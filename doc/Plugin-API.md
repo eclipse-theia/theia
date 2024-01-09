@@ -72,11 +72,14 @@ The communication between each side of the API is goverend by proxies that use a
 In Theia, the encoding and decoding process of RPC messages can be customized through dedicated `RpcMessageEncoder` and `RpcMessageDecoder` classes that can be provided when a new RpcProtocol is created.
 The `RpcMessageEncoder` writes RPC messages to a buffer whereas the `RpcMessageDecoder` parses a binary message from a buffer into a RPC message.
 
-By default, Theia uses an encoder and decoder based on [msgpackr](https://www.npmjs.com/package/msgpackr) that already properly handles many built-in types as well as arrays and maps.
+By default, Theia uses an encoder and decoder based on [msgpackr](https://www.npmjs.com/package/msgpackr) that already properly handles many JavaScript built-in types, such as arrays and maps.
 We can separately extend the encoding and decoding of our own classes by installing extensions using the `MsgPackExtensionManager` singleton, accessible from both ends of the channel.
 Examples of this can be found in the [extension for Errors](https://github.com/eclipse-theia/theia/blob/72421be24d0461f811a39324579913e91056d7c4/packages/core/src/common/message-rpc/rpc-message-encoder.ts#L171) and the [extension for URI, Range and other classes](https://github.com/eclipse-theia/theia/blob/72421be24d0461f811a39324579913e91056d7c4/packages/plugin-ext/src/common/rpc-protocol.ts#L223).
-Please note that it is the responsibility of the extension provider to use a free tag between 1 and 100.
-We call these extensions in the `index.ts` file to ensure they are available early on.
+We call the registration of these extensions in `index.ts` to ensure they are available early on.
+Please note that msgpackr [always registers extensions globally](https://github.com/kriszyp/msgpackr/issues/93) so the extensions leak into all connections within Theia, i.e., also non-API related areas such as the frontend-backend connection.
+And while the number of custom extensions is [limited to 100](https://github.com/kriszyp/msgpackr?tab=readme-ov-file#custom-extensions), checking the extensions for every single message may impact performance if there are many extensions or the conversion is very expensive.
+Another hurdle is that we need to ensure that we always detect the correct type of object purely from the object shape which may prove difficult if there are hundreds of objects and custom instances from user code.
+Consequently, we mainly use the msgpackr extension mechanism for very few common classes but rely on custom data transfer objects (DTOs) for the Theia plugin API, see also [Complex objects and RPC](#complex-objects-and-rpc).
 
 ## Adding new API
 
@@ -152,24 +155,19 @@ They each create the proxy to the other side in their constructors by using the 
 
 ### Complex objects and RPC
 
-When [encoding and decoding RPC messages](#encoding-and-decoding-rpc-messages) pure DTO objects can always safely be transmitted.
-For custom classes, we can also adapt the encoding and decoding through extensions.
+When [encoding and decoding RPC messages](#encoding-and-decoding-rpc-messages) pure DTO objects that only carry properties can always be transmitted safely.
 However, due to the necessary serialization process, functions and references to other objects can never be transmitted safely.
 
 If functions of objects need to be invoked on the opposite side of their creation, the object needs to be cached on the creation side.
 The other side receives a handle (usually an id) that can be used to invoke the functionality on the creation side.
 As all cached objects are kept in memory, they should be disposed of when they are no longer needed.
-
-For instance, in [LanguagesExtImpl](https://github.com/eclipse-theia/theia/blob/master/packages/plugin-ext/src/plugin/languages.ts)#registerCodeActionsProvider a new code action provider is created and cached on the `Ext` side and then registered on the `Main` side via its handle.
-When the code action provider’s methods are later invoked on the `Main` side (e.g. in [LanguagesMainImpl](https://github.com/eclipse-theia/theia/blob/master/packages/plugin-ext/src/main/browser/languages-main.ts)#provideCodeActions), it calls the `Ext` side with this handle.
-The `Ext` side then gets the cached object, executes appropriate functions and returns the results back to the `Main` side (e.g. in [LanguagesExtImpl](https://github.com/eclipse-theia/theia/blob/master/packages/plugin-ext/src/plugin/languages.ts)#$provideCodeActions).
-
+For instance, in [LanguagesExtImpl#registerCodeActionsProvider](https://github.com/eclipse-theia/theia/blob/master/packages/plugin-ext/src/plugin/languages.ts) a new code action provider is created and cached on the `Ext` side and then registered on the `Main` side via its handle.
+When the code action provider’s methods are later invoked on the `Main` side (e.g. in [LanguagesMainImpl#provideCodeActions](https://github.com/eclipse-theia/theia/blob/master/packages/plugin-ext/src/main/browser/languages-main.ts)), it calls the `Ext` side with this handle.
+The `Ext` side then gets the cached object, executes appropriate functions and returns the results back to the `Main` side (e.g. in [LanguagesExtImpl#$provideCodeActions](https://github.com/eclipse-theia/theia/blob/master/packages/plugin-ext/src/plugin/languages.ts)).
 Another example to browse are the [TaskExtImpl](https://github.com/eclipse-theia/theia/blob/master/packages/plugin-ext/src/plugin/tasks/tasks.ts) and [TaskMainImpl](https://github.com/eclipse-theia/theia/blob/master/packages/plugin-ext/src/main/browser/tasks-main.ts) classes.
 
-As we can see from the language and the task example, in Theia we have a complete API protocol that we need provide for plugins that may not be serializable by default.
-In such cases, it has also proven useful to explicitly define a layer of DTO types that are then converted to their API counterpart on the other side.
-For Theia, these are defined in [plugin-ext/src/common/plugin-api-rpc.ts](https://github.com/eclipse-theia/theia/blob/master/packages/plugin-ext/src/common/plugin-api-rpc.ts).
-Utility functions to convert between DTO and API types on the `Ext` side are usually added to [plugin-ext/src/plugin/type-converters.ts](https://github.com/eclipse-theia/theia/blob/master/packages/plugin-ext/src/plugin/type-converters.ts).
+To [ensure correct type conversion](#encoding-and-decoding-rpc-messages) between the Theia backend and the plugin host we define an API protocol based on types and DTOs that can be transmitted safely.
+The plugin API and it's types are defined in [plugin-ext/src/common/plugin-api-rpc.ts](https://github.com/eclipse-theia/theia/blob/master/packages/plugin-ext/src/common/plugin-api-rpc.ts) with some additional conversion on the `Ext` side being defined in [plugin-ext/src/plugin/type-converters.ts](https://github.com/eclipse-theia/theia/blob/master/packages/plugin-ext/src/plugin/type-converters.ts).
 Thus, this is also a good starting point to look for conversion utilities for existing types.
 
 ### Adding new types
