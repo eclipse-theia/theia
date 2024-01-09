@@ -158,7 +158,13 @@ export class InitializationCallbackImpl implements InitializationCallback {
 
     private readonly runningInits = new Set<string>();
 
-    private checkInitDeferred: Deferred<void> = new Deferred();
+    private checkInitDeferred: Deferred<void>;
+
+    constructor() {
+        this.checkInitDeferred = new Deferred();
+        /* after creation no init is active */
+        this.checkInitDeferred.resolve();
+    }
 
     reportInit(id: string): void {
         if (this.runningInits.size === 0) {
