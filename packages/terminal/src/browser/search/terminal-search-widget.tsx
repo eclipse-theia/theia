@@ -1,26 +1,26 @@
-/********************************************************************************
- * Copyright (C) 2019 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2019 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { injectable, inject, postConstruct } from 'inversify';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
-import * as React from 'react';
+import * as React from '@theia/core/shared/react';
 import '../../../src/browser/style/terminal-search.css';
 import { Terminal } from 'xterm';
 import { SearchAddon, ISearchOptions } from 'xterm-addon-search';
-import { Key } from '@theia/core/lib/browser';
+import { codicon, Key } from '@theia/core/lib/browser';
 
 export const TERMINAL_SEARCH_WIDGET_FACTORY_ID = 'terminal-search';
 export const TerminalSearchWidgetFactory = Symbol('TerminalSearchWidgetFactory');
@@ -54,20 +54,21 @@ export class TerminalSearchWidget extends ReactWidget {
                 <input
                     title='Find'
                     type='text'
+                    spellCheck='false'
                     placeholder='Find'
                     ref={ip => this.searchInput = ip}
                     onKeyUp={this.onInputChanged}
                     onFocus={this.onSearchInputFocus}
                     onBlur={this.onSearchInputBlur}
                 />
-                <div title='Match case' tabIndex={0} className='search-elem match-case' onClick={this.handleCaseSensitiveOptionClicked}></div>
-                <div title='Match whole word' tabIndex={0} className='search-elem whole-word' onClick={this.handleWholeWordOptionClicked}></div>
-                <div title='Use regular expression' tabIndex={0} className='search-elem use-regexp' onClick={this.handleRegexOptionClicked}></div>
+                <div title='Match case' tabIndex={0} className={'search-elem ' + codicon('case-sensitive')} onClick={this.handleCaseSensitiveOptionClicked}></div>
+                <div title='Match whole word' tabIndex={0} className={'search-elem ' + codicon('whole-word')} onClick={this.handleWholeWordOptionClicked}></div>
+                <div title='Use regular expression' tabIndex={0} className={'search-elem ' + codicon('regex')} onClick={this.handleRegexOptionClicked}></div>
             </div>
-            <button title='Previous match' className='search-elem arrow-up' onClick={this.handlePreviousButtonClicked}></button>
-            <button title='Next match' className='search-elem arrow-down' onClick={this.handleNextButtonClicked}></button>
-            <button title='Close' className='search-elem close' onClick={this.handleHide}></button>
-       </div>;
+            <button title='Previous match' className={'search-elem ' + codicon('arrow-up')} onClick={this.handlePreviousButtonClicked}></button>
+            <button title='Next match' className={'search-elem ' + codicon('arrow-down')} onClick={this.handleNextButtonClicked}></button>
+            <button title='Close' className={'search-elem ' + codicon('close')} onClick={this.handleHide}></button>
+        </div>;
     }
 
     onSearchInputFocus = (): void => {
@@ -148,11 +149,11 @@ export class TerminalSearchWidget extends ReactWidget {
         this.search(false, 'previous');
     };
 
-    onAfterHide(): void {
+    override onAfterHide(): void {
         this.terminal.focus();
     }
 
-    onAfterShow(): void {
+    override onAfterShow(): void {
         if (this.searchInput) {
             this.searchInput.select();
         }

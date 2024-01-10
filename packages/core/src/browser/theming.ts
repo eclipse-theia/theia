@@ -1,61 +1,62 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { Emitter, Event } from '../common/event';
 import { Disposable } from '../common/disposable';
 import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
+import { ApplicationProps, DefaultTheme } from '@theia/application-package/lib/application-props';
+import { Theme, ThemeChangeEvent } from '../common/theme';
+import { inject, injectable, postConstruct } from 'inversify';
+import { Deferred } from '../common/promise-util';
+import { PreferenceSchemaProvider, PreferenceService } from './preferences';
+import debounce = require('lodash.debounce');
 
-export const ThemeServiceSymbol = Symbol('ThemeService');
+const COLOR_THEME_PREFERENCE_KEY = 'workbench.colorTheme';
+const NO_THEME = { id: 'no-theme', label: 'Not a real theme.', type: 'dark' } as const;
 
-export type ThemeType = 'light' | 'dark' | 'hc';
-
-export interface Theme {
-    readonly id: string;
-    readonly type: ThemeType;
-    readonly label: string;
-    readonly description?: string;
-    readonly editorTheme?: string;
-    activate(): void;
-    deactivate(): void;
-}
-
-export interface ThemeChangeEvent {
-    readonly newTheme: Theme;
-    readonly oldTheme?: Theme;
-}
-
+@injectable()
 export class ThemeService {
+    static readonly STORAGE_KEY = 'theme';
 
-    private themes: { [id: string]: Theme } = {};
-    private activeTheme: Theme | undefined;
-    private readonly themeChange = new Emitter<ThemeChangeEvent>();
+    @inject(PreferenceService) protected readonly preferences: PreferenceService;
+    @inject(PreferenceSchemaProvider) protected readonly schemaProvider: PreferenceSchemaProvider;
 
-    readonly onThemeChange: Event<ThemeChangeEvent> = this.themeChange.event;
-
-    static get(): ThemeService {
-        const global = window as any; // eslint-disable-line @typescript-eslint/no-explicit-any
-        return global[ThemeServiceSymbol] || new ThemeService();
+    protected themes: { [id: string]: Theme } = {};
+    protected activeTheme: Theme = NO_THEME;
+    protected readonly themeChange = new Emitter<ThemeChangeEvent>();
+    protected readonly deferredInitializer = new Deferred();
+    get initialized(): Promise<void> {
+        return this.deferredInitializer.promise;
     }
 
-    protected constructor(
-        protected _defaultTheme: string | undefined = FrontendApplicationConfigProvider.get().defaultTheme,
-        protected fallbackTheme: string = 'dark'
-    ) {
-        const global = window as any; // eslint-disable-line @typescript-eslint/no-explicit-any
-        global[ThemeServiceSymbol] = this;
+    readonly onDidColorThemeChange: Event<ThemeChangeEvent> = this.themeChange.event;
+
+    @postConstruct()
+    protected init(): void {
+        this.register(...BuiltinThemeProvider.themes);
+        this.loadUserTheme();
+        this.preferences.ready.then(() => {
+            this.validateActiveTheme();
+            this.updateColorThemePreference();
+            this.preferences.onPreferencesChanged(changes => {
+                if (COLOR_THEME_PREFERENCE_KEY in changes) {
+                    this.validateActiveTheme();
+                }
+            });
+        });
     }
 
     register(...themes: Theme[]): Disposable {
@@ -63,24 +64,38 @@ export class ThemeService {
             this.themes[theme.id] = theme;
         }
         this.validateActiveTheme();
+        this.updateColorThemePreference();
         return Disposable.create(() => {
             for (const theme of themes) {
                 delete this.themes[theme.id];
+                if (this.activeTheme === theme) {
+                    this.setCurrentTheme(this.defaultTheme.id, false);
+                }
             }
-            this.validateActiveTheme();
+            this.updateColorThemePreference();
         });
     }
 
     protected validateActiveTheme(): void {
-        if (!this.activeTheme) {
-            return;
+        if (this.preferences.isReady) {
+            const configuredTheme = this.getConfiguredTheme();
+            if (configuredTheme && configuredTheme !== this.activeTheme) {
+                this.setCurrentTheme(configuredTheme.id, false);
+            }
         }
-        const theme = this.themes[this.activeTheme.id];
-        if (!theme) {
-            this.loadUserTheme();
-        } else if (theme !== this.activeTheme) {
-            this.activeTheme = undefined;
-            this.setCurrentTheme(theme.id);
+    }
+
+    protected updateColorThemePreference = debounce(() => this.doUpdateColorThemePreference(), 500);
+
+    protected doUpdateColorThemePreference(): void {
+        const preference = this.schemaProvider.getSchemaProperty(COLOR_THEME_PREFERENCE_KEY);
+        if (preference) {
+            const sortedThemes = this.getThemes().sort((a, b) => a.label.localeCompare(b.label));
+            this.schemaProvider.updateSchemaProperty(COLOR_THEME_PREFERENCE_KEY, {
+                ...preference,
+                enum: sortedThemes.map(e => e.id),
+                enumItemLabels: sortedThemes.map(e => e.label)
+            });
         }
     }
 
@@ -98,43 +113,50 @@ export class ThemeService {
         return this.themes[themeId] || this.defaultTheme;
     }
 
-    startupTheme(): void {
-        const theme = this.getCurrentTheme();
-        theme.activate();
+    protected tryGetTheme(themeId: string): Theme | undefined {
+        return this.themes[themeId];
     }
 
+    /** Should only be called at startup. */
     loadUserTheme(): void {
-        const theme = this.getCurrentTheme();
-        this.setCurrentTheme(theme.id);
+        const storedThemeId = window.localStorage.getItem(ThemeService.STORAGE_KEY) ?? this.defaultTheme.id;
+        const theme = this.getTheme(storedThemeId);
+        this.setCurrentTheme(theme.id, false);
+        this.deferredInitializer.resolve();
     }
 
-    setCurrentTheme(themeId: string): void {
-        const newTheme = this.getTheme(themeId);
+    /**
+     * @param persist If `true`, the value of the `workbench.colorTheme` preference will be set to the provided ID.
+     */
+    setCurrentTheme(themeId: string, persist = true): void {
+        const newTheme = this.tryGetTheme(themeId);
         const oldTheme = this.activeTheme;
-        if (oldTheme) {
-            if (oldTheme.id === newTheme.id) {
-                return;
-            }
-            oldTheme.deactivate();
+        if (newTheme && newTheme !== oldTheme) {
+            oldTheme?.deactivate?.();
+            newTheme.activate?.();
+            this.activeTheme = newTheme;
+            this.themeChange.fire({ newTheme, oldTheme });
         }
-        newTheme.activate();
-        this.activeTheme = newTheme;
-        window.localStorage.setItem('theme', themeId);
-        this.themeChange.fire({
-            newTheme, oldTheme
-        });
+        if (persist) {
+            this.preferences.updateValue(COLOR_THEME_PREFERENCE_KEY, themeId);
+        }
     }
 
     getCurrentTheme(): Theme {
-        const themeId = window.localStorage.getItem('theme') || this.defaultTheme.id;
-        return this.getTheme(themeId);
+        return this.activeTheme;
+    }
+
+    protected getConfiguredTheme(): Theme | undefined {
+        const configuredId = this.preferences.get<string>(COLOR_THEME_PREFERENCE_KEY);
+        return configuredId ? this.themes[configuredId.toString()] : undefined;
     }
 
     /**
      * The default theme. If that is not applicable, returns with the fallback theme.
      */
     get defaultTheme(): Theme {
-        return this.themes[this._defaultTheme || this.fallbackTheme] || this.themes[this.fallbackTheme];
+        return this.tryGetTheme(DefaultTheme.defaultForOSTheme(FrontendApplicationConfigProvider.get().defaultTheme))
+            ?? this.getTheme(DefaultTheme.defaultForOSTheme(ApplicationProps.DEFAULT.frontend.config.defaultTheme));
     }
 
     /**
@@ -143,57 +165,42 @@ export class ThemeService {
     reset(): void {
         this.setCurrentTheme(this.defaultTheme.id);
     }
-
 }
 
 export class BuiltinThemeProvider {
-
-    // Webpack converts these `require` in some Javascript object that wraps the `.css` files
-    static readonly darkCss = require('../../src/browser/style/variables-dark.useable.css');
-    static readonly lightCss = require('../../src/browser/style/variables-bright.useable.css');
 
     static readonly darkTheme: Theme = {
         id: 'dark',
         type: 'dark',
         label: 'Dark (Theia)',
-        editorTheme: 'dark-theia', // loaded in /packages/monaco/src/browser/textmate/monaco-theme-registry.ts
-        activate(): void {
-            BuiltinThemeProvider.darkCss.use();
-        },
-        deactivate(): void {
-            BuiltinThemeProvider.darkCss.unuse();
-        }
+        editorTheme: 'dark-theia' // loaded in /packages/monaco/src/browser/textmate/monaco-theme-registry.ts
     };
 
     static readonly lightTheme: Theme = {
         id: 'light',
         type: 'light',
         label: 'Light (Theia)',
-        editorTheme: 'light-theia', // loaded in /packages/monaco/src/browser/textmate/monaco-theme-registry.ts
-        activate(): void {
-            BuiltinThemeProvider.lightCss.use();
-        },
-        deactivate(): void {
-            BuiltinThemeProvider.lightCss.unuse();
-        }
+        editorTheme: 'light-theia' // loaded in /packages/monaco/src/browser/textmate/monaco-theme-registry.ts
     };
 
     static readonly hcTheme: Theme = {
         id: 'hc-theia',
         type: 'hc',
         label: 'High Contrast (Theia)',
-        editorTheme: 'hc-theia', // loaded in /packages/monaco/src/browser/textmate/monaco-theme-registry.ts
-        activate(): void {
-            BuiltinThemeProvider.darkCss.use();
-        },
-        deactivate(): void {
-            BuiltinThemeProvider.darkCss.unuse();
-        }
+        editorTheme: 'hc-theia' // loaded in /packages/monaco/src/browser/textmate/monaco-theme-registry.ts
+    };
+
+    static readonly hcLightTheme: Theme = {
+        id: 'hc-theia-light',
+        type: 'hcLight',
+        label: 'High Contrast Light (Theia)',
+        editorTheme: 'hc-theia-light' // loaded in /packages/monaco/src/browser/textmate/monaco-theme-registry.ts
     };
 
     static readonly themes = [
         BuiltinThemeProvider.darkTheme,
         BuiltinThemeProvider.lightTheme,
-        BuiltinThemeProvider.hcTheme
+        BuiltinThemeProvider.hcTheme,
+        BuiltinThemeProvider.hcLightTheme
     ];
 }

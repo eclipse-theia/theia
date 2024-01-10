@@ -1,27 +1,27 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { UUID } from '@phosphor/coreutils';
-import { injectable, inject } from 'inversify';
+import { UUID } from '@theia/core/shared/@phosphor/coreutils';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
 
-import { DebugAdapterPath } from '../common/debug-service';
+import { DebugAdapterPath, ForwardingDebugChannel } from '../common/debug-service';
 import { DebugConfiguration } from '../common/debug-configuration';
 import { DebugAdapterSession, DebugAdapterSessionFactory, DebugAdapterFactory } from '../common/debug-model';
-import { DebugAdapterContributionRegistry } from './debug-adapter-contribution-registry';
+import { DebugAdapterContributionRegistry } from '../common/debug-adapter-contribution-registry';
 
 /**
  * Debug adapter session manager.
@@ -37,14 +37,13 @@ export class DebugAdapterSessionManager implements MessagingService.Contribution
     protected readonly debugAdapterFactory: DebugAdapterFactory;
 
     configure(service: MessagingService): void {
-        service.wsChannel(`${DebugAdapterPath}/:id`, ({ id }: { id: string }, channel) => {
+        service.registerChannelHandler(`${DebugAdapterPath}/:id`, ({ id }: { id: string }, wsChannel) => {
             const session = this.find(id);
             if (!session) {
-                channel.close();
+                wsChannel.close();
                 return;
             }
-            channel.onClose(() => session.stop());
-            session.start(channel);
+            session.start(new ForwardingDebugChannel(wsChannel));
         });
     }
 
@@ -67,6 +66,14 @@ export class DebugAdapterSessionManager implements MessagingService.Contribution
         const sessionFactory = registry.debugAdapterSessionFactory(config.type) || this.debugAdapterSessionFactory;
         const session = sessionFactory.get(sessionId, communicationProvider);
         this.sessions.set(sessionId, session);
+
+        if (config.parentSession) {
+            const parentSession = this.sessions.get(config.parentSession.id);
+            if (parentSession) {
+                session.parentSession = parentSession;
+            }
+        }
+
         return session;
     }
 

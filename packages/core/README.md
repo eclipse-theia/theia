@@ -4,7 +4,7 @@
 
 <img src='https://raw.githubusercontent.com/eclipse-theia/theia/master/logo/theia.svg?sanitize=true' alt='theia-ext-logo' width='100px' />
 
-<h2>THEIA - CORE EXTENSION</h2>
+<h2>ECLIPSE THEIA - CORE EXTENSION</h2>
 
 <hr />
 
@@ -49,6 +49,65 @@ An extension module should have a default export of `ContainerModule | Promise<C
 
 A Theia application is a node package listing [Theia extensions](#theia-extension) as dependencies and managed with [Theia CLI](../../dev-packages/cli/README.md).
 
+## Re-Exports Mechanism
+
+In order to make application builds more stable `@theia/core` re-exports some common dependencies for Theia extensions to re-use. This is especially useful when having to re-use the same dependencies as `@theia/core` does: Since those dependencies will be pulled by Theia, instead of trying to match the same version in your own packages, you can use re-exports to consume it from the framework directly.
+
+### Usage Example
+
+Let's take inversify as an example since you will most likely use this package, you can import it by prefixing with `@theia/core/shared/`:
+
+```ts
+import { injectable } from '@theia/core/shared/inversify';
+
+@injectable()
+export class SomeClass {
+    // ...
+}
+```
+
+## Re-Exports
+
+- `@theia/core/electron-shared/...`
+    - `native-keymap` (from [`native-keymap@^2.2.1`](https://www.npmjs.com/package/native-keymap))
+    - `electron` (from [`electron@^23.2.4`](https://www.npmjs.com/package/electron))
+    - `electron-store` (from [`electron-store@^8.0.0`](https://www.npmjs.com/package/electron-store))
+    - `fix-path` (from [`fix-path@^3.0.0`](https://www.npmjs.com/package/fix-path))
+- `@theia/core/shared/...`
+    - `@phosphor/algorithm` (from [`@phosphor/algorithm@1`](https://www.npmjs.com/package/@phosphor/algorithm))
+    - `@phosphor/commands` (from [`@phosphor/commands@1`](https://www.npmjs.com/package/@phosphor/commands))
+    - `@phosphor/coreutils` (from [`@phosphor/coreutils@1`](https://www.npmjs.com/package/@phosphor/coreutils))
+    - `@phosphor/domutils` (from [`@phosphor/domutils@1`](https://www.npmjs.com/package/@phosphor/domutils))
+    - `@phosphor/dragdrop` (from [`@phosphor/dragdrop@1`](https://www.npmjs.com/package/@phosphor/dragdrop))
+    - `@phosphor/messaging` (from [`@phosphor/messaging@1`](https://www.npmjs.com/package/@phosphor/messaging))
+    - `@phosphor/properties` (from [`@phosphor/properties@1`](https://www.npmjs.com/package/@phosphor/properties))
+    - `@phosphor/signaling` (from [`@phosphor/signaling@1`](https://www.npmjs.com/package/@phosphor/signaling))
+    - `@phosphor/virtualdom` (from [`@phosphor/virtualdom@1`](https://www.npmjs.com/package/@phosphor/virtualdom))
+    - `@phosphor/widgets` (from [`@phosphor/widgets@1`](https://www.npmjs.com/package/@phosphor/widgets))
+    - `@theia/application-package` (from [`@theia/application-package@1.45.0`](https://www.npmjs.com/package/@theia/application-package/v/1.45.0))
+    - `@theia/application-package/lib/api` (from [`@theia/application-package@1.45.0`](https://www.npmjs.com/package/@theia/application-package/v/1.45.0))
+    - `@theia/application-package/lib/environment` (from [`@theia/application-package@1.45.0`](https://www.npmjs.com/package/@theia/application-package/v/1.45.0))
+    - `@theia/request` (from [`@theia/request@1.45.0`](https://www.npmjs.com/package/@theia/request/v/1.45.0))
+    - `@theia/request/lib/proxy` (from [`@theia/request@1.45.0`](https://www.npmjs.com/package/@theia/request/v/1.45.0))
+    - `@theia/request/lib/node-request-service` (from [`@theia/request@1.45.0`](https://www.npmjs.com/package/@theia/request/v/1.45.0))
+    - `fs-extra` (from [`fs-extra@^4.0.2`](https://www.npmjs.com/package/fs-extra))
+    - `fuzzy` (from [`fuzzy@^0.1.3`](https://www.npmjs.com/package/fuzzy))
+    - `inversify` (from [`inversify@^6.0.1`](https://www.npmjs.com/package/inversify))
+    - `react-dom` (from [`react-dom@^18.2.0`](https://www.npmjs.com/package/react-dom))
+    - `react-dom/client` (from [`react-dom@^18.2.0`](https://www.npmjs.com/package/react-dom))
+    - `react-virtuoso` (from [`react-virtuoso@^2.17.0`](https://www.npmjs.com/package/react-virtuoso))
+    - `vscode-languageserver-protocol` (from [`vscode-languageserver-protocol@^3.17.2`](https://www.npmjs.com/package/vscode-languageserver-protocol))
+    - `vscode-uri` (from [`vscode-uri@^2.1.1`](https://www.npmjs.com/package/vscode-uri))
+    - `dompurify` (from [`dompurify@^2.2.9`](https://www.npmjs.com/package/dompurify))
+    - `express` (from [`express@^4.16.3`](https://www.npmjs.com/package/express))
+    - `lodash.debounce` (from [`lodash.debounce@^4.0.8`](https://www.npmjs.com/package/lodash.debounce))
+    - `lodash.throttle` (from [`lodash.throttle@^4.1.1`](https://www.npmjs.com/package/lodash.throttle))
+    - `nsfw` (from [`nsfw@^2.2.4`](https://www.npmjs.com/package/nsfw))
+    - `markdown-it` (from [`markdown-it@^12.3.2`](https://www.npmjs.com/package/markdown-it))
+    - `react` (from [`react@^18.2.0`](https://www.npmjs.com/package/react))
+    - `ws` (from [`ws@^8.14.1`](https://www.npmjs.com/package/ws))
+    - `yargs` (from [`yargs@^15.3.1`](https://www.npmjs.com/package/yargs))
+
 ## Logging Configuration
 
 It's possible to change the log level for the entire Theia application by
@@ -83,6 +142,16 @@ root INFO [nsfw-watcher: 10734] Started watching: /Users/captain.future/git/thei
 ^^^^ ^^^^  ^^^^^^^^^^^^^^^^^^^
 ```
 Where `root` is the name of the logger and `INFO` is the log level. These are optionally followed by the name of a child process and the process ID.
+
+## Environment Variables
+
+- `THEIA_HOSTS`
+  - A comma-separated list of hosts expected to resolve to the current application.
+    - e.g: `theia.app.com,some.other.domain:3000`
+  - The port number is important if your application is not hosted on either `80` or `443`.
+  - If possible, you should set this environment variable:
+    - When not set, Theia will allow any origin to access the WebSocket services.
+    - When set, Theia will only allow the origins defined in this environment variable.
 
 ## Additional Information
 

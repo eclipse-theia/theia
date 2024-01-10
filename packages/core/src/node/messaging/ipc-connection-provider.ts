@@ -1,24 +1,25 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import * as path from 'path';
 import * as cp from 'child_process';
-import { injectable, inject } from 'inversify';
-import { Trace, IPCMessageReader, IPCMessageWriter, createMessageConnection, MessageConnection, Message } from 'vscode-jsonrpc';
-import { ILogger, ConnectionErrorHandler, DisposableCollection, Disposable } from '../../common';
+import { inject, injectable } from 'inversify';
+import * as path from 'path';
+import { createInterface } from 'readline';
+import { Channel, ConnectionErrorHandler, Disposable, DisposableCollection, ILogger } from '../../common';
+import { IPCChannel } from './ipc-channel';
 import { createIpcEnv } from './ipc-protocol';
 
 export interface ResolvedIPCConnectionOptions {
@@ -40,7 +41,7 @@ export class IPCConnectionProvider {
     @inject(ILogger)
     protected readonly logger: ILogger;
 
-    listen(options: IPCConnectionOptions, acceptor: (connection: MessageConnection) => void): Disposable {
+    listen(options: IPCConnectionOptions, acceptor: (connection: Channel) => void): Disposable {
         return this.doListen({
             logger: this.logger,
             args: [],
@@ -48,19 +49,21 @@ export class IPCConnectionProvider {
         }, acceptor);
     }
 
-    protected doListen(options: ResolvedIPCConnectionOptions, acceptor: (connection: MessageConnection) => void): Disposable {
+    protected doListen(options: ResolvedIPCConnectionOptions, acceptor: (connection: Channel) => void): Disposable {
         const childProcess = this.fork(options);
-        const connection = this.createConnection(childProcess, options);
+        const channel = new IPCChannel(childProcess);
         const toStop = new DisposableCollection();
         const toCancelStop = toStop.push(Disposable.create(() => childProcess.kill()));
         const errorHandler = options.errorHandler;
         if (errorHandler) {
-            connection.onError((e: [Error, Message | undefined, number | undefined]) => {
-                if (errorHandler.shouldStop(e[0], e[1], e[2])) {
+            let errorCount = 0;
+            channel.onError((err: Error) => {
+                errorCount++;
+                if (errorHandler.shouldStop(err, errorCount)) {
                     toStop.dispose();
                 }
             });
-            connection.onClose(() => {
+            channel.onClose(() => {
                 if (toStop.disposed) {
                     return;
                 }
@@ -70,41 +73,30 @@ export class IPCConnectionProvider {
                 }
             });
         }
-        acceptor(connection);
+        acceptor(channel);
         return toStop;
-    }
-
-    protected createConnection(childProcess: cp.ChildProcess, options: ResolvedIPCConnectionOptions): MessageConnection {
-        const reader = new IPCMessageReader(childProcess);
-        const writer = new IPCMessageWriter(childProcess);
-        const connection = createMessageConnection(reader, writer, {
-            error: (message: string) => this.logger.error(`[${options.serverName}: ${childProcess.pid}] ${message}`),
-            warn: (message: string) => this.logger.warn(`[${options.serverName}: ${childProcess.pid}] ${message}`),
-            info: (message: string) => this.logger.info(`[${options.serverName}: ${childProcess.pid}] ${message}`),
-            log: (message: string) => this.logger.info(`[${options.serverName}: ${childProcess.pid}] ${message}`)
-        });
-        connection.trace(Trace.Off, {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            log: (message: any, data?: string) => this.logger.info(`[${options.serverName}: ${childProcess.pid}] ${message}` + (typeof data === 'string' ? ' ' + data : ''))
-        });
-        return connection;
     }
 
     protected fork(options: ResolvedIPCConnectionOptions): cp.ChildProcess {
         const forkOptions: cp.ForkOptions = {
-            silent: true,
             env: createIpcEnv(options),
-            execArgv: []
+            execArgv: [],
+            // 5th element MUST be 'overlapped' for it to work properly on Windows.
+            // 'overlapped' works just like 'pipe' on non-Windows platforms.
+            // See: https://nodejs.org/docs/latest-v14.x/api/child_process.html#child_process_options_stdio
+            // Note: For some reason `@types/node` does not know about 'overlapped'.
+            stdio: ['pipe', 'pipe', 'pipe', 'ipc', 'overlapped' as 'pipe']
         };
         const inspectArgPrefix = `--${options.serverName}-inspect`;
         const inspectArg = process.argv.find(v => v.startsWith(inspectArgPrefix));
         if (inspectArg !== undefined) {
-            forkOptions.execArgv = ['--nolazy', `--inspect${inspectArg.substr(inspectArgPrefix.length)}`];
+            forkOptions.execArgv = ['--nolazy', `--inspect${inspectArg.substring(inspectArgPrefix.length)}`];
         }
 
-        const childProcess = cp.fork(path.resolve(__dirname, 'ipc-bootstrap.js'), options.args, forkOptions);
-        childProcess.stdout.on('data', data => this.logger.info(`[${options.serverName}: ${childProcess.pid}] ${data.toString().trim()}`));
-        childProcess.stderr.on('data', data => this.logger.error(`[${options.serverName}: ${childProcess.pid}] ${data.toString().trim()}`));
+        const childProcess = cp.fork(path.join(__dirname, 'ipc-bootstrap'), options.args, forkOptions);
+
+        createInterface(childProcess.stdout!).on('line', line => this.logger.info(`[${options.serverName}: ${childProcess.pid}] ${line}`));
+        createInterface(childProcess.stderr!).on('line', line => this.logger.error(`[${options.serverName}: ${childProcess.pid}] ${line}`));
 
         this.logger.debug(`[${options.serverName}: ${childProcess.pid}] IPC started`);
         childProcess.once('exit', () => this.logger.debug(`[${options.serverName}: ${childProcess.pid}] IPC exited`));

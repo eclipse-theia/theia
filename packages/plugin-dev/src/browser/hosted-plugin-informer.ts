@@ -1,28 +1,28 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import { StatusBar } from '@theia/core/lib/browser/status-bar/status-bar';
 import { StatusBarAlignment, StatusBarEntry, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { HostedPluginServer } from '../common/plugin-dev-protocol';
+import { PluginDevServer } from '../common/plugin-dev-protocol';
 import { ConnectionStatusService, ConnectionStatus } from '@theia/core/lib/browser/connection-status-service';
-import URI from '@theia/core/lib/common/uri';
-import { FileStat } from '@theia/filesystem/lib/common';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
+import { nls } from '@theia/core/lib/common/nls';
+import { WindowTitleService } from '@theia/core/lib/browser/window/window-title-service';
 
 /**
  * Informs the user whether Theia is running with hosted plugin.
@@ -31,7 +31,7 @@ import { FrontendApplicationStateService } from '@theia/core/lib/browser/fronten
 @injectable()
 export class HostedPluginInformer implements FrontendApplicationContribution {
 
-    public static readonly DEVELOPMENT_HOST_TITLE = 'Development Host';
+    public static readonly DEVELOPMENT_HOST_TITLE = nls.localize('theia/plugin-dev/devHost', 'Development Host');
 
     public static readonly DEVELOPMENT_HOST = 'development-host';
 
@@ -45,8 +45,8 @@ export class HostedPluginInformer implements FrontendApplicationContribution {
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
-    @inject(HostedPluginServer)
-    protected readonly hostedPluginServer: HostedPluginServer;
+    @inject(PluginDevServer)
+    protected readonly hostedPluginServer: PluginDevServer;
 
     @inject(ConnectionStatusService)
     protected readonly connectionStatusService: ConnectionStatusService;
@@ -54,27 +54,29 @@ export class HostedPluginInformer implements FrontendApplicationContribution {
     @inject(FrontendApplicationStateService)
     protected readonly frontendApplicationStateService: FrontendApplicationStateService;
 
+    @inject(WindowTitleService)
+    protected readonly windowTitleService: WindowTitleService;
+
     public initialize(): void {
-        this.workspaceService.roots.then(roots => {
-            const workspaceFolder = roots[0];
-            this.hostedPluginServer.getHostedPlugin().then(pluginMetadata => {
-                if (pluginMetadata) {
-                    this.updateTitle(workspaceFolder);
+        this.hostedPluginServer.getHostedPlugin().then(pluginMetadata => {
+            if (pluginMetadata) {
+                this.windowTitleService.update({
+                    developmentHost: HostedPluginInformer.DEVELOPMENT_HOST_TITLE
+                });
 
-                    this.entry = {
-                        text: `$(cube) ${HostedPluginInformer.DEVELOPMENT_HOST_TITLE}`,
-                        tooltip: `Hosted Plugin '${pluginMetadata.model.name}'`,
-                        alignment: StatusBarAlignment.LEFT,
-                        priority: 100
-                    };
+                this.entry = {
+                    text: `$(cube) ${HostedPluginInformer.DEVELOPMENT_HOST_TITLE}`,
+                    tooltip: `${nls.localize('theia/plugin-dev/hostedPlugin', 'Hosted Plugin')} '${pluginMetadata.model.name}'`,
+                    alignment: StatusBarAlignment.LEFT,
+                    priority: 100
+                };
 
-                    this.frontendApplicationStateService.reachedState('ready').then(() => {
-                        this.updateStatusBarElement();
-                    });
+                this.frontendApplicationStateService.reachedState('ready').then(() => {
+                    this.updateStatusBarElement();
+                });
 
-                    this.connectionStatusService.onStatusChange(() => this.updateStatusBarElement());
-                }
-            });
+                this.connectionStatusService.onStatusChange(() => this.updateStatusBarElement());
+            }
         });
     }
 
@@ -86,15 +88,6 @@ export class HostedPluginInformer implements FrontendApplicationContribution {
         }
 
         this.statusBar.setElement(HostedPluginInformer.DEVELOPMENT_HOST, this.entry);
-    }
-
-    private updateTitle(root: FileStat | undefined): void {
-        if (root) {
-            const uri = new URI(root.uri);
-            document.title = HostedPluginInformer.DEVELOPMENT_HOST_TITLE + ' - ' + uri.displayName;
-        } else {
-            document.title = HostedPluginInformer.DEVELOPMENT_HOST_TITLE;
-        }
     }
 
 }

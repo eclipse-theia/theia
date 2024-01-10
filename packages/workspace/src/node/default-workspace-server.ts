@@ -1,67 +1,96 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import * as path from 'path';
-import * as yargs from 'yargs';
-import * as fs from 'fs-extra';
+import * as yargs from '@theia/core/shared/yargs';
+import * as fs from '@theia/core/shared/fs-extra';
 import * as jsoncparser from 'jsonc-parser';
-
-import { injectable, inject, postConstruct } from 'inversify';
-import { FileUri } from '@theia/core/lib/node';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
+import { FileUri, BackendApplicationContribution } from '@theia/core/lib/node';
 import { CliContribution } from '@theia/core/lib/node/cli';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { WorkspaceServer } from '../common';
+import { WorkspaceServer, UntitledWorkspaceService } from '../common';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
+import URI from '@theia/core/lib/common/uri';
+import { notEmpty } from '@theia/core';
 
 @injectable()
 export class WorkspaceCliContribution implements CliContribution {
 
+    @inject(EnvVariablesServer) protected readonly envVariablesServer: EnvVariablesServer;
+    @inject(UntitledWorkspaceService) protected readonly untitledWorkspaceService: UntitledWorkspaceService;
+
     workspaceRoot = new Deferred<string | undefined>();
 
     configure(conf: yargs.Argv): void {
-        conf.usage('$0 [workspace-directory] [options]');
+        conf.usage('$0 [workspace-directories] [options]');
         conf.option('root-dir', {
             description: 'DEPRECATED: Sets the workspace directory.',
         });
     }
 
-    setArguments(args: yargs.Arguments): void {
-        let wsPath = args._[2];
-        if (!wsPath) {
-            wsPath = args['root-dir'];
-            if (!wsPath) {
-                this.workspaceRoot.resolve();
-                return;
+    async setArguments(args: yargs.Arguments): Promise<void> {
+        const workspaceArguments = args._.map(probablyAlreadyString => String(probablyAlreadyString));
+        if (workspaceArguments.length === 0 && args['root-dir']) {
+            workspaceArguments.push(String(args['root-dir']));
+        }
+        if (workspaceArguments.length === 0) {
+            this.workspaceRoot.resolve(undefined);
+        } else if (workspaceArguments.length === 1) {
+            this.workspaceRoot.resolve(this.normalizeWorkspaceArg(workspaceArguments[0]));
+        } else {
+            this.workspaceRoot.resolve(this.buildWorkspaceForMultipleArguments(workspaceArguments));
+        }
+    }
+
+    protected normalizeWorkspaceArg(raw: string): string {
+        return path.resolve(raw).replace(/\/$/, '');
+    }
+
+    protected async buildWorkspaceForMultipleArguments(workspaceArguments: string[]): Promise<string | undefined> {
+        try {
+            const dirs = await Promise.all(workspaceArguments.map(async maybeDir => (await fs.stat(maybeDir).catch(() => undefined))?.isDirectory()));
+            const folders = workspaceArguments.filter((_, index) => dirs[index]).map(dir => ({ path: this.normalizeWorkspaceArg(dir) }));
+            if (folders.length < 2) {
+                return folders[0]?.path;
             }
+            const untitledWorkspaceUri = await this.untitledWorkspaceService.getUntitledWorkspaceUri(
+                new URI(await this.envVariablesServer.getConfigDirUri()),
+                async uri => !await fs.pathExists(uri.path.fsPath()),
+            );
+            const untitledWorkspacePath = untitledWorkspaceUri.path.fsPath();
+
+            await fs.ensureDir(path.dirname(untitledWorkspacePath));
+            await fs.writeFile(untitledWorkspacePath, JSON.stringify({ folders }, undefined, 4));
+            return untitledWorkspacePath;
+        } catch {
+            return undefined;
         }
-        if (!path.isAbsolute(wsPath)) {
-            const cwd = process.cwd();
-            wsPath = path.join(cwd, wsPath);
-        }
-        if (wsPath && wsPath.endsWith('/')) {
-            wsPath = wsPath.slice(0, -1);
-        }
-        this.workspaceRoot.resolve(wsPath);
     }
 }
 
 @injectable()
-export class DefaultWorkspaceServer implements WorkspaceServer {
+export class DefaultWorkspaceServer implements WorkspaceServer, BackendApplicationContribution {
 
     protected root: Deferred<string | undefined> = new Deferred();
+    /**
+     * Untitled workspaces that are not among the most recent N workspaces will be deleted on start. Increase this number to keep older files,
+     * lower it to delete stale untitled workspaces more aggressively.
+     */
+    protected untitledWorkspaceStaleThreshold = 10;
 
     @inject(WorkspaceCliContribution)
     protected readonly cliParams: WorkspaceCliContribution;
@@ -69,10 +98,21 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
     @inject(EnvVariablesServer)
     protected readonly envServer: EnvVariablesServer;
 
+    @inject(UntitledWorkspaceService)
+    protected readonly untitledWorkspaceService: UntitledWorkspaceService;
+
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         const root = await this.getRoot();
         this.root.resolve(root);
+    }
+
+    async onStart(): Promise<void> {
+        await this.removeOldUntitledWorkspaces();
     }
 
     protected async getRoot(): Promise<string | undefined> {
@@ -90,41 +130,38 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
         return this.root.promise;
     }
 
-    async setMostRecentlyUsedWorkspace(uri: string): Promise<void> {
+    async setMostRecentlyUsedWorkspace(rawUri: string): Promise<void> {
+        const uri = rawUri && new URI(rawUri).toString(); // the empty string is used as a signal from the frontend not to load a workspace.
         this.root = new Deferred();
-        const listUri: string[] = [];
-        const oldListUri = await this.getRecentWorkspaces();
-        listUri.push(uri);
-        if (oldListUri) {
-            oldListUri.forEach(element => {
-                if (element !== uri && element.length > 0) {
-                    listUri.push(element);
-                }
+        this.root.resolve(uri);
+        const recentRoots = Array.from(new Set([uri, ...await this.getRecentWorkspaces()]));
+        this.writeToUserHome({ recentRoots });
+    }
+
+    async removeRecentWorkspace(rawUri: string): Promise<void> {
+        const uri = rawUri && new URI(rawUri).toString(); // the empty string is used as a signal from the frontend not to load a workspace.
+        const recentRoots = await this.getRecentWorkspaces();
+        const index = recentRoots.indexOf(uri);
+        if (index !== -1) {
+            recentRoots.splice(index, 1);
+            this.writeToUserHome({
+                recentRoots
             });
         }
-        this.root.resolve(uri);
-        this.writeToUserHome({
-            recentRoots: listUri
-        });
     }
 
     async getRecentWorkspaces(): Promise<string[]> {
-        const listUri: string[] = [];
         const data = await this.readRecentWorkspacePathsFromUserHome();
         if (data && data.recentRoots) {
-            data.recentRoots.forEach(element => {
-                if (element.length > 0) {
-                    if (this.workspaceStillExist(element)) {
-                        listUri.push(element);
-                    }
-                }
-            });
+            const allRootUris = await Promise.all(data.recentRoots.map(async element =>
+                element && await this.workspaceStillExist(element) ? element : undefined));
+            return allRootUris.filter(notEmpty);
         }
-        return listUri;
+        return [];
     }
 
-    protected workspaceStillExist(workspaceRootUri: string): boolean {
-        return fs.pathExistsSync(FileUri.fsPath(workspaceRootUri));
+    protected async workspaceStillExist(workspaceRootUri: string): Promise<boolean> {
+        return fs.pathExists(FileUri.fsPath(workspaceRootUri));
     }
 
     protected async getWorkspaceURIFromCli(): Promise<string | undefined> {
@@ -154,7 +191,7 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
     protected async readRecentWorkspacePathsFromUserHome(): Promise<RecentWorkspacePathsData | undefined> {
         const fsPath = await this.getUserStoragePath();
         const data = await this.readJsonFromFile(fsPath);
-        return RecentWorkspacePathsData.is(data) ? data : undefined;
+        return RecentWorkspacePathsData.create(data);
     }
 
     protected async readJsonFromFile(fsPath: string): Promise<object | undefined> {
@@ -169,15 +206,39 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
         const configDirUri = await this.envServer.getConfigDirUri();
         return path.resolve(FileUri.fsPath(configDirUri), 'recentworkspace.json');
     }
+
+    /**
+     * Removes untitled workspaces that are not among the most recently used workspaces.
+     * Use the `untitledWorkspaceStaleThreshold` to configure when to delete workspaces.
+     */
+    protected async removeOldUntitledWorkspaces(): Promise<void> {
+        const recents = (await this.getRecentWorkspaces()).map(FileUri.fsPath);
+        const olderUntitledWorkspaces = recents
+            .slice(this.untitledWorkspaceStaleThreshold)
+            .filter(workspace => this.untitledWorkspaceService.isUntitledWorkspace(FileUri.create(workspace)));
+        await Promise.all(olderUntitledWorkspaces.map(workspace => fs.promises.unlink(FileUri.fsPath(workspace)).catch(() => { })));
+        if (olderUntitledWorkspaces.length > 0) {
+            await this.writeToUserHome({ recentRoots: await this.getRecentWorkspaces() });
+        }
+    }
 }
 
-interface RecentWorkspacePathsData {
+export interface RecentWorkspacePathsData {
     recentRoots: string[];
 }
 
-namespace RecentWorkspacePathsData {
-    export function is(data: Object | undefined): data is RecentWorkspacePathsData {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return !!data && typeof data === 'object' && ('recentRoots' in data) && Array.isArray((data as any)['recentRoots']);
+export namespace RecentWorkspacePathsData {
+    /**
+     * Parses `data` as `RecentWorkspacePathsData` but removes any non-string array entry.
+     *
+     * Returns undefined if the given `data` does not contain a `recentRoots` array property.
+     */
+    export function create(data: unknown): RecentWorkspacePathsData | undefined {
+        if (typeof data !== 'object' || !data || !Array.isArray((data as RecentWorkspacePathsData).recentRoots)) {
+            return;
+        }
+        return {
+            recentRoots: (data as RecentWorkspacePathsData).recentRoots.filter(root => typeof root === 'string')
+        };
     }
 }

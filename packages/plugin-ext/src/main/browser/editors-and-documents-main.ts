@@ -1,20 +1,21 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { interfaces } from 'inversify';
+import { interfaces } from '@theia/core/shared/inversify';
+import * as monaco from '@theia/monaco-editor-core';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import {
     MAIN_RPC_CONTEXT,
@@ -29,8 +30,7 @@ import { EditorModelService } from './text-editor-model-service';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { TextEditorMain } from './text-editor-main';
-import { Emitter } from '@theia/core';
-import { DisposableCollection } from '@theia/core';
+import { DisposableCollection, Emitter } from '@theia/core';
 import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
 
 export class EditorsAndDocumentsMain implements Disposable {
@@ -41,6 +41,7 @@ export class EditorsAndDocumentsMain implements Disposable {
     private readonly textEditors = new Map<string, TextEditorMain>();
 
     private readonly modelService: EditorModelService;
+    private readonly editorService: EditorManager;
 
     private readonly onTextEditorAddEmitter = new Emitter<TextEditorMain[]>();
     private readonly onTextEditorRemoveEmitter = new Emitter<string[]>();
@@ -59,10 +60,10 @@ export class EditorsAndDocumentsMain implements Disposable {
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.EDITORS_AND_DOCUMENTS_EXT);
 
-        const editorService = container.get(EditorManager);
+        this.editorService = container.get(EditorManager);
         this.modelService = container.get(EditorModelService);
 
-        this.stateComputer = new EditorAndDocumentStateComputer(d => this.onDelta(d), editorService, this.modelService);
+        this.stateComputer = new EditorAndDocumentStateComputer(d => this.onDelta(d), this.editorService, this.modelService);
         this.toDispose.push(this.stateComputer);
         this.toDispose.push(this.onTextEditorAddEmitter);
         this.toDispose.push(this.onTextEditorRemoveEmitter);
@@ -138,6 +139,7 @@ export class EditorsAndDocumentsMain implements Disposable {
             uri: model.textEditorModel.uri,
             versionId: model.textEditorModel.getVersionId(),
             lines: model.textEditorModel.getLinesContent(),
+            languageId: model.getLanguageId(),
             EOL: model.textEditorModel.getEOL(),
             modeId: model.languageId,
             isDirty: model.dirty
@@ -167,6 +169,19 @@ export class EditorsAndDocumentsMain implements Disposable {
 
     saveAll(includeUntitled?: boolean): Promise<boolean> {
         return this.modelService.saveAll(includeUntitled);
+    }
+
+    hideEditor(id: string): Promise<void> {
+        for (const editorWidget of this.editorService.all) {
+            const monacoEditor = MonacoEditor.get(editorWidget);
+            if (monacoEditor) {
+                if (id === new EditorSnapshot(monacoEditor).id) {
+                    editorWidget.close();
+                    break;
+                }
+            }
+        }
+        return Promise.resolve();
     }
 }
 
@@ -259,7 +274,7 @@ class EditorAndDocumentStateComputer implements Disposable {
         const editors = new Map<string, EditorSnapshot>();
         for (const widget of this.editorService.all) {
             const editor = MonacoEditor.get(widget);
-            // VS Code tracks only visibles widgets
+            // VS Code tracks only visible widgets
             if (!editor || !widget.isVisible) {
                 continue;
             }

@@ -1,20 +1,20 @@
-/********************************************************************************
- * Copyright (C) 2017 Ericsson and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 Ericsson and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { inject, injectable, named } from 'inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { Disposable, DisposableCollection, ILogger } from '@theia/core/lib/common/';
 import {
     TaskClient,
@@ -31,6 +31,7 @@ import { TaskRunnerRegistry } from './task-runner';
 import { Task } from './task';
 import { ProcessTask } from './process/process-task';
 import { ProblemCollector } from './task-problem-collector';
+import { CustomTask } from './custom/custom-task';
 
 @injectable()
 export class TaskServerImpl implements TaskServer, Disposable {
@@ -89,7 +90,7 @@ export class TaskServerImpl implements TaskServer, Disposable {
     }
 
     async run(taskConfiguration: TaskConfiguration, ctx?: string, option?: RunTaskOption): Promise<TaskInfo> {
-        const runner = this.runnerRegistry.getRunner(taskConfiguration.type);
+        const runner = this.runnerRegistry.getRunner(taskConfiguration.type, taskConfiguration.taskType);
         const task = await runner.run(taskConfiguration, ctx);
 
         if (!this.toDispose.has(task.id)) {
@@ -103,7 +104,7 @@ export class TaskServerImpl implements TaskServer, Disposable {
         this.toDispose.get(task.id)!.push(
             task.onExit(event => {
                 this.taskManager.delete(task);
-                this.fireTaskExitedEvent(event);
+                this.fireTaskExitedEvent(event, task);
                 this.removedCachedProblemCollector(event.ctx || '', event.taskId);
                 this.disposeByTaskId(event.taskId);
             })
@@ -168,18 +169,23 @@ export class TaskServerImpl implements TaskServer, Disposable {
         return this.runnerRegistry.getRunnerTypes();
     }
 
+    async customExecutionComplete(id: number, exitCode: number | undefined): Promise<void> {
+        const task = this.taskManager.get(id) as CustomTask;
+        await task.callbackTaskComplete(exitCode);
+    }
+
     protected fireTaskExitedEvent(event: TaskExitedEvent, task?: Task): void {
         this.logger.debug(log => log('task has exited:', event));
 
-        this.clients.forEach(client => {
-            client.onTaskExit(event);
-        });
-
-        if (task && task instanceof ProcessTask && task.processType === 'process') {
+        if (task instanceof ProcessTask) {
             this.clients.forEach(client => {
                 client.onDidEndTaskProcess(event);
             });
         }
+
+        this.clients.forEach(client => {
+            client.onTaskExit(event);
+        });
     }
 
     protected fireTaskCreatedEvent(event: TaskInfo, task?: Task): void {

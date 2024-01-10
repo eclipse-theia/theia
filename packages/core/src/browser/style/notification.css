@@ -11,28 +11,29 @@
  * with the GNU Classpath Exception which is available at
  * https://www.gnu.org/software/classpath/license.html.
  *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
 :root {
-    --theia-notification-count-height: 15.5px;
+  --theia-notification-count-height: 15.5px;
+  --theia-notification-count-width: 15.5px;
 }
 
 .notification-count-container {
-    align-self: center;
-    background-color: var(--theia-badge-background);
-    border-radius: 20px;
-    color: var(--theia-badge-foreground);
-    display: flex;
-    font-size: calc(var(--theia-ui-font-size0) * 0.8);
-    font-weight: 500;
-    height: var(--theia-notification-count-height);
-    justify-content: center;
-    min-width: 6px;
-    padding: 0 5px;
-    text-align: center;
+  align-self: center;
+  background-color: var(--theia-badge-background);
+  border-radius: 20px;
+  color: var(--theia-badge-foreground);
+  display: flex;
+  font-size: calc(var(--theia-ui-font-size0) * 0.8);
+  font-weight: 500;
+  height: var(--theia-notification-count-height);
+  justify-content: center;
+  min-width: 6px;
+  padding: 0 5px;
+  text-align: center;
 }
 
 .notification-count-container > .notification-count {
-    align-self: center;
+  align-self: center;
 }

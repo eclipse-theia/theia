@@ -1,19 +1,21 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
+import * as monaco from '@theia/monaco-editor-core';
+import { StandaloneCodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import {
@@ -84,23 +86,23 @@ export class TextEditorMain implements Disposable {
         this.toDisposeOnEditor.push(Disposable.create(() => this.editor = undefined));
 
         if (this.editor) {
-            const monaco = this.editor.getControl();
+            const monacoEditor = this.editor.getControl();
             this.toDisposeOnEditor.push(this.editor.onSelectionChanged(_ => {
                 this.updateProperties();
             }));
-            this.toDisposeOnEditor.push(monaco.onDidChangeModel(() => {
+            this.toDisposeOnEditor.push(monacoEditor.onDidChangeModel(() => {
                 this.setEditor(undefined);
             }));
-            this.toDisposeOnEditor.push(monaco.onDidChangeCursorSelection(e => {
+            this.toDisposeOnEditor.push(monacoEditor.onDidChangeCursorSelection(e => {
                 this.updateProperties(e.source);
             }));
-            this.toDisposeOnEditor.push(monaco.onDidChangeConfiguration(() => {
+            this.toDisposeOnEditor.push(monacoEditor.onDidChangeConfiguration(() => {
                 this.updateProperties();
             }));
-            this.toDisposeOnEditor.push(monaco.onDidLayoutChange(() => {
+            this.toDisposeOnEditor.push(monacoEditor.onDidLayoutChange(() => {
                 this.updateProperties();
             }));
-            this.toDisposeOnEditor.push(monaco.onDidScrollChange(() => {
+            this.toDisposeOnEditor.push(monacoEditor.onDidScrollChange(() => {
                 this.updateProperties();
             }));
 
@@ -192,6 +194,13 @@ export class TextEditorMain implements Disposable {
         if (typeof newConfiguration.tabSize !== 'undefined') {
             newOpts.tabSize = newConfiguration.tabSize;
         }
+        if (typeof newConfiguration.indentSize !== 'undefined') {
+            if (newConfiguration.indentSize === 'tabSize') {
+                newOpts.indentSize = newConfiguration.tabSize;
+            } else if (typeof newConfiguration.indentSize == 'number') {
+                newOpts.indentSize = newConfiguration.indentSize;
+            }
+        }
         this.model.updateOptions(newOpts);
     }
 
@@ -263,12 +272,9 @@ export class TextEditorMain implements Disposable {
     }
 
     insertSnippet(template: string, ranges: Range[], opts: UndoStopOptions): boolean {
+        const snippetController: SnippetController2 | null | undefined = this.editor?.getControl().getContribution('snippetController2');
 
-        if (!this.editor) {
-            return false;
-        }
-
-        const snippetController: SnippetController2 = this.editor!.getControl().getContribution('snippetController2');
+        if (!snippetController || !this.editor) { return false; }
 
         const selections = ranges.map(r => new monaco.Selection(r.startLineNumber, r.startColumn, r.endLineNumber, r.endColumn));
         this.editor.getControl().setSelections(selections);
@@ -283,7 +289,8 @@ export class TextEditorMain implements Disposable {
         if (!this.editor) {
             return;
         }
-        this.editor.getControl().setDecorations(key, ranges.map(option => Object.assign(option, { color: undefined })));
+        (this.editor.getControl() as unknown as StandaloneCodeEditor)
+            .setDecorationsByType('Plugin decorations', key, ranges.map(option => Object.assign(option, { color: undefined })));
     }
 
     setDecorationsFast(key: string, _ranges: number[]): void {
@@ -295,8 +302,7 @@ export class TextEditorMain implements Disposable {
         for (let i = 0; i < len; i++) {
             ranges[i] = new monaco.Range(_ranges[4 * i], _ranges[4 * i + 1], _ranges[4 * i + 2], _ranges[4 * i + 3]);
         }
-
-        this.editor.getControl().setDecorationsFast(key, ranges);
+        (this.editor.getControl() as unknown as StandaloneCodeEditor).setDecorationsByTypeFast(key, ranges);
     }
 
     private static toMonacoSelections(selection: Selection): monaco.Selection {
@@ -409,6 +415,7 @@ export class TextEditorPropertiesMain {
         const modelOptions = model.getOptions();
         return {
             insertSpaces: modelOptions.insertSpaces,
+            indentSize: modelOptions.indentSize,
             tabSize: modelOptions.tabSize,
             cursorStyle,
             lineNumbers,
@@ -444,6 +451,7 @@ export class TextEditorPropertiesMain {
         return (
             a.tabSize === b.tabSize
             && a.insertSpaces === b.insertSpaces
+            && a.indentSize === b.indentSize
             && a.cursorStyle === b.cursorStyle
             && a.lineNumbers === b.lineNumbers
         );

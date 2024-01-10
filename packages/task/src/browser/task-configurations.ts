@@ -1,27 +1,28 @@
-/********************************************************************************
- * Copyright (C) 2017-2018 Ericsson and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017-2018 Ericsson and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { inject, injectable, postConstruct } from 'inversify';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import {
     TaskConfiguration,
     TaskCustomization,
     TaskDefinition,
     TaskOutputPresentation,
     TaskConfigurationScope,
-    TaskScope
+    TaskScope,
+    asVariableName
 } from '../common';
 import { TaskDefinitionRegistry } from './task-definition-registry';
 import { ProvidedTaskConfigurations } from './provided-task-configurations';
@@ -31,8 +32,6 @@ import { TaskSourceResolver } from './task-source-resolver';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common';
 import { FileChangeType } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { OpenerService } from '@theia/core/lib/browser';
-import { USER_PREFERENCE_FOLDER } from '@theia/preferences/lib/browser/user-configs-preference-provider';
 
 export interface TaskConfigurationClient {
     /**
@@ -41,8 +40,6 @@ export interface TaskConfigurationClient {
      */
     taskConfigurationChanged: (event: string[]) => void;
 }
-
-export const USER_TASKS_URI = USER_PREFERENCE_FOLDER.withPath('tasks.json');
 
 /**
  * Watches a tasks.json configuration file and provides a parsed version of the contained task configurations
@@ -70,9 +67,6 @@ export class TaskConfigurations implements Disposable {
 
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
-
-    @inject(OpenerService)
-    protected readonly openerService: OpenerService;
 
     @inject(TaskDefinitionRegistry)
     protected readonly taskDefinitionRegistry: TaskDefinitionRegistry;
@@ -136,16 +130,16 @@ export class TaskConfigurations implements Disposable {
      *
      * The invalid task configs are not returned.
      */
-    async getTasks(): Promise<TaskConfiguration[]> {
+    async getTasks(token: number): Promise<TaskConfiguration[]> {
         const configuredTasks = Array.from(this.tasksMap.values()).reduce((acc, labelConfigMap) => acc.concat(Array.from(labelConfigMap.values())), [] as TaskConfiguration[]);
         const detectedTasksAsConfigured: TaskConfiguration[] = [];
         for (const [rootFolder, customizations] of Array.from(this.taskCustomizationMap.entries())) {
-            for (const cus of customizations) {
+            for (const customization of customizations) {
                 // TODO: getTasksToCustomize() will ask all task providers to contribute tasks. Doing this in a loop is bad.
-                const detected = await this.providedTaskConfigurations.getTaskToCustomize(cus, rootFolder);
+                const detected = await this.providedTaskConfigurations.getTaskToCustomize(token, customization, rootFolder);
                 if (detected) {
                     // there might be a provided task that has a different scope from the task we're inspecting
-                    detectedTasksAsConfigured.push({ ...detected, ...cus });
+                    detectedTasksAsConfigured.push({ ...detected, ...customization });
                 }
             }
         }
@@ -153,7 +147,7 @@ export class TaskConfigurations implements Disposable {
     }
 
     getRawTaskConfigurations(scope?: TaskConfigurationScope): (TaskCustomization | TaskConfiguration)[] {
-        if (!scope) {
+        if (scope === undefined) {
             const tasks: (TaskCustomization | TaskConfiguration)[] = [];
             for (const configs of this.rawTaskConfigurations.values()) {
                 tasks.push(...configs);
@@ -193,12 +187,12 @@ export class TaskConfigurations implements Disposable {
     }
 
     /** returns the customized task for a given label or undefined if none */
-    async getCustomizedTask(scope: TaskConfigurationScope, taskLabel: string): Promise<TaskConfiguration | undefined> {
+    async getCustomizedTask(token: number, scope: TaskConfigurationScope, taskLabel: string): Promise<TaskConfiguration | undefined> {
         const customizations = this.taskCustomizationMap.get(this.getKeyFromScope(scope));
         if (customizations) {
             const customization = customizations.find(cus => cus.label === taskLabel);
             if (customization) {
-                const detected = await this.providedTaskConfigurations.getTaskToCustomize(customization, scope);
+                const detected = await this.providedTaskConfigurations.getTaskToCustomize(token, customization, scope);
                 if (detected) {
                     return {
                         ...detected,
@@ -251,15 +245,14 @@ export class TaskConfigurations implements Disposable {
             return undefined;
         }
 
-        const customizationByType = this.getTaskCustomizations(taskConfig.taskType || taskConfig.type, taskConfig._scope) || [];
+        const customizationByType = this.getTaskCustomizations(taskConfig.type, taskConfig._scope) || [];
         const hasCustomization = customizationByType.length > 0;
         if (hasCustomization) {
             const taskDefinition = this.taskDefinitionRegistry.getDefinition(taskConfig);
             if (taskDefinition) {
-                const cus = customizationByType.filter(customization =>
-                    taskDefinition.properties.required.every(rp => customization[rp] === taskConfig[rp])
-                )[0]; // Only support having one customization per task
-                return cus;
+                const required = taskDefinition.properties.required || [];
+                // Only support having one customization per task.
+                return customizationByType.find(customization => required.every(property => customization[property] === taskConfig[property]));
             }
         }
         return undefined;
@@ -303,18 +296,14 @@ export class TaskConfigurations implements Disposable {
     }
 
     async openUserTasks(): Promise<void> {
-        await this.openerService.getOpener(USER_TASKS_URI).then(opener => opener.open(USER_TASKS_URI));
+        await this.taskConfigurationManager.openConfiguration(TaskScope.Global);
     }
 
     /** Adds given task to a config file and opens the file to provide ability to edit task configuration. */
-    async configure(task: TaskConfiguration): Promise<void> {
+    async configure(token: number, task: TaskConfiguration): Promise<void> {
         const scope = task._scope;
         if (scope === TaskScope.Global) {
             return this.openUserTasks();
-        } else if (typeof scope !== 'string') {
-            console.error('Global task cannot be customized');
-            // TODO detected tasks of scope workspace or user could be customized in those preferences.
-            return;
         }
 
         const workspace = this.workspaceService.workspace;
@@ -322,9 +311,9 @@ export class TaskConfigurations implements Disposable {
             return;
         }
 
-        const configuredAndCustomizedTasks = await this.getTasks();
+        const configuredAndCustomizedTasks = await this.getTasks(token);
         if (!configuredAndCustomizedTasks.some(t => this.taskDefinitionRegistry.compareTasks(t, task))) {
-            await this.saveTask(scope, { ...task, problemMatcher: [] });
+            await this.saveTask(scope, task);
         }
 
         try {
@@ -340,7 +329,7 @@ export class TaskConfigurations implements Disposable {
             console.error('Detected / Contributed tasks should have a task definition.');
             return;
         }
-        const customization: TaskCustomization = { type: task.taskType || task.type };
+        const customization: TaskCustomization = { type: task.type, runOptions: task.runOptions };
         definition.properties.all.forEach(p => {
             if (task[p] !== undefined) {
                 customization[p] = task[p];
@@ -361,11 +350,14 @@ export class TaskConfigurations implements Disposable {
             } else if (task.problemMatcher) {
                 problemMatcher.push(task.problemMatcher.name!);
             }
-            customization.problemMatcher = problemMatcher.map(name => name.startsWith('$') ? name : `$${name}`);
+            customization.problemMatcher = problemMatcher.map(asVariableName);
         }
         if (task.group) {
             customization.group = task.group;
         }
+
+        customization.label = task.label;
+
         return { ...customization };
     }
 
@@ -458,14 +450,14 @@ export class TaskConfigurations implements Disposable {
      * @param update the updates to be applied
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async updateTaskConfig(task: TaskConfiguration, update: { [name: string]: any }): Promise<void> {
+    async updateTaskConfig(token: number, task: TaskConfiguration, update: { [name: string]: any }): Promise<void> {
         const scope = task._scope;
-        const configuredAndCustomizedTasks = await this.getTasks();
+        const configuredAndCustomizedTasks = await this.getTasks(token);
         if (configuredAndCustomizedTasks.some(t => this.taskDefinitionRegistry.compareTasks(t, task))) { // task is already in `tasks.json`
             const jsonTasks = this.taskConfigurationManager.getTasks(scope);
             if (jsonTasks) {
                 const ind = jsonTasks.findIndex((t: TaskCustomization | TaskConfiguration) => {
-                    if (t.type !== (task.taskType || task.type)) {
+                    if (t.type !== (task.type)) {
                         return false;
                     }
                     const def = this.taskDefinitionRegistry.getDefinition(t);
@@ -511,9 +503,6 @@ export class TaskConfigurations implements Disposable {
     }
 
     private getTaskDefinition(task: TaskCustomization): TaskDefinition | undefined {
-        return this.taskDefinitionRegistry.getDefinition({
-            ...task,
-            type: typeof task.taskType === 'string' ? task.taskType : task.type
-        });
+        return this.taskDefinitionRegistry.getDefinition(task);
     }
 }

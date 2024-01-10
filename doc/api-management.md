@@ -10,7 +10,7 @@
 - [**Deprecation**](#deprecation)
 
 Theia is a framework embracing openness, extensibility, and customizability as much as possible:
-- API defaults to public visibilty for clients.
+- API defaults to public visibility for clients.
 - API defaults to protected for extenders.
 - Language constructions prohibiting runtime access to internals are never used.
 
@@ -44,7 +44,7 @@ An API without a stability tag is considered to be experimental and does not req
 /**
  * One does not need any annotations while working on experimental APIs.
  */
-export interface ExperimentalInterface {
+export interface ExperimentalInterface {
 }
 
 /**
@@ -74,7 +74,7 @@ export interface StableInterface {
 
 - All new APIs should always be added as **experimental** since it's almost impossible to get [stable API](#stable) right the first time.
 - Experimental APIs don't require the stability tag, but if a new member is added to [stable API](#stable) then it should be explicitly annotated.
-- Experimental APIs don't require extensive documentation. It does not mean that one should not document not obvious parts.
+- Experimental APIs don't require extensive documentation. It does not mean that one shouldn't document unobvious parts.
 - Experimental APIs don't follow [semver](https://semver.org/#spec-item-8) semantic.
 - Experimental APIs could be changed or removed without [the deprecation cycle](#deprecation) if they were not widely adopted.
 - Adoption should be measured by the number of internal clients or based on the feedback of Theia contributors and committers.

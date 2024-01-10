@@ -1,22 +1,22 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Disposable } from './disposable';
+import { Disposable, DisposableGroup, DisposableCollection } from './disposable';
 import { MaybePromise } from './types';
 
 /**
@@ -31,21 +31,63 @@ export interface Event<T> {
      * @param disposables An array to which a {{IDisposable}} will be added.
      * @return a disposable to remove the listener again.
      */
-    (listener: (e: T) => any, thisArgs?: any, disposables?: Disposable[]): Disposable;
-    /**
-     * An emitter will print a warning if more listeners are added for this event.
-     * The event.maxListeners allows the limit to be modified for this specific event.
-     * The value can be set to 0 to indicate an unlimited number of listener.
-     */
-    maxListeners: number
+    (listener: (e: T) => any, thisArgs?: any, disposables?: DisposableGroup): Disposable;
 }
 
 export namespace Event {
     const _disposable = { dispose(): void { } };
+    export function getMaxListeners(event: Event<unknown>): number {
+        const { maxListeners } = event as any;
+        return typeof maxListeners === 'number' ? maxListeners : 0;
+    }
+    export function setMaxListeners<N extends number>(event: Event<unknown>, maxListeners: N): N {
+        if (typeof (event as any).maxListeners === 'number') {
+            return (event as any).maxListeners = maxListeners;
+        }
+        return maxListeners;
+    }
+    export function addMaxListeners(event: Event<unknown>, add: number): number {
+        if (typeof (event as any).maxListeners === 'number') {
+            return (event as any).maxListeners += add;
+        }
+        return add;
+    }
     export const None: Event<any> = Object.assign(function (): { dispose(): void } { return _disposable; }, {
         get maxListeners(): number { return 0; },
         set maxListeners(maxListeners: number) { }
     });
+
+    /**
+     * Given an event, returns another event which only fires once.
+     */
+    export function once<T>(event: Event<T>): Event<T> {
+        return (listener, thisArgs = undefined, disposables?) => {
+            // we need this, in case the event fires during the listener call
+            let didFire = false;
+            let result: Disposable | undefined = undefined;
+            result = event(e => {
+                if (didFire) {
+                    return;
+                } else if (result) {
+                    result.dispose();
+                } else {
+                    didFire = true;
+                }
+
+                return listener.call(thisArgs, e);
+            }, undefined, disposables);
+
+            if (didFire) {
+                result.dispose();
+            }
+
+            return result;
+        };
+    }
+
+    export function toPromise<T>(event: Event<T>): Promise<T> {
+        return new Promise(resolve => once(event)(resolve));
+    }
 
     /**
      * Given an event and a `map` function, returns another event which maps each element
@@ -53,8 +95,19 @@ export namespace Event {
      */
     export function map<I, O>(event: Event<I>, mapFunc: (i: I) => O): Event<O> {
         return Object.assign((listener: (e: O) => any, thisArgs?: any, disposables?: Disposable[]) => event(i => listener.call(thisArgs, mapFunc(i)), undefined, disposables), {
-            maxListeners: 0,
+            get maxListeners(): number { return 0; },
+            set maxListeners(maxListeners: number) { }
         });
+    }
+
+    /**
+     * Given a collection of events, returns a single event which emits whenever any of the provided events emit.
+     */
+    export function any<T>(...events: Event<T>[]): Event<T>;
+    export function any(...events: Event<any>[]): Event<void>;
+    export function any<T>(...events: Event<T>[]): Event<T> {
+        return (listener, thisArgs = undefined, disposables?: Disposable[]) =>
+            new DisposableCollection(...events.map(event => event(e => listener.call(thisArgs, e), undefined, disposables)));
     }
 }
 
@@ -152,7 +205,7 @@ export class Emitter<T = any> {
     private static _noop = function (): void { };
 
     private _event: Event<T>;
-    private _callbacks: CallbackList | undefined;
+    protected _callbacks: CallbackList | undefined;
     private _disposed = false;
 
     private _leakingStacks: Map<string, number> | undefined;
@@ -168,7 +221,7 @@ export class Emitter<T = any> {
      */
     get event(): Event<T> {
         if (!this._event) {
-            this._event = Object.assign((listener: (e: T) => any, thisArgs?: any, disposables?: Disposable[]) => {
+            this._event = Object.assign((listener: (e: T) => any, thisArgs?: any, disposables?: DisposableGroup) => {
                 if (!this._callbacks) {
                     this._callbacks = new CallbackList();
                 }
@@ -176,7 +229,7 @@ export class Emitter<T = any> {
                     this._options.onFirstListenerAdd(this);
                 }
                 this._callbacks.add(listener, thisArgs);
-                const removeMaxListenersCheck = this.checkMaxListeners(this._event.maxListeners);
+                const removeMaxListenersCheck = this.checkMaxListeners(Event.getMaxListeners(this._event));
 
                 const result: Disposable = {
                     dispose: () => {
@@ -193,15 +246,16 @@ export class Emitter<T = any> {
                         }
                     }
                 };
-                if (Array.isArray(disposables)) {
+                if (DisposableGroup.canPush(disposables)) {
                     disposables.push(result);
+                } else if (DisposableGroup.canAdd(disposables)) {
+                    disposables.add(result);
                 }
 
                 return result;
             }, {
-                    maxListeners: Emitter.LEAK_WARNING_THRESHHOLD
-                }
-            );
+                maxListeners: Emitter.LEAK_WARNING_THRESHHOLD
+            });
         }
         return this._event;
     }
@@ -264,7 +318,7 @@ export class Emitter<T = any> {
      */
     fire(event: T): any {
         if (this._callbacks) {
-            this._callbacks.invoke(event);
+            return this._callbacks.invoke(event);
         }
     }
 
@@ -295,8 +349,13 @@ export class Emitter<T = any> {
     }
 }
 
+export type WaitUntilData<T> = Omit<T, 'waitUntil' | 'token'>;
+
 export interface WaitUntilEvent {
-    /* eslint-disable @typescript-eslint/no-explicit-any */
+    /**
+     * A cancellation token.
+     */
+    token: CancellationToken;
     /**
      * Allows to pause the event loop until the provided thenable resolved.
      *
@@ -305,17 +364,22 @@ export interface WaitUntilEvent {
      * @param thenable A thenable that delays execution.
      */
     waitUntil(thenable: Promise<any>): void;
-    /* eslint-enable @typescript-eslint/no-explicit-any */
 }
 export namespace WaitUntilEvent {
+    /**
+     * Fire all listeners in the same tick.
+     *
+     * Use `AsyncEmitter.fire` to fire listeners async one after another.
+     */
     export async function fire<T extends WaitUntilEvent>(
         emitter: Emitter<T>,
-        event: Pick<T, Exclude<keyof T, 'waitUntil'>>,
-        timeout: number | undefined = undefined
+        event: WaitUntilData<T>,
+        timeout?: number,
+        token = CancellationToken.None
     ): Promise<void> {
         const waitables: Promise<void>[] = [];
         const asyncEvent = Object.assign(event, {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            token,
             waitUntil: (thenable: Promise<any>) => {
                 if (Object.isFrozen(waitables)) {
                     throw new Error('waitUntil cannot be called asynchronously.');
@@ -328,7 +392,7 @@ export namespace WaitUntilEvent {
             // Asynchronous calls to `waitUntil` should fail.
             Object.freeze(waitables);
         } finally {
-            delete asyncEvent['waitUntil'];
+            delete (asyncEvent as any)['waitUntil'];
         }
         if (!waitables.length) {
             return;
@@ -339,4 +403,67 @@ export namespace WaitUntilEvent {
             await Promise.all(waitables);
         }
     }
+}
+
+import { CancellationToken } from './cancellation';
+
+export class AsyncEmitter<T extends WaitUntilEvent> extends Emitter<T> {
+
+    protected deliveryQueue: Promise<void> | undefined;
+
+    /**
+     * Fire listeners async one after another.
+     */
+    override fire(event: WaitUntilData<T>, token: CancellationToken = CancellationToken.None,
+        promiseJoin?: (p: Promise<any>, listener: Function) => Promise<any>): Promise<void> {
+        const callbacks = this._callbacks;
+        if (!callbacks) {
+            return Promise.resolve();
+        }
+        const listeners = [...callbacks];
+        if (this.deliveryQueue) {
+            return this.deliveryQueue = this.deliveryQueue.then(() => this.deliver(listeners, event, token, promiseJoin));
+        }
+        return this.deliveryQueue = this.deliver(listeners, event, token, promiseJoin);
+    }
+
+    protected async deliver(listeners: Callback[], event: WaitUntilData<T>, token: CancellationToken,
+        promiseJoin?: (p: Promise<any>, listener: Function) => Promise<any>): Promise<void> {
+        for (const listener of listeners) {
+            if (token.isCancellationRequested) {
+                return;
+            }
+            const waitables: Promise<void>[] = [];
+            const asyncEvent = Object.assign(event, {
+                token,
+                waitUntil: (thenable: Promise<any>) => {
+                    if (Object.isFrozen(waitables)) {
+                        throw new Error('waitUntil cannot be called asynchronously.');
+                    }
+                    if (promiseJoin) {
+                        thenable = promiseJoin(thenable, listener);
+                    }
+                    waitables.push(thenable);
+                }
+            }) as T;
+            try {
+                listener(event);
+                // Asynchronous calls to `waitUntil` should fail.
+                Object.freeze(waitables);
+            } catch (e) {
+                console.error(e);
+            } finally {
+                delete (asyncEvent as any)['waitUntil'];
+            }
+            if (!waitables.length) {
+                continue;
+            }
+            try {
+                await Promise.all(waitables);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+    }
+
 }

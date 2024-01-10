@@ -4,7 +4,7 @@
 
 <img src='https://raw.githubusercontent.com/eclipse-theia/theia/master/logo/theia.svg?sanitize=true' alt='theia-ext-logo' width='100px' />
 
-<h2>THEIA - PLUGIN EXTENSION</h2>
+<h2>ECLIPSE THEIA - PLUGIN EXTENSION</h2>
 
 <hr />
 
@@ -490,19 +490,22 @@ In case if a few providers are registered the chain will be executed until one o
 To contribute a hover it is only needed to provide a function that can be called with a `TextDocument` and a `Position` returning hover info. Registration is done using a document selector which either a language id ('typescript', 'javascript' etc.) or a more complex filter like `{scheme: 'file', language: 'typescript'}`.
 
 For example,
+
 ```typescript
 theia.languages.registerHoverProvider('typescript', {
-    provideHover(doc: theia.TextDocument, position: theia.Position) {
+    provideHover(doc: theia.TextDocument, position: theia.Position, token: theia.CancellationToken) {
         return new theia.Hover('Hover for all **typescript** files.');
     }
 });
 ```
+
 will show the hover message for all `typescript` files.
 
 The code below puts word under cursor into hover message:
+
 ```typescript
 theia.languages.registerHoverProvider({scheme: 'file'}, {
-    provideHover(doc: theia.TextDocument, position: theia.Position) {
+    provideHover(doc: theia.TextDocument, position: theia.Position, token: theia.CancellationToken) {
         const range = doc.getWordRangeAtPosition(position);
         const text = doc.getText(range);
         return new theia.Hover(text);
@@ -681,8 +684,9 @@ Example of code symbol provider registration:
 ```typescript
 const documentsSelector: theia.DocumentSelector = { scheme: 'file', language: 'typescript' };
 const provider = { provideDocumentSymbols: provideSymbols };
+const metadata = { label: 'providerLabel' }
 
-const disposable = theia.languages.registerDocumentSymbolProvider(documentsSelector, provider);
+const disposable = theia.languages.registerDocumentSymbolProvider(documentsSelector, provider, metadata);
 
 ...
 

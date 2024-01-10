@@ -1,24 +1,24 @@
-/********************************************************************************
- * Copyright (C) 2019 Ericsson and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2019 Ericsson and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { expect } from 'chai';
-import { DiagnosticSeverity } from 'vscode-languageserver-types';
-import { ProblemCollector } from './task-problem-collector';
-import { ApplyToKind, FileLocationKind, ProblemLocationKind, ProblemMatch, ProblemMatchData, ProblemMatcher } from '../common/problem-matcher-protocol';
 import { Severity } from '@theia/core/lib/common/severity';
+import { DiagnosticSeverity } from '@theia/core/shared/vscode-languageserver-protocol';
+import { expect } from 'chai';
+import { ApplyToKind, FileLocationKind, ProblemLocationKind, ProblemMatch, ProblemMatchData, ProblemMatcher } from '../common/problem-matcher-protocol';
+import { ProblemCollector } from './task-problem-collector';
 
 const startStopMatcher1: ProblemMatcher = {
     owner: 'test1',
@@ -51,6 +51,28 @@ const startStopMatcher2: ProblemMatcher = {
             regexp: /^\s+(\d+):(\d+)\s+(error|warning|info)\s+(.+?)(?:\s\s+(.*))?$/.source,
             line: 1,
             character: 2,
+            severity: 3,
+            message: 4,
+            code: 5,
+            loop: true
+        }
+    ],
+    severity: Severity.Error
+};
+
+const startStopMatcher3: ProblemMatcher = {
+    owner: 'test2',
+    source: 'test2',
+    applyTo: ApplyToKind.allDocuments,
+    fileLocation: FileLocationKind.Absolute,
+    pattern: [
+        {
+            regexp: /^([^\s].*)$/.source,
+            kind: ProblemLocationKind.File,
+            file: 1
+        },
+        {
+            regexp: /^\s+(\d+):(\d+)\s+(error|warning|info)\s+(.+?)(?:\s\s+(.*))?$/.source,
             severity: 3,
             message: 4,
             code: 5,
@@ -108,7 +130,7 @@ describe('ProblemCollector', () => {
 
         expect(allMatches.length).to.eq(3);
 
-        expect((allMatches[0] as ProblemMatchData).resource!.path).eq('/home/test/hello.go');
+        expect((allMatches[0] as ProblemMatchData).resource!.path.toString()).eq('/home/test/hello.go');
         expect((allMatches[0] as ProblemMatchData).marker).deep.equal({
             range: { start: { line: 8, character: 1 }, end: { line: 8, character: 1 } },
             severity: DiagnosticSeverity.Error,
@@ -116,7 +138,7 @@ describe('ProblemCollector', () => {
             message: 'undefined: fmt.Pntln'
         });
 
-        expect((allMatches[1] as ProblemMatchData).resource!.path).eq('/home/test/hello.go');
+        expect((allMatches[1] as ProblemMatchData).resource!.path.toString()).eq('/home/test/hello.go');
         expect((allMatches[1] as ProblemMatchData).marker).deep.equal({
             range: { start: { line: 9, character: 5 }, end: { line: 9, character: 5 } },
             severity: DiagnosticSeverity.Error,
@@ -124,7 +146,7 @@ describe('ProblemCollector', () => {
             message: 'undefined: numb'
         });
 
-        expect((allMatches[2] as ProblemMatchData).resource!.path).eq('/home/test/hello.go');
+        expect((allMatches[2] as ProblemMatchData).resource!.path.toString()).eq('/home/test/hello.go');
         expect((allMatches[2] as ProblemMatchData).marker).deep.equal({
             range: { start: { line: 14, character: 8 }, end: { line: 14, character: 8 } },
             severity: DiagnosticSeverity.Error,
@@ -154,7 +176,7 @@ describe('ProblemCollector', () => {
 
         expect(allMatches.length).to.eq(4);
 
-        expect((allMatches[0] as ProblemMatchData).resource!.path).eq('/home/test/test-dir.js');
+        expect((allMatches[0] as ProblemMatchData).resource!.path.toString()).eq('/home/test/test-dir.js');
         expect((allMatches[0] as ProblemMatchData).marker).deep.equal({
             range: { start: { line: 13, character: 20 }, end: { line: 13, character: 20 } },
             severity: DiagnosticSeverity.Warning,
@@ -163,7 +185,7 @@ describe('ProblemCollector', () => {
             code: 'semi'
         });
 
-        expect((allMatches[1] as ProblemMatchData).resource!.path).eq('/home/test/test-dir.js');
+        expect((allMatches[1] as ProblemMatchData).resource!.path.toString()).eq('/home/test/test-dir.js');
         expect((allMatches[1] as ProblemMatchData).marker).deep.equal({
             range: { start: { line: 14, character: 22 }, end: { line: 14, character: 22 } },
             severity: DiagnosticSeverity.Warning,
@@ -172,7 +194,7 @@ describe('ProblemCollector', () => {
             code: 'semi'
         });
 
-        expect((allMatches[2] as ProblemMatchData).resource!.path).eq('/home/test/test-dir.js');
+        expect((allMatches[2] as ProblemMatchData).resource!.path.toString()).eq('/home/test/test-dir.js');
         expect((allMatches[2] as ProblemMatchData).marker).deep.equal({
             range: { start: { line: 102, character: 8 }, end: { line: 102, character: 8 } },
             severity: DiagnosticSeverity.Error,
@@ -180,9 +202,65 @@ describe('ProblemCollector', () => {
             message: 'Parsing error: Unexpected token inte'
         });
 
-        expect((allMatches[3] as ProblemMatchData).resource!.path).eq('/home/test/more-test.js');
+        expect((allMatches[3] as ProblemMatchData).resource!.path.toString()).eq('/home/test/more-test.js');
         expect((allMatches[3] as ProblemMatchData).marker).deep.equal({
             range: { start: { line: 12, character: 8 }, end: { line: 12, character: 8 } },
+            severity: DiagnosticSeverity.Error,
+            source: 'test2',
+            message: 'Parsing error: Unexpected token 1000'
+        });
+    });
+
+    it('should find problems from start-stop task when problem matcher is associated with more than one problem pattern and kind is file', () => {
+        collector = new ProblemCollector([startStopMatcher3]);
+        collectMatches([
+            '> test@0.1.0 lint /home/test',
+            '> eslint .',
+            '',
+            '',
+            '/home/test/test-dir.js',
+            '  14:21  warning  Missing semicolon  semi',
+            '  15:23  warning  Missing semicolon  semi',
+            '  103:9  error  Parsing error: Unexpected token inte',
+            '',
+            '/home/test/more-test.js',
+            '  13:9  error  Parsing error: Unexpected token 1000',
+            '',
+            '✖ 3 problems (1 error, 2 warnings)',
+            '  0 errors and 2 warnings potentially fixable with the `--fix` option.'
+        ]);
+
+        expect(allMatches.length).to.eq(4);
+
+        expect((allMatches[0] as ProblemMatchData).resource?.path.toString()).eq('/home/test/test-dir.js');
+        expect((allMatches[0] as ProblemMatchData).marker).deep.equal({
+            range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
+            severity: DiagnosticSeverity.Warning,
+            source: 'test2',
+            message: 'Missing semicolon',
+            code: 'semi'
+        });
+
+        expect((allMatches[1] as ProblemMatchData).resource?.path.toString()).eq('/home/test/test-dir.js');
+        expect((allMatches[1] as ProblemMatchData).marker).deep.equal({
+            range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
+            severity: DiagnosticSeverity.Warning,
+            source: 'test2',
+            message: 'Missing semicolon',
+            code: 'semi'
+        });
+
+        expect((allMatches[2] as ProblemMatchData).resource?.path.toString()).eq('/home/test/test-dir.js');
+        expect((allMatches[2] as ProblemMatchData).marker).deep.equal({
+            range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
+            severity: DiagnosticSeverity.Error,
+            source: 'test2',
+            message: 'Parsing error: Unexpected token inte'
+        });
+
+        expect((allMatches[3] as ProblemMatchData).resource?.path.toString()).eq('/home/test/more-test.js');
+        expect((allMatches[3] as ProblemMatchData).marker).deep.equal({
+            range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
             severity: DiagnosticSeverity.Error,
             source: 'test2',
             message: 'Parsing error: Unexpected token 1000'

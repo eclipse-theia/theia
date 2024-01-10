@@ -1,0 +1,37 @@
+{
+  "private": true,
+  "name": "@theia/example-{{app}}",
+  "version": "{{version}}",
+  "license": "EPL-2.0 OR GPL-2.0-with-classpath-exception",
+  "theia": {
+    "target": "{{app}}",
+    "frontend": {
+      "config": {
+        "applicationName": "Theia {{app}} Example",
+        "preferences": {
+          "files.enableTrash": false
+        }
+      }
+    },
+    "backend": {
+      "config": {
+        "resolveSystemPlugins": false
+      }
+    }
+  },
+  "dependencies": {
+    "@theia/core": "{{version}}",
+    "@theia/plugin-ext": "{{version}}"
+  },
+  "scripts": {
+    "clean": "theia clean",
+    "build": "yarn -s compile && yarn -s bundle",
+    "bundle": "theia build --mode development",
+    "compile": "tsc -b",
+    "rebuild": "theia rebuild:{{app}} --cacheRoot ../..",
+    "start": "THEIA_CONFIG_DIR=./theia-config-dir theia start --plugins=local-dir:../../noPlugins --log-level=fatal"
+  },
+  "devDependencies": {
+    "@theia/cli": "{{version}}"
+  }
+}

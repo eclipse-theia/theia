@@ -1,22 +1,22 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import * as fs from 'fs-extra';
+import * as fs from '@theia/core/shared/fs-extra';
 import * as Path from 'path';
-import { injectable, inject, postConstruct } from 'inversify';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { git } from 'dugite-extra/lib/core/git';
 import { push } from 'dugite-extra/lib/command/push';
 import { pull } from 'dugite-extra/lib/command/pull';
@@ -54,7 +54,7 @@ import { GitInit } from './init/git-init';
 @injectable()
 export abstract class OutputParser<T> {
 
-    /** This is the `NUL` delimiter. Equals wih `%x00`. */
+    /** This is the `NUL` delimiter. Equals `%x00`. */
     static readonly LINE_DELIMITER = '\0';
 
     abstract parse(repositoryUri: string, raw: string, delimiter?: string): T[];
@@ -266,7 +266,7 @@ export namespace GitBlameParser {
         } else if (firstPart === 'summary') {
             let summary = parts.slice(1).join(' ');
             if (summary.startsWith('"') && summary.endsWith('"')) {
-                summary = summary.substr(1, summary.length - 2);
+                summary = summary.substring(1, summary.length - 1);
             }
             entry.summary = uncommitted ? 'uncommitted' : summary;
         } else if (firstPart === 'previous') {
@@ -726,7 +726,7 @@ export class DugiteGit implements Git {
             if (nl > 0) {
                 nl = revOutput.indexOf('\n', nl + 1);
             }
-            return revOutput.substr(Math.max(0, nl)).trim();
+            return revOutput.substring(Math.max(0, nl)).trim();
         };
         const blame = await this.blameParser.parse(uri, output, commitBodyReader);
         return blame;
@@ -766,7 +766,8 @@ export class DugiteGit implements Git {
         const out = result.stdout;
         if (out && out.length !== 0) {
             try {
-                return fs.realpathSync(out.trim());
+                const realpath = await fs.realpath(out.trim());
+                return realpath;
             } catch (e) {
                 this.logger.error(e);
                 return undefined;
@@ -877,7 +878,14 @@ export class DugiteGit implements Git {
     }
 
     private async mapFileChanges(toMap: DugiteStatus, repositoryPath: string): Promise<GitFileChange[]> {
-        return Promise.all(toMap.files.map(file => this.mapFileChange(file, repositoryPath)));
+        return Promise.all(toMap.files
+            .filter(file => !this.isNestedGitRepository(file))
+            .map(file => this.mapFileChange(file, repositoryPath))
+        );
+    }
+
+    private isNestedGitRepository(fileChange: DugiteFileChange): boolean {
+        return fileChange.path.endsWith('/');
     }
 
     private async mapFileChange(toMap: DugiteFileChange, repositoryPath: string): Promise<GitFileChange> {

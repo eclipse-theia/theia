@@ -1,30 +1,114 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
+import { Emitter } from '@theia/core';
 import { DebugConfiguration } from '../common/debug-common';
+import { DebugCompound } from '../common/debug-compound';
 
-export interface DebugSessionOptions {
-    configuration: DebugConfiguration
-    workspaceFolderUri?: string
+export class DebugCompoundRoot {
+    private stopped = false;
+    private stopEmitter = new Emitter<void>();
+    onDidSessionStop = this.stopEmitter.event;
+
+    stopSession(): void {
+        if (!this.stopped) { // avoid sending extraneous terminate events
+            this.stopped = true;
+            this.stopEmitter.fire();
+        }
+    }
 }
-export interface InternalDebugSessionOptions extends DebugSessionOptions {
-    id: number
+
+export interface DebugSessionOptionsBase {
+    workspaceFolderUri?: string,
 }
+
+export interface DebugConfigurationSessionOptions extends DebugSessionOptionsBase {
+    name: string; // derived from the configuration
+    configuration: DebugConfiguration;
+    compound?: never;
+    compoundRoot?: DebugCompoundRoot;
+    providerType?: string // Applicable to dynamic configurations
+}
+
+export type DynamicDebugConfigurationSessionOptions = DebugConfigurationSessionOptions & { providerType: string };
+
+export interface DebugCompoundSessionOptions extends DebugSessionOptionsBase {
+    name: string; // derived from the compound
+    configuration?: never;
+    compound: DebugCompound;
+    noDebug?: boolean,
+}
+
+export type DebugSessionOptions = DebugConfigurationSessionOptions | DebugCompoundSessionOptions;
+
+export namespace DebugSessionOptions {
+    export function isConfiguration(options?: DebugSessionOptions): options is DebugConfigurationSessionOptions {
+        return !!options && 'configuration' in options && !!options.configuration;
+    }
+
+    export function isDynamic(options?: DebugSessionOptions): options is DynamicDebugConfigurationSessionOptions {
+        return isConfiguration(options) && 'providerType' in options && !!options.providerType;
+    }
+
+    export function isCompound(options?: DebugSessionOptions): options is DebugCompoundSessionOptions {
+        return !!options && 'compound' in options && !!options.compound;
+    }
+}
+
+/**
+ * Flat and partial version of a debug session options usable to find the options later in the manager.
+ * @deprecated Not needed anymore, the recommended way is to serialize/deserialize the options directly using `JSON.stringify` and `JSON.parse`.
+ */
+export type DebugSessionOptionsData = DebugSessionOptionsBase & (DebugConfiguration | DebugCompound);
+
+export type InternalDebugSessionOptions = DebugSessionOptions & { id: number };
+
 export namespace InternalDebugSessionOptions {
+
+    const SEPARATOR = '__CONF__';
+    const SEPARATOR_CONFIGS = '__COMP__';
+
     export function is(options: DebugSessionOptions): options is InternalDebugSessionOptions {
-        return ('id' in options);
+        return 'id' in options;
+    }
+
+    /** @deprecated Please use `JSON.stringify` to serialize the options. */
+    export function toValue(options: DebugSessionOptions): string {
+        if (DebugSessionOptions.isCompound(options)) {
+            return options.compound.name + SEPARATOR +
+                options.workspaceFolderUri + SEPARATOR +
+                options.compound?.configurations.join(SEPARATOR_CONFIGS);
+        }
+        return options.configuration.name + SEPARATOR +
+            options.configuration.type + SEPARATOR +
+            options.configuration.request + SEPARATOR +
+            options.workspaceFolderUri + SEPARATOR +
+            options.providerType;
+    }
+
+    /** @deprecated Please use `JSON.parse` to restore previously serialized debug session options. */
+    // eslint-disable-next-line deprecation/deprecation
+    export function parseValue(value: string): DebugSessionOptionsData {
+        const split = value.split(SEPARATOR);
+        if (split.length === 5) {
+            return { name: split[0], type: split[1], request: split[2], workspaceFolderUri: split[3], providerType: split[4] };
+        }
+        if (split.length === 3) {
+            return { name: split[0], workspaceFolderUri: split[1], configurations: split[2].split(SEPARATOR_CONFIGS) };
+        }
+        throw new Error('Unexpected argument, the argument is expected to have been generated by the \'toValue\' function');
     }
 }

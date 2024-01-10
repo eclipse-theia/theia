@@ -1,37 +1,37 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import * as PDFObject from 'pdfobject';
-import { inject, injectable, postConstruct } from 'inversify';
-import { Message } from '@phosphor/messaging';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { Message } from '@theia/core/shared/@phosphor/messaging';
 import URI from '@theia/core/lib/common/uri';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { Emitter } from '@theia/core/lib/common/event';
-import { FileSystem } from '@theia/filesystem/lib/common/filesystem';
 import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { parseCssTime, Key, KeyCode } from '@theia/core/lib/browser';
-import { FileSystemWatcher, FileChangeEvent } from '@theia/filesystem/lib/browser/filesystem-watcher';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
-import { BaseWidget, addEventListener } from '@theia/core/lib/browser/widgets/widget';
+import { BaseWidget, addEventListener, codiconArray } from '@theia/core/lib/browser/widgets/widget';
 import { LocationMapperService } from './location-mapper-service';
 import { ApplicationShellMouseTracker } from '@theia/core/lib/browser/shell/application-shell-mouse-tracker';
 
-import debounce = require('lodash.debounce');
+import debounce = require('@theia/core/shared/lodash.debounce');
 import { MiniBrowserContentStyle } from './mini-browser-content-style';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { FileChangesEvent, FileChangeType } from '@theia/filesystem/lib/common/files';
 
 /**
  * Initializer properties for the embedded browser widget.
@@ -177,11 +177,8 @@ export class MiniBrowserContent extends BaseWidget {
     @inject(ApplicationShellMouseTracker)
     protected readonly mouseTracker: ApplicationShellMouseTracker;
 
-    @inject(FileSystem)
-    protected readonly fileSystem: FileSystem;
-
-    @inject(FileSystemWatcher)
-    protected readonly fileSystemWatcher: FileSystemWatcher;
+    @inject(FileService)
+    protected readonly fileService: FileService;
 
     protected readonly submitInputEmitter = new Emitter<string>();
     protected readonly navigateBackEmitter = new Emitter<void>();
@@ -243,7 +240,7 @@ export class MiniBrowserContent extends BaseWidget {
         }
     }
 
-    protected onActivateRequest(msg: Message): void {
+    protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         if (this.getToolbarProps() !== 'hide') {
             this.input.focus();
@@ -253,20 +250,18 @@ export class MiniBrowserContent extends BaseWidget {
     }
 
     protected async listenOnContentChange(location: string): Promise<void> {
-        if (location.startsWith('file://')) {
-            if (await this.fileSystem.exists(location)) {
-                const fileUri = new URI(location);
-                const watcher = await this.fileSystemWatcher.watchFileChanges(fileUri);
-                this.toDispose.push(watcher);
-                const onFileChange = (event: FileChangeEvent) => {
-                    if (FileChangeEvent.isChanged(event, fileUri)) {
-                        this.go(location, {
-                            showLoadIndicator: false
-                        });
-                    }
-                };
-                this.toDispose.push(this.fileSystemWatcher.onFilesChanged(debounce(onFileChange, 500)));
-            }
+        if (await this.fileService.exists(new URI(location))) {
+            const fileUri = new URI(location);
+            const watcher = this.fileService.watch(fileUri);
+            this.toDispose.push(watcher);
+            const onFileChange = (event: FileChangesEvent) => {
+                if (event.contains(fileUri, FileChangeType.ADDED) || event.contains(fileUri, FileChangeType.UPDATED)) {
+                    this.go(location, {
+                        showLoadIndicator: false
+                    });
+                }
+            };
+            this.toDispose.push(this.fileService.onDidFilesChange(debounce(onFileChange, 500)));
         }
     }
 
@@ -344,7 +339,7 @@ export class MiniBrowserContent extends BaseWidget {
         errorBar.style.display = 'none';
 
         const icon = document.createElement('span');
-        icon.classList.add('fa', 'problem-tab-icon');
+        icon.classList.add(...codiconArray('info'));
         errorBar.appendChild(icon);
 
         const message = document.createElement('span');
@@ -454,6 +449,7 @@ export class MiniBrowserContent extends BaseWidget {
     protected createInput(parent: HTMLElement): HTMLInputElement {
         const input = document.createElement('input');
         input.type = 'text';
+        input.spellcheck = false;
         input.classList.add('theia-input');
         this.toDispose.pushAll([
             addEventListener(input, 'keydown', this.handleInputChange.bind(this)),
@@ -474,9 +470,9 @@ export class MiniBrowserContent extends BaseWidget {
     protected handleInputChange(e: KeyboardEvent): void {
         const { key } = KeyCode.createKeyCode(e);
         if (key && Key.ENTER.keyCode === key.keyCode && this.getToolbarProps() === 'show') {
-            const { srcElement } = e;
-            if (srcElement instanceof HTMLInputElement) {
-                this.mapLocation(srcElement.value).then(location => this.submitInputEmitter.fire(location));
+            const { target } = e;
+            if (target instanceof HTMLInputElement) {
+                this.mapLocation(target.value).then(location => this.submitInputEmitter.fire(location));
             }
         }
     }

@@ -1,6 +1,6 @@
 {
+  "$schema": "https://json.schemastore.org/eslintrc",
   "rules": {
-    "@typescript-eslint/class-name-casing": "error",
     "@typescript-eslint/consistent-type-definitions": "error",
     "@typescript-eslint/indent": "off",
     "@typescript-eslint/no-explicit-any": "error",
@@ -35,14 +35,13 @@
     "guard-for-in": "error",
     "id-blacklist": "off",
     "id-match": "off",
-    "import/no-deprecated": "error",
-    "import/no-extraneous-dependencies": "off",
     "max-len": [
       "error",
       {
         "code": 180
       }
     ],
+    "no-duplicate-imports": "error",
     "no-magic-numbers": "off",
     "no-multiple-empty-lines": [
       "error",
@@ -52,15 +51,18 @@
     ],
     "no-new-wrappers": "error",
     "no-null/no-null": "error",
-    "no-shadow": [
+    "no-shadow": "off",
+    "@typescript-eslint/no-shadow": [
       "error",
       {
         "hoist": "all"
       }
     ],
+    "no-tabs": "error",
     "no-throw-literal": "error",
     "no-trailing-spaces": "error",
     "no-underscore-dangle": "off",
+    "no-unreachable": "error",
     "no-unused-expressions": "error",
     "no-var": "error",
     "no-void": "error",
@@ -101,7 +103,10 @@
         "rules": {
           "file-header": [
             true,
-            "SPDX-License-Identifier: EPL-2\\.0 OR GPL-2\\.0 WITH Classpath-exception-2\\.0"
+            {
+              "allow-single-line-comments": true,
+              "match": "SPDX-License-Identifier: EPL-2\\.0 OR GPL-2\\.0-only WITH Classpath-exception-2\\.0"
+            }
           ],
           "jsdoc-format": [
             true,
@@ -129,6 +134,40 @@
           ]
         }
       }
+    ],
+    "@theia/localization-check": "error",
+    "@theia/no-src-import": "error",
+    "@theia/runtime-import-check": "error",
+    "@theia/shared-dependencies": "error",
+    "import/no-extraneous-dependencies": "error",
+    "import/no-dynamic-require": "error",
+    "no-restricted-imports": [
+      "error",
+      ".",
+      "./",
+      "..",
+      "../"
     ]
-  }
+  },
+  "overrides": [
+    {
+      "files": [
+        "**/*.{spec,espec,slow-spec}.{js,ts}"
+      ],
+      "rules": {
+        "@theia/runtime-import-check": "off",
+        "@theia/shared-dependencies": "off",
+        "import/no-extraneous-dependencies": "off",
+        "no-unused-expressions": "off"
+      }
+    },
+    {
+      "files": [
+        "**/electron-{node,main}/**"
+      ],
+      "rules": {
+        "import/no-dynamic-require": "off"
+      }
+    }
+  ]
 }

@@ -1,25 +1,25 @@
-/********************************************************************************
- * Copyright (C) 2019 Ericsson and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2019 Ericsson and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { injectable } from 'inversify';
-import { QuickPickItem } from '@theia/core/lib/common/quick-pick-service';
+import { injectable } from '@theia/core/shared/inversify';
+import { QuickPickValue } from '@theia/core/lib/browser';
 
 /** The representation of a task template used in the auto-generation of `tasks.json` */
 export interface TaskTemplateEntry {
@@ -152,7 +152,7 @@ const command: TaskTemplateEntry = {
 
 @injectable()
 export class TaskTemplateSelector {
-    selectTemplates(): QuickPickItem<TaskTemplateEntry>[] {
+    selectTemplates(): QuickPickValue<TaskTemplateEntry>[] {
         const templates: TaskTemplateEntry[] = [
             dotnetBuild, msbuild, maven
         ].sort((a, b) =>

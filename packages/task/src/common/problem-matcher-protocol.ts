@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2019 Ericsson and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2019 Ericsson and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 // This file is inspired by VSCode https://github.com/Microsoft/vscode/blob/1.33.1/src/vs/workbench/contrib/tasks/common/problemMatcher.ts
 // 'problemMatcher.ts' copyright:
@@ -21,11 +21,9 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { URI } from '@theia/core';
 import { Severity } from '@theia/core/lib/common/severity';
-import { Diagnostic } from 'vscode-languageserver-types';
-// TODO use URI from `@theia/core` instead
-import { URI } from 'vscode-uri';
-import { ProblemPatternContribution, WatchingMatcherContribution } from './task-protocol';
+import { Diagnostic } from '@theia/core/shared/vscode-languageserver-protocol';
 
 export enum ApplyToKind {
     allDocuments,
@@ -190,4 +188,47 @@ export namespace ProblemMatchData {
     export function is(data: ProblemMatch): data is ProblemMatchData {
         return 'marker' in data;
     }
+}
+
+export interface WatchingMatcherContribution {
+    // If set to true the background monitor is in active mode when the task starts.
+    // This is equals of issuing a line that matches the beginPattern
+    activeOnStart?: boolean;
+    beginsPattern: string | WatchingPattern;
+    endsPattern: string | WatchingPattern;
+}
+
+export interface ProblemMatcherContribution {
+    base?: string;
+    name?: string;
+    label: string;
+    deprecated?: boolean;
+
+    owner: string;
+    source?: string;
+    applyTo?: string;
+    fileLocation?: 'absolute' | 'relative' | string[];
+    pattern: string | ProblemPatternContribution | ProblemPatternContribution[];
+    severity?: string;
+    watching?: WatchingMatcherContribution; // deprecated. Use `background`.
+    background?: WatchingMatcherContribution;
+}
+
+export interface ProblemPatternContribution {
+    name?: string;
+    regexp: string;
+
+    kind?: string;
+    file?: number;
+    message?: number;
+    location?: number;
+    line?: number;
+    character?: number;
+    column?: number;
+    endLine?: number;
+    endCharacter?: number;
+    endColumn?: number;
+    code?: number;
+    severity?: number;
+    loop?: boolean;
 }

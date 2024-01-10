@@ -1,0 +1,520 @@
+{
+  "debug.breakpoint.editCondition": "編集条件...",
+  "terminal:new:profile": "プロファイルから新しい統合端末を作成する",
+  "terminal:profile:default": "デフォルトの端末プロファイルを選択",
+  "theia": {
+    "callhierarchy": {
+      "noCallers": "発信者は検出されていません。",
+      "open": "オープンコールヒエラルキー"
+    },
+    "core": {
+      "about": {
+        "compatibility": "{0} 互換性",
+        "defaultApi": "デフォルト{0} API",
+        "version": "バージョン"
+      },
+      "common": {
+        "closeAll": "すべてのタブを閉じる",
+        "closeAllTabMain": "メインエリアのすべてのタブを閉じる",
+        "closeOtherTabMain": "メインエリアの他のタブを閉じる",
+        "closeOthers": "他のタブを閉じる",
+        "closeRight": "閉じるタブを右に",
+        "closeTab": "タブを閉じる",
+        "closeTabMain": "メインエリアのタブを閉じる",
+        "collapseAllTabs": "すべてのサイドパネルを閉じる",
+        "collapseBottomPanel": "トグルボトムパネル",
+        "collapseTab": "折りたたみ式サイドパネル",
+        "showNextTabGroup": "次のタブグループに切り替える",
+        "showNextTabInGroup": "グループ内の次のタブに切り替える",
+        "showPreviousTabGroup": "前のタブグループに切り替える",
+        "showPreviousTabInGroup": "グループ内の前のタブに切り替える",
+        "toggleMaximized": "トグル・マキシマイズ"
+      },
+      "copyInfo": "まずファイルを開き、そのパスをコピーする",
+      "copyWarn": "ブラウザのコピーコマンドまたはショートカットをご利用ください。",
+      "cutWarn": "ブラウザのカットコマンドまたはショートカットをご利用ください。",
+      "enhancedPreview": {
+        "classic": "タブの基本情報を含む簡単なプレビューを表示する。",
+        "enhanced": "追加情報を含むタブの拡張プレビューを表示します。",
+        "visual": "タブのビジュアルプレビューを表示する。"
+      },
+      "file": {
+        "browse": "ブラウズ"
+      },
+      "highlightModifiedTabs": "モディファイド(ダーティ)エディタのタブにトップボーダーを描画するかどうかを制御します。",
+      "keybindingStatus": "{0}が押されたので、さらにキーを待つ",
+      "keyboard": {
+        "choose": "キーボードレイアウトの選択",
+        "chooseLayout": "キーボードレイアウトの選択",
+        "current": "(現在: {0})",
+        "currentLayout": "- 現在のレイアウト",
+        "mac": "Mac用キーボード",
+        "pc": "PCキーボード",
+        "tryDetect": "ブラウザの情報や押されたキーからキーボードの配列を検出してみてください。"
+      },
+      "navigator": {
+        "clipboardWarn": "クリップボードへのアクセスが拒否されました。ブラウザのアクセス許可を確認してください。",
+        "clipboardWarnFirefox": "クリップボードAPIは使用できません。これは、'{1}' ページの '{0}' 環境設定によって有効にすることができます。その後Theiaをリロードしてください。これにより、FireFoxがシステムクリップボードにフルアクセスできるようになります。"
+      },
+      "offline": "オフライン",
+      "pasteWarn": "ブラウザの貼り付けコマンドまたはショートカットをご利用ください。",
+      "quitMessage": "保存されていない変更は、保存されません。",
+      "resetWorkbenchLayout": "ワークベンチレイアウトのリセット",
+      "searchbox": {
+        "close": "閉じる(エスケープ)",
+        "next": "次へ(下)",
+        "previous": "前へ (上)"
+      },
+      "secondaryWindow": {
+        "alwaysOnTop": "有効にすると、セカンダリウィンドウは、異なるアプリケーションを含む他のすべてのウィンドウの上に表示されます。",
+        "description": "抽出されたセカンダリウィンドウの初期位置とサイズを設定する。",
+        "fullSize": "抽出されたウィジェットの位置とサイズは、実行中のTheiaアプリケーションと同じになります。",
+        "halfWidth": "抽出されたウィジェットの位置とサイズは、実行中のTheiaアプリケーションの幅の半分になります。",
+        "originalSize": "抽出されたウィジェットの位置とサイズは、元のウィジェットと同じになる。"
+      },
+      "silentNotifications": "通知のポップアップを抑制するかどうかを制御します。",
+      "tabDefaultSize": "タブのデフォルトサイズを指定します。",
+      "tabMaximize": "ダブルクリック時にタブを最大化するかどうかを制御します。",
+      "tabMinimumSize": "タブの最小サイズを指定します。",
+      "tabShrinkToFit": "タブを縮小して、空きスペースに合わせる。"
+    },
+    "debug": {
+      "addConfigurationPlaceholder": "設定を追加するワークスペース・ルートを選択します。",
+      "breakpoint": "ブレークポイント",
+      "compound-cycle": "起動構成 '{0}' は自分自身とのサイクルを含む",
+      "continueAll": "すべてを続ける",
+      "copyExpressionValue": "コピー式の値",
+      "dataBreakpoint": "データブレークポイント",
+      "debugVariableInput": "設定{0} 値",
+      "entry": "エントリー",
+      "exception": "例外",
+      "functionBreakpoint": "関数ブレークポイント",
+      "goto": "行く",
+      "instruction-breakpoint": "命令ブレークポイント",
+      "instructionBreakpoint": "命令ブレークポイント",
+      "missingConfiguration": "ダイナミックコンフィギュレーション「{0}:{1}」が存在しないか、適用できない",
+      "pause": "ポーズ",
+      "pauseAll": "ポーズ・オール",
+      "reveal": "暴露",
+      "step": "ステップ",
+      "threads": "スレッド",
+      "toggleTracing": "デバッグアダプタとの通信のトレースの有効化/無効化"
+    },
+    "editor": {
+      "dirtyEncoding": "ファイルが汚れています。別のエンコーディングで開き直す前に、まず保存してください。",
+      "editor.codeActionWidget.showHeaders": "コードアクションメニューにグループヘッダを表示するかどうかを設定します。",
+      "editor.experimental.pasteActions.enabled": "ペースト時に拡張機能からの編集を実行するかどうかを設定します。",
+      "editor.formatOnSaveMode.modificationsIfAvailable": "変更点のみをフォーマットしようとします(ソースコントロールが必要です)。ソースコントロールが使用できない場合は、ファイル全体がフォーマットされます。",
+      "editor.inlayHints.enabled1": "インレイのヒントはデフォルトで表示され、`Ctrl+Alt`を押すと隠れます。",
+      "editor.inlayHints.enabled2": "インレイのヒントはデフォルトでは非表示で、`Ctrl+Alt`を押したときに表示されます。",
+      "editor.quickSuggestions": "入力中に自動的にサジェストを表示するかどうかを制御します。コメント、文字列、その他のコードを入力する際に制御できます。クイックサジェストは、ゴーストテキストとして表示するか、サジェストウィジェットで表示するかを設定できます。また、'#editor.suggestOnTriggerCharacters#'設定は、特殊な文字でサジェストが発生するかどうかを制御します。",
+      "editor.suggest.matchOnWordStartOnly": "インテリセンスのフィルタリングを有効にすると、最初の文字が単語の先頭にマッチする必要があります。例えば、`Console` や `WebContext` では `c` ですが、`description` では _not_ です。無効化すると、インテリセンスはより多くの結果を表示しますが、マッチの質でソートされます。",
+      "files.autoSave": "未保存の変更があるエディターの[自動保存](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save)を制御します。",
+      "files.autoSave.afterDelay": "変更されたエディターは、設定された `#files.autoSaveDelay#` の後に自動的に保存されます。",
+      "files.autoSave.off": "変更されたエディタは、自動的に保存されることはありません。",
+      "files.autoSave.onFocusChange": "変更されたエディタは、エディタがフォーカスを失うと自動的に保存されます。",
+      "files.autoSave.onWindowChange": "変更されたエディタは、ウィンドウのフォーカスが外れたときに自動的に保存されます。",
+      "formatOnSaveTimeout": "ファイル保存時に実行されるフォーマットがキャンセルされるまでのタイムアウト(ミリ秒)。",
+      "persistClosedEditors": "ウィンドウの再読み込み時に、ワークスペースの閉じたエディタの履歴を保持するかどうかを制御します。",
+      "showAllEditors": "開いているエディタをすべて表示",
+      "splitHorizontal": "スプリットエディタ横",
+      "splitVertical": "スプリットエディタ縦",
+      "toggleStickyScroll": "固定スクロールの切り替えル"
+    },
+    "file-search": {
+      "toggleIgnoredFiles": "({0}を押すと、無視されたファイルの表示/非表示を切り替えることができます。"
+    },
+    "fileDialog": {
+      "showHidden": "隠しファイルを表示する"
+    },
+    "fileSystem": {
+      "fileResource": {
+        "overWriteBody": "ファイルシステム上の'{0}'に加えられた変更を上書きしますか?"
+      }
+    },
+    "filesystem": {
+      "copiedToClipboard": "ダウンロードリンクをクリップボードにコピー。",
+      "copyDownloadLink": "コピー・ダウンロード・リンク",
+      "dialog": {
+        "initialLocation": "初期位置へ移動",
+        "multipleItemMessage": "選択できる項目は1つだけです",
+        "name": "名前:",
+        "navigateBack": "戻る",
+        "navigateForward": "ナビゲートフォワード",
+        "navigateUp": "ディレクトリを1つ上に移動する"
+      },
+      "fileResource": {
+        "binaryFileQuery": "開くと時間がかかり、IDEが反応しなくなる可能性があります。とにかく'{0}'を開きたいのですか?",
+        "binaryTitle": "ファイルがバイナリであるか、サポートされていないテキストエンコーディングが使用されています。",
+        "largeFileTitle": "ファイルが大きすぎます({0})。",
+        "overwriteTitle": "ファイル '{0}' はファイルシステム上で変更されました。"
+      },
+      "filesExclude": "ファイルやフォルダーを除外するためのグロブパターンを設定します。例えば、ファイルエクスプローラーでは、この設定をもとにファイルやフォルダーの表示・非表示を決定します。",
+      "format": "フォーマット:",
+      "maxConcurrentUploads": "複数のファイルをアップロードする際に、同時にアップロードするファイルの最大数です。0の場合は、すべてのファイルが同時にアップロードされます。",
+      "maxFileSizeMB": "開くことのできる最大ファイルサイズ(MB)を制御します。",
+      "prepareDownload": "ダウンロードの準備中...",
+      "prepareDownloadLink": "ダウンロードリンクの準備中...",
+      "processedOutOf": "{1}のうち{0}を処理",
+      "replaceTitle": "ファイルの置き換え",
+      "uploadFiles": "ファイルのアップロード...",
+      "uploadedOutOf": "{1}のうち{0}をアップロードしました。"
+    },
+    "getting-started": {
+      "apiComparator": "{0} API互換性",
+      "newExtension": "新しいエクステンションの構築",
+      "newPlugin": "新しいプラグインの構築",
+      "startup-editor": {
+        "welcomePage": "{0} とエクステンションを使い始めるのに役立つコンテンツを含む、ようこそページを開きます。"
+      }
+    },
+    "git": {
+      "aFewSecondsAgo": "さきほど",
+      "addSignedOff": "サイン・オフ・バイの追加",
+      "amendReuseMessage": "最後のコミットメッセージを再利用するには、「Enter」または「Escape」を押してキャンセルしてください。",
+      "amendRewrite": "前回のコミットメッセージを書き換えます。確定するには「Enter」を、キャンセルするには「Escape」を押してください。",
+      "checkoutCreateLocalBranchWithName": "名前:{0}で新しいローカルブランチを作成します。確定するには「Enter」を、キャンセルするには「Escape」を押してください。",
+      "checkoutProvideBranchName": "支店名をご記入ください。",
+      "checkoutSelectRef": "チェックアウトするRefを選択するか、新しいローカルブランチを作成します。",
+      "cloneQuickInputLabel": "Gitリポジトリの場所を指定してください。確定するには「Enter」を、キャンセルするには「Escape」を押してください。",
+      "cloneRepository": "Gitリポジトリをクローンします。{0}.確定するには「Enter」を、キャンセルするには「Escape」を押します。",
+      "compareWith": "比べてみると...",
+      "compareWithBranchOrTag": "現在アクティブな{0}のブランチと比較するブランチやタグを選びます。",
+      "diff": "差分",
+      "dirtyDiffLinesLimit": "エディタの行数がこの制限を超えている場合、ダーティな diff デコレーションを表示しません。",
+      "dropStashMessage": "スタッシュの削除に成功しました。",
+      "editorDecorationsEnabled": "エディタにgitデコレーションを表示します。",
+      "fetchPickRemote": "フェッチするリモートを選びます。",
+      "gitDecorationsColors": "ナビゲーターに色の装飾を施す。",
+      "mergeQuickPickPlaceholder": "現在アクティブな{0}ブランチにマージするブランチを選びます。",
+      "missingUserInfo": "gitで「user.name」と「user.email」を設定していることを確認してください。",
+      "noHistoryForError": "の履歴はありません。{0}",
+      "noPreviousCommit": "修正する前のコミットがない",
+      "noRepositoriesSelected": "リポジトリが選択されていません。",
+      "prepositionIn": "で",
+      "repositoryNotInitialized": "リポジトリ {0} はまだ初期化されていません。",
+      "stashChanges": "スタッシュの変更確定するには「Enter」を、キャンセルするには「Escape」を押します。",
+      "stashChangesWithMessage": "メッセージでスタッシュが変わります。{0}.確定するには「Enter」を、キャンセルするには「Escape」を押してください。",
+      "tabTitleIndex": "{0} (インデックス)",
+      "tabTitleWorkingTree": "{0} (ワーキングツリー)",
+      "toggleBlameAnnotations": "トグル・ブレイム・アノテーション"
+    },
+    "keybinding-schema-updater": {
+      "deprecation": "代わりに `when` 句を使用してください。"
+    },
+    "keymaps": {
+      "addKeybindingTitle": "のキーバインドを追加{0}",
+      "editKeybinding": "キーバインドを編集...",
+      "editKeybindingTitle": "{0}のキーバインドを編集する",
+      "editWhenExpression": "Edit When Expression...",
+      "editWhenExpressionTitle": "を表す式を編集する{0}",
+      "keybinding": {
+        "copy": "コピー・キーバインド",
+        "copyCommandId": "キーバインドコマンドIDのコピー",
+        "copyCommandTitle": "キーバインドコマンドのタイトルをコピーする",
+        "edit": "キーバインドを編集...",
+        "editWhenExpression": "キーバインドを編集する(Expression..."
+      },
+      "keybindingCollidesValidation": "キーバインドがコリジョン中",
+      "requiredKeybindingValidation": "キーバインド値が必要です",
+      "resetKeybindingConfirmation": "このキーバインドを本当に初期値に戻すのですか?",
+      "resetKeybindingTitle": "{0}のキーバインドをリセットする",
+      "resetMultipleKeybindingsWarning": "このコマンドに複数のキーバインドが存在する場合は、すべてのキーバインドがリセットされます。"
+    },
+    "localize": {
+      "offlineTooltip": "バックエンドに接続できません。"
+    },
+    "markers": {
+      "clearAll": "クリアオール",
+      "noProblems": "これまでのところ、ワークスペースに問題は検出されていません。",
+      "tabbarDecorationsEnabled": "タブバーに問題のデコレーター(診断マーカー)を表示する。"
+    },
+    "memory-inspector": {
+      "addressTooltip": "表示するメモリ位置、アドレス、またはアドレスに評価される式",
+      "ascii": "ASCII",
+      "binary": "バイナリ",
+      "byteSize": "バイトサイズ",
+      "bytesPerGroup": "1グループあたりのバイト数",
+      "closeSettings": "設定を閉じる",
+      "columns": "コラム",
+      "command": {
+        "createNewMemory": "新しいメモリインスペクタの作成",
+        "createNewRegisterView": "新規登録ビューの作成",
+        "followPointer": "フォローポインター",
+        "followPointerMemory": "メモリインスペクタでポインタをフォローする",
+        "resetValue": "リセット値",
+        "showRegister": "メモリインスペクタにレジスタを表示する",
+        "viewVariable": "メモリインスペクタに変数を表示する"
+      },
+      "data": "データ",
+      "decimal": "10進数",
+      "diff": {
+        "label": "差分です。{0}"
+      },
+      "diff-widget": {
+        "offset-label": "{0} オフセット",
+        "offset-title": "からメモリをオフセットするバイト数{0}"
+      },
+      "editable": {
+        "apply": "変更を適用する",
+        "clear": "クリアランス"
+      },
+      "endianness": "エンディアン",
+      "extraColumn": "エクストラコラム",
+      "groupsPerRow": "1行あたりのグループ数",
+      "hexadecimal": "十六進法",
+      "length": "長さ",
+      "lengthTooltip": "取得するバイト数(10進数または16進数)。",
+      "memory": {
+        "addressField": {
+          "memoryReadError": "所在地欄に住所または式を入力する。"
+        },
+        "freeze": "フリーズメモリービュー",
+        "hideSettings": "設定パネルの非表示",
+        "readError": {
+          "bounds": "メモリ境界を超えたため、結果は切り捨てられます。",
+          "noContents": "現在、メモリーコンテンツはございません。"
+        },
+        "readLength": {
+          "memoryReadError": "Lengthの欄に長さ(10進数または16進数)を入力する。"
+        },
+        "showSettings": "設定パネルを表示する",
+        "unfreeze": "アンフリーズメモリービュー",
+        "userError": "メモリの取り込みにエラーが発生しました。"
+      },
+      "memoryCategory": "メモリーインスペクター",
+      "memoryInspector": "メモリーインスペクター",
+      "memoryTitle": "メモリ",
+      "octal": "八進数",
+      "offset": "オフセット",
+      "offsetTooltip": "ナビゲート時に現在のメモリ位置に追加されるオフセット値",
+      "provider": {
+        "localsError": "ローカル変数を読み取ることができません。アクティブなデバッグ・セッションがありません。",
+        "readError": "メモリを読み込むことができません。アクティブなデバッグセッションがありません。",
+        "writeError": "メモリの書き込みができません。アクティブなデバッグセッションがありません。"
+      },
+      "register": "登録",
+      "register-widget": {
+        "filter-placeholder": "フィルター(で始まる)"
+      },
+      "registerReadError": "レジスタの取得にエラーが発生しました。",
+      "registers": "レジスター",
+      "toggleComparisonWidgetVisibility": "比較ウィジェットの可視性をトグルする",
+      "utils": {
+        "afterBytes": "比較したい両方のウィジェットにメモリを搭載する必要があります。{0} はメモリが搭載されていません。",
+        "bytesMessage": "比較したい両方のウィジェットにメモリを搭載する必要があります。{0} はメモリが搭載されていません。"
+      }
+    },
+    "messages": {
+      "notificationTimeout": "このタイムアウト後は、情報提供のための通知が非表示になります。",
+      "toggleNotifications": "通知の切り替え"
+    },
+    "mini-browser": {
+      "typeUrl": "URLを入力する"
+    },
+    "monaco": {
+      "noSymbolsMatching": "シンボルが一致しない",
+      "typeToSearchForSymbols": "記号を検索するタイプ"
+    },
+    "navigator": {
+      "autoReveal": "オートリヴェール",
+      "clipboardWarn": "クリップボードへのアクセスが拒否されました。ブラウザのアクセス許可を確認してください。",
+      "clipboardWarnFirefox": "クリップボードAPIは使用できません。これは、'{1}' ページの '{0}' 環境設定によって有効にすることができます。その後Theiaをリロードしてください。これにより、FireFoxがシステムクリップボードにフルアクセスできるようになります。",
+      "noFolderOpened": "フォルダが開かない",
+      "refresh": "エクスプローラーでの更新",
+      "reveal": "エクスプローラーでの表示",
+      "toggleHiddenFiles": "隠しファイルのトグル"
+    },
+    "output": {
+      "clearOutputChannel": "クリア出力チャンネル...",
+      "closeOutputChannel": "出力チャンネルを閉じる...",
+      "hiddenChannels": "隠しチャンネル",
+      "hideOutputChannel": "出力チャンネルを隠す...",
+      "maxChannelHistory": "1つの出力チャネルの最大エントリ数。",
+      "outputChannels": "出力チャンネル",
+      "showOutputChannel": "出力チャンネルを表示..."
+    },
+    "plugin": {
+      "blockNewTab": "お使いのブラウザで新しいタブを開くことができませんでした"
+    },
+    "plugin-dev": {
+      "alreadyRunning": "ホストされているインスタンスはすでに実行されています。",
+      "debugInstance": "デバッグインスタンス",
+      "debugMode": "Node.js のデバッグに inspect または inspect-brk を使用する",
+      "devHost": "開発ホスト",
+      "failed": "ホストされたプラグインインスタンスの実行に失敗しました。{0}",
+      "hostedPlugin": "ホスト型プラグイン",
+      "hostedPluginRunning": "ホスト型プラグイン: 実行中",
+      "hostedPluginStarting": "ホスト型プラグイン: 開始",
+      "hostedPluginStopped": "ホスト型プラグイン: 停止中",
+      "hostedPluginWatching": "ホストされたプラグイン: ウォッチング",
+      "instanceTerminated": "{0}は終了しました。",
+      "launchOutFiles": "生成されたJavaScriptファイルを探すためのグロブパターンの配列です(`${pluginPath}`はプラグインの実際のパスに置き換えられます)。",
+      "noValidPlugin": "指定されたフォルダに有効なプラグインが含まれていません。",
+      "notRunning": "ホスト側のインスタンスが起動していない。",
+      "pluginFolder": "プラグインフォルダが設定されています。{0}",
+      "preventedNewTab": "お使いのブラウザで新しいタブが開かない",
+      "restartInstance": "インスタンスの再起動",
+      "running": "ホストされているインスタンスは、次のように実行されています。",
+      "select": "セレクト",
+      "selectPath": "セレクトパス",
+      "startInstance": "インスタンスの開始",
+      "starting": "ホストされたインスタンス・サーバーの起動 ...",
+      "stopInstance": "インスタンスの停止",
+      "unknownTerminated": "インスタンスが終了しました。",
+      "watchMode": "開発中のプラグインにウォッチャーを実行"
+    },
+    "plugin-ext": {
+      "authentication-main": {
+        "loginTitle": "ログイン"
+      },
+      "plugins": "プラグイン",
+      "webviewTrace": "ウェブビューによる通信のトレースを制御します。",
+      "webviewWarnIfUnsecure": "現在、ウェブビューが安全でない状態で展開されていることをユーザーに警告します。"
+    },
+    "preview": {
+      "openByDefault": "デフォルトではエディタではなくプレビューを開くようになっています。"
+    },
+    "property-view": {
+      "created": "作成",
+      "directory": "ディレクトリ",
+      "lastModified": "最終更新日",
+      "location": "所在地",
+      "noProperties": "物件はありません。",
+      "properties": "プロパティ",
+      "size": "サイズ",
+      "symbolicLink": "シンボリックリンク"
+    },
+    "scm": {
+      "amend": "修正",
+      "amendHeadCommit": "HEADコミット",
+      "amendLastCommit": "前回のコミットを修正",
+      "changeRepository": "リポジトリの変更...",
+      "config.untrackedChanges": "未追跡の変更の動作を制御します。",
+      "config.untrackedChanges.hidden": "隠れ",
+      "config.untrackedChanges.mixed": "合成",
+      "config.untrackedChanges.separate": "別",
+      "history": "歴史",
+      "noRepositoryFound": "リポジトリが見つからない",
+      "unamend": "くり返す",
+      "unamendCommit": "未修正のコミット"
+    },
+    "search-in-workspace": {
+      "includeIgnoredFiles": "無視されたファイルを含める",
+      "noFolderSpecified": "フォルダを開いていない、または指定していない。現在、開いているファイルのみが検索されます。",
+      "resultSubset": "これは、すべての結果の一部に過ぎません。より具体的な検索用語を使って、結果リストを絞り込んでください。",
+      "searchOnEditorModification": "修正されたときにアクティブなエディタを検索します。"
+    },
+    "secondary-window": {
+      "extract-widget": "セカンダリーウィンドウへの表示移動"
+    },
+    "shell-area": {
+      "secondary": "セカンダリーウィンドウ"
+    },
+    "task": {
+      "attachTask": "タスクの添付...",
+      "clearHistory": "明確な歴史",
+      "noTaskToRun": "実行するタスクが見つかりません。タスクの設定...",
+      "openUserTasks": "ユーザータスクを開く"
+    },
+    "terminal": {
+      "defaultProfile": "で使用されるデフォルトのプロファイルです。{0}",
+      "enableCopy": "ctrl-c(macOSではcmd-c)で選択されたテキストをコピーできるようになりました。",
+      "enablePaste": "ctrl-v(macOSではcmd-v)でクリップボードからの貼り付けを可能にする。",
+      "profileArgs": "このプロファイルが使用するシェル引数。",
+      "profileColor": "端末と関連付ける端末テーマカラーID。",
+      "profileDefault": "Default Profileを選択する...",
+      "profileIcon": "ターミナルアイコンに関連付けるコーディコンIDです。\nterminal-tmux:\"$(terminal-tmux)\" とする。",
+      "profileNew": "新端末(プロフィール付き)...",
+      "profilePath": "このプロファイルが使用するシェルのパス。",
+      "profiles": "新しいターミナルを作成するときに提示するプロファイル。オプションのアーギュメントを使用して、手動でパスプロパティを設定します。\n既存のプロファイルを `null` に設定すると、リストからプロファイルを隠すことができます。 例: `\"{0}\": null`.",
+      "rendererType": "端末のレンダリング方法を制御する。",
+      "selectProfile": "新規端末のプロファイルを選択する",
+      "shell.deprecated": "これは非推奨です。デフォルトシェルを設定する新しい推奨方法は、 'terminal.integrated.profiles.{0}' でターミナルプロファイルを作成し、 'terminal.integrated.defaultProfile.{0}.' でそのプロファイル名をデフォルトとして設定する方法です。",
+      "shellArgsLinux": "Linux端末で使用するコマンドライン引数です。",
+      "shellArgsOsx": "macOSのターミナルで使用するコマンドライン引数です。",
+      "shellArgsWindows": "Windows端末で使用するコマンドライン引数です。",
+      "shellLinux": "Linuxでターミナルが使用するシェルのパス(デフォルト:'{0}'})。",
+      "shellOsx": "macOSでターミナルが使用するシェルのパスです(デフォルト:'{0}'})。",
+      "shellWindows": "Windowsでターミナルが使用するシェルのパスです。(デフォルト: '{0}')を指定します。"
+    },
+    "test": {
+      "cancelAllTestRuns": "すべてのテスト実行をキャンセルする",
+      "testRunDefaultName": "{0} 走る{1}",
+      "testRuns": "テスト走行"
+    },
+    "toolbar": {
+      "addCommand": "ツールバーへのコマンド追加",
+      "addCommandPlaceholder": "ツールバーに追加するコマンドを探す",
+      "centerColumn": "センターポール",
+      "failedUpdate": "1}'の'{0}'の値を更新できませんでした。",
+      "filterIcons": "フィルターアイコン",
+      "iconSelectDialog": "{0}」のアイコンを選択します。",
+      "iconSet": "アイコンセット",
+      "insertGroupLeft": "インサートグループセパレーター(左)",
+      "insertGroupRight": "インサートグループセパレーター(右)",
+      "leftColumn": "左欄",
+      "openJSON": "ツールバーのカスタマイズ(JSONを開く)",
+      "removeCommand": "ツールバーからコマンドを削除する",
+      "restoreDefaults": "ツールバーの初期設定に戻す",
+      "rightColumn": "右列",
+      "selectIcon": "アイコンの選択",
+      "toggleToolbar": "ツールバーのトグル",
+      "toolbarLocationPlaceholder": "コマンドを追加したい場所はどこですか?",
+      "useDefaultIcon": "デフォルトアイコンを使用する"
+    },
+    "typehierarchy": {
+      "subtypeHierarchy": "サブタイプヒエラルキー",
+      "supertypeHierarchy": "スーパータイプヒエラルキー"
+    },
+    "vsx-registry": {
+      "downloadCount": "ダウンロード回数{0}",
+      "errorFetching": "拡張機能の取得にエラーが発生しました。",
+      "errorFetchingConfigurationHint": "これは、ネットワーク設定の問題が原因である可能性がある。",
+      "failedInstallingVSIX": "VSIXから{0} のインストールに失敗しました。",
+      "invalidVSIX": "選択されたファイルは、有効な \"*.vsix \"プラグインではありません。",
+      "license": "ライセンス{0}",
+      "recommendedExtensions": "このワークスペースでの使用が推奨される拡張機能の名前のリストです。",
+      "searchPlaceholder": "{0}で拡張子を検索",
+      "showInstalled": "インストールされている拡張機能を表示する",
+      "showRecommendedExtensions": "拡張機能の推奨事項について、通知を表示するかどうかを制御します。",
+      "vsx-extensions-contribution": {
+        "update-version-uninstall-error": "拡張子の削除中にエラーが発生しました。{0}.",
+        "update-version-version-error": "バージョン{0} のインストールに失敗しました。{1} 。"
+      }
+    },
+    "webview": {
+      "goToReadme": "READMEに戻る",
+      "messageWarning": "           {0}エンドポイントのホストパターンが`{1}`に変更されました。パターンを変更すると、セキュリティ上の脆弱性が発生する可能性があります。             詳しくは `{2}` をご覧ください。"
+    },
+    "workspace": {
+      "compareWithEachOther": "互いの比較",
+      "confirmDeletePermanently.description": "ゴミ箱を使った「{0}」の削除に失敗しました。代わりに永久に削除しますか?",
+      "confirmDeletePermanently.solution": "環境設定でゴミ箱の使用を無効にすることができます。",
+      "confirmDeletePermanently.title": "ファイル削除時のエラー",
+      "confirmMessage.delete": "本当に以下のファイルを削除しますか?",
+      "confirmMessage.dirtyMultiple": "保存されていない変更のある{0}個のファイルを本当に削除したいのですか?",
+      "confirmMessage.dirtySingle": "本当に未保存のまま{0}を削除したいのでしょうか?",
+      "confirmMessage.uriMultiple": "本当に{0}個の選択されたファイルをすべて削除しますか?",
+      "confirmMessage.uriSingle": "本当に{0}を削除するのですか?",
+      "duplicate": "デュプリケート",
+      "failApply": "新しいファイルに変更を適用できなかった",
+      "failSaveAs": "現在のウィジェットでは\"{0}\"を実行できません。",
+      "newFilePlaceholder": "ファイル名",
+      "newFolderPlaceholder": "フォルダー名",
+      "noErasure": "注:ディスクからは何も消去されません",
+      "openRecentPlaceholder": "開きたいワークスペースの名前を入力する",
+      "openRecentWorkspace": "最近のワークスペースを開く...",
+      "preserveWindow": "ワークスペースを現在のウィンドウで開けるようにします。",
+      "removeFolder": "ワークスペースから以下のフォルダを削除してよろしいですか?",
+      "removeFolders": "ワークスペースから以下のフォルダを削除してよろしいですか?",
+      "trashTitle": "{0}をゴミ箱に移動",
+      "trustEmptyWindow": "空のワークスペースをデフォルトで信頼するかどうかを制御します。",
+      "trustEnabled": "ワークスペースの信頼を有効にするかどうかを制御します。無効の場合、すべてのワークスペースが信頼されます。",
+      "trustRequest": "拡張機能がワークスペースの信頼を要求していますが、対応する API はまだ完全にはサポートされていません。このワークスペースを信頼しますか?",
+      "untitled-cleanup": "名称未設定のワークスペースファイルが多数あるようです。{0}を確認して、未使用のファイルを削除してください。",
+      "workspaceFolderAdded": "複数のルートを持つワークスペースが作成されました。ワークスペースの構成をファイルとして保存しますか?",
+      "workspaceFolderAddedTitle": "ワークスペースにフォルダを追加"
+    }
+  }
+}

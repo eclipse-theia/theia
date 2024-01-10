@@ -1,0 +1,101 @@
+/********************************************************************************
+ * Copyright (C) 2022 Ericsson and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+/* Copied from https://github.com/microsoft/vscode/blob/7d9b1c37f8e5ae3772782ba3b09d827eb3fdd833/src/vs/workbench/contrib/languageStatus/browser/media/languageStatus.css */
+
+.hover-language-status {
+  display: flex;
+  padding: 4px 8px;
+}
+
+.hover-language-status:not(:last-child) {
+  border-bottom: 1px solid var(--theia-notifications-border);
+}
+
+.hover-language-status > .severity {
+  padding-right: 8px;
+  flex: 1;
+  margin: auto;
+  display: none;
+}
+
+.hover-language-status > .severity.sev3 {
+  color: var(--theia-notificationsErrorIcon-foreground);
+}
+
+.hover-language-status > .severity.sev2 {
+  color: var(--theia-notificationsInfoIcon-foreground);
+}
+
+.hover-language-status > .severity.show {
+  display: inherit;
+}
+
+.hover-language-status > .element {
+  display: flex;
+  justify-content: space-between;
+  vertical-align: middle;
+  flex-grow: 100;
+}
+
+.hover-language-status > .element > .left > .detail:not(:empty)::before {
+  /* en-dash */
+  content: "–";
+  padding: 0 4px;
+  opacity: 0.6;
+}
+
+.hover-language-status > .element > .left > .label:empty {
+  display: none;
+}
+
+.hover-language-status > .element .left {
+  margin: auto 0;
+}
+
+.hover-language-status > .element .right {
+  margin: auto 0;
+  display: flex;
+}
+
+.hover-language-status > .element .right:not(:empty) {
+  padding-left: 16px;
+}
+
+.hover-language-status > .element .right .language-status-link {
+  margin: auto 0;
+  white-space: nowrap;
+
+  /* ADDED STYLES - NOT FROM VSCODE */
+  text-decoration: none;
+}
+
+/* ADDED STYLES - NOT FROM VSCODE */
+.hover-language-status > .element .right .language-status-link:hover {
+  color: var(--theia-textLink-foreground);
+}
+
+.hover-language-status
+  > .element
+  .right
+  .language-status-action-bar:not(:first-child) {
+  padding-left: 8px;
+}
+
+/* ADDED STYLES - NOT FROM VSCODE */
+.hover-language-status > .element .right .language-status-action-bar a {
+  color: var(--theia-editorHoverWidget-foreground);
+}

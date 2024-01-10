@@ -1,22 +1,23 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import * as request from 'request';
-const ChangesStream = require('changes-stream');
+import * as nano from 'nano';
+import { RequestContext } from '@theia/request';
+import { NodeRequestService } from '@theia/request/lib/node-request-service';
 import { NpmRegistryProps } from './application-props';
 
 export interface IChangeStream {
@@ -47,6 +48,7 @@ export interface NodePackage {
     maintainers?: Maintainer[];
     keywords?: string[];
     dependencies?: Dependencies;
+    peerDependencies?: Dependencies;
     [property: string]: any;
 }
 
@@ -92,8 +94,10 @@ export class NpmRegistry {
     readonly props: NpmRegistryProps = { ...NpmRegistryProps.DEFAULT };
     protected readonly options: NpmRegistryOptions;
 
-    protected changes: undefined | IChangeStream;
+    protected changes?: nano.ChangesReaderScope;
     protected readonly index = new Map<string, Promise<ViewResult>>();
+
+    protected request: NodeRequestService;
 
     constructor(options?: Partial<NpmRegistryOptions>) {
         this.options = {
@@ -101,6 +105,7 @@ export class NpmRegistry {
             ...options
         };
         this.resetIndex();
+        this.request = new NodeRequestService();
     }
 
     updateProps(props?: Partial<NpmRegistryProps>): void {
@@ -115,13 +120,11 @@ export class NpmRegistry {
         this.index.clear();
         if (this.options.watchChanges && this.props.registry === NpmRegistryProps.DEFAULT.registry) {
             if (this.changes) {
-                this.changes.destroy();
+                this.changes.stop();
             }
-            // invalidate index with NPM registry web hooks
-            // see: https://github.com/npm/registry-follower-tutorial
-            const db = 'https://replicate.npmjs.com';
-            this.changes = new ChangesStream({ db }) as IChangeStream;
-            this.changes.on('data', change => this.invalidate(change.id));
+            // Invalidate index with NPM registry web hooks
+            this.changes = nano('https://replicate.npmjs.com').use('registry').changesReader;
+            this.changes.get({}).on('change', change => this.invalidate(change.id));
         }
     }
     protected invalidate(name: string): void {
@@ -141,30 +144,18 @@ export class NpmRegistry {
         return result;
     }
 
-    protected doView(name: string): Promise<ViewResult> {
+    protected async doView(name: string): Promise<ViewResult> {
         let url = this.props.registry;
         if (name[0] === '@') {
-            url += '@' + encodeURIComponent(name.substr(1));
+            url += '@' + encodeURIComponent(name.substring(1));
         } else {
             url += encodeURIComponent(name);
         }
-        const headers: {
-            [header: string]: string
-        } = {};
-        return new Promise((resolve, reject) => {
-            request({
-                url, headers
-            }, (err, response, body) => {
-                if (err) {
-                    reject(err);
-                } else if (response.statusCode !== 200) {
-                    reject(new Error(`${response.statusCode}: ${response.statusMessage} for ${url}`));
-                } else {
-                    const data = JSON.parse(body);
-                    resolve(data);
-                }
-            });
-        });
+        const response = await this.request.request({ url });
+        if (response.res.statusCode !== 200) {
+            throw new Error(`HTTP ${response.res.statusCode}: for ${url}`);
+        }
+        return RequestContext.asJson<ViewResult>(response);
     }
 
 }

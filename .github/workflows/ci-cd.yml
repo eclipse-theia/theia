@@ -1,0 +1,115 @@
+name: CI/CD
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Use Node.js 18.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Use Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install and Build
+        shell: bash
+        run: |
+          yarn global add node-gyp
+          yarn --skip-integrity-check --network-timeout 100000
+          ./scripts/check_git_status.sh
+        env:
+          NODE_OPTIONS: --max_old_space_size=4096
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9
+
+      - name: Lint
+        run: |
+          yarn lint
+
+  build:
+    name: Build and Test (${{ matrix.os }}, node-${{ matrix.node }})
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2019, ubuntu-latest, macos-11]
+        node: [16.x, 18.x, 20.x]
+
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Use Node.js ${{ matrix.node }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node }}
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Use Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install
+        shell: bash
+        run: |
+          yarn global add node-gyp
+          yarn --skip-integrity-check --network-timeout 100000
+          ./scripts/check_git_status.sh
+        env:
+          NODE_OPTIONS: --max_old_space_size=4096
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9
+
+      - name: Download Plugins
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          yarn -s download:plugins
+
+      - name: Build
+        shell: bash
+        run: |
+          yarn build:examples
+          ./scripts/check_git_status.sh
+        env:
+          NODE_OPTIONS: --max_old_space_size=4096
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9
+
+      - name: Test (headless)
+        if: matrix.tests != 'skip'
+        shell: bash
+        run: |
+          yarn browser rebuild
+          yarn test:theia
+
+      - name: Test (browser)
+        if: matrix.tests != 'skip' && runner.os == 'Linux'
+        run: |
+          xvfb-run -a yarn browser test
+
+      - name: Test (electron)
+        if: matrix.tests != 'skip' && runner.os == 'Linux'
+        run: |
+          xvfb-run -a yarn electron test

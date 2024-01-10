@@ -1,25 +1,25 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import * as React from 'react';
-import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
+import * as React from '@theia/core/shared/react';
+import { DebugProtocol } from '@vscode/debugprotocol/lib/debugProtocol';
 import { RecursivePartial } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { Range } from '@theia/editor/lib/browser';
-import { WidgetOpenerOptions } from '@theia/core/lib/browser';
+import { TREE_NODE_INFO_CLASS, WidgetOpenerOptions } from '@theia/core/lib/browser';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
 import { SourceBreakpoint } from '../breakpoint/breakpoint-marker';
 import { DebugSource } from './debug-source';
@@ -38,7 +38,7 @@ export class DebugSourceBreakpoint extends DebugBreakpoint<SourceBreakpoint> imp
         this.origins = [origin];
     }
 
-    update(data: Partial<DebugSourceBreakpointData>): void {
+    override update(data: Partial<DebugSourceBreakpointData>): void {
         super.update(data);
     }
 
@@ -50,7 +50,8 @@ export class DebugSourceBreakpoint extends DebugBreakpoint<SourceBreakpoint> imp
         const { uri, raw } = this;
         let shouldUpdate = false;
         let breakpoints = raw && this.doRemove(this.origins.filter(origin => !(origin.raw.line === raw.line && origin.raw.column === raw.column)));
-        if (breakpoints) {
+        // Check for breakpoints array with at least one entry
+        if (breakpoints && breakpoints.length) {
             shouldUpdate = true;
         } else {
             breakpoints = this.breakpoints.getBreakpoints(uri);
@@ -139,7 +140,7 @@ export class DebugSourceBreakpoint extends DebugBreakpoint<SourceBreakpoint> imp
         }
     }
 
-    protected readonly setBreakpointEnabled = (event: React.ChangeEvent<HTMLInputElement>) => {
+    protected override setBreakpointEnabled = (event: React.ChangeEvent<HTMLInputElement>) => {
         this.setEnabled(event.target.checked);
     };
 
@@ -147,7 +148,7 @@ export class DebugSourceBreakpoint extends DebugBreakpoint<SourceBreakpoint> imp
         return <React.Fragment>
             <span className='line-info' title={this.labelProvider.getLongName(this.uri)}>
                 <span className='name'>{this.labelProvider.getName(this.uri)} </span>
-                <span className='path'>{this.labelProvider.getLongName(this.uri.parent)} </span>
+                <span className={'path ' + TREE_NODE_INFO_CLASS}>{this.labelProvider.getLongName(this.uri.parent)} </span>
             </span>
             <span className='line'>{this.renderPosition()}</span>
         </React.Fragment>;
@@ -157,7 +158,7 @@ export class DebugSourceBreakpoint extends DebugBreakpoint<SourceBreakpoint> imp
         return this.line + (typeof this.column === 'number' ? ':' + this.column : '');
     }
 
-    doGetDecoration(messages: string[] = []): DebugBreakpointDecoration {
+    override doGetDecoration(messages: string[] = []): DebugBreakpointDecoration {
         if (this.logMessage || this.condition || this.hitCondition) {
             const { session } = this;
             if (this.logMessage) {
@@ -184,7 +185,7 @@ export class DebugSourceBreakpoint extends DebugBreakpoint<SourceBreakpoint> imp
 
     protected getUnsupportedBreakpointDecoration(message: string): DebugBreakpointDecoration {
         return {
-            className: 'theia-debug-breakpoint-unsupported',
+            className: 'codicon-debug-breakpoint-unsupported',
             message: [message]
         };
     }
@@ -192,18 +193,18 @@ export class DebugSourceBreakpoint extends DebugBreakpoint<SourceBreakpoint> imp
     protected getBreakpointDecoration(message?: string[]): DebugBreakpointDecoration {
         if (this.logMessage) {
             return {
-                className: 'theia-debug-logpoint',
+                className: 'codicon-debug-breakpoint-log',
                 message: message || ['Logpoint']
             };
         }
         if (this.condition || this.hitCondition) {
             return {
-                className: 'theia-debug-conditional-breakpoint',
+                className: 'codicon-debug-breakpoint-conditional',
                 message: message || ['Conditional Breakpoint']
             };
         }
         return {
-            className: 'theia-debug-breakpoint',
+            className: 'codicon-debug-breakpoint',
             message: message || ['Breakpoint']
         };
     }

@@ -1,24 +1,25 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { injectable, inject } from 'inversify';
-import { Message } from '@phosphor/messaging';
-import * as React from 'react';
+import { injectable, inject } from '@theia/core/shared/inversify';
+import { DisposableCollection } from '@theia/core';
+import { Message } from '@theia/core/shared/@phosphor/messaging';
+import * as React from '@theia/core/shared/react';
 import TextareaAutosize from 'react-autosize-textarea';
-import { ScmInput } from './scm-input';
+import { ScmInput, ScmInputIssueType } from './scm-input';
 import {
     ContextMenuRenderer, ReactWidget, KeybindingRegistry, StatefulWidget
 } from '@theia/core/lib/browser';
@@ -31,6 +32,8 @@ export class ScmCommitWidget extends ReactWidget implements StatefulWidget {
 
     @inject(ScmService) protected readonly scmService: ScmService;
     @inject(KeybindingRegistry) protected readonly keybindings: KeybindingRegistry;
+
+    protected readonly toDisposeOnRepositoryChange = new DisposableCollection();
 
     protected shouldScrollToRow = true;
 
@@ -52,7 +55,29 @@ export class ScmCommitWidget extends ReactWidget implements StatefulWidget {
         this.id = ScmCommitWidget.ID;
     }
 
-    protected onActivateRequest(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
+        super.onAfterAttach(msg);
+        this.refreshOnRepositoryChange();
+        this.toDisposeOnDetach.push(this.scmService.onDidChangeSelectedRepository(() => {
+            this.refreshOnRepositoryChange();
+            this.update();
+        }));
+    }
+
+    protected refreshOnRepositoryChange(): void {
+        this.toDisposeOnRepositoryChange.dispose();
+        const repository = this.scmService.selectedRepository;
+        if (repository) {
+            this.toDisposeOnRepositoryChange.push(repository.provider.onDidChange(async () => {
+                this.update();
+            }));
+            this.toDisposeOnRepositoryChange.push(repository.provider.onDidChangeCommitTemplate(e => {
+                this.setInputValue(e);
+            }));
+        }
+    }
+
+    protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         this.focus();
     }
@@ -78,7 +103,20 @@ export class ScmCommitWidget extends ReactWidget implements StatefulWidget {
     }
 
     protected renderInput(input: ScmInput): React.ReactNode {
-        const validationStatus = input.issue ? input.issue.type : 'idle';
+        let validationStatus = 'idle';
+        if (input.issue) {
+            switch (input.issue.type) {
+                case ScmInputIssueType.Error:
+                    validationStatus = 'error';
+                    break;
+                case ScmInputIssueType.Information:
+                    validationStatus = 'info';
+                    break;
+                case ScmInputIssueType.Warning:
+                    validationStatus = 'warning';
+                    break;
+            }
+        }
         const validationMessage = input.issue ? input.issue.message : '';
         const format = (value: string, ...args: string[]): string => {
             if (args.length !== 0) {
@@ -92,18 +130,22 @@ export class ScmCommitWidget extends ReactWidget implements StatefulWidget {
 
         const keybinding = this.keybindings.acceleratorFor(this.keybindings.getKeybindingsForCommand('scm.acceptInput')[0]).join('+');
         const message = format(input.placeholder || '', keybinding);
-        return <div className={ScmCommitWidget.Styles.INPUT_MESSAGE_CONTAINER}>
+        const textArea = input.visible &&
             <TextareaAutosize
                 className={`${ScmCommitWidget.Styles.INPUT_MESSAGE} theia-input theia-scm-input-message-${validationStatus}`}
                 id={ScmCommitWidget.Styles.INPUT_MESSAGE}
                 placeholder={message}
+                spellCheck={false}
                 autoFocus={true}
                 value={input.value}
+                disabled={!input.enabled}
                 onChange={this.setInputValue}
                 ref={this.inputRef}
                 rows={1}
                 maxRows={6} /* from VS Code */>
-            </TextareaAutosize>
+            </TextareaAutosize>;
+        return <div className={ScmCommitWidget.Styles.INPUT_MESSAGE_CONTAINER}>
+            {textArea}
             <div
                 className={
                     `${ScmCommitWidget.Styles.VALIDATION_MESSAGE} ${ScmCommitWidget.Styles.NO_SELECT}

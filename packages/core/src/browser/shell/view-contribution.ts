@@ -1,20 +1,20 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { injectable, inject, interfaces } from 'inversify';
+import { injectable, inject, interfaces, optional } from 'inversify';
 import { Widget } from '@phosphor/widgets';
 import {
     MenuModelRegistry, Command, CommandContribution,
@@ -24,7 +24,7 @@ import { KeybindingContribution, KeybindingRegistry } from '../keybinding';
 import { WidgetManager } from '../widget-manager';
 import { CommonMenus } from '../common-frontend-contribution';
 import { ApplicationShell } from './application-shell';
-import { QuickViewService } from '../quick-view-service';
+import { QuickViewService } from '../quick-input';
 
 export interface OpenViewArguments extends ApplicationShell.WidgetOptions {
     toggle?: boolean
@@ -41,8 +41,7 @@ export interface ViewContributionOptions {
     toggleKeybinding?: string;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function bindViewContribution<T extends AbstractViewContribution<any>>(bind: interfaces.Bind, identifier: interfaces.Newable<T>): interfaces.BindingWhenOnSyntax<T> {
+export function bindViewContribution<T extends AbstractViewContribution<Widget>>(bind: interfaces.Bind, identifier: interfaces.Newable<T>): interfaces.BindingWhenOnSyntax<T> {
     const syntax = bind<T>(identifier).toSelf().inSingletonScope();
     bind(CommandContribution).toService(identifier);
     bind(KeybindingContribution).toService(identifier);
@@ -59,7 +58,7 @@ export abstract class AbstractViewContribution<T extends Widget> implements Comm
     @inject(WidgetManager) protected readonly widgetManager: WidgetManager;
     @inject(ApplicationShell) protected readonly shell: ApplicationShell;
 
-    @inject(QuickViewService)
+    @inject(QuickViewService) @optional()
     protected readonly quickView: QuickViewService;
 
     readonly toggleCommand?: Command;
@@ -140,7 +139,7 @@ export abstract class AbstractViewContribution<T extends Widget> implements Comm
                 execute: () => this.toggleView()
             });
         }
-        this.quickView.registerItem({
+        this.quickView?.registerItem({
             label: this.viewLabel,
             open: () => this.openView({ activate: true })
         });

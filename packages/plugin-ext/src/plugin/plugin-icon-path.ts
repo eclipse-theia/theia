@@ -1,27 +1,27 @@
-/********************************************************************************
- * Copyright (C) 2019 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2019 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import * as path from 'path';
-import { URI as Uri } from 'vscode-uri';
+import { URI } from './types-impl';
 import { IconUrl, PluginPackage } from '../common/plugin-protocol';
 import { Plugin } from '../common/plugin-api-rpc';
 
-export type PluginIconPath = string | Uri | {
-    light: string | Uri,
-    dark: string | Uri
+export type PluginIconPath = string | URI | {
+    light: string | URI,
+    dark: string | URI
 };
 export namespace PluginIconPath {
     export function toUrl(iconPath: PluginIconPath | undefined, plugin: Plugin): IconUrl | undefined {
@@ -36,8 +36,8 @@ export namespace PluginIconPath {
         }
         return asString(iconPath, plugin);
     }
-    export function asString(arg: string | Uri, plugin: Plugin): string {
-        arg = arg instanceof Uri && arg.scheme === 'file' ? arg.fsPath : arg;
+    export function asString(arg: string | URI, plugin: Plugin): string {
+        arg = arg instanceof URI && arg.scheme === 'file' ? arg.fsPath : arg;
         if (typeof arg !== 'string') {
             return arg.toString(true);
         }

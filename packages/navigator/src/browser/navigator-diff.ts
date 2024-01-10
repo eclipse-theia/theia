@@ -1,46 +1,47 @@
-/********************************************************************************
- * Copyright (C) 2019 David Saunders and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2019 David Saunders and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { FileSystem } from '@theia/filesystem/lib/common/filesystem';
 import { SelectionService, UriSelection } from '@theia/core/lib/common';
 import { OpenerService, open } from '@theia/core/lib/browser/opener-service';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { Command } from '@theia/core/lib/common/command';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { FileOperationError, FileOperationResult } from '@theia/filesystem/lib/common/files';
 
 export namespace NavigatorDiffCommands {
     const COMPARE_CATEGORY = 'Compare';
-    export const COMPARE_FIRST: Command = {
+    export const COMPARE_FIRST = Command.toDefaultLocalizedCommand({
         id: 'compare:first',
         category: COMPARE_CATEGORY,
         label: 'Select for Compare'
-    };
-    export const COMPARE_SECOND: Command = {
+    });
+    export const COMPARE_SECOND = Command.toDefaultLocalizedCommand({
         id: 'compare:second',
         category: COMPARE_CATEGORY,
         label: 'Compare with Selected'
-    };
+    });
 }
 
 @injectable()
 export class NavigatorDiff {
-    @inject(FileSystem)
-    protected readonly fileSystem: FileSystem;
+    @inject(FileService)
+    protected readonly fileService: FileService;
 
     @inject(OpenerService)
     protected openerService: OpenerService;
@@ -71,11 +72,12 @@ export class NavigatorDiff {
 
     protected async isDirectory(uri: URI): Promise<boolean> {
         try {
-            const stat = await this.fileSystem.getFileStat(uri.path.toString());
-            if (!stat || stat.isDirectory) {
+            const stat = await this.fileService.resolve(uri);
+            return stat.isDirectory;
+        } catch (e) {
+            if (e instanceof FileOperationError && e.fileOperationResult === FileOperationResult.FILE_NOT_FOUND) {
                 return true;
             }
-        } catch (e) {
         }
 
         return false;

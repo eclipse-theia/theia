@@ -1,25 +1,24 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import * as theia from '@theia/plugin';
 import { Event, Emitter } from '@theia/core/lib/common/event';
-import { StorageMain, StorageExt } from '../common/plugin-api-rpc';
+import { PLUGIN_RPC_CONTEXT, StorageMain, StorageExt } from '../common/plugin-api-rpc';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from '../common/types';
 import { RPCProtocol } from '../common/rpc-protocol';
-import { PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc';
 
 export class Memento implements theia.Memento {
 
@@ -39,6 +38,10 @@ export class Memento implements theia.Memento {
         }
     }
 
+    keys(): string[] {
+        return Object.entries(this.cache).filter(([, value]) => value !== undefined).map(([key]) => key);
+    }
+
     get<T>(key: string): T | undefined;
     get<T>(key: string, defaultValue: T): T;
     get<T>(key: string, defaultValue?: T): T | undefined {
@@ -51,9 +54,19 @@ export class Memento implements theia.Memento {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     update(key: string, value: any): Promise<void> {
-        this.cache[key] = value;
+        if (value === undefined) {
+            delete this.cache[key];
+        } else {
+            this.cache[key] = value;
+        }
         return this.storage.setPerPluginData(this.pluginId, this.cache, this.isPluginGlobalData).then(_ => undefined);
     }
+}
+
+export class GlobalState extends Memento {
+
+    /** @todo: API is not yet implemented. */
+    setKeysForSync(keys: readonly string[]): void { }
 }
 
 /**

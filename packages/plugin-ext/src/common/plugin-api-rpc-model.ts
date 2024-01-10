@@ -1,22 +1,27 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import * as theia from '@theia/plugin';
+import type * as monaco from '@theia/monaco-editor-core';
+import { MarkdownString as MarkdownStringDTO } from '@theia/core/lib/common/markdown-rendering';
 import { UriComponents } from './uri-components';
-import { FileStat } from '@theia/filesystem/lib/common';
+import { CompletionItemTag, SnippetString } from '../plugin/types-impl';
+import { Event as TheiaEvent } from '@theia/core/lib/common/event';
+import { URI } from '@theia/core/shared/vscode-uri';
+import { SerializedRegExp } from './plugin-api-rpc';
 
 // Should contains internal Plugin API types
 
@@ -67,35 +72,15 @@ export interface Range {
     readonly endColumn: number;
 }
 
-export interface MarkdownString {
-    value: string;
-    isTrusted?: boolean;
-    uris?: {
-        [href: string]: UriComponents;
-    };
-}
+export { MarkdownStringDTO as MarkdownString };
 
 export interface SerializedDocumentFilter {
     $serialized: true;
     language?: string;
     scheme?: string;
     pattern?: theia.GlobPattern;
+    notebookType?: string;
 }
-
-export interface FileWatcherSubscriberOptions {
-    globPattern: theia.GlobPattern;
-    ignoreCreateEvents?: boolean;
-    ignoreChangeEvents?: boolean;
-    ignoreDeleteEvents?: boolean;
-}
-
-export interface FileChangeEvent {
-    subscriberId: string,
-    uri: UriComponents,
-    type: FileChangeEventType
-}
-
-export type FileChangeEventType = 'created' | 'updated' | 'deleted';
 
 export enum CompletionTriggerKind {
     Invoke = 0,
@@ -114,10 +99,11 @@ export enum CompletionItemInsertTextRule {
 }
 
 export interface Completion {
-    label: string;
+    label: string | theia.CompletionItemLabel;
+    label2?: string;
     kind: CompletionItemKind;
     detail?: string;
-    documentation?: string | MarkdownString;
+    documentation?: string | MarkdownStringDTO;
     sortText?: string;
     filterText?: string;
     preselect?: boolean;
@@ -130,6 +116,9 @@ export interface Completion {
     commitCharacters?: string[];
     additionalTextEdits?: SingleEditOperation[];
     command?: Command;
+    tags?: CompletionItemTag[];
+    /** @deprecated use tags instead. */
+    deprecated?: boolean;
 }
 
 export interface SingleEditOperation {
@@ -176,7 +165,9 @@ export enum CompletionItemKind {
     Customcolor = 22,
     Folder = 23,
     TypeParameter = 24,
-    Snippet = 25
+    User = 25,
+    Issue = 26,
+    Snippet = 27
 }
 
 export class IdObject {
@@ -228,17 +219,19 @@ export enum MarkerSeverity {
 
 export enum MarkerTag {
     Unnecessary = 1,
+    Deprecated = 2,
 }
 
 export interface ParameterInformation {
     label: string | [number, number];
-    documentation?: string | MarkdownString;
+    documentation?: string | MarkdownStringDTO;
 }
 
 export interface SignatureInformation {
     label: string;
-    documentation?: string | MarkdownString;
+    documentation?: string | MarkdownStringDTO;
     parameters: ParameterInformation[];
+    activeParameter?: number;
 }
 
 export interface SignatureHelp extends IdObject {
@@ -255,12 +248,54 @@ export interface SignatureHelpContext {
 }
 
 export interface Hover {
-    contents: MarkdownString[];
+    contents: MarkdownStringDTO[];
     range?: Range;
 }
 
 export interface HoverProvider {
     provideHover(model: monaco.editor.ITextModel, position: monaco.Position, token: monaco.CancellationToken): Hover | undefined | Thenable<Hover | undefined>;
+}
+
+export interface EvaluatableExpression {
+    range: Range;
+    expression?: string;
+}
+
+export interface EvaluatableExpressionProvider {
+    provideEvaluatableExpression(model: monaco.editor.ITextModel, position: monaco.Position,
+        token: monaco.CancellationToken): EvaluatableExpression | undefined | Thenable<EvaluatableExpression | undefined>;
+}
+
+export interface InlineValueContext {
+    frameId: number;
+    stoppedLocation: Range;
+}
+
+export interface InlineValueText {
+    type: 'text';
+    range: Range;
+    text: string;
+}
+
+export interface InlineValueVariableLookup {
+    type: 'variable';
+    range: Range;
+    variableName?: string;
+    caseSensitiveLookup: boolean;
+}
+
+export interface InlineValueEvaluatableExpression {
+    type: 'expression';
+    range: Range;
+    expression?: string;
+}
+
+export type InlineValue = InlineValueText | InlineValueVariableLookup | InlineValueEvaluatableExpression;
+
+export interface InlineValuesProvider {
+    onDidChangeInlineValues?: TheiaEvent<void> | undefined;
+    provideInlineValues(model: monaco.editor.ITextModel, viewPort: Range, context: InlineValueContext, token: monaco.CancellationToken):
+        InlineValue[] | undefined | Thenable<InlineValue[] | undefined>;
 }
 
 export enum DocumentHighlightKind {
@@ -287,6 +322,32 @@ export interface TextEdit {
     range: Range;
     text: string;
     eol?: monaco.editor.EndOfLineSequence;
+}
+
+export interface DocumentDropEdit {
+    insertText: string | SnippetString;
+    additionalEdit?: WorkspaceEdit;
+}
+
+export interface DocumentDropEditProviderMetadata {
+    readonly id: string;
+    readonly dropMimeTypes: readonly string[];
+}
+
+export interface DataTransferFileDTO {
+    readonly name: string;
+    readonly uri?: UriComponents;
+}
+
+export interface DataTransferItemDTO {
+    readonly id: string;
+    readonly asString: string;
+    readonly fileData: DataTransferFileDTO | undefined;
+    readonly uriListData?: ReadonlyArray<string | UriComponents>;
+}
+
+export interface DataTransferDTO {
+    readonly items: Array<[/* type */string, DataTransferItemDTO]>;
 }
 
 export interface Location {
@@ -323,7 +384,14 @@ export interface ReferenceContext {
     includeDeclaration: boolean;
 }
 
+export type CacheId = number;
+export type ChainedCacheId = [CacheId, CacheId];
+
+export type CachedSessionItem<T> = T & { cacheId?: ChainedCacheId };
+export type CachedSession<T> = T & { cacheId?: CacheId };
+
 export interface DocumentLink {
+    cacheId?: ChainedCacheId,
     range: Range;
     url?: UriComponents | string;
     tooltip?: string;
@@ -340,16 +408,27 @@ export interface CodeLensSymbol {
 }
 
 export interface CodeAction {
+    cacheId: number;
     title: string;
     command?: Command;
     edit?: WorkspaceEdit;
     diagnostics?: MarkerData[];
     kind?: string;
+    disabled?: { reason: string };
+    isPreferred?: boolean;
+}
+
+export enum CodeActionTriggerKind {
+    Invoke = 1,
+    Automatic = 2,
 }
 
 export interface CodeActionContext {
     only?: string;
+    trigger: CodeActionTriggerKind
 }
+
+export type CodeActionProviderDocumentation = ReadonlyArray<{ command: Command, kind: string }>;
 
 export interface CodeActionProvider {
     provideCodeActions(
@@ -362,21 +441,35 @@ export interface CodeActionProvider {
     providedCodeActionKinds?: string[];
 }
 
-export interface ResourceFileEdit {
-    oldUri: UriComponents;
-    newUri: UriComponents;
-    options: { overwrite?: boolean, ignoreIfNotExists?: boolean, ignoreIfExists?: boolean, recursive?: boolean };
+// copied from https://github.com/microsoft/vscode/blob/b165e20587dd0797f37251515bc9e4dbe513ede8/src/vs/editor/common/modes.ts
+export interface WorkspaceEditMetadata {
+    needsConfirmation: boolean;
+    label: string;
+    description?: string;
+    iconPath?: {
+        id: string;
+    } | {
+        light: UriComponents;
+        dark: UriComponents;
+    };
 }
 
-export interface ResourceTextEdit {
+export interface WorkspaceFileEdit {
+    newResource?: UriComponents;
+    oldResource?: UriComponents;
+    options?: { overwrite?: boolean, ignoreIfNotExists?: boolean, ignoreIfExists?: boolean, recursive?: boolean };
+    metadata?: WorkspaceEditMetadata;
+}
+
+export interface WorkspaceTextEdit {
     resource: UriComponents;
     modelVersionId?: number;
-    edits: TextEdit[];
+    textEdit: TextEdit;
+    metadata?: WorkspaceEditMetadata;
 }
 
 export interface WorkspaceEdit {
-    edits: Array<ResourceTextEdit | ResourceFileEdit>;
-    rejectReason?: string;
+    edits: Array<WorkspaceTextEdit | WorkspaceFileEdit>;
 }
 
 export enum SymbolKind {
@@ -424,7 +517,7 @@ export interface DocumentSymbol {
 }
 
 export interface WorkspaceRootsChangeEvent {
-    roots: FileStat[];
+    roots: string[];
 }
 
 export interface WorkspaceFolder {
@@ -499,35 +592,23 @@ export interface RenameLocation {
     text: string;
 }
 
-export interface RenameProvider {
-    provideRenameEdits(model: monaco.editor.ITextModel, position: Position, newName: string): PromiseLike<WorkspaceEdit & Rejection>;
-    resolveRenameLocation?(model: monaco.editor.ITextModel, position: Position): PromiseLike<RenameLocation & Rejection>;
-}
-
-export interface CallHierarchyDefinition {
-    name: string;
-    kind: SymbolKind;
-    detail?: string;
-    uri: UriComponents;
-    range: Range;
-    selectionRange: Range;
-}
-
-export interface CallHierarchyReference {
-    callerDefinition: CallHierarchyDefinition,
-    references: Range[]
-}
-
-export interface CallHierarchyItem {
+export class HierarchyItem {
     _sessionId?: string;
     _itemId?: string;
 
     kind: SymbolKind;
+    tags?: readonly SymbolTag[];
     name: string;
     detail?: string;
     uri: UriComponents;
     range: Range;
     selectionRange: Range;
+}
+
+export class TypeHierarchyItem extends HierarchyItem { }
+
+export interface CallHierarchyItem extends HierarchyItem {
+    data?: unknown;
 }
 
 export interface CallHierarchyIncomingCall {
@@ -540,14 +621,277 @@ export interface CallHierarchyOutgoingCall {
     fromRanges: Range[];
 }
 
-export interface CreateFilesEventDTO {
-    files: UriComponents[]
+export interface LinkedEditingRanges {
+    ranges: Range[];
+    wordPattern?: SerializedRegExp;
 }
 
-export interface RenameFilesEventDTO {
-    files: { oldUri: UriComponents, newUri: UriComponents }[]
+export interface SearchInWorkspaceResult {
+    root: string;
+    fileUri: string;
+    matches: SearchMatch[];
 }
 
-export interface DeleteFilesEventDTO {
-    files: UriComponents[]
+export interface SearchMatch {
+    line: number;
+    character: number;
+    length: number;
+    lineText: string | LinePreview;
+
 }
+export interface LinePreview {
+    text: string;
+    character: number;
+}
+
+/**
+ * @deprecated Use {@link theia.AuthenticationSession} instead.
+ */
+export interface AuthenticationSession extends theia.AuthenticationSession {
+}
+
+/**
+ * @deprecated Use {@link theia.AuthenticationProviderAuthenticationSessionsChangeEvent} instead.
+ */
+export interface AuthenticationSessionsChangeEvent extends theia.AuthenticationProviderAuthenticationSessionsChangeEvent {
+}
+
+/**
+ * @deprecated Use {@link theia.AuthenticationProviderInformation} instead.
+ */
+export interface AuthenticationProviderInformation extends theia.AuthenticationProviderInformation {
+}
+
+export interface CommentOptions {
+    /**
+     * An optional string to show on the comment input box when it's collapsed.
+     */
+    prompt?: string;
+
+    /**
+     * An optional string to show as placeholder in the comment input box when it's focused.
+     */
+    placeHolder?: string;
+}
+
+export enum CommentMode {
+    Editing = 0,
+    Preview = 1
+}
+
+export interface Comment {
+    readonly uniqueIdInThread: number;
+    readonly body: MarkdownStringDTO;
+    readonly userName: string;
+    readonly userIconPath?: string;
+    readonly contextValue?: string;
+    readonly label?: string;
+    readonly mode?: CommentMode;
+    /** Timestamp serialized as ISO date string via Date.prototype.toISOString */
+    readonly timestamp?: string;
+}
+
+export enum CommentThreadState {
+    Unresolved = 0,
+    Resolved = 1
+}
+
+export enum CommentThreadCollapsibleState {
+    /**
+     * Determines an item is collapsed
+     */
+    Collapsed = 0,
+    /**
+     * Determines an item is expanded
+     */
+    Expanded = 1
+}
+
+export interface CommentInput {
+    value: string;
+    uri: URI;
+}
+
+export interface CommentThread {
+    commentThreadHandle: number;
+    controllerHandle: number;
+    extensionId?: string;
+    threadId: string;
+    resource: string | null;
+    range: Range;
+    label: string | undefined;
+    contextValue: string | undefined;
+    comments: Comment[] | undefined;
+    onDidChangeComments: TheiaEvent<Comment[] | undefined>;
+    collapsibleState?: CommentThreadCollapsibleState;
+    state?: CommentThreadState;
+    input?: CommentInput;
+    onDidChangeInput: TheiaEvent<CommentInput | undefined>;
+    onDidChangeRange: TheiaEvent<Range>;
+    onDidChangeLabel: TheiaEvent<string | undefined>;
+    onDidChangeState: TheiaEvent<CommentThreadState | undefined>;
+    onDidChangeCollapsibleState: TheiaEvent<CommentThreadCollapsibleState | undefined>;
+    isDisposed: boolean;
+    canReply: boolean;
+    onDidChangeCanReply: TheiaEvent<boolean>;
+}
+
+export interface CommentThreadChangedEventMain extends CommentThreadChangedEvent {
+    owner: string;
+}
+
+export interface CommentThreadChangedEvent {
+    /**
+     * Added comment threads.
+     */
+    readonly added: CommentThread[];
+
+    /**
+     * Removed comment threads.
+     */
+    readonly removed: CommentThread[];
+
+    /**
+     * Changed comment threads.
+     */
+    readonly changed: CommentThread[];
+}
+
+export interface CommentingRanges {
+    readonly resource: URI;
+    ranges: Range[];
+}
+
+export interface CommentInfo {
+    extensionId?: string;
+    threads: CommentThread[];
+    commentingRanges: CommentingRanges;
+}
+
+export interface ProvidedTerminalLink extends theia.TerminalLink {
+    providerId: string
+}
+
+export interface InlayHintLabelPart {
+    label: string;
+    tooltip?: string | MarkdownStringDTO;
+    location?: Location;
+    command?: Command;
+}
+
+export interface InlayHint {
+    position: { lineNumber: number, column: number };
+    label: string | InlayHintLabelPart[];
+    tooltip?: string | MarkdownStringDTO | undefined;
+    kind?: InlayHintKind;
+    textEdits?: TextEdit[];
+    paddingLeft?: boolean;
+    paddingRight?: boolean;
+}
+
+export enum InlayHintKind {
+    Type = 1,
+    Parameter = 2,
+}
+
+export interface InlayHintsProvider {
+    onDidChangeInlayHints?: TheiaEvent<void> | undefined;
+    provideInlayHints(model: monaco.editor.ITextModel, range: Range, token: monaco.CancellationToken): InlayHint[] | undefined | Thenable<InlayHint[] | undefined>;
+    resolveInlayHint?(hint: InlayHint, token: monaco.CancellationToken): InlayHint[] | undefined | Thenable<InlayHint[] | undefined>;
+}
+
+/**
+ * How an {@link InlineCompletionsProvider inline completion provider} was triggered.
+ */
+export enum InlineCompletionTriggerKind {
+    /**
+     * Completion was triggered automatically while editing.
+     * It is sufficient to return a single completion item in this case.
+     */
+    Automatic = 0,
+
+    /**
+     * Completion was triggered explicitly by a user gesture.
+     * Return multiple completion items to enable cycling through them.
+     */
+    Explicit = 1,
+}
+
+export interface InlineCompletionContext {
+    /**
+     * How the completion was triggered.
+     */
+    readonly triggerKind: InlineCompletionTriggerKind;
+
+    readonly selectedSuggestionInfo: SelectedSuggestionInfo | undefined;
+}
+
+export interface SelectedSuggestionInfo {
+    range: Range;
+    text: string;
+    isSnippetText: boolean;
+    completionKind: CompletionItemKind;
+}
+
+export interface InlineCompletion {
+    /**
+     * The text to insert.
+     * If the text contains a line break, the range must end at the end of a line.
+     * If existing text should be replaced, the existing text must be a prefix of the text to insert.
+     *
+     * The text can also be a snippet. In that case, a preview with default parameters is shown.
+     * When accepting the suggestion, the full snippet is inserted.
+     */
+    readonly insertText: string | { snippet: string };
+
+    /**
+     * A text that is used to decide if this inline completion should be shown.
+     * An inline completion is shown if the text to replace is a subword of the filter text.
+     */
+    readonly filterText?: string;
+
+    /**
+     * An optional array of additional text edits that are applied when
+     * selecting this completion. Edits must not overlap with the main edit
+     * nor with themselves.
+     */
+    readonly additionalTextEdits?: SingleEditOperation[];
+
+    /**
+     * The range to replace.
+     * Must begin and end on the same line.
+     */
+    readonly range?: Range;
+
+    readonly command?: Command;
+
+    /**
+     * If set to `true`, unopened closing brackets are removed and unclosed opening brackets are closed.
+     * Defaults to `false`.
+     */
+    readonly completeBracketPairs?: boolean;
+}
+
+export interface InlineCompletions<TItem extends InlineCompletion = InlineCompletion> {
+    readonly items: readonly TItem[];
+}
+
+export interface InlineCompletionsProvider<T extends InlineCompletions = InlineCompletions> {
+    provideInlineCompletions(
+        model: monaco.editor.ITextModel,
+        position: monaco.Position,
+        context: InlineCompletionContext,
+        token: monaco.CancellationToken
+    ): T[] | undefined | Thenable<T[] | undefined>;
+
+    /**
+     * Will be called when an item is shown.
+     */
+    handleItemDidShow?(completions: T, item: T['items'][number]): void;
+
+    /**
+     * Will be called when a completions list is no longer in use and can be garbage-collected.
+     */
+    freeInlineCompletions(completions: T): void;
+}
+

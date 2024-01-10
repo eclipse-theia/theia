@@ -1,0 +1,110 @@
+/********************************************************************************
+ * Copyright (C) 2021 TypeFox and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+#theia-drag-panel {
+  position: absolute;
+  display: block;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: calc(100% - 4px);
+  margin: 4px;
+  -webkit-app-region: drag !important;
+}
+
+#theia-top-panel > * {
+  -webkit-app-region: no-drag;
+}
+
+#theia-custom-title {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, 0px);
+  line-height: 30px;
+  flex: 0 1 auto;
+  font-size: 12px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+  margin-left: auto;
+  margin-right: auto;
+  zoom: 1;
+  -webkit-app-region: drag !important;
+}
+
+#theia-custom-title.relative {
+  transform: none;
+}
+
+#theia-custom-title.hidden {
+  visibility: hidden;
+}
+
+#window-controls {
+  display: grid;
+  grid-template-columns: repeat(3, 48px);
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+}
+
+#window-controls .control-button {
+  display: flex;
+  line-height: 30px;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+#minimize-button {
+  grid-column: 1;
+}
+
+#maximize-button,
+#restore-button {
+  grid-column: 2;
+}
+
+#close-button {
+  grid-column: 3;
+}
+
+#window-controls .control-button {
+  user-select: none;
+}
+
+#window-controls .control-button:hover {
+  background: rgba(50%, 50%, 50%, 0.2);
+}
+
+#window-controls #close-button:hover {
+  background: #e81123;
+}
+
+#window-controls #close-button:hover:before {
+  color: white;
+}
+
+body:not(.maximized) #restore-button {
+  display: none;
+}
+
+body.maximized #maximize-button {
+  display: none;
+}

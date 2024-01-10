@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -21,7 +21,7 @@
  * based on https://github.com/Microsoft/vscode/blob/bf9a27ec01f2ef82fc45f69e0c946c7d74a57d3e/src/vs/workbench/api/node/extHostDocumentSaveParticipant.ts
  */
 import { DocumentsExt, ModelChangedEvent, PLUGIN_RPC_CONTEXT, DocumentsMain, SingleEditOperation } from '../common/plugin-api-rpc';
-import { URI } from 'vscode-uri';
+import { TextEdit, URI } from './types-impl';
 import { UriComponents } from '../common/uri-components';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { Emitter, Event } from '@theia/core/lib/common/event';
@@ -31,7 +31,6 @@ import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
 import * as Converter from './type-converters';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Range, TextDocumentShowOptions } from '../common/plugin-api-rpc-model';
-import { TextEdit } from './types-impl';
 
 export class DocumentsExtImpl implements DocumentsExt {
     private toDispose = new DisposableCollection();
@@ -164,7 +163,8 @@ export class DocumentsExtImpl implements DocumentsExt {
         data.acceptIsDirty(isDirty);
         this._onDidChangeDocument.fire({
             document: data.document,
-            contentChanges: []
+            contentChanges: [],
+            reason: undefined,
         });
     }
     $acceptModelChanged(strUrl: UriComponents, e: ModelChangedEvent, isDirty: boolean): void {
@@ -178,13 +178,13 @@ export class DocumentsExtImpl implements DocumentsExt {
         data.onEvents(e);
         this._onDidChangeDocument.fire({
             document: data.document,
-            contentChanges: e.changes.map(change =>
-                ({
-                    range: Converter.toRange(change.range),
-                    rangeOffset: change.rangeOffset,
-                    rangeLength: change.rangeLength,
-                    text: change.text
-                }))
+            reason: e.reason,
+            contentChanges: e.changes.map(change => ({
+                range: Converter.toRange(change.range),
+                rangeOffset: change.rangeOffset,
+                rangeLength: change.rangeLength,
+                text: change.text
+            }))
         });
     }
     getAllDocumentData(): DocumentDataExt[] {
@@ -197,6 +197,14 @@ export class DocumentsExtImpl implements DocumentsExt {
         }
 
         return undefined;
+    }
+
+    public getDocument(resource: theia.Uri): theia.TextDocument {
+        const data = this.getDocumentData(resource);
+        if (!data?.document) {
+            throw new Error(`Unable to retrieve document from URI '${resource}'`);
+        }
+        return data.document;
     }
 
     /**
@@ -247,10 +255,10 @@ export class DocumentsExtImpl implements DocumentsExt {
             if (options.selection) {
                 const { start, end } = options.selection;
                 selection = {
-                    startLineNumber: start.line,
-                    startColumn: start.character,
-                    endLineNumber: end.line,
-                    endColumn: end.character
+                    startLineNumber: start.line + 1,
+                    startColumn: start.character + 1,
+                    endLineNumber: end.line + 1,
+                    endColumn: end.character + 1
                 };
             }
             documentOptions = {

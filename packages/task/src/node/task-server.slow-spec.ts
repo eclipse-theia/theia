@@ -1,20 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2017-2019 Ericsson and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
-
-/* eslint-disable no-unused-expressions */
+// *****************************************************************************
+// Copyright (C) 2017-2019 Ericsson and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 // tslint:disable-next-line:no-implicit-dependencies
 import 'reflect-metadata';
@@ -28,9 +26,10 @@ import { isWindows, isOSX } from '@theia/core/lib/common/os';
 import { FileUri } from '@theia/core/lib/node';
 import { terminalsPath } from '@theia/terminal/lib/common/terminal-protocol';
 import { expectThrowsAsync } from '@theia/core/lib/common/test/expect';
-import { TestWebSocketChannel } from '@theia/core/lib/node/messaging/test/test-web-socket-channel';
+import { TestWebSocketChannelSetup } from '@theia/core/lib/node/messaging/test/test-web-socket-channel';
 import { expect } from 'chai';
 import URI from '@theia/core/lib/common/uri';
+import { StringBufferingStream } from '@theia/terminal/lib/node/buffering-stream';
 
 // test scripts that we bundle with tasks
 const commandShortRunning = './task';
@@ -73,7 +72,7 @@ describe('Task server / back-end', function (): void {
         taskServer = testContainer.get(TaskServer);
         taskServer.setClient(taskWatcher.getTaskClient());
         backend = testContainer.get(BackendApplication);
-        server = await backend.start();
+        server = await backend.start(3000, 'localhost');
     });
 
     afterEach(async () => {
@@ -90,12 +89,6 @@ describe('Task server / back-end', function (): void {
     it('task running in terminal - expected data is received from the terminal ws server', async function (): Promise<void> {
         const someString = 'someSingleWordString';
 
-        // This test is flaky on Windows and fails intermittently. Disable it for now
-        if (isWindows) {
-            this.skip();
-            return;
-        }
-
         // create task using terminal process
         const command = isWindows ? commandShortRunningWindows : (isOSX ? commandShortRunningOsx : commandShortRunning);
         const taskInfo: TaskInfo = await taskServer.run(createProcessTaskConfig('shell', `${command} ${someString}`), wsRoot);
@@ -104,26 +97,26 @@ describe('Task server / back-end', function (): void {
         const messagesToWaitFor = 10;
         const messages: string[] = [];
 
+        // check output of task on terminal is what we expect
+        const expected = `${isOSX ? 'tasking osx' : 'tasking'}... ${someString}`;
+
         // hook-up to terminal's ws and confirm that it outputs expected tasks' output
-        await new Promise((resolve, reject) => {
-            const channel = new TestWebSocketChannel({ server, path: `${terminalsPath}/${terminalId}` });
-            channel.onError(reject);
-            channel.onClose((code, reason) => reject(new Error(`channel is closed with '${code}' code and '${reason}' reason`)));
-            channel.onMessage(msg => {
-                // check output of task on terminal is what we expect
-                const expected = `${isOSX ? 'tasking osx' : 'tasking'}... ${someString}`;
+        await new Promise<void>((resolve, reject) => {
+            const setup = new TestWebSocketChannelSetup({ server, path: `${terminalsPath}/${terminalId}` });
+            const stringBuffer = new StringBufferingStream();
+            setup.connectionProvider.listen(`${terminalsPath}/${terminalId}`, (path, channel) => {
+                channel.onMessage(e => stringBuffer.push(e().readString()));
+                channel.onError(reject);
+                channel.onClose(() => reject(new Error('Channel has been closed')));
+            }, false);
+            stringBuffer.onData(currentMessage => {
                 // Instead of waiting for one message from the terminal, we wait for several ones as the very first message can be something unexpected.
                 // For instance: `nvm is not compatible with the \"PREFIX\" environment variable: currently set to \"/usr/local\"\r\n`
-                const currentMessage = msg.toString();
                 messages.unshift(currentMessage);
-                if (currentMessage.indexOf(expected) !== -1) {
+                if (currentMessage.includes(expected)) {
                     resolve();
-                    channel.close();
-                    return;
-                }
-                if (messages.length >= messagesToWaitFor) {
+                } else if (messages.length >= messagesToWaitFor) {
                     reject(new Error(`expected sub-string not found in terminal output. Expected: "${expected}" vs Actual messages: ${JSON.stringify(messages)}`));
-                    channel.close();
                 }
             });
         });
@@ -137,7 +130,7 @@ describe('Task server / back-end', function (): void {
         // create task using raw process
         const taskInfo: TaskInfo = await taskServer.run(createProcessTaskConfig('process', executable, [someString]), wsRoot);
 
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
             const toDispose = taskWatcher.onTaskExit((event: TaskExitedEvent) => {
                 if (event.taskId === taskInfo.taskId && event.code === 0) {
                     if (typeof taskInfo.terminalId === 'number') {
@@ -242,8 +235,9 @@ describe('Task server / back-end', function (): void {
             taskWatcher.onTaskExit((event: TaskExitedEvent) => {
                 if (event.taskId !== taskInfo.taskId || event.code === undefined) {
                     reject(new Error(JSON.stringify(event)));
+                } else {
+                    resolve(event.code);
                 }
-                resolve(event.code);
             });
         });
         // node-pty reports different things on Linux/macOS vs Windows when
@@ -422,8 +416,8 @@ function createTaskConfigTaskLongRunning(processType: ProcessType): TaskConfigur
     };
 }
 
-function checkSuccessfulProcessExit(taskInfo: TaskInfo, taskWatcher: TaskWatcher): Promise<object> {
-    return new Promise<object>((resolve, reject) => {
+function checkSuccessfulProcessExit(taskInfo: TaskInfo, taskWatcher: TaskWatcher): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
         const toDispose = taskWatcher.onTaskExit((event: TaskExitedEvent) => {
             if (event.taskId === taskInfo.taskId && event.code === 0) {
                 toDispose.dispose();

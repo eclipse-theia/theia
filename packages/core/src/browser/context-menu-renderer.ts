@@ -1,29 +1,38 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { injectable } from 'inversify';
 import { MenuPath } from '../common/menu';
 import { Disposable, DisposableCollection } from '../common/disposable';
+import { ContextMatcher } from './context-key-service';
 
-export type Anchor = MouseEvent | { x: number, y: number };
+export interface Coordinate { x: number; y: number; }
+export const Coordinate = Symbol('Coordinate');
 
-export function toAnchor(anchor: HTMLElement | { x: number, y: number }): Anchor {
+export type Anchor = MouseEvent | Coordinate;
+
+export function toAnchor(anchor: HTMLElement | Coordinate): Anchor {
     return anchor instanceof HTMLElement ? { x: anchor.offsetLeft, y: anchor.offsetTop } : anchor;
+}
+
+export function coordinateFromAnchor(anchor: Anchor): Coordinate {
+    const { x, y } = anchor instanceof MouseEvent ? { x: anchor.clientX, y: anchor.clientY } : anchor;
+    return { x, y };
 }
 
 export abstract class ContextMenuAccess implements Disposable {
@@ -71,44 +80,49 @@ export abstract class ContextMenuRenderer {
         }
     }
 
-    render(options: RenderContextMenuOptions): ContextMenuAccess;
-    /** @deprecated since 0.7.2 pass `RenderContextMenuOptions` instead */
-    render(menuPath: MenuPath, anchor: Anchor, onHide?: () => void): ContextMenuAccess;
-    render(menuPathOrOptions: MenuPath | RenderContextMenuOptions, anchor?: Anchor, onHide?: () => void): ContextMenuAccess {
-        const resovledOptions = RenderContextMenuOptions.resolve(menuPathOrOptions, anchor, onHide);
-        const access = this.doRender(resovledOptions);
+    render(options: RenderContextMenuOptions): ContextMenuAccess {
+        const resolvedOptions = this.resolve(options);
+        const access = this.doRender(resolvedOptions);
         this.setCurrent(access);
         return access;
     }
 
     protected abstract doRender(options: RenderContextMenuOptions): ContextMenuAccess;
 
-}
-
-export interface RenderContextMenuOptions {
-    menuPath: MenuPath
-    anchor: Anchor
-    args?: any[]
-    onHide?: () => void
-}
-export namespace RenderContextMenuOptions {
-    export function resolve(menuPathOrOptions: MenuPath | RenderContextMenuOptions, anchor?: Anchor, onHide?: () => void): RenderContextMenuOptions {
-        let menuPath: MenuPath;
-        let args: any[];
-        if (Array.isArray(menuPathOrOptions)) {
-            menuPath = menuPathOrOptions;
-            args = [anchor!];
-        } else {
-            menuPath = menuPathOrOptions.menuPath;
-            anchor = menuPathOrOptions.anchor;
-            onHide = menuPathOrOptions.onHide;
-            args = menuPathOrOptions.args ? [...menuPathOrOptions.args, anchor] : [anchor];
+    protected resolve(options: RenderContextMenuOptions): RenderContextMenuOptions {
+        const args: any[] = options.args ? options.args.slice() : [];
+        if (options.includeAnchorArg !== false) {
+            args.push(options.anchor);
         }
         return {
-            menuPath,
-            anchor: anchor!,
-            onHide,
+            ...options,
             args
         };
     }
+
+}
+
+export interface RenderContextMenuOptions {
+    menuPath: MenuPath;
+    anchor: Anchor;
+    args?: any[];
+    /**
+     * Whether the anchor should be passed as an argument to the handlers of commands for this context menu.
+     * If true, the anchor will be appended to the list of arguments or passed as the only argument if no other
+     * arguments are supplied.
+     * Default is `true`.
+     */
+    includeAnchorArg?: boolean;
+    /**
+     * A DOM context to use when evaluating any `when` clauses
+     * of menu items registered for this item.
+     */
+    context?: HTMLElement;
+    contextKeyService?: ContextMatcher;
+    onHide?: () => void;
+    /**
+     * If true a single submenu in the context menu is not rendered but its children are rendered on the top level.
+     * Default is `false`.
+     */
+    skipSingleRootNode?: boolean;
 }

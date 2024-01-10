@@ -1,37 +1,33 @@
 {
   "name": "@theia/monaco",
-  "version": "1.2.0",
+  "version": "1.45.0",
   "description": "Theia - Monaco Extension",
   "dependencies": {
-    "@theia/core": "^1.2.0",
-    "@theia/editor": "^1.2.0",
-    "@theia/filesystem": "^1.2.0",
-    "@theia/languages": "^1.2.0",
-    "@theia/markers": "^1.2.0",
-    "@theia/outline-view": "^1.2.0",
-    "@theia/workspace": "^1.2.0",
-    "deepmerge": "2.0.1",
+    "@theia/core": "1.45.0",
+    "@theia/editor": "1.45.0",
+    "@theia/filesystem": "1.45.0",
+    "@theia/markers": "1.45.0",
+    "@theia/monaco-editor-core": "1.72.3",
+    "@theia/outline-view": "1.45.0",
+    "@theia/workspace": "1.45.0",
     "fast-plist": "^0.1.2",
     "idb": "^4.0.5",
-    "jsonc-parser": "^2.0.2",
-    "monaco-css": "^2.5.0",
-    "monaco-html": "^2.5.2",
-    "onigasm": "^2.2.0",
-    "vscode-textmate": "^4.0.1"
+    "jsonc-parser": "^2.2.0",
+    "vscode-oniguruma": "1.6.1",
+    "vscode-textmate": "^9.0.0"
   },
   "publishConfig": {
     "access": "public"
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/monaco-browser-module",
-      "frontendElectron": "lib/electron-browser/monaco-electron-module"
+      "frontend": "lib/browser/monaco-frontend-module"
     }
   ],
   "keywords": [
     "theia-extension"
   ],
-  "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
+  "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/eclipse-theia/theia.git"
@@ -46,14 +42,15 @@
     "data"
   ],
   "scripts": {
-    "lint": "theiaext lint",
     "build": "theiaext build",
-    "watch": "theiaext watch",
     "clean": "theiaext clean",
-    "test": "theiaext test"
+    "compile": "theiaext compile",
+    "lint": "theiaext lint",
+    "test": "theiaext test",
+    "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^1.2.0"
+    "@theia/ext-scripts": "1.45.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

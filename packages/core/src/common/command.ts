@@ -1,23 +1,26 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { injectable, inject, named } from 'inversify';
 import { Event, Emitter, WaitUntilEvent } from './event';
 import { Disposable, DisposableCollection } from './disposable';
 import { ContributionProvider } from './contribution-provider';
+import { nls } from './nls';
+import debounce = require('p-debounce');
+import { isObject } from './types';
 
 /**
  * A command is a unique identifier of a function
@@ -33,6 +36,7 @@ export interface Command {
      * A label of this command.
      */
     label?: string;
+    originalLabel?: string;
     /**
      * An icon class of this command.
      */
@@ -41,13 +45,34 @@ export interface Command {
      * A category of this command.
      */
     category?: string;
+    originalCategory?: string;
 }
 
 export namespace Command {
     /* Determine whether object is a Command */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function is(arg: Command | any): arg is Command {
-        return !!arg && arg === Object(arg) && 'id' in arg;
+    export function is(arg: unknown): arg is Command {
+        return isObject(arg) && 'id' in arg;
+    }
+
+    /** Utility function to easily translate commands */
+    export function toLocalizedCommand(command: Command, nlsLabelKey: string = command.id, nlsCategoryKey?: string): Command {
+        return {
+            ...command,
+            label: command.label && nls.localize(nlsLabelKey, command.label),
+            originalLabel: command.label,
+            category: nlsCategoryKey && command.category && nls.localize(nlsCategoryKey, command.category) || command.category,
+            originalCategory: command.category,
+        };
+    }
+
+    export function toDefaultLocalizedCommand(command: Command): Command {
+        return {
+            ...command,
+            label: command.label && nls.localizeByDefault(command.label),
+            originalLabel: command.label,
+            category: command.category && nls.localizeByDefault(command.category),
+            originalCategory: command.category,
+        };
     }
 
     /** Comparator function for when sorting commands */
@@ -97,6 +122,7 @@ export interface CommandHandler {
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     isEnabled?(...args: any[]): boolean;
+    onDidChangeEnabled?: Event<void>;
     /**
      * Test whether menu items for this handler should be visible.
      */
@@ -166,13 +192,16 @@ export class CommandRegistry implements CommandService {
     protected readonly toUnregisterCommands = new Map<string, Disposable>();
 
     // List of recently used commands.
-    protected _recent: Command[] = [];
+    protected _recent: string[] = [];
 
     protected readonly onWillExecuteCommandEmitter = new Emitter<WillExecuteCommandEvent>();
     readonly onWillExecuteCommand = this.onWillExecuteCommandEmitter.event;
 
     protected readonly onDidExecuteCommandEmitter = new Emitter<CommandEvent>();
     readonly onDidExecuteCommand = this.onDidExecuteCommandEmitter.event;
+
+    protected readonly onCommandsChangedEmitter = new Emitter<void>();
+    readonly onCommandsChanged = this.onCommandsChangedEmitter.event;
 
     constructor(
         @inject(ContributionProvider) @named(CommandContribution)
@@ -183,6 +212,12 @@ export class CommandRegistry implements CommandService {
         const contributions = this.contributionProvider.getContributions();
         for (const contrib of contributions) {
             contrib.registerCommands(this);
+        }
+    }
+
+    *getAllCommands(): IterableIterator<Readonly<Command & { handlers: CommandHandler[] }>> {
+        for (const command of Object.values(this._commands)) {
+            yield { ...command, handlers: this._handlers[command.id] ?? [] };
         }
     }
 
@@ -247,14 +282,22 @@ export class CommandRegistry implements CommandService {
             this._handlers[commandId] = handlers = [];
         }
         handlers.unshift(handler);
+        this.fireDidChange();
         return {
             dispose: () => {
                 const idx = handlers.indexOf(handler);
                 if (idx >= 0) {
                     handlers.splice(idx, 1);
+                    this.fireDidChange();
                 }
             }
         };
+    }
+
+    protected fireDidChange = debounce(() => this.doFireDidChange(), 0);
+
+    protected doFireDidChange(): void {
+        this.onCommandsChangedEmitter.fire();
     }
 
     /**
@@ -295,9 +338,7 @@ export class CommandRegistry implements CommandService {
             this.onDidExecuteCommandEmitter.fire({ commandId, args });
             return result;
         }
-        const argsMessage = args && args.length > 0 ? ` (args: ${JSON.stringify(args)})` : '';
-        // eslint-disable-next-line max-len
-        throw Object.assign(new Error(`The command '${commandId}' cannot be executed. There are no active handlers available for the command.${argsMessage}`), { code: 'NO_ACTIVE_HANDLER' });
+        throw Object.assign(new Error(`The command '${commandId}' cannot be executed. There are no active handlers available for the command.`), { code: 'NO_ACTIVE_HANDLER' });
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -378,14 +419,7 @@ export class CommandRegistry implements CommandService {
      * Get all registered commands.
      */
     get commands(): Command[] {
-        const commands: Command[] = [];
-        for (const id of this.commandIds) {
-            const cmd = this.getCommand(id);
-            if (cmd) {
-                commands.push(cmd);
-            }
-        }
-        return commands;
+        return Object.values(this._commands);
     }
 
     /**
@@ -406,7 +440,14 @@ export class CommandRegistry implements CommandService {
      * Get the list of recently used commands.
      */
     get recent(): Command[] {
-        return this._recent;
+        const commands: Command[] = [];
+        for (const recentId of this._recent) {
+            const command = this.getCommand(recentId);
+            if (command) {
+                commands.push(command);
+            }
+        }
+        return commands;
     }
 
     /**
@@ -414,7 +455,7 @@ export class CommandRegistry implements CommandService {
      * @param commands the list of recently used commands.
      */
     set recent(commands: Command[]) {
-        this._recent = commands;
+        this._recent = Array.from(new Set(commands.map(e => e.id)));
     }
 
     /**
@@ -424,15 +465,13 @@ export class CommandRegistry implements CommandService {
      * @param recent a recent command, or array of recent commands.
      */
     addRecentCommand(recent: Command | Command[]): void {
-        if (Array.isArray(recent)) {
-            recent.forEach((command: Command) => this.addRecentCommand(command));
-        } else {
+        for (const recentCommand of Array.isArray(recent) ? recent : [recent]) {
             // Determine if the command currently exists in the recently used list.
-            const index = this._recent.findIndex((command: Command) => Command.equals(recent, command));
+            const index = this._recent.findIndex(commandId => commandId === recentCommand.id);
             // If the command exists, remove it from the array so it can later be placed at the top.
             if (index >= 0) { this._recent.splice(index, 1); }
             // Add the recent command to the beginning of the array (most recent).
-            this._recent.unshift(recent);
+            this._recent.unshift(recentCommand.id);
         }
     }
 

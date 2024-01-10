@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2020 Maksim Ryzhikov and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2020 Maksim Ryzhikov and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import * as assert from 'assert';
 import * as temp from 'temp';
@@ -35,15 +35,15 @@ describe('application-package', function (): void {
         const warn = sandbox.stub(console, 'warn');
         const root = createProjectWithTarget('foo');
         const applicationPackage = new ApplicationPackage({ projectPath: root });
-        assert.equal(applicationPackage.target, ApplicationProps.ApplicationTarget.browser);
-        assert.equal(warn.called, true);
+        assert.deepStrictEqual(applicationPackage.target, ApplicationProps.ApplicationTarget.browser);
+        assert.deepStrictEqual(warn.called, true);
     });
 
     it('should set target from package.json', function (): void {
         const target = 'electron';
         const root = createProjectWithTarget(target);
         const applicationPackage = new ApplicationPackage({ projectPath: root });
-        assert.equal(applicationPackage.target, target);
+        assert.deepStrictEqual(applicationPackage.target, target);
     });
 
     it('should prefer target from passed options over target from package.json', function (): void {
@@ -51,7 +51,7 @@ describe('application-package', function (): void {
         const optTarget = 'browser';
         const root = createProjectWithTarget(pckTarget);
         const applicationPackage = new ApplicationPackage({ projectPath: root, appTarget: optTarget });
-        assert.equal(applicationPackage.target, optTarget);
+        assert.deepStrictEqual(applicationPackage.target, optTarget);
     });
 
     function createProjectWithTarget(target: string): string {

@@ -1,29 +1,33 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import * as React from 'react';
-import { injectable, inject } from 'inversify';
-import { DisposableCollection, Disposable } from '@theia/core/lib/common';
+import * as React from '@theia/core/shared/react';
+import { injectable, inject } from '@theia/core/shared/inversify';
+import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
+import URI from '@theia/core/lib/common/uri';
 import { UriSelection } from '@theia/core/lib/common/selection';
 import { isCancelled } from '@theia/core/lib/common/cancellation';
-import { ContextMenuRenderer, NodeProps, TreeProps, TreeNode, TreeWidget, CompositeTreeNode } from '@theia/core/lib/browser';
+import { ContextMenuRenderer, NodeProps, TreeProps, TreeNode, CompositeTreeNode, CompressedTreeWidget, CompressedNodeProps } from '@theia/core/lib/browser';
 import { FileUploadService } from '../file-upload-service';
-import { DirNode, FileStatNode } from './file-tree';
+import { DirNode, FileStatNode, FileStatNodeData } from './file-tree';
 import { FileTreeModel } from './file-tree-model';
 import { IconThemeService } from '@theia/core/lib/browser/icon-theme-service';
+import { ApplicationShell } from '@theia/core/lib/browser/shell';
+import { FileStat, FileType } from '../../common/files';
+import { isOSX } from '@theia/core';
 
 export const FILE_TREE_CLASS = 'theia-FileTree';
 export const FILE_STAT_NODE_CLASS = 'theia-FileStatNode';
@@ -31,7 +35,7 @@ export const DIR_NODE_CLASS = 'theia-DirNode';
 export const FILE_STAT_ICON_CLASS = 'theia-FileStatIcon';
 
 @injectable()
-export class FileTreeWidget extends TreeWidget {
+export class FileTreeWidget extends CompressedTreeWidget {
 
     protected readonly toCancelNodeExpansion = new DisposableCollection();
 
@@ -42,8 +46,8 @@ export class FileTreeWidget extends TreeWidget {
     protected readonly iconThemeService: IconThemeService;
 
     constructor(
-        @inject(TreeProps) readonly props: TreeProps,
-        @inject(FileTreeModel) readonly model: FileTreeModel,
+        @inject(TreeProps) props: TreeProps,
+        @inject(FileTreeModel) override readonly model: FileTreeModel,
         @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer
     ) {
         super(props, model, contextMenuRenderer);
@@ -51,7 +55,7 @@ export class FileTreeWidget extends TreeWidget {
         this.toDispose.push(this.toCancelNodeExpansion);
     }
 
-    protected createNodeClassNames(node: TreeNode, props: NodeProps): string[] {
+    protected override createNodeClassNames(node: TreeNode, props: NodeProps): string[] {
         const classNames = super.createNodeClassNames(node, props);
         if (FileStatNode.is(node)) {
             classNames.push(FILE_STAT_NODE_CLASS);
@@ -62,7 +66,7 @@ export class FileTreeWidget extends TreeWidget {
         return classNames;
     }
 
-    protected renderIcon(node: TreeNode, props: NodeProps): React.ReactNode {
+    protected override renderIcon(node: TreeNode, props: NodeProps): React.ReactNode {
         const icon = this.toNodeIcon(node);
         if (icon) {
             return <div className={icon + ' file-icon'}></div>;
@@ -71,7 +75,7 @@ export class FileTreeWidget extends TreeWidget {
         return null;
     }
 
-    protected createContainerAttributes(): React.HTMLAttributes<HTMLElement> {
+    protected override createContainerAttributes(): React.HTMLAttributes<HTMLElement> {
         const attrs = super.createContainerAttributes();
         return {
             ...attrs,
@@ -82,35 +86,52 @@ export class FileTreeWidget extends TreeWidget {
         };
     }
 
-    protected createNodeAttributes(node: TreeNode, props: NodeProps): React.Attributes & React.HTMLAttributes<HTMLElement> {
-        const elementAttrs = super.createNodeAttributes(node, props);
+    protected override createNodeAttributes(node: TreeNode, props: NodeProps): React.Attributes & React.HTMLAttributes<HTMLElement> {
         return {
-            ...elementAttrs,
-            draggable: FileStatNode.is(node),
-            onDragStart: event => this.handleDragStartEvent(node, event),
-            onDragEnter: event => this.handleDragEnterEvent(node, event),
-            onDragOver: event => this.handleDragOverEvent(node, event),
-            onDragLeave: event => this.handleDragLeaveEvent(node, event),
-            onDrop: event => this.handleDropEvent(node, event),
+            ...super.createNodeAttributes(node, props),
+            ...this.getNodeDragHandlers(node, props),
             title: this.getNodeTooltip(node)
         };
     }
 
     protected getNodeTooltip(node: TreeNode): string | undefined {
-        const uri = UriSelection.getUri(node);
-        return uri ? uri.path.toString() : undefined;
+        const operativeNode = this.compressionService.getCompressionChain(node)?.tail() ?? node;
+        const uri = UriSelection.getUri(operativeNode);
+        return uri ? uri.path.fsPath() : undefined;
+    }
+
+    protected override getCaptionChildEventHandlers(node: TreeNode, props: CompressedNodeProps): React.Attributes & React.HtmlHTMLAttributes<HTMLElement> {
+        return {
+            ...super.getCaptionChildEventHandlers(node, props),
+            ...this.getNodeDragHandlers(node, props),
+        };
+    }
+
+    protected getNodeDragHandlers(node: TreeNode, props: CompressedNodeProps): React.Attributes & React.HtmlHTMLAttributes<HTMLElement> {
+        return {
+            onDragStart: event => this.handleDragStartEvent(node, event),
+            onDragEnter: event => this.handleDragEnterEvent(node, event),
+            onDragOver: event => this.handleDragOverEvent(node, event),
+            onDragLeave: event => this.handleDragLeaveEvent(node, event),
+            onDrop: event => this.handleDropEvent(node, event),
+            draggable: FileStatNode.is(node),
+        };
     }
 
     protected handleDragStartEvent(node: TreeNode, event: React.DragEvent): void {
         event.stopPropagation();
-        let selectedNodes;
-        if (this.model.selectedNodes.find(selected => TreeNode.equals(selected, node))) {
-            selectedNodes = [...this.model.selectedNodes];
-        } else {
-            selectedNodes = [node];
-        }
-        this.setSelectedTreeNodesAsData(event.dataTransfer, node, selectedNodes);
         if (event.dataTransfer) {
+            let selectedNodes;
+            if (this.model.selectedNodes.find(selected => TreeNode.equals(selected, node))) {
+                selectedNodes = [...this.model.selectedNodes];
+            } else {
+                selectedNodes = [node];
+            }
+            this.setSelectedTreeNodesAsData(event.dataTransfer, node, selectedNodes);
+            const uris = selectedNodes.filter(FileStatNode.is).map(n => n.fileStat.resource);
+            if (uris.length > 0) {
+                ApplicationShell.setDraggedEditorUris(event.dataTransfer, uris);
+            }
             let label: string;
             if (selectedNodes.length === 1) {
                 label = this.toNodeName(node);
@@ -139,6 +160,7 @@ export class FileTreeWidget extends TreeWidget {
     protected handleDragOverEvent(node: TreeNode | undefined, event: React.DragEvent): void {
         event.preventDefault();
         event.stopPropagation();
+        event.dataTransfer.dropEffect = this.getDropEffect(event);
         if (!this.toCancelNodeExpansion.disposed) {
             return;
         }
@@ -161,13 +183,17 @@ export class FileTreeWidget extends TreeWidget {
         try {
             event.preventDefault();
             event.stopPropagation();
-            event.dataTransfer.dropEffect = 'copy'; // Explicitly show this is a copy.
+            event.dataTransfer.dropEffect = this.getDropEffect(event);
             const containing = this.getDropTargetDirNode(node);
             if (containing) {
                 const resources = this.getSelectedTreeNodesFromData(event.dataTransfer);
                 if (resources.length > 0) {
                     for (const treeNode of resources) {
-                        await this.model.move(treeNode, containing);
+                        if (event.dataTransfer.dropEffect === 'copy' && FileStatNode.is(treeNode)) {
+                            await this.model.copy(treeNode.uri, containing);
+                        } else {
+                            await this.model.move(treeNode, containing);
+                        }
                     }
                 } else {
                     await this.uploadService.upload(containing.uri, { source: event.dataTransfer });
@@ -190,6 +216,11 @@ export class FileTreeWidget extends TreeWidget {
             }
         }
         return DirNode.getContainingDir(node);
+    }
+
+    protected getDropEffect(event: React.DragEvent): 'copy' | 'move' {
+        const isCopy = isOSX ? event.altKey : event.ctrlKey;
+        return isCopy ? 'copy' : 'move';
     }
 
     protected setTreeNodeAsData(data: DataTransfer, node: TreeNode): void {
@@ -219,7 +250,7 @@ export class FileTreeWidget extends TreeWidget {
         return !!theme && !!theme.hidesExplorerArrows;
     }
 
-    protected renderExpansionToggle(node: TreeNode, props: NodeProps): React.ReactNode {
+    protected override renderExpansionToggle(node: TreeNode, props: NodeProps): React.ReactNode {
         if (this.hidesExplorerArrows) {
             // eslint-disable-next-line no-null/no-null
             return null;
@@ -227,7 +258,7 @@ export class FileTreeWidget extends TreeWidget {
         return super.renderExpansionToggle(node, props);
     }
 
-    protected getPaddingLeft(node: TreeNode, props: NodeProps): number {
+    protected override getPaddingLeft(node: TreeNode, props: NodeProps): number {
         if (this.hidesExplorerArrows) {
             // additional left padding instead of top-level expansion toggle
             return super.getPaddingLeft(node, props) + this.props.leftPadding;
@@ -235,7 +266,7 @@ export class FileTreeWidget extends TreeWidget {
         return super.getPaddingLeft(node, props);
     }
 
-    protected needsExpansionTogglePadding(node: TreeNode): boolean {
+    protected override needsExpansionTogglePadding(node: TreeNode): boolean {
         const theme = this.iconThemeService.getDefinition(this.iconThemeService.current);
         if (theme && (theme.hidesExplorerArrows || (theme.hasFileIcons && !theme.hasFolderIcons))) {
             return false;
@@ -243,4 +274,54 @@ export class FileTreeWidget extends TreeWidget {
         return super.needsExpansionTogglePadding(node);
     }
 
+    protected override deflateForStorage(node: TreeNode): object {
+        const deflated = super.deflateForStorage(node);
+        if (FileStatNode.is(node) && FileStatNodeData.is(deflated)) {
+            deflated.uri = node.uri.toString();
+            delete deflated['fileStat'];
+            deflated.stat = FileStat.toStat(node.fileStat);
+        }
+        return deflated;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    protected override inflateFromStorage(node: any, parent?: TreeNode): TreeNode {
+        if (FileStatNodeData.is(node)) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const fileStatNode: FileStatNode = node as any;
+            const resource = new URI(node.uri);
+            fileStatNode.uri = resource;
+            let stat: typeof node['stat'];
+            // in order to support deprecated FileStat
+            if (node.fileStat) {
+                stat = {
+                    type: node.fileStat.isDirectory ? FileType.Directory : FileType.File,
+                    mtime: node.fileStat.mtime,
+                    size: node.fileStat.size
+                };
+                delete node['fileStat'];
+            } else if (node.stat) {
+                stat = node.stat;
+                delete node['stat'];
+            }
+            if (stat) {
+                fileStatNode.fileStat = FileStat.fromStat(resource, stat);
+            }
+        }
+        const inflated = super.inflateFromStorage(node, parent);
+        if (DirNode.is(inflated)) {
+            inflated.fileStat.children = [];
+            for (const child of inflated.children) {
+                if (FileStatNode.is(child)) {
+                    inflated.fileStat.children.push(child.fileStat);
+                }
+            }
+        }
+        return inflated;
+    }
+
+    protected override getDepthPadding(depth: number): number {
+        // add additional depth so file nodes are rendered with padding in relation to the top level root node.
+        return super.getDepthPadding(depth + 1);
+    }
 }

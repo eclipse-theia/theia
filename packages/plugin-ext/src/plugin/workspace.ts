@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -21,7 +21,7 @@
 
 import * as paths from 'path';
 import * as theia from '@theia/plugin';
-import { Event, Emitter, WaitUntilEvent } from '@theia/core/lib/common/event';
+import { Event, Emitter } from '@theia/core/lib/common/event';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import {
     WorkspaceExt,
@@ -32,51 +32,41 @@ import {
 } from '../common/plugin-api-rpc';
 import { Path } from '@theia/core/lib/common/path';
 import { RPCProtocol } from '../common/rpc-protocol';
-import { WorkspaceRootsChangeEvent, FileChangeEvent, CreateFilesEventDTO, RenameFilesEventDTO, DeleteFilesEventDTO } from '../common/plugin-api-rpc-model';
+import { WorkspaceRootsChangeEvent, SearchInWorkspaceResult, Range } from '../common/plugin-api-rpc-model';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
-import { InPluginFileSystemWatcherProxy } from './in-plugin-filesystem-watcher-proxy';
-import { URI } from 'vscode-uri';
-import { FileStat } from '@theia/filesystem/lib/common';
-import { normalize } from '@theia/languages/lib/common/language-selector/paths';
+import { Disposable, URI } from './types-impl';
+import { normalize } from '@theia/core/lib/common/paths';
 import { relative } from '../common/paths-util';
 import { Schemes } from '../common/uri-components';
 import { toWorkspaceFolder } from './type-converters';
 import { MessageRegistryExt } from './message-registry';
+import * as Converter from './type-converters';
+import { FileStat } from '@theia/filesystem/lib/common/files';
+import { isUndefinedOrNull, isUndefined } from '../common/types';
 
 export class WorkspaceExtImpl implements WorkspaceExt {
 
     private proxy: WorkspaceMain;
-    private fileSystemWatcherManager: InPluginFileSystemWatcherProxy;
 
     private workspaceFoldersChangedEmitter = new Emitter<theia.WorkspaceFoldersChangeEvent>();
     public readonly onDidChangeWorkspaceFolders: Event<theia.WorkspaceFoldersChangeEvent> = this.workspaceFoldersChangedEmitter.event;
 
-    private willCreateFilesEmitter = new Emitter<theia.FileWillCreateEvent>();
-    public readonly onWillCreateFiles = this.willCreateFilesEmitter.event;
-
-    private didCreateFileEmitter = new Emitter<theia.FileCreateEvent>();
-    public readonly onDidCreateFiles = this.didCreateFileEmitter.event;
-
-    private willRenameFilesEmitter = new Emitter<theia.FileWillRenameEvent>();
-    public readonly onWillRenameFiles = this.willRenameFilesEmitter.event;
-
-    private didRenameFilesEmitter = new Emitter<theia.FileRenameEvent>();
-    public readonly onDidRenameFiles = this.didRenameFilesEmitter.event;
-
-    private willDeleteFilesEmitter = new Emitter<theia.FileWillDeleteEvent>();
-    public readonly onWillDeleteFiles = this.willDeleteFilesEmitter.event;
-
-    private didDeleteFilesEmitter = new Emitter<theia.FileDeleteEvent>();
-    public readonly onDidDeleteFiles = this.didDeleteFilesEmitter.event;
-
     private folders: theia.WorkspaceFolder[] | undefined;
+    private workspaceFileUri: theia.Uri | undefined;
     private documentContentProviders = new Map<string, theia.TextDocumentContentProvider>();
+    private searchInWorkspaceEmitter: Emitter<{ result?: theia.TextSearchResult, searchId: number }> = new Emitter<{ result?: theia.TextSearchResult, searchId: number }>();
+    protected workspaceSearchSequence: number = 0;
+
+    private _trusted?: boolean = undefined;
+    private didGrantWorkspaceTrustEmitter = new Emitter<void>();
+    public readonly onDidGrantWorkspaceTrust: Event<void> = this.didGrantWorkspaceTrustEmitter.event;
+
+    private canonicalUriProviders = new Map<string, theia.CanonicalUriProvider>();
 
     constructor(rpc: RPCProtocol,
         private editorsAndDocuments: EditorsAndDocumentsExtImpl,
         private messageService: MessageRegistryExt) {
         this.proxy = rpc.getProxy(Ext.WORKSPACE_MAIN);
-        this.fileSystemWatcherManager = new InPluginFileSystemWatcherProxy(this.proxy);
     }
 
     get rootPath(): string | undefined {
@@ -85,7 +75,14 @@ export class WorkspaceExtImpl implements WorkspaceExt {
     }
 
     get workspaceFolders(): theia.WorkspaceFolder[] | undefined {
+        if (this.folders && this.folders.length === 0) {
+            return undefined;
+        }
         return this.folders;
+    }
+
+    get workspaceFile(): theia.Uri | undefined {
+        return this.workspaceFileUri;
     }
 
     get name(): string | undefined {
@@ -96,6 +93,10 @@ export class WorkspaceExtImpl implements WorkspaceExt {
         return undefined;
     }
 
+    resolveProxy(url: string): Promise<string | undefined> {
+        return this.proxy.$resolveProxy(url);
+    }
+
     $onWorkspaceFoldersChanged(event: WorkspaceRootsChangeEvent): void {
         const newRoots = event.roots || [];
         const newFolders = newRoots.map((root, index) => this.toWorkspaceFolder(root, index));
@@ -103,7 +104,38 @@ export class WorkspaceExtImpl implements WorkspaceExt {
 
         this.folders = newFolders;
 
+        this.refreshWorkspaceFile();
+
         this.workspaceFoldersChangedEmitter.fire(delta);
+    }
+
+    $onWorkspaceLocationChanged(stat: FileStat | undefined): void {
+        this.updateWorkSpace(stat);
+    }
+
+    $onTextSearchResult(searchRequestId: number, done: boolean, result?: SearchInWorkspaceResult): void {
+        if (result) {
+            result.matches.map(next => {
+                const range: Range = {
+                    endColumn: next.character + next.length,
+                    endLineNumber: next.line + 1,
+                    startColumn: next.character,
+                    startLineNumber: next.line + 1
+                };
+                const tRange = <theia.Range>Converter.toRange(range);
+                const searchResult: theia.TextSearchMatch = {
+                    uri: URI.parse(result.fileUri),
+                    preview: {
+                        text: typeof next.lineText === 'string' ? next.lineText : next.lineText.text,
+                        matches: tRange
+                    },
+                    ranges: tRange
+                };
+                return searchResult;
+            }).forEach(next => this.searchInWorkspaceEmitter.fire({ result: next, searchId: searchRequestId }));
+        } else if (done) {
+            this.searchInWorkspaceEmitter.fire({ searchId: searchRequestId });
+        }
     }
 
     private deltaFolders(currentFolders: theia.WorkspaceFolder[] = [], newFolders: theia.WorkspaceFolder[] = []): {
@@ -123,8 +155,8 @@ export class WorkspaceExtImpl implements WorkspaceExt {
         return folder1.filter(folder => map.has(folder.uri.toString()));
     }
 
-    private toWorkspaceFolder(root: FileStat, index: number): theia.WorkspaceFolder {
-        const uri = URI.parse(root.uri);
+    private toWorkspaceFolder(root: string, index: number): theia.WorkspaceFolder {
+        const uri = URI.parse(root);
         const path = new Path(uri.path);
         return {
             uri: uri,
@@ -155,7 +187,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
                 includePattern = include;
             } else {
                 includePattern = include.pattern;
-                includeFolderUri = URI.file(include.base).toString();
+                includeFolderUri = include.baseUri.toString();
             }
         } else {
             includePattern = '';
@@ -182,20 +214,48 @@ export class WorkspaceExtImpl implements WorkspaceExt {
             .then(data => Array.isArray(data) ? data.map(uri => URI.revive(uri)) : []);
     }
 
-    createFileSystemWatcher(globPattern: theia.GlobPattern, ignoreCreateEvents?: boolean, ignoreChangeEvents?: boolean, ignoreDeleteEvents?: boolean): theia.FileSystemWatcher {
-        return this.fileSystemWatcherManager.createFileSystemWatcher(globPattern, ignoreCreateEvents, ignoreChangeEvents, ignoreDeleteEvents);
-    }
+    findTextInFiles(query: theia.TextSearchQuery, optionsOrCallback: theia.FindTextInFilesOptions | ((result: theia.TextSearchResult) => void),
+        callbackOrToken?: CancellationToken | ((result: theia.TextSearchResult) => void), token?: CancellationToken): Promise<theia.TextSearchComplete> {
+        let options: theia.FindTextInFilesOptions;
+        let callback: (result: theia.TextSearchResult) => void;
 
-    $fileChanged(event: FileChangeEvent): void {
-        this.fileSystemWatcherManager.onFileSystemEvent(event.subscriberId, URI.revive(event.uri), event.type);
+        if (typeof optionsOrCallback === 'object') {
+            options = optionsOrCallback;
+            callback = callbackOrToken as (result: theia.TextSearchResult) => void;
+        } else {
+            options = {};
+            callback = optionsOrCallback;
+            token = callbackOrToken as CancellationToken;
+        }
+        const nextSearchID = this.workspaceSearchSequence + 1;
+        this.workspaceSearchSequence = nextSearchID;
+        const disposable = this.searchInWorkspaceEmitter.event(searchResult => {
+            if (searchResult.searchId === nextSearchID) {
+                if (searchResult.result) {
+                    callback(searchResult.result);
+                } else {
+                    disposable.dispose();
+                }
+            }
+        });
+        if (token) {
+            token.onCancellationRequested(() => {
+                disposable.dispose();
+            });
+        }
+        return this.proxy.$findTextInFiles(query, options || {}, nextSearchID, token);
     }
 
     registerTextDocumentContentProvider(scheme: string, provider: theia.TextDocumentContentProvider): theia.Disposable {
         // `file` and `untitled` schemas are reserved by `workspace.openTextDocument` API:
         // `file`-scheme for opening a file
         // `untitled`-scheme for opening a new file that should be saved
-        if (scheme === Schemes.FILE || scheme === Schemes.UNTITLED || this.documentContentProviders.has(scheme)) {
+        if (scheme === Schemes.file || scheme === Schemes.untitled) {
             throw new Error(`Text Content Document Provider for scheme '${scheme}' is already registered`);
+        } else if (this.documentContentProviders.has(scheme)) {
+            // TODO: we should be able to handle multiple registrations, but for now we should ensure that it doesn't crash plugin activation.
+            console.warn(`Repeat registration of TextContentDocumentProvider for scheme '${scheme}'. This registration will be ignored.`);
+            return { dispose: () => { } };
         }
 
         this.documentContentProviders.set(scheme, provider);
@@ -227,7 +287,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
         };
     }
 
-    async $provideTextDocumentContent(documentURI: string): Promise<string | undefined> {
+    async $provideTextDocumentContent(documentURI: string): Promise<string | undefined | null> {
         const uri = URI.parse(documentURI);
         const provider = this.documentContentProviders.get(uri.scheme);
         if (provider) {
@@ -362,56 +422,74 @@ export class WorkspaceExtImpl implements WorkspaceExt {
         return true;
     }
 
-    // #region files api
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async $onWillCreateFiles(event: CreateFilesEventDTO): Promise<any[]> {
-        await WaitUntilEvent.fire(this.willCreateFilesEmitter, {
-            files: event.files.map<URI>(URI.revive),
-        });
-        return [];
+    private async refreshWorkspaceFile(): Promise<void> {
+        const workspace = await this.proxy.$getWorkspace();
+        this.updateWorkSpace(workspace);
     }
 
-    $onDidCreateFiles(event: CreateFilesEventDTO): void {
-        this.didCreateFileEmitter.fire({
-            files: event.files.map<URI>(URI.revive),
-        });
+    private updateWorkSpace(workspace: FileStat | undefined): void {
+        // A workspace directory implies an undefined workspace file
+        if (workspace && !workspace.isDirectory) {
+            this.workspaceFileUri = URI.parse(workspace.resource.toString());
+        }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async $onWillRenameFiles(event: RenameFilesEventDTO): Promise<any[]> {
-        await WaitUntilEvent.fire(this.willRenameFilesEmitter, {
-            files: event.files.map(file => ({
-                oldUri: URI.revive(file.oldUri),
-                newUri: URI.revive(file.newUri),
-            })),
-        });
-        return [];
+    get trusted(): boolean {
+        if (this._trusted === undefined) {
+            this.requestWorkspaceTrust();
+        }
+        return !!this._trusted;
     }
 
-    $onDidRenameFiles(event: RenameFilesEventDTO): void {
-        this.didRenameFilesEmitter.fire({
-            files: event.files.map(file => ({
-                oldUri: URI.revive(file.oldUri),
-                newUri: URI.revive(file.newUri),
-            })),
-        });
+    requestWorkspaceTrust(options?: theia.WorkspaceTrustRequestOptions): Promise<boolean | undefined> {
+        return this.proxy.$requestWorkspaceTrust(options);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async $onWillDeleteFiles(event: DeleteFilesEventDTO): Promise<any[]> {
-        await WaitUntilEvent.fire(this.willDeleteFilesEmitter, {
-            files: event.files.map<URI>(URI.revive),
-        });
-        return [];
+    $onWorkspaceTrustChanged(trust: boolean | undefined): void {
+        if (!this._trusted && trust) {
+            this._trusted = trust;
+            this.didGrantWorkspaceTrustEmitter.fire();
+        }
     }
 
-    $onDidDeleteFiles(event: DeleteFilesEventDTO): void {
-        this.didDeleteFilesEmitter.fire({
-            files: event.files.map<URI>(URI.revive),
+    registerCanonicalUriProvider(scheme: string, provider: theia.CanonicalUriProvider): theia.Disposable {
+        if (this.canonicalUriProviders.has(scheme)) {
+            throw new Error(`Canonical URI provider for scheme: '${scheme}' already exists locally`);
+        }
+
+        this.canonicalUriProviders.set(scheme, provider);
+        this.proxy.$registerCanonicalUriProvider(scheme).catch(e => {
+            console.error(`Canonical URI provider for scheme: '${scheme}' already exists globally`);
+            this.canonicalUriProviders.delete(scheme);
         });
+        const result = Disposable.create(() => { this.proxy.$unregisterCanonicalUriProvider(scheme); });
+        return result;
     }
 
-    // #endregion files api
+    $disposeCanonicalUriProvider(scheme: string): void {
+        if (!this.canonicalUriProviders.delete(scheme)) {
+            console.warn(`No canonical uri provider registered for '${scheme}'`);
+        }
+    }
 
+    async getCanonicalUri(uri: theia.Uri, options: theia.CanonicalUriRequestOptions, token: theia.CancellationToken): Promise<theia.Uri | undefined> {
+        const canonicalUri = await this.proxy.$getCanonicalUri(uri.toString(), options.targetScheme, token);
+        return isUndefined(canonicalUri) ? undefined : URI.parse(canonicalUri);
+    }
+
+    async $provideCanonicalUri(uri: string, targetScheme: string, token: CancellationToken): Promise<string | undefined> {
+        const parsed = URI.parse(uri);
+        const provider = this.canonicalUriProviders.get(parsed.scheme);
+        if (!provider) {
+            console.warn(`No canonical uri provider registered for '${parsed.scheme}'`);
+            return undefined;
+        }
+        const result = await provider.provideCanonicalUri(parsed, { targetScheme: targetScheme }, token);
+        return isUndefinedOrNull(result) ? undefined : result.toString();
+    }
+
+    /** @stubbed */
+    $registerEditSessionIdentityProvider(scheme: string, provider: theia.EditSessionIdentityProvider): theia.Disposable {
+        return Disposable.NULL;
+    }
 }

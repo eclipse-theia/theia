@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { TreeNode, CompositeTreeNode } from './tree';
 import { ExpandableTreeNode } from './tree-expansion';
@@ -202,12 +202,12 @@ export namespace Iterators {
      * Generator for depth first, pre-order tree traversal iteration.
      */
     export function* depthFirst<T>(root: T, children: (node: T) => T[] | undefined, include: (node: T) => boolean = () => true): IterableIterator<T> {
-        const stack: T[] = [];
+        let stack: T[] = [];
         stack.push(root);
         while (stack.length > 0) {
             const top = stack.pop()!;
             yield top;
-            stack.push(...(children(top) || []).filter(include).reverse());
+            stack = stack.concat((children(top) || []).filter(include).reverse());
         }
     }
 
@@ -215,12 +215,12 @@ export namespace Iterators {
      * Generator for breadth first tree traversal iteration.
      */
     export function* breadthFirst<T>(root: T, children: (node: T) => T[] | undefined, include: (node: T) => boolean = () => true): IterableIterator<T> {
-        const queue: T[] = [];
+        let queue: T[] = [];
         queue.push(root);
         while (queue.length > 0) {
             const head = queue.shift()!;
             yield head;
-            queue.push(...(children(head) || []).filter(include));
+            queue = queue.concat((children(head) || []).filter(include));
         }
     }
 

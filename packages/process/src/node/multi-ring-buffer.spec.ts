@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2017 Ericsson and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 Ericsson and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import * as chai from 'chai';
 import { MultiRingBuffer } from './multi-ring-buffer';
@@ -25,7 +25,6 @@ describe('MultiRingBuffer', function (): void {
         const size = 2;
         const compareTo = Buffer.from('0000', 'hex');
         const ringBuffer = new MultiRingBuffer({ size });
-        // eslint-disable-next-line no-unused-expressions
         expect(ringBuffer['buffer'].equals(compareTo)).to.be.true;
     });
 
@@ -95,7 +94,7 @@ describe('MultiRingBuffer', function (): void {
         const readBuffer = ringBuffer.deq(reader);
         expect(ringBuffer.size()).to.be.equal(size);
         expect(ringBuffer.sizeForReader(reader)).to.be.equal(0);
-        expect(readBuffer).to.equal(buffer.substr(buffer.length - size));
+        expect(readBuffer).to.equal(buffer.substring(buffer.length - size));
 
     });
 
@@ -113,7 +112,7 @@ describe('MultiRingBuffer', function (): void {
 
             expect(ringBuffer.size()).to.be.equal(size);
             expect(ringBuffer.sizeForReader(reader)).to.be.equal(0);
-            expect(readBuffer).to.equal(buffer.substr(buffer.length - size));
+            expect(readBuffer).to.equal(buffer.substring(buffer.length - size));
         }
     });
 
@@ -131,7 +130,7 @@ describe('MultiRingBuffer', function (): void {
         for (const _ of buffers) {
             const readBuffer = ringBuffer.deq(reader);
             if (i === 0) {
-                expect(readBuffer).to.equal(buffers[buffers.length - 1].substr(buffers[buffers.length - 1].length - size));
+                expect(readBuffer).to.equal(buffers[buffers.length - 1].substring(buffers[buffers.length - 1].length - size));
             } else {
                 expect(readBuffer).to.equal(undefined);
             }
@@ -329,7 +328,7 @@ describe('MultiRingBuffer', function (): void {
         const buffer = 'abc';
 
         const astream = ringBuffer.getStream();
-        const p = new Promise(resolve => {
+        const p = new Promise<void>(resolve => {
             astream.on('data', (chunk: string) => {
                 expect(chunk).to.be.equal(buffer);
                 resolve();
@@ -347,7 +346,7 @@ describe('MultiRingBuffer', function (): void {
         ringBuffer.enq(buffer);
 
         const astream = ringBuffer.getStream();
-        const p = new Promise(resolve => {
+        const p = new Promise<void>(resolve => {
             astream.on('data', (chunk: string) => {
                 expect(chunk).to.be.equal(buffer);
                 resolve();
@@ -403,7 +402,7 @@ describe('MultiRingBuffer', function (): void {
         ringBuffer.enq(buffer);
 
         const astream = ringBuffer.getStream('hex');
-        const p = new Promise(resolve => {
+        const p = new Promise<void>(resolve => {
             astream.on('data', (chunk: string) => {
                 expect(chunk).to.be.equal('74657374');
                 resolve();

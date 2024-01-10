@@ -1,24 +1,22 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 import { LabelParser, LabelPart, LabelIcon } from './label-parser';
 import { CommandService } from './../common';
 import { Container } from 'inversify';
 import { expect } from 'chai';
-
-/* eslint-disable no-unused-expressions */
 
 let statusBarEntryUtility: LabelParser;
 
@@ -126,4 +124,42 @@ describe('StatusBarEntryUtility', () => {
         expect((iconArr[3] as LabelIcon).name).equals('icon3');
     });
 
+    it('should strip nothing from an empty string', () => {
+        text = '';
+        const stripped: string = statusBarEntryUtility.stripIcons(text);
+        expect(stripped).to.be.equal(text);
+    });
+
+    it('should strip nothing from an string containing no icons', () => {
+        // Deliberate double space to verify not concatenating these words
+        text = 'foo  bar';
+        const stripped: string = statusBarEntryUtility.stripIcons(text);
+        expect(stripped).to.be.equal(text);
+    });
+
+    it("should strip a medial '$(icon)' from a string", () => {
+        text = 'foo $(icon) bar';
+        const stripped: string = statusBarEntryUtility.stripIcons(text);
+        expect(stripped).to.be.equal('foo bar');
+    });
+
+    it("should strip a terminal '$(icon)' from a string", () => {
+        // Deliberate double space to verify not concatenating these words
+        text = 'foo  bar $(icon)';
+        const stripped: string = statusBarEntryUtility.stripIcons(text);
+        expect(stripped).to.be.equal('foo  bar');
+    });
+
+    it("should strip an initial '$(icon)' from a string", () => {
+        // Deliberate double space to verify not concatenating these words
+        text = '$(icon) foo  bar';
+        const stripped: string = statusBarEntryUtility.stripIcons(text);
+        expect(stripped).to.be.equal('foo  bar');
+    });
+
+    it("should strip multiple '$(icon)' specifiers from a string", () => {
+        text = '$(icon1) foo $(icon2)$(icon3)  bar $(icon4) $(icon5)';
+        const stripped: string = statusBarEntryUtility.stripIcons(text);
+        expect(stripped).to.be.equal('foo bar');
+    });
 });

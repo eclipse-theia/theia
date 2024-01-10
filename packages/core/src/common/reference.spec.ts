@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import * as assert from 'assert';
 import { ReferenceCollection } from './reference';
@@ -29,17 +29,17 @@ describe('reference', () => {
         }));
         assert.ok(!references.has('a'));
         assert.ok(!expectation.disposed);
-        assert.deepEqual(references.keys(), []);
+        assert.deepStrictEqual(references.keys(), []);
 
         const reference = await references.acquire('a');
         assert.ok(references.has('a'));
         assert.ok(!expectation.disposed);
-        assert.deepEqual(references.keys(), ['a']);
+        assert.deepStrictEqual(references.keys(), ['a']);
 
         reference.dispose();
         assert.ok(!references.has('a'));
         assert.ok(expectation.disposed);
-        assert.deepEqual(references.keys(), []);
+        assert.deepStrictEqual(references.keys(), []);
     });
 
     it('dispose 2 references', async () => {
@@ -51,23 +51,23 @@ describe('reference', () => {
         }));
         assert.ok(!references.has('a'));
         assert.ok(!expectation.disposed);
-        assert.deepEqual(references.keys(), []);
+        assert.deepStrictEqual(references.keys(), []);
 
         const reference = await references.acquire('a');
         const reference2 = await references.acquire('a');
         assert.ok(references.has('a'));
         assert.ok(!expectation.disposed);
-        assert.deepEqual(references.keys(), ['a']);
+        assert.deepStrictEqual(references.keys(), ['a']);
 
         reference.dispose();
         assert.ok(references.has('a'));
         assert.ok(!expectation.disposed);
-        assert.deepEqual(references.keys(), ['a']);
+        assert.deepStrictEqual(references.keys(), ['a']);
 
         reference2.dispose();
         assert.ok(!references.has('a'));
         assert.ok(expectation.disposed);
-        assert.deepEqual(references.keys(), []);
+        assert.deepStrictEqual(references.keys(), []);
     });
 
     it('dispose an object with 2 references', async () => {
@@ -79,18 +79,18 @@ describe('reference', () => {
         }));
         assert.ok(!references.has('a'));
         assert.ok(!expectation.disposed);
-        assert.deepEqual(references.keys(), []);
+        assert.deepStrictEqual(references.keys(), []);
 
         await references.acquire('a');
         const reference = await references.acquire('a');
         assert.ok(references.has('a'));
         assert.ok(!expectation.disposed);
-        assert.deepEqual(references.keys(), ['a']);
+        assert.deepStrictEqual(references.keys(), ['a']);
 
         reference.object.dispose();
         assert.ok(!references.has('a'));
         assert.ok(expectation.disposed);
-        assert.deepEqual(references.keys(), []);
+        assert.deepStrictEqual(references.keys(), []);
     });
 
     it("shouldn't call onWillDispose event on create", async () => {

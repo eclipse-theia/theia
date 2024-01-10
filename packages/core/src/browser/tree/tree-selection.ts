@@ -1,21 +1,21 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { TreeNode } from './tree';
-import { Event, Disposable, SelectionProvider } from '../../common';
+import { Event, Disposable, isObject, SelectionProvider } from '../../common';
 
 /**
  * The tree selection service.
@@ -40,6 +40,11 @@ export interface TreeSelectionService extends Disposable, SelectionProvider<Read
      * a it will be treated as a tree selection with the default selection type.
      */
     addSelection(selectionOrTreeNode: TreeSelection | Readonly<SelectableTreeNode>): void;
+
+    /**
+     * Clears all selected nodes
+     */
+    clearSelection(): void;
 
     /**
      * Store selection state.
@@ -81,8 +86,8 @@ export namespace TreeSelection {
         RANGE
     }
 
-    export function is(arg: Object | undefined): arg is TreeSelection {
-        return !!arg && 'node' in arg;
+    export function is(arg: unknown): arg is TreeSelection {
+        return isObject(arg) && 'node' in arg;
     }
 
     export function isRange(arg: TreeSelection | SelectionType | undefined): boolean {
@@ -114,6 +119,8 @@ export interface SelectableTreeNode extends TreeNode {
     selected: boolean;
 
     /**
+     * @deprecated @since 1.27.0. Use TreeFocusService to track the focused node.
+     *
      * `true` if the tree node has the focus. Otherwise, `false`. Defaults to `false`.
      */
     focus?: boolean;
@@ -122,14 +129,17 @@ export interface SelectableTreeNode extends TreeNode {
 
 export namespace SelectableTreeNode {
 
-    export function is(node: TreeNode | undefined): node is SelectableTreeNode {
-        return !!node && 'selected' in node;
+    export function is(node: unknown): node is SelectableTreeNode {
+        return TreeNode.is(node) && 'selected' in node;
     }
 
-    export function isSelected(node: TreeNode | undefined): node is SelectableTreeNode {
+    export function isSelected(node: unknown): node is SelectableTreeNode {
         return is(node) && node.selected;
     }
 
+    /**
+     * @deprecated @since 1.27.0. Use TreeFocusService to track the focused node.
+     */
     export function hasFocus(node: TreeNode | undefined): boolean {
         return is(node) && node.focus === true;
     }

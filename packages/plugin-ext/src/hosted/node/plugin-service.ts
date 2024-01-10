@@ -1,26 +1,27 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
-import { injectable, inject, named, postConstruct } from 'inversify';
-import { HostedPluginServer, HostedPluginClient, PluginDeployer, GetDeployedPluginsParams, DeployedPlugin } from '../../common/plugin-protocol';
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
+import { injectable, inject, named, postConstruct } from '@theia/core/shared/inversify';
+import { HostedPluginServer, HostedPluginClient, PluginDeployer, GetDeployedPluginsParams, DeployedPlugin, PluginIdentifiers } from '../../common/plugin-protocol';
 import { HostedPluginSupport } from './hosted-plugin';
-import { ILogger, Disposable } from '@theia/core';
-import { ContributionProvider } from '@theia/core';
+import { ILogger, Disposable, ContributionProvider, DisposableCollection } from '@theia/core';
 import { ExtPluginApiProvider, ExtPluginApi } from '../../common/plugin-ext-api-contribution';
 import { HostedPluginDeployerHandler } from './hosted-plugin-deployer-handler';
 import { PluginDeployerImpl } from '../../main/node/plugin-deployer-impl';
+import { HostedPluginLocalizationService } from './hosted-plugin-localization-service';
+import { PluginUninstallationManager } from '../../main/node/plugin-uninstallation-manager';
 
 @injectable()
 export class HostedPluginServerImpl implements HostedPluginServer {
@@ -33,13 +34,28 @@ export class HostedPluginServerImpl implements HostedPluginServer {
     @inject(PluginDeployer)
     protected readonly pluginDeployer: PluginDeployerImpl;
 
+    @inject(HostedPluginLocalizationService)
+    protected readonly localizationService: HostedPluginLocalizationService;
+
     @inject(ContributionProvider)
     @named(Symbol.for(ExtPluginApiProvider))
     protected readonly extPluginAPIContributions: ContributionProvider<ExtPluginApiProvider>;
 
-    protected client: HostedPluginClient | undefined;
+    @inject(PluginUninstallationManager) protected readonly uninstallationManager: PluginUninstallationManager;
 
-    protected deployedListener: Disposable;
+    protected client: HostedPluginClient | undefined;
+    protected toDispose = new DisposableCollection();
+
+    protected _ignoredPlugins?: Set<PluginIdentifiers.VersionedId>;
+    // We ignore any plugins that are marked as uninstalled the first time the frontend requests information about deployed plugins.
+    protected get ignoredPlugins(): Set<PluginIdentifiers.VersionedId> {
+        if (!this._ignoredPlugins) {
+            this._ignoredPlugins = new Set(this.uninstallationManager.getUninstalledPluginIds());
+        }
+        return this._ignoredPlugins;
+    }
+
+    protected readonly pluginVersions = new Map<PluginIdentifiers.UnversionedId, string>();
 
     constructor(
         @inject(HostedPluginSupport) private readonly hostedPlugin: HostedPluginSupport) {
@@ -47,66 +63,109 @@ export class HostedPluginServerImpl implements HostedPluginServer {
 
     @postConstruct()
     protected init(): void {
-        this.deployedListener = this.pluginDeployer.onDidDeploy(() => {
-            if (this.client) {
-                this.client.onDidDeploy();
-            }
-        });
+        this.toDispose.pushAll([
+            this.pluginDeployer.onDidDeploy(() => this.client?.onDidDeploy()),
+            this.uninstallationManager.onDidChangeUninstalledPlugins(currentUninstalled => {
+                if (this._ignoredPlugins) {
+                    const uninstalled = new Set(currentUninstalled);
+                    for (const previouslyUninstalled of this._ignoredPlugins) {
+                        if (!uninstalled.has(previouslyUninstalled)) {
+                            this._ignoredPlugins.delete(previouslyUninstalled);
+                        }
+                    }
+                }
+                this.client?.onDidDeploy();
+            }),
+            Disposable.create(() => this.hostedPlugin.clientClosed()),
+        ]);
     }
 
     dispose(): void {
-        this.hostedPlugin.clientClosed();
-        this.deployedListener.dispose();
+        this.toDispose.dispose();
     }
+
     setClient(client: HostedPluginClient): void {
         this.client = client;
         this.hostedPlugin.setClient(client);
     }
 
-    async getDeployedPluginIds(): Promise<string[]> {
+    async getDeployedPluginIds(): Promise<PluginIdentifiers.VersionedId[]> {
         const backendMetadata = await this.deployerHandler.getDeployedBackendPluginIds();
         if (backendMetadata.length > 0) {
             this.hostedPlugin.runPluginServer();
         }
-        const plugins = new Set<string>();
-        for (const pluginId of await this.deployerHandler.getDeployedFrontendPluginIds()) {
-            plugins.add(pluginId);
+        const plugins = new Set<PluginIdentifiers.VersionedId>();
+        const addIds = async (identifiers: PluginIdentifiers.VersionedId[]): Promise<void> => {
+            for (const pluginId of identifiers) {
+                if (this.isRelevantPlugin(pluginId)) {
+                    plugins.add(pluginId);
+                }
+            }
+        };
+        addIds(await this.deployerHandler.getDeployedFrontendPluginIds());
+        addIds(backendMetadata);
+        addIds(await this.hostedPlugin.getExtraDeployedPluginIds());
+        return Array.from(plugins);
+    }
+
+    /**
+     * Ensures that the plugin was not uninstalled when this session was started
+     * and that it matches the first version of the given plugin seen by this session.
+     *
+     * The deployment system may have multiple versions of the same plugin available, but
+     * a single session should only ever activate one of them.
+     */
+    protected isRelevantPlugin(identifier: PluginIdentifiers.VersionedId): boolean {
+        const versionAndId = PluginIdentifiers.idAndVersionFromVersionedId(identifier);
+        if (!versionAndId) {
+            return false;
         }
-        for (const pluginId of backendMetadata) {
-            plugins.add(pluginId);
+        const knownVersion = this.pluginVersions.get(versionAndId.id);
+        if (knownVersion !== undefined && knownVersion !== versionAndId.version) {
+            return false;
         }
-        for (const pluginId of await this.hostedPlugin.getExtraDeployedPluginIds()) {
-            plugins.add(pluginId);
+        if (this.ignoredPlugins.has(identifier)) {
+            return false;
         }
-        return [...plugins.values()];
+        if (knownVersion === undefined) {
+            this.pluginVersions.set(versionAndId.id, versionAndId.version);
+        }
+        return true;
+    }
+
+    getUninstalledPluginIds(): Promise<readonly PluginIdentifiers.VersionedId[]> {
+        return Promise.resolve(this.uninstallationManager.getUninstalledPluginIds());
     }
 
     async getDeployedPlugins({ pluginIds }: GetDeployedPluginsParams): Promise<DeployedPlugin[]> {
         if (!pluginIds.length) {
             return [];
         }
-        const plugins = [];
+        const plugins: DeployedPlugin[] = [];
         let extraDeployedPlugins: Map<string, DeployedPlugin> | undefined;
-        for (const pluginId of pluginIds) {
-            let plugin = this.deployerHandler.getDeployedPlugin(pluginId);
+        for (const versionedId of pluginIds) {
+            if (!this.isRelevantPlugin(versionedId)) {
+                continue;
+            }
+            let plugin = this.deployerHandler.getDeployedPlugin(versionedId);
             if (!plugin) {
                 if (!extraDeployedPlugins) {
                     extraDeployedPlugins = new Map<string, DeployedPlugin>();
                     for (const extraDeployedPlugin of await this.hostedPlugin.getExtraDeployedPlugins()) {
-                        extraDeployedPlugins.set(extraDeployedPlugin.metadata.model.id, extraDeployedPlugin);
+                        extraDeployedPlugins.set(PluginIdentifiers.componentsToVersionedId(extraDeployedPlugin.metadata.model), extraDeployedPlugin);
                     }
                 }
-                plugin = extraDeployedPlugins.get(pluginId);
+                plugin = extraDeployedPlugins.get(versionedId);
             }
             if (plugin) {
                 plugins.push(plugin);
             }
         }
-        return plugins;
+        return Promise.all(plugins.map(plugin => this.localizationService.localizePlugin(plugin)));
     }
 
-    onMessage(message: string): Promise<void> {
-        this.hostedPlugin.onMessage(message);
+    onMessage(pluginHostId: string, message: Uint8Array): Promise<void> {
+        this.hostedPlugin.onMessage(pluginHostId, message);
         return Promise.resolve();
     }
 

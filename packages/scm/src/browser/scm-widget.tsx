@@ -1,33 +1,34 @@
-/********************************************************************************
- * Copyright (C) 2019 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2019 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 /* eslint-disable no-null/no-null, @typescript-eslint/no-explicit-any */
 
-import { Message } from '@phosphor/messaging';
-import { injectable, inject, postConstruct } from 'inversify';
+import { Message } from '@theia/core/shared/@phosphor/messaging';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import {
-    BaseWidget, Widget, StatefulWidget, Panel, PanelLayout, MessageLoop, PreferenceChangeEvent
+    BaseWidget, Widget, StatefulWidget, Panel, PanelLayout, MessageLoop, CompositeTreeNode, SelectableTreeNode, ApplicationShell, NavigatableWidget,
 } from '@theia/core/lib/browser';
 import { ScmCommitWidget } from './scm-commit-widget';
 import { ScmAmendWidget } from './scm-amend-widget';
 import { ScmNoRepositoryWidget } from './scm-no-repository-widget';
 import { ScmService } from './scm-service';
 import { ScmTreeWidget } from './scm-tree-widget';
-import { ScmPreferences, ScmConfiguration } from './scm-preferences';
+import { ScmPreferences } from './scm-preferences';
+import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()
 export class ScmWidget extends BaseWidget implements StatefulWidget {
@@ -36,11 +37,12 @@ export class ScmWidget extends BaseWidget implements StatefulWidget {
 
     static ID = 'scm-view';
 
+    @inject(ApplicationShell) protected readonly shell: ApplicationShell;
     @inject(ScmService) protected readonly scmService: ScmService;
     @inject(ScmCommitWidget) protected readonly commitWidget: ScmCommitWidget;
-    @inject(ScmTreeWidget) protected readonly resourceWidget: ScmTreeWidget;
+    @inject(ScmTreeWidget) readonly resourceWidget: ScmTreeWidget;
     @inject(ScmAmendWidget) protected readonly amendWidget: ScmAmendWidget;
-    @inject(ScmNoRepositoryWidget) protected readonly noRepositoryWidget: ScmNoRepositoryWidget;
+    @inject(ScmNoRepositoryWidget) readonly noRepositoryWidget: ScmNoRepositoryWidget;
     @inject(ScmPreferences) protected readonly scmPreferences: ScmPreferences;
 
     set viewMode(mode: 'tree' | 'list') {
@@ -78,9 +80,15 @@ export class ScmWidget extends BaseWidget implements StatefulWidget {
         this.refresh();
         this.toDispose.push(this.scmService.onDidChangeSelectedRepository(() => this.refresh()));
         this.updateViewMode(this.scmPreferences.get('scm.defaultViewMode'));
-        this.toDispose.push(this.scmPreferences.onPreferenceChanged((e: PreferenceChangeEvent<ScmConfiguration>) => {
+        this.toDispose.push(this.scmPreferences.onPreferenceChanged(e => {
             if (e.preferenceName === 'scm.defaultViewMode') {
-                this.updateViewMode(e.newValue!);
+                this.updateViewMode(e.newValue);
+            }
+        }));
+        this.toDispose.push(this.shell.onDidChangeCurrentWidget(({ newValue }) => {
+            const uri = NavigatableWidget.getUri(newValue || undefined);
+            if (uri) {
+                this.resourceWidget.selectNodeByUri(uri);
             }
         }));
 
@@ -103,7 +111,7 @@ export class ScmWidget extends BaseWidget implements StatefulWidget {
         this.toDisposeOnRefresh.dispose();
         this.toDispose.push(this.toDisposeOnRefresh);
         const repository = this.scmService.selectedRepository;
-        this.title.label = repository ? repository.provider.label : 'no repository found';
+        this.title.label = repository ? repository.provider.label : nls.localize('theia/scm/noRepositoryFound', 'No repository found');
         this.title.caption = this.title.label;
         this.update();
         if (repository) {
@@ -129,7 +137,7 @@ export class ScmWidget extends BaseWidget implements StatefulWidget {
         this.onUpdateRequest(Widget.Msg.UpdateRequest);
     }
 
-    protected onUpdateRequest(msg: Message): void {
+    protected override onUpdateRequest(msg: Message): void {
         MessageLoop.sendMessage(this.commitWidget, msg);
         MessageLoop.sendMessage(this.resourceWidget, msg);
         MessageLoop.sendMessage(this.amendWidget, msg);
@@ -137,7 +145,7 @@ export class ScmWidget extends BaseWidget implements StatefulWidget {
         super.onUpdateRequest(msg);
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         this.node.appendChild(this.commitWidget.node);
         this.node.appendChild(this.resourceWidget.node);
         this.node.appendChild(this.amendWidget.node);
@@ -147,10 +155,14 @@ export class ScmWidget extends BaseWidget implements StatefulWidget {
         this.update();
     }
 
-    protected onActivateRequest(msg: Message): void {
+    protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         this.refresh();
-        this.commitWidget.focus();
+        if (this.commitWidget.isVisible) {
+            this.commitWidget.focus();
+        } else {
+            this.node.focus();
+        }
     }
 
     protected focusInput(): void {
@@ -171,4 +183,22 @@ export class ScmWidget extends BaseWidget implements StatefulWidget {
         this.resourceWidget.restoreState(changesTreeState);
     }
 
+    collapseScmTree(): void {
+        const { model } = this.resourceWidget;
+        const root = model.root;
+        if (CompositeTreeNode.is(root)) {
+            root.children.map(group => {
+                if (CompositeTreeNode.is(group)) {
+                    group.children.map(folderNode => {
+                        if (CompositeTreeNode.is(folderNode)) {
+                            model.collapseAll(folderNode);
+                        }
+                        if (SelectableTreeNode.isSelected(folderNode)) {
+                            model.toggleNode(folderNode);
+                        }
+                    });
+                }
+            });
+        }
+    }
 }

@@ -1,27 +1,27 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
-import { FileSystem } from '../../common/filesystem';
 import { FileDownloadData } from '../../common/download/file-download-data';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { addClipboardListener } from '@theia/core/lib/browser/widgets';
+import { nls } from '@theia/core';
 
 @injectable()
 export class FileDownloadService {
@@ -32,9 +32,6 @@ export class FileDownloadService {
     @inject(ILogger)
     protected readonly logger: ILogger;
 
-    @inject(FileSystem)
-    protected readonly fileSystem: FileSystem;
-
     @inject(MessageService)
     protected readonly messageService: MessageService;
 
@@ -42,7 +39,7 @@ export class FileDownloadService {
         if (downloadUrl && event.clipboardData) {
             event.clipboardData.setData('text/plain', downloadUrl);
             event.preventDefault();
-            this.messageService.info('Copied the download link to the clipboard.');
+            this.messageService.info(nls.localize('theia/filesystem/copiedToClipboard', 'Copied the download link to the clipboard.'));
         }
     }
 
@@ -57,9 +54,13 @@ export class FileDownloadService {
         }
         const copyLink = options && options.copyLink ? true : false;
         try {
+            const text: string = copyLink ?
+                nls.localize('theia/filesystem/prepareDownloadLink', 'Preparing download link...') :
+                nls.localize('theia/filesystem/prepareDownload', 'Preparing download...');
             const [progress, result] = await Promise.all([
                 this.messageService.showProgress({
-                    text: `Preparing download${copyLink ? ' link' : ''}...`, options: { cancelable: true }
+                    text: text,
+                    options: { cancelable: true }
                 }, () => { cancel = true; }),
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 new Promise<{ response: Response, jsonResponse: any }>(async resolve => {

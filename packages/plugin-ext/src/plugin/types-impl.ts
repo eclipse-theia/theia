@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 // copied from https://github.com/microsoft/vscode/blob/1.37.0/src/vs/workbench/api/common/extHostTypes.ts
 /*---------------------------------------------------------------------------------------------
 *  Copyright (c) Microsoft Corporation. All rights reserved.
@@ -21,16 +21,89 @@
 
 /* eslint-disable no-null/no-null */
 
-import { UUID } from '@phosphor/coreutils/lib/uuid';
+import { UUID } from '@theia/core/shared/@phosphor/coreutils';
 import { illegalArgument } from '../common/errors';
-import * as theia from '@theia/plugin';
-import * as crypto from 'crypto';
-import { URI } from 'vscode-uri';
+import type * as theia from '@theia/plugin';
+import { URI as CodeURI, UriComponents } from '@theia/core/shared/vscode-uri';
 import { relative } from '../common/paths-util';
-import { startsWithIgnoreCase } from '@theia/languages/lib/common/language-selector/strings';
-import { MarkdownString, isMarkdownString } from './markdown-string';
+import { startsWithIgnoreCase } from '@theia/core/lib/common/strings';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
+import { FileSystemProviderErrorCode, markAsFileSystemProviderError } from '@theia/filesystem/lib/common/files';
+import * as paths from 'path';
+import { es5ClassCompat } from '../common/types';
+import { isObject, isStringArray } from '@theia/core/lib/common';
+import { CellEditType, CellMetadataEdit, NotebookDocumentMetadataEdit } from '@theia/notebook/lib/common';
 
+/**
+ * This is an implementation of #theia.Uri based on vscode-uri.
+ * This is supposed to fix https://github.com/eclipse-theia/theia/issues/8752
+ * We cannot simply upgrade the dependency, because the current version 3.x
+ * is not compatible with our current codebase
+ */
+@es5ClassCompat
+export class URI extends CodeURI implements theia.Uri {
+    protected constructor(scheme: string, authority?: string, path?: string, query?: string, fragment?: string, _strict?: boolean);
+    protected constructor(components: UriComponents);
+    protected constructor(schemeOrData: string | UriComponents, authority?: string, path?: string, query?: string, fragment?: string, _strict: boolean = false) {
+        if (typeof schemeOrData === 'string') {
+            super(schemeOrData, authority, path, query, fragment, _strict);
+        } else {
+            super(schemeOrData);
+        }
+    }
+
+    /**
+     * Override to create the correct class.
+     */
+    override with(change: {
+        scheme?: string;
+        authority?: string | null;
+        path?: string | null;
+        query?: string | null;
+        fragment?: string | null;
+    }): URI {
+        return new URI(super.with(change));
+    }
+
+    static joinPath(uri: URI, ...pathSegments: string[]): URI {
+        if (!uri.path) {
+            throw new Error('\'joinPath\' called on URI without path');
+        }
+        const newPath = paths.posix.join(uri.path, ...pathSegments);
+        return new URI(uri.scheme, uri.authority, newPath, uri.query, uri.fragment);
+    }
+
+    /**
+     * Override to create the correct class.
+     * @param data
+     */
+    static override revive(data: UriComponents | CodeURI): URI;
+    static override revive(data: UriComponents | CodeURI | null): URI | null;
+    static override revive(data: UriComponents | CodeURI | undefined): URI | undefined
+    static override revive(data: UriComponents | CodeURI | undefined | null): URI | undefined | null {
+        const uri = CodeURI.revive(data);
+        return uri ? new URI(uri) : undefined;
+    }
+
+    static override parse(value: string, _strict?: boolean): URI {
+        return new URI(CodeURI.parse(value, _strict));
+    }
+
+    static override file(path: string): URI {
+        return new URI(CodeURI.file(path));
+    }
+
+    /**
+     * There is quite some magic in to vscode URI class related to
+     * transferring via JSON.stringify(). Making the CodeURI instance
+     * makes sure we transfer this object as a vscode-uri URI.
+     */
+    override toJSON(): UriComponents {
+        return CodeURI.from(this).toJSON();
+    }
+}
+
+@es5ClassCompat
 export class Disposable {
     private disposable: undefined | (() => void);
 
@@ -63,6 +136,13 @@ export class Disposable {
     static create(func: () => void): Disposable {
         return new Disposable(func);
     }
+
+    static NULL: Disposable;
+}
+
+export interface AccessibilityInformation {
+    label: string;
+    role?: string;
 }
 
 export enum StatusBarAlignment {
@@ -95,6 +175,74 @@ export enum ViewColumn {
 }
 
 /**
+ * Represents a color theme kind.
+ */
+export enum ColorThemeKind {
+    Light = 1,
+    Dark = 2,
+    HighContrast = 3,
+    HighContrastLight = 4
+}
+
+export enum ExtensionMode {
+    /**
+     * The extension is installed normally (for example, from the marketplace
+     * or VSIX) in the editor.
+     */
+    Production = 1,
+
+    /**
+     * The extension is running from an `--extensionDevelopmentPath` provided
+     * when launching the editor.
+     */
+    Development = 2,
+
+    /**
+     * The extension is running from an `--extensionTestsPath` and
+     * the extension host is running unit tests.
+     */
+    Test = 3,
+}
+
+export enum ExtensionKind {
+    UI = 1,
+    Workspace = 2
+}
+
+/**
+ * Represents the validation type of the Source Control input.
+ */
+export enum SourceControlInputBoxValidationType {
+
+    /**
+     * Something not allowed by the rules of a language or other means.
+     */
+    Error = 0,
+
+    /**
+     * Something suspicious but allowed.
+     */
+    Warning = 1,
+
+    /**
+     * Something to inform about but not a problem.
+     */
+    Information = 2
+}
+
+export enum ExternalUriOpenerPriority {
+    None = 0,
+    Option = 1,
+    Default = 2,
+    Preferred = 3,
+}
+
+@es5ClassCompat
+export class ColorTheme implements theia.ColorTheme {
+    constructor(public readonly kind: ColorThemeKind) { }
+}
+
+/**
  * Represents sources that can cause `window.onDidChangeEditorSelection`
  */
 export enum TextEditorSelectionChangeKind {
@@ -116,6 +264,12 @@ export namespace TextEditorSelectionChangeKind {
     }
 }
 
+export enum TextDocumentChangeReason {
+    Undo = 1,
+    Redo = 2,
+}
+
+@es5ClassCompat
 export class Position {
     private _line: number;
     private _character: number;
@@ -258,8 +412,11 @@ export class Position {
         return result!;
     }
 
-    static isPosition(other: {}): other is Position {
+    static isPosition(other: unknown): other is Position {
         if (!other) {
+            return false;
+        }
+        if (typeof other !== 'object' || Array.isArray(other)) {
             return false;
         }
         if (other instanceof Position) {
@@ -271,8 +428,13 @@ export class Position {
         }
         return false;
     }
+
+    toJSON(): unknown {
+        return { line: this.line, character: this.character };
+    }
 }
 
+@es5ClassCompat
 export class Range {
     protected _start: Position;
     protected _end: Position;
@@ -390,20 +552,21 @@ export class Range {
         return new Range(start, end);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    static isRange(thing: any): thing is theia.Range {
-        if (thing instanceof Range) {
+    static isRange(arg: unknown): arg is theia.Range {
+        if (arg instanceof Range) {
             return true;
         }
-        if (!thing) {
-            return false;
-        }
-        return Position.isPosition((<Range>thing).start)
-            && Position.isPosition((<Range>thing).end);
+        return isObject<theia.Range>(arg)
+            && Position.isPosition(arg.start)
+            && Position.isPosition(arg.end);
     }
 
+    toJSON(): unknown {
+        return [this.start, this.end];
+    }
 }
 
+@es5ClassCompat
 export class Selection extends Range {
     private _anchor: Position;
     private _active: Position;
@@ -444,11 +607,34 @@ export class Selection extends Range {
     }
 }
 
+export namespace TextDocumentShowOptions {
+    /**
+     * @param candidate
+     * @returns `true` if `candidate` is an instance of options that includes a selection.
+     * This function should be used to determine whether TextDocumentOptions passed into commands by plugins
+     * need to be translated to TextDocumentShowOptions in the style of the RPC model. Selection is the only field that requires translation.
+     */
+    export function isTextDocumentShowOptions(candidate: unknown): candidate is theia.TextDocumentShowOptions {
+        if (!candidate) {
+            return false;
+        }
+        const options = candidate as theia.TextDocumentShowOptions;
+        return Range.isRange(options.selection);
+    }
+}
+
 export enum EndOfLine {
     LF = 1,
     CRLF = 2
 }
 
+export enum EnvironmentVariableMutatorType {
+    Replace = 1,
+    Append = 2,
+    Prepend = 3
+}
+
+@es5ClassCompat
 export class SnippetString {
 
     static isSnippetString(thing: {}): thing is SnippetString {
@@ -505,6 +691,12 @@ export class SnippetString {
         return this;
     }
 
+    appendChoice(values: string[], number: number = this._tabstop++): SnippetString {
+        const value = values.map(s => s.replace(/\$|}|\\|,/g, '\\$&')).join(',');
+        this.value += `\$\{${number}|${value}|\}`;
+        return this;
+    }
+
     appendVariable(name: string, defaultValue?: string | ((snippet: SnippetString) => void)): SnippetString {
 
         if (typeof defaultValue === 'function') {
@@ -530,20 +722,27 @@ export class SnippetString {
     }
 }
 
+@es5ClassCompat
 export class ThemeColor {
-    constructor(public id: string) {
-    }
+    constructor(public id: string) { }
 }
 
+@es5ClassCompat
 export class ThemeIcon {
 
     static readonly File: ThemeIcon = new ThemeIcon('file');
 
     static readonly Folder: ThemeIcon = new ThemeIcon('folder');
 
-    private constructor(public id: string) {
+    private constructor(public id: string, public color?: ThemeColor) {
     }
 
+}
+
+export namespace ThemeIcon {
+    export function is(item: unknown): item is ThemeIcon {
+        return isObject(item) && 'id' in item;
+    }
 }
 
 export enum TextEditorRevealType {
@@ -593,13 +792,30 @@ export enum ConfigurationTarget {
     Memory
 }
 
+@es5ClassCompat
 export class RelativePattern {
 
-    base: string;
+    private _base!: string;
+    get base(): string {
+        return this._base;
+    }
+    set base(base: string) {
+        this._base = base;
+        this._baseUri = URI.file(base);
+    }
 
-    constructor(base: theia.WorkspaceFolder | string, public pattern: string) {
+    private _baseUri!: URI;
+    get baseUri(): URI {
+        return this._baseUri;
+    }
+    set baseUri(baseUri: URI) {
+        this._baseUri = baseUri;
+        this.base = baseUri.fsPath;
+    }
+
+    constructor(base: theia.WorkspaceFolder | URI | string, public pattern: string) {
         if (typeof base !== 'string') {
-            if (!base || !URI.isUri(base.uri)) {
+            if (!base || !URI.isUri(base) && !URI.isUri(base.uri)) {
                 throw illegalArgument('base');
             }
         }
@@ -608,7 +824,13 @@ export class RelativePattern {
             throw illegalArgument('pattern');
         }
 
-        this.base = typeof base === 'string' ? base : base.uri.fsPath;
+        if (typeof base === 'string') {
+            this.baseUri = URI.file(base);
+        } else if (URI.isUri(base)) {
+            this.baseUri = base;
+        } else {
+            this.baseUri = base.uri;
+        }
     }
 
     pathToRelative(from: string, to: string): string {
@@ -623,6 +845,38 @@ export enum IndentAction {
     Outdent = 3
 }
 
+export namespace SyntaxTokenType {
+    export function toString(v: SyntaxTokenType | unknown): 'other' | 'comment' | 'string' | 'regex' {
+        switch (v) {
+            case SyntaxTokenType.Other: return 'other';
+            case SyntaxTokenType.Comment: return 'comment';
+            case SyntaxTokenType.String: return 'string';
+            case SyntaxTokenType.RegEx: return 'regex';
+        }
+        return 'other';
+    }
+}
+
+export enum SyntaxTokenType {
+    /**
+     * Everything except tokens that are part of comments, string literals and regular expressions.
+     */
+    Other = 0,
+    /**
+     * A comment.
+     */
+    Comment = 1,
+    /**
+     * A string literal.
+     */
+    String = 2,
+    /**
+     * A regular expression.
+     */
+    RegEx = 3
+}
+
+@es5ClassCompat
 export class TextEdit {
 
     protected _range: Range;
@@ -719,7 +973,7 @@ export enum CompletionItemKind {
     Enum = 12,
     Keyword = 13,
     Snippet = 14,
-    Color = 15, // eslint-disable-line no-shadow
+    Color = 15, // eslint-disable-line @typescript-eslint/no-shadow
     File = 16,
     Reference = 17,
     Folder = 18,
@@ -728,15 +982,19 @@ export enum CompletionItemKind {
     Struct = 21,
     Event = 22,
     Operator = 23,
-    TypeParameter = 24
+    TypeParameter = 24,
+    User = 25,
+    Issue = 26
 }
 
+@es5ClassCompat
 export class CompletionItem implements theia.CompletionItem {
 
     label: string;
     kind?: CompletionItemKind;
+    tags?: CompletionItemTag[];
     detail: string;
-    documentation: string | MarkdownString;
+    documentation: string | theia.MarkdownString;
     sortText: string;
     filterText: string;
     preselect: boolean;
@@ -752,6 +1010,7 @@ export class CompletionItem implements theia.CompletionItem {
     }
 }
 
+@es5ClassCompat
 export class CompletionList {
 
     isIncomplete?: boolean;
@@ -764,6 +1023,37 @@ export class CompletionList {
     }
 }
 
+export enum InlineCompletionTriggerKind {
+    Invoke = 0,
+    Automatic = 1,
+}
+
+@es5ClassCompat
+export class InlineCompletionItem implements theia.InlineCompletionItem {
+
+    filterText?: string;
+    insertText: string;
+    range?: Range;
+    command?: theia.Command;
+
+    constructor(insertText: string, range?: Range, command?: theia.Command) {
+        this.insertText = insertText;
+        this.range = range;
+        this.command = command;
+    }
+}
+
+@es5ClassCompat
+export class InlineCompletionList implements theia.InlineCompletionList {
+
+    items: theia.InlineCompletionItem[];
+    commands: theia.Command[] | undefined = undefined;
+
+    constructor(items: theia.InlineCompletionItem[]) {
+        this.items = items;
+    }
+}
+
 export enum DiagnosticSeverity {
     Error = 0,
     Warning = 1,
@@ -771,16 +1061,12 @@ export enum DiagnosticSeverity {
     Hint = 3
 }
 
-export class DiagnosticRelatedInformation {
-    location: Location;
-    message: string;
-
-    constructor(location: Location, message: string) {
-        this.location = location;
-        this.message = message;
-    }
+export enum DebugConsoleMode {
+    Separate = 0,
+    MergeWithParent = 1
 }
 
+@es5ClassCompat
 export class Location {
     uri: URI;
     range: Range;
@@ -806,10 +1092,27 @@ export class Location {
     }
 }
 
-export enum DiagnosticTag {
-    Unnecessary = 1,
+@es5ClassCompat
+export class DiagnosticRelatedInformation {
+    location: Location;
+    message: string;
+
+    constructor(location: Location, message: string) {
+        this.location = location;
+        this.message = message;
+    }
 }
 
+export enum DiagnosticTag {
+    Unnecessary = 1,
+    Deprecated = 2,
+}
+
+export enum CompletionItemTag {
+    Deprecated = 1,
+}
+
+@es5ClassCompat
 export class Diagnostic {
     range: Range;
     message: string;
@@ -835,24 +1138,308 @@ export enum MarkerSeverity {
 
 export enum MarkerTag {
     Unnecessary = 1,
+    Deprecated = 2,
 }
 
+export enum NotebookCellKind {
+    Markup = 1,
+    Code = 2
+}
+
+export enum NotebookCellStatusBarAlignment {
+    Left = 1,
+    Right = 2
+}
+
+export enum NotebookControllerAffinity {
+    Default = 1,
+    Preferred = 2
+}
+
+export enum NotebookEditorRevealType {
+    Default = 0,
+    InCenter = 1,
+    InCenterIfOutsideViewport = 2,
+    AtTop = 3
+}
+
+export enum NotebookCellExecutionState {
+    /**
+     * The cell is idle.
+     */
+    Idle = 1,
+    /**
+     * Execution for the cell is pending.
+     */
+    Pending = 2,
+    /**
+     * The cell is currently executing.
+     */
+    Executing = 3,
+}
+
+export class NotebookKernelSourceAction {
+    description?: string;
+    detail?: string;
+    command?: theia.Command;
+    constructor(
+        public label: string
+    ) { }
+}
+
+@es5ClassCompat
+export class NotebookCellData implements theia.NotebookCellData {
+    languageId: string;
+    kind: NotebookCellKind;
+    value: string;
+    outputs?: theia.NotebookCellOutput[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    metadata?: { [key: string]: any };
+    executionSummary?: theia.NotebookCellExecutionSummary;
+
+    constructor(kind: NotebookCellKind, value: string, languageId: string,
+        outputs?: theia.NotebookCellOutput[], metadata?: Record<string, unknown>, executionSummary?: theia.NotebookCellExecutionSummary) {
+        this.kind = kind;
+        this.value = value;
+        this.languageId = languageId;
+        this.outputs = outputs ?? [];
+        this.metadata = metadata;
+        this.executionSummary = executionSummary;
+    }
+}
+
+@es5ClassCompat
+export class NotebookCellOutput implements theia.NotebookCellOutput {
+    outputId: string;
+    items: theia.NotebookCellOutputItem[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    metadata?: { [key: string]: any };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    constructor(items: theia.NotebookCellOutputItem[], idOrMetadata?: string | Record<string, any>, metadata?: { [key: string]: any }) {
+        this.items = items;
+        if (typeof idOrMetadata === 'string') {
+            this.outputId = idOrMetadata;
+            this.metadata = metadata;
+        } else {
+            this.outputId = UUID.uuid4();
+            this.metadata = idOrMetadata ?? metadata;
+        }
+    }
+}
+
+export class NotebookCellOutputItem implements theia.NotebookCellOutputItem {
+    mime: string;
+    data: Uint8Array;
+
+    static #encoder = new TextEncoder();
+
+    static text(value: string, mime?: string): NotebookCellOutputItem {
+        const bytes = NotebookCellOutputItem.#encoder.encode(String(value));
+        return new NotebookCellOutputItem(bytes, mime || 'text/plain');
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    static json(value: any, mime?: string): NotebookCellOutputItem {
+        const jsonStr = JSON.stringify(value, undefined, '\t');
+        return NotebookCellOutputItem.text(jsonStr, mime);
+    }
+
+    static stdout(value: string): NotebookCellOutputItem {
+        return NotebookCellOutputItem.text(value, 'application/vnd.code.notebook.stdout');
+    }
+
+    static stderr(value: string): NotebookCellOutputItem {
+        return NotebookCellOutputItem.text(value, 'application/vnd.code.notebook.stderr');
+    }
+
+    static error(value: Error): NotebookCellOutputItem {
+        return NotebookCellOutputItem.json(value, 'application/vnd.code.notebook.error');
+    }
+
+    constructor(data: Uint8Array, mime: string) {
+        this.data = data;
+        this.mime = mime;
+    }
+}
+
+@es5ClassCompat
+export class NotebookCellStatusBarItem implements theia.NotebookCellStatusBarItem {
+    text: string;
+    alignment: NotebookCellStatusBarAlignment;
+    command?: string | theia.Command;
+    tooltip?: string;
+    priority?: number;
+    accessibilityInformation?: AccessibilityInformation;
+
+    /**
+     * Creates a new NotebookCellStatusBarItem.
+     * @param text The text to show for the item.
+     * @param alignment Whether the item is aligned to the left or right.
+     * @stubbed
+     */
+    constructor(text: string, alignment: NotebookCellStatusBarAlignment) {
+        this.text = text;
+        this.alignment = alignment;
+    }
+}
+
+@es5ClassCompat
+export class NotebookData implements theia.NotebookData {
+    cells: NotebookCellData[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    metadata?: { [key: string]: any };
+
+    constructor(cells: NotebookCellData[]) {
+        this.cells = cells;
+    }
+}
+
+export class NotebookRange implements theia.NotebookRange {
+    static isNotebookRange(thing: unknown): thing is theia.NotebookRange {
+        if (thing instanceof NotebookRange) {
+            return true;
+        }
+        if (!thing) {
+            return false;
+        }
+        return typeof (<NotebookRange>thing).start === 'number'
+            && typeof (<NotebookRange>thing).end === 'number';
+    }
+
+    readonly start: number;
+    readonly end: number;
+    readonly isEmpty: boolean;
+
+    with(change: { start?: number; end?: number }): NotebookRange {
+        let newStart = this.start;
+        let newEnd = this.end;
+
+        if (change.start !== undefined) {
+            newStart = change.start;
+        }
+        if (change.end !== undefined) {
+            newEnd = change.end;
+        }
+        if (newStart === this.start && newEnd === this.end) {
+            return this;
+        }
+        return new NotebookRange(newStart, newEnd);
+    }
+
+    constructor(start: number, end: number) {
+        this.start = start;
+        this.end = end;
+    }
+
+}
+
+export class SnippetTextEdit implements theia.SnippetTextEdit {
+    range: Range;
+    snippet: SnippetString;
+
+    static isSnippetTextEdit(thing: unknown): thing is SnippetTextEdit {
+        return thing instanceof SnippetTextEdit || isObject<SnippetTextEdit>(thing)
+            && Range.isRange((<SnippetTextEdit>thing).range)
+            && SnippetString.isSnippetString((<SnippetTextEdit>thing).snippet);
+    }
+
+    static replace(range: Range, snippet: SnippetString): SnippetTextEdit {
+        return new SnippetTextEdit(range, snippet);
+    }
+
+    static insert(position: Position, snippet: SnippetString): SnippetTextEdit {
+        return SnippetTextEdit.replace(new Range(position, position), snippet);
+    }
+
+    constructor(range: Range, snippet: SnippetString) {
+        this.range = range;
+        this.snippet = snippet;
+    }
+}
+
+@es5ClassCompat
+export class NotebookEdit implements theia.NotebookEdit {
+    range: theia.NotebookRange;
+    newCells: theia.NotebookCellData[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    newCellMetadata?: { [key: string]: any; } | undefined;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    newNotebookMetadata?: { [key: string]: any; } | undefined;
+
+    static isNotebookCellEdit(thing: unknown): thing is NotebookEdit {
+        if (thing instanceof NotebookEdit) {
+            return true;
+        }
+        if (!thing) {
+            return false;
+        }
+        return NotebookRange.isNotebookRange((<NotebookEdit>thing))
+            && Array.isArray((<NotebookEdit>thing).newCells);
+    }
+
+    static replaceCells(range: NotebookRange, newCells: NotebookCellData[]): NotebookEdit {
+        return new NotebookEdit(range, newCells);
+    }
+
+    static insertCells(index: number, newCells: NotebookCellData[]): NotebookEdit {
+        return new NotebookEdit(new NotebookRange(index, index), newCells);
+    }
+
+    static deleteCells(range: NotebookRange): NotebookEdit {
+        return new NotebookEdit(range, []);
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    static updateCellMetadata(index: number, newCellMetadata: { [key: string]: any }): NotebookEdit {
+        return new NotebookEdit(new NotebookRange(index, index), [], newCellMetadata);
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    static updateNotebookMetadata(newNotebookMetadata: { [key: string]: any }): NotebookEdit {
+        return new NotebookEdit(new NotebookRange(0, 0), [], undefined, newNotebookMetadata);
+    }
+
+    constructor(range: NotebookRange, newCells: NotebookCellData[], newCellMetadata?: { [key: string]: unknown }, newNotebookMetadata?: { [key: string]: unknown }) {
+        this.range = range;
+        this.newCells = newCells;
+        this.newCellMetadata = newCellMetadata;
+        this.newNotebookMetadata = newNotebookMetadata;
+    }
+
+}
+
+export class NotebookRendererScript implements theia.NotebookRendererScript {
+    provides: readonly string[];
+
+    constructor(
+        public uri: theia.Uri,
+        provides?: string | readonly string[]
+    ) {
+        this.provides = Array.isArray(provides) ? provides : [provides];
+    };
+
+}
+
+@es5ClassCompat
 export class ParameterInformation {
     label: string | [number, number];
-    documentation?: string | MarkdownString;
+    documentation?: string | theia.MarkdownString;
 
-    constructor(label: string | [number, number], documentation?: string | MarkdownString) {
+    constructor(label: string | [number, number], documentation?: string | theia.MarkdownString) {
         this.label = label;
         this.documentation = documentation;
     }
 }
 
+@es5ClassCompat
 export class SignatureInformation {
     label: string;
-    documentation?: string | MarkdownString;
+    documentation?: string | theia.MarkdownString;
     parameters: ParameterInformation[];
+    activeParameter?: number;
 
-    constructor(label: string, documentation?: string | MarkdownString) {
+    constructor(label: string, documentation?: string | theia.MarkdownString) {
         this.label = label;
         this.documentation = documentation;
         this.parameters = [];
@@ -865,6 +1452,7 @@ export enum SignatureHelpTriggerKind {
     ContentChange = 3,
 }
 
+@es5ClassCompat
 export class SignatureHelp {
     signatures: SignatureInformation[];
     activeSignature: number;
@@ -875,22 +1463,21 @@ export class SignatureHelp {
     }
 }
 
+@es5ClassCompat
 export class Hover {
 
-    public contents: MarkdownString[] | theia.MarkedString[];
+    public contents: Array<theia.MarkdownString | theia.MarkedString>;
     public range?: Range;
 
     constructor(
-        contents: MarkdownString | theia.MarkedString | MarkdownString[] | theia.MarkedString[],
+        contents: theia.MarkdownString | theia.MarkedString | Array<theia.MarkdownString | theia.MarkedString>,
         range?: Range
     ) {
         if (!contents) {
             illegalArgument('contents must be defined');
         }
         if (Array.isArray(contents)) {
-            this.contents = <MarkdownString[] | theia.MarkedString[]>contents;
-        } else if (isMarkdownString(contents)) {
-            this.contents = [contents];
+            this.contents = contents;
         } else {
             this.contents = [contents];
         }
@@ -898,12 +1485,100 @@ export class Hover {
     }
 }
 
+@es5ClassCompat
+export class EvaluatableExpression {
+
+    public range: Range;
+    public expression?: string;
+
+    constructor(
+        range: Range,
+        expression?: string
+    ) {
+        if (!range) {
+            illegalArgument('range must be defined');
+        }
+        this.range = range;
+        this.expression = expression;
+    }
+}
+
+@es5ClassCompat
+export class InlineValueContext implements theia.InlineValueContext {
+    public frameId: number;
+    public stoppedLocation: Range;
+
+    constructor(frameId: number, stoppedLocation: Range) {
+        if (!frameId) {
+            illegalArgument('frameId must be defined');
+        }
+        if (!stoppedLocation) {
+            illegalArgument('stoppedLocation must be defined');
+        }
+        this.frameId = frameId;
+        this.stoppedLocation = stoppedLocation;
+    }
+}
+
+@es5ClassCompat
+export class InlineValueText implements theia.InlineValueText {
+    public type = 'text';
+    public range: Range;
+    public text: string;
+
+    constructor(range: Range, text: string) {
+        if (!range) {
+            illegalArgument('range must be defined');
+        }
+        if (!text) {
+            illegalArgument('text must be defined');
+        }
+        this.range = range;
+        this.text = text;
+    }
+}
+
+@es5ClassCompat
+export class InlineValueVariableLookup implements theia.InlineValueVariableLookup {
+    public type = 'variable';
+    public range: Range;
+    public variableName?: string;
+    public caseSensitiveLookup: boolean;
+
+    constructor(range: Range, variableName?: string, caseSensitiveLookup?: boolean) {
+        if (!range) {
+            illegalArgument('range must be defined');
+        }
+        this.range = range;
+        this.caseSensitiveLookup = caseSensitiveLookup || true;
+        this.variableName = variableName;
+    }
+}
+
+@es5ClassCompat
+export class InlineValueEvaluatableExpression implements theia.InlineValueEvaluatableExpression {
+    public type = 'expression';
+    public range: Range;
+    public expression?: string;
+
+    constructor(range: Range, expression?: string) {
+        if (!range) {
+            illegalArgument('range must be defined');
+        }
+        this.range = range;
+        this.expression = expression;
+    }
+}
+
+export type InlineValue = InlineValueText | InlineValueVariableLookup | InlineValueEvaluatableExpression;
+
 export enum DocumentHighlightKind {
     Text = 0,
     Read = 1,
     Write = 2
 }
 
+@es5ClassCompat
 export class DocumentHighlight {
 
     public range: Range;
@@ -920,12 +1595,17 @@ export class DocumentHighlight {
 
 export type Definition = Location | Location[];
 
+@es5ClassCompat
 export class DocumentLink {
-    range: Range;
-    target: URI;
 
-    constructor(range: Range, target: URI) {
-        if (target && !(target instanceof URI)) {
+    range: Range;
+
+    target?: URI;
+
+    tooltip?: string;
+
+    constructor(range: Range, target: URI | undefined) {
+        if (target && !(URI.isUri(target))) {
             throw illegalArgument('target');
         }
         if (!Range.isRange(range) || range.isEmpty) {
@@ -936,6 +1616,25 @@ export class DocumentLink {
     }
 }
 
+@es5ClassCompat
+export class DocumentDropEdit {
+
+    id?: string;
+
+    priority?: number;
+
+    label?: string;
+
+    insertText: string | SnippetString;
+
+    additionalEdit?: WorkspaceEdit;
+
+    constructor(insertText: string | SnippetString) {
+        this.insertText = insertText;
+    }
+}
+
+@es5ClassCompat
 export class CodeLens {
 
     range: Range;
@@ -957,6 +1656,25 @@ export enum CodeActionTrigger {
     Manual = 2,
 }
 
+/**
+ * The reason why code actions were requested.
+ */
+export enum CodeActionTriggerKind {
+    /**
+     * Code actions were explicitly requested by the user or by an extension.
+     */
+    Invoke = 1,
+
+    /**
+     * Code actions were requested automatically.
+     *
+     * This typically happens when current selection in a file changes, but can
+     * also be triggered when file content changes.
+     */
+    Automatic = 2,
+}
+
+@es5ClassCompat
 export class CodeActionKind {
     private static readonly sep = '.';
 
@@ -965,10 +1683,12 @@ export class CodeActionKind {
     public static readonly Refactor = CodeActionKind.Empty.append('refactor');
     public static readonly RefactorExtract = CodeActionKind.Refactor.append('extract');
     public static readonly RefactorInline = CodeActionKind.Refactor.append('inline');
+    public static readonly RefactorMove = CodeActionKind.Refactor.append('move');
     public static readonly RefactorRewrite = CodeActionKind.Refactor.append('rewrite');
     public static readonly Source = CodeActionKind.Empty.append('source');
     public static readonly SourceOrganizeImports = CodeActionKind.Source.append('organizeImports');
     public static readonly SourceFixAll = CodeActionKind.Source.append('fixAll');
+    public static readonly Notebook = CodeActionKind.Empty.append('notebook');
 
     constructor(
         public readonly value: string
@@ -993,6 +1713,7 @@ export enum TextDocumentSaveReason {
     FocusOut = 3
 }
 
+@es5ClassCompat
 export class CodeAction {
     title: string;
 
@@ -1003,6 +1724,10 @@ export class CodeAction {
     diagnostics?: Diagnostic[];
 
     kind?: CodeActionKind;
+
+    disabled?: { reason: string };
+
+    isPreferred?: boolean;
 
     constructor(title: string, kind?: CodeActionKind) {
         this.title = title;
@@ -1016,45 +1741,98 @@ export interface FileOperationOptions {
     ignoreIfNotExists?: boolean;
     recursive?: boolean;
 }
+
+// copied from https://github.com/microsoft/vscode/blob/b165e20587dd0797f37251515bc9e4dbe513ede8/src/vs/editor/common/modes.ts
+export interface WorkspaceEditMetadata {
+    needsConfirmation: boolean;
+    label: string;
+    description?: string;
+    iconPath?: {
+        id: string;
+    } | {
+        light: URI;
+        dark: URI;
+    } | ThemeIcon;
+}
+
+export const enum FileEditType {
+    File = 1,
+    Text = 2,
+    // eslint-disable-next-line @typescript-eslint/no-shadow
+    Cell = 3,
+    CellReplace = 5,
+    Snippet = 6,
+}
+
 export interface FileOperation {
-    _type: 1;
+    _type: FileEditType.File;
     from: URI | undefined;
     to: URI | undefined;
     options?: FileOperationOptions;
+    metadata?: WorkspaceEditMetadata;
 }
 
 export interface FileTextEdit {
-    _type: 2;
+    _type: FileEditType.Text;
     uri: URI;
     edit: TextEdit;
+    metadata?: WorkspaceEditMetadata;
 }
 
+export interface FileSnippetTextEdit {
+    readonly _type: FileEditType.Snippet;
+    readonly uri: URI;
+    readonly range: Range;
+    readonly edit: SnippetTextEdit;
+    readonly metadata?: theia.WorkspaceEditEntryMetadata;
+}
+
+export interface FileCellEdit {
+    readonly _type: FileEditType.Cell;
+    readonly uri: URI;
+    readonly edit?: CellMetadataEdit | NotebookDocumentMetadataEdit;
+    readonly notebookMetadata?: Record<string, unknown>;
+    readonly metadata?: theia.WorkspaceEditEntryMetadata;
+}
+
+export interface CellEdit {
+    readonly _type: FileEditType.CellReplace;
+    readonly metadata?: theia.WorkspaceEditEntryMetadata;
+    readonly uri: URI;
+    readonly index: number;
+    readonly count: number;
+    readonly cells: theia.NotebookCellData[];
+}
+
+type WorkspaceEditEntry = FileOperation | FileTextEdit | FileSnippetTextEdit | FileCellEdit | CellEdit | undefined;
+
+@es5ClassCompat
 export class WorkspaceEdit implements theia.WorkspaceEdit {
 
-    private _edits = new Array<FileOperation | FileTextEdit | undefined>();
+    private _edits = new Array<WorkspaceEditEntry>();
 
-    renameFile(from: theia.Uri, to: theia.Uri, options?: { overwrite?: boolean, ignoreIfExists?: boolean }): void {
-        this._edits.push({ _type: 1, from, to, options });
+    renameFile(from: theia.Uri, to: theia.Uri, options?: { overwrite?: boolean, ignoreIfExists?: boolean }, metadata?: WorkspaceEditMetadata): void {
+        this._edits.push({ _type: 1, from, to, options, metadata });
     }
 
-    createFile(uri: theia.Uri, options?: { overwrite?: boolean, ignoreIfExists?: boolean }): void {
-        this._edits.push({ _type: 1, from: undefined, to: uri, options });
+    createFile(uri: theia.Uri, options?: { overwrite?: boolean, ignoreIfExists?: boolean }, metadata?: WorkspaceEditMetadata): void {
+        this._edits.push({ _type: 1, from: undefined, to: uri, options, metadata });
     }
 
-    deleteFile(uri: theia.Uri, options?: { recursive?: boolean, ignoreIfNotExists?: boolean }): void {
-        this._edits.push({ _type: 1, from: uri, to: undefined, options });
+    deleteFile(uri: theia.Uri, options?: { recursive?: boolean, ignoreIfNotExists?: boolean }, metadata?: WorkspaceEditMetadata): void {
+        this._edits.push({ _type: 1, from: uri, to: undefined, options, metadata });
     }
 
-    replace(uri: URI, range: Range, newText: string): void {
-        this._edits.push({ _type: 2, uri, edit: new TextEdit(range, newText) });
+    replace(uri: URI, range: Range, newText: string, metadata?: WorkspaceEditMetadata): void {
+        this._edits.push({ _type: 2, uri, edit: new TextEdit(range, newText), metadata });
     }
 
-    insert(resource: URI, position: Position, newText: string): void {
-        this.replace(resource, new Range(position, position), newText);
+    insert(resource: URI, position: Position, newText: string, metadata?: WorkspaceEditMetadata): void {
+        this.replace(resource, new Range(position, position), newText, metadata);
     }
 
-    delete(resource: URI, range: Range): void {
-        this.replace(resource, range, '');
+    delete(resource: URI, range: Range, metadata?: WorkspaceEditMetadata): void {
+        this.replace(resource, range, '', metadata);
     }
 
     has(uri: URI): boolean {
@@ -1066,21 +1844,65 @@ export class WorkspaceEdit implements theia.WorkspaceEdit {
         return false;
     }
 
-    set(uri: URI, edits: TextEdit[]): void {
+    set(uri: URI, edits: ReadonlyArray<TextEdit | SnippetTextEdit>): void;
+    set(uri: URI, edits: ReadonlyArray<[TextEdit | SnippetTextEdit, theia.WorkspaceEditEntryMetadata]>): void;
+    set(uri: URI, edits: ReadonlyArray<NotebookEdit>): void;
+    set(uri: URI, edits: ReadonlyArray<[NotebookEdit, theia.WorkspaceEditEntryMetadata]>): void;
+
+    set(uri: URI, edits: ReadonlyArray<TextEdit | SnippetTextEdit
+        | NotebookEdit | [NotebookEdit, theia.WorkspaceEditEntryMetadata]
+        | [TextEdit | SnippetTextEdit, theia.WorkspaceEditEntryMetadata]>): void {
         if (!edits) {
             // remove all text edits for `uri`
             for (let i = 0; i < this._edits.length; i++) {
                 const element = this._edits[i];
-                if (element && element._type === 2 && element.uri.toString() === uri.toString()) {
+                if (element &&
+                    (element._type === FileEditType.Text || element._type === FileEditType.Snippet) &&
+                    element.uri.toString() === uri.toString()) {
                     this._edits[i] = undefined;
                 }
             }
             this._edits = this._edits.filter(e => !!e);
         } else {
             // append edit to the end
-            for (const edit of edits) {
-                if (edit) {
-                    this._edits.push({ _type: 2, uri, edit });
+            for (const editOrTuple of edits) {
+                if (!editOrTuple) {
+                    continue;
+                }
+
+                let edit: TextEdit | SnippetTextEdit | NotebookEdit;
+                let metadata: theia.WorkspaceEditEntryMetadata | undefined;
+                if (Array.isArray(editOrTuple)) {
+                    edit = editOrTuple[0];
+                    metadata = editOrTuple[1];
+                } else {
+                    edit = editOrTuple;
+                }
+
+                if (NotebookEdit.isNotebookCellEdit(edit)) {
+                    if (edit.newCellMetadata) {
+                        this._edits.push({
+                            _type: FileEditType.Cell, metadata, uri,
+                            edit: { editType: CellEditType.Metadata, index: edit.range.start, metadata: edit.newCellMetadata }
+                        });
+                    } else if (edit.newNotebookMetadata) {
+                        this._edits.push({
+                            _type: FileEditType.Cell, metadata, uri,
+                            edit: { editType: CellEditType.DocumentMetadata, metadata: edit.newNotebookMetadata }, notebookMetadata: edit.newNotebookMetadata
+                        });
+                    } else {
+                        const start = edit.range.start;
+                        const end = edit.range.end;
+
+                        if (start !== end || edit.newCells.length > 0) {
+                            this._edits.push({ _type: FileEditType.CellReplace, uri, index: start, count: end - start, cells: edit.newCells, metadata });
+                        }
+                    }
+
+                } else if (SnippetTextEdit.isSnippetTextEdit(edit)) {
+                    this._edits.push({ _type: FileEditType.Snippet, uri, range: edit.range, edit, metadata });
+                } else {
+                    this._edits.push({ _type: FileEditType.Text, uri, edit });
                 }
             }
         }
@@ -1102,7 +1924,7 @@ export class WorkspaceEdit implements theia.WorkspaceEdit {
     entries(): [URI, TextEdit[]][] {
         const textEdits = new Map<string, [URI, TextEdit[]]>();
         for (const candidate of this._edits) {
-            if (candidate && candidate._type === 2) {
+            if (candidate && candidate._type === FileEditType.Text) {
                 let textEdit = textEdits.get(candidate.uri.toString());
                 if (!textEdit) {
                     textEdit = [candidate.uri, []];
@@ -1116,19 +1938,23 @@ export class WorkspaceEdit implements theia.WorkspaceEdit {
         return result;
     }
 
-    _allEntries(): ([URI, TextEdit[]] | [URI, URI, FileOperationOptions])[] {
-        const res: ([URI, TextEdit[]] | [URI, URI, FileOperationOptions])[] = [];
-        for (const edit of this._edits) {
-            if (!edit) {
-                continue;
-            }
-            if (edit._type === 1) {
-                res.push([edit.from!, edit.to!, edit.options!]);
-            } else {
-                res.push([edit.uri, [edit.edit]]);
-            }
-        }
-        return res;
+    // _allEntries(): ([URI, Array<TextEdit | SnippetTextEdit>, theia.WorkspaceEditEntryMetadata] | [URI, URI, FileOperationOptions, WorkspaceEditMetadata])[] {
+    //     const res: ([URI, Array<TextEdit | SnippetTextEdit>, theia.WorkspaceEditEntryMetadata] | [URI, URI, FileOperationOptions, WorkspaceEditMetadata])[] = [];
+    //     for (const edit of this._edits) {
+    //         if (!edit) {
+    //             continue;
+    //         }
+    //         if (edit._type === FileEditType.File) {
+    //             res.push([edit.from!, edit.to!, edit.options!, edit.metadata!]);
+    //         } else {
+    //             res.push([edit.uri, [edit.edit], edit.metadata!]);
+    //         }
+    //     }
+    //     return res;
+    // }
+
+    _allEntries(): ReadonlyArray<WorkspaceEditEntry> {
+        return this._edits;
     }
 
     get size(): number {
@@ -1141,6 +1967,56 @@ export class WorkspaceEdit implements theia.WorkspaceEdit {
     }
 }
 
+export class DataTransferItem {
+    asString(): Thenable<string> {
+        return Promise.resolve(typeof this.value === 'string' ? this.value : JSON.stringify(this.value));
+    }
+
+    asFile(): theia.DataTransferFile | undefined {
+        return undefined;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    constructor(readonly value: any) {
+    }
+}
+
+/**
+ * A map containing a mapping of the mime type of the corresponding transferred data.
+ *
+ * Drag and drop controllers that implement {@link TreeDragAndDropController.handleDrag `handleDrag`} can add additional mime types to the
+ * data transfer. These additional mime types will only be included in the `handleDrop` when the the drag was initiated from
+ * an element in the same drag and drop controller.
+ */
+@es5ClassCompat
+export class DataTransfer implements Iterable<[mimeType: string, item: DataTransferItem]> {
+    private items = new Map<string, DataTransferItem>();
+    get(mimeType: string): DataTransferItem | undefined {
+        return this.items.get(mimeType);
+    }
+    set(mimeType: string, value: DataTransferItem): void {
+        this.items.set(mimeType, value);
+    }
+
+    has(mimeType: string): boolean {
+        return this.items.has(mimeType);
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    forEach(callbackfn: (item: DataTransferItem, mimeType: string, dataTransfer: DataTransfer) => void, thisArg?: any): void {
+        this.items.forEach((item, mimetype) => {
+            callbackfn.call(thisArg, item, mimetype, this);
+        });
+    }
+    [Symbol.iterator](): IterableIterator<[mimeType: string, item: DataTransferItem]> {
+        return this.items[Symbol.iterator]();
+    }
+
+    clear(): void {
+        this.items.clear();
+    }
+}
+@es5ClassCompat
 export class TreeItem {
 
     label?: string | theia.TreeItemLabel;
@@ -1156,6 +2032,12 @@ export class TreeItem {
     command?: theia.Command;
 
     contextValue?: string;
+
+    checkboxState?: theia.TreeItemCheckboxState | {
+        readonly state: theia.TreeItemCheckboxState;
+        readonly tooltip?: string;
+        readonly accessibilityInformation?: AccessibilityInformation
+    };
 
     constructor(label: string | theia.TreeItemLabel, collapsibleState?: theia.TreeItemCollapsibleState)
     constructor(resourceUri: URI, collapsibleState?: theia.TreeItemCollapsibleState)
@@ -1174,10 +2056,16 @@ export enum TreeItemCollapsibleState {
     Expanded = 2
 }
 
+export enum TreeItemCheckboxState {
+    Unchecked = 0,
+    Checked = 1
+}
+
 export enum SymbolTag {
     Deprecated = 1
 }
 
+@es5ClassCompat
 export class SymbolInformation {
 
     static validate(candidate: SymbolInformation): void {
@@ -1222,6 +2110,7 @@ export class SymbolInformation {
     }
 }
 
+@es5ClassCompat
 export class DocumentSymbol {
 
     static validate(candidate: DocumentSymbol): void {
@@ -1256,10 +2145,9 @@ export class DocumentSymbol {
     }
 }
 
-export enum FileChangeType {
-    Changed = 1,
-    Created = 2,
-    Deleted = 3,
+export enum CommentThreadState {
+    Unresolved = 0,
+    Resolved = 1
 }
 
 export enum CommentThreadCollapsibleState {
@@ -1267,18 +2155,89 @@ export enum CommentThreadCollapsibleState {
     Expanded = 1
 }
 
-export interface QuickInputButton {
-    readonly iconPath: URI | { light: string | URI; dark: string | URI } | ThemeIcon;
-    readonly tooltip?: string | undefined;
-}
-
+@es5ClassCompat
 export class QuickInputButtons {
-    static readonly Back: QuickInputButton = {
+    static readonly Back: theia.QuickInputButton = {
         iconPath: {
-            id: 'Back'
+            id: 'Back',
         },
         tooltip: 'Back'
     };
+}
+
+@es5ClassCompat
+export class TerminalLink {
+
+    static validate(candidate: TerminalLink): void {
+        if (typeof candidate.startIndex !== 'number') {
+            throw new Error('Should provide a startIndex inside candidate field');
+        }
+        if (typeof candidate.length !== 'number') {
+            throw new Error('Should provide a length inside candidate field');
+        }
+    }
+
+    startIndex: number;
+    length: number;
+    tooltip?: string;
+
+    constructor(startIndex: number, length: number, tooltip?: string) {
+        this.startIndex = startIndex;
+        this.length = length;
+        this.tooltip = tooltip;
+    }
+}
+
+export enum TerminalLocation {
+    Panel = 1,
+    Editor = 2
+}
+
+export enum TerminalOutputAnchor {
+    Top = 0,
+    Bottom = 1
+}
+
+export class TerminalProfile {
+    /**
+     * Creates a new terminal profile.
+     * @param options The options that the terminal will launch with.
+     */
+    constructor(readonly options: theia.TerminalOptions | theia.ExtensionTerminalOptions) {
+    }
+}
+
+export enum TerminalExitReason {
+    Unknown = 0,
+    Shutdown = 1,
+    Process = 2,
+    User = 3,
+    Extension = 4,
+}
+
+@es5ClassCompat
+export class FileDecoration {
+
+    static validate(d: FileDecoration): void {
+        if (d.badge && d.badge.length !== 1 && d.badge.length !== 2) {
+            throw new Error('The \'badge\'-property must be undefined or a short character');
+        }
+        if (!d.color && !d.badge && !d.tooltip) {
+            throw new Error('The decoration is empty');
+        }
+    }
+
+    badge?: string;
+    tooltip?: string;
+    color?: theia.ThemeColor;
+    priority?: number;
+    propagate?: boolean;
+
+    constructor(badge?: string, tooltip?: string, color?: ThemeColor) {
+        this.badge = badge;
+        this.tooltip = tooltip;
+        this.color = color;
+    }
 }
 
 export enum CommentMode {
@@ -1286,40 +2245,61 @@ export enum CommentMode {
     Preview = 1
 }
 
+// #region file api
+
+export enum FileChangeType {
+    Changed = 1,
+    Created = 2,
+    Deleted = 3,
+}
+
+@es5ClassCompat
 export class FileSystemError extends Error {
 
     static FileExists(messageOrUri?: string | URI): FileSystemError {
-        return new FileSystemError(messageOrUri, 'EntryExists', FileSystemError.FileExists);
+        return new FileSystemError(messageOrUri, FileSystemProviderErrorCode.FileExists, FileSystemError.FileExists);
     }
     static FileNotFound(messageOrUri?: string | URI): FileSystemError {
-        return new FileSystemError(messageOrUri, 'EntryNotFound', FileSystemError.FileNotFound);
+        return new FileSystemError(messageOrUri, FileSystemProviderErrorCode.FileNotFound, FileSystemError.FileNotFound);
     }
     static FileNotADirectory(messageOrUri?: string | URI): FileSystemError {
-        return new FileSystemError(messageOrUri, 'EntryNotADirectory', FileSystemError.FileNotADirectory);
+        return new FileSystemError(messageOrUri, FileSystemProviderErrorCode.FileNotADirectory, FileSystemError.FileNotADirectory);
     }
     static FileIsADirectory(messageOrUri?: string | URI): FileSystemError {
-        return new FileSystemError(messageOrUri, 'EntryIsADirectory', FileSystemError.FileIsADirectory);
+        return new FileSystemError(messageOrUri, FileSystemProviderErrorCode.FileIsADirectory, FileSystemError.FileIsADirectory);
     }
     static NoPermissions(messageOrUri?: string | URI): FileSystemError {
-        return new FileSystemError(messageOrUri, 'NoPermissions', FileSystemError.NoPermissions);
+        return new FileSystemError(messageOrUri, FileSystemProviderErrorCode.NoPermissions, FileSystemError.NoPermissions);
     }
     static Unavailable(messageOrUri?: string | URI): FileSystemError {
-        return new FileSystemError(messageOrUri, 'Unavailable', FileSystemError.Unavailable);
+        return new FileSystemError(messageOrUri, FileSystemProviderErrorCode.Unavailable, FileSystemError.Unavailable);
     }
 
-    constructor(uriOrMessage?: string | URI, code?: string, terminator?: Function) {
-        super(URI.isUri(uriOrMessage) ? uriOrMessage.toString(true) : uriOrMessage);
-        this.name = code ? `${code} (FileSystemError)` : 'FileSystemError';
+    readonly code: string;
 
+    constructor(uriOrMessage?: string | URI, code: FileSystemProviderErrorCode = FileSystemProviderErrorCode.Unknown, terminator?: Function) {
+        super(URI.isUri(uriOrMessage) ? uriOrMessage.toString(true) : uriOrMessage);
+
+        this.code = terminator?.name ?? 'Unknown';
+
+        // mark the error as file system provider error so that
+        // we can extract the error code on the receiving side
+        markAsFileSystemProviderError(this, code);
+
+        // workaround when extending builtin objects and when compiling to ES5, see:
+        // https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
         if (typeof Object.setPrototypeOf === 'function') {
             Object.setPrototypeOf(this, FileSystemError.prototype);
         }
 
         if (typeof Error.captureStackTrace === 'function' && typeof terminator === 'function') {
+            // nice stack traces
             Error.captureStackTrace(this, terminator);
         }
     }
 }
+
+// #endregion
 
 export enum FileType {
     Unknown = 0,
@@ -1335,6 +2315,7 @@ export interface FileStat {
     readonly size: number;
 }
 
+@es5ClassCompat
 export class ProgressOptions {
     /**
      * The location at which progress should show.
@@ -1356,6 +2337,8 @@ export class ProgressOptions {
         this.location = location;
     }
 }
+
+@es5ClassCompat
 export class Progress<T> {
     /**
      * Report a progress update.
@@ -1381,6 +2364,7 @@ export enum ProgressLocation {
     Notification = 15
 }
 
+@es5ClassCompat
 export class ProcessExecution {
     private executionProcess: string;
     private arguments: string[];
@@ -1436,24 +2420,15 @@ export class ProcessExecution {
         this.executionOptions = value;
     }
 
-    public computeId(): string {
-        const hash = crypto.createHash('md5');
-        hash.update('process');
-        if (this.executionProcess !== undefined) {
-            hash.update(this.executionProcess);
-        }
-        if (this.arguments && this.arguments.length > 0) {
-            for (const arg of this.arguments) {
-                hash.update(arg);
-            }
-        }
-        return hash.digest('hex');
-    }
-
-    public static is(value: theia.ShellExecution | theia.ProcessExecution): boolean {
+    public static is(value: theia.ShellExecution | theia.ProcessExecution | theia.CustomExecution): value is ProcessExecution {
         const candidate = value as ProcessExecution;
         return candidate && !!candidate.process;
     }
+}
+
+export enum QuickPickItemKind {
+    Separator = -1,
+    Default = 0,
 }
 
 export enum ShellQuoting {
@@ -1474,6 +2449,7 @@ export enum TaskRevealKind {
     Never = 3
 }
 
+@es5ClassCompat
 export class ShellExecution {
     private shellCommandLine: string;
     private shellCommand: string | theia.ShellQuotedString;
@@ -1541,31 +2517,35 @@ export class ShellExecution {
         this.shellOptions = value;
     }
 
-    public computeId(): string {
-        const hash = crypto.createHash('md5');
-        hash.update('shell');
-        if (this.shellCommandLine !== undefined) {
-            hash.update(this.shellCommandLine);
-        }
-        if (this.shellCommand !== undefined) {
-            hash.update(typeof this.shellCommand === 'string' ? this.shellCommand : this.shellCommand.value);
-        }
-        if (this.arguments && this.arguments.length > 0) {
-            for (const arg of this.arguments) {
-                hash.update(typeof arg === 'string' ? arg : arg.value);
-            }
-        }
-        return hash.digest('hex');
-    }
-
-    public static is(value: theia.ShellExecution | theia.ProcessExecution): boolean {
+    public static is(value: theia.ShellExecution | theia.ProcessExecution | theia.CustomExecution): value is ShellExecution {
         const candidate = value as ShellExecution;
         return candidate && (!!candidate.commandLine || !!candidate.command);
     }
 }
 
+@es5ClassCompat
+export class CustomExecution {
+    private _callback: (resolvedDefinition: theia.TaskDefinition) => Thenable<theia.Pseudoterminal>;
+    constructor(callback: (resolvedDefinition: theia.TaskDefinition) => Thenable<theia.Pseudoterminal>) {
+        this._callback = callback;
+    }
+
+    public set callback(value: (resolvedDefinition: theia.TaskDefinition) => Thenable<theia.Pseudoterminal>) {
+        this._callback = value;
+    }
+
+    public get callback(): ((resolvedDefinition: theia.TaskDefinition) => Thenable<theia.Pseudoterminal>) {
+        return this._callback;
+    }
+
+    public static is(value: theia.ShellExecution | theia.ProcessExecution | theia.CustomExecution): value is CustomExecution {
+        const candidate = value as CustomExecution;
+        return candidate && (!!candidate._callback);
+    }
+}
+
+@es5ClassCompat
 export class TaskGroup {
-    private groupId: string;
 
     public static Clean: TaskGroup = new TaskGroup('clean', 'Clean');
     public static Build: TaskGroup = new TaskGroup('build', 'Build');
@@ -1587,19 +2567,13 @@ export class TaskGroup {
         }
     }
 
-    constructor(id: string, label: string) {
-        if (typeof id !== 'string') {
-            throw illegalArgument('id');
-        }
-        if (typeof label !== 'string') {
-            throw illegalArgument('name');
-        }
-        this.groupId = id;
+    constructor(id: 'clean' | 'build' | 'rebuild' | 'test', label: string);
+    constructor(id: 'clean' | 'build' | 'rebuild' | 'test', label: string, isDefault?: boolean | undefined);
+    constructor(readonly id: 'clean' | 'build' | 'rebuild' | 'test', label: string, isDefault?: boolean | undefined) {
+        this.isDefault = !!isDefault;
     }
 
-    get id(): string {
-        return this.groupId;
-    }
+    readonly isDefault: boolean;
 }
 
 export enum TaskScope {
@@ -1607,23 +2581,25 @@ export enum TaskScope {
     Workspace = 2
 }
 
+@es5ClassCompat
 export class Task {
     private taskDefinition: theia.TaskDefinition;
     private taskScope: theia.TaskScope.Global | theia.TaskScope.Workspace | theia.WorkspaceFolder | undefined;
     private taskName: string;
-    private taskExecution: ProcessExecution | ShellExecution | undefined;
+    private taskExecution: ProcessExecution | ShellExecution | CustomExecution | undefined;
     private taskProblemMatchers: string[];
     private hasTaskProblemMatchers: boolean;
     private isTaskBackground: boolean;
     private taskSource: string;
     private taskGroup: TaskGroup | undefined;
-    private taskPresentationOptions: theia.TaskPresentationOptions | undefined;
+    private taskPresentationOptions: theia.TaskPresentationOptions;
+    private taskRunOptions: theia.RunOptions;
     constructor(
         taskDefinition: theia.TaskDefinition,
         scope: theia.WorkspaceFolder | theia.TaskScope.Global | theia.TaskScope.Workspace,
         name: string,
         source: string,
-        execution?: ProcessExecution | ShellExecution,
+        execution?: ProcessExecution | ShellExecution | CustomExecution,
         problemMatchers?: string | string[]
     );
 
@@ -1632,7 +2608,7 @@ export class Task {
         taskDefinition: theia.TaskDefinition,
         name: string,
         source: string,
-        execution?: ProcessExecution | ShellExecution,
+        execution?: ProcessExecution | ShellExecution | CustomExecution,
         problemMatchers?: string | string[],
     );
 
@@ -1642,7 +2618,7 @@ export class Task {
         let scope: theia.WorkspaceFolder | theia.TaskScope.Global | theia.TaskScope.Workspace | undefined;
         let name: string;
         let source: string;
-        let execution: ProcessExecution | ShellExecution | undefined;
+        let execution: ProcessExecution | ShellExecution | CustomExecution | undefined;
         let problemMatchers: string | string[] | undefined;
 
         if (typeof args[1] === 'string') {
@@ -1681,6 +2657,8 @@ export class Task {
             this.hasTaskProblemMatchers = false;
         }
         this.isTaskBackground = false;
+        this.presentationOptions = Object.create(null);
+        this.taskRunOptions = Object.create(null);
     }
 
     get definition(): theia.TaskDefinition {
@@ -1716,16 +2694,15 @@ export class Task {
         this.taskName = value;
     }
 
-    get execution(): ProcessExecution | ShellExecution | undefined {
+    get execution(): ProcessExecution | ShellExecution | CustomExecution | undefined {
         return this.taskExecution;
     }
 
-    set execution(value: ProcessExecution | ShellExecution | undefined) {
+    set execution(value: ProcessExecution | ShellExecution | CustomExecution | undefined) {
         if (value === null) {
             value = undefined;
         }
         this.taskExecution = value;
-        this.updateDefinitionBasedOnExecution();
     }
 
     get problemMatchers(): string[] {
@@ -1780,34 +2757,33 @@ export class Task {
         this.taskGroup = value;
     }
 
-    get presentationOptions(): theia.TaskPresentationOptions | undefined {
+    get presentationOptions(): theia.TaskPresentationOptions {
         return this.taskPresentationOptions;
     }
 
-    set presentationOptions(value: theia.TaskPresentationOptions | undefined) {
-        if (value === null) {
-            value = undefined;
+    set presentationOptions(value: theia.TaskPresentationOptions) {
+        if (value === null || value === undefined) {
+            value = Object.create(null);
         }
         this.taskPresentationOptions = value;
     }
 
-    private updateDefinitionBasedOnExecution(): void {
-        if (this.taskExecution instanceof ProcessExecution) {
-            Object.assign(this.taskDefinition, {
-                type: 'process',
-                id: this.taskExecution.computeId(),
-                taskType: this.taskDefinition!.type
-            });
-        } else if (this.taskExecution instanceof ShellExecution) {
-            Object.assign(this.taskDefinition, {
-                type: 'shell',
-                id: this.taskExecution.computeId(),
-                taskType: this.taskDefinition!.type
-            });
+    get runOptions(): theia.RunOptions {
+        return this.taskRunOptions;
+    }
+
+    set runOptions(value: theia.RunOptions) {
+        if (value === null || value === undefined) {
+            value = Object.create(null);
         }
+        this.taskRunOptions = value;
     }
 }
 
+@es5ClassCompat
+export class Task2 extends Task { }
+
+@es5ClassCompat
 export class DebugAdapterExecutable {
     /**
      * The command or path of the debug adapter executable.
@@ -1841,9 +2817,16 @@ export class DebugAdapterExecutable {
     }
 }
 
+export namespace DebugAdapterExecutable {
+    export function is(adapter: theia.DebugAdapterDescriptor | undefined): adapter is theia.DebugAdapterExecutable {
+        return !!adapter && 'command' in adapter;
+    }
+}
+
 /**
  * Represents a debug adapter running as a socket based server.
  */
+@es5ClassCompat
 export class DebugAdapterServer {
 
     /**
@@ -1865,19 +2848,65 @@ export class DebugAdapterServer {
     }
 }
 
+export namespace DebugAdapterServer {
+    export function is(adapter: theia.DebugAdapterDescriptor | undefined): adapter is DebugAdapterServer {
+        return !!adapter && 'port' in adapter;
+    }
+}
+
+/**
+ * Represents a debug adapter running as a Named Pipe (on Windows)/UNIX Domain Socket (on non-Windows) based server.
+ */
+@es5ClassCompat
+export class DebugAdapterNamedPipeServer {
+    /**
+     * Create a description for a debug adapter running as a Named Pipe (on Windows)/UNIX Domain Socket (on non-Windows) based server.
+     */
+    constructor(readonly path: string) { }
+}
+
+export namespace DebugAdapterNamedPipeServer {
+    export function is(adapter: theia.DebugAdapterDescriptor | undefined): adapter is DebugAdapterNamedPipeServer {
+        return !!adapter && 'path' in adapter;
+    }
+}
+
+/**
+ * A debug adapter descriptor for an inline implementation.
+ */
+@es5ClassCompat
+export class DebugAdapterInlineImplementation {
+    implementation: theia.DebugAdapter;
+
+    /**
+     * Create a descriptor for an inline implementation of a debug adapter.
+     */
+    constructor(impl: theia.DebugAdapter) {
+        this.implementation = impl;
+    }
+}
+
+export namespace DebugAdapterInlineImplementation {
+    export function is(adapter: theia.DebugAdapterDescriptor | undefined): adapter is DebugAdapterInlineImplementation {
+        return !!adapter && 'implementation' in adapter;
+    }
+}
+
+export type DebugAdapterDescriptor = DebugAdapterExecutable | DebugAdapterServer | DebugAdapterNamedPipeServer | DebugAdapterInlineImplementation;
+
 export enum LogLevel {
+    Off = 0,
     Trace = 1,
     Debug = 2,
     Info = 3,
     Warning = 4,
-    Error = 5,
-    Critical = 6,
-    Off = 7
+    Error = 5
 }
 
 /**
  * The base class of all breakpoint types.
  */
+@es5ClassCompat
 export class Breakpoint {
     /**
      * Is breakpoint enabled.
@@ -1896,11 +2925,12 @@ export class Breakpoint {
      */
     logMessage?: string;
 
-    protected constructor(enabled?: boolean, condition?: string, hitCondition?: string, logMessage?: string) {
+    protected constructor(enabled?: boolean, condition?: string, hitCondition?: string, logMessage?: string, id?: string) {
         this.enabled = enabled || false;
         this.condition = condition;
         this.hitCondition = hitCondition;
         this.logMessage = logMessage;
+        this._id = id;
     }
 
     private _id: string | undefined;
@@ -1919,6 +2949,7 @@ export class Breakpoint {
 /**
  * A breakpoint specified by a source location.
  */
+@es5ClassCompat
 export class SourceBreakpoint extends Breakpoint {
     /**
      * The source and line position of this breakpoint.
@@ -1928,8 +2959,8 @@ export class SourceBreakpoint extends Breakpoint {
     /**
      * Create a new breakpoint for a source location.
      */
-    constructor(location: Location, enabled?: boolean, condition?: string, hitCondition?: string, logMessage?: string) {
-        super(enabled, condition, hitCondition, logMessage);
+    constructor(location: Location, enabled?: boolean, condition?: string, hitCondition?: string, logMessage?: string, id?: string) {
+        super(enabled, condition, hitCondition, logMessage, id);
         this.location = location;
     }
 }
@@ -1937,6 +2968,7 @@ export class SourceBreakpoint extends Breakpoint {
 /**
  * A breakpoint specified by a function name.
  */
+@es5ClassCompat
 export class FunctionBreakpoint extends Breakpoint {
     /**
      * The name of the function to which this breakpoint is attached.
@@ -1946,12 +2978,13 @@ export class FunctionBreakpoint extends Breakpoint {
     /**
      * Create a new function breakpoint.
      */
-    constructor(functionName: string, enabled?: boolean, condition?: string, hitCondition?: string, logMessage?: string) {
-        super(enabled, condition, hitCondition, logMessage);
+    constructor(functionName: string, enabled?: boolean, condition?: string, hitCondition?: string, logMessage?: string, id?: string) {
+        super(enabled, condition, hitCondition, logMessage, id);
         this.functionName = functionName;
     }
 }
 
+@es5ClassCompat
 export class Color {
     readonly red: number;
     readonly green: number;
@@ -1966,6 +2999,7 @@ export class Color {
     }
 }
 
+@es5ClassCompat
 export class ColorInformation {
     range: Range;
     color: Color;
@@ -1982,6 +3016,7 @@ export class ColorInformation {
     }
 }
 
+@es5ClassCompat
 export class ColorPresentation {
     label: string;
     textEdit?: TextEdit;
@@ -2001,6 +3036,41 @@ export enum ColorFormat {
     HSL = 2
 }
 
+@es5ClassCompat
+export class InlayHintLabelPart implements theia.InlayHintLabelPart {
+    value: string;
+    tooltip?: string | theia.MarkdownString | undefined;
+    location?: Location | undefined;
+    command?: theia.Command | undefined;
+
+    constructor(value: string) {
+        this.value = value;
+    }
+}
+
+@es5ClassCompat
+export class InlayHint implements theia.InlayHint {
+    position: theia.Position;
+    label: string | InlayHintLabelPart[];
+    tooltip?: string | theia.MarkdownString | undefined;
+    kind?: InlayHintKind;
+    textEdits?: TextEdit[];
+    paddingLeft?: boolean;
+    paddingRight?: boolean;
+
+    constructor(position: theia.Position, label: string | InlayHintLabelPart[], kind?: InlayHintKind) {
+        this.position = position;
+        this.label = label;
+        this.kind = kind;
+    }
+}
+
+export enum InlayHintKind {
+    Type = 1,
+    Parameter = 2,
+}
+
+@es5ClassCompat
 export class FoldingRange {
     start: number;
     end: number;
@@ -2019,6 +3089,7 @@ export enum FoldingRangeKind {
     Region = 3
 }
 
+@es5ClassCompat
 export class SelectionRange {
 
     range: Range;
@@ -2050,11 +3121,91 @@ export enum WebviewPanelTargetArea {
     Right = 'right',
     Bottom = 'bottom'
 }
+
+/**
+ * Possible kinds of UI that can use extensions.
+ */
+export enum UIKind {
+
+    /**
+     * Extensions are accessed from a desktop application.
+     */
+    Desktop = 1,
+
+    /**
+     * Extensions are accessed from a web browser.
+     */
+    Web = 2
+}
+
+@es5ClassCompat
 export class CallHierarchyItem {
     _sessionId?: string;
     _itemId?: string;
 
     kind: SymbolKind;
+    name: string;
+    detail?: string;
+    uri: URI;
+    range: Range;
+    selectionRange: Range;
+    tags?: readonly SymbolTag[];
+
+    constructor(kind: SymbolKind, name: string, detail: string, uri: URI, range: Range, selectionRange: Range) {
+        this.kind = kind;
+        this.name = name;
+        this.detail = detail;
+        this.uri = uri;
+        this.range = range;
+        this.selectionRange = selectionRange;
+    }
+
+    static isCallHierarchyItem(thing: {}): thing is CallHierarchyItem {
+        if (thing instanceof CallHierarchyItem) {
+            return true;
+        }
+        if (!thing) {
+            return false;
+        }
+        return typeof (<CallHierarchyItem>thing).kind === 'number' &&
+            typeof (<CallHierarchyItem>thing).name === 'string' &&
+            URI.isUri((<CallHierarchyItem>thing).uri) &&
+            Range.isRange((<CallHierarchyItem>thing).range) &&
+            Range.isRange((<CallHierarchyItem>thing).selectionRange);
+    }
+}
+
+@es5ClassCompat
+export class CallHierarchyIncomingCall {
+
+    from: theia.CallHierarchyItem;
+    fromRanges: theia.Range[];
+
+    constructor(item: CallHierarchyItem, fromRanges: Range[]) {
+        this.fromRanges = fromRanges;
+        this.from = item;
+    }
+}
+
+@es5ClassCompat
+export class CallHierarchyOutgoingCall {
+
+    to: theia.CallHierarchyItem;
+    fromRanges: theia.Range[];
+
+    constructor(item: CallHierarchyItem, fromRanges: Range[]) {
+        this.fromRanges = fromRanges;
+        this.to = item;
+    }
+}
+
+@es5ClassCompat
+export class TypeHierarchyItem {
+    _sessionId?: string;
+    _itemId?: string;
+
+    kind: SymbolKind;
+    tags?: readonly SymbolTag[];
     name: string;
     detail?: string;
     uri: URI;
@@ -2070,39 +3221,476 @@ export class CallHierarchyItem {
         this.selectionRange = selectionRange;
     }
 
-    static isCallHierarchyItem(thing: {}): thing is theia.CallHierarchyItem {
-        if (thing instanceof CallHierarchyItem) {
+    static isTypeHierarchyItem(thing: {}): thing is TypeHierarchyItem {
+        if (thing instanceof TypeHierarchyItem) {
             return true;
         }
         if (!thing) {
             return false;
         }
-        return typeof (<CallHierarchyItem>thing).kind === 'number' &&
-            typeof (<CallHierarchyItem>thing).name === 'string' &&
-            URI.isUri((<CallHierarchyItem>thing).uri) &&
-            Range.isRange((<CallHierarchyItem>thing).range) &&
-            Range.isRange((<CallHierarchyItem>thing).selectionRange);
+        return typeof (<TypeHierarchyItem>thing).kind === 'number' &&
+            typeof (<TypeHierarchyItem>thing).name === 'string' &&
+            URI.isUri((<TypeHierarchyItem>thing).uri) &&
+            Range.isRange((<TypeHierarchyItem>thing).range) &&
+            Range.isRange((<TypeHierarchyItem>thing).selectionRange);
     }
 }
 
-export class CallHierarchyIncomingCall {
+export enum LanguageStatusSeverity {
+    Information = 0,
+    Warning = 1,
+    Error = 2
+}
 
-    from: theia.CallHierarchyItem;
-    fromRanges: theia.Range[];
+@es5ClassCompat
+export class LinkedEditingRanges {
 
-    constructor(item: theia.CallHierarchyItem, fromRanges: theia.Range[]) {
-        this.fromRanges = fromRanges;
-        this.from = item;
+    ranges: theia.Range[];
+    wordPattern?: RegExp;
+
+    constructor(ranges: Range[], wordPattern?: RegExp) {
+        this.ranges = ranges;
+        this.wordPattern = wordPattern;
     }
 }
 
-export class CallHierarchyOutgoingCall {
+// Copied from https://github.com/microsoft/vscode/blob/1.72.2/src/vs/workbench/api/common/extHostTypes.ts
+export enum TestResultState {
+    Queued = 1,
+    Running = 2,
+    Passed = 3,
+    Failed = 4,
+    Skipped = 5,
+    Errored = 6
+}
 
-    to: theia.CallHierarchyItem;
-    fromRanges: theia.Range[];
+export enum TestRunProfileKind {
+    Run = 1,
+    Debug = 2,
+    Coverage = 3,
+}
 
-    constructor(item: theia.CallHierarchyItem, fromRanges: theia.Range[]) {
-        this.fromRanges = fromRanges;
-        this.to = item;
+@es5ClassCompat
+export class TestTag implements theia.TestTag {
+    constructor(public readonly id: string) { }
+}
+
+let nextTestRunId = 0;
+@es5ClassCompat
+export class TestRunRequest implements theia.TestRunRequest {
+    testRunId: number = nextTestRunId++;
+
+    constructor(
+        public readonly include: theia.TestItem[] | undefined = undefined,
+        public readonly exclude: theia.TestItem[] | undefined = undefined,
+        public readonly profile: theia.TestRunProfile | undefined = undefined,
+        public readonly continuous: boolean | undefined = undefined,
+    ) { }
+}
+
+@es5ClassCompat
+export class TestMessage implements theia.TestMessage {
+    public expectedOutput?: string;
+    public actualOutput?: string;
+    public location?: theia.Location;
+    public contextValue?: string;
+
+    public static diff(message: string | theia.MarkdownString, expected: string, actual: string): theia.TestMessage {
+        const msg = new TestMessage(message);
+        msg.expectedOutput = expected;
+        msg.actualOutput = actual;
+        return msg;
+    }
+
+    constructor(public message: string | theia.MarkdownString) { }
+}
+
+@es5ClassCompat
+export class TimelineItem {
+    timestamp: number;
+    label: string;
+    id?: string;
+    iconPath?: theia.Uri | { light: theia.Uri; dark: theia.Uri } | ThemeIcon;
+    description?: string;
+    detail?: string;
+    command?: theia.Command;
+    contextValue?: string;
+    constructor(label: string, timestamp: number) {
+        this.label = label;
+        this.timestamp = timestamp;
     }
 }
+
+// #region Semantic Coloring
+
+@es5ClassCompat
+export class SemanticTokensLegend {
+    public readonly tokenTypes: string[];
+    public readonly tokenModifiers: string[];
+
+    constructor(tokenTypes: string[], tokenModifiers: string[] = []) {
+        this.tokenTypes = tokenTypes;
+        this.tokenModifiers = tokenModifiers;
+    }
+}
+
+function isStrArrayOrUndefined(arg: unknown): arg is string[] | undefined {
+    return typeof arg === 'undefined' || isStringArray(arg);
+}
+
+@es5ClassCompat
+export class SemanticTokensBuilder {
+
+    private _prevLine: number;
+    private _prevChar: number;
+    private _dataIsSortedAndDeltaEncoded: boolean;
+    private _data: number[];
+    private _dataLen: number;
+    private _tokenTypeStrToInt: Map<string, number>;
+    private _tokenModifierStrToInt: Map<string, number>;
+    private _hasLegend: boolean;
+
+    constructor(legend?: SemanticTokensLegend) {
+        this._prevLine = 0;
+        this._prevChar = 0;
+        this._dataIsSortedAndDeltaEncoded = true;
+        this._data = [];
+        this._dataLen = 0;
+        this._tokenTypeStrToInt = new Map<string, number>();
+        this._tokenModifierStrToInt = new Map<string, number>();
+        this._hasLegend = false;
+        if (legend) {
+            this._hasLegend = true;
+            for (let i = 0, len = legend.tokenTypes.length; i < len; i++) {
+                this._tokenTypeStrToInt.set(legend.tokenTypes[i], i);
+            }
+            for (let i = 0, len = legend.tokenModifiers.length; i < len; i++) {
+                this._tokenModifierStrToInt.set(legend.tokenModifiers[i], i);
+            }
+        }
+    }
+
+    public push(line: number, char: number, length: number, tokenType: number, tokenModifiers?: number): void;
+    public push(range: Range, tokenType: string, tokenModifiers?: string[]): void;
+    public push(arg0: number | Range, arg1: number | string, arg2?: number | string[], arg3?: number, arg4?: number): void {
+        if (typeof arg0 === 'number' && typeof arg1 === 'number' && typeof arg2 === 'number' && typeof arg3 === 'number' &&
+            (typeof arg4 === 'number' || typeof arg4 === 'undefined')) {
+            if (typeof arg4 === 'undefined') {
+                arg4 = 0;
+            }
+            // 1st overload
+            return this._pushEncoded(arg0, arg1, arg2, arg3, arg4);
+        }
+        if (Range.isRange(arg0) && typeof arg1 === 'string' && isStrArrayOrUndefined(arg2)) {
+            // 2nd overload
+            return this._push(arg0, arg1, arg2);
+        }
+        throw illegalArgument();
+    }
+
+    private _push(range: theia.Range, tokenType: string, tokenModifiers?: string[]): void {
+        if (!this._hasLegend) {
+            throw new Error('Legend must be provided in constructor');
+        }
+        if (range.start.line !== range.end.line) {
+            throw new Error('`range` cannot span multiple lines');
+        }
+        if (!this._tokenTypeStrToInt.has(tokenType)) {
+            throw new Error('`tokenType` is not in the provided legend');
+        }
+        const line = range.start.line;
+        const char = range.start.character;
+        const length = range.end.character - range.start.character;
+        const nTokenType = this._tokenTypeStrToInt.get(tokenType)!;
+        let nTokenModifiers = 0;
+        if (tokenModifiers) {
+            for (const tokenModifier of tokenModifiers) {
+                if (!this._tokenModifierStrToInt.has(tokenModifier)) {
+                    throw new Error('`tokenModifier` is not in the provided legend');
+                }
+                const nTokenModifier = this._tokenModifierStrToInt.get(tokenModifier)!;
+                nTokenModifiers |= (1 << nTokenModifier) >>> 0;
+            }
+        }
+        this._pushEncoded(line, char, length, nTokenType, nTokenModifiers);
+    }
+
+    private _pushEncoded(line: number, char: number, length: number, tokenType: number, tokenModifiers: number): void {
+        if (this._dataIsSortedAndDeltaEncoded && (line < this._prevLine || (line === this._prevLine && char < this._prevChar))) {
+            // push calls were ordered and are no longer ordered
+            this._dataIsSortedAndDeltaEncoded = false;
+
+            // Remove delta encoding from data
+            const tokenCount = (this._data.length / 5) | 0;
+            let prevLine = 0;
+            let prevChar = 0;
+            for (let i = 0; i < tokenCount; i++) {
+                // eslint-disable-next-line @typescript-eslint/no-shadow
+                let line = this._data[5 * i];
+                // eslint-disable-next-line @typescript-eslint/no-shadow
+                let char = this._data[5 * i + 1];
+
+                if (line === 0) {
+                    // on the same line as previous token
+                    line = prevLine;
+                    char += prevChar;
+                } else {
+                    // on a different line than previous token
+                    line += prevLine;
+                }
+
+                this._data[5 * i] = line;
+                this._data[5 * i + 1] = char;
+
+                prevLine = line;
+                prevChar = char;
+            }
+        }
+
+        let pushLine = line;
+        let pushChar = char;
+        if (this._dataIsSortedAndDeltaEncoded && this._dataLen > 0) {
+            pushLine -= this._prevLine;
+            if (pushLine === 0) {
+                pushChar -= this._prevChar;
+            }
+        }
+
+        this._data[this._dataLen++] = pushLine;
+        this._data[this._dataLen++] = pushChar;
+        this._data[this._dataLen++] = length;
+        this._data[this._dataLen++] = tokenType;
+        this._data[this._dataLen++] = tokenModifiers;
+
+        this._prevLine = line;
+        this._prevChar = char;
+    }
+
+    private static _sortAndDeltaEncode(data: number[]): Uint32Array {
+        const pos: number[] = [];
+        const tokenCount = (data.length / 5) | 0;
+        for (let i = 0; i < tokenCount; i++) {
+            pos[i] = i;
+        }
+        pos.sort((a, b) => {
+            const aLine = data[5 * a];
+            const bLine = data[5 * b];
+            if (aLine === bLine) {
+                const aChar = data[5 * a + 1];
+                const bChar = data[5 * b + 1];
+                return aChar - bChar;
+            }
+            return aLine - bLine;
+        });
+        const result = new Uint32Array(data.length);
+        let prevLine = 0;
+        let prevChar = 0;
+        for (let i = 0; i < tokenCount; i++) {
+            const srcOffset = 5 * pos[i];
+            const line = data[srcOffset + 0];
+            const char = data[srcOffset + 1];
+            const length = data[srcOffset + 2];
+            const tokenType = data[srcOffset + 3];
+            const tokenModifiers = data[srcOffset + 4];
+
+            const pushLine = line - prevLine;
+            const pushChar = (pushLine === 0 ? char - prevChar : char);
+
+            const dstOffset = 5 * i;
+            result[dstOffset + 0] = pushLine;
+            result[dstOffset + 1] = pushChar;
+            result[dstOffset + 2] = length;
+            result[dstOffset + 3] = tokenType;
+            result[dstOffset + 4] = tokenModifiers;
+
+            prevLine = line;
+            prevChar = char;
+        }
+
+        return result;
+    }
+
+    public build(resultId?: string): SemanticTokens {
+        if (!this._dataIsSortedAndDeltaEncoded) {
+            return new SemanticTokens(SemanticTokensBuilder._sortAndDeltaEncode(this._data), resultId);
+        }
+        return new SemanticTokens(new Uint32Array(this._data), resultId);
+    }
+}
+
+@es5ClassCompat
+export class SemanticTokens {
+    readonly resultId: string | undefined;
+    readonly data: Uint32Array;
+
+    constructor(data: Uint32Array, resultId?: string) {
+        this.resultId = resultId;
+        this.data = data;
+    }
+}
+
+@es5ClassCompat
+export class SemanticTokensEdit {
+    readonly start: number;
+    readonly deleteCount: number;
+    readonly data: Uint32Array | undefined;
+
+    constructor(start: number, deleteCount: number, data?: Uint32Array) {
+        this.start = start;
+        this.deleteCount = deleteCount;
+        this.data = data;
+    }
+}
+
+@es5ClassCompat
+export class SemanticTokensEdits {
+    readonly resultId: string | undefined;
+    readonly edits: SemanticTokensEdit[];
+
+    constructor(edits: SemanticTokensEdit[], resultId?: string) {
+        this.resultId = resultId;
+        this.edits = edits;
+    }
+}
+
+export enum InputBoxValidationSeverity {
+    Info = 1,
+    Warning = 2,
+    Error = 3
+}
+
+// #endregion
+
+// #region Tab Inputs
+
+export class TextTabInput {
+    constructor(readonly uri: URI) { }
+}
+
+export class TextDiffTabInput {
+    constructor(readonly original: URI, readonly modified: URI) { }
+}
+
+export class TextMergeTabInput {
+    constructor(readonly base: URI, readonly input1: URI, readonly input2: URI, readonly result: URI) { }
+}
+
+export class CustomEditorTabInput {
+    constructor(readonly uri: URI, readonly viewType: string) { }
+}
+
+export class WebviewEditorTabInput {
+    constructor(readonly viewType: string) { }
+}
+
+export class TelemetryTrustedValue<T> {
+    readonly value: T;
+
+    constructor(value: T) {
+        this.value = value;
+    }
+}
+
+export class TelemetryLogger {
+    readonly onDidChangeEnableStates: theia.Event<TelemetryLogger>;
+    readonly isUsageEnabled: boolean;
+    readonly isErrorsEnabled: boolean;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    logUsage(eventName: string, data?: Record<string, any | TelemetryTrustedValue<any>>): void { }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    logError(eventNameOrError: string | Error, data?: Record<string, any | TelemetryTrustedValue<any>>): void { }
+    dispose(): void { }
+    constructor(readonly sender: TelemetrySender, readonly options?: TelemetryLoggerOptions) { }
+}
+
+export interface TelemetrySender {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    sendEventData(eventName: string, data?: Record<string, any>): void;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    sendErrorData(error: Error, data?: Record<string, any>): void;
+    flush?(): void | Thenable<void>;
+}
+
+export interface TelemetryLoggerOptions {
+    /**
+     * Whether or not you want to avoid having the built-in common properties such as os, extension name, etc injected into the data object.
+     * Defaults to `false` if not defined.
+     */
+    readonly ignoreBuiltInCommonProperties?: boolean;
+
+    /**
+     * Whether or not unhandled errors on the extension host caused by your extension should be logged to your sender.
+     * Defaults to `false` if not defined.
+     */
+    readonly ignoreUnhandledErrors?: boolean;
+
+    /**
+     * Any additional common properties which should be injected into the data object.
+     */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    readonly additionalCommonProperties?: Record<string, any>;
+}
+
+export class NotebookEditorTabInput {
+    constructor(readonly uri: URI, readonly notebookType: string) { }
+}
+
+export class NotebookDiffEditorTabInput {
+    constructor(readonly original: URI, readonly modified: URI, readonly notebookType: string) { }
+}
+
+export class TerminalEditorTabInput {
+    constructor() { }
+}
+export class InteractiveWindowInput {
+    constructor(readonly uri: URI, readonly inputBoxUri: URI) { }
+}
+
+// #endregion
+
+// #region DocumentPaste
+@es5ClassCompat
+export class DocumentPasteEdit {
+    constructor(insertText: string | SnippetString, id: string, label: string) {
+        this.insertText = insertText;
+        this.id = id;
+        this.label = label;
+    }
+    insertText: string | SnippetString;
+    additionalEdit?: WorkspaceEdit;
+    id: string;
+    label: string;
+    priority?: number;
+}
+// #endregion
+
+// #region DocumentPaste
+export enum EditSessionIdentityMatch {
+    Complete = 100,
+    Partial = 50,
+    None = 0
+}
+// #endregion
+
+// #region terminalQuickFixProvider
+export class TerminalQuickFixExecuteTerminalCommand {
+    /**
+     * The terminal command to run
+     */
+    terminalCommand: string;
+    /**
+     * @stubbed
+     */
+    constructor(terminalCommand: string) { }
+}
+export class TerminalQuickFixOpener {
+    /**
+     * The uri to open
+     */
+    uri: theia.Uri;
+    /**
+     * @stubbed
+     */
+    constructor(uri: theia.Uri) { }
+}
+

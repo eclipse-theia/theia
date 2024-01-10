@@ -1,20 +1,20 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import * as fs from 'fs-extra';
+import * as fs from '@theia/core/shared/fs-extra';
 import * as path from 'path';
 import { GitLocator, GitLocateOptions } from './git-locator-protocol';
 
@@ -59,7 +59,7 @@ export class GitLocatorImpl implements GitLocator {
     }
 
     protected async doLocate(basePath: string, context: GitLocateContext): Promise<string[]> {
-        const realBasePath = fs.realpathSync(basePath);
+        const realBasePath = await fs.realpath(basePath);
         if (context.visited.has(realBasePath)) {
             return [];
         }
@@ -77,9 +77,9 @@ export class GitLocatorImpl implements GitLocator {
                 }
             });
             if (context.maxCount >= 0 && paths.length >= context.maxCount) {
-                return paths.slice(0, context.maxCount).map(GitLocatorImpl.map);
+                return await Promise.all(paths.slice(0, context.maxCount).map(GitLocatorImpl.map));
             }
-            const repositoryPaths = paths.map(GitLocatorImpl.map);
+            const repositoryPaths = await Promise.all(paths.map(GitLocatorImpl.map));
             return this.locateFrom(
                 newContext => this.generateNested(repositoryPaths, newContext),
                 context,
@@ -145,8 +145,8 @@ export class GitLocatorImpl implements GitLocator {
         return result;
     }
 
-    static map(repository: string): string {
-        return fs.realpathSync(path.dirname(repository));
+    static async map(repository: string): Promise<string> {
+        return fs.realpath(path.dirname(repository));
     }
 
 }

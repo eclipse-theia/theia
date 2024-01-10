@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2020 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2020 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 // @ts-check
 describe('Saveable', function () {
@@ -23,18 +23,21 @@ describe('Saveable', function () {
     const { EditorManager } = require('@theia/editor/lib/browser/editor-manager');
     const { EditorWidget } = require('@theia/editor/lib/browser/editor-widget');
     const { PreferenceService } = require('@theia/core/lib/browser/preferences/preference-service');
-    const Uri = require('@theia/core/lib/common/uri');
     const { Saveable, SaveableWidget } = require('@theia/core/lib/browser/saveable');
     const { WorkspaceService } = require('@theia/workspace/lib/browser/workspace-service');
-    const { FileSystem } = require('@theia/filesystem/lib/common/filesystem');
+    const { FileService } = require('@theia/filesystem/lib/browser/file-service');
+    const { FileResource } = require('@theia/filesystem/lib/browser/file-resource');
+    const { ETAG_DISABLED } = require('@theia/filesystem/lib/common/files');
     const { MonacoEditor } = require('@theia/monaco/lib/browser/monaco-editor');
     const { Deferred } = require('@theia/core/lib/common/promise-util');
+    const { Disposable, DisposableCollection } = require('@theia/core/lib/common/disposable');
+    const { Range } = require('@theia/monaco-editor-core/esm/vs/editor/common/core/range');
 
     const container = window.theia.container;
+    /** @type {EditorManager} */
     const editorManager = container.get(EditorManager);
     const workspaceService = container.get(WorkspaceService);
-    /** @type {import('@theia/filesystem/lib/common/filesystem').FileSystem} */
-    const fileSystem = container.get(FileSystem);
+    const fileService = container.get(FileService);
     /** @type {import('@theia/core/lib/browser/preferences/preference-service').PreferenceService} */
     const preferences = container.get(PreferenceService);
 
@@ -43,32 +46,48 @@ describe('Saveable', function () {
     /** @type {MonacoEditor} */
     let editor;
 
-    const client = fileSystem.getClient();
-    const originalShouldOverwrite = client.shouldOverwrite;
-
-    const rootUri = new Uri.default(workspaceService.tryGetRoots()[0].uri);
+    const rootUri = workspaceService.tryGetRoots()[0].resource;
     const fileUri = rootUri.resolve('.test/foo.txt');
 
-    const autoSave = preferences.get('editor.autoSave', undefined, rootUri.toString());
+    const closeOnFileDelete = 'workbench.editor.closeOnFileDelete';
+
+    /**
+     * @param {FileResource['shouldOverwrite']} shouldOverwrite
+     * @returns {Disposable}
+     */
+    function setShouldOverwrite(shouldOverwrite) {
+        const resource = editor.document['resource'];
+        assert.isTrue(resource instanceof FileResource);
+        const fileResource = /** @type {FileResource} */ (resource);
+        const originalShouldOverwrite = fileResource['shouldOverwrite'];
+        fileResource['shouldOverwrite'] = shouldOverwrite;
+        return Disposable.create(() => fileResource['shouldOverwrite'] = originalShouldOverwrite);
+    }
+
+    const toTearDown = new DisposableCollection();
+
+    /** @type {string | undefined} */
+    const autoSave = preferences.get('files.autoSave', undefined, rootUri.toString());
 
     beforeEach(async () => {
-        preferences.set('editor.autoSave', 'off', undefined, rootUri.toString());
+        await preferences.set('files.autoSave', 'off', undefined, rootUri.toString());
+        await preferences.set(closeOnFileDelete, true);
         await editorManager.closeAll({ save: false });
-        await fileSystem.createFile(fileUri.toString(), { content: 'foo' });
+        await fileService.create(fileUri, 'foo', { fromUserGesture: false, overwrite: true });
         widget =  /** @type {EditorWidget & SaveableWidget} */
             (await editorManager.open(fileUri, { mode: 'reveal' }));
-        editor = MonacoEditor.get(widget);
-
-        client.shouldOverwrite = async () => (assert.fail('should be in sync'), false);
+        editor = /** @type {MonacoEditor} */ (MonacoEditor.get(widget));
     });
 
     afterEach(async () => {
-        preferences.set('editor.autoSave', autoSave, undefined, rootUri.toString());
-        client.shouldOverwrite = originalShouldOverwrite;
+        toTearDown.dispose();
+        await preferences.set('files.autoSave', autoSave, undefined, rootUri.toString());
+        // @ts-ignore
         editor = undefined;
+        // @ts-ignore
         widget = undefined;
         await editorManager.closeAll({ save: false });
-        await fileSystem.delete(fileUri.parent.toString(), { moveToTrash: false });
+        await fileService.delete(fileUri.parent, { fromUserGesture: false, useTrash: false, recursive: true });
     });
 
     it('normal save', async function () {
@@ -79,8 +98,8 @@ describe('Saveable', function () {
             await Saveable.save(widget);
             assert.isFalse(Saveable.isDirty(widget), `should NOT be dirty after '${edit}' save`);
             assert.equal(editor.getControl().getValue().trimRight(), edit, `model should be updated with '${edit}'`);
-            const state = await fileSystem.resolveContent(fileUri.toString());
-            assert.equal(state.content.trimRight(), edit, `fs should be updated with '${edit}'`);
+            const state = await fileService.read(fileUri);
+            assert.equal(state.value.trimRight(), edit, `fs should be updated with '${edit}'`);
         }
     });
 
@@ -92,8 +111,9 @@ describe('Saveable', function () {
         editor.getControl().setValue(longContent);
         await Saveable.save(widget);
 
+        // @ts-ignore
         editor.getControl().getModel().applyEdits([{
-            range: monaco.Range.fromPositions({ lineNumber: 1, column: 1 }, { lineNumber: 1, column: 4 }),
+            range: Range.fromPositions({ lineNumber: 1, column: 1 }, { lineNumber: 1, column: 4 }),
             forceMoveMarkers: false,
             text: ''
         }]);
@@ -101,21 +121,23 @@ describe('Saveable', function () {
 
         const resource = editor.document['resource'];
         const version = resource.version;
+        // @ts-ignore
         await resource.saveContents('baz');
         assert.notEqual(version, resource.version, 'latest version should be different after write');
 
         let outOfSync = false;
         let outOfSyncCount = 0;
-        client.shouldOverwrite = async () => {
+        toTearDown.push(setShouldOverwrite(async () => {
             outOfSync = true;
             outOfSyncCount++;
             return false;
-        };
+        }));
 
         let incrementalUpdate = false;
         const saveContentChanges = resource.saveContentChanges;
         resource.saveContentChanges = async (changes, options) => {
             incrementalUpdate = true;
+            // @ts-ignore
             return saveContentChanges.bind(resource)(changes, options);
         };
         try {
@@ -129,60 +151,61 @@ describe('Saveable', function () {
         assert.equal(outOfSyncCount, 1, 'user should be prompted only once with out of sync dialog');
         assert.isTrue(Saveable.isDirty(widget), 'should be dirty after rejected save');
         assert.equal(editor.getControl().getValue().trimRight(), longContent.substring(3), 'model should be updated');
-        const state = await fileSystem.resolveContent(fileUri.toString());
-        assert.equal(state.content, 'baz', 'fs should NOT be updated');
+        const state = await fileService.read(fileUri);
+        assert.equal(state.value, 'baz', 'fs should NOT be updated');
     });
 
-    it('accept rejected save', async () => {
+    it('accept rejected save', async function () {
         let outOfSync = false;
-        client.shouldOverwrite = async () => {
+        toTearDown.push(setShouldOverwrite(async () => {
             outOfSync = true;
             return false;
-        };
+        }));
         editor.getControl().setValue('bar');
         assert.isTrue(Saveable.isDirty(widget), 'should be dirty before save');
 
         const resource = editor.document['resource'];
         const version = resource.version;
-        await resource.saveContents('baz');
+        // @ts-ignore
+        await resource.saveContents('bazz');
         assert.notEqual(version, resource.version, 'latest version should be different after write');
 
         await Saveable.save(widget);
         assert.isTrue(outOfSync, 'file should be out of sync');
         assert.isTrue(Saveable.isDirty(widget), 'should be dirty after rejected save');
         assert.equal(editor.getControl().getValue().trimRight(), 'bar', 'model should be updated');
-        let state = await fileSystem.resolveContent(fileUri.toString());
-        assert.equal(state.content, 'baz', 'fs should NOT be updated');
+        let state = await fileService.read(fileUri);
+        assert.equal(state.value, 'bazz', 'fs should NOT be updated');
 
         outOfSync = false;
-        client.shouldOverwrite = async () => {
+        toTearDown.push(setShouldOverwrite(async () => {
             outOfSync = true;
             return true;
-        };
+        }));
         assert.isTrue(Saveable.isDirty(widget), 'should be dirty before save');
         await Saveable.save(widget);
         assert.isTrue(outOfSync, 'file should be out of sync');
         assert.isFalse(Saveable.isDirty(widget), 'should NOT be dirty after save');
         assert.equal(editor.getControl().getValue().trimRight(), 'bar', 'model should be updated');
-        state = await fileSystem.resolveContent(fileUri.toString());
-        assert.equal(state.content.trimRight(), 'bar', 'fs should be updated');
+        state = await fileService.read(fileUri);
+        assert.equal(state.value.trimRight(), 'bar', 'fs should be updated');
     });
 
     it('accept new save', async () => {
         let outOfSync = false;
-        client.shouldOverwrite = async () => {
+        toTearDown.push(setShouldOverwrite(async () => {
             outOfSync = true;
             return true;
-        };
+        }));
         editor.getControl().setValue('bar');
         assert.isTrue(Saveable.isDirty(widget), 'should be dirty before save');
-        await fileSystem.touchFile(fileUri.toString());
+        await fileService.write(fileUri, 'foo2', { etag: ETAG_DISABLED });
         await Saveable.save(widget);
         assert.isTrue(outOfSync, 'file should be out of sync');
         assert.isFalse(Saveable.isDirty(widget), 'should NOT be dirty after save');
         assert.equal(editor.getControl().getValue().trimRight(), 'bar', 'model should be updated');
-        const state = await fileSystem.resolveContent(fileUri.toString());
-        assert.equal(state.content.trimRight(), 'bar', 'fs should be updated');
+        const state = await fileService.read(fileUri);
+        assert.equal(state.value.trimRight(), 'bar', 'fs should be updated');
     });
 
     it('cancel save on close', async () => {
@@ -194,8 +217,8 @@ describe('Saveable', function () {
         });
         assert.isTrue(Saveable.isDirty(widget), 'should be still dirty after canceled close');
         assert.isFalse(widget.isDisposed, 'should NOT be disposed after canceled close');
-        const state = await fileSystem.resolveContent(fileUri.toString());
-        assert.equal(state.content, 'foo', 'fs should NOT be updated after canceled close');
+        const state = await fileService.read(fileUri);
+        assert.equal(state.value, 'foo', 'fs should NOT be updated after canceled close');
     });
 
     it('reject save on close', async () => {
@@ -205,44 +228,55 @@ describe('Saveable', function () {
             shouldSave: () => false
         });
         assert.isTrue(widget.isDisposed, 'should be disposed after rejected close');
-        const state = await fileSystem.resolveContent(fileUri.toString());
-        assert.equal(state.content, 'foo', 'fs should NOT be updated after rejected close');
+        const state = await fileService.read(fileUri);
+        assert.equal(state.value, 'foo', 'fs should NOT be updated after rejected close');
     });
 
     it('accept save on close and reject it', async () => {
         let outOfSync = false;
-        client.shouldOverwrite = async () => {
+        toTearDown.push(setShouldOverwrite(async () => {
             outOfSync = true;
             return false;
-        };
+        }));
         editor.getControl().setValue('bar');
         assert.isTrue(Saveable.isDirty(widget), 'should be dirty before rejecting save on close');
-        await fileSystem.touchFile(fileUri.toString());
+        await fileService.write(fileUri, 'foo2', { etag: ETAG_DISABLED });
         await widget.closeWithSaving({
             shouldSave: () => true
         });
         assert.isTrue(outOfSync, 'file should be out of sync');
-        assert.isTrue(widget.isDisposed, 'model should be disposed after close');
-        const state = await fileSystem.resolveContent(fileUri.toString());
-        assert.equal(state.content, 'foo', 'fs should NOT be updated');
+        assert.isFalse(widget.isDisposed, 'model should not be disposed after close when we reject the save');
+        const state = await fileService.read(fileUri);
+        assert.equal(state.value, 'foo2', 'fs should NOT be updated');
     });
 
     it('accept save on close and accept new save', async () => {
         let outOfSync = false;
-        client.shouldOverwrite = async () => {
+        toTearDown.push(setShouldOverwrite(async () => {
             outOfSync = true;
             return true;
-        };
+        }));
         editor.getControl().setValue('bar');
         assert.isTrue(Saveable.isDirty(widget), 'should be dirty before accepting save on close');
-        await fileSystem.touchFile(fileUri.toString());
+        await fileService.write(fileUri, 'foo2', { etag: ETAG_DISABLED });
         await widget.closeWithSaving({
             shouldSave: () => true
         });
         assert.isTrue(outOfSync, 'file should be out of sync');
         assert.isTrue(widget.isDisposed, 'model should be disposed after close');
-        const state = await fileSystem.resolveContent(fileUri.toString());
-        assert.equal(state.content.trimRight(), 'bar', 'fs should be updated');
+        const state = await fileService.read(fileUri);
+        assert.equal(state.value.trimRight(), 'bar', 'fs should be updated');
+    });
+
+    it('no save prompt when multiple editors open for same file', async () => {
+        const secondWidget = await editorManager.openToSide(fileUri);
+        editor.getControl().setValue('two widgets');
+        assert.isTrue(Saveable.isDirty(widget), 'the first widget should be dirty');
+        assert.isTrue(Saveable.isDirty(secondWidget), 'the second widget should also be dirty');
+        await Promise.resolve(secondWidget.close());
+        assert.isTrue(secondWidget.isDisposed, 'the widget should have closed without requesting user action');
+        assert.isTrue(Saveable.isDirty(widget), 'the original widget should still be dirty.');
+        assert.equal(editor.getControl().getValue(), 'two widgets', 'should still have the same value');
     });
 
     it('normal close', async () => {
@@ -252,21 +286,8 @@ describe('Saveable', function () {
             shouldSave: () => true
         });
         assert.isTrue(widget.isDisposed, 'model should be disposed after close');
-        const state = await fileSystem.resolveContent(fileUri.toString());
-        assert.equal(state.content.trimRight(), 'bar', 'fs should be updated');
-    });
-
-    it('delete file for saved', async () => {
-        assert.isFalse(Saveable.isDirty(widget), 'should NOT be dirty before delete');
-        const waitForDisposed = new Deferred();
-        const listener = editor.onDispose(() => waitForDisposed.resolve());
-        try {
-            await fileSystem.delete(fileUri.toString(), { moveToTrash: false });
-            await waitForDisposed.promise;
-            assert.isTrue(widget.isDisposed, 'model should be disposed after delete');
-        } finally {
-            listener.dispose();
-        }
+        const state = await fileService.read(fileUri);
+        assert.equal(state.value.trimRight(), 'bar', 'fs should be updated');
     });
 
     it('delete and add again file for dirty', async () => {
@@ -277,9 +298,9 @@ describe('Saveable', function () {
         const listener = () => waitForDidChangeTitle.resolve();
         widget.title.changed.connect(listener);
         try {
-            await fileSystem.delete(fileUri.toString(), { moveToTrash: false });
+            await fileService.delete(fileUri);
             await waitForDidChangeTitle.promise;
-            assert.isTrue(widget.title.label.endsWith('(deleted from disk)'), 'should be marked as deleted');
+            assert.isTrue(widget.title.label.endsWith('(Deleted)'), 'should be marked as deleted');
             assert.isTrue(Saveable.isDirty(widget), 'should be dirty after delete');
             assert.isFalse(widget.isDisposed, 'model should NOT be disposed after delete');
         } finally {
@@ -289,9 +310,9 @@ describe('Saveable', function () {
         waitForDidChangeTitle = new Deferred();
         widget.title.changed.connect(listener);
         try {
-            await fileSystem.createFile(fileUri.toString(), { content: 'foo' });
+            await fileService.create(fileUri, 'foo');
             await waitForDidChangeTitle.promise;
-            assert.isFalse(widget.title.label.endsWith('(deleted from disk)'), 'should NOT be marked as deleted');
+            assert.isFalse(widget.title.label.endsWith('(deleted)'), 'should NOT be marked as deleted');
             assert.isTrue(Saveable.isDirty(widget), 'should be dirty after added again');
             assert.isFalse(widget.isDisposed, 'model should NOT be disposed after added again');
         } finally {
@@ -307,7 +328,7 @@ describe('Saveable', function () {
         const waitForInvalid = new Deferred();
         const listener = editor.document.onDidChangeValid(() => waitForInvalid.resolve());
         try {
-            await fileSystem.delete(fileUri.toString(), { moveToTrash: false });
+            await fileService.delete(fileUri);
             await waitForInvalid.promise;
             assert.isFalse(editor.document.valid, 'should be invalid after delete');
         } finally {
@@ -318,19 +339,19 @@ describe('Saveable', function () {
         await Saveable.save(widget);
         assert.isFalse(Saveable.isDirty(widget), 'should NOT be dirty after save');
         assert.isTrue(editor.document.valid, 'should be valid after save');
-        const state = await fileSystem.resolveContent(fileUri.toString());
-        assert.equal(state.content.trimRight(), 'bar', 'fs should be updated');
+        const state = await fileService.read(fileUri);
+        assert.equal(state.value.trimRight(), 'bar', 'fs should be updated');
     });
 
     it('move file for saved', async function () {
         assert.isFalse(Saveable.isDirty(widget), 'should NOT be dirty before move');
 
         const targetUri = fileUri.parent.resolve('bar.txt');
-        await fileSystem.move(fileUri.toString(), targetUri.toString(), { overwrite: true });
+        await fileService.move(fileUri, targetUri, { overwrite: true });
         assert.isTrue(widget.isDisposed, 'old model should be disposed after move');
 
-        const renamed = await editorManager.getByUri(targetUri);
-        assert.equal(renamed.getResourceUri().toString(), targetUri.toString(), 'new model should be created after move');
+        const renamed = /** @type {EditorWidget} */ (await editorManager.getByUri(targetUri));
+        assert.equal(String(renamed.getResourceUri()), targetUri.toString(), 'new model should be created after move');
         assert.equal(renamed.editor.document.getText(), 'foo', 'new model should be created after move');
         assert.isFalse(Saveable.isDirty(renamed), 'new model should NOT be dirty after move');
     });
@@ -341,11 +362,11 @@ describe('Saveable', function () {
 
         const targetUri = fileUri.parent.resolve('bar.txt');
 
-        await fileSystem.move(fileUri.toString(), targetUri.toString(), { overwrite: true });
+        await fileService.move(fileUri, targetUri, { overwrite: true });
         assert.isTrue(widget.isDisposed, 'old model should be disposed after move');
 
-        const renamed = await editorManager.getByUri(targetUri);
-        assert.equal(renamed.getResourceUri().toString(), targetUri.toString(), 'new model should be created after move');
+        const renamed = /** @type {EditorWidget} */ (await editorManager.getByUri(targetUri));
+        assert.equal(String(renamed.getResourceUri()), targetUri.toString(), 'new model should be created after move');
         assert.equal(renamed.editor.document.getText(), 'bar', 'new model should be created after move');
         assert.isTrue(Saveable.isDirty(renamed), 'new model should be dirty after move');
 
@@ -360,6 +381,122 @@ describe('Saveable', function () {
             assert.fail('should not be possible to open an editor for invalid file');
         } catch (e) {
             assert.equal(e.code, 'MODEL_IS_INVALID');
+        }
+    });
+
+    it('decode without save', async function () {
+        assert.strictEqual('utf8', editor.document.getEncoding());
+        assert.strictEqual('foo', editor.document.getText());
+        await editor.setEncoding('utf16le', 1 /* EncodingMode.Decode */);
+        assert.strictEqual('utf16le', editor.document.getEncoding());
+        assert.notEqual('foo', editor.document.getText().trimRight());
+        assert.isFalse(Saveable.isDirty(widget), 'should not be dirty after decode');
+
+        await widget.closeWithSaving({
+            shouldSave: () => undefined
+        });
+        assert.isTrue(widget.isDisposed, 'widget should be disposed after close');
+
+        widget =  /** @type {EditorWidget & SaveableWidget} */
+            (await editorManager.open(fileUri, { mode: 'reveal' }));
+        editor = /** @type {MonacoEditor} */ (MonacoEditor.get(widget));
+
+        assert.strictEqual('utf8', editor.document.getEncoding());
+        assert.strictEqual('foo', editor.document.getText().trimRight());
+    });
+
+    it('decode with save', async function () {
+        assert.strictEqual('utf8', editor.document.getEncoding());
+        assert.strictEqual('foo', editor.document.getText());
+        await editor.setEncoding('utf16le', 1 /* EncodingMode.Decode */);
+        assert.strictEqual('utf16le', editor.document.getEncoding());
+        assert.notEqual('foo', editor.document.getText().trimRight());
+        assert.isFalse(Saveable.isDirty(widget), 'should not be dirty after decode');
+
+        await Saveable.save(widget);
+
+        await widget.closeWithSaving({
+            shouldSave: () => undefined
+        });
+        assert.isTrue(widget.isDisposed, 'widget should be disposed after close');
+
+        widget =  /** @type {EditorWidget & SaveableWidget} */
+            (await editorManager.open(fileUri, { mode: 'reveal' }));
+        editor = /** @type {MonacoEditor} */ (MonacoEditor.get(widget));
+
+        assert.strictEqual('utf16le', editor.document.getEncoding());
+        assert.notEqual('foo', editor.document.getText().trimRight());
+    });
+
+    it('encode', async function () {
+        assert.strictEqual('utf8', editor.document.getEncoding());
+        assert.strictEqual('foo', editor.document.getText());
+        await editor.setEncoding('utf16le', 0 /* EncodingMode.Encode */);
+        assert.strictEqual('utf16le', editor.document.getEncoding());
+        assert.strictEqual('foo', editor.document.getText().trimRight());
+        assert.isFalse(Saveable.isDirty(widget), 'should not be dirty after encode');
+
+        await widget.closeWithSaving({
+            shouldSave: () => undefined
+        });
+        assert.isTrue(widget.isDisposed, 'widget should be disposed after close');
+
+        widget =  /** @type {EditorWidget & SaveableWidget} */
+            (await editorManager.open(fileUri, { mode: 'reveal' }));
+        editor = /** @type {MonacoEditor} */ (MonacoEditor.get(widget));
+
+        assert.strictEqual('utf16le', editor.document.getEncoding());
+        assert.strictEqual('foo', editor.document.getText().trimRight());
+    });
+
+    it('delete file for saved', async () => {
+        assert.isFalse(Saveable.isDirty(widget), 'should NOT be dirty before delete');
+        const waitForDisposed = new Deferred();
+        const listener = editor.onDispose(() => waitForDisposed.resolve());
+        try {
+            await fileService.delete(fileUri);
+            await waitForDisposed.promise;
+            assert.isTrue(widget.isDisposed, 'model should be disposed after delete');
+        } finally {
+            listener.dispose();
+        }
+    });
+
+    it(`'${closeOnFileDelete}' should keep the editor opened when set to 'false'`, async () => {
+
+        await preferences.set(closeOnFileDelete, false);
+        assert.isFalse(preferences.get(closeOnFileDelete));
+        assert.isFalse(Saveable.isDirty(widget));
+
+        const waitForDidChangeTitle = new Deferred();
+        const listener = () => waitForDidChangeTitle.resolve();
+        widget.title.changed.connect(listener);
+        try {
+            await fileService.delete(fileUri);
+            await waitForDidChangeTitle.promise;
+            assert.isTrue(widget.title.label.endsWith('(Deleted)'));
+            assert.isFalse(widget.isDisposed);
+        } finally {
+            widget.title.changed.disconnect(listener);
+        }
+    });
+
+    it(`'${closeOnFileDelete}' should close the editor when set to 'true'`, async () => {
+
+        await preferences.set(closeOnFileDelete, true);
+        assert.isTrue(preferences.get(closeOnFileDelete));
+        assert.isFalse(Saveable.isDirty(widget));
+
+        const waitForDisposed = new Deferred();
+        // Must pass in 5 seconds, so check state after 4.5.
+        const listener = editor.onDispose(() => waitForDisposed.resolve());
+        const fourSeconds = new Promise(resolve => setTimeout(resolve, 4500));
+        try {
+            const deleteThenDispose = fileService.delete(fileUri).then(() => waitForDisposed.promise);
+            await Promise.race([deleteThenDispose, fourSeconds]);
+            assert.isTrue(widget.isDisposed);
+        } finally {
+            listener.dispose();
         }
     });
 

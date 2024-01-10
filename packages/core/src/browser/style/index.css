@@ -11,15 +11,70 @@
  * with the GNU Classpath Exception which is available at
  * https://www.gnu.org/software/classpath/license.html.
  *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
-@import url('~@phosphor/widgets/style/index.css');
-@import url('~font-awesome/css/font-awesome.min.css');
+@import url("~@phosphor/widgets/style/index.css");
+@import url("~font-awesome/css/font-awesome.min.css");
 
 /*-----------------------------------------------------------------------------
 | General
 |----------------------------------------------------------------------------*/
+
+:root {
+  /* Borders: Width and color (dark to bright) */
+
+  --theia-border-width: 1px;
+  --theia-panel-border-width: 1px;
+
+  /* UI fonts: Family, size and color (bright to dark)
+     ---------------------------------------------------
+     The UI font CSS variables are used for the typography all of the Theia
+     user interface elements that are not directly user-generated content.
+   */
+
+  --theia-ui-font-scale-factor: 1.2;
+  --theia-ui-font-size0: calc(
+    var(--theia-ui-font-size1) / var(--theia-ui-font-scale-factor)
+  );
+  --theia-ui-font-size1: 13px; /* Base font size */
+  --theia-ui-font-size2: calc(
+    var(--theia-ui-font-size1) * var(--theia-ui-font-scale-factor)
+  );
+  --theia-ui-font-size3: calc(
+    var(--theia-ui-font-size2) * var(--theia-ui-font-scale-factor)
+  );
+  --theia-ui-icon-font-size: 14px; /* Ensures px perfect FontAwesome icons */
+  --theia-ui-font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+  /* Content fonts: Family, size and color (bright to dark)
+     Content font variables are used for typography of user-generated content.
+   */
+
+  --theia-content-font-size: 13px;
+  --theia-content-line-height: 22px;
+
+  --theia-code-font-size: 13px;
+  --theia-code-line-height: 17px;
+  --theia-code-padding: 5px;
+  --theia-code-font-family: Menlo, Monaco, Consolas, "Droid Sans Mono",
+    "Courier New", monospace, "Droid Sans Fallback";
+  --theia-monospace-font-family: monospace;
+  --theia-ui-padding: 6px;
+
+  /* Icons */
+  --theia-icon-size: 16px;
+
+  /* Scrollbars */
+  --theia-scrollbar-width: 10px;
+  --theia-scrollbar-rail-width: 10px;
+
+  /* Statusbar */
+  --theia-statusBar-font-size: 12px;
+
+  /* Opacity for disabled mod  */
+  --theia-mod-disabled-opacity: 0.4;
+}
 
 body {
   margin: 0;
@@ -36,46 +91,62 @@ body:-moz-window-inactive {
 }
 
 a {
-    color: var(--theia-textLink-foreground);
+  color: var(--theia-textLink-foreground);
 }
 
-a:active, a:hover {
-    color: var(--theia-textLink-activeForeground);
+a:active,
+a:hover {
+  color: var(--theia-textLink-activeForeground);
 }
 
 code {
-    color: var(--theia-textPreformat-foreground);
+  color: var(--theia-textPreformat-foreground);
 }
 
 blockquote {
-    background: var(--vscode-textBlockQuote-background);
-    border: var(--theia-border-width) solid var(--theia-textBlockQuote-border);
+  margin: 0 7px 0 5px;
+  padding: 0px 16px 0px 10px;
+  background: var(--theia-textBlockQuote-background);
+  border-left: 5px solid var(--theia-textBlockQuote-border);
 }
 
 .theia-input {
-    background: var(--theia-input-background);
-    color: var(--theia-input-foreground);
-    border: var(--theia-border-width) solid var(--theia-input-border);
-    font-family: var(--theia-ui-font-family);
-    font-size: var(--theia-ui-font-size1);
-    line-height: var(--theia-content-line-height);
-    padding-left: 5px;
+  background: var(--theia-input-background);
+  color: var(--theia-input-foreground);
+  border: var(--theia-border-width) solid var(--theia-input-border);
+  font-family: var(--theia-ui-font-family);
+  font-size: var(--theia-ui-font-size1);
+  line-height: var(--theia-content-line-height);
+  padding-left: 5px;
+  border-radius: 2px;
+}
+
+.theia-input[type="text"] {
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .theia-input::placeholder {
-    color: var(--theia-input-placeholderForeground);
+  color: var(--theia-input-placeholderForeground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .theia-maximized {
-    position: fixed !important;
-    top: 0 !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    width: auto !important;
-    height: auto !important;
-    z-index: 255 !important;
-    background: var(--theia-editor-background);
+  position: fixed !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  z-index: 255 !important;
+  background: var(--theia-editor-background);
+}
+
+.theia-visible-menu-maximized {
+  top: var(--theia-private-menubar-height) !important;
 }
 
 .theia-ApplicationShell {
@@ -95,12 +166,30 @@ blockquote {
   bottom: 0;
   z-index: 50000;
   background: var(--theia-editor-background);
-  background-image: var(--theia-preloader);
   background-size: 60px 60px;
   background-repeat: no-repeat;
   background-attachment: fixed;
   background-position: center;
   transition: opacity 0.8s;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.theia-preload::after {
+  animation: 1s theia-preload-rotate infinite;
+  color: #777; /* color works on both light and dark themes */
+  content: "\eb19"; /* codicon-load */
+  font: normal normal normal 72px/1 codicon;
+}
+
+@keyframes theia-preload-rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .theia-preload.theia-hidden {
@@ -114,14 +203,15 @@ blockquote {
   margin-left: 8px;
 }
 
-.theia-mod-disabled {
-  opacity: var(--theia-mod-disabled-opacity);
+.theia-mod-disabled,
+.theia-mod-disabled:focus {
+  opacity: var(--theia-mod-disabled-opacity) !important;
 }
 
 .theia-header {
   text-transform: uppercase;
   font-size: var(--theia-ui-font-size0);
-  font-weight: 450;
+  font-weight: 700;
 }
 
 .p-Widget {
@@ -132,115 +222,125 @@ blockquote {
   display: none !important;
 }
 
-.noselect {
+.noselect,
+.no-select {
   -webkit-touch-callout: none; /* iOS Safari */
-    -webkit-user-select: none; /* Safari */
-     -khtml-user-select: none; /* Konqueror HTML */
-       -moz-user-select: none; /* Firefox */
-        -ms-user-select: none; /* Internet Explorer/Edge */
-            user-select: none; /* Non-prefixed version, currently
+  -webkit-user-select: none; /* Safari */
+  -khtml-user-select: none; /* Konqueror HTML */
+  -moz-user-select: none; /* Firefox */
+  -ms-user-select: none; /* Internet Explorer/Edge */
+  user-select: none; /* Non-prefixed version, currently
                                   supported by Chrome and Opera */
+  -o-user-select: none;
 }
 
 :focus {
-    outline-width: 1px;
-    outline-style: solid;
-    outline-offset: -1px;
-    opacity: 1 !important;
-    outline-color: var(--theia-focusBorder);
+  outline-width: 1px;
+  outline-style: solid;
+  outline-offset: -1px;
+  opacity: 1;
+  outline-color: var(--theia-focusBorder);
 }
 
 ::selection {
-    background: var(--theia-selection-background);
+  background: var(--theia-selection-background);
 }
 
-.p-Widget:focus {
-    border: none;
-    outline: none;
+.action-label {
+  padding: 2px;
+  border-radius: 5px;
+  cursor: pointer;
 }
 
-button.theia-button, .theia-button {
-    border: none;
-    color: var(--theia-button-foreground);
-    background-color: var(--theia-button-background);
-    min-width: 65px;
-    outline: none;
-    cursor: pointer;
-    padding: 4px 9px;
-    margin-left: calc(var(--theia-ui-padding)*2);
-    border-radius: 1px;
-    box-shadow: 0px 1px 5px 0px rgba(0, 0, 0, 0.2), 0px 1px 2px 0px rgba(0, 0, 0, 0.14), 0px 1px 1px -2px rgba(0, 0, 0, 0.12);
-    transition: background-color 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,box-shadow 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+.action-label:hover {
+  background-color: var(--theia-toolbar-hoverBackground);
 }
 
-button.theia-button:hover, .theia-button:hover, .theia-button:focus {
-  background-color: var(--theia-button-hoverBackground);
+.theia-button {
+  border: none;
+  color: var(--theia-button-foreground);
+  min-width: 65px;
+  outline: none;
+  cursor: pointer;
+  padding: 4px 9px;
+  margin-left: calc(var(--theia-ui-padding) * 2);
+  border-radius: 2px;
 }
 
-button.secondary, .theia-button.secondary {
+.theia-button:focus {
+  outline: 1px solid var(--theia-focusBorder);
+  outline-offset: 1px;
+}
+
+.theia-button.secondary {
   color: var(--theia-secondaryButton-foreground);
-  background-color: var(--theia-secondaryButton-background);
 }
 
-button.secondary:hover, .theia-button.secondary:hover {
-  background-color: var(--theia-secondaryButton-hoverBackground);
-}
-
-button.theia-button[disabled], .theia-button[disabled] {
+.theia-button[disabled] {
   opacity: 0.6;
   color: var(--theia-button-disabledForeground);
   background-color: var(--theia-button-disabledBackground);
   cursor: default;
 }
 
-button.secondary[disabled], .theia-button.secondary[disabled] {
-    color: var(--theia-secondaryButton-disabledForeground);
-    background-color: var(--theia-secondaryButton-disabledBackground);
+button.secondary[disabled],
+.theia-button.secondary[disabled] {
+  color: var(--theia-secondaryButton-disabledForeground);
+  background-color: var(--theia-secondaryButton-disabledBackground);
 }
 
 .theia-select {
-    color: var(--dropdown-foreground);
-    font-size: var(--theia-ui-font-size1);
-    border-radius: 0;
-    border: 1px solid var(--theia-dropdown-border);
-    background: var(--theia-dropdown-background);
-    outline: none;
+  color: var(--dropdown-foreground);
+  font-size: var(--theia-ui-font-size1);
+  border-radius: 2px;
+  border: 1px solid var(--theia-dropdown-border);
+  background: var(--theia-dropdown-background);
+  outline: none;
+  cursor: pointer;
 }
 
 .theia-select option {
-    background: var(--theia-dropdown-listBackground);
+  background: var(--theia-dropdown-listBackground);
 }
 
 .theia-transparent-overlay {
-    background-color: transparent;
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    width: 100%;
-    z-index: 999;
+  background-color: transparent;
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  z-index: 999;
+}
+
+.theia-cursor-no-drop,
+.theia-cursor-no-drop:active {
+  cursor: no-drop;
 }
 
 /*-----------------------------------------------------------------------------
 | Import children style files
 |----------------------------------------------------------------------------*/
 
-@import './dockpanel.css';
-@import './dialog.css';
-@import './menus.css';
-@import './sidepanel.css';
-@import './tabs.css';
-@import './scrollbars.css';
-@import './tree.css';
-@import './status-bar.css';
-@import './tree-decorators.css';
-@import './about.css';
-@import './search-box.css';
-@import './ansi.css';
-@import './view-container.css';
-@import './notification.css';
-@import './alert-messages.css';
-@import './icons.css';
-@import './widget.css';
-@import './quick-title-bar.css';
-@import './progress-bar.css';
+@import "./os.css";
+@import "./dockpanel.css";
+@import "./dialog.css";
+@import "./menus.css";
+@import "./sidepanel.css";
+@import "./tabs.css";
+@import "./scrollbars.css";
+@import "./tree.css";
+@import "./status-bar.css";
+@import "./tree-decorators.css";
+@import "./about.css";
+@import "./search-box.css";
+@import "./ansi.css";
+@import "./view-container.css";
+@import "./notification.css";
+@import "./alert-messages.css";
+@import "./icons.css";
+@import "./widget.css";
+@import "./quick-title-bar.css";
+@import "./progress-bar.css";
+@import "./breadcrumbs.css";
+@import "./tooltip.css";

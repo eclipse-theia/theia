@@ -1,25 +1,26 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { CommandRegistry } from '@theia/core/lib/common/command';
 import { Emitter } from '@theia/core/lib/common/event';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import ICommandEvent = monaco.commands.ICommandEvent;
-import ICommandService = monaco.commands.ICommandService;
+import { ICommandEvent, ICommandService } from '@theia/monaco-editor-core/esm/vs/platform/commands/common/commands';
+import { StandaloneCommandService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import * as monaco from '@theia/monaco-editor-core';
 
 export const MonacoCommandServiceFactory = Symbol('MonacoCommandServiceFactory');
 export interface MonacoCommandServiceFactory {
@@ -28,7 +29,7 @@ export interface MonacoCommandServiceFactory {
 
 @injectable()
 export class MonacoCommandService implements ICommandService, Disposable {
-
+    declare readonly _serviceBrand: undefined; // Required for type compliance.
     protected readonly onWillExecuteCommandEmitter = new Emitter<ICommandEvent>();
     protected readonly onDidExecuteCommandEmitter = new Emitter<ICommandEvent>();
     protected readonly toDispose = new DisposableCollection(
@@ -36,7 +37,7 @@ export class MonacoCommandService implements ICommandService, Disposable {
         this.onDidExecuteCommandEmitter
     );
 
-    protected delegate: monaco.services.StandaloneCommandService | undefined;
+    protected delegate: StandaloneCommandService | undefined;
     protected readonly delegateListeners = new DisposableCollection();
 
     constructor(
@@ -58,7 +59,7 @@ export class MonacoCommandService implements ICommandService, Disposable {
         return this.onDidExecuteCommandEmitter.event;
     }
 
-    setDelegate(delegate: monaco.services.StandaloneCommandService | undefined): void {
+    setDelegate(delegate: StandaloneCommandService | undefined): void {
         if (this.toDispose.disposed) {
             return;
         }
@@ -66,10 +67,10 @@ export class MonacoCommandService implements ICommandService, Disposable {
         this.toDispose.push(this.delegateListeners);
         this.delegate = delegate;
         if (this.delegate) {
-            this.delegateListeners.push(this.delegate['_onWillExecuteCommand'].event(event =>
+            this.delegateListeners.push(this.delegate.onWillExecuteCommand(event =>
                 this.onWillExecuteCommandEmitter.fire(event)
             ));
-            this.delegateListeners.push(this.delegate['_onDidExecuteCommand'].event(event =>
+            this.delegateListeners.push(this.delegate.onDidExecuteCommand(event =>
                 this.onDidExecuteCommandEmitter.fire(event)
             ));
         }

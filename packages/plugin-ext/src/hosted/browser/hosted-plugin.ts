@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -21,19 +21,19 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import debounce = require('lodash.debounce');
-import { UUID } from '@phosphor/coreutils';
-import { injectable, inject, interfaces, named, postConstruct } from 'inversify';
-import { PluginWorker } from '../../main/browser/plugin-worker';
-import { PluginMetadata, getPluginId, HostedPluginServer, DeployedPlugin } from '../../common/plugin-protocol';
+import debounce = require('@theia/core/shared/lodash.debounce');
+import { UUID } from '@theia/core/shared/@phosphor/coreutils';
+import { injectable, inject, interfaces, named, postConstruct } from '@theia/core/shared/inversify';
+import { PluginWorker } from './plugin-worker';
+import { PluginMetadata, getPluginId, HostedPluginServer, DeployedPlugin, PluginServer, PluginIdentifiers } from '../../common/plugin-protocol';
 import { HostedPluginWatcher } from './hosted-plugin-watcher';
-import { MAIN_RPC_CONTEXT, PluginManagerExt, ConfigStorage } from '../../common/plugin-api-rpc';
+import { MAIN_RPC_CONTEXT, PluginManagerExt, ConfigStorage, UIKind } from '../../common/plugin-api-rpc';
 import { setUpPluginApi } from '../../main/browser/main-context';
 import { RPCProtocol, RPCProtocolImpl } from '../../common/rpc-protocol';
 import {
-    Disposable, DisposableCollection,
+    Disposable, DisposableCollection, Emitter, isCancelled,
     ILogger, ContributionProvider, CommandRegistry, WillExecuteCommandEvent,
-    CancellationTokenSource, JsonRpcProxy, ProgressService
+    CancellationTokenSource, RpcProxy, ProgressService, nls
 } from '@theia/core';
 import { PreferenceServiceImpl, PreferenceProviderProvider } from '@theia/core/lib/browser/preferences';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -42,17 +42,15 @@ import { getQueryParameters } from '../../main/browser/env-main';
 import { MainPluginApiProvider } from '../../common/plugin-ext-api-contribution';
 import { PluginPathsService } from '../../main/common/plugin-paths-protocol';
 import { getPreferences } from '../../main/browser/preference-registry-main';
-import { PluginServer } from '../../common/plugin-protocol';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
 import { DebugConfigurationManager } from '@theia/debug/lib/browser/debug-configuration-manager';
 import { WaitUntilEvent } from '@theia/core/lib/common/event';
-import { FileSystem } from '@theia/filesystem/lib/common';
 import { FileSearchService } from '@theia/file-search/lib/common/file-search-service';
-import { Emitter, isCancelled } from '@theia/core';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { PluginViewRegistry } from '../../main/browser/view/plugin-view-registry';
-import { TaskProviderRegistry, TaskResolverRegistry } from '@theia/task/lib/browser/task-contribution';
+import { WillResolveTaskProvider, TaskProviderRegistry, TaskResolverRegistry } from '@theia/task/lib/browser/task-contribution';
+import { TaskDefinitionRegistry } from '@theia/task/lib/browser/task-definition-registry';
 import { WebviewEnvironment } from '../../main/browser/webview/webview-environment';
 import { WebviewWidget } from '../../main/browser/webview/webview';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
@@ -60,14 +58,51 @@ import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-servi
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import URI from '@theia/core/lib/common/uri';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
+import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
+import { JsonSchemaStore } from '@theia/core/lib/browser/json-schema-store';
+import { FileService, FileSystemProviderActivationEvent } from '@theia/filesystem/lib/browser/file-service';
+import { PluginCustomEditorRegistry } from '../../main/browser/custom-editors/plugin-custom-editor-registry';
+import { CustomEditorWidget } from '../../main/browser/custom-editors/custom-editor-widget';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language';
+import { LanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageService';
+import { Measurement, Stopwatch } from '@theia/core/lib/common';
+import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '@theia/core/lib/common/message-rpc/uint8-array-message-buffer';
+import { BasicChannel } from '@theia/core/lib/common/message-rpc/channel';
+import { NotebookTypeRegistry, NotebookService, NotebookRendererMessagingService } from '@theia/notebook/lib/browser';
 
 export type PluginHost = 'frontend' | string;
-export type DebugActivationEvent = 'onDebugResolve' | 'onDebugInitialConfigurations' | 'onDebugAdapterProtocolTracker';
+export type DebugActivationEvent = 'onDebugResolve' | 'onDebugInitialConfigurations' | 'onDebugAdapterProtocolTracker' | 'onDebugDynamicConfigurations';
 
 export const PluginProgressLocation = 'plugin';
+export const ALL_ACTIVATION_EVENT = '*';
 
 @injectable()
 export class HostedPluginSupport {
+
+    protected static ADDITIONAL_ACTIVATION_EVENTS_ENV = 'ADDITIONAL_ACTIVATION_EVENTS';
+    protected static BUILTIN_ACTIVATION_EVENTS = [
+        '*',
+        'onLanguage',
+        'onCommand',
+        'onDebug',
+        'onDebugInitialConfigurations',
+        'onDebugResolve',
+        'onDebugAdapterProtocolTracker',
+        'onDebugDynamicConfigurations',
+        'onTaskType',
+        'workspaceContains',
+        'onView',
+        'onUri',
+        'onTerminalProfile',
+        'onWebviewPanel',
+        'onFileSystem',
+        'onCustomEditor',
+        'onStartupFinished',
+        'onAuthenticationRequest',
+        'onNotebook',
+        'onNotebookSerializer'
+    ];
 
     protected readonly clientId = UUID.uuid4();
 
@@ -77,13 +112,13 @@ export class HostedPluginSupport {
     protected readonly logger: ILogger;
 
     @inject(HostedPluginServer)
-    private readonly server: JsonRpcProxy<HostedPluginServer>;
+    protected readonly server: RpcProxy<HostedPluginServer>;
 
     @inject(HostedPluginWatcher)
-    private readonly watcher: HostedPluginWatcher;
+    protected readonly watcher: HostedPluginWatcher;
 
     @inject(PluginContributionHandler)
-    private readonly contributionHandler: PluginContributionHandler;
+    protected readonly contributionHandler: PluginContributionHandler;
 
     @inject(ContributionProvider)
     @named(MainPluginApiProvider)
@@ -96,13 +131,19 @@ export class HostedPluginSupport {
     protected readonly preferenceProviderProvider: PreferenceProviderProvider;
 
     @inject(PreferenceServiceImpl)
-    private readonly preferenceServiceImpl: PreferenceServiceImpl;
+    protected readonly preferenceServiceImpl: PreferenceServiceImpl;
 
     @inject(PluginPathsService)
-    private readonly pluginPathsService: PluginPathsService;
+    protected readonly pluginPathsService: PluginPathsService;
 
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
+
+    @inject(NotebookService)
+    protected readonly notebookService: NotebookService;
+
+    @inject(NotebookRendererMessagingService)
+    protected readonly notebookRendererMessagingService: NotebookRendererMessagingService;
 
     @inject(CommandRegistry)
     protected readonly commands: CommandRegistry;
@@ -113,14 +154,17 @@ export class HostedPluginSupport {
     @inject(DebugConfigurationManager)
     protected readonly debugConfigurationManager: DebugConfigurationManager;
 
-    @inject(FileSystem)
-    protected readonly fileSystem: FileSystem;
+    @inject(FileService)
+    protected readonly fileService: FileService;
 
     @inject(FileSearchService)
     protected readonly fileSearchService: FileSearchService;
 
     @inject(FrontendApplicationStateService)
     protected readonly appState: FrontendApplicationStateService;
+
+    @inject(NotebookTypeRegistry)
+    protected readonly notebookTypeRegistry: NotebookTypeRegistry;
 
     @inject(PluginViewRegistry)
     protected readonly viewRegistry: PluginViewRegistry;
@@ -130,6 +174,9 @@ export class HostedPluginSupport {
 
     @inject(TaskResolverRegistry)
     protected readonly taskResolverRegistry: TaskResolverRegistry;
+
+    @inject(TaskDefinitionRegistry)
+    protected readonly taskDefinitionRegistry: TaskDefinitionRegistry;
 
     @inject(ProgressService)
     protected readonly progressService: ProgressService;
@@ -146,11 +193,20 @@ export class HostedPluginSupport {
     @inject(EnvVariablesServer)
     protected readonly envServer: EnvVariablesServer;
 
-    private theiaReadyPromise: Promise<any>;
+    @inject(JsonSchemaStore)
+    protected readonly jsonSchemaStore: JsonSchemaStore;
+
+    @inject(PluginCustomEditorRegistry)
+    protected readonly customEditorRegistry: PluginCustomEditorRegistry;
+
+    @inject(Stopwatch)
+    protected readonly stopwatch: Stopwatch;
+
+    protected theiaReadyPromise: Promise<any>;
 
     protected readonly managers = new Map<string, PluginManagerExt>();
 
-    private readonly contributions = new Map<string, PluginContributions>();
+    protected readonly contributions = new Map<PluginIdentifiers.UnversionedId, PluginContributions>();
 
     protected readonly activationEvents = new Set<string>();
 
@@ -178,32 +234,40 @@ export class HostedPluginSupport {
         this.theiaReadyPromise = Promise.all([this.preferenceServiceImpl.ready, this.workspaceService.roots]);
         this.workspaceService.onWorkspaceChanged(() => this.updateStoragePath());
 
-        const modeService = monaco.services.StaticServices.modeService.get();
-        for (const modeId of Object.keys(modeService['_instantiatedModes'])) {
-            const mode = modeService['_instantiatedModes'][modeId];
-            this.activateByLanguage(mode.getId());
+        const languageService = (StandaloneServices.get(ILanguageService) as LanguageService);
+        for (const language of languageService['_encounteredLanguages'] as Set<string>) {
+            this.activateByLanguage(language);
         }
-        modeService.onDidCreateMode(mode => this.activateByLanguage(mode.getId()));
+        languageService.onDidEncounterLanguage(language => this.activateByLanguage(language));
         this.commands.onWillExecuteCommand(event => this.ensureCommandHandlerRegistration(event));
         this.debugSessionManager.onWillStartDebugSession(event => this.ensureDebugActivation(event));
         this.debugSessionManager.onWillResolveDebugConfiguration(event => this.ensureDebugActivation(event, 'onDebugResolve', event.debugType));
         this.debugConfigurationManager.onWillProvideDebugConfiguration(event => this.ensureDebugActivation(event, 'onDebugInitialConfigurations'));
+        // Activate all providers of dynamic configurations, i.e. Let the user pick a configuration from all the available ones.
+        this.debugConfigurationManager.onWillProvideDynamicDebugConfiguration(event => this.ensureDebugActivation(event, 'onDebugDynamicConfigurations', ALL_ACTIVATION_EVENT));
         this.viewRegistry.onDidExpandView(id => this.activateByView(id));
         this.taskProviderRegistry.onWillProvideTaskProvider(event => this.ensureTaskActivation(event));
         this.taskResolverRegistry.onWillProvideTaskResolver(event => this.ensureTaskActivation(event));
+        this.fileService.onWillActivateFileSystemProvider(event => this.ensureFileSystemActivation(event));
+        this.customEditorRegistry.onWillOpenCustomEditor(event => this.activateByCustomEditor(event));
+        this.notebookService.onWillOpenNotebook(async event => this.activateByNotebook(event));
+        this.notebookRendererMessagingService.onWillActivateRenderer(rendererId => this.activateByNotebookRenderer(rendererId));
+
         this.widgets.onDidCreateWidget(({ factoryId, widget }) => {
-            if (factoryId === WebviewWidget.FACTORY_ID && widget instanceof WebviewWidget) {
+            if ((factoryId === WebviewWidget.FACTORY_ID || factoryId === CustomEditorWidget.FACTORY_ID) && widget instanceof WebviewWidget) {
                 const storeState = widget.storeState.bind(widget);
                 const restoreState = widget.restoreState.bind(widget);
+
                 widget.storeState = () => {
                     if (this.webviewRevivers.has(widget.viewType)) {
                         return storeState();
                     }
-                    return {};
+                    return undefined;
                 };
-                widget.restoreState = oldState => {
-                    if (oldState.viewType) {
-                        restoreState(oldState);
+
+                widget.restoreState = state => {
+                    if (state.viewType) {
+                        restoreState(state);
                         this.preserveWebview(widget);
                     } else {
                         widget.dispose();
@@ -219,7 +283,7 @@ export class HostedPluginSupport {
         return plugins;
     }
 
-    getPlugin(id: string): DeployedPlugin | undefined {
+    getPlugin(id: PluginIdentifiers.UnversionedId): DeployedPlugin | undefined {
         const contributions = this.contributions.get(id);
         return contributions && contributions.plugin;
     }
@@ -276,8 +340,6 @@ export class HostedPluginSupport {
         await this.startPlugins(contributionsByHost, toDisconnect);
 
         this.deferredDidStart.resolve();
-
-        this.restoreWebviews();
     }
 
     /**
@@ -287,28 +349,42 @@ export class HostedPluginSupport {
      */
     protected async syncPlugins(): Promise<void> {
         let initialized = 0;
-        const syncPluginsMeasurement = this.createMeasurement('syncPlugins');
+        const waitPluginsMeasurement = this.measure('waitForDeployment');
+        let syncPluginsMeasurement: Measurement | undefined;
 
         const toUnload = new Set(this.contributions.keys());
+        let didChangeInstallationStatus = false;
         try {
-            const pluginIds: string[] = [];
-            const deployedPluginIds = await this.server.getDeployedPluginIds();
-            for (const pluginId of deployedPluginIds) {
-                toUnload.delete(pluginId);
-                if (!this.contributions.has(pluginId)) {
-                    pluginIds.push(pluginId);
+            const newPluginIds: PluginIdentifiers.VersionedId[] = [];
+            const [deployedPluginIds, uninstalledPluginIds] = await Promise.all([this.server.getDeployedPluginIds(), this.server.getUninstalledPluginIds()]);
+            waitPluginsMeasurement.log('Waiting for backend deployment');
+            syncPluginsMeasurement = this.measure('syncPlugins');
+            for (const versionedId of deployedPluginIds) {
+                const unversionedId = PluginIdentifiers.unversionedFromVersioned(versionedId);
+                toUnload.delete(unversionedId);
+                if (!this.contributions.has(unversionedId)) {
+                    newPluginIds.push(versionedId);
                 }
             }
             for (const pluginId of toUnload) {
-                const contribution = this.contributions.get(pluginId);
-                if (contribution) {
-                    contribution.dispose();
+                this.contributions.get(pluginId)?.dispose();
+            }
+            for (const versionedId of uninstalledPluginIds) {
+                const plugin = this.getPlugin(PluginIdentifiers.unversionedFromVersioned(versionedId));
+                if (plugin && PluginIdentifiers.componentsToVersionedId(plugin.metadata.model) === versionedId && !plugin.metadata.outOfSync) {
+                    plugin.metadata.outOfSync = didChangeInstallationStatus = true;
                 }
             }
-            if (pluginIds.length) {
-                const plugins = await this.server.getDeployedPlugins({ pluginIds });
+            for (const contribution of this.contributions.values()) {
+                if (contribution.plugin.metadata.outOfSync && !uninstalledPluginIds.includes(PluginIdentifiers.componentsToVersionedId(contribution.plugin.metadata.model))) {
+                    contribution.plugin.metadata.outOfSync = false;
+                    didChangeInstallationStatus = true;
+                }
+            }
+            if (newPluginIds.length) {
+                const plugins = await this.server.getDeployedPlugins({ pluginIds: newPluginIds });
                 for (const plugin of plugins) {
-                    const pluginId = plugin.metadata.model.id;
+                    const pluginId = PluginIdentifiers.componentsToUnversionedId(plugin.metadata.model);
                     const contributions = new PluginContributions(plugin);
                     this.contributions.set(pluginId, contributions);
                     contributions.push(Disposable.create(() => this.contributions.delete(pluginId)));
@@ -316,12 +392,21 @@ export class HostedPluginSupport {
                 }
             }
         } finally {
-            if (initialized || toUnload.size) {
+            if (initialized || toUnload.size || didChangeInstallationStatus) {
                 this.onDidChangePluginsEmitter.fire(undefined);
             }
-        }
 
-        this.logMeasurement('Sync', initialized, syncPluginsMeasurement);
+            if (!syncPluginsMeasurement) {
+                // await didn't complete normally
+                waitPluginsMeasurement.error('Backend deployment failed.');
+            }
+        }
+        if (initialized > 0) {
+            // Only log sync measurement if there are were plugins to sync.
+            syncPluginsMeasurement?.log(`Sync of ${this.getPluginCount(initialized)}`);
+        } else {
+            syncPluginsMeasurement.stop();
+        }
     }
 
     /**
@@ -330,9 +415,10 @@ export class HostedPluginSupport {
      */
     protected loadContributions(toDisconnect: DisposableCollection): Map<PluginHost, PluginContributions[]> {
         let loaded = 0;
-        const loadPluginsMeasurement = this.createMeasurement('loadPlugins');
+        const loadPluginsMeasurement = this.measure('loadPlugins');
 
         const hostContributions = new Map<PluginHost, PluginContributions[]>();
+        console.log(`[${this.clientId}] Loading plugin contributions`);
         for (const contributions of this.contributions.values()) {
             const plugin = contributions.plugin.metadata;
             const pluginId = plugin.model.id;
@@ -342,51 +428,64 @@ export class HostedPluginSupport {
                 contributions.push(Disposable.create(() => console.log(`[${pluginId}]: Unloaded plugin.`)));
                 contributions.push(this.contributionHandler.handleContributions(this.clientId, contributions.plugin));
                 contributions.state = PluginContributions.State.LOADED;
-                console.log(`[${this.clientId}][${pluginId}]: Loaded contributions.`);
+                console.debug(`[${this.clientId}][${pluginId}]: Loaded contributions.`);
                 loaded++;
             }
 
             if (contributions.state === PluginContributions.State.LOADED) {
                 contributions.state = PluginContributions.State.STARTING;
                 const host = plugin.model.entryPoint.frontend ? 'frontend' : plugin.host;
-                const dynamicContributions = hostContributions.get(plugin.host) || [];
+                const dynamicContributions = hostContributions.get(host) || [];
                 dynamicContributions.push(contributions);
                 hostContributions.set(host, dynamicContributions);
                 toDisconnect.push(Disposable.create(() => {
                     contributions!.state = PluginContributions.State.LOADED;
-                    console.log(`[${this.clientId}][${pluginId}]: Disconnected.`);
+                    console.debug(`[${this.clientId}][${pluginId}]: Disconnected.`);
                 }));
             }
         }
-
-        this.logMeasurement('Load contributions', loaded, loadPluginsMeasurement);
+        if (loaded > 0) {
+            // Only log load measurement if there are were plugins to load.
+            loadPluginsMeasurement?.log(`Load contributions of ${this.getPluginCount(loaded)}`);
+        } else {
+            loadPluginsMeasurement.stop();
+        }
 
         return hostContributions;
     }
 
     protected async startPlugins(contributionsByHost: Map<PluginHost, PluginContributions[]>, toDisconnect: DisposableCollection): Promise<void> {
         let started = 0;
-        const startPluginsMeasurement = this.createMeasurement('startPlugins');
+        const startPluginsMeasurement = this.measure('startPlugins');
 
         const [hostLogPath, hostStoragePath, hostGlobalStoragePath] = await Promise.all([
             this.pluginPathsService.getHostLogPath(),
             this.getStoragePath(),
             this.getHostGlobalStoragePath()
         ]);
+
         if (toDisconnect.disposed) {
             return;
         }
+
         const thenable: Promise<void>[] = [];
         const configStorage: ConfigStorage = {
             hostLogPath,
             hostStoragePath,
             hostGlobalStoragePath
         };
+
         for (const [host, hostContributions] of contributionsByHost) {
+            // do not start plugins for electron browser
+            if (host === 'frontend' && environment.electron.is()) {
+                continue;
+            }
+
             const manager = await this.obtainManager(host, hostContributions, toDisconnect);
             if (!manager) {
-                return;
+                continue;
             }
+
             const plugins = hostContributions.map(contributions => contributions.plugin.metadata);
             thenable.push((async () => {
                 try {
@@ -395,14 +494,15 @@ export class HostedPluginSupport {
                     if (toDisconnect.disposed) {
                         return;
                     }
+                    console.log(`[${this.clientId}] Starting plugins.`);
                     for (const contributions of hostContributions) {
                         started++;
                         const plugin = contributions.plugin;
                         const id = plugin.metadata.model.id;
                         contributions.state = PluginContributions.State.STARTED;
-                        console.log(`[${this.clientId}][${id}]: Started plugin.`);
+                        console.debug(`[${this.clientId}][${id}]: Started plugin.`);
                         toDisconnect.push(contributions.push(Disposable.create(() => {
-                            console.log(`[${this.clientId}][${id}]: Stopped plugin.`);
+                            console.debug(`[${this.clientId}][${id}]: Stopped plugin.`);
                             manager.$stop(id);
                         })));
 
@@ -413,11 +513,18 @@ export class HostedPluginSupport {
                 }
             })());
         }
+
         await Promise.all(thenable);
+        await this.activateByEvent('onStartupFinished');
         if (toDisconnect.disposed) {
             return;
         }
-        this.logMeasurement('Start', started, startPluginsMeasurement);
+
+        if (started > 0) {
+            startPluginsMeasurement.log(`Start of ${this.getPluginCount(started)}`);
+        } else {
+            startPluginsMeasurement.stop();
+        }
     }
 
     protected async obtainManager(host: string, hostContributions: PluginContributions[], toDisconnect: DisposableCollection): Promise<PluginManagerExt | undefined> {
@@ -431,19 +538,28 @@ export class HostedPluginSupport {
             this.managers.set(host, manager);
             toDisconnect.push(Disposable.create(() => this.managers.delete(host)));
 
-            const [extApi, globalState, workspaceState, webviewResourceRoot, webviewCspSource, defaultShell] = await Promise.all([
+            const [extApi, globalState, workspaceState, webviewResourceRoot, webviewCspSource, defaultShell, jsonValidation] = await Promise.all([
                 this.server.getExtPluginAPI(),
                 this.pluginServer.getAllStorageValues(undefined),
                 this.pluginServer.getAllStorageValues({
-                    workspace: this.workspaceService.workspace,
-                    roots: this.workspaceService.tryGetRoots()
+                    workspace: this.workspaceService.workspace?.resource.toString(),
+                    roots: this.workspaceService.tryGetRoots().map(root => root.resource.toString())
                 }),
-                this.webviewEnvironment.resourceRoot(),
+                this.webviewEnvironment.resourceRoot(host),
                 this.webviewEnvironment.cspSource(),
-                this.terminalService.getDefaultShell()
+                this.terminalService.getDefaultShell(),
+                this.jsonSchemaStore.schemas
             ]);
             if (toDisconnect.disposed) {
                 return undefined;
+            }
+
+            const isElectron = environment.electron.is();
+
+            const supportedActivationEvents = [...HostedPluginSupport.BUILTIN_ACTIVATION_EVENTS];
+            const additionalActivationEvents = await this.envServer.getValue(HostedPluginSupport.ADDITIONAL_ACTIVATION_EVENTS_ENV);
+            if (additionalActivationEvents && additionalActivationEvents.value) {
+                additionalActivationEvents.value.split(',').forEach(event => supportedActivationEvents.push(event));
             }
 
             await manager.$init({
@@ -452,43 +568,58 @@ export class HostedPluginSupport {
                 workspaceState,
                 env: {
                     queryParams: getQueryParameters(),
-                    language: navigator.language,
+                    language: nls.locale || nls.defaultLocale,
                     shell: defaultShell,
-                    appName: FrontendApplicationConfigProvider.get().applicationName
+                    uiKind: isElectron ? UIKind.Desktop : UIKind.Web,
+                    appName: FrontendApplicationConfigProvider.get().applicationName,
+                    appHost: isElectron ? 'desktop' : 'web' // TODO: 'web' could be the embedder's name, e.g. 'github.dev'
                 },
                 extApi,
                 webview: {
                     webviewResourceRoot,
                     webviewCspSource
-                }
+                },
+                jsonValidation,
+                supportedActivationEvents
             });
             if (toDisconnect.disposed) {
                 return undefined;
             }
+            this.activationEvents.forEach(event => manager!.$activateByEvent(event));
         }
         return manager;
     }
 
     protected initRpc(host: PluginHost, pluginId: string): RPCProtocol {
-        const rpc = host === 'frontend' ? new PluginWorker().rpc : this.createServerRpc(pluginId, host);
+        const rpc = host === 'frontend' ? new PluginWorker().rpc : this.createServerRpc(host);
         setUpPluginApi(rpc, this.container);
         this.mainPluginApiProviders.getContributions().forEach(p => p.initialize(rpc, this.container));
         return rpc;
     }
 
-    private createServerRpc(pluginID: string, hostID: string): RPCProtocol {
-        return new RPCProtocolImpl({
-            onMessage: this.watcher.onPostMessageEvent,
-            send: message => {
-                const wrappedMessage: any = {};
-                wrappedMessage['pluginID'] = pluginID;
-                wrappedMessage['content'] = message;
-                this.server.onMessage(JSON.stringify(wrappedMessage));
+    protected createServerRpc(pluginHostId: string): RPCProtocol {
+
+        const channel = new BasicChannel(() => {
+            const writer = new Uint8ArrayWriteBuffer();
+            writer.onCommit(buffer => {
+                this.server.onMessage(pluginHostId, buffer);
+            });
+            return writer;
+        });
+
+        // Create RPC protocol before adding the listener to the watcher to receive the watcher's cached messages after the rpc protocol was created.
+        const rpc = new RPCProtocolImpl(channel);
+
+        this.watcher.onPostMessageEvent(received => {
+            if (pluginHostId === received.pluginHostId) {
+                channel.onMessageEmitter.fire(() => new Uint8ArrayReadBuffer(received.message));
             }
-        }, hostID);
+        });
+
+        return rpc;
     }
 
-    private async updateStoragePath(): Promise<void> {
+    protected async updateStoragePath(): Promise<void> {
         const path = await this.getStoragePath();
         for (const manager of this.managers.values()) {
             manager.$updateStoragePath(path);
@@ -497,18 +628,18 @@ export class HostedPluginSupport {
 
     protected async getStoragePath(): Promise<string | undefined> {
         const roots = await this.workspaceService.roots;
-        return this.pluginPathsService.getHostStoragePath(this.workspaceService.workspace, roots);
+        return this.pluginPathsService.getHostStoragePath(this.workspaceService.workspace?.resource.toString(), roots.map(root => root.resource.toString()));
     }
 
     protected async getHostGlobalStoragePath(): Promise<string> {
         const configDirUri = await this.envServer.getConfigDirUri();
-        const globalStorageFolderUri = new URI(configDirUri).resolve('globalStorage').toString();
+        const globalStorageFolderUri = new URI(configDirUri).resolve('globalStorage');
 
         // Make sure that folder by the path exists
-        if (!await this.fileSystem.exists(globalStorageFolderUri)) {
-            await this.fileSystem.createFolder(globalStorageFolderUri);
+        if (!await this.fileService.exists(globalStorageFolderUri)) {
+            await this.fileService.createFolder(globalStorageFolderUri, { fromUserGesture: false });
         }
-        const globalStorageFolderFsPath = await this.fileSystem.getFsPath(globalStorageFolderUri);
+        const globalStorageFolderFsPath = await this.fileService.fsPath(globalStorageFolderUri);
         if (!globalStorageFolderFsPath) {
             throw new Error(`Could not resolve the FS path for URI: ${globalStorageFolderUri}`);
         }
@@ -520,11 +651,11 @@ export class HostedPluginSupport {
             return;
         }
         this.activationEvents.add(activationEvent);
-        const activation: Promise<void>[] = [];
-        for (const manager of this.managers.values()) {
-            activation.push(manager.$activateByEvent(activationEvent));
-        }
-        await Promise.all(activation);
+        await Promise.all(Array.from(this.managers.values(), manager => manager.$activateByEvent(activationEvent)));
+    }
+
+    async activateByViewContainer(viewContainerId: string): Promise<void> {
+        await Promise.all(this.viewRegistry.getContainerViews(viewContainerId).map(viewId => this.activateByView(viewId)));
     }
 
     async activateByView(viewId: string): Promise<void> {
@@ -537,6 +668,38 @@ export class HostedPluginSupport {
 
     async activateByCommand(commandId: string): Promise<void> {
         await this.activateByEvent(`onCommand:${commandId}`);
+    }
+
+    async activateByTaskType(taskType: string): Promise<void> {
+        await this.activateByEvent(`onTaskType:${taskType}`);
+    }
+
+    async activateByCustomEditor(viewType: string): Promise<void> {
+        await this.activateByEvent(`onCustomEditor:${viewType}`);
+    }
+
+    async activateByNotebook(viewType: string): Promise<void> {
+        await this.activateByEvent(`onNotebook:${viewType}`);
+    }
+
+    async activateByNotebookSerializer(viewType: string): Promise<void> {
+        await this.activateByEvent(`onNotebookSerializer:${viewType}`);
+    }
+
+    async activateByNotebookRenderer(rendererId: string): Promise<void> {
+        await this.activateByEvent(`onRenderer:${rendererId}`);
+    }
+
+    activateByFileSystem(event: FileSystemProviderActivationEvent): Promise<void> {
+        return this.activateByEvent(`onFileSystem:${event.scheme}`);
+    }
+
+    activateByTerminalProfile(profileId: string): Promise<void> {
+        return this.activateByEvent(`onTerminalProfile:${profileId}`);
+    }
+
+    protected ensureFileSystemActivation(event: FileSystemProviderActivationEvent): void {
+        event.waitUntil(this.activateByFileSystem(event));
     }
 
     protected ensureCommandHandlerRegistration(event: WillExecuteCommandEvent): void {
@@ -561,8 +724,20 @@ export class HostedPluginSupport {
         event.waitUntil(p);
     }
 
-    protected ensureTaskActivation(event: WaitUntilEvent): void {
-        event.waitUntil(this.activateByCommand('workbench.action.tasks.runTask'));
+    protected ensureTaskActivation(event: WillResolveTaskProvider): void {
+        const promises = [this.activateByCommand('workbench.action.tasks.runTask')];
+        const taskType = event.taskType;
+        if (taskType) {
+            if (taskType === ALL_ACTIVATION_EVENT) {
+                for (const taskDefinition of this.taskDefinitionRegistry.getAll()) {
+                    promises.push(this.activateByTaskType(taskDefinition.taskType));
+                }
+            } else {
+                promises.push(this.activateByTaskType(taskType));
+            }
+        }
+
+        event.waitUntil(Promise.all(promises));
     }
 
     protected ensureDebugActivation(event: WaitUntilEvent, activationEvent?: DebugActivationEvent, debugType?: string): void {
@@ -590,8 +765,8 @@ export class HostedPluginSupport {
         // should be aligned with https://github.com/microsoft/vscode/blob/da5fb7d5b865aa522abc7e82c10b746834b98639/src/vs/workbench/api/node/extHostExtensionService.ts#L460-L469
         for (const activationEvent of activationEvents) {
             if (/^workspaceContains:/.test(activationEvent)) {
-                const fileNameOrGlob = activationEvent.substr('workspaceContains:'.length);
-                if (fileNameOrGlob.indexOf('*') >= 0 || fileNameOrGlob.indexOf('?') >= 0) {
+                const fileNameOrGlob = activationEvent.substring('workspaceContains:'.length);
+                if (fileNameOrGlob.indexOf(ALL_ACTIVATION_EVENT) >= 0 || fileNameOrGlob.indexOf('?') >= 0) {
                     includePatterns.push(fileNameOrGlob);
                 } else {
                     paths.push(fileNameOrGlob);
@@ -613,7 +788,7 @@ export class HostedPluginSupport {
             promises.push((async () => {
                 try {
                     const result = await this.fileSearchService.find('', {
-                        rootUris: this.workspaceService.tryGetRoots().map(r => r.uri),
+                        rootUris: this.workspaceService.tryGetRoots().map(r => r.resource.toString()),
                         includePatterns,
                         limit: 1
                     }, tokenSource.token);
@@ -641,40 +816,15 @@ export class HostedPluginSupport {
         await Promise.all(activation);
     }
 
-    protected createMeasurement(name: string): () => number {
-        const startMarker = `${name}-start`;
-        const endMarker = `${name}-end`;
-        performance.clearMeasures(name);
-        performance.clearMarks(startMarker);
-        performance.clearMarks(endMarker);
-
-        performance.mark(startMarker);
-        return () => {
-            performance.mark(endMarker);
-            performance.measure(name, startMarker, endMarker);
-
-            const entries = performance.getEntriesByName(name);
-            const duration = entries.length > 0 ? entries[0].duration : Number.NaN;
-
-            performance.clearMeasures(name);
-            performance.clearMarks(startMarker);
-            performance.clearMarks(endMarker);
-            return duration;
-        };
+    protected measure(name: string): Measurement {
+        return this.stopwatch.start(name, { context: this.clientId });
     }
 
-    protected logMeasurement(prefix: string, count: number, measurement: () => number): void {
-        const duration = measurement();
-        if (duration === Number.NaN) {
-            // Measurement was prevented by native API, do not log NaN duration
-            return;
-        }
-
-        const pluginCount = `${count} plugin${count === 1 ? '' : 's'}`;
-        console.log(`[${this.clientId}] ${prefix} of ${pluginCount} took: ${duration.toFixed(1)} ms`);
+    protected getPluginCount(plugins: number): string {
+        return `${plugins} plugin${plugins === 1 ? '' : 's'}`;
     }
 
-    protected readonly webviewsToRestore = new Set<WebviewWidget>();
+    protected readonly webviewsToRestore = new Map<string, WebviewWidget>();
     protected readonly webviewRevivers = new Map<string, (webview: WebviewWidget) => Promise<void>>();
 
     registerWebviewReviver(viewType: string, reviver: (webview: WebviewWidget) => Promise<void>): void {
@@ -682,63 +832,60 @@ export class HostedPluginSupport {
             throw new Error(`Reviver for ${viewType} already registered`);
         }
         this.webviewRevivers.set(viewType, reviver);
+
+        if (this.webviewsToRestore.has(viewType)) {
+            this.restoreWebview(this.webviewsToRestore.get(viewType) as WebviewWidget);
+        }
     }
 
     unregisterWebviewReviver(viewType: string): void {
         this.webviewRevivers.delete(viewType);
     }
 
-    protected preserveWebviews(): void {
+    protected async preserveWebviews(): Promise<void> {
         for (const webview of this.widgets.getWidgets(WebviewWidget.FACTORY_ID)) {
             this.preserveWebview(webview as WebviewWidget);
+        }
+        for (const webview of this.widgets.getWidgets(CustomEditorWidget.FACTORY_ID)) {
+            (webview as CustomEditorWidget).modelRef.dispose();
+            if ((webview as any)['closeWithoutSaving']) {
+                delete (webview as any)['closeWithoutSaving'];
+            }
+            this.customEditorRegistry.resolveWidget(webview as CustomEditorWidget);
         }
     }
 
     protected preserveWebview(webview: WebviewWidget): void {
-        if (!this.webviewsToRestore.has(webview)) {
-            this.webviewsToRestore.add(webview);
-            webview.disposed.connect(() => this.webviewsToRestore.delete(webview));
+        if (!this.webviewsToRestore.has(webview.viewType)) {
+            this.activateByEvent(`onWebviewPanel:${webview.viewType}`);
+            this.webviewsToRestore.set(webview.viewType, webview);
+            webview.disposed.connect(() => this.webviewsToRestore.delete(webview.viewType));
         }
-    }
-
-    protected restoreWebviews(): void {
-        for (const webview of this.webviewsToRestore) {
-            this.restoreWebview(webview);
-        }
-        this.webviewsToRestore.clear();
     }
 
     protected async restoreWebview(webview: WebviewWidget): Promise<void> {
-        await this.activateByEvent(`onWebviewPanel:${webview.viewType}`);
         const restore = this.webviewRevivers.get(webview.viewType);
-        if (!restore) {
-            /* eslint-disable max-len */
-            webview.setHTML(this.getDeserializationFailedContents(`
-            <p>The extension providing '${webview.viewType}' view is not capable of restoring it.</p>
-            <p>Want to help fix this? Please inform the extension developer to register a <a href="https://code.visualstudio.com/api/extension-guides/webview#serialization">reviver</a>.</p>
-            `));
-            /* eslint-enable max-len */
-            return;
-        }
-        try {
-            await restore(webview);
-        } catch (e) {
-            webview.setHTML(this.getDeserializationFailedContents(`
-            An error occurred while restoring '${webview.viewType}' view. Please check logs.
-            `));
-            console.error('Failed to restore the webview', e);
+        if (restore) {
+            try {
+                await restore(webview);
+            } catch (e) {
+                webview.setHTML(this.getDeserializationFailedContents(`
+                An error occurred while restoring '${webview.viewType}' view. Please check logs.
+                `));
+                console.error('Failed to restore the webview', e);
+            }
         }
     }
 
     protected getDeserializationFailedContents(message: string): string {
         return `<!DOCTYPE html>
-		<html>
-			<head>
-				<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
-				<meta http-equiv="Content-Security-Policy" content="default-src 'none';">
-			</head>
-			<body>${message}</body>
-		</html>`;
+        <html>
+            <head>
+                <meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+                <meta http-equiv="Content-Security-Policy" content="default-src 'none';">
+            </head>
+            <body>${message}</body>
+        </html>`;
     }
 
 }
@@ -751,6 +898,7 @@ export class PluginContributions extends DisposableCollection {
     }
     state: PluginContributions.State = PluginContributions.State.INITIALIZING;
 }
+
 export namespace PluginContributions {
     export enum State {
         INITIALIZING = 0,

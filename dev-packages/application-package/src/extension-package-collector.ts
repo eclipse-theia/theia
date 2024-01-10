@@ -1,22 +1,22 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { readJsonFile } from './json-file';
 import { NodePackage, PublishedNodePackage } from './npm-registry';
-import { ExtensionPackage, RawExtensionPackage } from './extension-package';
+import { ExtensionPackage, ExtensionPackageOptions, RawExtensionPackage } from './extension-package';
 
 export class ExtensionPackageCollector {
 
@@ -24,7 +24,7 @@ export class ExtensionPackageCollector {
     protected readonly visited = new Map<string, boolean>();
 
     constructor(
-        protected readonly extensionPackageFactory: (raw: PublishedNodePackage) => ExtensionPackage,
+        protected readonly extensionPackageFactory: (raw: PublishedNodePackage, options?: ExtensionPackageOptions) => ExtensionPackage,
         protected readonly resolveModule: (modulePath: string) => string
     ) { }
 
@@ -36,13 +36,11 @@ export class ExtensionPackageCollector {
     }
 
     protected collectPackages(pck: NodePackage): void {
-        if (!pck.dependencies) {
-            return;
-        }
-        // eslint-disable-next-line guard-for-in
-        for (const dependency in pck.dependencies) {
-            const versionRange = pck.dependencies[dependency]!;
-            this.collectPackage(dependency, versionRange);
+        for (const [dependency, versionRange] of [
+            ...Object.entries(pck.dependencies ?? {}),
+            ...Object.entries(pck.peerDependencies ?? {})
+        ]) {
+            this.collectPackage(dependency, versionRange!);
         }
     }
 
@@ -62,9 +60,9 @@ export class ExtensionPackageCollector {
 
         let packagePath: string | undefined;
         try {
-            packagePath = this.resolveModule(name + '/package.json');
-        } catch (error) {
-            console.warn(`Failed to resolve module: ${name}`);
+            packagePath = this.resolveModule(name);
+        } catch {
+            console.debug(`Failed to resolve module: ${name}`);
         }
         if (!packagePath) {
             return;
@@ -76,7 +74,7 @@ export class ExtensionPackageCollector {
             const transitive = !(name in this.root.dependencies!);
             pck.installed = { packagePath, version, parent, transitive };
             pck.version = versionRange;
-            const extensionPackage = this.extensionPackageFactory(pck);
+            const extensionPackage = this.extensionPackageFactory(pck, { alias: name });
             this.collectPackagesWithParent(pck, extensionPackage);
             this.sorted.push(extensionPackage);
         }

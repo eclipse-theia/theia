@@ -1,43 +1,48 @@
-/********************************************************************************
- * Copyright (C) 2017 Ericsson and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 Ericsson and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { enableJSDOM } from '../browser/test/jsdom';
+import { enableJSDOM } from './test/jsdom';
 let disableJSDOM = enableJSDOM();
+
+import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
+FrontendApplicationConfigProvider.set({});
 
 import { Container, injectable, ContainerModule } from 'inversify';
 import { bindContributionProvider } from '../common/contribution-provider';
 import { KeyboardLayoutProvider, NativeKeyboardLayout, KeyboardLayoutChangeNotifier } from '../common/keyboard/keyboard-layout-provider';
 import { ILogger } from '../common/logger';
-import { KeybindingRegistry, KeybindingContext, Keybinding, KeybindingContribution, KeybindingScope } from './keybinding';
+import { KeybindingRegistry, KeybindingContext, KeybindingContribution, KeybindingScope } from './keybinding';
+import { Keybinding } from '../common/keybinding';
 import { KeyCode, Key, KeyModifier, KeySequence } from './keyboard/keys';
 import { KeyboardLayoutService } from './keyboard/keyboard-layout-service';
 import { CommandRegistry, CommandService, CommandContribution, Command } from '../common/command';
 import { LabelParser } from './label-parser';
 import { MockLogger } from '../common/test/mock-logger';
-import { StatusBar, StatusBarImpl } from './status-bar/status-bar';
 import { FrontendApplicationStateService } from './frontend-application-state';
-import { ContextKeyService } from './context-key-service';
+import { ContextKeyService, ContextKeyServiceDummyImpl } from './context-key-service';
+import { CorePreferences } from './core-preferences';
 import * as os from '../common/os';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import { Emitter, Event } from '../common/event';
+import { bindPreferenceService } from './frontend-application-bindings';
+import { MarkdownRenderer, MarkdownRendererFactory, MarkdownRendererImpl } from './markdown-rendering/markdown-renderer';
+import { StatusBar } from './status-bar';
 
 disableJSDOM();
-
-/* eslint-disable no-unused-expressions */
 
 const expect = chai.expect;
 
@@ -45,7 +50,11 @@ let keybindingRegistry: KeybindingRegistry;
 let commandRegistry: CommandRegistry;
 let testContainer: Container;
 
+let stub: sinon.SinonStub;
+
 before(async () => {
+    disableJSDOM = enableJSDOM();
+
     testContainer = new Container();
     const module = new ContainerModule((bind, unbind, isBound, rebind) => {
 
@@ -78,12 +87,16 @@ before(async () => {
             }
         });
 
-        bind(StatusBarImpl).toSelf().inSingletonScope();
-        bind(StatusBar).toService(StatusBarImpl);
+        bind(StatusBar).toConstantValue({} as StatusBar);
+        bind(MarkdownRendererImpl).toSelf().inSingletonScope();
+        bind(MarkdownRenderer).toService(MarkdownRendererImpl);
+        bind(MarkdownRendererFactory).toFactory(({ container }) => container.get(MarkdownRenderer));
         bind(CommandService).toService(CommandRegistry);
         bind(LabelParser).toSelf().inSingletonScope();
-        bind(ContextKeyService).toSelf().inSingletonScope();
+        bind(ContextKeyService).to(ContextKeyServiceDummyImpl).inSingletonScope();
         bind(FrontendApplicationStateService).toSelf().inSingletonScope();
+        bind(CorePreferences).toConstantValue(<CorePreferences>{});
+        bindPreferenceService(bind);
     });
 
     testContainer.load(module);
@@ -93,27 +106,21 @@ before(async () => {
 
 });
 
+after(() => {
+    disableJSDOM();
+});
+
+beforeEach(async () => {
+    stub = sinon.stub(os, 'isOSX').value(false);
+    keybindingRegistry = testContainer.get<KeybindingRegistry>(KeybindingRegistry);
+    await keybindingRegistry.onStart();
+});
+
+afterEach(() => {
+    stub.restore();
+});
+
 describe('keybindings', () => {
-
-    let stub: sinon.SinonStub;
-
-    before(() => {
-        disableJSDOM = enableJSDOM();
-    });
-
-    after(() => {
-        disableJSDOM();
-    });
-
-    beforeEach(async () => {
-        stub = sinon.stub(os, 'isOSX').value(false);
-        keybindingRegistry = testContainer.get<KeybindingRegistry>(KeybindingRegistry);
-        await keybindingRegistry.onStart();
-    });
-
-    afterEach(() => {
-        stub.restore();
-    });
 
     it('should register the default keybindings', () => {
         const keybinding = keybindingRegistry.getKeybindingsForCommand(TEST_COMMAND.id);
@@ -156,22 +163,134 @@ describe('keybindings', () => {
         }
     });
 
-    it('should remove all keybindings from a command that has multiple keybindings', () => {
+    it('should remove all disabled keybindings from a command that has multiple keybindings', () => {
         const keybindings: Keybinding[] = [{
             command: TEST_COMMAND2.id,
             keybinding: 'F3'
-        }];
+        },
+        {
+            command: '-' + TEST_COMMAND2.id,
+            context: 'testContext',
+            keybinding: 'ctrl+f1'
+        },
+        ];
 
         keybindingRegistry.setKeymap(KeybindingScope.USER, keybindings);
 
         const bindings = keybindingRegistry.getKeybindingsForCommand(TEST_COMMAND2.id);
         if (bindings) {
-            expect(bindings.length).to.be.equal(1);
+            // a USER one and a DEFAULT one
+            expect(bindings.length).to.be.equal(2);
             const keyCode = KeyCode.parse(bindings[0].keybinding);
             expect(keyCode.key).to.be.equal(Key.F3);
             expect(keyCode.ctrl).to.be.false;
+            const keyCode2 = KeyCode.parse(bindings[1].keybinding);
+            expect(keyCode2.key).to.be.equal(Key.F2);
+            expect(keyCode2.ctrl).to.be.true;
         }
     });
+
+    it('should register a keybinding', () => {
+        const keybinding: Keybinding = {
+            command: TEST_COMMAND2.id,
+            keybinding: 'F5'
+        };
+        expect(isKeyBindingRegistered(keybinding)).to.be.false;
+
+        keybindingRegistry.registerKeybinding(keybinding);
+
+        expect(isKeyBindingRegistered(keybinding)).to.be.true;
+    }
+    );
+
+    it('should unregister all keybindings from a specific command', () => {
+        const otherKeybinding: Keybinding = {
+            command: TEST_COMMAND.id,
+            keybinding: 'F4'
+        };
+        keybindingRegistry.registerKeybinding(otherKeybinding);
+        expect(isKeyBindingRegistered(otherKeybinding)).to.be.true;
+
+        const keybinding: Keybinding = {
+            command: TEST_COMMAND2.id,
+            keybinding: 'F5'
+        };
+        const keybinding2: Keybinding = {
+            command: TEST_COMMAND2.id,
+            keybinding: 'F6'
+        };
+
+        keybindingRegistry.registerKeybinding(keybinding);
+        keybindingRegistry.registerKeybinding(keybinding2);
+        expect(isKeyBindingRegistered(keybinding)).to.be.true;
+        expect(isKeyBindingRegistered(keybinding2)).to.be.true;
+
+        keybindingRegistry.unregisterKeybinding(TEST_COMMAND2);
+
+        expect(isKeyBindingRegistered(keybinding)).to.be.false;
+        expect(isKeyBindingRegistered(keybinding2)).to.be.false;
+        const bindingsAfterUnregister = keybindingRegistry.getKeybindingsForCommand(TEST_COMMAND2.id);
+        expect(bindingsAfterUnregister).not.to.be.undefined;
+        expect(bindingsAfterUnregister.length).to.be.equal(0);
+        expect(isKeyBindingRegistered(otherKeybinding)).to.be.true;
+    });
+
+    it('should unregister a specific keybinding', () => {
+        const otherKeybinding: Keybinding = {
+            command: TEST_COMMAND2.id,
+            keybinding: 'F4'
+        };
+
+        keybindingRegistry.registerKeybinding(otherKeybinding);
+        const keybinding: Keybinding = {
+            command: TEST_COMMAND2.id,
+            keybinding: 'F5'
+        };
+
+        keybindingRegistry.registerKeybinding(keybinding);
+
+        expect(isKeyBindingRegistered(otherKeybinding)).to.be.true;
+        expect(isKeyBindingRegistered(keybinding)).to.be.true;
+
+        keybindingRegistry.unregisterKeybinding(keybinding);
+
+        expect(isKeyBindingRegistered(keybinding)).to.be.false;
+        expect(isKeyBindingRegistered(otherKeybinding)).to.be.true;
+    }
+    );
+
+    it('should unregister a specific key', () => {
+        const otherKeybinding: Keybinding = {
+            command: TEST_COMMAND.id,
+            keybinding: 'F4'
+        };
+
+        keybindingRegistry.registerKeybinding(otherKeybinding);
+        const testKey = 'F5';
+        const keybinding: Keybinding = {
+            command: TEST_COMMAND2.id,
+            keybinding: testKey
+        };
+
+        const keybinding2: Keybinding = {
+            command: TEST_COMMAND.id,
+            keybinding: testKey
+        };
+
+        keybindingRegistry.registerKeybinding(keybinding);
+        keybindingRegistry.registerKeybinding(keybinding2);
+
+        expect(isKeyBindingRegistered(otherKeybinding)).to.be.true;
+        expect(isKeyBindingRegistered(keybinding)).to.be.true;
+        expect(isKeyBindingRegistered(keybinding2)).to.be.true;
+
+        keybindingRegistry.unregisterKeybinding(testKey);
+
+        expect(isKeyBindingRegistered(otherKeybinding)).to.be.true;
+        expect(isKeyBindingRegistered(keybinding)).to.be.false;
+        expect(isKeyBindingRegistered(keybinding2)).to.be.false;
+    }
+    );
 
     it('should register a correct keybinding, then default back to the original for a wrong one after', () => {
         let keybindings: Keybinding[] = [{
@@ -226,13 +345,13 @@ describe('keybindings', () => {
 
         keybindingRegistry.setKeymap(KeybindingScope.WORKSPACE, keybindingsSpecific);
 
-        let match = keybindingRegistry.matchKeybiding([KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [KeyModifier.CtrlCmd] })]);
+        let match = keybindingRegistry.matchKeybinding([KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [KeyModifier.CtrlCmd] })]);
         expect(match && match.kind).to.be.equal('full');
 
-        match = keybindingRegistry.matchKeybiding([KeyCode.createKeyCode({ first: Key.KEY_B, modifiers: [KeyModifier.CtrlCmd] })]);
+        match = keybindingRegistry.matchKeybinding([KeyCode.createKeyCode({ first: Key.KEY_B, modifiers: [KeyModifier.CtrlCmd] })]);
         expect(match && match.kind).to.be.equal('full');
 
-        match = keybindingRegistry.matchKeybiding([KeyCode.createKeyCode({ first: Key.KEY_C, modifiers: [KeyModifier.CtrlCmd] })]);
+        match = keybindingRegistry.matchKeybinding([KeyCode.createKeyCode({ first: Key.KEY_C, modifiers: [KeyModifier.CtrlCmd] })]);
         const keyCode = match && KeyCode.parse(match.binding.keybinding);
         expect(keyCode?.key).to.be.equal(validKeyCode.key);
     });
@@ -249,17 +368,17 @@ describe('keybindings', () => {
         validKeyCodes.push(KeyCode.createKeyCode({ first: Key.KEY_C, modifiers: [KeyModifier.CtrlCmd] }));
         validKeyCodes.push(KeyCode.createKeyCode({ first: Key.KEY_T }));
 
-        const match = keybindingRegistry.matchKeybiding(KeySequence.parse('ctrlcmd+x'));
+        const match = keybindingRegistry.matchKeybinding(KeySequence.parse('ctrlcmd+x'));
         expect(match && match.kind).to.be.equal('partial');
     });
 
     it('should possible to override keybinding', () => {
-        const overridenKeybinding = 'ctrlcmd+b a';
+        const overriddenKeybinding = 'ctrlcmd+b a';
         const command = TEST_COMMAND_SHADOW.id;
         const keybindingShadowing: Keybinding[] = [
             {
                 command,
-                keybinding: overridenKeybinding
+                keybinding: overriddenKeybinding
             },
             {
                 command,
@@ -272,15 +391,15 @@ describe('keybindings', () => {
         const bindings = keybindingRegistry.getKeybindingsForCommand(command);
         expect(bindings.length).to.be.equal(2);
         expect(bindings[0].keybinding).to.be.equal('ctrlcmd+b');
-        expect(bindings[1].keybinding).to.be.equal(overridenKeybinding);
+        expect(bindings[1].keybinding).to.be.equal(overriddenKeybinding);
     });
 
-    it('overriden bindings should be returned last', () => {
+    it('overridden bindings should be returned last', () => {
         const keyCode = KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [KeyModifier.Shift] });
 
-        const overridenDefaultBinding: Keybinding = {
+        const overriddenDefaultBinding: Keybinding = {
             keybinding: keyCode.toString(),
-            command: 'test.overriden-default-command'
+            command: 'test.overridden-default-command'
         };
 
         const defaultBinding: Keybinding = {
@@ -298,33 +417,33 @@ describe('keybindings', () => {
             command: 'test.workspace-command'
         };
 
-        keybindingRegistry.setKeymap(KeybindingScope.DEFAULT, [overridenDefaultBinding, defaultBinding]);
+        keybindingRegistry.setKeymap(KeybindingScope.DEFAULT, [overriddenDefaultBinding, defaultBinding]);
         keybindingRegistry.setKeymap(KeybindingScope.USER, [userBinding]);
         keybindingRegistry.setKeymap(KeybindingScope.WORKSPACE, [workspaceBinding]);
         // now WORKSPACE bindings are overriding the other scopes
 
-        let match = keybindingRegistry.matchKeybiding([keyCode]);
+        let match = keybindingRegistry.matchKeybinding([keyCode]);
         expect(match?.kind).to.be.equal('full');
         expect(match?.binding?.command).to.be.equal(workspaceBinding.command);
 
         keybindingRegistry.resetKeybindingsForScope(KeybindingScope.WORKSPACE);
         // now it should find USER bindings
 
-        match = keybindingRegistry.matchKeybiding([keyCode]);
+        match = keybindingRegistry.matchKeybinding([keyCode]);
         expect(match?.kind).to.be.equal('full');
         expect(match?.binding?.command).to.be.equal(userBinding.command);
 
         keybindingRegistry.resetKeybindingsForScope(KeybindingScope.USER);
         // and finally it should fallback to DEFAULT bindings.
 
-        match = keybindingRegistry.matchKeybiding([keyCode]);
+        match = keybindingRegistry.matchKeybinding([keyCode]);
         expect(match?.kind).to.be.equal('full');
         expect(match?.binding?.command).to.be.equal(defaultBinding.command);
 
         keybindingRegistry.resetKeybindingsForScope(KeybindingScope.DEFAULT);
         // now the registry should be empty
 
-        match = keybindingRegistry.matchKeybiding([keyCode]);
+        match = keybindingRegistry.matchKeybinding([keyCode]);
         expect(match).to.be.undefined;
 
     });
@@ -342,16 +461,16 @@ describe('keybindings', () => {
         };
 
         keybindingRegistry.setKeymap(KeybindingScope.DEFAULT, [defaultBinding]);
-        let match = keybindingRegistry.matchKeybiding([keyCode]);
+        let match = keybindingRegistry.matchKeybinding([keyCode]);
         expect(match?.kind).to.be.equal('full');
         expect(match?.binding?.command).to.be.equal(defaultBinding.command);
 
         keybindingRegistry.setKeymap(KeybindingScope.USER, [disableDefaultBinding]);
-        match = keybindingRegistry.matchKeybiding([keyCode]);
+        match = keybindingRegistry.matchKeybinding([keyCode]);
         expect(match).to.be.undefined;
 
         keybindingRegistry.resetKeybindingsForScope(KeybindingScope.USER);
-        match = keybindingRegistry.matchKeybiding([keyCode]);
+        match = keybindingRegistry.matchKeybinding([keyCode]);
         expect(match?.kind).to.be.equal('full');
         expect(match?.binding?.command).to.be.equal(defaultBinding.command);
     });
@@ -417,4 +536,18 @@ class TestContribution implements CommandContribution, KeybindingContribution {
         });
     }
 
+}
+
+function isKeyBindingRegistered(keybinding: Keybinding): boolean {
+    const bindings = keybindingRegistry.getKeybindingsForCommand(keybinding.command);
+    expect(bindings).not.to.be.undefined;
+    let keyBindingFound = false;
+    bindings.forEach(
+        (value: Keybinding) => {
+            if (value.command === keybinding.command && value.keybinding === keybinding.keybinding) {
+                keyBindingFound = true;
+            }
+        }
+    );
+    return keyBindingFound;
 }

@@ -1,11 +1,11 @@
 {
   "name": "@theia/application-manager",
-  "version": "1.2.0",
+  "version": "1.45.0",
   "description": "Theia application manager API.",
   "publishConfig": {
     "access": "public"
   },
-  "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
+  "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/eclipse-theia/theia.git"
@@ -21,42 +21,60 @@
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "scripts": {
-    "lint": "theiaext lint",
     "build": "theiaext build",
-    "watch": "theiaext watch",
     "clean": "theiaext clean",
-    "test": "theiaext test"
+    "compile": "theiaext compile",
+    "lint": "theiaext lint",
+    "test": "theiaext test",
+    "watch": "theiaext watch"
   },
   "dependencies": {
-    "@babel/core": "^7.5.5",
-    "@babel/plugin-transform-classes": "^7.5.5",
-    "@babel/plugin-transform-runtime": "^7.5.5",
-    "@babel/preset-env": "^7.5.5",
-    "@theia/application-package": "^1.2.0",
-    "@theia/compression-webpack-plugin": "^3.0.0",
+    "@babel/core": "^7.10.0",
+    "@babel/plugin-transform-classes": "^7.10.0",
+    "@babel/plugin-transform-runtime": "^7.10.0",
+    "@babel/preset-env": "^7.10.0",
+    "@theia/application-package": "1.45.0",
+    "@theia/ffmpeg": "1.45.0",
+    "@theia/native-webpack-plugin": "1.45.0",
     "@types/fs-extra": "^4.0.2",
-    "@types/webpack": "^4.41.2",
-    "babel-loader": "^8.0.6",
-    "circular-dependency-plugin": "^5.0.0",
-    "copy-webpack-plugin": "^4.5.0",
-    "css-loader": "^0.28.1",
-    "electron-rebuild": "^1.8.6",
-    "file-loader": "^1.1.11",
-    "font-awesome-webpack": "0.0.5-beta.2",
+    "@types/semver": "^7.5.0",
+    "babel-loader": "^8.2.2",
+    "buffer": "^6.0.3",
+    "compression-webpack-plugin": "^9.0.0",
+    "copy-webpack-plugin": "^8.1.1",
+    "css-loader": "^6.2.0",
+    "electron-rebuild": "^3.2.7",
     "fs-extra": "^4.0.2",
     "ignore-loader": "^0.1.2",
     "less": "^3.0.3",
-    "source-map-loader": "^0.2.1",
-    "source-map-support": "^0.4.18",
-    "style-loader": "^0.23.1",
-    "umd-compat-loader": "^2.1.1",
-    "url-loader": "^1.1.2",
-    "webpack": "^4.0.0",
-    "webpack-cli": "2.0.12",
-    "worker-loader": "^1.1.1"
+    "mini-css-extract-plugin": "^2.6.1",
+    "node-abi": "*",
+    "node-loader": "^2.0.0",
+    "path-browserify": "^1.0.1",
+    "semver": "^7.5.4",
+    "setimmediate": "^1.0.5",
+    "source-map": "^0.6.1",
+    "source-map-loader": "^2.0.1",
+    "source-map-support": "^0.5.19",
+    "string-replace-loader": "^3.1.0",
+    "style-loader": "^2.0.0",
+    "umd-compat-loader": "^2.1.2",
+    "webpack": "^5.76.0",
+    "webpack-cli": "4.7.0",
+    "worker-loader": "^3.0.8",
+    "yargs": "^15.3.1"
+  },
+  "peerDependencies": {
+    "@theia/electron": "*"
+  },
+  "peerDependenciesMeta": {
+    "@theia/electron": {
+      "optional": true
+    }
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^1.2.0"
+    "@theia/ext-scripts": "1.45.0",
+    "@types/node-abi": "*"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

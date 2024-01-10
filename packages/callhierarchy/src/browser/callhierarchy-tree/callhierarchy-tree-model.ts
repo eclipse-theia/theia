@@ -1,33 +1,34 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { injectable, inject } from 'inversify';
-import { TreeModelImpl, TreeNode } from '@theia/core/lib/browser';
-import { CallHierarchyTree, DefinitionNode } from './callhierarchy-tree';
-import { CallHierarchyServiceProvider } from '../callhierarchy-service';
-import { Position } from 'vscode-languageserver-types';
+import { injectable, inject } from '@theia/core/shared/inversify';
+import { CompositeTreeNode, TreeModelImpl, TreeNode } from '@theia/core/lib/browser';
+import { CallHierarchyTree, ItemNode } from './callhierarchy-tree';
+import { CallHierarchyServiceProvider, CallHierarchySession } from '../callhierarchy-service';
+import { Position } from '@theia/core/shared/vscode-languageserver-protocol';
 import URI from '@theia/core/lib/common/uri';
 import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 
 @injectable()
 export class CallHierarchyTreeModel extends TreeModelImpl {
 
-    private _languageId: string | undefined;
+    protected _languageId: string | undefined;
+    protected currentSession?: CallHierarchySession;
 
-    @inject(CallHierarchyTree) protected readonly tree: CallHierarchyTree;
+    @inject(CallHierarchyTree) protected override readonly tree: CallHierarchyTree;
     @inject(CallHierarchyServiceProvider) protected readonly callHierarchyServiceProvider: CallHierarchyServiceProvider;
 
     getTree(): CallHierarchyTree {
@@ -49,14 +50,22 @@ export class CallHierarchyTreeModel extends TreeModelImpl {
                 const cancellationSource = new CancellationTokenSource();
                 const rootDefinition = await callHierarchyService.getRootDefinition(uri, position, cancellationSource.token);
                 if (rootDefinition) {
-                    const rootNode = DefinitionNode.create(rootDefinition, undefined);
-                    this.tree.root = rootNode;
+                    this.currentSession?.dispose();
+                    this.currentSession = rootDefinition;
+                    const root: CompositeTreeNode = {
+                        id: 'call-hierarchy-tree-root',
+                        parent: undefined,
+                        children: [],
+                        visible: false,
+                    };
+                    rootDefinition.items.forEach(definition => CompositeTreeNode.addChild(root, ItemNode.create(definition, root)));
+                    this.tree.root = root;
                 }
             }
         }
     }
 
-    protected doOpenNode(node: TreeNode): void {
+    protected override doOpenNode(node: TreeNode): void {
         // do nothing (in particular do not expand the node)
     }
 }

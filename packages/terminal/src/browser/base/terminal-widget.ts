@@ -1,28 +1,51 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { Event } from '@theia/core';
+import { Event, ViewColumn } from '@theia/core';
 import { BaseWidget } from '@theia/core/lib/browser';
 import { CommandLineOptions } from '@theia/process/lib/common/shell-command-builder';
 import { TerminalSearchWidget } from '../search/terminal-search-widget';
-import { TerminalProcessInfo } from '../../common/base-terminal-protocol';
+import { TerminalProcessInfo, TerminalExitReason } from '../../common/base-terminal-protocol';
+import URI from '@theia/core/lib/common/uri';
+import { MarkdownString } from '@theia/core/lib/common/markdown-rendering/markdown-string';
 
 export interface TerminalDimensions {
     cols: number;
     rows: number;
+}
+
+export interface TerminalExitStatus {
+    readonly code: number | undefined;
+    readonly reason: TerminalExitReason;
+}
+
+export type TerminalLocationOptions = TerminalLocation | TerminalEditorLocation | TerminalSplitLocation;
+
+export enum TerminalLocation {
+    Panel = 1,
+    Editor = 2
+}
+
+export interface TerminalEditorLocation {
+    readonly viewColumn: ViewColumn;
+    readonly preserveFocus?: boolean;
+}
+
+export interface TerminalSplitLocation {
+    readonly parentTerminal: string;
 }
 
 /**
@@ -31,11 +54,13 @@ export interface TerminalDimensions {
 export abstract class TerminalWidget extends BaseWidget {
 
     abstract processId: Promise<number>;
-
     /**
      * Get the current executable and arguments.
      */
     abstract processInfo: Promise<TerminalProcessInfo>;
+
+    /** The ids of extensions contributing to the environment of this terminal mapped to the provided description for their changes. */
+    abstract envVarCollectionDescriptionsByExtension: Promise<Map<string, (string | MarkdownString | undefined)[]>>;
 
     /** Terminal kind that indicates whether a terminal is created by a user or by some extension for a user */
     abstract readonly kind: 'user' | string;
@@ -43,6 +68,17 @@ export abstract class TerminalWidget extends BaseWidget {
     abstract readonly terminalId: number;
 
     abstract readonly dimensions: TerminalDimensions;
+
+    abstract readonly exitStatus: TerminalExitStatus | undefined;
+
+    /** Terminal widget can be hidden from users until explicitly shown once. */
+    abstract readonly hiddenFromUser: boolean;
+
+    /** The position of the terminal widget. */
+    abstract readonly location: TerminalLocationOptions;
+
+    /** The last CWD assigned to the terminal, useful when attempting getCwdURI on a task terminal fails */
+    lastCwd: URI;
 
     /**
      * Start terminal and return terminal id.
@@ -76,6 +112,9 @@ export abstract class TerminalWidget extends BaseWidget {
     /** Event that fires when the terminal size changed */
     abstract onSizeChanged: Event<{ cols: number; rows: number; }>;
 
+    /** Event that fires when the terminal receives a key event. */
+    abstract onKey: Event<{ key: string, domEvent: KeyboardEvent }>;
+
     /** Event that fires when the terminal input data */
     abstract onData: Event<string>;
 
@@ -102,11 +141,16 @@ export abstract class TerminalWidget extends BaseWidget {
      */
     abstract clearOutput(): void;
 
+    /**
+     * Select entire content in the terminal.
+     */
+    abstract selectAll(): void;
+
     abstract writeLine(line: string): void;
 
     abstract write(data: string): void;
 
-    abstract rezise(cols: number, rows: number): void;
+    abstract resize(cols: number, rows: number): void;
 
     /**
      * Return Terminal search box widget.
@@ -118,6 +162,8 @@ export abstract class TerminalWidget extends BaseWidget {
     abstract hasChildProcesses(): Promise<boolean>;
 
     abstract setTitle(title: string): void;
+
+    abstract waitOnExit(waitOnExit?: boolean | string): void;
 }
 
 /**
@@ -132,24 +178,35 @@ export interface TerminalWidgetOptions {
     readonly title?: string;
 
     /**
+     * icon class
+     */
+    readonly iconClass?: string;
+
+    /**
      * Path to the executable shell. For example: `/bin/bash`, `bash`, `sh`.
      */
     readonly shellPath?: string;
 
     /**
-     * Shell arguments to executable shell, for example: [`-l`] - without login.
+     * Args for the custom shell executable. A string can be used on Windows only which allows
+     * specifying shell args in [command-line format](https://msdn.microsoft.com/en-au/08dfcab2-eb6e-49a4-80eb-87d4076c98c6).
      */
-    readonly shellArgs?: string[];
+    readonly shellArgs?: string[] | string;
 
     /**
      * Current working directory.
      */
-    readonly cwd?: string;
+    readonly cwd?: string | URI;
 
     /**
      * Environment variables for terminal.
      */
     readonly env?: { [key: string]: string | null };
+
+    /**
+     * Whether the terminal process environment should be exactly as provided in `env`.
+     */
+    readonly strictEnv?: boolean;
 
     /**
      * In case `destroyTermOnClose` is true - terminal process will be destroyed on close terminal widget, otherwise will be kept
@@ -182,4 +239,16 @@ export interface TerminalWidgetOptions {
      * Terminal kind that indicates whether a terminal is created by a user or by some extension for a user
      */
     readonly kind?: 'user' | string;
+
+    /**
+     * When enabled the terminal will run the process as normal but not be surfaced to the user until `Terminal.show` is called.
+     */
+    readonly hideFromUser?: boolean;
+
+    readonly location?: TerminalLocationOptions;
+
+    /**
+     * When enabled, the terminal will not be persisted across window reloads.
+     */
+    readonly isTransient?: boolean;
 }

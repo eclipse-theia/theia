@@ -1,22 +1,22 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { ContainerModule, Container, interfaces } from 'inversify';
+import { ContainerModule, Container, interfaces } from '@theia/core/shared/inversify';
 import { TerminalBackendContribution } from './terminal-backend-contribution';
-import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core/lib/common/messaging';
+import { ConnectionHandler, RpcConnectionHandler } from '@theia/core/lib/common/messaging';
 import { ShellProcess, ShellProcessFactory, ShellProcessOptions } from './shell-process';
 import { ITerminalServer, terminalPath } from '../common/terminal-protocol';
 import { IBaseTerminalClient, DispatchingBaseTerminalClient, IBaseTerminalServer } from '../common/base-terminal-protocol';
@@ -45,7 +45,7 @@ export function bindTerminalServer(bind: interfaces.Bind, { path, identifier, co
         return terminalServer;
     });
     bind(ConnectionHandler).toDynamicValue(ctx =>
-        new JsonRpcConnectionHandler<IBaseTerminalClient>(path, client => {
+        new RpcConnectionHandler<IBaseTerminalClient>(path, client => {
             const disposable = dispatchingClient.push(client);
             client.onDidCloseConnection(() => disposable.dispose());
             return ctx.container.get(identifier);

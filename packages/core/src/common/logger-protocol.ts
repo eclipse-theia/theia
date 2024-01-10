@@ -1,27 +1,27 @@
-/********************************************************************************
- * Copyright (C) 2017 Ericsson and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 Ericsson and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { injectable } from 'inversify';
-import { JsonRpcServer } from './messaging/proxy-factory';
+import { RpcServer } from './messaging/proxy-factory';
 
 export const ILoggerServer = Symbol('ILoggerServer');
 
 export const loggerPath = '/services/logger';
 
-export interface ILoggerServer extends JsonRpcServer<ILoggerClient> {
+export interface ILoggerServer extends RpcServer<ILoggerClient> {
     setLogLevel(name: string, logLevel: number): Promise<void>;
     getLogLevel(name: string): Promise<number>;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -38,6 +38,7 @@ export interface ILogLevelChangedEvent {
 
 export interface ILoggerClient {
     onLogLevelChanged(event: ILogLevelChangedEvent): void;
+    onLogConfigChanged(): void;
 }
 
 @injectable()
@@ -49,6 +50,9 @@ export class DispatchingLoggerClient implements ILoggerClient {
         this.clients.forEach(client => client.onLogLevelChanged(event));
     }
 
+    onLogConfigChanged(): void {
+        this.clients.forEach(client => client.onLogConfigChanged());
+    }
 }
 
 export const rootLoggerName = 'root';
@@ -109,6 +113,7 @@ export namespace ConsoleLogger {
     export function log(name: string, logLevel: number, message: string, params: any[]): void {
         const console = consoles.get(logLevel) || originalConsoleLog;
         const severity = (LogLevel.strings.get(logLevel) || 'unknown').toUpperCase();
-        console(`${name} ${severity} ${message}`, ...params);
+        const now = new Date();
+        console(`${now.toISOString()} ${name} ${severity} ${message}`, ...params);
     }
 }

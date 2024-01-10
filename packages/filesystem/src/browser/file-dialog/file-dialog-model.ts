@@ -1,20 +1,20 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { injectable, inject, postConstruct } from 'inversify';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { Emitter, Event } from '@theia/core/lib/common';
 import { TreeNode, SelectableTreeNode } from '@theia/core/lib/browser';
@@ -24,13 +24,13 @@ import { FileDialogTree } from './file-dialog-tree';
 @injectable()
 export class FileDialogModel extends FileTreeModel {
 
-    @inject(FileDialogTree) readonly tree: FileDialogTree;
+    @inject(FileDialogTree) override readonly tree: FileDialogTree;
     protected readonly onDidOpenFileEmitter = new Emitter<void>();
     protected _initialLocation: URI | undefined;
     private _disableFileSelection: boolean = false;
 
     @postConstruct()
-    protected init(): void {
+    protected override init(): void {
         super.init();
         this.toDispose.push(this.onDidOpenFileEmitter);
     }
@@ -47,7 +47,7 @@ export class FileDialogModel extends FileTreeModel {
         this._disableFileSelection = isSelectable;
     }
 
-    async navigateTo(nodeOrId: TreeNode | string | undefined): Promise<TreeNode | undefined> {
+    override async navigateTo(nodeOrId: TreeNode | string | undefined): Promise<TreeNode | undefined> {
         const result = await super.navigateTo(nodeOrId);
         if (!this._initialLocation && FileStatNode.is(result)) {
             this._initialLocation = result.uri;
@@ -59,7 +59,7 @@ export class FileDialogModel extends FileTreeModel {
         return this.onDidOpenFileEmitter.event;
     }
 
-    protected doOpenNode(node: TreeNode): void {
+    protected override doOpenNode(node: TreeNode): void {
         if (FileNode.is(node)) {
             this.onDidOpenFileEmitter.fire(undefined);
         } else if (DirNode.is(node)) {
@@ -69,7 +69,7 @@ export class FileDialogModel extends FileTreeModel {
         }
     }
 
-    getNextSelectableNode(node: SelectableTreeNode = this.selectedNodes[0]): SelectableTreeNode | undefined {
+    override getNextSelectableNode(node: SelectableTreeNode | undefined = this.getFocusedNode()): SelectableTreeNode | undefined {
         let nextNode: SelectableTreeNode | undefined = node;
         do {
             nextNode = super.getNextSelectableNode(nextNode);
@@ -77,7 +77,7 @@ export class FileDialogModel extends FileTreeModel {
         return nextNode;
     }
 
-    getPrevSelectableNode(node: SelectableTreeNode = this.selectedNodes[0]): SelectableTreeNode | undefined {
+    override getPrevSelectableNode(node: SelectableTreeNode | undefined = this.getFocusedNode()): SelectableTreeNode | undefined {
         let prevNode: SelectableTreeNode | undefined = node;
         do {
             prevNode = super.getPrevSelectableNode(prevNode);
@@ -87,5 +87,10 @@ export class FileDialogModel extends FileTreeModel {
 
     private isFileStatNodeSelectable(node: FileStatNode): boolean {
         return !(!node.fileStat.isDirectory && this._disableFileSelection);
+    }
+
+    canNavigateUpward(): boolean {
+        const treeRoot = this.tree.root;
+        return FileStatNode.is(treeRoot) && !treeRoot.uri.path.isRoot;
     }
 }

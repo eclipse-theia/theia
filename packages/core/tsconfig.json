@@ -1,0 +1,22 @@
+{
+  "extends": "../../configs/base.tsconfig",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "lib"
+  },
+  "include": [
+    "src"
+  ],
+  "references": [
+    {
+      "path": "../../dev-packages/application-package"
+    },
+    {
+      "path": "../../dev-packages/private-re-exports"
+    },
+    {
+      "path": "../../dev-packages/request"
+    }
+  ]
+}

@@ -1,24 +1,24 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { PluginDeployerImpl } from './plugin-deployer-impl';
 import { PluginsKeyValueStorage } from './plugins-key-value-storage';
-import { PluginServer, PluginDeployer, PluginStorageKind, PluginType } from '../../common/plugin-protocol';
+import { PluginServer, PluginDeployer, PluginStorageKind, PluginType, UnresolvedPluginEntry, PluginIdentifiers, PluginDeployOptions } from '../../common/plugin-protocol';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from '../../common/types';
 
 @injectable()
@@ -30,15 +30,27 @@ export class PluginServerHandler implements PluginServer {
     @inject(PluginsKeyValueStorage)
     protected readonly pluginsKeyValueStorage: PluginsKeyValueStorage;
 
-    deploy(pluginEntry: string, arg2?: PluginType | CancellationToken): Promise<void> {
+    async deploy(pluginEntry: string, arg2?: PluginType | CancellationToken, options?: PluginDeployOptions): Promise<void> {
         const type = typeof arg2 === 'number' ? arg2 as PluginType : undefined;
-        return this.doDeploy(pluginEntry, type);
-    }
-    protected doDeploy(pluginEntry: string, type: PluginType = PluginType.User): Promise<void> {
-        return this.pluginDeployer.deploy(pluginEntry, type);
+        const successfulDeployments = await this.doDeploy({
+            id: pluginEntry,
+            type: type ?? PluginType.User
+        }, options);
+        if (successfulDeployments === 0) {
+            const optionText = options ? ` and options ${JSON.stringify(options)} ` : ' ';
+            throw new Error(`Deployment of extension with ID ${pluginEntry}${optionText}failed.`);
+        }
     }
 
-    undeploy(pluginId: string): Promise<void> {
+    protected doDeploy(pluginEntry: UnresolvedPluginEntry, options?: PluginDeployOptions): Promise<number> {
+        return this.pluginDeployer.deploy(pluginEntry, options);
+    }
+
+    uninstall(pluginId: PluginIdentifiers.VersionedId): Promise<void> {
+        return this.pluginDeployer.uninstall(pluginId);
+    }
+
+    undeploy(pluginId: PluginIdentifiers.VersionedId): Promise<void> {
         return this.pluginDeployer.undeploy(pluginId);
     }
 

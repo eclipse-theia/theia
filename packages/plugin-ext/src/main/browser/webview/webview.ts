@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 /*---------------------------------------------------------------------------------------------
 *  Copyright (c) Microsoft Corporation. All rights reserved.
 *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -21,8 +21,8 @@
 // copied and modified from https://github.com/microsoft/vscode/blob/ba40bd16433d5a817bfae15f3b4350e18f144af4/src/vs/workbench/contrib/webview/browser/webviewElement.ts#
 
 import * as mime from 'mime';
-import { JSONExt } from '@phosphor/coreutils/lib/json';
-import { injectable, inject, postConstruct } from 'inversify';
+import { JSONExt } from '@theia/core/shared/@phosphor/coreutils';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { WebviewPanelOptions, WebviewPortMapping } from '@theia/plugin';
 import { BaseWidget, Message } from '@theia/core/lib/browser/widgets/widget';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
@@ -33,21 +33,33 @@ import { IconUrl } from '../../../common/plugin-protocol';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { WebviewEnvironment } from './webview-environment';
 import URI from '@theia/core/lib/common/uri';
-import { Emitter } from '@theia/core/lib/common/event';
+import { Emitter, Event } from '@theia/core/lib/common/event';
 import { open, OpenerService } from '@theia/core/lib/browser/opener-service';
 import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
 import { Schemes } from '../../../common/uri-components';
 import { PluginSharedStyle } from '../plugin-shared-style';
 import { WebviewThemeDataProvider } from './webview-theme-data-provider';
 import { ExternalUriService } from '@theia/core/lib/browser/external-uri-service';
-import { OutputChannelManager } from '@theia/output/lib/common/output-channel';
+import { OutputChannelManager } from '@theia/output/lib/browser/output-channel';
 import { WebviewPreferences } from './webview-preferences';
-import { WebviewResourceLoader } from '../../common/webview-protocol';
 import { WebviewResourceCache } from './webview-resource-cache';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
+import { isFirefox } from '@theia/core/lib/browser/browser';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { FileOperationError, FileOperationResult } from '@theia/filesystem/lib/common/files';
+import { BinaryBufferReadableStream } from '@theia/core/lib/common/buffer';
+import { ViewColumn } from '../../../plugin/types-impl';
+import { ExtractableWidget } from '@theia/core/lib/browser/widgets/extractable-widget';
+import { BadgeWidget } from '@theia/core/lib/browser/view-container';
+import { MenuPath } from '@theia/core';
+import { ContextMenuRenderer } from '@theia/core/lib/browser';
+import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
+import { PluginViewWidget } from '../view/plugin-view-widget';
 
 // Style from core
 const TRANSPARENT_OVERLAY_STYLE = 'theia-transparent-overlay';
+
+export const WEBVIEW_CONTEXT_MENU: MenuPath = ['webview-context-menu'];
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -61,31 +73,43 @@ export const enum WebviewMessageChannels {
     loadResource = 'load-resource',
     loadLocalhost = 'load-localhost',
     webviewReady = 'webview-ready',
-    didKeydown = 'did-keydown'
+    didKeydown = 'did-keydown',
+    didMouseDown = 'did-mousedown',
+    didMouseUp = 'did-mouseup',
+    onconsole = 'onconsole',
+    didcontextmenu = 'did-context-menu'
 }
 
 export interface WebviewContentOptions {
     readonly allowScripts?: boolean;
+    readonly allowForms?: boolean;
     readonly localResourceRoots?: ReadonlyArray<string>;
     readonly portMapping?: ReadonlyArray<WebviewPortMapping>;
-    readonly enableCommandUris?: boolean;
+    readonly enableCommandUris?: boolean | readonly string[];
+}
+
+export interface WebviewConsoleLog {
+    level: Extract<keyof typeof console, 'log' | 'info' | 'warn' | 'error' | 'trace' | 'debug'>;
+    message?: string;
+    optionalParams?: string;
 }
 
 @injectable()
 export class WebviewWidgetIdentifier {
     id: string;
+    viewId?: string;
 }
 
 export const WebviewWidgetExternalEndpoint = Symbol('WebviewWidgetExternalEndpoint');
 
 @injectable()
-export class WebviewWidget extends BaseWidget implements StatefulWidget {
+export class WebviewWidget extends BaseWidget implements StatefulWidget, ExtractableWidget, BadgeWidget {
 
     private static readonly standardSupportedLinkSchemes = new Set([
-        Schemes.HTTP,
-        Schemes.HTTPS,
-        Schemes.MAILTO,
-        Schemes.VSCODE
+        Schemes.http,
+        Schemes.https,
+        Schemes.mailto,
+        Schemes.vscode
     ]);
 
     static FACTORY_ID = 'plugin-webview';
@@ -130,11 +154,17 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
     @inject(WebviewPreferences)
     protected readonly preferences: WebviewPreferences;
 
-    @inject(WebviewResourceLoader)
-    protected readonly resourceLoader: WebviewResourceLoader;
+    @inject(FileService)
+    protected readonly fileService: FileService;
 
     @inject(WebviewResourceCache)
     protected readonly resourceCache: WebviewResourceCache;
+
+    @inject(ContextMenuRenderer)
+    protected readonly contextMenuRenderer: ContextMenuRenderer;
+
+    @inject(ContextKeyService)
+    protected readonly contextKeyService: ContextKeyService;
 
     viewState: WebviewPanelViewState = {
         visible: false,
@@ -155,6 +185,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
     }
 
     viewType: string;
+    viewColumn: ViewColumn;
     options: WebviewPanelOptions = {};
 
     protected ready = new Deferred<void>();
@@ -166,6 +197,14 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
     protected readonly toHide = new DisposableCollection();
     protected hideTimeout: any | number | undefined;
 
+    isExtractable: boolean = true;
+    secondaryWindow: Window | undefined = undefined;
+
+    protected _badge?: number | undefined;
+    protected _badgeTooltip?: string | undefined;
+    protected onDidChangeBadgeEmitter = new Emitter<void>();
+    protected onDidChangeBadgeTooltipEmitter = new Emitter<void>();
+
     @postConstruct()
     protected init(): void {
         this.node.tabIndex = 0;
@@ -174,6 +213,8 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
         this.addClass(WebviewWidget.Styles.WEBVIEW);
 
         this.toDispose.push(this.onMessageEmitter);
+        this.toDispose.push(this.onDidChangeBadgeEmitter);
+        this.toDispose.push(this.onDidChangeBadgeTooltipEmitter);
 
         this.transparentOverlay = document.createElement('div');
         this.transparentOverlay.classList.add(TRANSPARENT_OVERLAY_STYLE);
@@ -192,19 +233,54 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
         }));
     }
 
-    protected onBeforeAttach(msg: Message): void {
+    get onDidChangeBadge(): Event<void> {
+        return this.onDidChangeBadgeEmitter.event;
+    }
+
+    get onDidChangeBadgeTooltip(): Event<void> {
+        return this.onDidChangeBadgeTooltipEmitter.event;
+    }
+
+    get badge(): number | undefined {
+        return this._badge;
+    }
+
+    set badge(badge: number | undefined) {
+        this._badge = badge;
+        this.onDidChangeBadgeEmitter.fire();
+    }
+
+    get badgeTooltip(): string | undefined {
+        return this._badgeTooltip;
+    }
+
+    set badgeTooltip(badgeTooltip: string | undefined) {
+        this._badgeTooltip = badgeTooltip;
+        this.onDidChangeBadgeTooltipEmitter.fire();
+    }
+
+    protected override onBeforeAttach(msg: Message): void {
         super.onBeforeAttach(msg);
         this.doShow();
         // iframe has to be reloaded when moved to another DOM element
         this.toDisposeOnDetach.push(Disposable.create(() => this.forceHide()));
     }
 
-    protected onBeforeShow(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
+        super.onAfterAttach(msg);
+        this.addEventListener(this.node, 'focus', () => {
+            if (this.element) {
+                this.doSend('focus');
+            }
+        });
+    }
+
+    protected override onBeforeShow(msg: Message): void {
         super.onBeforeShow(msg);
         this.doShow();
     }
 
-    protected onAfterHide(msg: Message): void {
+    protected override onAfterHide(msg: Message): void {
         super.onAfterHide(msg);
         this.doHide();
     }
@@ -234,7 +310,10 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
 
         const element = document.createElement('iframe');
         element.className = 'webview';
-        element.sandbox.add('allow-scripts', 'allow-forms', 'allow-same-origin');
+        element.sandbox.add('allow-scripts', 'allow-forms', 'allow-same-origin', 'allow-downloads');
+        if (!isFirefox) {
+            element.setAttribute('allow', 'clipboard-read; clipboard-write; usb; serial; hid;');
+        }
         element.setAttribute('src', `${this.externalEndpoint}/index.html?id=${this.identifier.id}`);
         element.style.border = 'none';
         element.style.width = '100%';
@@ -260,6 +339,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
         this.toHide.push(subscription);
 
         this.toHide.push(this.on(WebviewMessageChannels.onmessage, (data: any) => this.onMessageEmitter.fire(data)));
+        this.toHide.push(this.on(WebviewMessageChannels.onconsole, (data: WebviewConsoleLog) => this.forwardConsoleLog(data)));
         this.toHide.push(this.on(WebviewMessageChannels.didClickLink, (uri: string) => this.openLink(new URI(uri))));
         this.toHide.push(this.on(WebviewMessageChannels.doUpdateState, (state: any) => {
             this._state = state;
@@ -282,6 +362,18 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
             // keybinding service because these events do not bubble to the parent window anymore.
             this.keybindings.dispatchKeyDown(data, this.element);
         }));
+        this.toHide.push(this.on(WebviewMessageChannels.didMouseDown, (data: MouseEvent) => {
+            // We have to dispatch mousedown events so menus will be closed when clicking inside webviews.
+            // See: https://github.com/eclipse-theia/theia/issues/7752
+            this.dispatchMouseEvent('mousedown', data);
+        }));
+        this.toHide.push(this.on(WebviewMessageChannels.didMouseUp, (data: MouseEvent) => {
+            this.dispatchMouseEvent('mouseup', data);
+        }));
+
+        this.toHide.push(this.on(WebviewMessageChannels.didcontextmenu, (event: { clientX: number, clientY: number, context: any }) => {
+            this.handleContextMenu(event);
+        }));
 
         this.style();
         this.toHide.push(this.themeDataProvider.onDidChangeThemeData(() => this.style()));
@@ -295,6 +387,29 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
     protected async loadLocalhost(origin: string): Promise<void> {
         const redirect = await this.getRedirect(origin);
         return this.doSend('did-load-localhost', { origin, location: redirect });
+    }
+
+    protected dispatchMouseEvent(type: string, data: MouseEvent): void {
+        const domRect = this.node.getBoundingClientRect();
+        document.dispatchEvent(new MouseEvent(type, {
+            ...data,
+            clientX: domRect.x + data.clientX,
+            clientY: domRect.y + data.clientY
+        }));
+    }
+
+    handleContextMenu(event: { clientX: number, clientY: number, context: any }): void {
+        const domRect = this.node.getBoundingClientRect();
+        this.contextKeyService.with(this.parent instanceof PluginViewWidget ?
+            { webviewId: this.parent.options.viewId, ...event.context } : {},
+            () => {
+                this.contextMenuRenderer.render({
+                    menuPath: WEBVIEW_CONTEXT_MENU,
+                    anchor: {
+                        x: domRect.x + event.clientX, y: domRect.y + event.clientY
+                    }
+                });
+            });
     }
 
     protected async getRedirect(url: string): Promise<string | undefined> {
@@ -351,12 +466,16 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
             const iconClass = `webview-${this.identifier.id}-file-icon`;
             this.toDisposeOnIcon.push(this.sharedStyle.insertRule(
                 `.theia-webview-icon.${iconClass}::before`,
-                theme => `background-image: url(${theme.type === 'light' ? lightIconUrl : darkIconUrl});`
+                theme => `background-image: url(${this.toEndpoint(theme.type === 'light' ? lightIconUrl : darkIconUrl)});`
             ));
             this.title.iconClass = `theia-webview-icon ${iconClass}`;
         } else {
             this.title.iconClass = '';
         }
+    }
+
+    protected toEndpoint(pathname: string): string {
+        return new Endpoint({ path: pathname }).getRestUrl().toString();
     }
 
     setHTML(value: string): void {
@@ -374,25 +493,27 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
             });
     }
 
-    protected onActivateRequest(msg: Message): void {
+    protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
-        this.focus();
-    }
-
-    focus(): void {
         this.node.focus();
-        if (this.element) {
-            this.doSend('focus');
-        }
     }
 
     reload(): void {
         this.doUpdateContent();
     }
 
+    protected forwardConsoleLog(log: WebviewConsoleLog): void {
+        const message = `[webview: ${this.identifier.id}] ${log.message ? JSON.parse(log.message) : undefined}`;
+        if (log.optionalParams !== undefined) {
+            console[log.level](message, JSON.parse(log.optionalParams));
+        } else {
+            console[log.level](message);
+        }
+    }
+
     protected style(): void {
-        const { styles, activeTheme } = this.themeDataProvider.getThemeData();
-        this.doSend('styles', { styles, activeTheme });
+        const { styles, activeThemeType, activeThemeName } = this.themeDataProvider.getThemeData();
+        this.doSend('styles', { styles, activeThemeType, activeThemeName });
     }
 
     protected openLink(link: URI): void {
@@ -407,13 +528,17 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
             const linkAsString = link.toString();
             for (const resourceRoot of [this.externalEndpoint + '/theia-resource', this.externalEndpoint + '/vscode-resource']) {
                 if (linkAsString.startsWith(resourceRoot + '/')) {
-                    return this.normalizeRequestUri(linkAsString.substr(resourceRoot.length));
+                    return this.normalizeRequestUri(linkAsString.substring(resourceRoot.length));
                 }
             }
             return link;
         }
-        if (!!this.contentOptions.enableCommandUris && link.scheme === Schemes.COMMAND) {
-            return link;
+        if (link.scheme === Schemes.command) {
+            if (Array.isArray(this.contentOptions.enableCommandUris) && this.contentOptions.enableCommandUris.some(value => value === link.path.toString())) {
+                return link;
+            } else if (this.contentOptions.enableCommandUris === true) {
+                return link;
+            }
         }
         return undefined;
     }
@@ -430,11 +555,15 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
                         continue;
                     }
                     let cached = await this.resourceCache.match(cacheUrl);
-                    const response = await this.resourceLoader.load({ uri: normalizedUri.toString(), eTag: cached && cached.eTag });
-                    if (response) {
-                        const { buffer, eTag } = response;
-                        cached = { body: () => new Uint8Array(buffer), eTag: eTag };
+                    try {
+                        const result = await this.fileService.readFileStream(normalizedUri, { etag: cached?.eTag });
+                        const { buffer } = await BinaryBufferReadableStream.toBuffer(result.value);
+                        cached = { body: () => buffer, eTag: result.etag };
                         this.resourceCache.put(cacheUrl, cached);
+                    } catch (e) {
+                        if (!(e instanceof FileOperationError && e.fileOperationResult === FileOperationResult.FILE_NOT_MODIFIED_SINCE)) {
+                            throw e;
+                        }
                     }
                     if (cached) {
                         const data = await cached.body();
@@ -460,7 +589,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
 
     protected normalizeRequestUri(requestPath: string): URI {
         const normalizedPath = decodeURIComponent(requestPath);
-        const requestUri = new URI(normalizedPath.replace(/^\/(\w+)\/(.+)$/, (_, scheme, path) => scheme + ':/' + path));
+        const requestUri = new URI(normalizedPath.replace(/^\/([a-zA-Z0-9.\-+]+)\/(.+)$/, (_, scheme, path) => scheme + ':/' + path));
         if (requestUri.scheme !== 'theia-resource' && requestUri.scheme !== 'vscode-resource') {
             return requestUri;
         }
@@ -512,6 +641,12 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
         this._state = state;
     }
 
+    setIframeHeight(height: number): void {
+        if (this.element) {
+            this.element.style.height = `${height}px`;
+        }
+    }
+
     protected async doSend(channel: string, data?: any): Promise<void> {
         if (!this.element) {
             return;
@@ -527,7 +662,11 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
     protected postMessage(channel: string, data?: any): void {
         if (this.element) {
             this.trace('out', channel, data);
-            this.element.contentWindow!.postMessage({ channel, args: data }, '*');
+            if (this.secondaryWindow) {
+                this.secondaryWindow.postMessage({ channel, args: data }, '*');
+            } else {
+                this.element.contentWindow!.postMessage({ channel, args: data }, '*');
+            }
         }
     }
 

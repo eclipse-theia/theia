@@ -1,22 +1,22 @@
-/********************************************************************************
- * Copyright (C) 2018 Ericsson and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Ericsson and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { inject, injectable, postConstruct, named } from 'inversify';
+import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { PreferenceScope, PreferenceProvider } from '@theia/core/lib/browser/preferences';
@@ -35,26 +35,34 @@ export class WorkspacePreferenceProvider extends PreferenceProvider {
     @inject(PreferenceProvider) @named(PreferenceScope.Folder)
     protected readonly folderPreferenceProvider: PreferenceProvider;
 
+    protected readonly toDisposeOnEnsureDelegateUpToDate = new DisposableCollection();
+
     @postConstruct()
-    protected async init(): Promise<void> {
-        this._ready.resolve();
-        this.ensureDelegateUpToDate();
+    protected init(): void {
+        this.workspaceService.ready.then(() => {
+            // If there is no workspace after the workspace service is initialized, then no more work is needed for this provider to be ready.
+            // If there is a workspace, then we wait for the new delegate to be ready before declaring this provider ready.
+            if (!this.workspaceService.workspace) {
+                this._ready.resolve();
+            }
+        });
         this.workspaceService.onWorkspaceLocationChanged(() => this.ensureDelegateUpToDate());
+        this.workspaceService.onWorkspaceChanged(() => this.ensureDelegateUpToDate());
     }
 
-    getConfigUri(resourceUri: string | undefined = this.ensureResourceUri()): URI | undefined {
-        const delegate = this.delegate;
-        return delegate && delegate.getConfigUri(resourceUri);
+    override getConfigUri(resourceUri: string | undefined = this.ensureResourceUri(), sectionName?: string): URI | undefined {
+        return this.delegate?.getConfigUri(resourceUri, sectionName);
+    }
+
+    override getContainingConfigUri(resourceUri: string | undefined = this.ensureResourceUri(), sectionName?: string): URI | undefined {
+        return this.delegate?.getContainingConfigUri?.(resourceUri, sectionName);
     }
 
     protected _delegate: PreferenceProvider | undefined;
     protected get delegate(): PreferenceProvider | undefined {
-        if (!this._delegate) {
-            this.ensureDelegateUpToDate();
-        }
         return this._delegate;
     }
-    protected readonly toDisposeOnEnsureDelegateUpToDate = new DisposableCollection();
+
     protected ensureDelegateUpToDate(): void {
         const delegate = this.createDelegate();
         if (this._delegate !== delegate) {
@@ -62,6 +70,11 @@ export class WorkspacePreferenceProvider extends PreferenceProvider {
             this.toDispose.push(this.toDisposeOnEnsureDelegateUpToDate);
 
             this._delegate = delegate;
+
+            if (delegate) {
+                // If this provider has not yet declared itself ready, it should do so when the new delegate is ready.
+                delegate.ready.then(() => this._ready.resolve(), () => { });
+            }
 
             if (delegate instanceof WorkspaceFilePreferenceProvider) {
                 this.toDisposeOnEnsureDelegateUpToDate.pushAll([
@@ -71,6 +84,7 @@ export class WorkspacePreferenceProvider extends PreferenceProvider {
             }
         }
     }
+
     protected createDelegate(): PreferenceProvider | undefined {
         const workspace = this.workspaceService.workspace;
         if (!workspace) {
@@ -79,17 +93,20 @@ export class WorkspacePreferenceProvider extends PreferenceProvider {
         if (!this.workspaceService.isMultiRootWorkspaceOpened) {
             return this.folderPreferenceProvider;
         }
+        if (this._delegate instanceof WorkspaceFilePreferenceProvider && this._delegate.getConfigUri().isEqual(workspace.resource)) {
+            return this._delegate;
+        }
         return this.workspaceFileProviderFactory({
-            workspaceUri: new URI(workspace.uri)
+            workspaceUri: workspace.resource
         });
     }
 
-    get<T>(preferenceName: string, resourceUri: string | undefined = this.ensureResourceUri()): T | undefined {
+    override get<T>(preferenceName: string, resourceUri: string | undefined = this.ensureResourceUri()): T | undefined {
         const delegate = this.delegate;
         return delegate ? delegate.get<T>(preferenceName, resourceUri) : undefined;
     }
 
-    resolve<T>(preferenceName: string, resourceUri: string | undefined = this.ensureResourceUri()): { value?: T, configUri?: URI } {
+    override resolve<T>(preferenceName: string, resourceUri: string | undefined = this.ensureResourceUri()): { value?: T, configUri?: URI } {
         const delegate = this.delegate;
         return delegate ? delegate.resolve<T>(preferenceName, resourceUri) : {};
     }
@@ -109,7 +126,7 @@ export class WorkspacePreferenceProvider extends PreferenceProvider {
 
     protected ensureResourceUri(): string | undefined {
         if (this.workspaceService.workspace && !this.workspaceService.isMultiRootWorkspaceOpened) {
-            return this.workspaceService.workspace.uri;
+            return this.workspaceService.workspace.resource.toString();
         }
         return undefined;
     }

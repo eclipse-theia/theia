@@ -1,21 +1,21 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { inject, injectable, named } from 'inversify';
-import { ContributionProvider, CommandRegistry, MenuModelRegistry, isOSX } from '../common';
+import { ContributionProvider, CommandRegistry, MenuModelRegistry, isOSX, BackendStopwatch, LogLevel, Stopwatch } from '../common';
 import { MaybePromise } from '../common/types';
 import { KeybindingRegistry } from './keybinding';
 import { Widget } from './widgets';
@@ -24,77 +24,29 @@ import { ShellLayoutRestorer, ApplicationShellLayoutMigrationError } from './she
 import { FrontendApplicationStateService } from './frontend-application-state';
 import { preventNavigation, parseCssTime, animationFrame } from './browser';
 import { CorePreferences } from './core-preferences';
-
-/**
- * Clients can implement to get a callback for contributing widgets to a shell on start.
- */
-export const FrontendApplicationContribution = Symbol('FrontendApplicationContribution');
-export interface FrontendApplicationContribution {
-
-    /**
-     * Called on application startup before configure is called.
-     */
-    initialize?(): void;
-
-    /**
-     * Called before commands, key bindings and menus are initialized.
-     * Should return a promise if it runs asynchronously.
-     */
-    configure?(app: FrontendApplication): MaybePromise<void>;
-
-    /**
-     * Called when the application is started. The application shell is not attached yet when this method runs.
-     * Should return a promise if it runs asynchronously.
-     */
-    onStart?(app: FrontendApplication): MaybePromise<void>;
-
-    /**
-     * Called on `beforeunload` event, right before the window closes.
-     * Return `true` in order to prevent exit.
-     * Note: No async code allowed, this function has to run on one tick.
-     */
-    onWillStop?(app: FrontendApplication): boolean | void;
-
-    /**
-     * Called when an application is stopped or unloaded.
-     *
-     * Note that this is implemented using `window.beforeunload` which doesn't allow any asynchronous code anymore.
-     * I.e. this is the last tick.
-     */
-    onStop?(app: FrontendApplication): void;
-
-    /**
-     * Called after the application shell has been attached in case there is no previous workbench layout state.
-     * Should return a promise if it runs asynchronously.
-     */
-    initializeLayout?(app: FrontendApplication): MaybePromise<void>;
-
-    /**
-     * An event is emitted when a layout is initialized, but before the shell is attached.
-     */
-    onDidInitializeLayout?(app: FrontendApplication): MaybePromise<void>;
-}
+import { WindowService } from './window/window-service';
+import { TooltipService } from './tooltip-service';
+import { FrontendApplicationContribution } from './frontend-application-contribution';
 
 const TIMER_WARNING_THRESHOLD = 100;
-
-/**
- * Default frontend contribution that can be extended by clients if they do not want to implement any of the
- * methods from the interface but still want to contribute to the frontend application.
- */
-@injectable()
-export abstract class DefaultFrontendApplicationContribution implements FrontendApplicationContribution {
-
-    initialize(): void {
-        // NOOP
-    }
-
-}
 
 @injectable()
 export class FrontendApplication {
 
     @inject(CorePreferences)
     protected readonly corePreferences: CorePreferences;
+
+    @inject(WindowService)
+    protected readonly windowsService: WindowService;
+
+    @inject(TooltipService)
+    protected readonly tooltipService: TooltipService;
+
+    @inject(Stopwatch)
+    protected readonly stopwatch: Stopwatch;
+
+    @inject(BackendStopwatch)
+    protected readonly backendStopwatch: BackendStopwatch;
 
     constructor(
         @inject(CommandRegistry) protected readonly commands: CommandRegistry,
@@ -121,21 +73,26 @@ export class FrontendApplication {
      * - reveal the application shell if it was hidden by a startup indicator
      */
     async start(): Promise<void> {
-        await this.startContributions();
+        const startup = this.backendStopwatch.start('frontend');
+
+        await this.measure('startContributions', () => this.startContributions(), 'Start frontend contributions', false);
         this.stateService.state = 'started_contributions';
 
         const host = await this.getHost();
         this.attachShell(host);
+        this.attachTooltip(host);
         await animationFrame();
         this.stateService.state = 'attached_shell';
 
-        await this.initializeLayout();
+        await this.measure('initializeLayout', () => this.initializeLayout(), 'Initialize the workbench layout', false);
         this.stateService.state = 'initialized_layout';
         await this.fireOnDidInitializeLayout();
 
-        await this.revealShell(host);
+        await this.measure('revealShell', () => this.revealShell(host), 'Replace loading indicator with ready workbench UI (animation)', false);
         this.registerEventListeners();
         this.stateService.state = 'ready';
+
+        startup.then(idToken => this.backendStopwatch.stop(idToken, 'Frontend application start', []));
     }
 
     /**
@@ -158,52 +115,37 @@ export class FrontendApplication {
         return startupElements.length === 0 ? undefined : startupElements[0] as HTMLElement;
     }
 
-    /* vvv HOTFIX begin vvv
-     *
-     * This is a hotfix against issues eclipse/theia#6459 and gitpod-io/gitpod#875 .
-     * It should be reverted after Theia was updated to the newer Monaco.
-     */
-    protected inComposition = false;
-    /**
-     * Register composition related event listeners.
-     */
-    protected registerCompositionEventListeners(): void {
-        window.document.addEventListener('compositionstart', event => {
-            this.inComposition = true;
-        });
-        window.document.addEventListener('compositionend', event => {
-            this.inComposition = false;
-        });
-    }
-    /* ^^^ HOTFIX end ^^^ */
-
     /**
      * Register global event listeners.
      */
     protected registerEventListeners(): void {
-        this.registerCompositionEventListeners(); /* Hotfix. See above. */
-
-        window.addEventListener('beforeunload', () => {
+        this.windowsService.onUnload(() => {
             this.stateService.state = 'closing_window';
             this.layoutRestorer.storeLayout(this);
             this.stopContributions();
         });
         window.addEventListener('resize', () => this.shell.update());
-        document.addEventListener('keydown', event => {
-            if (this.inComposition !== true) {
-                this.keybindings.run(event);
-            }
-        }, true);
+
+        this.keybindings.registerEventListeners(window);
+
         document.addEventListener('touchmove', event => { event.preventDefault(); }, { passive: false });
         // Prevent forward/back navigation by scrolling in OS X
         if (isOSX) {
             document.body.addEventListener('wheel', preventNavigation, { passive: false });
         }
         // Prevent the default browser behavior when dragging and dropping files into the window.
-        window.addEventListener('dragover', event => {
+        document.addEventListener('dragenter', event => {
+            if (event.dataTransfer) {
+                event.dataTransfer.dropEffect = 'none';
+            }
             event.preventDefault();
         }, false);
-        window.addEventListener('drop', event => {
+        document.addEventListener('dragover', event => {
+            if (event.dataTransfer) {
+                event.dataTransfer.dropEffect = 'none';
+            } event.preventDefault();
+        }, false);
+        document.addEventListener('drop', event => {
             event.preventDefault();
         }, false);
 
@@ -216,6 +158,13 @@ export class FrontendApplication {
     protected attachShell(host: HTMLElement): void {
         const ref = this.getStartupIndicator(host);
         Widget.attach(this.shell, host, ref);
+    }
+
+    /**
+     * Attach the tooltip container to the host element.
+     */
+    protected attachTooltip(host: HTMLElement): void {
+        this.tooltipService.attachTo(host);
     }
 
     /**
@@ -369,23 +318,9 @@ export class FrontendApplication {
         console.info('<<< All frontend contributions have been stopped.');
     }
 
-    protected async measure<T>(name: string, fn: () => MaybePromise<T>): Promise<T> {
-        const startMark = name + '-start';
-        const endMark = name + '-end';
-        performance.mark(startMark);
-        const result = await fn();
-        performance.mark(endMark);
-        performance.measure(name, startMark, endMark);
-        for (const item of performance.getEntriesByName(name)) {
-            const contribution = `Frontend ${item.name}`;
-            if (item.duration > TIMER_WARNING_THRESHOLD) {
-                console.warn(`${contribution} is slow, took: ${item.duration.toFixed(1)} ms`);
-            } else {
-                console.debug(`${contribution} took: ${item.duration.toFixed(1)} ms`);
-            }
-        }
-        performance.clearMeasures(name);
-        return result;
+    protected async measure<T>(name: string, fn: () => MaybePromise<T>, message = `Frontend ${name}`, threshold = true): Promise<T> {
+        return this.stopwatch.startAsync(name, message, fn,
+            threshold ? { thresholdMillis: TIMER_WARNING_THRESHOLD, defaultLogLevel: LogLevel.DEBUG } : {});
     }
 
 }

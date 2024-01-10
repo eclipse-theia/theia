@@ -1,40 +1,50 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { injectable, inject } from 'inversify';
 import { MenuBar, Menu as MenuWidget, Widget } from '@phosphor/widgets';
 import { CommandRegistry as PhosphorCommandRegistry } from '@phosphor/commands';
 import {
-    CommandRegistry, ActionMenuNode, CompositeMenuNode,
-    MenuModelRegistry, MAIN_MENU_BAR, MenuPath, DisposableCollection, Disposable
+    CommandRegistry, environment, DisposableCollection, Disposable,
+    MenuModelRegistry, MAIN_MENU_BAR, MenuPath, MenuNode, MenuCommandExecutor, CompoundMenuNode, CompoundMenuNodeRole, CommandMenuNode
 } from '../../common';
 import { KeybindingRegistry } from '../keybinding';
-import { FrontendApplicationContribution, FrontendApplication } from '../frontend-application';
-import { ContextKeyService } from '../context-key-service';
+import { FrontendApplication } from '../frontend-application';
+import { FrontendApplicationContribution } from '../frontend-application-contribution';
+import { ContextKeyService, ContextMatcher } from '../context-key-service';
 import { ContextMenuContext } from './context-menu-context';
 import { waitForRevealed } from '../widgets';
 import { ApplicationShell } from '../shell';
+import { CorePreferences } from '../core-preferences';
+import { PreferenceService } from '../preferences/preference-service';
 
 export abstract class MenuBarWidget extends MenuBar {
     abstract activateMenu(label: string, ...labels: string[]): Promise<MenuWidget>;
     abstract triggerMenuItem(label: string, ...labels: string[]): Promise<MenuWidget.IItem>;
 }
 
+export interface BrowserMenuOptions extends MenuWidget.IOptions {
+    commands: MenuCommandRegistry,
+    context?: HTMLElement,
+    contextKeyService?: ContextMatcher;
+    rootMenuPath: MenuPath
+};
+
 @injectable()
-export class BrowserMainMenuFactory {
+export class BrowserMainMenuFactory implements MenuWidgetFactory {
 
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
@@ -45,6 +55,12 @@ export class BrowserMainMenuFactory {
     @inject(CommandRegistry)
     protected readonly commandRegistry: CommandRegistry;
 
+    @inject(MenuCommandExecutor)
+    protected readonly menuCommandExecutor: MenuCommandExecutor;
+
+    @inject(CorePreferences)
+    protected readonly corePreferences: CorePreferences;
+
     @inject(KeybindingRegistry)
     protected readonly keybindingRegistry: KeybindingRegistry;
 
@@ -54,67 +70,88 @@ export class BrowserMainMenuFactory {
     createMenuBar(): MenuBarWidget {
         const menuBar = new DynamicMenuBarWidget();
         menuBar.id = 'theia:menubar';
-        this.fillMenuBar(menuBar);
-        const listener = this.keybindingRegistry.onKeybindingsChanged(() => {
+        this.corePreferences.ready.then(() => {
+            this.showMenuBar(menuBar, this.corePreferences.get('window.menuBarVisibility', 'classic'));
+        });
+        const preferenceListener = this.corePreferences.onPreferenceChanged(preference => {
+            if (preference.preferenceName === 'window.menuBarVisibility') {
+                this.showMenuBar(menuBar, preference.newValue);
+            }
+        });
+        const keybindingListener = this.keybindingRegistry.onKeybindingsChanged(() => {
+            const preference = this.corePreferences['window.menuBarVisibility'];
+            this.showMenuBar(menuBar, preference);
+        });
+        menuBar.disposed.connect(() => {
+            preferenceListener.dispose();
+            keybindingListener.dispose();
+        });
+        return menuBar;
+    }
+
+    protected showMenuBar(menuBar: DynamicMenuBarWidget, preference: string | undefined): void {
+        if (preference && ['classic', 'visible'].includes(preference)) {
             menuBar.clearMenus();
             this.fillMenuBar(menuBar);
-        });
-        menuBar.disposed.connect(() => listener.dispose());
-        return menuBar;
+        } else {
+            menuBar.clearMenus();
+        }
     }
 
     protected fillMenuBar(menuBar: MenuBarWidget): void {
         const menuModel = this.menuProvider.getMenu(MAIN_MENU_BAR);
         const menuCommandRegistry = this.createMenuCommandRegistry(menuModel);
         for (const menu of menuModel.children) {
-            if (menu instanceof CompositeMenuNode) {
-                const menuWidget = new DynamicMenuWidget(menu, { commands: menuCommandRegistry }, this.services);
+            if (CompoundMenuNode.is(menu)) {
+                const menuWidget = this.createMenuWidget(menu, { commands: menuCommandRegistry, rootMenuPath: MAIN_MENU_BAR });
                 menuBar.addMenu(menuWidget);
             }
         }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    createContextMenu(path: MenuPath, args?: any[]): MenuWidget {
-        const menuModel = this.menuProvider.getMenu(path);
-        const menuCommandRegistry = this.createMenuCommandRegistry(menuModel, args).snapshot();
-        const contextMenu = new DynamicMenuWidget(menuModel, { commands: menuCommandRegistry }, this.services);
+    createContextMenu(path: MenuPath, args?: unknown[], context?: HTMLElement, contextKeyService?: ContextMatcher, skipSingleRootNode?: boolean): MenuWidget {
+        const menuModel = skipSingleRootNode ? this.menuProvider.removeSingleRootNode(this.menuProvider.getMenu(path), path) : this.menuProvider.getMenu(path);
+        const menuCommandRegistry = this.createMenuCommandRegistry(menuModel, args).snapshot(path);
+        const contextMenu = this.createMenuWidget(menuModel, { commands: menuCommandRegistry, context, rootMenuPath: path, contextKeyService });
         return contextMenu;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected createMenuCommandRegistry(menu: CompositeMenuNode, args: any[] = []): MenuCommandRegistry {
+    createMenuWidget(menu: CompoundMenuNode, options: BrowserMenuOptions): DynamicMenuWidget {
+        return new DynamicMenuWidget(menu, options, this.services);
+    }
+
+    protected createMenuCommandRegistry(menu: CompoundMenuNode, args: unknown[] = []): MenuCommandRegistry {
         const menuCommandRegistry = new MenuCommandRegistry(this.services);
         this.registerMenu(menuCommandRegistry, menu, args);
         return menuCommandRegistry;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected registerMenu(menuCommandRegistry: MenuCommandRegistry, menu: CompositeMenuNode, args: any[]): void {
-        for (const child of menu.children) {
-            if (child instanceof ActionMenuNode) {
-                menuCommandRegistry.registerActionMenu(child, args);
-                if (child.altNode) {
-                    menuCommandRegistry.registerActionMenu(child.altNode, args);
-                }
-            } else if (child instanceof CompositeMenuNode) {
-                this.registerMenu(menuCommandRegistry, child, args);
+    protected registerMenu(menuCommandRegistry: MenuCommandRegistry, menu: MenuNode, args: unknown[]): void {
+        if (CompoundMenuNode.is(menu)) {
+            menu.children.forEach(child => this.registerMenu(menuCommandRegistry, child, args));
+        } else if (CommandMenuNode.is(menu)) {
+            menuCommandRegistry.registerActionMenu(menu, args);
+            if (CommandMenuNode.hasAltHandler(menu)) {
+                menuCommandRegistry.registerActionMenu(menu.altNode, args);
             }
+
         }
     }
 
-    private get services(): MenuServices {
+    protected get services(): MenuServices {
         return {
             context: this.context,
             contextKeyService: this.contextKeyService,
             commandRegistry: this.commandRegistry,
-            keybindingRegistry: this.keybindingRegistry
+            keybindingRegistry: this.keybindingRegistry,
+            menuWidgetFactory: this,
+            commandExecutor: this.menuCommandExecutor,
         };
     }
 
 }
 
-class DynamicMenuBarWidget extends MenuBarWidget {
+export class DynamicMenuBarWidget extends MenuBarWidget {
 
     /**
      * We want to restore the focus after the menu closes.
@@ -183,17 +220,23 @@ class DynamicMenuBarWidget extends MenuBarWidget {
 
 }
 
-class MenuServices {
+export class MenuServices {
     readonly commandRegistry: CommandRegistry;
     readonly keybindingRegistry: KeybindingRegistry;
     readonly contextKeyService: ContextKeyService;
     readonly context: ContextMenuContext;
+    readonly menuWidgetFactory: MenuWidgetFactory;
+    readonly commandExecutor: MenuCommandExecutor;
+}
+
+export interface MenuWidgetFactory {
+    createMenuWidget(menu: MenuNode & Required<Pick<MenuNode, 'children'>>, options: BrowserMenuOptions): MenuWidget;
 }
 
 /**
  * A menu widget that would recompute its items on update.
  */
-class DynamicMenuWidget extends MenuWidget {
+export class DynamicMenuWidget extends MenuWidget {
 
     /**
      * We want to restore the focus after the menu closes.
@@ -201,87 +244,86 @@ class DynamicMenuWidget extends MenuWidget {
     protected previousFocusedElement: HTMLElement | undefined;
 
     constructor(
-        protected menu: CompositeMenuNode,
-        protected options: MenuWidget.IOptions & { commands: MenuCommandRegistry },
+        protected menu: CompoundMenuNode,
+        protected options: BrowserMenuOptions,
         protected services: MenuServices
     ) {
         super(options);
         if (menu.label) {
             this.title.label = menu.label;
         }
-        if (menu.iconClass) {
-            this.title.iconClass = menu.iconClass;
+        if (menu.icon) {
+            this.title.iconClass = menu.icon;
         }
         this.updateSubMenus(this, this.menu, this.options.commands);
     }
 
-    // Hint: this is not called from the context menu use-case, but is not required.
-    // For the context menu the command registry state is calculated by the factory before `open`.
     public aboutToShow({ previousFocusedElement }: { previousFocusedElement: HTMLElement | undefined }): void {
         this.preserveFocusedElement(previousFocusedElement);
         this.clearItems();
         this.runWithPreservedFocusContext(() => {
-            this.options.commands.snapshot();
+            this.options.commands.snapshot(this.options.rootMenuPath);
             this.updateSubMenus(this, this.menu, this.options.commands);
         });
     }
 
-    public open(x: number, y: number, options?: MenuWidget.IOpenOptions): void {
+    public override open(x: number, y: number, options?: MenuWidget.IOpenOptions): void {
         const cb = () => {
             this.restoreFocusedElement();
             this.aboutToClose.disconnect(cb);
         };
         this.aboutToClose.connect(cb);
+        this.preserveFocusedElement();
         super.open(x, y, options);
     }
 
-    private updateSubMenus(parent: MenuWidget, menu: CompositeMenuNode, commands: MenuCommandRegistry): void {
+    protected updateSubMenus(parent: MenuWidget, menu: CompoundMenuNode, commands: MenuCommandRegistry): void {
         const items = this.buildSubMenus([], menu, commands);
+        while (items[items.length - 1]?.type === 'separator') {
+            items.pop();
+        }
         for (const item of items) {
             parent.addItem(item);
         }
     }
 
-    private buildSubMenus(items: MenuWidget.IItemOptions[], menu: CompositeMenuNode, commands: MenuCommandRegistry): MenuWidget.IItemOptions[] {
-        for (const item of menu.children) {
-            if (item instanceof CompositeMenuNode) {
-                if (item.children.length) { // do not render empty nodes
-                    if (item.isSubmenu) { // submenu node
-                        const submenu = new DynamicMenuWidget(item, this.options, this.services);
-                        if (!submenu.items.length) {
-                            continue;
-                        }
-                        items.push({
-                            type: 'submenu',
-                            submenu,
-                        });
-                    } else { // group node
-                        const submenu = this.buildSubMenus([], item, commands);
-                        if (!submenu.length) {
-                            continue;
-                        }
-                        if (items.length) { // do not put a separator above the first group
-                            items.push({
-                                type: 'separator'
-                            });
-                        }
-                        items.push(...submenu); // render children
+    protected buildSubMenus(parentItems: MenuWidget.IItemOptions[], menu: MenuNode, commands: MenuCommandRegistry): MenuWidget.IItemOptions[] {
+        if (CompoundMenuNode.is(menu)
+            && menu.children.length
+            && this.undefinedOrMatch(this.options.contextKeyService ?? this.services.contextKeyService, menu.when, this.options.context)) {
+            const role = menu === this.menu ? CompoundMenuNodeRole.Group : CompoundMenuNode.getRole(menu);
+            if (role === CompoundMenuNodeRole.Submenu) {
+                const submenu = this.services.menuWidgetFactory.createMenuWidget(menu, this.options);
+                if (submenu.items.length > 0) {
+                    parentItems.push({ type: 'submenu', submenu });
+                }
+            } else if (role === CompoundMenuNodeRole.Group && menu.id !== 'inline') {
+                const children = CompoundMenuNode.getFlatChildren(menu.children);
+                const myItems: MenuWidget.IItemOptions[] = [];
+                children.forEach(child => this.buildSubMenus(myItems, child, commands));
+                if (myItems.length) {
+                    if (parentItems.length && parentItems[parentItems.length - 1].type !== 'separator') {
+                        parentItems.push({ type: 'separator' });
                     }
+                    parentItems.push(...myItems);
+                    parentItems.push({ type: 'separator' });
                 }
-            } else if (item instanceof ActionMenuNode) {
-                const { context, contextKeyService } = this.services;
-                const node = item.altNode && context.altPressed ? item.altNode : item;
-                const { when } = node.action;
-                if (!(commands.isVisible(node.action.commandId) && (!when || contextKeyService.match(when)))) {
-                    continue;
-                }
-                items.push({
-                    command: node.action.commandId,
+            }
+        } else if (menu.command) {
+            const node = menu.altNode && this.services.context.altPressed ? menu.altNode : (menu as MenuNode & CommandMenuNode);
+            if (commands.isVisible(node.command) && this.undefinedOrMatch(this.options.contextKeyService ?? this.services.contextKeyService, node.when, this.options.context)) {
+                parentItems.push({
+                    command: node.command,
                     type: 'command'
                 });
             }
         }
-        return items;
+        return parentItems;
+    }
+
+    protected undefinedOrMatch(contextKeyService: ContextMatcher, expression?: string, context?: HTMLElement): boolean {
+        if (expression) { return contextKeyService.match(expression, context); }
+        return true;
     }
 
     protected preserveFocusedElement(previousFocusedElement: Element | null = document.activeElement): boolean {
@@ -325,19 +367,38 @@ export class BrowserMenuBarContribution implements FrontendApplicationContributi
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
 
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
+
     constructor(
         @inject(BrowserMainMenuFactory) protected readonly factory: BrowserMainMenuFactory
     ) { }
 
     onStart(app: FrontendApplication): void {
-        const logo = this.createLogo();
-        app.shell.addWidget(logo, { area: 'top' });
-        const menu = this.factory.createMenuBar();
-        app.shell.addWidget(menu, { area: 'top' });
+        this.appendMenu(app.shell);
     }
 
     get menuBar(): MenuBarWidget | undefined {
         return this.shell.topPanel.widgets.find(w => w instanceof MenuBarWidget) as MenuBarWidget | undefined;
+    }
+
+    protected appendMenu(shell: ApplicationShell): void {
+        const logo = this.createLogo();
+        shell.addWidget(logo, { area: 'top' });
+        const menu = this.factory.createMenuBar();
+        shell.addWidget(menu, { area: 'top' });
+        // Hiding the menu is only necessary in electron
+        // In the browser we hide the whole top panel
+        if (environment.electron.is()) {
+            this.preferenceService.ready.then(() => {
+                menu.setHidden(['compact', 'hidden'].includes(this.preferenceService.get('window.menuBarVisibility', '')));
+            });
+            this.preferenceService.onPreferenceChanged(change => {
+                if (change.preferenceName === 'window.menuBarVisibility') {
+                    menu.setHidden(['compact', 'hidden'].includes(change.newValue));
+                }
+            });
+        }
     }
 
     protected createLogo(): Widget {
@@ -351,21 +412,18 @@ export class BrowserMenuBarContribution implements FrontendApplicationContributi
 /**
  * Stores Theia-specific action menu nodes instead of PhosphorJS commands with their handlers.
  */
-class MenuCommandRegistry extends PhosphorCommandRegistry {
+export class MenuCommandRegistry extends PhosphorCommandRegistry {
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected actions = new Map<string, [ActionMenuNode, any[]]>();
+    protected actions = new Map<string, [MenuNode & CommandMenuNode, unknown[]]>();
     protected toDispose = new DisposableCollection();
 
     constructor(protected services: MenuServices) {
         super();
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    registerActionMenu(menu: ActionMenuNode, args: any[]): void {
-        const { commandId } = menu.action;
+    registerActionMenu(menu: MenuNode & CommandMenuNode, args: unknown[]): void {
         const { commandRegistry } = this.services;
-        const command = commandRegistry.getCommand(commandId);
+        const command = commandRegistry.getCommand(menu.command);
         if (!command) {
             return;
         }
@@ -376,18 +434,17 @@ class MenuCommandRegistry extends PhosphorCommandRegistry {
         this.actions.set(id, [menu, args]);
     }
 
-    snapshot(): this {
+    snapshot(menuPath: MenuPath): this {
         this.toDispose.dispose();
         for (const [menu, args] of this.actions.values()) {
-            this.toDispose.push(this.registerCommand(menu, args));
+            this.toDispose.push(this.registerCommand(menu, args, menuPath));
         }
         return this;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected registerCommand(menu: ActionMenuNode, args: any[]): Disposable {
-        const { commandRegistry, keybindingRegistry } = this.services;
-        const command = commandRegistry.getCommand(menu.action.commandId);
+    protected registerCommand(menu: MenuNode & CommandMenuNode, args: unknown[], menuPath: MenuPath): Disposable {
+        const { commandRegistry, keybindingRegistry, commandExecutor } = this.services;
+        const command = commandRegistry.getCommand(menu.command);
         if (!command) {
             return Disposable.NULL;
         }
@@ -398,11 +455,11 @@ class MenuCommandRegistry extends PhosphorCommandRegistry {
         }
 
         // We freeze the `isEnabled`, `isVisible`, and `isToggled` states so they won't change.
-        const enabled = commandRegistry.isEnabled(id, ...args);
-        const visible = commandRegistry.isVisible(id, ...args);
-        const toggled = commandRegistry.isToggled(id, ...args);
+        const enabled = commandExecutor.isEnabled(menuPath, id, ...args);
+        const visible = commandExecutor.isVisible(menuPath, id, ...args);
+        const toggled = commandExecutor.isToggled(menuPath, id, ...args);
         const unregisterCommand = this.addCommand(id, {
-            execute: () => commandRegistry.executeCommand(id, ...args),
+            execute: () => commandExecutor.executeCommand(menuPath, id, ...args),
             label: menu.label,
             icon: menu.icon,
             isEnabled: () => enabled,
@@ -414,7 +471,7 @@ class MenuCommandRegistry extends PhosphorCommandRegistry {
         // Only consider the first keybinding.
         if (bindings.length) {
             const binding = bindings[0];
-            const keys = keybindingRegistry.acceleratorFor(binding);
+            const keys = keybindingRegistry.acceleratorFor(binding, ' ', true);
             this.addKeyBinding({
                 command: id,
                 keys,

@@ -1,26 +1,26 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { injectable, inject, postConstruct } from 'inversify';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { Path } from '@theia/core/lib/common/path';
-import { FileSystem } from '@theia/filesystem/lib/common';
 import { ApplicationShell, NavigatableWidget, WidgetManager } from '@theia/core/lib/browser';
 import { VariableContribution, VariableRegistry, Variable } from '@theia/variable-resolver/lib/browser';
 import { WorkspaceService } from './workspace-service';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
 
 @injectable()
 export class WorkspaceVariableContribution implements VariableContribution {
@@ -29,8 +29,8 @@ export class WorkspaceVariableContribution implements VariableContribution {
     protected readonly workspaceService: WorkspaceService;
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
-    @inject(FileSystem)
-    protected readonly fileSystem: FileSystem;
+    @inject(FileService)
+    protected readonly fileService: FileService;
     @inject(WidgetManager)
     protected readonly widgetManager: WidgetManager;
 
@@ -38,7 +38,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
 
     @postConstruct()
     protected init(): void {
-        this.shell.currentChanged.connect(() => this.updateCurrentWidget());
+        this.shell.onDidChangeCurrentWidget(() => this.updateCurrentWidget());
         this.widgetManager.onDidCreateWidget(({ widget }) => {
             if (NavigatableWidget.is(widget)) {
                 widget.onDidChangeVisibility(() => {
@@ -100,7 +100,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
             description: 'The path of the currently opened file',
             resolve: () => {
                 const uri = this.getResourceUri();
-                return uri && this.fileSystem.getFsPath(uri.toString());
+                return uri && this.fileService.fsPath(uri);
             }
         });
         variables.registerVariable({
@@ -142,8 +142,8 @@ export class WorkspaceVariableContribution implements VariableContribution {
             name: variable.name,
             description: variable.description,
             resolve: (context, workspaceRootName) => {
-                const workspaceRoot = workspaceRootName && this.workspaceService.tryGetRoots().find(r => new URI(r.uri).path.name === workspaceRootName);
-                return variable.resolve(workspaceRoot ? new URI(workspaceRoot.uri) : context);
+                const workspaceRoot = workspaceRootName && this.workspaceService.tryGetRoots().find(r => r.resource.path.name === workspaceRootName);
+                return variable.resolve(workspaceRoot ? workspaceRoot.resource : context);
             }
         });
         variables.registerVariable(scoped({
@@ -151,7 +151,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
             description: 'The path of the workspace root folder',
             resolve: (context?: URI) => {
                 const uri = this.getWorkspaceRootUri(context);
-                return uri && this.fileSystem.getFsPath(uri.toString());
+                return uri && this.fileService.fsPath(uri);
             }
         }));
         variables.registerVariable(scoped({
@@ -159,7 +159,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
             description: 'The path of the workspace root folder',
             resolve: (context?: URI) => {
                 const uri = this.getWorkspaceRootUri(context);
-                return uri && this.fileSystem.getFsPath(uri.toString());
+                return uri && this.fileService.fsPath(uri);
             }
         }));
         variables.registerVariable(scoped({
@@ -183,7 +183,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
             description: "The task runner's current working directory on startup",
             resolve: (context?: URI) => {
                 const uri = this.getWorkspaceRootUri(context);
-                return (uri && this.fileSystem.getFsPath(uri.toString())) || '';
+                return (uri && this.fileService.fsPath(uri)) || '';
             }
         }));
         variables.registerVariable(scoped({

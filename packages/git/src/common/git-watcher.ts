@@ -1,21 +1,21 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { injectable, inject } from 'inversify';
-import { JsonRpcServer, JsonRpcProxy } from '@theia/core';
+import { injectable, inject } from '@theia/core/shared/inversify';
+import { RpcServer, RpcProxy, isObject } from '@theia/core';
 import { Repository, WorkingDirectoryStatus } from './git-model';
 import { Disposable, DisposableCollection, Emitter, Event } from '@theia/core/lib/common';
 
@@ -47,9 +47,8 @@ export namespace GitStatusChangeEvent {
      * `true` if the argument is a `GitStatusEvent`, otherwise `false`.
      * @param event the argument to check whether it is a Git status change event or not.
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function is(event: any | undefined): event is GitStatusChangeEvent {
-        return !!event && ('source' in event) && ('status' in event);
+    export function is(event: unknown): event is GitStatusChangeEvent {
+        return isObject(event) && ('source' in event) && ('status' in event);
     }
 
 }
@@ -74,7 +73,7 @@ export const GitWatcherServer = Symbol('GitWatcherServer');
 /**
  * Service representation communicating between the backend and the frontend.
  */
-export interface GitWatcherServer extends JsonRpcServer<GitWatcherClient> {
+export interface GitWatcherServer extends RpcServer<GitWatcherClient> {
 
     /**
      * Watches status changes in the given repository.
@@ -90,7 +89,7 @@ export interface GitWatcherServer extends JsonRpcServer<GitWatcherClient> {
 }
 
 export const GitWatcherServerProxy = Symbol('GitWatcherServerProxy');
-export type GitWatcherServerProxy = JsonRpcProxy<GitWatcherServer>;
+export type GitWatcherServerProxy = RpcProxy<GitWatcherServer>;
 
 @injectable()
 export class ReconnectingGitWatcherServer implements GitWatcherServer {

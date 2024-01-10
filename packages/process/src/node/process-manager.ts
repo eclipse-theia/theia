@@ -1,28 +1,29 @@
-/********************************************************************************
- * Copyright (C) 2017 Ericsson and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
-import { injectable, inject, named } from 'inversify';
-import { Process } from './process';
+// *****************************************************************************
+// Copyright (C) 2017 Ericsson and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { Emitter, Event } from '@theia/core/lib/common';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
+import { ManagedProcessManager, ManagedProcess } from '../common/process-manager-types';
+import { MAX_SAFE_INTEGER } from '@theia/core/lib/common/numbers';
+import { Process } from './process';
 
 @injectable()
-export class ProcessManager implements BackendApplicationContribution {
+export class ProcessManager implements ManagedProcessManager, BackendApplicationContribution {
 
-    protected id: number = 0;
     protected readonly processes: Map<number, Process>;
     protected readonly deleteEmitter: Emitter<number>;
 
@@ -40,11 +41,23 @@ export class ProcessManager implements BackendApplicationContribution {
      * @param process the process to register.
      */
     register(process: Process): number {
-        const id = this.id;
+        const id = this.generateId();
         this.processes.set(id, process);
-        process.onExit(() => this.unregister(process));
         process.onError(() => this.unregister(process));
-        this.id++;
+        return id;
+    }
+
+    /**
+     * @returns a random id for a process that is not assigned to a different process yet.
+     */
+    protected generateId(): number {
+        let id = undefined;
+        while (id === undefined) {
+            const candidate = Math.floor(Math.random() * MAX_SAFE_INTEGER);
+            if (!this.processes.has(candidate)) {
+                id = candidate;
+            }
+        }
         return id;
     }
 
@@ -54,7 +67,7 @@ export class ProcessManager implements BackendApplicationContribution {
      *
      * @param process the process to unregister from this process manager.
      */
-    protected unregister(process: Process): void {
+    unregister(process: ManagedProcess): void {
         const processLabel = this.getProcessLabel(process);
         this.logger.debug(`Unregistering process. ${processLabel}`);
         if (!process.killed) {
@@ -69,7 +82,7 @@ export class ProcessManager implements BackendApplicationContribution {
         }
     }
 
-    get(id: number): Process | undefined {
+    get(id: number): ManagedProcess | undefined {
         return this.processes.get(id);
     }
 
@@ -87,7 +100,7 @@ export class ProcessManager implements BackendApplicationContribution {
         }
     }
 
-    private getProcessLabel(process: Process): string {
+    private getProcessLabel(process: ManagedProcess): string {
         return `[ID: ${process.id}]`;
     }
 

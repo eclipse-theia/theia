@@ -1,20 +1,20 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { URI } from 'vscode-uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import * as theia from '@theia/plugin';
 import { DocumentsExtImpl } from '../documents';
 import { DocumentLink } from '../../common/plugin-api-rpc-model';
@@ -44,7 +44,7 @@ export class LinkProviderAdapter {
             }
             const result: DocumentLink[] = [];
             for (const link of links) {
-                const data = Converter.fromDocumentLink(link);
+                const data = Converter.DocumentLink.from(link);
                 const id = this.cacheId++;
                 ObjectIdentifier.mixin(data, id);
                 this.cache.set(id, link);
@@ -65,7 +65,7 @@ export class LinkProviderAdapter {
         }
         return Promise.resolve(this.provider.resolveDocumentLink(item, token)).then(value => {
             if (value) {
-                return Converter.fromDocumentLink(value);
+                return Converter.DocumentLink.from(value);
             }
             return undefined;
         });

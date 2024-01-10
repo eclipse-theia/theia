@@ -1,20 +1,20 @@
-/********************************************************************************
- * Copyright (C) 2017-2018 Ericsson and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017-2018 Ericsson and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { JsonRpcServer } from '@theia/core';
+import { RpcServer } from '@theia/core';
 
 export interface SearchInWorkspaceOptions {
     /**
@@ -42,6 +42,10 @@ export interface SearchInWorkspaceOptions {
      */
     useRegExp?: boolean;
     /**
+     * Use multiline search if true.
+     */
+    multiline?: boolean;
+    /**
      * Include all .gitignored and hidden files.
      */
     includeIgnored?: boolean;
@@ -53,6 +57,10 @@ export interface SearchInWorkspaceOptions {
      * Glob pattern for matching files and directories to exclude the search.
      */
     exclude?: string[];
+    /**
+     * Whether symlinks should be followed while searching.
+     */
+    followSymlinks?: boolean;
 }
 
 export interface SearchInWorkspaceResult {
@@ -130,9 +138,9 @@ export interface SearchInWorkspaceClient {
 
 export const SIW_WS_PATH = '/services/search-in-workspace';
 export const SearchInWorkspaceServer = Symbol('SearchInWorkspaceServer');
-export interface SearchInWorkspaceServer extends JsonRpcServer<SearchInWorkspaceClient> {
+export interface SearchInWorkspaceServer extends RpcServer<SearchInWorkspaceClient> {
     /**
-     * Start a search for WHAT in directories ROOTURIS.  Return a unique search id.
+     * Start a search for WHAT in directories ROOTURIS. Return a unique search id.
      */
     search(what: string, rootUris: string[], opts?: SearchInWorkspaceOptions): Promise<number>;
 

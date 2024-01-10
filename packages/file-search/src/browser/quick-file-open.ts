@@ -1,55 +1,61 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { inject, injectable } from 'inversify';
-import {
-    QuickOpenModel, QuickOpenItem, QuickOpenMode, PrefixQuickOpenService,
-    OpenerService, KeybindingRegistry, QuickOpenGroupItem, QuickOpenGroupItemOptions, QuickOpenItemOptions,
-    QuickOpenHandler, QuickOpenOptions
-} from '@theia/core/lib/browser';
-import { FileSystem } from '@theia/filesystem/lib/common/filesystem';
+import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
+import { OpenerService, KeybindingRegistry, QuickAccessRegistry, QuickAccessProvider, CommonCommands, PreferenceService } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import URI from '@theia/core/lib/common/uri';
-import { FileSearchService } from '../common/file-search-service';
-import { CancellationTokenSource } from '@theia/core/lib/common';
+import { FileSearchService, WHITESPACE_QUERY_SEPARATOR } from '../common/file-search-service';
+import { CancellationToken, Command, nls } from '@theia/core/lib/common';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
-import { Command } from '@theia/core/lib/common';
 import { NavigationLocationService } from '@theia/editor/lib/browser/navigation/navigation-location-service';
-import * as fuzzy from 'fuzzy';
+import * as fuzzy from '@theia/core/shared/fuzzy';
 import { MessageService } from '@theia/core/lib/common/message-service';
+import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
+import { EditorOpenerOptions, EditorWidget, Position, Range } from '@theia/editor/lib/browser';
+import { findMatches, QuickInputService, QuickPickItem, QuickPicks } from '@theia/core/lib/browser/quick-input/quick-input-service';
 
-export const quickFileOpen: Command = {
+export const quickFileOpen = Command.toDefaultLocalizedCommand({
     id: 'file-search.openFile',
-    category: 'File',
+    category: CommonCommands.FILE_CATEGORY,
     label: 'Open File...'
-};
+});
+export interface FilterAndRange {
+    filter: string;
+    range?: Range;
+}
+
+// Supports patterns of <path><#|:><line><#|:|,><col?>
+const LINE_COLON_PATTERN = /\s?[#:\(](?:line )?(\d*)(?:[#:,](\d*))?\)?\s*$/;
+export type FileQuickPickItem = QuickPickItem & { uri: URI };
 
 @injectable()
-export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
+export class QuickFileOpenService implements QuickAccessProvider {
+    static readonly PREFIX = '';
 
     @inject(KeybindingRegistry)
     protected readonly keybindingRegistry: KeybindingRegistry;
-    @inject(FileSystem)
-    protected readonly fileSystem: FileSystem;
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
     @inject(OpenerService)
     protected readonly openerService: OpenerService;
-    @inject(PrefixQuickOpenService)
-    protected readonly quickOpenService: PrefixQuickOpenService;
+    @inject(QuickInputService) @optional()
+    protected readonly quickInputService: QuickInputService;
+    @inject(QuickAccessRegistry)
+    protected readonly quickAccessRegistry: QuickAccessRegistry;
     @inject(FileSearchService)
     protected readonly fileSearchService: FileSearchService;
     @inject(LabelProvider)
@@ -58,52 +64,56 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
     protected readonly navigationLocationService: NavigationLocationService;
     @inject(MessageService)
     protected readonly messageService: MessageService;
+    @inject(FileSystemPreferences)
+    protected readonly fsPreferences: FileSystemPreferences;
+    @inject(PreferenceService)
+    protected readonly preferences: PreferenceService;
+
+    registerQuickAccessProvider(): void {
+        this.quickAccessRegistry.registerQuickAccessProvider({
+            getInstance: () => this,
+            prefix: QuickFileOpenService.PREFIX,
+            placeholder: this.getPlaceHolder(),
+            helpEntries: [{ description: 'Open File', needsEditor: false }]
+        });
+    }
 
     /**
      * Whether to hide .gitignored (and other ignored) files.
      */
-    protected hideIgnoredFiles: boolean = true;
+    protected hideIgnoredFiles = true;
 
     /**
      * Whether the dialog is currently open.
      */
-    protected isOpen: boolean = false;
+    protected isOpen = false;
+    private updateIsOpen = true;
+
+    protected filterAndRangeDefault = { filter: '', range: undefined };
 
     /**
-     * The current lookFor string input by the user.
+     * Tracks the user file search filter and location range e.g. fileFilter:line:column or fileFilter:line,column
      */
-    protected currentLookFor: string = '';
+    protected filterAndRange: FilterAndRange = this.filterAndRangeDefault;
 
-    readonly prefix: string = '...';
+    /**
+     * The score constants when comparing file search results.
+     */
+    private static readonly Scores = {
+        max: 1000,  // represents the maximum score from fuzzy matching (Infinity).
+        exact: 500, // represents the score assigned to exact matching.
+        partial: 250 // represents the score assigned to partial matching.
+    };
 
-    get description(): string {
-        return 'Open File';
-    }
-
-    getModel(): QuickOpenModel {
-        return this;
-    }
-
-    getOptions(): QuickOpenOptions {
-        let placeholder = 'File name to search.';
-        const keybinding = this.getKeyCommand();
-        if (keybinding) {
-            placeholder += ` (Press ${keybinding} to show/hide ignored files)`;
-        }
-        return {
-            placeholder,
-            fuzzyMatchLabel: {
-                enableSeparateSubstringMatching: true
-            },
-            fuzzyMatchDescription: {
-                enableSeparateSubstringMatching: true
-            },
-            showItemsWithoutHighlight: true,
-            onClose: () => {
+    @postConstruct()
+    protected init(): void {
+        this.quickInputService?.onHide(() => {
+            if (this.updateIsOpen) {
                 this.isOpen = false;
-                this.cancelIndicator.cancel();
+            } else {
+                this.updateIsOpen = true;
             }
-        };
+        });
     }
 
     isEnabled(): boolean {
@@ -115,13 +125,19 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
         // showing the ignored files.
         if (this.isOpen) {
             this.hideIgnoredFiles = !this.hideIgnoredFiles;
+            this.hideQuickPick();
         } else {
             this.hideIgnoredFiles = true;
-            this.currentLookFor = '';
+            this.filterAndRange = this.filterAndRangeDefault;
             this.isOpen = true;
         }
 
-        this.quickOpenService.open(this.currentLookFor);
+        this.quickInputService?.open(this.filterAndRange.filter);
+    }
+
+    protected hideQuickPick(): void {
+        this.updateIsOpen = false;
+        this.quickInputService?.hide();
     }
 
     /**
@@ -139,43 +155,46 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
         return undefined;
     }
 
-    private cancelIndicator = new CancellationTokenSource();
-
-    public async onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): Promise<void> {
-        this.cancelIndicator.cancel();
-        this.cancelIndicator = new CancellationTokenSource();
-        const token = this.cancelIndicator.token;
-
+    async getPicks(filter: string, token: CancellationToken): Promise<QuickPicks> {
         const roots = this.workspaceService.tryGetRoots();
 
-        this.currentLookFor = lookFor;
-        const alreadyCollected = new Set<string>();
-        const recentlyUsedItems: QuickOpenItem[] = [];
+        this.filterAndRange = this.splitFilterAndRange(filter);
+        const fileFilter = this.filterAndRange.filter;
 
-        const locations = [...this.navigationLocationService.locations()].reverse();
-        for (const location of locations) {
-            const uriString = location.uri.toString();
-            if (location.uri.scheme === 'file' && !alreadyCollected.has(uriString) && fuzzy.test(lookFor, uriString)) {
-                const item = this.toItem(location.uri, { groupLabel: recentlyUsedItems.length === 0 ? 'recently opened' : undefined, showBorder: false });
-                recentlyUsedItems.push(item);
-                alreadyCollected.add(uriString);
+        const alreadyCollected = new Set<string>();
+        const recentlyUsedItems: QuickPicks = [];
+
+        if (this.preferences.get('search.quickOpen.includeHistory')) {
+            const locations = [...this.navigationLocationService.locations()].reverse();
+            for (const location of locations) {
+                const uriString = location.uri.toString();
+
+                if (location.uri.scheme === 'file' && !alreadyCollected.has(uriString) && fuzzy.test(fileFilter, uriString)) {
+                    if (recentlyUsedItems.length === 0) {
+                        recentlyUsedItems.push({
+                            type: 'separator',
+                            label: nls.localizeByDefault('recently opened')
+                        });
+                    }
+                    const item = this.toItem(fileFilter, location.uri);
+                    recentlyUsedItems.push(item);
+                    alreadyCollected.add(uriString);
+                }
             }
         }
-        if (lookFor.length > 0) {
-            const handler = async (results: string[]) => {
-                if (token.isCancellationRequested) {
-                    return;
-                }
-                const fileSearchResultItems: QuickOpenItem[] = [];
 
-                if (results.length <= 0) {
-                    acceptor([this.toNoResultsItem()]);
-                    return;
+        if (fileFilter.length > 0) {
+            const handler = async (results: string[]) => {
+                if (token.isCancellationRequested || results.length <= 0) {
+                    return [];
                 }
+
+                const result = [...recentlyUsedItems];
+                const fileSearchResultItems: FileQuickPickItem[] = [];
 
                 for (const fileUri of results) {
                     if (!alreadyCollected.has(fileUri)) {
-                        const item = this.toItem(fileUri);
+                        const item = this.toItem(fileFilter, fileUri);
                         fileSearchResultItems.push(item);
                         alreadyCollected.add(fileUri);
                     }
@@ -185,65 +204,35 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
                 const sortedResults = fileSearchResultItems.slice();
                 sortedResults.sort((a, b) => this.compareItems(a, b));
 
-                // Extract the first element, and re-add it to the array with the group label.
-                const first = sortedResults[0];
-                sortedResults.shift();
-                if (first) {
-                    const item = this.toItem(first.getUri()!, { groupLabel: 'file results', showBorder: !!recentlyUsedItems.length });
-                    sortedResults.unshift(item);
+                if (sortedResults.length > 0) {
+                    result.push({
+                        type: 'separator',
+                        label: nls.localizeByDefault('file results')
+                    });
+                    result.push(...sortedResults);
                 }
+
                 // Return the recently used items, followed by the search results.
-                acceptor([...recentlyUsedItems, ...sortedResults]);
+                return result;
             };
 
-            this.fileSearchService.find(lookFor, {
-                rootUris: roots.map(r => r.uri),
+            return this.fileSearchService.find(fileFilter, {
+                rootUris: roots.map(r => r.resource.toString()),
                 fuzzyMatch: true,
                 limit: 200,
                 useGitIgnore: this.hideIgnoredFiles,
-                excludePatterns: ['*.git*']
+                excludePatterns: this.hideIgnoredFiles
+                    ? Object.keys(this.fsPreferences['files.exclude'])
+                    : undefined,
             }, token).then(handler);
         } else {
-            if (roots.length !== 0) {
-                acceptor(recentlyUsedItems);
-            }
+            return roots.length !== 0 ? recentlyUsedItems : [];
         }
     }
 
-    protected getRunFunction(uri: URI): (mode: QuickOpenMode) => boolean {
-        return (mode: QuickOpenMode) => {
-            if (mode !== QuickOpenMode.OPEN) {
-                return false;
-            }
-            this.openFile(uri);
-            return true;
-        };
-    }
-
-    /**
-     * Compare two `QuickOpenItem`.
-     *
-     * @param a `QuickOpenItem` for comparison.
-     * @param b `QuickOpenItem` for comparison.
-     * @param member the `QuickOpenItem` object member for comparison.
-     */
     protected compareItems(
-        a: QuickOpenItem<QuickOpenItemOptions>,
-        b: QuickOpenItem<QuickOpenItemOptions>,
-        member: 'getLabel' | 'getUri' = 'getLabel'): number {
-
-        /**
-         * Normalize a given string.
-         *
-         * @param str the raw string value.
-         * @returns the normalized string value.
-         */
-        function normalize(str: string): string {
-            return str.trim().toLowerCase();
-        }
-
-        // Normalize the user query.
-        const query: string = normalize(this.currentLookFor);
+        left: FileQuickPickItem,
+        right: FileQuickPickItem): number {
 
         /**
          * Score a given string.
@@ -251,101 +240,148 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
          * @param str the string to score on.
          * @returns the score.
          */
-        function score(str: string): number {
-            const match = fuzzy.match(query, str);
-            // eslint-disable-next-line no-null/no-null
-            return (match === null) ? 0 : match.score;
-        }
-
-        // Get the item's member values for comparison.
-        let itemA = a[member]()!;
-        let itemB = b[member]()!;
-
-        // If the `URI` is used as a comparison member, perform the necessary string conversions.
-        if (typeof itemA !== 'string') {
-            itemA = itemA.path.toString();
-        }
-        if (typeof itemB !== 'string') {
-            itemB = itemB.path.toString();
-        }
-
-        // Normalize the item labels.
-        itemA = normalize(itemA);
-        itemB = normalize(itemB);
-
-        // Score the item labels.
-        const scoreA: number = score(itemA);
-        const scoreB: number = score(itemB);
-
-        // If both label scores are identical, perform additional computation.
-        if (scoreA === scoreB) {
-
-            // Favor the label which have the smallest substring index.
-            const indexA: number = itemA.indexOf(query);
-            const indexB: number = itemB.indexOf(query);
-
-            if (indexA === indexB) {
-
-                // Favor the result with the shortest label length.
-                if (itemA.length !== itemB.length) {
-                    return (itemA.length < itemB.length) ? -1 : 1;
-                }
-
-                // Fallback to the alphabetical order.
-                const comparison = itemB.localeCompare(itemA);
-
-                // If the alphabetical comparison is equal, call `compareItems` recursively using the `URI` member instead.
-                if (comparison === 0) {
-                    return this.compareItems(a, b, 'getUri');
-                }
-
-                return itemB.localeCompare(itemA);
+        function score(str: string | undefined): number {
+            if (!str) {
+                return 0;
             }
 
-            return indexA - indexB;
+            let exactMatch = true;
+            const partialMatches = querySplit.reduce((matched, part) => {
+                const partMatches = str.includes(part);
+                exactMatch = exactMatch && partMatches;
+                return partMatches ? matched + QuickFileOpenService.Scores.partial : matched;
+            }, 0);
+
+            // Check fuzzy matches.
+            const fuzzyMatch = fuzzy.match(queryJoin, str) ?? { score: 0 };
+            if (fuzzyMatch.score === Infinity && exactMatch) {
+                return Number.MAX_SAFE_INTEGER;
+            }
+
+            return fuzzyMatch.score + partialMatches + (exactMatch ? QuickFileOpenService.Scores.exact : 0);
         }
 
-        return scoreB - scoreA;
+        const query: string = normalize(this.filterAndRange.filter);
+        // Adjust for whitespaces in the query.
+        const querySplit = query.split(WHITESPACE_QUERY_SEPARATOR);
+        const queryJoin = querySplit.join('');
+
+        const compareByLabelScore = (l: FileQuickPickItem, r: FileQuickPickItem) => score(r.label) - score(l.label);
+        const compareByLabelIndex = (l: FileQuickPickItem, r: FileQuickPickItem) => r.label.indexOf(query) - l.label.indexOf(query);
+        const compareByLabel = (l: FileQuickPickItem, r: FileQuickPickItem) => l.label.localeCompare(r.label);
+
+        const compareByPathScore = (l: FileQuickPickItem, r: FileQuickPickItem) => score(r.uri.path.toString()) - score(l.uri.path.toString());
+        const compareByPathIndex = (l: FileQuickPickItem, r: FileQuickPickItem) => r.uri.path.toString().indexOf(query) - l.uri.path.toString().indexOf(query);
+        const compareByPathLabel = (l: FileQuickPickItem, r: FileQuickPickItem) => l.uri.path.toString().localeCompare(r.uri.path.toString());
+
+        return compareWithDiscriminators(left, right, compareByLabelScore, compareByLabelIndex, compareByLabel, compareByPathScore, compareByPathIndex, compareByPathLabel);
     }
 
     openFile(uri: URI): void {
-        this.openerService.getOpener(uri)
-            .then(opener => opener.open(uri))
-            .catch(error => this.messageService.error(error));
+        const options = this.buildOpenerOptions();
+        const closedEditor = this.navigationLocationService.closedEditorsStack.find(editor => editor.uri.path.toString() === uri.path.toString());
+        this.openerService.getOpener(uri, options)
+            .then(opener => opener.open(uri, options))
+            .then(widget => {
+                // Attempt to restore the editor state if it exists, and no selection is explicitly requested.
+                if (widget instanceof EditorWidget && closedEditor && !options.selection) {
+                    widget.editor.restoreViewState(closedEditor.viewState);
+                }
+            })
+            .catch(error => {
+                console.warn(error);
+                this.messageService.error(nls.localizeByDefault("Unable to open '{0}'", uri.path.toString()));
+            });
     }
 
-    private toItem(uriOrString: URI | string, group?: QuickOpenGroupItemOptions): QuickOpenItem<QuickOpenItemOptions> {
+    protected buildOpenerOptions(): EditorOpenerOptions {
+        return { selection: this.filterAndRange.range };
+    }
+
+    private toItem(lookFor: string, uriOrString: URI | string): FileQuickPickItem {
         const uri = uriOrString instanceof URI ? uriOrString : new URI(uriOrString);
-        let description = this.labelProvider.getLongName(uri.parent);
-        if (this.workspaceService.isMultiRootWorkspaceOpened) {
-            const rootUri = this.workspaceService.getWorkspaceRootUri(uri);
-            if (rootUri) {
-                description = `${rootUri.displayName} • ${description}`;
+        const label = this.labelProvider.getName(uri);
+        const description = this.getItemDescription(uri);
+        const iconClasses = this.getItemIconClasses(uri);
+
+        return {
+            label,
+            description,
+            highlights: {
+                label: findMatches(label, lookFor),
+                description: findMatches(description, lookFor)
+            },
+            iconClasses,
+            uri,
+            execute: () => this.openFile(uri)
+        };
+    }
+
+    private getItemIconClasses(uri: URI): string[] | undefined {
+        const icon = this.labelProvider.getIcon(uri);
+        return icon !== '' ? [icon + ' file-icon'] : [];
+    }
+
+    private getItemDescription(uri: URI): string {
+        return this.labelProvider.getDetails(uri);
+    }
+
+    private getPlaceHolder(): string {
+        let placeholder = nls.localizeByDefault('Search files by name (append {0} to go to line or {1} to go to symbol)', ':', '@');
+        const keybinding = this.getKeyCommand();
+        if (keybinding) {
+            placeholder += nls.localize('theia/file-search/toggleIgnoredFiles', ' (Press {0} to show/hide ignored files)', keybinding);
+        }
+        return placeholder;
+    }
+
+    /**
+     * Splits the given expression into a structure of search-file-filter and
+     * location-range.
+     *
+     * @param expression patterns of <path><#|:><line><#|:|,><col?>
+     */
+    protected splitFilterAndRange(expression: string): FilterAndRange {
+        let filter = expression;
+        let range = undefined;
+
+        // Find line and column number from the expression using RegExp.
+        const patternMatch = LINE_COLON_PATTERN.exec(expression);
+
+        if (patternMatch) {
+            const line = parseInt(patternMatch[1] ?? '', 10);
+            if (Number.isFinite(line)) {
+                const lineNumber = line > 0 ? line - 1 : 0;
+
+                const column = parseInt(patternMatch[2] ?? '', 10);
+                const startColumn = Number.isFinite(column) && column > 0 ? column - 1 : 0;
+                const position = Position.create(lineNumber, startColumn);
+
+                filter = expression.substring(0, patternMatch.index);
+                range = Range.create(position, position);
             }
         }
-        const icon = this.labelProvider.getIcon(uri);
-        const iconClass = icon === '' ? undefined : icon + ' file-icon';
-        const options: QuickOpenItemOptions = {
-            label: this.labelProvider.getName(uri),
-            iconClass,
-            description,
-            tooltip: this.labelProvider.getLongName(uri),
-            uri: uri,
-            hidden: false,
-            run: this.getRunFunction(uri)
-        };
-        if (group) {
-            return new QuickOpenGroupItem<QuickOpenGroupItemOptions>({ ...options, ...group });
-        } else {
-            return new QuickOpenItem<QuickOpenItemOptions>(options);
-        }
+        return { filter, range };
     }
+}
 
-    private toNoResultsItem(): QuickOpenItem<QuickOpenItemOptions> {
-        const options: QuickOpenItemOptions = {
-            label: 'No matching results',
-            run: () => false
-        };
-        return new QuickOpenItem<QuickOpenItemOptions>(options);
+/**
+ * Normalize a given string.
+ *
+ * @param str the raw string value.
+ * @returns the normalized string value.
+ */
+function normalize(str: string): string {
+    return str.trim().toLowerCase();
+}
+
+function compareWithDiscriminators<T>(left: T, right: T, ...discriminators: ((left: T, right: T) => number)[]): number {
+    let comparisonValue = 0;
+    let i = 0;
+
+    while (comparisonValue === 0 && i < discriminators.length) {
+        comparisonValue = discriminators[i](left, right);
+        i++;
     }
+    return comparisonValue;
 }

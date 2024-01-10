@@ -1,41 +1,44 @@
-/********************************************************************************
- * Copyright (C) 2019 Ericsson and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2019 Ericsson and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
+import * as jsoncparser from 'jsonc-parser';
 import debounce = require('p-debounce');
-import { inject, injectable, postConstruct, named } from 'inversify';
+import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
-import { PreferenceScope, PreferenceProvider } from '@theia/core/lib/browser';
+import { PreferenceScope, PreferenceProvider, PreferenceService } from '@theia/core/lib/browser';
 import { QuickPickService } from '@theia/core/lib/common/quick-pick-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { TaskConfigurationModel } from './task-configuration-model';
 import { TaskTemplateSelector } from './task-templates';
 import { TaskCustomization, TaskConfiguration, TaskConfigurationScope, TaskScope } from '../common/task-protocol';
 import { WorkspaceVariableContribution } from '@theia/workspace/lib/browser/workspace-variable-contribution';
-import { FileSystem, FileSystemError } from '@theia/filesystem/lib/common';
 import { FileChangeType } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
 import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { DisposableCollection } from '@theia/core/lib/common';
+import { TaskSchemaUpdater } from './task-schema-updater';
 
 export interface TasksChange {
     scope: TaskConfigurationScope;
     type: FileChangeType;
 }
 /**
- * This class connnects the the "tasks" preferences sections to task system: it collects tasks preference values and
+ * This class connects the the "tasks" preferences sections to task system: it collects tasks preference values and
  * provides them to the task system as raw, parsed JSON.
  */
 @injectable()
@@ -48,16 +51,25 @@ export class TaskConfigurationManager {
     protected readonly editorManager: EditorManager;
 
     @inject(QuickPickService)
-    protected readonly quickPick: QuickPickService;
+    protected readonly quickPickService: QuickPickService;
 
-    @inject(FileSystem)
-    protected readonly filesystem: FileSystem;
+    @inject(FileService)
+    protected readonly fileService: FileService;
+
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
+
+    @inject(TaskSchemaUpdater)
+    protected readonly taskSchemaProvider: TaskSchemaUpdater;
 
     @inject(PreferenceProvider) @named(PreferenceScope.Folder)
     protected readonly folderPreferences: PreferenceProvider;
 
     @inject(PreferenceProvider) @named(PreferenceScope.User)
     protected readonly userPreferences: PreferenceProvider;
+
+    @inject(PreferenceProvider) @named(PreferenceScope.Workspace)
+    protected readonly workspacePreferences: PreferenceProvider;
 
     @inject(PreferenceConfigurations)
     protected readonly preferenceConfigurations: PreferenceConfigurations;
@@ -71,14 +83,12 @@ export class TaskConfigurationManager {
     protected readonly onDidChangeTaskConfigEmitter = new Emitter<TasksChange>();
     readonly onDidChangeTaskConfig: Event<TasksChange> = this.onDidChangeTaskConfigEmitter.event;
 
-    protected readonly models = new Map<string, TaskConfigurationModel>();
-    protected userModel: TaskConfigurationModel;
+    protected readonly models = new Map<TaskConfigurationScope, TaskConfigurationModel>();
+    protected workspaceDelegate: PreferenceProvider;
 
     @postConstruct()
-    protected async init(): Promise<void> {
-        this.userModel = new TaskConfigurationModel(TaskScope.Global, this.userPreferences);
-        this.userModel.onDidChange(() => this.onDidChangeTaskConfigEmitter.fire({ scope: TaskScope.Global, type: FileChangeType.UPDATED }));
-        this.updateModels();
+    protected init(): void {
+        this.createModels();
         this.folderPreferences.onDidPreferencesChanged(e => {
             if (e['tasks']) {
                 this.updateModels();
@@ -87,13 +97,28 @@ export class TaskConfigurationManager {
         this.workspaceService.onWorkspaceChanged(() => {
             this.updateModels();
         });
+        this.workspaceService.onWorkspaceLocationChanged(() => {
+            this.updateModels();
+        });
+    }
+
+    protected createModels(): void {
+        const userModel = new TaskConfigurationModel(TaskScope.Global, this.userPreferences);
+        userModel.onDidChange(() => this.onDidChangeTaskConfigEmitter.fire({ scope: TaskScope.Global, type: FileChangeType.UPDATED }));
+        this.models.set(TaskScope.Global, userModel);
+
+        this.updateModels();
     }
 
     protected updateModels = debounce(async () => {
         const roots = await this.workspaceService.roots;
-        const toDelete = new Set(this.models.keys());
+        const toDelete = new Set(
+            [...this.models.keys()]
+                .filter(key => key !== TaskScope.Global && key !== TaskScope.Workspace)
+        );
+        this.updateWorkspaceModel();
         for (const rootStat of roots) {
-            const key = rootStat.uri;
+            const key = rootStat.resource.toString();
             toDelete.delete(key);
             if (!this.models.has(key)) {
                 const model = new TaskConfigurationModel(key, this.folderPreferences);
@@ -113,29 +138,19 @@ export class TaskConfigurationManager {
     }, 500);
 
     getTasks(scope: TaskConfigurationScope): (TaskCustomization | TaskConfiguration)[] {
-        if (typeof scope === 'string' && this.models.has(scope)) {
-            const taskPrefModel = this.models.get(scope)!;
-            return taskPrefModel.configurations;
-        }
-        return this.userModel.configurations;
+        return this.getModel(scope)?.configurations ?? [];
     }
 
     getTask(name: string, scope: TaskConfigurationScope): TaskCustomization | TaskConfiguration | undefined {
-        const taskPrefModel = this.getModel(scope);
-        if (taskPrefModel) {
-            for (const configuration of taskPrefModel.configurations) {
-                if (configuration.name === name) {
-                    return configuration;
-                }
-            }
-        }
-        return this.userModel.configurations.find(configuration => configuration.name === 'name');
+        return this.getTasks(scope).find((configuration: TaskCustomization | TaskConfiguration) => configuration.name === name);
     }
 
     async openConfiguration(scope: TaskConfigurationScope): Promise<void> {
         const taskPrefModel = this.getModel(scope);
-        if (taskPrefModel) {
-            await this.doOpen(taskPrefModel);
+        const maybeURI = typeof scope === 'string' ? scope : undefined;
+        const configURI = this.preferenceService.getConfigUri(this.getMatchingPreferenceScope(scope), maybeURI, 'tasks');
+        if (taskPrefModel && configURI) {
+            await this.doOpen(taskPrefModel, configURI);
         }
     }
 
@@ -156,66 +171,77 @@ export class TaskConfigurationManager {
         return false;
     }
 
-    private getModel(scope: TaskConfigurationScope): TaskConfigurationModel | undefined {
-        if (!scope) {
-            return undefined;
-        }
-        for (const model of this.models.values()) {
-            if (model.scope === scope) {
-                return model;
-            }
-        }
-        if (scope === TaskScope.Global) {
-            return this.userModel;
-        }
+    protected getModel(scope: TaskConfigurationScope): TaskConfigurationModel | undefined {
+        return this.models.get(scope);
     }
 
-    protected async doOpen(model: TaskConfigurationModel): Promise<EditorWidget | undefined> {
-        let uri = model.uri;
-        if (!uri) {
-            uri = await this.doCreate(model);
+    protected async doOpen(model: TaskConfigurationModel, configURI: URI): Promise<EditorWidget | undefined> {
+        if (!model.uri) {
+            // The file has not yet been created.
+            await this.doCreate(model, configURI);
         }
-        if (uri) {
-            return this.editorManager.open(uri, {
-                mode: 'activate'
-            });
-        }
+        return this.editorManager.open(configURI, {
+            mode: 'activate'
+        });
     }
 
-    protected async doCreate(model: TaskConfigurationModel): Promise<URI | undefined> {
+    protected async doCreate(model: TaskConfigurationModel, configURI: URI): Promise<void> {
         const content = await this.getInitialConfigurationContent();
         if (content) {
-            await this.folderPreferences.setPreference('tasks', {}, model.getWorkspaceFolder()); // create dummy tasks.json in the correct place
-            const { configUri } = this.folderPreferences.resolve('tasks', model.getWorkspaceFolder()); // get uri to write content to it
-
-            let uri: URI;
-            if (configUri && configUri.path.base === 'tasks.json') {
-                uri = configUri;
-            } else { // fallback
-                uri = new URI(model.getWorkspaceFolder()).resolve(`${this.preferenceConfigurations.getPaths()[0]}/tasks.json`);
-            }
-
-            const fileStat = await this.filesystem.getFileStat(uri.toString());
-            if (!fileStat) {
-                throw new Error(`file not found: ${uri.toString()}`);
-            }
-            try {
-                this.filesystem.setContent(fileStat, content);
-            } catch (e) {
-                if (!FileSystemError.FileExists.is(e)) {
-                    throw e;
+            // All scopes but workspace.
+            if (this.preferenceConfigurations.getName(configURI) === 'tasks') {
+                await this.fileService.write(configURI, content);
+            } else {
+                let taskContent: object;
+                try {
+                    taskContent = jsoncparser.parse(content);
+                } catch {
+                    taskContent = this.taskSchemaProvider.getTaskSchema().default ?? {};
                 }
+                await model.preferences.setPreference('tasks', taskContent);
             }
-            return uri;
+        }
+    }
+
+    protected getMatchingPreferenceScope(scope: TaskConfigurationScope): PreferenceScope {
+        switch (scope) {
+            case TaskScope.Global:
+                return PreferenceScope.User;
+            case TaskScope.Workspace:
+                return PreferenceScope.Workspace;
+            default:
+                return PreferenceScope.Folder;
         }
     }
 
     protected async getInitialConfigurationContent(): Promise<string | undefined> {
-        const selected = await this.quickPick.show(this.taskTemplateSelector.selectTemplates(), {
+        const selected = await this.quickPickService.show(this.taskTemplateSelector.selectTemplates(), {
             placeholder: 'Select a Task Template'
         });
         if (selected) {
-            return selected.content;
+            return selected.value?.content;
+        }
+    }
+
+    protected readonly toDisposeOnDelegateChange = new DisposableCollection();
+    protected updateWorkspaceModel(): void {
+        const isFolderWorkspace = this.workspaceService.opened && !this.workspaceService.saved;
+        const newDelegate = isFolderWorkspace ? this.folderPreferences : this.workspacePreferences;
+        const effectiveScope = isFolderWorkspace ? this.workspaceService.tryGetRoots()[0]?.resource.toString() : TaskScope.Workspace;
+        if (newDelegate !== this.workspaceDelegate) {
+            this.workspaceDelegate = newDelegate;
+            this.toDisposeOnDelegateChange.dispose();
+
+            const workspaceModel = new TaskConfigurationModel(effectiveScope, newDelegate);
+            this.toDisposeOnDelegateChange.push(workspaceModel);
+            // If the delegate is the folder preference provider, its events will be relayed via the folder scope models.
+            if (newDelegate === this.workspacePreferences) {
+                this.toDisposeOnDelegateChange.push(workspaceModel.onDidChange(() => {
+                    this.onDidChangeTaskConfigEmitter.fire({ scope: TaskScope.Workspace, type: FileChangeType.UPDATED });
+                }));
+            }
+            this.models.set(TaskScope.Workspace, workspaceModel);
+            this.onDidChangeTaskConfigEmitter.fire({ scope: effectiveScope, type: FileChangeType.UPDATED });
         }
     }
 }

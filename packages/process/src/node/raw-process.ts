@@ -1,20 +1,20 @@
-/********************************************************************************
- * Copyright (C) 2017 Ericsson and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 Ericsson and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { injectable, inject, named } from 'inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { ProcessManager } from './process-manager';
 import { ILogger } from '@theia/core/lib/common';
 import { Process, ProcessType, ProcessOptions, ForkOptions, ProcessErrorEvent } from './process';
@@ -56,21 +56,6 @@ export interface RawProcessFactory {
 
 @injectable()
 export class RawProcess extends Process {
-
-    /**
-     * @deprecated use `inputStream` instead.
-     */
-    get input(): stream.Writable { return this.inputStream; }
-
-    /**
-     * @deprecated use `outputStream` instead.
-     */
-    get output(): stream.Readable { return this.outputStream; }
-
-    /**
-     * @deprecated use `errorStream` instead.
-     */
-    get errorOutput(): stream.Readable { return this.errorStream; }
 
     /**
      * If the process fails to launch, it will be undefined.
@@ -128,6 +113,7 @@ export class RawProcess extends Process {
                     typeof exitCode === 'number' ? exitCode : undefined,
                     typeof signal === 'string' ? signal : undefined,
                 );
+                this.processManager.unregister(this);
             });
 
             this.process.on('close', (exitCode, signal) => {
@@ -155,7 +141,7 @@ export class RawProcess extends Process {
     }
 
     get pid(): number {
-        if (!this.process) {
+        if (!this.process || !this.process.pid) {
             throw new Error('process did not start correctly');
         }
         return this.process.pid;
@@ -163,7 +149,7 @@ export class RawProcess extends Process {
 
     kill(signal?: string): void {
         if (this.process && this.killed === false) {
-            this.process.kill(signal);
+            this.process.kill(signal as NodeJS.Signals);
         }
     }
 

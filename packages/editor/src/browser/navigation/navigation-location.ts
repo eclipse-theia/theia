@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import URI from '@theia/core/lib/common/uri';
 import { Position, Range, TextDocumentContentChangeDelta } from '../editor';
@@ -190,14 +190,62 @@ export namespace NavigationLocation {
         return JSON.stringify(toObject(location));
     }
 
-    function toUri(arg: URI | { uri: URI } | string): URI {
-        if (arg instanceof URI) {
-            return arg;
+}
+
+function toUri(arg: URI | { uri: URI } | string): URI {
+    if (arg instanceof URI) {
+        return arg;
+    }
+    if (typeof arg === 'string') {
+        return new URI(arg);
+    }
+    return arg.uri;
+}
+
+/**
+ * Representation of a closed editor.
+ */
+export interface RecentlyClosedEditor {
+
+    /**
+     * The uri of the closed editor.
+     */
+    readonly uri: URI,
+
+    /**
+     * The serializable view state of the closed editor.
+     */
+    readonly viewState: object
+
+}
+
+export namespace RecentlyClosedEditor {
+
+    /**
+     * Transform a RecentlyClosedEditor into an object for storing.
+     *
+     * @param closedEditor the editor needs to be transformed.
+     */
+    export function toObject(closedEditor: RecentlyClosedEditor): object {
+        const { uri, viewState } = closedEditor;
+        return {
+            uri: uri.toString(),
+            viewState: viewState
+        };
+    }
+
+    /**
+     * Transform the given object to a RecentlyClosedEditor object if possible.
+     */
+    export function fromObject(object: Partial<RecentlyClosedEditor>): RecentlyClosedEditor | undefined {
+        const { uri, viewState } = object;
+        if (uri !== undefined && viewState !== undefined) {
+            return {
+                uri: toUri(uri),
+                viewState: viewState
+            };
         }
-        if (typeof arg === 'string') {
-            return new URI(arg);
-        }
-        return arg.uri;
+        return undefined;
     }
 
 }

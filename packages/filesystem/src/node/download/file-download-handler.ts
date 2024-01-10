@@ -1,31 +1,30 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import * as os from 'os';
-import * as fs from 'fs-extra';
+import * as fs from '@theia/core/shared/fs-extra';
 import * as path from 'path';
 import { v4 } from 'uuid';
-import { Request, Response } from 'express';
-import { inject, injectable } from 'inversify';
+import { Request, Response } from '@theia/core/shared/express';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { OK, BAD_REQUEST, METHOD_NOT_ALLOWED, NOT_FOUND, INTERNAL_SERVER_ERROR, REQUESTED_RANGE_NOT_SATISFIABLE, PARTIAL_CONTENT } from 'http-status-codes';
 import URI from '@theia/core/lib/common/uri';
 import { isEmpty } from '@theia/core/lib/common/objects';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { FileUri } from '@theia/core/lib/node/file-uri';
-import { FileSystem } from '../../common/filesystem';
 import { DirectoryArchiver } from './directory-archiver';
 import { FileDownloadData } from '../../common/download/file-download-data';
 import { FileDownloadCache, DownloadStorageItem } from './file-download-cache';
@@ -42,9 +41,6 @@ export abstract class FileDownloadHandler {
 
     @inject(ILogger)
     protected readonly logger: ILogger;
-
-    @inject(FileSystem)
-    protected readonly fileSystem: FileSystem;
 
     @inject(DirectoryArchiver)
     protected readonly directoryArchiver: DirectoryArchiver;
@@ -215,16 +211,19 @@ export class SingleFileDownloadHandler extends FileDownloadHandler {
             return;
         }
         const uri = new URI(query.uri).toString(true);
-        const stat = await this.fileSystem.getFileStat(uri);
-        if (stat === undefined) {
+        const filePath = FileUri.fsPath(uri);
+
+        let stat: fs.Stats;
+        try {
+            stat = await fs.stat(filePath);
+        } catch {
             this.handleError(response, `The file does not exist. URI: ${uri}.`, NOT_FOUND);
             return;
         }
         try {
             const downloadId = v4();
-            const filePath = FileUri.fsPath(uri);
             const options: PrepareDownloadOptions = { filePath, downloadId, remove: false };
-            if (!stat.isDirectory) {
+            if (!stat.isDirectory()) {
                 await this.prepareDownload(request, response, options);
             } else {
                 const outputRootPath = await this.createTempDir(downloadId);
@@ -264,8 +263,9 @@ export class MultiFileDownloadHandler extends FileDownloadHandler {
             return;
         }
         for (const uri of body.uris) {
-            const stat = await this.fileSystem.getFileStat(uri);
-            if (stat === undefined) {
+            try {
+                await fs.access(FileUri.fsPath(uri));
+            } catch {
                 this.handleError(response, `The file does not exist. URI: ${uri}.`, NOT_FOUND);
                 return;
             }

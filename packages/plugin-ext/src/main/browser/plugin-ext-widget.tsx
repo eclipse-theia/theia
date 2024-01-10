@@ -1,28 +1,32 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import * as React from 'react';
-import { injectable, inject, postConstruct } from 'inversify';
-import { Message } from '@phosphor/messaging';
+import * as React from '@theia/core/shared/react';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
+import { Message } from '@theia/core/shared/@phosphor/messaging';
 import { PluginMetadata } from '../../common/plugin-protocol';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
 import { HostedPluginSupport, PluginProgressLocation } from '../../hosted/browser/hosted-plugin';
 import { ProgressBarFactory } from '@theia/core/lib/browser/progress-bar-factory';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
+import { codicon } from '@theia/core/lib/browser';
+import { nls } from '@theia/core/lib/common';
+
+export const PLUGINS_LABEL = nls.localize('theia/plugin-ext/plugins', 'Plugins');
 
 @injectable()
 export class PluginWidget extends ReactWidget {
@@ -36,9 +40,9 @@ export class PluginWidget extends ReactWidget {
     constructor() {
         super();
         this.id = 'plugins';
-        this.title.label = 'Plugins';
-        this.title.caption = 'Plugins';
-        this.title.iconClass = 'fa plugins-tab-icon';
+        this.title.label = PLUGINS_LABEL;
+        this.title.caption = PLUGINS_LABEL;
+        this.title.iconClass = codicon('diff-added');
         this.title.closable = true;
         this.node.tabIndex = 0;
         this.addClass('theia-plugins');
@@ -51,7 +55,7 @@ export class PluginWidget extends ReactWidget {
         this.toDispose.push(this.pluginService.onDidChangePlugins(() => this.update()));
     }
 
-    protected onActivateRequest(msg: Message): void {
+    protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         this.node.focus();
     }
@@ -86,7 +90,7 @@ export class PluginWidget extends ReactWidget {
         return <div key={plugin.model.name} className={this.createPluginClassName(plugin)}>
             <div className='column flexcontainer pluginInformationContainer'>
                 <div className='row flexcontainer'>
-                    <div className='fa fa-puzzle-piece fa-2x fa-fw'></div>
+                    <div className={codicon('list-selection')}></div>
                     <div title={plugin.model.name} className='pluginName noWrapInfo'>{plugin.model.name}</div>
                 </div>
                 <div className='row flexcontainer'>

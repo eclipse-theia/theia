@@ -11,98 +11,98 @@
  * with the GNU Classpath Exception which is available at
  * https://www.gnu.org/software/classpath/license.html.
  *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
-.theia-git-diff-icon {
-    -webkit-mask: url('git-diff.svg');
-    mask: url('git-diff.svg');
+.theia-git.git-diff-container {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  height: 100%;
 }
 
-.theia-git .git-diff-container {
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    height: 100%;
+.theia-git.git-diff-container .noWrapInfo {
+  width: 100%;
+}
+
+.theia-git .listContainer {
+  flex: 1;
+  position: relative;
+}
+
+.theia-git .listContainer .commitList {
+  height: 100%;
+}
+
+.theia-git .subject {
+  font-size: var(--theia-ui-font-size2);
+  font-weight: bold;
 }
 
 .theia-git .revision .row-title {
-    width: 35px;
-    display: inline-block;
+  width: 35px;
+  display: inline-block;
 }
 
 .theia-git .diff-header {
-    flex-shrink: 0;
+  flex-shrink: 0;
 }
 
 .theia-git .header-row {
-    display: flex;
-    flex-direction: row;
+  display: flex;
+  flex-direction: row;
 }
 
 .theia-git .header-row.diff-header,
 .theia-git .header-row.diff-nav {
-    margin-bottom: 10px;
+  margin-bottom: 10px;
 }
 
 .theia-git .header-value {
-    margin: 9px 0px 5px 5px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  margin: 9px 0px 5px 5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .theia-git .diff-header .header-value {
-    align-self: center;
-    margin: 0px;
+  align-self: center;
+  margin: 0px;
 }
 
 .theia-git .diff-header .theia-header {
-    align-self: center;
-    padding-right: 5px;
+  align-self: center;
+  padding-right: 5px;
 }
 
-.theia-git .lrBtns {
-    display:flex;
-    align-items: center;
-    margin-right: 2px;
+.theia-git .diff-header .subject {
+  font-size: var(--theia-ui-font-size2);
+  font-weight: bold;
 }
 
-.theia-git .lrBtns span {
-    display: inline-block;
-    margin-left: 10px;
-    cursor: pointer;
+.theia-git .commit-info {
+  padding-left: 10px;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
-.theia-git .listContainer.filesChanged {
-    flex: 1;
-    overflow: auto;
-}
-
-.theia-git .scm-diff-container .commit-info {
-    padding-left: 10px;
-    box-sizing: border-box;
-    overflow: hidden;
-}
-
-.theia-git .scm-diff-container .commit-info-row {
-    align-items: center;
-    margin-top: 10px;
+.theia-git .commit-info-row {
+  align-items: center;
+  margin-top: 10px;
 }
 
 .theia-git .commit-info .header-row {
-    margin: 4px 0;
+  margin: 4px 0;
 }
 
 .theia-git .commit-info .header-row .theia-header {
-    margin: 1px 0;
+  margin: 1px 0;
 }
 
 .theia-git .commit-info .header-row .header-value {
-    margin: 0 0 0 5px;
+  margin: 0 0 0 5px;
 }
 
 .theia-git .commit-info-row .image-container {
-    display: flex;
+  display: flex;
 }
-

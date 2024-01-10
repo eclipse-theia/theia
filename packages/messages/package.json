@@ -1,11 +1,9 @@
 {
   "name": "@theia/messages",
-  "version": "1.2.0",
+  "version": "1.45.0",
   "description": "Theia - Messages Extension",
   "dependencies": {
-    "@theia/core": "^1.2.0",
-    "lodash.throttle": "^4.1.1",
-    "markdown-it": "^8.4.0",
+    "@theia/core": "1.45.0",
     "react-perfect-scrollbar": "^1.5.3",
     "ts-md5": "^1.2.2"
   },
@@ -20,7 +18,7 @@
   "keywords": [
     "theia-extension"
   ],
-  "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
+  "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/eclipse-theia/theia.git"
@@ -34,14 +32,15 @@
     "src"
   ],
   "scripts": {
-    "lint": "theiaext lint",
     "build": "theiaext build",
-    "watch": "theiaext watch",
     "clean": "theiaext clean",
-    "test": "theiaext test"
+    "compile": "theiaext compile",
+    "lint": "theiaext lint",
+    "test": "theiaext test",
+    "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^1.2.0"
+    "@theia/ext-scripts": "1.45.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

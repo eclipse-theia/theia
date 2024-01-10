@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2019 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2019 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { Widget, Title } from '@phosphor/widgets';
 import { TabBarToolbar, TabBarToolbarRegistry, TabBarToolbarFactory } from './tab-bar-toolbar';
@@ -40,14 +40,14 @@ export class SidePanelToolbar extends BaseWidget {
         this.tabBarToolbarRegistry.onDidChange(() => this.update());
     }
 
-    protected onBeforeAttach(msg: Message): void {
+    protected override onBeforeAttach(msg: Message): void {
         super.onBeforeAttach(msg);
         if (this.titleContainer) {
             this.addEventListener(this.titleContainer, 'contextmenu', e => this.onContextMenuEmitter.fire(e));
         }
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         if (this.toolbar) {
             if (this.toolbar.isAttached) {
                 Widget.detach(this.toolbar);
@@ -57,7 +57,7 @@ export class SidePanelToolbar extends BaseWidget {
         super.onAfterAttach(msg);
     }
 
-    protected onBeforeDetach(msg: Message): void {
+    protected override onBeforeDetach(msg: Message): void {
         if (this.titleContainer) {
             this.node.removeChild(this.titleContainer);
         }
@@ -67,7 +67,7 @@ export class SidePanelToolbar extends BaseWidget {
         super.onBeforeDetach(msg);
     }
 
-    protected onUpdateRequest(msg: Message): void {
+    protected override onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
         this.updateToolbar();
     }
@@ -76,10 +76,8 @@ export class SidePanelToolbar extends BaseWidget {
         if (!this.toolbar) {
             return;
         }
-        const current = this._toolbarTitle;
-        const widget = current && current.owner || undefined;
-        const items = widget ? this.tabBarToolbarRegistry.visibleItems(widget) : [];
-        this.toolbar.updateItems(items, widget);
+        const widget = this._toolbarTitle?.owner ?? undefined;
+        this.toolbar.updateTarget(widget);
     }
 
     protected init(): void {
@@ -103,7 +101,6 @@ export class SidePanelToolbar extends BaseWidget {
         }
     }
 
-    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
     showMoreContextMenu(anchor: Anchor): ContextMenuAccess {
         if (this.toolbar) {
             return this.toolbar.renderMoreContextMenu(anchor);

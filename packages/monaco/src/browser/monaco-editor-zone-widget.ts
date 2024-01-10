@@ -1,30 +1,34 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation and others. All rights reserved.
  *  Licensed under the MIT License. See https://github.com/Microsoft/vscode/blob/master/LICENSE.txt for license information.
  *--------------------------------------------------------------------------------------------*/
 
 import { Disposable, DisposableCollection, Event, Emitter } from '@theia/core';
+import { TrackedRangeStickiness } from '@theia/editor/lib/browser';
+import * as monaco from '@theia/monaco-editor-core';
 
 export interface MonacoEditorViewZone extends monaco.editor.IViewZone {
     id: string;
 }
 
 export class MonacoEditorZoneWidget implements Disposable {
+
+    private arrow: Arrow | undefined;
 
     readonly zoneNode = document.createElement('div');
     readonly containerNode = document.createElement('div');
@@ -41,9 +45,12 @@ export class MonacoEditorZoneWidget implements Disposable {
         this.toHide
     );
 
+    editor: monaco.editor.IStandaloneCodeEditor;
+
     constructor(
-        readonly editor: monaco.editor.IStandaloneCodeEditor
+        editorInstance: monaco.editor.IStandaloneCodeEditor, readonly showArrow: boolean = true
     ) {
+        this.editor = editorInstance;
         this.zoneNode.classList.add('zone-widget');
         this.containerNode.classList.add('zone-widget-container');
         this.zoneNode.appendChild(this.containerNode);
@@ -53,6 +60,7 @@ export class MonacoEditorZoneWidget implements Disposable {
 
     dispose(): void {
         this.toDispose.dispose();
+        this.hide();
     }
 
     protected _options: MonacoEditorZoneWidget.Options | undefined;
@@ -67,10 +75,10 @@ export class MonacoEditorZoneWidget implements Disposable {
     show(options: MonacoEditorZoneWidget.Options): void {
         let { afterLineNumber, afterColumn, heightInLines } = this._options = { showFrame: true, ...options };
         const lineHeight = this.editor.getOption(monaco.editor.EditorOption.lineHeight);
-        const maxHeightInLines = (this.editor.getLayoutInfo().height / lineHeight) * .8;
-        if (heightInLines >= maxHeightInLines) {
-            heightInLines = maxHeightInLines;
-        }
+        // adjust heightInLines to viewport
+        const maxHeightInLines = Math.max(12, (this.editor.getLayoutInfo().height / lineHeight) * 0.8);
+        heightInLines = Math.min(heightInLines, maxHeightInLines);
+        let arrowHeight = 0;
         this.toHide.dispose();
         this.editor.changeViewZones(accessor => {
             this.zoneNode.style.top = '-1000px';
@@ -92,6 +100,14 @@ export class MonacoEditorZoneWidget implements Disposable {
                 this.editor.changeViewZones(a => a.removeZone(id));
                 this.viewZone = undefined;
             }));
+            if (this.showArrow) {
+                this.arrow = new Arrow(this.editor);
+                arrowHeight = Math.round(lineHeight / 3);
+                this.arrow.height = arrowHeight;
+                this.arrow.show({ lineNumber: options.afterLineNumber, column: 0 });
+
+                this.toHide.push(this.arrow);
+            }
             const widget: monaco.editor.IOverlayWidget = {
                 getId: () => 'editor-zone-widget-' + id,
                 getDomNode: () => this.zoneNode,
@@ -102,7 +118,6 @@ export class MonacoEditorZoneWidget implements Disposable {
             this.toHide.push(Disposable.create(() => this.editor.removeOverlayWidget(widget)));
         });
 
-        this.containerNode.style.top = 0 + 'px';
         this.containerNode.style.overflow = 'hidden';
         this.updateContainerHeight(heightInLines * lineHeight);
 
@@ -122,7 +137,7 @@ export class MonacoEditorZoneWidget implements Disposable {
     }
 
     protected updateTop(top: number): void {
-        this.zoneNode.style.top = top + 'px';
+        this.zoneNode.style.top = top + (this.showArrow ? 6 : 0) + 'px';
     }
     protected updateHeight(zoneHeight: number): void {
         this.zoneNode.style.height = zoneHeight + 'px';
@@ -155,17 +170,75 @@ export class MonacoEditorZoneWidget implements Disposable {
         this.zoneNode.style.left = this.computeLeft(info) + 'px';
     }
     protected computeWidth(info: monaco.editor.EditorLayoutInfo = this.editor.getLayoutInfo()): number {
-        return info.width - info.minimapWidth - info.verticalScrollbarWidth;
+        return info.width - info.minimap.minimapWidth - info.verticalScrollbarWidth;
     }
     protected computeLeft(info: monaco.editor.EditorLayoutInfo = this.editor.getLayoutInfo()): number {
         // If minimap is to the left, we move beyond it
-        if (info.minimapWidth > 0 && info.minimapLeft === 0) {
-            return info.minimapWidth;
+        if (info.minimap.minimapWidth > 0 && info.minimap.minimapLeft === 0) {
+            return info.minimap.minimapWidth;
         }
         return 0;
     }
 
 }
+
+class IdGenerator {
+    private lastId: number;
+    constructor(private prefix: string) {
+        this.lastId = 0;
+    }
+
+    nextId(): string {
+        return this.prefix + (++this.lastId);
+    }
+}
+
+class Arrow implements Disposable {
+
+    private readonly idGenerator = new IdGenerator('.arrow-decoration-');
+
+    private readonly ruleName = this.idGenerator.nextId();
+    private decorations: string[] = [];
+    private _height: number = -1;
+
+    constructor(
+        private readonly _editor: monaco.editor.ICodeEditor
+    ) { }
+
+    dispose(): void {
+        this.hide();
+    }
+
+    set height(value: number) {
+        if (this._height !== value) {
+            this._height = value;
+            this._updateStyle();
+        }
+    }
+
+    private _updateStyle(): void {
+        const style = document.createElement('style');
+        style.type = 'text/css';
+        style.media = 'screen';
+        document.getElementsByTagName('head')[0].appendChild(style);
+        const selector = `.monaco-editor ${this.ruleName}`;
+        const cssText = `border-style: solid; border-color: transparent transparent var(--theia-peekView-border); border-width:
+            ${this._height}px; bottom: -${this._height}px; margin-left: -${this._height}px; `;
+        (<CSSStyleSheet>style.sheet).insertRule(selector + '{' + cssText + '}', 0);
+    }
+
+    show(where: monaco.IPosition): void {
+        this.decorations = this._editor.deltaDecorations(
+            this.decorations,
+            [{ range: monaco.Range.fromPositions(where), options: { className: this.ruleName, stickiness: TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges } }]
+        );
+    }
+
+    hide(): void {
+        this._editor.deltaDecorations(this.decorations, []);
+    }
+}
+
 export namespace MonacoEditorZoneWidget {
     export interface Options {
         afterLineNumber: number,

@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import {
     PreferenceService,
@@ -20,7 +20,7 @@ import {
     PreferenceScope,
     PreferenceProviderProvider
 } from '@theia/core/lib/browser/preferences';
-import { interfaces } from 'inversify';
+import { interfaces } from '@theia/core/shared/inversify';
 import {
     MAIN_RPC_CONTEXT,
     PreferenceRegistryExt,
@@ -31,11 +31,11 @@ import {
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { ConfigurationTarget } from '../../plugin/types-impl';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { FileStat } from '@theia/filesystem/lib/common/filesystem';
+import { FileStat } from '@theia/filesystem/lib/common/files';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 
 export function getPreferences(preferenceProviderProvider: PreferenceProviderProvider, rootFolders: FileStat[]): PreferenceData {
-    const folders = rootFolders.map(root => root.uri.toString());
+    const folders = rootFolders.map(root => root.resource.toString());
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return PreferenceScope.getScopes().reduce((result: { [key: number]: any }, scope: PreferenceScope) => {
         result[scope] = {};
@@ -70,11 +70,10 @@ export class PreferenceRegistryMainImpl implements PreferenceRegistryMain, Dispo
 
             const roots = workspaceService.tryGetRoots();
             const data = getPreferences(preferenceProviderProvider, roots);
-            const eventData: PreferenceChangeExt[] = [];
-            for (const preferenceName of Object.keys(changes)) {
-                const { newValue } = changes[preferenceName];
-                eventData.push({ preferenceName, newValue });
-            }
+            const eventData = Object.values(changes).map<PreferenceChangeExt>(({ scope, newValue, domain, preferenceName }) => {
+                const extScope = scope === PreferenceScope.User ? undefined : domain?.[0];
+                return { preferenceName, newValue, scope: extScope };
+            });
             this.proxy.$acceptConfigurationChanged(data, eventData);
         }));
     }
@@ -84,17 +83,19 @@ export class PreferenceRegistryMainImpl implements PreferenceRegistryMain, Dispo
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async $updateConfigurationOption(target: boolean | ConfigurationTarget | undefined, key: string, value: any, resource?: string): Promise<void> {
-        const scope = this.parseConfigurationTarget(target);
-        await this.preferenceService.set(key, value, scope, resource);
+    async $updateConfigurationOption(target: boolean | ConfigurationTarget | undefined, key: string, value: any, resource?: string, withLanguageOverride?: boolean): Promise<void> {
+        const scope = this.parseConfigurationTarget(target, resource);
+        const effectiveKey = this.getEffectiveKey(key, scope, withLanguageOverride, resource);
+        await this.preferenceService.set(effectiveKey, value, scope, resource);
     }
 
-    async $removeConfigurationOption(target: boolean | ConfigurationTarget | undefined, key: string, resource?: string): Promise<void> {
-        const scope = this.parseConfigurationTarget(target);
-        await this.preferenceService.set(key, undefined, scope, resource);
+    async $removeConfigurationOption(target: boolean | ConfigurationTarget | undefined, key: string, resource?: string, withLanguageOverride?: boolean): Promise<void> {
+        const scope = this.parseConfigurationTarget(target, resource);
+        const effectiveKey = this.getEffectiveKey(key, scope, withLanguageOverride, resource);
+        await this.preferenceService.set(effectiveKey, undefined, scope, resource);
     }
 
-    private parseConfigurationTarget(target?: boolean | ConfigurationTarget): PreferenceScope | undefined {
+    private parseConfigurationTarget(target?: boolean | ConfigurationTarget, resource?: string): PreferenceScope {
         if (typeof target === 'boolean') {
             return target ? PreferenceScope.User : PreferenceScope.Workspace;
         }
@@ -106,9 +107,17 @@ export class PreferenceRegistryMainImpl implements PreferenceRegistryMain, Dispo
             case ConfigurationTarget.WorkspaceFolder:
                 return PreferenceScope.Folder;
             default:
-                // PreferenceService knows how to deal with undefined in VS Code compatible way
-                return undefined;
+                return resource ? PreferenceScope.Folder : PreferenceScope.Workspace;
         }
+    }
+
+    // If the caller does not set `withLanguageOverride = true`, we have to check whether the setting exists with that override already.
+    protected getEffectiveKey(key: string, scope: PreferenceScope, withLanguageOverride?: boolean, resource?: string): string {
+        if (withLanguageOverride) { return key; }
+        const overridden = this.preferenceService.overriddenPreferenceName(key);
+        if (!overridden) { return key; }
+        const value = this.preferenceService.inspectInScope(key, scope, resource, withLanguageOverride);
+        return value === undefined ? overridden.preferenceName : key;
     }
 
 }

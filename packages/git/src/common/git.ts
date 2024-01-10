@@ -1,21 +1,21 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { ChildProcess } from 'child_process';
-import { Disposable } from '@theia/core';
+import { Disposable, isObject } from '@theia/core';
 import {
     Repository, WorkingDirectoryStatus, Branch, GitResult, GitError, GitFileStatus,
     GitFileChange, CommitWithChanges, GitFileBlame, Remote as RemoteModel, StashEntry
@@ -846,56 +846,50 @@ export interface Git extends Disposable {
 }
 
 /**
- * Contains a set of utility functions for [Git](#Git).
+ * Contains a set of utility functions for {@link Git}.
  */
 export namespace GitUtils {
 
     /**
      * `true` if the argument is an option for renaming an existing branch in the repository.
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function isBranchRename(arg: any | undefined): arg is Git.Options.BranchCommand.Rename {
-        return !!arg && ('newName' in arg);
+    export function isBranchRename(arg: unknown): arg is Git.Options.BranchCommand.Rename {
+        return isObject(arg) && 'newName' in arg;
     }
 
     /**
      * `true` if the argument is an option for deleting an existing branch in the repository.
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function isBranchDelete(arg: any | undefined): arg is Git.Options.BranchCommand.Delete {
-        return !!arg && ('toDelete' in arg);
+    export function isBranchDelete(arg: unknown): arg is Git.Options.BranchCommand.Delete {
+        return isObject(arg) && 'toDelete' in arg;
     }
 
     /**
      * `true` if the argument is an option for creating a new branch in the repository.
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function isBranchCreate(arg: any | undefined): arg is Git.Options.BranchCommand.Create {
-        return !!arg && ('toCreate' in arg);
+    export function isBranchCreate(arg: unknown): arg is Git.Options.BranchCommand.Create {
+        return isObject(arg) && 'toCreate' in arg;
     }
 
     /**
      * `true` if the argument is an option for listing the branches in a repository.
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function isBranchList(arg: any | undefined): arg is Git.Options.BranchCommand.List {
-        return !!arg && ('type' in arg);
+    export function isBranchList(arg: unknown): arg is Git.Options.BranchCommand.List {
+        return isObject(arg) && 'type' in arg;
     }
 
     /**
      * `true` if the argument is an option for checking out a new local branch.
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function isBranchCheckout(arg: any | undefined): arg is Git.Options.Checkout.CheckoutBranch {
-        return !!arg && ('branch' in arg);
+    export function isBranchCheckout(arg: unknown): arg is Git.Options.Checkout.CheckoutBranch {
+        return isObject(arg) && 'branch' in arg;
     }
 
     /**
      * `true` if the argument is an option for checking out a working tree file.
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function isWorkingTreeFileCheckout(arg: any | undefined): arg is Git.Options.Checkout.WorkingTreeFile {
-        return !!arg && ('paths' in arg);
+    export function isWorkingTreeFileCheckout(arg: unknown): arg is Git.Options.Checkout.WorkingTreeFile {
+        return isObject(arg) && 'paths' in arg;
     }
 
     /**
@@ -907,13 +901,11 @@ export namespace GitUtils {
      * `true` if the argument is an error indicating the absence of a local Git repository.
      * Otherwise, `false`.
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function isRepositoryDoesNotExistError(error: any | undefined): boolean {
+    export function isRepositoryDoesNotExistError(error: unknown): boolean {
         // TODO this is odd here.This piece of code is already implementation specific, so this should go to the Git API.
         // But how can we ensure that the `any` type error is serializable?
         if (error instanceof Error && ('code' in error)) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            return (<any>error).code === RepositoryDoesNotExistErrorCode;
+            return (error as { code: string }).code === RepositoryDoesNotExistErrorCode;
         }
         return false;
     }

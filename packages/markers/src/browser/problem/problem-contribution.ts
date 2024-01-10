@@ -1,22 +1,22 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import debounce = require('lodash.debounce');
-import { injectable, inject } from 'inversify';
-import { FrontendApplication, FrontendApplicationContribution, CompositeTreeNode, SelectableTreeNode, Widget } from '@theia/core/lib/browser';
+import debounce = require('@theia/core/shared/lodash.debounce');
+import { injectable, inject } from '@theia/core/shared/inversify';
+import { FrontendApplication, FrontendApplicationContribution, CompositeTreeNode, SelectableTreeNode, Widget, codicon } from '@theia/core/lib/browser';
 import { StatusBar, StatusBarAlignment } from '@theia/core/lib/browser/status-bar/status-bar';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import { PROBLEM_KIND, ProblemMarker } from '../../common/problem-marker';
@@ -27,6 +27,7 @@ import { Command, CommandRegistry } from '@theia/core/lib/common/command';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { SelectionService } from '@theia/core/lib/common/selection-service';
 import { ProblemSelection } from './problem-selection';
+import { nls } from '@theia/core/lib/common/nls';
 
 export const PROBLEMS_CONTEXT_MENU: MenuPath = [PROBLEM_KIND];
 
@@ -41,7 +42,7 @@ export namespace ProblemsCommands {
     };
     export const COLLAPSE_ALL_TOOLBAR: Command = {
         id: 'problems.collapse.all.toolbar',
-        iconClass: 'theia-collapse-all-icon'
+        iconClass: codicon('collapse-all')
     };
     export const COPY: Command = {
         id: 'problems.copy'
@@ -49,6 +50,12 @@ export namespace ProblemsCommands {
     export const COPY_MESSAGE: Command = {
         id: 'problems.copy.message',
     };
+    export const CLEAR_ALL = Command.toLocalizedCommand({
+        id: 'problems.clear.all',
+        category: 'Problems',
+        label: 'Clear All',
+        iconClass: codicon('clear-all')
+    }, 'theia/markers/clearAll', nls.getDefaultKey('Problems'));
 }
 
 @injectable()
@@ -61,7 +68,7 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
     constructor() {
         super({
             widgetId: PROBLEMS_WIDGET_ID,
-            widgetName: 'Problems',
+            widgetName: nls.localizeByDefault('Problems'),
             defaultWidgetOptions: {
                 area: 'bottom'
             },
@@ -83,8 +90,8 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
     protected setStatusBarElement(problemStat: ProblemStat): void {
         this.statusBar.setElement('problem-marker-status', {
             text: problemStat.infos <= 0
-                ? `$(times-circle) ${problemStat.errors} $(exclamation-triangle) ${problemStat.warnings}`
-                : `$(times-circle) ${problemStat.errors} $(exclamation-triangle) ${problemStat.warnings} $(info-circle) ${problemStat.infos}`,
+                ? `$(codicon-error) ${problemStat.errors} $(codicon-warning) ${problemStat.warnings}`
+                : `$(codicon-error) ${problemStat.errors} $(codicon-warning) ${problemStat.warnings} $(codicon-info) ${problemStat.infos}`,
             alignment: StatusBarAlignment.LEFT,
             priority: 10,
             command: this.toggleCommand ? this.toggleCommand.id : undefined,
@@ -103,23 +110,23 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
      */
     protected getStatusBarTooltip(stat: ProblemStat): string {
         if (stat.errors <= 0 && stat.warnings <= 0 && stat.infos <= 0) {
-            return 'No Problems';
+            return nls.localizeByDefault('No Problems');
         }
         const tooltip: string[] = [];
         if (stat.errors > 0) {
-            tooltip.push(`${stat.errors} Errors`);
+            tooltip.push(nls.localizeByDefault('{0} Errors', stat.errors));
         }
         if (stat.warnings > 0) {
-            tooltip.push(`${stat.warnings} Warnings`);
+            tooltip.push(nls.localizeByDefault('{0} Warnings', stat.warnings));
         }
         if (stat.infos > 0) {
-            tooltip.push(`${stat.infos} Infos`);
+            tooltip.push(nls.localizeByDefault('{0} Infos', stat.infos));
         }
         return tooltip.join(', ');
 
     }
 
-    registerCommands(commands: CommandRegistry): void {
+    override registerCommands(commands: CommandRegistry): void {
         super.registerCommands(commands);
         commands.registerCommand(ProblemsCommands.COLLAPSE_ALL, {
             execute: () => this.collapseAllProblems()
@@ -145,23 +152,28 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
                 execute: selection => this.copyMessage(selection)
             })
         );
+        commands.registerCommand(ProblemsCommands.CLEAR_ALL, {
+            isEnabled: widget => this.withWidget(widget, () => true),
+            isVisible: widget => this.withWidget(widget, () => true),
+            execute: widget => this.withWidget(widget, () => this.problemManager.cleanAllMarkers())
+        });
     }
 
-    registerMenus(menus: MenuModelRegistry): void {
+    override registerMenus(menus: MenuModelRegistry): void {
         super.registerMenus(menus);
         menus.registerMenuAction(ProblemsMenu.CLIPBOARD, {
             commandId: ProblemsCommands.COPY.id,
-            label: 'Copy',
+            label: nls.localizeByDefault('Copy'),
             order: '0'
         });
         menus.registerMenuAction(ProblemsMenu.CLIPBOARD, {
             commandId: ProblemsCommands.COPY_MESSAGE.id,
-            label: 'Copy Message',
+            label: nls.localizeByDefault('Copy Message'),
             order: '1'
         });
         menus.registerMenuAction(ProblemsMenu.PROBLEMS, {
             commandId: ProblemsCommands.COLLAPSE_ALL.id,
-            label: 'Collapse All',
+            label: nls.localizeByDefault('Collapse All'),
             order: '2'
         });
     }
@@ -170,8 +182,14 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
         toolbarRegistry.registerItem({
             id: ProblemsCommands.COLLAPSE_ALL_TOOLBAR.id,
             command: ProblemsCommands.COLLAPSE_ALL_TOOLBAR.id,
-            tooltip: 'Collapse All',
+            tooltip: nls.localizeByDefault('Collapse All'),
             priority: 0,
+        });
+        toolbarRegistry.registerItem({
+            id: ProblemsCommands.CLEAR_ALL.id,
+            command: ProblemsCommands.CLEAR_ALL.id,
+            tooltip: ProblemsCommands.CLEAR_ALL.label,
+            priority: 1,
         });
     }
 
@@ -201,7 +219,7 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
         const marker = selection.marker as ProblemMarker;
         const serializedProblem = JSON.stringify({
             resource: marker.uri,
-            owner: marker.uri,
+            owner: marker.owner,
             code: marker.data.code,
             severity: marker.data.severity,
             message: marker.data.message,

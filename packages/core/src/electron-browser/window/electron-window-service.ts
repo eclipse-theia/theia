@@ -1,39 +1,97 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { injectable } from 'inversify';
-import { ipcRenderer } from 'electron';
-import { NewWindowOptions } from '../../browser/window/window-service';
+import { injectable, inject, postConstruct } from 'inversify';
+import { NewWindowOptions, WindowSearchParams } from '../../common/window';
 import { DefaultWindowService } from '../../browser/window/default-window-service';
+import { ElectronMainWindowService } from '../../electron-common/electron-main-window-service';
+import { ElectronWindowPreferences } from './electron-window-preferences';
+import { ConnectionCloseService } from '../../common/messaging/connection-management';
+import { FrontendIdProvider } from '../../browser/messaging/frontend-id-provider';
 
 @injectable()
 export class ElectronWindowService extends DefaultWindowService {
 
-    openNewWindow(url: string, { external }: NewWindowOptions = {}): undefined {
-        if (external) {
-            ipcRenderer.send('open-external', url);
-        } else {
-            ipcRenderer.send('create-new-window', url);
-        }
+    /**
+     * Lock to prevent multiple parallel executions of the `beforeunload` listener.
+     */
+    protected isUnloading: boolean = false;
+
+    /**
+     * Close the window right away when `true`, else check if we can unload.
+     */
+    protected closeOnUnload: boolean = false;
+
+    @inject(FrontendIdProvider)
+    protected readonly frontendIdProvider: FrontendIdProvider;
+
+    @inject(ElectronMainWindowService)
+    protected readonly delegate: ElectronMainWindowService;
+
+    @inject(ElectronWindowPreferences)
+    protected readonly electronWindowPreferences: ElectronWindowPreferences;
+
+    @inject(ConnectionCloseService)
+    protected readonly connectionCloseService: ConnectionCloseService;
+
+    override openNewWindow(url: string, { external }: NewWindowOptions = {}): undefined {
+        this.delegate.openNewWindow(url, { external });
         return undefined;
     }
 
-    protected preventUnload(event: BeforeUnloadEvent): string | void {
-        // The user will be shown a confirmation dialog by the will-prevent-unload handler in the Electron main script
-        event.returnValue = false;
+    override openNewDefaultWindow(params?: WindowSearchParams): void {
+        this.delegate.openNewDefaultWindow(params);
     }
 
+    @postConstruct()
+    protected init(): void {
+        // Update the default zoom level on startup when the preferences event is fired.
+        this.electronWindowPreferences.onPreferenceChanged(e => {
+            if (e.preferenceName === 'window.zoomLevel') {
+                this.updateWindowZoomLevel();
+            }
+        });
+        window.electronTheiaCore.onAboutToClose(() => {
+            this.connectionCloseService.markForClose(this.frontendIdProvider.getId());
+        });
+    }
+
+    protected override registerUnloadListeners(): void {
+        window.electronTheiaCore.setCloseRequestHandler(reason => this.isSafeToShutDown(reason));
+        window.addEventListener('unload', () => {
+            this.onUnloadEmitter.fire();
+        });
+    }
+
+    /**
+     * Updates the window zoom level based on the preference value.
+     */
+    protected async updateWindowZoomLevel(): Promise<void> {
+        const preferredZoomLevel = this.electronWindowPreferences['window.zoomLevel'];
+        if (await window.electronTheiaCore.getZoomLevel() !== preferredZoomLevel) {
+            window.electronTheiaCore.setZoomLevel(preferredZoomLevel);
+        }
+    }
+
+    override reload(params?: WindowSearchParams): void {
+        if (params) {
+            const query = Object.entries(params).map(([name, value]) => `${name}=${value}`).join('&');
+            location.search = query;
+        } else {
+            window.electronTheiaCore.requestReload();
+        }
+    }
 }

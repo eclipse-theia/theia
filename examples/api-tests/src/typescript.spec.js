@@ -1,22 +1,22 @@
-/********************************************************************************
- * Copyright (C) 2020 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2020 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 // @ts-check
 describe('TypeScript', function () {
-    this.timeout(30000);
+    this.timeout(30_000);
 
     const { assert } = chai;
 
@@ -33,12 +33,12 @@ describe('TypeScript', function () {
     const { CommandRegistry } = require('@theia/core/lib/common/command');
     const { KeybindingRegistry } = require('@theia/core/lib/browser/keybinding');
     const { OpenerService, open } = require('@theia/core/lib/browser/opener-service');
-    const { EditorPreviewWidget } = require('@theia/editor-preview/lib/browser/editor-preview-widget');
     const { animationFrame } = require('@theia/core/lib/browser/browser');
     const { PreferenceService, PreferenceScope } = require('@theia/core/lib/browser/preferences/preference-service');
     const { ProgressStatusBarItem } = require('@theia/core/lib/browser/progress-status-bar-item');
-    const { FileSystem } = require('@theia/filesystem/lib/common/filesystem');
     const { PluginViewRegistry } = require('@theia/plugin-ext/lib/main/browser/view/plugin-view-registry');
+    const { Range } = require('@theia/monaco-editor-core/esm/vs/editor/common/core/range');
+    const { Selection } = require('@theia/monaco-editor-core/esm/vs/editor/common/core/selection');
 
     const container = window.theia.container;
     const editorManager = container.get(EditorManager);
@@ -48,110 +48,49 @@ describe('TypeScript', function () {
     const contextKeyService = container.get(ContextKeyService);
     const commands = container.get(CommandRegistry);
     const openerService = container.get(OpenerService);
+    /** @type {KeybindingRegistry} */
     const keybindings = container.get(KeybindingRegistry);
     /** @type {import('@theia/core/lib/browser/preferences/preference-service').PreferenceService} */
     const preferences = container.get(PreferenceService);
     const progressStatusBarItem = container.get(ProgressStatusBarItem);
-    /** @type {import('@theia/filesystem/lib/common/filesystem').FileSystem} */
-    const fileSystem = container.get(FileSystem);
+    /** @type {PluginViewRegistry} */
     const pluginViewRegistry = container.get(PluginViewRegistry);
 
     const typescriptPluginId = 'vscode.typescript-language-features';
-    const referencesPluginId = 'ms-vscode.references-view';
-    const rootUri = new Uri.default(workspaceService.tryGetRoots()[0].uri);
-    const serverUri = rootUri.resolve('src-gen/backend/test-server.js');
-    const inversifyUri = rootUri.resolve('../../node_modules/inversify/dts/inversify.d.ts').normalizePath();
-    const containerUri = rootUri.resolve('../../node_modules/inversify/dts/container/container.d.ts').normalizePath();
+    const referencesPluginId = 'vscode.references-view';
+    const eslintPluginId = 'dbaeumer.vscode-eslint';
+    /** @type Uri.URI */
+    const rootUri = workspaceService.tryGetRoots()[0].resource;
+    const demoFileUri = rootUri.resolveToAbsolute('../api-tests/test-ts-workspace/demo-file.ts');
+    const definitionFileUri = rootUri.resolveToAbsolute('../api-tests/test-ts-workspace/demo-definitions-file.ts');
+    let originalAutoSaveValue = preferences.inspect('files.autoSave').globalValue;
 
     before(async function () {
-        await fileSystem.createFile(serverUri.toString(), {
-            content: `// @ts-check
-require('reflect-metadata');
-const path = require('path');
-const express = require('express');
-const { Container } = require('inversify');
-const { BackendApplication, CliManager } = require('@theia/core/lib/node');
-const { backendApplicationModule } = require('@theia/core/lib/node/backend-application-module');
-const { messagingBackendModule } = require('@theia/core/lib/node/messaging/messaging-backend-module');
-const { loggerBackendModule } = require('@theia/core/lib/node/logger-backend-module');
-
-const container = new Container();
-container.load(backendApplicationModule);
-container.load(messagingBackendModule);
-container.load(loggerBackendModule);
-
-function load(raw) {
-    return Promise.resolve(raw.default).then(module =>
-        container.load(module)
-    )
-}
-
-function start(port, host, argv) {
-    if (argv === undefined) {
-        argv = process.argv;
-    }
-
-    const cliManager = container.get(CliManager);
-    return cliManager.initializeCli(argv).then(function () {
-        const application = container.get(BackendApplication);
-        application.use(express.static(path.join(__dirname, '../../lib')));
-        application.use(express.static(path.join(__dirname, '../../lib/index.html')));
-        return application.start(port, host);
-    });
-}
-
-module.exports = (port, host, argv) => Promise.resolve()
-    .then(function () { return Promise.resolve(require('@theia/process/lib/node/process-backend-module')).then(load) })
-    .then(function () { return Promise.resolve(require('@theia/filesystem/lib/node/filesystem-backend-module')).then(load) })
-    .then(function () { return Promise.resolve(require('@theia/filesystem/lib/node/download/file-download-backend-module')).then(load) })
-    .then(function () { return Promise.resolve(require('@theia/workspace/lib/node/workspace-backend-module')).then(load) })
-    .then(function () { return Promise.resolve(require('@theia/languages/lib/node/languages-backend-module')).then(load) })
-    .then(function () { return Promise.resolve(require('@theia/terminal/lib/node/terminal-backend-module')).then(load) })
-    .then(function () { return Promise.resolve(require('@theia/task/lib/node/task-backend-module')).then(load) })
-    .then(function () { return Promise.resolve(require('@theia/debug/lib/node/debug-backend-module')).then(load) })
-    .then(function () { return Promise.resolve(require('@theia/file-search/lib/node/file-search-backend-module')).then(load) })
-    .then(function () { return Promise.resolve(require('@theia/git/lib/node/git-backend-module')).then(load) })
-    .then(function () { return Promise.resolve(require('@theia/git/lib/node/env/git-env-module')).then(load) })
-    .then(function () { return Promise.resolve(require('@theia/json/lib/node/json-backend-module')).then(load) })
-    .then(function () { return Promise.resolve(require('@theia/metrics/lib/node/metrics-backend-module')).then(load) })
-    .then(function () { return Promise.resolve(require('@theia/mini-browser/lib/node/mini-browser-backend-module')).then(load) })
-    .then(function () { return Promise.resolve(require('@theia/search-in-workspace/lib/node/search-in-workspace-backend-module')).then(load) })
-    .then(function () { return Promise.resolve(require('@theia/plugin-ext/lib/plugin-ext-backend-module')).then(load) })
-    .then(function () { return Promise.resolve(require('@theia/plugin-dev/lib/node/plugin-dev-backend-module')).then(load) })
-    .then(function () { return Promise.resolve(require('@theia/plugin-ext-vscode/lib/node/plugin-vscode-backend-module')).then(load) })
-    .then(function () { return Promise.resolve(require('@theia/plugin-metrics/lib/node/plugin-metrics-backend-module')).then(load) })
-    .then(function () { return Promise.resolve(require('@theia/vsx-registry/lib/node/vsx-registry-backend-module')).then(load) })
-    .then(() => start(port, host, argv)).catch(reason => {
-        console.error('Failed to start the backend application.');
-        if (reason) {
-            console.error(reason);
-        }
-        throw reason;
-    });
-    `
-        });
         await pluginService.didStart;
-        await Promise.all([typescriptPluginId, referencesPluginId].map(async pluginId => {
+        await Promise.all([typescriptPluginId, referencesPluginId, eslintPluginId].map(async pluginId => {
             if (!pluginService.getPlugin(pluginId)) {
                 throw new Error(pluginId + ' should be started');
             }
             await pluginService.activatePlugin(pluginId);
-        }));
-    });
-
-    after(async function () {
-        await fileSystem.delete(serverUri.toString());
+        }).concat(preferences.set('files.autoSave', 'off', PreferenceScope.User)));
+        await preferences.set('files.refactoring.autoSave', 'off', PreferenceScope.User);
     });
 
     beforeEach(async function () {
         await editorManager.closeAll({ save: false });
+        await new Promise(resolve => setTimeout(resolve, 500));
     });
 
     const toTearDown = new DisposableCollection();
     afterEach(async () => {
         toTearDown.dispose();
         await editorManager.closeAll({ save: false });
+        await new Promise(resolve => setTimeout(resolve, 500));
     });
+
+    after(async () => {
+        await preferences.set('files.autoSave', originalAutoSaveValue, PreferenceScope.User);
+    })
 
     /**
      * @param {Uri.default} uri
@@ -159,38 +98,44 @@ module.exports = (port, host, argv) => Promise.resolve()
      */
     async function openEditor(uri, preview = false) {
         const widget = await open(openerService, uri, { mode: 'activate', preview });
-        const editorWidget = widget instanceof EditorPreviewWidget ? widget.editorWidget : widget instanceof EditorWidget ? widget : undefined;
+        const editorWidget = widget instanceof EditorWidget ? widget : undefined;
         const editor = MonacoEditor.get(editorWidget);
         assert.isDefined(editor);
-
         // wait till tsserver is running, see:
         // https://github.com/microsoft/vscode/blob/93cbbc5cae50e9f5f5046343c751b6d010468200/extensions/typescript-language-features/src/extension.ts#L98-L103
         await waitForAnimation(() => contextKeyService.match('typescript.isManagedFile'));
-
         // wait till projects are loaded, see:
         // https://github.com/microsoft/vscode/blob/4aac84268c6226d23828cc6a1fe45ee3982927f0/extensions/typescript-language-features/src/typescriptServiceClient.ts#L911
         await waitForAnimation(() => !progressStatusBarItem.currentProgress);
-
         return /** @type {MonacoEditor} */ (editor);
     }
 
     /**
-     * @template T
-     * @param {() => Promise<T> | T} condition
-     * @returns {Promise<T>}
+     * @param {() => Promise<unknown> | unknown} condition
+     * @param {number | undefined} [timeout]
+     * @param {string | undefined} [message]
+     * @returns {Promise<void>}
      */
-    function waitForAnimation(condition) {
-        return new Promise(async (resolve, dispose) => {
-            toTearDown.push({ dispose });
+    function waitForAnimation(condition, timeout, message) {
+        const success = new Promise(async (resolve, reject) => {
+            toTearDown.push({ dispose: () => reject(message ?? 'Test terminated before resolution.') });
             do {
                 await animationFrame();
             } while (!condition());
             resolve();
         });
+        if (timeout !== undefined) {
+            const timedOut = new Promise((_, fail) => {
+                const toClear = setTimeout(() => fail(new Error(message ?? 'Wait for animation timed out.')), timeout);
+                toTearDown.push({ dispose: () => (fail(new Error(message ?? 'Wait for animation timed out.')), clearTimeout(toClear)) });
+            });
+            return Promise.race([success, timedOut]);
+        }
+        return success;
     }
 
     /**
-     * We ignore attributes on purprse since they are not stable.
+     * We ignore attributes on purpose since they are not stable.
      * But structure is important for us to see whether the plain text is rendered or markdown.
      *
      * @param {Element} element
@@ -219,7 +164,8 @@ module.exports = (port, host, argv) => Promise.resolve()
      * @param {MonacoEditor} editor
      */
     async function assertPeekOpened(editor) {
-        const referencesController = editor.getControl()._contributions['editor.contrib.referencesController'];
+        /** @type any */
+        const referencesController = editor.getControl().getContribution('editor.contrib.referencesController');
         await waitForAnimation(() => referencesController._widget && referencesController._widget._tree.getFocus().length);
 
         assert.isFalse(contextKeyService.match('editorTextFocus'));
@@ -253,15 +199,24 @@ module.exports = (port, host, argv) => Promise.resolve()
     async function closePeek(editor) {
         await assertPeekOpened(editor);
 
+        console.log('closePeek() - Attempt to close by sending "Escape"');
         keybindings.dispatchKeyDown('Escape');
-        await waitForAnimation(() => !contextKeyService.match('listFocus'));
+        await waitForAnimation(() => {
+            const isClosed = !contextKeyService.match('listFocus');
+            if (!isClosed) {
+                console.log('...');
+                keybindings.dispatchKeyDown('Escape');
+                return false;
+            }
+            return true;
+        });
         assert.isTrue(contextKeyService.match('editorTextFocus'));
         assert.isFalse(contextKeyService.match('referenceSearchVisible'));
         assert.isFalse(contextKeyService.match('listFocus'));
     }
 
-    it('document formating should be visible and enabled', async () => {
-        await openEditor(serverUri);
+    it('document formatting should be visible and enabled', async function () {
+        await openEditor(demoFileUri);
         const menu = menuFactory.createContextMenu(EDITOR_CONTEXT_MENU);
         const item = menu.items.find(i => i.command === 'editor.action.formatDocument');
         if (item) {
@@ -276,68 +231,64 @@ module.exports = (port, host, argv) => Promise.resolve()
         for (const preview of [false, true]) {
             const from = 'an editor' + (preview ? ' preview' : '');
             it('within ' + from, async function () {
-                const editor = await openEditor(serverUri, preview);
-                // con|tainer.load(backendApplicationModule);
-                editor.getControl().setPosition({ lineNumber: 12, column: 4 });
-                // @ts-ignore
-                assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'container');
+                const editor = await openEditor(demoFileUri, preview);
+                // const demoInstance = new Demo|Class('demo');
+                editor.getControl().setPosition({ lineNumber: 24, column: 30 });
+                assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'DemoClass');
 
                 await commands.executeCommand('editor.action.revealDefinition');
 
-                const activeEditor = /** @type {MonacoEditor} */ (MonacoEditor.get(editorManager.activeEditor));
-                // @ts-ignore
-                assert.equal(editorManager.activeEditor.parent instanceof EditorPreviewWidget, preview);
-                assert.equal(activeEditor.uri.toString(), serverUri.toString());
-                // const |container = new Container();
-                // @ts-ignore
+                const activeEditor = /** @type {MonacoEditor} */ MonacoEditor.get(editorManager.activeEditor);
+                assert.equal(editorManager.activeEditor.isPreview, preview);
+                assert.equal(activeEditor.uri.toString(), demoFileUri.toString());
+                // constructor(someString: string) {
                 const { lineNumber, column } = activeEditor.getControl().getPosition();
-                assert.deepEqual({ lineNumber, column }, { lineNumber: 11, column: 7 });
-                // @ts-ignore
-                assert.equal(activeEditor.getControl().getModel().getWordAtPosition({ lineNumber, column }).word, 'container');
+                assert.deepEqual({ lineNumber, column }, { lineNumber: 11, column: 5 });
+                assert.equal(activeEditor.getControl().getModel().getWordAtPosition({ lineNumber, column }).word, 'constructor');
             });
 
+            // Note: this test generate annoying but apparently harmless error traces, during cleanup:
+            // [Error: Error: Cannot update an unmounted root.
+            // at ReactDOMRoot.__webpack_modules__.../../node_modules/react-dom/cjs/react-dom.development.js.ReactDOMHydrationRoot.render.ReactDOMRoot.render (http://127.0.0.1:3000/bundle.js:92757:11)
+            // at BreadcrumbsRenderer.render (http://127.0.0.1:3000/bundle.js:137316:23)
+            // at BreadcrumbsRenderer.update (http://127.0.0.1:3000/bundle.js:108722:14)
+            // at BreadcrumbsRenderer.refresh (http://127.0.0.1:3000/bundle.js:108719:14)
+            // at async ToolbarAwareTabBar.updateBreadcrumbs (http://127.0.0.1:3000/bundle.js:128229:9)]
             it(`from ${from} to another editor`, async function () {
-                await editorManager.open(inversifyUri, { mode: 'open' });
+                await editorManager.open(definitionFileUri, { mode: 'open' });
 
-                const editor = await openEditor(serverUri, preview);
-                // const { Cont|ainer } = require('inversify');
-                editor.getControl().setPosition({ lineNumber: 5, column: 13 });
-                // @ts-ignore
-                assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'Container');
+                const editor = await openEditor(demoFileUri, preview);
+                // const bar: Defined|Interface = { coolField: [] };
+                editor.getControl().setPosition({ lineNumber: 32, column: 19 });
+                assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'DefinedInterface');
 
                 await commands.executeCommand('editor.action.revealDefinition');
 
-                const activeEditor = /** @type {MonacoEditor} */ (MonacoEditor.get(editorManager.activeEditor));
-                // @ts-ignore
-                assert.isFalse(editorManager.activeEditor.parent instanceof EditorPreviewWidget);
-                assert.equal(activeEditor.uri.toString(), inversifyUri.toString());
-                // export { |Container } from "./container/container";
-                // @ts-ignore
+                const activeEditor = /** @type {MonacoEditor} */ MonacoEditor.get(editorManager.activeEditor);
+                assert.isFalse(editorManager.activeEditor.isPreview);
+                assert.equal(activeEditor.uri.toString(), definitionFileUri.toString());
+
+                // export interface |DefinedInterface {
                 const { lineNumber, column } = activeEditor.getControl().getPosition();
-                assert.deepEqual({ lineNumber, column }, { lineNumber: 3, column: 10 });
-                // @ts-ignore
-                assert.equal(activeEditor.getControl().getModel().getWordAtPosition({ lineNumber, column }).word, 'Container');
+                assert.deepEqual({ lineNumber, column }, { lineNumber: 2, column: 18 });
+                assert.equal(activeEditor.getControl().getModel().getWordAtPosition({ lineNumber, column }).word, 'DefinedInterface');
             });
 
             it(`from ${from} to an editor preview`, async function () {
-                const editor = await openEditor(serverUri);
-                // const { Cont|ainer } = require('inversify');
-                editor.getControl().setPosition({ lineNumber: 5, column: 13 });
-                // @ts-ignore
-                assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'Container');
+                const editor = await openEditor(demoFileUri);
+                // const bar: Defined|Interface = { coolField: [] };
+                editor.getControl().setPosition({ lineNumber: 32, column: 19 });
+                assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'DefinedInterface');
 
                 await commands.executeCommand('editor.action.revealDefinition');
 
-                const activeEditor = /** @type {MonacoEditor} */ (MonacoEditor.get(editorManager.activeEditor));
-                // @ts-ignore
-                assert.isTrue(editorManager.activeEditor.parent instanceof EditorPreviewWidget);
-                assert.equal(activeEditor.uri.toString(), inversifyUri.toString());
-                // export { |Container } from "./container/container";
-                // @ts-ignore
+                const activeEditor = /** @type {MonacoEditor} */ MonacoEditor.get(editorManager.activeEditor);
+                assert.isTrue(editorManager.activeEditor.isPreview);
+                assert.equal(activeEditor.uri.toString(), definitionFileUri.toString());
+                // export interface |DefinedInterface {
                 const { lineNumber, column } = activeEditor.getControl().getPosition();
-                assert.deepEqual({ lineNumber, column }, { lineNumber: 3, column: 10 });
-                // @ts-ignore
-                assert.equal(activeEditor.getControl().getModel().getWordAtPosition({ lineNumber, column }).word, 'Container');
+                assert.deepEqual({ lineNumber, column }, { lineNumber: 2, column: 18 });
+                assert.equal(activeEditor.getControl().getModel().getWordAtPosition({ lineNumber, column }).word, 'DefinedInterface');
             });
         }
     });
@@ -347,75 +298,73 @@ module.exports = (port, host, argv) => Promise.resolve()
         for (const preview of [false, true]) {
             const from = 'an editor' + (preview ? ' preview' : '');
             it('within ' + from, async function () {
-                const editor = await openEditor(serverUri, preview);
-                // con|tainer.load(backendApplicationModule);
-                editor.getControl().setPosition({ lineNumber: 12, column: 4 });
-                // @ts-ignore
-                assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'container');
+                const editor = await openEditor(demoFileUri, preview);
+                editor.getControl().revealLine(24);
+                // const demoInstance = new Demo|Class('demo');
+                editor.getControl().setPosition({ lineNumber: 24, column: 30 });
+                assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'DemoClass');
 
                 await openPeek(editor);
                 await openReference();
 
-                const activeEditor = /** @type {MonacoEditor} */ (MonacoEditor.get(editorManager.activeEditor));
-                // @ts-ignore
-                assert.equal(editorManager.activeEditor.parent instanceof EditorPreviewWidget, preview);
-                assert.equal(activeEditor.uri.toString(), serverUri.toString());
-                // const |container = new Container();
-                // @ts-ignore
+                const activeEditor = /** @type {MonacoEditor} */ MonacoEditor.get(editorManager.activeEditor);
+                assert.equal(editorManager.activeEditor.isPreview, preview);
+                assert.equal(activeEditor.uri.toString(), demoFileUri.toString());
+                // constructor(someString: string) {
                 const { lineNumber, column } = activeEditor.getControl().getPosition();
-                assert.deepEqual({ lineNumber, column }, { lineNumber: 11, column: 7 });
-                // @ts-ignore
-                assert.equal(activeEditor.getControl().getModel().getWordAtPosition({ lineNumber, column }).word, 'container');
+                assert.deepEqual({ lineNumber, column }, { lineNumber: 11, column: 5 });
+                assert.equal(activeEditor.getControl().getModel().getWordAtPosition({ lineNumber, column }).word, 'constructor');
 
                 await closePeek(activeEditor);
             });
 
+            // Note: this test generate annoying but apparently harmless error traces, during cleanup:
+            // [Error: Error: Cannot update an unmounted root.
+            // at ReactDOMRoot.__webpack_modules__.../../node_modules/react-dom/cjs/react-dom.development.js.ReactDOMHydrationRoot.render.ReactDOMRoot.render (http://127.0.0.1:3000/bundle.js:92757:11)
+            // at BreadcrumbsRenderer.render (http://127.0.0.1:3000/bundle.js:137316:23)
+            // at BreadcrumbsRenderer.update (http://127.0.0.1:3000/bundle.js:108722:14)
+            // at BreadcrumbsRenderer.refresh (http://127.0.0.1:3000/bundle.js:108719:14)
+            // at async ToolbarAwareTabBar.updateBreadcrumbs (http://127.0.0.1:3000/bundle.js:128229:9)]
             it(`from ${from} to another editor`, async function () {
-                await editorManager.open(inversifyUri, { mode: 'open' });
+                await editorManager.open(definitionFileUri, { mode: 'open' });
 
-                const editor = await openEditor(serverUri, preview);
-                // const { Cont|ainer } = require('inversify');
-                editor.getControl().setPosition({ lineNumber: 5, column: 13 });
-                // @ts-ignore
-                assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'Container');
+                const editor = await openEditor(demoFileUri, preview);
+                editor.getControl().revealLine(32);
+                // const bar: Defined|Interface = { coolField: [] };
+                editor.getControl().setPosition({ lineNumber: 32, column: 19 });
+                assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'DefinedInterface');
 
                 await openPeek(editor);
                 await openReference();
 
-                const activeEditor = /** @type {MonacoEditor} */ (MonacoEditor.get(editorManager.activeEditor));
-                // @ts-ignore
-                assert.isFalse(editorManager.activeEditor.parent instanceof EditorPreviewWidget);
-                assert.equal(activeEditor.uri.toString(), inversifyUri.toString());
-                // export { |Container } from "./container/container";
-                // @ts-ignore
+                const activeEditor = /** @type {MonacoEditor} */ MonacoEditor.get(editorManager.activeEditor);
+                assert.isFalse(editorManager.activeEditor.isPreview);
+                assert.equal(activeEditor.uri.toString(), definitionFileUri.toString());
+                // export interface |DefinedInterface {
                 const { lineNumber, column } = activeEditor.getControl().getPosition();
-                assert.deepEqual({ lineNumber, column }, { lineNumber: 3, column: 10 });
-                // @ts-ignore
-                assert.equal(activeEditor.getControl().getModel().getWordAtPosition({ lineNumber, column }).word, 'Container');
+                assert.deepEqual({ lineNumber, column }, { lineNumber: 2, column: 18 });
+                assert.equal(activeEditor.getControl().getModel().getWordAtPosition({ lineNumber, column }).word, 'DefinedInterface');
 
                 await closePeek(activeEditor);
             });
 
             it(`from ${from} to an editor preview`, async function () {
-                const editor = await openEditor(serverUri);
-                // const { Cont|ainer } = require('inversify');
-                editor.getControl().setPosition({ lineNumber: 5, column: 13 });
-                // @ts-ignore
-                assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'Container');
+                const editor = await openEditor(demoFileUri);
+                editor.getControl().revealLine(32);
+                // const bar: Defined|Interface = { coolField: [] };
+                editor.getControl().setPosition({ lineNumber: 32, column: 19 });
+                assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'DefinedInterface');
 
                 await openPeek(editor);
                 await openReference();
 
-                const activeEditor = /** @type {MonacoEditor} */ (MonacoEditor.get(editorManager.activeEditor));
-                // @ts-ignore
-                assert.isTrue(editorManager.activeEditor.parent instanceof EditorPreviewWidget);
-                assert.equal(activeEditor.uri.toString(), inversifyUri.toString());
-                // export { |Container } from "./container/container";
-                // @ts-ignore
+                const activeEditor = /** @type {MonacoEditor} */ MonacoEditor.get(editorManager.activeEditor);
+                assert.isTrue(editorManager.activeEditor.isPreview);
+                assert.equal(activeEditor.uri.toString(), definitionFileUri.toString());
+                // export interface |DefinedInterface {
                 const { lineNumber, column } = activeEditor.getControl().getPosition();
-                assert.deepEqual({ lineNumber, column }, { lineNumber: 3, column: 10 });
-                // @ts-ignore
-                assert.equal(activeEditor.getControl().getModel().getWordAtPosition({ lineNumber, column }).word, 'Container');
+                assert.deepEqual({ lineNumber, column }, { lineNumber: 2, column: 18 });
+                assert.equal(activeEditor.getControl().getModel().getWordAtPosition({ lineNumber, column }).word, 'DefinedInterface');
 
                 await closePeek(activeEditor);
             });
@@ -423,12 +372,10 @@ module.exports = (port, host, argv) => Promise.resolve()
     });
 
     it('editor.action.triggerSuggest', async function () {
-        const editor = await openEditor(serverUri);
-        // const { [|Container] } = require('inversify');
-        editor.getControl().setPosition({ lineNumber: 5, column: 9 });
-        editor.getControl().setSelection({ startLineNumber: 5, startColumn: 9, endLineNumber: 5, endColumn: 18 });
-        // @ts-ignore
-        assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'Container');
+        const editor = await openEditor(demoFileUri);
+        editor.getControl().setPosition({ lineNumber: 26, column: 46 });
+        editor.getControl().setSelection(new Selection(26, 46, 26, 35));
+        assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'stringField');
 
         assert.isTrue(contextKeyService.match('editorTextFocus'));
         assert.isFalse(contextKeyService.match('suggestWidgetVisible'));
@@ -439,33 +386,40 @@ module.exports = (port, host, argv) => Promise.resolve()
         assert.isTrue(contextKeyService.match('editorTextFocus'));
         assert.isTrue(contextKeyService.match('suggestWidgetVisible'));
 
+        // May need a couple extra "Enter" being sent for the suggest to be accepted
         keybindings.dispatchKeyDown('Enter');
-        await waitForAnimation(() => !contextKeyService.match('suggestWidgetVisible'));
+        await waitForAnimation(() => {
+            const suggestWidgetDismissed = !contextKeyService.match('suggestWidgetVisible');
+            if (!suggestWidgetDismissed) {
+                console.log('Re-try accepting suggest using "Enter" key');
+                keybindings.dispatchKeyDown('Enter');
+                return false;
+            }
+            return true;
+        }, 5000, 'Suggest widget has not been dismissed despite attempts to accept suggestion');
 
         assert.isTrue(contextKeyService.match('editorTextFocus'));
         assert.isFalse(contextKeyService.match('suggestWidgetVisible'));
 
-        const activeEditor = /** @type {MonacoEditor} */ (MonacoEditor.get(editorManager.activeEditor));
-        assert.equal(activeEditor.uri.toString(), serverUri.toString());
-        // const { Container| } = require('inversify');
-        // @ts-ignore
+        const activeEditor = /** @type {MonacoEditor} */ MonacoEditor.get(editorManager.activeEditor);
+        assert.equal(activeEditor.uri.toString(), demoFileUri.toString());
+        // demoInstance.stringField;
         const { lineNumber, column } = activeEditor.getControl().getPosition();
-        assert.deepEqual({ lineNumber, column }, { lineNumber: 5, column: 18 });
-        // @ts-ignore
-        assert.equal(activeEditor.getControl().getModel().getWordAtPosition({ lineNumber, column }).word, 'Container');
+        assert.deepEqual({ lineNumber, column }, { lineNumber: 26, column: 46 });
+        assert.equal(activeEditor.getControl().getModel().getWordAtPosition({ lineNumber, column }).word, 'doSomething');
     });
 
     it('editor.action.triggerSuggest navigate', async function () {
-        const editor = await openEditor(serverUri);
-        // const { [|Container] } = require('inversify');
-        editor.getControl().setPosition({ lineNumber: 5, column: 9 });
-        editor.getControl().setSelection({ startLineNumber: 5, startColumn: 9, endLineNumber: 5, endColumn: 18 });
-        // @ts-ignore
-        assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'Container');
+        const editor = await openEditor(demoFileUri);
+        // demoInstance.[|stringField];
+        editor.getControl().setPosition({ lineNumber: 26, column: 46 });
+        editor.getControl().setSelection(new Selection(26, 46, 26, 35));
+        assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'stringField');
 
-        const suggest = editor.getControl()._contributions['editor.contrib.suggestController'];
+        /** @type {import('@theia/monaco-editor-core/src/vs/editor/contrib/suggest/browser/suggestController').SuggestController} */
+        const suggest = editor.getControl().getContribution('editor.contrib.suggestController');
         const getFocusedLabel = () => {
-            const focusedItem = suggest.widget.getValue().getFocusedItem();
+            const focusedItem = suggest.widget.value.getFocusedItem();
             return focusedItem && focusedItem.item.completion.label;
         };
 
@@ -473,44 +427,53 @@ module.exports = (port, host, argv) => Promise.resolve()
         assert.isFalse(contextKeyService.match('suggestWidgetVisible'));
 
         await commands.executeCommand('editor.action.triggerSuggest');
-        await waitForAnimation(() => contextKeyService.match('suggestWidgetVisible') && getFocusedLabel() === 'Container');
+        await waitForAnimation(() => contextKeyService.match('suggestWidgetVisible') && getFocusedLabel() === 'doSomething', 5000);
 
-        assert.equal(getFocusedLabel(), 'Container');
+        assert.equal(getFocusedLabel(), 'doSomething');
         assert.isTrue(contextKeyService.match('suggestWidgetVisible'));
 
         keybindings.dispatchKeyDown('ArrowDown');
-        await waitForAnimation(() => contextKeyService.match('suggestWidgetVisible') && getFocusedLabel() === 'ContainerModule');
+        await waitForAnimation(() => contextKeyService.match('suggestWidgetVisible') && getFocusedLabel() === 'numberField', 2000);
 
-        assert.equal(getFocusedLabel(), 'ContainerModule');
+        assert.equal(getFocusedLabel(), 'numberField');
         assert.isTrue(contextKeyService.match('suggestWidgetVisible'));
 
         keybindings.dispatchKeyDown('ArrowUp');
-        await waitForAnimation(() => contextKeyService.match('suggestWidgetVisible') && getFocusedLabel() === 'Container');
+        await waitForAnimation(() => contextKeyService.match('suggestWidgetVisible') && getFocusedLabel() === 'doSomething', 2000);
 
-        assert.equal(getFocusedLabel(), 'Container');
+        assert.equal(getFocusedLabel(), 'doSomething');
         assert.isTrue(contextKeyService.match('suggestWidgetVisible'));
 
         keybindings.dispatchKeyDown('Escape');
-        await waitForAnimation(() => !contextKeyService.match('suggestWidgetVisible') && getFocusedLabel() === undefined);
+
+        // once in a while, a second "Escape" is needed to dismiss widget
+        await waitForAnimation(() => {
+            const suggestWidgetDismissed = !contextKeyService.match('suggestWidgetVisible') && getFocusedLabel() === undefined;
+            if (!suggestWidgetDismissed) {
+                console.log('Re-try to dismiss suggest using "Escape" key');
+                keybindings.dispatchKeyDown('Escape');
+                return false;
+            }
+            return true;
+        }, 5000, 'Suggest widget not dismissed');
 
         assert.isUndefined(getFocusedLabel());
         assert.isFalse(contextKeyService.match('suggestWidgetVisible'));
     });
 
     it('editor.action.rename', async function () {
-        const editor = await openEditor(serverUri);
-        // const |container = new Container();
-        editor.getControl().setPosition({ lineNumber: 11, column: 7 });
-        // @ts-ignore
-        assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'container');
+        const editor = await openEditor(demoFileUri);
+        // const |demoVariable = demoInstance.stringField;
+        editor.getControl().setPosition({ lineNumber: 26, column: 7 });
+        assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'demoVariable');
 
         assert.isTrue(contextKeyService.match('editorTextFocus'));
         assert.isFalse(contextKeyService.match('renameInputVisible'));
 
-        const renaming = commands.executeCommand('editor.action.rename');
+        commands.executeCommand('editor.action.rename');
         await waitForAnimation(() => contextKeyService.match('renameInputVisible')
             && document.activeElement instanceof HTMLInputElement
-            && document.activeElement.selectionEnd === 'container'.length);
+            && document.activeElement.selectionEnd === 'demoVariable'.length);
         assert.isFalse(contextKeyService.match('editorTextFocus'));
         assert.isTrue(contextKeyService.match('renameInputVisible'));
 
@@ -523,26 +486,25 @@ module.exports = (port, host, argv) => Promise.resolve()
         input.value = 'foo';
         keybindings.dispatchKeyDown('Enter', input);
 
-        await renaming;
+        // all rename edits should be grouped in one edit operation and applied in the same tick
+        await new Promise(resolve => editor.getControl().onDidChangeModelContent(resolve));
+
         assert.isTrue(contextKeyService.match('editorTextFocus'));
         assert.isFalse(contextKeyService.match('renameInputVisible'));
 
-        const activeEditor = /** @type {MonacoEditor} */ (MonacoEditor.get(editorManager.activeEditor));
-        assert.equal(activeEditor.uri.toString(), serverUri.toString());
+        const activeEditor = /** @type {MonacoEditor} */ MonacoEditor.get(editorManager.activeEditor);
+        assert.equal(activeEditor.uri.toString(), demoFileUri.toString());
         // const |foo = new Container();
-        // @ts-ignore
         const { lineNumber, column } = activeEditor.getControl().getPosition();
-        assert.deepEqual({ lineNumber, column }, { lineNumber: 11, column: 7 });
-        // @ts-ignore
-        assert.equal(activeEditor.getControl().getModel().getWordAtPosition({ lineNumber, column }).word, 'foo');
+        assert.deepEqual({ lineNumber, column }, { lineNumber: 26, column: 7 });
+        assert.equal(activeEditor.getControl().getModel().getWordAtPosition({ lineNumber: 28, column: 1 }).word, 'foo');
     });
 
     it('editor.action.triggerParameterHints', async function () {
-        const editor = await openEditor(serverUri);
-        // container.load(|backendApplicationModule);
-        editor.getControl().setPosition({ lineNumber: 12, column: 16 });
-        // @ts-ignore
-        assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'backendApplicationModule');
+        const editor = await openEditor(demoFileUri);
+        // const demoInstance = new DemoClass('|demo');
+        editor.getControl().setPosition({ lineNumber: 24, column: 37 });
+        assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, "demo");
 
         assert.isTrue(contextKeyService.match('editorTextFocus'));
         assert.isFalse(contextKeyService.match('parameterHintsVisible'));
@@ -561,24 +523,22 @@ module.exports = (port, host, argv) => Promise.resolve()
     });
 
     it('editor.action.showHover', async function () {
-        const editor = await openEditor(serverUri);
-        // container.load(|backendApplicationModule);
-        editor.getControl().setPosition({ lineNumber: 12, column: 16 });
-        // @ts-ignore
-        assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'backendApplicationModule');
+        const editor = await openEditor(demoFileUri);
+        // class |DemoClass);
+        editor.getControl().setPosition({ lineNumber: 8, column: 7 });
+        assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'DemoClass');
 
-        const hover = editor.getControl()._contributions['editor.contrib.hover'];
+        /** @type {import('@theia/monaco-editor-core/src/vs/editor/contrib/hover/browser/hover').ModesHoverController} */
+        const hover = editor.getControl().getContribution('editor.contrib.hover');
 
         assert.isTrue(contextKeyService.match('editorTextFocus'));
-        assert.isFalse(hover.contentWidget.isVisible);
-
+        assert.isFalse(Boolean(hover['_contentWidget']?.['_widget']?.['_visibleData']));
         await commands.executeCommand('editor.action.showHover');
-        await waitForAnimation(() => hover.contentWidget.isVisible);
-
+        let doLog = true;
+        await waitForAnimation(() => hover['_contentWidget']?.['_widget']?.['_visibleData']);
         assert.isTrue(contextKeyService.match('editorTextFocus'));
-        assert.isTrue(hover.contentWidget.isVisible);
-
-        assert.deepEqual(nodeAsString(hover.contentWidget._domNode), `
+        assert.isTrue(Boolean(hover['_contentWidget']?.['_widget']?.['_visibleData']));
+        assert.deepEqual(nodeAsString(hover['_contentWidget']?.['_widget']?.['_hover']?.['contentsDomNode']).trim(), `
 DIV {
   DIV {
     DIV {
@@ -587,19 +547,13 @@ DIV {
           SPAN {
             DIV {
               SPAN {
-                "const"
+                "class"
               }
               SPAN {
                 " "
               }
               SPAN {
-                "backendApplicationModule"
-              }
-              SPAN {
-                ": "
-              }
-              SPAN {
-                "ContainerModule"
+                "DemoClass"
               }
             }
           }
@@ -607,25 +561,21 @@ DIV {
       }
     }
   }
-}
-`);
-
+}`.trim());
         keybindings.dispatchKeyDown('Escape');
-        await waitForAnimation(() => !hover.contentWidget.isVisible);
-
+        await waitForAnimation(() => !hover['_contentWidget']?.['_widget']?.['_visibleData']);
         assert.isTrue(contextKeyService.match('editorTextFocus'));
-        assert.isFalse(hover.contentWidget.isVisible);
+        assert.isFalse(Boolean(hover['_contentWidget']?.['_widget']?.['_visibleData']));
     });
 
-    it('highligh semantic (write) occurences', async function () {
-        const editor = await openEditor(serverUri);
+    it('highlight semantic (write) occurrences', async function () {
+        const editor = await openEditor(demoFileUri);
         // const |container = new Container();
-        const lineNumber = 11;
+        const lineNumber = 24;
         const column = 7;
-        const endColumn = column + 'container'.length;
+        const endColumn = column + 'demoInstance'.length;
 
         const hasWriteDecoration = () => {
-            // @ts-ignore
             for (const decoration of editor.getControl().getModel().getLineDecorations(lineNumber)) {
                 if (decoration.range.startColumn === column && decoration.range.endColumn === endColumn && decoration.options.className === 'wordHighlightStrong') {
                     return true;
@@ -636,9 +586,8 @@ DIV {
         assert.isFalse(hasWriteDecoration());
 
         editor.getControl().setPosition({ lineNumber, column });
-        // @ts-ignore
-        assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'container');
-        // highlight occurences is not trigged on the explicit position change, so move a cursor as a user
+        assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'demoInstance');
+        // highlight occurrences is not trigged on the explicit position change, so move a cursor as a user
         keybindings.dispatchKeyDown('ArrowRight');
         await waitForAnimation(() => hasWriteDecoration());
 
@@ -646,52 +595,48 @@ DIV {
     });
 
     it('editor.action.goToImplementation', async function () {
-        const editor = await openEditor(serverUri);
-        // con|tainer.load(backendApplicationModule);
-        editor.getControl().setPosition({ lineNumber: 12, column: 4 });
-        // @ts-ignore
-        assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'container');
+        const editor = await openEditor(demoFileUri);
+        // const demoInstance = new Demo|Class('demo');
+        editor.getControl().setPosition({ lineNumber: 24, column: 30 });
+        assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'DemoClass');
 
         await commands.executeCommand('editor.action.goToImplementation');
 
-        const activeEditor = /** @type {MonacoEditor} */ (MonacoEditor.get(editorManager.activeEditor));
-        assert.equal(activeEditor.uri.toString(), serverUri.toString());
-        // const |container = new Container();
-        // @ts-ignore
+        const activeEditor = /** @type {MonacoEditor} */ MonacoEditor.get(editorManager.activeEditor);
+        assert.equal(activeEditor.uri.toString(), demoFileUri.toString());
+        // class |DemoClass implements DemoInterface {
         const { lineNumber, column } = activeEditor.getControl().getPosition();
-        assert.deepEqual({ lineNumber, column }, { lineNumber: 11, column: 7 });
-        // @ts-ignore
-        assert.equal(activeEditor.getControl().getModel().getWordAtPosition({ lineNumber, column }).word, 'container');
+        assert.deepEqual({ lineNumber, column }, { lineNumber: 8, column: 7 });
+        assert.equal(activeEditor.getControl().getModel().getWordAtPosition({ lineNumber, column }).word, 'DemoClass');
     });
 
     it('editor.action.goToTypeDefinition', async function () {
-        const editor = await openEditor(serverUri);
-        // con|tainer.load(backendApplicationModule);
-        editor.getControl().setPosition({ lineNumber: 12, column: 4 });
-        // @ts-ignore
-        assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'container');
+        const editor = await openEditor(demoFileUri);
+        // const demoVariable = demo|Instance.stringField;
+        editor.getControl().setPosition({ lineNumber: 26, column: 26 });
+        assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'demoInstance');
 
         await commands.executeCommand('editor.action.goToTypeDefinition');
 
-        const activeEditor = /** @type {MonacoEditor} */ (MonacoEditor.get(editorManager.activeEditor));
-        assert.equal(activeEditor.uri.toString(), containerUri.toString());
-        // declare class |Container implements interfaces.Container {
-        // @ts-ignore
+        const activeEditor = /** @type {MonacoEditor} */ MonacoEditor.get(editorManager.activeEditor);
+        assert.equal(activeEditor.uri.toString(), demoFileUri.toString());
+        // class |DemoClass implements DemoInterface {
         const { lineNumber, column } = activeEditor.getControl().getPosition();
-        assert.deepEqual({ lineNumber, column }, { lineNumber: 2, column: 15 });
-        // @ts-ignore
-        assert.equal(activeEditor.getControl().getModel().getWordAtPosition({ lineNumber, column }).word, 'Container');
+        assert.deepEqual({ lineNumber, column }, { lineNumber: 8, column: 7 });
+        assert.equal(activeEditor.getControl().getModel().getWordAtPosition({ lineNumber, column }).word, 'DemoClass');
     });
 
     it('run reference code lens', async function () {
-        // @ts-ignore
-        const globalValue = preferences.inspect('javascript.referencesCodeLens.enabled').globalValue;
-        toTearDown.push({ dispose: () => preferences.set('javascript.referencesCodeLens.enabled', globalValue, PreferenceScope.User) });
+        const preferenceName = 'typescript.referencesCodeLens.enabled';
+        const globalValue = preferences.inspect(preferenceName).globalValue;
+        toTearDown.push({ dispose: () => preferences.set(preferenceName, globalValue, PreferenceScope.User) });
+        await preferences.set(preferenceName, false, PreferenceScope.User);
 
-        const editor = await openEditor(serverUri);
+        const editor = await openEditor(demoFileUri);
 
-        const codeLens = editor.getControl()._contributions['css.editor.codeLens'];
-        const codeLensNode = () => codeLens._lenses[0] && codeLens._lenses[0]._contentWidget && codeLens._lenses[0]._contentWidget._domNode;
+        /** @type {import('@theia/monaco-editor-core/src/vs/editor/contrib/codelens/browser/codelensController').CodeLensContribution} */
+        const codeLens = editor.getControl().getContribution('css.editor.codeLens');
+        const codeLensNode = () => codeLens['_lenses'][0]?.['_contentWidget']?.['_domNode'];
         const codeLensNodeVisible = () => {
             const n = codeLensNode();
             return !!n && n.style.visibility !== 'hidden';
@@ -699,155 +644,213 @@ DIV {
 
         assert.isFalse(codeLensNodeVisible());
 
-        // [export ]function load(raw) {
-        const position = { lineNumber: 16, column: 1 };
-        // @ts-ignore
-        editor.getControl().getModel().applyEdits([{
-            range: monaco.Range.fromPositions(position, position),
-            forceMoveMarkers: false,
-            text: 'export '
-        }]);
+        // |interface DemoInterface {
+        const position = { lineNumber: 2, column: 1 };
+        await preferences.set(preferenceName, true, PreferenceScope.User);
+
         editor.getControl().revealPosition(position);
-        await preferences.set('javascript.referencesCodeLens.enabled', true, PreferenceScope.User);
         await waitForAnimation(() => codeLensNodeVisible());
 
         assert.isTrue(codeLensNodeVisible());
         const node = codeLensNode();
-        if (node) {
-            assert.equal(nodeAsString(node), `
+        assert.isDefined(node);
+        assert.equal(nodeAsString(node), `
 SPAN {
   A {
-    "20 references"
+    "1 reference"
   }
 }
 `);
-            const link = node.getElementsByTagName('a').item(0);
-            if (link) {
-                link.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
-                await assertPeekOpened(editor);
-                await closePeek(editor);
-            } else {
-                assert.isDefined(link);
-            }
-        } else {
-            assert.isDefined(node);
-        }
+        const link = node.getElementsByTagName('a').item(0);
+        assert.isDefined(link);
+        link.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+        await assertPeekOpened(editor);
+        await closePeek(editor);
     });
 
     it('editor.action.quickFix', async function () {
-        const column = 6;
-        const lineNumber = 19;
-        const editor = await openEditor(serverUri);
-        // @ts-ignore
+        const column = 45;
+        const lineNumber = 26;
+        const editor = await openEditor(demoFileUri);
         const currentChar = () => editor.getControl().getModel().getLineContent(lineNumber).charAt(column - 1);
 
-        // missing semicolon at
-        //     )|
+        editor.getControl().getModel().applyEdits([{
+            range: {
+                startLineNumber: lineNumber,
+                endLineNumber: lineNumber,
+                startColumn: 45,
+                endColumn: 46
+            },
+            forceMoveMarkers: false,
+            text: ''
+        }]);
         editor.getControl().setPosition({ lineNumber, column });
         editor.getControl().revealPosition({ lineNumber, column });
-        assert.equal(currentChar(), '');
+        assert.equal(currentChar(), ';', 'Failed at assert 1');
 
-        const quickFixController = editor.getControl()._contributions['editor.contrib.quickFixController'];
+        /** @type {import('@theia/monaco-editor-core/src/vs/editor/contrib/codeAction/browser/codeActionCommands').CodeActionController} */
+        const codeActionController = editor.getControl().getContribution('editor.contrib.codeActionController');
         const lightBulbNode = () => {
-            const ui = quickFixController._ui.rawValue;
-            const lightBulb = ui && ui._lightBulbWidget.rawValue;
-            return lightBulb && lightBulb._domNode;
+            const ui = codeActionController['_ui'].rawValue;
+            const lightBulb = ui && ui['_lightBulbWidget'].rawValue;
+            return lightBulb && lightBulb['_domNode'];
         };
         const lightBulbVisible = () => {
             const node = lightBulbNode();
             return !!node && node.style.visibility !== 'hidden';
         };
 
-        assert.isFalse(lightBulbVisible());
+        assert.isFalse(lightBulbVisible(), 'Failed at assert 2');
         await waitForAnimation(() => lightBulbVisible());
 
         await commands.executeCommand('editor.action.quickFix');
-        await waitForAnimation(() => !!document.querySelector('.p-Widget.p-Menu'));
+        const codeActionSelector = '.codeActionWidget';
+        assert.isFalse(!!document.querySelector(codeActionSelector), 'Failed at assert 3 - codeActionWidget should not be visible');
+
+        console.log('Waiting for Quick Fix widget to be visible');
+        await waitForAnimation(() => {
+            const quickFixWidgetVisible = !!document.querySelector(codeActionSelector);
+            if (!quickFixWidgetVisible) {
+                console.log('...');
+                return false;
+            }
+            return true;
+        }, 10000, 'Timed-out waiting for the QuickFix widget to appear');
         await animationFrame();
 
-        keybindings.dispatchKeyDown('ArrowDown');
+        assert.isTrue(lightBulbVisible(), 'Failed at assert 4');
         keybindings.dispatchKeyDown('Enter');
+        console.log('Waiting for confirmation that QuickFix has taken effect');
+        await waitForAnimation(() => {
+            const quickFixHasTakenEffect = !lightBulbVisible();
+            if (!quickFixHasTakenEffect) {
+                console.log('...');
+                return false;
+            }
+            return true;
+        }, 5000, 'Quickfix widget has not been dismissed despite attempts to accept suggestion');
 
-        await waitForAnimation(() => currentChar() === ';');
-        assert.equal(currentChar(), ';');
+        await waitForAnimation(() => currentChar() === 'd', 5000, 'Failed to detect expected selected char: "d"');
+        assert.equal(currentChar(), 'd', 'Failed at assert 5');
 
         await waitForAnimation(() => !lightBulbVisible());
-        assert.isFalse(lightBulbVisible());
+        assert.isFalse(lightBulbVisible(), 'Failed at assert 6');
     });
 
     it('editor.action.formatDocument', async function () {
         const lineNumber = 5;
-        const editor = await openEditor(serverUri);
-        // @ts-ignore
-        const originalLenght = editor.getControl().getModel().getLineLength(lineNumber);
+        const editor = await openEditor(demoFileUri);
+        const originalLength = editor.getControl().getModel().getLineLength(lineNumber);
 
-        // const { Container[ ] } = require('inversify');
-        // @ts-ignore
+        // doSomething(): number; --> doSomething() : number;
         editor.getControl().getModel().applyEdits([{
-            range: monaco.Range.fromPositions({ lineNumber, column: 18 }, { lineNumber, column: 18 }),
+            range: Range.fromPositions({ lineNumber, column: 18 }, { lineNumber, column: 18 }),
             forceMoveMarkers: false,
             text: ' '
         }]);
 
-        // @ts-ignore
-        assert.equal(editor.getControl().getModel().getLineLength(lineNumber), originalLenght + 1);
+        assert.equal(editor.getControl().getModel().getLineLength(lineNumber), originalLength + 1);
 
         await commands.executeCommand('editor.action.formatDocument');
 
-        // @ts-ignore
-        assert.equal(editor.getControl().getModel().getLineLength(lineNumber), originalLenght);
+        assert.equal(editor.getControl().getModel().getLineLength(lineNumber), originalLength);
     });
 
     it('editor.action.formatSelection', async function () {
-        const lineNumber = 5;
-        const editor = await openEditor(serverUri);
-        // @ts-ignore
-        const originalLenght = editor.getControl().getModel().getLineLength(lineNumber);
+        // doSomething(): number {
+        const lineNumber = 15;
+        const editor = await openEditor(demoFileUri);
+        const originalLength /* 28 */ = editor.getControl().getModel().getLineLength(lineNumber);
 
-        // const { Container[  }  ]= require('inversify');
-        // @ts-ignore
+        // doSomething(  )  : number {
         editor.getControl().getModel().applyEdits([{
-            range: monaco.Range.fromPositions({ lineNumber, column: 18 }, { lineNumber, column: 21 }),
+            range: Range.fromPositions({ lineNumber, column: 17 }, { lineNumber, column: 18 }),
             forceMoveMarkers: false,
-            text: '  }  '
+            text: '  )  '
         }]);
 
-        // @ts-ignore
-        assert.equal(editor.getControl().getModel().getLineLength(lineNumber), originalLenght + 2);
+        assert.equal(editor.getControl().getModel().getLineLength(lineNumber), originalLength + 4);
 
         // [const { Container  }]  = require('inversify');
-        editor.getControl().setSelection({ startLineNumber: lineNumber, startColumn: 1, endLineNumber: lineNumber, endColumn: 21 });
+        editor.getControl().setSelection({ startLineNumber: lineNumber, startColumn: 1, endLineNumber: lineNumber, endColumn: 32 });
 
         await commands.executeCommand('editor.action.formatSelection');
 
         // [const { Container }]  = require('inversify');
-        // @ts-ignore
-        assert.equal(editor.getControl().getModel().getLineLength(lineNumber), originalLenght + 1);
+        assert.equal(editor.getControl().getModel().getLineLength(lineNumber), originalLength);
     });
 
     for (const referenceViewCommand of ['references-view.find', 'references-view.findImplementations']) {
         it(referenceViewCommand, async function () {
-            const editor = await openEditor(serverUri);
-            // const |container = new Container();
-            editor.getControl().setPosition({ lineNumber: 11, column: 7 });
-            // @ts-ignore
-            assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'container');
-
-            const view = await pluginViewRegistry.openView('references-view.tree');
-            if (!view) {
-                assert.isDefined(view);
-                return;
-            }
-
-            await commands.executeCommand('references-view.clear');
-            await waitForAnimation(() => view.title.label.toLowerCase() === 'results');
-            assert.equal(view.title.label.toLowerCase(), 'results');
-
+            let steps = 0;
+            const editor = await openEditor(demoFileUri);
+            editor.getControl().setPosition({ lineNumber: 24, column: 11 });
+            assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'demoInstance');
             await commands.executeCommand(referenceViewCommand);
-
-            await waitForAnimation(() => view.title.label.toLowerCase() !== 'results');
-            assert.notEqual(view.title.label.toLowerCase(), 'results');
+            const view = await pluginViewRegistry.openView('references-view.tree', { reveal: true });
+            const expectedMessage = referenceViewCommand === 'references-view.find' ? '2 results in 1 file' : '1 result in 1 file';
+            const getResultText = () => view.node.getElementsByClassName('theia-TreeViewInfo').item(0)?.textContent;
+            await waitForAnimation(() => getResultText() === expectedMessage, 5000);
+            assert.equal(getResultText(), expectedMessage);
         });
     }
 
+    it('Can execute code actions', async function () {
+        const editor = await openEditor(demoFileUri);
+        /** @type {import('@theia/monaco-editor-core/src/vs/editor/contrib/codeAction/browser/codeActionCommands').CodeActionController} */
+        const codeActionController = editor.getControl().getContribution('editor.contrib.codeActionController');
+        const isActionAvailable = () => {
+            const lightbulbVisibility = codeActionController['_ui'].rawValue?.['_lightBulbWidget'].rawValue?.['_domNode'].style.visibility;
+            return lightbulbVisibility !== undefined && lightbulbVisibility !== 'hidden';
+        }
+        assert.isFalse(isActionAvailable());
+        assert.strictEqual(editor.getControl().getModel().getLineContent(30), 'import { DefinedInterface } from "./demo-definitions-file";');
+        editor.getControl().revealLine(30);
+        editor.getControl().setSelection(new Selection(30, 1, 30, 60));
+        await waitForAnimation(() => isActionAvailable(), 5000, 'No code action available. (1)');
+        assert.isTrue(isActionAvailable());
+
+        await commands.executeCommand('editor.action.quickFix');
+        await waitForAnimation(() => Boolean(document.querySelector('.context-view-pointerBlock')), 5000, 'No context menu appeared. (1)');
+        await animationFrame();
+
+        keybindings.dispatchKeyDown('Enter');
+
+        assert.isNotNull(editor.getControl());
+        assert.isNotNull(editor.getControl().getModel());
+        console.log(`content: ${editor.getControl().getModel().getLineContent(30)}`);
+        await waitForAnimation(() => editor.getControl().getModel().getLineContent(30) === 'import * as demoDefinitionsFile from "./demo-definitions-file";', 5000, 'The namespace import did not take effect.');
+
+        // momentarily toggle selection, waiting for code action to become unavailable.
+        // Without doing this, the call to the quickfix command would sometimes fail because of an
+        // unexpected "no code action available" pop-up, which would trip the rest of the testcase
+        editor.getControl().setSelection(new Selection(30, 1, 30, 1));
+        console.log('waiting for code action to no longer be available');
+        await waitForAnimation(() => {
+            if (!isActionAvailable()) {
+                return true;
+            }
+            editor.getControl().setSelection(new Selection(30, 1, 30, 1));
+            console.log('...');
+            return !isActionAvailable();
+        }, 5000, 'Code action still available with no proper selection.');
+        // re-establish selection
+        editor.getControl().setSelection(new Selection(30, 1, 30, 64));
+        console.log('waiting for code action to become available again');
+        await waitForAnimation(() => {
+            console.log('...');
+            return isActionAvailable()
+        }, 5000, 'No code action available. (2)');
+
+        // Change import back: https://github.com/eclipse-theia/theia/issues/11059
+        await commands.executeCommand('editor.action.quickFix');
+        await waitForAnimation(() => Boolean(document.querySelector('.context-view-pointerBlock')), 5000, 'No context menu appeared. (2)');
+        await animationFrame();
+
+        keybindings.dispatchKeyDown('Enter');
+
+        assert.isNotNull(editor.getControl());
+        assert.isNotNull(editor.getControl().getModel());
+        await waitForAnimation(() => editor.getControl().getModel().getLineContent(30) === 'import { DefinedInterface } from "./demo-definitions-file";', 5000, 'The named import did not take effect.');
+    });
 });

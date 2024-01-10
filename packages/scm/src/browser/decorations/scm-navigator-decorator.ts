@@ -1,43 +1,47 @@
-/********************************************************************************
- * Copyright (C) 2019 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2019 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { Event, Emitter } from '@theia/core/lib/common/event';
 import { Tree } from '@theia/core/lib/browser/tree/tree';
 import { TreeDecorator, TreeDecoration } from '@theia/core/lib/browser/tree/tree-decorator';
 import { DepthFirstTreeIterator } from '@theia/core/lib/browser';
 import { FileStatNode } from '@theia/filesystem/lib/browser';
-import { DecorationData, ScmDecorationsService } from './scm-decorations-service';
 import URI from '@theia/core/lib/common/uri';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
+import { Decoration, DecorationsService } from '@theia/core/lib/browser/decorations-service';
 
+/**
+ * @deprecated since 1.25.0
+ * URI-based decorators should implement `DecorationsProvider` and contribute decorations via the `DecorationsService`.
+ */
 @injectable()
 export class ScmNavigatorDecorator implements TreeDecorator {
 
     readonly id = 'theia-scm-decorator';
-    private decorationsMap: Map<string, DecorationData> | undefined;
+    private decorationsMap: Map<string, Decoration> | undefined;
 
     @inject(ILogger) protected readonly logger: ILogger;
 
     @inject(ColorRegistry)
     protected readonly colors: ColorRegistry;
 
-    constructor(@inject(ScmDecorationsService) protected readonly decorationsService: ScmDecorationsService) {
-        this.decorationsService.onNavigatorDecorationsChanged(data => {
+    constructor(@inject(DecorationsService) protected readonly decorationsService: DecorationsService) {
+        this.decorationsService.onDidChangeDecorations(data => {
             this.decorationsMap = data;
             this.fireDidChangeDecorations((tree: Tree) => this.collectDecorators(tree));
         });
@@ -61,8 +65,8 @@ export class ScmNavigatorDecorator implements TreeDecorator {
         return new Map(Array.from(result.entries()).map(m => [m[0], this.toDecorator(m[1])] as [string, TreeDecoration.Data]));
     }
 
-    protected toDecorator(change: DecorationData): TreeDecoration.Data {
-        const colorVariable = change.color && this.colors.toCssVariableName(change.color.id);
+    protected toDecorator(change: Decoration): TreeDecoration.Data {
+        const colorVariable = change.colorId && this.colors.toCssVariableName(change.colorId);
         return {
             tailDecorations: [
                 {
@@ -70,7 +74,7 @@ export class ScmNavigatorDecorator implements TreeDecorator {
                     fontData: {
                         color: colorVariable && `var(${colorVariable})`
                     },
-                    tooltip: change.title ? change.title : ''
+                    tooltip: change.tooltip ? change.tooltip : ''
                 }
             ]
         };
@@ -86,8 +90,8 @@ export class ScmNavigatorDecorator implements TreeDecorator {
         }
     }
 
-    protected appendContainerChanges(decorationsMap: Map<string, DecorationData>): Map<string, DecorationData> {
-        const result: Map<string, DecorationData> = new Map();
+    protected appendContainerChanges(decorationsMap: Map<string, Decoration>): Map<string, Decoration> {
+        const result: Map<string, Decoration> = new Map();
         for (const [uri, data] of decorationsMap.entries()) {
             const uriString = uri.toString();
             result.set(uriString, data);

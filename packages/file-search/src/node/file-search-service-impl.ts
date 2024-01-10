@@ -1,28 +1,29 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import * as fuzzy from 'fuzzy';
+import * as cp from 'child_process';
+import * as fuzzy from '@theia/core/shared/fuzzy';
 import * as readline from 'readline';
-import { rgPath } from 'vscode-ripgrep';
-import { injectable, inject } from 'inversify';
+import { rgPath } from '@vscode/ripgrep';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { CancellationTokenSource, CancellationToken, ILogger, isWindows } from '@theia/core';
 import { RawProcessFactory } from '@theia/process/lib/node';
-import { FileSearchService } from '../common/file-search-service';
+import { FileSearchService, WHITESPACE_QUERY_SEPARATOR } from '../common/file-search-service';
 import * as path from 'path';
 
 @injectable()
@@ -30,7 +31,9 @@ export class FileSearchServiceImpl implements FileSearchService {
 
     constructor(
         @inject(ILogger) protected readonly logger: ILogger,
-        @inject(RawProcessFactory) protected readonly rawProcessFactory: RawProcessFactory) { }
+        /** @deprecated since 1.7.0 */
+        @inject(RawProcessFactory) protected readonly rawProcessFactory: RawProcessFactory,
+    ) { }
 
     async find(searchPattern: string, options: FileSearchService.Options, clientToken?: CancellationToken): Promise<string[]> {
         const cancellationSource = new CancellationTokenSource();
@@ -77,24 +80,38 @@ export class FileSearchServiceImpl implements FileSearchService {
             searchPattern = searchPattern.replace(/\//g, '\\');
         }
 
-        const stringPattern = searchPattern.toLocaleLowerCase();
+        const patterns = searchPattern.toLocaleLowerCase().trim().split(WHITESPACE_QUERY_SEPARATOR);
+
         await Promise.all(Object.keys(roots).map(async root => {
             try {
                 const rootUri = new URI(root);
                 const rootPath = FileUri.fsPath(rootUri);
                 const rootOptions = roots[root];
+
                 await this.doFind(rootUri, rootOptions, candidate => {
+
                     // Convert OS-native candidate path to a file URI string
                     const fileUri = FileUri.create(path.resolve(rootPath, candidate)).toString();
+
                     // Skip results that have already been matched.
                     if (exactMatches.has(fileUri) || fuzzyMatches.has(fileUri)) {
                         return;
                     }
-                    if (!searchPattern || searchPattern === '*' || candidate.toLocaleLowerCase().indexOf(stringPattern) !== -1) {
+
+                    // Determine if the candidate matches any of the patterns exactly or fuzzy
+                    const candidatePattern = candidate.toLocaleLowerCase();
+                    const patternExists = patterns.every(pattern => candidatePattern.indexOf(pattern) !== -1);
+                    if (patternExists) {
                         exactMatches.add(fileUri);
-                    } else if (opts.fuzzyMatch && fuzzy.test(searchPattern, candidate)) {
-                        fuzzyMatches.add(fileUri);
+                    } else if (!searchPattern || searchPattern === '*') {
+                        exactMatches.add(fileUri);
+                    } else {
+                        const fuzzyPatternExists = patterns.every(pattern => fuzzy.test(pattern, candidate));
+                        if (opts.fuzzyMatch && fuzzyPatternExists) {
+                            fuzzyMatches.add(fileUri);
+                        }
                     }
+
                     // Preemptively terminate the search when the list of exact matches reaches the limit.
                     if (exactMatches.size === opts.limit) {
                         cancellationSource.cancel();
@@ -104,6 +121,7 @@ export class FileSearchServiceImpl implements FileSearchService {
                 console.error('Failed to search:', root, e);
             }
         }));
+
         if (clientToken && clientToken.isCancellationRequested) {
             return [];
         }
@@ -111,37 +129,38 @@ export class FileSearchServiceImpl implements FileSearchService {
         return [...exactMatches, ...fuzzyMatches].slice(0, opts.limit);
     }
 
-    private doFind(rootUri: URI, options: FileSearchService.BaseOptions,
-        accept: (fileUri: string) => void, token: CancellationToken): Promise<void> {
+    protected doFind(rootUri: URI, options: FileSearchService.BaseOptions, accept: (fileUri: string) => void, token: CancellationToken): Promise<void> {
         return new Promise((resolve, reject) => {
-            try {
-                const cwd = FileUri.fsPath(rootUri);
-                const args = this.getSearchArgs(options);
-                // TODO: why not just child_process.spawn, theia process are supposed to be used for user processes like tasks and terminals, not internal
-                const process = this.rawProcessFactory({ command: rgPath, args, options: { cwd } });
-                process.onError(reject);
-                process.outputStream.on('close', resolve);
-                token.onCancellationRequested(() => process.kill());
-
-                const lineReader = readline.createInterface({
-                    input: process.outputStream,
-                    output: process.inputStream
-                });
-                lineReader.on('line', line => {
-                    if (token.isCancellationRequested) {
-                        process.kill();
-                    } else {
-                        accept(line);
-                    }
-                });
-            } catch (e) {
-                reject(e);
-            }
+            const cwd = FileUri.fsPath(rootUri);
+            const args = this.getSearchArgs(options);
+            const ripgrep = cp.spawn(rgPath, args, { cwd });
+            ripgrep.on('error', reject);
+            ripgrep.on('exit', (code, signal) => {
+                if (typeof code === 'number' && code !== 0) {
+                    reject(new Error(`"${rgPath}" exited with code: ${code}`));
+                } else if (typeof signal === 'string') {
+                    reject(new Error(`"${rgPath}" was terminated by signal: ${signal}`));
+                }
+            });
+            token.onCancellationRequested(() => {
+                ripgrep.kill(); // most likely sends a signal.
+                resolve(); // avoid rejecting for no good reason.
+            });
+            const lineReader = readline.createInterface({
+                input: ripgrep.stdout,
+                crlfDelay: Infinity,
+            });
+            lineReader.on('line', line => {
+                if (!token.isCancellationRequested) {
+                    accept(line);
+                }
+            });
+            lineReader.on('close', () => resolve());
         });
     }
 
-    private getSearchArgs(options: FileSearchService.BaseOptions): string[] {
-        const args = ['--files', '--hidden', '--case-sensitive'];
+    protected getSearchArgs(options: FileSearchService.BaseOptions): string[] {
+        const args = ['--files', '--hidden', '--case-sensitive', '--no-require-git', '--no-config'];
         if (options.includePatterns) {
             for (const includePattern of options.includePatterns) {
                 if (includePattern) {
@@ -156,8 +175,11 @@ export class FileSearchServiceImpl implements FileSearchService {
                 }
             }
         }
-        if (!options.useGitIgnore) {
-            args.push('-uu');
+        if (options.useGitIgnore) {
+            // ripgrep follows `.gitignore` by default, but it doesn't exclude `.git`:
+            args.push('--glob', '!.git');
+        } else {
+            args.push('--no-ignore');
         }
         return args;
     }

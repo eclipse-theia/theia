@@ -1,20 +1,20 @@
-/********************************************************************************
- * Copyright (C) 2019 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2019 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { PluginMetrics, METRICS_TIMEOUT } from '../common/metrics-protocol';
 import { AnalyticsFromRequests, DataFromRequest, createRequestData, createDefaultAnalytics, MetricsMap } from '../common/plugin-metrics-types';
 
@@ -40,7 +40,7 @@ export class PluginMetricsCreator {
      * create a metric.
      *
      * @param pluginID The id of the plugin
-     * @param errorContents The contents that the langauge server error has produced
+     * @param errorContents The contents that the language server error has produced
      */
     async createErrorMetric(requestData: DataFromRequest): Promise<void> {
         if (!requestData.pluginID) {
@@ -49,7 +49,7 @@ export class PluginMetricsCreator {
 
         const method = this.extractMethodFromValue(requestData.errorContentsOrMethod);
 
-        // only log the metric if we can find the method that it occured in
+        // only log the metric if we can find the method that it occurred in
         if (method) {
             const createdMetric = createRequestData(requestData.pluginID, method, requestData.timeTaken);
             this.createMetric(createdMetric, false);
@@ -75,7 +75,7 @@ export class PluginMetricsCreator {
             const currentAnalytics = thisExtension[method];
             if (currentAnalytics) {
                 currentAnalytics.totalRequests -= 1;
-                currentAnalytics.succesfulResponses -= 1;
+                currentAnalytics.successfulResponses -= 1;
             }
         }
     }
@@ -104,7 +104,7 @@ export class PluginMetricsCreator {
             if (currentAnalytic) {
                 currentAnalytic.totalRequests += 1;
                 if (isRequestSuccessful) {
-                    currentAnalytic.succesfulResponses += 1;
+                    currentAnalytic.successfulResponses += 1;
                 }
                 if (isRequestSuccessful) {
                     currentAnalytic.sumOfTimeForSuccess = currentAnalytic.sumOfTimeForSuccess + requestData.timeTaken;

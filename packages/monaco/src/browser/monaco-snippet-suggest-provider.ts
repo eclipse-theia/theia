@@ -1,37 +1,40 @@
-/********************************************************************************
- * Copyright (C) 2019 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2019 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
 import * as jsoncparser from 'jsonc-parser';
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { FileSystem, FileSystemError } from '@theia/filesystem/lib/common';
-import { CompletionTriggerKind } from '@theia/languages/lib/browser';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { FileOperationError } from '@theia/filesystem/lib/common/files';
+import * as monaco from '@theia/monaco-editor-core';
+import { SnippetParser } from '@theia/monaco-editor-core/esm/vs/editor/contrib/snippet/browser/snippetParser';
+import { isObject } from '@theia/core/lib/common';
 
 @injectable()
 export class MonacoSnippetSuggestProvider implements monaco.languages.CompletionItemProvider {
 
     private static readonly _maxPrefix = 10000;
 
-    @inject(FileSystem)
-    protected readonly filesystem: FileSystem;
+    @inject(FileService)
+    protected readonly fileService: FileService;
 
     protected readonly snippets = new Map<string, Snippet[]>();
     protected readonly pendingSnippets = new Map<string, Promise<void>[]>();
@@ -44,18 +47,18 @@ export class MonacoSnippetSuggestProvider implements monaco.languages.Completion
             return undefined;
         }
 
-        if (context.triggerKind === CompletionTriggerKind.TriggerCharacter && context.triggerCharacter === ' ') {
+        if (context.triggerKind === monaco.languages.CompletionTriggerKind.TriggerCharacter && context.triggerCharacter === ' ') {
             // no snippets when suggestions have been triggered by space
             return undefined;
         }
 
-        const languageId = model.getModeId(); // TODO: look up a language id at the position
+        const languageId = model.getLanguageId(); // TODO: look up a language id at the position
         await this.loadSnippets(languageId);
         const snippetsForLanguage = this.snippets.get(languageId) || [];
 
         const pos = { lineNumber: position.lineNumber, column: 1 };
         const lineOffsets: number[] = [];
-        const linePrefixLow = model.getLineContent(position.lineNumber).substr(0, position.column - 1).toLowerCase();
+        const linePrefixLow = model.getLineContent(position.lineNumber).substring(0, position.column - 1).toLowerCase();
         const endsInWhitespace = linePrefixLow.match(/\s$/);
 
         while (pos.column < position.column) {
@@ -101,7 +104,7 @@ export class MonacoSnippetSuggestProvider implements monaco.languages.Completion
         return { suggestions };
     }
 
-    resolveCompletionItem(textModel: monaco.editor.ITextModel, position: monaco.Position, item: monaco.languages.CompletionItem): monaco.languages.CompletionItem {
+    resolveCompletionItem?(item: monaco.languages.CompletionItem, token: monaco.CancellationToken): monaco.languages.CompletionItem {
         return item instanceof MonacoSnippetSuggestion ? item.resolve() : item;
     }
 
@@ -138,14 +141,15 @@ export class MonacoSnippetSuggestProvider implements monaco.languages.Completion
      */
     protected async loadURI(uri: string | URI, options: SnippetLoadOptions, toDispose: DisposableCollection): Promise<void> {
         try {
-            const { content } = await this.filesystem.resolveContent(uri.toString(), { encoding: 'utf-8' });
+            const resource = typeof uri === 'string' ? new URI(uri) : uri;
+            const { value } = await this.fileService.read(resource);
             if (toDispose.disposed) {
                 return;
             }
-            const snippets = content && jsoncparser.parse(content, undefined, { disallowComments: false });
+            const snippets = value && jsoncparser.parse(value, undefined, { disallowComments: false });
             toDispose.push(this.fromJSON(snippets, options));
         } catch (e) {
-            if (!FileSystemError.FileNotFound.is(e) && !FileSystemError.FileIsDirectory.is(e)) {
+            if (!(e instanceof FileOperationError)) {
                 console.error(e);
             }
         }
@@ -154,9 +158,9 @@ export class MonacoSnippetSuggestProvider implements monaco.languages.Completion
     fromJSON(snippets: JsonSerializedSnippets | undefined, { language, source }: SnippetLoadOptions): Disposable {
         const toDispose = new DisposableCollection();
         this.parseSnippets(snippets, (name, snippet) => {
-            const { prefix, body, description } = snippet;
+            const { isFileTemplate, prefix, body, description } = snippet;
             const parsedBody = Array.isArray(body) ? body.join('\n') : body;
-            const parsedPrefixes = Array.isArray(prefix) ? prefix : [prefix];
+            const parsedPrefixes = !prefix ? [''] : Array.isArray(prefix) ? prefix : [prefix];
 
             if (typeof parsedBody !== 'string') {
                 return;
@@ -177,6 +181,7 @@ export class MonacoSnippetSuggestProvider implements monaco.languages.Completion
                 }
             }
             parsedPrefixes.forEach(parsedPrefix => toDispose.push(this.push({
+                isFileTemplate: Boolean(isFileTemplate),
                 scopes,
                 name,
                 prefix: parsedPrefix,
@@ -188,14 +193,13 @@ export class MonacoSnippetSuggestProvider implements monaco.languages.Completion
         return toDispose;
     }
     protected parseSnippets(snippets: JsonSerializedSnippets | undefined, accept: (name: string, snippet: JsonSerializedSnippet) => void): void {
-        if (typeof snippets === 'object') {
-            // eslint-disable-next-line guard-for-in
-            for (const name in snippets) {
-                const scopeOrTemplate = snippets[name];
-                if (JsonSerializedSnippet.is(scopeOrTemplate)) {
-                    accept(name, scopeOrTemplate);
-                } else {
-                    this.parseSnippets(scopeOrTemplate, accept);
+        for (const [name, scopeOrTemplate] of Object.entries(snippets ?? {})) {
+            if (JsonSerializedSnippet.is(scopeOrTemplate)) {
+                accept(name, scopeOrTemplate);
+            } else {
+                // eslint-disable-next-line @typescript-eslint/no-shadow
+                for (const [name, template] of Object.entries(scopeOrTemplate)) {
+                    accept(name, template);
                 }
             }
         }
@@ -240,18 +244,20 @@ export interface JsonSerializedSnippets {
     [name: string]: JsonSerializedSnippet | { [name: string]: JsonSerializedSnippet };
 }
 export interface JsonSerializedSnippet {
+    isFileTemplate?: boolean;
     body: string | string[];
-    scope: string;
-    prefix: string | string[];
+    scope?: string;
+    prefix?: string | string[];
     description: string;
 }
 export namespace JsonSerializedSnippet {
-    export function is(obj: Object | undefined): obj is JsonSerializedSnippet {
-        return typeof obj === 'object' && 'body' in obj && 'prefix' in obj;
+    export function is(obj: unknown): obj is JsonSerializedSnippet {
+        return isObject(obj) && 'body' in obj;
     }
 }
 
 export interface Snippet {
+    readonly isFileTemplate: boolean
     readonly scopes: string[]
     readonly name: string
     readonly prefix: string
@@ -286,7 +292,7 @@ export class MonacoSnippetSuggestion implements monaco.languages.CompletionItem 
     protected resolved = false;
     resolve(): MonacoSnippetSuggestion {
         if (!this.resolved) {
-            const codeSnippet = new monaco.snippetParser.SnippetParser().parse(this.snippet.body).toString();
+            const codeSnippet = new SnippetParser().parse(this.snippet.body).toString();
             this.documentation = { value: '```\n' + codeSnippet + '```' };
             this.resolved = true;
         }

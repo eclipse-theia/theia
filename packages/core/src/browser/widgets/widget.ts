@@ -1,28 +1,29 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { injectable, decorate, unmanaged } from 'inversify';
-import { Widget } from '@phosphor/widgets';
-import { Message } from '@phosphor/messaging';
-import { Emitter, Event, Disposable, DisposableCollection, MaybePromise } from '../../common';
+import { Title, Widget } from '@phosphor/widgets';
+import { Message, MessageLoop } from '@phosphor/messaging';
+import { Emitter, Event, Disposable, DisposableCollection, MaybePromise, isObject } from '../../common';
 import { KeyCode, KeysOrKeyCodes } from '../keyboard/keys';
 
 import PerfectScrollbar from 'perfect-scrollbar';
+import { PreviewableWidget } from '../widgets/previewable-widget';
 
 decorate(injectable(), Widget);
 decorate(unmanaged(), Widget, 0);
@@ -30,15 +31,70 @@ decorate(unmanaged(), Widget, 0);
 export * from '@phosphor/widgets';
 export * from '@phosphor/messaging';
 
+export const ACTION_ITEM = 'action-label';
+
+export function codiconArray(name: string, actionItem = false): string[] {
+    const array = ['codicon', `codicon-${name}`];
+    if (actionItem) {
+        array.push(ACTION_ITEM);
+    }
+    return array;
+}
+
+export function codicon(name: string, actionItem = false): string {
+    return `codicon codicon-${name}${actionItem ? ` ${ACTION_ITEM}` : ''}`;
+}
+
 export const DISABLED_CLASS = 'theia-mod-disabled';
 export const EXPANSION_TOGGLE_CLASS = 'theia-ExpansionToggle';
+export const CODICON_TREE_ITEM_CLASSES = codiconArray('chevron-down');
 export const COLLAPSED_CLASS = 'theia-mod-collapsed';
 export const BUSY_CLASS = 'theia-mod-busy';
+export const CODICON_LOADING_CLASSES = codiconArray('loading');
 export const SELECTED_CLASS = 'theia-mod-selected';
 export const FOCUS_CLASS = 'theia-mod-focus';
+export const PINNED_CLASS = 'theia-mod-pinned';
+export const LOCKED_CLASS = 'theia-mod-locked';
+export const DEFAULT_SCROLL_OPTIONS: PerfectScrollbar.Options = {
+    suppressScrollX: true,
+    minScrollbarLength: 35,
+};
+
+/**
+ * At a number of places in the code, we have effectively reimplemented Phosphor's Widget.attach and Widget.detach,
+ * but omitted the checks that Phosphor expects to be performed for those operations. That is a bad idea, because it
+ * means that we are telling widgets that they are attached or detached when not all the conditions that should apply
+ * do apply. We should explicitly mark those locations so that we know where we should go fix them later.
+ */
+export namespace UnsafeWidgetUtilities {
+    /**
+     * Ordinarily, the following checks should be performed before detaching a widget:
+     * It should not be the child of another widget
+     * It should be attached and it should be a child of document.body
+     */
+    export function detach(widget: Widget): void {
+        MessageLoop.sendMessage(widget, Widget.Msg.BeforeDetach);
+        widget.node.remove();
+        MessageLoop.sendMessage(widget, Widget.Msg.AfterDetach);
+    };
+    /**
+     * @param ref The child of the host element to insert the widget before.
+     * Ordinarily the following checks should be performed:
+     * The widget should have no parent
+     * The widget should not be attached, and its node should not be a child of document.body
+     * The host should be a child of document.body
+     * We often violate the last condition.
+     */
+    // eslint-disable-next-line no-null/no-null
+    export function attach(widget: Widget, host: HTMLElement, ref: HTMLElement | null = null): void {
+        MessageLoop.sendMessage(widget, Widget.Msg.BeforeAttach);
+        host.insertBefore(widget.node, ref);
+        MessageLoop.sendMessage(widget, Widget.Msg.AfterAttach);
+    };
+}
 
 @injectable()
-export class BaseWidget extends Widget {
+export class BaseWidget extends Widget implements PreviewableWidget {
 
     protected readonly onScrollYReachEndEmitter = new Emitter<void>();
     readonly onScrollYReachEnd: Event<void> = this.onScrollYReachEndEmitter.event;
@@ -60,7 +116,11 @@ export class BaseWidget extends Widget {
     protected scrollBar?: PerfectScrollbar;
     protected scrollOptions?: PerfectScrollbar.Options;
 
-    dispose(): void {
+    constructor(options?: Widget.IOptions) {
+        super(options);
+    }
+
+    override dispose(): void {
         if (this.isDisposed) {
             return;
         }
@@ -68,31 +128,31 @@ export class BaseWidget extends Widget {
         this.toDispose.dispose();
     }
 
-    protected onCloseRequest(msg: Message): void {
+    protected override onCloseRequest(msg: Message): void {
         super.onCloseRequest(msg);
         this.dispose();
     }
 
-    protected onBeforeAttach(msg: Message): void {
+    protected override onBeforeAttach(msg: Message): void {
         if (this.title.iconClass === '') {
             this.title.iconClass = 'no-icon';
         }
         super.onBeforeAttach(msg);
     }
 
-    protected onAfterDetach(msg: Message): void {
+    protected override onAfterDetach(msg: Message): void {
         if (this.title.iconClass === 'no-icon') {
             this.title.iconClass = '';
         }
         super.onAfterDetach(msg);
     }
 
-    protected onBeforeDetach(msg: Message): void {
+    protected override onBeforeDetach(msg: Message): void {
         this.toDisposeOnDetach.dispose();
         super.onBeforeDetach(msg);
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
         if (this.scrollOptions) {
             (async () => {
@@ -128,7 +188,7 @@ export class BaseWidget extends Widget {
         }
     }
 
-    protected onUpdateRequest(msg: Message): void {
+    protected override onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
         if (this.scrollBar) {
             this.scrollBar.update();
@@ -157,14 +217,18 @@ export class BaseWidget extends Widget {
         this.toDisposeOnDetach.push(addClipboardListener(element, type, listener));
     }
 
-    setFlag(flag: Widget.Flag): void {
+    getPreviewNode(): Node | undefined {
+        return this.node;
+    }
+
+    override setFlag(flag: Widget.Flag): void {
         super.setFlag(flag);
         if (flag === Widget.Flag.IsVisible) {
             this.onDidChangeVisibilityEmitter.fire(this.isVisible);
         }
     }
 
-    clearFlag(flag: Widget.Flag): void {
+    override clearFlag(flag: Widget.Flag): void {
         super.clearFlag(flag);
         if (flag === Widget.Flag.IsVisible) {
             this.onDidChangeVisibilityEmitter.fire(this.isVisible);
@@ -192,9 +256,8 @@ export interface EventListenerObject<K extends keyof HTMLElementEventMap> {
     handleEvent(evt: HTMLElementEventMap[K]): void;
 }
 export namespace EventListenerObject {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function is<K extends keyof HTMLElementEventMap>(listener: any | undefined): listener is EventListenerObject<K> {
-        return !!listener && 'handleEvent' in listener;
+    export function is<K extends keyof HTMLElementEventMap>(listener: unknown): listener is EventListenerObject<K> {
+        return isObject(listener) && 'handleEvent' in listener;
     }
 }
 export type EventListenerOrEventListenerObject<K extends keyof HTMLElementEventMap> = EventListener<K> | EventListenerObject<K>;
@@ -203,7 +266,7 @@ export function addEventListener<K extends keyof HTMLElementEventMap>(
 ): Disposable {
     element.addEventListener(type, listener, useCapture);
     return Disposable.create(() =>
-        element.removeEventListener(type, listener)
+        element.removeEventListener(type, listener, useCapture)
     );
 }
 
@@ -279,7 +342,7 @@ export function waitForRevealed(widget: Widget): Promise<void> {
  * Resolves when the given widget is hidden regardless of attachment.
  */
 export function waitForHidden(widget: Widget): Promise<void> {
-    return waitForVisible(widget, true);
+    return waitForVisible(widget, false);
 }
 
 function waitForVisible(widget: Widget, visible: boolean, attached?: boolean): Promise<void> {
@@ -299,4 +362,37 @@ function waitForVisible(widget: Widget, visible: boolean, attached?: boolean): P
         });
         waitFor();
     });
+}
+
+export function isPinned(title: Title<Widget>): boolean {
+    const pinnedState = !title.closable && title.className.includes(PINNED_CLASS);
+    return pinnedState;
+}
+
+export function unpin(title: Title<Widget>): void {
+    title.closable = true;
+    title.className = title.className.replace(PINNED_CLASS, '').trim();
+}
+
+export function pin(title: Title<Widget>): void {
+    title.closable = false;
+    if (!title.className.includes(PINNED_CLASS)) {
+        title.className += ` ${PINNED_CLASS}`;
+    }
+}
+
+export function lock(title: Title<Widget>): void {
+    if (!title.className.includes(LOCKED_CLASS)) {
+        title.className += ` ${LOCKED_CLASS}`;
+    }
+}
+
+export function togglePinned(title?: Title<Widget>): void {
+    if (title) {
+        if (isPinned(title)) {
+            unpin(title);
+        } else {
+            pin(title);
+        }
+    }
 }

@@ -1,51 +1,59 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { EditorManager, TextEditor, EditorDecoration, EditorDecorationOptions, Range, Position, EditorDecorationStyle } from '@theia/editor/lib/browser';
-import { GitFileBlame, Commit } from '../../common';
-import { Disposable, DisposableCollection } from '@theia/core';
-import * as moment from 'moment';
-import { HoverProvider, TextDocumentPositionParams, Hover, CancellationToken, Languages } from '@theia/languages/lib/browser';
+import { GitFileBlame } from '../../common';
+import { Disposable, DisposableCollection, nls } from '@theia/core';
+import { DateTime } from 'luxon';
 import URI from '@theia/core/lib/common/uri';
+import { DecorationStyle } from '@theia/core/lib/browser';
+import * as monaco from '@theia/monaco-editor-core';
+import { LanguageSelector } from '@theia/monaco-editor-core/esm/vs/editor/common/languageSelector';
 
 @injectable()
-export class BlameDecorator implements HoverProvider {
+export class BlameDecorator implements monaco.languages.HoverProvider {
+
+    constructor(
+        protected blameDecorationsStyleSheet: CSSStyleSheet = DecorationStyle.createStyleSheet('gitBlameDecorationsStyle')
+    ) {
+        DecorationStyle.getOrCreateStyleRule(`.${BlameDecorator.GIT_BLAME_HIGHLIGHT}`,
+            this.blameDecorationsStyleSheet).style.backgroundColor = 'var(--theia-gitlens-lineHighlightBackgroundColor)';
+        DecorationStyle.getOrCreateStyleRule(`.${BlameDecorator.GIT_BLAME_CONTINUATION_LINE}::before`, this.blameDecorationsStyleSheet).style.content = "'\u2007'"; // blank
+        DecorationStyle.getOrCreateStyleRule(`.${BlameDecorator.GIT_BLAME_CONTINUATION_LINE}::after`, this.blameDecorationsStyleSheet).style.content = "'\u2007'"; // blank;
+    }
 
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
 
-    @inject(Languages)
-    protected readonly languages: Languages;
-
-    constructor(
-    ) { }
-
     protected registerHoverProvider(uri: string): Disposable {
-        if (this.languages.registerHoverProvider) {
-            return this.languages.registerHoverProvider([{ pattern: new URI(uri).path.toString() }], this);
-        }
-        return Disposable.NULL;
+        // The public typedef of this method only accepts strings, but it immediately delegates to a method that accepts LanguageSelectors.
+        return (monaco.languages.registerHoverProvider as (languageId: LanguageSelector, provider: monaco.languages.HoverProvider) => Disposable)
+            ([{ pattern: new URI(uri).path.toString() }], this);
     }
 
-    protected emptyHover: Hover = { contents: '' };
+    protected emptyHover: monaco.languages.Hover = {
+        contents: [{
+            value: ''
+        }]
+    };
 
-    async provideHover(params: TextDocumentPositionParams, token: CancellationToken): Promise<Hover> {
-        const { line } = params.position;
-        const uri = params.textDocument.uri;
+    async provideHover(model: monaco.editor.ITextModel, position: monaco.Position, token: monaco.CancellationToken): Promise<monaco.languages.Hover> {
+        const line = position.lineNumber - 1;
+        const uri = model.uri.toString();
         const applications = this.appliedDecorations.get(uri);
         if (!applications) {
             return this.emptyHover;
@@ -63,11 +71,11 @@ export class BlameDecorator implements HoverProvider {
         const date = new Date(commit.author.timestamp);
         let commitMessage = commit.summary + '\n' + (commit.body || '');
         commitMessage = commitMessage.replace(/[`\>\#\*\_\-\+]/g, '\\$&').replace(/\n/g, '  \n');
-        const message = `${commit.sha}\n \n ${commit.author.name}, ${date.toString()}\n \n> ${commitMessage}`;
+        const value = `${commit.sha}\n \n ${commit.author.name}, ${date.toString()}\n \n> ${commitMessage}`;
 
         const hover = {
-            contents: [message],
-            range: Range.create(Position.create(line, 0), Position.create(line, 10 ^ 10))
+            contents: [{ value }],
+            range: monaco.Range.fromPositions(new monaco.Position(position.lineNumber, 1), new monaco.Position(position.lineNumber, 10 ^ 10))
         };
         return hover;
     }
@@ -95,8 +103,8 @@ export class BlameDecorator implements HoverProvider {
             }
             applications.highlightedSha = sha;
         }
-        const blameDecorations = this.toDecorations(blame, highlightLine);
         applications.previousStyles.dispose();
+        const blameDecorations = this.toDecorations(blame, highlightLine);
         applications.previousStyles.pushAll(blameDecorations.styles);
         const newDecorations = blameDecorations.editorDecorations;
         const oldDecorations = applications.previousDecorations;
@@ -118,16 +126,24 @@ export class BlameDecorator implements HoverProvider {
         const commits = blame.commits;
         for (const commit of commits) {
             const sha = commit.sha;
-            const commitTime = moment(commit.author.timestamp);
+            const commitTime = DateTime.fromISO(commit.author.timestamp);
             const heat = this.getHeatColor(commitTime);
-            const content = this.formatContentLine(commit, commitTime);
-            const short = sha.substr(0, 7);
-            const selector = 'git-' + short + '::before';
-            beforeContentStyles.set(sha, new EditorDecorationStyle(selector, style => {
-                EditorDecorationStyle.copyStyle(BlameDecorator.defaultGutterStyles, style);
-                style.content = `'${content}'`;
+            const content = commit.summary.replace('\n', '↩︎').replace(/'/g, "\\'");
+            const short = sha.substring(0, 7);
+            new EditorDecorationStyle('.git-' + short, style => {
+                Object.assign(style, BlameDecorator.defaultGutterStyles);
                 style.borderColor = heat;
-            }));
+            }, this.blameDecorationsStyleSheet);
+            beforeContentStyles.set(sha, new EditorDecorationStyle('.git-' + short + '::before', style => {
+                Object.assign(style, BlameDecorator.defaultGutterBeforeStyles);
+                style.content = `'${content}'`;
+            }, this.blameDecorationsStyleSheet));
+            new EditorDecorationStyle('.git-' + short + '::after', style => {
+                Object.assign(style, BlameDecorator.defaultGutterAfterStyles);
+                style.content = (this.now.diff(commitTime, 'seconds').toObject().seconds ?? 0) < 60
+                    ? `'${nls.localize('theia/git/aFewSecondsAgo', 'a few seconds ago')}'`
+                    : `'${commitTime.toRelative({ locale: nls.locale })}'`;
+            }, this.blameDecorationsStyleSheet);
         }
         const commitLines = blame.lines;
         const highlightedSha = this.getShaForLine(blame, highlightLine) || '';
@@ -141,10 +157,10 @@ export class BlameDecorator implements HoverProvider {
                 beforeContentClassName,
             };
             if (sha === highlightedSha) {
-                options.beforeContentClassName += ' ' + BlameDecorator.highlightStyle.className;
+                options.beforeContentClassName += ' ' + BlameDecorator.GIT_BLAME_HIGHLIGHT;
             }
             if (sha === previousLineSha) {
-                options.beforeContentClassName += ' ' + BlameDecorator.continuationStyle.className;
+                options.beforeContentClassName += ' ' + BlameDecorator.GIT_BLAME_CONTINUATION_LINE + ' ' + BlameDecorator.GIT_BLAME_CONTINUATION_LINE;
             }
             previousLineSha = sha;
             const range = Range.create(Position.create(line, 0), Position.create(line, 0));
@@ -154,27 +170,9 @@ export class BlameDecorator implements HoverProvider {
         return { editorDecorations, styles };
     }
 
-    protected formatContentLine(commit: Commit, commitTime: moment.Moment): string {
-        const when = commitTime.fromNow();
-        const contentWidth = BlameDecorator.maxWidth - when.length - 2;
-        let content = commit.summary.substring(0, contentWidth + 1);
-        content = content.replace('\n', '↩︎').replace(/'/g, "\\'");
-        if (content.length > contentWidth) {
-            let cropAt = content.lastIndexOf(' ', contentWidth - 4);
-            if (cropAt < contentWidth / 2) {
-                cropAt = contentWidth - 3;
-            }
-            content = content.substring(0, cropAt) + '...';
-        }
-        if (content.length < contentWidth) {
-            content = content + '\u2007'.repeat(contentWidth - content.length); // fill up with blanks
-        }
-        return `${content} ${when}`;
-    }
-
-    protected now = moment();
-    protected getHeatColor(commitTime: moment.Moment): string {
-        const daysFromNow = this.now.diff(commitTime, 'days');
+    protected now = DateTime.now();
+    protected getHeatColor(commitTime: DateTime): string {
+        const daysFromNow = this.now.diff(commitTime, 'days').toObject().days ?? 0;
         if (daysFromNow <= 2) {
             return 'var(--md-orange-50)';
         }
@@ -206,26 +204,30 @@ export class BlameDecorator implements HoverProvider {
 
 export namespace BlameDecorator {
 
-    export const maxWidth = 50; // character
+    export const GIT_BLAME_HIGHLIGHT = 'git-blame-highlight';
+    export const GIT_BLAME_CONTINUATION_LINE = 'git-blame-continuation-line';
 
     export const defaultGutterStyles = <CSSStyleDeclaration>{
-        width: `${maxWidth}ch`,
-        color: 'var(--theia-gitlens-gutterForegroundColor)',
+        display: 'inline-flex',
+        width: '50ch',
+        marginRight: '26px',
+        justifyContent: 'space-between',
         backgroundColor: 'var(--theia-gitlens-gutterBackgroundColor)',
-        height: '100%',
-        margin: '0 26px -1px 0',
-        display: 'inline-block',
         borderRight: '2px solid',
+        height: '100%',
+        overflow: 'hidden'
     };
 
-    export const continuationStyle = new EditorDecorationStyle('git-blame-continuation-line::before', style => {
-        style.content = "'\u2007'"; // blank
-    });
+    export const defaultGutterBeforeStyles = <CSSStyleDeclaration>{
+        color: 'var(--theia-gitlens-gutterForegroundColor)',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis'
+    };
 
-    export const highlightStyle = new EditorDecorationStyle('git-blame-highlight::before', style => {
-        style.backgroundColor = 'var(--theia-gitlens-lineHighlightBackgroundColor)';
-    });
-
+    export const defaultGutterAfterStyles = <CSSStyleDeclaration>{
+        color: 'var(--theia-gitlens-gutterForegroundColor)',
+        marginLeft: '12px'
+    };
 }
 
 export interface BlameDecorations {

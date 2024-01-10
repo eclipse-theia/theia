@@ -1,25 +1,26 @@
-/********************************************************************************
- * Copyright (C) 2019 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2019 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import * as React from 'react';
+import * as React from '@theia/core/shared/react';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
 import { FunctionBreakpoint } from '../breakpoint/breakpoint-marker';
 import { BreakpointManager } from '../breakpoint/breakpoint-manager';
 import { DebugBreakpoint, DebugBreakpointOptions, DebugBreakpointDecoration } from './debug-breakpoint';
 import { SingleTextInputDialog } from '@theia/core/lib/browser/dialogs';
+import { nls } from '@theia/core';
 
 export class DebugFunctionBreakpoint extends DebugBreakpoint<FunctionBreakpoint> implements TreeElement {
 
@@ -36,7 +37,7 @@ export class DebugFunctionBreakpoint extends DebugBreakpoint<FunctionBreakpoint>
         }
     }
 
-    protected isEnabled(): boolean {
+    protected override isEnabled(): boolean {
         return super.isEnabled() && this.isSupported();
     }
 
@@ -61,23 +62,23 @@ export class DebugFunctionBreakpoint extends DebugBreakpoint<FunctionBreakpoint>
         return <span className='line-info'>{this.name}</span>;
     }
 
-    protected doGetDecoration(): DebugBreakpointDecoration {
+    protected override doGetDecoration(): DebugBreakpointDecoration {
         if (!this.isSupported()) {
-            return this.getDisabledBreakpointDecoration('Function breakpoints are not supported by this debug type');
+            return this.getDisabledBreakpointDecoration(nls.localizeByDefault('Function breakpoints are not supported by this debug type'));
         }
         return super.doGetDecoration();
     }
 
     protected getBreakpointDecoration(message?: string[]): DebugBreakpointDecoration {
         return {
-            className: 'theia-debug-function',
-            message: message || ['Function Breakpoint']
+            className: 'codicon-debug-breakpoint-function',
+            message: message || [nls.localizeByDefault('Function Breakpoint')]
         };
     }
 
     async open(): Promise<void> {
         const input = new SingleTextInputDialog({
-            title: 'Add Function Breakpoint',
+            title: nls.localizeByDefault('Add Function Breakpoint'),
             initialValue: this.name
         });
         const newValue = await input.open();

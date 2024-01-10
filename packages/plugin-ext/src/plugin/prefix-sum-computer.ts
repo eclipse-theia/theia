@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 // Copied from https://github.com/Microsoft/vscode/blob/master/src/vs/editor/common/viewModel/prefixSumComputer.ts
 /*---------------------------------------------------------------------------------------------
@@ -114,9 +114,9 @@ export class PrefixSumComputer {
         return true;
     }
 
-    public removeValues(startIndex: number, cnt: number): boolean {
+    public removeValues(startIndex: number, count: number): boolean {
         startIndex = toUint32(startIndex);
-        cnt = toUint32(cnt);
+        count = toUint32(count);
 
         const oldValues = this.values;
         const oldPrefixSum = this.prefixSum;
@@ -125,18 +125,18 @@ export class PrefixSumComputer {
             return false;
         }
 
-        const maxCnt = oldValues.length - startIndex;
-        if (cnt >= maxCnt) {
-            cnt = maxCnt;
+        const maxCount = oldValues.length - startIndex;
+        if (count >= maxCount) {
+            count = maxCount;
         }
 
-        if (cnt === 0) {
+        if (count === 0) {
             return false;
         }
 
-        this.values = new Uint32Array(oldValues.length - cnt);
+        this.values = new Uint32Array(oldValues.length - count);
         this.values.set(oldValues.subarray(0, startIndex), 0);
-        this.values.set(oldValues.subarray(startIndex + cnt), startIndex);
+        this.values.set(oldValues.subarray(startIndex + count), startIndex);
 
         this.prefixSum = new Uint32Array(this.values.length);
         if (startIndex - 1 < this.prefixSumValidIndex[0]) {

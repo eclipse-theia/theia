@@ -1,32 +1,31 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import debounce = require('lodash.debounce');
+import debounce = require('@theia/core/shared/lodash.debounce');
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import { FileSystem } from '@theia/filesystem/lib/common';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { StorageService } from '@theia/core/lib/browser/storage-service';
-import { FileSystemWatcher } from '@theia/filesystem/lib/browser/filesystem-watcher';
 import { Git, Repository } from '../common';
 import { GitCommitMessageValidator } from './git-commit-message-validator';
 import { GitScmProvider } from './git-scm-provider';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { ScmRepository } from '@theia/scm/lib/browser/scm-repository';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
 
 export interface GitRefreshOptions {
     readonly maxCount: number
@@ -45,18 +44,20 @@ export class GitRepositoryProvider {
     @inject(GitCommitMessageValidator)
     protected readonly commitMessageValidator: GitCommitMessageValidator;
 
-    constructor(
-        @inject(Git) protected readonly git: Git,
-        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
-        @inject(FileSystemWatcher) protected readonly watcher: FileSystemWatcher,
-        @inject(FileSystem) protected readonly fileSystem: FileSystem,
-        @inject(ScmService) protected readonly scmService: ScmService,
-        @inject(StorageService) protected readonly storageService: StorageService
-    ) {
-        this.initialize();
+    @inject(Git) protected readonly git: Git;
+    @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
+    @inject(ScmService) protected readonly scmService: ScmService;
+    @inject(StorageService) protected readonly storageService: StorageService;
+
+    @inject(FileService)
+    protected readonly fileService: FileService;
+
+    @postConstruct()
+    protected init(): void {
+        this.doInit();
     }
 
-    protected async initialize(): Promise<void> {
+    protected async doInit(): Promise<void> {
         const [selectedRepository, allRepositories] = await Promise.all([
             this.storageService.getData<Repository | undefined>(this.selectedRepoStorageKey),
             this.storageService.getData<Repository[]>(this.allRepoStorageKey)
@@ -71,10 +72,10 @@ export class GitRepositoryProvider {
         this.selectedRepository = selectedRepository;
 
         await this.refresh();
-        this.watcher.onFilesChanged(_changedFiles => this.lazyRefresh());
+        this.fileService.onDidFilesChange(_ => this.lazyRefresh());
     }
 
-    protected lazyRefresh: () => Promise<void> = debounce(() => this.refresh(), 1000);
+    protected lazyRefresh: () => Promise<void> | undefined = debounce(() => this.refresh(), 1000);
 
     /**
      * Returns with the previously selected repository, or if no repository has been selected yet,
@@ -131,7 +132,7 @@ export class GitRepositoryProvider {
         const repositories: Repository[] = [];
         const refreshing: Promise<void>[] = [];
         for (const root of await this.workspaceService.roots) {
-            refreshing.push(this.git.repositories(root.uri, { ...options }).then(
+            refreshing.push(this.git.repositories(root.resource.toString(), { ...options }).then(
                 result => { repositories.push(...result); },
                 () => { /* no-op*/ }
             ));
@@ -168,7 +169,7 @@ export class GitRepositoryProvider {
 
     protected registerScmProvider(repository: Repository): void {
         const provider = this.scmProviderFactory({ repository });
-        this.scmService.registerScmProvider(provider, {
+        const scmRepository = this.scmService.registerScmProvider(provider, {
             input: {
                 placeholder: 'Message (press {0} to commit)',
                 validator: async value => {
@@ -180,6 +181,7 @@ export class GitRepositoryProvider {
                 }
             }
         });
+        provider.input = scmRepository.input;
     }
 
     protected toScmRepository(repository: Repository | undefined): ScmRepository | undefined {

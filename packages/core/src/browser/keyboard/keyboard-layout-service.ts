@@ -1,21 +1,21 @@
-/********************************************************************************
- * Copyright (C) 2019 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2019 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { injectable, inject, optional } from 'inversify';
-import { IWindowsKeyMapping } from 'native-keymap';
+import type { IWindowsKeyMapping } from 'native-keymap';
 import { isWindows } from '../../common/os';
 import {
     NativeKeyboardLayout, KeyboardLayoutProvider, KeyboardLayoutChangeNotifier, KeyValidator
@@ -98,8 +98,18 @@ export class KeyboardLayoutService {
     getKeyboardCharacter(key: Key): string {
         const layout = this.currentLayout;
         if (layout) {
-            const value = layout.code2Character[key.code];
-            if (value) {
+            const value = layout.code2Character[key.code]?.trim();
+            // Special cases from native keymap
+            if (value === '\u001b') {
+                return 'escape';
+            }
+            if (value === '\u007f') {
+                return 'delete';
+            }
+            if (value === '\u0008') {
+                return 'backspace';
+            }
+            if (value?.replace(/[\n\r\t]/g, '')) {
                 return value;
             }
         }

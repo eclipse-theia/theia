@@ -1,22 +1,22 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import * as React from 'react';
-import { CancellationTokenSource, Emitter, Event } from '@theia/core';
-import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
+import * as React from '@theia/core/shared/react';
+import { CancellationTokenSource, Emitter, Event, nls } from '@theia/core';
+import { DebugProtocol } from '@vscode/debugprotocol/lib/debugProtocol';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
 import { DebugStackFrame } from './debug-stack-frame';
 import { DebugSession } from '../debug-session';
@@ -41,6 +41,10 @@ export class DebugThread extends DebugThreadData implements TreeElement {
 
     protected readonly onDidChangedEmitter = new Emitter<void>();
     readonly onDidChanged: Event<void> = this.onDidChangedEmitter.event;
+    protected readonly onDidFocusStackFrameEmitter = new Emitter<DebugStackFrame | undefined>();
+    get onDidFocusStackFrame(): Event<DebugStackFrame | undefined> {
+        return this.onDidFocusStackFrameEmitter.event;
+    }
 
     constructor(
         readonly session: DebugSession
@@ -59,6 +63,7 @@ export class DebugThread extends DebugThreadData implements TreeElement {
     set currentFrame(frame: DebugStackFrame | undefined) {
         this._currentFrame = frame;
         this.onDidChangedEmitter.fire(undefined);
+        this.onDidFocusStackFrameEmitter.fire(frame);
     }
 
     get stopped(): boolean {
@@ -155,7 +160,7 @@ export class DebugThread extends DebugThreadData implements TreeElement {
                 }
                 return this.doUpdateFrames(frames);
             } catch (e) {
-                console.error(e);
+                console.error('fetchFrames failed:', e);
                 return [];
             } finally {
                 if (!cancel.isCancellationRequested) {
@@ -224,12 +229,57 @@ export class DebugThread extends DebugThreadData implements TreeElement {
     }
 
     render(): React.ReactNode {
-        const reason = this.stoppedDetails && this.stoppedDetails.reason;
-        const status = this.stoppedDetails ? reason ? `Paused on ${reason}` : 'Paused' : 'Running';
-        return <div className='theia-debug-thread' title='Thread'>
-            <span className='label'>{this.raw.name}</span>
-            <span className='status'>{status}</span>
-        </div>;
+        return (
+            <div className="theia-debug-thread" title={nls.localizeByDefault('Session')}>
+                <span className="label">{this.raw.name}</span>
+                <span className="status">{this.threadStatus()}</span>
+            </div>
+        );
     }
 
+    protected threadStatus(): string {
+
+        if (!this.stoppedDetails) {
+            return nls.localizeByDefault('Running');
+        }
+
+        const description = this.stoppedDetails.description;
+
+        if (description) {
+            // According to DAP we must show description as is. Translation is made by debug adapter
+            return description;
+        }
+
+        const reason = this.stoppedDetails.reason;
+        const localizedReason = this.getLocalizedReason(reason);
+
+        return reason
+                ? nls.localizeByDefault('Paused on {0}', localizedReason)
+                : nls.localizeByDefault('Paused');
+    }
+
+    protected getLocalizedReason(reason: string | undefined): string {
+        switch (reason) {
+            case 'step':
+                return nls.localize('theia/debug/step', 'step');
+            case 'breakpoint':
+                return nls.localize('theia/debug/breakpoint', 'breakpoint');
+            case 'exception':
+                return nls.localize('theia/debug/exception', 'exception');
+            case 'pause':
+                return nls.localize('theia/debug/pause', 'pause');
+            case 'entry':
+                return nls.localize('theia/debug/entry', 'entry');
+            case 'goto':
+                return nls.localize('theia/debug/goto', 'goto');
+            case 'function breakpoint':
+                return nls.localize('theia/debug/functionBreakpoint', 'function breakpoint');
+             case 'data breakpoint':
+                return nls.localize('theia/debug/dataBreakpoint', 'data breakpoint');
+            case 'instruction breakpoint':
+                return nls.localize('theia/debug/instructionBreakpoint', 'instruction breakpoint');
+            default:
+                return '';
+        }
+    }
 }

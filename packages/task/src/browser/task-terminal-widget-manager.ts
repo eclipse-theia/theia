@@ -1,20 +1,20 @@
-/********************************************************************************
- * Copyright (C) 2020 Ericsson and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2020 Ericsson and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { inject, injectable, postConstruct } from 'inversify';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { ApplicationShell, WidgetOpenerOptions } from '@theia/core/lib/browser';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { TerminalWidgetFactoryOptions } from '@theia/terminal/lib/browser/terminal-widget-impl';
@@ -23,6 +23,7 @@ import { PanelKind, TaskConfiguration, TaskWatcher, TaskExitedEvent, TaskServer,
 import { ProcessTaskInfo } from '../common/process/task-protocol';
 import { TaskDefinitionRegistry } from './task-definition-registry';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import URI from '@theia/core/lib/common/uri';
 
 export interface TaskTerminalWidget extends TerminalWidget {
     readonly kind: 'task';
@@ -92,7 +93,8 @@ export class TaskTerminalWidgetManager {
             for (const terminal of this.getTaskTerminalWidgets()) {
                 if (terminal.taskId === finishedTaskId) {
                     const showReuseMessage = !!event.config && TaskOutputPresentation.shouldShowReuseMessage(event.config);
-                    this.notifyTaskFinished(terminal, showReuseMessage);
+                    const closeOnFinish = !!event.config && TaskOutputPresentation.shouldCloseTerminalOnFinish(event.config);
+                    this.updateTerminalOnTaskExit(terminal, showReuseMessage, closeOnFinish);
                     break;
                 }
             }
@@ -102,7 +104,7 @@ export class TaskTerminalWidgetManager {
             const terminal = TaskTerminalWidget.is(widget) && widget;
             if (terminal) {
                 const didConnectListener = terminal.onDidOpen(async () => {
-                    const context = this.workspaceService.workspace && this.workspaceService.workspace.uri;
+                    const context = this.workspaceService?.workspace?.resource.toString();
                     const tasksInfo = await this.taskServer.getTasks(context);
                     const taskInfo = tasksInfo.find(info => info.terminalId === widget.terminalId);
                     if (taskInfo) {
@@ -112,11 +114,11 @@ export class TaskTerminalWidgetManager {
                         terminal.taskConfig = taskConfig;
                         terminal.busy = true;
                     } else {
-                        this.notifyTaskFinished(terminal, true);
+                        this.updateTerminalOnTaskExit(terminal, true, false);
                     }
                 });
                 const didConnectFailureListener = terminal.onDidOpenFailure(async () => {
-                    this.notifyTaskFinished(terminal, true);
+                    this.updateTerminalOnTaskExit(terminal, true, false);
                 });
                 terminal.onDidDispose(() => {
                     didConnectListener.dispose();
@@ -195,10 +197,14 @@ export class TaskTerminalWidgetManager {
         }
 
         // we are unable to find a terminal widget to run the task, or `taskPresentation === 'new'`
+        const lastCwd = taskConfig?.options?.cwd ? new URI(taskConfig.options.cwd) : new URI();
+
         if (!reusableTerminalWidget) {
             const widget = await this.newTaskTerminal(factoryOptions);
+            widget.lastCwd = lastCwd;
             return { isNew: true, widget };
         }
+        reusableTerminalWidget.lastCwd = lastCwd;
         return { isNew: false, widget: reusableTerminalWidget };
     }
 
@@ -206,10 +212,12 @@ export class TaskTerminalWidgetManager {
         return this.terminalService.all.filter(TaskTerminalWidget.is);
     }
 
-    protected notifyTaskFinished(terminal: TaskTerminalWidget, showReuseMessage: boolean): void {
+    protected updateTerminalOnTaskExit(terminal: TaskTerminalWidget, showReuseMessage: boolean, closeOnFinish: boolean): void {
         terminal.busy = false;
-        terminal.scrollToBottom();
-        if (showReuseMessage) {
+        if (closeOnFinish) {
+            terminal.close();
+        } else if (showReuseMessage) {
+            terminal.scrollToBottom();
             terminal.writeLine('\x1b[1m\n\rTerminal will be reused by tasks. \x1b[0m\n');
         }
     }

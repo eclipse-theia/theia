@@ -1,39 +1,41 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { v4 } from 'uuid';
-import { WebviewsExt, WebviewPanelViewState, WebviewsMain, PLUGIN_RPC_CONTEXT, WebviewInitData, /* WebviewsMain, PLUGIN_RPC_CONTEXT  */ } from '../common/plugin-api-rpc';
+import { Plugin, WebviewsExt, WebviewPanelViewState, WebviewsMain, PLUGIN_RPC_CONTEXT, WebviewInitData, /* WebviewsMain, PLUGIN_RPC_CONTEXT  */ } from '../common/plugin-api-rpc';
 import * as theia from '@theia/plugin';
 import { RPCProtocol } from '../common/rpc-protocol';
-import { Plugin } from '../common/plugin-api-rpc';
-import { URI } from 'vscode-uri';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { fromViewColumn, toViewColumn, toWebviewPanelShowOptions } from './type-converters';
-import { Disposable, WebviewPanelTargetArea } from './types-impl';
+import { Disposable, WebviewPanelTargetArea, URI } from './types-impl';
 import { WorkspaceExtImpl } from './workspace';
 import { PluginIconPath } from './plugin-icon-path';
 
 export class WebviewsExtImpl implements WebviewsExt {
     private readonly proxy: WebviewsMain;
     private readonly webviewPanels = new Map<string, WebviewPanelImpl>();
+    private readonly webviews = new Map<string, WebviewImpl>();
     private readonly serializers = new Map<string, {
         serializer: theia.WebviewPanelSerializer,
         plugin: Plugin
     }>();
     private initData: WebviewInitData | undefined;
+
+    readonly onDidDisposeEmitter = new Emitter<void>();
+    readonly onDidDispose: Event<void> = this.onDidDisposeEmitter.event;
 
     constructor(
         rpc: RPCProtocol,
@@ -51,6 +53,11 @@ export class WebviewsExtImpl implements WebviewsExt {
         const panel = this.getWebviewPanel(handle);
         if (panel) {
             panel.webview.onMessageEmitter.fire(message);
+        } else {
+            const webview = this.getWebview(handle);
+            if (webview) {
+                webview.onMessageEmitter.fire(message);
+            }
         }
     }
     $onDidChangeWebviewPanelViewState(handle: string, newState: WebviewPanelViewState): void {
@@ -104,17 +111,43 @@ export class WebviewsExtImpl implements WebviewsExt {
         options: theia.WebviewPanelOptions & theia.WebviewOptions,
         plugin: Plugin
     ): theia.WebviewPanel {
+        const viewId = v4();
+        const webviewShowOptions = toWebviewPanelShowOptions(showOptions);
+        const webviewOptions = WebviewImpl.toWebviewOptions(options, this.workspace, plugin);
+        this.proxy.$createWebviewPanel(viewId, viewType, title, webviewShowOptions, webviewOptions);
+        const panel = this.createWebviewPanel(viewType, title, showOptions, options, plugin, viewId);
+        return panel;
+    }
+
+    createWebviewPanel(
+        viewType: string,
+        title: string,
+        showOptions: theia.ViewColumn | theia.WebviewPanelShowOptions,
+        options: theia.WebviewPanelOptions & theia.WebviewOptions,
+        plugin: Plugin,
+        viewId: string
+    ): WebviewPanelImpl {
         if (!this.initData) {
             throw new Error('Webviews are not initialized');
         }
         const webviewShowOptions = toWebviewPanelShowOptions(showOptions);
-        const viewId = v4();
-        this.proxy.$createWebviewPanel(viewId, viewType, title, webviewShowOptions, WebviewImpl.toWebviewOptions(options, this.workspace, plugin));
-
         const webview = new WebviewImpl(viewId, this.proxy, options, this.initData, this.workspace, plugin);
         const panel = new WebviewPanelImpl(viewId, this.proxy, viewType, title, webviewShowOptions, options, webview);
         this.webviewPanels.set(viewId, panel);
         return panel;
+    }
+
+    createNewWebview(
+        options: theia.WebviewPanelOptions & theia.WebviewOptions,
+        plugin: Plugin,
+        viewId: string
+    ): WebviewImpl {
+        if (!this.initData) {
+            throw new Error('Webviews are not initialized');
+        }
+        const webview = new WebviewImpl(viewId, this.proxy, options, this.initData, this.workspace, plugin);
+        this.webviews.set(viewId, webview);
+        return webview;
     }
 
     registerWebviewPanelSerializer(
@@ -135,11 +168,19 @@ export class WebviewsExtImpl implements WebviewsExt {
         });
     }
 
-    private getWebviewPanel(viewId: string): WebviewPanelImpl | undefined {
+    getWebviewPanel(viewId: string): WebviewPanelImpl | undefined {
         if (this.webviewPanels.has(viewId)) {
             return this.webviewPanels.get(viewId);
         }
         return undefined;
+    }
+
+    public deleteWebview(handle: string): void {
+        this.webviews.delete(handle);
+    }
+
+    public getWebview(handle: string): WebviewImpl | undefined {
+        return this.webviews.get(handle);
     }
 }
 
@@ -175,9 +216,9 @@ export class WebviewImpl implements theia.Webview {
 
     asWebviewUri(resource: theia.Uri): theia.Uri {
         const uri = this.initData.webviewResourceRoot
-            // Make sure we preserve the scheme of the resource but convert it into a normal path segment
-            // The scheme is important as we need to know if we are requesting a local or a remote resource.
-            .replace('{{resource}}', resource.scheme + resource.toString().replace(/^\S+?:/, ''))
+            .replace('{{scheme}}', resource.scheme)
+            .replace('{{authority}}', resource.authority)
+            .replace('{{path}}', resource.path.replace(/^\//, ''))
             .replace('{{uuid}}', this.viewId);
         return URI.parse(uri);
     }
@@ -195,7 +236,7 @@ export class WebviewImpl implements theia.Webview {
         this.checkIsDisposed();
         if (this._html !== value) {
             this._html = value;
-            this.proxy.$setHtml(this.viewId, value);
+            this.proxy.$setHtml(this.viewId, this._html);
         }
     }
 

@@ -1,45 +1,57 @@
-/********************************************************************************
- * Copyright (C) 2017-2019 Ericsson and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017-2019 Ericsson and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { injectable, inject, named } from 'inversify';
-import { isWindows, isOSX, ILogger } from '@theia/core';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
+import { deepClone, isWindows, isOSX, ILogger } from '@theia/core';
 import { FileUri } from '@theia/core/lib/node';
 import {
     RawProcessFactory,
-    TerminalProcessFactory,
     ProcessErrorEvent,
     Process,
     TerminalProcessOptions,
+    TaskTerminalProcessFactory,
 } from '@theia/process/lib/node';
 import {
     ShellQuotedString, ShellQuotingFunctions, BashQuotingFunctions, CmdQuotingFunctions, PowershellQuotingFunctions, createShellCommandLine, ShellQuoting,
 } from '@theia/process/lib/common/shell-quoting';
 import { TaskFactory } from './process-task';
-import { TaskRunner } from '../task-runner';
+import { TaskRunner } from '../task-runner-protocol';
 import { Task } from '../task';
 import { TaskConfiguration } from '../../common/task-protocol';
 import { ProcessTaskError, CommandOptions } from '../../common/process/task-protocol';
 import * as fs from 'fs';
 import { ShellProcess } from '@theia/terminal/lib/node/shell-process';
-import { deepClone } from '@theia/core';
+
+export interface OsSpecificCommand {
+    command: string,
+    args: Array<string | ShellQuotedString> | undefined,
+    options: CommandOptions
+}
+
+export interface ShellSpecificOptions {
+    /** Arguments passed to the shell, aka `command` here. */
+    execArgs: string[];
+    /** Pack of functions used to escape the `subCommand` and `subArgs` to run in the shell. */
+    quotingFunctions?: ShellQuotingFunctions;
+}
 
 /**
  * Task runner that runs a task as a process or a command inside a shell.
@@ -53,8 +65,8 @@ export class ProcessTaskRunner implements TaskRunner {
     @inject(RawProcessFactory)
     protected readonly rawProcessFactory: RawProcessFactory;
 
-    @inject(TerminalProcessFactory)
-    protected readonly terminalProcessFactory: TerminalProcessFactory;
+    @inject(TaskTerminalProcessFactory)
+    protected readonly taskTerminalProcessFactory: TaskTerminalProcessFactory;
 
     @inject(TaskFactory)
     protected readonly taskFactory: TaskFactory;
@@ -73,7 +85,7 @@ export class ProcessTaskRunner implements TaskRunner {
             // - process: directly look for an executable and pass a specific set of arguments/options.
             // - shell: defer the spawning to a shell that will evaluate a command line with our executable.
             const terminalProcessOptions = this.getResolvedCommand(taskConfig);
-            const terminal: Process = this.terminalProcessFactory(terminalProcessOptions);
+            const terminal: Process = this.taskTerminalProcessFactory(terminalProcessOptions);
 
             // Wait for the confirmation that the process is successfully started, or has failed to start.
             await new Promise((resolve, reject) => {
@@ -83,7 +95,7 @@ export class ProcessTaskRunner implements TaskRunner {
                 });
             });
 
-            const processType = taskConfig.type as 'process' | 'shell';
+            const processType = (taskConfig.taskType || taskConfig.type) as 'process' | 'shell';
             return this.taskFactory({
                 label: taskConfig.label,
                 process: terminal,
@@ -98,29 +110,10 @@ export class ProcessTaskRunner implements TaskRunner {
         }
     }
 
-    private getResolvedCommand(taskConfig: TaskConfiguration): TerminalProcessOptions {
-        let systemSpecificCommand: {
-            command: string | undefined
-            args: Array<string | ShellQuotedString> | undefined
-            options: CommandOptions
-        };
-        // on windows, windows-specific options, if available, take precedence
-        if (isWindows && taskConfig.windows !== undefined) {
-            systemSpecificCommand = this.getSystemSpecificCommand(taskConfig, 'windows');
-        } else if (isOSX && taskConfig.osx !== undefined) { // on macOS, mac-specific options, if available, take precedence
-            systemSpecificCommand = this.getSystemSpecificCommand(taskConfig, 'osx');
-        } else if (!isWindows && !isOSX && taskConfig.linux !== undefined) { // on linux, linux-specific options, if available, take precedence
-            systemSpecificCommand = this.getSystemSpecificCommand(taskConfig, 'linux');
-        } else { // system-specific options are unavailable, use the default
-            systemSpecificCommand = this.getSystemSpecificCommand(taskConfig, undefined);
-        }
+    protected getResolvedCommand(taskConfig: TaskConfiguration): TerminalProcessOptions {
+        const osSpecificCommand = this.getOsSpecificCommand(taskConfig);
 
-        const options = systemSpecificCommand.options;
-        // sanity checks:
-        // - we expect the cwd to be set by the client.
-        if (!options || !options.cwd) {
-            throw new Error("Can't run a task when 'cwd' is not provided by the client");
-        }
+        const options = osSpecificCommand.options;
 
         // Use task's cwd with spawned process and pass node env object to
         // new process, so e.g. we can re-use the system path
@@ -129,10 +122,6 @@ export class ProcessTaskRunner implements TaskRunner {
                 ...process.env,
                 ...(options.env || {})
             };
-        }
-
-        if (typeof systemSpecificCommand.command === 'undefined') {
-            throw new Error('The `command` field of a task cannot be undefined.');
         }
 
         /** Executable to actually spawn. */
@@ -146,7 +135,7 @@ export class ProcessTaskRunner implements TaskRunner {
          */
         let commandLine: string | undefined;
 
-        if (taskConfig.type === 'shell') {
+        if ((taskConfig.taskType || taskConfig.type) === 'shell') {
             // When running a shell task, we have to spawn a shell process somehow,
             // and tell it to run the command the user wants to run inside of it.
             //
@@ -162,63 +151,20 @@ export class ProcessTaskRunner implements TaskRunner {
             // What's even more funny is that on Windows, node-pty uses a special
             // mechanism to pass complex escaped arguments, via a string.
             //
-            // We need to accommodate for most shells, so we need to get specific.
+            // We need to accommodate most shells, so we need to get specific.
 
-            /** Shell command to run: */
-            let shellCommand: string;
-            /** Arguments passed to the shell, aka `command` here. */
-            let execArgs: string[] = [];
-            /** Pack of functions used to escape the `subCommand` and `subArgs` to run in the shell. */
-            let quotingFunctions: ShellQuotingFunctions | undefined;
+            const { shell } = osSpecificCommand.options;
 
-            const { shell } = systemSpecificCommand.options;
-            command = shell && shell.executable || ShellProcess.getShellExecutablePath();
-            args = [];
+            command = shell?.executable || ShellProcess.getShellExecutablePath();
+            const { execArgs, quotingFunctions } = this.getShellSpecificOptions(command);
 
-            if (/bash(.exe)?$/.test(command)) {
-                quotingFunctions = BashQuotingFunctions;
-                execArgs = ['-l', '-c'];
-
-            } else if (/wsl(.exe)?$/.test(command)) {
-                quotingFunctions = BashQuotingFunctions;
-                execArgs = ['-e'];
-
-            } else if (/cmd(.exe)?$/.test(command)) {
-                quotingFunctions = CmdQuotingFunctions;
-                execArgs = ['/S', '/C'];
-
-            } else if (/(ps|pwsh|powershell)(.exe)?/.test(command)) {
-                quotingFunctions = PowershellQuotingFunctions;
-                execArgs = ['-c'];
-            } else {
-                quotingFunctions = BashQuotingFunctions;
-                execArgs = ['-l', '-c'];
-
-            }
             // Allow overriding shell options from task configuration.
-            if (shell && shell.args) {
-                args = [...shell.args];
-            } else {
-                args = [...execArgs];
-            }
+            args = shell?.args ? [...shell.args] : [...execArgs];
+
             // Check if an argument list is defined or not. Empty is ok.
-            if (Array.isArray(systemSpecificCommand.args)) {
-                const commandLineElements: Array<string | ShellQuotedString> = [systemSpecificCommand.command, ...systemSpecificCommand.args].map(arg => {
-                    // We want to quote arguments only if needed.
-                    if (quotingFunctions && typeof arg === 'string' && this.argumentNeedsQuotes(arg, quotingFunctions)) {
-                        return {
-                            quoting: ShellQuoting.Strong,
-                            value: arg,
-                        };
-                    } else {
-                        return arg;
-                    }
-                });
-                shellCommand = createShellCommandLine(commandLineElements, quotingFunctions);
-            } else {
-                // No arguments are provided, so `command` is actually the full command line to execute.
-                shellCommand = systemSpecificCommand.command;
-            }
+            /** Shell command to run: */
+            const shellCommand = this.buildShellCommand(osSpecificCommand, quotingFunctions);
+
             if (isWindows && /cmd(.exe)?$/.test(command)) {
                 // Let's take the following command, including an argument containing whitespace:
                 //     cmd> node -p process.argv 1 2 "  3"
@@ -241,14 +187,15 @@ export class ProcessTaskRunner implements TaskRunner {
                 // Note the extra quotes that need to be added around the whole command.
                 commandLine = [...args, `"${shellCommand}"`].join(' ');
             }
+
             args.push(shellCommand);
         } else {
             // When running process tasks, `command` is the executable to run,
             // and `args` are the arguments we want to pass to it.
-            command = systemSpecificCommand.command;
-            if (Array.isArray(systemSpecificCommand.args)) {
+            command = osSpecificCommand.command;
+            if (Array.isArray(osSpecificCommand.args)) {
                 // Process task doesn't handle quotation: Normalize arguments from `ShellQuotedString` to raw `string`.
-                args = systemSpecificCommand.args.map(arg => typeof arg === 'string' ? arg : arg.value);
+                args = osSpecificCommand.args.map(arg => typeof arg === 'string' ? arg : arg.value);
             } else {
                 args = [];
             }
@@ -256,7 +203,69 @@ export class ProcessTaskRunner implements TaskRunner {
         return { command, args, commandLine, options };
     }
 
-    private getCommand(processType: 'process' | 'shell', terminalProcessOptions: TerminalProcessOptions): string | undefined {
+    protected buildShellCommand(systemSpecificCommand: OsSpecificCommand, quotingFunctions?: ShellQuotingFunctions): string {
+        if (Array.isArray(systemSpecificCommand.args)) {
+            const commandLineElements: Array<string | ShellQuotedString> = [systemSpecificCommand.command, ...systemSpecificCommand.args].map(arg => {
+                // We want to quote arguments only if needed.
+                if (quotingFunctions && typeof arg === 'string' && this.argumentNeedsQuotes(arg, quotingFunctions)) {
+                    return {
+                        quoting: ShellQuoting.Strong,
+                        value: arg,
+                    };
+                } else {
+                    return arg;
+                }
+            });
+            return createShellCommandLine(commandLineElements, quotingFunctions);
+        } else {
+            // No arguments are provided, so `command` is actually the full command line to execute.
+            return systemSpecificCommand.command ?? '';
+        }
+    }
+
+    protected getShellSpecificOptions(command: string): ShellSpecificOptions {
+        if (/bash(.exe)?$/.test(command)) {
+            return {
+                quotingFunctions: BashQuotingFunctions,
+                execArgs: ['-c']
+            };
+        } else if (/wsl(.exe)?$/.test(command)) {
+            return {
+                quotingFunctions: BashQuotingFunctions,
+                execArgs: ['-e']
+            };
+        } else if (/cmd(.exe)?$/.test(command)) {
+            return {
+                quotingFunctions: CmdQuotingFunctions,
+                execArgs: ['/S', '/C']
+            };
+        } else if (/(ps|pwsh|powershell)(.exe)?/.test(command)) {
+            return {
+                quotingFunctions: PowershellQuotingFunctions,
+                execArgs: ['-c']
+            };
+        } else {
+            return {
+                quotingFunctions: BashQuotingFunctions,
+                execArgs: ['-l', '-c']
+            };
+        }
+    }
+
+    protected getOsSpecificCommand(taskConfig: TaskConfiguration): OsSpecificCommand {
+        // on windows, windows-specific options, if available, take precedence
+        if (isWindows && taskConfig.windows !== undefined) {
+            return this.getSystemSpecificCommand(taskConfig, 'windows');
+        } else if (isOSX && taskConfig.osx !== undefined) { // on macOS, mac-specific options, if available, take precedence
+            return this.getSystemSpecificCommand(taskConfig, 'osx');
+        } else if (!isWindows && !isOSX && taskConfig.linux !== undefined) { // on linux, linux-specific options, if available, take precedence
+            return this.getSystemSpecificCommand(taskConfig, 'linux');
+        } else { // system-specific options are unavailable, use the default
+            return this.getSystemSpecificCommand(taskConfig, undefined);
+        }
+    }
+
+    protected getCommand(processType: 'process' | 'shell', terminalProcessOptions: TerminalProcessOptions): string | undefined {
         if (terminalProcessOptions.args) {
             if (processType === 'shell') {
                 return terminalProcessOptions.args[terminalProcessOptions.args.length - 1];
@@ -310,11 +319,7 @@ export class ProcessTaskRunner implements TaskRunner {
         return false;
     }
 
-    private getSystemSpecificCommand(taskConfig: TaskConfiguration, system: 'windows' | 'linux' | 'osx' | undefined): {
-        command: string | undefined,
-        args: Array<string | ShellQuotedString> | undefined,
-        options: CommandOptions
-    } {
+    protected getSystemSpecificCommand(taskConfig: TaskConfiguration, system: 'windows' | 'linux' | 'osx' | undefined): OsSpecificCommand {
         // initialize with default values from the `taskConfig`
         let command: string | undefined = taskConfig.command;
         let args: Array<string | ShellQuotedString> | undefined = taskConfig.args;
@@ -334,6 +339,10 @@ export class ProcessTaskRunner implements TaskRunner {
 
         if (options.cwd) {
             options.cwd = this.asFsPath(options.cwd);
+        }
+
+        if (command === undefined) {
+            throw new Error('The `command` field of a task cannot be undefined.');
         }
 
         return { command, args, options };

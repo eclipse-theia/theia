@@ -1,34 +1,36 @@
-/********************************************************************************
- * Copyright (C) 2019 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2019 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 // copied and modified from https://github.com/microsoft/vscode/blob/ba40bd16433d5a817bfae15f3b4350e18f144af4/src/vs/workbench/contrib/webview/common/themeing.ts
 
-import { inject, postConstruct, injectable } from 'inversify';
+import { inject, postConstruct, injectable } from '@theia/core/shared/inversify';
 import { Emitter } from '@theia/core/lib/common/event';
 import { EditorPreferences, EditorConfiguration } from '@theia/editor/lib/browser/editor-preferences';
 import { ThemeService } from '@theia/core/lib/browser/theming';
+import { Theme } from '@theia/core/lib/common/theme';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { ColorApplicationContribution } from '@theia/core/lib/browser/color-application-contribution';
 
 export type WebviewThemeType = 'vscode-light' | 'vscode-dark' | 'vscode-high-contrast';
 export interface WebviewThemeData {
-    readonly activeTheme: WebviewThemeType;
+    readonly activeThemeName: string;
+    readonly activeThemeType: WebviewThemeType;
     readonly styles: { readonly [key: string]: string | number; };
 }
 
@@ -38,14 +40,10 @@ export class WebviewThemeDataProvider {
     protected readonly onDidChangeThemeDataEmitter = new Emitter<void>();
     readonly onDidChangeThemeData = this.onDidChangeThemeDataEmitter.event;
 
-    @inject(EditorPreferences)
-    protected readonly editorPreferences: EditorPreferences;
-
-    @inject(ColorRegistry)
-    protected readonly colors: ColorRegistry;
-
-    @inject(ColorApplicationContribution)
-    protected readonly colorContribution: ColorApplicationContribution;
+    @inject(EditorPreferences) protected readonly editorPreferences: EditorPreferences;
+    @inject(ColorRegistry) protected readonly colors: ColorRegistry;
+    @inject(ColorApplicationContribution) protected readonly colorContribution: ColorApplicationContribution;
+    @inject(ThemeService) protected readonly themeService: ThemeService;
 
     protected themeData: WebviewThemeData | undefined;
 
@@ -86,8 +84,8 @@ export class WebviewThemeDataProvider {
         const addStyle = (id: string, rawValue: any) => {
             if (rawValue) {
                 const value = typeof rawValue === 'number' || typeof rawValue === 'string' ? rawValue : String(rawValue);
-                styles[this.colors.toCssVariableName(id).substr(2)] = value;
-                styles[this.colors.toCssVariableName(id, 'vscode').substr(2)] = value;
+                styles[this.colors.toCssVariableName(id).substring(2)] = value;
+                styles[this.colors.toCssVariableName(id, 'vscode').substring(2)] = value;
             }
         };
 
@@ -104,11 +102,18 @@ export class WebviewThemeDataProvider {
         }
 
         const activeTheme = this.getActiveTheme();
-        return { styles, activeTheme };
+        return {
+            styles,
+            activeThemeName: activeTheme.label,
+            activeThemeType: this.getThemeType(activeTheme)
+        };
     }
 
-    protected getActiveTheme(): WebviewThemeType {
-        const theme = ThemeService.get().getCurrentTheme();
+    protected getActiveTheme(): Theme {
+        return this.themeService.getCurrentTheme();
+    }
+
+    protected getThemeType(theme: Theme): WebviewThemeType {
         switch (theme.type) {
             case 'light': return 'vscode-light';
             case 'dark': return 'vscode-dark';

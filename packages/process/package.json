@@ -1,10 +1,10 @@
 {
   "name": "@theia/process",
-  "version": "1.2.0",
+  "version": "1.45.0",
   "description": "Theia process support.",
   "dependencies": {
-    "@theia/core": "^1.2.0",
-    "@theia/node-pty": "0.9.0-theia.6",
+    "@theia/core": "1.45.0",
+    "node-pty": "0.11.0-beta17",
     "string-argv": "^0.1.1"
   },
   "publishConfig": {
@@ -22,7 +22,7 @@
   "keywords": [
     "theia-extension"
   ],
-  "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
+  "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/eclipse-theia/theia.git"
@@ -36,14 +36,15 @@
     "src"
   ],
   "scripts": {
-    "lint": "theiaext lint",
     "build": "theiaext build",
-    "watch": "theiaext watch",
     "clean": "theiaext clean",
-    "test": "theiaext test"
+    "compile": "theiaext compile",
+    "lint": "theiaext lint",
+    "test": "theiaext test",
+    "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^1.2.0"
+    "@theia/ext-scripts": "1.45.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

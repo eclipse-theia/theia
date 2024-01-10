@@ -1,22 +1,23 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { ReactRenderer } from '@theia/core/lib/browser/widgets/react-renderer';
 import { FileDialogTree } from './file-dialog-tree';
-import * as React from 'react';
+import * as React from '@theia/core/shared/react';
+import { inject, injectable } from '@theia/core/shared/inversify';
 
 export const FILE_TREE_FILTERS_LIST_CLASS = 'theia-FileTreeFiltersList';
 
@@ -25,8 +26,8 @@ export const FILE_TREE_FILTERS_LIST_CLASS = 'theia-FileTreeFiltersList';
  * like "TypeScript", and an array of extensions, e.g.
  * ```ts
  * {
- * 	'Images': ['png', 'jpg']
- * 	'TypeScript': ['ts', 'tsx']
+ *  'Images': ['png', 'jpg']
+ *  'TypeScript': ['ts', 'tsx']
  * }
  * ```
  */
@@ -34,28 +35,41 @@ export class FileDialogTreeFilters {
     [name: string]: string[];
 }
 
+export const FileDialogTreeFiltersRendererFactory = Symbol('FileDialogTreeFiltersRendererFactory');
+export interface FileDialogTreeFiltersRendererFactory {
+    (options: FileDialogTreeFiltersRendererOptions): FileDialogTreeFiltersRenderer;
+}
+
+export const FileDialogTreeFiltersRendererOptions = Symbol('FileDialogTreeFiltersRendererOptions');
+export interface FileDialogTreeFiltersRendererOptions {
+    suppliedFilters: FileDialogTreeFilters;
+    fileDialogTree: FileDialogTree;
+}
+
+@injectable()
 export class FileDialogTreeFiltersRenderer extends ReactRenderer {
 
+    readonly appliedFilters: FileDialogTreeFilters;
+    readonly suppliedFilters: FileDialogTreeFilters;
+    readonly fileDialogTree: FileDialogTree;
+
     constructor(
-        readonly filters: FileDialogTreeFilters,
-        readonly fileDialogTree: FileDialogTree
+        @inject(FileDialogTreeFiltersRendererOptions) readonly options: FileDialogTreeFiltersRendererOptions
     ) {
         super();
+        this.suppliedFilters = options.suppliedFilters;
+        this.fileDialogTree = options.fileDialogTree;
+        this.appliedFilters = { ...this.suppliedFilters, 'All Files': [], };
     }
 
     protected readonly handleFilterChanged = (e: React.ChangeEvent<HTMLSelectElement>) => this.onFilterChanged(e);
 
-    protected doRender(): React.ReactNode {
-        if (!this.filters) {
+    protected override doRender(): React.ReactNode {
+        if (!this.appliedFilters) {
             return undefined;
         }
 
-        const fileTypes = ['All Files'];
-        Object.keys(this.filters).forEach(element => {
-            fileTypes.push(element);
-        });
-
-        const options = fileTypes.map(value => this.renderLocation(value));
+        const options = Object.keys(this.appliedFilters).map(value => this.renderLocation(value));
         return <select className={'theia-select ' + FILE_TREE_FILTERS_LIST_CLASS} onChange={this.handleFilterChanged}>{...options}</select>;
     }
 
@@ -67,7 +81,7 @@ export class FileDialogTreeFiltersRenderer extends ReactRenderer {
         const locationList = this.locationList;
         if (locationList) {
             const value = locationList.value;
-            const filters = this.filters[value];
+            const filters = this.appliedFilters[value];
             this.fileDialogTree.setFilter(filters);
         }
 

@@ -1,18 +1,20 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { injectable } from 'inversify';
 import { MaybePromise } from '../../common/types';
@@ -22,7 +24,7 @@ import { TreeElement, CompositeTreeElement, TreeSource } from './tree-source';
 @injectable()
 export class SourceTree extends TreeImpl {
 
-    async resolveChildren(parent: TreeElementNodeParent): Promise<TreeNode[]> {
+    override async resolveChildren(parent: TreeElementNodeParent): Promise<TreeNode[]> {
         const elements = await this.resolveElements(parent);
         const nodes: TreeNode[] = [];
         let index = 0;
@@ -67,15 +69,15 @@ export class SourceTree extends TreeImpl {
             } as TreeElementNode;
         }
         if (CompositeTreeElementNode.is(updated)) {
-            delete updated.expanded;
-            delete updated.children;
+            delete (updated as any).expanded;
+            delete (updated as any).children;
         }
         if (updated) {
             if (ExpandableTreeNode.is(updated)) {
-                delete updated.expanded;
+                delete (updated as any).expanded;
             }
             if (CompositeTreeNode.is(updated)) {
-                delete updated.children;
+                delete (updated as any).children;
             }
             return updated;
         }

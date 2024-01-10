@@ -1,20 +1,20 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { URI } from 'vscode-uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import {
     TextEditorsMain,
     MAIN_RPC_CONTEXT,
@@ -28,9 +28,11 @@ import {
     DecorationRenderOptions,
     ThemeDecorationInstanceRenderOptions,
     DecorationOptions,
-    WorkspaceEditDto
+    WorkspaceEditDto,
+    DocumentsMain,
+    WorkspaceEditMetadataDto,
 } from '../../common/plugin-api-rpc';
-import { Range } from '../../common/plugin-api-rpc-model';
+import { Range, TextDocumentShowOptions } from '../../common/plugin-api-rpc-model';
 import { EditorsAndDocumentsMain } from './editors-and-documents-main';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
@@ -41,6 +43,9 @@ import { MonacoBulkEditService } from '@theia/monaco/lib/browser/monaco-bulk-edi
 import { MonacoEditorService } from '@theia/monaco/lib/browser/monaco-editor-service';
 import { theiaUritoUriComponents, UriComponents } from '../../common/uri-components';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
+import * as monaco from '@theia/monaco-editor-core';
+import { ResourceEdit } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
+import { IDecorationRenderOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/editorCommon';
 
 export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
 
@@ -51,6 +56,7 @@ export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
 
     constructor(
         private readonly editorsAndDocuments: EditorsAndDocumentsMain,
+        private readonly documents: DocumentsMain,
         rpc: RPCProtocol,
         private readonly bulkEditService: MonacoBulkEditService,
         private readonly monacoEditorService: MonacoEditorService,
@@ -82,6 +88,10 @@ export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
         if (disposables) {
             disposables.dispose();
         }
+    }
+
+    $tryShowTextDocument(uri: UriComponents, options?: TextDocumentShowOptions): Promise<void> {
+        return this.documents.$tryShowDocument(uri, options);
     }
 
     $trySetOptions(id: string, options: TextEditorConfigurationUpdate): Promise<void> {
@@ -117,11 +127,15 @@ export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
         return Promise.resolve(this.editorsAndDocuments.getEditor(id)!.applyEdits(modelVersionId, edits, opts));
     }
 
-    $tryApplyWorkspaceEdit(dto: WorkspaceEditDto): Promise<boolean> {
-        const edits = toMonacoWorkspaceEdit(dto);
-        return new Promise(resolve => {
-            this.bulkEditService.apply(edits).then(() => resolve(true), err => resolve(false));
-        });
+    async $tryApplyWorkspaceEdit(dto: WorkspaceEditDto, metadata?: WorkspaceEditMetadataDto): Promise<boolean> {
+        const workspaceEdit = toMonacoWorkspaceEdit(dto);
+        try {
+            const edits = ResourceEdit.convert(workspaceEdit);
+            const { success } = await this.bulkEditService.apply(edits, { respectAutoSaveConfig: metadata?.isRefactoring });
+            return success;
+        } catch {
+            return false;
+        }
     }
 
     $tryInsertSnippet(id: string, template: string, ranges: Range[], opts: UndoStopOptions): Promise<boolean> {
@@ -131,9 +145,9 @@ export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
         return Promise.resolve(this.editorsAndDocuments.getEditor(id)!.insertSnippet(template, ranges, opts));
     }
 
-    $registerTextEditorDecorationType(key: string, options: DecorationRenderOptions): void {
+    $registerTextEditorDecorationType(key: string, options: DecorationRenderOptions | IDecorationRenderOptions): void {
         this.injectRemoteUris(options);
-        this.monacoEditorService.registerDecorationType(key, options);
+        this.monacoEditorService.registerDecorationType('Plugin decoration', key, options as IDecorationRenderOptions);
         this.toDispose.push(Disposable.create(() => this.$removeTextEditorDecorationType(key)));
     }
 
@@ -164,6 +178,10 @@ export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
 
     $removeTextEditorDecorationType(key: string): void {
         this.monacoEditorService.removeDecorationType(key);
+    }
+
+    $tryHideEditor(id: string): Promise<void> {
+        return this.editorsAndDocuments.hideEditor(id);
     }
 
     $trySetDecorations(id: string, key: string, ranges: DecorationOptions[]): Promise<void> {

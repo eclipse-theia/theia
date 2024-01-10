@@ -1,43 +1,48 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { environment } from '@theia/application-package/lib/environment';
-import { MaybePromise, SelectionService, isCancelled } from '@theia/core/lib/common';
+import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
+import { MaybePromise, SelectionService, isCancelled, Emitter } from '@theia/core/lib/common';
 import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/common/command';
 import {
     FrontendApplicationContribution, ApplicationShell,
     NavigatableWidget, NavigatableWidgetOptions,
-    Saveable, WidgetManager, StatefulWidget, FrontendApplication, ExpandableTreeNode, waitForClosed
+    Saveable, WidgetManager, StatefulWidget, FrontendApplication, ExpandableTreeNode,
+    CorePreferences,
+    CommonCommands,
 } from '@theia/core/lib/browser';
-import { FileSystemWatcher, FileChangeEvent, FileMoveEvent, FileChangeType } from './filesystem-watcher';
 import { MimeService } from '@theia/core/lib/browser/mime-service';
 import { TreeWidgetSelection } from '@theia/core/lib/browser/tree/tree-widget-selection';
 import { FileSystemPreferences } from './filesystem-preferences';
 import { FileSelection } from './file-selection';
-import { FileUploadService } from './file-upload-service';
+import { FileUploadService, FileUploadResult } from './file-upload-service';
+import { FileService, UserFileOperationEvent } from './file-service';
+import { FileChangesEvent, FileChangeType, FileOperation } from '../common/files';
+import { Deferred } from '@theia/core/lib/common/promise-util';
+import { nls } from '@theia/core';
 
 export namespace FileSystemCommands {
 
-    export const UPLOAD: Command = {
+    export const UPLOAD = Command.toLocalizedCommand({
         id: 'file.upload',
-        category: 'File',
+        category: CommonCommands.FILE_CATEGORY,
         label: 'Upload Files...'
-    };
+    }, 'theia/filesystem/uploadFiles', CommonCommands.FILE_CATEGORY_KEY);
 
 }
 
@@ -55,14 +60,14 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
     @inject(WidgetManager)
     protected readonly widgetManager: WidgetManager;
 
-    @inject(FileSystemWatcher)
-    protected readonly fileSystemWatcher: FileSystemWatcher;
-
     @inject(MimeService)
     protected readonly mimeService: MimeService;
 
     @inject(FileSystemPreferences)
     protected readonly preferences: FileSystemPreferences;
+
+    @inject(CorePreferences)
+    protected readonly corePreferences: CorePreferences;
 
     @inject(SelectionService)
     protected readonly selectionService: SelectionService;
@@ -70,11 +75,40 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
     @inject(FileUploadService)
     protected readonly uploadService: FileUploadService;
 
+    @inject(FileService)
+    protected readonly fileService: FileService;
+
+    protected onDidChangeEditorFileEmitter = new Emitter<{ editor: NavigatableWidget, type: FileChangeType }>();
+    readonly onDidChangeEditorFile = this.onDidChangeEditorFileEmitter.event;
+
+    protected readonly userOperations = new Map<number, Deferred<void>>();
+    protected queueUserOperation(event: UserFileOperationEvent): void {
+        const moveOperation = new Deferred<void>();
+        this.userOperations.set(event.correlationId, moveOperation);
+        this.run(() => moveOperation.promise);
+    }
+    protected resolveUserOperation(event: UserFileOperationEvent): void {
+        const operation = this.userOperations.get(event.correlationId);
+        if (operation) {
+            this.userOperations.delete(event.correlationId);
+            operation.resolve();
+        }
+    }
+
     initialize(): void {
-        this.fileSystemWatcher.onFilesChanged(event => this.run(() => this.updateWidgets(event)));
-        this.fileSystemWatcher.onWillMove(event => event.waitUntil(this.runEach((uri, widget) => this.pushMove(uri, widget, event))));
-        this.fileSystemWatcher.onDidFailMove(event => event.waitUntil(this.runEach((uri, widget) => this.revertMove(uri, widget, event))));
-        this.fileSystemWatcher.onDidMove(event => event.waitUntil(this.runEach((uri, widget) => this.applyMove(uri, widget, event))));
+        this.fileService.onDidFilesChange(event => this.run(() => this.updateWidgets(event)));
+        this.fileService.onWillRunUserOperation(event => {
+            this.queueUserOperation(event);
+            event.waitUntil(this.runEach((uri, widget) => this.pushMove(uri, widget, event)));
+        });
+        this.fileService.onDidFailUserOperation(event => event.waitUntil((async () => {
+            await this.runEach((uri, widget) => this.revertMove(uri, widget, event));
+            this.resolveUserOperation(event);
+        })()));
+        this.fileService.onDidRunUserOperation(event => event.waitUntil((async () => {
+            await this.runEach((uri, widget) => this.applyMove(uri, widget, event));
+            this.resolveUserOperation(event);
+        })()));
     }
 
     onStart?(app: FrontendApplication): MaybePromise<void> {
@@ -87,30 +121,47 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
     }
 
     registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand(FileSystemCommands.UPLOAD, new FileSelection.CommandHandler(this.selectionService, {
-            multi: false,
-            isEnabled: selection => this.canUpload(selection),
-            isVisible: selection => this.canUpload(selection),
-            execute: selection => this.upload(selection)
-        }));
+        commands.registerCommand(FileSystemCommands.UPLOAD, {
+            isEnabled: (...args: unknown[]) => {
+                const selection = this.getSelection(...args);
+                return !!selection && this.canUpload(selection);
+            },
+            isVisible: () => !environment.electron.is(),
+            execute: (...args: unknown[]) => {
+                const selection = this.getSelection(...args);
+                if (selection) {
+                    return this.upload(selection);
+                }
+            }
+        });
     }
 
     protected canUpload({ fileStat }: FileSelection): boolean {
         return !environment.electron.is() && fileStat.isDirectory;
     }
 
-    protected async upload(selection: FileSelection): Promise<void> {
+    protected async upload(selection: FileSelection): Promise<FileUploadResult | undefined> {
         try {
             const source = TreeWidgetSelection.getSource(this.selectionService.selection);
-            await this.uploadService.upload(selection.fileStat.uri);
+            const fileUploadResult = await this.uploadService.upload(selection.fileStat.resource);
             if (ExpandableTreeNode.is(selection) && source) {
                 await source.model.expandNode(selection);
             }
+            return fileUploadResult;
         } catch (e) {
             if (!isCancelled(e)) {
                 console.error(e);
             }
         }
+    }
+
+    protected getSelection(...args: unknown[]): FileSelection | undefined {
+        const { selection } = this.selectionService;
+        return this.toSelection(args[0]) ?? (Array.isArray(selection) ? selection.find(FileSelection.is) : this.toSelection(selection));
+    };
+
+    protected toSelection(arg: unknown): FileSelection | undefined {
+        return FileSelection.is(arg) ? arg : undefined;
     }
 
     protected pendingOperation = Promise.resolve();
@@ -124,14 +175,12 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
         });
     }
 
-    protected runEach(participant: (resourceUri: URI, widget: NavigatableWidget) => Promise<void>): Promise<void> {
-        return this.run(async () => {
-            const promises: Promise<void>[] = [];
-            for (const [resourceUri, widget] of NavigatableWidget.get(this.shell.widgets)) {
-                promises.push(participant(resourceUri, widget));
-            }
-            await Promise.all(promises);
-        });
+    protected async runEach(participant: (resourceUri: URI, widget: NavigatableWidget) => Promise<void>): Promise<void> {
+        const promises: Promise<void>[] = [];
+        for (const [resourceUri, widget] of NavigatableWidget.get(this.shell.widgets)) {
+            promises.push(participant(resourceUri, widget));
+        }
+        await Promise.all(promises);
     }
 
     protected readonly moveSnapshots = new Map<string, NavigatableWidgetMoveSnapshot>();
@@ -160,7 +209,7 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
         }
     }
 
-    protected async pushMove(resourceUri: URI, widget: NavigatableWidget, event: FileMoveEvent): Promise<void> {
+    protected async pushMove(resourceUri: URI, widget: NavigatableWidget, event: UserFileOperationEvent): Promise<void> {
         const newResourceUri = this.createMoveToUri(resourceUri, widget, event);
         if (!newResourceUri) {
             return;
@@ -181,7 +230,7 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
         this.moveSnapshots.set(newResourceUri.toString(), snapshot);
     }
 
-    protected async revertMove(resourceUri: URI, widget: NavigatableWidget, event: FileMoveEvent): Promise<void> {
+    protected async revertMove(resourceUri: URI, widget: NavigatableWidget, event: UserFileOperationEvent): Promise<void> {
         const newResourceUri = this.createMoveToUri(resourceUri, widget, event);
         if (!newResourceUri) {
             return;
@@ -190,7 +239,7 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
         this.applyMoveSnapshot(widget, snapshot);
     }
 
-    protected async applyMove(resourceUri: URI, widget: NavigatableWidget, event: FileMoveEvent): Promise<void> {
+    protected async applyMove(resourceUri: URI, widget: NavigatableWidget, event: UserFileOperationEvent): Promise<void> {
         const newResourceUri = this.createMoveToUri(resourceUri, widget, event);
         if (!newResourceUri) {
             return;
@@ -225,59 +274,58 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
         pending.push(this.shell.closeWidget(widget.id, { save: false }));
         await Promise.all(pending);
     }
-    protected createMoveToUri(resourceUri: URI, widget: NavigatableWidget, event: FileMoveEvent): URI | undefined {
-        const path = event.sourceUri.relative(resourceUri);
-        const targetUri = path && event.targetUri.resolve(path);
+
+    protected createMoveToUri(resourceUri: URI, widget: NavigatableWidget, event: UserFileOperationEvent): URI | undefined {
+        if (event.operation !== FileOperation.MOVE) {
+            return undefined;
+        }
+        const path = event.source?.relative(resourceUri);
+        const targetUri = path && event.target.resolve(path);
         return targetUri && widget.createMoveToUri(targetUri);
     }
 
-    protected readonly deletedSuffix = ' (deleted from disk)';
-    protected async updateWidgets(event: FileChangeEvent): Promise<void> {
-        const relevantEvent = event.filter(({ type }) => type !== FileChangeType.UPDATED);
-        if (relevantEvent.length) {
-            return this.doUpdateWidgets(relevantEvent);
+    protected readonly deletedSuffix = `(${nls.localizeByDefault('Deleted')})`;
+    protected async updateWidgets(event: FileChangesEvent): Promise<void> {
+        if (!event.gotDeleted() && !event.gotAdded()) {
+            return;
         }
-    }
-    protected async doUpdateWidgets(event: FileChangeEvent): Promise<void> {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const pending: Promise<any>[] = [];
-
         const dirty = new Set<string>();
         const toClose = new Map<string, NavigatableWidget[]>();
         for (const [uri, widget] of NavigatableWidget.get(this.shell.widgets)) {
-            this.updateWidget(uri, widget, event, { dirty, toClose });
+            this.updateWidget(uri, widget, event, { dirty, toClose: toClose });
         }
-        for (const [uriString, widgets] of toClose.entries()) {
-            if (!dirty.has(uriString)) {
-                for (const widget of widgets) {
-                    widget.close();
-                    pending.push(waitForClosed(widget));
+        if (this.corePreferences['workbench.editor.closeOnFileDelete']) {
+            const doClose = [];
+            for (const [uri, widgets] of toClose.entries()) {
+                if (!dirty.has(uri)) {
+                    doClose.push(...widgets);
                 }
             }
+            await this.shell.closeMany(doClose);
         }
-
-        await Promise.all(pending);
     }
-    protected updateWidget(uri: URI, widget: NavigatableWidget, event: FileChangeEvent, { dirty, toClose }: {
+    protected updateWidget(uri: URI, widget: NavigatableWidget, event: FileChangesEvent, { dirty, toClose }: {
         dirty: Set<string>;
         toClose: Map<string, NavigatableWidget[]>
     }): void {
         const label = widget.title.label;
         const deleted = label.endsWith(this.deletedSuffix);
-        if (FileChangeEvent.isDeleted(event, uri)) {
+        if (event.contains(uri, FileChangeType.DELETED)) {
             const uriString = uri.toString();
             if (Saveable.isDirty(widget)) {
-                if (!deleted) {
-                    widget.title.label += this.deletedSuffix;
-                }
                 dirty.add(uriString);
+            }
+            if (!deleted) {
+                widget.title.label += this.deletedSuffix;
+                this.onDidChangeEditorFileEmitter.fire({ editor: widget, type: FileChangeType.DELETED });
             }
             const widgets = toClose.get(uriString) || [];
             widgets.push(widget);
             toClose.set(uriString, widgets);
-        } else if (FileChangeEvent.isAdded(event, uri)) {
+        } else if (event.contains(uri, FileChangeType.ADDED)) {
             if (deleted) {
-                widget.title.label = widget.title.label.substr(0, label.length - this.deletedSuffix.length);
+                widget.title.label = widget.title.label.substring(0, label.length - this.deletedSuffix.length);
+                this.onDidChangeEditorFileEmitter.fire({ editor: widget, type: FileChangeType.ADDED });
             }
         }
     }

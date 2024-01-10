@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import * as fs from 'fs-extra';
 import * as paths from 'path';
@@ -20,20 +20,40 @@ import * as semver from 'semver';
 import { NpmRegistry, PublishedNodePackage, NodePackage } from './npm-registry';
 
 export interface Extension {
+    frontendPreload?: string;
     frontend?: string;
     frontendElectron?: string;
+    secondaryWindow?: string;
     backend?: string;
     backendElectron?: string;
+    electronMain?: string;
+    preload?: string;
+}
+
+export interface ExtensionPackageOptions {
+    /**
+     * Alias to use in place of the original package's name.
+     */
+    alias?: string
 }
 
 export class ExtensionPackage {
+
+    protected _name: string;
+
     constructor(
         readonly raw: PublishedNodePackage & Partial<RawExtensionPackage>,
-        protected readonly registry: NpmRegistry
-    ) { }
+        protected readonly registry: NpmRegistry,
+        options: ExtensionPackageOptions = {}
+    ) {
+        this._name = options.alias ?? raw.name;
+    }
 
+    /**
+     * The name of the extension's package as defined in "dependencies" (might be aliased)
+     */
     get name(): string {
-        return this.raw.name;
+        return this._name;
     }
 
     get version(): string {
@@ -115,32 +135,6 @@ export class ExtensionPackage {
         return '';
     }
 
-    async getLatestVersion(): Promise<string | undefined> {
-        const raw = await this.view();
-        return raw.latestVersion;
-    }
-
-    protected versionRange?: string;
-    async getVersionRange(): Promise<string | undefined> {
-        if (this.versionRange === undefined) {
-            this.versionRange = await this.resolveVersionRange();
-        }
-        return this.versionRange;
-    }
-    protected async resolveVersionRange(): Promise<string | undefined> {
-        const version = this.raw.version;
-        const validVersion = semver.valid(version);
-        if (validVersion) {
-            return validVersion;
-        }
-        const validRange = semver.validRange(version);
-        if (validRange) {
-            return validRange;
-        }
-        const raw = await this.view();
-        return raw.tags ? raw.tags[version] : undefined;
-    }
-
     getAuthor(): string {
         if (this.raw.publisher) {
             return this.raw.publisher.username;
@@ -157,20 +151,6 @@ export class ExtensionPackage {
         return '';
     }
 
-    async isOutdated(): Promise<boolean> {
-        const latestVersion = await this.getLatestVersion();
-        if (!latestVersion) {
-            return false;
-        }
-        const versionRange = await this.getVersionRange();
-        if (versionRange && semver.gtr(latestVersion, versionRange)) {
-            return true;
-        }
-        if (this.raw.installed) {
-            return semver.gt(latestVersion, this.raw.installed.version);
-        }
-        return false;
-    }
 }
 
 export interface RawExtensionPackage extends PublishedNodePackage {

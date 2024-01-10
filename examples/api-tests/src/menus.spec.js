@@ -1,21 +1,22 @@
-/********************************************************************************
- * Copyright (C) 2020 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2020 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 // @ts-check
 describe('Menus', function () {
+    this.timeout(7500);
 
     const { assert } = chai;
 
@@ -29,7 +30,7 @@ describe('Menus', function () {
     const { ViewContainer } = require('@theia/core/lib/browser/view-container');
     const { waitForRevealed, waitForHidden } = require('@theia/core/lib/browser/widgets/widget');
     const { CallHierarchyContribution } = require('@theia/callhierarchy/lib/browser/callhierarchy-contribution');
-    const { EXPLORER_VIEW_CONTAINER_ID } = require('@theia/navigator/lib/browser/navigator-widget');
+    const { EXPLORER_VIEW_CONTAINER_ID } = require('@theia/navigator/lib/browser/navigator-widget-factory');
     const { FileNavigatorContribution } = require('@theia/navigator/lib/browser/navigator-contribution');
     const { ScmContribution } = require('@theia/scm/lib/browser/scm-contribution');
     const { ScmHistoryContribution } = require('@theia/scm-extra/lib/browser/history/scm-history-contribution');
@@ -37,6 +38,7 @@ describe('Menus', function () {
     const { OutputContribution } = require('@theia/output/lib/browser/output-contribution');
     const { PluginFrontendViewContribution } = require('@theia/plugin-ext/lib/main/browser/plugin-frontend-view-contribution');
     const { ProblemContribution } = require('@theia/markers/lib/browser/problem/problem-contribution');
+    const { PropertyViewContribution } = require('@theia/property-view/lib/browser/property-view-contribution');
     const { SearchInWorkspaceFrontendContribution } = require('@theia/search-in-workspace/lib/browser/search-in-workspace-frontend-contribution');
     const { HostedPluginSupport } = require('@theia/plugin-ext/lib/hosted/browser/hosted-plugin');
 
@@ -51,8 +53,7 @@ describe('Menus', function () {
 
     before(async function () {
         await pluginService.didStart;
-        // register views for the explorer view container
-        await pluginService.activatePlugin('vscode.npm');
+        await pluginService.activateByViewContainer('explorer');
     });
 
     const toTearDown = new DisposableCollection();
@@ -67,6 +68,7 @@ describe('Menus', function () {
         container.get(OutputContribution),
         container.get(PluginFrontendViewContribution),
         container.get(ProblemContribution),
+        container.get(PropertyViewContribution),
         container.get(SearchInWorkspaceFrontendContribution)
     ]) {
         it(`should toggle '${contribution.viewLabel}' view`, async () => {
@@ -165,6 +167,10 @@ describe('Menus', function () {
         await waitForHidden(access2.menu);
         assert.deepEqual(contextMenuService.current, undefined);
         assert.isTrue(access2.disposed);
+    });
+
+    it('should not fail to register a menu with an invalid command', () => {
+        assert.doesNotThrow(() => menus.registerMenuAction(['test-menu-path'], { commandId: 'invalid-command', label: 'invalid command' }), 'should not throw.');
     });
 
 });

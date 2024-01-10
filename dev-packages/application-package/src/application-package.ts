@@ -1,27 +1,27 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import * as paths from 'path';
 import { readJsonFile, writeJsonFile } from './json-file';
 import { NpmRegistry, NodePackage, PublishedNodePackage, sortByKey } from './npm-registry';
-import { Extension, ExtensionPackage, RawExtensionPackage } from './extension-package';
+import { Extension, ExtensionPackage, ExtensionPackageOptions, RawExtensionPackage } from './extension-package';
 import { ExtensionPackageCollector } from './extension-package-collector';
 import { ApplicationProps } from './application-props';
-
-// tslint:disable:no-implicit-dependencies
+import deepmerge = require('deepmerge');
+import resolvePackagePath = require('resolve-package-path');
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ApplicationLog = (message?: any, ...optionalParams: any[]) => void;
@@ -46,14 +46,6 @@ export class ApplicationPackage {
         this.projectPath = options.projectPath;
         this.log = options.log || console.log.bind(console);
         this.error = options.error || console.error.bind(console);
-        if (this.isElectron()) {
-            const { version } = require('../package.json');
-            try {
-                require.resolve('@theia/electron/package.json', { paths: [this.projectPath] });
-            } catch {
-                console.warn(`please install @theia/electron@${version} as a runtime dependency`);
-            }
-        }
     }
 
     protected _registry: NpmRegistry | undefined;
@@ -87,7 +79,7 @@ export class ApplicationPackage {
             theia.target = defaultTarget;
         }
 
-        return this._props = { ...ApplicationProps.DEFAULT, ...theia };
+        return this._props = deepmerge(ApplicationProps.DEFAULT, theia);
     }
 
     protected _pck: NodePackage | undefined;
@@ -99,9 +91,13 @@ export class ApplicationPackage {
     }
 
     protected _frontendModules: Map<string, string> | undefined;
+    protected _frontendPreloadModules: Map<string, string> | undefined;
     protected _frontendElectronModules: Map<string, string> | undefined;
+    protected _secondaryWindowModules: Map<string, string> | undefined;
     protected _backendModules: Map<string, string> | undefined;
     protected _backendElectronModules: Map<string, string> | undefined;
+    protected _electronMainModules: Map<string, string> | undefined;
+    protected _preloadModules: Map<string, string> | undefined;
     protected _extensionPackages: ReadonlyArray<ExtensionPackage> | undefined;
 
     /**
@@ -110,7 +106,7 @@ export class ApplicationPackage {
     get extensionPackages(): ReadonlyArray<ExtensionPackage> {
         if (!this._extensionPackages) {
             const collector = new ExtensionPackageCollector(
-                raw => this.newExtensionPackage(raw),
+                (raw: PublishedNodePackage, options: ExtensionPackageOptions = {}) => this.newExtensionPackage(raw, options),
                 this.resolveModule
             );
             this._extensionPackages = collector.collect(this.pck);
@@ -126,41 +122,50 @@ export class ApplicationPackage {
         return this.getExtensionPackage(extension) || this.resolveExtensionPackage(extension);
     }
 
+    /**
+     * Resolve an extension name to its associated package
+     * @param extension the name of the extension's package as defined in "dependencies" (might be aliased)
+     * @returns the extension package
+     */
     async resolveExtensionPackage(extension: string): Promise<ExtensionPackage | undefined> {
         const raw = await RawExtensionPackage.view(this.registry, extension);
-        return raw ? this.newExtensionPackage(raw) : undefined;
+        return raw ? this.newExtensionPackage(raw, { alias: extension }) : undefined;
     }
 
-    protected newExtensionPackage(raw: PublishedNodePackage): ExtensionPackage {
-        return new ExtensionPackage(raw, this.registry);
+    protected newExtensionPackage(raw: PublishedNodePackage, options: ExtensionPackageOptions = {}): ExtensionPackage {
+        return new ExtensionPackage(raw, this.registry, options);
+    }
+
+    get frontendPreloadModules(): Map<string, string> {
+        return this._frontendPreloadModules ??= this.computeModules('frontendPreload');
     }
 
     get frontendModules(): Map<string, string> {
-        if (!this._frontendModules) {
-            this._frontendModules = this.computeModules('frontend');
-        }
-        return this._frontendModules;
+        return this._frontendModules ??= this.computeModules('frontend');
     }
 
     get frontendElectronModules(): Map<string, string> {
-        if (!this._frontendElectronModules) {
-            this._frontendElectronModules = this.computeModules('frontendElectron', 'frontend');
-        }
-        return this._frontendElectronModules;
+        return this._frontendElectronModules ??= this.computeModules('frontendElectron', 'frontend');
+    }
+
+    get secondaryWindowModules(): Map<string, string> {
+        return this._secondaryWindowModules ??= this.computeModules('secondaryWindow');
     }
 
     get backendModules(): Map<string, string> {
-        if (!this._backendModules) {
-            this._backendModules = this.computeModules('backend');
-        }
-        return this._backendModules;
+        return this._backendModules ??= this.computeModules('backend');
     }
 
     get backendElectronModules(): Map<string, string> {
-        if (!this._backendElectronModules) {
-            this._backendElectronModules = this.computeModules('backendElectron', 'backend');
-        }
-        return this._backendElectronModules;
+        return this._backendElectronModules ??= this.computeModules('backendElectron', 'backend');
+    }
+
+    get electronMainModules(): Map<string, string> {
+        return this._electronMainModules ??= this.computeModules('electronMain');
+    }
+
+    get preloadModules(): Map<string, string> {
+        return this._preloadModules ??= this.computeModules('preload');
     }
 
     protected computeModules<P extends keyof Extension, S extends keyof Extension = P>(primary: P, secondary?: S): Map<string, string> {
@@ -206,6 +211,10 @@ export class ApplicationPackage {
         return this.srcGen('backend', ...segments);
     }
 
+    bundledBackend(...segments: string[]): string {
+        return this.path('backend', 'bundle', ...segments);
+    }
+
     frontend(...segments: string[]): string {
         return this.srcGen('frontend', ...segments);
     }
@@ -238,6 +247,10 @@ export class ApplicationPackage {
         return this.ifBrowser(this.frontendModules, this.frontendElectronModules);
     }
 
+    get targetElectronMainModules(): Map<string, string> {
+        return this.ifElectron(this.electronMainModules, new Map());
+    }
+
     setDependency(name: string, version: string | undefined): boolean {
         const dependencies = this.pck.dependencies || {};
         const currentVersion = dependencies[name];
@@ -265,8 +278,14 @@ export class ApplicationPackage {
      */
     get resolveModule(): ApplicationModuleResolver {
         if (!this._moduleResolver) {
-            const resolutionPaths = [this.packagePath || process.cwd()];
-            this._moduleResolver = modulePath => require.resolve(modulePath, { paths: resolutionPaths });
+            const resolutionPaths = this.packagePath || process.cwd();
+            this._moduleResolver = modulePath => {
+                const resolved = resolvePackagePath(modulePath, resolutionPaths);
+                if (!resolved) {
+                    throw new Error('Could not resolve module: ' + modulePath);
+                }
+                return resolved;
+            };
         }
         return this._moduleResolver!;
     }

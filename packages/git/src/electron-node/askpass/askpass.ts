@@ -5,7 +5,7 @@
  *--------------------------------------------------------------------------------------------*/
 // Based on: https://github.com/Microsoft/vscode/blob/dd3e2d94f81139f9d18ba15a24c16c6061880b93/extensions/git/src/askpass.ts
 
-import { injectable, postConstruct, inject } from 'inversify';
+import { injectable, postConstruct, inject } from '@theia/core/shared/inversify';
 import * as path from 'path';
 import * as http from 'http';
 import { ILogger } from '@theia/core/lib/common/logger';
@@ -99,7 +99,7 @@ export class Askpass implements Disposable {
         }
     }
 
-    protected onRequest(req: http.ServerRequest, res: http.ServerResponse): void {
+    protected onRequest(req: http.IncomingMessage, res: http.ServerResponse): void {
         const chunks: string[] = [];
         req.setEncoding('utf8');
         req.on('data', (d: string) => chunks.push(d));

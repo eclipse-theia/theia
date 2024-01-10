@@ -1,122 +1,226 @@
-/********************************************************************************
- * Copyright (C) 2020 Ericsson and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2020 Ericsson and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { inject, injectable } from 'inversify';
-import { CompositeTreeNode, PreferenceSchemaProvider, SelectableTreeNode } from '@theia/core/lib/browser';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { CompositeTreeNode, PreferenceSchemaProvider, OVERRIDE_PROPERTY_PATTERN, PreferenceDataProperty } from '@theia/core/lib/browser';
 import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
+import { Emitter } from '@theia/core';
+import debounce = require('@theia/core/shared/lodash.debounce');
 import { Preference } from './preference-types';
 
+export const COMMONLY_USED_SECTION_PREFIX = 'commonly-used';
 @injectable()
 export class PreferenceTreeGenerator {
 
-    @inject(PreferenceSchemaProvider) schemaProvider: PreferenceSchemaProvider;
-    @inject(PreferenceConfigurations) preferenceConfigs: PreferenceConfigurations;
+    @inject(PreferenceSchemaProvider) protected readonly schemaProvider: PreferenceSchemaProvider;
+    @inject(PreferenceConfigurations) protected readonly preferenceConfigs: PreferenceConfigurations;
+
+    protected _root: CompositeTreeNode;
+
+    protected readonly onSchemaChangedEmitter = new Emitter<CompositeTreeNode>();
+    readonly onSchemaChanged = this.onSchemaChangedEmitter.event;
+    protected readonly commonlyUsedPreferences = [
+        'files.autoSave', 'files.autoSaveDelay', 'editor.fontSize',
+        'editor.fontFamily', 'editor.tabSize', 'editor.renderWhitespace',
+        'editor.cursorStyle', 'editor.multiCursorModifier', 'editor.insertSpaces',
+        'editor.wordWrap', 'files.exclude', 'files.associations'
+    ];
+    protected readonly topLevelCategories = new Map([
+        [COMMONLY_USED_SECTION_PREFIX, 'Commonly Used'],
+        ['editor', 'Text Editor'],
+        ['workbench', 'Workbench'],
+        ['window', 'Window'],
+        ['features', 'Features'],
+        ['application', 'Application'],
+        ['security', 'Security'],
+        ['extensions', 'Extensions']
+    ]);
+    protected readonly sectionAssignments = new Map([
+        ['breadcrumbs', 'workbench'],
+        ['comments', 'features'],
+        ['debug', 'features'],
+        ['diffEditor', 'editor'],
+        ['explorer', 'features'],
+        ['extensions', 'features'],
+        ['files', 'editor'],
+        ['hosted-plugin', 'features'],
+        ['http', 'application'],
+        ['keyboard', 'application'],
+        ['notification', 'workbench'],
+        ['output', 'features'],
+        ['preview', 'features'],
+        ['problems', 'features'],
+        ['scm', 'features'],
+        ['search', 'features'],
+        ['task', 'features'],
+        ['terminal', 'features'],
+        ['toolbar', 'features'],
+        ['webview', 'features'],
+        ['workspace', 'application'],
+    ]);
+    protected readonly defaultTopLevelCategory = 'extensions';
+
+    get root(): CompositeTreeNode {
+        return this._root ?? this.generateTree();
+    }
+
+    @postConstruct()
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
+        await this.schemaProvider.ready;
+        this.schemaProvider.onDidPreferenceSchemaChanged(() => this.handleChangedSchema());
+        this.handleChangedSchema();
+    }
 
     generateTree(): CompositeTreeNode {
         const preferencesSchema = this.schemaProvider.getCombinedSchema();
-        const propertyNames = Object.keys(preferencesSchema.properties).sort((a, b) => a.localeCompare(b));
-        const preferencesGroups: Preference.Branch[] = [];
-        const groups = new Map<string, Preference.Branch>();
-        const propertyPattern = Object.keys(preferencesSchema.patternProperties)[0]; // TODO: there may be a better way to get this data.
-        const overridePropertyIdentifier = new RegExp(propertyPattern, 'i');
+        const propertyNames = Object.keys(preferencesSchema.properties);
+        const groups = new Map<string, Preference.CompositeTreeNode>();
+        const root = this.createRootNode();
 
-        const root = this.createRootNode(preferencesGroups);
-
+        for (const id of this.topLevelCategories.keys()) {
+            this.getOrCreatePreferencesGroup(id, id, root, groups);
+        }
+        const commonlyUsed = this.getOrCreatePreferencesGroup(COMMONLY_USED_SECTION_PREFIX, COMMONLY_USED_SECTION_PREFIX, root, groups);
+        for (const preference of this.commonlyUsedPreferences) {
+            if (preference in preferencesSchema.properties) {
+                this.createLeafNode(preference, commonlyUsed, preferencesSchema.properties[preference]);
+            }
+        }
         for (const propertyName of propertyNames) {
-            if (!this.preferenceConfigs.isSectionName(propertyName) && !overridePropertyIdentifier.test(propertyName)) {
+            const property = preferencesSchema.properties[propertyName];
+            if (!this.preferenceConfigs.isSectionName(propertyName) && !OVERRIDE_PROPERTY_PATTERN.test(propertyName) && !property.deprecationMessage) {
                 const labels = propertyName.split('.');
-                const group = labels[0];
-                const subgroup = labels.length > 2 && labels.slice(0, 2).join('.');
-                if (!groups.has(group)) {
-                    const parentPreferencesGroup = this.createPreferencesGroup(group, root);
-                    groups.set(group, parentPreferencesGroup);
-                    preferencesGroups.push(parentPreferencesGroup);
-                }
-                if (subgroup && !groups.has(subgroup)) {
-                    const remoteParent = groups.get(group) as Preference.Branch;
-                    const newBranch = this.createPreferencesGroup(subgroup, remoteParent);
-                    groups.set(subgroup, newBranch);
-                    CompositeTreeNode.addChild(remoteParent, newBranch);
-                }
-                const parent = groups.get(subgroup || group) as Preference.Branch;
-                const leafNode = this.createLeafNode(propertyName, parent);
-                parent.leaves.push(leafNode);
+                const groupID = this.getGroupName(labels);
+                const subgroupName = this.getSubgroupName(labels, groupID);
+                const subgroupID = [groupID, subgroupName].join('.');
+                const toplevelParent = this.getOrCreatePreferencesGroup(groupID, groupID, root, groups);
+                const immediateParent = subgroupName && this.getOrCreatePreferencesGroup(subgroupID, groupID, toplevelParent, groups);
+                this.createLeafNode(propertyName, immediateParent || toplevelParent, property);
             }
         }
 
+        for (const group of groups.values()) {
+            if (group.id !== `${COMMONLY_USED_SECTION_PREFIX}@${COMMONLY_USED_SECTION_PREFIX}`) {
+                (group.children as Preference.TreeNode[]).sort((a, b) => {
+                    const aIsComposite = CompositeTreeNode.is(a);
+                    const bIsComposite = CompositeTreeNode.is(b);
+                    if (aIsComposite && !bIsComposite) {
+                        return 1;
+                    }
+                    if (bIsComposite && !aIsComposite) {
+                        return -1;
+                    }
+                    return a.id.localeCompare(b.id);
+                });
+            }
+        }
+
+        this._root = root;
         return root;
     };
 
-    protected createRootNode = (preferencesGroups: Preference.Branch[]): CompositeTreeNode => ({
-        id: 'root-node-id',
-        name: '',
-        parent: undefined,
-        visible: true,
-        children: preferencesGroups
-    });
+    getNodeId(preferenceId: string): string {
+        const expectedGroup = this.getGroupName(preferenceId.split('.'));
+        const expectedId = `${expectedGroup}@${preferenceId}`;
+        return expectedId;
+    }
 
-    protected createLeafNode = (property: string, preferencesGroup: Preference.Branch): SelectableTreeNode => {
-        const propertySpecifier = this.split(property).slice(1);
-        const name = propertySpecifier.map(word => word.slice(0, 1).toLocaleUpperCase() + word.slice(1)).join(' ').trim();
+    protected getGroupName(labels: string[]): string {
+        const defaultGroup = labels[0];
+        if (this.topLevelCategories.has(defaultGroup)) {
+            return defaultGroup;
+        }
+        const assignedGroup = this.sectionAssignments.get(defaultGroup);
+        if (assignedGroup) {
+            return assignedGroup;
+        }
+        return this.defaultTopLevelCategory;
+    }
+
+    protected getSubgroupName(labels: string[], computedGroupName: string): string | undefined {
+        if (computedGroupName !== labels[0]) {
+            return labels[0];
+        } else if (labels.length > 2) {
+            return labels[1];
+        }
+    }
+
+    doHandleChangedSchema(): void {
+        const newTree = this.generateTree();
+        this.onSchemaChangedEmitter.fire(newTree);
+    }
+
+    handleChangedSchema = debounce(this.doHandleChangedSchema, 200);
+
+    protected createRootNode(): CompositeTreeNode {
         return {
-            id: property,
-            name,
-            parent: preferencesGroup,
+            id: 'root-node-id',
+            name: '',
+            parent: undefined,
             visible: true,
-            selected: false,
+            children: []
         };
-    };
+    }
 
-    protected createPreferencesGroup = (group: string, root: CompositeTreeNode): Preference.Branch => {
-        const isSubgroup = 'expanded' in root;
-        const [groupname, subgroupname] = group.split('.');
-        const label = isSubgroup ? subgroupname : groupname;
+    protected createLeafNode(property: string, preferencesGroup: Preference.CompositeTreeNode, data: PreferenceDataProperty): Preference.LeafNode {
+        const { group } = Preference.TreeNode.getGroupAndIdFromNodeId(preferencesGroup.id);
         const newNode = {
-            id: `${group}-id`,
-            name: this.toTitleCase(label),
+            id: `${group}@${property}`,
+            preferenceId: property,
+            parent: preferencesGroup,
+            preference: { data },
+            depth: Preference.TreeNode.isTopLevel(preferencesGroup) ? 1 : 2,
+        };
+        CompositeTreeNode.addChild(preferencesGroup, newNode);
+        return newNode;
+    }
+
+    protected createPreferencesGroup(id: string, group: string, root: CompositeTreeNode): Preference.CompositeTreeNode {
+        const newNode = {
+            id: `${group}@${id}`,
             visible: true,
             parent: root,
             children: [],
-            leaves: [],
             expanded: false,
             selected: false,
+            depth: 0,
         };
+        const isTopLevel = Preference.TreeNode.isTopLevel(newNode);
+        if (!isTopLevel) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            delete (newNode as any).expanded;
+        }
+        newNode.depth = isTopLevel ? 0 : 1;
+        CompositeTreeNode.addChild(root, newNode);
+        return newNode;
+    }
+
+    getCustomLabelFor(id: string): string | undefined {
+        return this.topLevelCategories.get(id);
+    }
+
+    protected getOrCreatePreferencesGroup(id: string, group: string, root: CompositeTreeNode, groups: Map<string, Preference.CompositeTreeNode>): Preference.CompositeTreeNode {
+        const existingGroup = groups.get(id);
+        if (existingGroup) { return existingGroup; }
+        const newNode = this.createPreferencesGroup(id, group, root);
+        groups.set(id, newNode);
         return newNode;
     };
-
-    protected toTitleCase(nonTitle: string): string {
-        // Any non-word character or the 0-length space between a non-upper-case character and an upper-case character
-        return this.split(nonTitle).map(word => this.capitalizeFirst(word)).join(' ').trim();
-    }
-
-    protected capitalizeFirst(maybeLowerCase: string): string {
-        return maybeLowerCase.slice(0, 1).toLocaleUpperCase() + maybeLowerCase.slice(1);
-    }
-
-    /**
-     * Split based on any non-word character or the 0-length space between a non-upper-case character and an upper-case character
-     */
-    private split(string: string): string[] {
-        const split: string[] = [];
-        const regex = /[A-Z]+[a-z0-9]*|[A-Z]*[a-z0-9]+/g;
-        // eslint-disable-next-line no-null/no-null
-        let match; while ((match = regex.exec(string)) !== null) {
-            split.push(match[0]);
-        }
-        return split;
-    }
-
 }

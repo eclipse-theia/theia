@@ -1,34 +1,24 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import * as chai from 'chai';
-import { ConsoleLogger } from '../../node/messaging/logger';
-import { JsonRpcProxyFactory, JsonRpcProxy } from './proxy-factory';
-import { createMessageConnection } from 'vscode-jsonrpc/lib/main';
-import * as stream from 'stream';
+import { RpcProxyFactory, RpcProxy } from './proxy-factory';
+import { ChannelPipe } from '../message-rpc/channel.spec';
 
 const expect = chai.expect;
-
-class NoTransform extends stream.Transform {
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    public _transform(chunk: any, encoding: string, callback: Function): void {
-        callback(undefined, chunk);
-    }
-}
 
 class TestServer {
     requests: string[] = [];
@@ -94,23 +84,20 @@ describe('Proxy-Factory', () => {
 
 function getSetup(): {
     client: TestClient;
-    clientProxy: JsonRpcProxy<TestClient>;
+    clientProxy: RpcProxy<TestClient>;
     server: TestServer;
-    serverProxy: JsonRpcProxy<TestServer>;
+    serverProxy: RpcProxy<TestServer>;
 } {
     const client = new TestClient();
     const server = new TestServer();
 
-    const serverProxyFactory = new JsonRpcProxyFactory<TestServer>(client);
-    const client2server = new NoTransform();
-    const server2client = new NoTransform();
-    const serverConnection = createMessageConnection(server2client, client2server, new ConsoleLogger());
-    serverProxyFactory.listen(serverConnection);
+    const serverProxyFactory = new RpcProxyFactory<TestServer>(client);
+    const pipe = new ChannelPipe();
+    serverProxyFactory.listen(pipe.right);
     const serverProxy = serverProxyFactory.createProxy();
 
-    const clientProxyFactory = new JsonRpcProxyFactory<TestClient>(server);
-    const clientConnection = createMessageConnection(client2server, server2client, new ConsoleLogger());
-    clientProxyFactory.listen(clientConnection);
+    const clientProxyFactory = new RpcProxyFactory<TestClient>(server);
+    clientProxyFactory.listen(pipe.left);
     const clientProxy = clientProxyFactory.createProxy();
     return {
         client,

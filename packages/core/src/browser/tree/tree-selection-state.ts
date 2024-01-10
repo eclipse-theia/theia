@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { Tree, TreeNode } from './tree';
 import { DepthFirstTreeIterator } from './tree-iterator';
@@ -36,7 +36,7 @@ export namespace FocusableTreeSelection {
     /**
      * `true` if the argument is a focusable tree selection. Otherwise, `false`.
      */
-    export function is(arg: object | undefined): arg is FocusableTreeSelection {
+    export function is(arg: unknown): arg is FocusableTreeSelection {
         return TreeSelection.is(arg) && 'focus' in arg;
     }
 
@@ -95,8 +95,13 @@ export class TreeSelectionState {
 
     get focus(): SelectableTreeNode | undefined {
         const copy = this.checkNoDefaultSelection(this.selectionStack);
-        const candidate = copy[copy.length - 1].focus;
+        const candidate = copy[copy.length - 1]?.focus;
         return this.toSelectableTreeNode(candidate);
+    }
+
+    get node(): SelectableTreeNode | undefined {
+        const copy = this.checkNoDefaultSelection(this.selectionStack);
+        return this.toSelectableTreeNode(copy[copy.length - 1]?.node);
     }
 
     protected handleDefault(state: TreeSelectionState, node: Readonly<SelectableTreeNode>): TreeSelectionState {
@@ -116,7 +121,7 @@ export class TreeSelectionState {
             for (let i = allRanges.length - 1; i >= 0; i--) {
                 const latestRangeIndex = copy.indexOf(allRanges[i]);
                 const latestRangeSelection = copy[latestRangeIndex];
-                const latestRange = latestRangeSelection && latestRangeSelection.focus ? this.selectionRange(latestRangeSelection) : [];
+                const latestRange = latestRangeSelection?.focus ? this.selectionRange(latestRangeSelection) : [];
                 if (latestRange.indexOf(node) !== -1) {
                     if (this.focus === latestRangeSelection.focus) {
                         return latestRangeSelection.focus || node;

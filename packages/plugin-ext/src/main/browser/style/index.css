@@ -11,37 +11,38 @@
  * with the GNU Classpath Exception which is available at
  * https://www.gnu.org/software/classpath/license.html.
  *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
 .spinnerContainer {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .flexcontainer {
-    display: flex;
+  display: flex;
 }
 
 .row {
-    width: 100%;
+  width: 100%;
 }
 
 .column {
-    flex-direction: column;
+  flex-direction: column;
 }
 
 .theia-plugin-view-container {
-    -webkit-mask: url('');
-    mask: url('');
-}
-
-.theia-plugin-test-tab-icon {
-    -webkit-mask: url('test.svg');
-    mask: url('test.svg');
+  /*
+        It might take a second or two until the real plugin mask is loaded
+        To prevent flickering on the icon, we set a transparent mask instead
+        Since masks only support images, svg or gradients, we create a transparent gradient here
+    */
+  -webkit-mask: linear-gradient(transparent, transparent);
+  mask: linear-gradient(transparent, transparent);
+  background-color: var(--theia-activityBar-inactiveForeground);
 }
 
 .theia-plugin-file-icon,
@@ -54,11 +55,11 @@
 .theia-plugin-root-folder-icon::before,
 .theia-plugin-root-folder-expanded-icon,
 .theia-plugin-root-folder-expanded-icon::before {
-    padding-right: var(--theia-ui-padding);
-	width: var(--theia-icon-size);
-	height: var(--theia-content-line-height);
-	line-height: inherit !important;
-	display: inline-block;
+  padding-right: var(--theia-ui-padding);
+  width: var(--theia-icon-size);
+  height: var(--theia-content-line-height);
+  line-height: inherit !important;
+  display: inline-block;
 }
 
 .p-TabBar.theia-app-sides .theia-plugin-file-icon,
@@ -71,14 +72,13 @@
 .p-TabBar.theia-app-sides .theia-plugin-root-folder-icon::before,
 .p-TabBar.theia-app-sides .theia-plugin-root-folder-expanded-icon,
 .p-TabBar.theia-app-sides .theia-plugin-root-folder-expanded-icon::before {
-    padding: 0px !important;
-    width: var(--theia-private-sidebar-icon-size) !important;
-    height: var(--theia-private-sidebar-icon-size) !important;
-    background-size: var(--theia-private-sidebar-icon-size) !important;
-    font-size: var(--theia-private-sidebar-icon-size) !important;
+  padding: 0px !important;
+  width: var(--theia-private-sidebar-icon-size) !important;
+  height: var(--theia-private-sidebar-icon-size) !important;
+  background-size: var(--theia-private-sidebar-icon-size) !important;
+  font-size: var(--theia-private-sidebar-icon-size) !important;
 }
 
-
-@import './plugin-sidebar.css';
-@import './webview.css';
-@import './tree.css';
+@import "./plugin-sidebar.css";
+@import "./webview.css";
+@import "./tree.css";

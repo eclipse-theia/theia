@@ -1,21 +1,21 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018-2021 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import * as path from 'path';
-import { interfaces } from 'inversify';
+import { interfaces } from '@theia/core/shared/inversify';
 import { bindContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { CliContribution } from '@theia/core/lib/node/cli';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
@@ -31,6 +31,13 @@ import { HostedPluginProcess, HostedPluginProcessConfiguration } from './hosted-
 import { ExtPluginApiProvider } from '../../common/plugin-ext-api-contribution';
 import { HostedPluginCliContribution } from './hosted-plugin-cli-contribution';
 import { HostedPluginDeployerHandler } from './hosted-plugin-deployer-handler';
+import { PluginUriFactory } from './scanners/plugin-uri-factory';
+import { FilePluginUriFactory } from './scanners/file-plugin-uri-factory';
+import { HostedPluginLocalizationService } from './hosted-plugin-localization-service';
+import { LanguagePackService, languagePackServicePath } from '../../common/language-pack-service';
+import { PluginLanguagePackService } from './plugin-language-pack-service';
+import { RpcConnectionHandler } from '@theia/core/lib/common/messaging/proxy-factory';
+import { ConnectionHandler } from '@theia/core/lib/common/messaging/handler';
 
 const commonHostedConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {
     bind(HostedPluginProcess).toSelf().inSingletonScope();
@@ -56,13 +63,26 @@ export function bindCommonHostedBackend(bind: interfaces.Bind): void {
     bind(HostedPluginReader).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(HostedPluginReader);
 
+    bind(HostedPluginLocalizationService).toSelf().inSingletonScope();
+    bind(BackendApplicationContribution).toService(HostedPluginLocalizationService);
     bind(HostedPluginDeployerHandler).toSelf().inSingletonScope();
     bind(PluginDeployerHandler).toService(HostedPluginDeployerHandler);
 
+    bind(PluginLanguagePackService).toSelf().inSingletonScope();
+    bind(LanguagePackService).toService(PluginLanguagePackService);
+    bind(ConnectionHandler).toDynamicValue(ctx =>
+        new RpcConnectionHandler(languagePackServicePath, () =>
+            ctx.container.get(LanguagePackService)
+        )
+    ).inSingletonScope();
+
     bind(GrammarsReader).toSelf().inSingletonScope();
-    bind(HostedPluginProcessConfiguration).toConstantValue({ path: path.resolve(__dirname, 'plugin-host.js') });
+    bind(HostedPluginProcessConfiguration).toConstantValue({
+        path: path.join(__dirname, 'plugin-host'),
+    });
 
     bind(ConnectionContainerModule).toConstantValue(commonHostedConnectionModule);
+    bind(PluginUriFactory).to(FilePluginUriFactory).inSingletonScope();
 }
 
 export function bindHostedBackend(bind: interfaces.Bind): void {

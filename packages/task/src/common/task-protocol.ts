@@ -1,22 +1,24 @@
-/********************************************************************************
- * Copyright (C) 2017 Ericsson and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 Ericsson and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { JsonRpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
+import { Event } from '@theia/core';
+import { RpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
-import { ProblemMatcher, ProblemMatch, WatchingPattern } from './problem-matcher-protocol';
+import { ProblemMatcher, ProblemMatch, WatchingMatcherContribution, ProblemMatcherContribution, ProblemPatternContribution } from './problem-matcher-protocol';
+export { WatchingMatcherContribution, ProblemMatcherContribution, ProblemPatternContribution };
 
 export const taskPath = '/services/task';
 
@@ -28,15 +30,15 @@ export enum DependsOrder {
 }
 
 export enum RevealKind {
-    Always,
-    Silent,
-    Never
+    Always = 'always',
+    Silent = 'silent',
+    Never = 'never'
 }
 
 export enum PanelKind {
-    Shared,
-    Dedicated,
-    New
+    Shared = 'shared',
+    Dedicated = 'dedicated',
+    New = 'new'
 }
 
 export interface TaskOutputPresentation {
@@ -46,6 +48,7 @@ export interface TaskOutputPresentation {
     panel?: PanelKind;
     showReuseMessage?: boolean;
     clear?: boolean;
+    close?: boolean;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [name: string]: any;
 }
@@ -57,7 +60,8 @@ export namespace TaskOutputPresentation {
             focus: false,
             panel: PanelKind.Shared,
             showReuseMessage: true,
-            clear: false
+            clear: false,
+            close: false
         };
     }
 
@@ -88,7 +92,8 @@ export namespace TaskOutputPresentation {
                 echo: task.presentation.echo === undefined || task.presentation.echo,
                 focus: shouldSetFocusToTerminal(task),
                 showReuseMessage: shouldShowReuseMessage(task),
-                clear: shouldClearTerminalBeforeRun(task)
+                clear: shouldClearTerminalBeforeRun(task),
+                close: shouldCloseTerminalOnFinish(task)
             };
         }
         return outputPresentation;
@@ -106,6 +111,10 @@ export namespace TaskOutputPresentation {
         return !!task.presentation && !!task.presentation.clear;
     }
 
+    export function shouldCloseTerminalOnFinish(task: TaskCustomization): boolean {
+        return !!task.presentation && !!task.presentation.close;
+    }
+
     export function shouldShowReuseMessage(task: TaskCustomization): boolean {
         return !task.presentation || task.presentation.showReuseMessage === undefined || !!task.presentation.showReuseMessage;
     }
@@ -113,9 +122,10 @@ export namespace TaskOutputPresentation {
 
 export interface TaskCustomization {
     type: string;
-    group?: 'build' | 'test' | 'none' | { kind: 'build' | 'test' | 'none', isDefault: true };
+    group?: 'build' | 'test' | 'rebuild' | 'clean' | 'none' | { kind: 'build' | 'test' | 'rebuild' | 'clean', isDefault: boolean };
     problemMatcher?: string | ProblemMatcherContribution | (string | ProblemMatcherContribution)[];
     presentation?: TaskOutputPresentation;
+    detail?: string;
 
     /** Whether the task is a background task or not. */
     isBackground?: boolean;
@@ -126,32 +136,42 @@ export interface TaskCustomization {
     /** The order the dependsOn tasks should be executed in. */
     dependsOrder?: DependsOrder;
 
+    runOptions?: RunOptions;
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [name: string]: any;
 }
 export namespace TaskCustomization {
     export function isBuildTask(task: TaskCustomization): boolean {
-        return task.group === 'build' || !!task.group && typeof task.group === 'object' && task.group.kind === 'build';
+        return task.group === 'build' || typeof task.group === 'object' && task.group.kind === 'build';
     }
 
     export function isDefaultBuildTask(task: TaskCustomization): boolean {
-        return !!task.group && typeof task.group === 'object' && task.group.kind === 'build' && task.group.isDefault;
+        return isDefaultTask(task) && isBuildTask(task);
+    }
+
+    export function isDefaultTask(task: TaskCustomization): boolean {
+        return typeof task.group === 'object' && task.group.isDefault;
     }
 
     export function isTestTask(task: TaskCustomization): boolean {
-        return task.group === 'test' || !!task.group && typeof task.group === 'object' && task.group.kind === 'test';
+        return task.group === 'test' || typeof task.group === 'object' && task.group.kind === 'test';
     }
 
     export function isDefaultTestTask(task: TaskCustomization): boolean {
-        return !!task.group && typeof task.group === 'object' && task.group.kind === 'test' && task.group.isDefault;
+        return isDefaultTask(task) && isTestTask(task);
     }
 }
 
 export enum TaskScope {
-    Workspace,
-    Global
+    Global = 1,
+    Workspace = 2
 }
 
+/**
+ * The task configuration scopes.
+ * - `string` represents the associated workspace folder uri.
+ */
 export type TaskConfigurationScope = string | TaskScope.Workspace | TaskScope.Global;
 
 export interface TaskConfiguration extends TaskCustomization {
@@ -190,7 +210,7 @@ export interface TaskInfo {
     readonly [key: string]: any;
 }
 
-export interface TaskServer extends JsonRpcServer<TaskClient> {
+export interface TaskServer extends RpcServer<TaskClient> {
     /** Run a task. Optionally pass a context.  */
     run(task: TaskConfiguration, ctx?: string, option?: RunTaskOption): Promise<TaskInfo>;
     /** Kill a task, by id. */
@@ -208,6 +228,8 @@ export interface TaskServer extends JsonRpcServer<TaskClient> {
     /** Returns the list of default and registered task runners */
     getRegisteredTaskTypes(): Promise<string[]>
 
+    /** plugin callback task complete */
+    customExecutionComplete(id: number, exitCode: number | undefined): Promise<void>
 }
 
 export interface TaskCustomizationData {
@@ -219,6 +241,10 @@ export interface TaskCustomizationData {
 
 export interface RunTaskOption {
     customization?: TaskCustomizationData;
+}
+
+export interface RunOptions {
+    reevaluateOnRerun?: boolean;
 }
 
 /** Event sent when a task has concluded its execution */
@@ -267,51 +293,25 @@ export interface TaskDefinition {
     taskType: string;
     source: string;
     properties: {
-        required: string[];
+        /**
+         * Should be treated as an empty array if omitted.
+         * https://json-schema.org/draft/2020-12/json-schema-validation.html#rfc.section.6.5.3
+         */
+        required?: string[];
         all: string[];
         schema: IJSONSchema;
     }
 }
 
-export interface WatchingMatcherContribution {
-    // If set to true the background monitor is in active mode when the task starts.
-    // This is equals of issuing a line that matches the beginPattern
-    activeOnStart?: boolean;
-    beginsPattern: string | WatchingPattern;
-    endsPattern: string | WatchingPattern;
+export interface ManagedTask {
+    id: number;
+    context?: string;
 }
 
-export interface ProblemMatcherContribution {
-    base?: string;
-    name?: string;
-    label: string;
-    deprecated?: boolean;
-
-    owner: string;
-    source?: string;
-    applyTo?: string;
-    fileLocation?: 'absolute' | 'relative' | string[];
-    pattern: string | ProblemPatternContribution | ProblemPatternContribution[];
-    severity?: string;
-    watching?: WatchingMatcherContribution; // deprecated. Use `background`.
-    background?: WatchingMatcherContribution;
-}
-
-export interface ProblemPatternContribution {
-    name?: string;
-    regexp: string;
-
-    kind?: string;
-    file?: number;
-    message?: number;
-    location?: number;
-    line?: number;
-    character?: number;
-    column?: number;
-    endLine?: number;
-    endCharacter?: number;
-    endColumn?: number;
-    code?: number;
-    severity?: number;
-    loop?: boolean;
+export interface ManagedTaskManager<T extends ManagedTask> {
+    onDelete: Event<number>;
+    register(task: T, context?: string): number;
+    get(id: number): T | undefined;
+    getTasks(context?: string): T[] | undefined;
+    delete(task: T): void;
 }

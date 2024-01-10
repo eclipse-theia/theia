@@ -1,34 +1,37 @@
-/********************************************************************************
- * Copyright (C) 2020 Ericsson and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2020 Ericsson and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 let disableJSDOM = enableJSDOM();
 
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
+FrontendApplicationConfigProvider.set({});
+
 import URI from '@theia/core/lib/common/uri';
 import { expect } from 'chai';
-import { Container } from 'inversify';
-import { Diagnostic, Range, DiagnosticSeverity } from 'vscode-languageserver-types';
+import { Container } from '@theia/core/shared/inversify';
+import { Diagnostic, Range, DiagnosticSeverity } from '@theia/core/shared/vscode-languageserver-protocol';
 import { Event } from '@theia/core/lib/common/event';
-import { FileSystemWatcher } from '@theia/filesystem/lib/browser/filesystem-watcher';
 import { Marker } from '../../common/marker';
 import { MarkerManager } from '../marker-manager';
 import { MarkerNode, MarkerOptions } from '../marker-tree';
 import { PROBLEM_OPTIONS } from './problem-container';
 import { ProblemManager } from './problem-manager';
 import { ProblemTree } from './problem-tree-model';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
 
 disableJSDOM();
 
@@ -41,9 +44,9 @@ before(() => {
     testContainer.bind(MarkerManager).toSelf().inSingletonScope();
     testContainer.bind(ProblemManager).toSelf();
     testContainer.bind(MarkerOptions).toConstantValue(PROBLEM_OPTIONS);
-    testContainer.bind(FileSystemWatcher).toConstantValue({
-        onFilesChanged: Event.None
-    } as FileSystemWatcher);
+    testContainer.bind(FileService).toConstantValue(<FileService>{
+        onDidFilesChange: Event.None
+    });
 
     testContainer.bind(ProblemTree).toSelf().inSingletonScope();
     problemTree = testContainer.get<ProblemTree>(ProblemTree);
@@ -125,6 +128,15 @@ describe('Problem Tree', () => {
             expect(problemTree['sortMarkers'](nodeB, nodeA)).equals(10);
         });
 
+        it('should sort markers based on owner if their severities, line numbers and columns are equal', () => {
+            const markerA = createMockMarker({ start: { line: 1, character: 10 }, end: { line: 1, character: 10 } }, DiagnosticSeverity.Error, 'A');
+            const markerB = createMockMarker({ start: { line: 1, character: 10 }, end: { line: 1, character: 10 } }, DiagnosticSeverity.Error, 'B');
+            const nodeA = createMockMarkerNode(markerA);
+            const nodeB = createMockMarkerNode(markerB);
+            expect(problemTree['sortMarkers'](nodeA, nodeB)).equals(-1);
+            expect(problemTree['sortMarkers'](nodeB, nodeA)).equals(1);
+        });
+
         it('should not sort if markers are equal', () => {
             const markerA = createMockMarker({ start: { line: 0, character: 10 }, end: { line: 0, character: 10 } }, DiagnosticSeverity.Error);
             const markerB = createMockMarker({ start: { line: 0, character: 10 }, end: { line: 0, character: 10 } }, DiagnosticSeverity.Error);
@@ -158,19 +170,20 @@ function createMockMarkerNode(marker: Marker<Diagnostic>): MarkerNode {
  * Create a mock diagnostic marker.
  * @param range the diagnostic range.
  * @param severity the diagnostic severity.
+ * @param owner the optional owner of the diagnostic
  *
  * @returns a mock diagnostic marker.
  */
-function createMockMarker(range: Range, severity: DiagnosticSeverity): Readonly<Marker<Diagnostic>> {
+function createMockMarker(range: Range, severity: DiagnosticSeverity, owner?: string): Readonly<Marker<Diagnostic>> {
     const data: Diagnostic = {
         range: range,
         severity: severity,
         message: 'message'
     };
     return Object.freeze({
-        uri: name,
+        uri: 'uri',
         kind: 'marker',
-        owner: 'owner',
+        owner: owner ?? 'owner',
         data
     });
 }

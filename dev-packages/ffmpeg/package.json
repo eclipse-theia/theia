@@ -1,0 +1,37 @@
+{
+  "name": "@theia/ffmpeg",
+  "version": "1.45.0",
+  "description": "Theia FFMPEG reader utility.",
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eclipse-theia/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/eclipse-theia/theia/issues"
+  },
+  "homepage": "https://github.com/eclipse-theia/theia",
+  "main": "lib/index.js",
+  "files": [
+    "binding.gyp",
+    "lib",
+    "native",
+    "src"
+  ],
+  "scripts": {
+    "lint": "theiaext lint",
+    "build": "theiaext build",
+    "watch": "theiaext watch",
+    "clean": "theiaext clean"
+  },
+  "dependencies": {
+    "@electron/get": "^2.0.0",
+    "unzipper": "^0.9.11"
+  },
+  "devDependencies": {
+    "@types/unzipper": "^0.9.2"
+  }
+}

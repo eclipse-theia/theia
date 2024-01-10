@@ -1,22 +1,22 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { named, injectable, inject } from 'inversify';
 import URI from '../common/uri';
-import { ContributionProvider, Prioritizeable, MaybePromise } from '../common';
+import { ContributionProvider, Prioritizeable, MaybePromise, Emitter, Event, Disposable } from '../common';
 
 export interface OpenerOptions {
 }
@@ -75,6 +75,14 @@ export interface OpenerService {
      * Reject if such does not exist.
      */
     getOpener(uri: URI, options?: OpenerOptions): Promise<OpenHandler>;
+    /**
+     * Add open handler i.e. for custom editors
+     */
+    addHandler?(openHandler: OpenHandler): Disposable;
+    /**
+     * Event that fires when a new opener is added or removed.
+     */
+    onDidChangeOpeners?: Event<void>;
 }
 
 export async function open(openerService: OpenerService, uri: URI, options?: OpenerOptions): Promise<object | undefined> {
@@ -84,11 +92,26 @@ export async function open(openerService: OpenerService, uri: URI, options?: Ope
 
 @injectable()
 export class DefaultOpenerService implements OpenerService {
+    // Collection of open-handlers for custom-editor contributions.
+    protected readonly customEditorOpenHandlers: OpenHandler[] = [];
+
+    protected readonly onDidChangeOpenersEmitter = new Emitter<void>();
+    readonly onDidChangeOpeners = this.onDidChangeOpenersEmitter.event;
 
     constructor(
         @inject(ContributionProvider) @named(OpenHandler)
         protected readonly handlersProvider: ContributionProvider<OpenHandler>
     ) { }
+
+    addHandler(openHandler: OpenHandler): Disposable {
+        this.customEditorOpenHandlers.push(openHandler);
+        this.onDidChangeOpenersEmitter.fire();
+
+        return Disposable.create(() => {
+            this.customEditorOpenHandlers.splice(this.customEditorOpenHandlers.indexOf(openHandler), 1);
+            this.onDidChangeOpenersEmitter.fire();
+        });
+    }
 
     async getOpener(uri: URI, options?: OpenerOptions): Promise<OpenHandler> {
         const handlers = await this.prioritize(uri, options);
@@ -114,7 +137,10 @@ export class DefaultOpenerService implements OpenerService {
     }
 
     protected getHandlers(): OpenHandler[] {
-        return this.handlersProvider.getContributions();
+        return [
+            ...this.handlersProvider.getContributions(),
+            ...this.customEditorOpenHandlers
+        ];
     }
 
 }

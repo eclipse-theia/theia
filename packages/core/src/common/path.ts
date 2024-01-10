@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 /**
  * On POSIX:
@@ -31,6 +31,9 @@
  * "  /c: / home/user/dir / file  .txt "
  * └──────┴───────────────┴──────┴─────┘
  */
+
+import { OS } from './os';
+
 export class Path {
     static separator: '/' = '/';
 
@@ -48,15 +51,79 @@ export class Path {
         if (path.length >= 3 && path.charCodeAt(0) === 47 /* '/' */ && path.charCodeAt(2) === 58 /* ':' */) {
             const code = path.charCodeAt(1);
             if (code >= 65 /* A */ && code <= 90 /* Z */) {
-                path = `/${String.fromCharCode(code + 32)}:${path.substr(3)}`; // "/c:".length === 3
+                path = `/${String.fromCharCode(code + 32)}:${path.substring(3)}`; // "/c:".length === 3
             }
         } else if (path.length >= 2 && path.charCodeAt(1) === 58 /* ':' */) {
             const code = path.charCodeAt(0);
             if (code >= 65 /* A */ && code <= 90 /* Z */) {
-                path = `${String.fromCharCode(code + 32)}:${path.substr(2)}`; // "/c:".length === 3
+                path = `${String.fromCharCode(code + 32)}:${path.substring(2)}`; // "c:".length === 2
+            }
+            if (path.charCodeAt(0) !== 47 /* '/' */) {
+                path = `${String.fromCharCode(47)}${path}`;
             }
         }
         return path;
+    }
+    /**
+     * Normalize path separator to use Path.separator
+     * @param Path candidate to normalize
+     * @returns Normalized string path
+     */
+    static normalizePathSeparator(path: string): string {
+        return path.split(/[\\]/).join(Path.separator);
+    }
+
+    /**
+     * Creates a windows path from the given path string.
+     * A windows path uses an upper case drive letter and backwards slashes.
+     * @param path The input path
+     * @returns Windows style path
+     */
+    static windowsPath(path: string): string {
+        const offset = path.charAt(0) === '/' ? 1 : 0;
+        if (path.charAt(offset + 1) === ':') {
+            const driveLetter = path.charAt(offset).toUpperCase();
+            const substring = path.substring(offset + 2).replace(/\//g, '\\');
+            return `${driveLetter}:${substring || '\\'}`;
+        }
+        return path.replace(/\//g, '\\');
+    }
+
+    /**
+     * Tildify path, replacing `home` with `~` if user's `home` is present at the beginning of the path.
+     * This is a non-operation for Windows.
+     *
+     * @param resourcePath
+     * @param home
+     */
+    static tildify(resourcePath: string, home: string): string {
+        const path = new Path(resourcePath);
+        const isWindows = path.root && Path.isDrive(path.root.base);
+
+        if (!isWindows && home && resourcePath.indexOf(`${home}/`) === 0) {
+            return resourcePath.replace(`${home}/`, '~/');
+        }
+
+        return resourcePath;
+    }
+
+    /**
+     * Untildify path, replacing `~` with `home` if `~` present at the beginning of the path.
+     * This is a non-operation for Windows.
+     *
+     * @param resourcePath
+     * @param home
+     */
+    static untildify(resourcePath: string, home: string): string {
+        if (resourcePath.startsWith('~')) {
+            const untildifiedResource = resourcePath.replace(/^~/, home);
+            const untildifiedPath = new Path(untildifiedResource);
+            const isWindows = untildifiedPath.root && Path.isDrive(untildifiedPath.root.base);
+            if (!isWindows && home && untildifiedResource.startsWith(`${home}`)) {
+                return untildifiedResource;
+            }
+        }
+        return resourcePath;
     }
 
     readonly isAbsolute: boolean;
@@ -75,17 +142,18 @@ export class Path {
     constructor(
         raw: string
     ) {
+        raw = Path.normalizePathSeparator(raw);
         this.raw = Path.normalizeDrive(raw);
-        const firstIndex = raw.indexOf(Path.separator);
-        const lastIndex = raw.lastIndexOf(Path.separator);
+        const firstIndex = this.raw.indexOf(Path.separator);
+        const lastIndex = this.raw.lastIndexOf(Path.separator);
         this.isAbsolute = firstIndex === 0;
-        this.base = lastIndex === -1 ? raw : raw.substr(lastIndex + 1);
+        this.base = lastIndex === -1 ? this.raw : this.raw.substring(lastIndex + 1);
         this.isRoot = this.isAbsolute && firstIndex === lastIndex && (!this.base || Path.isDrive(this.base));
         this.root = this.computeRoot();
 
         const extIndex = this.base.lastIndexOf('.');
-        this.name = extIndex === -1 ? this.base : this.base.substr(0, extIndex);
-        this.ext = extIndex === -1 ? '' : this.base.substr(extIndex);
+        this.name = extIndex === -1 ? this.base : this.base.substring(0, extIndex);
+        this.ext = extIndex === -1 ? '' : this.base.substring(extIndex);
     }
 
     protected computeRoot(): Path | undefined {
@@ -105,7 +173,7 @@ export class Path {
         }
         // '/c:/foo/bar' -> '/c:'
         // '/foo/bar' -> '/'
-        return new Path(this.raw.substr(0, index)).root;
+        return new Path(this.raw.substring(0, index)).root;
     }
 
     /**
@@ -136,10 +204,10 @@ export class Path {
         if (this.isAbsolute) {
             const firstIndex = this.raw.indexOf(Path.separator);
             if (firstIndex === lastIndex) {
-                return new Path(this.raw.substr(0, firstIndex + 1));
+                return new Path(this.raw.substring(0, firstIndex + 1));
             }
         }
-        return new Path(this.raw.substr(0, lastIndex));
+        return new Path(this.raw.substring(0, lastIndex));
     }
 
     join(...paths: string[]): Path {
@@ -153,8 +221,46 @@ export class Path {
         return new Path(this.raw + Path.separator + relativePath);
     }
 
+    /**
+     *
+     * @param paths portions of a path
+     * @returns a new Path if an absolute path can be computed from the segments passed in + this.raw
+     * If no absolute path can be computed, returns undefined.
+     *
+     * Processes the path segments passed in from right to left (reverse order) concatenating until an
+     * absolute path is found.
+     */
+    resolve(...paths: string[]): Path | undefined {
+        const segments = paths.slice().reverse(); // Don't mutate the caller's array.
+        segments.push(this.raw);
+        let result = new Path('');
+        for (const segment of segments) {
+            if (segment) {
+                const next = new Path(segment).join(result.raw);
+                if (next.isAbsolute) {
+                    return next.normalize();
+                }
+                result = next;
+            }
+        }
+    }
+
     toString(): string {
         return this.raw;
+    }
+
+    /**
+     * Converts the current path into a file system path.
+     * @param format Determines the format of the path.
+     * If `undefined`, the format will be determined by the `OS.backend.type` value.
+     * @returns A file system path.
+     */
+    fsPath(format?: Path.Format): string {
+        if (format === Path.Format.Windows || (format === undefined && OS.backend.isWindows)) {
+            return Path.windowsPath(this.raw);
+        } else {
+            return this.raw;
+        }
     }
 
     relative(path: Path): Path | undefined {
@@ -168,7 +274,7 @@ export class Path {
         if (!path.raw.startsWith(raw)) {
             return undefined;
         }
-        const relativePath = path.raw.substr(raw.length);
+        const relativePath = path.raw.substring(raw.length);
         return new Path(relativePath);
     }
 
@@ -217,5 +323,12 @@ export class Path {
             }
         }
         return new Path((this.isAbsolute ? '/' : '') + resultArray.join('/') + (trailingSlash ? '/' : ''));
+    }
+}
+
+export namespace Path {
+    export enum Format {
+        Posix,
+        Windows
     }
 }

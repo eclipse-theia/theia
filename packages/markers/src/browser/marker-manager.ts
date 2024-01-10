@@ -1,24 +1,25 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { injectable, inject, postConstruct } from 'inversify';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { Event, Emitter } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
-import { FileSystemWatcher, FileChangeEvent, FileChangeType } from '@theia/filesystem/lib/browser/filesystem-watcher';
 import { Marker } from '../common/marker';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { FileChangesEvent, FileChangeType } from '@theia/filesystem/lib/common/files';
 
 /*
  * argument to the `findMarkers` method.
@@ -115,22 +116,22 @@ export abstract class MarkerManager<D extends object> {
     protected readonly uri2MarkerCollection = new Map<string, MarkerCollection<D>>();
     protected readonly onDidChangeMarkersEmitter = new Emitter<URI>();
 
-    @inject(FileSystemWatcher) protected fileWatcher: FileSystemWatcher;
+    @inject(FileService)
+    protected readonly fileService: FileService;
 
     @postConstruct()
     protected init(): void {
-        this.fileWatcher.onFilesChanged(event => {
-            const relevantEvent = event.filter(({ type }) => type === FileChangeType.DELETED);
-            if (relevantEvent.length) {
-                this.cleanMarkers(relevantEvent);
+        this.fileService.onDidFilesChange(event => {
+            if (event.gotDeleted()) {
+                this.cleanMarkers(event);
             }
         });
     }
 
-    protected cleanMarkers(event: FileChangeEvent): void {
+    protected cleanMarkers(event: FileChangesEvent): void {
         for (const uriString of this.uri2MarkerCollection.keys()) {
             const uri = new URI(uriString);
-            if (FileChangeEvent.isDeleted(event, uri)) {
+            if (event.contains(uri, FileChangeType.DELETED)) {
                 this.cleanAllMarkers(uri);
             }
         }
@@ -173,6 +174,10 @@ export abstract class MarkerManager<D extends object> {
             result.push(...this.uri2MarkerCollection.get(uri)!.findMarkers(filter));
         }
         return result;
+    }
+
+    getMarkersByUri(): IterableIterator<[string, MarkerCollection<D>]> {
+        return this.uri2MarkerCollection.entries();
     }
 
     getUris(): IterableIterator<string> {

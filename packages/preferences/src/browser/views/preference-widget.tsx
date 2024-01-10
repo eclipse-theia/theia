@@ -1,29 +1,37 @@
-/********************************************************************************
- * Copyright (C) 2020 Ericsson and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2020 Ericsson and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { postConstruct, injectable, inject } from 'inversify';
-import { WidgetManager, Panel, Widget, Message, } from '@theia/core/lib/browser';
-import { Preference } from '../util/preference-types';
-import { PreferencesEditorWidget } from './preference-editor-widget';
+import { postConstruct, injectable, inject } from '@theia/core/shared/inversify';
+import { Panel, Widget, Message, StatefulWidget, PreferenceScope, codicon } from '@theia/core/lib/browser';
+import { PreferencesEditorState, PreferencesEditorWidget } from './preference-editor-widget';
 import { PreferencesTreeWidget } from './preference-tree-widget';
-import { PreferencesSearchbarWidget } from './preference-searchbar-widget';
-import { PreferencesScopeTabBar } from './preference-scope-tabbar-widget';
+import { PreferencesSearchbarState, PreferencesSearchbarWidget } from './preference-searchbar-widget';
+import { PreferencesScopeTabBar, PreferencesScopeTabBarState } from './preference-scope-tabbar-widget';
+import { Preference } from '../util/preference-types';
+import URI from '@theia/core/lib/common/uri';
+import { nls } from '@theia/core/lib/common/nls';
+
+interface PreferencesWidgetState {
+    scopeTabBarState: PreferencesScopeTabBarState,
+    editorState: PreferencesEditorState,
+    searchbarWidgetState: PreferencesSearchbarState,
+}
 
 @injectable()
-export class PreferencesWidget extends Panel {
+export class PreferencesWidget extends Panel implements StatefulWidget {
     /**
      * The widget `id`.
      */
@@ -31,28 +39,26 @@ export class PreferencesWidget extends Panel {
     /**
      * The widget `label` which is used for display purposes.
      */
-    static readonly LABEL = 'Preferences';
+    static readonly LABEL = nls.localizeByDefault('Settings');
 
-    static readonly COMMAND_LABEL = 'Open Preferences';
+    @inject(PreferencesEditorWidget) protected readonly editorWidget: PreferencesEditorWidget;
+    @inject(PreferencesTreeWidget) protected readonly treeWidget: PreferencesTreeWidget;
+    @inject(PreferencesSearchbarWidget) protected readonly searchbarWidget: PreferencesSearchbarWidget;
+    @inject(PreferencesScopeTabBar) protected readonly tabBarWidget: PreferencesScopeTabBar;
 
-    protected _preferenceScope: Preference.SelectedScopeDetails = Preference.DEFAULT_SCOPE;
-
-    @inject(PreferencesEditorWidget) protected editorWidget: PreferencesEditorWidget;
-    @inject(PreferencesTreeWidget) protected treeWidget: PreferencesTreeWidget;
-    @inject(PreferencesSearchbarWidget) protected searchbarWidget: PreferencesSearchbarWidget;
-    @inject(PreferencesScopeTabBar) protected tabBarWidget: PreferencesScopeTabBar;
-    @inject(WidgetManager) protected readonly manager: WidgetManager;
-
-    get preferenceScope(): Preference.SelectedScopeDetails {
-        return this._preferenceScope;
+    get currentScope(): Preference.SelectedScopeDetails {
+        return this.tabBarWidget.currentScope;
     }
 
-    set preferenceScope(preferenceScopeDetails: Preference.SelectedScopeDetails) {
-        this._preferenceScope = preferenceScopeDetails;
-        this.editorWidget.preferenceScope = this._preferenceScope;
+    setSearchTerm(query: string): Promise<void> {
+        return this.searchbarWidget.updateSearchTerm(query);
     }
 
-    protected onResize(msg: Widget.ResizeMessage): void {
+    setScope(scope: PreferenceScope.User | PreferenceScope.Workspace | URI): void {
+        this.tabBarWidget.setScope(scope);
+    }
+
+    protected override onResize(msg: Widget.ResizeMessage): void {
         super.onResize(msg);
         if (msg.width < 600 && this.treeWidget && !this.treeWidget.isHidden) {
             this.treeWidget.hide();
@@ -63,35 +69,49 @@ export class PreferencesWidget extends Panel {
         }
     }
 
-    protected onActivateRequest(msg: Message): void {
+    protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         this.searchbarWidget.focus();
     }
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
         this.id = PreferencesWidget.ID;
         this.title.label = PreferencesWidget.LABEL;
         this.title.closable = true;
         this.addClass('theia-settings-container');
-        this.title.iconClass = 'fa fa-sliders';
+        this.title.iconClass = codicon('settings');
 
-        this.searchbarWidget = await this.manager.getOrCreateWidget<PreferencesSearchbarWidget>(PreferencesSearchbarWidget.ID);
         this.searchbarWidget.addClass('preferences-searchbar-widget');
         this.addWidget(this.searchbarWidget);
 
-        this.tabBarWidget = await this.manager.getOrCreateWidget<PreferencesScopeTabBar>(PreferencesScopeTabBar.ID);
         this.tabBarWidget.addClass('preferences-tabbar-widget');
         this.addWidget(this.tabBarWidget);
 
-        this.treeWidget = await this.manager.getOrCreateWidget<PreferencesTreeWidget>(PreferencesTreeWidget.ID);
         this.treeWidget.addClass('preferences-tree-widget');
         this.addWidget(this.treeWidget);
 
-        this.editorWidget = await this.manager.getOrCreateWidget<PreferencesEditorWidget>(PreferencesEditorWidget.ID);
         this.editorWidget.addClass('preferences-editor-widget');
         this.addWidget(this.editorWidget);
 
         this.update();
+    }
+
+    getPreviewNode(): Node | undefined {
+        return this.node;
+    }
+
+    storeState(): PreferencesWidgetState {
+        return {
+            scopeTabBarState: this.tabBarWidget.storeState(),
+            editorState: this.editorWidget.storeState(),
+            searchbarWidgetState: this.searchbarWidget.storeState(),
+        };
+    }
+
+    restoreState(state: PreferencesWidgetState): void {
+        this.tabBarWidget.restoreState(state.scopeTabBarState);
+        this.editorWidget.restoreState(state.editorState);
+        this.searchbarWidget.restoreState(state.searchbarWidgetState);
     }
 }

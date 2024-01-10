@@ -1,13 +1,13 @@
 {
   "name": "@theia/scm-extra",
-  "version": "1.2.0",
+  "version": "1.45.0",
   "description": "Theia - Source control extras Extension",
   "dependencies": {
-    "@theia/core": "^1.2.0",
-    "@theia/editor": "^1.2.0",
-    "@theia/filesystem": "^1.2.0",
-    "@theia/navigator": "^1.2.0",
-    "@theia/scm": "^1.2.0"
+    "@theia/core": "1.45.0",
+    "@theia/editor": "1.45.0",
+    "@theia/filesystem": "1.45.0",
+    "@theia/navigator": "1.45.0",
+    "@theia/scm": "1.45.0"
   },
   "publishConfig": {
     "access": "public"
@@ -20,7 +20,7 @@
   "keywords": [
     "theia-extension"
   ],
-  "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
+  "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/eclipse-theia/theia.git"
@@ -34,14 +34,15 @@
     "src"
   ],
   "scripts": {
-    "lint": "theiaext lint",
-    "clean": "theiaext clean",
     "build": "theiaext build",
-    "watch": "theiaext watch",
-    "docs": "theiaext docs"
+    "clean": "theiaext clean",
+    "compile": "theiaext compile",
+    "docs": "theiaext docs",
+    "lint": "theiaext lint",
+    "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^1.2.0"
+    "@theia/ext-scripts": "1.45.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

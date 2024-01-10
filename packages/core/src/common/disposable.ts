@@ -1,19 +1,21 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
+
 import { Event, Emitter } from './event';
+import { isFunction, isObject } from './types';
 
 export interface Disposable {
     /**
@@ -23,17 +25,27 @@ export interface Disposable {
 }
 
 export namespace Disposable {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function is(arg: any): arg is Disposable {
-        return !!arg && typeof arg === 'object' && 'dispose' in arg && typeof arg['dispose'] === 'function';
+    export function is(arg: unknown): arg is Disposable {
+        return isObject<Disposable>(arg) && isFunction(arg.dispose);
     }
     export function create(func: () => void): Disposable {
-        return {
-            dispose: func
-        };
+        return { dispose: func };
     }
-    export const NULL = create(() => { });
+    /** Always provides a reference to a new disposable. */
+    export declare const NULL: Disposable;
 }
+
+/**
+ * Ensures that every reference to {@link Disposable.NULL} returns a new object,
+ * as sharing a disposable between multiple {@link DisposableCollection} can have unexpected side effects
+ */
+Object.defineProperty(Disposable, 'NULL', {
+    configurable: false,
+    enumerable: true,
+    get(): Disposable {
+        return { dispose: () => { } };
+    }
+});
 
 export class DisposableCollection implements Disposable {
 
@@ -93,6 +105,7 @@ export class DisposableCollection implements Disposable {
         });
         disposable.dispose = () => {
             toRemove.dispose();
+            disposable.dispose = originalDispose;
             originalDispose();
         };
         return toRemove;
@@ -104,4 +117,19 @@ export class DisposableCollection implements Disposable {
         );
     }
 
+}
+
+export type DisposableGroup = { push(disposable: Disposable): void } | { add(disposable: Disposable): void };
+export namespace DisposableGroup {
+    export function canPush(candidate?: DisposableGroup): candidate is { push(disposable: Disposable): void } {
+        return Boolean(candidate && (candidate as { push(): void }).push);
+    }
+    export function canAdd(candidate?: DisposableGroup): candidate is { add(disposable: Disposable): void } {
+        return Boolean(candidate && (candidate as { add(): void }).add);
+    }
+}
+
+export function disposableTimeout(...args: Parameters<typeof setTimeout>): Disposable {
+    const handle = setTimeout(...args);
+    return { dispose: () => clearTimeout(handle) };
 }

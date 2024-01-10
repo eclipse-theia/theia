@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2019 Thomas Drosdzoll.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2019 Thomas Drosdzoll.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { expect, assert } from 'chai';
 import { MockTreeModel } from './test/mock-tree-model';
@@ -22,7 +22,6 @@ import { ExpandableTreeNode } from './tree-expansion';
 import { createTreeTestContainer } from './test/tree-test-container';
 import { timeout } from '../../common/promise-util';
 
-/* eslint-disable no-unused-expressions */
 describe('TreeExpansionService', () => {
     let model: TreeModel;
     beforeEach(() => {
@@ -132,7 +131,7 @@ describe('TreeExpansionService', () => {
         const container = createTreeTestContainer();
         container.rebind(Tree).to(class extends TreeImpl {
 
-            protected async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
+            protected override async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
                 await timeout(200);
                 return [{
                     id: 'child',

@@ -1,25 +1,26 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import { VariableRegistry } from './variable';
 import URI from '@theia/core/lib/common/uri';
-import { JSONExt, ReadonlyJSONValue } from '@phosphor/coreutils/lib/json';
+import { CommandIdVariables } from '../common/variable-types';
+import { isCancelled } from '@theia/core';
 
 export interface VariableResolveOptions {
     context?: URI;
@@ -27,6 +28,8 @@ export interface VariableResolveOptions {
      * Used for resolving inputs, see https://code.visualstudio.com/docs/editor/variables-reference#_input-variables
      */
     configurationSection?: string;
+    commandIdVariables?: CommandIdVariables;
+    configuration?: unknown;
 }
 
 /**
@@ -41,29 +44,35 @@ export class VariableResolverService {
 
     /**
      * Resolve the variables in the given string array.
-     * @param value The array of data to resolve
-     * @param options options of the variable resolution
-     * @returns promise resolved to the provided string array with already resolved variables.
-     * Never reject.
+     * @param value The array of data to resolve variables in.
+     * @param options Options of the variable resolution.
+     * @returns Promise to array with variables resolved. Never rejects.
+     *
+     * @deprecated since 1.28.0 use {@link resolve} instead.
      */
-    resolveArray(value: string[], options: VariableResolveOptions = {}): Promise<string[]> {
+    resolveArray(value: string[], options: VariableResolveOptions = {}): Promise<string[] | undefined> {
         return this.resolve(value, options);
     }
 
     /**
-     * Resolve the variables in the given string.
-     * @param value Data to resolve
-     * @param options options of the variable resolution
-     * @returns promise resolved to the provided string with already resolved variables.
-     * Never reject.
+     * Resolve the variables for all strings found in the object and nested objects.
+     * @param value Data to resolve variables in.
+     * @param options Options of the variable resolution
+     * @returns Promise to object with variables resolved. Returns `undefined` if a variable resolution was cancelled.
      */
-    async resolve<T>(value: T, options: VariableResolveOptions = {}): Promise<T> {
+    async resolve<T>(value: T, options: VariableResolveOptions = {}): Promise<T | undefined> {
         const context = new VariableResolverService.Context(this.variableRegistry, options);
-        const resolved = await this.doResolve(value, context);
-        return resolved as any;
+        try {
+            return await this.doResolve(value, context);
+        } catch (error) {
+            if (isCancelled(error)) {
+                return undefined;
+            }
+            throw error;
+        }
     }
 
-    protected async doResolve(value: Object | undefined, context: VariableResolverService.Context): Promise<Object | undefined> {
+    protected async doResolve(value: any, context: VariableResolverService.Context): Promise<any> {
         // eslint-disable-next-line no-null/no-null
         if (value === undefined || value === null) {
             return value;
@@ -120,6 +129,7 @@ export class VariableResolverService {
     }
 }
 export namespace VariableResolverService {
+
     export class Context {
 
         protected readonly resolved = new Map<string, string | undefined>();
@@ -140,21 +150,36 @@ export namespace VariableResolverService {
             try {
                 let variableName = name;
                 let argument: string | undefined;
-                const parts = name.split(':');
+                const parts = name.split(':', 2);
                 if (parts.length > 1) {
                     variableName = parts[0];
                     argument = parts[1];
                 }
                 const variable = this.variableRegistry.getVariable(variableName);
-                const value = variable && await variable.resolve(this.options.context, argument, this.options.configurationSection);
-                // eslint-disable-next-line no-null/no-null
-                const stringValue = value !== undefined && value !== null && JSONExt.isPrimitive(value as ReadonlyJSONValue) ? String(value) : undefined;
-                this.resolved.set(name, stringValue);
+                const resolved = await variable?.resolve(
+                    this.options.context,
+                    argument,
+                    this.options.configurationSection,
+                    this.options.commandIdVariables,
+                    this.options.configuration
+                );
+                if (
+                    typeof resolved === 'bigint' ||
+                    typeof resolved === 'boolean' ||
+                    typeof resolved === 'number' ||
+                    typeof resolved === 'string'
+                ) {
+                    this.resolved.set(name, `${resolved}`);
+                } else {
+                    this.resolved.set(name, undefined);
+                }
             } catch (e) {
-                console.error(`Failed to resolved '${name}' variable`, e);
+                if (isCancelled(e)) {
+                    throw e;
+                }
                 this.resolved.set(name, undefined);
+                console.error(`Failed to resolve '${name}' variable:`, e);
             }
         }
-
     }
 }

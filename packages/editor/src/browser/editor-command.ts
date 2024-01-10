@@ -1,33 +1,40 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
 import { CommandContribution, CommandRegistry, Command } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
-import { CommonCommands, PreferenceService, QuickPickItem, QuickPickService, LabelProvider, QuickPickValue } from '@theia/core/lib/browser';
-import { Languages, Language } from '@theia/languages/lib/browser';
+import { CommonCommands, PreferenceService, LabelProvider, ApplicationShell, QuickInputService, QuickPickValue, QuickPickItemOrSeparator } from '@theia/core/lib/browser';
 import { EditorManager } from './editor-manager';
-import { EncodingMode } from './editor';
 import { EditorPreferences } from './editor-preferences';
-import { SUPPORTED_ENCODINGS } from './supported-encodings';
 import { ResourceProvider, MessageService } from '@theia/core';
+import { LanguageService, Language } from '@theia/core/lib/browser/language-service';
+import { SUPPORTED_ENCODINGS } from '@theia/core/lib/browser/supported-encodings';
+import { EncodingMode } from './editor';
+import { nls } from '@theia/core/lib/common/nls';
 
 export namespace EditorCommands {
 
     const EDITOR_CATEGORY = 'Editor';
+    const EDITOR_CATEGORY_KEY = nls.getDefaultKey(EDITOR_CATEGORY);
+
+    export const GOTO_LINE_COLUMN = Command.toDefaultLocalizedCommand({
+        id: 'editor.action.gotoLine',
+        label: 'Go to Line/Column'
+    });
 
     /**
      * Show editor references
@@ -42,103 +49,170 @@ export namespace EditorCommands {
         id: 'textEditor.commands.configIndentation'
     };
 
-    export const CONFIG_EOL: Command = {
+    export const CONFIG_EOL = Command.toDefaultLocalizedCommand({
         id: 'textEditor.commands.configEol',
         category: EDITOR_CATEGORY,
         label: 'Change End of Line Sequence'
-    };
+    });
 
-    export const INDENT_USING_SPACES: Command = {
+    export const INDENT_USING_SPACES = Command.toDefaultLocalizedCommand({
         id: 'textEditor.commands.indentUsingSpaces',
         category: EDITOR_CATEGORY,
         label: 'Indent Using Spaces'
-    };
-    export const INDENT_USING_TABS: Command = {
+    });
+    export const INDENT_USING_TABS = Command.toDefaultLocalizedCommand({
         id: 'textEditor.commands.indentUsingTabs',
         category: EDITOR_CATEGORY,
         label: 'Indent Using Tabs'
-    };
-    export const CHANGE_LANGUAGE: Command = {
+    });
+    export const CHANGE_LANGUAGE = Command.toDefaultLocalizedCommand({
         id: 'textEditor.change.language',
         category: EDITOR_CATEGORY,
         label: 'Change Language Mode'
-    };
-    export const CHANGE_ENCODING: Command = {
+    });
+    export const CHANGE_ENCODING = Command.toDefaultLocalizedCommand({
         id: 'textEditor.change.encoding',
         category: EDITOR_CATEGORY,
         label: 'Change File Encoding'
-    };
+    });
+    export const REVERT_EDITOR = Command.toDefaultLocalizedCommand({
+        id: 'workbench.action.files.revert',
+        category: CommonCommands.FILE_CATEGORY,
+        label: 'Revert File',
+    });
+    export const REVERT_AND_CLOSE = Command.toDefaultLocalizedCommand({
+        id: 'workbench.action.revertAndCloseActiveEditor',
+        category: CommonCommands.VIEW_CATEGORY,
+        label: 'Revert and Close Editor'
+    });
 
     /**
      * Command for going back to the last editor navigation location.
      */
-    export const GO_BACK: Command = {
+    export const GO_BACK = Command.toDefaultLocalizedCommand({
         id: 'textEditor.commands.go.back',
         category: EDITOR_CATEGORY,
         label: 'Go Back'
-    };
+    });
     /**
      * Command for going to the forthcoming editor navigation location.
      */
-    export const GO_FORWARD: Command = {
+    export const GO_FORWARD = Command.toDefaultLocalizedCommand({
         id: 'textEditor.commands.go.forward',
         category: EDITOR_CATEGORY,
         label: 'Go Forward'
-    };
+    });
     /**
      * Command that reveals the last text edit location, if any.
      */
-    export const GO_LAST_EDIT: Command = {
+    export const GO_LAST_EDIT = Command.toDefaultLocalizedCommand({
         id: 'textEditor.commands.go.lastEdit',
         category: EDITOR_CATEGORY,
         label: 'Go to Last Edit Location'
-    };
+    });
     /**
      * Command that clears the editor navigation history.
      */
-    export const CLEAR_EDITOR_HISTORY: Command = {
+    export const CLEAR_EDITOR_HISTORY = Command.toDefaultLocalizedCommand({
         id: 'textEditor.commands.clear.history',
         category: EDITOR_CATEGORY,
         label: 'Clear Editor History'
-    };
+    });
     /**
      * Command that displays all editors that are currently opened.
      */
-    export const SHOW_ALL_OPENED_EDITORS: Command = {
+    export const SHOW_ALL_OPENED_EDITORS = Command.toLocalizedCommand({
         id: 'workbench.action.showAllEditors',
-        category: 'View',
+        category: CommonCommands.VIEW_CATEGORY,
         label: 'Show All Opened Editors'
-    };
+    }, 'theia/editor/showAllEditors', EDITOR_CATEGORY_KEY);
     /**
      * Command that toggles the minimap.
      */
-    export const TOGGLE_MINIMAP: Command = {
+    export const TOGGLE_MINIMAP = Command.toDefaultLocalizedCommand({
         id: 'editor.action.toggleMinimap',
-        category: 'View',
+        category: CommonCommands.VIEW_CATEGORY,
         label: 'Toggle Minimap'
-    };
+    });
     /**
      * Command that toggles the rendering of whitespace characters in the editor.
      */
-    export const TOGGLE_RENDER_WHITESPACE: Command = {
+    export const TOGGLE_RENDER_WHITESPACE = Command.toDefaultLocalizedCommand({
         id: 'editor.action.toggleRenderWhitespace',
-        category: 'View',
+        category: CommonCommands.VIEW_CATEGORY,
         label: 'Toggle Render Whitespace'
-    };
+    });
     /**
      * Command that toggles the word wrap.
      */
-    export const TOGGLE_WORD_WRAP: Command = {
+    export const TOGGLE_WORD_WRAP = Command.toDefaultLocalizedCommand({
         id: 'editor.action.toggleWordWrap',
-        category: 'View',
-        label: 'Toggle Word Wrap'
-    };
+        label: 'View: Toggle Word Wrap'
+    });
+    /**
+     * Command that toggles sticky scroll.
+     */
+    export const TOGGLE_STICKY_SCROLL = Command.toLocalizedCommand({
+        id: 'editor.action.toggleStickyScroll',
+        category: CommonCommands.VIEW_CATEGORY,
+        label: 'Toggle Sticky Scroll',
+    }, 'theia/editor/toggleStickyScroll', EDITOR_CATEGORY_KEY);
+    /**
+     * Command that re-opens the last closed editor.
+     */
+    export const REOPEN_CLOSED_EDITOR = Command.toDefaultLocalizedCommand({
+        id: 'workbench.action.reopenClosedEditor',
+        category: CommonCommands.VIEW_CATEGORY,
+        label: 'Reopen Closed Editor'
+    });
+    /**
+     * Opens a second instance of the current editor, splitting the view in the direction specified.
+     */
+    export const SPLIT_EDITOR_RIGHT = Command.toDefaultLocalizedCommand({
+        id: 'workbench.action.splitEditorRight',
+        category: CommonCommands.VIEW_CATEGORY,
+        label: 'Split Editor Right'
+    });
+    export const SPLIT_EDITOR_DOWN = Command.toDefaultLocalizedCommand({
+        id: 'workbench.action.splitEditorDown',
+        category: CommonCommands.VIEW_CATEGORY,
+        label: 'Split Editor Down'
+    });
+    export const SPLIT_EDITOR_UP = Command.toDefaultLocalizedCommand({
+        id: 'workbench.action.splitEditorUp',
+        category: CommonCommands.VIEW_CATEGORY,
+        label: 'Split Editor Up'
+    });
+    export const SPLIT_EDITOR_LEFT = Command.toDefaultLocalizedCommand({
+        id: 'workbench.action.splitEditorLeft',
+        category: CommonCommands.VIEW_CATEGORY,
+        label: 'Split Editor Left'
+    });
+    /**
+     * Default horizontal split: right.
+     */
+    export const SPLIT_EDITOR_HORIZONTAL = Command.toDefaultLocalizedCommand({
+        id: 'workbench.action.splitEditor',
+        category: CommonCommands.VIEW_CATEGORY,
+        label: 'Split Editor'
+    });
+    /**
+     * Default vertical split: down.
+     */
+    export const SPLIT_EDITOR_VERTICAL = Command.toDefaultLocalizedCommand({
+        id: 'workbench.action.splitEditorOrthogonal',
+        category: CommonCommands.VIEW_CATEGORY,
+        label: 'Split Editor Orthogonal'
+    });
 }
 
 @injectable()
 export class EditorCommandContribution implements CommandContribution {
 
-    public static readonly AUTOSAVE_PREFERENCE: string = 'editor.autoSave';
+    public static readonly AUTOSAVE_PREFERENCE: string = 'files.autoSave';
+
+    @inject(ApplicationShell)
+    protected readonly shell: ApplicationShell;
 
     @inject(PreferenceService)
     protected readonly preferencesService: PreferenceService;
@@ -146,16 +220,16 @@ export class EditorCommandContribution implements CommandContribution {
     @inject(EditorPreferences)
     protected readonly editorPreferences: EditorPreferences;
 
-    @inject(QuickPickService)
-    protected readonly quickPick: QuickPickService;
+    @inject(QuickInputService) @optional()
+    protected readonly quickInputService: QuickInputService;
 
     @inject(MessageService) protected readonly messageService: MessageService;
 
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
 
-    @inject(Languages)
-    protected readonly languages: Languages;
+    @inject(LanguageService)
+    protected readonly languages: LanguageService;
 
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
@@ -163,12 +237,23 @@ export class EditorCommandContribution implements CommandContribution {
     @inject(ResourceProvider)
     protected readonly resourceProvider: ResourceProvider;
 
+    @postConstruct()
+    protected init(): void {
+        this.editorPreferences.onPreferenceChanged(e => {
+            if (e.preferenceName === 'files.autoSave' && e.newValue !== 'off') {
+                this.shell.saveAll();
+            }
+        });
+    }
+
     registerCommands(registry: CommandRegistry): void {
         registry.registerCommand(EditorCommands.SHOW_REFERENCES);
         registry.registerCommand(EditorCommands.CONFIG_INDENTATION);
         registry.registerCommand(EditorCommands.CONFIG_EOL);
         registry.registerCommand(EditorCommands.INDENT_USING_SPACES);
         registry.registerCommand(EditorCommands.INDENT_USING_TABS);
+        registry.registerCommand(EditorCommands.REVERT_EDITOR);
+        registry.registerCommand(EditorCommands.REVERT_AND_CLOSE);
         registry.registerCommand(EditorCommands.CHANGE_LANGUAGE, {
             isEnabled: () => this.canConfigureLanguage(),
             isVisible: () => this.canConfigureLanguage(),
@@ -187,6 +272,8 @@ export class EditorCommandContribution implements CommandContribution {
         registry.registerCommand(EditorCommands.TOGGLE_MINIMAP);
         registry.registerCommand(EditorCommands.TOGGLE_RENDER_WHITESPACE);
         registry.registerCommand(EditorCommands.TOGGLE_WORD_WRAP);
+        registry.registerCommand(EditorCommands.TOGGLE_STICKY_SCROLL);
+        registry.registerCommand(EditorCommands.REOPEN_CLOSED_EDITOR);
 
         registry.registerCommand(CommonCommands.AUTO_SAVE, {
             isToggled: () => this.isAutoSaveOn(),
@@ -206,20 +293,18 @@ export class EditorCommandContribution implements CommandContribution {
             return;
         }
         const current = editor.document.languageId;
-        const items: QuickPickItem<'autoDetect' | Language>[] = [
-            { label: 'Auto Detect', value: 'autoDetect' },
-            { type: 'separator', label: 'languages (identifier)' },
-            ... (this.languages.languages.map(
-                language => this.toQuickPickLanguage(language, current)
-            )).sort((e, e2) => e.label.localeCompare(e2.label))
+        const items: Array<QuickPickValue<'autoDetect' | Language> | QuickPickItemOrSeparator> = [
+            { label: nls.localizeByDefault('Auto Detect'), value: 'autoDetect' },
+            { type: 'separator', label: nls.localizeByDefault('languages (identifier)') },
+            ... (this.languages.languages.map(language => this.toQuickPickLanguage(language, current))).sort((e, e2) => e.label.localeCompare(e2.label))
         ];
-        const selected = await this.quickPick.show(items, {
-            placeholder: 'Select Language Mode'
-        });
-        if (selected === 'autoDetect') {
-            editor.detectLanguage();
-        } else if (selected) {
-            editor.setLanguage(selected.id);
+        const selectedMode = await this.quickInputService?.showQuickPick(items, { placeholder: nls.localizeByDefault('Select Language Mode') });
+        if (selectedMode && ('value' in selectedMode)) {
+            if (selectedMode.value === 'autoDetect') {
+                editor.detectLanguage();
+            } else if (selectedMode.value) {
+                editor.setLanguage(selectedMode.value.id);
+            }
         }
     }
 
@@ -234,27 +319,25 @@ export class EditorCommandContribution implements CommandContribution {
         if (!editor) {
             return;
         }
-        const reopenWithEncodingPick = { label: 'Reopen with Encoding', value: 'reopen' };
-        const saveWithEncodingPick = { label: 'Save with Encoding', value: 'save' };
-        const actionItems: QuickPickItem<string>[] = [
+        const reopenWithEncodingPick = { label: nls.localizeByDefault('Reopen with Encoding'), value: 'reopen' };
+        const saveWithEncodingPick = { label: nls.localizeByDefault('Save with Encoding'), value: 'save' };
+        const actionItems: QuickPickValue<string>[] = [
             reopenWithEncodingPick,
             saveWithEncodingPick
         ];
-        const action = await this.quickPick.show(actionItems, {
-            placeholder: 'Select Action'
-        });
-        if (!action) {
+        const selectedEncoding = await this.quickInputService?.showQuickPick(actionItems, { placeholder: nls.localizeByDefault('Select Action') });
+        if (!selectedEncoding) {
             return;
         }
-        const isReopenWithEncoding = (action === reopenWithEncodingPick.value);
+        const isReopenWithEncoding = (selectedEncoding.value === reopenWithEncodingPick.value);
 
-        const configuredEncoding = this.editorPreferences.get('files.encoding');
+        const configuredEncoding = this.preferencesService.get<string>('files.encoding', 'utf8', editor.uri.toString());
 
         const resource = await this.resourceProvider(editor.uri);
         const guessedEncoding = resource.guessEncoding ? await resource.guessEncoding() : undefined;
         resource.dispose();
 
-        const encodingItems: QuickPickItem<{ id: string, description: string }>[] = Object.keys(SUPPORTED_ENCODINGS)
+        const encodingItems: QuickPickValue<{ id: string, description: string }>[] = Object.keys(SUPPORTED_ENCODINGS)
             .sort((k1, k2) => {
                 if (k1 === configuredEncoding) {
                     return -1;
@@ -275,33 +358,37 @@ export class EditorCommandContribution implements CommandContribution {
         // Insert guessed encoding
         if (guessedEncoding && configuredEncoding !== guessedEncoding && SUPPORTED_ENCODINGS[guessedEncoding]) {
             encodingItems.unshift({
-                label: `Guessed from content: ${SUPPORTED_ENCODINGS[guessedEncoding].labelLong}`,
+                label: `${nls.localizeByDefault('Guessed from content')}: ${SUPPORTED_ENCODINGS[guessedEncoding].labelLong}`,
                 value: { id: guessedEncoding, description: guessedEncoding }
             });
         }
-        const encoding = await this.quickPick.show(encodingItems, {
-            placeholder: isReopenWithEncoding ? 'Select File Encoding to Reopen File' : 'Select File Encoding to Save with'
+        const selectedFileEncoding = await this.quickInputService?.showQuickPick<QuickPickValue<{ id: string, description: string }>>(encodingItems, {
+            placeholder: isReopenWithEncoding ?
+                nls.localizeByDefault('Select File Encoding to Reopen File') :
+                nls.localizeByDefault('Select File Encoding to Save with')
         });
-        if (!encoding) {
+
+        if (!selectedFileEncoding) {
             return;
         }
         if (editor.document.dirty && isReopenWithEncoding) {
-            this.messageService.info('The file is dirty. Please save it first before reopening it with another encoding.');
+            this.messageService.info(nls.localize('theia/editor/dirtyEncoding', 'The file is dirty. Please save it first before reopening it with another encoding.'));
             return;
-        } else {
-            editor.setEncoding(encoding.id, isReopenWithEncoding ? EncodingMode.Decode : EncodingMode.Encode);
+        } else if (selectedFileEncoding.value) {
+            editor.setEncoding(selectedFileEncoding.value.id, isReopenWithEncoding ? EncodingMode.Decode : EncodingMode.Encode);
         }
     }
 
     protected toQuickPickLanguage(value: Language, current: string): QuickPickValue<Language> {
         const languageUri = this.toLanguageUri(value);
         const icon = this.labelProvider.getIcon(languageUri);
-        const iconClass = icon !== '' ? icon + ' file-icon' : undefined;
+        const iconClasses = icon !== '' ? [icon + ' file-icon'] : undefined;
+        const configured = current === value.id;
         return {
             value,
             label: value.name,
-            description: `(${value.id})${current === value.id ? ' - Configured Language' : ''}`,
-            iconClass
+            description: nls.localizeByDefault(`({0})${configured ? ' - Configured Language' : ''}`, value.id),
+            iconClasses
         };
     }
     protected toLanguageUri(language: Language): URI {
@@ -316,11 +403,12 @@ export class EditorCommandContribution implements CommandContribution {
         return new URI('file:///.txt');
     }
 
-    private isAutoSaveOn(): boolean {
+    protected isAutoSaveOn(): boolean {
         const autoSave = this.preferencesService.get(EditorCommandContribution.AUTOSAVE_PREFERENCE);
-        return autoSave === 'on' || autoSave === undefined;
+        return autoSave !== 'off';
     }
-    private async toggleAutoSave(): Promise<void> {
-        this.preferencesService.set(EditorCommandContribution.AUTOSAVE_PREFERENCE, this.isAutoSaveOn() ? 'off' : 'on');
+
+    protected async toggleAutoSave(): Promise<void> {
+        this.preferencesService.updateValue(EditorCommandContribution.AUTOSAVE_PREFERENCE, this.isAutoSaveOn() ? 'off' : 'afterDelay');
     }
 }

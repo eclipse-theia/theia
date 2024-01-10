@@ -1,0 +1,520 @@
+{
+  "debug.breakpoint.editCondition": "Edit Bedingung...",
+  "terminal:new:profile": "Neues integriertes Terminal aus einem Profil erstellen",
+  "terminal:profile:default": "Wählen Sie das Standard-Terminalprofil",
+  "theia": {
+    "callhierarchy": {
+      "noCallers": "Es wurden keine Anrufer entdeckt.",
+      "open": "Öffne Aufruf-Hierarchie"
+    },
+    "core": {
+      "about": {
+        "compatibility": "{0} Kompatibilität",
+        "defaultApi": "Standard {0} API",
+        "version": "Version"
+      },
+      "common": {
+        "closeAll": "Alle Registerkarten schließen",
+        "closeAllTabMain": "Alle Registerkarten im Hauptbereich schließen",
+        "closeOtherTabMain": "Andere Registerkarten im Hauptbereich schließen",
+        "closeOthers": "Andere Registerkarten schließen",
+        "closeRight": "Rechte Registerkarten schließen",
+        "closeTab": "Registerkarte schließen",
+        "closeTabMain": "Registerkarte im Hauptbereich schließen",
+        "collapseAllTabs": "Alle Registerkarten einklappen",
+        "collapseBottomPanel": "Unteres Panel umschalten",
+        "collapseTab": "Seitenwand einklappen",
+        "showNextTabGroup": "Zur nächsten Registerkarte wechseln Gruppe",
+        "showNextTabInGroup": "Zur nächsten Registerkarte in der Gruppe wechseln",
+        "showPreviousTabGroup": "Zur vorherigen Registerkartengruppe wechseln",
+        "showPreviousTabInGroup": "Zur vorherigen Registerkarte in der Gruppe wechseln",
+        "toggleMaximized": "Maximiert umschalten"
+      },
+      "copyInfo": "Öffnen Sie zuerst eine Datei, um ihren Pfad zu kopieren",
+      "copyWarn": "Bitte verwenden Sie den Kopierbefehl des Browsers oder eine Tastenkombination.",
+      "cutWarn": "Bitte verwenden Sie den Ausschneidebefehl des Browsers oder eine Tastenkombination.",
+      "enhancedPreview": {
+        "classic": "Zeigt eine einfache Vorschau der Registerkarte mit grundlegenden Informationen an.",
+        "enhanced": "Anzeige einer erweiterten Vorschau der Registerkarte mit zusätzlichen Informationen.",
+        "visual": "Zeigen Sie eine visuelle Vorschau der Registerkarte an."
+      },
+      "file": {
+        "browse": "Durchsuchen"
+      },
+      "highlightModifiedTabs": "Steuert, ob ein oberer Rand auf modifizierten (schmutzigen) Editor-Tabs gezeichnet wird oder nicht.",
+      "keybindingStatus": "{0} wurde gedrückt und wartet auf weitere Tasten",
+      "keyboard": {
+        "choose": "Tastaturlayout wählen",
+        "chooseLayout": "Wählen Sie ein Tastaturlayout",
+        "current": "(aktuell: {0})",
+        "currentLayout": " - aktuelles Layout",
+        "mac": "Mac-Tastaturen",
+        "pc": "PC-Tastaturen",
+        "tryDetect": "Versuchen Sie, das Tastaturlayout anhand der Browserinformationen und der gedrückten Tasten zu ermitteln."
+      },
+      "navigator": {
+        "clipboardWarn": "Der Zugriff auf die Zwischenablage wird verweigert. Überprüfen Sie die Berechtigung Ihres Browsers.",
+        "clipboardWarnFirefox": "Die Zwischenablage-API ist nicht verfügbar. Sie kann durch die Einstellung '{0}' auf der Seite '{1}' aktiviert werden. Dann laden Sie Theia neu. Beachten Sie, dass FireFox dadurch vollen Zugriff auf die Zwischenablage des Systems erhält."
+      },
+      "offline": "Offline",
+      "pasteWarn": "Bitte verwenden Sie den Einfügebefehl des Browsers oder eine Tastenkombination.",
+      "quitMessage": "Alle nicht gespeicherten Änderungen werden nicht gespeichert.",
+      "resetWorkbenchLayout": "Workbench-Layout zurücksetzen",
+      "searchbox": {
+        "close": "Schließen (Escape)",
+        "next": "Nächste (Unten)",
+        "previous": "Zurück (Oben)"
+      },
+      "secondaryWindow": {
+        "alwaysOnTop": "Wenn diese Funktion aktiviert ist, bleibt das sekundäre Fenster über allen anderen Fenstern, auch über denen anderer Anwendungen.",
+        "description": "Legt die Anfangsposition und -größe des extrahierten Sekundärfensters fest.",
+        "fullSize": "Die Position und Größe des extrahierten Widgets entspricht der der laufenden Theia-Anwendung.",
+        "halfWidth": "Die Position und Größe des extrahierten Widgets entspricht der halben Breite der laufenden Theia-Anwendung.",
+        "originalSize": "Position und Größe des extrahierten Widgets entsprechen denen des ursprünglichen Widgets."
+      },
+      "silentNotifications": "Legt fest, ob Benachrichtigungs-Popups unterdrückt werden sollen.",
+      "tabDefaultSize": "Gibt die Standardgröße für Registerkarten an.",
+      "tabMaximize": "Steuert, ob die Registerkarten bei einem Doppelklick maximiert werden sollen.",
+      "tabMinimumSize": "Gibt die Mindestgröße für Tabulatoren an.",
+      "tabShrinkToFit": "Schrumpfen Sie die Registerkarten auf den verfügbaren Platz."
+    },
+    "debug": {
+      "addConfigurationPlaceholder": "Wählen Sie das Stammverzeichnis des Arbeitsbereichs, dem Sie die Konfiguration hinzufügen möchten",
+      "breakpoint": "Haltepunkt",
+      "compound-cycle": "Startkonfiguration '{0}' enthält einen Zyklus mit sich selbst",
+      "continueAll": "Alle fortsetzen",
+      "copyExpressionValue": "Ausdruckswert kopieren",
+      "dataBreakpoint": "Daten-Haltepunkt",
+      "debugVariableInput": "{0} Wert einstellen",
+      "entry": "Eintrag",
+      "exception": "Ausnahme",
+      "functionBreakpoint": "Funktionsunterbrechungspunkt",
+      "goto": "siehe",
+      "instruction-breakpoint": "Anweisung Haltepunkt",
+      "instructionBreakpoint": "Befehlshaltepunkt",
+      "missingConfiguration": "Die dynamische Konfiguration '{0}:{1}' fehlt oder ist nicht anwendbar",
+      "pause": "Pause",
+      "pauseAll": "Pause Alle",
+      "reveal": "Enthüllen",
+      "step": "Schritt",
+      "threads": "Threads",
+      "toggleTracing": "Aktivieren/Deaktivieren der Verfolgung der Kommunikation mit Debug-Adaptern"
+    },
+    "editor": {
+      "dirtyEncoding": "Die Datei ist verschmutzt. Bitte speichern Sie sie zuerst, bevor Sie sie mit einer anderen Kodierung erneut öffnen.",
+      "editor.codeActionWidget.showHeaders": "Aktivieren/deaktivieren Sie die Anzeige von Gruppenkopfzeilen im Code-Aktionsmenü.",
+      "editor.experimental.pasteActions.enabled": "Aktivieren/deaktivieren Sie laufende Bearbeitungen von Erweiterungen beim Einfügen.",
+      "editor.formatOnSaveMode.modificationsIfAvailable": "Es wird versucht, nur Änderungen zu formatieren (erfordert Quellensicherung). Wenn die Versionskontrolle nicht verwendet werden kann, wird die gesamte Datei formatiert.",
+      "editor.inlayHints.enabled1": "Inlay-Hinweise werden standardmäßig angezeigt und bei gedrückter Tastenkombination \"Strg+Alt\" ausgeblendet",
+      "editor.inlayHints.enabled2": "Inlay-Hinweise sind standardmäßig ausgeblendet und werden angezeigt, wenn die Tastenkombination \"Strg+Alt\" gedrückt wird.",
+      "editor.quickSuggestions": "Legt fest, ob während der Eingabe automatisch Vorschläge angezeigt werden sollen. Dies kann für die Eingabe von Kommentaren, Strings und anderem Code gesteuert werden. Schnellvorschläge können so konfiguriert werden, dass sie als Ghosttext oder mit dem Suggest-Widget angezeigt werden. Beachten Sie auch die '#editor.suggestOnTriggerCharacters#'-Einstellung, die steuert, ob Vorschläge durch Sonderzeichen ausgelöst werden.",
+      "editor.suggest.matchOnWordStartOnly": "Wenn die IntelliSense-Filterung aktiviert ist, muss das erste Zeichen am Wortanfang übereinstimmen, z. B. \"c\" bei \"Konsole\" oder \"Webkontext\", aber _nicht_ bei \"Beschreibung\". Wenn IntelliSense deaktiviert ist, werden mehr Ergebnisse angezeigt, aber immer noch nach der Qualität der Übereinstimmung sortiert.",
+      "files.autoSave": "Steuert das [automatische Speichern](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save) von Editoren, die ungespeicherte Änderungen haben.",
+      "files.autoSave.afterDelay": "Ein Editor mit Änderungen wird automatisch nach der konfigurierten `#files.autoSaveDelay#` gespeichert.",
+      "files.autoSave.off": "Ein Editor mit Änderungen wird nie automatisch gespeichert.",
+      "files.autoSave.onFocusChange": "Ein Editor mit Änderungen wird automatisch gespeichert, wenn der Editor den Fokus verliert.",
+      "files.autoSave.onWindowChange": "Ein Editor mit Änderungen wird automatisch gespeichert, wenn das Fenster den Fokus verliert.",
+      "formatOnSaveTimeout": "Zeitüberschreitung in Millisekunden, nach der die Formatierung, die beim Speichern der Datei ausgeführt wird, abgebrochen wird.",
+      "persistClosedEditors": "Legt fest, ob der Verlauf des geschlossenen Editors für den Arbeitsbereich beim Neuladen des Fensters erhalten bleiben soll.",
+      "showAllEditors": "Alle geöffneten Editoren anzeigen",
+      "splitHorizontal": "Editor horizontal teilen",
+      "splitVertical": "Editor vertikal teilen",
+      "toggleStickyScroll": "Fixierten Bildlauf umschalten"
+    },
+    "file-search": {
+      "toggleIgnoredFiles": " (Drücken Sie {0}, um ignorierte Dateien anzuzeigen/auszublenden)"
+    },
+    "fileDialog": {
+      "showHidden": "Versteckte Dateien anzeigen"
+    },
+    "fileSystem": {
+      "fileResource": {
+        "overWriteBody": "Möchten Sie die an '{0}' vorgenommenen Änderungen im Dateisystem überschreiben?"
+      }
+    },
+    "filesystem": {
+      "copiedToClipboard": "Kopieren Sie den Download-Link in die Zwischenablage.",
+      "copyDownloadLink": "Download-Link kopieren",
+      "dialog": {
+        "initialLocation": "Zum Ausgangsort gehen",
+        "multipleItemMessage": "Sie können nur ein Element auswählen",
+        "name": "Name:",
+        "navigateBack": "Zurück navigieren",
+        "navigateForward": "Vorwärts navigieren",
+        "navigateUp": "Ein Verzeichnis nach oben navigieren"
+      },
+      "fileResource": {
+        "binaryFileQuery": "Das Öffnen kann einige Zeit in Anspruch nehmen und dazu führen, dass die IDE nicht mehr reagiert. Wollen Sie '{0}' trotzdem öffnen?",
+        "binaryTitle": "Die Datei ist entweder binär oder verwendet eine nicht unterstützte Textkodierung.",
+        "largeFileTitle": "Die Datei ist zu groß ({0}).",
+        "overwriteTitle": "Die Datei '{0}' wurde im Dateisystem geändert."
+      },
+      "filesExclude": "Konfigurieren Sie globale Muster für den Ausschluss von Dateien und Ordnern. Beispielsweise entscheidet der Datei-Explorer auf der Grundlage dieser Einstellung, welche Dateien und Ordner angezeigt oder ausgeblendet werden sollen.",
+      "format": "Format:",
+      "maxConcurrentUploads": "Maximale Anzahl der gleichzeitig hochzuladenden Dateien, wenn mehrere Dateien hochgeladen werden. 0 bedeutet, dass alle Dateien gleichzeitig hochgeladen werden.",
+      "maxFileSizeMB": "Steuert die maximale Dateigröße in MB, die geöffnet werden kann.",
+      "prepareDownload": "Download wird vorbereitet...",
+      "prepareDownloadLink": "Download-Link wird vorbereitet...",
+      "processedOutOf": "Verarbeitet {0} von {1}",
+      "replaceTitle": "Datei austauschen",
+      "uploadFiles": "Dateien hochladen...",
+      "uploadedOutOf": "Hochgeladen {0} von {1}"
+    },
+    "getting-started": {
+      "apiComparator": "{0} API-Kompatibilität",
+      "newExtension": "Bau einer neuen Erweiterung",
+      "newPlugin": "Ein neues Plugin erstellen",
+      "startup-editor": {
+        "welcomePage": "Öffnen Sie die Willkommensseite mit Inhalten, die Ihnen den Einstieg in die Arbeit mit {0} und den Erweiterungen erleichtern."
+      }
+    },
+    "git": {
+      "aFewSecondsAgo": "vor ein paar Sekunden",
+      "addSignedOff": "Abgezeichnet von hinzufügen",
+      "amendReuseMessage": "Um die letzte Meldung wieder zu verwenden, drücken Sie \"Enter\" oder \"Escape\", um den Vorgang abzubrechen.",
+      "amendRewrite": "Vorherige Übermittlungsnachricht neu schreiben. Bestätigen Sie mit \"Enter\" oder brechen Sie mit \"Escape\" ab.",
+      "checkoutCreateLocalBranchWithName": "Erstellen Sie einen neuen lokalen Zweig mit dem Namen: {0}. Drücken Sie \"Enter\" zur Bestätigung oder \"Escape\" zum Abbrechen.",
+      "checkoutProvideBranchName": "Bitte geben Sie den Namen einer Zweigstelle an.",
+      "checkoutSelectRef": "Wählen Sie eine Referenz zum Auschecken oder erstellen Sie eine neue lokale Zweigstelle:",
+      "cloneQuickInputLabel": "Bitte geben Sie einen Speicherort für das Git-Repository an. Bestätigen Sie mit \"Enter\" oder brechen Sie mit \"Escape\" ab.",
+      "cloneRepository": "Klonen Sie das Git-Repository: {0}. Bestätigen Sie mit \"Enter\" oder brechen Sie mit \"Escape\" ab.",
+      "compareWith": "Vergleichen mit...",
+      "compareWithBranchOrTag": "Wählen Sie einen Zweig oder eine Markierung, den/die Sie mit dem derzeit aktiven {0} Zweig vergleichen möchten:",
+      "diff": "Diff",
+      "dirtyDiffLinesLimit": "Schmutzige Diff-Dekorationen nicht anzeigen, wenn die Zeilenzahl des Editors diese Grenze überschreitet.",
+      "dropStashMessage": "Versteck erfolgreich entfernt.",
+      "editorDecorationsEnabled": "Git-Dekorationen im Editor anzeigen.",
+      "fetchPickRemote": "Wählen Sie eine Fernbedienung zum Abrufen aus:",
+      "gitDecorationsColors": "Farbdekoration im Navigator verwenden.",
+      "mergeQuickPickPlaceholder": "Wählen Sie einen Zweig, der mit dem derzeit aktiven {0}-Zweig zusammengeführt werden soll:",
+      "missingUserInfo": "Stellen Sie sicher, dass Sie Ihren 'user.name' und 'user.email' in git konfigurieren.",
+      "noHistoryForError": "Es ist keine Historie verfügbar für {0}",
+      "noPreviousCommit": "Kein früherer Commit zur Änderung",
+      "noRepositoriesSelected": "Es wurden keine Repositories ausgewählt.",
+      "prepositionIn": "in",
+      "repositoryNotInitialized": "Das Repository {0} ist noch nicht initialisiert.",
+      "stashChanges": "Versteckte Änderungen. Drücken Sie \"Enter\" zur Bestätigung oder \"Escape\" zum Abbrechen.",
+      "stashChangesWithMessage": "Stash-Änderungen mit Meldung: {0}. Drücken Sie \"Enter\" zur Bestätigung oder \"Escape\" zum Abbrechen.",
+      "tabTitleIndex": "{0} (Index)",
+      "tabTitleWorkingTree": "{0} (Arbeitsbaum)",
+      "toggleBlameAnnotations": "Blame Annotationen umschalten"
+    },
+    "keybinding-schema-updater": {
+      "deprecation": "Verwenden Sie stattdessen die `when`-Klausel."
+    },
+    "keymaps": {
+      "addKeybindingTitle": "Tastenbelegung hinzufügen für {0}",
+      "editKeybinding": "Tastaturbelegung bearbeiten...",
+      "editKeybindingTitle": "Tastaturbelegung für {0} bearbeiten",
+      "editWhenExpression": "Bearbeiten Wenn Ausdruck...",
+      "editWhenExpressionTitle": "Bearbeiten Wenn Ausdruck für {0}",
+      "keybinding": {
+        "copy": "Tastaturbelegung kopieren",
+        "copyCommandId": "Kopieren der Tastaturbelegung Befehls-ID",
+        "copyCommandTitle": "Tastaturbelegung kopieren Befehl Titel",
+        "edit": "Tastaturbelegung bearbeiten...",
+        "editWhenExpression": "Tastenkombinationen bearbeiten, wenn der Ausdruck..."
+      },
+      "keybindingCollidesValidation": "Tastenkombinationen kollidieren",
+      "requiredKeybindingValidation": "Schlüsselbindung Wert ist erforderlich",
+      "resetKeybindingConfirmation": "Möchten Sie diese Tastaturbelegung wirklich auf den Standardwert zurücksetzen?",
+      "resetKeybindingTitle": "Tastaturbelegung für {0} zurücksetzen",
+      "resetMultipleKeybindingsWarning": "Wenn mehrere Tastenkombinationen für diesen Befehl existieren, werden alle zurückgesetzt."
+    },
+    "localize": {
+      "offlineTooltip": "Kann keine Verbindung zum Backend herstellen."
+    },
+    "markers": {
+      "clearAll": "Alle löschen",
+      "noProblems": "Bisher wurden im Arbeitsbereich keine Probleme festgestellt.",
+      "tabbarDecorationsEnabled": "Problemdekorationen (Diagnosemarkierungen) in den Registerkartenleisten anzeigen."
+    },
+    "memory-inspector": {
+      "addressTooltip": "Speicherplatz, der angezeigt werden soll, eine Adresse oder ein Ausdruck, der zu einer Adresse ausgewertet wird",
+      "ascii": "ASCII",
+      "binary": "Binär",
+      "byteSize": "Byte Size",
+      "bytesPerGroup": "Bytes Per Group",
+      "closeSettings": "Einstellungen schließen",
+      "columns": "Rubriken",
+      "command": {
+        "createNewMemory": "Neuen Speicherinspektor erstellen",
+        "createNewRegisterView": "Neue Registeransicht erstellen",
+        "followPointer": "Zeigern folgen",
+        "followPointerMemory": "Zeiger im Memory Inspector verfolgen",
+        "resetValue": "Wert zurücksetzen",
+        "showRegister": "Register im Speicherinspektor anzeigen",
+        "viewVariable": "Variable im Speicherinspektor anzeigen"
+      },
+      "data": "Daten",
+      "decimal": "Dezimal",
+      "diff": {
+        "label": "Diff: {0}"
+      },
+      "diff-widget": {
+        "offset-label": "{0} Versetzt",
+        "offset-title": "Bytes zum Versetzen des Speichers von {0}"
+      },
+      "editable": {
+        "apply": "Änderungen anwenden",
+        "clear": "Deutliche Änderungen"
+      },
+      "endianness": "Endianness",
+      "extraColumn": "Extra-Spalte",
+      "groupsPerRow": "Gruppen pro Zeile",
+      "hexadecimal": "Hexadezimal",
+      "length": "Länge",
+      "lengthTooltip": "Anzahl der abzurufenden Bytes, dezimal oder hexadezimal",
+      "memory": {
+        "addressField": {
+          "memoryReadError": "Geben Sie eine Adresse oder einen Ausdruck in das Feld Ort ein."
+        },
+        "freeze": "Speicheransicht einfrieren",
+        "hideSettings": "Einstellungsfeld ausblenden",
+        "readError": {
+          "bounds": "Speichergrenzen überschritten, Ergebnis wird abgeschnitten.",
+          "noContents": "Derzeit ist kein Speicherinhalt verfügbar."
+        },
+        "readLength": {
+          "memoryReadError": "Geben Sie eine Länge (Dezimal- oder Hexadezimalzahl) in das Feld Länge ein."
+        },
+        "showSettings": "Einstellungsfeld anzeigen",
+        "unfreeze": "Speicheransicht auftauen",
+        "userError": "Es ist ein Fehler beim Abrufen von Speicher aufgetreten."
+      },
+      "memoryCategory": "Speicherinspektor",
+      "memoryInspector": "Speicherinspektor",
+      "memoryTitle": "Speicher",
+      "octal": "Oktal",
+      "offset": "Versetzt",
+      "offsetTooltip": "Offset, der beim Navigieren zum aktuellen Speicherplatz hinzugefügt wird",
+      "provider": {
+        "localsError": "Lokale Variablen können nicht gelesen werden. Keine aktive Debug-Sitzung.",
+        "readError": "Speicher kann nicht gelesen werden. Keine aktive Debug-Sitzung.",
+        "writeError": "Speicher kann nicht geschrieben werden. Keine aktive Debug-Sitzung."
+      },
+      "register": "Register",
+      "register-widget": {
+        "filter-placeholder": "Filter (beginnt mit)"
+      },
+      "registerReadError": "Es gab einen Fehler beim Abrufen von Registern.",
+      "registers": "Registers",
+      "toggleComparisonWidgetVisibility": "Sichtbarkeit des Vergleichs-Widgets umschalten",
+      "utils": {
+        "afterBytes": "Sie müssen in beide Widgets, die Sie vergleichen möchten, Speicher laden. {0} hat keinen Speicher geladen.",
+        "bytesMessage": "Sie müssen in beide Widgets, die Sie vergleichen möchten, Speicher laden. {0} hat keinen Speicher geladen."
+      }
+    },
+    "messages": {
+      "notificationTimeout": "Informative Benachrichtigungen werden nach dieser Zeitspanne ausgeblendet.",
+      "toggleNotifications": "Benachrichtigungen umschalten"
+    },
+    "mini-browser": {
+      "typeUrl": "Geben Sie eine URL ein"
+    },
+    "monaco": {
+      "noSymbolsMatching": "Keine passenden Symbole",
+      "typeToSearchForSymbols": "Tippen Sie, um nach Symbolen zu suchen"
+    },
+    "navigator": {
+      "autoReveal": "Auto-Enthüllung",
+      "clipboardWarn": "Der Zugriff auf die Zwischenablage wird verweigert. Überprüfen Sie die Berechtigung Ihres Browsers.",
+      "clipboardWarnFirefox": "Die Zwischenablage-API ist nicht verfügbar. Sie kann durch die Einstellung '{0}' auf der Seite '{1}' aktiviert werden. Dann laden Sie Theia neu. Beachten Sie, dass FireFox dadurch vollen Zugriff auf die Systemzwischenablage erhält.",
+      "noFolderOpened": "Kein Ordner geöffnet",
+      "refresh": "Aktualisieren im Explorer",
+      "reveal": "Enthüllen im Explorer",
+      "toggleHiddenFiles": "Versteckte Dateien umschalten"
+    },
+    "output": {
+      "clearOutputChannel": "Ausgangskanal löschen...",
+      "closeOutputChannel": "Ausgangskanal schließen...",
+      "hiddenChannels": "Versteckte Kanäle",
+      "hideOutputChannel": "Ausgangskanal ausblenden...",
+      "maxChannelHistory": "Die maximale Anzahl der Einträge in einem Ausgabekanal.",
+      "outputChannels": "Ausgangskanäle",
+      "showOutputChannel": "Ausgangskanal anzeigen..."
+    },
+    "plugin": {
+      "blockNewTab": "Ihr Browser hat das Öffnen einer neuen Registerkarte verhindert"
+    },
+    "plugin-dev": {
+      "alreadyRunning": "Die gehostete Instanz läuft bereits.",
+      "debugInstance": "Debug-Instanz",
+      "debugMode": "Verwendung von inspect oder inspect-brk zur Fehlersuche in Node.js",
+      "devHost": "Entwicklung Host",
+      "failed": "Die gehostete Plugin-Instanz konnte nicht ausgeführt werden: {0}",
+      "hostedPlugin": "Gehostetes Plugin",
+      "hostedPluginRunning": "Gehostetes Plugin: Läuft",
+      "hostedPluginStarting": "Gehostetes Plugin: Start",
+      "hostedPluginStopped": "Gehostetes Plugin: Angehalten",
+      "hostedPluginWatching": "Gehostetes Plugin: Überwachen",
+      "instanceTerminated": "{0} wurde abgebrochen",
+      "launchOutFiles": "Array von Glob-Patterns zum Auffinden der generierten JavaScript-Dateien (`${pluginPath}` wird durch den tatsächlichen Pfad des Plugins ersetzt).",
+      "noValidPlugin": "Der angegebene Ordner enthält kein gültiges Plugin.",
+      "notRunning": "Die gehostete Instanz läuft nicht.",
+      "pluginFolder": "Plugin-Ordner ist eingestellt auf: {0}",
+      "preventedNewTab": "Ihr Browser hat das Öffnen einer neuen Registerkarte verhindert",
+      "restartInstance": "Instanz neu starten",
+      "running": "Die gehostete Instanz läuft auf:",
+      "select": "Wählen Sie",
+      "selectPath": "Pfad auswählen",
+      "startInstance": "Start-Instanz",
+      "starting": "Start des gehosteten Instanzservers ...",
+      "stopInstance": "Instanz anhalten",
+      "unknownTerminated": "Die Instanz wurde beendet",
+      "watchMode": "Watcher auf Plugin in Entwicklung ausführen"
+    },
+    "plugin-ext": {
+      "authentication-main": {
+        "loginTitle": "Anmeldung"
+      },
+      "plugins": "Plugins",
+      "webviewTrace": "Steuert die Kommunikationsverfolgung mit Webviews.",
+      "webviewWarnIfUnsecure": "Warnt Benutzer, dass Webviews derzeit unsicher eingesetzt werden."
+    },
+    "preview": {
+      "openByDefault": "Öffnen Sie standardmäßig die Vorschau anstelle des Editors."
+    },
+    "property-view": {
+      "created": "Erstellt",
+      "directory": "Verzeichnis",
+      "lastModified": "Zuletzt geändert",
+      "location": "Standort",
+      "noProperties": "Keine Eigenschaften verfügbar.",
+      "properties": "Eigenschaften",
+      "size": "Größe",
+      "symbolicLink": "Symbolischer Link"
+    },
+    "scm": {
+      "amend": "Ändern",
+      "amendHeadCommit": "HEAD Commit",
+      "amendLastCommit": "Letzte Übertragung ändern",
+      "changeRepository": "Repository ändern...",
+      "config.untrackedChanges": "Steuert, wie sich nicht verfolgte Änderungen verhalten.",
+      "config.untrackedChanges.hidden": "versteckt",
+      "config.untrackedChanges.mixed": "gemischt",
+      "config.untrackedChanges.separate": "getrennt",
+      "history": "Geschichte",
+      "noRepositoryFound": "Kein Repository gefunden",
+      "unamend": "Ändern",
+      "unamendCommit": "Commit ändern"
+    },
+    "search-in-workspace": {
+      "includeIgnoredFiles": "Ignorierte Dateien einbeziehen",
+      "noFolderSpecified": "Sie haben keinen Ordner geöffnet oder angegeben. Es werden derzeit nur geöffnete Dateien durchsucht.",
+      "resultSubset": "Dies ist nur eine Teilmenge aller Ergebnisse. Verwenden Sie einen spezifischeren Suchbegriff, um die Ergebnisliste einzugrenzen.",
+      "searchOnEditorModification": "Durchsucht den aktiven Editor nach Änderungen."
+    },
+    "secondary-window": {
+      "extract-widget": "Ansicht in sekundäres Fenster verschieben"
+    },
+    "shell-area": {
+      "secondary": "Sekundäres Fenster"
+    },
+    "task": {
+      "attachTask": "Aufgabe anhängen...",
+      "clearHistory": "Geschichte löschen",
+      "noTaskToRun": "Keine Aufgabe zur Ausführung gefunden. Aufgaben konfigurieren...",
+      "openUserTasks": "Nutzertasks öffnen"
+    },
+    "terminal": {
+      "defaultProfile": "Das Standardprofil unter {0}",
+      "enableCopy": "Aktivieren von ctrl-c (cmd-c unter macOS) zum Kopieren von markiertem Text",
+      "enablePaste": "Aktivieren von ctrl-v (cmd-v unter macOS) zum Einfügen aus der Zwischenablage",
+      "profileArgs": "Die Shellparameter, welche dieses Profil verwendet.",
+      "profileColor": "ID einer Terminal-Themenfarbe zur Verwendung mit diesem Terminal.",
+      "profileDefault": "Standardprofil wählen...",
+      "profileIcon": "Eine codicon ID zur Verwendung mit diesem Terminal.  \nterminal-tmux:\"$(terminal-tmux)\"",
+      "profileNew": "Neues Terminal (mit Profil)...",
+      "profilePath": "Der Pfad der Shell, den dieses Profil benutzt.",
+      "profiles": "Die Profile welche zur Erzeugung eines Terminals verwendet werden können. Setzen Sie den Pfad von Hand mit optionalen Parametern.\n\nSezen Sie ein Profile auf `null` um es zu verbergen, z.B.: `{0}: null`.",
+      "rendererType": "Steuert, wie das Terminal gerendert wird.",
+      "selectProfile": "Wählen Sie ein Profil für das neue Terminal",
+      "shell.deprecated": "Dies ist veraltet, neu können Sie Ihre Shell konfigurieren, indem Sie ein Profil unter 'terminal.integrated.profiles.{0}' anlegen und dessen Namen in 'terminal.integrated.defaultProfile.{0}' als Standard setzen.",
+      "shellArgsLinux": "Die Befehlszeilenargumente, die im Linux-Terminal zu verwenden sind.",
+      "shellArgsOsx": "Die Befehlszeilenargumente, die im macOS-Terminal zu verwenden sind.",
+      "shellArgsWindows": "Die Befehlszeilenargumente, die im Windows-Terminal zu verwenden sind.",
+      "shellLinux": "Der Pfad der Shell, die das Terminal unter Linux verwendet (Standard: '{0}'}).",
+      "shellOsx": "Der Pfad der Shell, die das Terminal unter macOS verwendet (Standard: '{0}'}).",
+      "shellWindows": "Der Pfad der Shell, die das Terminal unter Windows verwendet. (Standard: '{0}')."
+    },
+    "test": {
+      "cancelAllTestRuns": "Alle Testläufe abbrechen",
+      "testRunDefaultName": "{0} laufen. {1}",
+      "testRuns": "Testläufe"
+    },
+    "toolbar": {
+      "addCommand": "Befehl zur Symbolleiste hinzufügen",
+      "addCommandPlaceholder": "Suchen Sie einen Befehl, den Sie der Symbolleiste hinzufügen möchten",
+      "centerColumn": "Mittlere Spalte",
+      "failedUpdate": "Der Wert von '{0}' konnte nicht in '{1}' aktualisiert werden.",
+      "filterIcons": "Filter-Symbole",
+      "iconSelectDialog": "Wählen Sie ein Symbol für '{0}'.",
+      "iconSet": "Ikonensatz",
+      "insertGroupLeft": "Gruppentrennzeichen einfügen (links)",
+      "insertGroupRight": "Gruppentrennzeichen einfügen (rechts)",
+      "leftColumn": "Linke Spalte",
+      "openJSON": "Symbolleiste anpassen (JSON öffnen)",
+      "removeCommand": "Befehl aus der Symbolleiste entfernen",
+      "restoreDefaults": "Standardeinstellungen der Symbolleiste wiederherstellen",
+      "rightColumn": "Rechte Spalte",
+      "selectIcon": "Icon auswählen",
+      "toggleToolbar": "Symbolleiste umschalten",
+      "toolbarLocationPlaceholder": "Wo möchten Sie den Befehl hinzufügen?",
+      "useDefaultIcon": "Standardsymbol verwenden"
+    },
+    "typehierarchy": {
+      "subtypeHierarchy": "Hierarchie der Untertypen",
+      "supertypeHierarchy": "Supertyp-Hierarchie"
+    },
+    "vsx-registry": {
+      "downloadCount": "Anzahl der Downloads: {0}",
+      "errorFetching": "Fehler beim Abrufen von Erweiterungen.",
+      "errorFetchingConfigurationHint": "Dies könnte auf Probleme bei der Netzwerkkonfiguration zurückzuführen sein.",
+      "failedInstallingVSIX": "Die Installation von {0} aus VSIX ist fehlgeschlagen.",
+      "invalidVSIX": "Die ausgewählte Datei ist kein gültiges \"*.vsix\"-Plugin.",
+      "license": "Lizenz: {0}",
+      "recommendedExtensions": "Eine Liste mit den Namen der Erweiterungen, die für die Verwendung in diesem Arbeitsbereich empfohlen werden.",
+      "searchPlaceholder": "Erweiterungen suchen in {0}",
+      "showInstalled": "Installierte Erweiterungen anzeigen",
+      "showRecommendedExtensions": "Steuert, ob Benachrichtigungen für Erweiterungsempfehlungen angezeigt werden.",
+      "vsx-extensions-contribution": {
+        "update-version-uninstall-error": "Fehler beim Entfernen der Erweiterung: {0}.",
+        "update-version-version-error": "Die Installation der Version {0} von {1} ist fehlgeschlagen."
+      }
+    },
+    "webview": {
+      "goToReadme": "Zum README gehen",
+      "messageWarning": "            Das Host-Muster des {0}-Endpunkts wurde in `{1}` geändert; die Änderung des Musters kann zu Sicherheitslücken führen.             Siehe `{2}` für weitere Informationen."
+    },
+    "workspace": {
+      "compareWithEachOther": "Miteinander vergleichen",
+      "confirmDeletePermanently.description": "Das Löschen von \"{0}\" über den Papierkorb ist fehlgeschlagen. Möchten Sie stattdessen dauerhaft löschen?",
+      "confirmDeletePermanently.solution": "Sie können die Verwendung des Papierkorbs in den Einstellungen deaktivieren.",
+      "confirmDeletePermanently.title": "Fehler beim Löschen einer Datei",
+      "confirmMessage.delete": "Wollen Sie die folgenden Dateien wirklich löschen?",
+      "confirmMessage.dirtyMultiple": "Wollen Sie wirklich {0} Dateien mit ungespeicherten Änderungen löschen?",
+      "confirmMessage.dirtySingle": "Wollen Sie wirklich {0} mit ungespeicherten Änderungen löschen?",
+      "confirmMessage.uriMultiple": "Wollen Sie wirklich alle {0} ausgewählten Dateien löschen?",
+      "confirmMessage.uriSingle": "Wollen Sie wirklich {0} löschen?",
+      "duplicate": "Duplizieren",
+      "failApply": "Änderungen konnten nicht auf neue Datei angewendet werden",
+      "failSaveAs": "Kann \"{0}\" für das aktuelle Widget nicht ausführen.",
+      "newFilePlaceholder": "File Name",
+      "newFolderPlaceholder": "Folder Name",
+      "noErasure": "Hinweis: Es wird nichts von der Festplatte gelöscht.",
+      "openRecentPlaceholder": "Geben Sie den Namen des Arbeitsbereichs ein, den Sie öffnen möchten",
+      "openRecentWorkspace": "Aktuellen Arbeitsbereich öffnen...",
+      "preserveWindow": "Aktivieren Sie das Öffnen von Arbeitsbereichen im aktuellen Fenster.",
+      "removeFolder": "Sind Sie sicher, dass Sie den folgenden Ordner aus dem Arbeitsbereich entfernen möchten?",
+      "removeFolders": "Sind Sie sicher, dass Sie die folgenden Ordner aus dem Arbeitsbereich entfernen möchten?",
+      "trashTitle": "Verschiebe {0} in den Papierkorb",
+      "trustEmptyWindow": "Steuert, ob dem leeren Arbeitsbereich standardmäßig vertraut wird oder nicht.",
+      "trustEnabled": "Steuert, ob das Vertrauen in Arbeitsbereiche aktiviert ist oder nicht. Wenn deaktiviert, wird allen Arbeitsbereichen vertraut.",
+      "trustRequest": "Eine Erweiterung fordert Vertrauen in den Arbeitsbereich an, aber die entsprechende API wird noch nicht vollständig unterstützt. Möchten Sie diesem Arbeitsbereich vertrauen?",
+      "untitled-cleanup": "Es scheint viele unbenannte Arbeitsbereichsdateien zu geben. Bitte überprüfen Sie {0} und entfernen Sie alle unbenutzten Dateien.",
+      "workspaceFolderAdded": "Ein Arbeitsbereich mit mehreren Wurzeln wurde erstellt. Möchten Sie Ihre Arbeitsbereichskonfiguration als Datei speichern?",
+      "workspaceFolderAddedTitle": "Ordner zum Arbeitsbereich hinzugefügt"
+    }
+  }
+}

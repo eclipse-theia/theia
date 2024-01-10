@@ -1,0 +1,60 @@
+name: Performance Tests
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-and-test-performance:
+    name: Performance Tests
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Use Node.js 18.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18.x"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Use Python 3.x
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+
+      - name: Build
+        shell: bash
+        run: |
+          yarn global add node-gyp
+          yarn --skip-integrity-check --network-timeout 100000 --ignore-engines
+          yarn build:examples
+        env:
+          NODE_OPTIONS: --max_old_space_size=4096
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9
+
+      - name: Performance (browser)
+        uses: GabrielBB/xvfb-action@v1
+        with:
+          run: yarn performance:startup:browser
+
+      - name: Performance (Electron)
+        uses: GabrielBB/xvfb-action@v1
+        with:
+          run: yarn performance:startup:electron
+
+      - name: Analyze performance results
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: Performance Benchmarks
+          tool: "customSmallerIsBetter"
+          output-file-path: performance-result.json
+          alert-threshold: "150%"
+          fail-on-alert: false
+          github-token: ${{ secrets.GITHUB_TOKEN }} # Needed for comments an GH Pages
+          benchmark-data-dir-path: tests/performance
+          auto-push: true # Push to GH Pages
+          comment-on-alert: true # Comment on commit if it causes a performance regression
+          max-items-in-chart: 100 # Don't just collect results forever

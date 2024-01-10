@@ -1,25 +1,26 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { injectable } from 'inversify';
 import { Event, Emitter, WaitUntilEvent } from '../../common/event';
 import { Disposable, DisposableCollection } from '../../common/disposable';
 import { CancellationToken, CancellationTokenSource } from '../../common/cancellation';
-import { Mutable } from '../../common/types';
 import { timeout } from '../../common/promise-util';
+import { isObject, Mutable } from '../../common';
+import { AccessibilityInformation } from '../../common/accessibility';
 
 export const Tree = Symbol('Tree');
 
@@ -70,6 +71,19 @@ export interface Tree extends Disposable {
      * A token source of the given token should be canceled to unmark.
      */
     markAsBusy(node: Readonly<TreeNode>, ms: number, token: CancellationToken): Promise<void>;
+
+    /**
+     * An update to the tree node occurred, but the tree structure remains unchanged
+     */
+    readonly onDidUpdate: Event<TreeNode[]>;
+
+    markAsChecked(node: TreeNode, checked: boolean): void;
+}
+
+export interface TreeViewItemCheckboxInfo {
+    checked: boolean;
+    tooltip?: string;
+    accessibilityInformation?: AccessibilityInformation
 }
 
 /**
@@ -120,11 +134,16 @@ export interface TreeNode {
      * Whether this node is busy. Greater than 0 then busy; otherwise not.
      */
     readonly busy?: number;
+
+    /**
+     * Whether this node is checked.
+     */
+    readonly checkboxInfo?: TreeViewItemCheckboxInfo;
 }
 
 export namespace TreeNode {
-    export function is(node: Object | undefined): node is TreeNode {
-        return !!node && typeof node === 'object' && 'id' in node && 'parent' in node;
+    export function is(node: unknown): node is TreeNode {
+        return isObject(node) && 'id' in node && 'parent' in node;
     }
 
     export function equals(left: TreeNode | undefined, right: TreeNode | undefined): boolean {
@@ -147,8 +166,8 @@ export interface CompositeTreeNode extends TreeNode {
 }
 
 export namespace CompositeTreeNode {
-    export function is(node: Object | undefined): node is CompositeTreeNode {
-        return !!node && 'children' in node;
+    export function is(node: unknown): node is CompositeTreeNode {
+        return isObject(node) && 'children' in node;
     }
 
     export function getFirstChild(parent: CompositeTreeNode): TreeNode | undefined {
@@ -238,6 +257,8 @@ export class TreeImpl implements Tree {
 
     protected readonly onDidChangeBusyEmitter = new Emitter<TreeNode>();
     readonly onDidChangeBusy = this.onDidChangeBusyEmitter.event;
+    protected readonly onDidUpdateEmitter = new Emitter<TreeNode[]>();
+    readonly onDidUpdate = this.onDidUpdateEmitter.event;
 
     protected nodes: {
         [id: string]: Mutable<TreeNode> | undefined
@@ -258,11 +279,15 @@ export class TreeImpl implements Tree {
         return this._root;
     }
 
+    protected toDisposeOnSetRoot = new DisposableCollection();
     set root(root: TreeNode | undefined) {
+        this.toDisposeOnSetRoot.dispose();
+        const cancelRefresh = new CancellationTokenSource();
+        this.toDisposeOnSetRoot.push(cancelRefresh);
         this.nodes = {};
         this._root = root;
         this.addNode(root);
-        this.refresh();
+        this.refresh(undefined, cancelRefresh.token);
     }
 
     get onChanged(): Event<void> {
@@ -291,7 +316,7 @@ export class TreeImpl implements Tree {
         return this.getNode(id);
     }
 
-    async refresh(raw?: CompositeTreeNode): Promise<CompositeTreeNode | undefined> {
+    async refresh(raw?: CompositeTreeNode, cancellationToken?: CancellationToken): Promise<CompositeTreeNode | undefined> {
         const parent = !raw ? this._root : this.validateNode(raw);
         let result: CompositeTreeNode | undefined;
         if (CompositeTreeNode.is(parent)) {
@@ -300,7 +325,9 @@ export class TreeImpl implements Tree {
             try {
                 result = parent;
                 const children = await this.resolveChildren(parent);
+                if (cancellationToken?.isCancellationRequested) { return; }
                 result = await this.setChildren(parent, children);
+                if (cancellationToken?.isCancellationRequested) { return; }
             } finally {
                 busySource.cancel();
             }
@@ -359,26 +386,39 @@ export class TreeImpl implements Tree {
     async markAsBusy(raw: TreeNode, ms: number, token: CancellationToken): Promise<void> {
         const node = this.validateNode(raw);
         if (node) {
-            await this.markAsBusy(node, ms, token);
+            await this.doMarkAsBusy(node, ms, token);
         }
     }
+
+    markAsChecked(node: Mutable<TreeNode>, checked: boolean): void {
+        node.checkboxInfo!.checked = checked;
+        this.onDidUpdateEmitter.fire([node]);
+    }
+
     protected async doMarkAsBusy(node: Mutable<TreeNode>, ms: number, token: CancellationToken): Promise<void> {
         try {
             await timeout(ms, token);
-            this.doSetBusy(node, true);
-            token.onCancellationRequested(() => this.doSetBusy(node, false));
+            this.doSetBusy(node);
+            token.onCancellationRequested(() => this.doResetBusy(node));
         } catch {
             /* no-op */
         }
     }
-    protected doSetBusy(node: Mutable<TreeNode>, busy: boolean): void {
+    protected doSetBusy(node: Mutable<TreeNode>): void {
         const oldBusy = node.busy || 0;
-        const newBusy = oldBusy + (busy ? 1 : oldBusy ? -1 : 0);
-        if (!!oldBusy === !!newBusy) {
-            return;
+        node.busy = oldBusy + 1;
+        if (oldBusy === 0) {
+            this.onDidChangeBusyEmitter.fire(node);
         }
-        node.busy = newBusy;
-        this.onDidChangeBusyEmitter.fire(node);
+    }
+    protected doResetBusy(node: Mutable<TreeNode>): void {
+        const oldBusy = node.busy || 0;
+        if (oldBusy > 0) {
+            node.busy = oldBusy - 1;
+            if (node.busy === 0) {
+                this.onDidChangeBusyEmitter.fire(node);
+            }
+        }
     }
 
 }

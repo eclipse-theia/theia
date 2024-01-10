@@ -1,0 +1,520 @@
+{
+  "debug.breakpoint.editCondition": "Editar condición...",
+  "terminal:new:profile": "Crear un nuevo terminal integrado a partir de un perfil",
+  "terminal:profile:default": "Elija el perfil de terminal por defecto",
+  "theia": {
+    "callhierarchy": {
+      "noCallers": "No se ha detectado ninguna llamada.",
+      "open": "Jerarquía de la convocatoria abierta"
+    },
+    "core": {
+      "about": {
+        "compatibility": "{0} Compatibilidad",
+        "defaultApi": "API por defecto {0} ",
+        "version": "Versión"
+      },
+      "common": {
+        "closeAll": "Cerrar todas las pestañas",
+        "closeAllTabMain": "Cerrar todas las pestañas del área principal",
+        "closeOtherTabMain": "Cerrar otras pestañas en el área principal",
+        "closeOthers": "Cerrar otras pestañas",
+        "closeRight": "Cerrar pestañas a la derecha",
+        "closeTab": "Cerrar pestaña",
+        "closeTabMain": "Cerrar la pestaña en el área principal",
+        "collapseAllTabs": "Contraer todos los paneles laterales",
+        "collapseBottomPanel": "Panel inferior de la palanca",
+        "collapseTab": "Colapso del panel lateral",
+        "showNextTabGroup": "Pasar al siguiente grupo de pestañas",
+        "showNextTabInGroup": "Pasar a la siguiente pestaña del grupo",
+        "showPreviousTabGroup": "Cambiar al grupo de pestañas anterior",
+        "showPreviousTabInGroup": "Pasar a la pestaña anterior del grupo",
+        "toggleMaximized": "Alternar maximizado"
+      },
+      "copyInfo": "Abra primero un archivo para copiar su ruta",
+      "copyWarn": "Utilice el comando de copia del navegador o el acceso directo.",
+      "cutWarn": "Utiliza el comando o atajo de teclado del navegador.",
+      "enhancedPreview": {
+        "classic": "Muestra una vista previa sencilla de la ficha con información básica.",
+        "enhanced": "Mostrar una vista previa mejorada de la ficha con información adicional.",
+        "visual": "Muestra una vista previa visual de la pestaña."
+      },
+      "file": {
+        "browse": "Visite"
+      },
+      "highlightModifiedTabs": "Controla si se dibuja un borde superior en las pestañas modificadas (sucias) del editor o no.",
+      "keybindingStatus": "{0} fue presionado, esperando más teclas",
+      "keyboard": {
+        "choose": "Elija la disposición del teclado",
+        "chooseLayout": "Elija una disposición de teclado",
+        "current": "(corriente: {0})",
+        "currentLayout": " - diseño actual",
+        "mac": "Teclados Mac",
+        "pc": "Teclados para PC",
+        "tryDetect": "Intenta detectar la distribución del teclado a partir de la información del navegador y de las teclas pulsadas."
+      },
+      "navigator": {
+        "clipboardWarn": "El acceso al portapapeles está denegado. Comprueba los permisos de tu navegador.",
+        "clipboardWarnFirefox": "La API del portapapeles no está disponible. Se puede activar mediante la preferencia '{0}' en la página '{1}'. A continuación, vuelva a cargar Theia. Tenga en cuenta que esto permitirá a FireFox tener acceso completo al portapapeles del sistema."
+      },
+      "offline": "Fuera de línea",
+      "pasteWarn": "Por favor, utilice el comando de pegar o el atajo de teclado del navegador.",
+      "quitMessage": "Cualquier cambio no guardado no se guardará.",
+      "resetWorkbenchLayout": "Restablecer la disposición del banco de trabajo",
+      "searchbox": {
+        "close": "Cerrar (Escapar)",
+        "next": "Siguiente (abajo)",
+        "previous": "Anterior (Arriba)"
+      },
+      "secondaryWindow": {
+        "alwaysOnTop": "Cuando está activada, la ventana secundaria se mantiene por encima de todas las demás ventanas, incluidas las de distintas aplicaciones.",
+        "description": "Establece la posición inicial y el tamaño de la ventana secundaria extraída.",
+        "fullSize": "La posición y el tamaño del widget extraído serán los mismos que los de la aplicación Theia en ejecución.",
+        "halfWidth": "La posición y el tamaño del widget extraído serán la mitad de la anchura de la aplicación Theia en ejecución.",
+        "originalSize": "La posición y el tamaño del widget extraído serán los mismos que los del widget original."
+      },
+      "silentNotifications": "Controla si se suprimen las ventanas emergentes de notificación.",
+      "tabDefaultSize": "Especifica el tamaño por defecto de las pestañas.",
+      "tabMaximize": "Controla si se maximizan las pestañas al hacer doble clic.",
+      "tabMinimumSize": "Especifica el tamaño mínimo de las pestañas.",
+      "tabShrinkToFit": "Reduzca las pestañas para adaptarlas al espacio disponible."
+    },
+    "debug": {
+      "addConfigurationPlaceholder": "Seleccione la raíz del espacio de trabajo para añadir la configuración",
+      "breakpoint": "punto de interrupción",
+      "compound-cycle": "La configuración de lanzamiento '{0}' contiene un ciclo consigo mismo",
+      "continueAll": "Continuar todo",
+      "copyExpressionValue": "Copiar el valor de la expresión",
+      "dataBreakpoint": "punto de interrupción de datos",
+      "debugVariableInput": "Establecer {0} Valor",
+      "entry": "entrada",
+      "exception": "excepción",
+      "functionBreakpoint": "punto de interrupción de la función",
+      "goto": "ir a",
+      "instruction-breakpoint": "Punto de interrupción de la instrucción",
+      "instructionBreakpoint": "punto de interrupción de instrucción",
+      "missingConfiguration": "La configuración dinámica '{0}:{1}' falta o no es aplicable",
+      "pause": "pausa",
+      "pauseAll": "Pausa Todo",
+      "reveal": "Revelar",
+      "step": "paso",
+      "threads": "Hilos",
+      "toggleTracing": "Activar/desactivar las comunicaciones de rastreo con los adaptadores de depuración"
+    },
+    "editor": {
+      "dirtyEncoding": "El archivo está sucio. Por favor, guárdelo primero antes de volver a abrirlo con otra codificación.",
+      "editor.codeActionWidget.showHeaders": "Activar/desactivar la visualización de las cabeceras de los grupos en el menú de acción del código.",
+      "editor.experimental.pasteActions.enabled": "Activar/desactivar la ejecución de ediciones desde extensiones al pegar.",
+      "editor.formatOnSaveMode.modificationsIfAvailable": "Intentará formatear sólo las modificaciones (requiere control de origen). Si no se puede utilizar el control de origen, se formateará todo el archivo.",
+      "editor.inlayHints.enabled1": "Los consejos de incrustación se muestran por defecto y se ocultan cuando se mantiene `Ctrl+Alt`.",
+      "editor.inlayHints.enabled2": "Los consejos de incrustación están ocultos por defecto y se muestran cuando se mantiene pulsado `Ctrl+Alt`.",
+      "editor.quickSuggestions": "Controla si las sugerencias deben aparecer automáticamente mientras se escribe. Esto puede controlarse para escribir comentarios, cadenas y otros códigos. La sugerencia rápida puede ser configurada para mostrarse como texto fantasma o con el widget de sugerencia. También hay que tener en cuenta la configuración '#editor.suggestOnTriggerCharacters#' que controla si las sugerencias son activadas por caracteres especiales.",
+      "editor.suggest.matchOnWordStartOnly": "Cuando se activa el filtro IntelliSense se requiere que el primer carácter coincida con el inicio de una palabra, por ejemplo `c` en `Console` o `WebContext` pero _no_ en `description`. Si se desactiva, IntelliSense mostrará más resultados, pero los ordenará según la calidad de la coincidencia.",
+      "files.autoSave": "Controla el [autoguardado](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save) de los editores que tienen cambios sin guardar.",
+      "files.autoSave.afterDelay": "Un editor con cambios se guarda automáticamente después del `#files.autoSaveDelay#` configurado.",
+      "files.autoSave.off": "Un editor con cambios nunca se guarda automáticamente.",
+      "files.autoSave.onFocusChange": "Un editor con cambios se guarda automáticamente cuando el editor pierde el foco.",
+      "files.autoSave.onWindowChange": "Un editor con cambios se guarda automáticamente cuando la ventana pierde el foco.",
+      "formatOnSaveTimeout": "Tiempo de espera en milisegundos tras el cual se cancela el formato que se ejecuta al guardar el archivo.",
+      "persistClosedEditors": "Controla si se mantiene el historial del editor cerrado para el espacio de trabajo a través de las recargas de la ventana.",
+      "showAllEditors": "Mostrar todos los editores abiertos",
+      "splitHorizontal": "Editor de división horizontal",
+      "splitVertical": "Split Editor Vertical",
+      "toggleStickyScroll": "Alternar desplazamiento permanente"
+    },
+    "file-search": {
+      "toggleIgnoredFiles": " (Pulse {0} para mostrar/ocultar los archivos ignorados)"
+    },
+    "fileDialog": {
+      "showHidden": "Mostrar archivos ocultos"
+    },
+    "fileSystem": {
+      "fileResource": {
+        "overWriteBody": "¿Quiere sobrescribir los cambios realizados en '{0}' en el sistema de archivos?"
+      }
+    },
+    "filesystem": {
+      "copiedToClipboard": "Copiado el enlace de descarga en el portapapeles.",
+      "copyDownloadLink": "Copiar el enlace de descarga",
+      "dialog": {
+        "initialLocation": "Ir a la ubicación inicial",
+        "multipleItemMessage": "Sólo puede seleccionar un elemento",
+        "name": "Nombre:",
+        "navigateBack": "Navegar hacia atrás",
+        "navigateForward": "Navegar hacia adelante",
+        "navigateUp": "Navegar hacia arriba en un directorio"
+      },
+      "fileResource": {
+        "binaryFileQuery": "Abrirlo puede llevar algún tiempo y puede hacer que el IDE no responda. ¿Quiere abrir '{0}' de todos modos?",
+        "binaryTitle": "El archivo es binario o utiliza una codificación de texto no admitida.",
+        "largeFileTitle": "El archivo es demasiado grande ({0}).",
+        "overwriteTitle": "El archivo '{0}' ha sido modificado en el sistema de archivos."
+      },
+      "filesExclude": "Configurar patrones glob para excluir archivos y carpetas. Por ejemplo, el Explorador de archivos decide qué archivos y carpetas mostrar u ocultar en función de esta configuración.",
+      "format": "Formato:",
+      "maxConcurrentUploads": "Número máximo de archivos concurrentes a subir cuando se suben varios archivos. 0 significa que todos los archivos se subirán simultáneamente.",
+      "maxFileSizeMB": "Controla el tamaño máximo de archivo en MB que es posible abrir.",
+      "prepareDownload": "Preparando la descarga...",
+      "prepareDownloadLink": "Preparando enlace de descarga...",
+      "processedOutOf": "Procesado {0} de {1}",
+      "replaceTitle": "Sustituir archivo",
+      "uploadFiles": "Subir archivos...",
+      "uploadedOutOf": "Cargado {0} de {1}"
+    },
+    "getting-started": {
+      "apiComparator": "{0} Compatibilidad con la API",
+      "newExtension": "Construir una nueva extensión",
+      "newPlugin": "Creación de un nuevo plugin",
+      "startup-editor": {
+        "welcomePage": "Abra la página de bienvenida, con contenidos que le ayudarán a empezar a utilizar {0} y las extensiones."
+      }
+    },
+    "git": {
+      "aFewSecondsAgo": "hace unos segundos",
+      "addSignedOff": "Agregar a la lista de firmas",
+      "amendReuseMessage": "Para reutilizar el último mensaje de confirmación, pulse \"Enter\" o \"Escape\" para cancelar.",
+      "amendRewrite": "Reescribir el mensaje de confirmación anterior. Pulse 'Enter' para confirmar o 'Escape' para cancelar.",
+      "checkoutCreateLocalBranchWithName": "Cree una nueva sucursal local con el nombre: {0}. Pulse 'Enter' para confirmar o 'Escape' para cancelar.",
+      "checkoutProvideBranchName": "Por favor, indique el nombre de la sucursal.",
+      "checkoutSelectRef": "Selecciona una referencia para hacer el checkout o crea una nueva sucursal local:",
+      "cloneQuickInputLabel": "Por favor, indique la ubicación del repositorio Git. Pulse 'Enter' para confirmar o 'Escape' para cancelar.",
+      "cloneRepository": "Clona el repositorio Git: {0}. Pulsa 'Enter' para confirmar o 'Escape' para cancelar.",
+      "compareWith": "Compara con...",
+      "compareWithBranchOrTag": "Elija una rama o etiqueta para comparar con la rama {0} actualmente activa:",
+      "diff": "Diff",
+      "dirtyDiffLinesLimit": "No mostrar decoraciones diff sucias, si el número de líneas del editor supera este límite.",
+      "dropStashMessage": "El alijo se ha eliminado con éxito.",
+      "editorDecorationsEnabled": "Mostrar las decoraciones git en el editor.",
+      "fetchPickRemote": "Escoge un mando a distancia desde el que buscar:",
+      "gitDecorationsColors": "Utilice la decoración de colores en el navegador.",
+      "mergeQuickPickPlaceholder": "Elige una rama para fusionar con la rama {0} actualmente activa:",
+      "missingUserInfo": "Asegúrate de configurar tu 'user.name' y 'user.email' en git.",
+      "noHistoryForError": "No hay historial disponible para {0}",
+      "noPreviousCommit": "No hay compromiso previo para modificar",
+      "noRepositoriesSelected": "No se ha seleccionado ningún repositorio.",
+      "prepositionIn": "en",
+      "repositoryNotInitialized": "El repositorio {0} aún no está inicializado.",
+      "stashChanges": "Cambios en el alijo. Pulse \"Enter\" para confirmar o \"Escape\" para cancelar.",
+      "stashChangesWithMessage": "Cambios en el alijo con mensaje: {0}. Pulse 'Enter' para confirmar o 'Escape' para cancelar.",
+      "tabTitleIndex": "{0} (índice)",
+      "tabTitleWorkingTree": "{0} (Árbol de trabajo)",
+      "toggleBlameAnnotations": "Alternar las anotaciones de culpabilidad"
+    },
+    "keybinding-schema-updater": {
+      "deprecation": "Utilice la cláusula `when` en su lugar."
+    },
+    "keymaps": {
+      "addKeybindingTitle": "Añadir Keybinding para {0}",
+      "editKeybinding": "Editar asignación de teclas...",
+      "editKeybindingTitle": "Editar enlace de teclas para {0}",
+      "editWhenExpression": "Editar cuando la expresión...",
+      "editWhenExpressionTitle": "Editar cuando Expresión para {0}",
+      "keybinding": {
+        "copy": "Copiar enlace de teclas",
+        "copyCommandId": "Copiar ID de comando de combinación de teclas",
+        "copyCommandTitle": "Copiar comando de combinación de teclas Título",
+        "edit": "Editar asignación de teclas...",
+        "editWhenExpression": "Editar vinculación de teclas cuando la expresión..."
+      },
+      "keybindingCollidesValidation": "la vinculación de teclas actualmente colisiona",
+      "requiredKeybindingValidation": "se requiere el valor del keybinding",
+      "resetKeybindingConfirmation": "¿Realmente quieres restablecer este keybinding a su valor por defecto?",
+      "resetKeybindingTitle": "Restablecer la unión de teclas para {0}",
+      "resetMultipleKeybindingsWarning": "Si existen varias combinaciones de teclas para este comando, todas ellas se restablecerán."
+    },
+    "localize": {
+      "offlineTooltip": "No se puede conectar al backend."
+    },
+    "markers": {
+      "clearAll": "Borrar todo",
+      "noProblems": "Hasta ahora no se han detectado problemas en el espacio de trabajo.",
+      "tabbarDecorationsEnabled": "Mostrar decoradores de problemas (marcadores de diagnóstico) en las barras de pestañas."
+    },
+    "memory-inspector": {
+      "addressTooltip": "Ubicación de la memoria a mostrar, una dirección o expresión que se evalúa a una dirección",
+      "ascii": "ASCII",
+      "binary": "Binario",
+      "byteSize": "Tamaño del byte",
+      "bytesPerGroup": "Bytes por grupo",
+      "closeSettings": "Cerrar Ajustes",
+      "columns": "Columnas",
+      "command": {
+        "createNewMemory": "Crear un nuevo inspector de memoria",
+        "createNewRegisterView": "Crear una nueva vista de registro",
+        "followPointer": "Siga el puntero",
+        "followPointerMemory": "Seguir el puntero en el inspector de memoria",
+        "resetValue": "Valor de reposición",
+        "showRegister": "Mostrar registro en el inspector de memoria",
+        "viewVariable": "Mostrar la variable en el inspector de memoria"
+      },
+      "data": "Datos",
+      "decimal": "Decimal",
+      "diff": {
+        "label": "Diff: {0}"
+      },
+      "diff-widget": {
+        "offset-label": "{0} Offset",
+        "offset-title": "Bytes para compensar la memoria de {0}"
+      },
+      "editable": {
+        "apply": "Aplicar cambios",
+        "clear": "Cambios claros"
+      },
+      "endianness": "Endiosamiento",
+      "extraColumn": "Extra Column",
+      "groupsPerRow": "Grupos por fila",
+      "hexadecimal": "Hexadecimal",
+      "length": "Longitud",
+      "lengthTooltip": "Número de bytes a recuperar, en decimal o hexadecimal",
+      "memory": {
+        "addressField": {
+          "memoryReadError": "Introduzca una dirección o expresión en el campo Ubicación."
+        },
+        "freeze": "Congelar la vista de la memoria",
+        "hideSettings": "Ocultar el panel de configuración",
+        "readError": {
+          "bounds": "Límites de memoria excedidos, el resultado será truncado.",
+          "noContents": "No hay contenidos de memoria disponibles actualmente."
+        },
+        "readLength": {
+          "memoryReadError": "Introduzca una longitud (número decimal o hexadecimal) en el campo Longitud."
+        },
+        "showSettings": "Mostrar el panel de configuración",
+        "unfreeze": "Descongelar la vista de la memoria",
+        "userError": "Hubo un error en la obtención de la memoria."
+      },
+      "memoryCategory": "Inspector de memoria",
+      "memoryInspector": "Inspector de memoria",
+      "memoryTitle": "Memoria",
+      "octal": "Octal",
+      "offset": "Offset",
+      "offsetTooltip": "Desplazamiento que se añade a la posición de memoria actual, cuando se navega",
+      "provider": {
+        "localsError": "No se pueden leer las variables locales. No hay sesión de depuración activa.",
+        "readError": "No se puede leer la memoria. No hay sesión de depuración activa.",
+        "writeError": "No se puede escribir en la memoria. No hay sesión de depuración activa."
+      },
+      "register": "Registro",
+      "register-widget": {
+        "filter-placeholder": "Filtro (comienza con)"
+      },
+      "registerReadError": "Hubo un error en la obtención de registros.",
+      "registers": "Registros",
+      "toggleComparisonWidgetVisibility": "Alternar la visibilidad del widget de comparación",
+      "utils": {
+        "afterBytes": "Debes cargar memoria en los dos widgets que quieras comparar. {0} no tiene memoria cargada.",
+        "bytesMessage": "Debes cargar memoria en los dos widgets que quieras comparar. {0} no tiene memoria cargada."
+      }
+    },
+    "messages": {
+      "notificationTimeout": "Las notificaciones informativas se ocultarán después de este tiempo de espera.",
+      "toggleNotifications": "Alternar las notificaciones"
+    },
+    "mini-browser": {
+      "typeUrl": "Escriba una URL"
+    },
+    "monaco": {
+      "noSymbolsMatching": "No hay símbolos que coincidan",
+      "typeToSearchForSymbols": "Escriba para buscar símbolos"
+    },
+    "navigator": {
+      "autoReveal": "Auto Reveal",
+      "clipboardWarn": "El acceso al portapapeles está denegado. Comprueba los permisos de tu navegador.",
+      "clipboardWarnFirefox": "La API del portapapeles no está disponible. Se puede activar mediante la preferencia '{0}' en la página '{1}'. A continuación, vuelva a cargar Theia. Tenga en cuenta que esto permitirá a FireFox tener acceso completo al portapapeles del sistema.",
+      "noFolderOpened": "Ninguna carpeta abierta",
+      "refresh": "Actualizar en el Explorador",
+      "reveal": "Revelar en el Explorador",
+      "toggleHiddenFiles": "Activar los archivos ocultos"
+    },
+    "output": {
+      "clearOutputChannel": "Canal de salida claro...",
+      "closeOutputChannel": "Cerrar canal de salida...",
+      "hiddenChannels": "Canales ocultos",
+      "hideOutputChannel": "Ocultar canal de salida...",
+      "maxChannelHistory": "El número máximo de entradas en un canal de salida.",
+      "outputChannels": "Canales de salida",
+      "showOutputChannel": "Mostrar canal de salida..."
+    },
+    "plugin": {
+      "blockNewTab": "Su navegador ha impedido la apertura de una nueva pestaña"
+    },
+    "plugin-dev": {
+      "alreadyRunning": "La instancia alojada ya está funcionando.",
+      "debugInstance": "Instancia de depuración",
+      "debugMode": "Uso de inspect o inspect-brk para la depuración de Node.js",
+      "devHost": "Anfitrión del desarrollo",
+      "failed": "Fallo en la ejecución de la instancia del plugin alojado: {0}",
+      "hostedPlugin": "Plugin alojado",
+      "hostedPluginRunning": "Plugin alojado: en funcionamiento",
+      "hostedPluginStarting": "Plugin alojado: Inicio",
+      "hostedPluginStopped": "Plugin alojado: Detenido",
+      "hostedPluginWatching": "Plugin alojado: Ver",
+      "instanceTerminated": "{0} se ha terminado",
+      "launchOutFiles": "Conjunto de patrones glob para localizar los archivos JavaScript generados (`${pluginPath}` se sustituirá por la ruta real del plugin).",
+      "noValidPlugin": "La carpeta especificada no contiene un plugin válido.",
+      "notRunning": "La instancia alojada no se está ejecutando.",
+      "pluginFolder": "La carpeta de plugins está configurada en: {0}",
+      "preventedNewTab": "Su navegador ha impedido la apertura de una nueva pestaña",
+      "restartInstance": "Reiniciar la instancia",
+      "running": "La instancia alojada está funcionando en:",
+      "select": "Seleccione",
+      "selectPath": "Seleccione la ruta",
+      "startInstance": "Instancia de inicio",
+      "starting": "Iniciando el servidor de instancia alojada ...",
+      "stopInstance": "Detener la instancia",
+      "unknownTerminated": "La instancia ha sido terminada",
+      "watchMode": "Ejecutar el vigilante en el plugin en desarrollo"
+    },
+    "plugin-ext": {
+      "authentication-main": {
+        "loginTitle": "Inicio de sesión"
+      },
+      "plugins": "Plugins",
+      "webviewTrace": "Controla el rastreo de la comunicación con los webviews.",
+      "webviewWarnIfUnsecure": "Advierte a los usuarios de que las vistas web se despliegan actualmente de forma insegura."
+    },
+    "preview": {
+      "openByDefault": "Abrir la vista previa en lugar del editor por defecto."
+    },
+    "property-view": {
+      "created": "Creado",
+      "directory": "Directorio",
+      "lastModified": "Última modificación",
+      "location": "Ubicación",
+      "noProperties": "No hay propiedades disponibles.",
+      "properties": "Propiedades",
+      "size": "Tamaño",
+      "symbolicLink": "Enlace simbólico"
+    },
+    "scm": {
+      "amend": "Modificar",
+      "amendHeadCommit": "Compromiso HEAD",
+      "amendLastCommit": "Modificar el último compromiso",
+      "changeRepository": "Cambiar el repositorio...",
+      "config.untrackedChanges": "Controla el comportamiento de los cambios no rastreados.",
+      "config.untrackedChanges.hidden": "oculto",
+      "config.untrackedChanges.mixed": "mixto",
+      "config.untrackedChanges.separate": "separar",
+      "history": "Historia",
+      "noRepositoryFound": "No se ha encontrado ningún repositorio",
+      "unamend": "Sin modificar",
+      "unamendCommit": "No modificar el compromiso"
+    },
+    "search-in-workspace": {
+      "includeIgnoredFiles": "Incluir archivos ignorados",
+      "noFolderSpecified": "No ha abierto o especificado una carpeta. Actualmente sólo se buscan los archivos abiertos.",
+      "resultSubset": "Esto es sólo un subconjunto de todos los resultados. Utilice un término de búsqueda más específico para reducir la lista de resultados.",
+      "searchOnEditorModification": "Busca en el editor activo cuando se modifica."
+    },
+    "secondary-window": {
+      "extract-widget": "Mover la vista a la ventana secundaria"
+    },
+    "shell-area": {
+      "secondary": "Ventana secundaria"
+    },
+    "task": {
+      "attachTask": "Adjuntar tarea...",
+      "clearHistory": "Historia clara",
+      "noTaskToRun": "No se ha encontrado ninguna tarea que ejecutar. Configurar tareas...",
+      "openUserTasks": "Abrir las tareas del usuario"
+    },
+    "terminal": {
+      "defaultProfile": "El perfil por defecto utilizado en {0}",
+      "enableCopy": "Activar ctrl-c (cmd-c en macOS) para copiar el texto seleccionado",
+      "enablePaste": "Activar ctrl-v (cmd-v en macOS) para pegar desde el portapapeles",
+      "profileArgs": "Los argumentos de shell que utiliza este perfil.",
+      "profileColor": "Un ID de color del tema del terminal para asociar con el terminal.",
+      "profileDefault": "Elija Perfil predeterminado...",
+      "profileIcon": "Un ID de codicon para asociar con el icono de terminal.\nterminal-tmux:\"$(terminal-tmux)\"",
+      "profileNew": "Nuevo Terminal (Con Perfil)...",
+      "profilePath": "La ruta del shell que utiliza este perfil.",
+      "profiles": "Los perfiles a presentar cuando se crea un nuevo terminal. Establezca la propiedad path manualmente con argumentos opcionales.\nEstablezca un perfil existente como `null` para ocultar el perfil de la lista, por ejemplo: `\"{0}\": null`.",
+      "rendererType": "Controla cómo se representa el terminal.",
+      "selectProfile": "Seleccione un perfil para el nuevo terminal",
+      "shell.deprecated": "Esto está obsoleto, la nueva forma recomendada de configurar tu shell por defecto es creando un perfil de terminal en 'terminal.integrated.profiles.{0}' y estableciendo su nombre de perfil como el predeterminado en 'terminal.integrated.defaultProfile.{0}.'",
+      "shellArgsLinux": "Los argumentos de la línea de comandos a utilizar cuando en el terminal de Linux.",
+      "shellArgsOsx": "Los argumentos de la línea de comandos a utilizar cuando en el terminal de macOS.",
+      "shellArgsWindows": "Los argumentos de la línea de comandos a utilizar cuando en el terminal de Windows.",
+      "shellLinux": "La ruta del shell que utiliza la terminal en Linux (por defecto: '{0}'}).",
+      "shellOsx": "La ruta del shell que utiliza el terminal en macOS (por defecto: '{0}'}).",
+      "shellWindows": "La ruta del shell que utiliza la terminal en Windows. (por defecto: '{0}')."
+    },
+    "test": {
+      "cancelAllTestRuns": "Cancelar todas las pruebas",
+      "testRunDefaultName": "{0} ejecute {1}",
+      "testRuns": "Pruebas"
+    },
+    "toolbar": {
+      "addCommand": "Añadir comando a la barra de herramientas",
+      "addCommandPlaceholder": "Buscar un comando para añadir a la barra de herramientas",
+      "centerColumn": "Columna central",
+      "failedUpdate": "No se ha podido actualizar el valor de '{0}' en '{1}'.",
+      "filterIcons": "Iconos del filtro",
+      "iconSelectDialog": "Seleccione un icono para '{0}'",
+      "iconSet": "Conjunto de iconos",
+      "insertGroupLeft": "Insertar separador de grupos (izquierda)",
+      "insertGroupRight": "Insertar separador de grupos (derecha)",
+      "leftColumn": "Columna izquierda",
+      "openJSON": "Personalizar la barra de herramientas (abrir JSON)",
+      "removeCommand": "Eliminar el comando de la barra de herramientas",
+      "restoreDefaults": "Restaurar la barra de herramientas por defecto",
+      "rightColumn": "Columna derecha",
+      "selectIcon": "Seleccionar icono",
+      "toggleToolbar": "Barra de herramientas",
+      "toolbarLocationPlaceholder": "¿Dónde quiere que se añada el comando?",
+      "useDefaultIcon": "Utilizar el icono por defecto"
+    },
+    "typehierarchy": {
+      "subtypeHierarchy": "Jerarquía de subtipos",
+      "supertypeHierarchy": "Jerarquía de supertipos"
+    },
+    "vsx-registry": {
+      "downloadCount": "Descargue el recuento: {0}",
+      "errorFetching": "Error en la búsqueda de extensiones.",
+      "errorFetchingConfigurationHint": "Esto podría deberse a problemas de configuración de la red.",
+      "failedInstallingVSIX": "Fallo en la instalación de {0} desde VSIX.",
+      "invalidVSIX": "El archivo seleccionado no es un plugin válido \"*.vsix\".",
+      "license": "License: {0}",
+      "recommendedExtensions": "Una lista de los nombres de las extensiones recomendadas para su uso en este espacio de trabajo.",
+      "searchPlaceholder": "Buscar extensiones en {0}",
+      "showInstalled": "Mostrar extensiones instaladas",
+      "showRecommendedExtensions": "Controla si se muestran las notificaciones de las recomendaciones de extensión.",
+      "vsx-extensions-contribution": {
+        "update-version-uninstall-error": "Error al eliminar la extensión: {0}.",
+        "update-version-version-error": "Fallo al instalar la versión {0} de {1}."
+      }
+    },
+    "webview": {
+      "goToReadme": "Ir al LÉAME",
+      "messageWarning": "            El patrón de host del punto final {0} se ha cambiado a `{1}`; el cambio de patrón puede dar lugar a vulnerabilidades de seguridad.             Consulte `{2}` para obtener más información."
+    },
+    "workspace": {
+      "compareWithEachOther": "Comparar con los demás",
+      "confirmDeletePermanently.description": "No se ha podido eliminar \"{0}\" con la papelera. Quieres eliminar permanentemente en su lugar?",
+      "confirmDeletePermanently.solution": "Puedes desactivar el uso de la papelera en las preferencias.",
+      "confirmDeletePermanently.title": "Error al borrar el archivo",
+      "confirmMessage.delete": "¿Realmente quiere eliminar los siguientes archivos?",
+      "confirmMessage.dirtyMultiple": "¿Realmente quieres borrar {0} archivos con cambios no guardados?",
+      "confirmMessage.dirtySingle": "¿Realmente quieres borrar {0} con los cambios no guardados?",
+      "confirmMessage.uriMultiple": "¿Realmente quieres borrar todos los {0} archivos seleccionados?",
+      "confirmMessage.uriSingle": "¿Realmente quieres borrar {0}?",
+      "duplicate": "Duplicado",
+      "failApply": "No se han podido aplicar los cambios al nuevo archivo",
+      "failSaveAs": "No se puede ejecutar \"{0}\" para el widget actual.",
+      "newFilePlaceholder": "Nombre del archivo",
+      "newFolderPlaceholder": "Nombre de la carpeta",
+      "noErasure": "Nota: No se borrará nada del disco",
+      "openRecentPlaceholder": "Escriba el nombre del espacio de trabajo que desea abrir",
+      "openRecentWorkspace": "Abrir el espacio de trabajo reciente...",
+      "preserveWindow": "Habilitar la apertura de espacios de trabajo en la ventana actual.",
+      "removeFolder": "¿Está seguro de que quiere eliminar la siguiente carpeta del espacio de trabajo?",
+      "removeFolders": "¿Está seguro de que quiere eliminar las siguientes carpetas del espacio de trabajo?",
+      "trashTitle": "Mover {0} a la Papelera",
+      "trustEmptyWindow": "Controla si el espacio de trabajo vacío es de confianza o no por defecto.",
+      "trustEnabled": "Controla si la confianza del espacio de trabajo está activada o no. Si se desactiva, todos los espacios de trabajo son de confianza.",
+      "trustRequest": "Una extensión solicita la confianza del espacio de trabajo, pero la API correspondiente aún no es totalmente compatible. Desea confiar en este espacio de trabajo?",
+      "untitled-cleanup": "Parece que hay muchos archivos de espacio de trabajo sin título. Por favor, compruebe {0} y elimine los archivos no utilizados.",
+      "workspaceFolderAdded": "Se ha creado un espacio de trabajo con múltiples raíces. Desea guardar la configuración del espacio de trabajo como un archivo?",
+      "workspaceFolderAddedTitle": "Carpeta añadida al espacio de trabajo"
+    }
+  }
+}

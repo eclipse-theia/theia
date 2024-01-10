@@ -1,24 +1,25 @@
-/********************************************************************************
- * Copyright (C) 2018 Ericsson
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Ericsson
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { injectable, inject } from 'inversify';
-import { DisposableCollection } from '@theia/core';
+import { injectable, inject } from '@theia/core/shared/inversify';
+import { DisposableCollection, nls } from '@theia/core';
 import { FrontendApplicationContribution, FrontendApplication, StatusBar, StatusBarAlignment } from '@theia/core/lib/browser';
 import { EditorCommands, EditorManager, EditorWidget } from '@theia/editor/lib/browser';
 import { MonacoEditor } from './monaco-editor';
+import * as monaco from '@theia/monaco-editor-core';
 
 @injectable()
 export class MonacoStatusBarContribution implements FrontendApplicationContribution {
@@ -66,13 +67,16 @@ export class MonacoStatusBarContribution implements FrontendApplicationContribut
         if (editor && editorModel) {
             const modelOptions = editorModel.getOptions();
             const tabSize = modelOptions.tabSize;
-            const useSpaceOrTab = modelOptions.insertSpaces ? 'Spaces' : 'Tab Size';
+            const indentSize = modelOptions.indentSize;
+            const spaceOrTabSizeMessage = modelOptions.insertSpaces
+                ? nls.localizeByDefault('Spaces: {0}', indentSize)
+                : nls.localizeByDefault('Tab Size: {0}', tabSize);
             this.statusBar.setElement('editor-status-tabbing-config', {
-                text: `${useSpaceOrTab}: ${tabSize}`,
+                text: spaceOrTabSizeMessage,
                 alignment: StatusBarAlignment.RIGHT,
                 priority: 10,
                 command: EditorCommands.CONFIG_INDENTATION.id,
-                tooltip: 'Select Indentation'
+                tooltip: nls.localizeByDefault('Select Indentation')
             });
         }
     }
@@ -91,7 +95,7 @@ export class MonacoStatusBarContribution implements FrontendApplicationContribut
                 alignment: StatusBarAlignment.RIGHT,
                 priority: 11,
                 command: EditorCommands.CONFIG_EOL.id,
-                tooltip: 'Select End Of Line Sequence'
+                tooltip: nls.localizeByDefault('Select End of Line Sequence')
             });
         }
     }
@@ -99,7 +103,7 @@ export class MonacoStatusBarContribution implements FrontendApplicationContribut
         this.statusBar.removeElement('editor-status-eol');
     }
 
-    protected getModel(editor: EditorWidget | undefined): monaco.editor.IModel | undefined {
+    protected getModel(editor: EditorWidget | undefined): monaco.editor.ITextModel | undefined {
         const monacoEditor = MonacoEditor.get(editor);
         return monacoEditor && monacoEditor.getControl().getModel() || undefined;
     }

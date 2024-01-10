@@ -1,0 +1,9 @@
+{
+  "npm/npmjs/-/allure-commandline/2.23.0": "Approved https://gitlab.eclipse.org/eclipsefdn/emo-team/iplab/-/issues/9379",
+  "npm/npmjs/-/eslint-plugin-deprecation/1.2.1": "Approved as 'works-with': https://dev.eclipse.org/ipzilla/show_bug.cgi?id=22573",
+  "npm/npmjs/-/jschardet/2.3.0": "Approved for Eclipse Theia: https://dev.eclipse.org/ipzilla/show_bug.cgi?id=22481",
+  "npm/npmjs/-/jsdom/11.12.0": "Approved as 'works-with': https://dev.eclipse.org/ipzilla/show_bug.cgi?id=23640https://dev.eclipse.org/ipzilla/show_bug.cgi?id=23640",
+  "npm/npmjs/-/lzma-native/8.0.6": "Approved as 'works-with': https://gitlab.eclipse.org/eclipsefdn/emo-team/iplab/-/issues/1850",
+  "npm/npmjs/-/normalize-package-data/3.0.3": "Under review, licence believed to be BSD-2-Clause: https://gitlab.eclipse.org/eclipsefdn/emo-team/iplab/-/issues/11614",
+  "npm/npmjs/-/playwright-core/1.22.2": "Approved as 'works-with': https://gitlab.eclipse.org/eclipsefdn/emo-team/iplab/-/issues/2734"
+}

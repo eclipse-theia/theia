@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2019 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2019 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -20,10 +20,9 @@
 // some code is copied and modified from:
 // https://github.com/microsoft/vscode/blob/7cf4cca47aa025a590fc939af54932042302be63/src/vs/workbench/services/themes/browser/fileIconThemeData.ts
 
-import debounce = require('lodash.debounce');
+import debounce = require('@theia/core/shared/lodash.debounce');
 import * as jsoncparser from 'jsonc-parser';
-import { injectable, inject, postConstruct } from 'inversify';
-import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { IconThemeService, IconTheme, IconThemeDefinition } from '@theia/core/lib/browser/icon-theme-service';
 import { IconThemeContribution, DeployedPlugin, UiTheme, getPluginId } from '../../common/plugin-protocol';
 import URI from '@theia/core/lib/common/uri';
@@ -31,10 +30,17 @@ import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposa
 import { Emitter } from '@theia/core/lib/common/event';
 import { RecursivePartial } from '@theia/core/lib/common/types';
 import { LabelProviderContribution, DidChangeLabelEvent, LabelProvider, URIIconReference } from '@theia/core/lib/browser/label-provider';
-import { ThemeType } from '@theia/core/lib/browser/theming';
-import { FileStatNode, DirNode, FileSystemWatcher, FileChangeEvent } from '@theia/filesystem/lib/browser';
+import { ThemeType } from '@theia/core/lib/common/theme';
+import { FileStatNode, DirNode } from '@theia/filesystem/lib/browser';
 import { WorkspaceRootNode } from '@theia/navigator/lib/browser/navigator-tree';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { FileStat, FileChangeType } from '@theia/filesystem/lib/common/files';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language';
+import { LanguageService } from '@theia/core/lib/browser/language-service';
+import { DEFAULT_ICON_SIZE, PLUGIN_FILE_ICON_CLASS } from './plugin-shared-style';
 
 export interface PluginIconDefinition {
     iconPath: string;
@@ -75,6 +81,7 @@ export interface PluginIconThemeDocument extends PluginIconsAssociation {
     light?: PluginIconsAssociation;
     highContrast?: PluginIconsAssociation;
     hidesExplorerArrows?: boolean;
+    showLanguageModeIcons?: boolean;
 }
 
 export const PluginIconThemeFactory = Symbol('PluginIconThemeFactory');
@@ -92,22 +99,31 @@ export class PluginIconThemeDefinition implements IconThemeDefinition, IconTheme
     hasFileIcons?: boolean;
     hasFolderIcons?: boolean;
     hidesExplorerArrows?: boolean;
+    showLanguageModeIcons?: boolean;
 }
+
+class PluginLanguageIconInfo {
+    hasSpecificFileIcons: boolean = false;
+    coveredLanguages: { [languageId: string]: boolean } = {};
+};
 
 @injectable()
 export class PluginIconTheme extends PluginIconThemeDefinition implements IconTheme, Disposable {
 
-    @inject(FileSystem)
-    protected readonly fileSystem: FileSystem;
-
-    @inject(FileSystemWatcher)
-    protected readonly fsWatcher: FileSystemWatcher;
+    @inject(FileService)
+    protected readonly fileService: FileService;
 
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
 
     @inject(PluginIconThemeDefinition)
     protected readonly definition: PluginIconThemeDefinition;
+
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
+
+    @inject(LanguageService)
+    protected readonly languageService: LanguageService;
 
     protected readonly onDidChangeEmitter = new Emitter<DidChangeLabelEvent>();
     readonly onDidChange = this.onDidChangeEmitter.event;
@@ -162,7 +178,7 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
         const styleElement = document.createElement('style');
         styleElement.type = 'text/css';
         styleElement.className = 'theia-icon-theme';
-        styleElement.innerHTML = this.styleSheetContent;
+        styleElement.innerText = this.styleSheetContent;
         document.head.appendChild(styleElement);
         const toRemoveStyleElement = Disposable.create(() => styleElement.remove());
         this.toDisposeStyleElement.push(toRemoveStyleElement);
@@ -192,18 +208,19 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
             this.icons.clear();
         }));
 
-        const { content } = await this.fileSystem.resolveContent(this.uri);
+        const uri = new URI(this.uri);
+        const result = await this.fileService.read(uri);
+        const content = result.value;
         const json: RecursivePartial<PluginIconThemeDocument> = jsoncparser.parse(content, undefined, { disallowComments: false });
         this.hidesExplorerArrows = !!json.hidesExplorerArrows;
 
-        const uri = new URI(this.uri);
-        const toUnwatch = await this.fsWatcher.watchFileChanges(uri);
+        const toUnwatch = this.fileService.watch(uri);
         if (this.toUnload.disposed) {
             toUnwatch.dispose();
         } else {
             this.toUnload.push(toUnwatch);
-            this.toUnload.push(this.fsWatcher.onFilesChanged(e => {
-                if (FileChangeEvent.isChanged(e, uri)) {
+            this.toUnload.push(this.fileService.onDidFilesChange(e => {
+                if (e.contains(uri, FileChangeType.ADDED) || e.contains(uri, FileChangeType.UPDATED)) {
                     this.reload();
                 }
             }));
@@ -232,21 +249,21 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
             if (themeType !== 'dark') {
                 selector = '.theia-' + themeType + ' ' + selector;
             }
-            selectors.push(selector);
             selectors.push(selector + '::before');
             definitionSelectors.set(definitionId, selectors);
         };
-        this.collectSelectors(json, acceptSelector.bind(undefined, 'dark'));
+
+        let iconInfo = this.collectSelectors(json, acceptSelector.bind(undefined, 'dark'));
         if (json.light) {
-            this.collectSelectors(json.light, acceptSelector.bind(undefined, 'light'));
+            iconInfo = this.collectSelectors(json.light, acceptSelector.bind(undefined, 'light'));
         }
         if (json.highContrast) {
-            this.collectSelectors(json.highContrast, acceptSelector.bind(undefined, 'hc'));
+            iconInfo = this.collectSelectors(json.highContrast, acceptSelector.bind(undefined, 'hc'));
         }
 
-        if (!this.icons.size) {
-            return;
-        }
+        const showLanguageModeIcons = this.showLanguageModeIcons === true
+            || json.showLanguageModeIcons === true
+            || (iconInfo.hasSpecificFileIcons && json.showLanguageModeIcons !== false);
 
         const fonts = json.fonts;
         if (Array.isArray(fonts)) {
@@ -283,8 +300,8 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
     font-family: '${firstFont.id}';
     font-size: ${firstFont.size || '150%'};
     -webkit-font-smoothing: antialiased;
-	-moz-osx-font-smoothing: grayscale;
-	vertical-align: top;
+    -moz-osx-font-smoothing: grayscale;
+    vertical-align: top;
 }
 `;
             }
@@ -299,9 +316,9 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
                     this.styleSheetContent += `${selectors.join(', ')} {
     content: ' ';
     background-image: ${cssUrl};
-	background-size: 16px;
-	background-position: left center;
-	background-repeat: no-repeat;
+    background-size: ${DEFAULT_ICON_SIZE}px;
+    background-position: left center;
+    background-repeat: no-repeat;
 }
 `;
                 }
@@ -323,6 +340,20 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
                 }
             }
         }
+
+        if (showLanguageModeIcons) {
+            for (const language of this.languageService.languages) {
+                // only show language icons if there are no more specific icons in the style document
+                if (!iconInfo.coveredLanguages[language.id]) {
+                    const icon = this.languageService.getIcon(language.id);
+                    if (icon) {
+                        this.icons.add(this.fileIcon);
+                        this.icons.add(this.languageIcon(language.id));
+                        this.icons.add(icon);
+                    }
+                }
+            }
+        }
     }
 
     protected toCSSUrl(iconPath: string | undefined): string | undefined {
@@ -337,19 +368,14 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
     }
 
     protected escapeCSS(value: string): string {
-        try {
-            return CSS.escape(value);
-        } catch {
-            // Edge and Safari on iOS does not support `CSS.escape` yet, remove it when they do
-            value = value.replace(/[^\-a-zA-Z0-9]/g, '-');
-            if (value.charAt(0).match(/[0-9\-]/)) {
-                value = '-' + value;
-            }
-            return value;
+        value = value.replace(/[^\-a-zA-Z0-9]/g, '-');
+        if (value.charAt(0).match(/[0-9\-]/)) {
+            value = '-' + value;
         }
+        return value;
     }
 
-    protected readonly fileIcon = 'theia-plugin-file-icon';
+    protected readonly fileIcon = PLUGIN_FILE_ICON_CLASS;
     protected readonly folderIcon = 'theia-plugin-folder-icon';
     protected readonly folderExpandedIcon = 'theia-plugin-folder-expanded-icon';
     protected readonly rootFolderIcon = 'theia-plugin-root-folder-icon';
@@ -363,7 +389,7 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
     protected fileNameIcon(fileName: string): string[] {
         fileName = fileName.toLowerCase();
         const extIndex = fileName.indexOf('.');
-        const icons = extIndex !== -1 ? this.fileExtensionIcon(fileName.substr(extIndex + 1)) : [];
+        const icons = extIndex !== -1 ? this.fileExtensionIcon(fileName.substring(extIndex + 1)) : [];
         icons.unshift('theia-plugin-' + this.escapeCSS(fileName) + '-file-name-icon');
         return icons;
     }
@@ -385,12 +411,16 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
         return 'theia-plugin-' + this.escapeCSS(languageId) + '-lang-file-icon';
     }
 
-    protected collectSelectors(
-        associations: RecursivePartial<PluginIconsAssociation>,
-        accept: (definitionId: string, ...icons: string[]) => void
-    ): void {
+    protected collectSelectors(associations: RecursivePartial<PluginIconsAssociation>, accept: (definitionId: string, ...icons: string[]) => void): PluginLanguageIconInfo {
+        const iconInfo = new PluginLanguageIconInfo();
         if (associations.folder) {
             accept(associations.folder, this.folderIcon);
+            if (associations.folderExpanded === undefined) {
+                // Use the same icon for expanded state (issue #12727). Check for
+                // undefined folderExpanded property to allow for
+                // "folderExpanded": null in case a developer really wants that
+                accept(associations.folder, this.folderExpandedIcon);
+            }
             this.hasFolderIcons = true;
         }
         if (associations.folderExpanded) {
@@ -436,6 +466,8 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
             for (const languageId in languageIds) {
                 accept(languageIds[languageId]!, this.languageIcon(languageId), this.fileIcon);
                 this.hasFileIcons = true;
+                iconInfo.hasSpecificFileIcons = true;
+                iconInfo.coveredLanguages[languageId] = true;
             }
         }
         const fileExtensions = associations.fileExtensions;
@@ -444,6 +476,7 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
             for (const fileExtension in fileExtensions) {
                 accept(fileExtensions[fileExtension]!, ...this.fileExtensionIcon(fileExtension), this.fileIcon);
                 this.hasFileIcons = true;
+                iconInfo.hasSpecificFileIcons = true;
             }
         }
         const fileNames = associations.fileNames;
@@ -452,8 +485,10 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
             for (const fileName in fileNames) {
                 accept(fileNames[fileName]!, ...this.fileNameIcon(fileName), this.fileIcon);
                 this.hasFileIcons = true;
+                iconInfo.hasSpecificFileIcons = true;
             }
         }
+        return iconInfo;
     }
 
     /**
@@ -489,13 +524,13 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
             return this.getFolderClassNames(element);
         }
         if (FileStatNode.is(element)) {
-            return this.getFileClassNames(element, element.fileStat.uri);
+            return this.getFileClassNames(element, element.fileStat.resource.toString());
         }
         if (FileStat.is(element)) {
             if (element.isDirectory) {
                 return this.getFolderClassNames(element);
             }
-            return this.getFileClassNames(element, element.uri);
+            return this.getFileClassNames(element, element.resource.toString());
         }
         if (URIIconReference.is(element)) {
             if (element.id === 'folder') {
@@ -515,9 +550,19 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
         const name = this.labelProvider.getName(element);
         const classNames = this.fileNameIcon(name);
         if (uri) {
-            const language = monaco.services.StaticServices.modeService.get().createByFilepathOrFirstLine(monaco.Uri.parse(uri));
-            classNames.push(this.languageIcon(language.languageIdentifier.language));
-            classNames.unshift(this.fileIcon);
+            const parsedURI = new URI(uri);
+            const isRoot = this.workspaceService.getWorkspaceRootUri(new URI(uri))?.isEqual(parsedURI);
+            if (isRoot) {
+                classNames.unshift(this.rootFolderIcon);
+            } else {
+                classNames.unshift(this.fileIcon);
+            }
+            const language = StandaloneServices.get(ILanguageService).createByFilepathOrFirstLine(parsedURI['codeUri']);
+            classNames.push(this.languageIcon(language.languageId));
+            const defaultLanguageIcon = this.languageService.getIcon(language.languageId);
+            if (defaultLanguageIcon) {
+                classNames.push(defaultLanguageIcon);
+            }
         }
         return classNames;
     }

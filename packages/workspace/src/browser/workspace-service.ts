@@ -1,35 +1,40 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { injectable, inject, postConstruct } from 'inversify';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
-import { FileSystemWatcher, FileChangeEvent } from '@theia/filesystem/lib/browser/filesystem-watcher';
-import { WorkspaceServer, THEIA_EXT, VSCODE_EXT, getTemporaryWorkspaceFileUri } from '../common';
+import { WorkspaceServer, UntitledWorkspaceService, WorkspaceFileService } from '../common';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
+import { DEFAULT_WINDOW_HASH } from '@theia/core/lib/common/window';
 import {
-    FrontendApplicationContribution, PreferenceServiceImpl, PreferenceScope, PreferenceSchemaProvider
+    FrontendApplicationContribution, PreferenceServiceImpl, PreferenceScope, PreferenceSchemaProvider, LabelProvider
 } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
-import { ILogger, Disposable, DisposableCollection, Emitter, Event, MaybePromise, MessageService } from '@theia/core';
+import { ILogger, Disposable, DisposableCollection, Emitter, Event, MaybePromise, MessageService, nls } from '@theia/core';
 import { WorkspacePreferences } from './workspace-preferences';
 import * as jsoncparser from 'jsonc-parser';
-import * as Ajv from 'ajv';
-import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
+import * as Ajv from '@theia/core/shared/ajv';
+import { FileStat, BaseStat } from '@theia/filesystem/lib/common/files';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { WindowTitleService } from '@theia/core/lib/browser/window/window-title-service';
+import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
+import { workspaceSchema, WorkspaceSchemaUpdater } from './workspace-schema-updater';
+import { IJSONSchema } from '@theia/core/lib/common/json-schema';
+import { StopReason } from '@theia/core/lib/common/frontend-application-state';
 
 /**
  * The workspace service.
@@ -37,16 +42,13 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 @injectable()
 export class WorkspaceService implements FrontendApplicationContribution {
 
-    private _workspace: FileStat | undefined;
+    protected _workspace: FileStat | undefined;
 
-    private _roots: FileStat[] = [];
-    private deferredRoots = new Deferred<FileStat[]>();
+    protected _roots: FileStat[] = [];
+    protected deferredRoots = new Deferred<FileStat[]>();
 
-    @inject(FileSystem)
-    protected readonly fileSystem: FileSystem;
-
-    @inject(FileSystemWatcher)
-    protected readonly watcher: FileSystemWatcher;
+    @inject(FileService)
+    protected readonly fileService: FileService;
 
     @inject(WorkspaceServer)
     protected readonly server: WorkspaceServer;
@@ -72,26 +74,50 @@ export class WorkspaceService implements FrontendApplicationContribution {
     @inject(MessageService)
     protected readonly messageService: MessageService;
 
-    protected applicationName: string;
+    @inject(LabelProvider)
+    protected readonly labelProvider: LabelProvider;
+
+    @inject(FileSystemPreferences)
+    protected readonly fsPreferences: FileSystemPreferences;
+
+    @inject(WorkspaceSchemaUpdater)
+    protected readonly schemaUpdater: WorkspaceSchemaUpdater;
+
+    @inject(UntitledWorkspaceService)
+    protected readonly untitledWorkspaceService: UntitledWorkspaceService;
+
+    @inject(WorkspaceFileService)
+    protected readonly workspaceFileService: WorkspaceFileService;
+
+    @inject(WindowTitleService)
+    protected readonly windowTitleService: WindowTitleService;
+
+    protected _ready = new Deferred<void>();
+    get ready(): Promise<void> {
+        return this._ready.promise;
+    }
 
     @postConstruct()
-    protected async init(): Promise<void> {
-        this.applicationName = FrontendApplicationConfigProvider.get().applicationName;
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         const wsUriString = await this.getDefaultWorkspaceUri();
         const wsStat = await this.toFileStat(wsUriString);
         await this.setWorkspace(wsStat);
 
-        this.watcher.onFilesChanged(event => {
-            if (this._workspace && FileChangeEvent.isAffected(event, new URI(this._workspace.uri))) {
+        this.fileService.onDidFilesChange(event => {
+            if (this._workspace && this._workspace.isFile && event.contains(this._workspace.resource)) {
                 this.updateWorkspace();
             }
         });
-        this.preferences.onPreferenceChanged(event => {
-            const multiRootPrefName = 'workspace.supportMultiRootWorkspace';
-            if (event.preferenceName === multiRootPrefName) {
-                this.updateWorkspace();
+        this.fsPreferences.onPreferenceChanged(event => {
+            if (event.preferenceName === 'files.watcherExclude') {
+                this.refreshRootWatchers();
             }
         });
+        this._ready.resolve();
     }
 
     /**
@@ -109,13 +135,24 @@ export class WorkspaceService implements FrontendApplicationContribution {
     }
 
     protected async doGetDefaultWorkspaceUri(): Promise<string | undefined> {
+
+        // If an empty window is explicitly requested do not restore a previous workspace.
+        // Note: `window.location.hash` includes leading "#" if non-empty.
+        if (window.location.hash === `#${DEFAULT_WINDOW_HASH}`) {
+            window.location.hash = '';
+            return undefined;
+        }
+
         // Prefer the workspace path specified as the URL fragment, if present.
         if (window.location.hash.length > 1) {
             // Remove the leading # and decode the URI.
             const wpPath = decodeURI(window.location.hash.substring(1));
             const workspaceUri = new URI().withPath(wpPath).withScheme('file');
-            const workspaceStat = await this.fileSystem.getFileStat(workspaceUri.toString());
-            if (workspaceStat && !workspaceStat.isDirectory && !await this.isWorkspaceFile(workspaceStat)) {
+            let workspaceStat: FileStat | undefined;
+            try {
+                workspaceStat = await this.fileService.resolve(workspaceUri);
+            } catch { }
+            if (workspaceStat && !workspaceStat.isDirectory && !this.isWorkspaceFile(workspaceStat)) {
                 this.messageService.error(`Not a valid workspace file: ${workspaceUri}`);
                 return undefined;
             }
@@ -128,18 +165,10 @@ export class WorkspaceService implements FrontendApplicationContribution {
     }
 
     /**
-     * Get the path of the workspace to use initially.
-     * @deprecated use `WorkspaceService#getDefaultWorkspaceUri` instead.
-     */
-    protected getDefaultWorkspacePath(): MaybePromise<string | undefined> {
-        return this.getDefaultWorkspaceUri();
-    }
-
-    /**
      * Set the URL fragment to the given workspace path.
      */
     protected setURLFragment(workspacePath: string): void {
-        window.location.hash = workspacePath;
+        window.location.hash = encodeURI(workspacePath);
     }
 
     get roots(): Promise<FileStat[]> {
@@ -164,26 +193,31 @@ export class WorkspaceService implements FrontendApplicationContribution {
 
     protected readonly toDisposeOnWorkspace = new DisposableCollection();
     protected async setWorkspace(workspaceStat: FileStat | undefined): Promise<void> {
-        if (FileStat.equals(this._workspace, workspaceStat)) {
+        if (this._workspace && workspaceStat &&
+            this._workspace.resource === workspaceStat.resource &&
+            this._workspace.mtime === workspaceStat.mtime &&
+            this._workspace.etag === workspaceStat.etag &&
+            this._workspace.size === workspaceStat.size) {
             return;
         }
         this.toDisposeOnWorkspace.dispose();
         this._workspace = workspaceStat;
         if (this._workspace) {
-            const uri = new URI(this._workspace.uri);
-            this.toDisposeOnWorkspace.push(await this.watcher.watchFileChanges(uri));
+            const uri = this._workspace.resource;
+            if (this._workspace.isFile) {
+                this.toDisposeOnWorkspace.push(this.fileService.watch(uri));
+                this.onWorkspaceLocationChangedEmitter.fire(this._workspace);
+            }
             this.setURLFragment(uri.path.toString());
         } else {
             this.setURLFragment('');
         }
         this.updateTitle();
+        await this.server.setMostRecentlyUsedWorkspace(this._workspace ? this._workspace.resource.toString() : '');
         await this.updateWorkspace();
     }
 
     protected async updateWorkspace(): Promise<void> {
-        if (this._workspace) {
-            this.toFileStat(this._workspace.uri).then(stat => this._workspace = stat);
-        }
         await this.updateRoots();
         this.watchRoots();
     }
@@ -195,7 +229,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
             rootsChanged = true;
         } else {
             for (const newRoot of newRoots) {
-                if (!this._roots.some(r => r.uri === newRoot.uri)) {
+                if (!this._roots.some(r => r.resource.toString() === newRoot.resource.toString())) {
                     rootsChanged = true;
                     break;
                 }
@@ -224,11 +258,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
                     if (valid) {
                         roots.push(valid);
                     } else {
-                        roots.push({
-                            uri: path,
-                            lastModification: Date.now(),
-                            isDirectory: true
-                        });
+                        roots.push(FileStat.dir(path));
                     }
                 }
             }
@@ -237,54 +267,64 @@ export class WorkspaceService implements FrontendApplicationContribution {
     }
 
     protected async getWorkspaceDataFromFile(): Promise<WorkspaceData | undefined> {
-        if (this._workspace && await this.fileSystem.exists(this._workspace.uri)) {
+        if (this._workspace && await this.fileService.exists(this._workspace.resource)) {
             if (this._workspace.isDirectory) {
                 return {
-                    folders: [{ path: this._workspace.uri }]
+                    folders: [{ path: this._workspace.resource.toString() }]
                 };
-            } else if (await this.isWorkspaceFile(this._workspace)) {
-                const { stat, content } = await this.fileSystem.resolveContent(this._workspace.uri);
-                const strippedContent = jsoncparser.stripComments(content);
+            } else if (this.isWorkspaceFile(this._workspace)) {
+                const stat = await this.fileService.read(this._workspace.resource);
+                const strippedContent = jsoncparser.stripComments(stat.value);
                 const data = jsoncparser.parse(strippedContent);
                 if (data && WorkspaceData.is(data)) {
                     return WorkspaceData.transformToAbsolute(data, stat);
                 }
-                this.logger.error(`Unable to retrieve workspace data from the file: '${this._workspace.uri}'. Please check if the file is corrupted.`);
+                this.logger.error(`Unable to retrieve workspace data from the file: '${this.labelProvider.getLongName(this._workspace)}'. Please check if the file is corrupted.`);
             } else {
-                this.logger.warn(`Not a valid workspace file: ${this._workspace.uri}`);
+                this.logger.warn(`Not a valid workspace file: ${this.labelProvider.getLongName(this._workspace)}`);
             }
         }
-    }
-
-    protected formatTitle(title?: string): string {
-        const name = this.applicationName;
-        return title ? `${title} — ${name}` : name;
     }
 
     protected updateTitle(): void {
-        let title: string | undefined;
+        let rootName: string | undefined;
+        let rootPath: string | undefined;
         if (this._workspace) {
-            const uri = new URI(this._workspace.uri);
-            const displayName = uri.displayName;
-            if (!this._workspace.isDirectory &&
-                (displayName.endsWith(`.${THEIA_EXT}`) || displayName.endsWith(`.${VSCODE_EXT}`))) {
-                title = displayName.slice(0, displayName.lastIndexOf('.'));
+            const displayName = this._workspace.name;
+            const fullName = this._workspace.resource.path.toString();
+            if (this.isWorkspaceFile(this._workspace)) {
+                if (this.isUntitledWorkspace(this._workspace.resource)) {
+                    const untitled = nls.localizeByDefault('Untitled (Workspace)');
+                    rootName = untitled;
+                    rootPath = untitled;
+                } else {
+                    rootName = displayName.slice(0, displayName.lastIndexOf('.'));
+                    rootPath = fullName.slice(0, fullName.lastIndexOf('.'));
+                }
             } else {
-                title = displayName;
+                rootName = displayName;
+                rootPath = fullName;
             }
         }
-        document.title = this.formatTitle(title);
+        this.windowTitleService.update({
+            rootName,
+            rootPath
+        });
     }
 
     /**
      * on unload, we set our workspace root as the last recently used on the backend.
      */
     onStop(): void {
-        this.server.setMostRecentlyUsedWorkspace(this._workspace ? this._workspace.uri : '');
+        this.server.setMostRecentlyUsedWorkspace(this._workspace ? this._workspace.resource.toString() : '');
     }
 
     async recentWorkspaces(): Promise<string[]> {
         return this.server.getRecentWorkspaces();
+    }
+
+    async removeRecentWorkspace(uri: string): Promise<void> {
+        return this.server.removeRecentWorkspace(uri);
     }
 
     /**
@@ -304,26 +344,17 @@ export class WorkspaceService implements FrontendApplicationContribution {
     }
 
     /**
-     * Returns `true` if there is an opened workspace, and multi root workspace support is enabled.
-     * @returns {boolean}
-     */
-    get isMultiRootWorkspaceEnabled(): boolean {
-        return this.opened && this.preferences['workspace.supportMultiRootWorkspace'];
-    }
-
-    /**
      * Opens directory, or recreates a workspace from the file that `uri` points to.
      */
     open(uri: URI, options?: WorkspaceInput): void {
         this.doOpen(uri, options);
     }
 
-    protected async doOpen(uri: URI, options?: WorkspaceInput): Promise<void> {
-        const rootUri = uri.toString();
-        const stat = await this.toFileStat(rootUri);
+    protected async doOpen(uri: URI, options?: WorkspaceInput): Promise<URI | undefined> {
+        const stat = await this.toFileStat(uri);
         if (stat) {
-            if (!stat.isDirectory && !await this.isWorkspaceFile(stat)) {
-                const message = `Not a valid workspace file: ${uri}`;
+            if (!stat.isDirectory && !this.isWorkspaceFile(stat)) {
+                const message = `Not a valid workspace: ${uri.path.toString()}`;
                 this.messageService.error(message);
                 throw new Error(message);
             }
@@ -334,22 +365,23 @@ export class WorkspaceService implements FrontendApplicationContribution {
                 preserveWindow: this.preferences['workspace.preserveWindow'] || !this.opened,
                 ...options
             };
-            await this.server.setMostRecentlyUsedWorkspace(rootUri);
+            await this.server.setMostRecentlyUsedWorkspace(uri.toString());
             if (preserveWindow) {
                 this._workspace = stat;
             }
-            this.openWindow(stat, { preserveWindow });
+            this.openWindow(stat, Object.assign(options ?? {}, { preserveWindow }));
             return;
         }
-        throw new Error('Invalid workspace root URI. Expected an existing directory location.');
+        throw new Error('Invalid workspace root URI. Expected an existing directory or workspace file.');
     }
 
     /**
-     * Adds a root folder to the workspace
-     * @param uri URI of the root folder being added
+     * Adds root folder(s) to the workspace
+     * @param uris URI or URIs of the root folder(s) to add
      */
-    async addRoot(uri: URI): Promise<void> {
-        await this.spliceRoots(this._roots.length, 0, uri);
+    async addRoot(uris: URI[] | URI): Promise<void> {
+        const toAdd = Array.isArray(uris) ? uris : [uris];
+        await this.spliceRoots(this._roots.length, 0, ...toAdd);
     }
 
     /**
@@ -363,19 +395,24 @@ export class WorkspaceService implements FrontendApplicationContribution {
             const workspaceData = await this.getWorkspaceDataFromFile();
             this._workspace = await this.writeWorkspaceFile(this._workspace,
                 WorkspaceData.buildWorkspaceData(
-                    this._roots.filter(root => uris.findIndex(u => u.toString() === root.uri) < 0),
-                    workspaceData!.settings
+                    this._roots.filter(root => uris.findIndex(u => u.toString() === root.resource.toString()) < 0),
+                    workspaceData
                 )
             );
+            await this.updateWorkspace();
         }
     }
 
     async spliceRoots(start: number, deleteCount?: number, ...rootsToAdd: URI[]): Promise<URI[]> {
-        if (!this._workspace) {
-            throw new Error('There is not active workspace');
+        if (!this._workspace || this._workspace.isDirectory) {
+            const untitledWorkspace = await this.getUntitledWorkspace();
+            await this.save(untitledWorkspace);
+            if (!this._workspace) {
+                throw new Error('Could not create new untitled workspace');
+            }
         }
         const dedup = new Set<string>();
-        const roots = this._roots.map(root => (dedup.add(root.uri), root.uri));
+        const roots = this._roots.map(root => (dedup.add(root.resource.toString()), root.resource.toString()));
         const toAdd: string[] = [];
         for (const root of rootsToAdd) {
             const uri = root.toString();
@@ -388,29 +425,34 @@ export class WorkspaceService implements FrontendApplicationContribution {
         if (!toRemove.length && !toAdd.length) {
             return [];
         }
-        if (this._workspace.isDirectory) {
-            const untitledWorkspace = await this.getUntitledWorkspace();
-            if (untitledWorkspace) {
-                await this.save(untitledWorkspace);
-            }
-        }
+
         const currentData = await this.getWorkspaceDataFromFile();
-        const newData = WorkspaceData.buildWorkspaceData(roots, currentData && currentData.settings);
+        const newData = WorkspaceData.buildWorkspaceData(roots, currentData);
         await this.writeWorkspaceFile(this._workspace, newData);
+        await this.updateWorkspace();
         return toRemove.map(root => new URI(root));
     }
 
-    protected async getUntitledWorkspace(): Promise<URI | undefined> {
-        return getTemporaryWorkspaceFileUri(this.envVariableServer);
+    async getUntitledWorkspace(): Promise<URI> {
+        const configDirURI = new URI(await this.envVariableServer.getConfigDirUri());
+        return this.untitledWorkspaceService.getUntitledWorkspaceUri(
+            configDirURI,
+            uri => this.fileService.exists(uri).then(exists => !exists),
+            () => this.messageService.warn(nls.localize(
+                'theia/workspace/untitled-cleanup',
+                'There appear to be many untitled workspace files. Please check {0} and remove any unused files.',
+                configDirURI.resolve('workspaces').path.fsPath())
+            ),
+        );
     }
 
-    private async writeWorkspaceFile(workspaceFile: FileStat | undefined, workspaceData: WorkspaceData): Promise<FileStat | undefined> {
+    protected async writeWorkspaceFile(workspaceFile: FileStat | undefined, workspaceData: WorkspaceData): Promise<FileStat | undefined> {
         if (workspaceFile) {
             const data = JSON.stringify(WorkspaceData.transformToRelative(workspaceData, workspaceFile));
-            const edits = jsoncparser.format(data, undefined, { tabSize: 3, insertSpaces: true, eol: '' });
+            const edits = jsoncparser.format(data, undefined, { tabSize: 2, insertSpaces: true, eol: '' });
             const result = jsoncparser.applyEdits(data, edits);
-            const stat = await this.fileSystem.setContent(workspaceFile, result);
-            return stat;
+            await this.fileService.write(workspaceFile.resource, result);
+            return this.fileService.resolve(workspaceFile.resource);
         }
     }
 
@@ -418,11 +460,14 @@ export class WorkspaceService implements FrontendApplicationContribution {
      * Clears current workspace root.
      */
     async close(): Promise<void> {
-        this._workspace = undefined;
-        this._roots.length = 0;
+        if (await this.windowService.isSafeToShutDown(StopReason.Reload)) {
+            this.windowService.setSafeToShutDown();
+            this._workspace = undefined;
+            this._roots.length = 0;
 
-        await this.server.setMostRecentlyUsedWorkspace('');
-        this.reloadWindow();
+            await this.server.setMostRecentlyUsedWorkspace('');
+            this.reloadWindow();
+        }
     }
 
     /**
@@ -448,25 +493,21 @@ export class WorkspaceService implements FrontendApplicationContribution {
             if (uriStr.endsWith('/')) {
                 uriStr = uriStr.slice(0, -1);
             }
-            const normalizedUriStr = new URI(uriStr).normalizePath().toString();
-            const fileStat = await this.fileSystem.getFileStat(normalizedUriStr);
-            if (!fileStat) {
-                return undefined;
-            }
-            return fileStat;
+            const normalizedUri = new URI(uriStr).normalizePath();
+            return await this.fileService.resolve(normalizedUri);
         } catch (error) {
             return undefined;
         }
     }
 
     protected openWindow(uri: FileStat, options?: WorkspaceInput): void {
-        const workspacePath = new URI(uri.uri).path.toString();
+        const workspacePath = uri.resource.path.toString();
 
         if (this.shouldPreserveWindow(options)) {
-            this.reloadWindow();
+            this.reloadWindow(options);
         } else {
             try {
-                this.openNewWindow(workspacePath);
+                this.openNewWindow(workspacePath, options);
             } catch (error) {
                 // Fall back to reloading the current window in case the browser has blocked the new window
                 this._workspace = uri;
@@ -475,20 +516,20 @@ export class WorkspaceService implements FrontendApplicationContribution {
         }
     }
 
-    protected reloadWindow(): void {
+    protected reloadWindow(options?: WorkspaceInput): void {
         // Set the new workspace path as the URL fragment.
         if (this._workspace !== undefined) {
-            this.setURLFragment(new URI(this._workspace.uri).path.toString());
+            this.setURLFragment(this._workspace.resource.path.toString());
         } else {
             this.setURLFragment('');
         }
 
-        window.location.reload(true);
+        this.windowService.reload();
     }
 
-    protected openNewWindow(workspacePath: string): void {
+    protected openNewWindow(workspacePath: string, options?: WorkspaceInput): void {
         const url = new URL(window.location.href);
-        url.hash = workspacePath;
+        url.hash = encodeURI(workspacePath);
         this.windowService.openNewWindow(url.toString());
     }
 
@@ -504,10 +545,10 @@ export class WorkspaceService implements FrontendApplicationContribution {
         await this.roots;
         if (this.opened) {
             for (const root of this._roots) {
-                const uri = new URI(root.uri);
+                const uri = root.resource;
                 for (const path of paths) {
-                    const fileUri = uri.resolve(path).toString();
-                    const exists = await this.fileSystem.exists(fileUri);
+                    const fileUri = uri.resolve(path);
+                    const exists = await this.fileService.exists(fileUri);
                     if (exists) {
                         return exists;
                     }
@@ -517,6 +558,11 @@ export class WorkspaceService implements FrontendApplicationContribution {
         return false;
     }
 
+    /**
+     * `true` if the current workspace is configured using a configuration file.
+     *
+     * `false` if there is no workspace or the workspace is simply a folder.
+     */
     get saved(): boolean {
         return !!this._workspace && !this._workspace.isDirectory;
     }
@@ -526,9 +572,9 @@ export class WorkspaceService implements FrontendApplicationContribution {
      * @param uri URI or FileStat of the workspace file
      */
     async save(uri: URI | FileStat): Promise<void> {
-        const uriStr = uri instanceof URI ? uri.toString() : uri.uri;
-        if (!await this.fileSystem.exists(uriStr)) {
-            await this.fileSystem.createFile(uriStr);
+        const resource = uri instanceof URI ? uri : uri.resource;
+        if (!await this.fileService.exists(resource)) {
+            await this.fileService.create(resource);
         }
         const workspaceData: WorkspaceData = { folders: [], settings: {} };
         if (!this.saved) {
@@ -542,18 +588,23 @@ export class WorkspaceService implements FrontendApplicationContribution {
                 }
             }
         }
-        let stat = await this.toFileStat(uriStr);
+        let stat = await this.toFileStat(resource);
         Object.assign(workspaceData, await this.getWorkspaceDataFromFile());
-        stat = await this.writeWorkspaceFile(stat, WorkspaceData.buildWorkspaceData(this._roots, workspaceData ? workspaceData.settings : undefined));
-        await this.server.setMostRecentlyUsedWorkspace(uriStr);
+        stat = await this.writeWorkspaceFile(stat, WorkspaceData.buildWorkspaceData(this._roots, workspaceData));
+        await this.server.setMostRecentlyUsedWorkspace(resource.toString());
+        // If saving a workspace based on an untitled workspace, delete the old file.
+        const toDelete = this.isUntitledWorkspace(this.workspace?.resource) && this.workspace!.resource;
         await this.setWorkspace(stat);
+        if (toDelete && stat && !toDelete.isEqual(stat.resource)) {
+            await this.fileService.delete(toDelete).catch(() => { });
+        }
         this.onWorkspaceLocationChangedEmitter.fire(stat);
     }
 
     protected readonly rootWatchers = new Map<string, Disposable>();
 
     protected async watchRoots(): Promise<void> {
-        const rootUris = new Set(this._roots.map(r => r.uri));
+        const rootUris = new Set(this._roots.map(r => r.resource.toString()));
         for (const [uri, watcher] of this.rootWatchers.entries()) {
             if (!rootUris.has(uri)) {
                 watcher.dispose();
@@ -564,16 +615,32 @@ export class WorkspaceService implements FrontendApplicationContribution {
         }
     }
 
+    protected async refreshRootWatchers(): Promise<void> {
+        for (const watcher of this.rootWatchers.values()) {
+            watcher.dispose();
+        }
+        await this.watchRoots();
+    }
+
     protected async watchRoot(root: FileStat): Promise<void> {
-        const uriStr = root.uri;
+        const uriStr = root.resource.toString();
         if (this.rootWatchers.has(uriStr)) {
             return;
         }
-        const watcher = this.watcher.watchFileChanges(new URI(uriStr));
-        this.rootWatchers.set(uriStr, Disposable.create(() => {
-            watcher.then(disposable => disposable.dispose());
-            this.rootWatchers.delete(uriStr);
-        }));
+        const excludes = this.getExcludes(uriStr);
+        const watcher = this.fileService.watch(new URI(uriStr), {
+            recursive: true,
+            excludes
+        });
+        this.rootWatchers.set(uriStr, new DisposableCollection(
+            watcher,
+            Disposable.create(() => this.rootWatchers.delete(uriStr))
+        ));
+    }
+
+    protected getExcludes(uri: string): string[] {
+        const patterns = this.fsPreferences.get('files.watcherExclude', undefined, uri);
+        return Object.keys(patterns).filter(pattern => patterns[pattern]);
     }
 
     /**
@@ -586,13 +653,13 @@ export class WorkspaceService implements FrontendApplicationContribution {
         if (!uri) {
             const root = this.tryGetRoots()[0];
             if (root) {
-                return new URI(root.uri);
+                return root.resource;
             }
             return undefined;
         }
         const rootUris: URI[] = [];
         for (const root of this.tryGetRoots()) {
-            const rootUri = new URI(root.uri);
+            const rootUri = root.resource;
             if (rootUri && rootUri.isEqualOrParent(uri)) {
                 rootUris.push(rootUri);
             }
@@ -604,7 +671,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
         if (!uris.length) {
             return false;
         }
-        const rootUris = new Set(this.tryGetRoots().map(root => root.uri));
+        const rootUris = new Set(this.tryGetRoots().map(root => root.resource.toString()));
         return uris.every(uri => rootUris.has(uri.toString()));
     }
 
@@ -613,10 +680,26 @@ export class WorkspaceService implements FrontendApplicationContribution {
      *
      * Example: We should not try to read the contents of an .exe file.
      */
-    protected async isWorkspaceFile(fileStat: FileStat): Promise<boolean> {
-        return fileStat.uri.endsWith(`.${THEIA_EXT}`) || fileStat.uri.endsWith(`.${VSCODE_EXT}`);
+    protected isWorkspaceFile(candidate: FileStat | URI): boolean {
+        return this.workspaceFileService.isWorkspaceFile(candidate);
     }
 
+    isUntitledWorkspace(candidate?: URI): boolean {
+        return this.untitledWorkspaceService.isUntitledWorkspace(candidate);
+    }
+
+    async isSafeToReload(withURI?: URI): Promise<boolean> {
+        return !withURI || !this.untitledWorkspaceService.isUntitledWorkspace(withURI) || new URI(await this.getDefaultWorkspaceUri()).isEqual(withURI);
+    }
+
+    /**
+     *
+     * @param key the property key under which to store the schema (e.g. tasks, launch)
+     * @param schema the schema for the property. If none is supplied, the update is treated as a deletion.
+     */
+    async updateSchema(key: string, schema?: IJSONSchema): Promise<boolean> {
+        return this.schemaUpdater.updateSchema({ key, schema });
+    }
 }
 
 export interface WorkspaceInput {
@@ -631,61 +714,38 @@ export interface WorkspaceInput {
 export interface WorkspaceData {
     folders: Array<{ path: string, name?: string }>;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    settings?: { [id: string]: any };
+    [key: string]: { [id: string]: any };
 }
 
 export namespace WorkspaceData {
-    const validateSchema = new Ajv().compile({
-        type: 'object',
-        properties: {
-            folders: {
-                description: 'Root folders in the workspace',
-                type: 'array',
-                items: {
-                    type: 'object',
-                    properties: {
-                        path: {
-                            type: 'string',
-                        }
-                    },
-                    required: ['path']
-                }
-            },
-            settings: {
-                description: 'Workspace preferences',
-                type: 'object'
-            }
-        },
-        required: ['folders']
-    });
+    const validateSchema = new Ajv().compile(workspaceSchema);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function is(data: any): data is WorkspaceData {
+    export function is(data: unknown): data is WorkspaceData {
         return !!validateSchema(data);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function buildWorkspaceData(folders: string[] | FileStat[], settings: { [id: string]: any } | undefined): WorkspaceData {
-        let roots: string[] = [];
+    export function buildWorkspaceData(folders: string[] | FileStat[], additionalFields?: Partial<WorkspaceData>): WorkspaceData {
+        const roots = new Set<string>();
         if (folders.length > 0) {
             if (typeof folders[0] !== 'string') {
-                roots = (<FileStat[]>folders).map(folder => folder.uri);
+                (<FileStat[]>folders).forEach(folder => roots.add(folder.resource.toString()));
             } else {
-                roots = <string[]>folders;
+                (<string[]>folders).forEach(folder => roots.add(folder));
             }
         }
         const data: WorkspaceData = {
-            folders: roots.map(folder => ({ path: folder }))
+            folders: Array.from(roots, folder => ({ path: folder }))
         };
-        if (settings) {
-            data.settings = settings;
+        if (additionalFields) {
+            delete additionalFields.folders;
+            Object.assign(data, additionalFields);
         }
         return data;
     }
 
     export function transformToRelative(data: WorkspaceData, workspaceFile?: FileStat): WorkspaceData {
         const folderUris: string[] = [];
-        const workspaceFileUri = new URI(workspaceFile ? workspaceFile.uri : '').withScheme('file');
+        const workspaceFileUri = new URI(workspaceFile ? workspaceFile.resource.toString() : '').withScheme('file');
         for (const { path } of data.folders) {
             const folderUri = new URI(path).withScheme('file');
             const rel = workspaceFileUri.parent.relative(folderUri);
@@ -695,10 +755,10 @@ export namespace WorkspaceData {
                 folderUris.push(folderUri.toString());
             }
         }
-        return buildWorkspaceData(folderUris, data.settings);
+        return buildWorkspaceData(folderUris, data);
     }
 
-    export function transformToAbsolute(data: WorkspaceData, workspaceFile?: FileStat): WorkspaceData {
+    export function transformToAbsolute(data: WorkspaceData, workspaceFile?: BaseStat): WorkspaceData {
         if (workspaceFile) {
             const folders: string[] = [];
             for (const folder of data.folders) {
@@ -706,11 +766,14 @@ export namespace WorkspaceData {
                 if (path.startsWith('file:///')) {
                     folders.push(path);
                 } else {
-                    folders.push(new URI(workspaceFile.uri).withScheme('file').parent.resolve(path).toString());
+                    const absolutePath = workspaceFile.resource.withScheme('file').parent.resolveToAbsolute(path)?.toString();
+                    if (absolutePath) {
+                        folders.push(absolutePath.toString());
+                    }
                 }
 
             }
-            return Object.assign(data, buildWorkspaceData(folders, data.settings));
+            return Object.assign(data, buildWorkspaceData(folders, data));
         }
         return data;
     }

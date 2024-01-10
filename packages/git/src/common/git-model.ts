@@ -1,21 +1,21 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import URI from '@theia/core/lib/common/uri';
-import { Path } from '@theia/core';
+import { Path, nls, isObject } from '@theia/core';
 
 export interface WorkingDirectoryStatus {
 
@@ -104,12 +104,14 @@ export namespace GitFileStatus {
      */
     export const toString = (status: GitFileStatus, staged?: boolean): string => {
         switch (status) {
-            case GitFileStatus.New: return !!staged ? 'Added' : 'Unstaged';
-            case GitFileStatus.Renamed: return 'Renamed';
-            case GitFileStatus.Copied: return 'Copied';
-            case GitFileStatus.Modified: return 'Modified';
-            case GitFileStatus.Deleted: return 'Deleted';
-            case GitFileStatus.Conflicted: return 'Conflicted';
+            case GitFileStatus.New: return !!staged ? nls.localize('theia/git/added', 'Added') : nls.localize('theia/git/unstaged', 'Unstaged');
+            case GitFileStatus.Renamed: return nls.localize('theia/git/renamed', 'Renamed');
+            case GitFileStatus.Copied: return nls.localize('theia/git/copied', 'Copied');
+            // eslint-disable-next-line @theia/localization-check
+            case GitFileStatus.Modified: return nls.localize('vscode.git/repository/modified', 'Modified');
+            // eslint-disable-next-line @theia/localization-check
+            case GitFileStatus.Deleted: return nls.localize('vscode.git/repository/deleted', 'Deleted');
+            case GitFileStatus.Conflicted: return nls.localize('theia/git/conflicted', 'Conflicted');
             default: throw new Error(`Unexpected Git file stats: ${status}.`);
         }
     };
@@ -117,7 +119,17 @@ export namespace GitFileStatus {
     /**
      * Returns with the human readable abbreviation of the Git file status argument. `staged` argument defaults to `false`.
      */
-    export const toAbbreviation = (status: GitFileStatus, staged?: boolean): string => GitFileStatus.toString(status, staged).charAt(0);
+    export const toAbbreviation = (status: GitFileStatus, staged?: boolean): string => {
+        switch (status) {
+            case GitFileStatus.New: return !!staged ? 'A' : 'U';
+            case GitFileStatus.Renamed: return 'R';
+            case GitFileStatus.Copied: return 'C';
+            case GitFileStatus.Modified: return 'M';
+            case GitFileStatus.Deleted: return 'D';
+            case GitFileStatus.Conflicted: return 'C';
+            default: throw new Error(`Unexpected Git file stats: ${status}.`);
+        }
+    };
 
     /**
      * It should be aligned with https://github.com/microsoft/vscode/blob/0dfa355b3ad185a6289ba28a99c141ab9e72d2be/extensions/git/src/repository.ts#L197
@@ -136,6 +148,10 @@ export namespace GitFileStatus {
             case GitFileStatus.Deleted: return 'var(--theia-gitDecoration-deletedResourceForeground)';
             case GitFileStatus.Conflicted: return 'var(--theia-gitDecoration-conflictingResourceForeground)';
         }
+    }
+
+    export function toStrikethrough(status: GitFileStatus): boolean {
+        return status === GitFileStatus.Deleted;
     }
 
 }
@@ -200,8 +216,8 @@ export namespace Repository {
         }
         return repository === repository2;
     }
-    export function is(repository: Object | undefined): repository is Repository {
-        return !!repository && 'localUri' in repository;
+    export function is(repository: unknown): repository is Repository {
+        return isObject(repository) && 'localUri' in repository;
     }
     export function relativePath(repository: Repository | URI, uri: URI | string): Path | undefined {
         const repositoryUri = new URI(Repository.is(repository) ? repository.localUri : String(repository));
@@ -423,35 +439,50 @@ export enum GitError {
     RevertConflicts = 13,
     EmptyRebasePatch = 14,
     NoMatchingRemoteBranch = 15,
-    NothingToCommit = 16,
-    NoSubmoduleMapping = 17,
-    SubmoduleRepositoryDoesNotExist = 18,
-    InvalidSubmoduleSHA = 19,
-    LocalPermissionDenied = 20,
-    InvalidMerge = 21,
-    InvalidRebase = 22,
-    NonFastForwardMergeIntoEmptyHead = 23,
-    PatchDoesNotApply = 24,
-    BranchAlreadyExists = 25,
-    BadRevision = 26,
-    NotAGitRepository = 27,
-    CannotMergeUnrelatedHistories = 28,
-    LFSAttributeDoesNotMatch = 29,
-    BranchRenameFailed = 30,
-    PathDoesNotExist = 31,
-    InvalidObjectName = 32,
-    OutsideRepository = 33,
-    LockFileAlreadyExists = 34,
+    NoExistingRemoteBranch = 16,
+    NothingToCommit = 17,
+    NoSubmoduleMapping = 18,
+    SubmoduleRepositoryDoesNotExist = 19,
+    InvalidSubmoduleSHA = 20,
+    LocalPermissionDenied = 21,
+    InvalidMerge = 22,
+    InvalidRebase = 23,
+    NonFastForwardMergeIntoEmptyHead = 24,
+    PatchDoesNotApply = 25,
+    BranchAlreadyExists = 26,
+    BadRevision = 27,
+    NotAGitRepository = 28,
+    CannotMergeUnrelatedHistories = 29,
+    LFSAttributeDoesNotMatch = 30,
+    BranchRenameFailed = 31,
+    PathDoesNotExist = 32,
+    InvalidObjectName = 33,
+    OutsideRepository = 34,
+    LockFileAlreadyExists = 35,
+    NoMergeToAbort = 36,
+    LocalChangesOverwritten = 37,
+    UnresolvedConflicts = 38,
+    GPGFailedToSignData = 39,
+    ConflictModifyDeletedInBranch = 40,
     // GitHub-specific error codes
-    PushWithFileSizeExceedingLimit = 35,
-    HexBranchNameRejected = 36,
-    ForcePushRejected = 37,
-    InvalidRefLength = 38,
-    ProtectedBranchRequiresReview = 39,
-    ProtectedBranchForcePush = 40,
-    ProtectedBranchDeleteRejected = 41,
-    ProtectedBranchRequiredStatus = 42,
-    PushWithPrivateEmail = 43
+    PushWithFileSizeExceedingLimit = 41,
+    HexBranchNameRejected = 42,
+    ForcePushRejected = 43,
+    InvalidRefLength = 44,
+    ProtectedBranchRequiresReview = 45,
+    ProtectedBranchForcePush = 46,
+    ProtectedBranchDeleteRejected = 47,
+    ProtectedBranchRequiredStatus = 48,
+    PushWithPrivateEmail = 49,
+    // End of GitHub-specific error codes
+    ConfigLockFileAlreadyExists = 50,
+    RemoteAlreadyExists = 51,
+    TagAlreadyExists = 52,
+    MergeWithLocalChanges = 53,
+    RebaseWithLocalChanges = 54,
+    MergeCommitNoMainlineOption = 55,
+    UnsafeDirectory = 56,
+    PathExistsButNotInRef = 57
 }
 
 export interface GitFileBlame {

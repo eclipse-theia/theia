@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2020 Ericsson and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2020 Ericsson and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 /**
  * This test suite assumes that we run in a NodeJS environment!
@@ -21,14 +21,8 @@
 import { spawn, execSync, SpawnOptions, ChildProcess, spawnSync } from 'child_process';
 import { Readable } from 'stream';
 import { join } from 'path';
-
 import { ShellCommandBuilder, CommandLineOptions, ProcessInfo } from './shell-command-builder';
-
-import {
-    bgRed, bgWhite, bgYellow,
-    black, green, magenta, red, white, yellow,
-    bold,
-} from 'colors/safe'; // tslint:disable-line:no-implicit-dependencies
+import * as chalk from 'chalk'; // tslint:disable-line:no-implicit-dependencies
 
 export interface TestProcessInfo extends ProcessInfo {
     shell: ChildProcess
@@ -67,9 +61,9 @@ const spawnOptions: SpawnOptions = {
 
 // Formatting options, used with `scanLines` for debugging.
 const stdoutFormat = (prefix: string) => (data: string) =>
-    `${bold(yellow(`${prefix} STDOUT:`))} ${bgYellow(black(data))}`;
+    `${chalk.bold(chalk.yellow(`${prefix} STDOUT:`))} ${chalk.bgYellow(chalk.black(data))}`;
 const stderrFormat = (prefix: string) => (data: string) =>
-    `${bold(red(`${prefix} STDERR:`))} ${bgRed(white(data))}`;
+    `${chalk.bold(chalk.red(`${prefix} STDERR:`))} ${chalk.bgRed(chalk.white(data))}`;
 
 // Default error scanner
 const errorScanner = (handle: ScanLineHandle<void>) => {
@@ -178,7 +172,7 @@ for (const shellConfig of shellConfigs) {
             }
         } catch (error) {
             console.error(error);
-            skipMessage = 'error occured';
+            skipMessage = 'error occurred';
         }
     }
 
@@ -242,16 +236,16 @@ for (const shellConfig of shellConfigs) {
                         [envName]: envValue,
                     }
                 }, [
-                    // stderr
-                    scanLines<void>(context, processInfo.shell.stderr, errorScanner, stderrFormat(context.name)),
-                    // stdout
-                    scanLines<void>(context, processInfo.shell.stdout, handle => {
-                        errorScanner(handle);
-                        if (handle.line.includes(`[${envValue}]`)) {
-                            handle.resolve();
-                        }
-                    }, stdoutFormat(context.name)),
-                ]);
+                // stderr
+                scanLines<void>(context, processInfo.shell.stderr!, errorScanner, stderrFormat(context.name)),
+                // stdout
+                scanLines<void>(context, processInfo.shell.stdout!, handle => {
+                    errorScanner(handle);
+                    if (handle.line.includes(`[${envValue}]`)) {
+                        handle.resolve();
+                    }
+                }, stdoutFormat(context.name)),
+            ]);
         });
 
         it('use problematic environment variables', async () => {
@@ -265,19 +259,19 @@ for (const shellConfig of shellConfigs) {
                         [envName]: envValue,
                     }
                 }, [
-                    // stderr
-                    scanLines<void>(context, processInfo.shell.stderr, errorScanner, stderrFormat(context.name)),
-                    // stdout
-                    scanLines<void>(context, processInfo.shell.stdout, handle => {
-                        errorScanner(handle);
-                        if (handle.line.includes(`[${envValue}]`)) {
-                            handle.resolve();
-                        }
-                        if (handle.line.includes('[undefined]')) {
-                            handle.reject(new Error(handle.text));
-                        }
-                    }, stdoutFormat(context.name)),
-                ]);
+                // stderr
+                scanLines<void>(context, processInfo.shell.stderr!, errorScanner, stderrFormat(context.name)),
+                // stdout
+                scanLines<void>(context, processInfo.shell.stdout!, handle => {
+                    errorScanner(handle);
+                    if (handle.line.includes(`[${envValue}]`)) {
+                        handle.resolve();
+                    }
+                    if (handle.line.includes('[undefined]')) {
+                        handle.reject(new Error(handle.text));
+                    }
+                }, stdoutFormat(context.name)),
+            ]);
         });
 
         it('command with complex arguments', async () => {
@@ -292,16 +286,16 @@ for (const shellConfig of shellConfigs) {
                         console.log(\`[\${left}|\${right}]\`);
                     }`],
                 }, [
-                    // stderr
-                    scanLines<void>(context, processInfo.shell.stderr, errorScanner, stderrFormat(context.name)),
-                    // stdout
-                    scanLines<void>(context, processInfo.shell.stdout, handle => {
-                        errorScanner(handle);
-                        if (handle.line.includes(`[${left}|${right}]`)) {
-                            handle.resolve();
-                        }
-                    }, stdoutFormat(context.name)),
-                ]);
+                // stderr
+                scanLines<void>(context, processInfo.shell.stderr!, errorScanner, stderrFormat(context.name)),
+                // stdout
+                scanLines<void>(context, processInfo.shell.stdout!, handle => {
+                    errorScanner(handle);
+                    if (handle.line.includes(`[${left}|${right}]`)) {
+                        handle.resolve();
+                    }
+                }, stdoutFormat(context.name)),
+            ]);
         });
 
     });
@@ -352,8 +346,8 @@ async function testCommandLine(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<any> {
     const commandLine = shellCommandBuilder.buildCommand(processInfo, options);
-    debug(`${bold(white(`${context.name} STDIN:`))} ${bgWhite(black(displayWhitespaces(commandLine)))}`);
-    processInfo.shell.stdin.write(commandLine + context.submit);
+    debug(`${chalk.bold(chalk.white(`${context.name} STDIN:`))} ${chalk.bgWhite(chalk.black(displayWhitespaces(commandLine)))}`);
+    processInfo.shell.stdin!.write(commandLine + context.submit);
     return Promise.race(firstOf);
 }
 
@@ -366,9 +360,9 @@ function createShell(
     shellArguments: string[] = []
 ): TestProcessInfo {
     const shell = spawn(shellExecutable, shellArguments, spawnOptions);
-    debug(magenta(`${bold(`${context.name} SPAWN:`)} ${shellExecutable} ${shellArguments.join(' ')}`));
-    shell.on('close', (code, signal) => debug(magenta(
-        `${bold(`${context.name} CLOSE:`)} ${shellExecutable} code(${code}) signal(${signal})`
+    debug(chalk.magenta(`${chalk.bold(`${context.name} SPAWN:`)} ${shellExecutable} ${shellArguments.join(' ')}`));
+    shell.on('close', (code, signal) => debug(chalk.magenta(
+        `${chalk.bold(`${context.name} CLOSE:`)} ${shellExecutable} code(${code}) signal(${signal})`
     )));
     return {
         executable: shellExecutable,
@@ -409,21 +403,21 @@ async function scanLines<T = void>(
                             if (!context.resolved) {
                                 context.resolve();
                                 resolve(value);
-                                debug(bold(green(`${context.name} SCANLINES RESOLVED`)));
+                                debug(chalk.bold(chalk.green(`${context.name} SCANLINES RESOLVED`)));
                             }
                         },
                         reject: (reason?: Error) => {
                             if (!context.resolved) {
                                 context.resolve();
                                 reject(reason);
-                                debug(bold(red(`${context.name} SCANLINES REJECTED`)));
+                                debug(chalk.bold(chalk.red(`${context.name} SCANLINES REJECTED`)));
                             }
                         },
                         line,
                         text,
                     });
                 } catch (error) {
-                    debug(bold(red(`${context.name} SCANLINES THROWED`)));
+                    debug(chalk.bold(chalk.red(`${context.name} SCANLINES THROWED`)));
                     context.resolve();
                     reject(error);
                     break;
@@ -485,7 +479,7 @@ class TestCaseContext {
     finalize(): void {
         if (!this.resolved) {
             this.resolve();
-            debug(red(`${bold(`${this.name} CONTEXT:`)} context wasn't resolved when finalizing, resolving!`));
+            debug(chalk.red(`${chalk.bold(`${this.name} CONTEXT:`)} context wasn't resolved when finalizing, resolving!`));
         }
     }
 

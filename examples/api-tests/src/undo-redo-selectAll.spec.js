@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2020 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2020 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 // @ts-check
 describe('Undo, Redo and Select All', function () {
@@ -20,7 +20,6 @@ describe('Undo, Redo and Select All', function () {
 
     const { assert } = chai;
 
-    const Uri = require('@theia/core/lib/common/uri');
     const { animationFrame } = require('@theia/core/lib/browser/browser');
     const { DisposableCollection } = require('@theia/core/lib/common/disposable');
     const { CommonCommands } = require('@theia/core/lib/browser/common-frontend-contribution');
@@ -32,6 +31,8 @@ describe('Undo, Redo and Select All', function () {
     const { ApplicationShell } = require('@theia/core/lib/browser/shell/application-shell');
     const { MonacoEditor } = require('@theia/monaco/lib/browser/monaco-editor');
     const { ScmContribution } = require('@theia/scm/lib/browser/scm-contribution');
+    const { Range } = require('@theia/monaco-editor-core/esm/vs/editor/common/core/range');
+    const { PreferenceService, PreferenceScope } = require('@theia/core/lib/browser');
 
     const container = window.theia.container;
     const editorManager = container.get(EditorManager);
@@ -41,15 +42,17 @@ describe('Undo, Redo and Select All', function () {
     const navigatorContribution = container.get(FileNavigatorContribution);
     const shell = container.get(ApplicationShell);
     const scmContribution = container.get(ScmContribution);
+    /** @type {PreferenceService} */
+    const preferenceService = container.get(PreferenceService)
 
-    const rootUri = new Uri.default(workspaceService.tryGetRoots()[0].uri);
+    const rootUri = workspaceService.tryGetRoots()[0].resource;
     const fileUri = rootUri.resolve('webpack.config.js');
 
     const toTearDown = new DisposableCollection();
 
     /**
      * @template T
-     * @param {() => Promise<T> | T} condition
+     * @param {() => Promise<T> | T} condition
      * @returns {Promise<T>}
      */
     function waitForAnimation(condition) {
@@ -58,11 +61,12 @@ describe('Undo, Redo and Select All', function () {
             do {
                 await animationFrame();
             } while (!condition());
-            resolve();
+            resolve(undefined);
         });
     }
-
-    before(() => {
+    const originalValue = preferenceService.get('files.autoSave', undefined, rootUri.toString());
+    before(async () => {
+        await preferenceService.set('files.autoSave', 'off', undefined, rootUri.toString());
         shell.leftPanelHandler.collapse();
     });
 
@@ -79,7 +83,8 @@ describe('Undo, Redo and Select All', function () {
         await editorManager.closeAll({ save: false });
     });
 
-    after(() => {
+    after(async () => {
+        await preferenceService.set('files.autoSave', originalValue, undefined, rootUri.toString());
         shell.leftPanelHandler.collapse();
     });
 
@@ -88,10 +93,10 @@ describe('Undo, Redo and Select All', function () {
      */
     async function assertInEditor(widget) {
         const originalContent = widget.editor.document.getText();
-        const editor = /** @type {MonacoEditor} */ (MonacoEditor.get(widget));
+        const editor = /** @type {MonacoEditor} */ (MonacoEditor.get(widget));
         editor.getControl().pushUndoStop();
         editor.getControl().executeEdits('test', [{
-            range: new monaco.Range(1, 1, 1, 1),
+            range: new Range(1, 1, 1, 1),
             text: 'A'
         }]);
         editor.getControl().pushUndoStop();

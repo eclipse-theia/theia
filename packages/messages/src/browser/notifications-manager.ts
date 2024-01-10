@@ -1,26 +1,26 @@
-/********************************************************************************
- * Copyright (C) 2019 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2019 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { injectable, inject, postConstruct } from 'inversify';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { MessageClient, MessageType, Message as PlainMessage, ProgressMessage, ProgressUpdate, CancellationToken } from '@theia/core/lib/common';
 import { deepClone } from '@theia/core/lib/common/objects';
 import { Emitter } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { Md5 } from 'ts-md5';
-import throttle = require('lodash.throttle');
+import throttle = require('@theia/core/shared/lodash.throttle');
 import { NotificationPreferences } from './notification-preferences';
 import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
 import { OpenerService } from '@theia/core/lib/browser';
@@ -66,8 +66,12 @@ export class NotificationManager extends MessageClient {
     protected readonly onUpdatedEmitter = new Emitter<NotificationUpdateEvent>();
     readonly onUpdated = this.onUpdatedEmitter.event;
     protected readonly fireUpdatedEvent = throttle(() => {
-        const notifications = deepClone(Array.from(this.notifications.values()));
-        const toasts = deepClone(Array.from(this.toasts.values()));
+        const notifications = deepClone(Array.from(this.notifications.values()).filter((notification: Notification) =>
+            notification.message
+        ));
+        const toasts = deepClone(Array.from(this.toasts.values()).filter((toast: Notification) =>
+            toast.message
+        ));
         const visibilityState = this.visibilityState;
         this.onUpdatedEmitter.fire({ notifications, toasts, visibilityState });
     }, 250, { leading: true, trailing: true });
@@ -78,15 +82,23 @@ export class NotificationManager extends MessageClient {
 
     protected notificationToastsVisibleKey: ContextKey<boolean>;
     protected notificationCenterVisibleKey: ContextKey<boolean>;
+    protected notificationsVisible: ContextKey<boolean>;
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         this.notificationToastsVisibleKey = this.contextKeyService.createKey<boolean>('notificationToastsVisible', false);
         this.notificationCenterVisibleKey = this.contextKeyService.createKey<boolean>('notificationCenterVisible', false);
+        this.notificationsVisible = this.contextKeyService.createKey<boolean>('notificationsVisible', false);
     }
+
     protected updateContextKeys(): void {
         this.notificationToastsVisibleKey.set(this.toastsVisible);
         this.notificationCenterVisibleKey.set(this.centerVisible);
+        this.notificationsVisible.set(this.toastsVisible || this.centerVisible);
     }
 
     get toastsVisible(): boolean {
@@ -108,6 +120,9 @@ export class NotificationManager extends MessageClient {
     hideCenter(): void {
         this.setVisibilityState('hidden');
     }
+    showCenter(): void {
+        this.setVisibilityState('center');
+    }
     toggleCenter(): void {
         this.setVisibilityState(this.centerVisible ? 'hidden' : 'center');
     }
@@ -124,8 +139,8 @@ export class NotificationManager extends MessageClient {
             return;
         }
         this.deferredResults.delete(messageId);
-        if (this.centerVisible && this.notifications.size === 0) {
-            this.visibilityState = 'hidden';
+        if ((this.centerVisible && !this.notifications.size) || (this.toastsVisible && !this.toasts.size)) {
+            this.setVisibilityState('hidden');
         }
         result.resolve(action);
         this.fireUpdatedEvent();
@@ -162,7 +177,7 @@ export class NotificationManager extends MessageClient {
         this.fireUpdatedEvent();
     }
 
-    showMessage(plainMessage: PlainMessage): Promise<string | undefined> {
+    override showMessage(plainMessage: PlainMessage): Promise<string | undefined> {
         const messageId = this.getMessageId(plainMessage);
 
         let notification = this.notifications.get(messageId);
@@ -233,7 +248,7 @@ export class NotificationManager extends MessageClient {
         return String(Md5.hashStr(`[${m.type}] ${m.text} : ${(m.actions || []).join(' | ')};`));
     }
 
-    async showProgress(messageId: string, plainMessage: ProgressMessage, cancellationToken: CancellationToken): Promise<string | undefined> {
+    override async showProgress(messageId: string, plainMessage: ProgressMessage, cancellationToken: CancellationToken): Promise<string | undefined> {
         let notification = this.notifications.get(messageId);
         if (!notification) {
             const message = this.contentRenderer.renderMessage(plainMessage.text);
@@ -261,7 +276,7 @@ export class NotificationManager extends MessageClient {
         return result.promise;
     }
 
-    async reportProgress(messageId: string, update: ProgressUpdate, originalMessage: ProgressMessage, cancellationToken: CancellationToken): Promise<void> {
+    override async reportProgress(messageId: string, update: ProgressUpdate, originalMessage: ProgressMessage, cancellationToken: CancellationToken): Promise<void> {
         const notification = this.find(messageId);
         if (!notification) {
             return;
@@ -269,8 +284,11 @@ export class NotificationManager extends MessageClient {
         if (cancellationToken.isCancellationRequested) {
             this.clear(messageId);
         } else {
-            notification.message = update.message ? `${originalMessage.text}: ${update.message}` : originalMessage.text;
-            notification.progress = this.toPlainProgress(update);
+            const textMessage = originalMessage.text && update.message ? `${originalMessage.text}: ${update.message}` : originalMessage.text || update?.message;
+            if (textMessage) {
+                notification.message = this.contentRenderer.renderMessage(textMessage);
+            }
+            notification.progress = this.toPlainProgress(update) || notification.progress;
         }
         this.fireUpdatedEvent();
     }

@@ -1,161 +1,150 @@
 # Publishing
 
-In order to release one should:
+The documentation describes the various steps and information regarding the release of Eclipse Theia for maintainers.
 
-- update the release page (Pre-release)
-- announce upcoming release
-- pre-publishing steps
-- login to the npm registry
-- publish packages
-- commit updated versions
-- reset local HEAD to match release commit
-- tag the published version
-- announce release is done
-- update the release page (Post-release)
+## Release Procedure
 
-## Updating the release page on Eclipse Foundation (Pre-release)
+- [**Pre-Release Steps**](#pre-release-steps)
+  - [Yarn Upgrade](#yarn-upgrade)
+  - [Announce Release](#announce-release)
+  - [Localization](#localization)
+  - [Changelog](#changelog)
+  - [Update Milestone](#update-milestone)
+- [**Release**](#publishing)
+  - [Community Releases](#community-releases)
+- [**Post-Release Steps**](#post-release-steps)
+  - [Eclipse Release](#eclipse-release)
+  - [Announce Release is Completed](#announce-release-is-completed)
+  - [Update Future Milestones](#update-future-milestones)
+  - [Publish GitHub Pages](#publish-github-pages)
+- [**Troubleshooting**](#troubleshooting)
+  - [**Failures During Publishing**](#failures-during-publishing)
 
-`One week` before the release, the project's release page should be updated in order to announce upcoming changes.
+## Pre-Release Steps
 
-Login to [Eclipse Foundation Theia project page]( https://projects.eclipse.org/projects/ecd.theia)
-- On the right side panel, select Release / Create a new release
+### Yarn Upgrade
 
-    Create a new version
-    - Name: enter the new version for this release. (ex: 1.2.0).
-    - Date: enter the date for this release.
+In general, it is recommended to perform a `yarn upgrade` on the repository prior to a release to update the `yarn.lock`.
+The upgrade helps to:
 
-    Select the edit tab
-    - In "The Basic" section
-        - Select the  "Type A" in the IP Due Diligence type.
-    - In the "Project Plan"
-        - Deliverables section
-            - Paste the content of the changelog.md.
-        - Compatibility section
-            - Paste the content of the "Breaking changes"
+- Better represents what adopters will pull during a release.
+- Validate dependencies with our declared version ranges.
+- Fix known security vulnerabilities from dependencies.
 
+In order to successfully perform a `yarn upgrade` one must:
 
-- When completing the edition, select "Save" at the bottom of the page.
-- To confirm the release is successful,
-    - Open the page https://projects.eclipse.org/projects/ecd.theia
-        - Select the version you just created.
-        - Open the Review plan section, you should see the data provided before.
+- Perform a `yarn upgrade` at the root of the repository.
+- Fix any potential compilation errors, typing errors, and failing tests that may have been introduced.
+- Confirm licenses and wait for the "IP Check" to complete ([example](https://gitlab.eclipse.org/eclipsefdn/emo-team/iplab/-/issues/9377)).
 
-## Announce upcoming release
+### Announce Release
 
-It's good to give a heads-up to the Theia developers some hours before a release. One can use whatever forum is appropriate. At the time of writing this is `Discourse`. Here is an [example](https://community.theia-ide.org/t/0-11-0-release/373).
+It is a good idea to give a heads-up to developers and the community some hours before a release.
+At the time of writing this is [Discourse](https://community.theia-ide.org/). Here is an [example](https://community.theia-ide.org/t/eclipse-theia-v1-40-0-release/3112/5).
 
-## Pre-Publishing Steps
+### Localization
 
-Before publishing it's important to make sure that a functional Theia application can be made from the latest `next` version of the platform. Else we will have problems with "latest" after publishing.
+The localization (`nls`) updates should be performed before a release ([example](https://github.com/eclipse-theia/theia/pull/12665)).
+To help we have an [automatic translation](https://github.com/eclipse-theia/theia/actions/workflows/translation.yml) workflow which can be triggered.
+Note that due to the required CI check (`lint`) we will need for force-push the branch that the bot creates to properly trigger CI.
 
-One easy way is to use the theia-apps repo CI:
+### Changelog
 
-- Make sure that there is no pending build on Theia master, otherwise a new "next" version might be published while we validate the current "next".
+The [changelog](https://github.com/eclipse-theia/theia/blob/master/CHANGELOG.md) should be updated and merged for the release.
+The updates should document the release as thoroughly as possible:
 
-- Go in the theia-apps repo [here](https://github.com/theia-ide/theia-apps/commits/master) and identify the latest commit. There should be an icon next to it; either a red X or a green checkmark. Click on it to go the Travis page. There re-trigger the build. We need to make sure that at least the various "next" builds pass CI.If it doesn't, it needs to be fixed before continuing.
+- Notable new features, improvements and bug fixes.
+- Potential breaking changes.
 
-- in case the theia-app images fail CI for reasons not related to the `next` Theia platform extensions (e.g. none of the images currently pass CI including `latest`), a fallback alternative is to build and briefly test one Theia app locally using the `next` version of a good subset of the platform extensions.
+The `changelog` should follow the same format as previous releases:
 
-- Update the forum release post to ask committers to hold-off merging any PR while the release is ongoing.
+- Include the version, and date.
+- Add a link to the appropriate milestone.
+- Document all breaking changes in a separate section.
+- Entries should be formatted in the following way:
+  - Prefix by their most appropriate extension name (ex: `[core]`).
+  - Add a link to their corresponding pull-request.
+  - Should be in alphabetical order.
+  - Should be in the past tense (ex: 'Added support...').
 
-## Login to the npm registry
+### Update Milestone
 
-Follow this [instruction](https://docs.npmjs.com/cli/adduser) to login to the npm registry with a user account.
+The given release [milestone](https://github.com/eclipse-theia/theia/milestones) should be updated to include all commits that composed the release.
+Generally, milestones are automatically added on merge but not necessarily for forks. It is therefore important to manually add such contributions to the milestone for the time being.
 
-If you don't have an account contact [Theia organization](https://www.npmjs.com/~theia) to request one.
+## Release
 
-## Publishing packages
+The release instructions are as follows:
 
-    yarn run publish
+- Checkout `master` with the latest changes (`git pull` to pull the latest changes).
+- Confirm the latest changes are present (`git log`).
+- Build the changes (`yarn`).
+- Confirm the changes are built (individual `@theia` extensions should have their `lib/` folders present).
+- Perform the release using `yarn publish:latest` - choose an appropriate version.
+- Keep the `packages/core/README.md` updates in a separate commit ([example](https://github.com/eclipse-theia/theia/commit/21fa2ec688e4a8bcf10203d6dc0f730af43a7f58)).
+- Prepare a release - create a branch with the pattern `release/x.y.z` (ex: `release/1.40.x`).
+- Once approved, merge using `Rebase and Merge` (**DO NOT `Squash and Merge`**).
+- Once the pull-request is merged, pull the changes locally and tag the publishing commit (ex: `git tag -a "${version} ${sha} -m "${version}"`).
+- Publish the tag to GitHub.
+- Create a GitHub release:
+  - Navigate to the releases [page](https://github.com/eclipse-theia/theia/releases).
+  - Select the _"Draft a new release"_ button.
+  - Input the appropriate release `tag` version (ex: `v1.2.0`).
+  - Input the appropriate release `name` (ex: `Eclipse Theia v1.2.0`).
+  - Use the `generate release notes` button to generate the list of contributors (including new ones), and format them similarly to other releases.
+  - Include a release `description` to include a reference to the `changelog` at the respective `sha` and release version.
+  - Include a reference to the migration guide in the release description.
+  - Select _"Publish Release"_ bottom at the bottom of the page.
+  - For additional information, please consult the official GitHub documentation regarding [creating releases](https://help.github.com/en/github/administering-a-repository/managing-releases-in-a-repository#creating-a-release).
 
-This command will rebuild all packages, test them, publish to npm and bump versions.
+### Community Releases
 
-If publishing of an individual package failed then publish it with `npm publish` from its root after resolving outstanding issues.
+For the most part community releases are similar to regular releases but with fewer steps (ex: no need to submit a pull-request).
+In order to perform a community releases we want to:
 
-## Commit updated versions
+- Prepare the community release branch which branches off from a specific release `tag`.
+- Cherry-pick any changes we want to apply on top of the `tag` (ex: patches that fix regressions, security vulnerabilities).
+- Perform the release as usual (we want to use a `dist-tag` of `community`).
 
-    git add *
-    git commit -m "publish v${published.version}" -s
-    git push ${remote for main Theia repo} master:${branch}
+## Post-Release Steps
 
-The version picked during package publishing should be used as `${published.version}`.
-
-For example, if you picked `0.1.0` as a version and your git remote for the main Theia repo is named `origin`, then you should run:
-
-    git add *
-    git commit -m "publish v0.1.0" -s
-    git push origin master:release_0_1_0
-
-Then from the project's [main page](https://github.com/eclipse-theia/theia), create a pull request from the branch just pushed. Have another committer on standby to quickly review and approve the PR, then merge it.
-
-## Reset local HEAD to match release commit
-
-(so that the tag we will add is attached to correct commit)
-
-    git fetch ${remote for main Theia repo}
-    git reset --hard ${remote for main Theia repo}/master
-
-For example:
-
-    git fetch origin
-    git reset --hard origin/master
-
-## Tagging the published version
-
-**Warning:** Continue only if all packages have been published successfully. Otherwise work on resolving issues and publishing failed packages.
-
-    git tag v${published.version}
-    git push origin v${published.version}
-
-The version picked during package publishing should be used as `${published.version}`.
-
-For example, if you picked `0.1.0` as a version then you should run:
-
-    git tag v0.1.0
-    git push origin v0.1.0
-
-To confirm that the tagging was correctly done, check the repo's [releases](https://github.com/eclipse-theia/theia/releases) page and confirm the release just done is listed there.
-
-## Create a release
-
-The next step of the release process is to create a new **release** on the GitHub [releases](https://github.com/eclipse-theia/theia/releases) page for the project. This will create a new release, attach the necessary assets (`.zip`, `tar.gz`, changelog link), and also notify GitHub subscribers of a new release.
-
-In order to create a new release on GitHub, one must:
-
-- navigate to the [tags](https://github.com/eclipse-theia/theia/tags) page for the project
-- select the latest tag, and click `create release` from the 'more' (`...`) toolbar item
-- update the release description to include a reference to the `changelog` at the respective `sha` and release version:
-
-   ```md
-   [Release Changelog](https://github.com/eclipse-theia/theia/blob/${sha}/CHANGELOG.md#${changelog-version-header})
-   ```
-
-   For example (version `v1.2.0`):
-
-   ```md
-   [Release Changelog](https://github.com/eclipse-theia/theia/blob/2aa2fa1ab091ec36ef851c4e364b322301cddb40/CHANGELOG.md#v120)
-   ```
-
-- select `create release` at the bottom of the page
-
-For additional information, please consult the official GitHub documentation regarding [creating releases](https://help.github.com/en/github/administering-a-repository/managing-releases-in-a-repository#creating-a-release).
-
-## Updating the release page on Eclipse Foundation (Post-release)
+### Eclipse Release
 
 - Login to [Eclipse Foundation Theia project page]( https://projects.eclipse.org/projects/ecd.theia)
--   Select the edit tab from the current release
-    - In the "Project Plan"
-        - Deliverables section
-            - Paste the content of the new changelog.md.
-        - Compatibility section
-            - Paste the content of the "Breaking changes"
+- On the right side menu, select `Release` / `Create a new release`
+  - `Release Date`: enter the date for the release.
+  - `Name`: enter the version of the release (ex: `1.40.0`).
+- Select `Create and edit`.
+- In the `projects` section:
+  - Add the changelog link to `deliverables`.
+  - Add the breaking changes link to `compatibility`.
+- Save the changes.
+- To confirm the release is successful:
+  - Open the [project page](https://projects.eclipse.org/projects/ecd.theia)
+    - Select the version you just created.
+    - Open the Review plan section, you should see the data provided before.
 
-- When completing the edition, select "Save" at the bottom of the page.
-- To confirm the release is successful,
-    - Open the page https://projects.eclipse.org/projects/ecd.theia
-        - Select the version you just created.
-        - Open the Review plan section, you should see the data provided before.
+### Announce Release is Completed
 
-## Announce release is done
+- Update the forum release post to announce that the release has completed.
+- Submit to "Theia News", so that a Tweet will be created by the Twitter managers. Use [this template](https://github.com/eclipse-theia/theia/wiki/Eclipse-Theia-Twitter-strategy#release-announcement-no-review) for the message and post it [here](https://forms.gle/ccS6qawpS54FQZht5).
 
-- Update the forum release post to announce that the release is done.
+### Update Future Milestones
+
+- Close current release [milestone](https://github.com/eclipse-theia/theia/milestones).
+- Create the next two milestones in the case they do not already exist. Generally, the release is performed on the last Thursday of the month, but there may be exceptions (bug fix release, holidays, etc.).
+
+### Publish GitHub Pages
+
+Following a release we should publish the `latest` documentation with our [GitHub Pages](https://github.com/eclipse-theia/theia/actions/workflows/publish-gh-pages.yml) workflow. The publishing should be performed manually using the `manual_dispatch` job.
+
+## Troubleshooting
+
+### Failures During Publishing
+
+Sometimes `lerna` will fail during publishing (ex: socket errors). If such a case happens we should `git reset --hard` and retry publishing of only unpublished
+packages using a workaround command:
+
+```bash
+npx lerna publish from-package --no-git-reset --no-git-tag-version --no-push
+```

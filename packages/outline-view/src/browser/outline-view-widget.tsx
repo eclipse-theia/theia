@@ -1,35 +1,39 @@
-/********************************************************************************
- * Copyright (C) 2017-2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017-2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import {
     TreeWidget,
     TreeNode,
     NodeProps,
     SelectableTreeNode,
+    CompositeTreeNode,
     TreeProps,
     ContextMenuRenderer,
     TreeModel,
-    ExpandableTreeNode
+    ExpandableTreeNode,
+    codicon
 } from '@theia/core/lib/browser';
-import { OutlineViewTreeModel } from './outline-view-tree';
-import { Message } from '@phosphor/messaging';
-import { Emitter } from '@theia/core';
-import { CompositeTreeNode } from '@theia/core/lib/browser';
-import * as React from 'react';
+import { OutlineViewTreeModel } from './outline-view-tree-model';
+import { Message } from '@theia/core/shared/@phosphor/messaging';
+import { Emitter, Event, isObject, Mutable, UriSelection } from '@theia/core';
+import * as React from '@theia/core/shared/react';
+import { Range } from '@theia/core/shared/vscode-languageserver-protocol';
+import URI from '@theia/core/lib/common/uri';
+import { nls } from '@theia/core/lib/common/nls';
 
 /**
  * Representation of an outline symbol information node.
@@ -58,6 +62,10 @@ export namespace OutlineSymbolInformationNode {
     export function is(node: TreeNode): node is OutlineSymbolInformationNode {
         return !!node && SelectableTreeNode.is(node) && 'iconClass' in node;
     }
+
+    export function hasRange(node: unknown): node is { range: Range } {
+        return isObject<{ range: Range }>(node) && Range.is(node.range);
+    }
 }
 
 export type OutlineViewWidgetFactory = () => OutlineViewWidget;
@@ -66,21 +74,32 @@ export const OutlineViewWidgetFactory = Symbol('OutlineViewWidgetFactory');
 @injectable()
 export class OutlineViewWidget extends TreeWidget {
 
+    static LABEL = nls.localizeByDefault('Outline');
+
     readonly onDidChangeOpenStateEmitter = new Emitter<boolean>();
 
+    protected readonly onDidUpdateEmitter = new Emitter<void>();
+    readonly onDidUpdate: Event<void> = this.onDidUpdateEmitter.event;
+
     constructor(
-        @inject(TreeProps) protected readonly treeProps: TreeProps,
-        @inject(OutlineViewTreeModel) model: OutlineViewTreeModel,
-        @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer
+        @inject(TreeProps) treeProps: TreeProps,
+        @inject(OutlineViewTreeModel) override readonly model: OutlineViewTreeModel,
+        @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer
     ) {
         super(treeProps, model, contextMenuRenderer);
 
         this.id = 'outline-view';
-        this.title.label = 'Outline';
-        this.title.caption = 'Outline';
+        this.title.label = OutlineViewWidget.LABEL;
+        this.title.caption = OutlineViewWidget.LABEL;
         this.title.closable = true;
-        this.title.iconClass = 'fa outline-view-tab-icon';
+        this.title.iconClass = codicon('symbol-class');
         this.addClass('theia-outline-view');
+    }
+
+    @postConstruct()
+    protected override init(): void {
+        super.init();
+        this.toDispose.push(this.model.onExpansionChanged(() => this.onDidUpdateEmitter.fire()));
     }
 
     /**
@@ -91,13 +110,17 @@ export class OutlineViewWidget extends TreeWidget {
         // Gather the list of available nodes.
         const nodes = this.reconcileTreeState(roots);
         // Update the model root node, appending the outline symbol information nodes as children.
-        this.model.root = {
+        this.model.root = this.getRoot(nodes);
+    }
+
+    protected getRoot(children: TreeNode[]): CompositeTreeNode {
+        return {
             id: 'outline-view-root',
-            name: 'Outline Root',
+            name: OutlineViewWidget.LABEL,
             visible: false,
-            children: nodes,
+            children,
             parent: undefined
-        } as CompositeTreeNode;
+        };
     }
 
     /**
@@ -120,24 +143,24 @@ export class OutlineViewWidget extends TreeWidget {
         return nodes;
     }
 
-    protected onAfterHide(msg: Message): void {
+    protected override onAfterHide(msg: Message): void {
         super.onAfterHide(msg);
         this.onDidChangeOpenStateEmitter.fire(false);
     }
 
-    protected onAfterShow(msg: Message): void {
+    protected override onAfterShow(msg: Message): void {
         super.onAfterShow(msg);
         this.onDidChangeOpenStateEmitter.fire(true);
     }
 
-    renderIcon(node: TreeNode, props: NodeProps): React.ReactNode {
+    override renderIcon(node: TreeNode, props: NodeProps): React.ReactNode {
         if (OutlineSymbolInformationNode.is(node)) {
-            return <div className={'symbol-icon symbol-icon-center ' + node.iconClass}></div>;
+            return <div className={'symbol-icon-center codicon codicon-symbol-' + node.iconClass}></div>;
         }
         return undefined;
     }
 
-    protected createNodeAttributes(node: TreeNode, props: NodeProps): React.Attributes & React.HTMLAttributes<HTMLElement> {
+    protected override createNodeAttributes(node: TreeNode, props: NodeProps): React.Attributes & React.HTMLAttributes<HTMLElement> {
         const elementAttrs = super.createNodeAttributes(node, props);
         return {
             ...elementAttrs,
@@ -160,15 +183,30 @@ export class OutlineViewWidget extends TreeWidget {
         return undefined;
     }
 
-    protected isExpandable(node: TreeNode): node is ExpandableTreeNode {
+    protected override isExpandable(node: TreeNode): node is ExpandableTreeNode {
         return OutlineSymbolInformationNode.is(node) && node.children.length > 0;
     }
 
-    protected renderTree(model: TreeModel): React.ReactNode {
+    protected override renderTree(model: TreeModel): React.ReactNode {
         if (CompositeTreeNode.is(this.model.root) && !this.model.root.children.length) {
-            return <div className='theia-widget-noInfo no-outline'>No outline information available.</div>;
+            return <div className='theia-widget-noInfo no-outline'>{nls.localizeByDefault('The active editor cannot provide outline information.')}</div>;
         }
         return super.renderTree(model);
     }
 
+    protected override deflateForStorage(node: TreeNode): object {
+        const deflated = super.deflateForStorage(node) as { uri: string };
+        if (UriSelection.is(node)) {
+            deflated.uri = node.uri.toString();
+        }
+        return deflated;
+    }
+
+    protected override inflateFromStorage(node: any, parent?: TreeNode): TreeNode { /* eslint-disable-line @typescript-eslint/no-explicit-any */
+        const inflated = super.inflateFromStorage(node, parent) as Mutable<TreeNode & UriSelection>;
+        if (node && 'uri' in node && typeof node.uri === 'string') {
+            inflated.uri = new URI(node.uri);
+        }
+        return inflated;
+    }
 }

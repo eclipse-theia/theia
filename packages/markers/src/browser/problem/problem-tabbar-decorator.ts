@@ -1,23 +1,23 @@
-/********************************************************************************
- * Copyright (C) 2019 Ericsson and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2019 Ericsson and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { inject, injectable, postConstruct } from 'inversify';
-import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver-types';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { Diagnostic, DiagnosticSeverity } from '@theia/core/shared/vscode-languageserver-protocol';
 import { Event, Emitter } from '@theia/core/lib/common/event';
-import { Title, Widget } from '@phosphor/widgets';
+import { Title, Widget } from '@theia/core/shared/@phosphor/widgets';
 import { WidgetDecoration } from '@theia/core/lib/browser/widget-decoration';
 import { TabBarDecorator } from '@theia/core/lib/browser/shell/tab-bar-decorator';
 import { Marker } from '../../common/marker';
@@ -45,6 +45,9 @@ export class ProblemTabBarDecorator implements TabBarDecorator {
     }
 
     decorate(title: Title<Widget>): WidgetDecoration.Data[] {
+        if (!this.preferences['problems.decorations.tabbar.enabled']) {
+            return [];
+        }
         const widget = title.owner;
         if (Navigatable.is(widget)) {
             const resourceUri = widget.getResourceUri();
@@ -139,9 +142,8 @@ export class ProblemTabBarDecorator implements TabBarDecorator {
     protected getOverlayIconColor(marker: Marker<Diagnostic>): WidgetDecoration.Color {
         const { severity } = marker.data;
         switch (severity) {
-            case 1: return 'var(--theia-editorError-foreground)';
-            case 2: return 'var(--theia-editorWarning-foreground)';
-            case 3: return 'var(--theia-editorInfo-foreground)';
+            case 1: return 'var(--theia-list-errorForeground)';
+            case 2: return 'var(--theia-list-warningForeground)';
             default: return 'var(--theia-successBackground)';
         }
     }

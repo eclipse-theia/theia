@@ -1,23 +1,24 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { injectable } from 'inversify';
+import { injectable } from '@theia/core/shared/inversify';
 import { WidgetOpenHandler, WidgetOpenerOptions } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
-import { GitCommitDetailWidgetOptions, GitCommitDetailWidget } from './git-commit-detail-widget';
+import { GitCommitDetailWidgetOptions } from './git-commit-detail-widget-options';
+import { GitCommitDetailWidget } from './git-commit-detail-widget';
 import { GitScmProvider } from '../git-scm-provider';
 
 export namespace GitCommitDetailUri {
@@ -45,13 +46,7 @@ export class GitCommitDetailOpenHandler extends WidgetOpenHandler<GitCommitDetai
         }
     }
 
-    protected async doOpen(widget: GitCommitDetailWidget, options: GitCommitDetailOpenerOptions): Promise<void> {
-        widget.setContent({
-            range: {
-                fromRevision: options.commitSha + '~1',
-                toRevision: options.commitSha
-            }
-        });
+    protected override async doOpen(widget: GitCommitDetailWidget, options: GitCommitDetailOpenerOptions): Promise<void> {
         await super.doOpen(widget, options);
     }
 

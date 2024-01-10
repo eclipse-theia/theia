@@ -1,23 +1,22 @@
-/********************************************************************************
- * Copyright (C) 2019 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2019 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { injectable, inject } from 'inversify';
-import { CancellationToken } from 'vscode-jsonrpc';
-import { ProgressClient } from '../common';
-import { ProgressMessage, ProgressUpdate } from '../common';
+import { CancellationToken } from '../../shared/vscode-languageserver-protocol';
+import { ProgressClient, ProgressMessage, ProgressUpdate } from '../common';
 import { StatusBar, StatusBarAlignment } from './status-bar';
 import { Deferred } from '../common/promise-util';
 import throttle = require('lodash.throttle');
@@ -73,7 +72,7 @@ export class ProgressStatusBarItem implements ProgressClient {
             this.statusBar.removeElement(this.id);
             return;
         }
-        const text = `$(refresh~spin) ${message}`;
+        const text = `$(codicon-sync~spin) ${message}`;
         this.statusBar.setElement(this.id, {
             text,
             alignment: StatusBarAlignment.LEFT,

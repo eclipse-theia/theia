@@ -1,96 +1,71 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { injectable, inject, decorate } from 'inversify';
-import {
-    MonacoLanguages as BaseMonacoLanguages, ProtocolToMonacoConverter,
-    MonacoToProtocolConverter,
-    DocumentSelector,
-    SignatureHelpProvider,
-    MonacoModelIdentifier,
-    CodeActionProvider,
-    CodeLensProvider
-} from 'monaco-languageclient';
-import { Languages, Diagnostic, DiagnosticCollection, Language, WorkspaceSymbolProvider } from '@theia/languages/lib/browser';
+import { SymbolInformation, WorkspaceSymbolParams } from '@theia/core/shared/vscode-languageserver-protocol';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { ProblemManager } from '@theia/markers/lib/browser/problem/problem-manager';
 import URI from '@theia/core/lib/common/uri';
-import { Mutable } from '@theia/core/lib/common/types';
+import { MaybePromise, Mutable } from '@theia/core/lib/common/types';
 import { Disposable } from '@theia/core/lib/common/disposable';
-import { MonacoDiagnosticCollection } from 'monaco-languageclient/lib/monaco-diagnostic-collection';
+import { CancellationToken } from '@theia/core/lib/common/cancellation';
+import { Language, LanguageService } from '@theia/core/lib/browser/language-service';
+import { MonacoMarkerCollection } from './monaco-marker-collection';
+import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
+import * as monaco from '@theia/monaco-editor-core';
+import { FileStat } from '@theia/filesystem/lib/common/files';
+import { FileStatNode } from '@theia/filesystem/lib/browser';
+import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 
-decorate(injectable(), BaseMonacoLanguages);
-decorate(inject(ProtocolToMonacoConverter), BaseMonacoLanguages, 0);
-decorate(inject(MonacoToProtocolConverter), BaseMonacoLanguages, 1);
+export interface WorkspaceSymbolProvider {
+    provideWorkspaceSymbols(params: WorkspaceSymbolParams, token: CancellationToken): MaybePromise<SymbolInformation[] | undefined>;
+    resolveWorkspaceSymbol?(symbol: SymbolInformation, token: CancellationToken): Thenable<SymbolInformation | undefined>
+}
 
 @injectable()
-export class MonacoLanguages extends BaseMonacoLanguages implements Languages {
+export class MonacoLanguages extends LanguageService {
 
     readonly workspaceSymbolProviders: WorkspaceSymbolProvider[] = [];
 
-    protected readonly makers = new Map<string, MonacoDiagnosticCollection>();
+    protected readonly markers = new Map<string, MonacoMarkerCollection>();
+    protected readonly icons = new Map<string, string>();
 
-    constructor( // eslint-disable-next-line @typescript-eslint/indent
-        @inject(ProtocolToMonacoConverter) p2m: ProtocolToMonacoConverter,
-        @inject(MonacoToProtocolConverter) m2p: MonacoToProtocolConverter,
-        @inject(ProblemManager) protected readonly problemManager: ProblemManager
-    ) {
-        super(p2m, m2p);
-        for (const uri of this.problemManager.getUris()) {
-            this.updateMarkers(new URI(uri));
-        }
+    @inject(ProblemManager) protected readonly problemManager: ProblemManager;
+    @inject(ProtocolToMonacoConverter) protected readonly p2m: ProtocolToMonacoConverter;
+
+    @postConstruct()
+    protected init(): void {
         this.problemManager.onDidChangeMarkers(uri => this.updateMarkers(uri));
+        monaco.editor.onDidCreateModel(model => this.updateModelMarkers(model));
     }
 
-    protected updateMarkers(uri: URI): void {
+    updateMarkers(uri: URI): void {
+        const markers = this.problemManager.findMarkers({ uri });
         const uriString = uri.toString();
-        const owners = new Map<string, Diagnostic[]>();
-        for (const marker of this.problemManager.findMarkers({ uri })) {
-            const diagnostics = owners.get(marker.owner) || [];
-            diagnostics.push(marker.data);
-            owners.set(marker.owner, diagnostics);
-        }
-        const toClean = new Set<string>(this.makers.keys());
-        for (const [owner, diagnostics] of owners) {
-            toClean.delete(owner);
-            const collection = this.makers.get(owner) || new MonacoDiagnosticCollection(owner, this.p2m);
-            collection.set(uriString, diagnostics);
-            this.makers.set(owner, collection);
-        }
-        for (const owner of toClean) {
-            const collection = this.makers.get(owner);
-            if (collection) {
-                collection.set(uriString, []);
-            }
-        }
+        const collection = this.markers.get(uriString) || new MonacoMarkerCollection(uri, this.p2m);
+        this.markers.set(uriString, collection);
+        collection.updateMarkers(markers);
     }
 
-    createDiagnosticCollection(name?: string): DiagnosticCollection {
-        const owner = name || 'default';
-        const uris: string[] = [];
-        return {
-            set: (uri, diagnostics) => {
-                this.problemManager.setMarkers(new URI(uri), owner, diagnostics);
-                uris.push(uri);
-            },
-            dispose: () => {
-                for (const uri of uris) {
-                    this.problemManager.setMarkers(new URI(uri), owner, []);
-                }
-            }
-        };
+    updateModelMarkers(model: monaco.editor.ITextModel): void {
+        const uriString = model.uri.toString();
+        const uri = new URI(uriString);
+        const collection = this.markers.get(uriString) || new MonacoMarkerCollection(uri, this.p2m);
+        this.markers.set(uriString, collection);
+        collection.updateModelMarkers(model);
     }
 
     registerWorkspaceSymbolProvider(provider: WorkspaceSymbolProvider): Disposable {
@@ -103,12 +78,68 @@ export class MonacoLanguages extends BaseMonacoLanguages implements Languages {
         });
     }
 
-    get languages(): Language[] {
+    override get languages(): Language[] {
         return [...this.mergeLanguages(monaco.languages.getLanguages()).values()];
     }
 
-    getLanguage(languageId: string): Language | undefined {
+    override getLanguage(languageId: string): Language | undefined {
         return this.mergeLanguages(monaco.languages.getLanguages().filter(language => language.id === languageId)).get(languageId);
+    }
+
+    override detectLanguage(obj: unknown): Language | undefined {
+        if (obj === undefined) {
+            return undefined;
+        }
+        if (typeof obj === 'string') {
+            return this.detectLanguageByIdOrName(obj) ?? this.detectLanguageByURI(new URI(obj));
+        }
+        if (obj instanceof URI) {
+            return this.detectLanguageByURI(obj);
+        }
+        if (FileStat.is(obj)) {
+            return this.detectLanguageByURI(obj.resource);
+        }
+        if (FileStatNode.is(obj)) {
+            return this.detectLanguageByURI(obj.uri);
+        }
+        return undefined;
+    }
+
+    protected detectLanguageByIdOrName(obj: string): Language | undefined {
+        const languageById = this.getLanguage(obj);
+        if (languageById) {
+            return languageById;
+        }
+
+        const languageId = this.getLanguageIdByLanguageName(obj);
+        return languageId ? this.getLanguage(languageId) : undefined;
+    }
+
+    protected detectLanguageByURI(uri: URI): Language | undefined {
+        const languageId = StandaloneServices.get(ILanguageService).guessLanguageIdByFilepathOrFirstLine(uri['codeUri']);
+        return languageId ? this.getLanguage(languageId) : undefined;
+    }
+
+    getExtension(languageId: string): string | undefined {
+        return this.getLanguage(languageId)?.extensions.values().next().value;
+    }
+
+    override registerIcon(languageId: string, iconClass: string): Disposable {
+        this.icons.set(languageId, iconClass);
+        this.onDidChangeIconEmitter.fire({ languageId });
+        return Disposable.create(() => {
+            this.icons.delete(languageId);
+            this.onDidChangeIconEmitter.fire({ languageId });
+        });
+    }
+
+    override getIcon(obj: unknown): string | undefined {
+        const language = this.detectLanguage(obj);
+        return language ? this.icons.get(language.id) : undefined;
+    }
+
+    getLanguageIdByLanguageName(languageName: string): string | undefined {
+        return monaco.languages.getLanguages().find(language => language.aliases?.includes(languageName))?.id;
     }
 
     protected mergeLanguages(registered: monaco.languages.ILanguageExtensionPoint[]): Map<string, Mutable<Language>> {
@@ -141,70 +172,6 @@ export class MonacoLanguages extends BaseMonacoLanguages implements Languages {
             }
         }
         return languages;
-    }
-
-    protected createSignatureHelpProvider(selector: DocumentSelector, provider: SignatureHelpProvider, ...triggerCharacters: string[]): monaco.languages.SignatureHelpProvider {
-        const signatureHelpTriggerCharacters = [...(provider.triggerCharacters || triggerCharacters || [])];
-        const signatureHelpRetriggerCharacters = [...(provider.retriggerCharacters || [])];
-        return {
-            signatureHelpTriggerCharacters,
-            signatureHelpRetriggerCharacters,
-            provideSignatureHelp: async (model, position, token) => {
-                if (!this.matchModel(selector, MonacoModelIdentifier.fromModel(model))) {
-                    return undefined;
-                }
-                const params = this.m2p.asTextDocumentPositionParams(model, position);
-                const help = await provider.provideSignatureHelp(params, token, undefined! /* not used by LC */);
-                if (!help) {
-                    return undefined;
-                }
-                return this.p2m.asSignatureHelpResult(help);
-            }
-        };
-    }
-
-    protected createCodeActionProvider(selector: DocumentSelector, provider: CodeActionProvider): monaco.languages.CodeActionProvider {
-        return {
-            provideCodeActions: async (model, range, context, token) => {
-                if (!this.matchModel(selector, MonacoModelIdentifier.fromModel(model))) {
-                    return undefined!;
-                }
-                const params = this.m2p.asCodeActionParams(model, range, context);
-                const actions = await provider.provideCodeActions(params, token);
-                if (!actions) {
-                    return undefined!;
-                }
-                return this.p2m.asCodeActionList(actions);
-            }
-        };
-    }
-
-    protected createCodeLensProvider(selector: DocumentSelector, provider: CodeLensProvider): monaco.languages.CodeLensProvider {
-        return {
-            provideCodeLenses: async (model, token) => {
-                if (!this.matchModel(selector, MonacoModelIdentifier.fromModel(model))) {
-                    return undefined;
-                }
-                const params = this.m2p.asCodeLensParams(model);
-                const lenses = await provider.provideCodeLenses(params, token);
-                if (!lenses) {
-                    return undefined;
-                }
-                return this.p2m.asCodeLensList(lenses);
-            },
-            resolveCodeLens: provider.resolveCodeLens ? async (model, codeLens, token) => {
-                if (!this.matchModel(selector, MonacoModelIdentifier.fromModel(model))) {
-                    return codeLens;
-                }
-                const protocolCodeLens = this.m2p.asCodeLens(codeLens);
-                const result = await provider.resolveCodeLens!(protocolCodeLens, token);
-                if (result) {
-                    const resolvedCodeLens = this.p2m.asCodeLens(result);
-                    Object.assign(codeLens, resolvedCodeLens);
-                }
-                return codeLens;
-            } : ((_, codeLens, __) => codeLens)
-        };
     }
 
 }

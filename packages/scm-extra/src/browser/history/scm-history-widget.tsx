@@ -1,69 +1,37 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { injectable, inject, postConstruct } from 'inversify';
-import { Event as TheiaEvent, DisposableCollection } from '@theia/core';
-import { OpenerService, open, StatefulWidget, SELECTED_CLASS, WidgetManager, ApplicationShell } from '@theia/core/lib/browser';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
+import { DisposableCollection } from '@theia/core';
+import { OpenerService, open, StatefulWidget, SELECTED_CLASS, WidgetManager, ApplicationShell, codicon } from '@theia/core/lib/browser';
 import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
-import { Message } from '@phosphor/messaging';
-import { AutoSizer, List, ListRowRenderer, ListRowProps, InfiniteLoader, IndexRange, ScrollParams, CellMeasurerCache, CellMeasurer } from 'react-virtualized';
+import { Message } from '@theia/core/shared/@phosphor/messaging';
+import { Virtuoso, VirtuosoHandle } from '@theia/core/shared/react-virtuoso';
 import URI from '@theia/core/lib/common/uri';
-import { ScmService } from '@theia/scm/lib/browser/scm-service';
-import { ScmHistoryProvider } from '.';
-import { SCM_HISTORY_ID, SCM_HISTORY_MAX_COUNT, SCM_HISTORY_LABEL } from './scm-history-contribution';
-import { ScmHistoryCommit, ScmFileChange } from '../scm-file-change-node';
-import { FileSystem } from '@theia/filesystem/lib/common';
+import { ScmFileChange, ScmFileChangeNode } from '../scm-file-change-node';
 import { ScmAvatarService } from '@theia/scm/lib/browser/scm-avatar-service';
-import { ScmItemComponent } from '../scm-navigable-list-widget';
-import { ScmFileChangeNode } from '../scm-file-change-node';
-import { ScmNavigableListWidget } from '../scm-navigable-list-widget';
-import * as React from 'react';
+import { ScmItemComponent, ScmNavigableListWidget } from '../scm-navigable-list-widget';
+import * as React from '@theia/core/shared/react';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
-
-export const ScmHistorySupport = Symbol('scm-history-support');
-export interface ScmHistorySupport {
-    getCommitHistory(options?: HistoryWidgetOptions): Promise<ScmHistoryCommit[]>;
-    readonly onDidChangeHistory: TheiaEvent<void>;
-}
-
-export interface ScmCommitNode {
-    commitDetails: ScmHistoryCommit;
-    authorAvatar: string;
-    fileChangeNodes: ScmFileChangeNode[];
-    expanded: boolean;
-    selected: boolean;
-}
-
-export namespace ScmCommitNode {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function is(node: any): node is ScmCommitNode {
-        return !!node && 'commitDetails' in node && 'expanded' in node && 'selected' in node;
-    }
-}
-
-export interface HistoryWidgetOptions {
-    readonly range?: {
-        readonly toRevision?: string;
-        readonly fromRevision?: string;
-    };
-    readonly uri?: string;
-    readonly maxCount?: number;
-}
-
-export type ScmHistoryListNode = (ScmCommitNode | ScmFileChangeNode);
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { nls } from '@theia/core/lib/common/nls';
+import { ScmHistoryProvider } from './scm-history-provider';
+import throttle = require('@theia/core/shared/lodash.throttle');
+import { HistoryWidgetOptions, ScmCommitNode, ScmHistoryListNode, ScmHistorySupport, SCM_HISTORY_ID, SCM_HISTORY_LABEL, SCM_HISTORY_MAX_COUNT } from './scm-history-constants';
+export { HistoryWidgetOptions, ScmCommitNode, ScmHistoryListNode, ScmHistorySupport };
 
 @injectable()
 export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode> implements StatefulWidget {
@@ -89,10 +57,9 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
     protected historySupport: ScmHistorySupport | undefined;
 
     constructor(
-        @inject(ScmService) protected readonly scmService: ScmService,
         @inject(OpenerService) protected readonly openerService: OpenerService,
         @inject(ApplicationShell) protected readonly shell: ApplicationShell,
-        @inject(FileSystem) protected readonly fileSystem: FileSystem,
+        @inject(FileService) protected readonly fileService: FileService,
         @inject(ScmAvatarService) protected readonly avatarService: ScmAvatarService,
         @inject(WidgetManager) protected readonly widgetManager: WidgetManager,
     ) {
@@ -101,10 +68,11 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
         this.scrollContainer = 'scm-history-list-container';
         this.title.label = SCM_HISTORY_LABEL;
         this.title.caption = SCM_HISTORY_LABEL;
-        this.title.iconClass = 'fa scm-history-tab-icon';
+        this.title.iconClass = codicon('history');
         this.title.closable = true;
         this.addClass('theia-scm');
         this.addClass('theia-scm-history');
+        this.status = { state: 'loading' };
         this.resetState();
         this.cancelIndicator = new CancellationTokenSource();
     }
@@ -135,9 +103,15 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
         this.setContent(this.options);
 
         // If switching repository, discard options because they are specific to a repository
-        this.options = {};
+        this.options = this.createHistoryOptions();
 
         this.refresh();
+    }
+
+    protected createHistoryOptions(): HistoryWidgetOptions {
+        return {
+            maxCount: SCM_HISTORY_MAX_COUNT
+        };
     }
 
     protected readonly toDisposeOnRefresh = new DisposableCollection();
@@ -165,30 +139,31 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
         }
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
         this.addListNavigationKeyListeners(this.node);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         this.addEventListener<any>(this.node, 'ps-scroll-y', (e: Event & { target: { scrollTop: number } }) => {
-            if (this.listView && this.listView.list && this.listView.list.Grid) {
+            if (this.listView?.list) {
                 const { scrollTop } = e.target;
-                this.listView.list.Grid.handleScrollEvent({ scrollTop });
+                this.listView.list.scrollTo({
+                    top: scrollTop
+                });
             }
         });
     }
 
-    update(): void {
-        if (this.listView && this.listView.list) {
-            this.listView.list.forceUpdateGrid();
-        }
-        super.update();
-    }
+    setContent = throttle((options?: HistoryWidgetOptions) => this.doSetContent(options), 100);
 
-    async setContent(options?: HistoryWidgetOptions): Promise<void> {
+    protected async doSetContent(options?: HistoryWidgetOptions): Promise<void> {
         this.resetState(options);
         if (options && options.uri) {
-            const fileStat = await this.fileSystem.getFileStat(options.uri);
-            this.singleFileMode = !!fileStat && !fileStat.isDirectory;
+            try {
+                const fileStat = await this.fileService.resolve(new URI(options.uri));
+                this.singleFileMode = !fileStat.isDirectory;
+            } catch {
+                this.singleFileMode = true;
+            }
         }
         await this.addCommits(options);
         this.onDataReady();
@@ -198,15 +173,12 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
     }
 
     protected resetState(options?: HistoryWidgetOptions): void {
-        this.options = options || {};
-        this.status = { state: 'loading' };
-        this.scmNodes = [];
+        this.options = options || this.createHistoryOptions();
         this.hasMoreCommits = true;
         this.allowScrollToSelected = true;
     }
 
     protected async addCommits(options?: HistoryWidgetOptions): Promise<void> {
-        // const repository: Repository | undefined = this.repositoryProvider.findRepositoryOrSelected(options);
         const repository = this.scmService.selectedRepository;
 
         this.cancelIndicator.cancel();
@@ -216,19 +188,17 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
         if (repository) {
             if (this.historySupport) {
                 try {
-                    const currentCommits = this.status.state === 'ready' ? this.status.commits : [];
-
-                    let history = await this.historySupport.getCommitHistory(options);
+                    const history = await this.historySupport.getCommitHistory(options);
                     if (token.isCancellationRequested || !this.hasMoreCommits) {
                         return;
                     }
 
-                    if (options && ((options.maxCount && history.length < options.maxCount) || (!options.maxCount && currentCommits))) {
+                    if (options && (options.maxCount && history.length < options.maxCount)) {
                         this.hasMoreCommits = false;
                     }
-                    if (currentCommits.length > 0) {
-                        history = history.slice(1);
-                    }
+
+                    const avatarCache = new Map<string, string>();
+
                     const commits: ScmCommitNode[] = [];
                     for (const commit of history) {
                         const fileChangeNodes: ScmFileChangeNode[] = [];
@@ -238,7 +208,14 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
                             });
                         }));
 
-                        const avatarUrl = await this.avatarService.getAvatar(commit.authorEmail);
+                        let avatarUrl = '';
+                        if (avatarCache.has(commit.authorEmail)) {
+                            avatarUrl = avatarCache.get(commit.authorEmail)!;
+                        } else {
+                            avatarUrl = await this.avatarService.getAvatar(commit.authorEmail);
+                            avatarCache.set(commit.authorEmail, avatarUrl);
+                        }
+
                         commits.push({
                             commitDetails: commit,
                             authorAvatar: avatarUrl,
@@ -247,8 +224,7 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
                             selected: false
                         });
                     }
-                    currentCommits.push(...commits);
-                    this.status = { state: 'ready', commits: currentCommits };
+                    this.status = { state: 'ready', commits };
                 } catch (error) {
                     if (options && options.uri && repository) {
                         this.hasMoreCommits = false;
@@ -259,7 +235,10 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
                 this.status = { state: 'error', errorMessage: <React.Fragment>History is not supported for {repository.provider.label} source control.</React.Fragment> };
             }
         } else {
-            this.status = { state: 'error', errorMessage: <React.Fragment>There is no repository selected in this workspace.</React.Fragment> };
+            this.status = {
+                state: 'error',
+                errorMessage: <React.Fragment>{nls.localizeByDefault('No source control providers registered.')}</React.Fragment>
+            };
         }
     }
 
@@ -299,6 +278,7 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     restoreState(oldState: any): void {
         this.options = oldState['options'];
+        this.options.maxCount = SCM_HISTORY_MAX_COUNT;
         this.singleFileMode = oldState['singleFileMode'];
         this.setContent(this.options);
     }
@@ -328,25 +308,27 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
                     const relPath = relPathEncoded ? `${decodeURIComponent(relPathEncoded)}` : '';
 
                     const repo = this.scmService.findRepository(new URI(this.options.uri));
-                    const repoName = repo ? `${new URI(repo.provider.rootUri).displayName}` : '';
+                    const repoName = repo ? `${this.labelProvider.getName(new URI(repo.provider.rootUri))}` : '';
 
-                    const relPathAndRepo = [relPath, repoName].filter(Boolean).join(' in ');
-                    path = ` for ${relPathAndRepo}`;
+                    const relPathAndRepo = [relPath, repoName].filter(Boolean).join(
+                        ` ${nls.localize('theia/git/prepositionIn', 'in')} `
+                    );
+                    path = `${relPathAndRepo}`;
                 }
                 content = <AlertMessage
                     type='WARNING'
-                    header={`There is no history available${path}.`}>
+                    header={nls.localize('theia/git/noHistoryForError', 'There is no history available for {0}', `${path}`)}>
                     {reason}
                 </AlertMessage>;
                 break;
 
             case 'loading':
                 content = <div className='spinnerContainer'>
-                    <span className='fa fa-spinner fa-pulse fa-3x fa-fw'></span>
+                    <span className={`${codicon('loading')} theia-animation-spin large-spinner`}></span>
                 </div>;
                 break;
         }
-        return <div className='scm-diff-container'>
+        return <div className='history-container'>
             {content}
         </div>;
     }
@@ -375,8 +357,6 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
                 ref={listView => this.listView = (listView || undefined)}
                 rows={this.scmNodes}
                 hasMoreRows={this.hasMoreCommits}
-                indexOfSelected={this.allowScrollToSelected ? this.indexOfSelected : -1}
-                handleScroll={this.handleScroll}
                 loadMoreRows={this.loadMoreRows}
                 renderCommit={this.renderCommit}
                 renderFileChangeList={this.renderFileChangeList}
@@ -386,17 +366,11 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
         return list;
     }
 
-    protected readonly handleScroll = (info: ScrollParams) => this.doHandleScroll(info);
-    protected doHandleScroll(info: ScrollParams): void {
-        this.node.scrollTop = info.scrollTop;
-    }
-
-    protected readonly loadMoreRows = (params: IndexRange) => this.doLoadMoreRows(params);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected doLoadMoreRows(params: IndexRange): Promise<any> {
+    protected readonly loadMoreRows = (index: number) => this.doLoadMoreRows(index);
+    protected doLoadMoreRows(index: number): Promise<void> {
         let resolver: () => void;
-        const promise = new Promise(resolve => resolver = resolve);
-        const lastRow = this.scmNodes[params.stopIndex - 1];
+        const promise = new Promise<void>(resolve => resolver = resolve);
+        const lastRow = this.scmNodes[index - 1];
         if (ScmCommitNode.is(lastRow)) {
             const toRevision = lastRow.commitDetails.id;
             this.addCommits({
@@ -414,9 +388,9 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
 
     protected readonly renderCommit = (commit: ScmCommitNode) => this.doRenderCommit(commit);
     protected doRenderCommit(commit: ScmCommitNode): React.ReactNode {
-        let expansionToggleIcon = 'caret-right';
+        let expansionToggleIcon = codicon('chevron-right');
         if (commit && commit.expanded) {
-            expansionToggleIcon = 'caret-down';
+            expansionToggleIcon = codicon('chevron-down');
         }
         return <div
             className={`containerHead${commit.selected ? ' ' + SELECTED_CLASS : ''}`}
@@ -442,24 +416,21 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
             <div className='headContent'><div className='image-container'>
                 <img className='gravatar' src={commit.authorAvatar}></img>
             </div>
-            <div className={`headLabelContainer${this.singleFileMode ? ' singleFileMode' : ''}`}>
-                <div className='headLabel noWrapInfo noselect'>
-                    {commit.commitDetails.summary}
-                </div>
-                <div className='commitTime noWrapInfo noselect'>
-                    {commit.commitDetails.authorDateRelative + ' by ' + commit.commitDetails.authorName}
-                </div>
-            </div>
-            <div className='fa fa-eye detailButton' onClick={() => this.openDetailWidget(commit)}></div>
-            {
-                !this.singleFileMode ? <div className='expansionToggle noselect'>
-                    <div className='toggle'>
-                        <div className='number'>{commit.commitDetails.fileChanges.length.toString()}</div>
-                        <div className={'icon fa fa-' + expansionToggleIcon}></div>
+                <div className={`headLabelContainer${this.singleFileMode ? ' singleFileMode' : ''}`}>
+                    <div className='headLabel noWrapInfo noselect'>
+                        {commit.commitDetails.summary}
+                    </div>
+                    <div className='commitTime noWrapInfo noselect'>
+                        {commit.commitDetails.authorDateRelative + ' by ' + commit.commitDetails.authorName}
                     </div>
                 </div>
-                    : ''
-            }
+                <div className={`${codicon('eye')} detailButton`} onClick={() => this.openDetailWidget(commit)}></div>
+                {!this.singleFileMode && <div className='expansionToggle noselect'>
+                    <div className='toggle'>
+                        <div className='number'>{commit.commitDetails.fileChanges.length.toString()}</div>
+                        <div className={'icon ' + expansionToggleIcon}></div>
+                    </div>
+                </div>}
             </div>
         </div >;
     }
@@ -492,7 +463,7 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
         }} />;
     }
 
-    protected navigateLeft(): void {
+    protected override navigateLeft(): void {
         const selected = this.getSelected();
         if (selected && this.status.state === 'ready') {
             if (ScmCommitNode.is(selected)) {
@@ -512,7 +483,7 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
         this.update();
     }
 
-    protected navigateRight(): void {
+    protected override navigateRight(): void {
         const selected = this.getSelected();
         if (selected) {
             if (ScmCommitNode.is(selected) && !selected.expanded && !this.singleFileMode) {
@@ -524,7 +495,7 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
         this.update();
     }
 
-    protected handleListEnter(): void {
+    protected override handleListEnter(): void {
         const selected = this.getSelected();
         if (selected) {
             if (ScmCommitNode.is(selected)) {
@@ -549,17 +520,14 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
 export namespace ScmHistoryList {
     export interface Props {
         readonly rows: ScmHistoryListNode[]
-        readonly indexOfSelected: number
         readonly hasMoreRows: boolean
-        readonly handleScroll: (info: { clientHeight: number; scrollHeight: number; scrollTop: number }) => void
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        readonly loadMoreRows: (params: IndexRange) => Promise<any>
+        readonly loadMoreRows: (index: number) => Promise<void>
         readonly renderCommit: (commit: ScmCommitNode) => React.ReactNode
         readonly renderFileChangeList: (fileChange: ScmFileChangeNode) => React.ReactNode
     }
 }
 export class ScmHistoryList extends React.Component<ScmHistoryList.Props> {
-    list: List | undefined;
+    list: VirtuosoHandle | undefined;
 
     protected readonly checkIfRowIsLoaded = (opts: { index: number }) => this.doCheckIfRowIsLoaded(opts);
     protected doCheckIfRowIsLoaded(opts: { index: number }): boolean {
@@ -567,81 +535,36 @@ export class ScmHistoryList extends React.Component<ScmHistoryList.Props> {
         return !!row;
     }
 
-    render(): React.ReactNode {
-        return <InfiniteLoader
-            isRowLoaded={this.checkIfRowIsLoaded}
-            loadMoreRows={this.props.loadMoreRows}
-            rowCount={this.props.rows.length + 1}
-            threshold={15}
-        >
-            {
-                ({ onRowsRendered, registerChild }) => (
-                    <AutoSizer>
-                        {
-                            ({ width, height }) => <List
-                                className='commitList'
-                                ref={list => {
-                                    this.list = (list || undefined);
-                                    registerChild(list);
-                                }}
-                                width={width}
-                                height={height}
-                                onRowsRendered={onRowsRendered}
-                                rowRenderer={this.measureRowRenderer}
-                                rowHeight={this.measureCache.rowHeight}
-                                rowCount={this.props.hasMoreRows ? this.props.rows.length + 1 : this.props.rows.length}
-                                tabIndex={-1}
-                                onScroll={this.props.handleScroll}
-                                scrollToIndex={this.props.indexOfSelected}
-                                style={{
-                                    overflowY: 'visible',
-                                    overflowX: 'visible'
-                                }}
-                            />
-                        }
-                    </AutoSizer>
-                )
-            }
-        </InfiniteLoader>;
+    override render(): React.ReactNode {
+        const { hasMoreRows, loadMoreRows, rows } = this.props;
+        return <Virtuoso
+            ref={list => this.list = (list || undefined)}
+            data={rows}
+            itemContent={index => this.renderRow(index)}
+            endReached={hasMoreRows ? loadMoreRows : undefined}
+            overscan={500}
+            style={{
+                overflowX: 'hidden'
+            }}
+        />;
     }
 
-    componentWillUpdate(): void {
-        this.measureCache.clearAll();
-    }
-
-    protected measureCache = new CellMeasurerCache();
-
-    protected measureRowRenderer: ListRowRenderer = (params: ListRowProps) => {
-        const { index, key, parent } = params;
-        return (
-            <CellMeasurer
-                cache={this.measureCache}
-                columnIndex={0}
-                key={key}
-                rowIndex={index}
-                parent={parent}
-            >
-                {() => this.renderRow(params)}
-            </CellMeasurer>
-        );
-    };
-
-    protected renderRow: ListRowRenderer = ({ index, key, style }) => {
+    protected renderRow(index: number): React.ReactNode {
         if (this.checkIfRowIsLoaded({ index })) {
             const row = this.props.rows[index];
             if (ScmCommitNode.is(row)) {
                 const head = this.props.renderCommit(row);
-                return <div key={key} style={style} className={`commitListElement${index === 0 ? ' first' : ''}`} >
+                return <div className={`commitListElement${index === 0 ? ' first' : ''}`} >
                     {head}
                 </div>;
             } else if (ScmFileChangeNode.is(row)) {
-                return <div key={key} style={style} className='fileChangeListElement'>
+                return <div className='fileChangeListElement'>
                     {this.props.renderFileChangeList(row)}
                 </div>;
             }
         } else {
-            return <div key={key} style={style} className={`commitListElement${index === 0 ? ' first' : ''}`} >
-                <span className='fa fa-spinner fa-pulse fa-fw'></span>
+            return <div className={`commitListElement${index === 0 ? ' first' : ''}`} >
+                <span className={`${codicon('loading')} theia-animation-spin`}></span>
             </div>;
         }
     };

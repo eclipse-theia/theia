@@ -1,20 +1,20 @@
-/********************************************************************************
- * Copyright (C) 2017 Ericsson and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 Ericsson and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable, postConstruct } from 'inversify';
 import { LoggerWatcher } from './logger-watcher';
 import { ILoggerServer, LogLevel, ConsoleLogger, rootLoggerName } from './logger-protocol';
 
@@ -235,33 +235,36 @@ export class Logger implements ILogger {
     /* A promise resolved when the logger has been created by the backend.  */
     protected created: Promise<void>;
 
-    /**
-     * Build a new Logger.
-     */
-    constructor(
-        @inject(ILoggerServer) protected readonly server: ILoggerServer,
-        @inject(LoggerWatcher) protected readonly loggerWatcher: LoggerWatcher,
-        @inject(LoggerFactory) protected readonly factory: LoggerFactory,
-        @inject(LoggerName) protected name: string) {
+    @inject(ILoggerServer) protected readonly server: ILoggerServer;
+    @inject(LoggerWatcher) protected readonly loggerWatcher: LoggerWatcher;
+    @inject(LoggerFactory) protected readonly factory: LoggerFactory;
+    @inject(LoggerName) protected name: string;
 
-        if (name !== rootLoggerName) {
+    @postConstruct()
+    protected init(): void {
+        if (this.name !== rootLoggerName) {
             /* Creating a child logger.  */
-            this.created = server.child(name);
+            this.created = this.server.child(this.name);
         } else {
             /* Creating the root logger (it already exists at startup).  */
             this.created = Promise.resolve();
         }
 
         /* Fetch the log level so it's cached in the frontend.  */
-        this._logLevel = this.created.then(_ => this.server.getLogLevel(name));
+        this._logLevel = this.created.then(_ => this.server.getLogLevel(this.name));
 
         /* Update the log level if it changes in the backend. */
-        loggerWatcher.onLogLevelChanged(event => {
+        this.loggerWatcher.onLogLevelChanged(event => {
             this.created.then(() => {
-                if (event.loggerName === name) {
+                if (event.loggerName === this.name) {
                     this._logLevel = Promise.resolve(event.newLogLevel);
                 }
             });
+        });
+
+        /* Refetch log level if overall config in backend changed. */
+        this.loggerWatcher.onLogConfigChanged(() => {
+            this._logLevel = this.created.then(_ => this.server.getLogLevel(this.name));
         });
     }
 

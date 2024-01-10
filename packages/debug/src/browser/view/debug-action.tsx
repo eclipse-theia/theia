@@ -1,27 +1,30 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import * as React from 'react';
-import { DISABLED_CLASS } from '@theia/core/lib/browser';
+import * as React from '@theia/core/shared/react';
+import { codiconArray, DISABLED_CLASS } from '@theia/core/lib/browser';
 
 export class DebugAction extends React.Component<DebugAction.Props> {
 
-    render(): React.ReactNode {
+    override render(): React.ReactNode {
         const { enabled, label, iconClass } = this.props;
-        const classNames = ['debug-action', 'theia-debug-' + iconClass];
+        const classNames = ['debug-action'];
+        if (iconClass) {
+            classNames.push(...codiconArray(iconClass, true));
+        }
         if (enabled === false) {
             classNames.push(DISABLED_CLASS);
         }
@@ -29,7 +32,9 @@ export class DebugAction extends React.Component<DebugAction.Props> {
             className={classNames.join(' ')}
             title={label}
             onClick={this.props.run}
-            ref={this.setRef} />;
+            ref={this.setRef} >
+            {!iconClass && <div>{label}</div>}
+        </span>;
     }
 
     focus(): void {

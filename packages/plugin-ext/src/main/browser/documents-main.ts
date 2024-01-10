@@ -1,36 +1,37 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 import { DocumentsMain, MAIN_RPC_CONTEXT, DocumentsExt } from '../../common/plugin-api-rpc';
 import { UriComponents } from '../../common/uri-components';
 import { EditorsAndDocumentsMain } from './editors-and-documents-main';
-import { DisposableCollection, Disposable } from '@theia/core';
+import { DisposableCollection, Disposable, UntitledResourceResolver } from '@theia/core';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { EditorModelService } from './text-editor-model-service';
-import { UntitledResourceResolver } from './editor/untitled-resource';
 import { EditorManager, EditorOpenerOptions } from '@theia/editor/lib/browser';
 import URI from '@theia/core/lib/common/uri';
-import { URI as CodeURI } from 'vscode-uri';
+import { URI as CodeURI } from '@theia/core/shared/vscode-uri';
 import { ApplicationShell, Saveable } from '@theia/core/lib/browser';
 import { TextDocumentShowOptions } from '../../common/plugin-api-rpc-model';
-import { Range } from 'vscode-languageserver-types';
+import { Range } from '@theia/core/shared/vscode-languageserver-protocol';
 import { OpenerService } from '@theia/core/lib/browser/opener-service';
 import { Reference } from '@theia/core/lib/common/reference';
 import { dispose } from '../../common/disposable-util';
-import { FileResourceResolver } from '@theia/filesystem/lib/browser';
+import { MonacoLanguages } from '@theia/monaco/lib/browser/monaco-languages';
+import * as monaco from '@theia/monaco-editor-core';
+import { TextDocumentChangeReason } from '../../plugin/types-impl';
 
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
@@ -95,7 +96,7 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
         private openerService: OpenerService,
         private shell: ApplicationShell,
         private untitledResourceResolver: UntitledResourceResolver,
-        private fileResourceResolver: FileResourceResolver
+        private languageService: MonacoLanguages,
     ) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.DOCUMENTS_EXT);
 
@@ -156,13 +157,14 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
                 this.proxy.$acceptModelChanged(modelUri, {
                     eol: e.eol,
                     versionId: e.versionId,
+                    reason: e.isRedoing ? TextDocumentChangeReason.Redo : e.isUndoing ? TextDocumentChangeReason.Undo : undefined,
                     changes: e.changes.map(c =>
-                        ({
-                            text: c.text,
-                            range: c.range,
-                            rangeLength: c.rangeLength,
-                            rangeOffset: c.rangeOffset
-                        }))
+                    ({
+                        text: c.text,
+                        range: c.range,
+                        rangeLength: c.rangeLength,
+                        rangeOffset: c.rangeOffset
+                    }))
                 }, model.dirty)
             ),
             Disposable.create(() => this.syncedModels.delete(key))
@@ -179,9 +181,9 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
     }
 
     async $tryCreateDocument(options?: { language?: string; content?: string; }): Promise<UriComponents> {
-        const language = options && options.language;
-        const content = options && options.content;
-        const resource = await this.untitledResourceResolver.createUntitledResource(this.fileResourceResolver, content, language);
+        const language = options?.language && this.languageService.getExtension(options.language);
+        const content = options?.content;
+        const resource = await this.untitledResourceResolver.createUntitledResource(content, language);
         return monaco.Uri.parse(resource.uri.toString());
     }
 
@@ -245,16 +247,35 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
         }
         /* fall back to side group -> split relative to the active widget */
         let widgetOptions: ApplicationShell.WidgetOptions | undefined = { mode: 'split-right' };
-        const viewColumn = options.viewColumn;
+        let viewColumn = options.viewColumn;
+        if (viewColumn === -2) {
+            /* show besides -> compute current column and adjust viewColumn accordingly */
+            const tabBars = shell.mainAreaTabBars;
+            const currentTabBar = shell.currentTabBar;
+            if (currentTabBar) {
+                const currentColumn = tabBars.indexOf(currentTabBar);
+                if (currentColumn > -1) {
+                    // +2 because conversion from 0-based to 1-based index and increase of 1
+                    viewColumn = currentColumn + 2;
+                }
+            }
+        }
         if (viewColumn === undefined || viewColumn === -1) {
             /* active group -> skip (default behaviour) */
             widgetOptions = undefined;
-        } else if (viewColumn > 0) {
+        } else if (viewColumn > 0 && shell.mainAreaTabBars.length > 0) {
             const tabBars = shell.mainAreaTabBars;
-            // convert to zero-based index
-            const tabBar = tabBars[viewColumn - 1];
-            if (tabBar && tabBar.currentTitle) {
-                widgetOptions = { ref: tabBar.currentTitle.owner };
+            if (viewColumn <= tabBars.length) {
+                // convert to zero-based index
+                const tabBar = tabBars[viewColumn - 1];
+                if (tabBar?.currentTitle) {
+                    widgetOptions = { ref: tabBar.currentTitle.owner };
+                }
+            } else {
+                const tabBar = tabBars[tabBars.length - 1];
+                if (tabBar?.currentTitle) {
+                    widgetOptions!.ref = tabBar.currentTitle.owner;
+                }
             }
         }
         return {

@@ -1,0 +1,101 @@
+/********************************************************************************
+ * Copyright (C) 2022 TypeFox and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+/* Adapted from https://github.com/microsoft/vscode/blob/7d9b1c37f8e5ae3772782ba3b09d827eb3fdd833/src/vs/workbench/services/hover/browser/hoverService.ts */
+
+:root {
+  --theia-hover-max-width: 500px;
+  --theia-hover-preview-width: 300px;
+}
+
+.theia-hover {
+  font-family: var(--theia-ui-font-family);
+  font-size: var(--theia-ui-font-size1);
+  color: var(--theia-editorHoverWidget-foreground);
+  background-color: var(--theia-editorHoverWidget-background);
+  border: 1px solid var(--theia-editorHoverWidget-border);
+  padding: var(--theia-ui-padding);
+  max-width: var(--theia-hover-max-width);
+}
+
+.theia-hover .hover-row:not(:first-child):not(:empty) {
+  border-top: 1px solid var(--theia-editorHoverWidgetInternalBorder);
+}
+
+.theia-hover hr {
+  border-top: 1px solid var(--theia-editorHoverWidgetInternalBorder);
+  border-bottom: 0px solid var(--theia-editorHoverWidgetInternalBorder);
+  margin: var(--theia-ui-padding) calc(var(--theia-ui-padding) * -1);
+}
+
+.theia-hover a {
+  color: var(--theia-textLink-foreground);
+}
+
+.theia-hover a:hover {
+  color: var(--theia-textLink-active-foreground);
+}
+
+.theia-hover .hover-row .actions {
+  background-color: var(--theia-editorHoverWidget-statusBarBackground);
+}
+
+.theia-hover code {
+  background-color: var(--theia-textCodeBlock-background);
+  font-family: var(--theia-code-font-family);
+}
+
+.theia-hover::before {
+  content: "";
+  position: absolute;
+}
+
+.theia-hover.top::before {
+  left: var(--theia-hover-before-position);
+  bottom: -5px;
+  border-top: 5px solid var(--theia-editorHoverWidget-border);
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+}
+
+.theia-hover.bottom::before {
+  left: var(--theia-hover-before-position);
+  top: -5px;
+  border-bottom: 5px solid var(--theia-editorHoverWidget-border);
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+}
+
+.theia-hover.left::before {
+  top: var(--theia-hover-before-position);
+  right: -5px;
+  border-left: 5px solid var(--theia-editorHoverWidget-border);
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+}
+
+.theia-hover.right::before {
+  top: var(--theia-hover-before-position);
+  left: -5px;
+  border-right: 5px solid var(--theia-editorHoverWidget-border);
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+}
+
+.theia-hover.extended-tab-preview {
+  border-radius: 10px;
+  width: var(--theia-hover-preview-width);
+}

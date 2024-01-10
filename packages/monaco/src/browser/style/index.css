@@ -1,106 +1,263 @@
 .monaco-editor {
-    padding-bottom: 5.6px;
-    font-family: var(--theia-ui-font-family);
-    font-size: inherit !important;
+  padding-bottom: 5.6px;
+  font-family: var(--theia-code-font-family);
+  font-size: inherit !important;
+}
+
+#quick-input-container {
+  position: fixed;
+  right: 50%;
+  z-index: 1000000;
 }
 
 /*
  * set z-index to 0, so tabs are not above overlay widgets
  */
 .p-TabBar.theia-app-centers {
-    z-index: 0;
-    display: flex;
-}
-
-/*
- * we need to disable the background image when using font awesome icons and file-icons
- */
-.monaco-quick-open-widget .quick-open-tree .quick-open-entry .quick-open-entry-icon.fa,
-.monaco-quick-open-widget .quick-open-tree .quick-open-entry .quick-open-entry-icon.file-icon {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-image: none;
-    margin-right: 0px;
-}
-
-.monaco-quick-open-widget .quick-open-tree .quick-open-entry .codicon {
-	vertical-align: sub;
-}
-
-.monaco-quick-open-widget {
-    background-color: var(--theia-quickInput-background) !important;
-    color: var(--theia-quickInput-foreground) !important;
-}
-
-.quick-open-entry .quick-open-row .monaco-icon-label .monaco-icon-label-description-container .label-description {
-    font-size: calc(var(--theia-ui-font-size0) * 0.95);
+  z-index: 0;
+  display: flex;
 }
 
 .monaco-editor .zone-widget {
-	position: absolute;
-	z-index: 10;
+  position: absolute;
+  z-index: 10;
+  background-color: var(--theia-editorWidget-background);
 }
 
 .monaco-editor .zone-widget .zone-widget-container {
-	border-top-style: solid;
-	border-bottom-style: solid;
-	border-top-width: 0;
-	border-bottom-width: 0;
-    border-top-color: var(--theia-peekView-border);
-    border-bottom-color: var(--theia-peekView-border);
-	position: relative;
+  border-top-style: solid;
+  border-bottom-style: solid;
+  border-top-width: 0;
+  border-bottom-width: 0;
+  border-top-color: var(--theia-peekView-border);
+  border-bottom-color: var(--theia-peekView-border);
+  position: relative;
 }
 
 .monaco-editor .parameter-hints-widget > .wrapper {
-    overflow: hidden;
+  overflow: hidden;
 }
 
 /* List highlight, see https://github.com/microsoft/vscode/blob/ff5f581425da6230b6f9216ecf19abf6c9d285a6/src/vs/workbench/browser/style.ts#L50 */
 .monaco-tree .monaco-tree-row .monaco-highlighted-label .highlight,
 .monaco-list .monaco-list-row .monaco-highlighted-label .highlight {
-	color: var(--theia-list-highlightForeground) !important;
+  color: var(--theia-list-highlightForeground) !important;
 }
 
 /* Scrollbars, see https://github.com/microsoft/vscode/blob/ff5f581425da6230b6f9216ecf19abf6c9d285a6/src/vs/workbench/browser/style.ts#L65 */
 .monaco-scrollable-element > .shadow.top {
-    box-shadow: var(--theia-scrollbar-shadow) 0 6px 6px -6px inset !important;
+  box-shadow: var(--theia-scrollbar-shadow) 0 6px 6px -6px inset !important;
 }
 
 .monaco-scrollable-element > .shadow.left {
-    box-shadow: var(--theia-scrollbar-shadow) 6px 0 6px -6px inset !important;
+  box-shadow: var(--theia-scrollbar-shadow) 6px 0 6px -6px inset !important;
 }
 
 .monaco-scrollable-element > .shadow.top.left {
-    box-shadow: var(--theia-scrollbar-shadow) 6px 6px 6px -6px inset !important;
+  box-shadow: var(--theia-scrollbar-shadow) 6px 6px 6px -6px inset !important;
 }
 
 .monaco-scrollable-element > .scrollbar > .slider {
-    background: var(--theia-scrollbarSlider-background) !important;
+  background: var(--theia-scrollbarSlider-background) !important;
 }
 
 .monaco-scrollable-element > .scrollbar > .slider:hover {
-    background: var(--theia-scrollbarSlider-hoverBackground) !important;
+  background: var(--theia-scrollbarSlider-hoverBackground) !important;
 }
 
 .monaco-scrollable-element > .scrollbar > .slider.active {
-    background: var(--theia-scrollbarSlider-activeBackground) !important;
+  background: var(--theia-scrollbarSlider-activeBackground) !important;
 }
 
-.monaco-scrollable-element > .scrollbar.vertical > .slider {
-    width: var(--theia-scrollbar-width) !important;
+.monaco-editor .codicon.codicon-debug-start {
+  color: var(--theia-debugIcon-startForeground) !important;
 }
 
-.monaco-scrollable-element > .scrollbar.horizontal > .slider {
-    height: var(--theia-scrollbar-width) !important;
+.monaco-editor .codelens-decoration a {
+  color: inherit !important;
 }
 
 .monaco-editor .reference-zone-widget .ref-tree .referenceMatch .highlight {
-    color: unset !important;
+  color: unset !important;
 }
 
 .monaco-editor .find-widget .monaco-inputbox.synthetic-focus {
-    outline: var(--theia-border-width) solid;
-    outline-offset: calc(-1*var(--theia-border-width));
-    outline-color: var(--theia-focusBorder);
+  outline: var(--theia-border-width) solid;
+  outline-offset: calc(-1 * var(--theia-border-width));
+  outline-color: var(--theia-focusBorder);
+}
+
+.monaco-editor .rename-box input {
+  color: var(--theia-editor-foreground);
+}
+
+.monaco-editor .rename-box .rename-label {
+  opacity: 0.8;
+  padding: 3px;
+  font-family: sans-serif;
+}
+
+/* Monaco Quick Input */
+.quick-input-widget {
+  background-color: var(--theia-quickInput-background) !important;
+  color: var(--theia-foreground) !important;
+}
+
+.quick-input-list .monaco-list-row.focused {
+  background-color: var(--theia-quickInputList-focusBackground) !important;
+}
+
+.quick-input-list .monaco-keybinding > .monaco-keybinding-key {
+  color: inherit !important;
+}
+
+.quick-input-list .monaco-list-row.focused,
+.quick-input-list .monaco-list-row.focused .monaco-highlighted-label,
+.quick-input-list .monaco-list-row.focused .monaco-highlighted-label .codicon,
+.quick-input-list .monaco-list-row.focused .quick-input-list-entry .quick-input-list-separator,
+.quick-input-list .monaco-list-row.focused .monaco-highlighted-label .monaco-keybinding .monaco-keybinding-key,
+.quick-input-list .monaco-list-row.focused .monaco-highlighted-label .monaco-keybinding .monaco-keybinding-key-separator {
+  color: var(--theia-quickInputList-focusForeground) !important;
+}
+
+.quick-input-list .monaco-list-row .codicon {
+  color: var(--theia-foreground) !important;
+}
+
+.quick-input-list .monaco-list-row.focused .codicon {
+  color: var(--theia-list-foreground) !important;
+}
+
+.quick-input-list .monaco-list-row.focused .monaco-highlighted-label .highlight {
+  color: var(--theia-list-focusHighlightForeground) !important;
+}
+
+.quick-input-titlebar .action-item .action-label {
+    color: var(--theia-foreground) !important;
+}
+
+.monaco-list-rows
+  .monaco-list-row:not(:first-child)
+  .quick-input-list-entry.quick-input-list-separator-border {
+  border-top: 1px solid var(--theia-pickerGroup-border) !important;
+}
+.quick-input-list .quick-input-list-separator {
+  color: var(--theia-pickerGroup-foreground) !important;
+}
+
+.monaco-icon-label > .monaco-icon-label-container {
+  flex: 1;
+}
+
+.quick-input-list-rows
+  .quick-input-list-row
+  .monaco-icon-label
+  .monaco-icon-description-container
+  .label-description {
+    font-family: var(--theia-ui-font-family);
+    font-size: calc(var(--theia-ui-font-size1) * 0.9) !important;
+    color: var(--theia-foreground) !important;
+    white-space: inherit;
+}
+
+.quick-input-list-rows
+  .quick-input-list-row
+  .monaco-icon-label
+  .monaco-icon-label-container
+  .monaco-icon-name-container
+  .label-name {
+    font-family: var(--theia-ui-font-family);
+    font-size: var(--theia-ui-font-size1) !important;
+    color: var(--theia-foreground) !important;
+}
+
+.quick-input-list .monaco-icon-label.codicon,
+.quick-input-list .monaco-icon-label.file-icon {
+  display: flex;
+  text-align: left;
+}
+
+.codicon-file.default-file-icon.file-icon {
+  padding-left: 2px;
+  height: 22px;
+}
+
+.codicon-file.default-file-icon.file-icon::before {
+  margin-right: 4px;
+  font-size: var(--theia-ui-font-size1);
+}
+
+.quick-input-list .monaco-icon-label.codicon::before {
+  position: relative;
+  top: 3px;
+}
+
+.quick-input-list .monaco-icon-label.theia-file-icons-js {
+  line-height: inherit;
+}
+
+.quick-input-list .quick-input-list-label {
+  cursor: pointer !important;
+}
+
+.quick-input-progress.active.infinite {
+    background-color: var(--theia-progressBar-background);
+    width: 3%;
+    /* `progress-animation` is defined in `packages/core/src/browser/style/progress-bar.css` */
+    animation: progress-animation 1.3s 0s infinite cubic-bezier(0.645, 0.045, 0.355, 1);
+}
+
+.monaco-list:not(.drop-target) .monaco-list-row:hover:not(.selected):not(.focused) {
+  background: var(--theia-list-hoverBackground);
+}
+
+.monaco-editor .peekview-widget .head .peekview-title {
+  font-family: var(--theia-ui-font-family);
+}
+
+.monaco-editor .peekview-widget .referenceMatch {
+  font-family: var(--theia-ui-font-family);
+}
+
+.monaco-editor .find-widget .monaco-findInput .input,
+.monaco-editor .find-widget .matchesCount {
+  font-family: var(--theia-ui-font-family);
+}
+
+.monaco-editor .monaco-action-bar .action-label.codicon {
+  color: var(--theia-foreground);
+}
+
+.monaco-editor .monaco-action-bar .action-item.active {
+	transform: none;
+}
+
+.monaco-editor .peekview-widget .monaco-list-row.focused.selected .label-name,
+.monaco-editor .peekview-widget .monaco-list-row.focused.selected .label-description,
+.monaco-editor .peekview-widget .monaco-list-row.focused.selected .monaco-highlighted-label,
+.monaco-editor .peekview-widget .monaco-list-row.focused.selected .codicon {
+  color: var(--theia-list-activeSelectionForeground) !important;
+}
+
+.quick-input-titlebar {
+  background-color: var(--theia-quickInputTitle-background);
+}
+
+.quick-input-widget input {
+  background-color: var(--theia-input-background) !important;
+}
+
+.monaco-editor .suggest-widget .monaco-list .monaco-list-row.focused>.contents>.main .monaco-highlighted-label .highlight {
+    color: var(--vscode-editorSuggestWidget-focusHighlightForeground) !important;
+}
+
+.symbol-icon-center {
+  align-self: center;
+  margin-right: 4px;
+}
+
+.monaco-inputbox.error > .ibwrapper > .input,
+.monaco-inputbox.warning > .ibwrapper > .input,
+.monaco-inputbox.info > .ibwrapper > .input {
+    outline: 0 !important;
 }

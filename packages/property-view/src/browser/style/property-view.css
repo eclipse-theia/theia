@@ -1,0 +1,51 @@
+/********************************************************************************
+ * Copyright (C) 2020 EclipseSource and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+:root {
+  --theia-property-view-widget-padding: 5px;
+  --theia-empty-property-view-widget-padding: 8px;
+  --theia-resource-tree-node-icon-margin: 0 3px;
+  --theia-resource-tree-node-icon-flex-basis: 1.5%;
+  --theia-resource-tree-node-name-flex-basis: 30%;
+  --theia-resource-tree-node-property-flex-basis: 70%;
+}
+
+.theia-property-view-widget {
+  padding: var(--theia-border-width);
+}
+
+#theia-empty-property-view .theia-widget-noInfo {
+  padding: var(--theia-empty-property-view-widget-padding);
+}
+
+.theia-property-view-widget .treeContainer {
+  height: 100%;
+}
+
+.theia-resource-tree-node-icon {
+  margin: var(--theia-resource-tree-node-icon-margin);
+  flex-basis: var(--theia-resource-tree-node-icon-flex-basis);
+  align-self: center;
+  text-align: center;
+}
+
+.theia-resource-tree-node-name {
+  flex-basis: var(--theia-resource-tree-node-name-flex-basis);
+}
+
+.theia-resource-tree-node-property {
+  flex-basis: var(--theia-resource-tree-node-property-flex-basis);
+}

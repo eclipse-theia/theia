@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -25,14 +25,10 @@ import { RPCProtocol } from '../common/rpc-protocol';
 import { Disposable } from './types-impl';
 import { DisposableCollection } from '@theia/core';
 import { KnownCommands } from './known-commands';
+import { ArgumentProcessor } from '../common/commands';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Handler = <T>(...args: any[]) => T | PromiseLike<T | undefined>;
-
-export interface ArgumentProcessor {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    processArgument(arg: any): any;
-}
 
 export class CommandRegistryImpl implements CommandRegistryExt {
 
@@ -102,7 +98,7 @@ export class CommandRegistryImpl implements CommandRegistryExt {
             // Using the KnownCommand exclusions, convert the commands manually
             return KnownCommands.map(id, args, (mappedId: string, mappedArgs: any[] | undefined, mappedResult: KnownCommands.ConversionFunction) => {
                 const mr: KnownCommands.ConversionFunction = mappedResult;
-                return this.proxy.$executeCommand(mappedId, ...mappedArgs).then((result: any) => {
+                return this.proxy.$executeCommand(mappedId, ...mappedArgs || []).then((result: any) => {
                     if (!result) {
                         return undefined;
                     }
@@ -129,7 +125,7 @@ export class CommandRegistryImpl implements CommandRegistryExt {
         if (handler) {
             return handler<T>(...args.map(arg => this.argumentProcessors.reduce((r, p) => p.processArgument(r), arg)));
         } else {
-            throw new Error(`Command ${id} doesn't exist`);
+            throw new Error(`No handler exists for command '${id}'`);
         }
     }
 
@@ -171,6 +167,7 @@ export class CommandsConverter {
         if (!command) {
             return undefined;
         }
+
         const result = this.toInternalCommand(command);
         if (KnownCommands.mapped(result.id)) {
             return result;
@@ -181,7 +178,7 @@ export class CommandsConverter {
             this.isSafeCommandRegistered = true;
         }
 
-        if (command.command && command.arguments && command.arguments.length > 0) {
+        if (command.arguments && command.arguments.length > 0) {
             const id = this.handle++;
             this.commandsMap.set(id, command);
             disposables.push(new Disposable(() => this.commandsMap.delete(id)));
@@ -196,22 +193,27 @@ export class CommandsConverter {
         // we're deprecating Command.id, so it has to be optional.
         // Existing code will have compiled against a non - optional version of the field, so asserting it to exist is ok
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return KnownCommands.map((external.command || external.id)!, external.arguments, (mappedId: string, mappedArgs: any[]) =>
-            ({
-                id: mappedId,
-                title: external.title || external.label || ' ',
-                tooltip: external.tooltip,
-                arguments: mappedArgs
-            }));
+        return KnownCommands.map(external.command, external.arguments, (mappedId: string, mappedArgs: any[]) =>
+        ({
+            id: mappedId,
+            title: external.title || ' ',
+            tooltip: external.tooltip,
+            arguments: mappedArgs
+        }));
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private executeSafeCommand<R>(...args: any[]): PromiseLike<R | undefined> {
-        const command = this.commandsMap.get(args[0]);
-        if (!command || !command.command) {
-            return Promise.reject('command NOT FOUND');
+        const handle = args[0];
+        if (typeof handle !== 'number') {
+            return Promise.reject(`Invalid handle ${handle}`);
         }
-        return this.commands.executeCommand(command.command, ...(command.arguments || []));
+        const command = this.commandsMap.get(handle);
+        if (!command || !command.command) {
+            return Promise.reject(`Safe command with handle ${handle} not found`);
+        }
+        const allArgs = (command.arguments ?? []).concat(args.slice(1));
+        return this.commands.executeCommand(command.command, ...allArgs);
     }
 
 }

@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 Ericsson and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Ericsson and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import * as yargs from 'yargs';
 import { injectable } from 'inversify';
@@ -73,11 +73,11 @@ export class LogLevelCliContribution implements CliContribution {
         }
 
         if (args['log-level'] !== undefined) {
-            this._defaultLogLevel = this.readLogLevelString(args['log-level'], 'Unknown log level passed to --log-level');
+            this._defaultLogLevel = this.readLogLevelString(args['log-level'] as string, 'Unknown log level passed to --log-level');
         }
 
         if (args['log-config'] !== undefined) {
-            let filename = args['log-config'];
+            let filename: string = args['log-config'] as string;
             try {
                 filename = path.resolve(filename);
 
@@ -90,7 +90,7 @@ export class LogLevelCliContribution implements CliContribution {
     }
 
     protected watchLogConfigFile(filename: string): Promise<void> {
-        return nsfw(filename, async (events: nsfw.ChangeEvent[]) => {
+        return nsfw(filename, async (events: nsfw.FileChangeEvent[]) => {
             try {
                 for (const event of events) {
                     switch (event.action) {

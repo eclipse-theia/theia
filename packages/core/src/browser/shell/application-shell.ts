@@ -1,41 +1,49 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { injectable, inject, optional, postConstruct } from 'inversify';
 import { ArrayExt, find, toArray, each } from '@phosphor/algorithm';
-import { Signal } from '@phosphor/signaling';
 import {
     BoxLayout, BoxPanel, DockLayout, DockPanel, FocusTracker, Layout, Panel, SplitLayout,
     SplitPanel, TabBar, Widget, Title
 } from '@phosphor/widgets';
 import { Message } from '@phosphor/messaging';
 import { IDragEvent } from '@phosphor/dragdrop';
-import { RecursivePartial, Event as CommonEvent, DisposableCollection, Disposable } from '../../common';
+import { RecursivePartial, Event as CommonEvent, DisposableCollection, Disposable, environment, isObject } from '../../common';
 import { animationFrame } from '../browser';
-import { Saveable, SaveableWidget } from '../saveable';
+import { Saveable, SaveableWidget, SaveOptions, SaveableSource } from '../saveable';
 import { StatusBarImpl, StatusBarEntry, StatusBarAlignment } from '../status-bar/status-bar';
 import { TheiaDockPanel, BOTTOM_AREA_ID, MAIN_AREA_ID } from './theia-dock-panel';
 import { SidePanelHandler, SidePanel, SidePanelHandlerFactory } from './side-panel-handler';
-import { TabBarRendererFactory, TabBarRenderer, SHELL_TABBAR_CONTEXT_MENU, ScrollableTabBar, ToolbarAwareTabBar } from './tab-bars';
+import { TabBarRendererFactory, SHELL_TABBAR_CONTEXT_MENU, ScrollableTabBar, ToolbarAwareTabBar } from './tab-bars';
 import { SplitPositionHandler, SplitPositionOptions } from './split-panels';
 import { FrontendApplicationStateService } from '../frontend-application-state';
-import { TabBarToolbarRegistry, TabBarToolbarFactory, TabBarToolbar } from './tab-bar-toolbar';
+import { TabBarToolbarRegistry, TabBarToolbarFactory } from './tab-bar-toolbar';
 import { ContextKeyService } from '../context-key-service';
 import { Emitter } from '../../common/event';
-import { waitForRevealed, waitForClosed } from '../widgets';
+import { waitForRevealed, waitForClosed, PINNED_CLASS } from '../widgets';
+import { CorePreferences } from '../core-preferences';
+import { BreadcrumbsRendererFactory } from '../breadcrumbs/breadcrumbs-renderer';
+import { Deferred } from '../../common/promise-util';
+import { SaveResourceService } from '../save-resource-service';
+import { nls } from '../../common/nls';
+import { SecondaryWindowHandler } from '../secondary-window-handler';
+import URI from '../../common/uri';
+import { OpenerService } from '../opener-service';
+import { PreviewableWidget } from '../widgets/previewable-widget';
 
 /** The class name added to ApplicationShell instances. */
 const APPLICATION_SHELL_CLASS = 'theia-ApplicationShell';
@@ -54,12 +62,16 @@ export type ApplicationShellLayoutVersion =
     /** view containers are introduced, backward compatible to 2.0 */
     3.0 |
     /** git history view is replaced by a more generic scm history view, backward compatible to 3.0 */
-    4.0;
+    4.0 |
+    /** Replace custom/font-awesome icons with codicons */
+    5.0 |
+    /** added the ability to drag and drop view parts between view containers */
+    6.0;
 
 /**
  * When a version is increased, make sure to introduce a migration (ApplicationShellLayoutMigration) to this version.
  */
-export const applicationShellLayoutVersion: ApplicationShellLayoutVersion = 4.0;
+export const applicationShellLayoutVersion: ApplicationShellLayoutVersion = 5.0;
 
 export const ApplicationShellOptions = Symbol('ApplicationShellOptions');
 export const DockPanelRendererFactory = Symbol('DockPanelRendererFactory');
@@ -73,29 +85,64 @@ export interface DockPanelRendererFactory {
 @injectable()
 export class DockPanelRenderer implements DockLayout.IRenderer {
 
+    @inject(TheiaDockPanel.Factory)
+    protected readonly dockPanelFactory: TheiaDockPanel.Factory;
+
     readonly tabBarClasses: string[] = [];
 
+    private readonly onDidCreateTabBarEmitter = new Emitter<TabBar<Widget>>();
+
     constructor(
-        @inject(TabBarRendererFactory) protected readonly tabBarRendererFactory: () => TabBarRenderer,
+        @inject(TabBarRendererFactory) protected readonly tabBarRendererFactory: TabBarRendererFactory,
         @inject(TabBarToolbarRegistry) protected readonly tabBarToolbarRegistry: TabBarToolbarRegistry,
-        @inject(TabBarToolbarFactory) protected readonly tabBarToolbarFactory: () => TabBarToolbar
+        @inject(TabBarToolbarFactory) protected readonly tabBarToolbarFactory: TabBarToolbarFactory,
+        @inject(BreadcrumbsRendererFactory) protected readonly breadcrumbsRendererFactory: BreadcrumbsRendererFactory,
+        @inject(CorePreferences) protected readonly corePreferences: CorePreferences
     ) { }
 
+    get onDidCreateTabBar(): CommonEvent<TabBar<Widget>> {
+        return this.onDidCreateTabBarEmitter.event;
+    }
+
     createTabBar(): TabBar<Widget> {
+        const getDynamicTabOptions: () => ScrollableTabBar.Options | undefined = () => {
+            if (this.corePreferences.get('workbench.tab.shrinkToFit.enabled')) {
+                return {
+                    minimumTabSize: this.corePreferences.get('workbench.tab.shrinkToFit.minimumSize'),
+                    defaultTabSize: this.corePreferences.get('workbench.tab.shrinkToFit.defaultSize')
+                };
+            } else {
+                return undefined;
+            }
+        };
+
         const renderer = this.tabBarRendererFactory();
-        const tabBar = new ToolbarAwareTabBar(this.tabBarToolbarRegistry, this.tabBarToolbarFactory, {
-            renderer,
-            // Scroll bar options
-            handlers: ['drag-thumb', 'keyboard', 'wheel', 'touch'],
-            useBothWheelAxes: true,
-            scrollXMarginOffset: 4,
-            suppressScrollY: true
-        });
+        const tabBar = new ToolbarAwareTabBar(
+            this.tabBarToolbarRegistry,
+            this.tabBarToolbarFactory,
+            this.breadcrumbsRendererFactory,
+            {
+                renderer,
+                // Scroll bar options
+                handlers: ['drag-thumb', 'keyboard', 'wheel', 'touch'],
+                useBothWheelAxes: true,
+                scrollXMarginOffset: 4,
+                suppressScrollY: true
+            },
+            getDynamicTabOptions());
         this.tabBarClasses.forEach(c => tabBar.addClass(c));
         renderer.tabBar = tabBar;
         tabBar.disposed.connect(() => renderer.dispose());
         renderer.contextMenuPath = SHELL_TABBAR_CONTEXT_MENU;
         tabBar.currentChanged.connect(this.onCurrentTabChanged, this);
+        this.corePreferences.onPreferenceChanged(change => {
+            if (change.preferenceName === 'workbench.tab.shrinkToFit.enabled' ||
+                change.preferenceName === 'workbench.tab.shrinkToFit.minimumSize' ||
+                change.preferenceName === 'workbench.tab.shrinkToFit.defaultSize') {
+                tabBar.dynamicTabOptions = getDynamicTabOptions();
+            }
+        });
+        this.onDidCreateTabBarEmitter.fire(tabBar);
         return tabBar;
     }
 
@@ -132,25 +179,25 @@ export class ApplicationShell extends Widget {
     /**
      * The dock panel in the main shell area. This is where editors usually go to.
      */
-    readonly mainPanel: TheiaDockPanel;
+    mainPanel: TheiaDockPanel;
 
     /**
      * The dock panel in the bottom shell area. In contrast to the main panel, the bottom panel
      * can be collapsed and expanded.
      */
-    readonly bottomPanel: TheiaDockPanel;
+    bottomPanel: TheiaDockPanel;
 
     /**
      * Handler for the left side panel. The primary application views go here, such as the
      * file explorer and the git view.
      */
-    readonly leftPanelHandler: SidePanelHandler;
+    leftPanelHandler: SidePanelHandler;
 
     /**
      * Handler for the right side panel. The secondary application views go here, such as the
      * outline view.
      */
-    readonly rightPanelHandler: SidePanelHandler;
+    rightPanelHandler: SidePanelHandler;
 
     /**
      * General options for the application shell.
@@ -160,7 +207,7 @@ export class ApplicationShell extends Widget {
     /**
      * The fixed-size panel shown on top. This one usually holds the main menu.
      */
-    readonly topPanel: Panel;
+    topPanel: Panel;
 
     /**
      * The current state of the bottom panel.
@@ -173,9 +220,13 @@ export class ApplicationShell extends Widget {
 
     private readonly tracker = new FocusTracker<Widget>();
     private dragState?: WidgetDragState;
+    additionalDraggedUris: URI[] | undefined;
 
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
+
+    @inject(OpenerService)
+    protected readonly openerService: OpenerService;
 
     protected readonly onDidAddWidgetEmitter = new Emitter<Widget>();
     readonly onDidAddWidget = this.onDidAddWidgetEmitter.event;
@@ -195,61 +246,102 @@ export class ApplicationShell extends Widget {
     protected readonly onDidChangeCurrentWidgetEmitter = new Emitter<FocusTracker.IChangedArgs<Widget>>();
     readonly onDidChangeCurrentWidget = this.onDidChangeCurrentWidgetEmitter.event;
 
+    protected readonly onDidDoubleClickMainAreaEmitter = new Emitter<void>();
+    readonly onDidDoubleClickMainArea = this.onDidDoubleClickMainAreaEmitter.event;
+
+    @inject(TheiaDockPanel.Factory)
+    protected readonly dockPanelFactory: TheiaDockPanel.Factory;
+
+    private _mainPanelRenderer: DockPanelRenderer;
+    get mainPanelRenderer(): DockPanelRenderer {
+        return this._mainPanelRenderer;
+    }
+
     /**
      * Construct a new application shell.
      */
     constructor(
         @inject(DockPanelRendererFactory) protected dockPanelRendererFactory: () => DockPanelRenderer,
         @inject(StatusBarImpl) protected readonly statusBar: StatusBarImpl,
-        @inject(SidePanelHandlerFactory) sidePanelHandlerFactory: () => SidePanelHandler,
+        @inject(SidePanelHandlerFactory) protected readonly sidePanelHandlerFactory: () => SidePanelHandler,
         @inject(SplitPositionHandler) protected splitPositionHandler: SplitPositionHandler,
         @inject(FrontendApplicationStateService) protected readonly applicationStateService: FrontendApplicationStateService,
-        @inject(ApplicationShellOptions) @optional() options: RecursivePartial<ApplicationShell.Options> = {}
+        @inject(ApplicationShellOptions) @optional() options: RecursivePartial<ApplicationShell.Options> = {},
+        @inject(CorePreferences) protected readonly corePreferences: CorePreferences,
+        @inject(SaveResourceService) protected readonly saveResourceService: SaveResourceService,
+        @inject(SecondaryWindowHandler) protected readonly secondaryWindowHandler: SecondaryWindowHandler,
     ) {
         super(options as Widget.IOptions);
-        this.addClass(APPLICATION_SHELL_CLASS);
-        this.id = 'theia-app-shell';
 
         // Merge the user-defined application options with the default options
         this.options = {
             bottomPanel: {
                 ...ApplicationShell.DEFAULT_OPTIONS.bottomPanel,
-                ...options.bottomPanel || {}
+                ...options?.bottomPanel || {}
             },
             leftPanel: {
                 ...ApplicationShell.DEFAULT_OPTIONS.leftPanel,
-                ...options.leftPanel || {}
+                ...options?.leftPanel || {}
             },
             rightPanel: {
                 ...ApplicationShell.DEFAULT_OPTIONS.rightPanel,
-                ...options.rightPanel || {}
+                ...options?.rightPanel || {}
             }
         };
+    }
+
+    @postConstruct()
+    protected init(): void {
+        this.initializeShell();
+        this.initSidebarVisibleKeyContext();
+        this.initFocusKeyContexts();
+
+        if (!environment.electron.is()) {
+            this.corePreferences.ready.then(() => {
+                this.setTopPanelVisibility(this.corePreferences['window.menuBarVisibility']);
+            });
+            this.corePreferences.onPreferenceChanged(preference => {
+                if (preference.preferenceName === 'window.menuBarVisibility') {
+                    this.setTopPanelVisibility(preference.newValue);
+                }
+            });
+        }
+
+        this.corePreferences.onPreferenceChanged(preference => {
+            if (preference.preferenceName === 'window.tabbar.enhancedPreview') {
+                this.allTabBars.forEach(tabBar => {
+                    tabBar.update();
+                });
+            }
+        });
+    }
+
+    protected initializeShell(): void {
+        this.addClass(APPLICATION_SHELL_CLASS);
+        this.id = 'theia-app-shell';
 
         this.mainPanel = this.createMainPanel();
         this.topPanel = this.createTopPanel();
         this.bottomPanel = this.createBottomPanel();
 
-        this.leftPanelHandler = sidePanelHandlerFactory();
+        this.leftPanelHandler = this.sidePanelHandlerFactory();
         this.leftPanelHandler.create('left', this.options.leftPanel);
         this.leftPanelHandler.dockPanel.widgetAdded.connect((_, widget) => this.fireDidAddWidget(widget));
         this.leftPanelHandler.dockPanel.widgetRemoved.connect((_, widget) => this.fireDidRemoveWidget(widget));
 
-        this.rightPanelHandler = sidePanelHandlerFactory();
+        this.rightPanelHandler = this.sidePanelHandlerFactory();
         this.rightPanelHandler.create('right', this.options.rightPanel);
         this.rightPanelHandler.dockPanel.widgetAdded.connect((_, widget) => this.fireDidAddWidget(widget));
         this.rightPanelHandler.dockPanel.widgetRemoved.connect((_, widget) => this.fireDidRemoveWidget(widget));
+
+        this.secondaryWindowHandler.init(this);
+        this.secondaryWindowHandler.onDidAddWidget(widget => this.fireDidAddWidget(widget));
+        this.secondaryWindowHandler.onDidRemoveWidget(widget => this.fireDidRemoveWidget(widget));
 
         this.layout = this.createLayout();
 
         this.tracker.currentChanged.connect(this.onCurrentChanged, this);
         this.tracker.activeChanged.connect(this.onActiveChanged, this);
-    }
-
-    @postConstruct()
-    protected init(): void {
-        this.initSidebarVisibleKeyContext();
-        this.initFocusKeyContexts();
     }
 
     protected initSidebarVisibleKeyContext(): void {
@@ -268,25 +360,30 @@ export class ApplicationShell extends Widget {
     }
 
     protected initFocusKeyContexts(): void {
-        const sideBarFocus = this.contextKeyService.createKey('sideBarFocus', false);
-        const panelFocus = this.contextKeyService.createKey('panelFocus', false);
+        const sideBarFocus = this.contextKeyService.createKey<boolean>('sideBarFocus', false);
+        const panelFocus = this.contextKeyService.createKey<boolean>('panelFocus', false);
         const updateFocusContextKeys = () => {
             const area = this.activeWidget && this.getAreaFor(this.activeWidget);
             sideBarFocus.set(area === 'left');
             panelFocus.set(area === 'main');
         };
         updateFocusContextKeys();
-        this.activeChanged.connect(updateFocusContextKeys);
+        this.onDidChangeActiveWidget(updateFocusContextKeys);
     }
 
-    protected onBeforeAttach(msg: Message): void {
+    protected setTopPanelVisibility(preference: string): void {
+        const hiddenPreferences = ['compact', 'hidden'];
+        this.topPanel.setHidden(hiddenPreferences.includes(preference));
+    }
+
+    protected override onBeforeAttach(msg: Message): void {
         document.addEventListener('p-dragenter', this, true);
         document.addEventListener('p-dragover', this, true);
         document.addEventListener('p-dragleave', this, true);
         document.addEventListener('p-drop', this, true);
     }
 
-    protected onAfterDetach(msg: Message): void {
+    protected override onAfterDetach(msg: Message): void {
         document.removeEventListener('p-dragenter', this, true);
         document.removeEventListener('p-dragover', this, true);
         document.removeEventListener('p-dragleave', this, true);
@@ -444,7 +541,8 @@ export class ApplicationShell extends Widget {
         const renderer = this.dockPanelRendererFactory();
         renderer.tabBarClasses.push(MAIN_BOTTOM_AREA_CLASS);
         renderer.tabBarClasses.push(MAIN_AREA_CLASS);
-        const dockPanel = new TheiaDockPanel({
+        this._mainPanelRenderer = renderer;
+        const dockPanel = this.dockPanelFactory({
             mode: 'multiple-document',
             renderer,
             spacing: 0
@@ -452,7 +550,74 @@ export class ApplicationShell extends Widget {
         dockPanel.id = MAIN_AREA_ID;
         dockPanel.widgetAdded.connect((_, widget) => this.fireDidAddWidget(widget));
         dockPanel.widgetRemoved.connect((_, widget) => this.fireDidRemoveWidget(widget));
+
+        const openUri = async (fileUri: URI) => {
+            try {
+                const opener = await this.openerService.getOpener(fileUri);
+                opener.open(fileUri);
+            } catch (e) {
+                console.info(`no opener found for '${fileUri}'`);
+            }
+        };
+
+        dockPanel.node.addEventListener('drop', event => {
+            if (event.dataTransfer) {
+                const uris = this.additionalDraggedUris || ApplicationShell.getDraggedEditorUris(event.dataTransfer);
+                if (uris.length > 0) {
+                    uris.forEach(openUri);
+                } else if (event.dataTransfer.files?.length > 0) {
+                    // the files were dragged from the outside the workspace
+                    Array.from(event.dataTransfer.files).forEach(file => {
+                        if (file.path) {
+                            const fileUri = URI.fromComponents({
+                                scheme: 'file',
+                                path: file.path,
+                                authority: '',
+                                query: '',
+                                fragment: ''
+                            });
+                            openUri(fileUri);
+                        }
+                    });
+                }
+            }
+        });
+
+        dockPanel.node.addEventListener('dblclick', event => {
+            const el = event.target as Element;
+            if (el.id === MAIN_AREA_ID || el.classList.contains('p-TabBar-content')) {
+                this.onDidDoubleClickMainAreaEmitter.fire();
+            }
+        });
+
+        const handler = (e: DragEvent) => {
+            if (e.dataTransfer) {
+                e.dataTransfer.dropEffect = 'link';
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        };
+        dockPanel.node.addEventListener('dragover', handler);
+        dockPanel.node.addEventListener('dragenter', handler);
+
         return dockPanel;
+    }
+
+    addAdditionalDraggedEditorUris(uris: URI[]): void {
+        this.additionalDraggedUris = uris;
+    }
+
+    clearAdditionalDraggedEditorUris(): void {
+        this.additionalDraggedUris = undefined;
+    }
+
+    protected static getDraggedEditorUris(dataTransfer: DataTransfer): URI[] {
+        const data = dataTransfer.getData('theia-editor-dnd');
+        return data ? data.split('\n').map(entry => new URI(entry)) : [];
+    }
+
+    static setDraggedEditorUris(dataTransfer: DataTransfer, uris: URI[]): void {
+        dataTransfer.setData('theia-editor-dnd', uris.map(uri => uri.toString()).join('\n'));
     }
 
     /**
@@ -462,7 +627,7 @@ export class ApplicationShell extends Widget {
         const renderer = this.dockPanelRendererFactory();
         renderer.tabBarClasses.push(MAIN_BOTTOM_AREA_CLASS);
         renderer.tabBarClasses.push(BOTTOM_AREA_CLASS);
-        const dockPanel = new TheiaDockPanel({
+        const dockPanel = this.dockPanelFactory({
             mode: 'multiple-document',
             renderer,
             spacing: 0
@@ -493,6 +658,7 @@ export class ApplicationShell extends Widget {
     protected createTopPanel(): Panel {
         const topPanel = new Panel();
         topPanel.id = 'theia-top-panel';
+        topPanel.hide();
         return topPanel;
     }
 
@@ -564,8 +730,10 @@ export class ApplicationShell extends Widget {
         return {
             version: applicationShellLayoutVersion,
             mainPanel: this.mainPanel.saveLayout(),
+            mainPanelPinned: this.getPinnedMainWidgets(),
             bottomPanel: {
                 config: this.bottomPanel.saveLayout(),
+                pinned: this.getPinnedBottomWidgets(),
                 size: this.bottomPanel.isVisible ? this.getBottomPanelSize() : this.bottomPanelState.lastPanelSize,
                 expanded: this.isExpanded('bottom')
             },
@@ -573,6 +741,28 @@ export class ApplicationShell extends Widget {
             rightPanel: this.rightPanelHandler.getLayoutData(),
             activeWidgetId: this.activeWidget ? this.activeWidget.id : undefined
         };
+    }
+
+    // Get an array corresponding to main panel widgets' pinned state.
+    getPinnedMainWidgets(): boolean[] {
+        const pinned: boolean[] = [];
+
+        toArray(this.mainPanel.widgets()).forEach((a, i) => {
+            pinned[i] = a.title.className.includes(PINNED_CLASS);
+        });
+
+        return pinned;
+    }
+
+    // Get an array corresponding to bottom panel widgets' pinned state.
+    getPinnedBottomWidgets(): boolean[] {
+        const pinned: boolean[] = [];
+
+        toArray(this.bottomPanel.widgets()).forEach((a, i) => {
+            pinned[i] = a.title.className.includes(PINNED_CLASS);
+        });
+
+        return pinned;
     }
 
     /**
@@ -607,7 +797,7 @@ export class ApplicationShell extends Widget {
      * Apply a shell layout that has been previously created with `getLayoutData`.
      */
     async setLayoutData(layoutData: ApplicationShell.LayoutData): Promise<void> {
-        const { mainPanel, bottomPanel, leftPanel, rightPanel, activeWidgetId } = layoutData;
+        const { mainPanel, mainPanelPinned, bottomPanel, leftPanel, rightPanel, activeWidgetId } = layoutData;
         if (leftPanel) {
             this.leftPanelHandler.setLayoutData(leftPanel);
             this.registerWithFocusTracker(leftPanel);
@@ -631,6 +821,16 @@ export class ApplicationShell extends Widget {
             } else {
                 this.collapseBottomPanel();
             }
+            const widgets = toArray(this.bottomPanel.widgets());
+            this.bottomPanel.markActiveTabBar(widgets[0]?.title);
+            if (bottomPanel.pinned && bottomPanel.pinned.length === widgets.length) {
+                widgets.forEach((a, i) => {
+                    if (bottomPanel.pinned![i]) {
+                        a.title.className += ` ${PINNED_CLASS}`;
+                        a.title.closable = false;
+                    }
+                });
+            }
             this.refreshBottomPanelToggleButton();
         }
         // Proceed with the main panel once all others are set up
@@ -638,6 +838,18 @@ export class ApplicationShell extends Widget {
         if (mainPanel) {
             this.mainPanel.restoreLayout(mainPanel);
             this.registerWithFocusTracker(mainPanel.main);
+            const widgets = toArray(this.mainPanel.widgets());
+            // We don't store information about the last active tabbar
+            // So we simply mark the first as being active
+            this.mainPanel.markActiveTabBar(widgets[0]?.title);
+            if (mainPanelPinned && mainPanelPinned.length === widgets.length) {
+                widgets.forEach((a, i) => {
+                    if (mainPanelPinned[i]) {
+                        a.title.className += ` ${PINNED_CLASS}`;
+                        a.title.closable = false;
+                    }
+                });
+            }
         }
         if (activeWidgetId) {
             this.activateWidget(activeWidgetId);
@@ -709,36 +921,13 @@ export class ApplicationShell extends Widget {
      *
      * Widgets added to the top area are not tracked regarding the _current_ and _active_ states.
      */
-    async addWidget(widget: Widget, options: Readonly<ApplicationShell.WidgetOptions> = {}): Promise<void> {
+    async addWidget(widget: Widget, options?: Readonly<ApplicationShell.WidgetOptions>): Promise<void> {
         if (!widget.id) {
             console.error('Widgets added to the application shell must have a unique id property.');
             return;
         }
-        let ref: Widget | undefined = options.ref;
-        let area: ApplicationShell.Area = options.area || 'main';
-        if (!ref && (area === 'main' || area === 'bottom')) {
-            const tabBar = this.getTabBarFor(area);
-            ref = tabBar && tabBar.currentTitle && tabBar.currentTitle.owner || undefined;
-        }
-        // make sure that ref belongs to area
-        area = ref && this.getAreaFor(ref) || area;
-        const addOptions: DockPanel.IAddOptions = {};
-        if (ApplicationShell.isOpenToSideMode(options.mode)) {
-            const areaPanel = area === 'main' ? this.mainPanel : area === 'bottom' ? this.bottomPanel : undefined;
-            const sideRef = areaPanel && ref && (options.mode === 'open-to-left' ?
-                areaPanel.previousTabBarWidget(ref) :
-                areaPanel.nextTabBarWidget(ref));
-            if (sideRef) {
-                addOptions.ref = sideRef;
-            } else {
-                addOptions.ref = ref;
-                addOptions.mode = options.mode === 'open-to-left' ? 'split-left' : 'split-right';
-            }
-        } else {
-            addOptions.ref = ref;
-            addOptions.mode = options.mode;
-        }
-        const sidePanelOptions: SidePanel.WidgetOptions = { rank: options.rank };
+        const { area, addOptions } = this.getInsertionOptions(options);
+        const sidePanelOptions: SidePanel.WidgetOptions = { rank: options?.rank };
         switch (area) {
             case 'main':
                 this.mainPanel.addWidget(widget, addOptions);
@@ -755,12 +944,43 @@ export class ApplicationShell extends Widget {
             case 'right':
                 this.rightPanelHandler.addWidget(widget, sidePanelOptions);
                 break;
+            case 'secondaryWindow':
+                /** At the moment, widgets are only moved to this area (i.e. a secondary window) by moving them from one of the other areas. */
+                throw new Error('Widgets cannot be added directly to a secondary window');
             default:
-                throw new Error('Unexpected area: ' + options.area);
+                throw new Error('Unexpected area: ' + options?.area);
         }
         if (area !== 'top') {
             this.track(widget);
         }
+    }
+
+    getInsertionOptions(options?: Readonly<ApplicationShell.WidgetOptions>): { area: string; addOptions: DockLayout.IAddOptions; } {
+        let ref: Widget | undefined = options?.ref;
+        let area: ApplicationShell.Area = options?.area || 'main';
+        if (!ref && (area === 'main' || area === 'bottom')) {
+            const tabBar = this.getTabBarFor(area);
+            ref = tabBar && tabBar.currentTitle && tabBar.currentTitle.owner || undefined;
+        }
+        // make sure that ref belongs to area
+        area = ref && this.getAreaFor(ref) || area;
+        const addOptions: DockPanel.IAddOptions = {};
+        if (ApplicationShell.isOpenToSideMode(options?.mode)) {
+            const areaPanel = area === 'main' ? this.mainPanel : area === 'bottom' ? this.bottomPanel : undefined;
+            const sideRef = areaPanel && ref && (options?.mode === 'open-to-left' ?
+                areaPanel.previousTabBarWidget(ref) :
+                areaPanel.nextTabBarWidget(ref));
+            if (sideRef) {
+                addOptions.ref = sideRef;
+            } else {
+                addOptions.ref = ref;
+                addOptions.mode = options?.mode === 'open-to-left' ? 'split-left' : 'split-right';
+            }
+        } else {
+            addOptions.ref = ref;
+            addOptions.mode = options?.mode;
+        }
+        return { area, addOptions };
     }
 
     /**
@@ -778,6 +998,8 @@ export class ApplicationShell extends Widget {
                 return toArray(this.leftPanelHandler.dockPanel.widgets());
             case 'right':
                 return toArray(this.rightPanelHandler.dockPanel.widgets());
+            case 'secondaryWindow':
+                return toArray(this.secondaryWindowHandler.widgets);
             default:
                 throw new Error('Illegal argument: ' + area);
         }
@@ -809,6 +1031,51 @@ export class ApplicationShell extends Widget {
             return !result;
         });
         return result;
+    }
+
+    /**
+     * Finds the title widget from the tab-bar.
+     * @param tabBar used for providing an array of titles.
+     * @returns the selected title widget, else returns the currentTitle or undefined.
+     */
+    findTitle(tabBar: TabBar<Widget>, event?: Event): Title<Widget> | undefined {
+        if (event?.target instanceof HTMLElement) {
+            const tabNode = event.target;
+
+            const titleIndex = Array.from(tabBar.contentNode.getElementsByClassName('p-TabBar-tab'))
+                .findIndex(node => node.contains(tabNode));
+
+            if (titleIndex !== -1) {
+                return tabBar.titles[titleIndex];
+            }
+
+        }
+        return tabBar.currentTitle || undefined;
+    }
+
+    /**
+     * Finds the tab-bar widget.
+     * @returns the selected tab-bar, else returns the currentTabBar.
+     */
+    findTabBar(event?: Event): TabBar<Widget> | undefined {
+        if (event?.target instanceof HTMLElement) {
+            const tabBar = this.findWidgetForElement(event.target);
+            if (tabBar instanceof TabBar) {
+                return tabBar;
+            }
+        }
+        return this.currentTabBar;
+    }
+
+    /**
+     *  @returns the widget whose title has been targeted by a DOM event on a tabbar, or undefined if none can be found.
+     */
+    findTargetedWidget(event?: Event): Widget | undefined {
+        if (event) {
+            const tab = this.findTabBar(event);
+            const title = tab && this.findTitle(tab, event);
+            return title && title.owner;
+        }
     }
 
     /**
@@ -849,6 +1116,9 @@ export class ApplicationShell extends Widget {
             case 'right':
                 title = this.rightPanelHandler.tabBar.currentTitle;
                 break;
+            case 'secondaryWindow':
+                // The current widget in a secondary window is not tracked.
+                return undefined;
             default:
                 throw new Error('Illegal argument: ' + area);
         }
@@ -856,26 +1126,11 @@ export class ApplicationShell extends Widget {
     }
 
     /**
-     * A signal emitted whenever the `currentWidget` property is changed.
-     *
-     * @deprecated since 0.11.0, use `onDidChangeActiveWidget` instead
-     */
-    readonly currentChanged = new Signal<this, FocusTracker.IChangedArgs<Widget>>(this);
-
-    /**
      * Handle a change to the current widget.
      */
     private onCurrentChanged(sender: FocusTracker<Widget>, args: FocusTracker.IChangedArgs<Widget>): void {
-        this.currentChanged.emit(args);
         this.onDidChangeCurrentWidgetEmitter.fire(args);
     }
-
-    /**
-     * A signal emitted whenever the `activeWidget` property is changed.
-     *
-     * @deprecated since 0.11.0, use `onDidChangeActiveWidget` instead
-     */
-    readonly activeChanged = new Signal<this, FocusTracker.IChangedArgs<Widget>>(this);
 
     protected readonly toDisposeOnActiveChanged = new DisposableCollection();
 
@@ -911,12 +1166,17 @@ export class ApplicationShell extends Widget {
                     tabBar.revealTab(index);
                 }
             }
-            const panel = this.getAreaPanelFor(newValue);
-            if (panel instanceof TheiaDockPanel) {
-                panel.markAsCurrent(newValue.title);
+            const widget = this.toTrackedStack(newValue.id).pop();
+            const panel = this.findPanel(widget);
+            if (panel) {
+                // if widget was undefined, we wouldn't have gotten a panel back before
+                panel.markAsCurrent(widget!.title);
             }
-            // Set the z-index so elements with `position: fixed` contained in the active widget are displayed correctly
-            this.setZIndex(newValue.node, '1');
+            // Add checks to ensure that the 'sash' for left panel is displayed correctly
+            if (newValue.node.className === 'p-Widget theia-view-container p-DockPanel-widget') {
+                // Set the z-index so elements with `position: fixed` contained in the active widget are displayed correctly
+                this.setZIndex(newValue.node, '1');
+            }
 
             // activate another widget if an active widget will be closed
             const onCloseRequest = newValue['onCloseRequest'];
@@ -939,8 +1199,10 @@ export class ApplicationShell extends Widget {
                 newValue['onCloseRequest'](msg);
             };
             this.toDisposeOnActiveChanged.push(Disposable.create(() => newValue['onCloseRequest'] = onCloseRequest));
+            if (PreviewableWidget.is(newValue)) {
+                newValue.loaded = true;
+            }
         }
-        this.activeChanged.emit(args);
         this.onDidChangeActiveWidgetEmitter.fire(args);
     }
 
@@ -964,7 +1226,11 @@ export class ApplicationShell extends Widget {
         }
         this.tracker.add(widget);
         this.checkActivation(widget);
-        Saveable.apply(widget);
+        Saveable.apply(
+            widget,
+            () => this.widgets.filter((maybeSaveable): maybeSaveable is Widget & SaveableSource => !!Saveable.get(maybeSaveable)),
+            (toSave, options) => this.saveResourceService.save(toSave, options),
+        );
         if (ApplicationShell.TrackableWidgetProvider.is(widget)) {
             for (const toTrack of widget.getTrackableWidgets()) {
                 this.track(toTrack);
@@ -975,6 +1241,11 @@ export class ApplicationShell extends Widget {
         }
     }
 
+    /**
+     * @returns an array of Widgets, all of which are tracked by the focus tracker
+     * The first member of the array is the widget whose id is passed in, and the other widgets
+     * are its tracked parents in ascending order
+     */
     protected toTrackedStack(id: string): Widget[] {
         const tracked = new Map<string, Widget>(this.tracker.widgets.map(w => [w.id, w] as [string, Widget]));
         let current = tracked.get(id);
@@ -1016,25 +1287,27 @@ export class ApplicationShell extends Widget {
         if (!current) {
             return undefined;
         }
-        await Promise.all([
+        return Promise.all([
             this.waitForActivation(current.id),
             waitForRevealed(current),
             this.pendingUpdates
-        ]);
-        return current;
+        ]).then(() => current, () => undefined);
     }
 
     waitForActivation(id: string): Promise<void> {
         if (this.activeWidget && this.activeWidget.id === id) {
             return Promise.resolve();
         }
-        return new Promise(resolve => {
-            const toDispose = this.onDidChangeActiveWidget(() => {
-                if (this.activeWidget && this.activeWidget.id === id) {
-                    toDispose.dispose();
-                    resolve();
-                }
-            });
+        const activation = new Deferred();
+        const success = this.onDidChangeActiveWidget(() => {
+            if (this.activeWidget && this.activeWidget.id === id) {
+                activation.resolve();
+            }
+        });
+        const failure = setTimeout(() => activation.reject(new Error(`Widget with id '${id}' failed to activate.`)), this.activationTimeout + 250);
+        return activation.promise.finally(() => {
+            success.dispose();
+            clearTimeout(failure);
         });
     }
 
@@ -1061,6 +1334,7 @@ export class ApplicationShell extends Widget {
         if (widget) {
             return widget;
         }
+        return this.secondaryWindowHandler.activateWidget(id);
     }
 
     /**
@@ -1090,7 +1364,8 @@ export class ApplicationShell extends Widget {
 
         let start = 0;
         const step: FrameRequestCallback = timestamp => {
-            if (document.activeElement && widget.node.contains(document.activeElement)) {
+            const activeElement = widget.node.ownerDocument.activeElement;
+            if (activeElement && widget.node.contains(activeElement)) {
                 return;
             }
             if (!start) {
@@ -1159,7 +1434,11 @@ export class ApplicationShell extends Widget {
         if (widget) {
             return widget;
         }
-        return this.rightPanelHandler.expand(id);
+        widget = this.rightPanelHandler.expand(id);
+        if (widget) {
+            return widget;
+        }
+        return this.secondaryWindowHandler.revealWidget(id);
     }
 
     /**
@@ -1294,11 +1573,17 @@ export class ApplicationShell extends Widget {
         if (this.bottomPanel.isEmpty) {
             this.statusBar.removeElement(BOTTOM_PANEL_TOGGLE_ID);
         } else {
+            const label = nls.localize('theia/core/common/collapseBottomPanel', 'Toggle Bottom Panel');
             const element: StatusBarEntry = {
-                text: '$(window-maximize)',
+                name: label,
+                text: '$(codicon-window)',
                 alignment: StatusBarAlignment.RIGHT,
-                tooltip: 'Toggle Bottom Panel',
+                tooltip: label,
                 command: 'core.toggle.bottom.panel',
+                accessibilityInformation: {
+                    label: label,
+                    role: 'button'
+                },
                 priority: -1000
             };
             this.statusBar.setElement(BOTTOM_PANEL_TOGGLE_ID, element);
@@ -1329,27 +1614,70 @@ export class ApplicationShell extends Widget {
      * @param filter
      *      If undefined, all tabs are closed; otherwise only those tabs that match the filter are closed.
      */
-    closeTabs(tabBarOrArea: TabBar<Widget> | ApplicationShell.Area,
-        filter?: (title: Title<Widget>, index: number) => boolean): void {
-        if (tabBarOrArea === 'main') {
-            this.mainAreaTabBars.forEach(tb => this.closeTabs(tb, filter));
-        } else if (tabBarOrArea === 'bottom') {
-            this.bottomAreaTabBars.forEach(tb => this.closeTabs(tb, filter));
-        } else if (typeof tabBarOrArea === 'string') {
-            const tabBar = this.getTabBarFor(tabBarOrArea);
-            if (tabBar) {
-                this.closeTabs(tabBar, filter);
-            }
-        } else if (tabBarOrArea) {
-            const titles = toArray(tabBarOrArea.titles);
-            for (let i = 0; i < titles.length; i++) {
-                if (filter === undefined || filter(titles[i], i)) {
-                    titles[i].owner.close();
-                }
-            }
+    async closeTabs(tabBarOrArea: TabBar<Widget> | ApplicationShell.Area,
+        filter?: (title: Title<Widget>, index: number) => boolean): Promise<void> {
+        const titles: Array<Title<Widget>> = this.getWidgetTitles(tabBarOrArea, filter);
+        if (titles.length) {
+            await this.closeMany(titles.map(title => title.owner));
         }
     }
 
+    saveTabs(tabBarOrArea: TabBar<Widget> | ApplicationShell.Area,
+        filter?: (title: Title<Widget>, index: number) => boolean): void {
+
+        const titles = this.getWidgetTitles(tabBarOrArea, filter);
+        for (let i = 0; i < titles.length; i++) {
+            const widget = titles[i].owner;
+            const saveable = Saveable.get(widget);
+            saveable?.save();
+        }
+    }
+
+    /**
+     * Collects all widget titles for the given tab bar or area and optionally filters them.
+     *
+     * @param tabBarOrArea The tab bar or area to retrieve the widget titles for
+     * @param filter The filter to apply to the result
+     * @returns The filtered array of widget titles or an empty array
+     */
+    protected getWidgetTitles(tabBarOrArea: TabBar<Widget> | ApplicationShell.Area,
+        filter?: (title: Title<Widget>, index: number) => boolean): Title<Widget>[] {
+
+        const titles: Title<Widget>[] = [];
+        if (tabBarOrArea === 'main') {
+            this.mainAreaTabBars.forEach(tabbar => titles.push(...toArray(tabbar.titles)));
+        } else if (tabBarOrArea === 'bottom') {
+            this.bottomAreaTabBars.forEach(tabbar => titles.push(...toArray(tabbar.titles)));
+        } else if (tabBarOrArea === 'secondaryWindow') {
+            titles.push(...this.secondaryWindowHandler.widgets.map(w => w.title));
+        } else if (typeof tabBarOrArea === 'string') {
+            const tabbar = this.getTabBarFor(tabBarOrArea);
+            if (tabbar) {
+                titles.push(...toArray(tabbar.titles));
+            }
+        } else if (tabBarOrArea) {
+            titles.push(...toArray(tabBarOrArea.titles));
+        }
+
+        return filter ? titles.filter(filter) : titles;
+    }
+
+    /**
+     * @param targets the widgets to be closed
+     * @return an array of all the widgets that were actually closed.
+     */
+    async closeMany(targets: Widget[], options?: ApplicationShell.CloseOptions): Promise<Widget[]> {
+        if (options?.save === false || await Saveable.confirmSaveBeforeClose(targets, this.widgets.filter(widget => !targets.includes(widget)))) {
+            return (await Promise.all(targets.map(target => this.closeWidget(target.id, options)))).filter((widget): widget is Widget => widget !== undefined);
+        }
+        return [];
+    }
+
+    /**
+     * @returns the widget that was closed, if any, `undefined` otherwise.
+     *
+     * If your use case requires closing multiple widgets, use {@link ApplicationShell#closeMany} instead. That method handles closing saveable widgets more reliably.
+     */
     async closeWidget(id: string, options?: ApplicationShell.CloseOptions): Promise<Widget | undefined> {
         // TODO handle save for composite widgets, i.e. the preference widget has 2 editors
         const stack = this.toTrackedStack(id);
@@ -1357,17 +1685,10 @@ export class ApplicationShell extends Widget {
         if (!current) {
             return undefined;
         }
-        let pendingClose;
-        if (SaveableWidget.is(current)) {
-            let shouldSave;
-            if (options && 'save' in options) {
-                shouldSave = () => options.save;
-            }
-            pendingClose = current.closeWithSaving({ shouldSave });
-        } else {
-            current.close();
-            pendingClose = waitForClosed(current);
-        };
+        const saveableOptions = options && { shouldSave: () => options.save };
+        const pendingClose = SaveableWidget.is(current)
+            ? current.closeWithSaving(saveableOptions)
+            : (current.close(), waitForClosed(current));
         await Promise.all([
             pendingClose,
             this.pendingUpdates
@@ -1423,11 +1744,24 @@ export class ApplicationShell extends Widget {
         if (ArrayExt.firstIndexOf(this.rightPanelHandler.tabBar.titles, title) > -1) {
             return 'right';
         }
+        if (this.secondaryWindowHandler.widgets.includes(widget)) {
+            return 'secondaryWindow';
+        }
         return undefined;
     }
 
     protected getAreaPanelFor(input: Widget): DockPanel | undefined {
         const widget = this.toTrackedStack(input.id).pop();
+        if (!widget) {
+            return undefined;
+        }
+        return this.findPanel(widget);
+    }
+
+    /**
+     * Find the shell panel this top-level widget is part of
+     */
+    protected findPanel(widget: Widget | undefined): TheiaDockPanel | undefined {
         if (!widget) {
             return undefined;
         }
@@ -1473,6 +1807,9 @@ export class ApplicationShell extends Widget {
                     return this.leftPanelHandler.tabBar;
                 case 'right':
                     return this.rightPanelHandler.tabBar;
+                case 'secondaryWindow':
+                    // Secondary windows don't have a tab bar
+                    return undefined;
                 default:
                     throw new Error('Illegal argument: ' + widgetOrArea);
             }
@@ -1646,6 +1983,13 @@ export class ApplicationShell extends Widget {
                     }
                     return true;
                 } else if (ci === 0) {
+                    if (current && current.titles.length > 0) {
+                        current.currentIndex = current.titles.length - 1;
+                        if (current.currentTitle) {
+                            this.activateWidget(current.currentTitle.owner.id);
+                        }
+                        return true;
+                    }
                     return this.activatePreviousTabBar(current);
                 }
             }
@@ -1658,8 +2002,9 @@ export class ApplicationShell extends Widget {
         if (!prevBar) {
             return false;
         }
-        const len = prevBar.titles.length;
-        prevBar.currentIndex = len - 1;
+        if (!prevBar.currentTitle) {
+            prevBar.currentIndex = prevBar.titles.length - 1;
+        }
         if (prevBar.currentTitle) {
             this.activateWidget(prevBar.currentTitle.owner.id);
         }
@@ -1686,28 +2031,32 @@ export class ApplicationShell extends Widget {
      * Test whether the current widget is dirty.
      */
     canSave(): boolean {
-        return Saveable.isDirty(this.currentWidget);
+        return this.saveResourceService.canSave(this.currentWidget);
     }
 
     /**
      * Save the current widget if it is dirty.
      */
-    async save(): Promise<void> {
-        await Saveable.save(this.currentWidget);
+    async save(options?: SaveOptions): Promise<void> {
+        await this.saveResourceService.save(this.currentWidget, options);
     }
 
     /**
      * Test whether there is a dirty widget.
      */
     canSaveAll(): boolean {
-        return this.tracker.widgets.some(Saveable.isDirty);
+        return this.tracker.widgets.some(widget => this.saveResourceService.canSave(widget));
     }
 
     /**
      * Save all dirty widgets.
      */
-    async saveAll(): Promise<void> {
-        await Promise.all(this.tracker.widgets.map(Saveable.save));
+    async saveAll(options?: SaveOptions): Promise<void> {
+        for (const widget of this.widgets) {
+            if (this.saveResourceService.canSaveNotSaveAs(widget)) {
+                await this.saveResourceService.save(widget, options);
+            }
+        }
     }
 
     /**
@@ -1726,15 +2075,16 @@ export class ApplicationShell extends Widget {
         return undefined;
     }
 
-    canToggleMaximized(): boolean {
-        const area = this.currentWidget && this.getAreaFor(this.currentWidget);
+    canToggleMaximized(widget: Widget | undefined = this.currentWidget): boolean {
+        const area = widget && this.getAreaFor(widget);
         return area === 'main' || area === 'bottom';
     }
 
-    toggleMaximized(): void {
-        const area = this.currentWidget && this.getAreaPanelFor(this.currentWidget);
+    toggleMaximized(widget: Widget | undefined = this.currentWidget): void {
+        const area = widget && this.getAreaPanelFor(widget);
         if (area instanceof TheiaDockPanel && (area === this.mainPanel || area === this.bottomPanel)) {
             area.toggleMaximized();
+            this.revealWidget(widget!.id);
         }
     }
 
@@ -1747,7 +2097,16 @@ export namespace ApplicationShell {
     /**
      * The areas of the application shell where widgets can reside.
      */
-    export type Area = 'main' | 'top' | 'left' | 'right' | 'bottom';
+    export type Area = 'main' | 'top' | 'left' | 'right' | 'bottom' | 'secondaryWindow';
+
+    export const areaLabels: Record<Area, string> = {
+        main: nls.localizeByDefault('Main'),
+        top: nls.localizeByDefault('Top'),
+        left: nls.localizeByDefault('Left'),
+        right: nls.localizeByDefault('Right'),
+        bottom: nls.localizeByDefault('Bottom'),
+        secondaryWindow: nls.localize('theia/shell-area/secondary', 'Secondary Window'),
+    };
 
     /**
      * The _side areas_ are those shell areas that can be collapsed and expanded,
@@ -1755,6 +2114,11 @@ export namespace ApplicationShell {
      */
     export function isSideArea(area?: string): area is 'left' | 'right' | 'bottom' {
         return area === 'left' || area === 'right' || area === 'bottom';
+    }
+
+    export function isValidArea(area?: unknown): area is ApplicationShell.Area {
+        const areas = ['main', 'top', 'left', 'right', 'bottom', 'secondaryWindow'];
+        return typeof area === 'string' && areas.includes(area);
     }
 
     /**
@@ -1798,8 +2162,8 @@ export namespace ApplicationShell {
      * Whether a widget should be opened to the side tab bar relatively to the reference widget.
      */
     export type OpenToSideMode = 'open-to-left' | 'open-to-right';
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function isOpenToSideMode(mode: OpenToSideMode | any): mode is OpenToSideMode {
+
+    export function isOpenToSideMode(mode: unknown): mode is OpenToSideMode {
         return mode === 'open-to-left' || mode === 'open-to-right';
     }
 
@@ -1841,6 +2205,7 @@ export namespace ApplicationShell {
     export interface LayoutData {
         version?: string | ApplicationShellLayoutVersion,
         mainPanel?: DockPanel.ILayoutConfig;
+        mainPanelPinned?: boolean[];
         bottomPanel?: BottomPanelLayoutData;
         leftPanel?: SidePanel.LayoutData;
         rightPanel?: SidePanel.LayoutData;
@@ -1854,6 +2219,7 @@ export namespace ApplicationShell {
         config?: DockPanel.ILayoutConfig;
         size?: number;
         expanded?: boolean;
+        pinned?: boolean[];
     }
 
     /**
@@ -1875,8 +2241,8 @@ export namespace ApplicationShell {
     }
 
     export namespace TrackableWidgetProvider {
-        export function is(widget: object | undefined): widget is TrackableWidgetProvider {
-            return !!widget && 'getTrackableWidgets' in widget;
+        export function is(widget: unknown): widget is TrackableWidgetProvider {
+            return isObject(widget) && 'getTrackableWidgets' in widget;
         }
     }
 

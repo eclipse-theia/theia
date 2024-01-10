@@ -1,0 +1,24 @@
+{
+  "extends": "../../configs/base.tsconfig",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "lib",
+    "paths": {
+      "mv": [
+        "./src/typings/mv"
+      ],
+      "trash": [
+        "./src/typings/trash"
+      ]
+    }
+  },
+  "include": [
+    "src"
+  ],
+  "references": [
+    {
+      "path": "../core"
+    }
+  ]
+}

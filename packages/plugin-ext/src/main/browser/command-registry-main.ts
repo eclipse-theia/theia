@@ -1,20 +1,20 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { interfaces } from 'inversify';
+import { interfaces } from '@theia/core/shared/inversify';
 import { CommandRegistry } from '@theia/core/lib/common/command';
 import * as theia from '@theia/plugin';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
@@ -22,6 +22,7 @@ import { CommandRegistryMain, CommandRegistryExt, MAIN_RPC_CONTEXT } from '../..
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { KeybindingRegistry } from '@theia/core/lib/browser';
 import { PluginContributionHandler } from './plugin-contribution-handler';
+import { ArgumentProcessor } from '../../common/commands';
 
 export class CommandRegistryMainImpl implements CommandRegistryMain, Disposable {
     private readonly proxy: CommandRegistryExt;
@@ -30,6 +31,8 @@ export class CommandRegistryMainImpl implements CommandRegistryMain, Disposable 
     private readonly delegate: CommandRegistry;
     private readonly keyBinding: KeybindingRegistry;
     private readonly contributions: PluginContributionHandler;
+
+    private readonly argumentProcessors: ArgumentProcessor[] = [];
 
     protected readonly toDispose = new DisposableCollection();
 
@@ -42,6 +45,16 @@ export class CommandRegistryMainImpl implements CommandRegistryMain, Disposable 
 
     dispose(): void {
         this.toDispose.dispose();
+    }
+
+    registerArgumentProcessor(processor: ArgumentProcessor): Disposable {
+        this.argumentProcessors.push(processor);
+        return Disposable.create(() => {
+            const index = this.argumentProcessors.lastIndexOf(processor);
+            if (index >= 0) {
+                this.argumentProcessors.splice(index, 1);
+            }
+        });
     }
 
     $registerCommand(command: theia.CommandDescription): void {
@@ -59,7 +72,7 @@ export class CommandRegistryMainImpl implements CommandRegistryMain, Disposable 
 
     $registerHandler(id: string): void {
         this.handlers.set(id, this.contributions.registerCommandHandler(id, (...args) =>
-            this.proxy.$executeCommand(id, ...args)
+            this.proxy.$executeCommand(id, ...args.map(arg => this.argumentProcessors.reduce((currentValue, processor) => processor.processArgument(currentValue), arg)))
         ));
         this.toDispose.push(Disposable.create(() => this.$unregisterHandler(id)));
     }
@@ -77,7 +90,7 @@ export class CommandRegistryMainImpl implements CommandRegistryMain, Disposable 
             throw new Error(`Command with id '${id}' is not registered.`);
         }
         try {
-            return await this.delegate.executeCommand(id, ...args);
+            return await this.delegate.executeCommand<T>(id, ...args);
         } catch (e) {
             // Command handler may be not active at the moment so the error must be caught. See https://github.com/eclipse-theia/theia/pull/6687#discussion_r354810079
             if ('code' in e && e['code'] === 'NO_ACTIVE_HANDLER') {

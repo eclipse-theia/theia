@@ -1,28 +1,28 @@
-/********************************************************************************
- * Copyright (C) 2019 Ericsson and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2019 Ericsson and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { inject, injectable, postConstruct } from 'inversify';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { PreferenceProvider, PreferenceResolveResult } from '@theia/core/lib/browser/preferences/preference-provider';
+import { PreferenceProvider, PreferenceResolveResult, PreferenceScope } from '@theia/core/lib/browser/preferences';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
 import { FolderPreferenceProvider, FolderPreferenceProviderFactory } from './folder-preference-provider';
-import { FileStat } from '@theia/filesystem/lib/common';
+import { FileStat } from '@theia/filesystem/lib/common/files';
 
 @injectable()
 export class FoldersPreferencesProvider extends PreferenceProvider {
@@ -39,7 +39,11 @@ export class FoldersPreferencesProvider extends PreferenceProvider {
     protected readonly providers = new Map<string, FolderPreferenceProvider>();
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         await this.workspaceService.roots;
 
         this.updateProviders();
@@ -58,7 +62,7 @@ export class FoldersPreferencesProvider extends PreferenceProvider {
         for (const folder of roots) {
             for (const configPath of this.configurations.getPaths()) {
                 for (const configName of [...this.configurations.getSectionNames(), this.configurations.getConfigName()]) {
-                    const sectionUri = this.configurations.createUri(new URI(folder.uri), configPath, configName);
+                    const sectionUri = this.configurations.createUri(folder.resource, configPath, configName);
                     const sectionKey = sectionUri.toString();
                     toDelete.delete(sectionKey);
                     if (!this.providers.has(sectionKey)) {
@@ -77,31 +81,31 @@ export class FoldersPreferencesProvider extends PreferenceProvider {
         }
     }
 
-    getConfigUri(resourceUri?: string): URI | undefined {
+    override getConfigUri(resourceUri?: string, sectionName: string = this.configurations.getConfigName()): URI | undefined {
         for (const provider of this.getFolderProviders(resourceUri)) {
             const configUri = provider.getConfigUri(resourceUri);
-            if (this.configurations.isConfigUri(configUri)) {
+            if (configUri && this.configurations.getName(configUri) === sectionName) {
                 return configUri;
             }
         }
         return undefined;
     }
 
-    getContainingConfigUri(resourceUri?: string): URI | undefined {
+    override getContainingConfigUri(resourceUri?: string, sectionName: string = this.configurations.getConfigName()): URI | undefined {
         for (const provider of this.getFolderProviders(resourceUri)) {
             const configUri = provider.getConfigUri();
-            if (this.configurations.isConfigUri(configUri) && provider.contains(resourceUri)) {
+            if (provider.contains(resourceUri) && this.configurations.getName(configUri) === sectionName) {
                 return configUri;
             }
         }
         return undefined;
     }
 
-    getDomain(): string[] {
-        return this.workspaceService.tryGetRoots().map(root => root.uri);
+    override getDomain(): string[] {
+        return this.workspaceService.tryGetRoots().map(root => root.resource.toString());
     }
 
-    resolve<T>(preferenceName: string, resourceUri?: string): PreferenceResolveResult<T> {
+    override resolve<T>(preferenceName: string, resourceUri?: string): PreferenceResolveResult<T> {
         const result: PreferenceResolveResult<T> = {};
         const groups = this.groupProvidersByConfigName(resourceUri);
         for (const group of groups.values()) {
@@ -133,46 +137,64 @@ export class FoldersPreferencesProvider extends PreferenceProvider {
     }
 
     async setPreference(preferenceName: string, value: any, resourceUri?: string): Promise<boolean> {
-        const sectionName = preferenceName.split('.', 1)[0];
-        const configName = this.configurations.isSectionName(sectionName) ? sectionName : this.configurations.getConfigName();
+        const firstPathFragment = preferenceName.split('.', 1)[0];
+        const defaultConfigName = this.configurations.getConfigName();
+        const configName = this.configurations.isSectionName(firstPathFragment) ? firstPathFragment : defaultConfigName;
 
         const providers = this.getFolderProviders(resourceUri);
         let configPath: string | undefined;
-
-        const iterator: (() => FolderPreferenceProvider | undefined)[] = [];
-        for (const provider of providers) {
-            if (configPath === undefined) {
-                const configUri = provider.getConfigUri(resourceUri);
-                if (configUri) {
-                    configPath = this.configurations.getPath(configUri);
-                }
+        const candidates = providers.filter(provider => {
+            // Attempt to figure out the settings folder (.vscode or .theia) we're interested in.
+            const containingConfigUri = provider.getConfigUri(resourceUri);
+            if (configPath === undefined && containingConfigUri) {
+                configPath = this.configurations.getPath(containingConfigUri);
             }
-            if (this.configurations.getName(provider.getConfigUri()) === configName) {
-                iterator.push(() => {
-                    if (provider.getConfigUri(resourceUri)) {
-                        return provider;
-                    }
-                    iterator.push(() => {
-                        if (this.configurations.getPath(provider.getConfigUri()) === configPath) {
-                            return provider;
-                        }
-                        iterator.push(() => provider);
-                    });
-                });
+            const providerName = this.configurations.getName(containingConfigUri ?? provider.getConfigUri());
+            return providerName === configName || providerName === defaultConfigName;
+        });
+
+        const configNameAndPathMatches = [];
+        const configNameOnlyMatches = [];
+        const configUriMatches = [];
+        const otherMatches = [];
+
+        for (const candidate of candidates) {
+            const domainMatches = candidate.getConfigUri(resourceUri);
+            const configUri = domainMatches ?? candidate.getConfigUri();
+            const nameMatches = this.configurations.getName(configUri) === configName;
+            const pathMatches = this.configurations.getPath(configUri) === configPath;
+
+            // Perfect match, run immediately in case we can bail out early.
+            if (nameMatches && domainMatches) {
+                if (await candidate.setPreference(preferenceName, value, resourceUri)) {
+                    return true;
+                }
+            } else if (nameMatches && pathMatches) { // Right file in the right folder.
+                configNameAndPathMatches.push(candidate);
+            } else if (nameMatches) { // Right file.
+                configNameOnlyMatches.push(candidate);
+            } else if (domainMatches) { // Currently valid and governs target URI
+                configUriMatches.push(candidate);
+            } else {
+                otherMatches.push(candidate);
             }
         }
 
-        let next = iterator.shift();
-        while (next) {
-            const provider = next();
-            if (provider) {
-                if (await provider.setPreference(preferenceName, value, resourceUri)) {
+        const candidateSets = [configNameAndPathMatches, configNameOnlyMatches, configUriMatches, otherMatches];
+
+        for (const candidateSet of candidateSets) {
+            for (const candidate of candidateSet) {
+                if (await candidate.setPreference(preferenceName, value, resourceUri)) {
                     return true;
                 }
             }
-            next = iterator.shift();
         }
+
         return false;
+    }
+
+    override canHandleScope(scope: PreferenceScope): boolean {
+        return this.workspaceService.isMultiRootWorkspaceOpened && scope === PreferenceScope.Folder || scope === PreferenceScope.Workspace;
     }
 
     protected groupProvidersByConfigName(resourceUri?: string): Map<string, FolderPreferenceProvider[]> {
@@ -215,10 +237,7 @@ export class FoldersPreferencesProvider extends PreferenceProvider {
     protected createProvider(uri: URI, section: string, folder: FileStat): FolderPreferenceProvider {
         const provider = this.folderPreferenceProviderFactory(uri, section, folder);
         this.toDispose.push(provider);
-        this.toDispose.push(provider.onDidPreferencesChanged(change => {
-            this.onDidPreferencesChangedEmitter.fire(change);
-        }
-        ));
+        this.toDispose.push(provider.onDidPreferencesChanged(change => this.onDidPreferencesChangedEmitter.fire(change)));
         return provider;
     }
 

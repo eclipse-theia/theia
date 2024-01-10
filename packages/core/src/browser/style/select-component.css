@@ -1,0 +1,108 @@
+/********************************************************************************
+ * Copyright (C) 2022 TypeFox and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+.theia-select-component {
+  background-color: var(--theia-dropdown-background);
+  cursor: pointer;
+  outline: var(--theia-dropdown-border) solid 1px;
+  outline-offset: -1px;
+  min-height: 23px;
+  min-width: 90px;
+  padding: 0px 8px;
+  display: flex;
+  align-items: center;
+  user-select: none;
+  border-radius: 2px;
+}
+
+.theia-select-component .theia-select-component-label {
+  width: 100%;
+  color: var(--theia-dropdown-foreground);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.theia-select-component:focus {
+  outline-color: var(--theia-focusBorder);
+}
+
+.theia-select-component-dropdown {
+  font-family: var(--theia-ui-font-family);
+  font-size: var(--theia-ui-font-size1);
+  color: var(--theia-foreground);
+  background-color: var(--theia-settings-dropdownBackground);
+  outline: var(--theia-focusBorder) solid 1px;
+  outline-offset: -1px;
+  user-select: none;
+  overflow: auto;
+  border-radius: 2px;
+}
+
+.theia-select-component-dropdown .theia-select-component-option {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  display: flex;
+  padding: 0px 5px;
+  line-height: 22px;
+}
+
+.theia-select-component-dropdown .theia-select-component-description {
+  padding: 6px 5px;
+}
+
+.theia-select-component-dropdown
+  .theia-select-component-description:first-child {
+  border-bottom: 1px solid var(--theia-editorWidget-border);
+  margin-bottom: 2px;
+}
+
+.theia-select-component-dropdown
+  .theia-select-component-description:last-child {
+  border-top: 1px solid var(--theia-editorWidget-border);
+  margin-top: 2px;
+}
+
+.theia-select-component-dropdown
+  .theia-select-component-option
+  .theia-select-component-option-value {
+  width: 100%;
+}
+
+.theia-select-component-dropdown
+  .theia-select-component-option
+  .theia-select-component-option-detail {
+  padding-left: 4px;
+}
+
+.theia-select-component-dropdown
+  .theia-select-component-option:not(.selected)
+  .theia-select-component-option-detail {
+  color: var(--theia-textLink-foreground);
+}
+
+.theia-select-component-dropdown .theia-select-component-option.selected {
+  color: var(--theia-list-activeSelectionForeground);
+  cursor: pointer;
+  background: var(--theia-list-activeSelectionBackground);
+}
+
+.theia-select-component-dropdown .theia-select-component-separator {
+  width: 84px;
+  height: 1px;
+  margin: 3px 3px;
+  background: var(--theia-foreground);
+}

@@ -1,16 +1,17 @@
 {
-  "lerna": "2.2.0",
+  "$schema": "https://json.schemastore.org/lerna.json",
   "npmClient": "yarn",
-  "useWorkspaces": true,
-  "version": "1.2.0",
+  "version": "1.45.0",
   "command": {
     "run": {
       "stream": true
     },
     "publish": {
       "forcePublish": true,
-      "skipGit": true,
-      "registry": "https://registry.npmjs.org/"
+      "graphType": "all",
+      "registry": "https://registry.npmjs.org/",
+      "push": false,
+      "gitTagVersion": false
     }
   }
 }

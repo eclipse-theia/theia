@@ -1,22 +1,22 @@
-/********************************************************************************
- * Copyright (C) 2020 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2020 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import * as puppeteer from 'puppeteer';
+import * as puppeteer from 'puppeteer-core';
 const collectFiles: (options: TestFileOptions) => string[] = require('mocha/lib/cli/collect-files');
 
 export interface TestFileOptions {
@@ -49,7 +49,7 @@ export default async function newTestPage(options: TestPageOptions): Promise<pup
     };
 
     // quick check whether test files exist
-    collectFiles(fileOptions);
+    const files = collectFiles(fileOptions);
 
     const page = await newPage();
     page.on('dialog', dialog => dialog.dismiss());
@@ -81,7 +81,7 @@ export default async function newTestPage(options: TestPageOptions): Promise<pup
         }
         console.log('loading mocha...');
         // replace console.log by theia logger for mocha
-        await page.waitForFunction(() => !!(window as any)['theia']['@theia/core/lib/common/logger'].logger, {
+        await page.waitForFunction(() => !!(window as any)['theia']?.['@theia/core/lib/common/logger']?.logger, {
             timeout: 30 * 1000
         });
         await page.addScriptTag({ path: require.resolve('mocha/mocha.js') });
@@ -112,15 +112,15 @@ export default async function newTestPage(options: TestPageOptions): Promise<pup
             mocha.setup({
                 reporter: 'spec',
                 ui: 'bdd',
-                useColors: true
-            } as MochaSetupOptions);
+                color: true,
+                retries: 0
+            });
         });
 
         if (onWillRun) {
             await onWillRun();
         }
 
-        const files = collectFiles(fileOptions);
         for (const file of files) {
             await page.addScriptTag({ path: file });
         }

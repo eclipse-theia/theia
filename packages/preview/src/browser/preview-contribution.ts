@@ -1,47 +1,49 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { injectable, inject } from 'inversify';
-import { Widget } from '@phosphor/widgets';
-import { FrontendApplicationContribution, WidgetOpenerOptions, NavigatableWidgetOpenHandler } from '@theia/core/lib/browser';
+import { injectable, inject } from '@theia/core/shared/inversify';
+import { Widget } from '@theia/core/shared/@phosphor/widgets';
+import { FrontendApplicationContribution, WidgetOpenerOptions, NavigatableWidgetOpenHandler, codicon } from '@theia/core/lib/browser';
 import { EditorManager, TextEditor, EditorWidget, EditorContextMenu } from '@theia/editor/lib/browser';
 import { DisposableCollection, CommandContribution, CommandRegistry, Command, MenuContribution, MenuModelRegistry, Disposable } from '@theia/core/lib/common';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { MiniBrowserCommands } from '@theia/mini-browser/lib/browser/mini-browser-open-handler';
 import URI from '@theia/core/lib/common/uri';
-import { Position } from 'vscode-languageserver-types';
+import { Position } from '@theia/core/shared/vscode-languageserver-protocol';
 import { PreviewWidget } from './preview-widget';
-import { PreviewHandlerProvider, } from './preview-handler';
+import { PreviewHandlerProvider } from './preview-handler';
 import { PreviewUri } from './preview-uri';
 import { PreviewPreferences } from './preview-preferences';
+import { nls } from '@theia/core/lib/common/nls';
 
-import debounce = require('lodash.debounce');
+import debounce = require('@theia/core/shared/lodash.debounce');
 
 export namespace PreviewCommands {
     /**
      * No `label`. Otherwise, it would show up in the `Command Palette` and we already have the `Preview` open handler.
      * See in (`WorkspaceCommandContribution`)[https://bit.ly/2DncrSD].
      */
-    export const OPEN: Command = {
+    export const OPEN = Command.toLocalizedCommand({
         id: 'preview:open',
         label: 'Open Preview',
-        iconClass: 'theia-open-preview-icon'
-    };
+        iconClass: codicon('open-preview')
+    }, 'vscode.markdown-language-features/package/markdown.preview.title');
     export const OPEN_SOURCE: Command = {
         id: 'preview.open.source',
-        iconClass: 'theia-open-file-icon'
+        iconClass: codicon('go-to-file')
     };
 }
 
@@ -54,7 +56,7 @@ export interface PreviewOpenerOptions extends WidgetOpenerOptions {
 export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWidget> implements CommandContribution, MenuContribution, FrontendApplicationContribution, TabBarToolbarContribution {
 
     readonly id = PreviewUri.id;
-    readonly label = 'Preview';
+    readonly label = nls.localize(MiniBrowserCommands.PREVIEW_CATEGORY_KEY, MiniBrowserCommands.PREVIEW_CATEGORY);
 
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
@@ -185,11 +187,11 @@ export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWid
         return this.preferences['preview.openByDefault'];
     }
 
-    async open(uri: URI, options?: PreviewOpenerOptions): Promise<PreviewWidget> {
+    override async open(uri: URI, options?: PreviewOpenerOptions): Promise<PreviewWidget> {
         const resolvedOptions = await this.resolveOpenerOptions(options);
         return super.open(uri, resolvedOptions);
     }
-    protected serializeUri(uri: URI): string {
+    protected override serializeUri(uri: URI): string {
         return super.serializeUri(PreviewUri.decode(uri));
     }
 
@@ -227,12 +229,12 @@ export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWid
         registry.registerItem({
             id: PreviewCommands.OPEN.id,
             command: PreviewCommands.OPEN.id,
-            tooltip: 'Open Preview to the Side'
+            tooltip: nls.localize('vscode.markdown-language-features/package/markdown.previewSide.title', 'Open Preview to the Side')
         });
         registry.registerItem({
             id: PreviewCommands.OPEN_SOURCE.id,
             command: PreviewCommands.OPEN_SOURCE.id,
-            tooltip: 'Open Source'
+            tooltip: nls.localize('vscode.markdown-language-features/package/markdown.showSource.title', 'Open Source')
         });
     }
 
@@ -266,7 +268,7 @@ export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWid
     protected async openSource(ref?: Widget): Promise<EditorWidget | undefined> {
         if (ref instanceof PreviewWidget) {
             return this.editorManager.open(ref.uri, {
-                widgetOptions: { ref, mode: 'open-to-left' }
+                widgetOptions: { ref, mode: 'tab-after' }
             });
         }
     }

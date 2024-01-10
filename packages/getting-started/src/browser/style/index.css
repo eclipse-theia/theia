@@ -11,74 +11,99 @@
  * with the GNU Classpath Exception which is available at
  * https://www.gnu.org/software/classpath/license.html.
  *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
-html, body {
-    font-family: var(--theia-ui-font-family);
+html,
+body {
+  font-family: var(--theia-ui-font-family);
 }
 
 .col {
-    flex: 1;
-    align-items: center;
-    justify-content: center;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
 }
 
 .flex-grid {
-    display: flex;
+  display: flex;
 }
 
 .gs-action-container {
-    line-height: 20px;
+  line-height: 20px;
 }
 
 .gs-action-details {
-    padding-left: 5px;
-    color: var(--theia-descriptionForeground);
+  padding-left: 5px;
+  color: var(--theia-descriptionForeground);
 }
 
 .gs-container {
-    padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+}
+
+.gs-content-container {
+  padding: 20px;
+}
+
+.gs-content-container a {
+  cursor: pointer;
 }
 
 .gs-header h1 {
-    flex: 1;
-    font-weight: 600;
+  flex: 1;
+  font-weight: 600;
 }
 
 .gs-hr {
-    background-color: var(--theia-contrastBorder);
-    height: 1px;
-    border: 0;
-    margin: 0px;
+  background-color: var(--theia-contrastBorder);
+  height: 1px;
+  border: 0;
+  margin: 0px;
 }
 
 .gs-no-recent {
-    color: var(--theia-descriptionForeground);
+  color: var(--theia-descriptionForeground);
 }
 
 .gs-section a {
-    border: none;
-    font-weight: 500;
-    text-decoration: none;
+  border: none;
+  font-weight: 500;
+  text-decoration: none;
 }
 
 .gs-section a:hover {
-    text-decoration: underline;
+  text-decoration: underline;
 }
 
 .gs-section-header {
-    font-size: var(--theia-ui-font-size2);
-    font-weight: 600;
-    margin-bottom: 5px;
+  font-size: var(--theia-ui-font-size2);
+  font-weight: 600;
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
 }
 
 .gs-section-header i {
-    padding-right: 5px;
+  padding-right: 5px;
 }
 
 .gs-sub-header {
-    color: var(--theia-descriptionForeground);
-    text-transform: capitalize;
-    font-weight: 400;
+  color: var(--theia-descriptionForeground);
+  text-transform: capitalize;
+  font-weight: 400;
+}
+
+.gs-preference-container {
+  display: flex;
+  justify-content: center;
+}
+
+.gs-preference {
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
 }

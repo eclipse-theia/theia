@@ -1,32 +1,40 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import * as React from 'react';
-import { inject, postConstruct, injectable } from 'inversify';
-import { Disposable } from '@theia/core';
+import * as React from '@theia/core/shared/react';
+import { inject, postConstruct, injectable } from '@theia/core/shared/inversify';
+import { CommandMenuNode, CommandRegistry, CompoundMenuNode, Disposable, DisposableCollection, MenuModelRegistry, MenuPath } from '@theia/core';
+import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { ReactWidget } from '@theia/core/lib/browser/widgets';
 import { DebugViewModel } from './debug-view-model';
 import { DebugState } from '../debug-session';
 import { DebugAction } from './debug-action';
+import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()
 export class DebugToolBar extends ReactWidget {
 
-    @inject(DebugViewModel)
-    protected readonly model: DebugViewModel;
+    static readonly MENU: MenuPath = ['debug-toolbar-menu'];
+
+    @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry;
+    @inject(MenuModelRegistry) protected readonly menuModelRegistry: MenuModelRegistry;
+    @inject(ContextKeyService) protected readonly contextKeyService: ContextKeyService;
+    @inject(DebugViewModel) protected readonly model: DebugViewModel;
+
+    protected readonly onRender = new DisposableCollection();
 
     @postConstruct()
     protected init(): void {
@@ -52,37 +60,82 @@ export class DebugToolBar extends ReactWidget {
         return true;
     }
     protected stepRef: DebugAction | undefined;
-    protected setStepRef = (stepRef: DebugAction | null) => this.stepRef = stepRef || undefined;
+    protected setStepRef = (stepRef: DebugAction | null) => {
+        this.stepRef = stepRef || undefined;
+        this.onRender.dispose();
+    };
 
     protected render(): React.ReactNode {
         const { state } = this.model;
         return <React.Fragment>
+            {this.renderContributedCommands()}
             {this.renderContinue()}
-            <DebugAction enabled={state === DebugState.Stopped} run={this.stepOver} label='Step Over' iconClass='step-over' ref={this.setStepRef} />
-            <DebugAction enabled={state === DebugState.Stopped} run={this.stepIn} label='Step Into' iconClass='step-into' />
-            <DebugAction enabled={state === DebugState.Stopped} run={this.stepOut} label='Step Out' iconClass='step-out' />
-            <DebugAction enabled={state !== DebugState.Inactive} run={this.restart} label='Restart' iconClass='restart' />
+            <DebugAction enabled={state === DebugState.Stopped} run={this.stepOver} label={nls.localizeByDefault('Step Over')}
+                iconClass='debug-step-over' ref={this.setStepRef} />
+            <DebugAction enabled={state === DebugState.Stopped} run={this.stepIn} label={nls.localizeByDefault('Step Into')}
+                iconClass='debug-step-into' />
+            <DebugAction enabled={state === DebugState.Stopped} run={this.stepOut} label={nls.localizeByDefault('Step Out')}
+                iconClass='debug-step-out' />
+            <DebugAction enabled={state !== DebugState.Inactive} run={this.restart} label={nls.localizeByDefault('Restart')}
+                iconClass='debug-restart' />
             {this.renderStart()}
         </React.Fragment>;
     }
+
+    protected renderContributedCommands(): React.ReactNode {
+        const debugActions: React.ReactNode[] = [];
+        // first, search for CompoundMenuNodes:
+        this.menuModelRegistry.getMenu(DebugToolBar.MENU).children.forEach(compoundMenuNode => {
+            if (CompoundMenuNode.is(compoundMenuNode) && this.matchContext(compoundMenuNode.when)) {
+                // second, search for nested CommandMenuNodes:
+                compoundMenuNode.children.forEach(commandMenuNode => {
+                    if (CommandMenuNode.is(commandMenuNode) && this.matchContext(commandMenuNode.when)) {
+                        debugActions.push(this.debugAction(commandMenuNode));
+                    }
+                });
+            }
+        });
+        return debugActions;
+    }
+
+    protected matchContext(when?: string): boolean {
+        return !when || this.contextKeyService.match(when);
+    }
+
+    protected debugAction(commandMenuNode: CommandMenuNode): React.ReactNode {
+        const { command, icon = '', label = '' } = commandMenuNode;
+        if (!label && !icon) {
+            const { when } = commandMenuNode;
+            console.warn(`Neither 'label' nor 'icon' properties were defined for the command menu node. (${JSON.stringify({ command, when })}}. Skipping.`);
+            return;
+        }
+        const run = () => this.commandRegistry.executeCommand(command);
+        return <DebugAction
+            key={command}
+            enabled={true}
+            label={label}
+            iconClass={icon}
+            run={run} />;
+    }
+
     protected renderStart(): React.ReactNode {
         const { state } = this.model;
         if (state === DebugState.Inactive && this.model.sessionCount === 1) {
-            return <DebugAction run={this.start} label='Start' iconClass='start' />;
+            return <DebugAction run={this.start} label={nls.localizeByDefault('Start')} iconClass='debug-start' />;
         }
-        return <DebugAction enabled={state !== DebugState.Inactive} run={this.stop} label='Stop' iconClass='stop' />;
+        return <DebugAction enabled={state !== DebugState.Inactive} run={this.stop} label={nls.localizeByDefault('Stop')} iconClass='debug-stop' />;
     }
     protected renderContinue(): React.ReactNode {
         const { state } = this.model;
         if (state === DebugState.Stopped) {
-            return <DebugAction run={this.continue} label='Continue' iconClass='continue' />;
+            return <DebugAction run={this.continue} label={nls.localizeByDefault('Continue')} iconClass='debug-continue' />;
         }
-        return <DebugAction enabled={state === DebugState.Running} run={this.pause} label='Pause' iconClass='pause' />;
+        return <DebugAction enabled={state === DebugState.Running} run={this.pause} label={nls.localizeByDefault('Pause')} iconClass='debug-pause' />;
     }
 
     protected start = () => this.model.start();
     protected restart = () => this.model.restart();
-    protected stop = () => this.model.currentSession && this.model.currentSession.terminate();
+    protected stop = () => this.model.terminate();
     protected continue = () => this.model.currentThread && this.model.currentThread.continue();
     protected pause = () => this.model.currentThread && this.model.currentThread.pause();
     protected stepOver = () => this.model.currentThread && this.model.currentThread.stepOver();

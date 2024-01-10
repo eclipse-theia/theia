@@ -1,13 +1,15 @@
 {
   "name": "@theia/mini-browser",
-  "version": "1.2.0",
+  "version": "1.45.0",
   "description": "Theia - Mini-Browser Extension",
   "dependencies": {
-    "@theia/core": "^1.2.0",
-    "@theia/filesystem": "^1.2.0",
+    "@theia/core": "1.45.0",
+    "@theia/filesystem": "1.45.0",
     "@types/mime-types": "^2.1.0",
     "mime-types": "^2.1.18",
-    "pdfobject": "^2.0.201604172"
+    "pdfobject": "^2.0.201604172",
+    "uuid": "^8.0.0",
+    "vhost": "^3.0.2"
   },
   "publishConfig": {
     "access": "public"
@@ -16,12 +18,16 @@
     {
       "backend": "lib/node/mini-browser-backend-module",
       "frontend": "lib/browser/mini-browser-frontend-module"
+    },
+    {
+      "frontend": "lib/browser/environment/mini-browser-environment-module",
+      "frontendElectron": "lib/electron-browser/environment/electron-mini-browser-environment-module"
     }
   ],
   "keywords": [
     "theia-extension"
   ],
-  "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
+  "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/eclipse-theia/theia.git"
@@ -35,14 +41,15 @@
     "src"
   ],
   "scripts": {
-    "lint": "theiaext lint",
     "build": "theiaext build",
-    "watch": "theiaext watch",
     "clean": "theiaext clean",
-    "test": "theiaext test"
+    "compile": "theiaext compile",
+    "lint": "theiaext lint",
+    "test": "theiaext test",
+    "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^1.2.0"
+    "@theia/ext-scripts": "1.45.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

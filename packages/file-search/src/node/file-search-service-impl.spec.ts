@@ -1,37 +1,37 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { expect } from 'chai';
 import * as assert from 'assert';
 import * as path from 'path';
 import { FileSearchServiceImpl } from './file-search-service-impl';
 import { FileUri } from '@theia/core/lib/node';
-import { Container, ContainerModule } from 'inversify';
+import { Container, ContainerModule } from '@theia/core/shared/inversify';
 import { CancellationTokenSource } from '@theia/core';
 import { bindLogger } from '@theia/core/lib/node/logger-backend-module';
-import processBackendModule from '@theia/process/lib/node/process-backend-module';
 import URI from '@theia/core/lib/common/uri';
 import { FileSearchService } from '../common/file-search-service';
-
-/* eslint-disable no-unused-expressions */
+import { RawProcessFactory } from '@theia/process/lib/node';
 
 const testContainer = new Container();
 
 bindLogger(testContainer.bind.bind(testContainer));
-testContainer.load(processBackendModule);
+testContainer.bind(RawProcessFactory).toConstantValue(() => {
+    throw new Error('should not be used anymore');
+});
 testContainer.load(new ContainerModule(bind => {
     bind(FileSearchServiceImpl).toSelf().inSingletonScope();
 }));
@@ -46,24 +46,24 @@ describe('search-service', function (): void {
         service = testContainer.get(FileSearchServiceImpl);
     });
 
-    it('shall fuzzy search this spec file', async () => {
+    it('should fuzzy search this spec file', async () => {
         const rootUri = FileUri.create(path.resolve(__dirname, '..')).toString();
         const matches = await service.find('spc', { rootUris: [rootUri] });
-        const expectedFile = FileUri.create(__filename).displayName;
+        const expectedFile = FileUri.create(__filename).path.base;
         const testFile = matches.find(e => e.endsWith(expectedFile));
-        expect(testFile).to.be.not.undefined;
+        expect(testFile).to.not.be.undefined;
     });
 
-    it.skip('shall respect nested .gitignore', async () => {
+    it.skip('should respect nested .gitignore', async () => {
         const rootUri = FileUri.create(path.resolve(__dirname, '../../test-resources')).toString();
         const matches = await service.find('foo', { rootUris: [rootUri], fuzzyMatch: false });
 
         expect(matches.find(match => match.endsWith('subdir1/sub-bar/foo.txt'))).to.be.undefined;
-        expect(matches.find(match => match.endsWith('subdir1/sub2/foo.txt'))).to.be.not.undefined;
-        expect(matches.find(match => match.endsWith('subdir1/foo.txt'))).to.be.not.undefined;
+        expect(matches.find(match => match.endsWith('subdir1/sub2/foo.txt'))).to.not.be.undefined;
+        expect(matches.find(match => match.endsWith('subdir1/foo.txt'))).to.not.be.undefined;
     });
 
-    it('shall cancel searches', async () => {
+    it('should cancel searches', async () => {
         const rootUri = FileUri.create(path.resolve(__dirname, '../../../../..')).toString();
         const cancelTokenSource = new CancellationTokenSource();
         cancelTokenSource.cancel();
@@ -77,7 +77,7 @@ describe('search-service', function (): void {
         const dirB = FileUri.create(path.resolve(__dirname, '../../test-resources/subdir1/sub2')).toString();
 
         const matches = await service.find('foo', { rootUris: [dirA, dirB] });
-        expect(matches).to.be.not.undefined;
+        expect(matches).to.not.be.undefined;
         expect(matches.length).to.eq(2);
     });
 
@@ -86,7 +86,7 @@ describe('search-service', function (): void {
             const rootUri = FileUri.create(path.resolve(__dirname, '../../test-resources/subdir1/sub2')).toString();
 
             const matches = await service.find('', { rootUris: [rootUri], includePatterns: ['**/*oo.*'] });
-            expect(matches).to.be.not.undefined;
+            expect(matches).to.not.be.undefined;
             expect(matches.length).to.eq(1);
         });
 
@@ -94,11 +94,11 @@ describe('search-service', function (): void {
             const rootUri = FileUri.create(path.resolve(__dirname, '../../test-resources/subdir1/sub2')).toString();
 
             const trailingMatches = await service.find('', { rootUris: [rootUri], includePatterns: ['*oo'] });
-            expect(trailingMatches).to.be.not.undefined;
+            expect(trailingMatches).to.not.be.undefined;
             expect(trailingMatches.length).to.eq(0);
 
             const prefixedMatches = await service.find('', { rootUris: [rootUri], includePatterns: ['oo*'] });
-            expect(prefixedMatches).to.be.not.undefined;
+            expect(prefixedMatches).to.not.be.undefined;
             expect(prefixedMatches.length).to.eq(0);
         });
     });
@@ -108,7 +108,7 @@ describe('search-service', function (): void {
             const rootUri = FileUri.create(path.resolve(__dirname, '../../test-resources/subdir1/sub2')).toString();
 
             const matches = await service.find('', { rootUris: [rootUri], includePatterns: ['**/*oo.*'], excludePatterns: ['foo'] });
-            expect(matches).to.be.not.undefined;
+            expect(matches).to.not.be.undefined;
             expect(matches.length).to.eq(1);
         });
 
@@ -152,7 +152,7 @@ describe('search-service', function (): void {
 
         async function assertIgnoreGlobs(options: FileSearchService.Options): Promise<void> {
             const matches = await service.find('', options);
-            expect(matches).to.be.not.undefined;
+            expect(matches).to.not.be.undefined;
             expect(matches.length).to.eq(0);
         }
     });
@@ -161,28 +161,69 @@ describe('search-service', function (): void {
         const rootUri = FileUri.create(path.resolve(__dirname, '../../../..'));
 
         it('not fuzzy', async () => {
-            const searchPattern = rootUri.path.dir.base;
+            const searchPattern = 'package'; // package.json should produce a result.
             const matches = await service.find(searchPattern, { rootUris: [rootUri.toString()], fuzzyMatch: false, useGitIgnore: true, limit: 200 });
+            expect(matches).not.empty;
             for (const match of matches) {
                 const relativeUri = rootUri.relative(new URI(match));
-                assert.notEqual(relativeUri, undefined);
+                assert.notStrictEqual(relativeUri, undefined);
                 const relativeMatch = relativeUri!.toString();
-                assert.notEqual(relativeMatch.indexOf(searchPattern), -1, relativeMatch);
+                assert.notStrictEqual(relativeMatch.indexOf(searchPattern), -1, relativeMatch);
             }
         });
 
         it('fuzzy', async () => {
             const matches = await service.find('shell', { rootUris: [rootUri.toString()], fuzzyMatch: true, useGitIgnore: true, limit: 200 });
+            expect(matches).not.empty;
             for (const match of matches) {
                 const relativeUri = rootUri.relative(new URI(match));
-                assert.notEqual(relativeUri, undefined);
+                assert.notStrictEqual(relativeUri, undefined);
                 const relativeMatch = relativeUri!.toString();
                 let position = 0;
                 for (const ch of 'shell') {
-                    position = relativeMatch.indexOf(ch, position);
-                    assert.notEqual(position, -1, relativeMatch);
+                    position = relativeMatch.toLowerCase().indexOf(ch, position);
+                    assert.notStrictEqual(position, -1, `character "${ch}" not found in "${relativeMatch}"`);
                 }
             }
+        });
+
+        it('should not look into .git', async () => {
+            const matches = await service.find('master', { rootUris: [rootUri.toString()], fuzzyMatch: false, useGitIgnore: true, limit: 200 });
+            // `**/.git/refs/remotes/*/master` files should not be picked up
+            assert.deepStrictEqual([], matches);
+        });
+    });
+
+    describe('search with whitespaces', () => {
+        const rootUri = FileUri.create(path.resolve(__dirname, '../../test-resources')).toString();
+
+        it('should support file searches with whitespaces', async () => {
+            const matches = await service.find('foo sub', { rootUris: [rootUri], fuzzyMatch: true, useGitIgnore: true, limit: 200 });
+
+            expect(matches).to.be.length(2);
+            expect(matches[0].endsWith('subdir1/sub-bar/foo.txt'));
+            expect(matches[1].endsWith('subdir1/sub2/foo.txt'));
+        });
+
+        it('should support fuzzy file searches with whitespaces', async () => {
+            const matchesExact = await service.find('foo sbd2', { rootUris: [rootUri], fuzzyMatch: false, useGitIgnore: true, limit: 200 });
+            const matchesFuzzy = await service.find('foo sbd2', { rootUris: [rootUri], fuzzyMatch: true, useGitIgnore: true, limit: 200 });
+
+            expect(matchesExact).to.be.length(0);
+            expect(matchesFuzzy).to.be.length(1);
+            expect(matchesFuzzy[0].endsWith('subdir1/sub2/foo.txt'));
+        });
+
+        it('should support file searches with whitespaces regardless of order', async () => {
+            const matchesA = await service.find('foo sub', { rootUris: [rootUri], fuzzyMatch: true, useGitIgnore: true, limit: 200 });
+            const matchesB = await service.find('sub foo', { rootUris: [rootUri], fuzzyMatch: true, useGitIgnore: true, limit: 200 });
+
+            expect(matchesA).to.not.be.empty;
+            expect(matchesB).to.not.be.empty;
+            expect(matchesA.length).to.equal(matchesB.length);
+
+            // Due to ripgrep parallelism we cannot deepEqual the matches since order is not guaranteed.
+            expect(matchesA).to.have.members(matchesB);
         });
     });
 

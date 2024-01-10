@@ -1,26 +1,29 @@
-/********************************************************************************
- * Copyright (C) 2019 Arm and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2019 Arm and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import * as React from 'react';
-import { inject, injectable, postConstruct } from 'inversify';
+import * as React from '@theia/core/shared/react';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { Emitter } from '@theia/core/lib/common/event';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/select-component';
 import { OutputWidget } from './output-widget';
-import { OutputCommands, OutputContribution } from './output-contribution';
-import { OutputChannelManager } from '../common/output-channel';
+import { OutputCommands } from './output-commands';
+import { OutputContribution } from './output-contribution';
+import { OutputChannelManager } from './output-channel';
+import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()
 export class OutputToolbarContribution implements TabBarToolbarContribution {
@@ -50,7 +53,7 @@ export class OutputToolbarContribution implements TabBarToolbarContribution {
         this.outputChannelManager.onChannelWasHidden(fireChannelsChanged);
     }
 
-    async registerToolbarItems(toolbarRegistry: TabBarToolbarRegistry): Promise<void> {
+    registerToolbarItems(toolbarRegistry: TabBarToolbarRegistry): void {
         toolbarRegistry.registerItem({
             id: 'channels',
             render: () => this.renderChannelSelector(),
@@ -60,50 +63,54 @@ export class OutputToolbarContribution implements TabBarToolbarContribution {
         toolbarRegistry.registerItem({
             id: OutputCommands.CLEAR__WIDGET.id,
             command: OutputCommands.CLEAR__WIDGET.id,
-            tooltip: OutputCommands.CLEAR__WIDGET.label,
+            tooltip: nls.localizeByDefault('Clear Output'),
             priority: 1,
         });
         toolbarRegistry.registerItem({
             id: OutputCommands.LOCK__WIDGET.id,
             command: OutputCommands.LOCK__WIDGET.id,
-            tooltip: 'Turn Auto Scrolling Off',
+            tooltip: nls.localizeByDefault('Turn Auto Scrolling Off'),
             onDidChange: this.onOutputWidgetStateChanged,
             priority: 2
         });
         toolbarRegistry.registerItem({
             id: OutputCommands.UNLOCK__WIDGET.id,
             command: OutputCommands.UNLOCK__WIDGET.id,
-            tooltip: 'Turn Auto Scrolling On',
+            tooltip: nls.localizeByDefault('Turn Auto Scrolling On'),
             onDidChange: this.onOutputWidgetStateChanged,
             priority: 2
         });
     }
 
     protected readonly NONE = '<no channels>';
+    protected readonly OUTPUT_CHANNEL_LIST_ID = 'outputChannelList';
 
     protected renderChannelSelector(): React.ReactNode {
-        const channelOptionElements: React.ReactNode[] = [];
-        this.outputChannelManager.getVisibleChannels().forEach(channel => {
-            channelOptionElements.push(<option value={channel.name} key={channel.name}>{channel.name}</option>);
+        const channelOptionElements: SelectOption[] = [];
+        this.outputChannelManager.getVisibleChannels().forEach((channel, i) => {
+            channelOptionElements.push({
+                value: channel.name
+            });
         });
         if (channelOptionElements.length === 0) {
-            channelOptionElements.push(<option key={this.NONE} value={this.NONE}>{this.NONE}</option>);
+            channelOptionElements.push({
+                value: this.NONE
+            });
         }
-        return <select
-            className='theia-select'
-            id='outputChannelList'
-            key='outputChannelList'
-            value={this.outputChannelManager.selectedChannel ? this.outputChannelManager.selectedChannel.name : this.NONE}
-            onChange={this.changeChannel}
-        >
-            {channelOptionElements}
-        </select>;
+        return <div id={this.OUTPUT_CHANNEL_LIST_ID} key={this.OUTPUT_CHANNEL_LIST_ID}>
+            <SelectComponent
+                key={this.outputChannelManager.selectedChannel?.name}
+                options={channelOptionElements}
+                defaultValue={this.outputChannelManager.selectedChannel?.name}
+                onChange={option => this.changeChannel(option)}
+            />
+        </div>;
     }
 
-    protected changeChannel = (event: React.ChangeEvent<HTMLSelectElement>) => {
-        const channelName = event.target.value;
-        if (channelName !== this.NONE) {
-            this.outputChannelManager.selectedChannel = this.outputChannelManager.getChannel(channelName);
+    protected changeChannel = (option: SelectOption) => {
+        const channelName = option.value;
+        if (channelName !== this.NONE && channelName) {
+            this.outputChannelManager.getChannel(channelName).show();
         }
     };
 }

@@ -1,25 +1,25 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { inject, injectable, postConstruct } from 'inversify';
-import { Message } from '@phosphor/messaging';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { Message } from '@theia/core/shared/@phosphor/messaging';
 import URI from '@theia/core/lib/common/uri';
 import { NavigatableWidget, StatefulWidget } from '@theia/core/lib/browser';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
-import { BaseWidget, PanelLayout } from '@theia/core/lib/browser/widgets/widget';
+import { BaseWidget, codicon, PanelLayout } from '@theia/core/lib/browser/widgets/widget';
 import { MiniBrowserProps, MiniBrowserContentFactory } from './mini-browser-content';
 
 export { MiniBrowserProps };
@@ -33,7 +33,7 @@ export class MiniBrowserOptions {
 export class MiniBrowser extends BaseWidget implements NavigatableWidget, StatefulWidget {
 
     static ID = 'mini-browser';
-    static ICON = 'fa fa-globe';
+    static ICON = codicon('globe');
 
     @inject(MiniBrowserOptions)
     protected readonly options: MiniBrowserOptions;
@@ -84,7 +84,7 @@ export class MiniBrowser extends BaseWidget implements NavigatableWidget, Statef
         this.toDisposeOnProps.push(content);
     }
 
-    protected onActivateRequest(msg: Message): void {
+    protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         const widget = (this.layout as PanelLayout).widgets[0];
         if (widget) {

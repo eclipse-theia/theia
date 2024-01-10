@@ -1,52 +1,28 @@
-/********************************************************************************
- * Copyright (C) 2017 Ericsson and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 Ericsson and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { injectable, unmanaged } from 'inversify';
-import { ProcessManager } from './process-manager';
-import { ILogger, Emitter, Event } from '@theia/core/lib/common';
+import { injectable, unmanaged } from '@theia/core/shared/inversify';
+import { ILogger, Emitter, Event, isObject } from '@theia/core/lib/common';
 import { FileUri } from '@theia/core/lib/node';
 import { isOSX, isWindows } from '@theia/core';
 import { Readable, Writable } from 'stream';
 import { exec } from 'child_process';
 import * as fs from 'fs';
-
-export interface IProcessExitEvent {
-    // Exactly one of code and signal will be set.
-    readonly code?: number,
-    readonly signal?: string
-}
-
-/**
- * Data emitted when a process has been successfully started.
- */
-export interface IProcessStartEvent {
-}
-
-/**
- * Data emitted when a process has failed to start.
- */
-export interface ProcessErrorEvent extends Error {
-    /** An errno-like error string (e.g. ENOENT).  */
-    code: string;
-}
-
-export enum ProcessType {
-    'Raw',
-    'Terminal'
-}
+import { IProcessStartEvent, IProcessExitEvent, ProcessErrorEvent, ProcessType, ManagedProcessManager, ManagedProcess } from '../common/process-manager-types';
+export { IProcessStartEvent, IProcessExitEvent, ProcessErrorEvent, ProcessType };
 
 /**
  * Options to spawn a new process (`spawn`).
@@ -80,7 +56,7 @@ export interface ForkOptions {
 }
 
 @injectable()
-export abstract class Process {
+export abstract class Process implements ManagedProcess {
 
     readonly id: number;
     protected readonly startEmitter: Emitter<IProcessStartEvent> = new Emitter<IProcessStartEvent>();
@@ -110,7 +86,7 @@ export abstract class Process {
     abstract readonly inputStream: Writable;
 
     constructor(
-        protected readonly processManager: ProcessManager,
+        protected readonly processManager: ManagedProcessManager,
         protected readonly logger: ILogger,
         @unmanaged() protected readonly type: ProcessType,
         protected readonly options: ProcessOptions | ForkOptions
@@ -192,9 +168,8 @@ export abstract class Process {
         this.logger.error(error);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected isForkOptions(options: any): options is ForkOptions {
-        return !!options && !!options.modulePath;
+    protected isForkOptions(options: unknown): options is ForkOptions {
+        return isObject<ForkOptions>(options) && !!options.modulePath;
     }
 
     protected readonly initialCwd: string;
@@ -205,7 +180,7 @@ export abstract class Process {
     public getCwdURI(): Promise<string> {
         if (isOSX) {
             return new Promise<string>(resolve => {
-                exec('lsof -p ' + this.pid + ' | grep cwd', (error, stdout, stderr) => {
+                exec('lsof -OPln -p ' + this.pid + ' | grep cwd', (error, stdout, stderr) => {
                     if (stdout !== '') {
                         resolve(FileUri.create(stdout.substring(stdout.indexOf('/'), stdout.length - 1)).toString());
                     } else {

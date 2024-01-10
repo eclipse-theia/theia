@@ -1,25 +1,26 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { LabelProvider } from '@theia/core/lib/browser';
 import { EditorManager, EditorOpenerOptions, EditorWidget } from '@theia/editor/lib/browser';
 import URI from '@theia/core/lib/common/uri';
-import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
+import { DebugProtocol } from '@vscode/debugprotocol/lib/debugProtocol';
 import { DebugSession } from '../debug-session';
-import { URI as Uri } from 'vscode-uri';
+import { URI as Uri } from '@theia/core/shared/vscode-uri';
+import { DEBUG_SCHEME, SCHEME_PATTERN } from '../../common/debug-uri-utils';
 
 export class DebugSourceData {
     readonly raw: DebugProtocol.Source;
@@ -58,12 +59,12 @@ export class DebugSource extends DebugSourceData {
     }
 
     get inMemory(): boolean {
-        return this.uri.scheme === DebugSource.SCHEME;
+        return this.uri.scheme === DEBUG_SCHEME;
     }
 
     get name(): string {
         if (this.inMemory) {
-            return this.raw.name || this.uri.path.base || this.uri.path.toString();
+            return this.raw.name || this.uri.path.base || this.uri.path.fsPath();
         }
         return this.labelProvider.getName(this.uri);
     }
@@ -75,16 +76,16 @@ export class DebugSource extends DebugSourceData {
         return this.labelProvider.getLongName(this.uri);
     }
 
-    static SCHEME = 'debug';
-    static SCHEME_PATTERN = /^[a-zA-Z][a-zA-Z0-9\+\-\.]+:/;
+    static SCHEME = DEBUG_SCHEME;
+    static SCHEME_PATTERN = SCHEME_PATTERN;
     static toUri(raw: DebugProtocol.Source): URI {
         if (raw.sourceReference && raw.sourceReference > 0) {
-            return new URI().withScheme(DebugSource.SCHEME).withPath(raw.name!).withQuery(String(raw.sourceReference));
+            return new URI().withScheme(DEBUG_SCHEME).withPath(raw.name!).withQuery(String(raw.sourceReference));
         }
         if (!raw.path) {
             throw new Error('Unrecognized source type: ' + JSON.stringify(raw));
         }
-        if (raw.path.match(DebugSource.SCHEME_PATTERN)) {
+        if (raw.path.match(SCHEME_PATTERN)) {
             return new URI(raw.path);
         }
         return new URI(Uri.file(raw.path));

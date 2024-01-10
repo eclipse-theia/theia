@@ -1,22 +1,24 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
+
+import { environment } from '../common';
 
 const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : '';
 
@@ -31,7 +33,10 @@ export const isChrome = (userAgent.indexOf('Chrome') >= 0);
 export const isSafari = (userAgent.indexOf('Chrome') === -1) && (userAgent.indexOf('Safari') >= 0);
 export const isIPad = (userAgent.indexOf('iPad') >= 0);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const isNative = typeof (window as any).process !== 'undefined';
+/**
+ * @deprecated us Environment.electron.is
+ */
+export const isNative = environment.electron.is();
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const isBasicWasmSupported = typeof (window as any).WebAssembly !== 'undefined';
 
@@ -155,4 +160,66 @@ export function preventNavigation(event: WheelEvent): void {
 
     event.preventDefault();
     event.stopPropagation();
+}
+
+export type PartialCSSStyle = Omit<Partial<CSSStyleDeclaration>,
+    'visibility' |
+    'display' |
+    'parentRule' |
+    'getPropertyPriority' |
+    'getPropertyValue' |
+    'item' |
+    'removeProperty' |
+    'setProperty'>;
+
+export function measureTextWidth(text: string | string[], style?: PartialCSSStyle): number {
+    const measureElement = getMeasurementElement(style);
+    text = Array.isArray(text) ? text : [text];
+    let width = 0;
+    for (const item of text) {
+        measureElement.textContent = item;
+        width = Math.max(measureElement.getBoundingClientRect().width, width);
+    }
+    return width;
+}
+
+export function measureTextHeight(text: string | string[], style?: PartialCSSStyle): number {
+    const measureElement = getMeasurementElement(style);
+    text = Array.isArray(text) ? text : [text];
+    let height = 0;
+    for (const item of text) {
+        measureElement.textContent = item;
+        height = Math.max(measureElement.getBoundingClientRect().height, height);
+    }
+    return height;
+}
+
+const defaultStyle = document.createElement('div').style;
+defaultStyle.fontFamily = 'var(--theia-ui-font-family)';
+defaultStyle.fontSize = 'var(--theia-ui-font-size1)';
+defaultStyle.visibility = 'hidden';
+
+function getMeasurementElement(style?: PartialCSSStyle): HTMLElement {
+    let measureElement = document.getElementById('measure');
+    if (!measureElement) {
+        measureElement = document.createElement('span');
+        measureElement.id = 'measure';
+        measureElement.style.fontFamily = defaultStyle.fontFamily;
+        measureElement.style.fontSize = defaultStyle.fontSize;
+        measureElement.style.visibility = defaultStyle.visibility;
+        document.body.appendChild(measureElement);
+    }
+    const measureStyle = measureElement.style;
+    // Reset styling first
+    for (let i = 0; i < measureStyle.length; i++) {
+        const property = measureStyle[i];
+        measureStyle.setProperty(property, defaultStyle.getPropertyValue(property));
+    }
+    // Apply new styling
+    if (style) {
+        for (const [key, value] of Object.entries(style)) {
+            measureStyle.setProperty(key, value as string);
+        }
+    }
+    return measureElement;
 }

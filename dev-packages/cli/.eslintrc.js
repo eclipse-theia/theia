@@ -5,6 +5,9 @@ module.exports = {
     ],
     parserOptions: {
         tsconfigRootDir: __dirname,
-        project: 'compile.tsconfig.json'
+        project: 'tsconfig.json'
+    },
+    rules: {
+        'import/no-dynamic-require': 'off'
     }
 };

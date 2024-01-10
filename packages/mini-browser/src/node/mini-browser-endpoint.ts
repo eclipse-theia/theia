@@ -1,31 +1,32 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import * as fs from 'fs-extra';
+const vhost = require('vhost');
+import express = require('@theia/core/shared/express');
+import * as fs from '@theia/core/shared/fs-extra';
 import { lookup } from 'mime-types';
-import { injectable, inject, named } from 'inversify';
-import { Application, Request, Response } from 'express';
-import URI from '@theia/core/lib/common/uri';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
+import { Application, Request, Response } from '@theia/core/shared/express';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { MaybePromise } from '@theia/core/lib/common/types';
-import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
 import { MiniBrowserService } from '../common/mini-browser-service';
+import { MiniBrowserEndpoint as MiniBrowserEndpointNS } from '../common/mini-browser-endpoint';
 
 /**
  * The return type of the `FileSystem#resolveContent` method.
@@ -35,7 +36,7 @@ export interface FileStatWithContent {
     /**
      * The file stat.
      */
-    readonly stat: FileStat;
+    readonly stat: fs.Stats & { uri: string };
 
     /**
      * The content of the file as a UTF-8 encoded string.
@@ -72,16 +73,10 @@ export interface MiniBrowserEndpointHandler {
 @injectable()
 export class MiniBrowserEndpoint implements BackendApplicationContribution, MiniBrowserService {
 
-    /**
-     * Endpoint path to handle the request for the given resource.
-     */
-    static HANDLE_PATH = '/mini-browser/';
+    private attachRequestHandlerPromise: Promise<void>;
 
     @inject(ILogger)
     protected readonly logger: ILogger;
-
-    @inject(FileSystem)
-    protected readonly fileSystem: FileSystem;
 
     @inject(ContributionProvider)
     @named(MiniBrowserEndpointHandler)
@@ -90,11 +85,11 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution, Mini
     protected readonly handlers: Map<string, MiniBrowserEndpointHandler> = new Map();
 
     configure(app: Application): void {
-        app.get(`${MiniBrowserEndpoint.HANDLE_PATH}*`, async (request, response) => this.response(await this.getUri(request), response));
+        this.attachRequestHandlerPromise = this.attachRequestHandler(app);
     }
 
     async onStart(): Promise<void> {
-        for (const handler of this.getContributions()) {
+        await Promise.all(Array.from(this.getContributions(), async handler => {
             const extensions = await handler.supportedExtensions();
             for (const extension of (Array.isArray(extensions) ? extensions : [extensions]).map(e => e.toLocaleLowerCase())) {
                 const existingHandler = this.handlers.get(extension);
@@ -102,21 +97,28 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution, Mini
                     this.handlers.set(extension, handler);
                 }
             }
-        }
+        }));
+        await this.attachRequestHandlerPromise;
     }
 
     async supportedFileExtensions(): Promise<Readonly<{ extension: string, priority: number }>[]> {
-        return Array.from(this.handlers.entries()).map(([extension, handler]) => ({ extension, priority: handler.priority() }));
+        return Array.from(this.handlers.entries(), ([extension, handler]) => ({ extension, priority: handler.priority() }));
+    }
+
+    protected async attachRequestHandler(app: Application): Promise<void> {
+        const miniBrowserApp = express();
+        miniBrowserApp.get('*', async (request, response) => this.response(await this.getUri(request), response));
+        app.use(MiniBrowserEndpointNS.PATH, vhost(await this.getVirtualHostRegExp(), miniBrowserApp));
     }
 
     protected async response(uri: string, response: Response): Promise<Response> {
-        const exists = await this.fileSystem.exists(uri);
+        const exists = await fs.pathExists(FileUri.fsPath(uri));
         if (!exists) {
             return this.missingResourceHandler()(uri, response);
         }
         const statWithContent = await this.readContent(uri);
         try {
-            if (!statWithContent.stat.isDirectory) {
+            if (!statWithContent.stat.isDirectory()) {
                 const extension = uri.split('.').pop();
                 if (!extension) {
                     return this.defaultHandler()(statWithContent, response);
@@ -138,12 +140,13 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution, Mini
     }
 
     protected getUri(request: Request): MaybePromise<string> {
-        const decodedPath = request.path.substr(MiniBrowserEndpoint.HANDLE_PATH.length);
-        return new URI(FileUri.create(decodedPath).toString(true)).toString(true);
+        return FileUri.create(request.path).toString(true);
     }
 
     protected async readContent(uri: string): Promise<FileStatWithContent> {
-        return this.fileSystem.resolveContent(uri);
+        const fsPath = FileUri.fsPath(uri);
+        const [stat, content] = await Promise.all([fs.stat(fsPath), fs.readFile(fsPath, 'utf8')]);
+        return { stat: Object.assign(stat, { uri }), content };
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -170,14 +173,14 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution, Mini
     protected missingResourceHandler(): (uri: string, response: Response) => MaybePromise<Response> {
         return async (uri: string, response: Response) => {
             this.logger.error(`Cannot handle missing resource. URI: ${uri}.`);
-            return response.send();
+            return response.sendStatus(404);
         };
     }
 
     protected defaultHandler(): (statWithContent: FileStatWithContent, response: Response) => MaybePromise<Response> {
         return async (statWithContent: FileStatWithContent, response: Response) => {
-            const { stat, content } = statWithContent;
-            const mimeType = lookup(FileUri.fsPath(stat.uri));
+            const { content } = statWithContent;
+            const mimeType = lookup(FileUri.fsPath(statWithContent.stat.uri));
             if (!mimeType) {
                 this.logger.warn(`Cannot handle unexpected resource. URI: ${statWithContent.stat.uri}.`);
                 response.contentType('application/octet-stream');
@@ -188,6 +191,14 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution, Mini
         };
     }
 
+    protected async getVirtualHostRegExp(): Promise<RegExp> {
+        const pattern = process.env[MiniBrowserEndpointNS.HOST_PATTERN_ENV] || MiniBrowserEndpointNS.HOST_PATTERN_DEFAULT;
+        const vhostRe = pattern
+            .replace(/\./g, '\\.')
+            .replace('{{uuid}}', '.+')
+            .replace('{{hostname}}', '.+');
+        return new RegExp(vhostRe, 'i');
+    }
 }
 
 // See `EditorManager#canHandle`.

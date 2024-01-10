@@ -1,13 +1,10 @@
 {
   "name": "@theia/editor",
-  "version": "1.2.0",
+  "version": "1.45.0",
   "description": "Theia - Editor Extension",
   "dependencies": {
-    "@theia/core": "^1.2.0",
-    "@theia/languages": "^1.2.0",
-    "@theia/variable-resolver": "^1.2.0",
-    "@types/base64-arraybuffer": "0.1.0",
-    "base64-arraybuffer": "^0.1.5"
+    "@theia/core": "1.45.0",
+    "@theia/variable-resolver": "1.45.0"
   },
   "publishConfig": {
     "access": "public"
@@ -20,7 +17,7 @@
   "keywords": [
     "theia-extension"
   ],
-  "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
+  "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/eclipse-theia/theia.git"
@@ -34,14 +31,15 @@
     "src"
   ],
   "scripts": {
-    "lint": "theiaext lint",
     "build": "theiaext build",
-    "watch": "theiaext watch",
     "clean": "theiaext clean",
-    "test": "theiaext test"
+    "compile": "theiaext compile",
+    "lint": "theiaext lint",
+    "test": "theiaext test",
+    "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^1.2.0"
+    "@theia/ext-scripts": "1.45.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

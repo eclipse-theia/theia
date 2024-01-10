@@ -1,31 +1,32 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { ElementExt } from '@phosphor/domutils';
-import { injectable, inject, postConstruct, interfaces, Container } from 'inversify';
+import { ElementExt } from '@theia/core/shared/@phosphor/domutils';
+import { injectable, inject, postConstruct, interfaces, Container } from '@theia/core/shared/inversify';
 import { TreeSourceNode } from '@theia/core/lib/browser/source-tree';
-import { ContextKey } from '@theia/core/lib/browser/context-key-service';
+import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
 import { BaseWidget, PanelLayout, Widget, Message, MessageLoop, StatefulWidget, CompositeTreeNode } from '@theia/core/lib/browser';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import URI from '@theia/core/lib/common/uri';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
-import { ProtocolToMonacoConverter, MonacoToProtocolConverter } from 'monaco-languageclient/lib';
 import { ConsoleHistory } from './console-history';
 import { ConsoleContentWidget } from './console-content-widget';
 import { ConsoleSession } from './console-session';
+import { ConsoleSessionManager } from './console-session-manager';
+import * as monaco from '@theia/monaco-editor-core';
 
 export const ConsoleOptions = Symbol('ConsoleWidgetOptions');
 export interface ConsoleOptions {
@@ -62,22 +63,23 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
     @inject(ConsoleOptions)
     protected readonly options: ConsoleOptions;
 
-    @inject(MonacoToProtocolConverter)
-    protected readonly m2p: MonacoToProtocolConverter;
-
-    @inject(ProtocolToMonacoConverter)
-    protected readonly p2m: ProtocolToMonacoConverter;
-
     @inject(ConsoleContentWidget)
     readonly content: ConsoleContentWidget;
 
     @inject(ConsoleHistory)
     protected readonly history: ConsoleHistory;
 
+    @inject(ConsoleSessionManager)
+    protected readonly sessionManager: ConsoleSessionManager;
+
     @inject(MonacoEditorProvider)
     protected readonly editorProvider: MonacoEditorProvider;
 
+    @inject(ContextKeyService)
+    protected readonly contextKeyService: ContextKeyService;
+
     protected _input: MonacoEditor;
+    protected _inputFocusContextKey: ContextKey<boolean>;
 
     constructor() {
         super();
@@ -85,7 +87,11 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
     }
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         const { id, title, inputFocusContextKey } = this.options;
         const { label, iconClass, caption } = Object.assign({}, title);
         this.id = id;
@@ -110,15 +116,30 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
         this.toDispose.push(input);
         this.toDispose.push(input.getControl().onDidLayoutChange(() => this.resizeContent()));
 
-        // todo update font if fontInfo was changed only
-        // it's impossible at the moment, but will be fixed for next upgrade of monaco version
-        // see https://github.com/microsoft/vscode/commit/5084e8ca1935698c98c163e339ca664818786c6d
-        this.toDispose.push(input.getControl().onDidChangeConfiguration(() => this.updateFont()));
+        this.toDispose.push(input.getControl().onDidChangeConfiguration(event => {
+            if (event.hasChanged(monaco.editor.EditorOption.fontInfo)) {
+                this.updateFont();
+            }
+        }));
+
+        this.session = this.sessionManager.selectedSession;
+        this.toDispose.push(this.sessionManager.onDidChangeSelectedSession(session => {
+            // Do not clear the session output when `undefined`.
+            if (session) {
+                this.session = session;
+            }
+        }));
 
         this.updateFont();
         if (inputFocusContextKey) {
             this.toDispose.push(input.onFocusChanged(() => inputFocusContextKey.set(this.hasInputFocus())));
+            this.toDispose.push(input.onCursorPositionChanged(() => input.getControl().createContextKey('consoleNavigationBackEnabled', this.consoleNavigationBackEnabled)));
+            this.toDispose.push(input.onCursorPositionChanged(() => input.getControl().createContextKey('consoleNavigationForwardEnabled', this.consoleNavigationForwardEnabled)));
         }
+        input.getControl().createContextKey('consoleInputFocus', true);
+        const contentContext = this.contextKeyService.createScoped(this.content.node);
+        contentContext.setContext('consoleContentFocus', true);
+        this.toDispose.push(contentContext);
     }
 
     protected createInput(node: HTMLElement): Promise<MonacoEditor> {
@@ -146,6 +167,18 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
 
     get input(): MonacoEditor {
         return this._input;
+    }
+
+    get consoleNavigationBackEnabled(): boolean {
+        const editor = this.input.getControl();
+        return !!editor.getPosition()!.equals({ lineNumber: 1, column: 1 });
+    }
+
+    get consoleNavigationForwardEnabled(): boolean {
+        const editor = this.input.getControl();
+        const lineNumber = editor.getModel()!.getLineCount();
+        const column = editor.getModel()!.getLineMaxColumn(lineNumber);
+        return !!editor.getPosition()!.equals({ lineNumber, column });
     }
 
     selectAll(): void {
@@ -210,14 +243,14 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
         }
     }
 
-    protected onActivateRequest(msg: Message): void {
+    protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         this._input.focus();
     }
 
     protected totalHeight = -1;
     protected totalWidth = -1;
-    protected onResize(msg: Widget.ResizeMessage): void {
+    protected override onResize(msg: Widget.ResizeMessage): void {
         super.onResize(msg);
         this.totalWidth = msg.width;
         this.totalHeight = msg.height;

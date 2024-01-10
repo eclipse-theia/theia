@@ -1,0 +1,255 @@
+/********************************************************************************
+ * Copyright (C) 2022 Ericsson and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+#main-toolbar {
+  --theia-toolbar-height: calc(var(--theia-private-menubar-height) - 2px);
+  --theia-toolbar-item-padding: 5px;
+  --theia-toolbar-icon-size: 20px;
+
+  min-height: var(--theia-toolbar-height);
+  color: var(--theia-mainToolbar-foreground);
+  background: var(--theia-mainToolbar-background);
+  padding: 2px 4px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+}
+
+#main-toolbar .theia-progress-bar-container {
+  position: absolute;
+  bottom: 0;
+}
+
+.toolbar-wrapper {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  overflow: hidden;
+}
+
+.toolbar-wrapper .toolbar-column {
+  display: flex;
+  flex: 1;
+}
+
+.toolbar-wrapper .left {
+  justify-content: flex-start;
+}
+
+.toolbar-wrapper .center {
+  justify-content: center;
+}
+
+.toolbar-wrapper .right {
+  justify-content: flex-end;
+}
+
+.toolbar-wrapper:focus {
+  outline: none;
+}
+
+#main-toolbar .toolbar-item {
+  padding: 2px;
+  margin: 0 2px;
+  box-sizing: border-box;
+  position: relative;
+  background: unset;
+  cursor: pointer;
+}
+
+#main-toolbar .empty-column-space {
+  flex-grow: 1;
+}
+
+#main-toolbar .toolbar-item .codicon,
+#main-toolbar .toolbar-item .fa {
+  font-size: var(--theia-toolbar-icon-size);
+  width: unset;
+  min-width: var(--theia-toolbar-icon-size);
+  height: var(--theia-toolbar-icon-size);
+  line-height: var(--theia-toolbar-icon-size);
+}
+
+#main-toolbar
+  .toolbar-item.action-label.enabled:hover:not(.dragging):not(.active) {
+  background-color: var(--theia-toolbar-hoverBackground);
+}
+
+#main-toolbar .toolbar-item.action-label:not(.enabled) {
+  cursor: default;
+}
+
+#main-toolbar .toolbar-item .hover-overlay {
+  position: absolute;
+  pointer-events: none;
+  height: 100%;
+  width: 100%;
+  left: 0;
+  top: 0;
+}
+
+#main-toolbar .toolbar-item .hover-overlay.drag-over {
+  background-color: var(--theia-activityBar-foreground);
+  opacity: 0.3;
+}
+
+#main-toolbar .toolbar-item .hover-overlay.location-left {
+  width: 25%;
+}
+
+#main-toolbar .toolbar-item .hover-overlay.location-right {
+  width: 25%;
+  left: 75%;
+  right: 0;
+}
+
+#main-toolbar .toolbar-item.dragging {
+  opacity: 0.3;
+}
+
+#main-toolbar .toolbar-item:focus {
+  outline: none;
+}
+
+#main-toolbar .item:focus,
+#main-toolbar .item div:focus {
+  outline: none;
+}
+
+#main-toolbar .separator {
+  width: 1px;
+  background-color: var(--theia-activityBar-foreground);
+  opacity: var(--theia-mod-disabled-opacity);
+  margin: 0 5px;
+}
+
+.toolbar-column {
+  display: flex;
+}
+
+.toolbar-column.left {
+  margin-right: var(--theia-toolbar-item-padding);
+}
+
+.toolbar-column.right {
+  margin-left: var(--theia-toolbar-item-padding);
+}
+
+.toolbar-column.empty {
+  min-width: 60px;
+}
+
+.empty-column-space.drag-over {
+  background-color: var(--theia-activityBar-foreground);
+  opacity: 0.3;
+  border-radius: 2px;
+}
+
+#toolbar-icon-selector-dialog {
+  --theia-icon-dialog-icon-size: 20px;
+}
+
+#toolbar-icon-selector-dialog .dialogBlock {
+  max-height: 75%;
+  width: 600px;
+}
+
+#toolbar-icon-selector-dialog .dialogContent {
+  overflow: hidden;
+  display: block;
+}
+
+#toolbar-icon-selector-dialog .dialogContent .icon-selector-options {
+  display: flex;
+}
+
+#toolbar-icon-selector-dialog .dialogContent .icon-wrapper:focus {
+  box-shadow: unset;
+  outline: solid 1px var(--theia-focusBorder);
+}
+
+#toolbar-icon-selector-dialog .dialogControl {
+  padding-top: var(--theia-ui-padding);
+}
+
+#toolbar-icon-selector-dialog .toolbar-icon-dialog-content.grid {
+  --grid-size: 28px;
+  display: grid;
+  grid-template-columns: repeat(20, var(--grid-size));
+  grid-template-rows: var(--grid-size);
+  grid-auto-rows: var(--grid-size);
+}
+
+#toolbar-icon-selector-dialog .toolbar-icon-dialog-content .icon-wrapper {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#toolbar-icon-selector-dialog .toolbar-icon-dialog-content .search-placeholder {
+  text-align: center;
+  margin-top: var(--theia-ui-padding);
+  font-size: 1.2em;
+}
+
+#toolbar-icon-selector-dialog .toolbar-icon-controls {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+}
+
+#toolbar-icon-selector-dialog .toolbar-icon-controls .default-button {
+  display: flex;
+}
+
+#toolbar-icon-selector-dialog .toolbar-icon-controls .toolbar-default-icon {
+  margin-left: var(--theia-ui-padding);
+  font-size: var(--theia-icon-dialog-icon-size);
+}
+
+#toolbar-icon-selector-dialog .icon-selector-options {
+  justify-content: space-between;
+}
+
+#toolbar-icon-selector-dialog .icon-selector-options .icon-filter-input {
+  height: 18px;
+}
+
+#toolbar-icon-selector-dialog .toolbar-icon-select {
+  margin-bottom: var(--theia-ui-padding);
+}
+
+#toolbar-icon-selector-dialog
+  .toolbar-icon-dialog-content
+  .icon-wrapper.selected {
+  background-color: var(--theia-list-activeSelectionBackground);
+}
+
+#toolbar-icon-selector-dialog .toolbar-icon-dialog-content .fa,
+#toolbar-icon-selector-dialog .toolbar-icon-dialog-content .codicon {
+  font-size: var(--theia-icon-dialog-icon-size);
+}
+
+#toolbar-icon-selector-dialog .toolbar-scroll-container {
+  height: 375px;
+  position: relative;
+  padding: 0 var(--theia-ui-padding);
+  border: 1px solid var(--theia-editorWidget-border);
+  background-color: var(--theia-dropdown-background);
+}

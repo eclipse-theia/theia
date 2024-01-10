@@ -1,0 +1,17 @@
+{
+  "extends": "../../configs/base.tsconfig",
+  "compilerOptions": {
+    "composite": true
+  },
+  "include": [
+    "rules"
+  ],
+  "references": [
+    {
+      "path": "../../packages/core"
+    },
+    {
+      "path": "../private-re-exports"
+    }
+  ]
+}

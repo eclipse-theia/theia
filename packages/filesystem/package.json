@@ -1,33 +1,34 @@
 {
   "name": "@theia/filesystem",
-  "version": "1.2.0",
+  "version": "1.45.0",
   "description": "Theia - FileSystem Extension",
   "dependencies": {
-    "@theia/application-package": "^1.2.0",
-    "@theia/core": "^1.2.0",
+    "@theia/core": "1.45.0",
     "@types/body-parser": "^1.17.0",
+    "@types/multer": "^1.4.7",
     "@types/rimraf": "^2.0.2",
     "@types/tar-fs": "^1.16.1",
-    "@types/touch": "0.0.1",
     "@types/uuid": "^7.0.3",
+    "async-mutex": "^0.3.1",
     "body-parser": "^1.18.3",
-    "drivelist": "^6.4.3",
     "http-status-codes": "^1.3.0",
-    "iconv-lite": "0.4.23",
-    "jschardet": "1.6.0",
-    "minimatch": "^3.0.4",
-    "mv": "^2.1.1",
+    "minimatch": "^5.1.0",
+    "multer": "1.4.4-lts.1",
     "rimraf": "^2.6.2",
+    "stat-mode": "^1.0.0",
     "tar-fs": "^1.16.2",
-    "touch": "^3.1.0",
-    "trash": "^4.0.1",
+    "trash": "^7.2.0",
     "uuid": "^8.0.0",
-    "zip-dir": "^1.0.2"
+    "vscode-languageserver-textdocument": "^1.0.1"
   },
   "publishConfig": {
     "access": "public"
   },
   "theiaExtensions": [
+    {
+      "preload": "lib/electron-browser/preload",
+      "electronMain": "lib/electron-main/electron-main-module"
+    },
     {
       "frontend": "lib/browser/filesystem-frontend-module",
       "backend": "lib/node/filesystem-backend-module"
@@ -37,14 +38,16 @@
       "backend": "lib/node/download/file-download-backend-module"
     },
     {
-      "frontend": "lib/browser/file-dialog/file-dialog-module",
+      "frontend": "lib/browser/file-dialog/file-dialog-module"
+    },
+    {
       "frontendElectron": "lib/electron-browser/file-dialog/electron-file-dialog-module"
     }
   ],
   "keywords": [
     "theia-extension"
   ],
-  "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
+  "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/eclipse-theia/theia.git"
@@ -58,15 +61,16 @@
     "src"
   ],
   "scripts": {
-    "lint": "theiaext lint",
     "build": "theiaext build",
-    "watch": "theiaext watch",
     "clean": "theiaext clean",
+    "compile": "theiaext compile",
+    "lint": "theiaext lint",
     "test": "theiaext test",
-    "test:watch": "theiaext test:watch"
+    "test:watch": "theiaext test:watch",
+    "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^1.2.0"
+    "@theia/ext-scripts": "1.45.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

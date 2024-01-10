@@ -1,11 +1,11 @@
 {
   "name": "@theia/application-package",
-  "version": "1.2.0",
+  "version": "1.45.0",
   "description": "Theia application package API.",
   "publishConfig": {
     "access": "public"
   },
-  "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
+  "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/eclipse-theia/theia.git"
@@ -21,26 +21,28 @@
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "scripts": {
-    "lint": "theiaext lint",
     "build": "theiaext build",
-    "watch": "theiaext watch",
     "clean": "theiaext clean",
-    "test": "theiaext test"
+    "compile": "theiaext compile",
+    "lint": "theiaext lint",
+    "test": "theiaext test",
+    "watch": "theiaext watch"
   },
   "dependencies": {
+    "@theia/request": "1.45.0",
     "@types/fs-extra": "^4.0.2",
-    "@types/request": "^2.0.3",
-    "@types/semver": "^5.4.0",
+    "@types/semver": "^7.5.0",
     "@types/write-json-file": "^2.2.1",
-    "changes-stream": "^2.2.0",
+    "deepmerge": "^4.2.2",
     "fs-extra": "^4.0.2",
     "is-electron": "^2.1.0",
-    "request": "^2.82.0",
-    "semver": "^5.4.1",
+    "nano": "^9.0.5",
+    "resolve-package-path": "^4.0.3",
+    "semver": "^7.5.4",
     "write-json-file": "^2.2.0"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^1.2.0"
+    "@theia/ext-scripts": "1.45.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

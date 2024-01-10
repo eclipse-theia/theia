@@ -1,30 +1,31 @@
-/********************************************************************************
- * Copyright (C) 2019 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2019 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { Range as R, Position as P, Location as L } from 'vscode-languageserver-types';
-import { URI } from 'vscode-uri';
 import * as theia from '@theia/plugin';
+import { Range as R, Position as P, Location as L } from '@theia/core/shared/vscode-languageserver-protocol';
+import { URI as TheiaURI } from '@theia/core/lib/common/uri';
 import { cloneAndChange } from '../common/objects';
-import { Position, Range, Location, CallHierarchyItem } from './types-impl';
+import { Position, Range, Location, CallHierarchyItem, TypeHierarchyItem, URI, TextDocumentShowOptions } from './types-impl';
 import {
     fromPosition, fromRange, fromLocation,
     isModelLocation, toLocation,
     isModelCallHierarchyItem, fromCallHierarchyItem, toCallHierarchyItem,
+    isModelTypeHierarchyItem, fromTypeHierarchyItem, toTypeHierarchyItem,
     isModelCallHierarchyIncomingCall, toCallHierarchyIncomingCall,
-    isModelCallHierarchyOutgoingCall, toCallHierarchyOutgoingCall
+    isModelCallHierarchyOutgoingCall, toCallHierarchyOutgoingCall, fromTextDocumentShowOptions
 } from './type-converters';
 
 // Here is a mapping of VSCode commands to monaco commands with their conversions
@@ -62,6 +63,9 @@ export namespace KnownCommands {
             return createConversionFunction(...argStack)(args);
         }
     };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const identity = (args: any[]) => args;
 
     mappings['editor.action.select.all'] = ['editor.action.select.all', CONVERT_VSCODE_TO_MONACO];
     mappings['editor.action.toggleHighContrast'] = ['editor.action.toggleHighContrast', CONVERT_VSCODE_TO_MONACO];
@@ -295,6 +299,23 @@ export namespace KnownCommands {
     mappings['vscode.prepareCallHierarchy'] = ['vscode.prepareCallHierarchy', CONVERT_VSCODE_TO_MONACO, CONVERT_MONACO_TO_VSCODE];
     mappings['vscode.provideIncomingCalls'] = ['vscode.provideIncomingCalls', CONVERT_VSCODE_TO_MONACO, CONVERT_MONACO_TO_VSCODE];
     mappings['vscode.provideOutgoingCalls'] = ['vscode.provideOutgoingCalls', CONVERT_VSCODE_TO_MONACO, CONVERT_MONACO_TO_VSCODE];
+    mappings['vscode.prepareTypeHierarchy'] = ['vscode.prepareTypeHierarchy', CONVERT_VSCODE_TO_MONACO, CONVERT_MONACO_TO_VSCODE];
+    mappings['vscode.provideSupertypes'] = ['vscode.provideSupertypes', CONVERT_VSCODE_TO_MONACO, CONVERT_MONACO_TO_VSCODE];
+    mappings['vscode.provideSubtypes'] = ['vscode.provideSubtypes', CONVERT_VSCODE_TO_MONACO, CONVERT_MONACO_TO_VSCODE];
+
+    mappings['vscode.open'] = ['vscode.open', CONVERT_VSCODE_TO_MONACO];
+    mappings['vscode.diff'] = ['vscode.diff', CONVERT_VSCODE_TO_MONACO];
+
+    // terminal commands
+    mappings['workbench.action.terminal.new'] = ['terminal:new', identity];
+    mappings['workbench.action.terminal.newWithProfile'] = ['terminal:new:profile', identity];
+    mappings['workbench.action.terminal.selectDefaultShell'] = ['terminal:profile:default', identity];
+    mappings['workbench.action.terminal.newInActiveWorkspace'] = ['terminal:new:active:workspace', identity];
+    mappings['workbench.action.terminal.clear'] = ['terminal:clear', identity];
+    mappings['openInTerminal'] = ['terminal:context', createConversionFunction((uri: URI) => new TheiaURI(uri))];
+    mappings['workbench.action.terminal.split'] = ['terminal:split', identity];
+    mappings['workbench.action.terminal.focusFind'] = ['terminal:find', identity];
+    mappings['workbench.action.terminal.hideFind'] = ['terminal:find:cancel', identity];
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function map<T>(id: string, args: any[] | undefined, toDo: (mappedId: string, mappedArgs: any[] | undefined, mappedResult: ConversionFunction | undefined) => T): T {
@@ -347,6 +368,15 @@ export namespace KnownCommands {
     function vscodeToMonacoArgsConverter(args: any[]) {
         // tslint:disable-next-line:typedef
         return cloneAndChange(args, function (value) {
+            if (CallHierarchyItem.isCallHierarchyItem(value)) {
+                return fromCallHierarchyItem(value);
+            }
+            if (TypeHierarchyItem.isTypeHierarchyItem(value)) {
+                return fromTypeHierarchyItem(value);
+            }
+            if (TextDocumentShowOptions.isTextDocumentShowOptions(value)) {
+                return fromTextDocumentShowOptions(value);
+            }
             if (Position.isPosition(value)) {
                 return fromPosition(value);
             }
@@ -355,9 +385,6 @@ export namespace KnownCommands {
             }
             if (Location.isLocation(value)) {
                 return fromLocation(value);
-            }
-            if (CallHierarchyItem.isCallHierarchyItem(value)) {
-                return fromCallHierarchyItem(value);
             }
             if (!Array.isArray(value)) {
                 return value;
@@ -369,17 +396,20 @@ export namespace KnownCommands {
     function monacoToVscodeArgsConverter(args: any[]) {
         // tslint:disable-next-line:typedef
         return cloneAndChange(args, function (value) {
-            if (isModelLocation(value)) {
-                return toLocation(value);
-            }
             if (isModelCallHierarchyItem(value)) {
                 return toCallHierarchyItem(value);
+            }
+            if (isModelTypeHierarchyItem(value)) {
+                return toTypeHierarchyItem(value);
             }
             if (isModelCallHierarchyIncomingCall(value)) {
                 return toCallHierarchyIncomingCall(value);
             }
             if (isModelCallHierarchyOutgoingCall(value)) {
                 return toCallHierarchyOutgoingCall(value);
+            }
+            if (isModelLocation(value)) {
+                return toLocation(value);
             }
             if (!Array.isArray(value)) {
                 return value;

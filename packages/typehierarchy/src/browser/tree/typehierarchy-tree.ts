@@ -1,40 +1,40 @@
-/********************************************************************************
- * Copyright (C) 2019 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2019 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { injectable } from 'inversify';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+import { injectable } from '@theia/core/shared/inversify';
 import { v4 } from 'uuid';
 import URI from '@theia/core/lib/common/uri';
 import { Location } from '@theia/editor/lib/browser/editor';
 import { TreeDecoration, DecoratedTreeNode } from '@theia/core/lib/browser/tree/tree-decorator';
 import { TreeImpl, TreeNode, CompositeTreeNode, ExpandableTreeNode, SelectableTreeNode } from '@theia/core/lib/browser/tree';
-import { TypeHierarchyItem } from '@theia/languages/lib/browser/typehierarchy/typehierarchy-protocol';
-import { TypeHierarchyDirection, ResolveTypeHierarchyItemParams } from '@theia/languages/lib/browser/typehierarchy/typehierarchy-protocol';
-import { TypeHierarchyService } from '../typehierarchy-service';
+import { TypeHierarchyProvider, TypeHierarchyDirection, ResolveTypeHierarchyItemParams, TypeHierarchyItem } from '../typehierarchy-provider';
 
 @injectable()
 export class TypeHierarchyTree extends TreeImpl {
 
-    service: TypeHierarchyService | undefined;
+    provider: TypeHierarchyProvider | undefined;
 
-    async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
+    override async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
         if (TypeHierarchyTree.Node.is(parent)) {
             await this.ensureResolved(parent);
             if (parent.children.length === 0) {
-                delete parent.children;
-                delete parent.expanded;
+                delete (parent as any).children;
+                delete (parent as any).expanded;
                 return [];
             }
             return parent.children.slice();
@@ -57,15 +57,15 @@ export class TypeHierarchyTree extends TreeImpl {
      */
     protected async ensureResolved(node: TypeHierarchyTree.Node): Promise<void> {
         if (!node.resolved) {
-            const { service, direction } = this;
-            if (service && direction !== undefined) {
+            const { provider, direction } = this;
+            if (provider && direction !== undefined) {
                 const { item } = node;
                 const param: ResolveTypeHierarchyItemParams = {
                     item,
                     direction,
                     resolve: 1
                 };
-                const resolvedItem = await service.resolve(param);
+                const resolvedItem = await provider.resolve(param);
                 if (resolvedItem) {
                     node.resolved = true;
                     const items = TypeHierarchyDirection.Children === direction ? resolvedItem.children : resolvedItem.parents;
@@ -97,8 +97,7 @@ export namespace TypeHierarchyTree {
 
         export function is(node: TreeNode | undefined): node is RootNode {
             if (Node.is(node) && 'direction' in node) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const { direction } = (node as any);
+                const { direction } = (node as RootNode);
                 return direction === TypeHierarchyDirection.Children || direction === TypeHierarchyDirection.Parents;
             }
             return false;
@@ -122,8 +121,7 @@ export namespace TypeHierarchyTree {
 
         export function is(node: TreeNode | undefined): node is Node {
             if (!!node && 'resolved' in node && 'item' in node) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const { resolved, item } = (node as any);
+                const { resolved, item } = (node as Node);
                 return typeof resolved === 'boolean' && !!item;
             }
             return false;
@@ -152,7 +150,7 @@ export namespace TypeHierarchyTree {
             };
             // Trick: if the node is `resolved` and have zero `children`, make the node non-expandable.
             if (resolved && node.children.length === 0) {
-                delete node.expanded;
+                delete (node as any).expanded;
             }
             return node;
         }

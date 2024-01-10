@@ -1,23 +1,28 @@
-/********************************************************************************
- * Copyright (C) 2019 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2019 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { injectable, inject, postConstruct } from 'inversify';
 import { Emitter } from '../common/event';
 import { Disposable, DisposableCollection } from '../common/disposable';
 import { LabelProviderContribution, DidChangeLabelEvent } from './label-provider';
+import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
+import { PreferenceService, PreferenceSchemaProvider } from './preferences';
+import debounce = require('lodash.debounce');
+
+const ICON_THEME_PREFERENCE_KEY = 'workbench.iconTheme';
 
 export interface IconThemeDefinition {
     readonly id: string
@@ -26,6 +31,7 @@ export interface IconThemeDefinition {
     readonly hasFileIcons?: boolean;
     readonly hasFolderIcons?: boolean;
     readonly hidesExplorerArrows?: boolean;
+    readonly showLanguageModeIcons?: boolean;
 }
 
 export interface IconTheme extends IconThemeDefinition {
@@ -62,7 +68,7 @@ export class NoneIconTheme implements IconTheme, LabelProviderContribution {
         if (this.toDeactivate.disposed) {
             return 0;
         }
-        return Number.MAX_SAFE_INTEGER;
+        return Number.MAX_SAFE_INTEGER - 1024;
     }
 
     getIcon(): string {
@@ -73,6 +79,7 @@ export class NoneIconTheme implements IconTheme, LabelProviderContribution {
 
 @injectable()
 export class IconThemeService {
+    static readonly STORAGE_KEY = 'iconTheme';
 
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange = this.onDidChangeEmitter.event;
@@ -88,20 +95,30 @@ export class IconThemeService {
         return this._iconThemes.get(id);
     }
 
-    @inject(NoneIconTheme)
-    protected readonly noneIconTheme: NoneIconTheme;
+    @inject(NoneIconTheme) protected readonly noneIconTheme: NoneIconTheme;
+    @inject(PreferenceService) protected readonly preferences: PreferenceService;
+    @inject(PreferenceSchemaProvider) protected readonly schemaProvider: PreferenceSchemaProvider;
 
     protected readonly onDidChangeCurrentEmitter = new Emitter<string>();
     readonly onDidChangeCurrent = this.onDidChangeCurrentEmitter.event;
 
-    protected _default: IconTheme;
-
     protected readonly toDeactivate = new DisposableCollection();
+
+    protected activeTheme: IconTheme;
 
     @postConstruct()
     protected init(): void {
-        this._default = this.noneIconTheme;
-        this.register(this.noneIconTheme);
+        this.register(this.fallback);
+        this.setCurrent(this.fallback, false);
+        this.preferences.ready.then(() => {
+            this.validateActiveTheme();
+            this.updateIconThemePreference();
+            this.preferences.onPreferencesChanged(changes => {
+                if (ICON_THEME_PREFERENCE_KEY in changes) {
+                    this.validateActiveTheme();
+                }
+            });
+        });
     }
 
     register(iconTheme: IconTheme): Disposable {
@@ -111,11 +128,12 @@ export class IconThemeService {
         }
         this._iconThemes.set(iconTheme.id, iconTheme);
         this.onDidChangeEmitter.fire(undefined);
-        if (this.toDeactivate.disposed
-            && window.localStorage.getItem('iconTheme') === iconTheme.id) {
-            this.setCurrent(iconTheme);
-        }
-        return Disposable.create(() => this.unregister(iconTheme.id));
+        this.validateActiveTheme();
+        this.updateIconThemePreference();
+        return Disposable.create(() => {
+            this.unregister(iconTheme.id);
+            this.updateIconThemePreference();
+        });
     }
 
     unregister(id: string): IconTheme | undefined {
@@ -124,14 +142,10 @@ export class IconThemeService {
             return undefined;
         }
         this._iconThemes.delete(id);
-        if (this._default === iconTheme) {
-            this._default = this.noneIconTheme;
-        }
-        if (window.localStorage.getItem('iconTheme') === id) {
-            window.localStorage.removeItem('iconTheme');
-            this.onDidChangeCurrentEmitter.fire(this._default.id);
-        }
         this.onDidChangeEmitter.fire(undefined);
+        if (id === this.getCurrent().id) {
+            this.setCurrent(this.default, false);
+        }
         return iconTheme;
     }
 
@@ -140,41 +154,64 @@ export class IconThemeService {
     }
 
     set current(id: string) {
-        const newCurrent = this._iconThemes.get(id) || this._default;
-        if (this.getCurrent().id !== newCurrent.id) {
+        const newCurrent = this._iconThemes.get(id);
+        if (newCurrent && this.getCurrent().id !== newCurrent.id) {
             this.setCurrent(newCurrent);
         }
     }
 
-    protected getCurrent(): IconTheme {
-        const id = window.localStorage.getItem('iconTheme');
-        return id && this._iconThemes.get(id) || this._default;
+    getCurrent(): IconTheme {
+        return this.activeTheme;
     }
 
-    protected setCurrent(current: IconTheme): void {
-        window.localStorage.setItem('iconTheme', current.id);
-        this.toDeactivate.dispose();
-        this.toDeactivate.push(current.activate());
-        this.onDidChangeCurrentEmitter.fire(current.id);
-    }
-
-    get default(): string {
-        return this._default.id;
-    }
-
-    set default(id: string) {
-        const newDefault = this._iconThemes.get(id) || this.noneIconTheme;
-        if (this._default.id === newDefault.id) {
-            return;
+    /**
+     * @param persistSetting If `true`, the theme's id will be set as the value of the `workbench.iconTheme` preference. (default: `true`)
+     */
+    setCurrent(newCurrent: IconTheme, persistSetting = true): void {
+        if (newCurrent !== this.getCurrent()) {
+            this.activeTheme = newCurrent;
+            this.toDeactivate.dispose();
+            this.toDeactivate.push(newCurrent.activate());
+            this.onDidChangeCurrentEmitter.fire(newCurrent.id);
         }
-        this._default = newDefault;
-        if (!window.localStorage.getItem('iconTheme')) {
-            this.onDidChangeCurrentEmitter.fire(newDefault.id);
+        if (persistSetting) {
+            this.preferences.updateValue(ICON_THEME_PREFERENCE_KEY, newCurrent.id);
         }
     }
 
-    protected load(): string | undefined {
-        return window.localStorage.getItem('iconTheme') || undefined;
+    protected getConfiguredTheme(): IconTheme | undefined {
+        const configuredId = this.preferences.get<string>(ICON_THEME_PREFERENCE_KEY);
+        return configuredId ? this._iconThemes.get(configuredId) : undefined;
     }
 
+    protected validateActiveTheme(): void {
+        if (this.preferences.isReady) {
+            const configured = this.getConfiguredTheme();
+            if (configured && configured !== this.getCurrent()) {
+                this.setCurrent(configured, false);
+            }
+        }
+    }
+
+    protected updateIconThemePreference = debounce(() => this.doUpdateIconThemePreference(), 500);
+
+    protected doUpdateIconThemePreference(): void {
+        const preference = this.schemaProvider.getSchemaProperty(ICON_THEME_PREFERENCE_KEY);
+        if (preference) {
+            const sortedThemes = Array.from(this.definitions).sort((a, b) => a.label.localeCompare(b.label));
+            this.schemaProvider.updateSchemaProperty(ICON_THEME_PREFERENCE_KEY, {
+                ...preference,
+                enum: sortedThemes.map(e => e.id),
+                enumItemLabels: sortedThemes.map(e => e.label)
+            });
+        }
+    }
+
+    get default(): IconTheme {
+        return this._iconThemes.get(FrontendApplicationConfigProvider.get().defaultIconTheme) || this.fallback;
+    }
+
+    get fallback(): IconTheme {
+        return this.noneIconTheme;
+    }
 }

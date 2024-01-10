@@ -1,26 +1,30 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { find, toArray, ArrayExt } from '@phosphor/algorithm';
 import { TabBar, Widget, DockPanel, Title, DockLayout } from '@phosphor/widgets';
 import { Signal } from '@phosphor/signaling';
 import { Disposable, DisposableCollection } from '../../common/disposable';
-import { MessageLoop } from '../widgets';
+import { UnsafeWidgetUtilities } from '../widgets';
+import { CorePreferences } from '../core-preferences';
+import { Emitter, Event, environment } from '../../common';
 
-const MAXIMIZED_CLASS = 'theia-maximized';
+export const MAXIMIZED_CLASS = 'theia-maximized';
+export const ACTIVE_TABBAR_CLASS = 'theia-tabBar-active';
+const VISIBLE_MENU_MAXIMIZED_CLASS = 'theia-visible-menu-maximized';
 
 export const MAIN_AREA_ID = 'theia-main-content-panel';
 export const BOTTOM_AREA_ID = 'theia-bottom-content-panel';
@@ -44,7 +48,16 @@ export class TheiaDockPanel extends DockPanel {
      */
     readonly widgetRemoved = new Signal<this, Widget>(this);
 
-    constructor(options?: DockPanel.IOptions) {
+    protected readonly onDidToggleMaximizedEmitter = new Emitter<Widget>();
+    readonly onDidToggleMaximized = this.onDidToggleMaximizedEmitter.event;
+    protected readonly onDidChangeCurrentEmitter = new Emitter<Title<Widget> | undefined>();
+    get onDidChangeCurrent(): Event<Title<Widget> | undefined> {
+        return this.onDidChangeCurrentEmitter.event;
+    }
+
+    constructor(options?: DockPanel.IOptions,
+        protected readonly preferences?: CorePreferences
+    ) {
         super(options);
         this['_onCurrentChanged'] = (sender: TabBar<Widget>, args: TabBar.ICurrentChangedArgs<Widget>) => {
             this.markAsCurrent(args.currentTitle || undefined);
@@ -54,6 +67,30 @@ export class TheiaDockPanel extends DockPanel {
             this.markAsCurrent(args.title);
             super['_onTabActivateRequested'](sender, args);
         };
+        if (preferences) {
+            preferences.onPreferenceChanged(preference => {
+                if (!this.isElectron() && preference.preferenceName === 'window.menuBarVisibility' && (preference.newValue === 'visible' || preference.oldValue === 'visible')) {
+                    this.handleMenuBarVisibility(preference.newValue);
+                }
+            });
+        }
+    }
+
+    isElectron(): boolean {
+        return environment.electron.is();
+    }
+
+    protected handleMenuBarVisibility(newValue: string): void {
+        const areaContainer = this.node.parentElement;
+        const maximizedElement = this.getMaximizedElement();
+
+        if (areaContainer === maximizedElement) {
+            if (newValue === 'visible') {
+                this.addClass(VISIBLE_MENU_MAXIMIZED_CLASS);
+            } else {
+                this.removeClass(VISIBLE_MENU_MAXIMIZED_CLASS);
+            }
+        }
     }
 
     protected _currentTitle: Title<Widget> | undefined;
@@ -73,6 +110,7 @@ export class TheiaDockPanel extends DockPanel {
     markAsCurrent(title: Title<Widget> | undefined): void {
         this.toDisposeOnMarkAsCurrent.dispose();
         this._currentTitle = title;
+        this.markActiveTabBar(title);
         if (title) {
             const resetCurrent = () => this.markAsCurrent(undefined);
             title.owner.disposed.connect(resetCurrent);
@@ -80,22 +118,37 @@ export class TheiaDockPanel extends DockPanel {
                 title.owner.disposed.disconnect(resetCurrent)
             ));
         }
+        this.onDidChangeCurrentEmitter.fire(title);
     }
 
-    addWidget(widget: Widget, options?: DockPanel.IAddOptions): void {
+    markActiveTabBar(title?: Title<Widget>): void {
+        const tabBars = toArray(this.tabBars());
+        tabBars.forEach(tabBar => tabBar.removeClass(ACTIVE_TABBAR_CLASS));
+        const activeTabBar = title && this.findTabBar(title);
+        if (activeTabBar) {
+            activeTabBar.addClass(ACTIVE_TABBAR_CLASS);
+        } else if (tabBars.length > 0) {
+            // At least one tabbar needs to be active
+            tabBars[0].addClass(ACTIVE_TABBAR_CLASS);
+        }
+    }
+
+    override addWidget(widget: Widget, options?: DockPanel.IAddOptions): void {
         if (this.mode === 'single-document' && widget.parent === this) {
             return;
         }
         super.addWidget(widget, options);
         this.widgetAdded.emit(widget);
+        this.markActiveTabBar(widget.title);
     }
 
-    activateWidget(widget: Widget): void {
+    override activateWidget(widget: Widget): void {
         super.activateWidget(widget);
         this.widgetActivated.emit(widget);
+        this.markActiveTabBar(widget.title);
     }
 
-    protected onChildRemoved(msg: Widget.ChildMessage): void {
+    protected override onChildRemoved(msg: Widget.ChildMessage): void {
         super.onChildRemoved(msg);
         this.widgetRemoved.emit(msg.child);
     }
@@ -142,27 +195,28 @@ export class TheiaDockPanel extends DockPanel {
             return;
         }
         if (this.isAttached) {
-            MessageLoop.sendMessage(this, Widget.Msg.BeforeDetach);
-            this.node.remove();
-            MessageLoop.sendMessage(this, Widget.Msg.AfterDetach);
+            UnsafeWidgetUtilities.detach(this);
         }
         maximizedElement.style.display = 'block';
         this.addClass(MAXIMIZED_CLASS);
-        MessageLoop.sendMessage(this, Widget.Msg.BeforeAttach);
-        maximizedElement.appendChild(this.node);
-        MessageLoop.sendMessage(this, Widget.Msg.AfterAttach);
+        const preference = this.preferences?.get('window.menuBarVisibility');
+        if (!this.isElectron() && preference === 'visible') {
+            this.addClass(VISIBLE_MENU_MAXIMIZED_CLASS);
+        }
+        UnsafeWidgetUtilities.attach(this, maximizedElement);
         this.fit();
+        this.onDidToggleMaximizedEmitter.fire(this);
         this.toDisposeOnToggleMaximized.push(Disposable.create(() => {
             maximizedElement.style.display = 'none';
             this.removeClass(MAXIMIZED_CLASS);
-            if (this.isAttached) {
-                MessageLoop.sendMessage(this, Widget.Msg.BeforeDetach);
-                this.node.remove();
-                MessageLoop.sendMessage(this, Widget.Msg.AfterDetach);
+            this.onDidToggleMaximizedEmitter.fire(this);
+            if (!this.isElectron()) {
+                this.removeClass(VISIBLE_MENU_MAXIMIZED_CLASS);
             }
-            MessageLoop.sendMessage(this, Widget.Msg.BeforeAttach);
-            areaContainer.appendChild(this.node);
-            MessageLoop.sendMessage(this, Widget.Msg.AfterAttach);
+            if (this.isAttached) {
+                UnsafeWidgetUtilities.detach(this);
+            }
+            UnsafeWidgetUtilities.attach(this, areaContainer);
             this.fit();
         }));
 
@@ -192,4 +246,10 @@ export class TheiaDockPanel extends DockPanel {
         return this.maximizedElement;
     }
 
+}
+export namespace TheiaDockPanel {
+    export const Factory = Symbol('TheiaDockPanel#Factory');
+    export interface Factory {
+        (options?: DockPanel.IOptions): TheiaDockPanel;
+    }
 }
