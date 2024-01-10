@@ -48,10 +48,8 @@ export class NotebookKernelHistoryService implements Disposable {
     @inject(CommandService)
     protected commandService: CommandService;
 
-    declare serviceBrand: undefined;
-
-    private static STORAGE_KEY = 'notebook.kernelHistory';
-    private mostRecentKernelsMap: KernelsList = {};
+    protected static STORAGE_KEY = 'notebook.kernelHistory';
+    protected mostRecentKernelsMap: KernelsList = {};
 
     @postConstruct()
     protected init(): void {
@@ -97,16 +95,16 @@ export class NotebookKernelHistoryService implements Disposable {
         this.saveState();
     }
 
-    private saveState(): void {
+    protected saveState(): void {
         let notEmpty = false;
-        for (const [_, kernels] of Object.entries(this.mostRecentKernelsMap)) {
+        for (const kernels of Object.values(this.mostRecentKernelsMap)) {
             notEmpty = notEmpty || Object.entries(kernels).length > 0;
         }
 
         this.storageService.setData(NotebookKernelHistoryService.STORAGE_KEY, notEmpty ? this.mostRecentKernelsMap : undefined);
     }
 
-    private async loadState(): Promise<void> {
+    protected async loadState(): Promise<void> {
         const kernelMap = await this.storageService.getData(NotebookKernelHistoryService.STORAGE_KEY);
         if (kernelMap) {
             this.mostRecentKernelsMap = kernelMap as KernelsList;

@@ -334,7 +334,6 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
             await obj.controller.executeHandler.call(obj.controller, cells, document.apiNotebook, obj.controller);
         } catch (err) {
             console.error(`NotebookController[${handle}] execute cells FAILED`, err);
-            console.error(err);
         }
 
     }
