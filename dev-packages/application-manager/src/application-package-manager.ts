@@ -139,7 +139,7 @@ export class ApplicationPackageManager {
             console.warn(
                 `WARNING: ${this.pck.packagePath} does not have a "main" entry.\n` +
                 'Please add the following line:\n' +
-                '    "main": "src-gen/frontend/electron-main.js"'
+                '    "main": "lib/backend/electron-main.js"'
             );
         }
 
