@@ -361,7 +361,9 @@ export class AuthenticationProviderImpl implements AuthenticationProvider {
 
     removeSession(sessionId: string): Thenable<void> {
         return this.proxy.$removeSession(this.id, sessionId)
-            .then(() => { this.messageService.info('Successfully signed out.'); });
+            .then(() => {
+                this.messageService.info(nls.localizeByDefault('Successfully signed out.'));
+            });
     }
 }
 
