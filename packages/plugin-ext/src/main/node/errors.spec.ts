@@ -17,13 +17,13 @@
 import { rejects } from 'assert';
 import { strictEqual } from 'assert/strict';
 import { promises as fs } from 'fs';
-import { v4 } from 'uuid';
+import { generateUuid } from '@theia/core/lib/common/uuid';
 import { isENOENT } from '../../common/errors';
 
 describe('errors', () => {
     describe('errno-exception', () => {
         it('should be ENOENT error', async () => {
-            await rejects(fs.readFile(v4()), reason => isENOENT(reason));
+            await rejects(fs.readFile(generateUuid()), reason => isENOENT(reason));
         });
 
         it('should not be ENOENT error (no code)', () => {

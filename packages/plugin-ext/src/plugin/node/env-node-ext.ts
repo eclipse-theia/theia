@@ -18,7 +18,7 @@ import { injectable } from '@theia/core/shared/inversify';
 import * as mac from 'macaddress';
 import { EnvExtImpl } from '../env';
 import { createHash } from 'crypto';
-import { v4 } from 'uuid';
+import { generateUuid } from '@theia/core/lib/common/uuid';
 import fs = require('fs');
 
 /**
@@ -36,7 +36,7 @@ export class EnvNodeExtImpl extends EnvExtImpl {
 
         mac.one((err, macAddress) => {
             if (err) {
-                this.macMachineId = v4();
+                this.macMachineId = generateUuid();
             } else {
                 this.macMachineId = createHash('sha256').update(macAddress, 'utf8').digest('hex');
             }

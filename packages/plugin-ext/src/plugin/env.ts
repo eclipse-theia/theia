@@ -19,7 +19,7 @@ import * as theia from '@theia/plugin';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { EnvMain, PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc';
 import { QueryParameters } from '../common/env';
-import { v4 } from 'uuid';
+import { generateUuid } from '@theia/core/lib/common/uuid';
 
 @injectable()
 export abstract class EnvExtImpl {
@@ -38,8 +38,8 @@ export abstract class EnvExtImpl {
     private _remoteName: string | undefined;
 
     constructor() {
-        this.envSessionId = v4();
-        this.envMachineId = v4();
+        this.envSessionId = generateUuid();
+        this.envMachineId = generateUuid();
         this._remoteName = undefined;
     }
 

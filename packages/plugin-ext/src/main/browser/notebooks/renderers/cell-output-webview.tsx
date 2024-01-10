@@ -21,7 +21,7 @@
 import * as React from '@theia/core/shared/react';
 import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
 import { NotebookRendererMessagingService, CellOutputWebview, NotebookRendererRegistry, NotebookEditorWidgetService, NotebookCellOutputsSplice } from '@theia/notebook/lib/browser';
-import { v4 } from 'uuid';
+import { generateUuid } from '@theia/core/lib/common/uuid';
 import { NotebookCellModel } from '@theia/notebook/lib/browser/view-model/notebook-cell-model';
 import { WebviewWidget } from '../../webview/webview';
 import { Message, WidgetManager } from '@theia/core/lib/browser';
@@ -65,7 +65,7 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
     @inject(QuickPickService)
     protected readonly quickPickService: QuickPickService;
 
-    readonly id = v4();
+    readonly id = generateUuid();
 
     protected readonly elementRef = React.createRef<HTMLDivElement>();
     protected outputPresentationListeners: DisposableCollection = new DisposableCollection();

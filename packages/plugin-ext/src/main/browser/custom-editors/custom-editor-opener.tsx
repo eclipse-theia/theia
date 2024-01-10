@@ -19,7 +19,7 @@ import URI from '@theia/core/lib/common/uri';
 import { ApplicationShell, OpenHandler, Widget, WidgetManager, WidgetOpenerOptions } from '@theia/core/lib/browser';
 import { CustomEditor, CustomEditorPriority, CustomEditorSelector } from '../../../common';
 import { CustomEditorWidget } from './custom-editor-widget';
-import { v4 } from 'uuid';
+import { generateUuid } from '@theia/core/lib/common/uuid';
 import { Emitter } from '@theia/core';
 import { match } from '@theia/core/lib/common/glob';
 
@@ -77,7 +77,7 @@ export class CustomEditorOpener implements OpenHandler {
             const uriString = uri.toString();
             let widgetPromise = this.pendingWidgetPromises.get(uriString);
             if (!widgetPromise) {
-                const id = v4();
+                const id = generateUuid();
                 widgetPromise = this.widgetManager.getOrCreateWidget<CustomEditorWidget>(CustomEditorWidget.FACTORY_ID, { id });
                 this.pendingWidgetPromises.set(uriString, widgetPromise);
                 widget = await widgetPromise;

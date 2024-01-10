@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { v4 } from 'uuid';
+import { generateUuid } from '@theia/core/lib/common/uuid';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { Plugin, WebviewsExt, WebviewPanelViewState, WebviewsMain, PLUGIN_RPC_CONTEXT, WebviewInitData, /* WebviewsMain, PLUGIN_RPC_CONTEXT  */ } from '../common/plugin-api-rpc';
 import * as theia from '@theia/plugin';
@@ -118,7 +118,7 @@ export class WebviewsExtImpl implements WebviewsExt {
         options: theia.WebviewPanelOptions & theia.WebviewOptions,
         plugin: Plugin
     ): theia.WebviewPanel {
-        const viewId = v4();
+        const viewId = generateUuid();
         const webviewShowOptions = toWebviewPanelShowOptions(showOptions);
         const webviewOptions = WebviewImpl.toWebviewOptions(options, this.workspace, plugin);
         this.proxy.$createWebviewPanel(viewId, viewType, title, webviewShowOptions, webviewOptions);
