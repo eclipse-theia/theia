@@ -54,9 +54,9 @@ const SampleQuickInputCommand: Command = {
     category: 'Quick Input',
     label: 'Test Positive Integer'
 };
-const SampleReactDialog: Command = {
-    id: 'sample-command-react-dialog',
-    label: 'Sample React Dialog'
+const SampleSelectDialog: Command = {
+    id: 'sample-command-select-dialog',
+    label: 'Sample Select Component Dialog'
 };
 
 @injectable()
