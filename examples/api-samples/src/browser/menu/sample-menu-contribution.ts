@@ -122,11 +122,11 @@ export class SampleCommandContribution implements CommandContribution {
                 this.messageService.info(`Sample confirm dialog returned with: \`${JSON.stringify(choice)}\``);
             }
         });
-        commands.registerCommand(SampleReactDialog, {
+        commands.registerCommand(SampleSelectDialog, {
             execute: async () => {
                 await new class extends ReactDialog<boolean> {
                     constructor() {
-                        super({ title: 'Sample React Dialog' });
+                        super({ title: 'Sample Select Component Dialog' });
                         this.appendAcceptButton(Dialog.OK);
                     }
                     protected override render(): ReactNode {
