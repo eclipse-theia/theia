@@ -14,12 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ConfirmDialog, QuickInputService } from '@theia/core/lib/browser';
+import { ConfirmDialog, Dialog, QuickInputService } from '@theia/core/lib/browser';
+import { ReactDialog } from '@theia/core/lib/browser/dialogs/react-dialog';
+import { SelectComponent } from '@theia/core/lib/browser/widgets/select-component';
 import {
     Command, CommandContribution, CommandRegistry, MAIN_MENU_BAR,
     MenuContribution, MenuModelRegistry, MenuNode, MessageService, SubMenuOptions
 } from '@theia/core/lib/common';
 import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
+import * as React from '@theia/core/shared/react';
+import { ReactNode } from '@theia/core/shared/react';
 
 const SampleCommand: Command = {
     id: 'sample-command',
@@ -49,6 +53,10 @@ const SampleQuickInputCommand: Command = {
     id: 'sample-quick-input-command',
     category: 'Quick Input',
     label: 'Test Positive Integer'
+};
+const SampleSelectDialog: Command = {
+    id: 'sample-command-select-dialog',
+    label: 'Sample Select Component Dialog'
 };
 
 @injectable()
@@ -112,6 +120,25 @@ export class SampleCommandContribution implements CommandContribution {
                     msg: mainDiv
                 }).open();
                 this.messageService.info(`Sample confirm dialog returned with: \`${JSON.stringify(choice)}\``);
+            }
+        });
+        commands.registerCommand(SampleSelectDialog, {
+            execute: async () => {
+                await new class extends ReactDialog<boolean> {
+                    constructor() {
+                        super({ title: 'Sample Select Component Dialog' });
+                        this.appendAcceptButton(Dialog.OK);
+                    }
+                    protected override render(): ReactNode {
+                        return React.createElement(SelectComponent, {
+                            options: Array.from(Array(10).keys()).map(i => ({ label: 'Option ' + ++i })),
+                            defaultValue: 0
+                        });
+                    }
+                    override get value(): boolean {
+                        return true;
+                    }
+                }().open();
             }
         });
         commands.registerCommand(SampleQuickInputCommand, {
