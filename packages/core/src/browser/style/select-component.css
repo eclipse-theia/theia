@@ -14,6 +14,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
+.theia-select-component-container {
+  /* required to set z-index */
+  position: fixed;
+  /* dialog overlay has a z-index of 5000 */
+  z-index: 6000;
+}
+
 .theia-select-component {
   background-color: var(--theia-dropdown-background);
   cursor: pointer;
@@ -64,33 +71,25 @@
   padding: 6px 5px;
 }
 
-.theia-select-component-dropdown
-  .theia-select-component-description:first-child {
+.theia-select-component-dropdown .theia-select-component-description:first-child {
   border-bottom: 1px solid var(--theia-editorWidget-border);
   margin-bottom: 2px;
 }
 
-.theia-select-component-dropdown
-  .theia-select-component-description:last-child {
+.theia-select-component-dropdown .theia-select-component-description:last-child {
   border-top: 1px solid var(--theia-editorWidget-border);
   margin-top: 2px;
 }
 
-.theia-select-component-dropdown
-  .theia-select-component-option
-  .theia-select-component-option-value {
+.theia-select-component-dropdown .theia-select-component-option .theia-select-component-option-value {
   width: 100%;
 }
 
-.theia-select-component-dropdown
-  .theia-select-component-option
-  .theia-select-component-option-detail {
+.theia-select-component-dropdown .theia-select-component-option .theia-select-component-option-detail {
   padding-left: 4px;
 }
 
-.theia-select-component-dropdown
-  .theia-select-component-option:not(.selected)
-  .theia-select-component-option-detail {
+.theia-select-component-dropdown .theia-select-component-option:not(.selected) .theia-select-component-option-detail {
   color: var(--theia-textLink-foreground);
 }
 

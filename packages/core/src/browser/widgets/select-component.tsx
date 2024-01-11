@@ -77,6 +77,7 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
         if (!list) {
             list = document.createElement('div');
             list.id = SELECT_COMPONENT_CONTAINER;
+            list.className = 'theia-select-component-container';
             document.body.appendChild(list);
         }
         this.dropdownElement = list;
