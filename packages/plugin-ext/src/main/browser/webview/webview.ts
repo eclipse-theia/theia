@@ -405,6 +405,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
             () => {
                 this.contextMenuRenderer.render({
                     menuPath: WEBVIEW_CONTEXT_MENU,
+                    args: [event.context],
                     anchor: {
                         x: domRect.x + event.clientX, y: domRect.y + event.clientY
                     }
