@@ -59,4 +59,9 @@
     180
   ],
   "typescript.preferences.quoteStyle": "single",
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features",
+    "typescript.preferences.quoteStyle": "single",
+    "editor.tabSize": 4,
+  }
 }
