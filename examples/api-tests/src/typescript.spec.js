@@ -689,11 +689,10 @@ SPAN {
         editor.getControl().revealPosition({ lineNumber, column });
         assert.equal(currentChar(), ';', 'Failed at assert 1');
 
-        /** @type {import('@theia/monaco-editor-core/src/vs/editor/contrib/codeAction/browser/codeActionCommands').CodeActionController} */
+        /** @type {import('@theia/monaco-editor-core/src/vs/editor/contrib/codeAction/browser/codeActionController').CodeActionController} */
         const codeActionController = editor.getControl().getContribution('editor.contrib.codeActionController');
         const lightBulbNode = () => {
-            const ui = codeActionController['_ui'].rawValue;
-            const lightBulb = ui && ui['_lightBulbWidget'].rawValue;
+            const lightBulb = codeActionController['_lightBulbWidget'].rawValue;
             return lightBulb && lightBulb['_domNode'];
         };
         const lightBulbVisible = () => {
@@ -703,14 +702,14 @@ SPAN {
 
         await timeout(1000); // quick fix is always available: need to wait for the error fix to become available.
         await commands.executeCommand('editor.action.quickFix');
-        const codeActionSelector = '.codeActionWidget';
+        const codeActionSelector = '.action-widget';
         assert.isFalse(!!document.querySelector(codeActionSelector), 'Failed at assert 3 - codeActionWidget should not be visible');
 
         console.log('Waiting for Quick Fix widget to be visible');
         await waitForAnimation(() => {
             const quickFixWidgetVisible = !!document.querySelector(codeActionSelector);
             if (!quickFixWidgetVisible) {
-                console.log('...');
+                // console.log('...');
                 return false;
             }
             return true;
@@ -785,10 +784,10 @@ SPAN {
 
     it('Can execute code actions', async function () {
         const editor = await openEditor(demoFileUri);
-        /** @type {import('@theia/monaco-editor-core/src/vs/editor/contrib/codeAction/browser/codeActionCommands').CodeActionController} */
+        /** @type {import('@theia/monaco-editor-core/src/vs/editor/contrib/codeAction/browser/codeActionController').CodeActionController} */
         const codeActionController = editor.getControl().getContribution('editor.contrib.codeActionController');
         const isActionAvailable = () => {
-            const lightbulbVisibility = codeActionController['_ui'].rawValue?.['_lightBulbWidget'].rawValue?.['_domNode'].style.visibility;
+            const lightbulbVisibility = codeActionController['_lightBulbWidget'].rawValue?.['_domNode'].style.visibility;
             return lightbulbVisibility !== undefined && lightbulbVisibility !== 'hidden';
         }
         assert.isFalse(isActionAvailable());
@@ -799,7 +798,7 @@ SPAN {
         assert.isTrue(isActionAvailable());
 
         await commands.executeCommand('editor.action.quickFix');
-        await waitForAnimation(() => Boolean(document.querySelector('.context-view-pointerBlock')), 5000, 'No context menu appeared. (1)');
+        await waitForAnimation(() => Boolean(document.querySelector('.action-widget')), 5000, 'No context menu appeared. (1)');
         await animationFrame();
 
         keybindings.dispatchKeyDown('Enter');

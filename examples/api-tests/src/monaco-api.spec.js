@@ -177,11 +177,11 @@ describe('Monaco API', async function () {
         const key = 'monaco-api-test-context';
         const firstValue = 'first setting';
         const secondValue = 'second setting';
-        assert.isFalse(contextKeys.match(`${key} == ${firstValue}`));
+        assert.isFalse(contextKeys.match(`${key} == '${firstValue}'`));
         await commands.executeCommand(setContext, key, firstValue);
-        assert.isTrue(contextKeys.match(`${key} == ${firstValue}`));
+        assert.isTrue(contextKeys.match(`${key} == '${firstValue}'`));
         await commands.executeCommand(setContext, key, secondValue);
-        assert.isTrue(contextKeys.match(`${key} == ${secondValue}`));
+        assert.isTrue(contextKeys.match(`${key} == '${secondValue}'`));
     });
 
     it('Supports context key: inQuickOpen', async () => {
