@@ -694,12 +694,7 @@ export class FileService {
     async read(resource: URI, options?: ReadTextFileOptions): Promise<TextFileContent> {
         const [bufferStream, decoder] = await this.doRead(resource, {
             ...options,
-            // optimization: since we know that the caller does not
-            // care about buffering, we indicate this to the reader.
-            // this reduces all the overhead the buffered reading
-            // has (open, read, close) if the provider supports
-            // unbuffered reading.
-            preferUnbuffered: true
+            preferUnbuffered: this.shouldReadUnbuffered(options)
         });
 
         return {
@@ -888,17 +883,25 @@ export class FileService {
             options.mtime < stat.mtime && options.etag !== etag({ mtime: options.mtime /* not using stat.mtime for a reason, see above */, size: stat.size });
     }
 
+    protected shouldReadUnbuffered(options?: ReadFileOptions): boolean {
+        // optimization: since we know that the caller does not
+        // care about buffering, we indicate this to the reader.
+        // this reduces all the overhead the buffered reading
+        // has (open, read, close) if the provider supports
+        // unbuffered reading.
+        //
+        // However, if we read only part of the file we still
+        // want buffered reading as otherwise we need to read
+        // the whole file and cut out the specified part later.
+        return options?.position === undefined && options?.length === undefined;
+    }
+
     async readFile(resource: URI, options?: ReadFileOptions): Promise<FileContent> {
         const provider = await this.withReadProvider(resource);
 
         const stream = await this.doReadAsFileStream(provider, resource, {
             ...options,
-            // optimization: since we know that the caller does not
-            // care about buffering, we indicate this to the reader.
-            // this reduces all the overhead the buffered reading
-            // has (open, read, close) if the provider supports
-            // unbuffered reading.
-            preferUnbuffered: true
+            preferUnbuffered: this.shouldReadUnbuffered(options)
         });
 
         return {
