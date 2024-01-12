@@ -246,11 +246,11 @@ export class QuickOpenExtImpl implements QuickOpenExt {
     async $acceptOnDidTriggerButton(sessionId: number, btn: QuickInputButtonHandle): Promise<void> {
         const session = this._sessions.get(sessionId);
         if (session) {
-            if (btn.index === -1) {
+            if (btn.handle === -1) {
                 session._fireButtonTrigger(QuickInputButtons.Back);
             } else if (session && (session instanceof InputBoxExt || session instanceof QuickPickExt)) {
-                const btnFromIndex = session.buttons[btn.index];
-                session._fireButtonTrigger(btnFromIndex as theia.QuickInputButton);
+                const btnFromHandle = session.buttons[btn.handle];
+                session._fireButtonTrigger(btnFromHandle as theia.QuickInputButton);
             }
         }
     }
