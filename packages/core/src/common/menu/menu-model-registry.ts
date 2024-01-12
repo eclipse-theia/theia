@@ -14,13 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject, named } from 'inversify';
-import { Disposable } from '../disposable';
-import { CommandRegistry, Command } from '../command';
+import { inject, injectable, named } from 'inversify';
+import { Command, CommandRegistry } from '../command';
 import { ContributionProvider } from '../contribution-provider';
-import { CompositeMenuNode, CompositeMenuNodeWrapper } from './composite-menu-node';
-import { CompoundMenuNode, MenuAction, MenuNode, MenuPath, MutableCompoundMenuNode, SubMenuOptions } from './menu-types';
+import { Disposable } from '../disposable';
 import { ActionMenuNode } from './action-menu-node';
+import { CompositeMenuNode, CompositeMenuNodeWrapper } from './composite-menu-node';
+import { CompoundMenuNode, MenuAction, MenuNode, MenuNodeMetadata, MenuPath, MutableCompoundMenuNode, SubMenuOptions } from './menu-types';
 
 export const MenuContribution = Symbol('MenuContribution');
 
@@ -157,6 +157,23 @@ export class MenuModelRegistry {
     linkSubmenu(parentPath: MenuPath | string, childId: string | MenuPath, options?: SubMenuOptions, group?: string): Disposable {
         const child = this.getMenuNode(childId);
         const parent = this.getMenuNode(parentPath, group);
+
+        const isRecursive = (node: MenuNodeMetadata, childNode: MenuNodeMetadata): boolean => {
+            if (node.id === childNode.id) {
+                return true;
+            }
+            if (node.parent) {
+                return isRecursive(node.parent, childNode);
+            }
+            return false;
+        };
+
+        // check for menu contribution recursion
+        if (isRecursive(parent, child)) {
+            console.warn(`Recursive menu contribution detected: ${child.id} is already in hierarchy of ${parent.id}.`);
+            return Disposable.NULL;
+        }
+
         const wrapper = new CompositeMenuNodeWrapper(child, parent, options);
         return parent.addNode(wrapper);
     }

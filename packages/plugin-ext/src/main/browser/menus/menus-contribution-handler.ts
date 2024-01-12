@@ -99,9 +99,12 @@ export class MenusContributionPointHandler {
                         const targets = this.getMatchingMenu(contributionPoint as ContributionPoint) ?? [contributionPoint];
                         const { group, order } = this.parseGroup(item.group);
                         const { submenu, command } = item;
-                        if (submenu) {
-                            targets.forEach(target => toDispose.push(this.menuRegistry.linkSubmenu(target, submenu!, { order, when: item.when }, group)));
-                        } else if (command) {
+                        if (submenu && command) {
+                            console.warn(
+                                `Menu item ${command} from plugin ${plugin.metadata.model.id} contributed both submenu and command. Only command will be registered.`
+                            );
+                        }
+                        if (command) {
                             toDispose.push(this.commandAdapter.addCommand(command));
                             targets.forEach(target => {
                                 const node = new ActionMenuNode({
@@ -112,6 +115,8 @@ export class MenusContributionPointHandler {
                                 const parent = this.menuRegistry.getMenuNode(target, group);
                                 toDispose.push(parent.addNode(node));
                             });
+                        } else if (submenu) {
+                            targets.forEach(target => toDispose.push(this.menuRegistry.linkSubmenu(target, submenu!, { order, when: item.when }, group)));
                         }
                     }
                 } catch (error) {

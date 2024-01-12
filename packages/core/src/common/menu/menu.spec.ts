@@ -14,10 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CommandContribution, CommandRegistry } from '../command';
-import { MenuContribution, MenuModelRegistry } from './menu-model-registry';
 import * as chai from 'chai';
+import { CommandContribution, CommandRegistry } from '../command';
 import { CompositeMenuNode } from './composite-menu-node';
+import { MenuContribution, MenuModelRegistry } from './menu-model-registry';
 
 const expect = chai.expect;
 
@@ -61,6 +61,25 @@ describe('menu-model-registry', () => {
             expect(openGroup.children.length).equals(2);
             expect(openGroup.label).undefined;
         });
+
+        it('Should not allow to register cyclic menus.', () => {
+            const fileMenu = ['main', 'File'];
+            const fileOpenMenu = [...fileMenu, '0_open'];
+            const fileCloseMenu = [...fileMenu, '1_close'];
+            const service = createMenuRegistry({
+                registerMenus(menuRegistry: MenuModelRegistry): void {
+                    menuRegistry.registerSubmenu(fileMenu, 'File');
+                    // open menu should not be added to open menu
+                    menuRegistry.linkSubmenu(fileOpenMenu, fileOpenMenu);
+                    // close menu should be added
+                    menuRegistry.linkSubmenu(fileOpenMenu, fileCloseMenu);
+                }
+            }, {
+                registerCommands(reg: CommandRegistry): void { }
+            });
+            const all = service.getMenu() as CompositeMenuNode;
+            expect(menuStructureToString(all.children[0] as CompositeMenuNode)).equals('File(0_open(1_close),1_close())');
+        });
     });
 });
 
@@ -70,4 +89,13 @@ function createMenuRegistry(menuContrib: MenuContribution, commandContrib: Comma
     const menuReg = new MenuModelRegistry({ getContributions: () => [menuContrib] }, cmdReg);
     menuReg.onStart();
     return menuReg;
+}
+
+function menuStructureToString(node: CompositeMenuNode): string {
+    return node.children.map(c => {
+        if (c instanceof CompositeMenuNode) {
+            return `${c.id}(${menuStructureToString(c)})`;
+        }
+        return c.id;
+    }).join(',');
 }
