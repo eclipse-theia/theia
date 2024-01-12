@@ -17,8 +17,7 @@
 import { interfaces } from '@theia/core/shared/inversify';
 import { WebviewWidget, WebviewWidgetIdentifier, WebviewWidgetExternalEndpoint } from './webview';
 import { WebviewEnvironment } from './webview-environment';
-import { StorageService } from '@theia/core/lib/browser';
-import { v4 } from 'uuid';
+import { hashValue } from '../../../common/hash-uuid';
 
 export class WebviewWidgetFactory {
 
@@ -32,7 +31,7 @@ export class WebviewWidgetFactory {
 
     async createWidget(identifier: WebviewWidgetIdentifier): Promise<WebviewWidget> {
         const externalEndpoint = await this.container.get(WebviewEnvironment).externalEndpoint();
-        let endpoint = externalEndpoint.replace('{{uuid}}', identifier.viewId ? await this.getOrigin(this.container.get(StorageService), identifier.viewId) : identifier.id);
+        let endpoint = externalEndpoint.replace('{{uuid}}', identifier.viewId ? hashValue(identifier.viewId) : identifier.id);
         if (endpoint[endpoint.length - 1] === '/') {
             endpoint = endpoint.slice(0, endpoint.length - 1);
         }
@@ -40,18 +39,6 @@ export class WebviewWidgetFactory {
         child.bind(WebviewWidgetIdentifier).toConstantValue(identifier);
         child.bind(WebviewWidgetExternalEndpoint).toConstantValue(endpoint);
         return child.get(WebviewWidget);
-    }
-
-    protected async getOrigin(storageService: StorageService, viewId: string): Promise<string> {
-        const key = 'plugin-view-registry.origin.' + viewId;
-        const origin = await storageService.getData<string>(key);
-        if (!origin) {
-            const newOrigin = v4();
-            storageService.setData(key, newOrigin);
-            return newOrigin;
-        } else {
-            return origin;
-        }
     }
 
 }
