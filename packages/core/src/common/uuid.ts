@@ -107,5 +107,6 @@ const NAMESPACE = '4c90ee4f-d952-44b1-83ca-f04121ab8e05';
  * @returns a uuid
  */
 export function hashValue(value: string): string {
+    // as opposed to v4, v5 is deterministic and uses SHA1 hashing
     return v5(value, NAMESPACE);
 }
