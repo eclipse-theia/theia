@@ -16,7 +16,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { CancellationToken, CancellationTokenSource } from '../cancellation';
-import { Disposable, DisposableCollection } from '../disposable';
+import { DisposableWrapper, Disposable, DisposableCollection } from '../disposable';
 import { Emitter, Event } from '../event';
 import { Deferred } from '../promise-util';
 import { Channel } from './channel';
@@ -46,31 +46,6 @@ export interface RpcProtocolOptions {
 }
 
 /**
- * Wrapper for a {@link Disposable} that is not available immediately.
- */
-export class MaybeDisposable {
-
-    private disposed = false;
-    private disposable: Disposable | undefined = undefined;
-
-    setDisposable(disposable: Disposable): void {
-        if (this.disposed) {
-            disposable.dispose();
-        } else {
-            this.disposable = disposable;
-        }
-    }
-
-    dispose(): void {
-        this.disposed = true;
-        if (this.disposable) {
-            this.disposable.dispose();
-            this.disposable = undefined;
-        }
-    }
-}
-
-/**
  * Establish a RPC protocol on top of a given channel. By default the rpc protocol is bi-directional, meaning it is possible to send
  * requests and notifications to the remote side (i.e. acts as client) as well as receiving requests and notifications from the remote side (i.e. acts as a server).
  * Clients can get a promise for a remote request result that will be either resolved or
@@ -82,7 +57,7 @@ export class RpcProtocol {
     static readonly CANCELLATION_TOKEN_KEY = 'add.cancellation.token';
 
     protected readonly pendingRequests: Map<number, Deferred<any>> = new Map();
-    protected readonly pendingRequestCancellationEventListeners: Map<number, MaybeDisposable> = new Map();
+    protected readonly pendingRequestCancellationEventListeners: Map<number, DisposableWrapper> = new Map();
 
     protected nextMessageId: number = 0;
 
@@ -195,9 +170,9 @@ export class RpcProtocol {
 
         this.pendingRequests.set(id, reply);
 
-        // register disposable before output.commit()
-        const maybeDisposable = new MaybeDisposable();
-        this.pendingRequestCancellationEventListeners.set(id, maybeDisposable);
+        // register disposable before output.commit() even when not available yet
+        const disposableWrapper = new DisposableWrapper();
+        this.pendingRequestCancellationEventListeners.set(id, disposableWrapper);
 
         const output = this.channel.getWriteBuffer();
         this.encoder.request(output, id, method, args);
@@ -208,7 +183,7 @@ export class RpcProtocol {
         } else {
             const disposable = cancellationToken?.onCancellationRequested(() => this.sendCancel(id));
             if (disposable) {
-                maybeDisposable.setDisposable(disposable);
+                disposableWrapper.set(disposable);
             }
         }
 

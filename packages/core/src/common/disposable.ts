@@ -133,3 +133,28 @@ export function disposableTimeout(...args: Parameters<typeof setTimeout>): Dispo
     const handle = setTimeout(...args);
     return { dispose: () => clearTimeout(handle) };
 }
+
+/**
+ * Wrapper for a {@link Disposable} that is not available immediately.
+ */
+export class DisposableWrapper implements Disposable {
+
+    private disposed = false;
+    private disposable: Disposable | undefined = undefined;
+
+    set(disposable: Disposable): void {
+        if (this.disposed) {
+            disposable.dispose();
+        } else {
+            this.disposable = disposable;
+        }
+    }
+
+    dispose(): void {
+        this.disposed = true;
+        if (this.disposable) {
+            this.disposable.dispose();
+            this.disposable = undefined;
+        }
+    }
+}
