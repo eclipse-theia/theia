@@ -27,7 +27,7 @@ import { WebviewImpl, WebviewsExtImpl } from './webviews';
 import { WebviewViewProvider } from '@theia/plugin';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import * as theia from '@theia/plugin';
-import { hashValue } from '../common/hash-uuid';
+import { hashValue } from '@theia/core/lib/common/uuid';
 
 export class WebviewViewsExtImpl implements WebviewViewsExt {
 

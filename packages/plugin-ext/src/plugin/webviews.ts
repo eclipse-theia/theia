@@ -23,7 +23,7 @@ import { fromViewColumn, toViewColumn, toWebviewPanelShowOptions } from './type-
 import { Disposable, WebviewPanelTargetArea, URI } from './types-impl';
 import { WorkspaceExtImpl } from './workspace';
 import { PluginIconPath } from './plugin-icon-path';
-import { hashValue } from '../common/hash-uuid';
+import { hashValue } from '@theia/core/lib/common/uuid';
 
 export class WebviewsExtImpl implements WebviewsExt {
     private readonly proxy: WebviewsMain;
