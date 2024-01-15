@@ -28,7 +28,7 @@ import { PreferenceInspectionScope, PreferenceService } from '@theia/core/lib/br
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { RecommendedExtensions } from './recommended-extensions/recommended-extensions-preference-contribution';
 import URI from '@theia/core/lib/common/uri';
-import { VSXExtensionRaw, VSXResponseError, VSXSearchOptions } from '@theia/ovsx-client/lib/ovsx-types';
+import { OVSXClient, VSXAllVersions, VSXExtensionRaw, VSXResponseError, VSXSearchEntry, VSXSearchOptions } from '@theia/ovsx-client/lib/ovsx-types';
 import { OVSXClientProvider } from '../common/ovsx-client-provider';
 import { RequestContext, RequestService } from '@theia/core/shared/@theia/request';
 import { OVSXApiFilter } from '@theia/ovsx-client';
@@ -111,6 +111,13 @@ export class VSXExtensionsModel {
 
     get recommended(): IterableIterator<string> {
         return this._recommended.values();
+    }
+
+    setOnlyShowVerifiedExtensions(bool: boolean): void {
+        if (this.preferences.get('extensions.onlyShowVerifiedExtensions') !== bool) {
+            this.preferences.updateValue('extensions.onlyShowVerifiedExtensions', bool);
+        }
+        this.updateSearchResult();
     }
 
     isInstalled(id: string): boolean {
@@ -208,9 +215,8 @@ export class VSXExtensionsModel {
 
     protected doUpdateSearchResult(param: VSXSearchOptions, token: CancellationToken): Promise<void> {
         return this.doChange(async () => {
-            const searchResult = new Set<string>();
+            this._searchResult = new Set<string>();
             if (!param.query) {
-                this._searchResult = searchResult;
                 return;
             }
             const client = await this.clientProvider();
@@ -225,18 +231,53 @@ export class VSXExtensionsModel {
                 if (!allVersions) {
                     continue;
                 }
-                this.setExtension(id).update(Object.assign(data, {
-                    publisher: data.namespace,
-                    downloadUrl: data.files.download,
-                    iconUrl: data.files.icon,
-                    readmeUrl: data.files.readme,
-                    licenseUrl: data.files.license,
-                    version: allVersions.version
-                }));
-                searchResult.add(id);
+                if (this.preferences.get('extensions.onlyShowVerifiedExtensions')) {
+                    this.fetchVerifiedStatus(id, client, allVersions).then(verified => {
+                        this.doChange(() => {
+                            this.addExtensions(data, id, allVersions, !!verified);
+                            return Promise.resolve();
+                        });
+                    });
+                } else {
+                    this.addExtensions(data, id, allVersions);
+                    this.fetchVerifiedStatus(id, client, allVersions).then(verified => {
+                        this.doChange(() => {
+                            let extension = this.getExtension(id);
+                            extension = this.setExtension(id);
+                            extension.update(Object.assign({
+                                verified: verified
+                            }));
+                            return Promise.resolve();
+                        });
+                    });
+                }
             }
-            this._searchResult = searchResult;
         }, token);
+    }
+
+    protected async fetchVerifiedStatus(id: string, client: OVSXClient, allVersions: VSXAllVersions): Promise<boolean | undefined> {
+        const res = await client.query({ extensionId: id, extensionVersion: allVersions.version, includeAllVersions: true });
+        let verified = res.extensions?.[0].verified;
+        if (!verified && res.extensions?.[0].publishedBy.loginName === 'open-vsx') {
+            verified = true;
+        }
+        return verified;
+    }
+
+    protected addExtensions(data: VSXSearchEntry, id: string, allVersions: VSXAllVersions, verified?: boolean): void {
+        if (!this.preferences.get('extensions.onlyShowVerifiedExtensions') || verified) {
+            const extension = this.setExtension(id);
+            extension.update(Object.assign(data, {
+                publisher: data.namespace,
+                downloadUrl: data.files.download,
+                iconUrl: data.files.icon,
+                readmeUrl: data.files.readme,
+                licenseUrl: data.files.license,
+                version: allVersions.version,
+                verified: verified
+            }));
+            this._searchResult.add(id);
+        }
     }
 
     protected async updateInstalled(): Promise<void> {
@@ -331,6 +372,11 @@ export class VSXExtensionsModel {
             if (data.error) {
                 return this.onDidFailRefresh(id, data.error);
             }
+            if (!data.verified) {
+                if (data.publishedBy.loginName === 'open-vsx') {
+                    data.verified = true;
+                }
+            }
             extension = this.setExtension(id);
             extension.update(Object.assign(data, {
                 publisher: data.namespace,
@@ -338,7 +384,8 @@ export class VSXExtensionsModel {
                 iconUrl: data.files.icon,
                 readmeUrl: data.files.readme,
                 licenseUrl: data.files.license,
-                version: data.version
+                version: data.version,
+                verified: data.verified
             }));
             return extension;
         } catch (e) {

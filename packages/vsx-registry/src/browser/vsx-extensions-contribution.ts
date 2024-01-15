@@ -182,6 +182,12 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
                     hcLight: Color.black
                 }, description: 'Border color for a table row of the extension editor view'
             },
+            {
+                id: 'extensionIcon.verifiedForeground', defaults: {
+                    dark: '#40a6ff',
+                    light: '#40a6ff'
+                }, description: 'The icon color for extension verified publisher.'
+            },
         );
     }
 
