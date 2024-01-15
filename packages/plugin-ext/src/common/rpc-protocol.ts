@@ -93,7 +93,7 @@ export class RPCProtocolImpl implements RPCProtocol {
     constructor(channel: Channel) {
         this.toDispose.push(this.multiplexer = new ChannelMultiplexer(new BatchingChannel(channel)));
         this.toDispose.push(Disposable.create(() => this.proxies.clear()));
-        this.initCallback = new InitializationCallbackImpl();
+        this.initCallback = new ProxySynchronizerImpl();
     }
 
     dispose(): void {
@@ -154,35 +154,35 @@ export class RPCProtocolImpl implements RPCProtocol {
     }
 }
 
-export class InitializationCallbackImpl implements ProxySynchronizer {
+export class ProxySynchronizerImpl implements ProxySynchronizer {
 
-    private readonly runningInits = new Set<string>();
+    private readonly runningInitializations = new Set<string>();
 
-    private checkInitDeferred: Deferred<void>;
+    private _pendingProxyInitializations: Deferred<void>;
 
     constructor() {
-        this.checkInitDeferred = new Deferred();
+        this._pendingProxyInitializations = new Deferred();
         /* after creation no init is active */
-        this.checkInitDeferred.resolve();
+        this._pendingProxyInitializations.resolve();
     }
 
     startProxyInitialization(id: string, init: Promise<void>): void {
-        if (this.runningInits.size === 0) {
-            this.checkInitDeferred = new Deferred();
+        if (this.runningInitializations.size === 0) {
+            this._pendingProxyInitializations = new Deferred();
         }
-        init.then(() => this.finishProxyInitialization(id));
-        this.runningInits.add(id);
+        init.then(() => this.finishedProxyInitialization(id));
+        this.runningInitializations.add(id);
     }
 
-    protected finishProxyInitialization(id: string): void {
-        this.runningInits.delete(id);
-        if (this.runningInits.size === 0) {
-            this.checkInitDeferred.resolve();
+    protected finishedProxyInitialization(id: string): void {
+        this.runningInitializations.delete(id);
+        if (this.runningInitializations.size === 0) {
+            this._pendingProxyInitializations.resolve();
         }
     }
 
     pendingProxyInitializations(): Promise<void> {
-        return this.checkInitDeferred.promise;
+        return this._pendingProxyInitializations.promise;
     }
 
 }

@@ -78,14 +78,18 @@ export class ClientProxyHandler<T extends object> implements ProxyHandler<T> {
         const isNotify = this.isNotification(name);
         return (...args: any[]) => {
             const method = name.toString();
-            return this.proxySynchronizer.pendingProxyInitializations().then(() => this.rpcDeferred.promise.then(async (connection: RpcProtocol) => {
+            return this.sendWhenNoInit(async (connection: RpcProtocol) => {
                 if (isNotify) {
                     connection.sendNotification(method, args);
                 } else {
                     return await connection.sendRequest(method, args) as Promise<any>;
                 }
-            }));
+            });
         };
+    }
+
+    private sendWhenNoInit(send: (connection: RpcProtocol) => Promise<any>): Promise<any> {
+        return this.proxySynchronizer.pendingProxyInitializations().then(() => this.rpcDeferred.promise.then(send));
     }
 
     /**
