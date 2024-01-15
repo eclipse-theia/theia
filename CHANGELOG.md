@@ -6,6 +6,7 @@
 
 ## not yet released
 
+- [plugin] stub multiDocumentHighlightProvider proposed API [#13248](https://github.com/eclipse-theia/theia/pull/13248) - contributed on behalf of STMicroelectronics
 - [terminal] update terminalQuickFixProvider proposed API according to vscode 1.85 version [#13240](https://github.com/eclipse-theia/theia/pull/13240) - contributed on behalf of STMicroelectronics
 
 ## v1.45.0 - 12/21/2023

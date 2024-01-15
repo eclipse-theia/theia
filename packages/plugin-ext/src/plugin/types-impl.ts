@@ -1593,6 +1593,30 @@ export class DocumentHighlight {
     }
 }
 
+@es5ClassCompat
+export class MultiDocumentHighlight {
+
+    /**
+     * The URI of the document containing the highlights.
+     */
+    uri: URI;
+
+    /**
+     * The highlights for the document.
+     */
+    highlights: DocumentHighlight[];
+
+    /**
+     * Creates a new instance of MultiDocumentHighlight.
+     * @param uri The URI of the document containing the highlights.
+     * @param highlights The highlights for the document.
+     */
+    constructor(uri: URI, highlights: DocumentHighlight[]) {
+        this.uri = uri;
+        this.highlights = highlights;
+    }
+}
+
 export type Definition = Location | Location[];
 
 @es5ClassCompat
