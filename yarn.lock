@@ -2272,11 +2272,6 @@
   dependencies:
     "@types/node" "*"
 
-"@types/uuid@^7.0.3":
-  version "7.0.6"
-  resolved "https://registry.yarnpkg.com/@types/uuid/-/uuid-7.0.6.tgz#455e838428ae709f82c85c677dcf5115f2061ac1"
-  integrity sha512-U/wu4HTp6T2dUmKqDtOUKS9cYhawuf8txqKF3Jp1iMDG8fP5HtjSldcN0g4m+/h7XHU1to1/HDCT0qeeUiu0EA==
-
 "@types/vscode-notebook-renderer@^1.72.0":
   version "1.72.1"
   resolved "https://registry.yarnpkg.com/@types/vscode-notebook-renderer/-/vscode-notebook-renderer-1.72.1.tgz#5605079fa6f0fa1dddc57ce11315eec0d1a8d869"

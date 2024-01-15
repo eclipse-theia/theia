@@ -17,7 +17,6 @@
     "@types/node": "18",
     "@types/sinon": "^10.0.6",
     "@types/temp": "^0.9.1",
-    "@types/uuid": "^7.0.3",
     "@typescript-eslint/eslint-plugin": "^4.8.1",
     "@typescript-eslint/eslint-plugin-tslint": "^4.8.1",
     "@typescript-eslint/parser": "^4.8.1",
