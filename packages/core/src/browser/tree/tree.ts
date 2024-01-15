@@ -397,9 +397,10 @@ export class TreeImpl implements Tree {
 
     protected async doMarkAsBusy(node: Mutable<TreeNode>, ms: number, token: CancellationToken): Promise<void> {
         try {
-            await timeout(ms, token);
-            this.doSetBusy(node);
             token.onCancellationRequested(() => this.doResetBusy(node));
+            await timeout(ms, token);
+            if (token.isCancellationRequested) { return; }
+            this.doSetBusy(node);
         } catch {
             /* no-op */
         }
