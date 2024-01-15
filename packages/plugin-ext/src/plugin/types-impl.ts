@@ -3673,15 +3673,19 @@ export enum EditSessionIdentityMatch {
 // #endregion
 
 // #region terminalQuickFixProvider
-export class TerminalQuickFixExecuteTerminalCommand {
+export class TerminalQuickFixTerminalCommand {
     /**
      * The terminal command to run
      */
     terminalCommand: string;
     /**
+     * Whether the command should be executed or just inserted (default)
+     */
+    shouldExecute?: boolean;
+    /**
      * @stubbed
      */
-    constructor(terminalCommand: string) { }
+    constructor(terminalCommand: string, shouldExecute?: boolean) { }
 }
 export class TerminalQuickFixOpener {
     /**

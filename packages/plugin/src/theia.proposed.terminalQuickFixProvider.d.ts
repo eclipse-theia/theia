@@ -40,7 +40,7 @@ export module '@theia/plugin' {
          * @return Terminal quick fix(es) if any
          */
         provideTerminalQuickFixes(commandMatchResult: TerminalCommandMatchResult, token: CancellationToken):
-            ProviderResult<SingleOrMany<TerminalQuickFixExecuteTerminalCommand | TerminalQuickFixOpener | Command>>;
+            ProviderResult<SingleOrMany<TerminalQuickFixTerminalCommand | TerminalQuickFixOpener | Command>>;
     }
 
     export interface TerminalCommandMatchResult {
@@ -52,12 +52,16 @@ export module '@theia/plugin' {
         };
     }
 
-    export class TerminalQuickFixExecuteTerminalCommand {
+    export class TerminalQuickFixTerminalCommand {
         /**
-         * The terminal command to run
+         * The terminal command to insert or run
          */
         terminalCommand: string;
-        constructor(terminalCommand: string);
+        /**
+         * Whether the command should be executed or just inserted (default)
+         */
+        shouldExecute?: boolean;
+        constructor(terminalCommand: string, shouldExecute?: boolean);
     }
     export class TerminalQuickFixOpener {
         /**

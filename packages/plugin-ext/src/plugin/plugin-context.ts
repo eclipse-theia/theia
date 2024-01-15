@@ -200,7 +200,7 @@ import {
     ExternalUriOpenerPriority,
     EditSessionIdentityMatch,
     TerminalOutputAnchor,
-    TerminalQuickFixExecuteTerminalCommand,
+    TerminalQuickFixTerminalCommand,
     TerminalQuickFixOpener,
     TestResultState
 } from './types-impl';
@@ -1375,7 +1375,7 @@ export function createAPIFactory(
             TerminalExitReason,
             DocumentPasteEdit,
             ExternalUriOpenerPriority,
-            TerminalQuickFixExecuteTerminalCommand,
+            TerminalQuickFixTerminalCommand,
             TerminalQuickFixOpener,
             EditSessionIdentityMatch,
             TestResultState
