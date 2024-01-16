@@ -181,11 +181,11 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, TerminalLin
         return undefined;
     }
 
-    $sendText(id: string, text: string, addNewLine?: boolean): void {
+    $sendText(id: string, text: string, shouldExecute?: boolean): void {
         const terminal = this.terminals.getById(id);
         if (terminal) {
             text = text.replace(/\r?\n/g, '\r');
-            if (addNewLine && text.charAt(text.length - 1) !== '\r') {
+            if (shouldExecute && text.charAt(text.length - 1) !== '\r') {
                 text += '\r';
             }
             terminal.sendText(text);
