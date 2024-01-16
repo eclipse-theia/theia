@@ -25,11 +25,18 @@ export interface RpcHandlerOptions {
 }
 export interface ProxyHandlerOptions extends RpcHandlerOptions {
     channelProvider: () => Promise<Channel>,
+    proxySynchronizer: ProxySynchronizer,
 }
 
 export interface InvocationHandlerOptions extends RpcHandlerOptions {
     target: any
 }
+
+export interface ProxySynchronizer {
+    startProxyInitialization(id: string, init: Promise<void>): void
+    pendingProxyInitializations(): Promise<void>
+}
+
 /**
  * A proxy handler that will send any method invocation on the proxied object
  * as a rcp protocol message over a channel.
@@ -40,6 +47,7 @@ export class ClientProxyHandler<T extends object> implements ProxyHandler<T> {
 
     readonly id: string;
     private readonly channelProvider: () => Promise<Channel>;
+    private readonly proxySynchronizer: ProxySynchronizer;
     private readonly encoder: RpcMessageEncoder;
     private readonly decoder: RpcMessageDecoder;
 
@@ -50,6 +58,7 @@ export class ClientProxyHandler<T extends object> implements ProxyHandler<T> {
     private initializeRpc(): void {
         // we need to set the flag to true before waiting for the channel provider. Otherwise `get` might
         // get called again and we'll try to open a channel more than once
+        this.proxySynchronizer.startProxyInitialization(this.id, this.rpcDeferred.promise.then(() => { }));
         this.isRpcInitialized = true;
         const clientOptions: RpcProtocolOptions = { encoder: this.encoder, decoder: this.decoder, mode: 'clientOnly' };
         this.channelProvider().then(channel => {
@@ -69,7 +78,7 @@ export class ClientProxyHandler<T extends object> implements ProxyHandler<T> {
         const isNotify = this.isNotification(name);
         return (...args: any[]) => {
             const method = name.toString();
-            return this.rpcDeferred.promise.then(async (connection: RpcProtocol) => {
+            return this.sendWhenNoInit(async (connection: RpcProtocol) => {
                 if (isNotify) {
                     connection.sendNotification(method, args);
                 } else {
@@ -77,6 +86,10 @@ export class ClientProxyHandler<T extends object> implements ProxyHandler<T> {
                 }
             });
         };
+    }
+
+    private sendWhenNoInit(send: (connection: RpcProtocol) => Promise<any>): Promise<any> {
+        return this.proxySynchronizer.pendingProxyInitializations().then(() => this.rpcDeferred.promise.then(send));
     }
 
     /**

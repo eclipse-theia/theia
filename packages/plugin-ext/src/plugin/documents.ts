@@ -158,7 +158,7 @@ export class DocumentsExtImpl implements DocumentsExt {
         const uriString = uri.toString();
         const data = this.editorsAndDocuments.getDocument(uriString);
         if (!data) {
-            throw new Error('unknown document');
+            throw new Error('unknown document: ' + uriString);
         }
         data.acceptIsDirty(isDirty);
         this._onDidChangeDocument.fire({
@@ -172,7 +172,7 @@ export class DocumentsExtImpl implements DocumentsExt {
         const uriString = uri.toString();
         const data = this.editorsAndDocuments.getDocument(uriString);
         if (!data) {
-            throw new Error('unknown document');
+            throw new Error('unknown document: ' + uriString);
         }
         data.acceptIsDirty(isDirty);
         data.onEvents(e);

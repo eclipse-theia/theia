@@ -27,11 +27,12 @@ import { Emitter, Event } from '@theia/core/lib/common/event';
 import { ChannelMultiplexer, MessageProvider } from '@theia/core/lib/common/message-rpc/channel';
 import { MsgPackMessageDecoder, MsgPackMessageEncoder } from '@theia/core/lib/common/message-rpc/rpc-message-encoder';
 import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '@theia/core/lib/common/message-rpc/uint8-array-message-buffer';
-import { ClientProxyHandler, RpcInvocationHandler } from './proxy-handler';
+import { ClientProxyHandler, ProxySynchronizer, RpcInvocationHandler } from './proxy-handler';
 import { MsgPackExtensionManager } from '@theia/core/lib/common/message-rpc/msg-pack-extension-manager';
 import { URI as VSCodeURI } from '@theia/core/shared/vscode-uri';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { Range, Position } from '../plugin/types-impl';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 
 export interface MessageConnection {
     send(msg: string): void;
@@ -83,6 +84,7 @@ export class RPCProtocolImpl implements RPCProtocol {
     private readonly multiplexer: ChannelMultiplexer;
     private readonly encoder = new MsgPackMessageEncoder();
     private readonly decoder = new MsgPackMessageDecoder();
+    private readonly initCallback: ProxySynchronizer;
 
     private readonly toDispose = new DisposableCollection(
         Disposable.create(() => { /* mark as no disposed */ })
@@ -91,6 +93,7 @@ export class RPCProtocolImpl implements RPCProtocol {
     constructor(channel: Channel) {
         this.toDispose.push(this.multiplexer = new ChannelMultiplexer(new BatchingChannel(channel)));
         this.toDispose.push(Disposable.create(() => this.proxies.clear()));
+        this.initCallback = new ProxySynchronizerImpl();
     }
 
     dispose(): void {
@@ -114,7 +117,9 @@ export class RPCProtocolImpl implements RPCProtocol {
     }
 
     protected createProxy<T>(proxyId: string): T {
-        const handler = new ClientProxyHandler({ id: proxyId, encoder: this.encoder, decoder: this.decoder, channelProvider: () => this.multiplexer.open(proxyId) });
+        const handler = new ClientProxyHandler({
+            id: proxyId, encoder: this.encoder, decoder: this.decoder, channelProvider: () => this.multiplexer.open(proxyId), proxySynchronizer: this.initCallback
+        });
         return new Proxy(Object.create(null), handler);
     }
 
@@ -147,6 +152,39 @@ export class RPCProtocolImpl implements RPCProtocol {
         }
         return instance;
     }
+}
+
+export class ProxySynchronizerImpl implements ProxySynchronizer {
+
+    private readonly runningInitializations = new Set<string>();
+
+    private _pendingProxyInitializations: Deferred<void>;
+
+    constructor() {
+        this._pendingProxyInitializations = new Deferred();
+        /* after creation no init is active */
+        this._pendingProxyInitializations.resolve();
+    }
+
+    startProxyInitialization(id: string, init: Promise<void>): void {
+        if (this.runningInitializations.size === 0) {
+            this._pendingProxyInitializations = new Deferred();
+        }
+        init.then(() => this.finishedProxyInitialization(id));
+        this.runningInitializations.add(id);
+    }
+
+    protected finishedProxyInitialization(id: string): void {
+        this.runningInitializations.delete(id);
+        if (this.runningInitializations.size === 0) {
+            this._pendingProxyInitializations.resolve();
+        }
+    }
+
+    pendingProxyInitializations(): Promise<void> {
+        return this._pendingProxyInitializations.promise;
+    }
+
 }
 
 /**
