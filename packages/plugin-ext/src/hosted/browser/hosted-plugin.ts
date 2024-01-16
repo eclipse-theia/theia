@@ -328,7 +328,8 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
                     uiKind: isElectron ? UIKind.Desktop : UIKind.Web,
                     appName: FrontendApplicationConfigProvider.get().applicationName,
                     appHost: isElectron ? 'desktop' : 'web', // TODO: 'web' could be the embedder's name, e.g. 'github.dev'
-                    appRoot
+                    appRoot,
+                    appUriScheme: FrontendApplicationConfigProvider.get().electron.uriScheme
                 },
                 extApi,
                 webview: {
@@ -414,6 +415,10 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
     async activateByLanguage(languageId: string): Promise<void> {
         await this.activateByEvent('onLanguage');
         await this.activateByEvent(`onLanguage:${languageId}`);
+    }
+
+    async activateByUri(scheme: string, authority: string): Promise<void> {
+        await this.activateByEvent(`onUri:${scheme}://${authority}`);
     }
 
     async activateByCommand(commandId: string): Promise<void> {

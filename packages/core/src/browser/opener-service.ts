@@ -79,6 +79,12 @@ export interface OpenerService {
      * Add open handler i.e. for custom editors
      */
     addHandler?(openHandler: OpenHandler): Disposable;
+
+    /**
+     * Remove open handler
+     */
+    removeHandler?(openHandler: OpenHandler): void;
+
     /**
      * Event that fires when a new opener is added or removed.
      */
@@ -108,9 +114,13 @@ export class DefaultOpenerService implements OpenerService {
         this.onDidChangeOpenersEmitter.fire();
 
         return Disposable.create(() => {
-            this.customEditorOpenHandlers.splice(this.customEditorOpenHandlers.indexOf(openHandler), 1);
-            this.onDidChangeOpenersEmitter.fire();
+            this.removeHandler(openHandler);
         });
+    }
+
+    removeHandler(openHandler: OpenHandler): void {
+        this.customEditorOpenHandlers.splice(this.customEditorOpenHandlers.indexOf(openHandler), 1);
+        this.onDidChangeOpenersEmitter.fire();
     }
 
     async getOpener(uri: URI, options?: OpenerOptions): Promise<OpenHandler> {

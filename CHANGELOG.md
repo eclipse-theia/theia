@@ -4,13 +4,14 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
-
 ## Unreleased
+- [plugin] implement stubbed API window registerUriHandler() [#13306](https://github.com/eclipse-theia/theia/pull/13306) - contributed on behalf of STMicroelectronics
 - [core] Download json schema catalog at build-time - [#14065](https://github.com/eclipse-theia/theia/pull/14065/) - Contributed on behalf of STMicroelectronics
 
 <a name="breaking_changes_1.53.0">[Breaking Changes:](#breaking_changes_1.53.0)</a>
 - [dependencies] Updated electron to version 30.1.2 - [#14041](https://github.com/eclipse-theia/theia/pull/14041) - Contributed on behalf of STMicroelectronics
 - [dependencies] increased minimum node version to 18. [#14027](https://github.com/eclipse-theia/theia/pull/14027) - Contributed on behalf of STMicroelectronics
+
 
 ## 1.52.0 - 07/25/2024
 
