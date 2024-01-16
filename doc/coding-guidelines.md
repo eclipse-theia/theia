@@ -301,11 +301,12 @@ export namespace DirtyDiffModel {
 }
 ```
 <a name="no-multi-inject"></a>
-* [5.](#no-multi-inject) Don't use multi-inject, use `ContributionProvider` to inject multiple instances.
+* [5.](#no-multi-inject) Don't use InversifyJS's `@multiInject`, use Theia's utility `ContributionProvider` to inject multiple instances.
 > Why?
 > - `ContributionProvider` is a documented way to introduce contribution points. See `Contribution-Points`: https://www.theia-ide.org/docs/services_and_contributions
 > - If nothing is bound to an identifier, multi-inject resolves to `undefined`, not an empty array. `ContributionProvider` provides an empty array.
 > - Multi-inject does not guarantee the same instances are injected if an extender does not use `inSingletonScope`. `ContributionProvider` caches instances to ensure uniqueness.
+> - `ContributionProvider` supports filtering. See `ContributionFilterRegistry`.
 
 
 ## CSS
