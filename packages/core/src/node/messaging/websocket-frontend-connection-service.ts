@@ -51,7 +51,9 @@ export class WebsocketFrontendConnectionService implements FrontendConnectionSer
             if (this.connectionsByFrontend.has(frontEndId)) {
                 this.closeConnection(frontEndId, 'reconnecting same front end');
             }
-            channelCreatedHandler(this.createConnection(socket, frontEndId));
+            const channel = this.createConnection(socket, frontEndId);
+            this.handleSocketDisconnect(socket, channel, frontEndId);
+            channelCreatedHandler(channel);
             socket.emit(ConnectionManagementMessages.INITIAL_CONNECT);
         };
 
@@ -63,6 +65,7 @@ export class WebsocketFrontendConnectionService implements FrontendConnectionSer
                 console.info(`Reconnecting to front end ${frontEndId}`);
                 socket.emit(ConnectionManagementMessages.RECONNECT, true);
                 channel.connect(socket);
+                this.handleSocketDisconnect(socket, channel, frontEndId);
                 const pendingTimeout = this.closeTimeouts.get(frontEndId);
                 clearTimeout(pendingTimeout);
                 this.closeTimeouts.delete(frontEndId);
@@ -89,11 +92,16 @@ export class WebsocketFrontendConnectionService implements FrontendConnectionSer
         connection.close();
     }
 
-    protected createConnection(socket: Socket, frontEndId: string): Channel {
+    protected createConnection(socket: Socket, frontEndId: string): ReconnectableSocketChannel {
         console.info(`creating connection for ${frontEndId}`);
         const channel = new ReconnectableSocketChannel();
         channel.connect(socket);
 
+        this.connectionsByFrontend.set(frontEndId, channel);
+        return channel;
+    }
+
+    handleSocketDisconnect(socket: Socket, channel: ReconnectableSocketChannel, frontEndId: string): void {
         socket.on('disconnect', evt => {
             console.info('socked closed');
             channel.disconnect();
@@ -111,9 +119,6 @@ export class WebsocketFrontendConnectionService implements FrontendConnectionSer
                 // timeout < 0: never close the back end
             }
         });
-
-        this.connectionsByFrontend.set(frontEndId, channel);
-        return channel;
     }
 
     markForClose(channelId: string): void {
