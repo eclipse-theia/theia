@@ -1227,12 +1227,15 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
 
     /**
      * Handle the `space key` keyboard event.
-     * - By default should be similar to a single-click action.
+     * - If the element has a checkbox, it will be toggled.
+     * - Otherwise, it should be similar to a single-click action.
      * @param event the `space key` keyboard event.
      */
     protected handleSpace(event: KeyboardEvent): void {
         const { focusedNode } = this.focusService;
-        if (!this.props.multiSelect || (!event.ctrlKey && !event.metaKey && !event.shiftKey)) {
+        if (focusedNode && focusedNode.checkboxInfo) {
+            this.model.markAsChecked(focusedNode, !focusedNode.checkboxInfo.checked);
+        } else if (!this.props.multiSelect || (!event.ctrlKey && !event.metaKey && !event.shiftKey)) {
             this.tapNode(focusedNode);
         }
     }
