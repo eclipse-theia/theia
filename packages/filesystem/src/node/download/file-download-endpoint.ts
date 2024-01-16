@@ -21,7 +21,7 @@ import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { json } from 'body-parser';
 import { Application, Router } from '@theia/core/shared/express';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
-import { FileUri } from '@theia/core/lib/node/file-uri';
+import { FileUri } from '@theia/core/lib/common/file-uri';
 import { FileDownloadHandler } from './file-download-handler';
 
 @injectable()

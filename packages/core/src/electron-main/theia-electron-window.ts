@@ -22,7 +22,7 @@ import { ElectronMainApplicationGlobals } from './electron-main-constants';
 import { DisposableCollection, Emitter, Event } from '../common';
 import { createDisposableListener } from './event-utils';
 import { URI } from '../common/uri';
-import { FileUri } from '../node/file-uri';
+import { FileUri } from '../common/file-uri';
 import { TheiaRendererAPI } from './electron-api-main';
 
 /**

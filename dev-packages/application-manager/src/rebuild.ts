@@ -19,7 +19,7 @@ import fs = require('fs-extra');
 import path = require('path');
 import os = require('os');
 
-export type RebuildTarget = 'electron' | 'browser';
+export type RebuildTarget = 'electron' | 'browser' | 'browser-only';
 
 const EXIT_SIGNALS: NodeJS.Signals[] = ['SIGINT', 'SIGTERM'];
 

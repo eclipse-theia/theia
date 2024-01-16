@@ -29,6 +29,9 @@
     {
       "electronMain": "lib/electron-main/update/sample-updater-main-module",
       "frontendElectron": "lib/electron-browser/updater/sample-updater-frontend-module"
+    },
+    {
+      "frontendOnly": "lib/browser-only/api-samples-frontend-only-module"
     }
   ],
   "keywords": [

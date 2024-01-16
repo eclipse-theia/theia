@@ -24,7 +24,7 @@ import { clone } from 'dugite-extra/lib/command/clone';
 import { fetch } from 'dugite-extra/lib/command/fetch';
 import { stash } from 'dugite-extra/lib/command/stash';
 import { merge } from 'dugite-extra/lib/command/merge';
-import { FileUri } from '@theia/core/lib/node/file-uri';
+import { FileUri } from '@theia/core/lib/common/file-uri';
 import { getStatus } from 'dugite-extra/lib/command/status';
 import { createCommit } from 'dugite-extra/lib/command/commit';
 import { stage, unstage } from 'dugite-extra/lib/command/stage';

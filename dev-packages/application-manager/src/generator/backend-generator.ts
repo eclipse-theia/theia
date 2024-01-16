@@ -20,6 +20,10 @@ import { AbstractGenerator } from './abstract-generator';
 export class BackendGenerator extends AbstractGenerator {
 
     async generate(): Promise<void> {
+        if (this.pck.isBrowserOnly()) {
+            // no backend generation in case of browser-only target
+            return;
+        }
         const backendModules = this.pck.targetBackendModules;
         await this.write(this.pck.backend('server.js'), this.compileServer(backendModules));
         await this.write(this.pck.backend('main.js'), this.compileMain(backendModules));

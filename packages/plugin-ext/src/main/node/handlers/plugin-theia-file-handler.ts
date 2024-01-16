@@ -21,7 +21,7 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 import { getTempDirPathAsync } from '../temp-dir-util';
 import * as fs from '@theia/core/shared/fs-extra';
 import * as filenamify from 'filenamify';
-import { FileUri } from '@theia/core/lib/node/file-uri';
+import { FileUri } from '@theia/core/lib/common/file-uri';
 import { PluginTheiaEnvironment } from '../../common/plugin-theia-environment';
 
 @injectable()

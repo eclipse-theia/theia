@@ -37,6 +37,10 @@ export abstract class AbstractGenerator {
         return this.pck.ifElectron(value, defaultValue);
     }
 
+    protected ifBrowserOnly(value: string, defaultValue: string = ''): string {
+        return this.pck.ifBrowserOnly(value, defaultValue);
+    }
+
     protected async write(path: string, content: string): Promise<void> {
         await fs.ensureFile(path);
         await fs.writeFile(path, content);

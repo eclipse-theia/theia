@@ -9,6 +9,10 @@
 - [plugin] stub multiDocumentHighlightProvider proposed API [#13248](https://github.com/eclipse-theia/theia/pull/13248) - contributed on behalf of STMicroelectronics
 - [terminal] update terminalQuickFixProvider proposed API according to vscode 1.85 version [#13240](https://github.com/eclipse-theia/theia/pull/13240) - contributed on behalf of STMicroelectronics
 
+<a name="breaking_changes_not_yet_released">[Breaking Changes:](#breaking_changes_not_yet_released)</a>
+
+- [core] moved `FileUri` from `node` package to `common`
+
 ## v1.45.0 - 12/21/2023
 
 - [application-manager] updated logic to allow rebinding messaging services in preload [#13199](https://github.com/eclipse-theia/theia/pull/13199)

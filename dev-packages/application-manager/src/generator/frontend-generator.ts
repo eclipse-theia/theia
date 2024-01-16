@@ -24,7 +24,7 @@ export class FrontendGenerator extends AbstractGenerator {
 
     async generate(options?: GeneratorOptions): Promise<void> {
         await this.write(this.pck.frontend('index.html'), this.compileIndexHtml(this.pck.targetFrontendModules));
-        await this.write(this.pck.frontend('index.js'), this.compileIndexJs(this.pck.targetFrontendModules, this.pck.frontendPreloadModules));
+        await this.write(this.pck.frontend('index.js'), this.compileIndexJs(this.pck.targetFrontendModules, this.pck.targetFrontendPreloadModules));
         await this.write(this.pck.frontend('secondary-window.html'), this.compileSecondaryWindowHtml());
         await this.write(this.pck.frontend('secondary-index.js'), this.compileSecondaryIndexJs(this.pck.secondaryWindowModules));
         if (this.pck.isElectron()) {
@@ -108,18 +108,26 @@ ${Array.from(frontendPreloadModules.values(), jsModulePath => `\
 }
 
 module.exports = (async () => {
-    const { messagingFrontendModule } = require('@theia/core/lib/${this.pck.isBrowser()
-            ? 'browser/messaging/messaging-frontend-module'
-            : 'electron-browser/messaging/electron-messaging-frontend-module'}');
+    const { messagingFrontendModule } = require('@theia/core/lib/${!this.pck.isElectron()
+                ? 'browser/messaging/messaging-frontend-module'
+                : 'electron-browser/messaging/electron-messaging-frontend-module'}');
     const container = new Container();
     container.load(messagingFrontendModule);
+    ${this.ifBrowserOnly(`const { messagingFrontendOnlyModule } = require('@theia/core/lib/browser-only/messaging/messaging-frontend-only-module');
+    container.load(messagingFrontendOnlyModule);`)}
+
     await preload(container);
     const { FrontendApplication } = require('@theia/core/lib/browser');
     const { frontendApplicationModule } = require('@theia/core/lib/browser/frontend-application-module');    
     const { loggerFrontendModule } = require('@theia/core/lib/browser/logger-frontend-module');
 
     container.load(frontendApplicationModule);
+    ${this.pck.ifBrowserOnly(`const { frontendOnlyApplicationModule } = require('@theia/core/lib/browser-only/frontend-only-application-module');
+    container.load(frontendOnlyApplicationModule);`)}
+    
     container.load(loggerFrontendModule);
+    ${this.ifBrowserOnly(`const { loggerFrontendOnlyModule } = require('@theia/core/lib/browser-only/logger-frontend-only-module');
+    container.load(loggerFrontendOnlyModule);`)}
 
     try {
 ${Array.from(frontendModules.values(), jsModulePath => `\

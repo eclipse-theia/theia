@@ -24,7 +24,7 @@ import { OK, BAD_REQUEST, METHOD_NOT_ALLOWED, NOT_FOUND, INTERNAL_SERVER_ERROR, 
 import URI from '@theia/core/lib/common/uri';
 import { isEmpty } from '@theia/core/lib/common/objects';
 import { ILogger } from '@theia/core/lib/common/logger';
-import { FileUri } from '@theia/core/lib/node/file-uri';
+import { FileUri } from '@theia/core/lib/common/file-uri';
 import { DirectoryArchiver } from './directory-archiver';
 import { FileDownloadData } from '../../common/download/file-download-data';
 import { FileDownloadCache, DownloadStorageItem } from './file-download-cache';

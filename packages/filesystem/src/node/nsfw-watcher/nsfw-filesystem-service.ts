@@ -18,7 +18,7 @@ import nsfw = require('@theia/core/shared/nsfw');
 import path = require('path');
 import { promises as fsp } from 'fs';
 import { IMinimatch, Minimatch } from 'minimatch';
-import { FileUri } from '@theia/core/lib/node/file-uri';
+import { FileUri } from '@theia/core/lib/common/file-uri';
 import {
     FileChangeType, FileSystemWatcherService, FileSystemWatcherServiceClient, WatchOptions
 } from '../../common/filesystem-watcher-protocol';

@@ -73,7 +73,7 @@ export class ApplicationPackage {
             theia.target = this.options.appTarget;
         }
 
-        if (theia.target && !(theia.target in ApplicationProps.ApplicationTarget)) {
+        if (theia.target && !(Object.values(ApplicationProps.ApplicationTarget).includes(theia.target))) {
             const defaultTarget = ApplicationProps.ApplicationTarget.browser;
             console.warn(`Unknown application target '${theia.target}', '${defaultTarget}' to be used instead`);
             theia.target = defaultTarget;
@@ -140,8 +140,22 @@ export class ApplicationPackage {
         return this._frontendPreloadModules ??= this.computeModules('frontendPreload');
     }
 
+    get frontendOnlyPreloadModules(): Map<string, string> {
+        if (!this._frontendPreloadModules) {
+            this._frontendPreloadModules = this.computeModules('frontendOnlyPreload', 'frontendPreload');
+        }
+        return this._frontendPreloadModules;
+    }
+
     get frontendModules(): Map<string, string> {
         return this._frontendModules ??= this.computeModules('frontend');
+    }
+
+    get frontendOnlyModules(): Map<string, string> {
+        if (!this._frontendModules) {
+            this._frontendModules = this.computeModules('frontendOnly', 'frontend');
+        }
+        return this._frontendModules;
     }
 
     get frontendElectronModules(): Map<string, string> {
@@ -227,6 +241,10 @@ export class ApplicationPackage {
         return this.target === ApplicationProps.ApplicationTarget.electron;
     }
 
+    isBrowserOnly(): boolean {
+        return this.target === ApplicationProps.ApplicationTarget.browserOnly;
+    }
+
     ifBrowser<T>(value: T): T | undefined;
     ifBrowser<T>(value: T, defaultValue: T): T;
     ifBrowser<T>(value: T, defaultValue?: T): T | undefined {
@@ -239,12 +257,31 @@ export class ApplicationPackage {
         return this.isElectron() ? value : defaultValue;
     }
 
+    ifBrowserOnly<T>(value: T): T | undefined;
+    ifBrowserOnly<T>(value: T, defaultValue: T): T;
+    ifBrowserOnly<T>(value: T, defaultValue?: T): T | undefined {
+        return this.isBrowserOnly() ? value : defaultValue;
+    }
+
     get targetBackendModules(): Map<string, string> {
+        if (this.isBrowserOnly()) {
+            return new Map();
+        }
         return this.ifBrowser(this.backendModules, this.backendElectronModules);
     }
 
     get targetFrontendModules(): Map<string, string> {
+        if (this.isBrowserOnly()) {
+            return this.frontendOnlyModules;
+        }
         return this.ifBrowser(this.frontendModules, this.frontendElectronModules);
+    }
+
+    get targetFrontendPreloadModules(): Map<string, string> {
+        if (this.isBrowserOnly()) {
+            return this.frontendOnlyPreloadModules;
+        }
+        return this.frontendPreloadModules;
     }
 
     get targetElectronMainModules(): Map<string, string> {

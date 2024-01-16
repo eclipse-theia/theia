@@ -18,7 +18,7 @@ import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposa
 import { EncodingService } from '@theia/core/lib/common/encoding-service';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
-import { FileUri } from '@theia/core/lib/node/file-uri';
+import { FileUri } from '@theia/core/lib/common/file-uri';
 import { IPCConnectionProvider } from '@theia/core/lib/node/messaging/ipc-connection-provider';
 import { Container, ContainerModule } from '@theia/core/shared/inversify';
 import { equal, fail } from 'assert';

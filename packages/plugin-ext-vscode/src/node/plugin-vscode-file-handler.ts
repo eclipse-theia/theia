@@ -18,8 +18,8 @@ import { PluginDeployerFileHandler, PluginDeployerEntry, PluginDeployerFileHandl
 import * as filenamify from 'filenamify';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import * as fs from '@theia/core/shared/fs-extra';
-import { FileUri } from '@theia/core/lib/node';
 import { PluginVSCodeEnvironment } from '../common/plugin-vscode-environment';
+import { FileUri } from '@theia/core/lib/common/file-uri';
 import { unpackToDeploymentDir } from './plugin-vscode-utils';
 
 export const isVSCodePluginFile = (pluginPath?: string) => Boolean(pluginPath && (pluginPath.endsWith('.vsix') || pluginPath.endsWith('.tgz')));

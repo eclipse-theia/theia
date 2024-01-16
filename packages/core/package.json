@@ -135,7 +135,11 @@
       "preload": "lib/electron-browser/preload"
     },
     {
+      "frontendOnlyPreload": "lib/browser-only/preload/frontend-only-preload-module"
+    },
+    {
       "frontend": "lib/browser/i18n/i18n-frontend-module",
+      "frontendOnly": "lib/browser-only/i18n/i18n-frontend-only-module",
       "backend": "lib/node/i18n/i18n-backend-module"
     },
     {
