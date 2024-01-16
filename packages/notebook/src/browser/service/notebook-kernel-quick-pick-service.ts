@@ -356,6 +356,7 @@ export class NotebookKernelQuickPickService {
                         return this.displaySelectAnotherQuickPick(editor, false);
                     }
                 } catch (ex) {
+                    console.error('Failed to select notebook kernel', ex);
                     return false;
                 }
             } else if (isKernelPick(selectedKernelPickItem)) {
@@ -370,6 +371,7 @@ export class NotebookKernelQuickPickService {
                     await selectedKernelPickItem.action.run(this.commandService);
                     return true;
                 } catch (ex) {
+                    console.error('Failed to select notebook kernel', ex);
                     return false;
                 }
             }
