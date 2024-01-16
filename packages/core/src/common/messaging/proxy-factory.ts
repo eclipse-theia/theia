@@ -25,7 +25,6 @@ import { RequestHandler, RpcProtocol } from '../message-rpc/rpc-protocol';
 import { ConnectionHandler } from './handler';
 import { Deferred } from '../promise-util';
 import { decorate, injectable, unmanaged } from '../../../shared/inversify';
-import { ILogger } from '../logger';
 
 export type RpcServer<Client> = Disposable & {
     /**
@@ -120,7 +119,7 @@ export class RpcProxyFactory<T extends object> implements ProxyHandler<T> {
      * @param target - The object to expose to RPC methods calls.  If this
      *   is omitted, the proxy won't be able to handle requests, only send them.
      */
-    constructor(public target?: any, protected rpcProtocolFactory = defaultRpcProtocolFactory, protected logger?: ILogger) {
+    constructor(public target?: any, protected rpcProtocolFactory = defaultRpcProtocolFactory) {
         this.waitForConnection();
     }
 
@@ -169,14 +168,7 @@ export class RpcProxyFactory<T extends object> implements ProxyHandler<T> {
                 throw new Error(`no target was set to handle ${method}`);
             }
         } catch (error) {
-            const e = this.serializeError(error);
-            if (e instanceof ResponseError) {
-                throw e;
-            }
-            const reason = e.message || '';
-            const stack = e.stack || '';
-            this.logger?.error(`Request ${method} failed with error: ${reason}`, stack);
-            throw e;
+            throw this.serializeError(error);
         }
     }
 
