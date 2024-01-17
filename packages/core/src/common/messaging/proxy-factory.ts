@@ -168,14 +168,7 @@ export class RpcProxyFactory<T extends object> implements ProxyHandler<T> {
                 throw new Error(`no target was set to handle ${method}`);
             }
         } catch (error) {
-            const e = this.serializeError(error);
-            if (e instanceof ResponseError) {
-                throw e;
-            }
-            const reason = e.message || '';
-            const stack = e.stack || '';
-            console.error(`Request ${method} failed with error: ${reason}`, stack);
-            throw e;
+            throw this.serializeError(error);
         }
     }
 
