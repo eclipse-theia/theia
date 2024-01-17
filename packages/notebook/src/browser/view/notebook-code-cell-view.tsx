@@ -149,7 +149,8 @@ interface NotebookCellOutputProps {
 
 export class NotebookCodeCellOutputs extends React.Component<NotebookCellOutputProps> {
 
-    protected outputsWebview: CellOutputWebview | Promise<CellOutputWebview> | undefined;
+    protected outputsWebview: CellOutputWebview | undefined;
+    protected outputsWebviewPromise: Promise<CellOutputWebview> | undefined;
 
     protected toDispose = new DisposableCollection();
 
@@ -160,21 +161,22 @@ export class NotebookCodeCellOutputs extends React.Component<NotebookCellOutputP
     override async componentDidMount(): Promise<void> {
         const { cell, outputWebviewFactory } = this.props;
         this.toDispose.push(cell.onDidChangeOutputs(async () => {
-            if (!this.outputsWebview && cell.outputs.length > 0) {
-                this.outputsWebview = outputWebviewFactory(cell).then(webview => {
+            if (!this.outputsWebviewPromise && cell.outputs.length > 0) {
+                this.outputsWebviewPromise = outputWebviewFactory(cell).then(webview => {
                     this.outputsWebview = webview;
                     this.forceUpdate();
                     return webview;
                     });
                 this.forceUpdate();
-            } else if (this.outputsWebview && cell.outputs.length === 0 && cell.internalMetadata.runEndTime) {
-                (await this.outputsWebview).dispose();
+            } else if (this.outputsWebviewPromise && cell.outputs.length === 0 && cell.internalMetadata.runEndTime) {
+                (await this.outputsWebviewPromise).dispose();
                 this.outputsWebview = undefined;
+                this.outputsWebviewPromise = undefined;
                 this.forceUpdate();
             }
         }));
         if (cell.outputs.length > 0) {
-            this.outputsWebview = outputWebviewFactory(cell).then(webview => {
+            this.outputsWebviewPromise = outputWebviewFactory(cell).then(webview => {
                 this.outputsWebview = webview;
                 this.forceUpdate();
                 return webview;
@@ -183,14 +185,14 @@ export class NotebookCodeCellOutputs extends React.Component<NotebookCellOutputP
     }
 
     override async componentDidUpdate(): Promise<void> {
-        if (!(await this.outputsWebview)?.isAttached()) {
-            (await this.outputsWebview)?.attachWebview();
+        if (!(await this.outputsWebviewPromise)?.isAttached()) {
+            (await this.outputsWebviewPromise)?.attachWebview();
         }
     }
 
     override async componentWillUnmount(): Promise<void> {
         this.toDispose.dispose();
-        (await this.outputsWebview)?.dispose();
+        (await this.outputsWebviewPromise)?.dispose();
     }
 
     override render(): React.ReactNode {
