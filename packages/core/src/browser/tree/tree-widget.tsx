@@ -43,6 +43,8 @@ import { LabelProvider } from '../label-provider';
 import { CorePreferences } from '../core-preferences';
 import { TreeFocusService } from './tree-focus-service';
 import { useEffect } from 'react';
+import { PreferenceService, PreferenceChange } from '../preferences';
+import { PREFERENCE_NAME_TREE_INDENT } from './tree-preference';
 
 const debounce = require('lodash.debounce');
 
@@ -73,8 +75,7 @@ export interface TreeProps {
     readonly contextMenuPath?: MenuPath;
 
     /**
-     * The size of the padding (in pixels) per hierarchy depth. The root element won't have left padding but
-     * the padding for the children will be calculated as `leftPadding * hierarchyDepth` and so on.
+     * The size of the padding (in pixels) for the root node of the tree.
      */
     readonly leftPadding: number;
 
@@ -174,6 +175,9 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     @inject(SelectionService)
     protected readonly selectionService: SelectionService;
 
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
+
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
 
@@ -181,6 +185,8 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     protected readonly corePreferences: CorePreferences;
 
     protected shouldScrollToRow = true;
+
+    protected treeIndent: number = 8;
 
     constructor(
         @inject(TreeProps) readonly props: TreeProps,
@@ -198,6 +204,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
 
     @postConstruct()
     protected init(): void {
+        this.treeIndent = this.preferenceService.get(PREFERENCE_NAME_TREE_INDENT, this.treeIndent);
         if (this.props.search) {
             this.searchBox = this.searchBoxFactory({ ...SearchBoxProps.DEFAULT, showButtons: true, showFilter: true });
             this.searchBox.node.addEventListener('focus', () => {
@@ -263,6 +270,12 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                         this.update();
                         return;
                     }
+                }
+            }),
+            this.preferenceService.onPreferenceChanged((event: PreferenceChange) => {
+                if (event.preferenceName === PREFERENCE_NAME_TREE_INDENT) {
+                    this.treeIndent = event.newValue;
+                    this.update();
                 }
             })
         ]);
@@ -1500,7 +1513,10 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         return this.labelProvider.getLongName(node);
     }
     protected getDepthPadding(depth: number): number {
-        return depth * this.props.leftPadding;
+        if (depth === 1) {
+            return this.props.leftPadding;
+        }
+        return depth * this.treeIndent;
     }
 }
 export namespace TreeWidget {

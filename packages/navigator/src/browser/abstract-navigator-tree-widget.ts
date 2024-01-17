@@ -16,16 +16,12 @@
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { FileNavigatorPreferences } from './navigator-preferences';
-import { PreferenceService } from '@theia/core/lib/browser/preferences/preference-service';
 import { FileTreeWidget } from '@theia/filesystem/lib/browser';
 import { Attributes, HTMLAttributes } from '@theia/core/shared/react';
 import { TreeNode } from '@theia/core/lib/browser';
 
 @injectable()
 export class AbstractNavigatorTreeWidget extends FileTreeWidget {
-
-    @inject(PreferenceService)
-    protected readonly preferenceService: PreferenceService;
 
     @inject(FileNavigatorPreferences)
     protected readonly navigatorPreferences: FileNavigatorPreferences;

@@ -139,6 +139,7 @@ import { bindCommonStylingParticipants } from './common-styling-participants';
 import { HoverService } from './hover-service';
 import { AdditionalViewsMenuWidget, AdditionalViewsMenuWidgetFactory } from './shell/additional-views-menu-widget';
 import { LanguageIconLabelProvider } from './language-icon-provider';
+import { bindTreePreferences } from './tree';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
@@ -365,6 +366,7 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bind(ThemeService).toSelf().inSingletonScope();
 
     bindCorePreferences(bind);
+    bindTreePreferences(bind);
 
     bind(MimeService).toSelf().inSingletonScope();
 
