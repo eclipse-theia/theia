@@ -34,6 +34,7 @@ export abstract class EnvExtImpl {
     private envMachineId: string;
     private envSessionId: string;
     private host: string;
+    private applicationRoot: string;
     private _remoteName: string | undefined;
 
     constructor() {
@@ -84,6 +85,10 @@ export abstract class EnvExtImpl {
         this.host = appHost;
     }
 
+    setAppRoot(appRoot: string): void {
+        this.applicationRoot = appRoot;
+    }
+
     getClientOperatingSystem(): Promise<theia.OperatingSystem> {
         return this.proxy.$getClientOperatingSystem();
     }
@@ -92,7 +97,9 @@ export abstract class EnvExtImpl {
         return this.applicationName;
     }
 
-    abstract get appRoot(): string;
+    get appRoot(): string {
+        return this.applicationRoot;
+    }
 
     abstract get isNewAppInstall(): boolean;
 

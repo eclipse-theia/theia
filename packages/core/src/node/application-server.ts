@@ -37,9 +37,16 @@ export class ApplicationServerImpl implements ApplicationServer {
             const name = pck.name;
             const version = pck.version;
 
-            return Promise.resolve({ name, version });
+            return Promise.resolve({
+                name,
+                version
+            });
         }
         return Promise.resolve(undefined);
+    }
+
+    getApplicationRoot(): Promise<string> {
+        return Promise.resolve(this.applicationPackage.projectPath);
     }
 
     async getBackendOS(): Promise<OS.Type> {
