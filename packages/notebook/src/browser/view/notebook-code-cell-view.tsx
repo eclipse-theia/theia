@@ -149,6 +149,9 @@ interface NotebookCellOutputProps {
 export class NotebookCodeCellOutputs extends React.Component<NotebookCellOutputProps> {
 
     protected outputsWebview: CellOutputWebview | undefined;
+    protected outputsWebviewPromise: Promise<CellOutputWebview> | undefined;
+
+    protected toDispose = new DisposableCollection();
 
     constructor(props: NotebookCellOutputProps) {
         super(props);
@@ -156,25 +159,39 @@ export class NotebookCodeCellOutputs extends React.Component<NotebookCellOutputP
 
     override async componentDidMount(): Promise<void> {
         const { cell, outputWebviewFactory } = this.props;
-        cell.onDidChangeOutputs(async () => {
-            if (!this.outputsWebview && cell.outputs.length > 0) {
-                this.outputsWebview = await outputWebviewFactory(cell);
-            } else if (this.outputsWebview && cell.outputs.length === 0) {
-                this.outputsWebview.dispose();
+        this.toDispose.push(cell.onDidChangeOutputs(async () => {
+            if (!this.outputsWebviewPromise && cell.outputs.length > 0) {
+                this.outputsWebviewPromise = outputWebviewFactory(cell).then(webview => {
+                    this.outputsWebview = webview;
+                    this.forceUpdate();
+                    return webview;
+                    });
+                this.forceUpdate();
+            } else if (this.outputsWebviewPromise && cell.outputs.length === 0 && cell.internalMetadata.runEndTime) {
+                (await this.outputsWebviewPromise).dispose();
                 this.outputsWebview = undefined;
+                this.outputsWebviewPromise = undefined;
+                this.forceUpdate();
             }
-            this.forceUpdate();
-        });
+        }));
         if (cell.outputs.length > 0) {
-            this.outputsWebview = await outputWebviewFactory(cell);
-            this.forceUpdate();
+            this.outputsWebviewPromise = outputWebviewFactory(cell).then(webview => {
+                this.outputsWebview = webview;
+                this.forceUpdate();
+                return webview;
+            });
         }
     }
 
-    override componentDidUpdate(): void {
-        if (!this.outputsWebview?.isAttached()) {
-            this.outputsWebview?.attachWebview();
+    override async componentDidUpdate(): Promise<void> {
+        if (!(await this.outputsWebviewPromise)?.isAttached()) {
+            (await this.outputsWebviewPromise)?.attachWebview();
         }
+    }
+
+    override async componentWillUnmount(): Promise<void> {
+        this.toDispose.dispose();
+        (await this.outputsWebviewPromise)?.dispose();
     }
 
     override render(): React.ReactNode {

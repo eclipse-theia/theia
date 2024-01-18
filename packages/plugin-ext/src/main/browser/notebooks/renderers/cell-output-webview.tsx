@@ -72,12 +72,14 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
 
     protected webviewWidget: WebviewWidget;
 
+    protected toDispose = new DisposableCollection();
+
     @postConstruct()
     protected async init(): Promise<void> {
-        this.cell.onDidChangeOutputs(outputChange => this.updateOutput(outputChange));
-        this.cell.onDidChangeOutputItems(output => {
+        this.toDispose.push(this.cell.onDidChangeOutputs(outputChange => this.updateOutput(outputChange)));
+        this.toDispose.push(this.cell.onDidChangeOutputItems(output => {
             this.updateOutput({start: this.cell.outputs.findIndex(o => o.outputId === output.outputId), deleteCount: 1, newOutputs: [output]});
-        });
+        }));
 
         this.webviewWidget = await this.widgetManager.getOrCreateWidget(WebviewWidget.FACTORY_ID, { id: this.id });
         this.webviewWidget.setContentOptions({ allowScripts: true });
@@ -106,29 +108,28 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
     }
 
     updateOutput(update: NotebookCellOutputsSplice): void {
-        if (this.cell.outputs.length > 0) {
-            if (this.webviewWidget.isHidden) {
-                this.webviewWidget.show();
-            }
-
-            this.outputPresentationListeners.dispose();
-            this.outputPresentationListeners = new DisposableCollection();
-            for (const output of this.cell.outputs) {
-                this.outputPresentationListeners.push(output.onRequestOutputPresentationChange(() => this.requestOutputPresentationUpdate(output)));
-            }
-
-            const updateOutputMessage: OutputChangedMessage = {
-                type: 'outputChanged',
-                newOutputs: update.newOutputs.map(output => ({
-                    id: output.outputId,
-                    items: output.outputs.map(item => ({ mime: item.mime, data: item.data.buffer })),
-                    metadata: output.metadata
-                })),
-                deletedOutputIds: this.cell.outputs.slice(update.start, update.start + update.deleteCount).map(output => output.outputId)
-            };
-
-            this.webviewWidget.sendMessage(updateOutputMessage);
+        if (this.webviewWidget.isHidden) {
+            this.webviewWidget.show();
         }
+
+        this.outputPresentationListeners.dispose();
+        this.outputPresentationListeners = new DisposableCollection();
+        for (const output of this.cell.outputs) {
+            this.outputPresentationListeners.push(output.onRequestOutputPresentationChange(() => this.requestOutputPresentationUpdate(output)));
+        }
+
+        const updateOutputMessage: OutputChangedMessage = {
+            type: 'outputChanged',
+            newOutputs: update.newOutputs.map(output => ({
+                id: output.outputId,
+                items: output.outputs.map(item => ({ mime: item.mime, data: item.data.buffer })),
+                metadata: output.metadata
+            })),
+            deleteStart: update.start,
+            deleteCount: update.deleteCount
+        };
+
+        this.webviewWidget.sendMessage(updateOutputMessage);
     }
 
     private async requestOutputPresentationUpdate(output: NotebookCellOutputModel): Promise<void> {
@@ -195,6 +196,7 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
     }
 
     dispose(): void {
+        this.toDispose.dispose();
         this.outputPresentationListeners.dispose();
         this.webviewWidget.dispose();
     }

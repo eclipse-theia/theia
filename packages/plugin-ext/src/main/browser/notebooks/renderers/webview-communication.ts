@@ -39,7 +39,8 @@ export interface UpdateRenderersMessage {
 export interface OutputChangedMessage {
     readonly type: 'outputChanged';
     readonly newOutputs?: Output[];
-    readonly deletedOutputIds?: string[];
+    readonly deleteStart?: number;
+    readonly deleteCount?: number;
 }
 
 export interface ChangePreferredMimetypeMessage {
