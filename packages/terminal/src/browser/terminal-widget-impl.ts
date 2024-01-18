@@ -611,8 +611,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         if (this.needsResize) {
             this.resizeTerminal();
             this.needsResize = false;
-
-            this.resizeTerminalProcess();
         }
     }
 
@@ -797,6 +795,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         const cols = geo.cols;
         const rows = geo.rows - 1; // subtract one row for margin
         this.term.resize(cols, rows);
+
+        this.resizeTerminalProcess();
     }
 
     protected resizeTerminalProcess(): void {
