@@ -20,7 +20,7 @@ import { ProcessTerminatedMessage, ProcessTerminateMessage } from '@theia/plugin
 import { HeadlessPluginHostRPC } from './plugin-host-headless-rpc';
 import pluginHostModule from './plugin-host-headless-module';
 
-const banner = `HEADLESSPLUGIN_HOST(${process.pid}):`;
+const banner = `HEADLESS_PLUGIN_HOST(${process.pid}):`;
 console.log(banner, 'Starting instance');
 
 // override exit() function, to do not allow plugin kill this node

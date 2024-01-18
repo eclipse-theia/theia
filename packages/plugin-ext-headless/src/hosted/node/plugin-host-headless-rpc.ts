@@ -39,7 +39,7 @@ export class HeadlessPluginHostRPC extends AbstractPluginHostRPC<HeadlessPluginM
     protected readonly localizationExt: LocalizationExtImpl;
 
     constructor() {
-        super('HEADLESSPLUGIN_HOST', undefined,
+        super('HEADLESS_PLUGIN_HOST', undefined,
             {
                 $pluginManager: HEADLESSMAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT,
             }
