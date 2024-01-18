@@ -21,6 +21,8 @@
 
 // based on https://github.com/microsoft/vscode/blob/1.72.2/src/vs/base/common/uuid.ts
 
+import { v5 } from 'uuid';
+
 const _UUIDPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export function isUUID(value: string): boolean {
@@ -97,3 +99,14 @@ export const generateUuid = (function (): () => string {
         return result;
     };
 })();
+
+const NAMESPACE = '4c90ee4f-d952-44b1-83ca-f04121ab8e05';
+/**
+ * This function will hash the given value using SHA1. The result will be a uuid.
+ * @param value the string to hash
+ * @returns a uuid
+ */
+export function hashValue(value: string): string {
+    // as opposed to v4, v5 is deterministic and uses SHA1 hashing
+    return v5(value, NAMESPACE);
+}

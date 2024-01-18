@@ -27,6 +27,7 @@ import { WebviewImpl, WebviewsExtImpl } from './webviews';
 import { WebviewViewProvider } from '@theia/plugin';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import * as theia from '@theia/plugin';
+import { hashValue } from '@theia/core/lib/common/uuid';
 
 export class WebviewViewsExtImpl implements WebviewViewsExt {
 
@@ -82,7 +83,7 @@ export class WebviewViewsExtImpl implements WebviewViewsExt {
 
         const { provider, plugin } = entry;
 
-        const webviewNoPanel = this.webviewsExt.createNewWebview({}, plugin, handle);
+        const webviewNoPanel = this.webviewsExt.createNewWebview({}, plugin, handle, hashValue(viewType));
         const revivedView = new WebviewViewExtImpl(handle, this.proxy, viewType, title, webviewNoPanel, true);
         this.webviewViews.set(handle, revivedView);
         await provider.resolveWebviewView(revivedView, { state }, cancellation);

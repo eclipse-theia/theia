@@ -194,6 +194,31 @@ export class WidgetManager {
         return widget;
     }
 
+    /**
+     * Finds a widget that matches the given test predicate.
+     * @param factoryId The widget factory id.
+     * @param predicate The test predicate.
+     *
+     * @returns a promise resolving to the widget if available, else `undefined`.
+     */
+    async findWidget<T extends Widget>(factoryId: string, predicate: (options?: any) => boolean): Promise<T | undefined> {
+        for (const [key, widget] of this.widgets.entries()) {
+            if (this.testPredicate(key, factoryId, predicate)) {
+                return widget as T;
+            }
+        }
+        for (const [key, widget] of this.pendingWidgetPromises.entries()) {
+            if (this.testPredicate(key, factoryId, predicate)) {
+                return widget as T;
+            }
+        }
+    }
+
+    protected testPredicate(key: string, factoryId: string, predicate: (options?: any) => boolean): boolean {
+        const constructionOptions = this.fromKey(key);
+        return constructionOptions.factoryId === factoryId && predicate(constructionOptions.options);
+    }
+
     protected doGetWidget<T extends Widget>(key: string): MaybePromise<T> | undefined {
         const pendingWidget = this.widgets.get(key) ?? this.pendingWidgetPromises.get(key);
         if (pendingWidget) {
