@@ -119,19 +119,28 @@ describe('TypeScript', function () {
      */
     function waitForAnimation(condition, timeout, message) {
         const success = new Promise(async (resolve, reject) => {
+            if (timeout === undefined) {
+                timeout = 100000;
+            }
+
+            let timedOut = false;
+            const handle = setTimeout(() => {
+                console.log(message);
+                timedOut = true;
+            }, timeout);
+
             toTearDown.push({ dispose: () => reject(message ?? 'Test terminated before resolution.') });
             do {
                 await animationFrame();
-            } while (!condition());
-            resolve();
+            } while (!timedOut && !condition());
+            if (timedOut) {
+                reject(new Error(message ?? 'Wait for animation timed out.'));
+            } else {
+                clearTimeout(handle);
+                resolve(undefined);
+            }
+
         });
-        if (timeout !== undefined) {
-            const timedOut = new Promise((_, fail) => {
-                const toClear = setTimeout(() => fail(new Error(message ?? 'Wait for animation timed out.')), timeout);
-                toTearDown.push({ dispose: () => (fail(new Error(message ?? 'Wait for animation timed out.')), clearTimeout(toClear)) });
-            });
-            return Promise.race([success, timedOut]);
-        }
         return success;
     }
 
@@ -767,20 +776,6 @@ SPAN {
         assert.equal(editor.getControl().getModel().getLineLength(lineNumber), originalLength);
     });
 
-    for (const referenceViewCommand of ['references-view.find', 'references-view.findImplementations']) {
-        it(referenceViewCommand, async function () {
-            let steps = 0;
-            const editor = await openEditor(demoFileUri);
-            editor.getControl().setPosition({ lineNumber: 24, column: 11 });
-            assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'demoInstance');
-            await commands.executeCommand(referenceViewCommand);
-            const view = await pluginViewRegistry.openView('references-view.tree', { reveal: true });
-            const expectedMessage = referenceViewCommand === 'references-view.find' ? '2 results in 1 file' : '1 result in 1 file';
-            const getResultText = () => view.node.getElementsByClassName('theia-TreeViewInfo').item(0)?.textContent;
-            await waitForAnimation(() => getResultText() === expectedMessage, 5000);
-            assert.equal(getResultText(), expectedMessage);
-        });
-    }
 
     it('Can execute code actions', async function () {
         const editor = await openEditor(demoFileUri);
@@ -797,8 +792,16 @@ SPAN {
         await waitForAnimation(() => isActionAvailable(), 5000, 'No code action available. (1)');
         assert.isTrue(isActionAvailable());
 
+        try { // for some reason, we need to wait a second here, otherwise, we  run into some cancellation. 
+            await waitForAnimation(() => false, 1000);
+        } catch (e) {
+        }
+
         await commands.executeCommand('editor.action.quickFix');
-        await waitForAnimation(() => Boolean(document.querySelector('.action-widget')), 5000, 'No context menu appeared. (1)');
+        await waitForAnimation(() => {
+            const elements = document.querySelector('.action-widget');
+            return !!elements;
+        }, 5000, 'No context menu appeared. (1)');
         await animationFrame();
 
         keybindings.dispatchKeyDown('Enter');
@@ -840,4 +843,19 @@ SPAN {
         assert.isNotNull(editor.getControl().getModel());
         await waitForAnimation(() => editor.getControl().getModel().getLineContent(30) === 'import { DefinedInterface } from "./demo-definitions-file";', 5000, 'The named import did not take effect.');
     });
+
+    for (const referenceViewCommand of ['references-view.find', 'references-view.findImplementations']) {
+        it(referenceViewCommand, async function () {
+            let steps = 0;
+            const editor = await openEditor(demoFileUri);
+            editor.getControl().setPosition({ lineNumber: 24, column: 11 });
+            assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'demoInstance');
+            await commands.executeCommand(referenceViewCommand);
+            const view = await pluginViewRegistry.openView('references-view.tree', { reveal: true });
+            const expectedMessage = referenceViewCommand === 'references-view.find' ? '2 results in 1 file' : '1 result in 1 file';
+            const getResultText = () => view.node.getElementsByClassName('theia-TreeViewInfo').item(0)?.textContent;
+            await waitForAnimation(() => getResultText() === expectedMessage, 5000);
+            assert.equal(getResultText(), expectedMessage);
+        });
+    }
 });
