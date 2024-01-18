@@ -13,18 +13,23 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import {
     PLUGIN_RPC_CONTEXT as Ext, MessageRegistryMain, MainMessageOptions, MainMessageType
 } from '../common/plugin-api-rpc';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { MessageItem, MessageOptions } from '@theia/plugin';
 
+@injectable()
 export class MessageRegistryExt {
+    @inject(RPCProtocol)
+    protected readonly rpc: RPCProtocol;
 
     private proxy: MessageRegistryMain;
 
-    constructor(rpc: RPCProtocol) {
-        this.proxy = rpc.getProxy(Ext.MESSAGE_REGISTRY_MAIN);
+    @postConstruct()
+    initialize(): void {
+        this.proxy = this.rpc.getProxy(Ext.MESSAGE_REGISTRY_MAIN);
     }
 
     async showMessage(type: MainMessageType, message: string,

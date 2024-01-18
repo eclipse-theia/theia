@@ -13,6 +13,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
+import { Container } from '@theia/core/shared/inversify';
 import { DebugSession } from '@theia/plugin';
 import * as chai from 'chai';
 import { ProxyIdentifier, RPCProtocol } from '../../../common/rpc-protocol';
@@ -37,7 +38,10 @@ describe('Debug API', () => {
             }
         };
 
-        const debug = new DebugExtImpl(mockRPCProtocol);
+        const container = new Container();
+        container.bind(RPCProtocol).toConstantValue(mockRPCProtocol);
+        container.bind(DebugExtImpl).toSelf().inSingletonScope();
+        const debug = container.get(DebugExtImpl);
 
         it('should use sourceReference, path and sessionId', () => {
             const source = {

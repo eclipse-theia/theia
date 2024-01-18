@@ -14,73 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { NotificationExt, NotificationMain, MAIN_RPC_CONTEXT } from '../../common';
-import { ProgressService, Progress, ProgressMessage } from '@theia/core/lib/common';
+import { MAIN_RPC_CONTEXT } from '../../common';
 import { interfaces } from '@theia/core/shared/inversify';
 import { RPCProtocol } from '../../common/rpc-protocol';
-import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
+import { BasicNotificationMainImpl } from '../common/basic-notification-main';
 
-export class NotificationMainImpl implements NotificationMain, Disposable {
-    private readonly progressService: ProgressService;
-    private readonly progressMap = new Map<string, Progress>();
-    private readonly progress2Work = new Map<string, number>();
-    private readonly proxy: NotificationExt;
-
-    protected readonly toDispose = new DisposableCollection(
-        Disposable.create(() => { /* mark as not disposed */ })
-    );
-
+export class NotificationMainImpl extends BasicNotificationMainImpl {
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
-        this.progressService = container.get(ProgressService);
-        this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.NOTIFICATION_EXT);
-    }
-
-    dispose(): void {
-        this.toDispose.dispose();
-    }
-
-    async $startProgress(options: NotificationMain.StartProgressOptions): Promise<string> {
-        const onDidCancel = () => {
-            // If the map does not contain current id, it has already stopped and should not be cancelled
-            if (this.progressMap.has(id)) {
-                this.proxy.$acceptProgressCanceled(id);
-            }
-        };
-
-        const progressMessage = this.mapOptions(options);
-        const progress = await this.progressService.showProgress(progressMessage, onDidCancel);
-        const id = progress.id;
-        this.progressMap.set(id, progress);
-        this.progress2Work.set(id, 0);
-        if (this.toDispose.disposed) {
-            this.$stopProgress(id);
-        } else {
-            this.toDispose.push(Disposable.create(() => this.$stopProgress(id)));
-        }
-        return id;
-    }
-    protected mapOptions(options: NotificationMain.StartProgressOptions): ProgressMessage {
-        const { title, location, cancellable } = options;
-        return { text: title, options: { location, cancelable: cancellable } };
-    }
-
-    $stopProgress(id: string): void {
-        const progress = this.progressMap.get(id);
-
-        if (progress) {
-            this.progressMap.delete(id);
-            this.progress2Work.delete(id);
-            progress.cancel();
-        }
-    }
-
-    $updateProgress(id: string, item: NotificationMain.ProgressReport): void {
-        const progress = this.progressMap.get(id);
-        if (!progress) {
-            return;
-        }
-        const done = Math.min((this.progress2Work.get(id) || 0) + (item.increment || 0), 100);
-        this.progress2Work.set(id, done);
-        progress.report({ message: item.message, work: done ? { done, total: 100 } : undefined });
+        super(rpc, container, MAIN_RPC_CONTEXT.NOTIFICATION_EXT);
     }
 }

@@ -16,16 +16,16 @@
 
 import { ConnectionErrorHandler, ContributionProvider, ILogger, MessageService } from '@theia/core/lib/common';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { BinaryMessagePipe } from '@theia/core/lib/node/messaging/binary-message-pipe';
 import { createIpcEnv } from '@theia/core/lib/node/messaging/ipc-protocol';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as cp from 'child_process';
+import { Duplex } from 'stream';
+import { DeployedPlugin, HostedPluginClient, PLUGIN_HOST_BACKEND, PluginHostEnvironmentVariable, PluginIdentifiers, ServerPluginRunner } from '../../common/plugin-protocol';
 import { HostedPluginCliContribution } from './hosted-plugin-cli-contribution';
 import { HostedPluginLocalizationService } from './hosted-plugin-localization-service';
-import { ProcessTerminatedMessage, ProcessTerminateMessage } from './hosted-plugin-protocol';
-import { BinaryMessagePipe } from '@theia/core/lib/node/messaging/binary-message-pipe';
-import { DeployedPlugin, HostedPluginClient, PluginHostEnvironmentVariable, PluginIdentifiers, PLUGIN_HOST_BACKEND, ServerPluginRunner } from '../../common/plugin-protocol';
+import { ProcessTerminateMessage, ProcessTerminatedMessage } from './hosted-plugin-protocol';
 import psTree = require('ps-tree');
-import { Duplex } from 'stream';
 
 export interface IPCConnectionOptions {
     readonly serverName: string;

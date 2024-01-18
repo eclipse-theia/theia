@@ -20,7 +20,9 @@
     }
   },
   "dependencies": {
+    "@theia/api-provider-sample": "1.45.0",
     "@theia/api-samples": "1.45.0",
+    "@theia/plugin-ext-headless": "1.45.0",
     "@theia/bulk-edit": "1.45.0",
     "@theia/callhierarchy": "1.45.0",
     "@theia/console": "1.45.0",

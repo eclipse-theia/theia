@@ -21,6 +21,7 @@
 
 import * as paths from 'path';
 import * as theia from '@theia/plugin';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { Event, Emitter } from '@theia/core/lib/common/event';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import {
@@ -44,7 +45,17 @@ import * as Converter from './type-converters';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { isUndefinedOrNull, isUndefined } from '../common/types';
 
+@injectable()
 export class WorkspaceExtImpl implements WorkspaceExt {
+
+    @inject(RPCProtocol)
+    protected readonly rpc: RPCProtocol;
+
+    @inject(EditorsAndDocumentsExtImpl)
+    protected editorsAndDocuments: EditorsAndDocumentsExtImpl;
+
+    @inject(MessageRegistryExt)
+    protected messageService: MessageRegistryExt;
 
     private proxy: WorkspaceMain;
 
@@ -63,10 +74,9 @@ export class WorkspaceExtImpl implements WorkspaceExt {
 
     private canonicalUriProviders = new Map<string, theia.CanonicalUriProvider>();
 
-    constructor(rpc: RPCProtocol,
-        private editorsAndDocuments: EditorsAndDocumentsExtImpl,
-        private messageService: MessageRegistryExt) {
-        this.proxy = rpc.getProxy(Ext.WORKSPACE_MAIN);
+    @postConstruct()
+    initialize(): void {
+        this.proxy = this.rpc.getProxy(Ext.WORKSPACE_MAIN);
     }
 
     get rootPath(): string | undefined {

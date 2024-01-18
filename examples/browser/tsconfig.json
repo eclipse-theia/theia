@@ -1,6 +1,6 @@
 {
   "extends": "../../configs/base.tsconfig",
-  "include": [ ],
+  "include": [],
   "compilerOptions": {
     "composite": true
   },
@@ -81,6 +81,9 @@
       "path": "../../packages/plugin-ext"
     },
     {
+      "path": "../../packages/plugin-ext-headless"
+    },
+    {
       "path": "../../packages/plugin-ext-vscode"
     },
     {
@@ -142,6 +145,9 @@
     },
     {
       "path": "../../packages/workspace"
+    },
+    {
+      "path": "../api-provider-sample"
     },
     {
       "path": "../api-samples"

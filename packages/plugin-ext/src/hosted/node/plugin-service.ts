@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { injectable, inject, named, postConstruct } from '@theia/core/shared/inversify';
+import { injectable, inject, named, optional, postConstruct } from '@theia/core/shared/inversify';
 import { HostedPluginServer, HostedPluginClient, PluginDeployer, GetDeployedPluginsParams, DeployedPlugin, PluginIdentifiers } from '../../common/plugin-protocol';
 import { HostedPluginSupport } from './hosted-plugin';
 import { ILogger, Disposable, ContributionProvider, DisposableCollection } from '@theia/core';
@@ -22,6 +22,14 @@ import { HostedPluginDeployerHandler } from './hosted-plugin-deployer-handler';
 import { PluginDeployerImpl } from '../../main/node/plugin-deployer-impl';
 import { HostedPluginLocalizationService } from './hosted-plugin-localization-service';
 import { PluginUninstallationManager } from '../../main/node/plugin-uninstallation-manager';
+
+export const BackendPluginHostableFilter = Symbol('BackendPluginHostableFilter');
+/**
+ * A filter matching backend plugins that are hostable in my plugin host process.
+ * Only if at least one backend plugin is deployed that matches my filter will I
+ * start the host process.
+ */
+export type BackendPluginHostableFilter = (plugin: DeployedPlugin) => boolean;
 
 @injectable()
 export class HostedPluginServerImpl implements HostedPluginServer {
@@ -43,6 +51,10 @@ export class HostedPluginServerImpl implements HostedPluginServer {
 
     @inject(PluginUninstallationManager) protected readonly uninstallationManager: PluginUninstallationManager;
 
+    @inject(BackendPluginHostableFilter)
+    @optional()
+    protected backendPluginHostableFilter: BackendPluginHostableFilter;
+
     protected client: HostedPluginClient | undefined;
     protected toDispose = new DisposableCollection();
 
@@ -63,6 +75,10 @@ export class HostedPluginServerImpl implements HostedPluginServer {
 
     @postConstruct()
     protected init(): void {
+        if (!this.backendPluginHostableFilter) {
+            this.backendPluginHostableFilter = () => true;
+        }
+
         this.toDispose.pushAll([
             this.pluginDeployer.onDidDeploy(() => this.client?.onDidDeploy()),
             this.uninstallationManager.onDidChangeUninstalledPlugins(currentUninstalled => {
@@ -90,8 +106,9 @@ export class HostedPluginServerImpl implements HostedPluginServer {
     }
 
     async getDeployedPluginIds(): Promise<PluginIdentifiers.VersionedId[]> {
-        const backendMetadata = await this.deployerHandler.getDeployedBackendPluginIds();
-        if (backendMetadata.length > 0) {
+        const backendPlugins = (await this.deployerHandler.getDeployedBackendPlugins())
+            .filter(this.backendPluginHostableFilter);
+        if (backendPlugins.length > 0) {
             this.hostedPlugin.runPluginServer();
         }
         const plugins = new Set<PluginIdentifiers.VersionedId>();
@@ -103,7 +120,7 @@ export class HostedPluginServerImpl implements HostedPluginServer {
             }
         };
         addIds(await this.deployerHandler.getDeployedFrontendPluginIds());
-        addIds(backendMetadata);
+        addIds(await this.deployerHandler.getDeployedBackendPluginIds());
         addIds(await this.hostedPlugin.getExtraDeployedPluginIds());
         return Array.from(plugins);
     }

@@ -1,6 +1,6 @@
 {
   "extends": "./configs/base.tsconfig.json",
-  "include": [ ],
+  "include": [],
   "compilerOptions": {
     "composite": true,
     "allowJs": true
@@ -35,6 +35,9 @@
     },
     {
       "path": "dev-packages/request"
+    },
+    {
+      "path": "examples/api-provider-sample"
     },
     {
       "path": "examples/api-samples"
@@ -128,6 +131,9 @@
     },
     {
       "path": "packages/plugin-ext"
+    },
+    {
+      "path": "packages/plugin-ext-headless"
     },
     {
       "path": "packages/plugin-ext-vscode"

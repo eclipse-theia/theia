@@ -19,32 +19,65 @@ import { interfaces } from '@theia/core/shared/inversify';
 
 export const ExtPluginApiProvider = 'extPluginApi';
 /**
- * Provider for extension API description
+ * Provider for extension API description.
  */
 export interface ExtPluginApiProvider {
     /**
-     * Provide API description
+     * Provide API description.
      */
     provideApi(): ExtPluginApi;
 }
 
 /**
- * Plugin API extension description.
- * This interface describes scripts for both plugin runtimes: frontend(WebWorker) and backend(NodeJs)
+ * Provider for backend extension API description.
  */
-export interface ExtPluginApi {
+export interface ExtPluginBackendApiProvider {
+    /**
+     * Provide API description.
+     */
+    provideApi(): ExtPluginBackendApi;
+}
+
+/**
+ * Provider for frontend extension API description.
+ */
+export interface ExtPluginFrontendApiProvider {
+    /**
+     * Provide API description.
+     */
+    provideApi(): ExtPluginFrontendApi;
+}
+
+/**
+ * Backend Plugin API extension description.
+ * This interface describes a script for the backend(NodeJs) runtime.
+ */
+export interface ExtPluginBackendApi {
 
     /**
      * Path to the script which should be loaded to provide api, module should export `provideApi` function with
      * [ExtPluginApiBackendInitializationFn](#ExtPluginApiBackendInitializationFn) signature
      */
     backendInitPath?: string;
+}
+
+/**
+ * Frontend Plugin API extension description.
+ * This interface describes a script for the frontend(WebWorker) runtime.
+ */
+export interface ExtPluginFrontendApi {
 
     /**
      * Initialization information for frontend part of Plugin API
      */
     frontendExtApi?: FrontendExtPluginApi;
 }
+
+/**
+ * Plugin API extension description.
+ * This interface describes scripts for both plugin runtimes: frontend(WebWorker) and backend(NodeJs)
+ */
+export interface ExtPluginApi extends ExtPluginBackendApi, ExtPluginFrontendApi { }
 
 export interface ExtPluginApiFrontendInitializationFn {
     (rpc: RPCProtocol, plugins: Map<string, Plugin>): void;

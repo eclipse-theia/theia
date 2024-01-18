@@ -20,17 +20,37 @@
  *--------------------------------------------------------------------------------------------*/
 // code copied and modified from https://github.com/microsoft/vscode/blob/1.55.2/src/vs/workbench/api/common/extHostSecrets.ts
 
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { Plugin, PLUGIN_RPC_CONTEXT, SecretsExt, SecretsMain } from '../common/plugin-api-rpc';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { Event, Emitter } from '@theia/core/lib/common/event';
+import { Disposable, DisposableGroup } from '@theia/core';
 import * as theia from '@theia/plugin';
 
-export class SecretsExtImpl implements SecretsExt {
+export interface PasswordChange {
+    extensionId: string;
+    key: string;
+}
+
+export const InternalSecretsExt = Symbol('InternalSecretsExt');
+export interface InternalSecretsExt extends SecretsExt {
+    get(extensionId: string, key: string): Promise<string | undefined>;
+
+    store(extensionId: string, key: string, value: string): Promise<void>;
+
+    delete(extensionId: string, key: string): Promise<void>;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onDidChangePassword(listener: (e: PasswordChange) => any, thisArgs?: any, disposables?: DisposableGroup): Disposable;
+}
+
+@injectable()
+export class SecretsExtImpl implements InternalSecretsExt {
     private proxy: SecretsMain;
-    private onDidChangePasswordEmitter = new Emitter<{ extensionId: string, key: string }>();
+    private onDidChangePasswordEmitter = new Emitter<PasswordChange>();
     readonly onDidChangePassword = this.onDidChangePasswordEmitter.event;
 
-    constructor(rpc: RPCProtocol) {
+    constructor(@inject(RPCProtocol) rpc: RPCProtocol) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.SECRETS_MAIN);
     }
 
@@ -54,12 +74,12 @@ export class SecretsExtImpl implements SecretsExt {
 export class SecretStorageExt implements theia.SecretStorage {
 
     protected readonly id: string;
-    readonly secretState: SecretsExtImpl;
+    readonly secretState: InternalSecretsExt;
 
     private onDidChangeEmitter = new Emitter<theia.SecretStorageChangeEvent>();
     readonly onDidChange: Event<theia.SecretStorageChangeEvent> = this.onDidChangeEmitter.event;
 
-    constructor(pluginDescription: Plugin, secretState: SecretsExtImpl) {
+    constructor(pluginDescription: Plugin, secretState: InternalSecretsExt) {
         this.id = pluginDescription.model.id.toLowerCase();
         this.secretState = secretState;
 

@@ -108,6 +108,9 @@ export class HostedPluginReader implements BackendApplicationContribution {
         if (pluginMetadata.model.entryPoint.backend) {
             pluginMetadata.model.entryPoint.backend = path.resolve(plugin.packagePath, pluginMetadata.model.entryPoint.backend);
         }
+        if (pluginMetadata.model.entryPoint.headless) {
+            pluginMetadata.model.entryPoint.headless = path.resolve(plugin.packagePath, pluginMetadata.model.entryPoint.headless);
+        }
         if (pluginMetadata) {
             // Add post processor
             if (this.metadataProcessors) {

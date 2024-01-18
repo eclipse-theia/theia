@@ -15,7 +15,8 @@
 // *****************************************************************************
 
 import * as theia from '@theia/plugin';
-import { Event, Emitter } from '@theia/core/lib/common/event';
+import { inject, injectable } from '@theia/core/shared/inversify';
+import { Disposable, DisposableGroup, Event, Emitter } from '@theia/core';
 import { PLUGIN_RPC_CONTEXT, StorageMain, StorageExt } from '../common/plugin-api-rpc';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from '../common/types';
 import { RPCProtocol } from '../common/rpc-protocol';
@@ -27,7 +28,7 @@ export class Memento implements theia.Memento {
     constructor(
         private readonly pluginId: string,
         private readonly isPluginGlobalData: boolean,
-        private readonly storage: KeyValueStorageProxy
+        private readonly storage: InternalStorageExt
     ) {
         this.cache = storage.getPerPluginData(pluginId, isPluginGlobalData);
 
@@ -69,11 +70,28 @@ export class GlobalState extends Memento {
     setKeysForSync(keys: readonly string[]): void { }
 }
 
+export const InternalStorageExt = Symbol('InternalStorageExt');
+export interface InternalStorageExt extends StorageExt {
+
+    init(initGlobalData: KeysToKeysToAnyValue, initWorkspaceData: KeysToKeysToAnyValue): void;
+
+    getPerPluginData(key: string, isGlobal: boolean): KeysToAnyValues;
+
+    setPerPluginData(key: string, value: KeysToAnyValues, isGlobal: boolean): Promise<boolean>;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    storageDataChangedEvent(listener: (e: KeysToKeysToAnyValue) => any, thisArgs?: any, disposables?: DisposableGroup): Disposable;
+
+    $updatePluginsWorkspaceData(workspaceData: KeysToKeysToAnyValue): void;
+
+}
+
 /**
  * Singleton.
  * Is used to proxy storage requests to main side.
  */
-export class KeyValueStorageProxy implements StorageExt {
+@injectable()
+export class KeyValueStorageProxy implements InternalStorageExt {
 
     private storageDataChangedEmitter = new Emitter<KeysToKeysToAnyValue>();
     public readonly storageDataChangedEvent: Event<KeysToKeysToAnyValue> = this.storageDataChangedEmitter.event;
@@ -83,7 +101,7 @@ export class KeyValueStorageProxy implements StorageExt {
     private globalDataCache: KeysToKeysToAnyValue;
     private workspaceDataCache: KeysToKeysToAnyValue;
 
-    constructor(rpc: RPCProtocol) {
+    constructor(@inject(RPCProtocol) rpc: RPCProtocol) {
         this.proxy = rpc.getProxy<StorageMain>(PLUGIN_RPC_CONTEXT.STORAGE_MAIN);
     }
 

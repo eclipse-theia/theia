@@ -15,15 +15,21 @@
 // *****************************************************************************
 
 import * as theia from '@theia/plugin';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { PLUGIN_RPC_CONTEXT, ClipboardMain } from '../common';
 
+@injectable()
 export class ClipboardExt implements theia.Clipboard {
 
-    protected readonly proxy: ClipboardMain;
+    @inject(RPCProtocol)
+    protected readonly rpc: RPCProtocol;
 
-    constructor(rpc: RPCProtocol) {
-        this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.CLIPBOARD_MAIN);
+    protected proxy: ClipboardMain;
+
+    @postConstruct()
+    initialize(): void {
+        this.proxy = this.rpc.getProxy(PLUGIN_RPC_CONTEXT.CLIPBOARD_MAIN);
     }
 
     readText(): Promise<string> {

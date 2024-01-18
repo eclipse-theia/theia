@@ -39,7 +39,7 @@ export interface MessageConnection {
     onMessage: Event<string>;
 }
 
-export const RPCProtocol = Symbol('RPCProtocol');
+export const RPCProtocol = Symbol.for('RPCProtocol');
 export interface RPCProtocol extends Disposable {
     /**
      * Returns a proxy to an object addressable/named in the plugin process or in the main process.

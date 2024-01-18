@@ -62,7 +62,9 @@ import {
     Translation,
     PluginIdentifiers,
     TerminalProfile,
-    PluginIconContribution
+    PluginIconContribution,
+    PluginEntryPoint,
+    PluginPackageContribution
 } from '../../../common/plugin-protocol';
 import { promises as fs } from 'fs';
 import * as path from 'path';
@@ -87,16 +89,18 @@ function getFileExtension(filePath: string): string {
     return index === -1 ? '' : filePath.substring(index + 1);
 }
 
-@injectable()
-export class TheiaPluginScanner implements PluginScanner {
+type PluginPackageWithContributes = PluginPackage & { contributes: PluginPackageContribution };
 
-    private readonly _apiType: PluginEngine = 'theiaPlugin';
+@injectable()
+export abstract class AbstractPluginScanner implements PluginScanner {
 
     @inject(GrammarsReader)
-    private readonly grammarsReader: GrammarsReader;
+    protected readonly grammarsReader: GrammarsReader;
 
     @inject(PluginUriFactory)
     protected readonly pluginUriFactory: PluginUriFactory;
+
+    constructor(private readonly _apiType: PluginEngine, private readonly _backendInitPath?: string) { }
 
     get apiType(): PluginEngine {
         return this._apiType;
@@ -119,22 +123,25 @@ export class TheiaPluginScanner implements PluginScanner {
                 type: this._apiType,
                 version: plugin.engines[this._apiType]
             },
-            entryPoint: {
-                frontend: plugin.theiaPlugin!.frontend,
-                backend: plugin.theiaPlugin!.backend
-            }
+            entryPoint: this.getEntryPoint(plugin)
         };
         return result;
     }
 
+    protected abstract getEntryPoint(plugin: PluginPackage): PluginEntryPoint;
+
     getLifecycle(plugin: PluginPackage): PluginLifecycle {
-        return {
+        const result: PluginLifecycle = {
             startMethod: 'start',
             stopMethod: 'stop',
             frontendModuleName: buildFrontendModuleName(plugin),
-
-            backendInitPath: path.join(__dirname, 'backend-init-theia')
         };
+
+        if (this._backendInitPath) {
+            result.backendInitPath = path.join(__dirname, this._backendInitPath);
+        }
+
+        return result;
     }
 
     getDependencies(rawPlugin: PluginPackage): Map<string, string> | undefined {
@@ -155,6 +162,33 @@ export class TheiaPluginScanner implements PluginScanner {
             return contributions;
         }
 
+        return this.readContributions(rawPlugin as PluginPackageWithContributes, contributions);
+    }
+
+    protected async readContributions(rawPlugin: PluginPackageWithContributes, contributions: PluginContribution): Promise<PluginContribution> {
+        return contributions;
+    }
+
+}
+
+@injectable()
+export class TheiaPluginScanner extends AbstractPluginScanner {
+    constructor() {
+        super('theiaPlugin', 'backend-init-theia');
+    }
+
+    protected getEntryPoint(plugin: PluginPackage): PluginEntryPoint {
+        const result: PluginEntryPoint = {
+            frontend: plugin.theiaPlugin!.frontend,
+            backend: plugin.theiaPlugin!.backend
+        };
+        if (plugin.theiaPlugin?.headless) {
+            result.headless = plugin.theiaPlugin.headless;
+        }
+        return result;
+    }
+
+    protected override async readContributions(rawPlugin: PluginPackageWithContributes, contributions: PluginContribution): Promise<PluginContribution> {
         try {
             if (rawPlugin.contributes.configuration) {
                 const configurations = Array.isArray(rawPlugin.contributes.configuration) ? rawPlugin.contributes.configuration : [rawPlugin.contributes.configuration];

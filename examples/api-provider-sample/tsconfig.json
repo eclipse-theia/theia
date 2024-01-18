@@ -1,0 +1,22 @@
+{
+  "extends": "../../configs/base.tsconfig",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "lib"
+  },
+  "include": [
+    "src"
+  ],
+  "references": [
+    {
+      "path": "../../packages/core"
+    },
+    {
+      "path": "../../packages/plugin-ext"
+    },
+    {
+      "path": "../../packages/plugin-ext-headless"
+    }
+  ]
+}

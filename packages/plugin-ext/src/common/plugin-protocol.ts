@@ -31,7 +31,7 @@ export { PluginIdentifiers };
 export const hostedServicePath = '/services/hostedPlugin';
 
 /**
- * Plugin engine (API) type, i.e. 'theiaPlugin', 'vscode', etc.
+ * Plugin engine (API) type, i.e. 'theiaPlugin', 'vscode', 'theiaHeadlessPlugin', etc.
  */
 export type PluginEngine = string;
 
@@ -49,6 +49,8 @@ export interface PluginPackage {
     theiaPlugin?: {
         frontend?: string;
         backend?: string;
+        /* Requires the `@theia/plugin-ext-headless` extension. */
+        headless?: string;
     };
     main?: string;
     browser?: string;
@@ -445,7 +447,9 @@ export enum PluginDeployerEntryType {
 
     FRONTEND,
 
-    BACKEND
+    BACKEND,
+
+    HEADLESS // Deployed in the Theia Node server outside the context of a frontend/backend connection
 }
 
 /**
@@ -571,6 +575,7 @@ export interface PluginModel {
 export interface PluginEntryPoint {
     frontend?: string;
     backend?: string;
+    headless?: string;
 }
 
 /**
