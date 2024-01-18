@@ -14,9 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { ApplicationShell, FocusTracker, Widget } from '@theia/core/lib/browser';
+import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { CustomEditorWidget } from '../custom-editors/custom-editor-widget';
 import { WebviewWidget } from './webview';
 
 @injectable()
@@ -27,6 +28,11 @@ export class WebviewContextKeys {
      */
     activeWebviewPanelId: ContextKey<string>;
 
+    /**
+     * Context key representing the `viewType` of the active `CustomEditorWidget`, if any.
+     */
+    activeCustomEditorId: ContextKey<string>;
+
     @inject(ApplicationShell)
     protected applicationShell: ApplicationShell;
 
@@ -36,12 +42,19 @@ export class WebviewContextKeys {
     @postConstruct()
     protected init(): void {
         this.activeWebviewPanelId = this.contextKeyService.createKey('activeWebviewPanelId', '');
+        this.activeCustomEditorId = this.contextKeyService.createKey('activeCustomEditorId', '');
         this.applicationShell.onDidChangeCurrentWidget(this.handleDidChangeCurrentWidget, this);
     }
 
     protected handleDidChangeCurrentWidget(change: FocusTracker.IChangedArgs<Widget>): void {
-        if (change.newValue instanceof WebviewWidget) {
-            this.activeWebviewPanelId.set(change.newValue.viewType);
+        const { newValue } = change;
+        if (newValue instanceof CustomEditorWidget) {
+            this.activeCustomEditorId.set(newValue.viewType);
+        } else {
+            this.activeCustomEditorId.set('');
+        }
+        if (newValue instanceof WebviewWidget) {
+            this.activeWebviewPanelId.set(newValue.viewType);
         } else {
             this.activeWebviewPanelId.set('');
         }
