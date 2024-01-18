@@ -85,7 +85,7 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
     protected rpc: RPCProtocol;
 
     @inject(WorkspaceExtImpl)
-    protected readonly workspace: WorkspaceExtImpl
+    protected readonly workspace: WorkspaceExtImpl;
 
     private proxy: PreferenceRegistryMain;
     private _preferences: Configuration;

@@ -37,7 +37,7 @@ export default new ContainerModule(bind => {
     bind(RPCProtocol).toConstantValue(new RPCProtocolImpl(channel));
 
     bind(PluginContainerModuleLoader).toDynamicValue(({ container }) =>
-         (module: ContainerModule) => {
+        (module: ContainerModule) => {
             container.load(module);
             const internalModule = module as InternalPluginContainerModule;
             const pluginApiCache = internalModule.initializeApi?.(container);
