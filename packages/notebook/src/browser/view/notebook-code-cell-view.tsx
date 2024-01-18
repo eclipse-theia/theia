@@ -29,7 +29,6 @@ import { CellExecution, NotebookExecutionStateService } from '../service/noteboo
 import { codicon } from '@theia/core/lib/browser';
 import { NotebookCellExecutionState } from '../../common';
 import { DisposableCollection } from '@theia/core';
-import { isThenable } from '@theia/core/lib/common/promise-util';
 
 @injectable()
 export class NotebookCodeCellRenderer implements CellRenderer {
@@ -196,7 +195,7 @@ export class NotebookCodeCellOutputs extends React.Component<NotebookCellOutputP
     }
 
     override render(): React.ReactNode {
-        return this.outputsWebview && !isThenable(this.outputsWebview) ?
+        return this.outputsWebview ?
             <>
                 {this.props.renderSidebar()}
                 {this.outputsWebview.render()}
