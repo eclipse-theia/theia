@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, interfaces, postConstruct, inject } from '@theia/core/shared/inversify';
-import { TreeModel, TreeNode } from '@theia/core/lib/browser';
+import { Message, TreeModel, TreeNode } from '@theia/core/lib/browser';
 import { SourceTreeWidget } from '@theia/core/lib/browser/source-tree';
 import { VSXExtensionsSource, VSXExtensionsSourceOptions } from './vsx-extensions-source';
 import { nls } from '@theia/core/lib/common/nls';
@@ -152,5 +152,14 @@ export class VSXExtensionsWidget extends SourceTreeWidget implements BadgeWidget
             }
         }
         return super.renderTree(model);
+    }
+
+    protected override onAfterShow(msg: Message): void {
+        super.onAfterShow(msg);
+        if (this.options.id === VSXExtensionsSourceOptions.INSTALLED) {
+            // This is needed when an Extension was installed outside of the extension view.
+            // E.g. using explorer context menu.
+            this.doUpdateRows();
+        }
     }
 }
