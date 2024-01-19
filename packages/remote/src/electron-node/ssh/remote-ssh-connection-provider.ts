@@ -86,13 +86,14 @@ export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvi
         const deferred = new Deferred<RemoteSSHConnection>();
         const sshClient = new ssh2.Client();
         const identityFiles = await this.identityFileCollector.gatherIdentityFiles();
-        const sshAuthHandler = this.getAuthHandler(user, host, identityFiles);
+        const hostUrl = new URL(`ssh://${host}`);
+        const sshAuthHandler = this.getAuthHandler(user, hostUrl.hostname, identityFiles);
         sshClient
             .on('ready', async () => {
                 const connection = new RemoteSSHConnection({
                     client: sshClient,
                     id: v4(),
-                    name: host,
+                    name: hostUrl.hostname,
                     type: 'SSH'
                 });
                 try {
@@ -102,11 +103,12 @@ export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvi
                     deferred.reject(err);
                 }
             }).on('end', () => {
-                console.log(`Ended remote connection to host '${user}@${host}'`);
+                console.log(`Ended remote connection to host '${user}@${hostUrl.hostname}'`);
             }).on('error', err => {
                 deferred.reject(err);
             }).connect({
-                host: host,
+                host: hostUrl.hostname,
+                port: hostUrl.port ? parseInt(hostUrl.port, 10) : undefined,
                 username: user,
                 authHandler: (methodsLeft, successes, callback) => (sshAuthHandler(methodsLeft, successes, callback), undefined)
             });
