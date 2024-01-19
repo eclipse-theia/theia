@@ -51,6 +51,10 @@ export class VsCodePluginScanner extends TheiaPluginScanner implements PluginSca
             // Default to using backend
             entryPoint.backend = plugin.main;
         }
+        if (plugin.theiaPlugin?.headless) {
+            // Support the Theia-specific extension for headless plugins
+            entryPoint.headless = plugin.theiaPlugin?.headless;
+        }
 
         const result: PluginModel = {
             packagePath: plugin.packagePath,

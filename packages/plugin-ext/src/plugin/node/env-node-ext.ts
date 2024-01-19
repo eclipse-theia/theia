@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { injectable } from '@theia/core/shared/inversify';
 import * as mac from 'macaddress';
 import { EnvExtImpl } from '../env';
-import { RPCProtocol } from '../../common/rpc-protocol';
 import { createHash } from 'crypto';
 import { v4 } from 'uuid';
 import fs = require('fs');
@@ -25,13 +25,15 @@ import fs = require('fs');
  * Provides machineId using mac address. It's only possible on node side
  * Extending the common class
  */
+@injectable()
 export class EnvNodeExtImpl extends EnvExtImpl {
 
     private macMachineId: string;
     private _isNewAppInstall: boolean;
 
-    constructor(rpc: RPCProtocol) {
-        super(rpc);
+    constructor() {
+        super();
+
         mac.one((err, macAddress) => {
             if (err) {
                 this.macMachineId = v4();

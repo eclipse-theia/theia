@@ -21,7 +21,7 @@ import { CliContribution } from '@theia/core/lib/node/cli';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
 import { MetadataScanner } from './metadata-scanner';
-import { HostedPluginServerImpl } from './plugin-service';
+import { BackendPluginHostableFilter, HostedPluginServerImpl } from './plugin-service';
 import { HostedPluginReader } from './plugin-reader';
 import { HostedPluginSupport } from './hosted-plugin';
 import { TheiaPluginScanner } from './scanners/scanner-theia';
@@ -38,6 +38,7 @@ import { LanguagePackService, languagePackServicePath } from '../../common/langu
 import { PluginLanguagePackService } from './plugin-language-pack-service';
 import { RpcConnectionHandler } from '@theia/core/lib/common/messaging/proxy-factory';
 import { ConnectionHandler } from '@theia/core/lib/common/messaging/handler';
+import { isConnectionScopedBackendPlugin } from '../common/hosted-plugin';
 
 const commonHostedConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {
     bind(HostedPluginProcess).toSelf().inSingletonScope();
@@ -48,6 +49,7 @@ const commonHostedConnectionModule = ConnectionContainerModule.create(({ bind, b
 
     bind(HostedPluginServerImpl).toSelf().inSingletonScope();
     bind(HostedPluginServer).toService(HostedPluginServerImpl);
+    bind(BackendPluginHostableFilter).toConstantValue(isConnectionScopedBackendPlugin);
     bindBackendService<HostedPluginServer, HostedPluginClient>(hostedServicePath, HostedPluginServer, (server, client) => {
         server.setClient(client);
         client.onDidCloseConnection(() => server.dispose());

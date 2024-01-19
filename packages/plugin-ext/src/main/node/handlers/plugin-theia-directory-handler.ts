@@ -28,7 +28,7 @@ import { PluginCliContribution } from '../plugin-cli-contribution';
 import { getTempDirPathAsync } from '../temp-dir-util';
 
 @injectable()
-export class PluginTheiaDirectoryHandler implements PluginDeployerDirectoryHandler {
+export abstract class AbstractPluginDirectoryHandler implements PluginDeployerDirectoryHandler {
 
     protected readonly deploymentDirectory: Deferred<URI>;
 
@@ -42,15 +42,20 @@ export class PluginTheiaDirectoryHandler implements PluginDeployerDirectoryHandl
 
     async accept(resolvedPlugin: PluginDeployerEntry): Promise<boolean> {
 
-        console.debug('PluginTheiaDirectoryHandler: accepting plugin with path', resolvedPlugin.path());
+        console.debug(`Plugin directory handler: accepting plugin with path ${resolvedPlugin.path()}`);
 
         // handle only directories
         if (await resolvedPlugin.isFile()) {
             return false;
         }
 
+        // Was this directory unpacked from an NPM tarball?
+        const wasTarball = resolvedPlugin.originalPath().endsWith('.tgz');
+        const rootPath = resolvedPlugin.path();
+        const basePath = wasTarball ? path.resolve(rootPath, 'package') : rootPath;
+
         // is there a package.json ?
-        const packageJsonPath = path.resolve(resolvedPlugin.path(), 'package.json');
+        const packageJsonPath = path.resolve(basePath, 'package.json');
 
         try {
             let packageJson = resolvedPlugin.getValue<PluginPackage>('package.json');
@@ -60,26 +65,20 @@ export class PluginTheiaDirectoryHandler implements PluginDeployerDirectoryHandl
                 resolvedPlugin.storeValue('package.json', packageJson);
             }
 
-            if (packageJson?.engines?.theiaPlugin) {
+            if (this.acceptManifest(packageJson)) {
+                if (wasTarball) {
+                    resolvedPlugin.updatePath(basePath);
+                    resolvedPlugin.rootPath = rootPath;
+                }
                 return true;
             }
         } catch { /* Failed to read file. Fall through. */ }
         return false;
     }
 
-    async handle(context: PluginDeployerDirectoryHandlerContext): Promise<void> {
-        await this.copyDirectory(context);
-        const types: PluginDeployerEntryType[] = [];
-        const packageJson = context.pluginEntry().getValue<PluginPackage>('package.json');
-        if (packageJson.theiaPlugin && packageJson.theiaPlugin.backend) {
-            types.push(PluginDeployerEntryType.BACKEND);
-        }
-        if (packageJson.theiaPlugin && packageJson.theiaPlugin.frontend) {
-            types.push(PluginDeployerEntryType.FRONTEND);
-        }
+    protected abstract acceptManifest(plugin: PluginPackage): boolean;
 
-        context.pluginEntry().accept(...types);
-    }
+    abstract handle(context: PluginDeployerDirectoryHandlerContext): Promise<void>;
 
     protected async copyDirectory(context: PluginDeployerDirectoryHandlerContext): Promise<void> {
         if (this.pluginCli.copyUncompressedPlugins() && context.pluginEntry().type === PluginType.User) {
@@ -111,5 +110,28 @@ export class PluginTheiaDirectoryHandler implements PluginDeployerDirectoryHandl
     protected async getExtensionDir(context: PluginDeployerDirectoryHandlerContext): Promise<string> {
         const deploymentDirectory = await this.deploymentDirectory.promise;
         return FileUri.fsPath(deploymentDirectory.resolve(filenamify(context.pluginEntry().id(), { replacement: '_' })));
+    }
+
+}
+
+@injectable()
+export class PluginTheiaDirectoryHandler extends AbstractPluginDirectoryHandler {
+
+    protected acceptManifest(plugin: PluginPackage): boolean {
+        return plugin?.engines?.theiaPlugin !== undefined;
+    }
+
+    async handle(context: PluginDeployerDirectoryHandlerContext): Promise<void> {
+        await this.copyDirectory(context);
+        const types: PluginDeployerEntryType[] = [];
+        const packageJson = context.pluginEntry().getValue<PluginPackage>('package.json');
+        if (packageJson.theiaPlugin && packageJson.theiaPlugin.backend) {
+            types.push(PluginDeployerEntryType.BACKEND);
+        }
+        if (packageJson.theiaPlugin && packageJson.theiaPlugin.frontend) {
+            types.push(PluginDeployerEntryType.FRONTEND);
+        }
+
+        context.pluginEntry().accept(...types);
     }
 }

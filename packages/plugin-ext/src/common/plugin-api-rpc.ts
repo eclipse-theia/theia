@@ -172,6 +172,7 @@ export interface PluginAPI {
 
 }
 
+export const PluginManager = Symbol.for('PluginManager');
 export interface PluginManager {
     getAllPlugins(): Plugin[];
     getPluginById(pluginId: string): Plugin | undefined;
@@ -243,10 +244,9 @@ export interface PluginManagerStartParams {
     activationEvents: string[]
 }
 
-export interface PluginManagerExt {
-
+export interface AbstractPluginManagerExt<P extends Record<string, any>> {
     /** initialize the manager, should be called only once */
-    $init(params: PluginManagerInitializeParams): Promise<void>;
+    $init(params: P): Promise<void>;
 
     /** load and activate plugins */
     $start(params: PluginManagerStartParams): Promise<void>;
@@ -263,6 +263,8 @@ export interface PluginManagerExt {
 
     $activatePlugin(id: string): Promise<void>;
 }
+
+export interface PluginManagerExt extends AbstractPluginManagerExt<PluginManagerInitializeParams> { }
 
 export interface CommandRegistryMain {
     $registerCommand(command: theia.CommandDescription): void;
@@ -2651,6 +2653,7 @@ export interface IdentifiableInlineCompletion extends InlineCompletion {
     idx: number;
 }
 
+export const LocalizationExt = Symbol('LocalizationExt');
 export interface LocalizationExt {
     translateMessage(pluginId: string, details: StringDetails): string;
     getBundle(pluginId: string): Record<string, string> | undefined;

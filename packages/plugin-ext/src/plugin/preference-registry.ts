@@ -16,6 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { isOSX, isWindows } from '@theia/core/lib/common/os';
 import { URI } from '@theia/core/shared/vscode-uri';
@@ -78,18 +79,23 @@ export class TheiaWorkspace extends Workspace {
     }
 }
 
+@injectable()
 export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
+    @inject(RPCProtocol)
+    protected rpc: RPCProtocol;
+
+    @inject(WorkspaceExtImpl)
+    protected readonly workspace: WorkspaceExtImpl;
+
     private proxy: PreferenceRegistryMain;
     private _preferences: Configuration;
     private readonly _onDidChangeConfiguration = new Emitter<theia.ConfigurationChangeEvent>();
 
     readonly onDidChangeConfiguration: Event<theia.ConfigurationChangeEvent> = this._onDidChangeConfiguration.event;
 
-    constructor(
-        rpc: RPCProtocol,
-        private readonly workspace: WorkspaceExtImpl
-    ) {
-        this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.PREFERENCE_REGISTRY_MAIN);
+    @postConstruct()
+    initialize(): void {
+        this.proxy = this.rpc.getProxy(PLUGIN_RPC_CONTEXT.PREFERENCE_REGISTRY_MAIN);
     }
 
     init(data: PreferenceData): void {

@@ -14,17 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { injectable } from '@theia/core/shared/inversify';
 import { EnvExtImpl } from '../../../plugin/env';
-import { RPCProtocol } from '../../../common/rpc-protocol';
 
 /**
  * Worker specific implementation not returning any FileSystem details
  * Extending the common class
  */
+@injectable()
 export class WorkerEnvExtImpl extends EnvExtImpl {
 
-    constructor(rpc: RPCProtocol) {
-        super(rpc);
+    constructor() {
+        super();
     }
 
     /**

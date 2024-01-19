@@ -271,20 +271,24 @@ export class PluginDeployerImpl implements PluginDeployer {
         const acceptedPlugins = pluginsToDeploy.filter(pluginDeployerEntry => pluginDeployerEntry.isAccepted());
         const acceptedFrontendPlugins = pluginsToDeploy.filter(pluginDeployerEntry => pluginDeployerEntry.isAccepted(PluginDeployerEntryType.FRONTEND));
         const acceptedBackendPlugins = pluginsToDeploy.filter(pluginDeployerEntry => pluginDeployerEntry.isAccepted(PluginDeployerEntryType.BACKEND));
+        const acceptedHeadlessPlugins = pluginsToDeploy.filter(pluginDeployerEntry => pluginDeployerEntry.isAccepted(PluginDeployerEntryType.HEADLESS));
 
         this.logger.debug('the accepted plugins are', acceptedPlugins);
         this.logger.debug('the acceptedFrontendPlugins plugins are', acceptedFrontendPlugins);
         this.logger.debug('the acceptedBackendPlugins plugins are', acceptedBackendPlugins);
+        this.logger.debug('the acceptedHeadlessPlugins plugins are', acceptedHeadlessPlugins);
 
         acceptedPlugins.forEach(plugin => {
             this.logger.debug('will deploy plugin', plugin.id(), 'with changes', JSON.stringify(plugin.getChanges()), 'and this plugin has been resolved by', plugin.resolvedBy());
         });
 
         // local path to launch
-        const pluginPaths = acceptedBackendPlugins.map(pluginEntry => pluginEntry.path());
+        const pluginPaths = [...acceptedBackendPlugins, ...acceptedHeadlessPlugins].map(pluginEntry => pluginEntry.path());
         this.logger.debug('local path to deploy on remote instance', pluginPaths);
 
         const deployments = await Promise.all([
+            // headless plugins are deployed like backend plugins
+            this.pluginDeployerHandler.deployBackendPlugins(acceptedHeadlessPlugins),
             // start the backend plugins
             this.pluginDeployerHandler.deployBackendPlugins(acceptedBackendPlugins),
             this.pluginDeployerHandler.deployFrontendPlugins(acceptedFrontendPlugins)

@@ -13,6 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { Emitter } from '@theia/core/lib/common/event';
 import { Path } from '@theia/core/lib/common/path';
 import * as theia from '@theia/plugin';
@@ -43,7 +44,11 @@ interface ConfigurationProviderRecord {
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+@injectable()
 export class DebugExtImpl implements DebugExt {
+    @inject(RPCProtocol)
+    protected readonly rpc: RPCProtocol;
+
     // debug sessions by sessionId
     private sessions = new Map<string, PluginDebugAdapterSession>();
     private configurationProviderHandleGenerator: number;
@@ -83,14 +88,18 @@ export class DebugExtImpl implements DebugExt {
         return [...this._breakpoints.values()];
     }
 
-    constructor(rpc: RPCProtocol) {
-        this.proxy = rpc.getProxy(Ext.DEBUG_MAIN);
+    constructor() {
         this.activeDebugConsole = {
             append: (value: string) => this.proxy.$appendToDebugConsole(value),
             appendLine: (value: string) => this.proxy.$appendLineToDebugConsole(value)
         };
         this.configurationProviderHandleGenerator = 0;
         this.configurationProviders = [];
+    }
+
+    @postConstruct()
+    initialize(): void {
+        this.proxy = this.rpc.getProxy(Ext.DEBUG_MAIN);
     }
 
     /**

@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { v4 } from 'uuid';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { Plugin, WebviewsExt, WebviewPanelViewState, WebviewsMain, PLUGIN_RPC_CONTEXT, WebviewInitData, /* WebviewsMain, PLUGIN_RPC_CONTEXT  */ } from '../common/plugin-api-rpc';
 import * as theia from '@theia/plugin';
 import { RPCProtocol } from '../common/rpc-protocol';
@@ -25,8 +26,15 @@ import { WorkspaceExtImpl } from './workspace';
 import { PluginIconPath } from './plugin-icon-path';
 import { hashValue } from '@theia/core/lib/common/uuid';
 
+@injectable()
 export class WebviewsExtImpl implements WebviewsExt {
-    private readonly proxy: WebviewsMain;
+    @inject(RPCProtocol)
+    protected readonly rpc: RPCProtocol;
+
+    @inject(WorkspaceExtImpl)
+    protected readonly workspace: WorkspaceExtImpl;
+
+    private proxy: WebviewsMain;
     private readonly webviewPanels = new Map<string, WebviewPanelImpl>();
     private readonly webviews = new Map<string, WebviewImpl>();
     private readonly serializers = new Map<string, {
@@ -38,11 +46,9 @@ export class WebviewsExtImpl implements WebviewsExt {
     readonly onDidDisposeEmitter = new Emitter<void>();
     readonly onDidDispose: Event<void> = this.onDidDisposeEmitter.event;
 
-    constructor(
-        rpc: RPCProtocol,
-        private readonly workspace: WorkspaceExtImpl,
-    ) {
-        this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.WEBVIEWS_MAIN);
+    @postConstruct()
+    initialize(): void {
+        this.proxy = this.rpc.getProxy(PLUGIN_RPC_CONTEXT.WEBVIEWS_MAIN);
     }
 
     init(initData: WebviewInitData): void {

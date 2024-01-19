@@ -15,26 +15,21 @@
 // *****************************************************************************
 
 import { interfaces } from '@theia/core/shared/inversify';
-import { MessageService } from '@theia/core/lib/common/message-service';
-import { MessageRegistryMain, MainMessageType, MainMessageOptions, MainMessageItem } from '../../common/plugin-api-rpc';
+import { MainMessageType, MainMessageOptions, MainMessageItem } from '../../common/plugin-api-rpc';
 import { ModalNotification, MessageType } from './dialogs/modal-notification';
+import { BasicMessageRegistryMainImpl } from '../common/basic-message-registry-main';
 
-export class MessageRegistryMainImpl implements MessageRegistryMain {
-    private readonly messageService: MessageService;
-
+/**
+ * Message registry implementation that adds support for the model option via dialog in the browser.
+ */
+export class MessageRegistryMainImpl extends BasicMessageRegistryMainImpl {
     constructor(container: interfaces.Container) {
-        this.messageService = container.get(MessageService);
+        super(container);
     }
 
-    async $showMessage(type: MainMessageType, message: string, options: MainMessageOptions, actions: MainMessageItem[]): Promise<number | undefined> {
-        const action = await this.doShowMessage(type, message, options, actions);
-        const handle = action
-            ? actions.map(a => a.title).indexOf(action)
-            : undefined;
-        return handle === undefined && options.modal ? options.onCloseActionHandle : handle;
-    }
+    protected override async doShowMessage(type: MainMessageType, message: string,
+        options: MainMessageOptions, actions: MainMessageItem[]): Promise<string | undefined> {
 
-    protected async doShowMessage(type: MainMessageType, message: string, options: MainMessageOptions, actions: MainMessageItem[]): Promise<string | undefined> {
         if (options.modal) {
             const messageType = type === MainMessageType.Error ? MessageType.Error :
                 type === MainMessageType.Warning ? MessageType.Warning :
@@ -42,15 +37,7 @@ export class MessageRegistryMainImpl implements MessageRegistryMain {
             const modalNotification = new ModalNotification();
             return modalNotification.showDialog(messageType, message, options, actions);
         }
-        switch (type) {
-            case MainMessageType.Info:
-                return this.messageService.info(message, ...actions.map(a => a.title));
-            case MainMessageType.Warning:
-                return this.messageService.warn(message, ...actions.map(a => a.title));
-            case MainMessageType.Error:
-                return this.messageService.error(message, ...actions.map(a => a.title));
-        }
-        throw new Error(`Message type '${type}' is not supported yet!`);
+        return super.doShowMessage(type, message, options, actions);
     }
 
 }
