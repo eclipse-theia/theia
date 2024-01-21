@@ -6,12 +6,16 @@ In the following, we focus on the mechanics of Theia plugins and Theia’s compa
 This documentation aims to support developers extending Theia’s plugin API to either enhance the extensibility of Theia via plugins and/or increase Theia’s coverage of the VS Code Extension API – and with that the number of VS Code extensions that can be used in Theia.
 
 Theia plugins, as well as VS Code extensions, can be installed and removed from a Theia installation at runtime and may extend many different capabilities of Theia, such as theming, language support, debuggers, tree views, etc., via a clearly defined API.
+A special category of "headless" plugins addresses more application-specific extension points, not intended to extend Theia's out-of-the-box capabilities.
+For the most part, the discussion in this document of the plugin API does not apply to these plugins but only to VS Code compatible plugins.
+More information about headless plugins [is detailed below](#headless-plugins).
+
 A plugin runs inside a "host process".
 This is a sub-process spawned by Theia's backend to isolate the plugin from the main process.
 This encapsulates the plugin to prevent it from arbitrarily accessing Theia services and potentially harm performance or functionality of Theia’s main functionality.
-Instead, a plugin accesses Theia’s state and services via the plugin API.
+Instead, a plugin accesses Theia’s state and services via the plugin API, if any, provided within its host process.
 
-Theia’s plugin API thrives to be a super set of VS Code’s extension API to enable running VS Code extensions as Theia plugins.
+Theia’s plugin API thrives to be a superset of VS Code’s extension API to enable running VS Code extensions as Theia plugins.
 For many cases this already works well.
 A report on API compatibility is generated daily in the [vscode-theia-comparator repository](https://github.com/eclipse-theia/vscode-theia-comparator).
 Please note that the report only checks the API on an interface level – and not the compatibility of the interfaces’ implementation behaviour.
@@ -27,6 +31,7 @@ The report can be found here:
 - [plugin-ext](https://github.com/eclipse-theia/theia/tree/master/packages/plugin-ext): Contains both the mechanisms for running plugins and providing them with an API namespace and the implementation of the ‘theia’ plugin API
 - [plugin-ext-vscode](https://github.com/eclipse-theia/theia/tree/master/packages/plugin-ext-vscode): Contains an implementation of the VS Code plugin API.
 Since VS Code and Theia APIs are largely compatible, the initialization passes on the Theia plugin API and overrides a few members in the API object to be compatible to VS Code extensions (see [plugin-ext-vscode/src/node/plugin-vscode-init.ts](https://github.com/eclipse-theia/theia/blob/master/packages/plugin-ext-vscode/src/node/plugin-vscode-init.ts))
+- [plugin-ext-headless](https://github.com/eclipse-theia/theia/tree/master/packages/plugin-ext-headless): Contains the mechanism for running "headless" plugins in a dedicated backend plugin host process
 
 ## API definition and exposure
 
@@ -57,6 +62,10 @@ Therefore, this code cannot directly use any Theia services (e.g. via dependency
 `Main` refers to code running inside the Theia frontend in the **browser** context.
 Therefore, it can access any Theia service just like a [build time Theia extension](https://theia-ide.org/docs/authoring_extensions/).
 
+> [!NOTE]
+> In the case of headless plugins, the Main side is actually in the Node backend, not the browser frontend, as there is no frontend context for headless plugins.
+> So, the Main implementations in that case additionally have access to all the capabilities of the Node environment.
+
 As the lifecycle of a plugin starts inside its process on the `Ext` side, anything that the plugin needs from Theia (e.g. state, command execution, access to services) has to be invoked over RCP via an implementation on the `Main` side.
 In the inverse direction, the same is true for code that runs on the `Main` side and that needs something from the plugin side (e.g. changing plugin state after a user input).
 It needs to be invoked over RCP via an implementation on the `Ext` side.
@@ -68,7 +77,7 @@ The implementations do not have explicit dependencies to each other.
 
 ### Encoding and Decoding RPC Messages
 
-The communication between each side of the API is goverend by proxies that use a `RpcProtocol` on a given channel to transmit RPC messages such as requests and notifications.
+The communication between each side of the API is governed by proxies that use an `RpcProtocol` on a given channel to transmit RPC messages such as requests and notifications.
 In Theia, the encoding and decoding process of RPC messages can be customized through dedicated `RpcMessageEncoder` and `RpcMessageDecoder` classes that can be provided when a new RpcProtocol is created.
 The `RpcMessageEncoder` writes RPC messages to a buffer whereas the `RpcMessageDecoder` parses a binary message from a buffer into a RPC message.
 
@@ -167,13 +176,44 @@ The `Ext` side then gets the cached object, executes appropriate functions and r
 Another example to browse are the [TaskExtImpl](https://github.com/eclipse-theia/theia/blob/master/packages/plugin-ext/src/plugin/tasks/tasks.ts) and [TaskMainImpl](https://github.com/eclipse-theia/theia/blob/master/packages/plugin-ext/src/main/browser/tasks-main.ts) classes.
 
 To [ensure correct type conversion](#encoding-and-decoding-rpc-messages) between the Theia backend and the plugin host we define an API protocol based on types and DTOs that can be transmitted safely.
-The plugin API and it's types are defined in [plugin-ext/src/common/plugin-api-rpc.ts](https://github.com/eclipse-theia/theia/blob/master/packages/plugin-ext/src/common/plugin-api-rpc.ts) with some additional conversion on the `Ext` side being defined in [plugin-ext/src/plugin/type-converters.ts](https://github.com/eclipse-theia/theia/blob/master/packages/plugin-ext/src/plugin/type-converters.ts).
+The plugin API and its types are defined in [plugin-ext/src/common/plugin-api-rpc.ts](https://github.com/eclipse-theia/theia/blob/master/packages/plugin-ext/src/common/plugin-api-rpc.ts) with some additional conversion on the `Ext` side being defined in [plugin-ext/src/plugin/type-converters.ts](https://github.com/eclipse-theia/theia/blob/master/packages/plugin-ext/src/plugin/type-converters.ts).
 Thus, this is also a good starting point to look for conversion utilities for existing types.
 
 ### Adding new types
 
 New classes and other types such as enums are usually implemented in [plugin-ext/src/plugin/types-impl.ts](https://github.com/eclipse-theia/theia/blob/master/packages/plugin-ext/src/plugin/types-impl.ts).
 They can be added there and then we can add them to the API object created in the API factory.
+
+## Headless Plugins
+
+The majority of plugin use cases are for extension of the Theia user experience via the VS Code compatible API provided by Theia.
+These plugins use either the `vscode` API object if they use the `"vscode"` engine type in their package manifests or else the `theia` object if they use the `"theiaPlugin"` engine.
+The lifecycle of these kinds of plugins is bound to _frontend connections_: for each connected frontend, the Theia backend spawns a plugin host host process dedicated to it in which these plugins are loaded and activated (as applicable to their declared activation events).
+In the plugin host for a frontend connection these plugins have access to Theia services as discussed above, isolated from Theia itself and from all of the other instances of the same plugin running in plugin hosts for all other frontend connections.
+
+Headless plugins, by contrast, are quite different in most respects:
+
+- they are encapsulated in a single plugin host process in the backend, separate from all frontend-connection plugin hosts.
+This host is spun up only if there are any headless plugins to run in it
+- Theia does not export any default API object, analogous to `vscode` or `theia` for other plugins, as Theia itself defines no use cases for headless plugins.
+Such use cases are entirely defined by the Theia-based application's requirements
+- Theia does not support any contribution points for headless plugins not any non-trivial activation events (only `'*'` and `'onStartupFinished'`).
+This is a corollary of the use cases being entirely application-specific: the application needs to define its own contribution points and activation events
+
+Thus, headless plugins are best suited to the contribution of third-party extensions of a Theia application's custom backend services, where those service are shared by all connected frontends or serve some kind of headless scenario like a CLI.
+
+A headless plugin may be restricted to only the headless deployment, in which case it may make this explicit by declaring the `"theiaHeadlessPlugin"` engine in its package manifest.
+Alternatively, a VS Code or Theia plugin that extends the frontend user experience may also contribute a headless entrypoint for a headless deployment by identifying such entrypoint script in the `"headless"` property of the `"theiaPlugin"` object in its package manifest in addition to the `"main"` entrypoint (for VS Code plugins) or the `"theiaPlugin.backend"` entrypoint (for Theia plugins).
+
+The only API namespaces that are available to headless plugins are those custom APIs that are contributed by the application's custom build-time extensions or by the activation of other headless plugins.
+For details of how to contribute custom API, see the [pertinent documentation](https://github.com/eclipse-theia/theia/blob/master/packages/plugin-ext/doc/how-to-add-new-custom-plugin-api.md).
+
+## Dependency Injection
+
+Both the `Main` and the `Ext` sides of the plugin API are configured using [InversifyJS](https://inversify.io) dependency injection.
+On the `Main` side, the usual Theia container modules are used to bind implementations of the API objects.
+On the `Ext` side, the plugin host initialization script creates and configures its Inversify `Container`.
+You are encouraged to leverage this dependency injection in the definition of new API objects and the maintenance of existing ones, to promote reuse and substitutability of the various interface implementations.
 
 ## Additional Links
 
@@ -190,3 +230,5 @@ Theia versus VS Code API Comparator: <https://github.com/eclipse-theia/vscode-th
 Theia's extension mechanisms: VS Code extensions, Theia extensions, and Theia plugins: <https://theia-ide.org/docs/extensions>
 
 Example of creating a custom namespace API and using in VS Code extensions: <https://github.com/thegecko/vscode-theia-extension>
+
+Example of a Theia extension defining a custom namespace API and a headless plugin that uses it: [Greeting-of-the-Day API Provider Sample](https://github.com/eclipse-theia/theia/blob/master/examples/api-provider-sample) and [Greeting-of-the-Day Client Sample Plugin](https://github.com/eclipse-theia/theia/blob/master/sample-plugins/sample-namespace/plugin-gotd)
