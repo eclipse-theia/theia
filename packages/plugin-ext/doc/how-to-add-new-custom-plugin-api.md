@@ -5,7 +5,7 @@ That will require API that goes beyond what's in the VS Code Extension API and t
 You can do that by implementing a Theia extension that creates and exposes an API object within the plugin host.
 The API object can be imported by your plugins and exposes one or more API namespaces.
 
-Depending on the plugin host we can either provide a frontend or backend plugin API, or an API for headless plugins that extend or otherwise access backend services that are not tied to any frontend connection:
+Depending on the plugin host we can either provide a frontend or backend plugin API, or an API for headless plugins that extend or otherwise access backend services:
 
 - In the backend plugin host that runs in the Node environment in a separate process, we adapt the module loading to return a custom API object instead of loading a module with a particular name.
 There is a distinct plugin host for each connected Theia frontend.
@@ -22,7 +22,7 @@ All three APIs — backend, frontend, and headless — can be provided by implem
 
 The plugin API provider is executed on the respective plugin host to add your custom API object and namespaces.
 Add `@theia/plugin-ext` as a dependency in your `package.json`.
-If your plugin is contributing API to headless plugins, then add the `@theia/plugin-ext-headless` package as a dependency.
+If your plugin is contributing API to headless plugins, then you also need to add the `@theia/plugin-ext-headless` package as a dependency.
 
 Example Foo Plugin API provider.
 Here we see that it provides the same API initialized by the same script to both backend plugins that are frontend-connection-scoped and to headless plugins.

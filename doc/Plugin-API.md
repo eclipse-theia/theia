@@ -208,7 +208,7 @@ Headless plugins, by contrast, are quite different in most respects:
 This host is spun up only if there are any headless plugins to run in it.
 - Theia does not export any default API object, analogous to `vscode` or `theia` for other plugins, as Theia itself defines no use cases for headless plugins.
 Such use cases are entirely defined by the Theia-based application's requirements and reflected in its custom APIs defined [as described in this how-to document][custom-api-howto].
-- Theia does not support any contribution points for headless plugins not any non-trivial activation events (only `'*'` and `'onStartupFinished'`).
+- Theia supports neither any contribution points for headless plugins nor any non-trivial activation events (only `'*'` and `'onStartupFinished'`).
 This is a corollary of the use cases being entirely application-specific: the application needs to define its own contribution points and activation events.
 Currently this requires an application to enumerate the available deployed plugins via the [HostedPluginServer](https://github.com/eclipse-theia/theia/blob/1a56ba96fdc9b6df3a230df7b44e22e5785e3abd/packages/plugin-ext/src/common/plugin-protocol.ts#L1005) to parse their package manifests to extract application-specific contribution points and activation events, and to activate plugins via the [PluginManager::activatePlugin(pluginId)](https://github.com/eclipse-theia/theia/blob/1a56ba96fdc9b6df3a230df7b44e22e5785e3abd/packages/plugin-ext/src/common/plugin-api-rpc.ts#L182) API on the appropriate triggers.
 
@@ -217,7 +217,7 @@ Thus, headless plugins are best suited to the contribution of third-party extens
 A headless plugin may be restricted to only the headless deployment, in which case it may make this explicit by declaring the `"theiaHeadlessPlugin"` engine in its package manifest.
 Alternatively, a VS Code or Theia plugin that extends the frontend user experience may also contribute a headless entrypoint for a headless deployment by identifying such entrypoint script in the `"headless"` property of the `"theiaPlugin"` object in its package manifest in addition to the `"main"` entrypoint (for VS Code plugins) or the `"theiaPlugin.backend"` entrypoint (for Theia plugins).
 
-The only API namespaces that are available to headless plugins are those custom APIs that are contributed by the application's custom build-time extensions or by the activation of other headless plugins.
+The only API namespaces that are available to headless plugins are those custom APIs that are contributed by the application's custom build-time Theia extensions or by other headless plugins via the return results of their `activate()` functions.
 For details of how to contribute custom API, see the [pertinent documentation][custom-api-howto].
 
 [custom-api-howto]: https://github.com/eclipse-theia/theia/blob/master/packages/plugin-ext/doc/how-to-add-new-custom-plugin-api.md
