@@ -24,6 +24,7 @@ export interface RemoteScriptStrategy {
     unzip(file: string, directory: string): string;
     mkdir(path: string): string;
     home(): string;
+    tempFile(): string;
     joinPath(...segments: string[]): string;
     joinScript(...segments: string[]): string;
 }
@@ -33,6 +34,10 @@ export class RemoteWindowsScriptStrategy implements RemoteScriptStrategy {
 
     home(): string {
         return 'PowerShell -Command $HOME';
+    }
+
+    tempFile(): string {
+        return 'PowerShell -Command [System.IO.Path]::GetTempFileName()()';
     }
 
     exec(): string {
@@ -65,6 +70,10 @@ export class RemotePosixScriptStrategy implements RemoteScriptStrategy {
 
     home(): string {
         return 'eval echo ~';
+    }
+
+    tempFile(): string {
+        return 'mktemp';
     }
 
     exec(): string {
@@ -118,6 +127,10 @@ export class RemoteSetupScriptService {
 
     home(platform: RemotePlatform): string {
         return this.getStrategy(platform).home();
+    }
+
+    tempFile(platform: RemotePlatform): string {
+        return this.getStrategy(platform).tempFile();
     }
 
     exec(platform: RemotePlatform): string {

@@ -18,7 +18,8 @@ import { interfaces } from '@theia/core/shared/inversify';
 import {
     PreferenceProxy,
     PreferenceSchema,
-    PreferenceContribution
+    PreferenceContribution,
+    PreferenceScope
 } from '@theia/core/lib/browser/preferences';
 import { nls } from '@theia/core/lib/common/nls';
 import { PreferenceProxyFactory } from '@theia/core/lib/browser/preferences/injectable-preference-proxy';
@@ -29,7 +30,6 @@ const nodeDownloadTemplateParts = [
     nls.localize('theia/remote/nodeDownloadTemplateArch', '`{arch}` for the remote system architecture.'),
     nls.localize('theia/remote/nodeDownloadTemplateExt', '`{ext}` for the file extension. Either `zip`, `tar.xz` or `tar.xz`, depending on the operating system.')
 ];
-
 export const RemotePreferenceSchema: PreferenceSchema = {
     'type': 'object',
     properties: {
@@ -41,11 +41,19 @@ export const RemotePreferenceSchema: PreferenceSchema = {
                 'Controls the template used to download the node.js binaries for the remote backend. Points to the official node.js website by default. Uses multiple placeholders:'
             ) + '\n- ' + nodeDownloadTemplateParts.join('\n- ')
         },
+        'remote.httpRemoteCopyPort': {
+            type: 'number',
+            description: 'The port used for copying the backend via http for connecting to remote systems (http is in most cases faster than sftp)',
+            default: 8080,
+            scope: PreferenceScope.Workspace
+        }
+
     }
 };
 
 export interface RemoteConfiguration {
     'remote.nodeDownloadTemplate': string;
+    'remote.httpRemoteCopyPort': number;
 }
 
 export const RemotePreferenceContribution = Symbol('RemotePreferenceContribution');

@@ -22,6 +22,7 @@ export interface RemoteSSHConnectionProviderOptions {
     user: string;
     host: string;
     nodeDownloadTemplate?: string;
+    remoteHttpCopyPort?: number;
 }
 
 export interface RemoteSSHConnectionProvider {
