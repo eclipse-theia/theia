@@ -5,14 +5,14 @@ That will require API that goes beyond what's in the VS Code Extension API and t
 You can do that by implementing a Theia extension that creates and exposes an API object within the plugin host.
 The API object can be imported by your plugins and exposes one or more API namespaces.
 
-Depending on the plugin host we can either provide a frontend or backend plugin API, or an API for headless plugins that extend backend services that are not tied to any frontend connection:
+Depending on the plugin host we can either provide a frontend or backend plugin API, or an API for headless plugins that extend or otherwise access backend services that are not tied to any frontend connection:
 
 - In the backend plugin host that runs in the Node environment in a separate process, we adapt the module loading to return a custom API object instead of loading a module with a particular name.
 There is a distinct plugin host for each connected Theia frontend.
 - In the frontend plugin host that runs in the browser environment via a web worker, we import the API scripts and put it in the global context.
 There is a distinct plugin host for each connected Theia frontend.
 - In the headless plugin host that also runs in the Node environment in a separate process, we similarly adapt the module loading mechanism.
-There is only one plugin host for headless plugins, if there are any headless plugins deployed.
+When the first headless plugin is deployed, whether at start-up or upon later installation during run-time, then the one and only headless plugin host process is started.
 
 In this document we focus on the implementation of a custom backend plugin API.
 Headless plugin APIs are similar, and the same API can be contributed to both backend and headless plugin hosts.
@@ -24,7 +24,9 @@ The plugin API provider is executed on the respective plugin host to add your cu
 Add `@theia/plugin-ext` as a dependency in your `package.json`.
 If your plugin is contributing API to headless plugins, then add the `@theia/plugin-ext-headless` package as a dependency.
 
-Example Foo Plugin API provider:
+Example Foo Plugin API provider.
+Here we see that it provides the same API initialized by the same script to both backend plugins that are frontend-connection-scoped and to headless plugins.
+Any combination of these API initialization scripts may be provided, offering the same or differing capabilities in each respective plugin host, although of course it would be odd to provide API to none of them.
 
 ```typescript
 @injectable()
@@ -37,7 +39,7 @@ export class FooExtPluginApiProvider implements ExtPluginApiProvider {
                 initVariable: 'foo_global_variable'
             },
             backendInitPath: path.join(__dirname, 'foo-init'),
-            // (Optional) provide the same API to headless plugins, too (or a different/subset API)
+            // Provide the same API to headless plugins, too (or a different/subset API)
             headlessInitPath: path.join(__dirname, 'foo-init')
         };
     }
@@ -70,10 +72,9 @@ declare module '@bar/foo' {
 ## Implement your plugin API provider
 
 In our example, we aim to provide a new API object for the backend.
-Theia expects that the `backendInitPath` that we specified in our API provider exports an [InversifyJS](https://inversify.io) `ContainerModule` under the name `containerModule`.
+Theia expects that the `backendInitPath` or `headlessInitPath` that we specified in our API provider exports an [InversifyJS](https://inversify.io) `ContainerModule` under the name `containerModule`.
 This container-module configures the Inversify `Container` in the plugin host for creation of our API object.
-It also implements for us the customization
-For export of the API to headless plugins, use the `headlessInitPath` with a `provideApi` function of `ExtPluginApiHeadlessInitializationFn` type.
+It also implements for us the customization of Node's module loading system to hook our API factory into the import of the module name that we choose.
 
 Example `node/foo-init.ts`:
 
