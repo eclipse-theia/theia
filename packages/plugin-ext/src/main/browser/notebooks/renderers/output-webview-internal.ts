@@ -314,10 +314,17 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
             // we need to check for all images are loaded. Otherwise we can't determine the correct height of the output
             const images = Array.from(document.images);
             if (images.length > 0) {
-                Promise.all(images.filter(img => !img.complete).map(img => new Promise(resolve => { img.onload = img.onerror = resolve; }))).then(() =>
-                    theia.postMessage(<webviewCommunication.OnDidRenderOutput>{ type: 'didRenderOutput', contentHeight: document.body.clientHeight }));
+                Promise.all(images.filter(img => !img.complete).map(img => new Promise(resolve => { img.onload = img.onerror = resolve; }))).then(() => {
+                    theia.postMessage(<webviewCommunication.OnDidRenderOutput>{ type: 'didRenderOutput', contentHeight: document.body.clientHeight });
+                    new ResizeObserver(() =>
+                        theia.postMessage(<webviewCommunication.OnDidRenderOutput>{ type: 'didRenderOutput', contentHeight: document.body.clientHeight }))
+                        .observe(document.body);
+                });
             } else {
                 theia.postMessage(<webviewCommunication.OnDidRenderOutput>{ type: 'didRenderOutput', contentHeight: document.body.clientHeight });
+                new ResizeObserver(() =>
+                    theia.postMessage(<webviewCommunication.OnDidRenderOutput>{ type: 'didRenderOutput', contentHeight: document.body.clientHeight }))
+                    .observe(document.body);
             }
 
         }
