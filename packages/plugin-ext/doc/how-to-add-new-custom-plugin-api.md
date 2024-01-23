@@ -5,20 +5,28 @@ That will require API that goes beyond what's in the VS Code Extension API and t
 You can do that by implementing a Theia extension that creates and exposes an API object within the plugin host.
 The API object can be imported by your plugins and exposes one or more API namespaces.
 
-Depending on the plugin host we can either provide a frontend or backend plugin API:
+Depending on the plugin host we can either provide a frontend or backend plugin API, or an API for headless plugins that extend or otherwise access backend services:
 
 - In the backend plugin host that runs in the Node environment in a separate process, we adapt the module loading to return a custom API object instead of loading a module with a particular name.
+There is a distinct plugin host for each connected Theia frontend.
 - In the frontend plugin host that runs in the browser environment via a web worker, we import the API scripts and put it in the global context.
+There is a distinct plugin host for each connected Theia frontend.
+- In the headless plugin host that also runs in the Node environment in a separate process, we similarly adapt the module loading mechanism.
+When the first headless plugin is deployed, whether at start-up or upon later installation during run-time, then the one and only headless plugin host process is started.
 
 In this document we focus on the implementation of a custom backend plugin API.
-However, both APIs can be provided by implementing and binding an `ExtPluginApiProvider` which should be packaged as a Theia extension.
+Headless plugin APIs are similar, and the same API can be contributed to both backend and headless plugin hosts.
+All three APIs — backend, frontend, and headless — can be provided by implementing and binding an `ExtPluginApiProvider` which should be packaged as a Theia extension.
 
 ## Declare your plugin API provider
 
 The plugin API provider is executed on the respective plugin host to add your custom API object and namespaces.
-Add `@theia/plugin-ext` as a dependency in your `package.json`
+Add `@theia/plugin-ext` as a dependency in your `package.json`.
+If your plugin is contributing API to headless plugins, then you also need to add the `@theia/plugin-ext-headless` package as a dependency.
 
-Example Foo Plugin API provider:
+Example Foo Plugin API provider.
+Here we see that it provides the same API initialized by the same script to both backend plugins that are frontend-connection-scoped and to headless plugins.
+Any combination of these API initialization scripts may be provided, offering the same or differing capabilities in each respective plugin host, although of course it would be odd to provide API to none of them.
 
 ```typescript
 @injectable()
@@ -30,7 +38,9 @@ export class FooExtPluginApiProvider implements ExtPluginApiProvider {
                 initFunction: 'fooInitializationFunction',
                 initVariable: 'foo_global_variable'
             },
-            backendInitPath: path.join(__dirname, 'foo-init')
+            backendInitPath: path.join(__dirname, 'foo-init'),
+            // Provide the same API to headless plugins, too (or a different/subset API)
+            headlessInitPath: path.join(__dirname, 'foo-init')
         };
     }
 }
@@ -62,94 +72,69 @@ declare module '@bar/foo' {
 ## Implement your plugin API provider
 
 In our example, we aim to provide a new API object for the backend.
-Theia expects that the `backendInitPath` that we specified in our API provider is a function called `provideApi` that follows the `ExtPluginApiBackendInitializationFn` signature.
+Theia expects that the `backendInitPath` or `headlessInitPath` that we specified in our API provider exports an [InversifyJS](https://inversify.io) `ContainerModule` under the name `containerModule`.
+This container-module configures the Inversify `Container` in the plugin host for creation of our API object.
+It also implements for us the customization of Node's module loading system to hook our API factory into the import of the module name that we choose.
 
 Example `node/foo-init.ts`:
 
 ```typescript
+import { inject, injectable } from '@theia/core/shared/inversify';
+import { RPCProtocol } from '@theia/plugin-ext/lib/common/rpc-protocol';
+import { Plugin } from '@theia/plugin-ext/lib/common/plugin-api-rpc';
+import { ApiFactory, PluginContainerModule } from '@theia/plugin-ext/lib/plugin/node/plugin-container-module';
+import { FooExt } from '../common/foo-api-rpc';
+import { FooExtImpl } from './foo-ext-impl';
+
 import * as fooBarAPI from '@bar/foo';
 
-// Factory to create an API object for each plugin.
-let apiFactory: (plugin: Plugin) => typeof fooBarAPI;
+type FooBarApi = typeof fooBarAPI;
+type Foo = FooBarApi['Foo'];
 
-// Map key is the plugin ID. Map value is the FooBar API object.
-const pluginsApiImpl = new Map<string, typeof fooBarAPI>();
+const FooBarApiFactory = Symbol('FooBarApiFactory');
+type FooBarApiFactory = ApiFactory<FooBarApi>;
 
-// Singleton API object to use as a last resort.
-let defaultApi: typeof fooBarAPI;
+// Retrieved by Theia to configure the Inversify DI container when the plugin is initialized.
+// This is called when the plugin-host process is forked.
+export const containerModule = PluginContainerModule.create(({ bind, bindApiFactory }) => {
+    // Bind the implementations of our Ext API interfaces (here just one)
+    bind(FooExt).to(FooExtImpl).inSingletonScope();
 
-// Have we hooked into the module loader yet?
-let hookedModuleLoader = false;
-
-let plugins: PluginManager;
-
-// Theia expects an exported 'provideApi' function
-export const provideApi: ExtPluginApiBackendInitializationFn = (rpc: RPCProtocol, manager: PluginManager) => {
-    apiFactory = createAPIFactory(rpc);
-    plugins = manager;
-
-    if (!hookedModuleLoader) {
-        overrideInternalLoad();
-        hookedModuleLoader = true;
-    }
-};
-
-function overrideInternalLoad(): void {
-    const module = require('module');
-    const internalLoad = module._load;
-
-    module._load = function (request: string, parent: any, isMain: {}) {
-        if (request !== '@bar/foo') {
-            // Pass the request to the next implementation down the chain
-            return internalLoad.apply(this, arguments);
-        }
-
-        // create custom API object and return that as a result of loading '@bar/foo'
-        const plugin = findPlugin(parent.filename);
-        if (plugin) {
-            let apiImpl = pluginsApiImpl.get(plugin.model.id);
-            if (!apiImpl) {
-                apiImpl = apiFactory(plugin);
-                pluginsApiImpl.set(plugin.model.id, apiImpl);
-            }
-            return apiImpl;
-        }
-
-        if (!defaultApi) {
-            console.warn(`Could not identify plugin for '@bar/foo' require call from ${parent.filename}`);
-            defaultApi = apiFactory(emptyPlugin);
-        }
-
-        return defaultApi;
-    };
-}
-
-function findPlugin(filePath: string): Plugin | undefined {
-    return plugins.getAllPlugins().find(plugin => filePath.startsWith(plugin.pluginFolder));
-}
+    // Bind our API factory to the module name by which plugins will import it
+    bindApiFactory('@bar/foo', FooBarApiFactory, FooBarApiFactoryImpl);
+});
 ```
 
 ## Implement your API object
 
 We create a dedicated API object for each individual plugin as part of the module loading process.
 Each API object is returned as part of the module loading process if a script imports `@bar/foo` and should therefore match the API definition that we provided in the `*.d.ts` file.
-Multiple imports will not lead to the creation of multiple API objects as we cache it in our custom `overrideInternalLoad` function.
+Multiple imports will not lead to the creation of multiple API objects as the `PluginContainerModule` automatically caches the API implementation for us.
 
 Example `node/foo-init.ts` (continued):
 
 ```typescript
-export function createAPIFactory(rpc: RPCProtocol): ApiFactory {
-    const fooExtImpl = new FooExtImpl(rpc);
-    return function (plugin: Plugin): typeof fooBarAPI {
-        const FooBar: typeof fooBarAPI.fooBar = {
-            getFoo(): Promise<fooBarAPI.Foo> {
-                return fooExtImpl.getFooImpl();
-            }
-        }
-        return <typeof fooBarAPI>{
-            fooBar : FooBar
-        };
+// Creates the @foo/bar API object
+@injectable()
+class FooBarApiFactoryImpl {
+    @inject(RPCProtocol) protected readonly rpc: RPCProtocol;
+    @inject(FooExt) protected readonly fooExt: FooExt;
+
+    @postConstruct()
+    initialize(): void {
+        this.rpc.set(FOO_MAIN_RPC_CONTEXT.FOO_EXT, this.fooExt);
     }
+
+    // The plugin host expects our API factory to export a `createApi()` method
+    createApi(plugin: Plugin): FooBarApi {
+        return {
+            fooBar: {
+                getFoo(): Promise<Foo> {
+                    return fooExt.getFooImpl();
+                }
+            }
+        };
+    };
 }
 ```
 
@@ -169,10 +154,12 @@ Due to the asynchronous nature of the communication over RPC, the result should 
 Example `common/foo-api-rpc.ts`:
 
 ```typescript
+export const FooMain = Symbol('FooMain');
 export interface FooMain {
     $getFooImpl(): Promise<Foo>;
 }
 
+export const FooExt = Symbol('FooExt');
 export interface FooExt {
     // placeholder for callbacks for the main application to the extension
 }
@@ -193,13 +180,18 @@ On the plugin host side we can register our implementation and retrieve the prox
 Example `plugin/foo-ext.ts`:
 
 ```typescript
+import { inject, injectable } from '@theia/core/shared/inversify';
+import { RPCProtocol } from '@theia/plugin-ext/lib/common/rpc-protocol';
+import { FooExt, FooMain, FOO_PLUGIN_RPC_CONTEXT } from '../common/foo-api-rpc';
+
+@injectable()
 export class FooExtImpl implements FooExt {
     // Main application RCP counterpart
     private proxy: FooMain;
 
-    constructor(rpc: RPCProtocol) {
-        rpc.set(FOO_MAIN_RPC_CONTEXT.FOO_EXT, this); // register ourselves
-        this.proxy = rpc.getProxy(FOO_PLUGIN_RPC_CONTEXT.FOO_MAIN); // retrieve proxy
+    constructor(@inject(RPCProtocol) rpc: RPCProtocol) {
+        // Retrieve a proxy for the main side
+        this.proxy = rpc.getProxy(FOO_PLUGIN_RPC_CONTEXT.FOO_MAIN);
     }
 
     getFooImpl(): Promise<Foo> {
@@ -208,7 +200,12 @@ export class FooExtImpl implements FooExt {
 }
 ```
 
-On the main side we need to implement the counterpart of the ExtPluginApiProvider, the `MainPluginApiProvider`, and expose it in a browser frontend module:
+On the main side we need to implement the counterpart of the ExtPluginApiProvider, the `MainPluginApiProvider`, and expose it in a browser frontend module.
+
+> [!NOTE]
+> If the same API is also published to headless plugins, then the Main side is actually in the Node backend, not the browser frontend, so the implementation might
+then be in the `common/` tree and registered in both the frontend and backend container modules.
+> Alternatively, if the API is _only_ published to headless plugins, then it can be implemented in the `node/` tree and can take advantage of capabilities only available in the Node backend.
 
 Example `main/browser/foo-main.ts`:
 
@@ -218,7 +215,7 @@ export class FooMainImpl implements FooMain {
     @inject(MessageService) protected messageService: MessageService;
     protected proxy: FooExt;
 
-    init(rpc: RPCProtocol) {
+    constructor(@inject(RPCProtocol) rpc: RPCProtocol) {
         // We would use this if we had a need to call back into the plugin-host/plugin
         this.proxy = rpc.getProxy(FOO_MAIN_RPC_CONTEXT.FOO_EXT);
     }
@@ -232,19 +229,17 @@ export class FooMainImpl implements FooMain {
 @injectable()
 export class FooMainPluginApiProvider implements MainPluginApiProvider {
     @inject(MessageService) protected messageService: MessageService;
+    @inject(FooMain) protected fooMain: FooMain;
 
-    initialize(rpc: RPCProtocol, container: interfaces.Container): void {
+    initialize(rpc: RPCProtocol): void {
         this.messageService.info('Initialize RPC communication for FooMain!');
-        // create a new FooMainImpl as it is not bound as singleton
-        const fooMainImpl = container.get(FooMainImpl);
-        fooMainImpl.init(rpc);
-        rpc.set(FOO_PLUGIN_RPC_CONTEXT.FOO_MAIN, fooMainImpl);
+        rpc.set(FOO_PLUGIN_RPC_CONTEXT.FOO_MAIN, this.fooMain);
     }
 }
 
 export default new ContainerModule(bind => {
-    bind(FooMainImpl).toSelf();
     bind(MainPluginApiProvider).to(FooMainPluginApiProvider).inSingletonScope();
+    bind(FooMain).to(FooMainImpl).inSingletonScope();
 });
 ```
 
