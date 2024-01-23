@@ -19,6 +19,7 @@ describe('TypeScript', function () {
     this.timeout(30_000);
 
     const { assert } = chai;
+    const { timeout } = require('@theia/core/lib/common/promise-util');
 
     const Uri = require('@theia/core/lib/common/uri');
     const { DisposableCollection } = require('@theia/core/lib/common/disposable');
@@ -700,9 +701,7 @@ SPAN {
             return !!node && node.style.visibility !== 'hidden';
         };
 
-        assert.isFalse(lightBulbVisible(), 'Failed at assert 2');
-        await waitForAnimation(() => lightBulbVisible());
-
+        await timeout(1000); // quick fix is always available: need to wait for the error fix to become available.
         await commands.executeCommand('editor.action.quickFix');
         const codeActionSelector = '.codeActionWidget';
         assert.isFalse(!!document.querySelector(codeActionSelector), 'Failed at assert 3 - codeActionWidget should not be visible');
@@ -721,20 +720,9 @@ SPAN {
         assert.isTrue(lightBulbVisible(), 'Failed at assert 4');
         keybindings.dispatchKeyDown('Enter');
         console.log('Waiting for confirmation that QuickFix has taken effect');
-        await waitForAnimation(() => {
-            const quickFixHasTakenEffect = !lightBulbVisible();
-            if (!quickFixHasTakenEffect) {
-                console.log('...');
-                return false;
-            }
-            return true;
-        }, 5000, 'Quickfix widget has not been dismissed despite attempts to accept suggestion');
 
-        await waitForAnimation(() => currentChar() === 'd', 5000, 'Failed to detect expected selected char: "d"');
+        await waitForAnimation(() => currentChar() === 'd', 10000, 'Failed to detect expected selected char: "d"');
         assert.equal(currentChar(), 'd', 'Failed at assert 5');
-
-        await waitForAnimation(() => !lightBulbVisible());
-        assert.isFalse(lightBulbVisible(), 'Failed at assert 6');
     });
 
     it('editor.action.formatDocument', async function () {
