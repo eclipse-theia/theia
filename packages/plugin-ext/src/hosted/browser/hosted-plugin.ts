@@ -66,6 +66,7 @@ import { LanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/
 import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '@theia/core/lib/common/message-rpc/uint8-array-message-buffer';
 import { BasicChannel } from '@theia/core/lib/common/message-rpc/channel';
 import { NotebookTypeRegistry, NotebookService, NotebookRendererMessagingService } from '@theia/notebook/lib/browser';
+import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import {
     AbstractHostedPluginSupport, PluginContributions, PluginHost,
     ALL_ACTIVATION_EVENT, isConnectionScopedBackendPlugin
@@ -173,6 +174,9 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
 
     @inject(PluginCustomEditorRegistry)
     protected readonly customEditorRegistry: PluginCustomEditorRegistry;
+
+    @inject(ApplicationServer)
+    protected readonly applicationServer: ApplicationServer;
 
     constructor() {
         super(generateUuid());
@@ -302,7 +306,10 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
             const isElectron = environment.electron.is();
 
             const supportedActivationEvents = [...HostedPluginSupport.BUILTIN_ACTIVATION_EVENTS];
-            const additionalActivationEvents = await this.envServer.getValue(HostedPluginSupport.ADDITIONAL_ACTIVATION_EVENTS_ENV);
+            const [additionalActivationEvents, appRoot] = await Promise.all([
+                this.envServer.getValue(HostedPluginSupport.ADDITIONAL_ACTIVATION_EVENTS_ENV),
+                this.applicationServer.getApplicationRoot()
+            ]);
             if (additionalActivationEvents && additionalActivationEvents.value) {
                 additionalActivationEvents.value.split(',').forEach(event => supportedActivationEvents.push(event));
             }
@@ -317,7 +324,8 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
                     shell: defaultShell,
                     uiKind: isElectron ? UIKind.Desktop : UIKind.Web,
                     appName: FrontendApplicationConfigProvider.get().applicationName,
-                    appHost: isElectron ? 'desktop' : 'web' // TODO: 'web' could be the embedder's name, e.g. 'github.dev'
+                    appHost: isElectron ? 'desktop' : 'web', // TODO: 'web' could be the embedder's name, e.g. 'github.dev'
+                    appRoot
                 },
                 extApi,
                 webview: {

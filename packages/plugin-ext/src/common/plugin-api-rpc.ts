@@ -163,9 +163,10 @@ export interface EnvInit {
     queryParams: QueryParameters;
     language: string;
     shell: string;
-    uiKind: UIKind,
+    uiKind: UIKind;
     appName: string;
     appHost: string;
+    appRoot: string;
 }
 
 export interface PluginAPI {

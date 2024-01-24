@@ -55,6 +55,7 @@ export const frontendOnlyApplicationModule = new ContainerModule((bind, unbind, 
     const mockedApplicationServer: ApplicationServer = {
         getExtensionsInfos: async (): Promise<ExtensionInfo[]> => [],
         getApplicationInfo: async (): Promise<ApplicationInfo | undefined> => undefined,
+        getApplicationRoot: async (): Promise<string> => '',
         getBackendOS: async (): Promise<OS.Type> => OS.Type.Linux
     };
     if (isBound(ApplicationServer)) {

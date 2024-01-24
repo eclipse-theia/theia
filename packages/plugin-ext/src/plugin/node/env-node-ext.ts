@@ -51,13 +51,6 @@ export class EnvNodeExtImpl extends EnvExtImpl {
         return this.macMachineId;
     }
 
-    /**
-     * Provides application root.
-     */
-    get appRoot(): string {
-        return __dirname;
-    }
-
     get isNewAppInstall(): boolean {
         return this._isNewAppInstall;
     }
