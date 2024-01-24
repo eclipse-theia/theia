@@ -268,7 +268,10 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
                 editor.revealPosition(selection);
             } else if (Range.is(selection)) {
                 editor.cursor = selection.end;
-                editor.selection = selection;
+                editor.selection = {
+                    ...selection,
+                    direction: 'ltr'
+                };
                 editor.revealRange(selection);
             }
         }

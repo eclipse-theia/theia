@@ -375,21 +375,6 @@ export class MonacoQuickInputService implements QuickInputService {
                     wrapped.activeItems = [options.activeItem];
                 }
 
-                wrapped.onDidAccept(() => {
-                    if (options?.onDidAccept) {
-                        options.onDidAccept();
-                    }
-                    wrapped.hide();
-                    resolve(wrapped.selectedItems[0]);
-                });
-
-                wrapped.onDidHide(() => {
-                    if (options.onDidHide) {
-                        options.onDidHide();
-                    };
-                    wrapped.dispose();
-                    setTimeout(() => resolve(undefined));
-                });
                 wrapped.onDidChangeValue((filter: string) => {
                     if (options.onDidChangeValue) {
                         options.onDidChangeValue(wrapped, filter);
@@ -425,6 +410,20 @@ export class MonacoQuickInputService implements QuickInputService {
                     }
                 });
             }
+            wrapped.onDidAccept(() => {
+                if (options?.onDidAccept) {
+                    options.onDidAccept();
+                }
+                wrapped.hide();
+                resolve(wrapped.selectedItems[0]);
+            });
+            wrapped.onDidHide(() => {
+                if (options?.onDidHide) {
+                    options?.onDidHide();
+                };
+                wrapped.dispose();
+                setTimeout(() => resolve(undefined));
+            });
             wrapped.show();
         }).then(item => {
             if (item?.execute) {

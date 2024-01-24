@@ -1,0 +1,22 @@
+.theia-collaboration-selection-marker {
+    position: absolute;
+    content: " ";
+    border-right: solid 2px;
+    border-top: solid 2px;
+    border-bottom: solid 2px;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+.theia-collaboration-selection-marker::after {
+    position: absolute;
+    transform: translateY(-100%);
+    padding: 0 4px;
+    border-radius: 4px 4px 4px 0px;
+}
+
+.theia-collaboration-selection-marker.theia-collaboration-selection-inverted::after {
+    transform: translateY(100%);
+    margin-top: -2px;
+    border-radius: 0px 4px 4px 4px;
+}
