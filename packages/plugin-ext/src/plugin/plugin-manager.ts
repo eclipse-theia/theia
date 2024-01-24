@@ -467,6 +467,7 @@ export class PluginManagerExtImpl extends AbstractPluginManagerExtImpl<PluginMan
         this.terminalService.$setShell(params.env.shell);
         this.envExt.setApplicationName(params.env.appName);
         this.envExt.setAppHost(params.env.appHost);
+        this.envExt.setAppRoot(params.env.appRoot);
 
         this.preferencesManager.init(params.preferences);
 
