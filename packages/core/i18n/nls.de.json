@@ -468,12 +468,16 @@
       "supertypeHierarchy": "Supertyp-Hierarchie"
     },
     "vsx-registry": {
+      "confirmDialogMessage": "Die Erweiterung \"{0}\" ist ungeprüft und könnte ein Sicherheitsrisiko darstellen.",
+      "confirmDialogTitle": "Sind Sie sicher, dass Sie mit der Installation fortfahren wollen?",
       "downloadCount": "Anzahl der Downloads: {0}",
       "errorFetching": "Fehler beim Abrufen von Erweiterungen.",
       "errorFetchingConfigurationHint": "Dies könnte auf Probleme bei der Netzwerkkonfiguration zurückzuführen sein.",
       "failedInstallingVSIX": "Die Installation von {0} aus VSIX ist fehlgeschlagen.",
       "invalidVSIX": "Die ausgewählte Datei ist kein gültiges \"*.vsix\"-Plugin.",
       "license": "Lizenz: {0}",
+      "onlyShowVerifiedExtensionsDescription": "Auf diese Weise kann {0} nur verifizierte Durchwahlen anzeigen.",
+      "onlyShowVerifiedExtensionsTitle": "Nur geprüfte Erweiterungen anzeigen",
       "recommendedExtensions": "Eine Liste mit den Namen der Erweiterungen, die für die Verwendung in diesem Arbeitsbereich empfohlen werden.",
       "searchPlaceholder": "Erweiterungen suchen in {0}",
       "showInstalled": "Installierte Erweiterungen anzeigen",

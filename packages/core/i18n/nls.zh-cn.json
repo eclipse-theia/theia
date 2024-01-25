@@ -468,12 +468,16 @@
       "supertypeHierarchy": "超类型层次结构"
     },
     "vsx-registry": {
+      "confirmDialogMessage": "扩展名 \"{0}\" 未经验证,可能存在安全风险。",
+      "confirmDialogTitle": "您确定要继续安装吗?",
       "downloadCount": "下载次数: {0}",
       "errorFetching": "取出扩展程序时出错。",
       "errorFetchingConfigurationHint": "这可能是网络配置问题造成的。",
       "failedInstallingVSIX": "从VSIX安装{0} ,失败了。",
       "invalidVSIX": "所选文件不是有效的 \"*.vsix \"插件。",
       "license": "许可证: {0}",
+      "onlyShowVerifiedExtensionsDescription": "这样,{0} 只显示经过验证的扩展名。",
+      "onlyShowVerifiedExtensionsTitle": "只显示已验证的扩展名",
       "recommendedExtensions": "建议在该工作区使用的扩展名称的列表。",
       "searchPlaceholder": "在{0}中搜索扩展",
       "showInstalled": "显示已安装的扩展程序",

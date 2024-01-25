@@ -468,12 +468,16 @@
       "supertypeHierarchy": "スーパータイプヒエラルキー"
     },
     "vsx-registry": {
+      "confirmDialogMessage": "拡張子 \"{0}\" は未検証であり、セキュリティリスクをもたらす可能性があります。",
+      "confirmDialogTitle": "本当にインストールを続行しますか?",
       "downloadCount": "ダウンロード回数{0}",
       "errorFetching": "拡張機能の取得にエラーが発生しました。",
       "errorFetchingConfigurationHint": "これは、ネットワーク設定の問題が原因である可能性がある。",
       "failedInstallingVSIX": "VSIXから{0} のインストールに失敗しました。",
       "invalidVSIX": "選択されたファイルは、有効な \"*.vsix \"プラグインではありません。",
       "license": "ライセンス{0}",
+      "onlyShowVerifiedExtensionsDescription": "これにより、{0} 、検証済みの拡張子のみを表示することができる。",
+      "onlyShowVerifiedExtensionsTitle": "検証済みのエクステンションのみ表示",
       "recommendedExtensions": "このワークスペースでの使用が推奨される拡張機能の名前のリストです。",
       "searchPlaceholder": "{0}で拡張子を検索",
       "showInstalled": "インストールされている拡張機能を表示する",

@@ -468,12 +468,16 @@
       "supertypeHierarchy": "Hierarchia nadtypów"
     },
     "vsx-registry": {
+      "confirmDialogMessage": "Rozszerzenie \"{0}\" jest niezweryfikowane i może stanowić zagrożenie dla bezpieczeństwa.",
+      "confirmDialogTitle": "Czy na pewno chcesz kontynuować instalację?",
       "downloadCount": "Pobierz licz: {0}",
       "errorFetching": "Błąd pobierania rozszerzeń.",
       "errorFetchingConfigurationHint": "Może to być spowodowane problemami z konfiguracją sieci.",
       "failedInstallingVSIX": "Nie udało się zainstalować {0} z VSIX.",
       "invalidVSIX": "Wybrany plik nie jest prawidłowym pluginem \"*.vsix\".",
       "license": "Licencja: {0}",
+      "onlyShowVerifiedExtensionsDescription": "Dzięki temu strona {0} będzie wyświetlać tylko zweryfikowane rozszerzenia.",
+      "onlyShowVerifiedExtensionsTitle": "Pokaż tylko zweryfikowane rozszerzenia",
       "recommendedExtensions": "Lista nazw rozszerzeń zalecanych do użycia w tym obszarze roboczym.",
       "searchPlaceholder": "Wyszukaj rozszerzenia w {0}.",
       "showInstalled": "Pokaż zainstalowane rozszerzenia",

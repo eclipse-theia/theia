@@ -468,12 +468,16 @@
       "supertypeHierarchy": "Szupertípus hierarchia"
     },
     "vsx-registry": {
+      "confirmDialogMessage": "A \"{0}\" kiterjesztés nem ellenőrzött, és biztonsági kockázatot jelenthet.",
+      "confirmDialogTitle": "Biztos, hogy folytatni akarja a telepítést ?",
       "downloadCount": "Letöltési szám: {0}",
       "errorFetching": "Hiba a kiterjesztések lekérdezésében.",
       "errorFetchingConfigurationHint": "Ezt hálózati konfigurációs problémák okozhatják.",
       "failedInstallingVSIX": "Nem sikerült telepíteni a {0} oldalt a VSIX-ből.",
       "invalidVSIX": "A kiválasztott fájl nem érvényes \"*.vsix\" bővítmény.",
       "license": "Engedély: {0}",
+      "onlyShowVerifiedExtensionsDescription": "Ez lehetővé teszi, hogy a {0} csak ellenőrzött kiterjesztéseket jelenítsen meg.",
+      "onlyShowVerifiedExtensionsTitle": "Csak ellenőrzött kiterjesztések megjelenítése",
       "recommendedExtensions": "A munkaterületre ajánlott kiterjesztések neveinek listája.",
       "searchPlaceholder": "Keresés kiterjesztések {0}",
       "showInstalled": "Telepített bővítmények megjelenítése",

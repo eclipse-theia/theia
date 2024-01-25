@@ -468,12 +468,16 @@
       "supertypeHierarchy": "Hierarquia de Supertipo"
     },
     "vsx-registry": {
+      "confirmDialogMessage": "A extensão \"{0}\" não foi verificada e pode representar um risco de segurança.",
+      "confirmDialogTitle": "Tem a certeza de que pretende prosseguir com a instalação?",
       "downloadCount": "Contagem de downloads: {0}",
       "errorFetching": "Extensões de erro de busca.",
       "errorFetchingConfigurationHint": "Isto pode ser causado por problemas de configuração da rede.",
       "failedInstallingVSIX": "Falha na instalação {0} da VSIX.",
       "invalidVSIX": "O ficheiro seleccionado não é um plugin \"*.vsix\" válido.",
       "license": "Licença: {0}",
+      "onlyShowVerifiedExtensionsDescription": "Isto permite que o {0} mostre apenas as extensões verificadas.",
+      "onlyShowVerifiedExtensionsTitle": "Mostrar apenas extensões verificadas",
       "recommendedExtensions": "Uma lista dos nomes das extensões recomendadas para utilização neste espaço de trabalho.",
       "searchPlaceholder": "Pesquisar extensões em {0}",
       "showInstalled": "Mostrar extensões instaladas",
