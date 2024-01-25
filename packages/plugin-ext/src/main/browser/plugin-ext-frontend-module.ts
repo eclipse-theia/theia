@@ -90,7 +90,6 @@ import { NotebookCellModel } from '@theia/notebook/lib/browser/view-model/notebo
 import { NotebookModel } from '@theia/notebook/lib/browser/view-model/notebook-model';
 import { ArgumentProcessorContribution } from './command-registry-main';
 import { WebviewSecondaryWindowSupport } from './webview/webview-secondary-window-support';
-import { DefaultPluginUriHandlerService, PluginUriHandlerService } from './plugin-uri-handler-service';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
@@ -268,8 +267,6 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(CellOutputWebviewFactory).toFactory(ctx => async (cell: NotebookCellModel, notebook: NotebookModel) =>
         createCellOutputWebviewContainer(ctx.container, cell, notebook).getAsync(CellOutputWebviewImpl)
     );
-
     bindContributionProvider(bind, ArgumentProcessorContribution);
-    bind(DefaultPluginUriHandlerService).toSelf().inSingletonScope();
-    bind(PluginUriHandlerService).toService(DefaultPluginUriHandlerService);
+
 });
