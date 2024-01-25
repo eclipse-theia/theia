@@ -4,19 +4,57 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
-## not yet released
+<!-- ## not yet released
 
-- [plugin] stub multiDocumentHighlightProvider proposed API [#13248](https://github.com/eclipse-theia/theia/pull/13248) - contributed on behalf of STMicroelectronics
-- [builtins] update built-ins to version 1.83.1 [#13298](https://github.com/eclipse-theia/theia/pull/13298) - contributed on behalf of STMicroelectronics
-- [terminal] rename terminal.sendText() parameter from addNewLine to shouldExecute [#13236](https://github.com/eclipse-theia/theia/pull/13236) - contributed on behalf of STMicroelectronics
-- [terminal] update terminalQuickFixProvider proposed API according to vscode 1.85 version [#13240](https://github.com/eclipse-theia/theia/pull/13240) - contributed on behalf of STMicroelectronics
-- [core] added preference 'workbench.tree.indent' to control the indentation in the tree widget [#13179](https://github.com/eclipse-theia/theia/pull/13179) - contributed on behalf of STMicroelectronics
-- [remote] upport specifying the port of a remote SSH connection [#13296](https://github.com/eclipse-theia/theia/pull/13296) - contributed on behalf of STMicroelectronics
-- [monaco] add document URI as context to getDefaultFormatter [#13280](https://github.com/eclipse-theia/theia/pull/13280) - contributed on behalf of STMicroelectronics
+- [component] add here
 
 <a name="breaking_changes_not_yet_released">[Breaking Changes:](#breaking_changes_not_yet_released)</a>
 
-- [core] moved `FileUri` from `node` package to `common`
+- [component] add here -->
+
+## v1.46.0 - 01/25/2024
+
+- [application-manager] updated message for missing Electron main entries [#13242](https://github.com/eclipse-theia/theia/pull/13242)
+- [application-package] bumped the default supported API from `1.84.2` to `1.85.1` [#13276](https://github.com/eclipse-theia/theia/pull/13276) - contributed on behalf of STMicroelectronics
+- [browser-only] added support for 'browser-only' Theia [#12853](https://github.com/eclipse-theia/theia/pull/12853)
+- [builtins] update built-ins to version 1.83.1 [#13298](https://github.com/eclipse-theia/theia/pull/13298) - contributed on behalf of STMicroelectronics
+- [core] added keybindings to toggle the tree checkbox [#13271](https://github.com/eclipse-theia/theia/pull/13271)
+- [core] added logic to dispose cancellation event listeners [#13254](https://github.com/eclipse-theia/theia/pull/13254)
+- [core] added preference 'workbench.tree.indent' to control the indentation in the tree widget [#13179](https://github.com/eclipse-theia/theia/pull/13179) - contributed on behalf of STMicroelectronics
+- [core] fixed copy/paste from a menu in electron [#13220](https://github.com/eclipse-theia/theia/pull/13220) - contributed on behalf of STMicroelectronics
+- [core] fixed file explorer progress bar issue [#13268](https://github.com/eclipse-theia/theia/pull/13268)
+- [core] fixed issue with cyclic menu contributions [#13264](https://github.com/eclipse-theia/theia/pull/13264)
+- [core] fixed leak when reconnecting to back end without reload [#13250](https://github.com/eclipse-theia/theia/pull/13250) - contributed on behalf of STMicroelectronics
+- [core] fixed SelectComponent to render dropdown correctly in dialog [#13261](https://github.com/eclipse-theia/theia/pull/13261)
+- [core] removed error logs from RpcProxyFactory [#13191](https://github.com/eclipse-theia/theia/pull/13191)
+- [documentation] improved documentation about 'ContributionProvider' use [#13278](https://github.com/eclipse-theia/theia/pull/13278)
+- [docuemtnation] improved documentation on passing objects across RPC [#13238](https://github.com/eclipse-theia/theia/pull/13238)
+- [documentation] updated plugin API docs for headless plugins and Inversify DI [#13299](https://github.com/eclipse-theia/theia/pull/13299)
+- [filesystem] updated logic to only read unbuffered when we read the whole file [#13197](https://github.com/eclipse-theia/theia/pull/13197)
+- [headless-plugin] added support for "headless plugins" in a new plugin host [#13138](https://github.com/eclipse-theia/theia/pull/13138)
+- [monaco] updated logic to add document URI as context to getDefaultFormatter [#13280](https://github.com/eclipse-theia/theia/pull/13280) - contributed on behalf of STMicroelectronics
+- [notebook] fixed dynamic notebook widgets resizing [#13289](https://github.com/eclipse-theia/theia/pull/13289)
+- [notebook] fixed multiple problems with the notebook output rendering [#13239](https://github.com/eclipse-theia/theia/pull/13239)
+- [notebook] improved notebook error logging [#13256](https://github.com/eclipse-theia/theia/pull/13256)
+- [plugin] added logic to synchronize messages sent via different proxies [#13180](https://github.com/eclipse-theia/theia/pull/13180)
+- [remote] added support for specifying the port of a remote SSH connection [#13296](https://github.com/eclipse-theia/theia/pull/13296) - contributed on behalf of STMicroelectronics
+- [plugin] fixed inputbox onTriggerButton() event [#13207](https://github.com/eclipse-theia/theia/pull/13207) - contributed on behalf of STMicroelectronics
+- [plugin] fixed localization for the removeSession method [#13257](https://github.com/eclipse-theia/theia/pull/13257)
+- [plugin] fixed `vscode.env.appRoot` path [#13285](https://github.com/eclipse-theia/theia/pull/13285)
+- [plugin] stubbed multiDocumentHighlightProvider proposed API [#13248](https://github.com/eclipse-theia/theia/pull/13248) - contributed on behalf of STMicroelectronics
+- [plugin] updated logic to handle activeCustomEditorId [#13267](https://github.com/eclipse-theia/theia/pull/13267)
+- [plugin] updated logic to pass context to webview context menu action [#13228](https://github.com/eclipse-theia/theia/pull/13228)
+- [plugin] updated logic to use more stable hostname for webviews [#13092](https://github.com/eclipse-theia/theia/pull/13225) [#13258](https://github.com/eclipse-theia/theia/pull/13265)
+- [terminal] fixed wording in error message [#13245](https://github.com/eclipse-theia/theia/pull/13245) - contributed on behalf of STMicroelectronics
+- [terminal] renamed terminal.sendText() parameter from addNewLine to shouldExecute [#13236](https://github.com/eclipse-theia/theia/pull/13236) - contributed on behalf of STMicroelectronics
+- [terminal] updated logic to resize terminal [#13281](https://github.com/eclipse-theia/theia/pull/13281)
+- [terminal] updated terminalQuickFixProvider proposed API according to vscode 1.85 version [#13240](https://github.com/eclipse-theia/theia/pull/13240) - contributed on behalf of STMicroelectronics
+- [vsx-registry] implemented verified extension filtering [#12995](https://github.com/eclipse-theia/theia/pull/12995)
+
+<a name="breaking_changes_1.46.0">[Breaking Changes:](#breaking_changes_1.46.0)</a>
+
+- [core] moved `FileUri` from `node` package to `common` [#12853](https://github.com/eclipse-theia/theia/pull/12853)
+- [plugin] introduced new common interfaces/classes for reuse by different plugin hosts [#13138](https://github.com/eclipse-theia/theia/pull/13138)
 
 ## v1.45.0 - 12/21/2023
 
