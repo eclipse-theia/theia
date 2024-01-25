@@ -56,17 +56,10 @@ export class UriExtImpl implements UriExt {
 
     $handleExternalUri(handle: number, uri: UriComponents): Promise<void> {
         const handler = this.handlers.get(handle);
-
         if (!handler) {
-            return Promise.resolve(undefined);
+            return Promise.resolve();
         }
-        try {
-            handler.handleUri(URI.revive(uri));
-        } catch (err) {
-            console.log(`error while handling external uri: ${uri}`);
-        }
-
-        return Promise.resolve(undefined);
+        handler.handleUri(URI.revive(uri));
+        return Promise.resolve();
     }
-
 }
