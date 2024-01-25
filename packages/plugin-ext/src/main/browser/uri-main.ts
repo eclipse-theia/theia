@@ -15,20 +15,20 @@
 // *****************************************************************************
 
 import { Disposable, URI } from '@theia/core';
-import { ExtensionOpenHandler, UriHandler} from '@theia/core/lib/browser/extension-open-handler';
 import { MAIN_RPC_CONTEXT, UriExt, UriMain } from '../../common';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { interfaces } from '@theia/core/shared/inversify';
+import { PluginUriHandlerService, UriHandler } from './plugin-uri-handler-service';
 
 export class UriMainImpl implements UriMain, Disposable {
 
     private readonly proxy: UriExt;
     private readonly handlers = new Map<number, string>();
-    private readonly extensionOpenHandler: ExtensionOpenHandler;
+    private readonly pluginUriHandlerService: PluginUriHandlerService;
 
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.URI_EXT);
-        this.extensionOpenHandler = container.get(ExtensionOpenHandler);
+        this.pluginUriHandlerService = container.get(PluginUriHandlerService);
     }
 
     dispose(): void {
@@ -36,8 +36,8 @@ export class UriMainImpl implements UriMain, Disposable {
     }
 
     async $registerUriHandler(handle: number, extensionId: string, extensionDisplayName: string): Promise<void> {
-        const extensionUrlHandler = new ExtensionUriHandler(this.proxy, handle, extensionId, extensionDisplayName);
-        this.extensionOpenHandler.registerHandler(extensionId, extensionUrlHandler);
+        const extensionUriHandler = new PluginUriHandler(this.proxy, handle, extensionId, extensionDisplayName);
+        this.pluginUriHandlerService.registerUriHandler(extensionId, extensionUriHandler);
         this.handlers.set(handle, extensionId);
 
         return Promise.resolve(undefined);
@@ -47,13 +47,12 @@ export class UriMainImpl implements UriMain, Disposable {
         const extensionId = this.handlers.get(handle);
         if (extensionId) {
             this.handlers.delete(handle);
-            this.extensionOpenHandler.unregisterHandler(extensionId);
+            this.pluginUriHandlerService.unregisterUriHandler?.(extensionId);
         }
     }
-
 }
 
-class ExtensionUriHandler implements UriHandler {
+class PluginUriHandler implements UriHandler {
 
     constructor(
         private proxy: UriExt,
@@ -66,11 +65,10 @@ class ExtensionUriHandler implements UriHandler {
         return uri.authority === this.extensionId;
     }
 
-    handleUri(uri: URI): Promise<boolean> {
+    handleUri(uri: URI): Promise<void> {
         if (this.extensionId !== uri.authority) {
-            return Promise.resolve(false);
+            throw new Error(`Extension ${this.extensionId} is not supposed to handle this URI: ${uri}`);
         }
-
-        return Promise.resolve(this.proxy.$handleExternalUri(this.handle, uri.toComponents())).then(() => true);
+        return Promise.resolve(this.proxy.$handleExternalUri(this.handle, uri.toComponents()));
     }
 }
