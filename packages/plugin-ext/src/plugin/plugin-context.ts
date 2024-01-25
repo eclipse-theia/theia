@@ -250,6 +250,7 @@ import { NotebookKernelsExtImpl } from './notebook/notebook-kernels';
 import { NotebookDocumentsExtImpl } from './notebook/notebook-documents';
 import { NotebookEditorsExtImpl } from './notebook/notebook-editors';
 import { TestingExtImpl } from './tests';
+import { UriExtImpl } from './uri-ext';
 
 export function createAPIFactory(
     rpc: RPCProtocol,
@@ -298,6 +299,7 @@ export function createAPIFactory(
     const webviewViewsExt = rpc.set(MAIN_RPC_CONTEXT.WEBVIEW_VIEWS_EXT, new WebviewViewsExtImpl(rpc, webviewExt));
     const telemetryExt = rpc.set(MAIN_RPC_CONTEXT.TELEMETRY_EXT, new TelemetryExtImpl());
     const testingExt = rpc.set(MAIN_RPC_CONTEXT.TESTING_EXT, new TestingExtImpl(rpc, commandRegistry));
+    const uriExt = rpc.set(MAIN_RPC_CONTEXT.URI_EXT, new UriExtImpl(rpc));
     rpc.set(MAIN_RPC_CONTEXT.DEBUG_EXT, debugExt);
 
     return function (plugin: InternalPlugin): typeof theia {
@@ -570,8 +572,7 @@ export function createAPIFactory(
                 return decorationsExt.registerFileDecorationProvider(provider, pluginToPluginInfo(plugin));
             },
             registerUriHandler(handler: theia.UriHandler): theia.Disposable {
-                // TODO ?
-                return new Disposable(() => { });
+                return uriExt.registerUriHandler(handler, pluginToPluginInfo(plugin));
             },
             createInputBox(): theia.InputBox {
                 return quickOpenExt.createInputBox(plugin);

@@ -6,6 +6,7 @@
 
 ## not yet released
 
+- [plugin] implement stubbed API window registerUriHandler() [#13306](https://github.com/eclipse-theia/theia/pull/13306) - contributed on behalf of STMicroelectronics
 - [plugin] stub multiDocumentHighlightProvider proposed API [#13248](https://github.com/eclipse-theia/theia/pull/13248) - contributed on behalf of STMicroelectronics
 - [builtins] update built-ins to version 1.83.1 [#13298](https://github.com/eclipse-theia/theia/pull/13298) - contributed on behalf of STMicroelectronics
 - [terminal] rename terminal.sendText() parameter from addNewLine to shouldExecute [#13236](https://github.com/eclipse-theia/theia/pull/13236) - contributed on behalf of STMicroelectronics
