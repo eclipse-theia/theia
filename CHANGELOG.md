@@ -12,6 +12,7 @@
 - [terminal] update terminalQuickFixProvider proposed API according to vscode 1.85 version [#13240](https://github.com/eclipse-theia/theia/pull/13240) - contributed on behalf of STMicroelectronics
 - [core] added preference 'workbench.tree.indent' to control the indentation in the tree widget [#13179](https://github.com/eclipse-theia/theia/pull/13179) - contributed on behalf of STMicroelectronics
 - [remote] upport specifying the port of a remote SSH connection [#13296](https://github.com/eclipse-theia/theia/pull/13296) - contributed on behalf of STMicroelectronics
+- [monaco] add document URI as context to getDefaultFormatter [#13280](https://github.com/eclipse-theia/theia/pull/13280) - contributed on behalf of STMicroelectronics
 
 <a name="breaking_changes_not_yet_released">[Breaking Changes:](#breaking_changes_not_yet_released)</a>
 

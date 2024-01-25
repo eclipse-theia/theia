@@ -59,13 +59,13 @@ export class MonacoFormattingConflictsContribution implements FrontendApplicatio
         await this.preferenceService.set(name, formatter);
     }
 
-    private getDefaultFormatter(language: string): string | undefined {
+    private getDefaultFormatter(language: string, resourceURI: string): string | undefined {
         const name = this.preferenceSchema.overridePreferenceName({
             preferenceName: PREFERENCE_NAME,
             overrideIdentifier: language
         });
 
-        return this.preferenceService.get<string>(name);
+        return this.preferenceService.get<string>(name, undefined, resourceURI);
     }
 
     private async selectFormatter<T extends FormattingEditProvider>(
@@ -85,7 +85,7 @@ export class MonacoFormattingConflictsContribution implements FrontendApplicatio
         }
 
         const languageId = currentEditor.editor.document.languageId;
-        const defaultFormatterId = this.getDefaultFormatter(languageId);
+        const defaultFormatterId = this.getDefaultFormatter(languageId, document.uri.toString());
 
         if (defaultFormatterId) {
             const formatter = formatters.find(f => f.extensionId && f.extensionId.value === defaultFormatterId);
