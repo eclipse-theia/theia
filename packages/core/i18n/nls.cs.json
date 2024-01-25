@@ -468,12 +468,16 @@
       "supertypeHierarchy": "Hierarchie nadtypů"
     },
     "vsx-registry": {
+      "confirmDialogMessage": "Rozšíření \"{0}\" není ověřeno a může představovat bezpečnostní riziko.",
+      "confirmDialogTitle": "Jste si jisti, že chcete pokračovat v instalaci ?",
       "downloadCount": "Počet stažení: {0}",
       "errorFetching": "Chyba při načítání rozšíření.",
       "errorFetchingConfigurationHint": "To může být způsobeno problémy s konfigurací sítě.",
       "failedInstallingVSIX": "Nepodařilo se nainstalovat {0} z VSIX.",
       "invalidVSIX": "Vybraný soubor není platný zásuvný modul \"*.vsix\".",
       "license": "Licence: {0}",
+      "onlyShowVerifiedExtensionsDescription": "Díky tomu se na stránkách {0} zobrazují pouze ověřená rozšíření.",
+      "onlyShowVerifiedExtensionsTitle": "Zobrazit pouze ověřená rozšíření",
       "recommendedExtensions": "Seznam názvů rozšíření doporučených pro použití v tomto pracovním prostoru.",
       "searchPlaceholder": "Hledat rozšíření v {0}",
       "showInstalled": "Zobrazit nainstalovaná rozšíření",

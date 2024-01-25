@@ -468,12 +468,16 @@
       "supertypeHierarchy": "Иерархия супертипов"
     },
     "vsx-registry": {
+      "confirmDialogMessage": "Расширение \"{0}\" является непроверенным и может представлять угрозу безопасности.",
+      "confirmDialogTitle": "Вы уверены, что хотите продолжить установку?",
       "downloadCount": "Скачать граф: {0}",
       "errorFetching": "Ошибка при получении расширений.",
       "errorFetchingConfigurationHint": "Это может быть вызвано проблемами конфигурации сети.",
       "failedInstallingVSIX": "Не удалось установить {0} из VSIX.",
       "invalidVSIX": "Выбранный файл не является действительным плагином \"*.vsix\".",
       "license": "Лицензия: {0}",
+      "onlyShowVerifiedExtensionsDescription": "Это позволяет сайту {0} показывать только проверенные расширения.",
+      "onlyShowVerifiedExtensionsTitle": "Показывать только проверенные расширения",
       "recommendedExtensions": "Список имен расширений, рекомендуемых для использования в данной рабочей области.",
       "searchPlaceholder": "Поисковые расширения в {0}",
       "showInstalled": "Показать установленные расширения",

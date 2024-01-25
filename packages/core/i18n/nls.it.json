@@ -468,12 +468,16 @@
       "supertypeHierarchy": "Gerarchia dei supertipi"
     },
     "vsx-registry": {
+      "confirmDialogMessage": "L'estensione \"{0}\" non è verificata e potrebbe rappresentare un rischio per la sicurezza.",
+      "confirmDialogTitle": "Siete sicuri di voler procedere con l'installazione?",
       "downloadCount": "Conteggio dei download: {0}",
       "errorFetching": "Errore nel recupero delle estensioni.",
       "errorFetchingConfigurationHint": "Questo potrebbe essere causato da problemi di configurazione della rete.",
       "failedInstallingVSIX": "Impossibile installare {0} da VSIX.",
       "invalidVSIX": "Il file selezionato non è un plugin \"*.vsix\" valido.",
       "license": "Licenza: {0}",
+      "onlyShowVerifiedExtensionsDescription": "Ciò consente a {0} di mostrare solo le estensioni verificate.",
+      "onlyShowVerifiedExtensionsTitle": "Mostra solo le estensioni verificate",
       "recommendedExtensions": "Una lista dei nomi delle estensioni raccomandate per l'uso in questo spazio di lavoro.",
       "searchPlaceholder": "Estensioni di ricerca in {0}",
       "showInstalled": "Mostra le estensioni installate",
