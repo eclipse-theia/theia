@@ -67,7 +67,7 @@ Object.defineProperty(Disposable, 'NULL', {
  * are disposed, but such activity will never result in another
  * notification.
  *
- * Calling dispose() on the collection disposes all is elements. A notification
+ * Calling dispose() on the collection disposes all its elements. A notification
  * is sent (if no notification was previously sent).
  */
 export class DisposableCollection implements Disposable {
