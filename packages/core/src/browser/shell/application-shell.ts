@@ -132,15 +132,18 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
             getDynamicTabOptions());
         this.tabBarClasses.forEach(c => tabBar.addClass(c));
         renderer.tabBar = tabBar;
-        tabBar.disposed.connect(() => renderer.dispose());
         renderer.contextMenuPath = SHELL_TABBAR_CONTEXT_MENU;
         tabBar.currentChanged.connect(this.onCurrentTabChanged, this);
-        this.corePreferences.onPreferenceChanged(change => {
+        const prefChangeDisposable = this.corePreferences.onPreferenceChanged(change => {
             if (change.preferenceName === 'workbench.tab.shrinkToFit.enabled' ||
                 change.preferenceName === 'workbench.tab.shrinkToFit.minimumSize' ||
                 change.preferenceName === 'workbench.tab.shrinkToFit.defaultSize') {
                 tabBar.dynamicTabOptions = getDynamicTabOptions();
             }
+        });
+        tabBar.disposed.connect(() => {
+            prefChangeDisposable.dispose();
+            renderer.dispose();
         });
         this.onDidCreateTabBarEmitter.fire(tabBar);
         return tabBar;
