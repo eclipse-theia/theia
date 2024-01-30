@@ -23,7 +23,7 @@ import { ElectronFrontendIdProvider } from './electron-frontend-id-provider';
 import { FrontendIdProvider } from '../../browser/messaging/frontend-id-provider';
 import { ConnectionSource } from '../../browser/messaging/connection-source';
 import { LocalConnectionProvider, RemoteConnectionProvider, ServiceConnectionProvider } from '../../browser/messaging/service-connection-provider';
-import { WebSocketConnectionProvider } from '../../browser';
+import { WebSocketConnectionProvider } from '../../browser/messaging/ws-connection-provider';
 import { ConnectionCloseService, connectionCloseServicePath } from '../../common/messaging/connection-management';
 import { WebSocketConnectionSource } from '../../browser/messaging/ws-connection-source';
 
