@@ -23,10 +23,10 @@ import { RPCProtocol, RPCProtocolImpl } from '../../../common/rpc-protocol';
 import { ClipboardExt } from '../../../plugin/clipboard-ext';
 import { EditorsAndDocumentsExtImpl } from '../../../plugin/editors-and-documents';
 import { MessageRegistryExt } from '../../../plugin/message-registry';
-import { PluginManagerExtImpl } from '../../../plugin/plugin-manager';
-import { KeyValueStorageProxy } from '../../../plugin/plugin-storage';
+import { MinimalTerminalServiceExt, PluginManagerExtImpl } from '../../../plugin/plugin-manager';
+import { InternalStorageExt, KeyValueStorageProxy } from '../../../plugin/plugin-storage';
 import { PreferenceRegistryExtImpl } from '../../../plugin/preference-registry';
-import { SecretsExtImpl } from '../../../plugin/secrets-ext';
+import { InternalSecretsExt, SecretsExtImpl } from '../../../plugin/secrets-ext';
 import { TerminalServiceExtImpl } from '../../../plugin/terminal-ext';
 import { WebviewsExtImpl } from '../../../plugin/webviews';
 import { WorkspaceExtImpl } from '../../../plugin/workspace';
@@ -58,16 +58,23 @@ export default new ContainerModule(bind => {
 
     bind(PluginManagerExtImpl).toSelf().inSingletonScope();
     bind(EnvExtImpl).to(WorkerEnvExtImpl).inSingletonScope();
-    bind(LocalizationExt).to(LocalizationExtImpl).inSingletonScope();
+    bind(LocalizationExtImpl).toSelf().inSingletonScope();
+    bind(LocalizationExt).toService(LocalizationExtImpl);
     bind(KeyValueStorageProxy).toSelf().inSingletonScope();
+    bind(InternalStorageExt).toService(KeyValueStorageProxy);
     bind(SecretsExtImpl).toSelf().inSingletonScope();
+    bind(InternalSecretsExt).toService(SecretsExtImpl);
     bind(PreferenceRegistryExtImpl).toSelf().inSingletonScope();
-    bind(DebugExtImpl).toDynamicValue(({ container }) => createDebugExtStub(container))
-        .inSingletonScope();
+    bind(DebugExtImpl).toDynamicValue(({ container }) => {
+        const child = container.createChild();
+        child.bind(DebugExtImpl).toSelf();
+        return createDebugExtStub(child);
+    }).inSingletonScope();
     bind(EditorsAndDocumentsExtImpl).toSelf().inSingletonScope();
     bind(WorkspaceExtImpl).toSelf().inSingletonScope();
     bind(MessageRegistryExt).toSelf().inSingletonScope();
     bind(ClipboardExt).toSelf().inSingletonScope();
     bind(WebviewsExtImpl).toSelf().inSingletonScope();
     bind(TerminalServiceExtImpl).toSelf().inSingletonScope();
+    bind(MinimalTerminalServiceExt).toService(TerminalServiceExtImpl);
 });
