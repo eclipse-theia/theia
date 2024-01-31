@@ -19,8 +19,7 @@ import { MarkdownString } from '@theia/core/lib/common/markdown-rendering/markdo
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { UriComponents } from '@theia/core/lib/common/uri';
 
-export interface NotebookCommand {
-    id: string;
+export interface NotebookCommand extends Command {
     title?: string;
     tooltip?: string;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
