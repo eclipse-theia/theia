@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as net from 'net';
-import { RemoteContainerConnectionProvider } from '../electron-common/remote-container-connection-provider';
+import { ContainerConnectionOptions, RemoteContainerConnectionProvider } from '../electron-common/remote-container-connection-provider';
 import { RemoteConnection, RemoteExecOptions, RemoteExecResult, RemoteExecTester, RemoteStatusReport } from '@theia/remote/lib/electron-node/remote-types';
 import { RemoteSetupService } from '@theia/remote/lib/electron-node/setup/remote-setup-service';
 import { RemoteConnectionService } from '@theia/remote/lib/electron-node/remote-connection-service';
@@ -26,6 +26,10 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { v4 } from 'uuid';
 import * as Docker from 'dockerode';
 import { DockerContainerCreationService } from './docker-container-creation-service';
+import { Deferred } from '@theia/core/lib/common/promise-util';
+import { WriteStream } from 'tty';
+import { PassThrough } from 'stream';
+import { exec } from 'child_process';
 
 @injectable()
 export class DevContainerConnectionProvider implements RemoteContainerConnectionProvider {
@@ -45,54 +49,61 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
     @inject(DockerContainerCreationService)
     protected readonly containerCreationService: DockerContainerCreationService;
 
-    async connectToContainer(): Promise<string> {
+    async connectToContainer(options: ContainerConnectionOptions): Promise<string> {
         const dockerConnection = new Docker();
-        const version = await dockerConnection.version();
+        const version = await dockerConnection.version().catch(() => undefined);
 
         if (!version) {
             this.messageService.error('Docker Daemon is not running');
             throw new Error('Docker is not running');
         }
 
+        // create container
         const progress = await this.messageService.showProgress({
             text: 'create container',
         });
+        try {
+            const port = Math.floor(Math.random() * (49151 - 10000)) + 10000;
+            const container = await this.containerCreationService.buildContainer(dockerConnection, port);
 
-        // create container
-        progress.report({ message: 'Connecting to container' });
+            // create actual connection
+            const report: RemoteStatusReport = message => progress.report({ message });
+            report('Connecting to remote system...');
 
-        const container = await this.containerCreationService.buildContainer(dockerConnection);
-
-        // create actual connection
-        const report: RemoteStatusReport = message => progress.report({ message });
-        report('Connecting to remote system...');
-
-        const remote = await this.createContainerConnection(container, dockerConnection);
-        await this.remoteSetup.setup({
-            connection: remote,
-            report,
-            nodeDownloadTemplate: ''
-        });
-        const registration = this.remoteConnectionService.register(remote);
-        const server = await this.serverProvider.getProxyServer(socket => {
-            remote.forwardOut(socket);
-        });
-        remote.onDidDisconnect(() => {
-            server.close();
-            registration.dispose();
-        });
-        const localPort = (server.address() as net.AddressInfo).port;
-        remote.localPort = localPort;
-        return localPort.toString();
+            const remote = await this.createContainerConnection(container, dockerConnection, port);
+            await this.remoteSetup.setup({
+                connection: remote,
+                report,
+                nodeDownloadTemplate: options.nodeDownloadTemplate
+            });
+            const registration = this.remoteConnectionService.register(remote);
+            const server = await this.serverProvider.getProxyServer(socket => {
+                remote.forwardOut(socket);
+            });
+            remote.onDidDisconnect(() => {
+                server.close();
+                registration.dispose();
+            });
+            const localPort = (server.address() as net.AddressInfo).port;
+            remote.localPort = localPort;
+            return localPort.toString();
+        } catch (e) {
+            this.messageService.error(e.message);
+            console.error(e);
+            throw e;
+        } finally {
+            progress.cancel();
+        }
     }
 
-    async createContainerConnection(container: Docker.Container, docker: Docker): Promise<RemoteDockerContainerConnection> {
+    async createContainerConnection(container: Docker.Container, docker: Docker, port: number): Promise<RemoteDockerContainerConnection> {
         return Promise.resolve(new RemoteDockerContainerConnection({
             id: v4(),
             name: 'dev-container',
             type: 'container',
             docker,
-            container
+            container,
+            port
         }));
     }
 
@@ -104,6 +115,14 @@ export interface RemoteContainerConnectionOptions {
     type: string;
     docker: Docker;
     container: Docker.Container;
+    port: number;
+}
+
+interface ContainerTerminalSession {
+    execution: Docker.Exec,
+    stdout: WriteStream,
+    stderr: WriteStream,
+    executeCommand(cmd: string, args?: string[]): Promise<{ stdout: string, stderr: string }>;
 }
 
 export class RemoteDockerContainerConnection implements RemoteConnection {
@@ -117,6 +136,10 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
     docker: Docker;
     container: Docker.Container;
 
+    containerInfo: Docker.ContainerInspectInfo | undefined;
+
+    protected activeTerminalSession: ContainerTerminalSession | undefined;
+
     protected readonly onDidDisconnectEmitter = new Emitter<void>();
     onDidDisconnect: Event<void> = this.onDidDisconnectEmitter.event;
 
@@ -128,26 +151,104 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
 
         this.docker = options.docker;
         this.container = options.container;
+        this.remotePort = options.port;
     }
 
-    forwardOut(socket: Socket): void {
-        throw new Error('Method not implemented.');
+    async forwardOut(socket: Socket): Promise<void> {
+        if (!this.containerInfo) {
+            this.containerInfo = await this.container.inspect();
+        }
+        const portMapping = this.containerInfo.NetworkSettings.Ports[`${this.remotePort}/tcp`][0];
+        const connectSocket = new Socket({ readable: true, writable: true }).connect(parseInt(portMapping.HostPort), portMapping.HostIp);
+        socket.pipe(connectSocket);
+        connectSocket.pipe(socket);
     }
 
-    exec(cmd: string, args?: string[], options?: RemoteExecOptions): Promise<RemoteExecResult> {
-        throw new Error('Method not implemented.');
+    async exec(cmd: string, args?: string[], options?: RemoteExecOptions): Promise<RemoteExecResult> {
+        // return (await this.getOrCreateTerminalSession()).executeCommand(cmd, args);
+        const deferred = new Deferred<RemoteExecResult>();
+        try {
+            // TODO add windows container support
+            const execution = await this.container.exec({ Cmd: ['sh', '-c', `${cmd} ${args?.join(' ') ?? ''}`], AttachStdout: true, AttachStderr: true });
+            let stdoutBuffer = '';
+            let stderrBuffer = '';
+            const stream = await execution?.start({});
+            const stdout = new PassThrough();
+            stdout.on('data', (chunk: Buffer) => {
+                stdoutBuffer += chunk.toString();
+            });
+            const stderr = new PassThrough();
+            stderr.on('data', (chunk: Buffer) => {
+                stderrBuffer += chunk.toString();
+            });
+            execution.modem.demuxStream(stream, stdout, stderr);
+            stream?.addListener('close', () => deferred.resolve({ stdout: stdoutBuffer.toString(), stderr: stderrBuffer.toString() }));
+        } catch (e) {
+            deferred.reject(e);
+        }
+        return deferred.promise;
     }
 
-    execPartial(cmd: string, tester: RemoteExecTester, args?: string[], options?: RemoteExecOptions): Promise<RemoteExecResult> {
-        throw new Error('Method not implemented.');
+    async execPartial(cmd: string, tester: RemoteExecTester, args?: string[], options?: RemoteExecOptions): Promise<RemoteExecResult> {
+        const deferred = new Deferred<RemoteExecResult>();
+        try {
+            // TODO add windows container support
+            const execution = await this.container.exec({ Cmd: ['sh', '-c', `${cmd} ${args?.join(' ') ?? ''}`], AttachStdout: true, AttachStderr: true });
+            let stdoutBuffer = '';
+            let stderrBuffer = '';
+            const stream = await execution?.start({});
+            stream.on('close', () => {
+                if (deferred.state === 'unresolved') {
+                    deferred.resolve({ stdout: stdoutBuffer.toString(), stderr: stderrBuffer.toString() });
+                }
+            });
+            const stdout = new PassThrough();
+            stdout.on('data', (data: Buffer) => {
+                if (deferred.state === 'unresolved') {
+                    stdoutBuffer += data.toString();
+
+                    if (tester(stdoutBuffer, stderrBuffer)) {
+                        deferred.resolve({ stdout: stdoutBuffer, stderr: stderrBuffer });
+                    }
+                }
+            });
+            const stderr = new PassThrough();
+            stderr.on('data', (data: Buffer) => {
+                if (deferred.state === 'unresolved') {
+                    stderrBuffer += data.toString();
+
+                    if (tester(stdoutBuffer, stderrBuffer)) {
+                        deferred.resolve({ stdout: stdoutBuffer, stderr: stderrBuffer });
+                    }
+                }
+            });
+            execution.modem.demuxStream(stream, stdout, stderr);
+        } catch (e) {
+            deferred.reject(e);
+        }
+        return deferred.promise;
     }
 
-    copy(localPath: string | Buffer | NodeJS.ReadableStream, remotePath: string): Promise<void> {
-        throw new Error('Method not implemented.');
+    async copy(localPath: string | Buffer | NodeJS.ReadableStream, remotePath: string): Promise<void> {
+        const deferred = new Deferred<void>();
+        const process = exec(`docker cp -qa ${localPath.toString()} ${this.container.id}:${remotePath}`);
+
+        let stderr = '';
+        process.stderr?.on('data', data => {
+            stderr += data.toString();
+        });
+        process.on('close', code => {
+            if (code === 0) {
+                deferred.resolve();
+            } else {
+                deferred.reject(stderr);
+            }
+        });
+        return deferred.promise;
     }
 
     dispose(): void {
-        throw new Error('Method not implemented.');
+        this.container.stop();
     }
 
 }

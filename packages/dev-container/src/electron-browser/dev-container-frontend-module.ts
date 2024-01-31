@@ -15,8 +15,16 @@
 // *****************************************************************************
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { RemoteRegistryContribution } from '@theia/remote/lib/electron-browser/remote-registry-contribution';
+import { RemoteContainerConnectionProvider, RemoteContainerConnectionProviderPath } from '../electron-common/remote-container-connection-provider';
 import { ContainerConnectionContribution } from './container-connection-contribution';
+import { ServiceConnectionProvider } from '@theia/core/lib/browser/messaging/service-connection-provider';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
-    bind(RemoteRegistryContribution).to(ContainerConnectionContribution);
+    bind(ContainerConnectionContribution).toSelf().inSingletonScope();
+    bind(RemoteRegistryContribution).toService(ContainerConnectionContribution);
+
+    bind(RemoteContainerConnectionProvider).toDynamicValue(ctx =>
+        ServiceConnectionProvider.createLocalProxy<RemoteContainerConnectionProvider>(ctx.container, RemoteContainerConnectionProviderPath)
+    ).inSingletonScope();
+
 });

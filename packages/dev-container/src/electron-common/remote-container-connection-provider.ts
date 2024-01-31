@@ -17,6 +17,9 @@ export const RemoteContainerConnectionProviderPath = '/remote/container';
 
 export const RemoteContainerConnectionProvider = Symbol('RemoteContainerConnectionProvider');
 
+export interface ContainerConnectionOptions {
+    nodeDownloadTemplate?: string;
+}
 export interface RemoteContainerConnectionProvider {
-    connectToContainer(): Promise<string>;
+    connectToContainer(options: ContainerConnectionOptions): Promise<string>;
 }

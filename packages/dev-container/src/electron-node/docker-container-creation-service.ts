@@ -26,19 +26,37 @@ export class DockerContainerCreationService {
     @inject(WorkspaceServer)
     protected readonly workspaceServer: WorkspaceServer;
 
-    async buildContainer(docker: Docker, from?: URI): Promise<Docker.Container> {
+    async buildContainer(docker: Docker, port: number, from?: URI): Promise<Docker.Container> {
         const workspace = from ?? new URI(await this.workspaceServer.getMostRecentlyUsedWorkspace());
         if (!workspace) {
             throw new Error('No workspace');
         }
 
         const devcontainerFile = workspace.resolve('.devcontainer/devcontainer.json');
-        const devcontainerConfig = JSON.parse(await fs.readFile(devcontainerFile.path.fsPath(), 'utf-8'));
+        const devcontainerConfig = JSON.parse(await fs.readFile(devcontainerFile.path.fsPath(), 'utf-8').catch(() => '0'));
+
+        if (!devcontainerConfig) {
+            // TODO add ability for user to create new config
+            throw new Error('No devcontainer.json');
+        }
+
+        await docker.pull(devcontainerConfig.image);
 
         // TODO add more config
-        const container = docker.createContainer({
+        const container = await docker.createContainer({
             Image: devcontainerConfig.image,
+            Tty: true,
+            ExposedPorts: {
+                [`${port}/tcp`]: {},
+            },
+            HostConfig: {
+                PortBindings: {
+                    [`${port}/tcp`]: [{ HostPort: '0' }],
+                }
+            }
         });
+        const start = await container.start();
+        console.log(start);
 
         return container;
     }

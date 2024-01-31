@@ -18,6 +18,7 @@ import { ContainerModule } from '@theia/core/shared/inversify';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
 import { DevContainerConnectionProvider } from './remote-container-connection-provider';
 import { RemoteContainerConnectionProvider, RemoteContainerConnectionProviderPath } from '../electron-common/remote-container-connection-provider';
+import { DockerContainerCreationService } from './docker-container-creation-service';
 
 export const remoteConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {
     bind(DevContainerConnectionProvider).toSelf().inSingletonScope();
@@ -26,5 +27,6 @@ export const remoteConnectionModule = ConnectionContainerModule.create(({ bind, 
 });
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
+    bind(DockerContainerCreationService).toSelf().inSingletonScope();
     bind(ConnectionContainerModule).toConstantValue(remoteConnectionModule);
 });

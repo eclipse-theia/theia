@@ -17,6 +17,7 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { AbstractRemoteRegistryContribution, RemoteRegistry } from '@theia/remote/lib/electron-browser/remote-registry-contribution';
 import { RemoteContainerConnectionProvider } from '../electron-common/remote-container-connection-provider';
+import { RemotePreferences } from '@theia/remote/lib/electron-browser/remote-preferences';
 
 @injectable()
 export class ContainerConnectionContribution extends AbstractRemoteRegistryContribution {
@@ -24,10 +25,14 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
     @inject(RemoteContainerConnectionProvider)
     protected readonly connectionProvider: RemoteContainerConnectionProvider;
 
+    @inject(RemotePreferences)
+    protected readonly remotePreferences: RemotePreferences;
+
     registerRemoteCommands(registry: RemoteRegistry): void {
         registry.registerCommand({
             id: 'dev-container:reopen-in-container',
-            label: 'Reopen in Container'
+            label: 'Reopen in Container',
+            category: 'Dev Container'
         }, {
             execute: () => this.openInContainer()
         });
@@ -35,7 +40,9 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
     }
 
     async openInContainer(): Promise<void> {
-        const port = await this.connectionProvider.connectToContainer();
+        const port = await this.connectionProvider.connectToContainer({
+            nodeDownloadTemplate: this.remotePreferences['remote.nodeDownloadTemplate']
+        });
         this.openRemote(port, false);
     }
 

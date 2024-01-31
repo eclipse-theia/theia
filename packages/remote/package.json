@@ -12,7 +12,7 @@
     "decompress-unzip": "^4.0.1",
     "express-http-proxy": "^1.6.3",
     "glob": "^8.1.0",
-    "ssh2": "^1.12.0",
+    "ssh2": "^1.15.0",
     "ssh2-sftp-client": "^9.1.0",
     "socket.io": "^4.5.3",
     "socket.io-client": "^4.5.3",
