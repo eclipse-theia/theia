@@ -21,6 +21,7 @@ import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookKernelService } from '../service/notebook-kernel-service';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
+import { NotebookCommand } from '../../common';
 
 export interface NotebookMainToolbarProps {
     notebookModel: NotebookModel
@@ -85,7 +86,7 @@ export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProp
         return <div className='theia-notebook-main-toolbar'>
             {this.getMenuItems().map(item => this.renderMenuItem(item))}
             <div style={{ flexGrow: 1 }}></div>
-            <div className='theia-notebook-main-toolbar-item'
+            <div className='theia-notebook-main-toolbar-item action-label'
                 onClick={() => this.props.commandRegistry.executeCommand(NotebookCommands.SELECT_KERNEL_COMMAND.id, this.props.notebookModel)}>
                 <span className={codicon('server-environment')} />
                 <span className=' theia-notebook-main-toolbar-item-text'>
@@ -103,7 +104,8 @@ export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProp
                 {itemNodes && itemNodes.length > 0 && <span key={`${item.id}-separator`} className='theia-notebook-toolbar-separator'></span>}
             </React.Fragment>;
         } else if (!item.when || this.props.contextKeyService.match(item.when)) {
-            return <div key={item.id} title={item.id} className='theia-notebook-main-toolbar-item'
+            const title = (this.props.commandRegistry.getCommand(item.command ?? '') as NotebookCommand)?.tooltip ?? item.label;
+            return <div key={item.id} title={title} className='theia-notebook-main-toolbar-item action-label'
                 onClick={() => {
                     if (item.command) {
                         this.props.commandRegistry.executeCommand(item.command, this.props.notebookModel);
