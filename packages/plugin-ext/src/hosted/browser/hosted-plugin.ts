@@ -240,6 +240,7 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
     }
 
     protected override afterStart(): void {
+        this.watcher.onDidDeploy(() => this.load());
         this.server.onDidOpenConnection(() => this.load());
     }
 
