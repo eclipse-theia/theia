@@ -81,7 +81,7 @@ class ActivatedPlugin {
 
 export const MinimalTerminalServiceExt = Symbol('MinimalTerminalServiceExt');
 export type MinimalTerminalServiceExt = Pick<TerminalServiceExt,
-    'getEnvironmentVariableCollection'|'$initEnvironmentVariableCollections'|'$setShell'>;
+    'getEnvironmentVariableCollection' | '$initEnvironmentVariableCollections' | '$setShell'>;
 
 @injectable()
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

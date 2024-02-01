@@ -20,7 +20,7 @@ import * as theia from '@theia/plugin';
 import { emptyPlugin, MAIN_RPC_CONTEXT, Plugin } from '../../../common/plugin-api-rpc';
 import { ExtPluginApi } from '../../../common/plugin-ext-api-contribution';
 import { getPluginId, PluginMetadata } from '../../../common/plugin-protocol';
-import { RPCProtocol, RPCProtocolImpl } from '../../../common/rpc-protocol';
+import { RPCProtocol } from '../../../common/rpc-protocol';
 import { ClipboardExt } from '../../../plugin/clipboard-ext';
 import { EditorsAndDocumentsExtImpl } from '../../../plugin/editors-and-documents';
 import { MessageRegistryExt } from '../../../plugin/message-registry';
@@ -56,7 +56,7 @@ function initialize(contextPath: string, pluginMetadata: PluginMetadata): void {
 const container = new Container();
 container.load(pluginHostModule);
 
-const rpc: RPCProtocol = container.get(RPCProtocolImpl);
+const rpc: RPCProtocol = container.get(RPCProtocol);
 const pluginManager = container.get(PluginManagerExtImpl);
 pluginManager.setPluginHost({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
