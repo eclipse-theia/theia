@@ -202,7 +202,7 @@ export class ReferenceCollection<K, V extends Disposable> extends AbstractRefere
  * Synchronous implementation of AbstractReferenceCollection that requires
  * the client to provide a value factory, used to service the acquire()
  * function.
-*/
+ */
 export class SyncReferenceCollection<K, V extends Disposable> extends AbstractReferenceCollection<K, V> {
 
     constructor(protected readonly factory: (key: K) => V) {
