@@ -56,7 +56,7 @@ Object.defineProperty(Disposable, 'NULL', {
  * - the collection is auto-pruned when an element it contains is disposed by
  * any code that has a reference to it
  * - you can register to be notified when all elements in the collection have
- * been disposed[1]
+ * been disposed [1]
  * - you can conveniently dispose all elements by calling dispose()
  * on the collection
  *

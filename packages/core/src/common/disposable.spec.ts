@@ -37,34 +37,28 @@ describe('Disposables', () => {
         const collection = new DisposableCollection();
         collection.onDispose(onDispose);
 
-        // DisposableCollection doesn't provide direct access to its array,
-        // so we have to defeat TypeScript to properly test pruning.
-        function collectionSize(): number {
-            /* eslint-disable  @typescript-eslint/no-explicit-any */
-            return (<any>collection).disposables.length;
-        }
         const disposable1 = Disposable.create(elementDispose);
         collection.push(disposable1);
-        expect(collectionSize()).equal(1);
+        expect(collection['disposables']).to.have.lengthOf(1);
 
         const disposable2 = Disposable.create(elementDispose);
         collection.push(disposable2);
-        expect(collectionSize()).equal(2);
+        expect(collection['disposables']).to.have.lengthOf(2);
 
         disposable1.dispose();
-        expect(collectionSize()).equal(1);
+        expect(collection['disposables']).to.have.lengthOf(1);
         expect(onDispose).to.have.not.been.called();
         expect(collection.disposed).is.false;
 
         // Test that calling dispose on an already disposed element doesn't
         // alter the collection state
         disposable1.dispose();
-        expect(collectionSize()).equal(1);
+        expect(collection['disposables']).to.have.lengthOf(1);
         expect(onDispose).to.have.not.been.called();
         expect(collection.disposed).is.false;
 
         disposable2.dispose();
-        expect(collectionSize()).equal(0);
+        expect(collection['disposables']).to.be.empty;
         expect(collection.disposed).is.true;
         expect(onDispose).to.have.been.called.once;
     });
