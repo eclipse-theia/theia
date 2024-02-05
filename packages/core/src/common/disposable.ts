@@ -47,6 +47,34 @@ Object.defineProperty(Disposable, 'NULL', {
     }
 });
 
+/**
+ * Utility for tracking a collection of Disposable objects.
+ *
+ * This utility provides a number of benefits over just using an array of
+ * Disposables:
+ *
+ * - the collection is auto-pruned when an element it contains is disposed by
+ * any code that has a reference to it
+ * - you can register to be notified when all elements in the collection have
+ * been disposed [1]
+ * - you can conveniently dispose all elements by calling dispose()
+ * on the collection
+ *
+ * Unlike an array, however, this utility does not give you direct access to
+ * its elements.
+ *
+ * Being notified when all elements are disposed is simple:
+ * ```
+ * const dc = new DisposableCollection(myDisposables);
+ * dc.onDispose(() => {
+ *    console.log('All elements in the collection have been disposed');
+ * });
+ * ```
+ *
+ * [1] The collection will notify only once. It will continue to function in so
+ * far as accepting new Disposables and pruning them when they are disposed, but
+ * such activity will never result in another notification.
+ */
 export class DisposableCollection implements Disposable {
 
     protected readonly disposables: Disposable[] = [];
