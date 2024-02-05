@@ -3,7 +3,8 @@
   "version": "1.46.0",
   "description": "Theia - Variable Resolver Extension",
   "dependencies": {
-    "@theia/core": "1.46.0"
+    "@theia/core": "1.46.0",
+    "tslib": "^2.6.2"
   },
   "publishConfig": {
     "access": "public"

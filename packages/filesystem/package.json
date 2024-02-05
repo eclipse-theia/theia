@@ -19,6 +19,7 @@
     "stat-mode": "^1.0.0",
     "tar-fs": "^1.16.2",
     "trash": "^7.2.0",
+    "tslib": "^2.6.2",
     "uuid": "^8.0.0",
     "vscode-languageserver-textdocument": "^1.0.1"
   },
