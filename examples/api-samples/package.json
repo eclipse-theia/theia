@@ -8,7 +8,7 @@
     "@theia/file-search": "1.46.0",
     "@theia/filesystem": "1.46.0",
     "@theia/monaco": "1.46.0",
-    "@theia/monaco-editor-core": "1.83.1",
+    "@theia/monaco-editor-core": "1.83.101",
     "@theia/output": "1.46.0",
     "@theia/ovsx-client": "1.46.0",
     "@theia/search-in-workspace": "1.46.0",
