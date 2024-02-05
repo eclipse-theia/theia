@@ -42,6 +42,7 @@ export class NotebookCellContextManager implements NotebookCellContextManager, D
             this.toDispose.dispose();
 
             this.currentContext = newHtmlContext;
+            this.currentStore = this.contextKeyService.createScoped(newHtmlContext);
 
             this.currentStore.setContext(NOTEBOOK_CELL_TYPE, cell.cellKind === CellKind.Code ? 'code' : 'markdown');
 
