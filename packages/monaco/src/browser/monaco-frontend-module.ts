@@ -215,6 +215,14 @@ export function createMonacoConfigurationService(container: interfaces.Container
         return proxy;
     };
 
+    /*
+     * Since we never read values from the underlying service, writing to it doesn't make sense. The standalone editor writes to the configuration when being created,
+     * which makes sense in the standalone case where there is no preference infrastructure in place. Those writes degrade the performance, however, so we patch the
+     * service to an empty implementation.
+     */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    service.updateValues = (values: [string, any][]) => Promise.resolve();
+
     const toTarget = (scope: PreferenceScope): ConfigurationTarget => {
         switch (scope) {
             case PreferenceScope.Default: return ConfigurationTarget.DEFAULT;
