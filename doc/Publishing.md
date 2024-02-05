@@ -40,7 +40,7 @@ In order to successfully perform a `yarn upgrade` one must:
 ### Announce Release
 
 It is a good idea to give a heads-up to developers and the community some hours before a release.
-At the time of writing this is [Discourse](https://community.theia-ide.org/). Here is an [example](https://community.theia-ide.org/t/eclipse-theia-v1-40-0-release/3112/5).
+At the time of writing this is [GitHub Discussions](https://github.com/eclipse-theia/theia/discussions). Here is an [example](https://github.com/eclipse-theia/theia/discussions/13314).
 
 ### Localization
 
