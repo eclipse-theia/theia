@@ -1,6 +1,6 @@
 {
   "name": "@theia/playwright",
-  "version": "1.46.0",
+  "version": "1.46.1",
   "description": "System tests for Theia",
   "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
   "repository": {
@@ -44,5 +44,6 @@
   "publishConfig": {
     "access": "public"
   },
-  "main": "lib/index"
+  "main": "lib/index",
+  "gitHead": "1799210a8fba6eb81e2ddaf66f09d6fa071df012"
 }

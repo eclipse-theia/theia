@@ -1,11 +1,11 @@
 {
   "name": "@theia/output",
-  "version": "1.46.0",
+  "version": "1.46.1",
   "description": "Theia - Output Extension",
   "dependencies": {
-    "@theia/core": "1.46.0",
-    "@theia/editor": "1.46.0",
-    "@theia/monaco": "1.46.0",
+    "@theia/core": "1.46.1",
+    "@theia/editor": "1.46.1",
+    "@theia/monaco": "1.46.1",
     "@theia/monaco-editor-core": "1.72.3",
     "@types/p-queue": "^2.3.1",
     "p-queue": "^2.4.2"
@@ -43,9 +43,10 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.46.0"
+    "@theia/ext-scripts": "1.46.1"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
-  }
+  },
+  "gitHead": "fb7722e8d90d9d4771e7ba1c5b04383ed560fcd9"
 }

@@ -1,6 +1,6 @@
 {
   "name": "@theia/request",
-  "version": "1.46.0",
+  "version": "1.46.1",
   "description": "Theia Proxy-Aware Request Service",
   "publishConfig": {
     "access": "public"
@@ -31,5 +31,6 @@
   "dependencies": {
     "http-proxy-agent": "^5.0.0",
     "https-proxy-agent": "^5.0.0"
-  }
+  },
+  "gitHead": "1799210a8fba6eb81e2ddaf66f09d6fa071df012"
 }
