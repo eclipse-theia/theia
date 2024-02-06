@@ -89,9 +89,9 @@ import { FooExtImpl } from './foo-ext-impl';
 import * as fooBarAPI from '@bar/foo';
 
 type FooBarApi = typeof fooBarAPI;
+type Foo = FooBarApi['Foo'];
 
 const FooBarApiFactory = Symbol('FooBarApiFactory');
-type FooBarApiFactory = ApiFactory<FooBarApi>;
 
 // Retrieved by Theia to configure the Inversify DI container when the plugin is initialized.
 // This is called when the plugin-host process is forked.
