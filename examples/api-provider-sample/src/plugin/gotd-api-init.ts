@@ -21,7 +21,7 @@ import type * as gotd from '../gotd';
 import { GreetingKind, GreetingExt, MAIN_RPC_CONTEXT } from '../common/plugin-api-rpc';
 import { GreetingExtImpl } from './greeting-ext-impl';
 import { Disposable, DisposableCollection } from '@theia/core';
-import { ApiFactory, PluginContainerModule } from '@theia/plugin-ext/lib/plugin/node/plugin-container-module';
+import { PluginContainerModule } from '@theia/plugin-ext/lib/plugin/node/plugin-container-module';
 
 // This script is responsible for creating and returning the extension's
 // custom API object when a plugin's module imports it. Keep in mind that
@@ -31,7 +31,6 @@ import { ApiFactory, PluginContainerModule } from '@theia/plugin-ext/lib/plugin/
 
 type Gotd = typeof gotd;
 const GotdApiFactory = Symbol('GotdApiFactory');
-type GotdApiFactory = ApiFactory<Gotd>;
 
 // Retrieved by Theia to configure the Inversify DI container when the plugin is initialized.
 // This is called when the plugin-host process is forked.
