@@ -89,7 +89,6 @@ import { FooExtImpl } from './foo-ext-impl';
 import * as fooBarAPI from '@bar/foo';
 
 type FooBarApi = typeof fooBarAPI;
-type Foo = FooBarApi['Foo'];
 
 const FooBarApiFactory = Symbol('FooBarApiFactory');
 type FooBarApiFactory = ApiFactory<FooBarApi>;
@@ -127,10 +126,11 @@ class FooBarApiFactoryImpl {
 
     // The plugin host expects our API factory to export a `createApi()` method
     createApi(plugin: Plugin): FooBarApi {
+        const self = this;
         return {
             fooBar: {
                 getFoo(): Promise<Foo> {
-                    return fooExt.getFooImpl();
+                    return self.fooExt.getFooImpl();
                 }
             }
         };
