@@ -19,7 +19,20 @@ export const RemoteContainerConnectionProvider = Symbol('RemoteContainerConnecti
 
 export interface ContainerConnectionOptions {
     nodeDownloadTemplate?: string;
+    lastContainerInfo?: LastContainerInfo
+}
+
+export interface LastContainerInfo {
+    id: string;
+    port: number;
+}
+
+export interface ContainerConnectionResult {
+    port: string;
+    workspacePath: string;
+    containerId: string;
+    containerPort: number;
 }
 export interface RemoteContainerConnectionProvider {
-    connectToContainer(options: ContainerConnectionOptions): Promise<string>;
+    connectToContainer(options: ContainerConnectionOptions): Promise<ContainerConnectionResult>;
 }

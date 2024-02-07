@@ -16,10 +16,11 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { AbstractRemoteRegistryContribution, RemoteRegistry } from '@theia/remote/lib/electron-browser/remote-registry-contribution';
-import { RemoteContainerConnectionProvider } from '../electron-common/remote-container-connection-provider';
+import { LastContainerInfo, RemoteContainerConnectionProvider } from '../electron-common/remote-container-connection-provider';
 import { RemotePreferences } from '@theia/remote/lib/electron-browser/remote-preferences';
-import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import { WorkspaceStorageService } from '@theia/workspace/lib/browser/workspace-storage-service';
 
+const LAST_USED_CONTAINER = 'lastUsedContainer';
 @injectable()
 export class ContainerConnectionContribution extends AbstractRemoteRegistryContribution {
 
@@ -29,8 +30,8 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
     @inject(RemotePreferences)
     protected readonly remotePreferences: RemotePreferences;
 
-    @inject(WorkspaceService)
-    private workspaceService: WorkspaceService;
+    @inject(WorkspaceStorageService)
+    private workspaceStorageService: WorkspaceStorageService;
 
     registerRemoteCommands(registry: RemoteRegistry): void {
         registry.registerCommand({
@@ -44,10 +45,16 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
     }
 
     async openInContainer(): Promise<void> {
-        const port = await this.connectionProvider.connectToContainer({
-            nodeDownloadTemplate: this.remotePreferences['remote.nodeDownloadTemplate']
+        const lastContainerInfo = await this.workspaceStorageService.getData<LastContainerInfo | undefined>(LAST_USED_CONTAINER);
+
+        const connectionResult = await this.connectionProvider.connectToContainer({
+            nodeDownloadTemplate: this.remotePreferences['remote.nodeDownloadTemplate'],
+            lastContainerInfo
         });
-        this.openRemote(port, false, `/workspaces/${(await this.workspaceService.roots)[0].name}`);
+
+        this.workspaceStorageService.setData<LastContainerInfo>(LAST_USED_CONTAINER, { id: connectionResult.containerId, port: connectionResult.containerPort });
+
+        this.openRemote(connectionResult.port, false, connectionResult.workspacePath);
     }
 
 }

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as net from 'net';
-import { ContainerConnectionOptions, RemoteContainerConnectionProvider } from '../electron-common/remote-container-connection-provider';
+import { ContainerConnectionOptions, ContainerConnectionResult, RemoteContainerConnectionProvider } from '../electron-common/remote-container-connection-provider';
 import { RemoteConnection, RemoteExecOptions, RemoteExecResult, RemoteExecTester, RemoteStatusReport } from '@theia/remote/lib/electron-node/remote-types';
 import { RemoteSetupService } from '@theia/remote/lib/electron-node/setup/remote-setup-service';
 import { RemoteConnectionService } from '@theia/remote/lib/electron-node/remote-connection-service';
@@ -25,7 +25,7 @@ import { Socket } from 'net';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { v4 } from 'uuid';
 import * as Docker from 'dockerode';
-import { DockerContainerCreationService } from './docker-container-creation-service';
+import { DockerContainerService } from './docker-container-service';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { WriteStream } from 'tty';
 import { PassThrough } from 'stream';
@@ -46,10 +46,10 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
     @inject(RemoteProxyServerProvider)
     protected readonly serverProvider: RemoteProxyServerProvider;
 
-    @inject(DockerContainerCreationService)
-    protected readonly containerCreationService: DockerContainerCreationService;
+    @inject(DockerContainerService)
+    protected readonly containerService: DockerContainerService;
 
-    async connectToContainer(options: ContainerConnectionOptions): Promise<string> {
+    async connectToContainer(options: ContainerConnectionOptions): Promise<ContainerConnectionResult> {
         const dockerConnection = new Docker();
         const version = await dockerConnection.version().catch(() => undefined);
 
@@ -63,8 +63,7 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
             text: 'create container',
         });
         try {
-            const port = Math.floor(Math.random() * (49151 - 10000)) + 10000;
-            const container = await this.containerCreationService.buildContainer(dockerConnection, port);
+            const [container, port] = await this.containerService.getOrCreateContainer(dockerConnection, options.lastContainerInfo);
 
             // create actual connection
             const report: RemoteStatusReport = message => progress.report({ message });
@@ -86,7 +85,12 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
             });
             const localPort = (server.address() as net.AddressInfo).port;
             remote.localPort = localPort;
-            return localPort.toString();
+            return {
+                containerId: container.id,
+                containerPort: port,
+                workspacePath: (await container.inspect()).Mounts[0].Destination,
+                port: localPort.toString(),
+            };
         } catch (e) {
             this.messageService.error(e.message);
             console.error(e);

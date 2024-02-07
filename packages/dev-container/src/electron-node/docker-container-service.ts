@@ -19,12 +19,34 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { WorkspaceServer } from '@theia/workspace/lib/common';
 import * as fs from '@theia/core/shared/fs-extra';
 import * as Docker from 'dockerode';
+import { LastContainerInfo } from '../electron-common/remote-container-connection-provider';
 
 @injectable()
-export class DockerContainerCreationService {
+export class DockerContainerService {
 
     @inject(WorkspaceServer)
     protected readonly workspaceServer: WorkspaceServer;
+
+    async getOrCreateContainer(docker: Docker, lastContainerInfo?: LastContainerInfo): Promise<[Docker.Container, number]> {
+        let port = Math.floor(Math.random() * (49151 - 10000)) + 10000;
+        let container;
+        if (lastContainerInfo) {
+            try {
+                container = docker.getContainer(lastContainerInfo.id);
+                if (!(await container.inspect()).State.Running) {
+                    await container.start();
+                }
+                port = lastContainerInfo.port;
+            } catch (e) {
+                container = undefined;
+                console.warn('DevContainer: could not find last used container ', e);
+            }
+        }
+        if (!container) {
+            container = await this.buildContainer(docker, port);
+        }
+        return [container, port];
+    }
 
     async buildContainer(docker: Docker, port: number, from?: URI): Promise<Docker.Container> {
         const workspace = from ?? new URI(await this.workspaceServer.getMostRecentlyUsedWorkspace());
