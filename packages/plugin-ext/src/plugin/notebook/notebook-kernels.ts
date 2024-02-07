@@ -294,11 +294,11 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
         };
     }
 
-    $acceptNotebookAssociation(handle: number, uri: UriComponents, value: boolean): void {
+    async $acceptNotebookAssociation(handle: number, uri: UriComponents, value: boolean): Promise<void> {
         const obj = this.kernelData.get(handle);
         if (obj) {
             // update data structure
-            const notebook = this.notebooks.getNotebookDocument(URI.from(uri))!;
+            const notebook = await this.notebooks.waitForNotebookDocument(URI.from(uri));
             if (value) {
                 obj.associatedNotebooks.set(notebook.uri.toString(), true);
             } else {
@@ -320,7 +320,7 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
             // extension can dispose kernels in the meantime
             return Promise.resolve();
         }
-        const document = this.notebooks.getNotebookDocument(URI.from(uri));
+        const document = await this.notebooks.waitForNotebookDocument(URI.from(uri));
         const cells: theia.NotebookCell[] = [];
         for (const cellHandle of handles) {
             const cell = document.getCell(cellHandle);
@@ -347,7 +347,7 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
 
         // cancel or interrupt depends on the controller. When an interrupt handler is used we
         // don't trigger the cancelation token of executions.N
-        const document = this.notebooks.getNotebookDocument(URI.from(uri));
+        const document = await this.notebooks.waitForNotebookDocument(URI.from(uri));
         if (obj.controller.interruptHandler) {
             await obj.controller.interruptHandler.call(obj.controller, document.apiNotebook);
 

@@ -31,7 +31,6 @@ import { NotebookEditorsMainImpl } from './notebook-editors-main';
 import { NotebookDocumentsMainImpl } from './notebook-documents-main';
 import { diffMaps, diffSets } from '../../../common/collections';
 import { Mutex } from 'async-mutex';
-import throttle = require('@theia/core/shared/lodash.throttle');
 
 interface NotebookAndEditorDelta {
     removedDocuments: UriComponents[];
@@ -107,12 +106,12 @@ export class NotebooksAndEditorsMain implements NotebookDocumentsAndEditorsMain 
         this.notebookEditorService = container.get(NotebookEditorWidgetService);
         this.WidgetManager = container.get(WidgetManager);
 
-        this.notebookService.onDidAddNotebookDocument(async () => this.throttleStateUpdate(), this, this.disposables);
-        this.notebookService.onDidRemoveNotebookDocument(async () => this.throttleStateUpdate(), this, this.disposables);
+        this.notebookService.onDidAddNotebookDocument(async () => this.updateState(), this, this.disposables);
+        this.notebookService.onDidRemoveNotebookDocument(async () => this.updateState(), this, this.disposables);
         // this.WidgetManager.onActiveEditorChanged(() => this.updateState(), this, this.disposables);
         this.notebookEditorService.onDidAddNotebookEditor(async editor => this.handleEditorAdd(editor), this, this.disposables);
         this.notebookEditorService.onDidRemoveNotebookEditor(async editor => this.handleEditorRemove(editor), this, this.disposables);
-        this.notebookEditorService.onDidChangeFocusedEditor(async editor => this.throttleStateUpdate(editor), this, this.disposables);
+        this.notebookEditorService.onDidChangeFocusedEditor(async editor => this.updateState(editor), this, this.disposables);
     }
 
     dispose(): void {
@@ -130,17 +129,15 @@ export class NotebooksAndEditorsMain implements NotebookDocumentsAndEditorsMain 
         } else {
             this.editorListeners.set(editor.id, [disposable]);
         }
-        await this.throttleStateUpdate();
+        await this.updateState();
     }
 
     private handleEditorRemove(editor: NotebookEditorWidget): void {
         const listeners = this.editorListeners.get(editor.id);
         listeners?.forEach(listener => listener.dispose());
         this.editorListeners.delete(editor.id);
-        this.throttleStateUpdate();
+        this.updateState();
     }
-
-    private throttleStateUpdate = throttle((focusedEditor?: NotebookEditorWidget) => this.updateState(focusedEditor), 100);
 
     private async updateState(focusedEditor?: NotebookEditorWidget): Promise<void> {
         await this.updateMutex.runExclusive(async () => this.doUpdateState(focusedEditor));
