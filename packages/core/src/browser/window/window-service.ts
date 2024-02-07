@@ -35,7 +35,7 @@ export interface WindowService {
      * Opens a new default window.
      * - In electron and in the browser it will open the default window without a pre-defined content.
      */
-    openNewDefaultWindow(params?: WindowSearchParams): void;
+    openNewDefaultWindow(params?: { search?: WindowSearchParams, hash?: string }): void;
 
     /**
      * Fires when the `window` unloads. The unload event is inevitable. On this event, the frontend application can save its state and release resource.
@@ -64,5 +64,5 @@ export interface WindowService {
     /**
      * Reloads the window according to platform.
      */
-    reload(params?: WindowSearchParams): void;
+    reload(params?: { search?: WindowSearchParams, hash?: string }): void;
 }

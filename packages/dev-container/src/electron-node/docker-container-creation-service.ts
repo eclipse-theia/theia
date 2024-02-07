@@ -42,22 +42,51 @@ export class DockerContainerCreationService {
 
         await docker.pull(devcontainerConfig.image);
 
+        const { exposedPorts, portBindings } = this.getPortBindings(devcontainerConfig.forwardPorts);
+
         // TODO add more config
         const container = await docker.createContainer({
             Image: devcontainerConfig.image,
             Tty: true,
             ExposedPorts: {
                 [`${port}/tcp`]: {},
+                ...exposedPorts
             },
             HostConfig: {
                 PortBindings: {
                     [`${port}/tcp`]: [{ HostPort: '0' }],
-                }
+                    ...portBindings
+                },
+                Mounts: [{
+                    Source: workspace.path.toString(),
+                    Target: `/workspaces/${workspace.path.name}`,
+                    Type: 'bind'
+                }]
             }
         });
         const start = await container.start();
         console.log(start);
 
         return container;
+    }
+
+    getPortBindings(forwardPorts: (string | number)[]): { exposedPorts: {}, portBindings: {} } {
+        const res: { exposedPorts: { [key: string]: {} }, portBindings: { [key: string]: {} } } = { exposedPorts: {}, portBindings: {} };
+        for (const port of forwardPorts) {
+            let portKey: string;
+            let hostPort: string;
+            if (typeof port === 'string') {
+                const parts = port.split(':');
+                portKey = isNaN(+parts[0]) ? parts[0] : `${parts[0]}/tcp`;
+                hostPort = parts[1] ?? parts[0];
+            } else {
+                portKey = `${port}/tcp`;
+                hostPort = port.toString();
+            }
+            res.exposedPorts[portKey] = {};
+            res.portBindings[portKey] = [{ HostPort: hostPort }];
+        }
+
+        return res;
     }
 }

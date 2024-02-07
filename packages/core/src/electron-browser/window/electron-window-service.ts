@@ -22,6 +22,10 @@ import { ElectronWindowPreferences } from './electron-window-preferences';
 import { ConnectionCloseService } from '../../common/messaging/connection-management';
 import { FrontendIdProvider } from '../../browser/messaging/frontend-id-provider';
 
+export interface WindowReloadOptions {
+    search?: WindowSearchParams,
+    hash?: string
+}
 @injectable()
 export class ElectronWindowService extends DefaultWindowService {
 
@@ -86,12 +90,20 @@ export class ElectronWindowService extends DefaultWindowService {
         }
     }
 
-    override reload(params?: WindowSearchParams): void {
+    override reload(params?: WindowReloadOptions): void {
         if (params) {
-            const query = Object.entries(params).map(([name, value]) => `${name}=${value}`).join('&');
-            location.search = query;
+            const newLocation = new URL(location.href);
+            if (params.search) {
+                const query = Object.entries(params.search).map(([name, value]) => `${name}=${value}`).join('&');
+                newLocation.search = query;
+            }
+            if (params.hash) {
+                newLocation.hash = '#' + params.hash;
+            }
+            location.assign(newLocation);
         } else {
             window.electronTheiaCore.requestReload();
         }
     }
 }
+

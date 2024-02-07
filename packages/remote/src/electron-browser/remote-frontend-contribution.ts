@@ -108,9 +108,7 @@ export class RemoteFrontendContribution implements CommandContribution, Frontend
     protected disconnectRemote(): void {
         const port = new URLSearchParams(location.search).get('localPort');
         if (port) {
-            this.windowService.reload({
-                port
-            });
+            this.windowService.reload({ search: { port } });
         }
     }
 

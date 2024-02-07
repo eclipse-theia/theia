@@ -18,6 +18,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { AbstractRemoteRegistryContribution, RemoteRegistry } from '@theia/remote/lib/electron-browser/remote-registry-contribution';
 import { RemoteContainerConnectionProvider } from '../electron-common/remote-container-connection-provider';
 import { RemotePreferences } from '@theia/remote/lib/electron-browser/remote-preferences';
+import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 
 @injectable()
 export class ContainerConnectionContribution extends AbstractRemoteRegistryContribution {
@@ -27,6 +28,9 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
 
     @inject(RemotePreferences)
     protected readonly remotePreferences: RemotePreferences;
+
+    @inject(WorkspaceService)
+    private workspaceService: WorkspaceService;
 
     registerRemoteCommands(registry: RemoteRegistry): void {
         registry.registerCommand({
@@ -43,7 +47,7 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
         const port = await this.connectionProvider.connectToContainer({
             nodeDownloadTemplate: this.remotePreferences['remote.nodeDownloadTemplate']
         });
-        this.openRemote(port, false);
+        this.openRemote(port, false, `/workspaces/${(await this.workspaceService.roots)[0].name}`);
     }
 
 }
