@@ -191,7 +191,7 @@ export interface QuickPick<T extends QuickPickItemOrSeparator> extends QuickInpu
     readonly onDidAccept: Event<{ inBackground: boolean } | undefined>;
     readonly onDidChangeValue: Event<string>;
     readonly onDidTriggerButton: Event<QuickInputButton>;
-    readonly onDidTriggerItemButton: Event<QuickPickItemButtonEvent<T>>;
+    readonly onDidTriggerItemButton: Event<QuickPickItemButtonEvent<QuickPickItem>>;
     readonly onDidChangeActive: Event<T[]>;
     readonly onDidChangeSelection: Event<T[]>;
 }

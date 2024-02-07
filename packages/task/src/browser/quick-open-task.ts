@@ -182,6 +182,7 @@ export class QuickOpenTask implements QuickAccessProvider {
         picker.matchOnDescription = true;
         picker.ignoreFocusOut = false;
         picker.items = this.items;
+        picker.onDidTriggerItemButton(({ item }) => this.onDidTriggerGearIcon(item));
 
         const firstLevelTask = await this.doPickerFirstLevel(picker);
 
@@ -225,7 +226,10 @@ export class QuickOpenTask implements QuickAccessProvider {
             execute: () => this.showMultiLevelQuickPick(true)
         }));
 
-        this.quickInputService?.showQuickPick(providedTasksItems, { placeholder: CHOOSE_TASK });
+        this.quickInputService?.showQuickPick(providedTasksItems, {
+            placeholder: CHOOSE_TASK,
+            onDidTriggerItemButton: ({ item }) => this.onDidTriggerGearIcon(item)
+        });
     }
 
     attach(): void {
