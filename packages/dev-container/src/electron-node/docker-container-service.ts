@@ -33,7 +33,9 @@ export class DockerContainerService {
         if (lastContainerInfo) {
             try {
                 container = docker.getContainer(lastContainerInfo.id);
-                if (!(await container.inspect()).State.Running) {
+                if ((await container.inspect()).State.Running) {
+                    await container.restart();
+                } else {
                     await container.start();
                 }
                 port = lastContainerInfo.port;
