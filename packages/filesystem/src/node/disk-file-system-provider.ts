@@ -509,7 +509,12 @@ export class DiskFileSystemProvider implements Disposable,
             if (opts.recursive) {
                 await this.rimraf(filePath);
             } else {
-                await promisify(unlink)(filePath);
+                const stat = await promisify(lstat)(filePath);
+                if (stat.isDirectory() && !stat.isSymbolicLink()) {
+                    await promisify(rmdir)(filePath);
+                } else {
+                    await promisify(unlink)(filePath);
+                }
             }
         } else {
             await trash(filePath);
