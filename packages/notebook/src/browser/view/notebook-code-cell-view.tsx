@@ -71,21 +71,40 @@ export class NotebookCodeCellRenderer implements CellRenderer {
 
 export interface NotebookCodeCellStatusProps {
     cell: NotebookCellModel;
-    executionStateService: NotebookExecutionStateService
+    executionStateService: NotebookExecutionStateService;
 }
 
-export class NotebookCodeCellStatus extends React.Component<NotebookCodeCellStatusProps, { currentExecution?: CellExecution }> {
+export interface NotebookCodeCellStatusState {
+    currentExecution?: CellExecution;
+    executionTime: number;
+}
+
+export class NotebookCodeCellStatus extends React.Component<NotebookCodeCellStatusProps, NotebookCodeCellStatusState> {
 
     protected toDispose = new DisposableCollection();
 
     constructor(props: NotebookCodeCellStatusProps) {
         super(props);
 
-        this.state = {};
+        this.state = {
+            executionTime: 0
+        };
 
+        let currentInterval: NodeJS.Timeout | undefined;
         this.toDispose.push(props.executionStateService.onDidChangeExecution(event => {
             if (event.affectsCell(this.props.cell.uri)) {
-                this.setState({ currentExecution: event.changed });
+                this.setState({ currentExecution: event.changed, executionTime: 0 });
+                clearInterval(currentInterval);
+                if (event.changed?.state === NotebookCellExecutionState.Executing) {
+                    const startTime = Date.now();
+                    // The resolution of the time display is only a single digit after the decimal point.
+                    // Therefore, we only need to update the display every 100ms.
+                    currentInterval = setInterval(() => {
+                        this.setState({
+                            executionTime: Date.now() - startTime
+                        });
+                    }, 100);
+                }
             }
         }));
     }
@@ -126,17 +145,22 @@ export class NotebookCodeCellStatus extends React.Component<NotebookCodeCellStat
             {iconClasses &&
                 <>
                     <span className={`${iconClasses} notebook-cell-status-item`} style={{ color }}></span>
-                    <div className='notebook-cell-status-item'>{this.getExecutionTime()}</div>
+                    <div className='notebook-cell-status-item'>{this.renderTime(this.getExecutionTime())}</div>
                 </>}
         </>;
     }
 
-    private getExecutionTime(): string {
+    private getExecutionTime(): number {
         const { runStartTime, runEndTime } = this.props.cell.internalMetadata;
-        if (runStartTime && runEndTime) {
-            return `${((runEndTime - runStartTime) / 1000).toLocaleString(undefined, { maximumFractionDigits: 1, minimumFractionDigits: 1 })}s`;
+        const { executionTime } = this.state;
+        if (runStartTime !== undefined && runEndTime !== undefined) {
+            return runEndTime - runStartTime;
         }
-        return '0.0s';
+        return executionTime;
+    }
+
+    private renderTime(ms: number): string {
+        return `${(ms / 1000).toLocaleString(undefined, { maximumFractionDigits: 1, minimumFractionDigits: 1 })}s`;
     }
 }
 
