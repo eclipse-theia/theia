@@ -5,7 +5,8 @@
   "dependencies": {
     "@theia/core": "1.46.0",
     "@theia/editor": "1.46.0",
-    "@theia/workspace": "1.46.0"
+    "@theia/workspace": "1.46.0",
+    "tslib": "^2.6.2"
   },
   "publishConfig": {
     "access": "public"

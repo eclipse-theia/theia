@@ -30,6 +30,7 @@
   },
   "dependencies": {
     "http-proxy-agent": "^5.0.0",
-    "https-proxy-agent": "^5.0.0"
+    "https-proxy-agent": "^5.0.0",
+    "tslib": "^2.6.2"
   }
 }

@@ -4,7 +4,8 @@
   "description": "Theia - Metrics Extension",
   "dependencies": {
     "@theia/core": "1.46.0",
-    "prom-client": "^10.2.0"
+    "prom-client": "^10.2.0",
+    "tslib": "^2.6.2"
   },
   "publishConfig": {
     "access": "public"

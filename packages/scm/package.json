@@ -10,7 +10,8 @@
     "diff": "^3.4.0",
     "p-debounce": "^2.1.0",
     "react-autosize-textarea": "^7.0.0",
-    "ts-md5": "^1.2.2"
+    "ts-md5": "^1.2.2",
+    "tslib": "^2.6.2"
   },
   "publishConfig": {
     "access": "public"

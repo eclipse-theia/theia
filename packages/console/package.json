@@ -6,7 +6,8 @@
     "@theia/core": "1.46.0",
     "@theia/monaco": "1.46.0",
     "@theia/monaco-editor-core": "1.83.101",
-    "anser": "^2.0.1"
+    "anser": "^2.0.1",
+    "tslib": "^2.6.2"
   },
   "publishConfig": {
     "access": "public"

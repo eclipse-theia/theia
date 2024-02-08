@@ -52,6 +52,7 @@
     "puppeteer-core": "19.7.2",
     "puppeteer-to-istanbul": "1.4.0",
     "temp": "^0.9.1",
+    "tslib": "^2.6.2",
     "yargs": "^15.3.1"
   },
   "devDependencies": {

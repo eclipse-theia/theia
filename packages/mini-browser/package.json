@@ -8,6 +8,7 @@
     "@types/mime-types": "^2.1.0",
     "mime-types": "^2.1.18",
     "pdfobject": "^2.0.201604172",
+    "tslib": "^2.6.2",
     "vhost": "^3.0.2"
   },
   "publishConfig": {

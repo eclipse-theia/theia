@@ -7,7 +7,8 @@
     "@theia/editor": "1.46.0",
     "@theia/filesystem": "1.46.0",
     "@theia/monaco": "1.46.0",
-    "react-perfect-scrollbar": "^1.5.8"
+    "react-perfect-scrollbar": "^1.5.8",
+    "tslib": "^2.6.2"
   },
   "publishConfig": {
     "access": "public"
