@@ -29,7 +29,7 @@ export class VsxCliDeployerParticipant implements PluginDeployerParticipant {
     protected readonly vsxCli: VsxCli;
 
     async onWillStart(context: PluginDeployerStartContext): Promise<void> {
-        const pluginUris = this.vsxCli.pluginsToInstall.map(async id => {
+        const pluginUris = await Promise.all(this.vsxCli.pluginsToInstall.map(async id => {
             try {
                 const resolvedPath = path.resolve(id);
                 const stat = await fs.promises.stat(resolvedPath);
@@ -40,7 +40,7 @@ export class VsxCliDeployerParticipant implements PluginDeployerParticipant {
                 // expected if file does not exist
             }
             return VSXExtensionUri.fromVersionedId(id).toString();
-        });
-        context.userEntries.push(...await Promise.all(pluginUris));
+        }));
+        context.userEntries.push(...pluginUris);
     }
 }

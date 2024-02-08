@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2023 TypeFox and others.
+// Copyright (C) 2024 TypeFox and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,15 +14,21 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from '@theia/core/shared/inversify';
-import { RemoteCopyContribution, RemoteCopyRegistry } from '@theia/core/lib/node/remote/remote-copy-contribution';
+import type { OS } from '../../common/os';
+import type { MaybePromise } from '../../common/types';
 
-@injectable()
-export class MainCopyContribution implements RemoteCopyContribution {
-    async copy(registry: RemoteCopyRegistry): Promise<void> {
-        registry.file('package.json');
-        await registry.glob('lib/backend/**/*.js');
-        await registry.directory('lib/frontend');
-        await registry.directory('lib/webview');
-    }
+export interface RemotePlatform {
+    os: OS.Type
+    arch: string
+}
+
+export interface RemoteCliContext {
+    platform: RemotePlatform;
+    directory: string;
+}
+
+export const RemoteCliContribution = Symbol('RemoteCliContribution');
+
+export interface RemoteCliContribution {
+    enhanceArgs(context: RemoteCliContext): MaybePromise<string[]>;
 }
