@@ -709,7 +709,8 @@ export function createAPIFactory(
                 } else {
                     throw new Error('Invalid arguments');
                 }
-                return notebooksExt.getNotebookDocument(uri).apiNotebook;
+                const result = await notebooksExt.waitForNotebookDocument(uri);
+                return result.apiNotebook;
 
             },
             createFileSystemWatcher: (pattern, ignoreCreate, ignoreChange, ignoreDelete): theia.FileSystemWatcher =>

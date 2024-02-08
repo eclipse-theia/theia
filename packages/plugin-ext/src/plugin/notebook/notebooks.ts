@@ -312,6 +312,26 @@ export class NotebooksExtImpl implements NotebooksExt {
         return result;
     }
 
+    waitForNotebookDocument(uri: TheiaURI, duration = 2000): Promise<NotebookDocument> {
+        const existing = this.getNotebookDocument(uri, true);
+        if (existing) {
+            return Promise.resolve(existing);
+        }
+        return new Promise<NotebookDocument>((resolve, reject) => {
+            const listener = this.onDidOpenNotebookDocument(event => {
+                if (event.uri.toString() === uri.toString()) {
+                    clearTimeout(timeout);
+                    listener.dispose();
+                    resolve(this.getNotebookDocument(uri));
+                }
+            });
+            const timeout = setTimeout(() => {
+                listener.dispose();
+                reject(new Error(`Notebook document did NOT open in ${duration}ms: ${uri}`));
+            }, duration);
+        });
+    }
+
     private createExtHostEditor(document: NotebookDocument, editorId: string, data: NotebookEditorAddData): void {
 
         if (this.editors.has(editorId)) {

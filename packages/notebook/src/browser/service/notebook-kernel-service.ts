@@ -144,7 +144,7 @@ export class SourceCommand implements Disposable {
 
 const NOTEBOOK_KERNEL_BINDING_STORAGE_KEY = 'notebook.kernel.bindings';
 @injectable()
-export class NotebookKernelService implements Disposable {
+export class NotebookKernelService {
 
     @inject(NotebookService)
     protected notebookService: NotebookService;
@@ -152,33 +152,34 @@ export class NotebookKernelService implements Disposable {
     @inject(StorageService)
     protected storageService: StorageService;
 
-    private readonly kernels = new Map<string, KernelInfo>();
+    protected readonly kernels = new Map<string, KernelInfo>();
 
-    private notebookBindings: { [key: string]: string } = {};
+    protected notebookBindings: Record<string, string> = {};
 
-    private readonly kernelDetectionTasks = new Map<string, string[]>();
-    private readonly onDidChangeKernelDetectionTasksEmitter = new Emitter<string>();
+    protected readonly kernelDetectionTasks = new Map<string, string[]>();
+    protected readonly onDidChangeKernelDetectionTasksEmitter = new Emitter<string>();
     readonly onDidChangeKernelDetectionTasks = this.onDidChangeKernelDetectionTasksEmitter.event;
 
-    private readonly onDidChangeSourceActionsEmitter = new Emitter<NotebookSourceActionChangeEvent>();
-    private readonly kernelSourceActionProviders = new Map<string, KernelSourceActionProvider[]>();
+    protected readonly onDidChangeSourceActionsEmitter = new Emitter<NotebookSourceActionChangeEvent>();
+    protected readonly kernelSourceActionProviders = new Map<string, KernelSourceActionProvider[]>();
     readonly onDidChangeSourceActions: Event<NotebookSourceActionChangeEvent> = this.onDidChangeSourceActionsEmitter.event;
 
-    private readonly onDidAddKernelEmitter = new Emitter<NotebookKernel>();
+    protected readonly onDidAddKernelEmitter = new Emitter<NotebookKernel>();
     readonly onDidAddKernel: Event<NotebookKernel> = this.onDidAddKernelEmitter.event;
 
-    private readonly onDidRemoveKernelEmitter = new Emitter<NotebookKernel>();
+    protected readonly onDidRemoveKernelEmitter = new Emitter<NotebookKernel>();
     readonly onDidRemoveKernel: Event<NotebookKernel> = this.onDidRemoveKernelEmitter.event;
 
-    private readonly onDidChangeSelectedNotebookKernelBindingEmitter = new Emitter<SelectedNotebookKernelChangeEvent>();
+    protected readonly onDidChangeSelectedNotebookKernelBindingEmitter = new Emitter<SelectedNotebookKernelChangeEvent>();
     readonly onDidChangeSelectedKernel: Event<SelectedNotebookKernelChangeEvent> = this.onDidChangeSelectedNotebookKernelBindingEmitter.event;
 
-    private readonly onDidChangeNotebookAffinityEmitter = new Emitter<void>();
+    protected readonly onDidChangeNotebookAffinityEmitter = new Emitter<void>();
     readonly onDidChangeNotebookAffinity: Event<void> = this.onDidChangeNotebookAffinityEmitter.event;
 
     @postConstruct()
     init(): void {
-        this.storageService.getData(NOTEBOOK_KERNEL_BINDING_STORAGE_KEY).then((value: { [key: string]: string } | undefined) => {
+        this.notebookService.onDidAddNotebookDocument(model => this.tryAutoBindNotebook(model));
+        this.storageService.getData(NOTEBOOK_KERNEL_BINDING_STORAGE_KEY).then((value: Record<string, string> | undefined) => {
             if (value) {
                 this.notebookBindings = value;
             }
@@ -343,14 +344,5 @@ export class NotebookKernelService implements Disposable {
         const promises = providers.map(provider => provider.provideKernelSourceActions());
         const allActions = await Promise.all(promises);
         return allActions.flat();
-    }
-
-    dispose(): void {
-        this.onDidChangeKernelDetectionTasksEmitter.dispose();
-        this.onDidChangeSourceActionsEmitter.dispose();
-        this.onDidAddKernelEmitter.dispose();
-        this.onDidRemoveKernelEmitter.dispose();
-        this.onDidChangeSelectedNotebookKernelBindingEmitter.dispose();
-        this.onDidChangeNotebookAffinityEmitter.dispose();
     }
 }
