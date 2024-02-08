@@ -23,6 +23,9 @@ import { RPCProtocol } from '../../common/rpc-protocol';
 import { KeybindingRegistry } from '@theia/core/lib/browser';
 import { PluginContributionHandler } from './plugin-contribution-handler';
 import { ArgumentProcessor } from '../../common/commands';
+import { ContributionProvider } from '@theia/core';
+
+export const ArgumentProcessorContribution = Symbol('ArgumentProcessorContribution');
 
 export class CommandRegistryMainImpl implements CommandRegistryMain, Disposable {
     private readonly proxy: CommandRegistryExt;
@@ -41,6 +44,10 @@ export class CommandRegistryMainImpl implements CommandRegistryMain, Disposable 
         this.delegate = container.get(CommandRegistry);
         this.keyBinding = container.get(KeybindingRegistry);
         this.contributions = container.get(PluginContributionHandler);
+
+        container.getNamed<ContributionProvider<ArgumentProcessor>>(ContributionProvider, ArgumentProcessorContribution).getContributions().forEach(processor => {
+            this.registerArgumentProcessor(processor);
+        });
     }
 
     dispose(): void {

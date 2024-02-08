@@ -743,7 +743,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
 
         menus.registerSubmenu(TerminalMenus.TERMINAL_TITLE_CONTRIBUTIONS, '', {
             role: CompoundMenuNodeRole.Group,
-            when: 'tabContextWidgetId =~ /^terminal-[0-9]+$/'
+            when: 'isTerminalTab'
         });
     }
 

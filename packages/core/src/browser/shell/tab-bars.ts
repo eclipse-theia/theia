@@ -648,7 +648,7 @@ export class TabBarRenderer extends TabBar.Renderer {
                 this.selectionService.selection = NavigatableWidget.is(widget) ? { uri: widget.getResourceUri() } : widget;
             }
 
-            const contextKeyServiceOverly = this.contextKeyService?.createOverlay([['tabContextWidgetId', widget?.id]]);
+            const contextKeyServiceOverly = this.contextKeyService?.createOverlay([['isTerminalTab', widget && '_terminalId' in widget]]);
             this.contextMenuRenderer.render({
                 menuPath: this.contextMenuPath!,
                 anchor: event,

@@ -89,6 +89,7 @@ import { CellOutputWebviewFactory } from '@theia/notebook/lib/browser';
 import { CellOutputWebviewImpl, createCellOutputWebviewContainer } from './notebooks/renderers/cell-output-webview';
 import { NotebookCellModel } from '@theia/notebook/lib/browser/view-model/notebook-cell-model';
 import { NotebookModel } from '@theia/notebook/lib/browser/view-model/notebook-model';
+import { ArgumentProcessorContribution } from './command-registry-main';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
@@ -266,4 +267,6 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(CellOutputWebviewFactory).toFactory(ctx => async (cell: NotebookCellModel, notebook: NotebookModel) =>
         createCellOutputWebviewContainer(ctx.container, cell, notebook).getAsync(CellOutputWebviewImpl)
     );
+
+    bindContributionProvider(bind, ArgumentProcessorContribution);
 });
