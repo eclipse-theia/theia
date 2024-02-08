@@ -776,7 +776,6 @@ SPAN {
         assert.equal(editor.getControl().getModel().getLineLength(lineNumber), originalLength);
     });
 
-
     it('Can execute code actions', async function () {
         const editor = await openEditor(demoFileUri);
         /** @type {import('@theia/monaco-editor-core/src/vs/editor/contrib/codeAction/browser/codeActionController').CodeActionController} */
