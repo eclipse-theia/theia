@@ -81,9 +81,10 @@ export class TabBarDecoratorService implements FrontendApplicationContribution {
             all = all.concat(decorations);
         }
         if (Navigatable.is(title.owner)) {
-            if (title.owner.getResourceUri() !== undefined) {
-                const serviceDecorations = this.decorationsService.getDecoration(title.owner.getResourceUri()!, false);
-                all = all.concat(serviceDecorations.map(d => this.toDecorator(d)));
+            const resourceUri = title.owner.getResourceUri();
+            if (resourceUri) {
+                const serviceDecorations = this.decorationsService.getDecoration(resourceUri, false);
+                all.push(...serviceDecorations.map(d => this.toDecorator(d)));
             }
         }
         return all;
