@@ -17,6 +17,7 @@
 import { ContributionProvider, URI } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { WorkspaceServer } from '@theia/workspace/lib/common';
+import { parse } from 'jsonc-parser';
 import * as fs from '@theia/core/shared/fs-extra';
 import * as Docker from 'dockerode';
 import { LastContainerInfo } from '../electron-common/remote-container-connection-provider';
