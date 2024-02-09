@@ -200,6 +200,11 @@ export const corePreferenceSchema: PreferenceSchema = {
             'description': nls.localizeByDefault('Controls whether an editor is revealed in any of the visible groups if opened. If disabled, an editor will prefer to open in the currently active editor group. If enabled, an already opened editor will be revealed instead of opened again in the currently active editor group. Note that there are some cases where this setting is ignored, such as when forcing an editor to open in a specific group or to the side of the currently active group.'),
             'default': false
         },
+        'workbench.editor.decorations.badges': {
+            'type': 'boolean',
+            'description': nls.localizeByDefault('Controls whether editor file decorations should use badges.'),
+            'default': true
+        },
         'workbench.commandPalette.history': {
             type: 'number',
             default: 50,
@@ -295,6 +300,7 @@ export interface CoreConfiguration {
     'workbench.editor.mouseBackForwardToNavigate': boolean;
     'workbench.editor.closeOnFileDelete': boolean;
     'workbench.editor.revealIfOpen': boolean;
+    'workbench.editor.decorations.badges': boolean;
     'workbench.colorTheme': string;
     'workbench.iconTheme': string;
     'workbench.silentNotifications': boolean;

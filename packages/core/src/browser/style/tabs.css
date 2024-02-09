@@ -123,6 +123,12 @@
   white-space: nowrap;
 }
 
+.p-TabBar-tail {
+  padding-left: 5px;
+  text-align: center;
+  justify-content: center;
+}
+
 .p-TabBar.theia-app-centers .p-TabBar-tabLabelWrapper {
   display: flex;
 }

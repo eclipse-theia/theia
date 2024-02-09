@@ -17,9 +17,12 @@
 import debounce = require('lodash.debounce');
 import { Title, Widget } from '@phosphor/widgets';
 import { inject, injectable, named } from 'inversify';
-import { Event, Emitter, ContributionProvider } from '../../common';
-import { WidgetDecoration } from '../widget-decoration';
+import { ContributionProvider, Emitter, Event } from '../../common';
+import { ColorRegistry } from '../color-registry';
+import { Decoration, DecorationsService, DecorationsServiceImpl } from '../decorations-service';
 import { FrontendApplicationContribution } from '../frontend-application-contribution';
+import { Navigatable } from '../navigatable-types';
+import { WidgetDecoration } from '../widget-decoration';
 
 export const TabBarDecorator = Symbol('TabBarDecorator');
 
@@ -53,6 +56,12 @@ export class TabBarDecoratorService implements FrontendApplicationContribution {
     @inject(ContributionProvider) @named(TabBarDecorator)
     protected readonly contributions: ContributionProvider<TabBarDecorator>;
 
+    @inject(DecorationsService)
+    protected readonly decorationsService: DecorationsServiceImpl;
+
+    @inject(ColorRegistry)
+    protected readonly colors: ColorRegistry;
+
     initialize(): void {
         this.contributions.getContributions().map(decorator => decorator.onDidChangeDecorations(this.fireDidChangeDecorations));
     }
@@ -71,6 +80,27 @@ export class TabBarDecoratorService implements FrontendApplicationContribution {
             const decorations = decorator.decorate(title);
             all = all.concat(decorations);
         }
+        if (Navigatable.is(title.owner)) {
+            if (title.owner.getResourceUri() !== undefined) {
+                const serviceDecorations = this.decorationsService.getDecoration(title.owner.getResourceUri()!, false);
+                all = all.concat(serviceDecorations.map(d => this.toDecorator(d)));
+            }
+        }
         return all;
+    }
+
+    protected toDecorator(decoration: Decoration): WidgetDecoration.Data {
+        const colorVariable = decoration.colorId && this.colors.toCssVariableName(decoration.colorId);
+        return {
+            tailDecorations: [
+                {
+                    data: decoration.letter ? decoration.letter : '',
+                    fontData: {
+                        color: colorVariable && `var(${colorVariable})`
+                    },
+                    tooltip: decoration.tooltip ? decoration.tooltip : ''
+                }
+            ]
+        };
     }
 }
