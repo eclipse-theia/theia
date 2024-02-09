@@ -17,7 +17,7 @@
 import PerfectScrollbar from 'perfect-scrollbar';
 import { TabBar, Title, Widget } from '@phosphor/widgets';
 import { VirtualElement, h, VirtualDOM, ElementInlineStyle } from '@phosphor/virtualdom';
-import { Disposable, DisposableCollection, MenuPath, notEmpty, SelectionService, CommandService, nls } from '../../common';
+import { Disposable, DisposableCollection, MenuPath, notEmpty, SelectionService, CommandService, nls, ArrayUtils } from '../../common';
 import { ContextMenuRenderer } from '../context-menu-renderer';
 import { Signal, Slot } from '@phosphor/signaling';
 import { Message, MessageLoop } from '@phosphor/messaging';
@@ -294,8 +294,7 @@ export class TabBarRenderer extends TabBar.Renderer {
         if (!this.corePreferences?.get('workbench.editor.decorations.badges')) {
             return [];
         }
-        const tailDecorations = this.getDecorationData(renderData.title, 'tailDecorations')
-            .filter(acc => acc !== undefined).reduce((acc, current) => acc!.concat(current!), []);
+        const tailDecorations = ArrayUtils.coalesce(this.getDecorationData(renderData.title, 'tailDecorations')).flat();
         if (tailDecorations === undefined || tailDecorations.length === 0) {
             return [];
         }

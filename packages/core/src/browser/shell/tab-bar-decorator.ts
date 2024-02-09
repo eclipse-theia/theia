@@ -75,22 +75,21 @@ export class TabBarDecoratorService implements FrontendApplicationContribution {
      */
     getDecorations(title: Title<Widget>): WidgetDecoration.Data[] {
         const decorators = this.contributions.getContributions();
-        let all: WidgetDecoration.Data[] = [];
+        const decorations: WidgetDecoration.Data[] = [];
         for (const decorator of decorators) {
-            const decorations = decorator.decorate(title);
-            all = all.concat(decorations);
+            decorations.push(...decorator.decorate(title));
         }
         if (Navigatable.is(title.owner)) {
             const resourceUri = title.owner.getResourceUri();
             if (resourceUri) {
                 const serviceDecorations = this.decorationsService.getDecoration(resourceUri, false);
-                all.push(...serviceDecorations.map(d => this.toDecorator(d)));
+                decorations.push(...serviceDecorations.map(d => this.fromDecoration(d)));
             }
         }
-        return all;
+        return decorations;
     }
 
-    protected toDecorator(decoration: Decoration): WidgetDecoration.Data {
+    protected fromDecoration(decoration: Decoration): WidgetDecoration.Data {
         const colorVariable = decoration.colorId && this.colors.toCssVariableName(decoration.colorId);
         return {
             tailDecorations: [
