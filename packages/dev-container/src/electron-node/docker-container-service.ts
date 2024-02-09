@@ -14,18 +14,28 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { URI } from '@theia/core';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { ContributionProvider, URI } from '@theia/core';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { WorkspaceServer } from '@theia/workspace/lib/common';
 import * as fs from '@theia/core/shared/fs-extra';
 import * as Docker from 'dockerode';
 import { LastContainerInfo } from '../electron-common/remote-container-connection-provider';
+import { DevContainerConfiguration } from './devcontainer-file';
+
+export const ContainerCreationContribution = Symbol('ContainerCreationContributions');
+
+export interface ContainerCreationContribution {
+    handleContainerCreation(createOptions: Docker.ContainerCreateOptions, containerConfig: DevContainerConfiguration, api: Docker): Promise<void>;
+}
 
 @injectable()
 export class DockerContainerService {
 
     @inject(WorkspaceServer)
     protected readonly workspaceServer: WorkspaceServer;
+
+    @inject(ContributionProvider) @named(ContainerCreationContribution)
+    protected readonly containerCreationContributions: ContributionProvider<ContainerCreationContribution>;
 
     async getOrCreateContainer(docker: Docker, lastContainerInfo?: LastContainerInfo): Promise<[Docker.Container, number]> {
         let port = Math.floor(Math.random() * (49151 - 10000)) + 10000;
@@ -57,37 +67,36 @@ export class DockerContainerService {
         }
 
         const devcontainerFile = workspace.resolve('.devcontainer/devcontainer.json');
-        const devcontainerConfig = JSON.parse(await fs.readFile(devcontainerFile.path.fsPath(), 'utf-8').catch(() => '0'));
+        const devcontainerConfig = JSON.parse(await fs.readFile(devcontainerFile.path.fsPath(), 'utf-8').catch(() => '0')) as DevContainerConfiguration;
 
         if (!devcontainerConfig) {
             // TODO add ability for user to create new config
             throw new Error('No devcontainer.json');
         }
 
-        await docker.pull(devcontainerConfig.image);
-
-        const { exposedPorts, portBindings } = this.getPortBindings(devcontainerConfig.forwardPorts);
-
-        // TODO add more config
-        const container = await docker.createContainer({
-            Image: devcontainerConfig.image,
+        const containerCreateOptions: Docker.ContainerCreateOptions = {
             Tty: true,
             ExposedPorts: {
                 [`${port}/tcp`]: {},
-                ...exposedPorts
             },
             HostConfig: {
                 PortBindings: {
                     [`${port}/tcp`]: [{ HostPort: '0' }],
-                    ...portBindings
                 },
                 Mounts: [{
                     Source: workspace.path.toString(),
                     Target: `/workspaces/${workspace.path.name}`,
                     Type: 'bind'
-                }]
-            }
-        });
+                }],
+            },
+        };
+
+        for (const containerCreateContrib of this.containerCreationContributions.getContributions()) {
+            await containerCreateContrib.handleContainerCreation(containerCreateOptions, devcontainerConfig, docker);
+        }
+
+        // TODO add more config
+        const container = await docker.createContainer(containerCreateOptions);
         const start = await container.start();
         console.log(start);
 
