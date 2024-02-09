@@ -52,7 +52,11 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
             lastContainerInfo
         });
 
-        this.workspaceStorageService.setData<LastContainerInfo>(LAST_USED_CONTAINER, { id: connectionResult.containerId, port: connectionResult.containerPort });
+        this.workspaceStorageService.setData<LastContainerInfo>(LAST_USED_CONTAINER, {
+            id: connectionResult.containerId,
+            port: connectionResult.containerPort,
+            lastUsed: Date.now()
+        });
 
         this.openRemote(connectionResult.port, false, connectionResult.workspacePath);
     }

@@ -41,7 +41,15 @@ export class DockerContainerService {
     async getOrCreateContainer(docker: Docker, lastContainerInfo?: LastContainerInfo): Promise<[Docker.Container, number]> {
         let port = Math.floor(Math.random() * (49151 - 10000)) + 10000;
         let container;
-        if (lastContainerInfo) {
+
+        const workspace = new URI(await this.workspaceServer.getMostRecentlyUsedWorkspace());
+        if (!workspace) {
+            throw new Error('No workspace');
+        }
+
+        const devcontainerFile = workspace.resolve('.devcontainer/devcontainer.json');
+
+        if (lastContainerInfo && fs.statSync(devcontainerFile.path.fsPath()).mtimeMs > lastContainerInfo.lastUsed) {
             try {
                 container = docker.getContainer(lastContainerInfo.id);
                 if ((await container.inspect()).State.Running) {
@@ -56,18 +64,12 @@ export class DockerContainerService {
             }
         }
         if (!container) {
-            container = await this.buildContainer(docker, port);
+            container = await this.buildContainer(docker, port, devcontainerFile, workspace);
         }
         return [container, port];
     }
 
-    async buildContainer(docker: Docker, port: number, from?: URI): Promise<Docker.Container> {
-        const workspace = from ?? new URI(await this.workspaceServer.getMostRecentlyUsedWorkspace());
-        if (!workspace) {
-            throw new Error('No workspace');
-        }
-
-        const devcontainerFile = workspace.resolve('.devcontainer/devcontainer.json');
+    protected async buildContainer(docker: Docker, port: number, devcontainerFile: URI, workspace: URI): Promise<Docker.Container> {
         const devcontainerConfig = parse(await fs.readFile(devcontainerFile.path.fsPath(), 'utf-8').catch(() => '0')) as DevContainerConfiguration;
         devcontainerConfig.location = devcontainerFile.path.dir.fsPath();
 
@@ -105,7 +107,7 @@ export class DockerContainerService {
         return container;
     }
 
-    getPortBindings(forwardPorts: (string | number)[]): { exposedPorts: {}, portBindings: {} } {
+    protected getPortBindings(forwardPorts: (string | number)[]): { exposedPorts: {}, portBindings: {} } {
         const res: { exposedPorts: { [key: string]: {} }, portBindings: { [key: string]: {} } } = { exposedPorts: {}, portBindings: {} };
         for (const port of forwardPorts) {
             let portKey: string;

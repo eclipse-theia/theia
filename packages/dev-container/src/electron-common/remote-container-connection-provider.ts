@@ -25,6 +25,7 @@ export interface ContainerConnectionOptions {
 export interface LastContainerInfo {
     id: string;
     port: number;
+    lastUsed: number;
 }
 
 export interface ContainerConnectionResult {
