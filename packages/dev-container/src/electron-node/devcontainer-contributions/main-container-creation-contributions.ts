@@ -16,10 +16,11 @@
 import * as Docker from 'dockerode';
 import { injectable, interfaces } from '@theia/core/shared/inversify';
 import { ContainerCreationContribution } from '../docker-container-service';
-import { DevContainerConfiguration, ImageContainer } from '../devcontainer-file';
+import { DevContainerConfiguration, DockerfileContainer, ImageContainer } from '../devcontainer-file';
 
 export function registerContainerCreationContributions(bind: interfaces.Bind): void {
     bind(ContainerCreationContribution).to(ImageFileContribution).inSingletonScope();
+    bind(ContainerCreationContribution).to(DockerFileContribution).inSingletonScope();
     bind(ContainerCreationContribution).to(ForwardPortsContribution).inSingletonScope();
     bind(ContainerCreationContribution).to(MountsContribution).inSingletonScope();
 }
@@ -31,6 +32,36 @@ export class ImageFileContribution implements ContainerCreationContribution {
         if (containerConfig.image) {
             await api.pull(containerConfig.image);
             createOptions.Image = containerConfig.image;
+        }
+    }
+}
+
+@injectable()
+export class DockerFileContribution implements ContainerCreationContribution {
+    async handleContainerCreation(createOptions: Docker.ContainerCreateOptions, containerConfig: DockerfileContainer, api: Docker): Promise<void> {
+        // check if dockerfile container
+        if (containerConfig.dockerFile || containerConfig.build?.dockerfile) {
+            const dockerfile = (containerConfig.dockerFile ?? containerConfig.build?.dockerfile) as string;
+            const buildStream = await api.buildImage({
+                context: containerConfig.context ?? containerConfig.location,
+                src: [dockerfile],
+            } as Docker.ImageBuildContext, {
+                buildargs: containerConfig.build?.args
+            });
+            // TODO probably have some console windows showing the output of the build
+            const imageId = await new Promise<string>((res, rej) => api.modem.followProgress(buildStream, (err, ouptuts) => {
+                if (err) {
+                    rej(err);
+                } else {
+                    for (let i = ouptuts.length - 1; i >= 0; i--) {
+                        if (ouptuts[i].aux?.ID) {
+                            res(ouptuts[i].aux.ID);
+                            return;
+                        }
+                    }
+                }
+            }));
+            createOptions.Image = imageId;
         }
     }
 }

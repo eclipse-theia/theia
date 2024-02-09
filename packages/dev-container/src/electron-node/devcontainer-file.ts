@@ -18,7 +18,7 @@
  * Defines a dev container
  * type generated from https://containers.dev/implementors/json_schema/ and modified
  */
-export type DevContainerConfiguration = (DockerfileContainer | ImageContainer) & NonComposeContainerBase & DevContainerCommon;
+export type DevContainerConfiguration = (DockerfileContainer | ImageContainer) & NonComposeContainerBase & DevContainerCommon & { location?: string };
 
 export type DockerfileContainer = {
     /**
@@ -33,43 +33,40 @@ export type DockerfileContainer = {
          * The location of the context folder for building the Docker image. The path is relative to the folder containing the `devcontainer.json` file.
          */
         context?: string
-        [k: string]: unknown
     } & BuildOptions
     [k: string]: unknown
-}
-    | ({
+} | {
+    /**
+     * The location of the Dockerfile that defines the contents of the container. The path is relative to the folder containing the `devcontainer.json` file.
+     */
+    dockerFile: string
+    /**
+     * The location of the context folder for building the Docker image. The path is relative to the folder containing the `devcontainer.json` file.
+     */
+    context?: string
+
+    /**
+     * Docker build-related options.
+     */
+    build?: {
         /**
-         * The location of the Dockerfile that defines the contents of the container. The path is relative to the folder containing the `devcontainer.json` file.
+         * Target stage in a multi-stage build.
          */
-        dockerFile: string
+        target?: string
         /**
-         * The location of the context folder for building the Docker image. The path is relative to the folder containing the `devcontainer.json` file.
+         * Build arguments.
          */
-        context?: string
-        [k: string]: unknown
-    } & {
-        /**
-         * Docker build-related options.
-         */
-        build?: {
-            /**
-             * Target stage in a multi-stage build.
-             */
-            target?: string
-            /**
-             * Build arguments.
-             */
-            args?: {
-                [k: string]: string
-            }
-            /**
-             * The image to consider as a cache. Use an array to specify multiple images.
-             */
-            cacheFrom?: string | string[]
-            [k: string]: unknown
+        args?: {
+            [k: string]: string
         }
+        /**
+         * The image to consider as a cache. Use an array to specify multiple images.
+         */
+        cacheFrom?: string | string[]
         [k: string]: unknown
-    });
+    }
+    [k: string]: unknown
+};
 
 export interface BuildOptions {
     /**

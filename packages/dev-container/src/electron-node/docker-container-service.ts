@@ -17,6 +17,7 @@
 import { ContributionProvider, URI } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { WorkspaceServer } from '@theia/workspace/lib/common';
+import { parse } from 'jsonc-parser';
 import * as fs from '@theia/core/shared/fs-extra';
 import * as Docker from 'dockerode';
 import { LastContainerInfo } from '../electron-common/remote-container-connection-provider';
@@ -51,7 +52,7 @@ export class DockerContainerService {
                 port = lastContainerInfo.port;
             } catch (e) {
                 container = undefined;
-                console.warn('DevContainer: could not find last used container ', e);
+                console.warn('DevContainer: could not find last used container');
             }
         }
         if (!container) {
@@ -67,7 +68,8 @@ export class DockerContainerService {
         }
 
         const devcontainerFile = workspace.resolve('.devcontainer/devcontainer.json');
-        const devcontainerConfig = JSON.parse(await fs.readFile(devcontainerFile.path.fsPath(), 'utf-8').catch(() => '0')) as DevContainerConfiguration;
+        const devcontainerConfig = parse(await fs.readFile(devcontainerFile.path.fsPath(), 'utf-8').catch(() => '0')) as DevContainerConfiguration;
+        devcontainerConfig.location = devcontainerFile.path.dir.fsPath();
 
         if (!devcontainerConfig) {
             // TODO add ability for user to create new config
