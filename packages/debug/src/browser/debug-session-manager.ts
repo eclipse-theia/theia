@@ -526,7 +526,7 @@ export class DebugSessionManager {
     }
     open(): void {
         const { currentFrame } = this;
-        if (currentFrame) {
+        if (currentFrame && currentFrame.thread.stopped) {
             currentFrame.open();
         }
     }

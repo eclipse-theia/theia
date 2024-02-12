@@ -193,6 +193,10 @@ export class DebugEditorModel implements Disposable {
             return [];
         }
 
+        if (!currentFrame.thread.stopped) {
+            return [];
+        }
+
         if (!this.sessions.isCurrentEditorFrame(this.uri)) {
             return [];
         }
