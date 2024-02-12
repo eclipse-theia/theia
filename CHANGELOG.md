@@ -7,6 +7,7 @@
 ## v1.47.0 not yet released
 
 - [plugin] Add command to install plugins from the command line [#13406](https://github.com/eclipse-theia/theia/issues/13406) - contributed on behalf of STMicroelectronics
+- [testing] support TestRunProfile onDidChangeDefault introduced in VS Code 1.86.0 [#13388](https://github.com/eclipse-theia/theia/pull/13388) - contributed on behalf of STMicroelectronics
 
 <a name="breaking_changes_not_yet_released">[Breaking Changes:](#breaking_changes_not_yet_released)</a>
 - [monaco] Upgrade Monaco dependency to 1.83.1 [#13217](https://github.com/eclipse-theia/theia/pull/13217)- contributed on behalf of STMicroelectronics\

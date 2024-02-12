@@ -32,7 +32,7 @@ export enum TestRunProfileKind {
 export interface TestRunProfile {
     readonly kind: TestRunProfileKind;
     readonly label: string,
-    readonly isDefault: boolean;
+    isDefault: boolean;
     readonly canConfigure: boolean;
     readonly tag: string;
     run(name: string, included: readonly TestItem[], excluded: readonly TestItem[]): void;
@@ -177,6 +177,7 @@ export interface TestController {
 export interface TestService {
     clearResults(): void;
     configureProfile(): void;
+    selectDefaultProfile(): void;
     runTestsWithProfile(tests: TestItem[]): void;
     runTests(profileKind: TestRunProfileKind, tests: TestItem[]): void;
     runAllTests(profileKind: TestRunProfileKind): void;
@@ -304,12 +305,28 @@ export class DefaultTestService implements TestService {
             }
             return {
                 iconClasses,
-                label: profile.label,
+                label: `${profile.label}${profile.isDefault ? ' (default)' : ''}`,
                 profile: profile
             };
         });
 
         return (await this.quickpickService.show(picks, { title: title }))?.profile;
+
+    }
+
+    protected async pickProfileKind(): Promise<TestRunProfileKind | undefined> {
+        // eslint-disable-next-line arrow-body-style
+        const picks = [{
+            iconClasses: codiconArray('run'),
+            label: 'Run',
+            kind: TestRunProfileKind.Run
+        }, {
+            iconClasses: codiconArray('debug-alt'),
+            label: 'Debug',
+            kind: TestRunProfileKind.Debug
+        }];
+
+        return (await this.quickpickService.show(picks, { title: 'Select the kind of profiles' }))?.kind;
 
     }
 
@@ -330,6 +347,21 @@ export class DefaultTestService implements TestService {
                     }
                 });
             }
+        });
+    }
+
+    selectDefaultProfile(): void {
+        this.pickProfileKind().then(kind => {
+           const profiles = this.getControllers().flatMap(c => c.testRunProfiles).filter(profile => profile.kind === kind);
+            this.pickProfile(profiles, nls.localizeByDefault('Pick a test profile to use')).then(activeProfile => {
+                if (activeProfile) {
+                    // only change the default for the controller containing selected profile for default and its profiles with same kind
+                    const controller = this.getControllers().find(c => c.testRunProfiles.includes(activeProfile));
+                    controller?.testRunProfiles.filter(profile => profile.kind === activeProfile.kind).forEach(profile => {
+                        profile.isDefault = profile === activeProfile;
+                    });
+                }
+            });
         });
     }
 

@@ -109,6 +109,12 @@ export namespace TestViewCommands {
         category: 'Test'
     });
 
+    export const SELECT_DEFAULT_PROFILES: Command = Command.toDefaultLocalizedCommand({
+        id: TestCommandId.SelectDefaultTestProfiles,
+        label: 'Select Default Test Profiles...',
+        category: 'Test'
+    });
+
     export const CLEAR_ALL_RESULTS: Command = Command.toDefaultLocalizedCommand({
         id: TestCommandId.ClearTestResultsAction,
         label: 'Clear All Results',
@@ -186,6 +192,14 @@ export class TestViewContribution extends AbstractViewContribution<TestTreeWidge
             }
         });
 
+        commands.registerCommand(TestViewCommands.SELECT_DEFAULT_PROFILES, {
+            isEnabled: t => TestItem.is(t),
+            isVisible: t => TestItem.is(t),
+            execute: () => {
+                this.testService.selectDefaultProfile();
+            }
+        });
+
         commands.registerCommand(TestViewCommands.DEBUG_TEST, {
             isEnabled: t => TestItem.is(t),
             isVisible: t => TestItem.is(t),
@@ -253,6 +267,11 @@ export class TestViewContribution extends AbstractViewContribution<TestTreeWidge
         menus.registerMenuAction(TEST_VIEW_CONTEXT_MENU, {
             commandId: TestViewCommands.RUN_TEST_WITH_PROFILE.id,
             order: 'aaaa'
+        });
+
+        menus.registerMenuAction(TEST_VIEW_CONTEXT_MENU, {
+            commandId: TestViewCommands.SELECT_DEFAULT_PROFILES.id,
+            order: 'aaaaa'
         });
     }
 

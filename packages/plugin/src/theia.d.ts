@@ -15979,8 +15979,17 @@ export module '@theia/plugin' {
          * the generic "run all" button, then the default profile for
          * {@link TestRunProfileKind.Run} will be executed, although the
          * user can configure this.
+         *
+         * Changes the user makes in their default profiles will be reflected
+         * in this property after a {@link onDidChangeDefault} event.
          */
         isDefault: boolean;
+
+        /**
+         * Fired when a user has changed whether this is a default profile. The
+         * event contains the new value of {@link isDefault}
+         */
+        onDidChangeDefault: Event<boolean>;
 
         /**
          * Whether this profile supports continuous running of requests. If so,
