@@ -126,6 +126,18 @@ export class WebviewsExtImpl implements WebviewsExt {
         return panel;
     }
 
+    /**
+     * Creates a new webview panel.
+     *
+     * @param viewType Identifies the type of the webview panel.
+     * @param title Title of the panel.
+     * @param showOptions Where webview panel will be reside.
+     * @param options Settings for the new panel.
+     * @param plugin The plugin contributing the webview.
+     * @param viewId The identifier of the webview instance.
+     * @param originBasedOnType true if a stable origin based on the viewType shall be used, false if the viewId should be used.
+     * @returns The new webview panel.
+     */
     createWebviewPanel(
         viewType: string,
         title: string,
