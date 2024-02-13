@@ -132,13 +132,15 @@ export class WebviewsExtImpl implements WebviewsExt {
         showOptions: theia.ViewColumn | theia.WebviewPanelShowOptions,
         options: theia.WebviewPanelOptions & theia.WebviewOptions,
         plugin: Plugin,
-        viewId: string
+        viewId: string,
+        originBasedOnType = true
     ): WebviewPanelImpl {
         if (!this.initData) {
             throw new Error('Webviews are not initialized');
         }
         const webviewShowOptions = toWebviewPanelShowOptions(showOptions);
-        const webview = new WebviewImpl(viewId, this.proxy, options, this.initData, this.workspace, plugin, hashValue(viewType));
+        const origin = originBasedOnType ? hashValue(viewType) : undefined;
+        const webview = new WebviewImpl(viewId, this.proxy, options, this.initData, this.workspace, plugin, origin);
         const panel = new WebviewPanelImpl(viewId, this.proxy, viewType, title, webviewShowOptions, options, webview);
         this.webviewPanels.set(viewId, panel);
         return panel;
