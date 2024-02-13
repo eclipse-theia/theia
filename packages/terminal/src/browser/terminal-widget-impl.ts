@@ -670,14 +670,17 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                     // in Firefox, the intersection observer always reports the widget as non-intersecting if the dom element
                     // is in a different document from when the IntersectionObserver started observing. Since we know
                     // that the widget is always "visible" when in a secondary window, so we refresh the rows ourselves
-                    renderService._pausedResizeTask.flush();
-                    renderService.refreshRows(0, renderService._rowCount - 1);
+                    const patchedEvent: IntersectionObserverEntry = {
+                        ...entry,
+                        isIntersecting: true,
+                    };
+                    originalFunc(patchedEvent);
                 } else {
                     originalFunc(entry);
                 }
             };
 
-            renderService._handleIntersectionChange = replacement;
+            renderService._handleIntersectionChange = replacement.bind(renderService);
         }
 
         if (this.initialData) {
@@ -685,13 +688,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }
         this.termOpened = true;
         this.initialData = '';
-
-        if (isFirefox) {
-            // The software scrollbars don't work with xterm.js, so we disable the scrollbar if we are on firefox.
-            if (this.term.element) {
-                (this.term.element.children.item(0) as HTMLElement).style.overflow = 'hidden';
-            }
-        }
     }
 
     write(data: string): void {
@@ -779,11 +775,13 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             return;
         }
         const geo = this.fitAddon.proposeDimensions();
-        const cols = geo.cols;
-        const rows = geo.rows - 1; // subtract one row for margin
-        this.term.resize(cols, rows);
+        if (geo) {
+            const cols = geo.cols;
+            const rows = geo.rows - 1; // subtract one row for margin
+            this.term.resize(cols, rows);
 
-        this.resizeTerminalProcess();
+            this.resizeTerminalProcess();
+        }
     }
 
     protected resizeTerminalProcess(): void {
