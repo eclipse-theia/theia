@@ -49,7 +49,7 @@ export class DockerContainerService {
 
         const devcontainerFile = workspace.resolve('.devcontainer/devcontainer.json');
 
-        if (lastContainerInfo && fs.statSync(devcontainerFile.path.fsPath()).mtimeMs > lastContainerInfo.lastUsed) {
+        if (lastContainerInfo && fs.statSync(devcontainerFile.path.fsPath()).mtimeMs < lastContainerInfo.lastUsed) {
             try {
                 container = docker.getContainer(lastContainerInfo.id);
                 if ((await container.inspect()).State.Running) {
