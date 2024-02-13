@@ -109,6 +109,16 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
 
     private readonly webviewViewRevivals = new Map<string, { readonly webview: WebviewView; readonly revival: Deferred<void> }>();
 
+    private nextViewContainerId = 0;
+
+    private static readonly BUILTIN_VIEW_CONTAINERS = new Set<string>([
+        'explorer',
+        'scm',
+        'search',
+        'test',
+        'debug'
+    ]);
+
     private static readonly ID_MAPPINGS: Map<string, string> = new Map([
         // VS Code Viewlets
         [EXPLORER_VIEW_CONTAINER_ID, 'workbench.view.explorer'],
@@ -266,14 +276,15 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     }
 
     registerViewContainer(location: string, viewContainer: ViewContainer): Disposable {
-        if (this.viewContainers.has(viewContainer.id)) {
+        const containerId = `workbench.view.extension.${viewContainer.id}`;
+        if (this.viewContainers.has(containerId)) {
             console.warn('view container such id already registered: ', JSON.stringify(viewContainer));
             return Disposable.NULL;
         }
         const toDispose = new DisposableCollection();
         const containerClass = 'theia-plugin-view-container';
         let themeIconClass = '';
-        const iconClass = 'plugin-view-container-icon-' + viewContainer.id;
+        const iconClass = 'plugin-view-container-icon-' + this.nextViewContainerId++; // having dots in class would not work for css, so we need to generate an id.
 
         if (viewContainer.themeIcon) {
             const icon = ThemeIcon.fromString(viewContainer.themeIcon);
@@ -290,7 +301,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             `));
         }
 
-        toDispose.push(this.doRegisterViewContainer(viewContainer.id, location, {
+        toDispose.push(this.doRegisterViewContainer(containerId, location, {
             label: viewContainer.title,
             // The container class automatically sets a mask; if we're using a theme icon, we don't want one.
             iconClass: (themeIconClass || containerClass) + ' ' + iconClass,
@@ -349,6 +360,10 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     }
 
     registerView(viewContainerId: string, view: View): Disposable {
+        if (!PluginViewRegistry.BUILTIN_VIEW_CONTAINERS.has(viewContainerId)) {
+            // if it's not a built-in view container, it must be a contributed view container, see https://github.com/eclipse-theia/theia/issues/13249
+            viewContainerId = `workbench.view.extension.${viewContainerId}`;
+        }
         if (this.views.has(view.id)) {
             console.warn('view with such id already registered: ', JSON.stringify(view));
             return Disposable.NULL;

@@ -13,7 +13,7 @@
 - [component] add here -->
 
 ## v1.46.0 - 01/25/2024
-
+- [plugin] Add prefix to contributed view container ids [#13362](https://github.com/eclipse-theia/theia/pull/13362) - contributed on behalf of STMicroelectronics
 - [application-manager] updated message for missing Electron main entries [#13242](https://github.com/eclipse-theia/theia/pull/13242)
 - [application-package] bumped the default supported API from `1.84.2` to `1.85.1` [#13276](https://github.com/eclipse-theia/theia/pull/13276) - contributed on behalf of STMicroelectronics
 - [browser-only] added support for 'browser-only' Theia [#12853](https://github.com/eclipse-theia/theia/pull/12853)
