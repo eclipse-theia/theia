@@ -194,24 +194,19 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
             isEnabled: () => !!this.scmFocus.get() && !!this.acceptInputCommand()
         });
         commandRegistry.registerCommand(SCM_COMMANDS.GOTO_NEXT_CHANGE, {
-            execute: () => this.dirtyDiffNavigator.gotoNextChange(),
-            isEnabled: () => this.dirtyDiffNavigator.canNavigate()
+            execute: () => this.dirtyDiffNavigator.gotoNextChange()
         });
         commandRegistry.registerCommand(SCM_COMMANDS.GOTO_PREVIOUS_CHANGE, {
-            execute: () => this.dirtyDiffNavigator.gotoPreviousChange(),
-            isEnabled: () => this.dirtyDiffNavigator.canNavigate()
+            execute: () => this.dirtyDiffNavigator.gotoPreviousChange()
         });
         commandRegistry.registerCommand(SCM_COMMANDS.SHOW_NEXT_CHANGE, {
-            execute: () => this.dirtyDiffNavigator.showNextChange(),
-            isEnabled: () => this.dirtyDiffNavigator.canShowChange()
+            execute: () => this.dirtyDiffNavigator.showNextChange()
         });
         commandRegistry.registerCommand(SCM_COMMANDS.SHOW_PREVIOUS_CHANGE, {
-            execute: () => this.dirtyDiffNavigator.showPreviousChange(),
-            isEnabled: () => this.dirtyDiffNavigator.canShowChange()
+            execute: () => this.dirtyDiffNavigator.showPreviousChange()
         });
         commandRegistry.registerCommand(SCM_COMMANDS.CLOSE_CHANGE_PEEK_VIEW, {
-            execute: () => this.dirtyDiffNavigator.closeChangePeekView(),
-            isEnabled: () => this.dirtyDiffNavigator.isShowingChange()
+            execute: () => this.dirtyDiffNavigator.closeChangePeekView()
         });
     }
 
