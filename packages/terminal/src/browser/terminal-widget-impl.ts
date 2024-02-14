@@ -660,10 +660,28 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }
         this.term.open(this.node);
 
+        interface ViewportType {
+            register(d: Disposable): void;
+            _refreshAnimationFrame: number | null;
+            _coreBrowserService: {
+                window: Window;
+            }
+        }
+
+        // Workaround for https://github.com/xtermjs/xterm.js/issues/4775. Can be removed for releases > 5.3.0
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const viewPort: ViewportType = (this.term as any)._core.viewport;
+        viewPort.register(Disposable.create(() => {
+            if (typeof viewPort._refreshAnimationFrame === 'number') {
+                viewPort._coreBrowserService.window.cancelAnimationFrame(viewPort._refreshAnimationFrame);
+            }
+        }));
+
         if (isFirefox) {
             // monkey patching intersection observer handling for secondary window support
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const renderService: any = (this.term as any)._core._renderService;
+
             const originalFunc: (entry: IntersectionObserverEntry) => void = renderService._handleIntersectionChange.bind(renderService);
             const replacement = function (entry: IntersectionObserverEntry): void {
                 if (entry.target.ownerDocument !== document) {
