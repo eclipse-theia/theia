@@ -15,7 +15,6 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { Disposable } from '../common';
 import { Emitter, Event } from '../common/event';
 
 export type ContextKeyValue = null | undefined | boolean | number | string
@@ -43,7 +42,7 @@ export interface ContextKeyChangeEvent {
 
 export const ContextKeyService = Symbol('ContextKeyService');
 
-export interface ContextMatcher extends Disposable {
+export interface ContextMatcher {
     /**
      * Whether the expression is satisfied. If `context` provided, the service will attempt to retrieve a context object associated with that element.
      */

@@ -14,18 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { CommandRegistry } from '@theia/core/lib/common/command';
 import { Emitter } from '@theia/core/lib/common/event';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { ICommandEvent, ICommandService } from '@theia/monaco-editor-core/esm/vs/platform/commands/common/commands';
-import { StandaloneCommandService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { StandaloneCommandService, StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import * as monaco from '@theia/monaco-editor-core';
-
-export const MonacoCommandServiceFactory = Symbol('MonacoCommandServiceFactory');
-export interface MonacoCommandServiceFactory {
-    (): MonacoCommandService;
-}
+import { IInstantiationService } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation';
 
 @injectable()
 export class MonacoCommandService implements ICommandService, Disposable {
@@ -38,13 +34,25 @@ export class MonacoCommandService implements ICommandService, Disposable {
     );
 
     protected delegate: StandaloneCommandService | undefined;
-    protected readonly delegateListeners = new DisposableCollection();
 
     constructor(
         @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry
     ) {
         this.toDispose.push(this.commandRegistry.onWillExecuteCommand(e => this.onWillExecuteCommandEmitter.fire(e)));
         this.toDispose.push(this.commandRegistry.onDidExecuteCommand(e => this.onDidExecuteCommandEmitter.fire(e)));
+    }
+
+    @postConstruct()
+    init(): void {
+        this.delegate = new StandaloneCommandService(StandaloneServices.get(IInstantiationService));
+        if (this.delegate) {
+            this.toDispose.push(this.delegate.onWillExecuteCommand(event =>
+                this.onWillExecuteCommandEmitter.fire(event)
+            ));
+            this.toDispose.push(this.delegate.onDidExecuteCommand(event =>
+                this.onDidExecuteCommandEmitter.fire(event)
+            ));
+        }
     }
 
     dispose(): void {
@@ -57,23 +65,6 @@ export class MonacoCommandService implements ICommandService, Disposable {
 
     get onDidExecuteCommand(): monaco.IEvent<ICommandEvent> {
         return this.onDidExecuteCommandEmitter.event;
-    }
-
-    setDelegate(delegate: StandaloneCommandService | undefined): void {
-        if (this.toDispose.disposed) {
-            return;
-        }
-        this.delegateListeners.dispose();
-        this.toDispose.push(this.delegateListeners);
-        this.delegate = delegate;
-        if (this.delegate) {
-            this.delegateListeners.push(this.delegate.onWillExecuteCommand(event =>
-                this.onWillExecuteCommandEmitter.fire(event)
-            ));
-            this.delegateListeners.push(this.delegate.onDidExecuteCommand(event =>
-                this.onDidExecuteCommandEmitter.fire(event)
-            ));
-        }
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

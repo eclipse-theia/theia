@@ -45,7 +45,6 @@ import { EditorModelService } from './text-editor-model-service';
 import { OpenerService } from '@theia/core/lib/browser/opener-service';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
 import { MonacoBulkEditService } from '@theia/monaco/lib/browser/monaco-bulk-edit-service';
-import { MonacoEditorService } from '@theia/monaco/lib/browser/monaco-editor-service';
 import { MainFileSystemEventService } from './main-file-system-event-service';
 import { LabelServiceMainImpl } from './label-service-main';
 import { TimelineMainImpl } from './timeline-main';
@@ -115,8 +114,7 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
     rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_KERNELS_MAIN, new NotebookKernelsMainImpl(rpc, container));
 
     const bulkEditService = container.get(MonacoBulkEditService);
-    const monacoEditorService = container.get(MonacoEditorService);
-    const editorsMain = new TextEditorsMainImpl(editorsAndDocuments, documentsMain, rpc, bulkEditService, monacoEditorService);
+    const editorsMain = new TextEditorsMainImpl(editorsAndDocuments, documentsMain, rpc, bulkEditService);
     rpc.set(PLUGIN_RPC_CONTEXT.TEXT_EDITORS_MAIN, editorsMain);
 
     // start listening only after all clients are subscribed to events

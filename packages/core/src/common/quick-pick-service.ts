@@ -14,7 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import URI from './uri';
 import * as fuzzy from 'fuzzy';
 import { Event } from './event';
 import { KeySequence } from './keys';
@@ -54,11 +53,11 @@ export interface QuickPickItem {
     description?: string;
     detail?: string;
     keySequence?: KeySequence;
-    iconPath?: URI | Uri | { light?: URI | Uri; dark: URI | Uri } | { id: string };
+    iconPath?: { light?: Uri; dark: Uri };
     iconClasses?: string[];
     alwaysShow?: boolean;
     highlights?: QuickPickItemHighlights;
-    buttons?: readonly QuickInputButton[];
+    buttons?: QuickInputButton[];
     execute?: () => void;
 }
 
@@ -95,39 +94,13 @@ export interface QuickPickValue<V> extends QuickPickItem {
 }
 
 export interface QuickInputButton {
-    iconPath?: URI | Uri | { light?: URI | Uri; dark: URI | Uri } | { id: string };
+    iconPath?: { light?: Uri; dark: Uri };
     iconClass?: string;
     tooltip?: string;
     /**
      * Whether the button should be visible even when the user is not hovering.
      */
     alwaysVisible?: boolean;
-}
-
-export interface NormalizedQuickInputButton extends QuickInputButton {
-    iconPath?: { light?: Uri, dark: Uri };
-}
-
-export namespace QuickInputButton {
-    export function normalize(button: undefined): undefined;
-    export function normalize(button: QuickInputButton): NormalizedQuickInputButton;
-    export function normalize(button?: QuickInputButton): NormalizedQuickInputButton | undefined {
-        if (!button) {
-            return button;
-        }
-        let iconPath: NormalizedQuickInputButton['iconPath'] = undefined;
-        if (button.iconPath instanceof URI) {
-            iconPath = { dark: button.iconPath['codeUri'] };
-        } else if (button.iconPath && 'dark' in button.iconPath) {
-            const dark = Uri.isUri(button.iconPath.dark) ? button.iconPath.dark : button.iconPath.dark['codeUri'];
-            const light = Uri.isUri(button.iconPath.light) ? button.iconPath.light : button.iconPath.light?.['codeUri'];
-            iconPath = { dark, light };
-        }
-        return {
-            ...button,
-            iconPath,
-        };
-    }
 }
 
 export interface QuickInputButtonHandle extends QuickInputButton {
@@ -281,8 +254,13 @@ export interface QuickInputService {
     open(filter: string): void;
     createInputBox(): InputBox;
     input(options?: InputOptions, token?: CancellationToken): Promise<string | undefined>;
-    pick<T extends QuickPickItem, O extends PickOptions<T>>(picks: Promise<QuickPickInput<T>[]> | QuickPickInput<T>[], options?: O, token?: CancellationToken):
-        Promise<(O extends { canPickMany: true } ? T[] : T) | undefined>;
+    pick<T extends QuickPickItem>(picks: Promise<QuickPickInput<T>[]> | QuickPickInput<T>[],
+        options?: PickOptions<T> & { canPickMany: true }, token?: CancellationToken): Promise<T[] | undefined>;
+    pick<T extends QuickPickItem>(picks: Promise<QuickPickInput<T>[]> | QuickPickInput<T>[],
+        options?: PickOptions<T> & { canPickMany: false }, token?: CancellationToken): Promise<T | undefined>;
+    pick<T extends QuickPickItem>(picks: Promise<QuickPickInput<T>[]> | QuickPickInput<T>[],
+        options?: Omit<PickOptions<T>, 'canPickMany'>, token?: CancellationToken): Promise<T | undefined>;
+
     showQuickPick<T extends QuickPickItem>(items: Array<T | QuickPickSeparator>, options?: QuickPickOptions<T>): Promise<T | undefined>;
     hide(): void;
     /**

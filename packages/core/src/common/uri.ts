@@ -19,8 +19,10 @@ import { Path } from './path';
 
 export class URI {
 
-    public static fromComponents(components: UriComponents): URI {
-        return new URI(Uri.revive(components));
+    public static fromComponents(components: UriComponents): URI;
+    public static fromComponents(components: undefined): undefined;
+    public static fromComponents(components: UriComponents | undefined): URI | undefined {
+        return components ? new URI(Uri.revive(components)) : undefined;
     }
 
     public static fromFilePath(path: string): URI {

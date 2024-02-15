@@ -189,10 +189,10 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
         this.workspaceService.onWorkspaceChanged(() => this.updateStoragePath());
 
         const languageService = (StandaloneServices.get(ILanguageService) as LanguageService);
-        for (const language of languageService['_encounteredLanguages'] as Set<string>) {
+        for (const language of languageService['_requestedBasicLanguages'] as Set<string>) {
             this.activateByLanguage(language);
         }
-        languageService.onDidEncounterLanguage(language => this.activateByLanguage(language));
+        languageService.onDidRequestBasicLanguageFeatures(language => this.activateByLanguage(language));
         this.commands.onWillExecuteCommand(event => this.ensureCommandHandlerRegistration(event));
         this.debugSessionManager.onWillStartDebugSession(event => this.ensureDebugActivation(event));
         this.debugSessionManager.onWillResolveDebugConfiguration(event => this.ensureDebugActivation(event, 'onDebugResolve', event.debugType));

@@ -23,31 +23,39 @@ import {
     QuickOpenMain,
     MAIN_RPC_CONTEXT,
     TransferInputBox,
-    TransferQuickPickItems,
+    TransferQuickPickItem,
     TransferQuickInput,
     TransferQuickInputButton,
-    TransferQuickPickItemValue
+    TransferQuickPickOptions
 } from '../../common/plugin-api-rpc';
 import {
     InputOptions,
-    PickOptions,
+    QuickInput,
     QuickInputButton,
     QuickInputButtonHandle,
-    QuickInputService
+    QuickInputService,
+    QuickPickItem,
+    codiconArray
 } from '@theia/core/lib/browser';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { MonacoQuickInputService } from '@theia/monaco/lib/browser/monaco-quick-input-service';
 import { QuickInputButtons } from '../../plugin/types-impl';
-import { getIconPathOrClass } from '../../plugin/quick-open';
 import * as monaco from '@theia/monaco-editor-core';
-import { IQuickPickItem, IQuickInput } from '@theia/monaco-editor-core/esm/vs/base/parts/quickinput/common/quickInput';
-import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
+import { UriComponents } from '../../common/uri-components';
+import { URI } from '@theia/core/shared/vscode-uri';
+import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/base/common/themables';
+import { isUriComponents } from '@theia/monaco-editor-core/esm/vs/base/common/uri';
 
 export interface QuickInputSession {
-    input: IQuickInput;
-    handlesToItems: Map<number, TransferQuickPickItems>;
+    input: QuickInput;
+    handlesToItems: Map<number, TransferQuickPickItem>;
 }
+
+interface IconPath {
+    dark: URI,
+    light?: URI
+};
 
 export class QuickOpenMainImpl implements QuickOpenMain, Disposable {
 
@@ -55,7 +63,7 @@ export class QuickOpenMainImpl implements QuickOpenMain, Disposable {
     private proxy: QuickOpenExt;
     private delegate: MonacoQuickInputService;
     private readonly items: Record<number, {
-        resolve(items: TransferQuickPickItems[]): void;
+        resolve(items: QuickPickItem[]): void;
         reject(error: Error): void;
     }> = {};
 
@@ -71,33 +79,74 @@ export class QuickOpenMainImpl implements QuickOpenMain, Disposable {
         this.toDispose.dispose();
     }
 
-    async $show(instance: number, options: PickOptions<TransferQuickPickItemValue>, token: CancellationToken): Promise<number | number[] | undefined> {
-        const contents = new Promise<TransferQuickPickItems[]>((resolve, reject) => {
+    async $show(instance: number, options: TransferQuickPickOptions<TransferQuickPickItem>, token: CancellationToken): Promise<number | number[] | undefined> {
+        const contents = new Promise<QuickPickItem[]>((resolve, reject) => {
             this.items[instance] = { resolve, reject };
         });
 
-        options = {
+        const activeItem = await options.activeItem;
+        const transformedOptions = {
             ...options,
             onDidFocus: (el: any) => {
                 if (el) {
-                    this.proxy.$onItemSelected((<TransferQuickPickItems>el).handle);
+                    this.proxy.$onItemSelected(Number.parseInt((<QuickPickItem>el).id!));
                 }
-            }
+            },
+            activeItem: activeItem ? this.toQuickPickItem(activeItem) : undefined
         };
 
-        const result = await this.delegate.pick<TransferQuickPickItemValue>(contents, options, token);
+        const result = await this.delegate.pick(contents, transformedOptions, token);
 
         if (Array.isArray(result)) {
-            return result.map(({ handle }) => handle);
+            return result.map(({ id }) => Number.parseInt(id!));
         } else if (result) {
-            return result.handle;
+            return Number.parseInt(result.id!);
         }
         return undefined;
     }
 
-    $setItems(instance: number, items: TransferQuickPickItems[]): Promise<any> {
+    private normalizeIconPath(path: UriComponents | { light: UriComponents; dark: UriComponents } | ThemeIcon | undefined): {
+        iconPath?: IconPath
+        iconClasses?: string[]
+    } {
+        let iconClasses;
+        if (ThemeIcon.isThemeIcon(path)) {
+            const codicon = codiconArray(path.id);
+            iconClasses = codicon;
+        }
+        let iconPath;
+        if (isUriComponents(path)) {
+            iconPath = { dark: URI.from(path) };
+        } else if (path && 'dark' in path) {
+            iconPath = { dark: URI.from(path.dark), light: URI.from(path.light) };
+        }
+        return {
+            iconPath,
+            iconClasses
+        };
+    }
+
+    private toQuickPickItem(item: undefined): undefined;
+    private toQuickPickItem(item: TransferQuickPickItem): QuickPickItem
+    private toQuickPickItem(item: TransferQuickPickItem | undefined): QuickPickItem | undefined {
+        if (!item) {
+            return undefined;
+        }
+        return {
+            ...this.normalizeIconPath(item.iconPath),
+            type: 'item',
+            id: item.handle.toString(),
+            label: item.label,
+            description: item.description,
+            detail: item.detail,
+            alwaysShow: item.alwaysShow,
+            buttons: item.buttons ? this.convertToQuickInputButtons(item.buttons) : undefined
+        };
+    }
+
+    $setItems(instance: number, items: TransferQuickPickItem[]): Promise<any> {
         if (this.items[instance]) {
-            this.items[instance].resolve(items);
+            this.items[instance].resolve(items.map(item => this.toQuickPickItem(item)));
             delete this.items[instance];
         }
         return Promise.resolve();
@@ -201,17 +250,17 @@ export class QuickOpenMainImpl implements QuickOpenMain, Disposable {
                 quickPick.onDidAccept(() => {
                     this.proxy.$acceptOnDidAccept(sessionId);
                 });
-                quickPick.onDidChangeActive((items: Array<IQuickPickItem>) => {
-                    this.proxy.$onDidChangeActive(sessionId, items.map(item => (item as TransferQuickPickItems).handle));
+                quickPick.onDidChangeActive((items: QuickPickItem[]) => {
+                    this.proxy.$onDidChangeActive(sessionId, items.map(item => Number.parseInt(item.id!)));
                 });
-                quickPick.onDidChangeSelection((items: Array<IQuickPickItem>) => {
-                    this.proxy.$onDidChangeSelection(sessionId, items.map(item => (item as TransferQuickPickItems).handle));
+                quickPick.onDidChangeSelection((items: QuickPickItem[]) => {
+                    this.proxy.$onDidChangeSelection(sessionId, items.map(item => Number.parseInt(item.id!)));
                 });
                 quickPick.onDidTriggerButton((button: QuickInputButtonHandle) => {
                     this.proxy.$acceptOnDidTriggerButton(sessionId, button);
                 });
                 quickPick.onDidTriggerItemButton(e => {
-                    this.proxy.$onDidTriggerItemButton(sessionId, (e.item as TransferQuickPickItems).handle, (e.button as TransferQuickPickItems).handle);
+                    this.proxy.$onDidTriggerItemButton(sessionId, Number.parseInt(e.item.id!), (e.button as TransferQuickPickItem).handle);
                 });
                 quickPick.onDidChangeValue((value: string) => {
                     this.proxy.$acceptDidChangeValue(sessionId, value);
@@ -260,7 +309,7 @@ export class QuickOpenMainImpl implements QuickOpenMain, Disposable {
                     }
                 } else if (param === 'items') {
                     handlesToItems.clear();
-                    params[param].forEach((item: TransferQuickPickItems) => {
+                    params[param].forEach((item: TransferQuickPickItem) => {
                         handlesToItems.set(item.handle, item);
                     });
                     (input as any)[param] = params[param];
@@ -314,9 +363,9 @@ export class QuickOpenMainImpl implements QuickOpenMain, Disposable {
         return Promise.resolve(undefined);
     }
 
-    private convertToQuickInputButtons(buttons: Array<TransferQuickInputButton>): Array<QuickInputButton> {
+    private convertToQuickInputButtons(buttons: readonly TransferQuickInputButton[]): QuickInputButton[] {
         return buttons.map((button, i) => ({
-            ...getIconPathOrClass(button),
+            ...this.normalizeIconPath(button.iconPath),
             tooltip: button.tooltip,
             handle: button === QuickInputButtons.Back ? -1 : i,
         } as QuickInputButton));

@@ -4,13 +4,18 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
-<!-- ## not yet released
+## v1.47.0 not yet released
 
 - [component] add here
 
 <a name="breaking_changes_not_yet_released">[Breaking Changes:](#breaking_changes_not_yet_released)</a>
-
-- [component] add here -->
+- [monaco] Upgrade Monaco dependency to 1.83.1 [#13217](https://github.com/eclipse-theia/theia/pull/13217)- contributed on behalf of STMicroelectronics\
+  There are a couple of breaking changes that come with this monaco update
+  - Moved `ThemaIcon` and `ThemeColor` to the common folder
+  - Minor typing adjustments in QuickPickService: in parti
+  - FileUploadService: moved id field from data transfer item to the corresponding file info
+  - The way we instantiate monaco services has changed completely: if you touch monaco services in your code, please read the description in the 
+    file comment in `monaco-init.ts`.
 
 ## v1.46.0 - 01/25/2024
 - [plugin] Add prefix to contributed view container ids [#13362](https://github.com/eclipse-theia/theia/pull/13362) - contributed on behalf of STMicroelectronics

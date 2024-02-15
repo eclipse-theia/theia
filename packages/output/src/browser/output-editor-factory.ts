@@ -35,10 +35,10 @@ export class OutputEditorFactory implements MonacoEditorFactory {
 
     readonly scheme: string = OutputUri.SCHEME;
 
-    create(model: MonacoEditorModel, defaultsOptions: MonacoEditor.IOptions, defaultOverrides: EditorServiceOverrides): MonacoEditor {
+    create(model: MonacoEditorModel, defaultsOptions: MonacoEditor.IOptions): MonacoEditor {
         const uri = new URI(model.uri);
         const options = this.createOptions(model, defaultsOptions);
-        const overrides = this.createOverrides(model, defaultOverrides);
+        const overrides = this.createOverrides(model);
         return new MonacoEditor(uri, model, document.createElement('div'), this.services, options, overrides);
     }
 
@@ -62,13 +62,7 @@ export class OutputEditorFactory implements MonacoEditorFactory {
         };
     }
 
-    protected *createOverrides(model: MonacoEditorModel, defaultOverrides: EditorServiceOverrides): EditorServiceOverrides {
+    protected *createOverrides(model: MonacoEditorModel): EditorServiceOverrides {
         yield [IContextMenuService, this.contextMenuService];
-        for (const [identifier, provider] of defaultOverrides) {
-            if (identifier !== IContextMenuService) {
-                yield [identifier, provider];
-            }
-        }
     }
-
 }

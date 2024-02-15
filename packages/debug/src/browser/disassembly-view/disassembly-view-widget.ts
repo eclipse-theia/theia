@@ -128,7 +128,7 @@ export class DisassemblyViewWidget extends BaseWidget {
 
     protected createPane(): void {
         this._enableSourceCodeRender = this.debugPreferences['debug.disassemblyView.showSourceCode'];
-        const monacoInstantiationService = StandaloneServices.initialize({});
+        const monacoInstantiationService = StandaloneServices.get(IInstantiationService);
         const tableDelegate = new DisassemblyViewTableDelegate(this);
         const instructionRenderer = monacoInstantiationService.createInstance(InstructionRenderer, this, this.openerService, { asCanonicalUri(thing: Uri): Uri { return thing; } });
         this.toDispose.push(instructionRenderer);

@@ -139,7 +139,6 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
         input.getControl().createContextKey('consoleInputFocus', true);
         const contentContext = this.contextKeyService.createScoped(this.content.node);
         contentContext.setContext('consoleContentFocus', true);
-        this.toDispose.push(contentContext);
     }
 
     protected createInput(node: HTMLElement): Promise<MonacoEditor> {

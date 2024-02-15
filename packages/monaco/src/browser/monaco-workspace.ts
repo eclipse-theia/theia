@@ -230,7 +230,7 @@ export class MonacoWorkspace {
         });
     }
 
-    async applyBulkEdit(edits: ResourceEdit[], options?: IBulkEditOptions): Promise<IBulkEditResult & { success: boolean }> {
+    async applyBulkEdit(edits: ResourceEdit[], options?: IBulkEditOptions): Promise<IBulkEditResult> {
         try {
             let totalEdits = 0;
             let totalFiles = 0;
@@ -264,12 +264,12 @@ export class MonacoWorkspace {
             }
 
             const ariaSummary = this.getAriaSummary(totalEdits, totalFiles);
-            return { ariaSummary, success: true };
+            return { ariaSummary, isApplied: true };
         } catch (e) {
             console.error('Failed to apply Resource edits:', e);
             return {
                 ariaSummary: `Error applying Resource edits: ${e.toString()}`,
-                success: false
+                isApplied: false
             };
         }
     }
@@ -369,27 +369,27 @@ export class MonacoWorkspace {
             const options = edit.options || {};
             if (edit.newResource && edit.oldResource) {
                 // rename
-                if (options.overwrite === undefined && options.ignoreIfExists && await this.fileService.exists(new URI(edit.newResource))) {
+                if (options.overwrite === undefined && options.ignoreIfExists && await this.fileService.exists(URI.fromComponents(edit.newResource))) {
                     return; // not overwriting, but ignoring, and the target file exists
                 }
-                await this.fileService.move(new URI(edit.oldResource), new URI(edit.newResource), { overwrite: options.overwrite });
+                await this.fileService.move(URI.fromComponents(edit.oldResource), URI.fromComponents(edit.newResource), { overwrite: options.overwrite });
             } else if (!edit.newResource && edit.oldResource) {
                 // delete file
-                if (await this.fileService.exists(new URI(edit.oldResource))) {
+                if (await this.fileService.exists(URI.fromComponents(edit.oldResource))) {
                     let useTrash = this.filePreferences['files.enableTrash'];
-                    if (useTrash && !(this.fileService.hasCapability(new URI(edit.oldResource), FileSystemProviderCapabilities.Trash))) {
+                    if (useTrash && !(this.fileService.hasCapability(URI.fromComponents(edit.oldResource), FileSystemProviderCapabilities.Trash))) {
                         useTrash = false; // not supported by provider
                     }
-                    await this.fileService.delete(new URI(edit.oldResource), { useTrash, recursive: options.recursive });
+                    await this.fileService.delete(URI.fromComponents(edit.oldResource), { useTrash, recursive: options.recursive });
                 } else if (!options.ignoreIfNotExists) {
                     throw new Error(`${edit.oldResource} does not exist and can not be deleted`);
                 }
             } else if (edit.newResource && !edit.oldResource) {
                 // create file
-                if (options.overwrite === undefined && options.ignoreIfExists && await this.fileService.exists(new URI(edit.newResource))) {
+                if (options.overwrite === undefined && options.ignoreIfExists && await this.fileService.exists(URI.fromComponents(edit.newResource))) {
                     return; // not overwriting, but ignoring, and the target file exists
                 }
-                await this.fileService.create(new URI(edit.newResource), undefined, { overwrite: options.overwrite });
+                await this.fileService.create(URI.fromComponents(edit.newResource), undefined, { overwrite: options.overwrite });
             }
         }
     }

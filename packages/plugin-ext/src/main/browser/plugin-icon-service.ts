@@ -14,18 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { asCSSPropertyValue } from '@theia/monaco-editor-core/esm/vs/base/browser/dom';
 import { Endpoint } from '@theia/core/lib/browser';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { getIconRegistry } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/iconRegistry';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { URI } from '@theia/core/shared/vscode-uri';
-import { IconFontDefinition, IconContribution as Icon } from '@theia/core/lib/browser/icon-registry';
 import { MonacoIconRegistry } from '@theia/monaco/lib/browser/monaco-icon-registry';
 import * as path from 'path';
 import { IconContribution, DeployedPlugin, IconDefinition } from '../../common/plugin-protocol';
-import { IThemeService } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
-import { UnthemedProductIconTheme } from '@theia/monaco-editor-core/esm/vs/platform/theme/browser/iconsStyleSheet';
 
 @injectable()
 export class PluginIconService implements Disposable {
@@ -45,18 +40,7 @@ export class PluginIconService implements Disposable {
         } else {
             this.registerRegularIcon(contribution, defaultIcon.id);
         }
-        this.updateStyle(contribution);
         return Disposable.NULL;
-    }
-
-    updateStyle(contribution: IconContribution): void {
-        this.updateStyleElement();
-        const css = this.getCSS(contribution);
-        if (css) {
-            this.styleElement.innerText = css;
-        }
-        const toRemoveStyleElement = Disposable.create(() => this.styleElement.remove());
-        this.toDispose.push(toRemoveStyleElement);
     }
 
     dispose(): void {
@@ -64,10 +48,11 @@ export class PluginIconService implements Disposable {
     }
 
     protected registerFontIcon(contribution: IconContribution, defaultIcon: IconDefinition): void {
-        const location = defaultIcon.location;
-        const format = getFileExtension(location);
-        const fontId = getFontId(contribution.extensionId, location);
-        const definition = this.iconRegistry.registerIconFont(fontId, { src: [{ location: URI.file(location), format }] });
+        const location = this.toPluginUrl(contribution.extensionId, getIconRelativePath(URI.parse(defaultIcon.location).path));
+        const format = getFileExtension(location.path);
+        const fontId = getFontId(contribution.extensionId, location.path);
+
+        const definition = this.iconRegistry.registerIconFont(fontId, { src: [{ location: location, format }] });
         this.iconRegistry.registerIcon(contribution.id, {
             fontCharacter: defaultIcon.fontCharacter,
             font: {
@@ -81,59 +66,10 @@ export class PluginIconService implements Disposable {
         this.iconRegistry.registerIcon(contribution.id, { id: defaultIconId }, contribution.description);
     }
 
-    protected updateStyleElement(): void {
-        if (!this.styleElement) {
-            const styleElement = document.createElement('style');
-            styleElement.type = 'text/css';
-            styleElement.media = 'screen';
-            styleElement.id = 'contributedIconsStyles';
-            document.head.appendChild(styleElement);
-            this.styleElement = styleElement;
-        }
-    }
-    protected getCSS(iconContribution: IconContribution, themeService?: IThemeService): string | undefined {
-        const iconRegistry = getIconRegistry();
-        const productIconTheme = themeService ? themeService.getProductIconTheme() : new UnthemedProductIconTheme();
-        const usedFontIds: { [id: string]: IconFontDefinition } = {};
-        const formatIconRule = (contribution: Icon): string | undefined => {
-            const definition = productIconTheme.getIcon(contribution);
-            if (!definition) {
-                return undefined;
-            }
-            const fontContribution = definition.font;
-            if (fontContribution) {
-                usedFontIds[fontContribution.id] = fontContribution.definition;
-                return `.codicon-${contribution.id}:before { content: '${definition.fontCharacter}'; font-family: ${asCSSPropertyValue(iconContribution.extensionId)}; }`;
-            }
-            // default font (codicon)
-            return `.codicon-${contribution.id}:before { content: '${definition.fontCharacter}'; }`;
-        };
-
-        const rules = [];
-        for (const contribution of iconRegistry.getIcons()) {
-            const rule = formatIconRule(contribution);
-            if (rule) {
-                rules.push(rule);
-            }
-        }
-        for (const id in usedFontIds) {
-            if (id) {
-                const definition = usedFontIds[id];
-                const fontWeight = definition.weight ? `font-weight: ${definition.weight};` : '';
-                const fontStyle = definition.style ? `font-style: ${definition.style};` : '';
-                const src = definition.src.map(icon =>
-                    `${this.toPluginUrl(iconContribution.extensionId, getIconRelativePath(icon.location.path))} format('${icon.format}')`)
-                    .join(', ');
-                rules.push(`@font-face { src: ${src}; font-family: ${asCSSPropertyValue(iconContribution.extensionId)};${fontWeight}${fontStyle} font-display: block; }`);
-            }
-        }
-        return rules.join('\n');
-    }
-
-    protected toPluginUrl(id: string, relativePath: string): string {
-        return `url('${new Endpoint({
+    protected toPluginUrl(id: string, relativePath: string): URI {
+        return URI.from(new Endpoint({
             path: `hostedPlugin/${this.formatExtensionId(id)}/${encodeURIComponent(relativePath)}`
-        }).getRestUrl().toString()}')`;
+        }).getRestUrl().toComponents());
     }
 
     protected formatExtensionId(id: string): string {

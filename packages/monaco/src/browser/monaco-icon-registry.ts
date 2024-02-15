@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { injectable } from '@theia/core/shared/inversify';
-import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
 import { IconRegistry } from '@theia/core/lib/browser/icon-registry';
-import { IconDefinition, IconFontDefinition, getIconRegistry } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/iconRegistry';
+import { getIconRegistry } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/iconRegistry';
+import { IconDefinition, IconFontDefinition, ThemeIcon } from '@theia/core/lib/common/theme';
 
 @injectable()
 export class MonacoIconRegistry implements IconRegistry {
@@ -33,7 +33,8 @@ export class MonacoIconRegistry implements IconRegistry {
     }
 
     registerIconFont(id: string, definition: IconFontDefinition): IconFontDefinition {
-        return this.iconRegistry.registerIconFont(id, definition);
+        // need to cast because of vscode issue https://github.com/microsoft/vscode/issues/190584
+        return this.iconRegistry.registerIconFont(id, definition) as IconFontDefinition;
     }
 
     deregisterIconFont(id: string): void {
@@ -41,7 +42,8 @@ export class MonacoIconRegistry implements IconRegistry {
     }
 
     getIconFont(id: string): IconFontDefinition | undefined {
-        return this.iconRegistry.getIconFont(id);
+        // need to cast because of vscode issue https://github.com/microsoft/vscode/issues/190584
+        return this.iconRegistry.getIconFont(id) as IconFontDefinition;
     }
 }
 

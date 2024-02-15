@@ -31,11 +31,11 @@ import { InlineValueContext } from '@theia/monaco-editor-core/esm/vs/editor/comm
 import { ITextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
 import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { MonacoEditorService } from '@theia/monaco/lib/browser/monaco-editor-service';
 import { DebugVariable, ExpressionContainer, ExpressionItem } from '../console/debug-console-items';
 import { DebugPreferences } from '../debug-preferences';
 import { DebugStackFrame } from '../model/debug-stack-frame';
 import { DebugEditorModel } from './debug-editor-model';
+import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';
 
 // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/workbench/contrib/debug/browser/debugEditorContribution.ts#L40-L43
 export const INLINE_VALUE_DECORATION_KEY = 'inlinevaluedecoration';
@@ -59,10 +59,6 @@ class InlineSegment {
 
 @injectable()
 export class DebugInlineValueDecorator implements FrontendApplicationContribution {
-
-    @inject(MonacoEditorService)
-    protected readonly editorService: MonacoEditorService;
-
     @inject(DebugPreferences)
     protected readonly preferences: DebugPreferences;
 
@@ -70,7 +66,7 @@ export class DebugInlineValueDecorator implements FrontendApplicationContributio
     protected wordToLineNumbersMap: Map<string, monaco.Position[]> | undefined = new Map();
 
     onStart(): void {
-        this.editorService.registerDecorationType('Inline debug decorations', INLINE_VALUE_DECORATION_KEY, {});
+        StandaloneServices.get(ICodeEditorService).registerDecorationType('Inline debug decorations', INLINE_VALUE_DECORATION_KEY, {});
         this.enabled = !!this.preferences['debug.inlineValues'];
         this.preferences.onPreferenceChanged(({ preferenceName, newValue }) => {
             if (preferenceName === 'debug.inlineValues' && !!newValue !== this.enabled) {

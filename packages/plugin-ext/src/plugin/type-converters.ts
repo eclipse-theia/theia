@@ -35,6 +35,7 @@ import { CellRange, isTextStreamMime } from '@theia/notebook/lib/common';
 import { MarkdownString as MarkdownStringDTO } from '@theia/core/lib/common/markdown-rendering';
 
 import { TestItemDTO, TestMessageDTO } from '../common/test-types';
+import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/base/common/themables';
 
 const SIDE_GROUP = -2;
 const ACTIVE_GROUP = -1;
@@ -1212,23 +1213,57 @@ export function fromColorPresentation(colorPresentation: theia.ColorPresentation
     };
 }
 
-export function convertToTransferQuickPickItems(items: rpc.Item[]): rpc.TransferQuickPickItems[] {
-    return items.map<rpc.TransferQuickPickItems>((item, index) => {
+export function convertIconPath(iconPath: types.URI | { light: types.URI; dark: types.URI } | theia.ThemeIcon | undefined):
+    UriComponents | { light: UriComponents; dark: UriComponents } | ThemeIcon | undefined {
+    if (!iconPath) {
+        return undefined;
+    }
+    if (iconPath instanceof types.URI) {
+        return iconPath.toJSON();
+    } else if ('dark' in iconPath) {
+        return {
+            dark: iconPath.dark.toJSON(),
+            light: iconPath.light?.toJSON()
+        };
+    } else if (ThemeIcon.isThemeIcon(iconPath)) {
+        return {
+            id: iconPath.id,
+            color: iconPath.color ? { id: iconPath.color.id } : undefined
+        };
+    } else {
+        return undefined;
+    }
+}
+
+export function convertQuickInputButton(button: theia.QuickInputButton, index: number): rpc.TransferQuickInputButton {
+    const iconPath = convertIconPath(button.iconPath);
+    if (!iconPath) {
+        throw new Error(`Could not convert icon path: '${button.iconPath}'`);
+    }
+    return {
+        handle: index,
+        iconPath: iconPath,
+        tooltip: button.tooltip
+    };
+}
+
+export function convertToTransferQuickPickItems(items: (theia.QuickPickItem | string)[]): rpc.TransferQuickPickItem[] {
+    return items.map((item, index) => {
         if (typeof item === 'string') {
-            return { type: 'item', label: item, handle: index };
+            return { kind: 'item', label: item, handle: index };
         } else if (item.kind === QuickPickItemKind.Separator) {
-            return { type: 'separator', label: item.label, handle: index };
+            return { kind: 'separator', label: item.label, handle: index };
         } else {
             const { label, description, iconPath, detail, picked, alwaysShow, buttons } = item;
             return {
-                type: 'item',
+                kind: 'item',
                 label,
                 description,
-                iconPath,
+                iconPath: convertIconPath(iconPath),
                 detail,
                 picked,
                 alwaysShow,
-                buttons,
+                buttons: buttons ? buttons.map(convertQuickInputButton) : undefined,
                 handle: index,
             };
         }
@@ -1403,7 +1438,7 @@ export namespace DataTransferItem {
                     return {
                         name: file.name,
                         uri: URI.revive(file.uri),
-                        data: () => resolveFileData(item.id),
+                        data: () => resolveFileData(file.id),
                     };
                 }
             }('');

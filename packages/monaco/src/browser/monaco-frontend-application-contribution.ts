@@ -20,15 +20,7 @@ import { MonacoSnippetSuggestProvider } from './monaco-snippet-suggest-provider'
 import * as monaco from '@theia/monaco-editor-core';
 import { setSnippetSuggestSupport } from '@theia/monaco-editor-core/esm/vs/editor/contrib/suggest/browser/suggest';
 import { CompletionItemProvider } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
-import { MonacoEditorService } from './monaco-editor-service';
 import { MonacoTextModelService } from './monaco-text-model-service';
-import { ContextKeyService as VSCodeContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/browser/contextKeyService';
-import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';
-import { ITextModelService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/resolverService';
-import { IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
-import { IContextMenuService } from '@theia/monaco-editor-core/esm/vs/platform/contextview/browser/contextView';
-import { MonacoContextMenuService } from './monaco-context-menu';
 import { MonacoThemingService } from './monaco-theming-service';
 import { isHighContrast } from '@theia/core/lib/common/theme';
 import { editorOptionsRegistry, IEditorOption } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
@@ -36,27 +28,11 @@ import { MAX_SAFE_INTEGER } from '@theia/core';
 import { editorGeneratedPreferenceProperties } from '@theia/editor/lib/browser/editor-generated-preference-schema';
 import { WorkspaceFileService } from '@theia/workspace/lib/common/workspace-file-service';
 
-let theiaDidInitialize = false;
-const originalInitialize = StandaloneServices.initialize;
-StandaloneServices.initialize = overrides => {
-    if (!theiaDidInitialize) {
-        console.warn('Monaco was initialized before overrides were installed by Theia\'s initialization.'
-            + ' Please check the lifecycle of services that use Monaco and ensure that Monaco entities are not instantiated before Theia is initialized.', new Error());
-    }
-    return originalInitialize(overrides);
-};
-
 @injectable()
 export class MonacoFrontendApplicationContribution implements FrontendApplicationContribution, StylingParticipant {
 
-    @inject(MonacoEditorService)
-    protected readonly codeEditorService: MonacoEditorService;
-
     @inject(MonacoTextModelService)
     protected readonly textModelService: MonacoTextModelService;
-
-    @inject(VSCodeContextKeyService)
-    protected readonly contextKeyService: VSCodeContextKeyService;
 
     @inject(MonacoSnippetSuggestProvider)
     protected readonly snippetSuggestProvider: MonacoSnippetSuggestProvider;
@@ -67,9 +43,6 @@ export class MonacoFrontendApplicationContribution implements FrontendApplicatio
     @inject(QuickAccessRegistry)
     protected readonly quickAccessRegistry: QuickAccessRegistry;
 
-    @inject(MonacoContextMenuService)
-    protected readonly contextMenuService: MonacoContextMenuService;
-
     @inject(MonacoThemingService) protected readonly monacoThemingService: MonacoThemingService;
 
     @inject(WorkspaceFileService) protected readonly workspaceFileService: WorkspaceFileService;
@@ -77,14 +50,6 @@ export class MonacoFrontendApplicationContribution implements FrontendApplicatio
     @postConstruct()
     protected init(): void {
         this.addAdditionalPreferenceValidations();
-        const { codeEditorService, textModelService, contextKeyService, contextMenuService } = this;
-        theiaDidInitialize = true;
-        StandaloneServices.initialize({
-            [ICodeEditorService.toString()]: codeEditorService,
-            [ITextModelService.toString()]: textModelService,
-            [IContextKeyService.toString()]: contextKeyService,
-            [IContextMenuService.toString()]: contextMenuService,
-        });
         // Monaco registers certain quick access providers (e.g. QuickCommandAccess) at import time, but we want to use our own.
         this.quickAccessRegistry.clear();
 

@@ -36,7 +36,10 @@ export class MonacoCommandRegistry {
 
     @inject(SelectionService) protected readonly selectionService: SelectionService;
 
-    validate(command: string): string | undefined {
+    validate(command: string | undefined): string | undefined {
+        if (!command) {
+            return undefined;
+        }
         return this.commands.commandIds.indexOf(command) !== -1 ? command : undefined;
     }
 
