@@ -43,6 +43,7 @@ import { KeyCodeChord } from '@theia/monaco-editor-core/esm/vs/base/common/keybi
 import { IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
 import { ITextModelService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/resolverService';
 import { IReference } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
+import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 
 export const MonacoEditorFactory = Symbol('MonacoEditorFactory');
 export interface MonacoEditorFactory {
@@ -205,13 +206,20 @@ export class MonacoEditorProvider {
             }
         }));
         toDispose.push(editor.onLanguageChanged(() => this.updateMonacoEditorOptions(editor)));
+        toDispose.push(editor.onDidChangeReadOnly(() => this.updateReadOnlyMessage(options, model.readOnly)));
         editor.document.onWillSaveModel(event => event.waitUntil(this.formatOnSave(editor, event)));
         return editor;
     }
+
+    protected updateReadOnlyMessage(options: MonacoEditor.IOptions, readOnly: boolean | MarkdownString ): void {
+        options.readOnlyMessage = MarkdownString.is(readOnly) ? readOnly : undefined;
+    }
+
     protected createMonacoEditorOptions(model: MonacoEditorModel): MonacoEditor.IOptions {
         const options = this.createOptions(this.preferencePrefixes, model.uri, model.languageId);
         options.model = model.textEditorModel;
         options.readOnly = model.readOnly;
+        this.updateReadOnlyMessage(options, model.readOnly);
         options.lineNumbersMinChars = model.lineNumbersMinChars;
         return options;
     }
@@ -293,6 +301,7 @@ export class MonacoEditorProvider {
         const options = this.createOptions(this.diffPreferencePrefixes, modified.uri, modified.languageId);
         options.originalEditable = !original.readOnly;
         options.readOnly = modified.readOnly;
+        options.readOnlyMessage = MarkdownString.is(modified.readOnly) ? modified.readOnly : undefined;
         return options;
     }
     protected updateMonacoDiffEditorOptions(editor: MonacoDiffEditor, event?: EditorPreferenceChange, resourceUri?: string): void {

@@ -35,9 +35,10 @@ import { UriComponents } from '../../common/uri-components';
 import {
     FileSystemProviderCapabilities, Stat, FileType, FileSystemProviderErrorCode, FileOverwriteOptions, FileDeleteOptions, FileOpenOptions, FileWriteOptions, WatchOptions,
     FileSystemProviderWithFileReadWriteCapability, FileSystemProviderWithOpenReadWriteCloseCapability, FileSystemProviderWithFileFolderCopyCapability,
-    FileStat, FileChange, FileOperationError, FileOperationResult
+    FileStat, FileChange, FileOperationError, FileOperationResult, ReadOnlyMessageFileSystemProvider
 } from '@theia/filesystem/lib/common/files';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { MarkdownString } from '../../common/plugin-api-rpc-model';
 
 type IDisposable = Disposable;
 
@@ -66,8 +67,8 @@ export class FileSystemMainImpl implements FileSystemMain, Disposable {
         this._disposables.dispose();
     }
 
-    $registerFileSystemProvider(handle: number, scheme: string, capabilities: FileSystemProviderCapabilities): void {
-        this._fileProvider.set(handle, new RemoteFileSystemProvider(this._fileService, scheme, capabilities, handle, this._proxy));
+    $registerFileSystemProvider(handle: number, scheme: string, capabilities: FileSystemProviderCapabilities, readonlyMessage?: MarkdownString): void {
+        this._fileProvider.set(handle, new RemoteFileSystemProvider(this._fileService, scheme, capabilities, handle, this._proxy, readonlyMessage));
     }
 
     $unregisterProvider(handle: number): void {
@@ -163,7 +164,7 @@ export class FileSystemMainImpl implements FileSystemMain, Disposable {
 
 }
 
-class RemoteFileSystemProvider implements FileSystemProviderWithFileReadWriteCapability, FileSystemProviderWithOpenReadWriteCloseCapability, FileSystemProviderWithFileFolderCopyCapability {
+class RemoteFileSystemProvider implements FileSystemProviderWithFileReadWriteCapability, FileSystemProviderWithOpenReadWriteCloseCapability, FileSystemProviderWithFileFolderCopyCapability, ReadOnlyMessageFileSystemProvider {
 
     private readonly _onDidChange = new Emitter<readonly FileChange[]>();
     private readonly _registration: IDisposable;
@@ -174,12 +175,15 @@ class RemoteFileSystemProvider implements FileSystemProviderWithFileReadWriteCap
     readonly capabilities: FileSystemProviderCapabilities;
     readonly onDidChangeCapabilities: Event<void> = Event.None;
 
+    readonly onDidChangeReadOnlyMessage: Event<MarkdownString | undefined> = Event.None;
+
     constructor(
         fileService: FileService,
         scheme: string,
         capabilities: FileSystemProviderCapabilities,
         private readonly _handle: number,
-        private readonly _proxy: FileSystemExt
+        private readonly _proxy: FileSystemExt,
+        public readonly readOnlyMessage: MarkdownString | undefined = undefined
     ) {
         this.capabilities = capabilities;
         this._registration = fileService.registerProvider(scheme, this);

@@ -41,7 +41,7 @@ export namespace FileResourceVersion {
 }
 
 export interface FileResourceOptions {
-    isReadonly: boolean
+    readOnly: boolean | MarkdownString
     shouldOverwrite: () => Promise<boolean>
     shouldOpenAsText: (error: string) => Promise<boolean>
 }
@@ -65,8 +65,8 @@ export class FileResource implements Resource {
     get encoding(): string | undefined {
         return this._version?.encoding;
     }
-    get readOnly(): boolean {
-        return this.options.isReadonly || this.fileService.hasCapability(this.uri, FileSystemProviderCapabilities.Readonly);
+    get readOnly(): boolean | MarkdownString {
+        return this.options.readOnly;
     }
 
     constructor(
@@ -92,11 +92,30 @@ export class FileResource implements Resource {
             console.error(e);
         }
         this.updateSavingContentChanges();
-        this.toDispose.push(this.fileService.onDidChangeFileSystemProviderCapabilities(e => {
+        this.toDispose.push(this.fileService.onDidChangeFileSystemProviderCapabilities(async e => {
             if (e.scheme === this.uri.scheme) {
-                this.updateSavingContentChanges();
+                this.updateReadOnly();
             }
         }));
+        this.fileService.onDidChangeFileSystemProviderReadOnlyMessage(async e => {
+            if (e.scheme === this.uri.scheme) {
+                this.updateReadOnly();
+            }
+        });
+    }
+
+    protected async updateReadOnly(): Promise<void> {
+        const oldReadOnly = this.options.readOnly;
+        const readOnlyMessage = this.fileService.getReadOnlyMessage(this.uri);
+        if (readOnlyMessage) {
+            this.options.readOnly = readOnlyMessage;
+        } else {
+            this.options.readOnly = this.fileService.hasCapability(this.uri, FileSystemProviderCapabilities.Readonly);
+        }
+        if (this.options.readOnly !== oldReadOnly) {
+            this.updateSavingContentChanges();
+            this.onDidChangeReadOnlyEmitter.fire(this.options.readOnly);
+        }
     }
 
     dispose(): void {
@@ -225,23 +244,16 @@ export class FileResource implements Resource {
     saveContents?: Resource['saveContents'];
     saveContentChanges?: Resource['saveContentChanges'];
     protected updateSavingContentChanges(): void {
-        let changed = false;
         if (this.readOnly) {
-            changed = Boolean(this.saveContents);
             delete this.saveContentChanges;
             delete this.saveContents;
             delete this.saveStream;
         } else {
-            changed = !Boolean(this.saveContents);
             this.saveContents = this.doWrite;
             this.saveStream = this.doWrite;
             if (this.fileService.hasCapability(this.uri, FileSystemProviderCapabilities.Update)) {
                 this.saveContentChanges = this.doSaveContentChanges;
             }
-        }
-        if (changed) {
-            // Only actually bother to call the event if the value has changed.
-            this.onDidChangeReadOnlyEmitter.fire(this.readOnly);
         }
     }
     protected doSaveContentChanges: Resource['saveContentChanges'] = async (changes, options) => {
@@ -332,8 +344,13 @@ export class FileResourceResolver implements ResourceResolver {
         if (stat && stat.isDirectory) {
             throw new Error('The given uri is a directory: ' + this.labelProvider.getLongName(uri));
         }
+
+        const readOnlyMessage = this.fileService.getReadOnlyMessage(uri);
+        const isFileSystemReadOnly = this.fileService.hasCapability(uri, FileSystemProviderCapabilities.Readonly);
+        const readOnly = readOnlyMessage ?? (isFileSystemReadOnly ? isFileSystemReadOnly : (stat?.isReadonly ?? false));
+
         return new FileResource(uri, this.fileService, {
-            isReadonly: stat?.isReadonly ?? false,
+            readOnly: readOnly,
             shouldOverwrite: () => this.shouldOverwrite(uri),
             shouldOpenAsText: error => this.shouldOpenAsText(uri, error)
         });

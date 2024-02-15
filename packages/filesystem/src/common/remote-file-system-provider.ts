@@ -23,7 +23,8 @@ import {
     FileWriteOptions, FileOpenOptions, FileChangeType,
     FileSystemProviderCapabilities, FileChange, Stat, FileOverwriteOptions, WatchOptions, FileType, FileSystemProvider, FileDeleteOptions,
     hasOpenReadWriteCloseCapability, hasFileFolderCopyCapability, hasReadWriteCapability, hasAccessCapability,
-    FileSystemProviderError, FileSystemProviderErrorCode, FileUpdateOptions, hasUpdateCapability, FileUpdateResult, FileReadStreamOptions, hasFileReadStreamCapability
+    FileSystemProviderError, FileSystemProviderErrorCode, FileUpdateOptions, hasUpdateCapability, FileUpdateResult, FileReadStreamOptions, hasFileReadStreamCapability,
+    ReadOnlyMessageFileSystemProvider
 } from './files';
 import { RpcServer, RpcProxy, RpcProxyFactory } from '@theia/core/lib/common/messaging/proxy-factory';
 import { ApplicationError } from '@theia/core/lib/common/application-error';
@@ -31,6 +32,7 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 import type { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
 import { newWriteableStream, ReadableStreamEvents } from '@theia/core/lib/common/stream';
 import { CancellationToken, cancelled } from '@theia/core/lib/common/cancellation';
+import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 
 export const remoteFileSystemPath = '/services/remote-filesystem';
 
@@ -38,6 +40,7 @@ export const RemoteFileSystemServer = Symbol('RemoteFileSystemServer');
 export interface RemoteFileSystemServer extends RpcServer<RemoteFileSystemClient> {
     getCapabilities(): Promise<FileSystemProviderCapabilities>
     stat(resource: string): Promise<Stat>;
+    getReadOnlyMessage(): Promise<MarkdownString | undefined>;
     access(resource: string, mode?: number): Promise<void>;
     fsPath(resource: string): Promise<string>;
     open(resource: string, opts: FileOpenOptions): Promise<number>;
@@ -70,6 +73,7 @@ export interface RemoteFileSystemClient {
     notifyDidChangeFile(event: { changes: RemoteFileChange[] }): void;
     notifyFileWatchError(): void;
     notifyDidChangeCapabilities(capabilities: FileSystemProviderCapabilities): void;
+    notifyDidChangeReadOnlyMessage(readOnlyMessage: MarkdownString | undefined): void;
     onFileStreamData(handle: number, data: Uint8Array): void;
     onFileStreamEnd(handle: number, error: RemoteFileStreamError | undefined): void;
 }
@@ -109,7 +113,7 @@ export class RemoteFileSystemProxyFactory<T extends object> extends RpcProxyFact
  * Wraps the remote filesystem provider living on the backend.
  */
 @injectable()
-export class RemoteFileSystemProvider implements Required<FileSystemProvider>, Disposable {
+export class RemoteFileSystemProvider implements Required<FileSystemProvider>, Disposable, ReadOnlyMessageFileSystemProvider {
 
     private readonly onDidChangeFileEmitter = new Emitter<readonly FileChange[]>();
     readonly onDidChangeFile = this.onDidChangeFileEmitter.event;
@@ -120,6 +124,9 @@ export class RemoteFileSystemProvider implements Required<FileSystemProvider>, D
     private readonly onDidChangeCapabilitiesEmitter = new Emitter<void>();
     readonly onDidChangeCapabilities = this.onDidChangeCapabilitiesEmitter.event;
 
+    private readonly onDidChangeReadOnlyMessageEmitter = new Emitter<MarkdownString | undefined>();
+    readonly onDidChangeReadOnlyMessage = this.onDidChangeReadOnlyMessageEmitter.event;
+
     private readonly onFileStreamDataEmitter = new Emitter<[number, Uint8Array]>();
     private readonly onFileStreamData = this.onFileStreamDataEmitter.event;
 
@@ -129,6 +136,7 @@ export class RemoteFileSystemProvider implements Required<FileSystemProvider>, D
     protected readonly toDispose = new DisposableCollection(
         this.onDidChangeFileEmitter,
         this.onDidChangeCapabilitiesEmitter,
+        this.onDidChangeReadOnlyMessageEmitter,
         this.onFileStreamDataEmitter,
         this.onFileStreamEndEmitter
     );
@@ -146,6 +154,11 @@ export class RemoteFileSystemProvider implements Required<FileSystemProvider>, D
     private _capabilities: FileSystemProviderCapabilities = 0;
     get capabilities(): FileSystemProviderCapabilities { return this._capabilities; }
 
+    private _readOnlyMessage: MarkdownString | undefined = undefined;
+    get readOnlyMessage(): MarkdownString | undefined {
+        return this._readOnlyMessage;
+    }
+
     protected readonly readyDeferred = new Deferred<void>();
     readonly ready = this.readyDeferred.promise;
 
@@ -161,6 +174,9 @@ export class RemoteFileSystemProvider implements Required<FileSystemProvider>, D
             this._capabilities = capabilities;
             this.readyDeferred.resolve();
         }, this.readyDeferred.reject);
+        this.server.getReadOnlyMessage().then(readOnlyMessage => {
+            this._readOnlyMessage = readOnlyMessage;
+        });
         this.server.setClient({
             notifyDidChangeFile: ({ changes }) => {
                 this.onDidChangeFileEmitter.fire(changes.map(event => ({ resource: new URI(event.resource), type: event.type })));
@@ -169,6 +185,7 @@ export class RemoteFileSystemProvider implements Required<FileSystemProvider>, D
                 this.onFileWatchErrorEmitter.fire();
             },
             notifyDidChangeCapabilities: capabilities => this.setCapabilities(capabilities),
+            notifyDidChangeReadOnlyMessage: readOnlyMessage => this.setReadOnlyMessage(readOnlyMessage),
             onFileStreamData: (handle, data) => this.onFileStreamDataEmitter.fire([handle, data]),
             onFileStreamEnd: (handle, error) => this.onFileStreamEndEmitter.fire([handle, error])
         });
@@ -186,6 +203,11 @@ export class RemoteFileSystemProvider implements Required<FileSystemProvider>, D
     protected setCapabilities(capabilities: FileSystemProviderCapabilities): void {
         this._capabilities = capabilities;
         this.onDidChangeCapabilitiesEmitter.fire(undefined);
+    }
+
+    protected setReadOnlyMessage(readOnlyMessage: MarkdownString | undefined): void {
+        this._readOnlyMessage = readOnlyMessage;
+        this.onDidChangeReadOnlyMessageEmitter.fire(readOnlyMessage);
     }
 
     // --- forwarding calls
@@ -362,6 +384,14 @@ export class FileSystemProviderServer implements RemoteFileSystemServer {
                 this.client.notifyDidChangeCapabilities(this.provider.capabilities);
             }
         }));
+        if (ReadOnlyMessageFileSystemProvider.is(this.provider)) {
+            const providerWithReadOnlyMessage: ReadOnlyMessageFileSystemProvider = this.provider;
+            this.toDispose.push(this.provider.onDidChangeReadOnlyMessage(() => {
+                if (this.client) {
+                    this.client.notifyDidChangeReadOnlyMessage(providerWithReadOnlyMessage.readOnlyMessage);
+                }
+            }));
+        }
         this.toDispose.push(this.provider.onDidChangeFile(changes => {
             if (this.client) {
                 this.client.notifyDidChangeFile({
@@ -378,6 +408,14 @@ export class FileSystemProviderServer implements RemoteFileSystemServer {
 
     async getCapabilities(): Promise<FileSystemProviderCapabilities> {
         return this.provider.capabilities;
+    }
+
+    async getReadOnlyMessage(): Promise<MarkdownString | undefined> {
+        if (ReadOnlyMessageFileSystemProvider.is(this.provider)) {
+            return this.provider.readOnlyMessage;
+        } else {
+            return undefined;
+        }
     }
 
     stat(resource: string): Promise<Stat> {

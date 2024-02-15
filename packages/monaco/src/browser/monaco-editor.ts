@@ -653,7 +653,7 @@ export namespace MonacoEditor {
 
     export function createReadOnlyOptions(readOnly?: boolean | MarkdownString): monaco.editor.IEditorOptions {
         if (typeof readOnly === 'boolean') {
-            return { readOnly };
+            return { readOnly, readOnlyMessage: undefined };
         }
         if (readOnly) {
             return { readOnly: true, readOnlyMessage: readOnly };
