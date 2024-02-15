@@ -129,24 +129,6 @@ module.exports = [{
     module: {
         rules: [
             {
-                // Removes the host check in PhosphorJS to enable moving widgets to secondary windows.
-                test: /widget\\.js$/,
-                loader: 'string-replace-loader',
-                include: /node_modules[\\\\/]@phosphor[\\\\/]widgets[\\\\/]lib/,
-                options: {
-                    multiple: [
-                        {
-                            search: /document\\.body\\.contains\\(widget.node\\)/gm,
-                            replace: 'widget.node.ownerDocument.body.contains(widget.node)'
-                        },
-                        {
-                            search: /\\!document\\.body\\.contains\\(host\\)/gm,
-                            replace: ' !host.ownerDocument.body.contains(host)'
-                        }
-                    ]
-                }
-            },
-            {
                 test: /\\.css$/,
                 exclude: /materialcolors\\.css$|\\.useable\\.css$/,
                 use: ['style-loader', 'css-loader']
@@ -280,6 +262,10 @@ module.exports = [{
             {
                 test: /\.css$/i,
                 use: [MiniCssExtractPlugin.loader, "css-loader"]
+            },
+            {
+                test: /\.wasm$/,
+                type: 'asset/resource'
             }
         ]
     },

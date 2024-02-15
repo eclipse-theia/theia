@@ -43,6 +43,11 @@ export interface WindowService {
     openNewDefaultWindow(params?: WindowReloadOptions): void;
 
     /**
+     * Reveal and focuses the current window
+     */
+    focus(): void;
+
+    /**
      * Fires when the `window` unloads. The unload event is inevitable. On this event, the frontend application can save its state and release resource.
      * Saving the state and releasing any resources must be a synchronous call. Any asynchronous calls invoked after emitting this event might be ignored.
      */

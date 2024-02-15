@@ -115,7 +115,7 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
         });
 
         // popup menu
-        ipcMain.handle(CHANNEL_OPEN_POPUP, (event, menuId, menu, x, y) => {
+        ipcMain.handle(CHANNEL_OPEN_POPUP, (event, menuId, menu, x, y, windowName?: string) => {
             const zoom = event.sender.getZoomFactor();
             // TODO: Remove the offset once Electron fixes https://github.com/electron/electron/issues/31641
             const offset = process.platform === 'win32' ? 0 : 2;
@@ -124,7 +124,14 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
             y = Math.round(y * zoom) + offset;
             const popup = Menu.buildFromTemplate(this.fromMenuDto(event.sender, menuId, menu));
             this.openPopups.set(menuId, popup);
+            let electronWindow: BrowserWindow | undefined;
+            if (windowName) {
+                electronWindow = BrowserWindow.getAllWindows().find(win => win.webContents.mainFrame.name === windowName);
+            } else {
+                electronWindow = BrowserWindow.fromWebContents(event.sender) || undefined;
+            }
             popup.popup({
+                window: electronWindow,
                 callback: () => {
                     this.openPopups.delete(menuId);
                     event.sender.send(CHANNEL_ON_CLOSE_POPUP, menuId);

@@ -22,7 +22,8 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/monaco-frontend-module"
+      "frontend": "lib/browser/monaco-frontend-module",
+      "secondaryWindow": "lib/browser/monaco-frontend-module"
     }
   ],
   "keywords": [
