@@ -394,6 +394,9 @@
       "config.untrackedChanges.hidden": "hidden",
       "config.untrackedChanges.mixed": "mixed",
       "config.untrackedChanges.separate": "separate",
+      "dirtyDiff": {
+        "close": "Close Change Peek View"
+      },
       "history": "History",
       "noRepositoryFound": "No repository found",
       "unamend": "Unamend",

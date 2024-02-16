@@ -394,6 +394,9 @@
       "config.untrackedChanges.hidden": "скрытый",
       "config.untrackedChanges.mixed": "смешанный",
       "config.untrackedChanges.separate": "отдельный",
+      "dirtyDiff": {
+        "close": "Закрыть панель просмотра изменения"
+      },
       "history": "История",
       "noRepositoryFound": "Репозиторий не найден",
       "unamend": "не изменять",
