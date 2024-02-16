@@ -12,6 +12,10 @@
 
 - [component] add here -->
 
+## v1.46.101 (based on v1.46.1) - 02/16/2024
+
+- [scm] added support for dirty diff peek view [#13104](https://github.com/eclipse-theia/theia/pull/13104)
+
 ## v1.46.0 - 01/25/2024
 
 - [application-manager] updated message for missing Electron main entries [#13242](https://github.com/eclipse-theia/theia/pull/13242)
