@@ -27,12 +27,13 @@ import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/stan
 import { IInstantiationService } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation';
 import { ICodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorBrowser';
 import { IPosition, Position } from '@theia/monaco-editor-core/esm/vs/editor/common/core/position';
-import { IRange } from '@theia/monaco-editor-core/esm/vs/editor/common/core/range';
+import { IRange, Range } from '@theia/monaco-editor-core/esm/vs/editor/common/core/range';
 import { IDiffEditorOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
 import { EmbeddedDiffEditorWidget } from '@theia/monaco-editor-core/esm/vs/editor/browser/widget/embeddedCodeEditorWidget';
 import { ITextModelService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/resolverService';
 import { Action, IAction } from '@theia/monaco-editor-core/esm/vs/base/common/actions';
 import { Codicon } from '@theia/monaco-editor-core/esm/vs/base/common/codicons';
+import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/base/common/themables';
 import { ScrollType } from '@theia/monaco-editor-core/esm/vs/editor/common/editorCommon';
 import { Color } from '@theia/monaco-editor-core/esm/vs/base/common/color';
 import { IColorTheme, IThemeService } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
@@ -297,11 +298,11 @@ class DirtyDiffPeekView extends PeekViewWidget {
                 }
             }
         });
-        actions.push(new Action('dirtydiff.next', nls.localizeByDefault('Show Next Change'), Codicon.arrowDown.classNames, true,
+        actions.push(new Action('dirtydiff.next', nls.localizeByDefault('Show Next Change'), ThemeIcon.asClassName(Codicon.arrowDown), true,
             () => this.widget.showNextChange()));
-        actions.push(new Action('dirtydiff.previous', nls.localizeByDefault('Show Previous Change'), Codicon.arrowUp.classNames, true,
+        actions.push(new Action('dirtydiff.previous', nls.localizeByDefault('Show Previous Change'), ThemeIcon.asClassName(Codicon.arrowUp), true,
             () => this.widget.showPreviousChange()));
-        actions.push(new Action('peekview.close', nls.localizeByDefault('Close'), Codicon.close.classNames, true,
+        actions.push(new Action('peekview.close', nls.localizeByDefault('Close'), ThemeIcon.asClassName(Codicon.close), true,
             () => this.dispose()));
         actionBar.clear();
         actionBar.push(actions, { label: false, icon: true });
@@ -327,11 +328,11 @@ class DirtyDiffPeekView extends PeekViewWidget {
             renderSideBySide: false,
             readOnly: true,
             renderIndicators: false,
-            diffAlgorithm: 'experimental',
+            diffAlgorithm: 'advanced',
             stickyScroll: { enabled: false }
         };
         this.diffEditor = this._disposables.add(this.instantiationService.createInstance(
-            EmbeddedDiffEditorWidget, container, options, this.editor));
+            EmbeddedDiffEditorWidget, container, options, {}, this.editor));
         StandaloneServices.get(ITextModelService).createModelReference(this.widget.previousRevisionUri['codeUri']).then(modelRef => {
             this._disposables.add(modelRef);
             this.diffEditor!.setModel({ original: modelRef.object.textEditorModel, modified: this.editor.getModel()! });
@@ -354,8 +355,8 @@ class DirtyDiffPeekView extends PeekViewWidget {
         }
     }
 
-    protected override revealLine(lineNumber: number): void {
-        this.editor.revealLineInCenterIfOutsideViewport(lineNumber, ScrollType.Smooth);
+    protected override revealRange(range: Range): void {
+        this.editor.revealLineInCenterIfOutsideViewport(range.endLineNumber, ScrollType.Smooth);
     }
 
     private applyTheme(theme: IColorTheme): void {
