@@ -1301,6 +1301,8 @@ export interface TextEditorsMain {
     $tryApplyEdits(id: string, modelVersionId: number, edits: SingleEditOperation[], opts: ApplyEditsOptions): Promise<boolean>;
     $tryApplyWorkspaceEdit(workspaceEditDto: WorkspaceEditDto, metadata?: WorkspaceEditMetadataDto): Promise<boolean>;
     $tryInsertSnippet(id: string, template: string, selections: Range[], opts: UndoStopOptions): Promise<boolean>;
+    $save(uri: UriComponents): PromiseLike<UriComponents | undefined>;
+    $saveAs(uri: UriComponents): PromiseLike<UriComponents | undefined>;
     $saveAll(includeUntitled?: boolean): Promise<boolean>;
     // $getDiffInformation(id: string): Promise<editorCommon.ILineChange[]>;
 }

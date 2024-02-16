@@ -47,7 +47,7 @@ export class FilesystemSaveResourceService extends SaveResourceService {
     /**
      * Save `sourceWidget` to a new file picked by the user.
      */
-    override async saveAs(sourceWidget: Widget & SaveableSource & Navigatable, options?: SaveOptions): Promise<void> {
+    override async saveAs(sourceWidget: Widget & SaveableSource & Navigatable, options?: SaveOptions): Promise<URI | undefined> {
         let exist: boolean = false;
         let overwrite: boolean = false;
         let selected: URI | undefined;
@@ -68,10 +68,11 @@ export class FilesystemSaveResourceService extends SaveResourceService {
             }
         } while ((selected && exist && !overwrite) || (selected?.isEqual(uri) && !canSave));
         if (selected && selected.isEqual(uri)) {
-            await this.save(sourceWidget, options);
+            return this.save(sourceWidget, options);
         } else if (selected) {
             try {
                 await this.copyAndSave(sourceWidget, selected, overwrite);
+                return selected;
             } catch (e) {
                 console.warn(e);
             }

@@ -456,7 +456,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
     }
 
     async saveAs(widget: Widget & SaveableSource & Navigatable): Promise<void> {
-        return this.saveService.saveAs(widget);
+        await this.saveService.saveAs(widget);
     }
 
     protected updateWorkspaceStateKey(): WorkspaceState {

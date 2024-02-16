@@ -14,7 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { URI } from '@theia/core/shared/vscode-uri';
 import {
     TextEditorsMain,
     MAIN_RPC_CONTEXT,
@@ -40,13 +39,14 @@ import { TextEditorMain } from './text-editor-main';
 import { disposed } from '../../common/errors';
 import { toMonacoWorkspaceEdit } from './languages-main';
 import { MonacoBulkEditService } from '@theia/monaco/lib/browser/monaco-bulk-edit-service';
-import { theiaUritoUriComponents, UriComponents } from '../../common/uri-components';
+import { UriComponents } from '../../common/uri-components';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import * as monaco from '@theia/monaco-editor-core';
 import { ResourceEdit } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
 import { IDecorationRenderOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/editorCommon';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';
+import { URI } from '@theia/core';
 
 export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
 
@@ -171,7 +171,7 @@ export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
 
     protected toRemoteUri(uri?: UriComponents): UriComponents | undefined {
         if (uri && uri.scheme === 'file') {
-            return theiaUritoUriComponents(this.fileEndpoint.withQuery(URI.revive(uri).toString()));
+            return this.fileEndpoint.withQuery(URI.fromComponents(uri).toString()).toComponents();
         }
         return uri;
     }
@@ -198,6 +198,14 @@ export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
         }
         this.editorsAndDocuments.getEditor(id)!.setDecorationsFast(key, ranges);
         return Promise.resolve();
+    }
+
+    $save(uri: UriComponents): PromiseLike<UriComponents | undefined> {
+        return this.editorsAndDocuments.save(URI.fromComponents(uri)).then(u => u?.toComponents());
+    }
+
+    $saveAs(uri: UriComponents): PromiseLike<UriComponents | undefined> {
+        return this.editorsAndDocuments.saveAs(URI.fromComponents(uri)).then(u => u?.toComponents());
     }
 
     $saveAll(includeUntitled?: boolean): Promise<boolean> {
