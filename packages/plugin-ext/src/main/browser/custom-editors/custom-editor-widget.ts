@@ -42,7 +42,7 @@ export class CustomEditorWidget extends WebviewWidget implements SaveableSource,
             this,
             () => this.shell.widgets.filter(widget => !!Saveable.get(widget)),
             async (widget, options) => {
-                this.saveService.save(widget, options);
+                await this.saveService.save(widget, options);
             },
         );
     }

@@ -175,9 +175,6 @@ export class EditorsAndDocumentsMain implements Disposable {
         if (!editor) {
             return undefined;
         }
-        if (!this.saveResourceService.canSave(editor)) {
-            return undefined;
-        }
         return this.saveResourceService.save(editor);
     }
 

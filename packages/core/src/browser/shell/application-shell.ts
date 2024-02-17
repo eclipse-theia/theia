@@ -1230,7 +1230,7 @@ export class ApplicationShell extends Widget {
             widget,
             () => this.widgets.filter((maybeSaveable): maybeSaveable is Widget & SaveableSource => !!Saveable.get(maybeSaveable)),
             async (toSave, options) => {
-                this.saveResourceService.save(toSave, options);
+                await this.saveResourceService.save(toSave, options);
             },
         );
         if (ApplicationShell.TrackableWidgetProvider.is(widget)) {
