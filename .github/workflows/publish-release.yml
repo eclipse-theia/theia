@@ -1,9 +1,11 @@
-name: Publish Next
+name: Publish Release
 
 permissions:
   id-token: write
 
-on: workflow_dispatch
+on:
+  release:
+    types: [published]
 
 jobs:
   publish:
@@ -37,7 +39,7 @@ jobs:
       - name: Publish NPM
         shell: bash
         run: |
-          yarn publish:next
+          yarn publish:latest
         env:
-          NPM_CONFIG_PROVENANCE: "true"
+          NPM_CONFIG_PROVENANCE: "true" # enable provenance check
           NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
