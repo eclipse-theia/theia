@@ -33,7 +33,9 @@ export class LinkProviderAdapter {
     provideLinks(resource: URI, token: theia.CancellationToken): Promise<DocumentLink[] | undefined> {
         const document = this.documents.getDocumentData(resource);
         if (!document) {
-            return Promise.reject(new Error(`There is no document for ${resource}`));
+            // not all documents are replicated to the plugin host (e.g. breakpoint input)
+            console.warn(`There is no document for ${resource}`);
+            return Promise.resolve(undefined);
         }
 
         const doc = document.document;

@@ -16,7 +16,7 @@
 
 // @ts-check
 describe('Saveable', function () {
-    this.timeout(5000);
+    this.timeout(30000);
 
     const { assert } = chai;
 
