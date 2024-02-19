@@ -64,11 +64,13 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
             {this.props.notebookModel.cells
                 .map((cell, index) =>
                     <React.Fragment key={'cell-' + cell.handle}>
-                        <NotebookCellDivider onAddNewCell={(kind: CellKind) => this.onAddNewCell(kind, index)}
+                        <NotebookCellDivider
+                            isVisible={() => this.isEnabled()}
+                            onAddNewCell={(kind: CellKind) => this.onAddNewCell(kind, index)}
                             onDrop={e => this.onDrop(e, index)}
                             onDragOver={e => this.onDragOver(e, cell, 'top')} />
                         {this.shouldRenderDragOverIndicator(cell, 'top') && <CellDropIndicator />}
-                        <li className={'theia-notebook-cell' + (this.state.selectedCell === cell ? ' focused' : '')}
+                        <li className={'theia-notebook-cell' + (this.state.selectedCell === cell ? ' focused' : '') + (this.isEnabled() ? ' draggable' : '')}
                             onClick={() => {
                                 this.setState({ selectedCell: cell });
                                 this.props.notebookModel.setSelectedCell(cell);
@@ -89,7 +91,9 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
                     </React.Fragment>
                 )
             }
-            <NotebookCellDivider onAddNewCell={(kind: CellKind) => this.onAddNewCell(kind, this.props.notebookModel.cells.length)}
+            <NotebookCellDivider
+                isVisible={() => this.isEnabled()}
+                onAddNewCell={(kind: CellKind) => this.onAddNewCell(kind, this.props.notebookModel.cells.length)}
                 onDrop={e => this.onDrop(e, this.props.notebookModel.cells.length - 1)}
                 onDragOver={e => this.onDragOver(e, this.props.notebookModel.cells[this.props.notebookModel.cells.length - 1], 'bottom')} />
         </ul>;
@@ -105,18 +109,33 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
 
     protected onDragStart(event: React.DragEvent<HTMLLIElement>, index: number): void {
         event.stopPropagation();
+        if (!this.isEnabled()) {
+            event.preventDefault();
+            return;
+        }
         event.dataTransfer.setData('text/theia-notebook-cell-index', index.toString());
         event.dataTransfer.setData('text/plain', this.props.notebookModel.cells[index].source);
     }
 
     protected onDragOver(event: React.DragEvent<HTMLLIElement>, cell: NotebookCellModel, position?: 'top' | 'bottom'): void {
+        if (!this.isEnabled()) {
+            return;
+        }
         event.preventDefault();
         event.stopPropagation();
         // show indicator
         this.setState({ ...this.state, dragOverIndicator: { cell, position: position ?? event.nativeEvent.offsetY < event.currentTarget.clientHeight / 2 ? 'top' : 'bottom' } });
     }
 
+    protected isEnabled(): boolean {
+        return !Boolean(this.props.notebookModel.readOnly);
+    }
+
     protected onDrop(event: React.DragEvent<HTMLLIElement>, dropElementIndex: number): void {
+        if (!this.isEnabled()) {
+            this.setState({ dragOverIndicator: undefined });
+            return;
+        }
         const index = parseInt(event.dataTransfer.getData('text/theia-notebook-cell-index'));
         const isTargetBelow = index < dropElementIndex;
         let newIdx = this.state.dragOverIndicator?.position === 'top' ? dropElementIndex : dropElementIndex + 1;
@@ -133,15 +152,18 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
     }
 
     protected onAddNewCell(kind: CellKind, index: number): void {
-        this.props.commandRegistry.executeCommand(NotebookCommands.ADD_NEW_CELL_COMMAND.id,
-            this.props.notebookModel,
-            kind,
-            index
-        );
+        if (this.isEnabled()) {
+            this.props.commandRegistry.executeCommand(NotebookCommands.ADD_NEW_CELL_COMMAND.id,
+                this.props.notebookModel,
+                kind,
+                index
+            );
+        }
     }
 
     protected shouldRenderDragOverIndicator(cell: NotebookCellModel, position: 'top' | 'bottom'): boolean {
-        return this.state.dragOverIndicator !== undefined &&
+        return this.isEnabled() &&
+            this.state.dragOverIndicator !== undefined &&
             this.state.dragOverIndicator.cell === cell &&
             this.state.dragOverIndicator.position === position;
     }
@@ -149,16 +171,17 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
 }
 
 export interface NotebookCellDividerProps {
+    isVisible: () => boolean;
     onAddNewCell: (type: CellKind) => void;
     onDrop: (event: React.DragEvent<HTMLLIElement>) => void;
     onDragOver: (event: React.DragEvent<HTMLLIElement>) => void;
 }
 
-export function NotebookCellDivider({ onAddNewCell, onDrop, onDragOver }: NotebookCellDividerProps): React.JSX.Element {
+export function NotebookCellDivider({ isVisible, onAddNewCell, onDrop, onDragOver }: NotebookCellDividerProps): React.JSX.Element {
     const [hover, setHover] = React.useState(false);
 
     return <li className='theia-notebook-cell-divider' onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} onDrop={onDrop} onDragOver={onDragOver}>
-        {hover && <div className='theia-notebook-add-cell-buttons'>
+        {hover && isVisible() && <div className='theia-notebook-add-cell-buttons'>
             <button className='theia-notebook-add-cell-button' onClick={() => onAddNewCell(CellKind.Code)} title={nls.localizeByDefault('Add Code Cell')}>
                 <div className={codicon('add') + ' theia-notebook-add-cell-button-icon'} />
                 {nls.localizeByDefault('Code')}

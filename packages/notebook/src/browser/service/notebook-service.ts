@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Disposable, DisposableCollection, Emitter, URI } from '@theia/core';
+import { Disposable, DisposableCollection, Emitter, Resource, URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { NotebookData, TransientOptions } from '../../common';
@@ -101,14 +101,14 @@ export class NotebookService implements Disposable {
         });
     }
 
-    async createNotebookModel(data: NotebookData, viewType: string, uri: URI): Promise<NotebookModel> {
+    async createNotebookModel(data: NotebookData, viewType: string, resource: Resource): Promise<NotebookModel> {
         const serializer = this.notebookProviders.get(viewType)?.serializer;
         if (!serializer) {
             throw new Error('no notebook serializer for ' + viewType);
         }
 
-        const model = this.notebookModelFactory({ data, uri, viewType, serializer });
-        this.notebookModels.set(uri.toString(), model);
+        const model = this.notebookModelFactory({ data, resource, viewType, serializer });
+        this.notebookModels.set(resource.uri.toString(), model);
         // Resolve cell text models right after creating the notebook model
         // This ensures that all text models are available in the plugin host
         await Promise.all(model.cells.map(e => e.resolveTextModel()));

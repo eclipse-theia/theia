@@ -225,7 +225,9 @@ export class NotebookCellModel implements NotebookCell, Disposable {
     }
 
     requestEdit(): void {
-        this.onDidRequestCellEditChangeEmitter.fire(true);
+        if (!this.textModel.readOnly) {
+            this.onDidRequestCellEditChangeEmitter.fire(true);
+        }
     }
 
     requestStopEdit(): void {

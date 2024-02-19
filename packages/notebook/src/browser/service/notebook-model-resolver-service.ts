@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Emitter, URI } from '@theia/core';
+import { Emitter, Resource, ResourceProvider, URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { UriComponents } from '@theia/core/lib/common/uri';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -33,6 +33,9 @@ export class NotebookModelResolverService {
 
     @inject(FileService)
     protected fileService: FileService;
+
+    @inject(ResourceProvider)
+    protected resourceProvider: ResourceProvider;
 
     @inject(NotebookService)
     protected notebookService: NotebookService;
@@ -60,9 +63,9 @@ export class NotebookModelResolverService {
             throw new Error(`Missing viewType for '${resource}'`);
         }
 
-        const notebookData = await this.resolveExistingNotebookData(resource, viewType!);
-
-        const notebookModel = await this.notebookService.createNotebookModel(notebookData, viewType, resource);
+        const actualResource = await this.resourceProvider(resource);
+        const notebookData = await this.resolveExistingNotebookData(actualResource, viewType!);
+        const notebookModel = await this.notebookService.createNotebookModel(notebookData, viewType, actualResource);
 
         notebookModel.onDirtyChanged(() => this.onDidChangeDirtyEmitter.fire(notebookModel));
         notebookModel.onDidSaveNotebook(() => this.onDidSaveNotebookEmitter.fire(notebookModel.uri.toComponents()));
@@ -103,8 +106,8 @@ export class NotebookModelResolverService {
         return this.resolve(resource, viewType);
     }
 
-    protected async resolveExistingNotebookData(resource: URI, viewType: string): Promise<NotebookData> {
-        if (resource.scheme === 'untitled') {
+    protected async resolveExistingNotebookData(resource: Resource, viewType: string): Promise<NotebookData> {
+        if (resource.uri.scheme === 'untitled') {
 
             return {
                 cells: [
@@ -118,10 +121,11 @@ export class NotebookModelResolverService {
                 metadata: {}
             };
         } else {
-            const file = await this.fileService.readFile(resource);
-
-            const dataProvider = await this.notebookService.getNotebookDataProvider(viewType);
-            const notebook = await dataProvider.serializer.toNotebook(file.value);
+            const [dataProvider, contents] = await Promise.all([
+                this.notebookService.getNotebookDataProvider(viewType),
+                this.fileService.readFile(resource.uri)
+            ]);
+            const notebook = await dataProvider.serializer.toNotebook(contents.value);
 
             return notebook;
         }

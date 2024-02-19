@@ -50,6 +50,7 @@ import { IInstantiationService, ServiceIdentifier } from '@theia/monaco-editor-c
 import { ICodeEditor, IMouseTargetMargin } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorBrowser';
 import { IStandaloneEditorConstructionOptions, StandaloneEditor } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
 import { ServiceCollection } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/serviceCollection';
+import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 
 export type ServicePair<T> = [ServiceIdentifier<T>, T];
 
@@ -86,6 +87,7 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
     protected readonly onFocusChangedEmitter = new Emitter<boolean>();
     protected readonly onDocumentContentChangedEmitter = new Emitter<TextDocumentChangeEvent>();
     protected readonly onMouseDownEmitter = new Emitter<EditorMouseEvent>();
+    readonly onDidChangeReadOnly = this.document.onDidChangeReadOnly;
     protected readonly onLanguageChangedEmitter = new Emitter<string>();
     readonly onLanguageChanged = this.onLanguageChangedEmitter.event;
     protected readonly onScrollChangedEmitter = new Emitter<void>();
@@ -117,7 +119,10 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
         this.autoSizing = options && options.autoSizing !== undefined ? options.autoSizing : false;
         this.minHeight = options && options.minHeight !== undefined ? options.minHeight : -1;
         this.maxHeight = options && options.maxHeight !== undefined ? options.maxHeight : -1;
-        this.toDispose.push(this.create(options, override));
+        this.toDispose.push(this.create({
+            ...MonacoEditor.createReadOnlyOptions(document.readOnly),
+            ...options
+        }, override));
         this.addHandlers(this.editor);
     }
 
@@ -199,6 +204,9 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
         this.toDispose.push(codeEditor.onDidScrollChange(e => {
             this.onScrollChangedEmitter.fire(undefined);
         }));
+        this.toDispose.push(this.onDidChangeReadOnly(readOnly => {
+            codeEditor.updateOptions(MonacoEditor.createReadOnlyOptions(readOnly));
+        }));
     }
 
     getVisibleRanges(): Range[] {
@@ -221,8 +229,8 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
         return this.onDocumentContentChangedEmitter.event;
     }
 
-    get isReadonly(): boolean {
-        return this.document.isReadonly();
+    get isReadonly(): boolean | MarkdownString {
+        return this.document.readOnly;
     }
 
     get cursor(): Position {
@@ -641,5 +649,15 @@ export namespace MonacoEditor {
             const candidate = get(widget);
             return candidate && candidate.getControl() === control;
         });
+    }
+
+    export function createReadOnlyOptions(readOnly?: boolean | MarkdownString): monaco.editor.IEditorOptions {
+        if (typeof readOnly === 'boolean') {
+            return { readOnly };
+        }
+        if (readOnly) {
+            return { readOnly: true, readOnlyMessage: readOnly };
+        }
+        return {};
     }
 }

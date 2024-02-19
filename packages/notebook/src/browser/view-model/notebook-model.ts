@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Disposable, Emitter, URI } from '@theia/core';
+import { Disposable, Emitter, Event, Resource, URI } from '@theia/core';
 import { Saveable, SaveOptions } from '@theia/core/lib/browser';
 import {
     CellData, CellEditType, CellUri, NotebookCellInternalMetadata,
@@ -28,6 +28,7 @@ import { NotebookCellModel, NotebookCellModelFactory } from './notebook-cell-mod
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
 import { UndoRedoService } from '@theia/editor/lib/browser/undo-redo-service';
+import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 
 export const NotebookModelFactory = Symbol('NotebookModelFactory');
 
@@ -42,10 +43,10 @@ export function createNotebookModelContainer(parent: interfaces.Container, props
 
 const NotebookModelProps = Symbol('NotebookModelProps');
 export interface NotebookModelProps {
-    data: NotebookData,
-    uri: URI,
-    viewType: string,
-    serializer: NotebookSerializer,
+    data: NotebookData;
+    resource: Resource;
+    viewType: string;
+    serializer: NotebookSerializer;
 }
 
 @injectable()
@@ -62,6 +63,10 @@ export class NotebookModel implements Saveable, Disposable {
 
     protected readonly onDidChangeContentEmitter = new Emitter<NotebookContentChangedEvent[]>();
     readonly onDidChangeContent = this.onDidChangeContentEmitter.event;
+
+    get onDidChangeReadOnly(): Event<boolean | MarkdownString> {
+        return this.props.resource.onDidChangeReadOnly ?? Event.None;
+    }
 
     @inject(FileService)
     protected readonly fileService: FileService;
@@ -81,7 +86,7 @@ export class NotebookModel implements Saveable, Disposable {
 
     protected nextHandle: number = 0;
 
-    protected _dirty: boolean = false;
+    protected _dirty = false;
 
     set dirty(dirty: boolean) {
         this._dirty = dirty;
@@ -92,13 +97,17 @@ export class NotebookModel implements Saveable, Disposable {
         return this._dirty;
     }
 
+    get readOnly(): boolean | MarkdownString {
+        return this.props.resource.readOnly ?? false;
+    }
+
     selectedCell?: NotebookCellModel;
     protected dirtyCells: NotebookCellModel[] = [];
 
     cells: NotebookCellModel[];
 
     get uri(): URI {
-        return this.props.uri;
+        return this.props.resource.uri;
     }
 
     get viewType(): string {
@@ -112,7 +121,7 @@ export class NotebookModel implements Saveable, Disposable {
         this.dirty = false;
 
         this.cells = this.props.data.cells.map((cell, index) => this.cellModelFactory({
-            uri: CellUri.generate(this.props.uri, index),
+            uri: CellUri.generate(this.props.resource.uri, index),
             handle: index,
             source: cell.source,
             language: cell.language,

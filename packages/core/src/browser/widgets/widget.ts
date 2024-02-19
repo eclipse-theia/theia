@@ -381,10 +381,18 @@ export function pin(title: Title<Widget>): void {
     }
 }
 
+export function isLocked(title: Title<Widget>): boolean {
+    return title.className.includes(LOCKED_CLASS);
+}
+
 export function lock(title: Title<Widget>): void {
     if (!title.className.includes(LOCKED_CLASS)) {
         title.className += ` ${LOCKED_CLASS}`;
     }
+}
+
+export function unlock(title: Title<Widget>): void {
+    title.className = title.className.replace(LOCKED_CLASS, '').trim();
 }
 
 export function togglePinned(title?: Title<Widget>): void {

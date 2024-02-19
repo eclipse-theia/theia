@@ -26,7 +26,6 @@ import { MonacoDiffNavigatorFactory } from './monaco-diff-navigator-factory';
 import { EditorServiceOverrides, MonacoEditor, MonacoEditorServices } from './monaco-editor';
 import { MonacoEditorModel, WillSaveMonacoModelEvent } from './monaco-editor-model';
 import { MonacoWorkspace } from './monaco-workspace';
-import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { ContributionProvider } from '@theia/core';
 import { KeybindingRegistry, OpenerService, open, WidgetOpenerOptions, FormatType } from '@theia/core/lib/browser';
 import { MonacoResolvedKeybinding } from './monaco-resolved-keybinding';
@@ -86,8 +85,6 @@ export class MonacoEditorProvider {
         @inject(MonacoWorkspace) protected readonly workspace: MonacoWorkspace,
         @inject(EditorPreferences) protected readonly editorPreferences: EditorPreferences,
         @inject(MonacoDiffNavigatorFactory) protected readonly diffNavigatorFactory: MonacoDiffNavigatorFactory,
-        /** @deprecated since 1.6.0 */
-        @inject(ApplicationServer) protected readonly applicationServer: ApplicationServer,
     ) {
     }
 

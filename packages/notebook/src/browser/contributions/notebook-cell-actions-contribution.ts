@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Command, CommandContribution, CommandRegistry, CompoundMenuNodeRole, MenuContribution, MenuModelRegistry, nls } from '@theia/core';
+import { Command, CommandContribution, CommandHandler, CommandRegistry, CompoundMenuNodeRole, MenuContribution, MenuModelRegistry, nls } from '@theia/core';
 import { codicon } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { NotebookModel } from '../view-model/notebook-model';
@@ -172,30 +172,39 @@ export class NotebookCellActionContribution implements MenuContribution, Command
     }
 
     registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand(NotebookCellCommands.EDIT_COMMAND, { execute: (_, cell: NotebookCellModel) => cell.requestEdit() });
+        commands.registerCommand(NotebookCellCommands.EDIT_COMMAND, this.editableCellCommandHandler((_, cell) => cell.requestEdit()));
         commands.registerCommand(NotebookCellCommands.STOP_EDIT_COMMAND, { execute: (_, cell: NotebookCellModel) => cell.requestStopEdit() });
-        commands.registerCommand(NotebookCellCommands.DELETE_COMMAND, {
-            execute: (notebookModel: NotebookModel, cell: NotebookCellModel) => notebookModel.applyEdits([{
+        commands.registerCommand(NotebookCellCommands.DELETE_COMMAND,
+            this.editableCellCommandHandler((notebookModel, cell) => notebookModel.applyEdits([{
                 editType: CellEditType.Replace,
                 index: notebookModel.cells.indexOf(cell),
                 count: 1,
                 cells: []
-            }], true)
-        });
+            }], true)));
         commands.registerCommand(NotebookCellCommands.SPLIT_CELL_COMMAND);
 
-        commands.registerCommand(NotebookCellCommands.EXECUTE_SINGLE_CELL_COMMAND, {
-            execute: (notebookModel: NotebookModel, cell: NotebookCellModel) => this.notebookExecutionService.executeNotebookCells(notebookModel, [cell])
-        });
+        commands.registerCommand(NotebookCellCommands.EXECUTE_SINGLE_CELL_COMMAND, this.editableCellCommandHandler(
+            (notebookModel, cell) => this.notebookExecutionService.executeNotebookCells(notebookModel, [cell])
+        ));
         commands.registerCommand(NotebookCellCommands.STOP_CELL_EXECUTION_COMMAND, {
             execute: (notebookModel: NotebookModel, cell: NotebookCellModel) => this.notebookExecutionService.cancelNotebookCells(notebookModel, [cell])
         });
-        commands.registerCommand(NotebookCellCommands.CLEAR_OUTPUTS_COMMAND, {
-            execute: (_, cell: NotebookCellModel) => cell.spliceNotebookCellOutputs({ start: 0, deleteCount: cell.outputs.length, newOutputs: [] })
-        });
-        commands.registerCommand(NotebookCellCommands.CHANGE_OUTPUT_PRESENTATION_COMMAND, {
-            execute: (_, __, output: NotebookCellOutputModel) => output.requestOutputPresentationUpdate()
-        });
+        commands.registerCommand(NotebookCellCommands.CLEAR_OUTPUTS_COMMAND, this.editableCellCommandHandler(
+            (_, cell) => cell.spliceNotebookCellOutputs({ start: 0, deleteCount: cell.outputs.length, newOutputs: [] })
+        ));
+        commands.registerCommand(NotebookCellCommands.CHANGE_OUTPUT_PRESENTATION_COMMAND, this.editableCellCommandHandler(
+            (_, __, output) => output?.requestOutputPresentationUpdate()
+        ));
+    }
+
+    protected editableCellCommandHandler(execute: (notebookModel: NotebookModel, cell: NotebookCellModel, output?: NotebookCellOutputModel) => void): CommandHandler {
+        return {
+            isEnabled: (notebookModel: NotebookModel) => !Boolean(notebookModel.readOnly),
+            isVisible: (notebookModel: NotebookModel) => !Boolean(notebookModel.readOnly),
+            execute: (notebookModel: NotebookModel, cell: NotebookCellModel, output?: NotebookCellOutputModel) => {
+                execute(notebookModel, cell, output);
+            }
+        };
     }
 }
 
