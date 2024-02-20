@@ -104,6 +104,14 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
                     message
                 });
             }));
+
+            this.toDispose.push(this.editor.onPostRendererMessage(messageObj => {
+                this.webviewWidget.sendMessage({
+                    type: 'customRendererMessage',
+                    ...messageObj
+                });
+            }));
+
         }
 
         this.webviewWidget = await this.widgetManager.getOrCreateWidget(WebviewWidget.FACTORY_ID, { id: this.id });
@@ -191,7 +199,6 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
                 break;
             case 'customKernelMessage':
                 this.editor.recieveKernelMessage(message.message);
-                console.log('Kernel message from webview', message.message);
                 break;
         }
     }

@@ -90,6 +90,9 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
     protected readonly onPostKernelMessageEmitter = new Emitter<unknown>();
     readonly onPostKernelMessage = this.onPostKernelMessageEmitter.event;
 
+    protected readonly onPostRendererMessageEmitter = new Emitter<{ rendererId: string; message: unknown }>();
+    readonly onPostRendererMessage = this.onPostRendererMessageEmitter.event;
+
     protected readonly onDidRecieveKernelMessageEmitter = new Emitter<unknown>();
     readonly onDidRecieveKernelMessage = this.onDidRecieveKernelMessageEmitter.event;
 
@@ -199,6 +202,10 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
 
     postKernelMessage(message: unknown): void {
         this.onPostKernelMessageEmitter.fire(message);
+    }
+
+    postRendererMessage(rendererId: string, message: unknown): void {
+        this.onPostRendererMessageEmitter.fire({ rendererId, message });
     }
 
     recieveKernelMessage(message: unknown): void {

@@ -237,7 +237,10 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
 
             if (this.data.requiresMessaging) {
                 context.onDidReceiveMessage = this.onMessageEvent.event;
-                context.postMessage = message => theia.postMessage({ type: 'customRendererMessage', rendererId: this.data.id, message });
+                context.postMessage = message => {
+                    console.log('post Renderer Message ', message);
+                    theia.postMessage({ type: 'customRendererMessage', rendererId: this.data.id, message });
+                };
             }
 
             return Object.freeze(context);
@@ -536,7 +539,6 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
         }
     };
 
-    console.log('adding message listener');
     window.addEventListener('message', async rawEvent => {
         const event = rawEvent as ({ data: webviewCommunication.ToWebviewMessage });
         console.log('message ', event.data);
@@ -548,6 +550,7 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
                 outputsChanged(event.data);
                 break;
             case 'customRendererMessage':
+                console.log('customRendererMessage ', event.data.message);
                 renderers.getRenderer(event.data.rendererId)?.receiveMessage(event.data.message);
                 break;
             case 'changePreferredMimetype':

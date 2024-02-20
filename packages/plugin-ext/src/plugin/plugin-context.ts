@@ -276,7 +276,7 @@ export function createAPIFactory(
     const notebooksExt = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOKS_EXT, new NotebooksExtImpl(rpc, commandRegistry, editorsAndDocumentsExt, documents));
     const notebookEditors = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOK_EDITORS_EXT, new NotebookEditorsExtImpl(notebooksExt));
     const notebookRenderers = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOK_RENDERERS_EXT, new NotebookRenderersExtImpl(rpc, notebooksExt));
-    const notebookKernels = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOK_KERNELS_EXT, new NotebookKernelsExtImpl(rpc, notebooksExt, commandRegistry, webviewExt));
+    const notebookKernels = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOK_KERNELS_EXT, new NotebookKernelsExtImpl(rpc, notebooksExt, commandRegistry));
     const notebookDocuments = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_EXT, new NotebookDocumentsExtImpl(notebooksExt));
     const statusBarMessageRegistryExt = new StatusBarMessageRegistryExt(rpc);
     const terminalExt = rpc.set(MAIN_RPC_CONTEXT.TERMINAL_EXT, new TerminalServiceExtImpl(rpc));
@@ -1183,7 +1183,7 @@ export function createAPIFactory(
                     controller: theia.NotebookController) => void | Thenable<void>,
                 rendererScripts?: NotebookRendererScript[]
             ) {
-                return notebookKernels.createNotebookController(plugin.model.id, plugin.pluginUri, id, notebookType, label, handler, rendererScripts);
+                return notebookKernels.createNotebookController(plugin.model, id, notebookType, label, handler, rendererScripts);
             },
             createRendererMessaging(rendererId) {
                 return notebookRenderers.createRendererMessaging(rendererId);

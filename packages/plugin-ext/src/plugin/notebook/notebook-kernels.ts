@@ -19,11 +19,12 @@
  *--------------------------------------------------------------------------------------------*/
 
 import {
-    CellExecuteUpdateDto, NotebookKernelDto, NotebookKernelsExt, NotebookKernelsMain, NotebookKernelSourceActionDto, NotebookOutputDto, PLUGIN_RPC_CONTEXT
+    CellExecuteUpdateDto, NotebookKernelDto, NotebookKernelsExt, NotebookKernelsMain,
+    NotebookKernelSourceActionDto, NotebookOutputDto, PluginModel, PluginPackage, PLUGIN_RPC_CONTEXT
 } from '../../common';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { UriComponents } from '../../common/uri-components';
-import { CancellationTokenSource, Disposable, DisposableCollection, Emitter } from '@theia/core';
+import { CancellationTokenSource, Disposable, DisposableCollection, Emitter, Path } from '@theia/core';
 import { Cell } from './notebook-document';
 import { NotebooksExtImpl } from './notebooks';
 import { NotebookCellOutputConverter, NotebookCellOutputItem, NotebookKernelSourceAction } from '../type-converters';
@@ -31,7 +32,6 @@ import { timeout, Deferred } from '@theia/core/lib/common/promise-util';
 import { CellExecutionUpdateType, NotebookCellExecutionState } from '@theia/notebook/lib/common';
 import { CommandRegistryImpl } from '../command-registry';
 import { NotebookCellOutput, NotebookRendererScript, URI } from '../types-impl';
-import { WebviewsExtImpl } from '../webviews';
 import { toUriComponents } from '../../main/browser/hierarchy/hierarchy-types-converters';
 import type * as theia from '@theia/plugin';
 
@@ -64,18 +64,17 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
         rpc: RPCProtocol,
         private readonly notebooks: NotebooksExtImpl,
         private readonly commands: CommandRegistryImpl,
-        private readonly webviews: WebviewsExtImpl
     ) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.NOTEBOOK_KERNELS_MAIN);
     }
 
     private currentHandle = 0;
 
-    createNotebookController(extensionId: string, extensionLocation: string, id: string, viewType: string, label: string, handler?: (cells: theia.NotebookCell[],
+    createNotebookController(extension: PluginModel, id: string, viewType: string, label: string, handler?: (cells: theia.NotebookCell[],
         notebook: theia.NotebookDocument, controller: theia.NotebookController) => void | Thenable<void>, rendererScripts?: NotebookRendererScript[]): theia.NotebookController {
 
         for (const kernelData of this.kernelData.values()) {
-            if (kernelData.controller.id === id && extensionId === kernelData.extensionId) {
+            if (kernelData.controller.id === id && extension.id === kernelData.extensionId) {
                 throw new Error(`notebook controller with id '${id}' ALREADY exist`);
             }
         }
@@ -83,9 +82,9 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
         const handle = this.currentHandle++;
         const that = this;
 
-        console.debug(`NotebookController[${handle}], CREATED by ${extensionId}, ${id}`);
+        console.debug(`NotebookController[${handle}], CREATED by ${extension.id}, ${id}`);
 
-        const defaultExecuteHandler = () => console.warn(`NO execute handler from notebook controller '${data.id}' of extension: '${extensionId}'`);
+        const defaultExecuteHandler = () => console.warn(`NO execute handler from notebook controller '${data.id}' of extension: '${extension.id}'`);
 
         let isDisposed = false;
         const commandDisposables = new DisposableCollection();
@@ -94,11 +93,11 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
         const onDidReceiveMessage = new Emitter<{ editor: theia.NotebookEditor; message: unknown }>();
 
         const data: NotebookKernelDto = {
-            id: createKernelId(extensionId, id),
+            id: createKernelId(extension.id, id),
             notebookType: viewType,
-            extensionId: extensionId,
-            extensionLocation: toUriComponents(extensionLocation),
-            label: label || extensionId,
+            extensionId: extension.id,
+            extensionLocation: toUriComponents(extension.packageUri),
+            label: label || extension.id,
             preloads: rendererScripts ? rendererScripts.map(preload => ({ uri: toUriComponents(preload.uri.toString()), provides: preload.provides })) : []
         };
 
@@ -139,7 +138,7 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
                 return data.label;
             },
             set label(value) {
-                data.label = value ?? extensionId;
+                data.label = value ?? extension.id;
                 update();
             },
             get detail(): string {
@@ -196,7 +195,7 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
                         Array.from(associatedNotebooks.keys()).map(u => u.toString()));
                     throw new Error(`notebook controller is NOT associated to notebook: ${cell.notebook.uri.toString()}`);
                 }
-                return that.createNotebookCellExecution(cell, createKernelId(extensionId, this.id));
+                return that.createNotebookCellExecution(cell, createKernelId(extension.id, this.id));
             },
             dispose: () => {
                 if (!isDisposed) {
@@ -217,16 +216,13 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
                 return that.proxy.$postMessage(handle, 'notebook:' + editor?.notebook.uri.toString(), message);
             },
             asWebviewUri(localResource: theia.Uri): theia.Uri {
-                const uri = that.webviews.getResourceRoot()!
-                    .replace('{{scheme}}', localResource.scheme)
-                    .replace('{{authority}}', localResource.authority)
-                    .replace('{{path}}', localResource.path.replace(/^\//, ''));
-                return URI.parse(uri);
+                const basePath = PluginPackage.toPluginUrl(extension, '');
+                return URI.from({ path: new Path(basePath).join(localResource.path).toString(), scheme: 'https' });
             }
         };
 
         this.kernelData.set(handle, {
-            extensionId: extensionId,
+            extensionId: extension.id,
             controller,
             onDidReceiveMessage,
             onDidChangeSelection,
