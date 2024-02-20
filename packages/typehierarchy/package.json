@@ -4,9 +4,7 @@
   "description": "Theia - Type Hierarchy Extension",
   "dependencies": {
     "@theia/core": "1.46.0",
-    "@theia/editor": "1.46.0",
-    "@types/uuid": "^7.0.3",
-    "uuid": "^8.0.0"
+    "@theia/editor": "1.46.0"
   },
   "publishConfig": {
     "access": "public"
