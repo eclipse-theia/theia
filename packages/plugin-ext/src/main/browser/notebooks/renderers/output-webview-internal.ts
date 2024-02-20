@@ -114,7 +114,6 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
         return Object.freeze({
             onDidReceiveKernelMessage: onDidReceiveKernelMessage.event,
             postKernelMessage: (data: unknown) => {
-                console.log('postKernelMessage ', data);
                 theia.postMessage({ type: 'customKernelMessage', message: data });
             }
         });
@@ -238,7 +237,6 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
             if (this.data.requiresMessaging) {
                 context.onDidReceiveMessage = this.onMessageEvent.event;
                 context.postMessage = message => {
-                    console.log('post Renderer Message ', message);
                     theia.postMessage({ type: 'customRendererMessage', rendererId: this.data.id, message });
                 };
             }
@@ -463,7 +461,6 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
         }
     };
 
-    console.log('loading preload ', ctx.staticPreloadsData);
     await Promise.all(ctx.staticPreloadsData.map(preload => kernelPreloads.load(preload)));
 
     function clearOutput(output: Output): void {
@@ -541,7 +538,6 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
 
     window.addEventListener('message', async rawEvent => {
         const event = rawEvent as ({ data: webviewCommunication.ToWebviewMessage });
-        console.log('message ', event.data);
         switch (event.data.type) {
             case 'updateRenderers':
                 renderers.updateRendererData(event.data.rendererData);
@@ -550,7 +546,6 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
                 outputsChanged(event.data);
                 break;
             case 'customRendererMessage':
-                console.log('customRendererMessage ', event.data.message);
                 renderers.getRenderer(event.data.rendererId)?.receiveMessage(event.data.message);
                 break;
             case 'changePreferredMimetype':
@@ -561,7 +556,6 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
                 renderers.render(outputs[index], event.data.mimeType, undefined, new AbortController().signal);
                 break;
             case 'customKernelMessage':
-                console.log('customKernelMessage ', event.data.message);
                 onDidReceiveKernelMessage.fire(event.data.message);
                 break;
             case 'preload': {
