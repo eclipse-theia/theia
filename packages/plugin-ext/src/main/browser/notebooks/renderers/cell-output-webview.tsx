@@ -186,7 +186,6 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
         switch (message.type) {
             case 'initialized':
                 this.updateOutput({ newOutputs: this.cell.outputs, start: 0, deleteCount: 0 });
-                this.getPreloads();
                 break;
             case 'customRendererMessage':
                 this.messagingService.getScoped(this.editor.id).postMessage(message.rendererId, message.message);

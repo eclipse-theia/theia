@@ -121,7 +121,7 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
 
     async function runKernelPreload(url: string): Promise<void> {
         try {
-            return await activateModuleKernelPreload(url);
+            return activateModuleKernelPreload(url);
         } catch (e) {
             console.error(e);
             throw e;
@@ -200,6 +200,10 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
             if (this.rendererApi) {
                 return this.rendererApi;
             }
+
+            // Preloads need to be loaded before loading renderers.
+            await kernelPreloads.waitForAllCurrent();
+
             const baseUri = window.location.href.replace(/\/webview\/index\.html.*/, '');
             const rendererModule = await __import(`${baseUri}/${this.data.entrypoint.uri}`) as { activate: rendererApi.ActivationFunction };
             this.rendererApi = await rendererModule.activate(this.createRendererContext());
