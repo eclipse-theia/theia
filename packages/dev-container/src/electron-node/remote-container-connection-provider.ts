@@ -17,7 +17,7 @@
 import * as net from 'net';
 import { ContainerConnectionOptions, ContainerConnectionResult, RemoteContainerConnectionProvider } from '../electron-common/remote-container-connection-provider';
 import { RemoteConnection, RemoteExecOptions, RemoteExecResult, RemoteExecTester, RemoteStatusReport } from '@theia/remote/lib/electron-node/remote-types';
-import { RemoteSetupService } from '@theia/remote/lib/electron-node/setup/remote-setup-service';
+import { RemoteSetupResult, RemoteSetupService } from '@theia/remote/lib/electron-node/setup/remote-setup-service';
 import { RemoteConnectionService } from '@theia/remote/lib/electron-node/remote-connection-service';
 import { RemoteProxyServerProvider } from '@theia/remote/lib/electron-node/remote-proxy-server-provider';
 import { Emitter, Event, MessageService } from '@theia/core';
@@ -70,11 +70,13 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
             report('Connecting to remote system...');
 
             const remote = await this.createContainerConnection(container, dockerConnection, port);
-            await this.remoteSetup.setup({
+            const result = await this.remoteSetup.setup({
                 connection: remote,
                 report,
                 nodeDownloadTemplate: options.nodeDownloadTemplate
             });
+            remote.remoteSetupResult = result;
+
             const registration = this.remoteConnectionService.register(remote);
             const server = await this.serverProvider.getProxyServer(socket => {
                 remote.forwardOut(socket);
@@ -107,7 +109,7 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
             type: 'container',
             docker,
             container,
-            port
+            port,
         }));
     }
 
@@ -142,6 +144,8 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
 
     containerInfo: Docker.ContainerInspectInfo | undefined;
 
+    remoteSetupResult: RemoteSetupResult;
+
     protected activeTerminalSession: ContainerTerminalSession | undefined;
 
     protected readonly onDidDisconnectEmitter = new Emitter<void>();
@@ -159,13 +163,20 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
     }
 
     async forwardOut(socket: Socket): Promise<void> {
-        if (!this.containerInfo) {
-            this.containerInfo = await this.container.inspect();
+        const node = `${this.remoteSetupResult.nodeDirectory}/bin/node`;
+        const devContainerServer = `${this.remoteSetupResult.applicationDirectory}/backend/dev-container-server.js`;
+        try {
+            const ttySession = await this.container.exec({
+                Cmd: ['sh', '-c', `${node} ${devContainerServer} -target-port=${this.remotePort}`],
+                AttachStdin: true, AttachStdout: true, AttachStderr: true
+            });
+            const stream = await ttySession.start({ hijack: true, stdin: true });
+
+            socket.pipe(stream);
+            ttySession.modem.demuxStream(stream, socket, socket);
+        } catch (e) {
+            console.error(e);
         }
-        const portMapping = this.containerInfo.NetworkSettings.Ports[`${this.remotePort}/tcp`][0];
-        const connectSocket = new Socket({ readable: true, writable: true }).connect(parseInt(portMapping.HostPort), portMapping.HostIp);
-        socket.pipe(connectSocket);
-        connectSocket.pipe(socket);
     }
 
     async exec(cmd: string, args?: string[], options?: RemoteExecOptions): Promise<RemoteExecResult> {

@@ -29,6 +29,11 @@ export interface RemoteSetupOptions {
     nodeDownloadTemplate?: string;
 }
 
+export interface RemoteSetupResult {
+    applicationDirectory: string;
+    nodeDirectory: string;
+}
+
 @injectable()
 export class RemoteSetupService {
 
@@ -47,7 +52,7 @@ export class RemoteSetupService {
     @inject(ApplicationPackage)
     protected readonly applicationPackage: ApplicationPackage;
 
-    async setup(options: RemoteSetupOptions): Promise<void> {
+    async setup(options: RemoteSetupOptions): Promise<RemoteSetupResult> {
         const {
             connection,
             report,
@@ -86,6 +91,10 @@ export class RemoteSetupService {
         report('Starting application on remote...');
         const port = await this.startApplication(connection, platform, applicationDirectory, remoteNodeDirectory);
         connection.remotePort = port;
+        return {
+            applicationDirectory: libDir,
+            nodeDirectory: remoteNodeDirectory
+        };
     }
 
     protected async startApplication(connection: RemoteConnection, platform: RemotePlatform, remotePath: string, nodeDir: string): Promise<number> {

@@ -437,6 +437,8 @@ const config = {
         ${this.ifPackage('@theia/git', () => `// Ensure the git locator process can the started
         'git-locator-host': require.resolve('@theia/git/lib/node/git-locator/git-locator-host'),`)}
         ${this.ifElectron("'electron-main': require.resolve('./src-gen/backend/electron-main'),")}
+        ${this.ifPackage('@theia/dev-container', () => `// VS Code Dev-Container communication:
+        'dev-container-server': require.resolve('@theia/dev-container/lib/dev-container-server/dev-container-server'),`)}
         ...commonJsLibraries
     },
     module: {

@@ -81,11 +81,11 @@ export class DockerContainerService {
         const containerCreateOptions: Docker.ContainerCreateOptions = {
             Tty: true,
             ExposedPorts: {
-                [`${port}/tcp`]: {},
+                // [`${port}/tcp`]: {},
             },
             HostConfig: {
                 PortBindings: {
-                    [`${port}/tcp`]: [{ HostPort: '0' }],
+                    // [`${port}/tcp`]: [{ HostPort: '0' }],
                 },
                 Mounts: [{
                     Source: workspace.path.toString(),
