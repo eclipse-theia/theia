@@ -1869,13 +1869,13 @@ export class WorkspaceEdit implements theia.WorkspaceEdit {
     }
 
     set(uri: URI, edits: ReadonlyArray<TextEdit | SnippetTextEdit>): void;
-    set(uri: URI, edits: ReadonlyArray<[TextEdit | SnippetTextEdit, theia.WorkspaceEditEntryMetadata]>): void;
+    set(uri: URI, edits: ReadonlyArray<[TextEdit | SnippetTextEdit, theia.WorkspaceEditEntryMetadata | undefined]>): void;
     set(uri: URI, edits: ReadonlyArray<NotebookEdit>): void;
-    set(uri: URI, edits: ReadonlyArray<[NotebookEdit, theia.WorkspaceEditEntryMetadata]>): void;
+    set(uri: URI, edits: ReadonlyArray<[NotebookEdit, theia.WorkspaceEditEntryMetadata | undefined]>): void;
 
     set(uri: URI, edits: ReadonlyArray<TextEdit | SnippetTextEdit
-        | NotebookEdit | [NotebookEdit, theia.WorkspaceEditEntryMetadata]
-        | [TextEdit | SnippetTextEdit, theia.WorkspaceEditEntryMetadata]>): void {
+        | NotebookEdit | [NotebookEdit, theia.WorkspaceEditEntryMetadata | undefined]
+        | [TextEdit | SnippetTextEdit, theia.WorkspaceEditEntryMetadata | undefined]>): void {
         if (!edits) {
             // remove all text edits for `uri`
             for (let i = 0; i < this._edits.length; i++) {
