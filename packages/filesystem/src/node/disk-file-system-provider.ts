@@ -24,7 +24,7 @@
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { basename, dirname, normalize, join } from 'path';
-import { v4 } from 'uuid';
+import { generateUuid } from '@theia/core/lib/common/uuid';
 import * as os from 'os';
 import * as fs from 'fs';
 import {
@@ -530,7 +530,7 @@ export class DiskFileSystemProvider implements Disposable,
 
     protected async rimrafMove(path: string): Promise<void> {
         try {
-            const pathInTemp = join(os.tmpdir(), v4());
+            const pathInTemp = join(os.tmpdir(), generateUuid());
             try {
                 await promisify(rename)(path, pathInTemp);
             } catch (error) {

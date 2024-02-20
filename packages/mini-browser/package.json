@@ -8,7 +8,6 @@
     "@types/mime-types": "^2.1.0",
     "mime-types": "^2.1.18",
     "pdfobject": "^2.0.201604172",
-    "uuid": "^8.0.0",
     "vhost": "^3.0.2"
   },
   "publishConfig": {

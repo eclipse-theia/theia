@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
-import { v4 } from 'uuid';
+import { generateUuid } from '../common/uuid';
 import { bindContributionProvider } from '../common/contribution-provider';
 import { RpcConnectionHandler } from '../common/messaging/proxy-factory';
 import { ElectronSecurityToken } from '../electron-common/electron-token';
@@ -29,7 +29,7 @@ import { ElectronSecurityTokenService } from './electron-security-token-service'
 import { ElectronMessagingService } from './messaging/electron-messaging-service';
 import { ElectronConnectionHandler } from './messaging/electron-connection-handler';
 
-const electronSecurityToken: ElectronSecurityToken = { value: v4() };
+const electronSecurityToken: ElectronSecurityToken = { value: generateUuid() };
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (global as any)[ElectronSecurityToken] = electronSecurityToken;
 

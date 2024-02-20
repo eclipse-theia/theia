@@ -28,7 +28,7 @@ import { DEBUG_SCHEME, SCHEME_PATTERN } from '@theia/debug/lib/common/debug-uri-
 import { Disposable, Breakpoint as BreakpointExt, SourceBreakpoint, FunctionBreakpoint, Location, Range, URI as URIImpl } from '../types-impl';
 import { PluginDebugAdapterSession } from './plugin-debug-adapter-session';
 import { PluginDebugAdapterTracker } from './plugin-debug-adapter-tracker';
-import uuid = require('uuid');
+import { generateUuid } from '@theia/core/lib/common/uuid';
 import { DebugAdapter } from '@theia/debug/lib/common/debug-model';
 import { PluginDebugAdapterCreator } from './plugin-debug-adapter-creator';
 import { NodeDebugAdapterCreator } from '../node/debug/plugin-node-debug-adapter-creator';
@@ -345,7 +345,7 @@ export class DebugExtImpl implements DebugExt {
     }
 
     async $createDebugSession(debugConfiguration: DebugConfiguration, workspaceFolderUri: string | undefined): Promise<string> {
-        const sessionId = uuid.v4();
+        const sessionId = generateUuid();
 
         const parentSession = debugConfiguration.parentSessionId ? this.sessions.get(debugConfiguration.parentSessionId) : undefined;
         const theiaSession: theia.DebugSession = {

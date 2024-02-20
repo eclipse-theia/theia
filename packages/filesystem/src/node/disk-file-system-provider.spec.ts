@@ -25,7 +25,7 @@ import { equal, fail } from 'assert';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import * as temp from 'temp';
-import { v4 } from 'uuid';
+import { generateUuid } from '@theia/core/lib/common/uuid';
 import { FilePermission, FileSystemProviderCapabilities, FileSystemProviderError, FileSystemProviderErrorCode } from '../common/files';
 import { DiskFileSystemProvider } from './disk-file-system-provider';
 import { bindFileSystemWatcherServer } from './filesystem-backend-module';
@@ -53,7 +53,7 @@ describe('disk-file-system-provider', () => {
     describe('stat', () => {
         it("should omit the 'permissions' property of the stat if the file can be both read and write", async () => {
             const tempDirPath = tracked.mkdirSync();
-            const tempFilePath = join(tempDirPath, `${v4()}.txt`);
+            const tempFilePath = join(tempDirPath, `${generateUuid()}.txt`);
             await fs.writeFile(tempFilePath, 'some content', { encoding: 'utf8' });
 
             let content = await fs.readFile(tempFilePath, { encoding: 'utf8' });
@@ -70,7 +70,7 @@ describe('disk-file-system-provider', () => {
 
         it("should set the 'permissions' property to `Readonly` if the file can be read but not write", async () => {
             const tempDirPath = tracked.mkdirSync();
-            const tempFilePath = join(tempDirPath, `${v4()}.txt`);
+            const tempFilePath = join(tempDirPath, `${generateUuid()}.txt`);
             await fs.writeFile(tempFilePath, 'readonly content', {
                 encoding: 'utf8',
             });

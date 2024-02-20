@@ -27,7 +27,7 @@ import { RemoteConnection, RemoteExecOptions, RemoteExecResult, RemoteExecTester
 import { Deferred, timeout } from '@theia/core/lib/common/promise-util';
 import { SSHIdentityFileCollector, SSHKey } from './ssh-identity-file-collector';
 import { RemoteSetupService } from '../setup/remote-setup-service';
-import { v4 } from 'uuid';
+import { generateUuid } from '@theia/core/lib/common/uuid';
 
 @injectable()
 export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvider {
@@ -92,7 +92,7 @@ export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvi
             .on('ready', async () => {
                 const connection = new RemoteSSHConnection({
                     client: sshClient,
-                    id: v4(),
+                    id: generateUuid(),
                     name: hostUrl.hostname,
                     type: 'SSH'
                 });

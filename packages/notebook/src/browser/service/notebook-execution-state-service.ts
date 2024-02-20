@@ -18,7 +18,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Disposable, DisposableCollection, Emitter, URI } from '@theia/core';
+import { Disposable, DisposableCollection, Emitter, URI, generateUuid } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { NotebookService } from './notebook-service';
 import {
@@ -27,7 +27,6 @@ import {
 } from '../../common';
 import { CellPartialInternalMetadataEditByHandle, CellEditOperation } from '../notebook-types';
 import { NotebookModel } from '../view-model/notebook-model';
-import { v4 } from 'uuid';
 
 export type CellExecuteUpdate = CellExecuteOutputEdit | CellExecuteOutputItemEdit | CellExecutionStateUpdate;
 
@@ -178,7 +177,7 @@ export class CellExecution implements Disposable {
             editType: CellEditType.PartialInternalMetadata,
             handle: this.cellHandle,
             internalMetadata: {
-                executionId: v4(),
+                executionId: generateUuid(),
                 runStartTime: undefined,
                 runEndTime: undefined,
                 lastRunSuccess: undefined,

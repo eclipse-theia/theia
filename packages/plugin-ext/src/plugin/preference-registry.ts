@@ -25,7 +25,7 @@ import { IConfigurationOverrides } from '@theia/monaco-editor-core/esm/vs/platfo
 import { Configuration, ConfigurationModel, ConfigurationModelParser } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configurationModels';
 import { Workspace, WorkspaceFolder } from '@theia/monaco-editor-core/esm/vs/platform/workspace/common/workspace';
 import * as theia from '@theia/plugin';
-import { v4 } from 'uuid';
+import { generateUuid } from '@theia/core/lib/common/uuid';
 import {
     PLUGIN_RPC_CONTEXT, PreferenceChangeExt, PreferenceData, PreferenceRegistryExt,
     PreferenceRegistryMain
@@ -75,7 +75,7 @@ function lookUp(tree: any, key: string): any {
 export class TheiaWorkspace extends Workspace {
     constructor(ext: WorkspaceExtImpl) {
         const folders = (ext.workspaceFolders ?? []).map(folder => new WorkspaceFolder(folder));
-        super(v4(), folders, false, ext.workspaceFile ?? null, () => isOSX || isWindows);
+        super(generateUuid(), folders, false, ext.workspaceFile ?? null, () => isOSX || isWindows);
     }
 }
 

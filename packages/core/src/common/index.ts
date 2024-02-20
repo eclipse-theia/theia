@@ -46,5 +46,6 @@ export * from './strings';
 export * from './telemetry';
 export * from './types';
 export { default as URI } from './uri';
+export * from './uuid';
 export * from './view-column';
 export * from './version';

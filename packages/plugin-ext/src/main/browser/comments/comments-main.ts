@@ -38,7 +38,7 @@ import { URI } from '@theia/core/shared/vscode-uri';
 import { CancellationToken } from '@theia/core/lib/common';
 import { RPCProtocol } from '../../../common/rpc-protocol';
 import { interfaces } from '@theia/core/shared/inversify';
-import { v4 as uuidv4 } from 'uuid';
+import { generateUuid } from '@theia/core/lib/common/uuid';
 import { CommentsContribution } from './comments-contribution';
 
 /*---------------------------------------------------------------------------------------------
@@ -392,7 +392,7 @@ export class CommentsMainImp implements CommentsMain {
     }
 
     $registerCommentController(handle: number, id: string, label: string): void {
-        const providerId = uuidv4();
+        const providerId = generateUuid();
         this.handlers.set(handle, providerId);
 
         const provider = new CommentController(this.proxy, this.commentService, handle, providerId, id, label, {});
