@@ -170,8 +170,8 @@ export class TabBarRenderer extends TabBar.Renderer {
         const hover = this.tabBar && (this.tabBar.orientation === 'horizontal' && this.corePreferences?.['window.tabbar.enhancedPreview'] === 'classic')
             ? { title: title.caption }
             : {
-            onmouseenter: this.handleMouseEnterEvent
-        };
+                onmouseenter: this.handleMouseEnterEvent
+            };
 
         return h.li(
             {
@@ -967,7 +967,7 @@ export class ToolbarAwareTabBar extends ScrollableTabBar {
 
     protected override onBeforeDetach(msg: Message): void {
         if (this.toolbar && this.toolbar.isAttached) {
-            Widget.detach(this.toolbar);
+            this.toolbar.dispose();
         }
         super.onBeforeDetach(msg);
     }
