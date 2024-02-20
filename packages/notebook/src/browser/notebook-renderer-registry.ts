@@ -30,6 +30,11 @@ export interface NotebookRendererInfo {
     readonly requiresMessaging: boolean;
 }
 
+export interface NotebookPreloadInfo {
+    readonly type: string;
+    readonly entrypoint: string;
+}
+
 @injectable()
 export class NotebookRendererRegistry {
 
@@ -37,6 +42,12 @@ export class NotebookRendererRegistry {
 
     get notebookRenderers(): readonly NotebookRendererInfo[] {
         return this._notebookRenderers;
+    }
+
+    private readonly _staticNotebookPreloads: NotebookPreloadInfo[] = [];
+
+    get staticNotebookPreloads(): readonly NotebookPreloadInfo[] {
+        return this._staticNotebookPreloads;
     }
 
     registerNotebookRenderer(type: NotebookRendererDescriptor, basePath: string): Disposable {
@@ -60,6 +71,14 @@ export class NotebookRendererRegistry {
         });
         return Disposable.create(() => {
             this._notebookRenderers.splice(this._notebookRenderers.findIndex(renderer => renderer.id === type.id), 1);
+        });
+    }
+
+    registerStaticNotebookPreload(type: string, entrypoint: string, basePath: string): Disposable {
+        const staticPreload = { type, entrypoint: new Path(basePath).join(entrypoint).toString() };
+        this._staticNotebookPreloads.push(staticPreload);
+        return Disposable.create(() => {
+            this._staticNotebookPreloads.splice(this._staticNotebookPreloads.indexOf(staticPreload), 1);
         });
     }
 }

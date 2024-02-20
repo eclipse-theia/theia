@@ -49,7 +49,17 @@ export interface ChangePreferredMimetypeMessage {
     readonly mimeType: string;
 }
 
-export type ToWebviewMessage = UpdateRenderersMessage | OutputChangedMessage | ChangePreferredMimetypeMessage | CustomRendererMessage;
+export interface KernelMessage {
+    readonly type: 'customKernelMessage';
+    readonly message: unknown;
+}
+
+export interface PreloadMessage {
+    readonly type: 'preload';
+    readonly resources: string[];
+}
+
+export type ToWebviewMessage = UpdateRenderersMessage | OutputChangedMessage | ChangePreferredMimetypeMessage | CustomRendererMessage | KernelMessage | PreloadMessage;
 
 export interface WebviewInitialized {
     readonly type: 'initialized';
@@ -66,7 +76,7 @@ export interface WheelMessage {
     readonly deltaX: number;
 }
 
-export type FromWebviewMessage = WebviewInitialized | OnDidRenderOutput | WheelMessage | CustomRendererMessage;
+export type FromWebviewMessage = WebviewInitialized | OnDidRenderOutput | WheelMessage | CustomRendererMessage | KernelMessage;
 
 export interface Output {
     id: string

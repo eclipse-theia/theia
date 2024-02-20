@@ -87,6 +87,12 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
     protected readonly onDidChangeReadOnlyEmitter = new Emitter<boolean | MarkdownString>();
     readonly onDidChangeReadOnly = this.onDidChangeReadOnlyEmitter.event;
 
+    protected readonly onPostKernelMessageEmitter = new Emitter<unknown>();
+    readonly onPostKernelMessage = this.onPostKernelMessageEmitter.event;
+
+    protected readonly onDidRecieveKernelMessageEmitter = new Emitter<unknown>();
+    readonly onDidRecieveKernelMessage = this.onDidRecieveKernelMessageEmitter.event;
+
     protected readonly renderers = new Map<CellKind, CellRenderer>();
     protected _model?: NotebookModel;
     protected _ready: Deferred<NotebookModel> = new Deferred();
@@ -189,5 +195,20 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
     protected override onAfterDetach(msg: Message): void {
         super.onAfterDetach(msg);
         this.notebookEditorService.removeNotebookEditor(this);
+    }
+
+    postKernelMessage(message: unknown): void {
+        this.onPostKernelMessageEmitter.fire(message);
+    }
+
+    recieveKernelMessage(message: unknown): void {
+        this.onDidRecieveKernelMessageEmitter.fire(message);
+    }
+
+    override dispose(): void {
+        this.onDidChangeModelEmitter.dispose();
+        this.onPostKernelMessageEmitter.dispose();
+        this.onDidRecieveKernelMessageEmitter.dispose();
+        super.dispose();
     }
 }

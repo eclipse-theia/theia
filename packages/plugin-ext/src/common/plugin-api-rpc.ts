@@ -2288,7 +2288,7 @@ export const MAIN_RPC_CONTEXT = {
     NOTEBOOKS_EXT: createProxyIdentifier<NotebooksExt>('NotebooksExt'),
     NOTEBOOK_DOCUMENTS_EXT: createProxyIdentifier<NotebookDocumentsExt>('NotebookDocumentsExt'),
     NOTEBOOK_EDITORS_EXT: createProxyIdentifier<NotebookEditorsExt>('NotebookEditorsExt'),
-    NOTEBOOK_RENDERERS_EXT: createProxyIdentifier<NotebookRenderersExt>('NotebooksExt'),
+    NOTEBOOK_RENDERERS_EXT: createProxyIdentifier<NotebookRenderersExt>('NotebooksRenderersExt'),
     NOTEBOOK_KERNELS_EXT: createProxyIdentifier<NotebookKernelsExt>('NotebookKernelsExt'),
     TERMINAL_EXT: createProxyIdentifier<TerminalServiceExt>('TerminalServiceExt'),
     OUTPUT_CHANNEL_REGISTRY_EXT: createProxyIdentifier<OutputChannelRegistryExt>('OutputChannelRegistryExt'),
@@ -2488,7 +2488,7 @@ export interface NotebookKernelDto {
     id: string;
     notebookType: string;
     extensionId: string;
-    // extensionLocation: UriComponents;
+    extensionLocation: UriComponents;
     label: string;
     detail?: string;
     description?: string;

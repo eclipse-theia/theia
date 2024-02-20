@@ -20,8 +20,11 @@
 
 import * as React from '@theia/core/shared/react';
 import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
-import { NotebookRendererMessagingService, CellOutputWebview, NotebookRendererRegistry, NotebookEditorWidgetService, NotebookCellOutputsSplice } from '@theia/notebook/lib/browser';
 import { generateUuid } from '@theia/core/lib/common/uuid';
+import {
+    NotebookRendererMessagingService, CellOutputWebview, NotebookRendererRegistry,
+    NotebookEditorWidgetService, NotebookCellOutputsSplice, NOTEBOOK_EDITOR_ID_PREFIX, NotebookKernelService, NotebookEditorWidget
+} from '@theia/notebook/lib/browser';
 import { NotebookCellModel } from '@theia/notebook/lib/browser/view-model/notebook-cell-model';
 import { WebviewWidget } from '../../webview/webview';
 import { Message, WidgetManager } from '@theia/core/lib/browser';
@@ -31,12 +34,15 @@ import { ChangePreferredMimetypeMessage, FromWebviewMessage, OutputChangedMessag
 import { CellUri } from '@theia/notebook/lib/common';
 import { Disposable, DisposableCollection, nls, QuickPickService } from '@theia/core';
 import { NotebookCellOutputModel } from '@theia/notebook/lib/browser/view-model/notebook-cell-output-model';
+import { NotebookModel } from '@theia/notebook/lib/browser/view-model/notebook-model';
 
 const CellModel = Symbol('CellModel');
+const Notebook = Symbol('NotebookModel');
 
-export function createCellOutputWebviewContainer(ctx: interfaces.Container, cell: NotebookCellModel): interfaces.Container {
+export function createCellOutputWebviewContainer(ctx: interfaces.Container, cell: NotebookCellModel, notebook: NotebookModel): interfaces.Container {
     const child = ctx.createChild();
     child.bind(CellModel).toConstantValue(cell);
+    child.bind(Notebook).toConstantValue(notebook);
     child.bind(CellOutputWebviewImpl).toSelf().inSingletonScope();
     return child;
 }
@@ -50,6 +56,9 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
     @inject(CellModel)
     protected readonly cell: NotebookCellModel;
 
+    @inject(Notebook)
+    protected readonly notebook: NotebookModel;
+
     @inject(WidgetManager)
     protected readonly widgetManager: WidgetManager;
 
@@ -62,10 +71,15 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
     @inject(NotebookEditorWidgetService)
     protected readonly notebookEditorWidgetService: NotebookEditorWidgetService;
 
+    @inject(NotebookKernelService)
+    protected readonly notebookKernelService: NotebookKernelService;
+
     @inject(QuickPickService)
     protected readonly quickPickService: QuickPickService;
 
     readonly id = generateUuid();
+
+    protected editor: NotebookEditorWidget | undefined;
 
     protected readonly elementRef = React.createRef<HTMLDivElement>();
     protected outputPresentationListeners: DisposableCollection = new DisposableCollection();
@@ -76,10 +90,21 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
 
     @postConstruct()
     protected async init(): Promise<void> {
+        this.editor = this.notebookEditorWidgetService.getNotebookEditor(NOTEBOOK_EDITOR_ID_PREFIX + CellUri.parse(this.cell.uri)?.notebook);
+
         this.toDispose.push(this.cell.onDidChangeOutputs(outputChange => this.updateOutput(outputChange)));
         this.toDispose.push(this.cell.onDidChangeOutputItems(output => {
-            this.updateOutput({start: this.cell.outputs.findIndex(o => o.outputId === output.outputId), deleteCount: 1, newOutputs: [output]});
+            this.updateOutput({ start: this.cell.outputs.findIndex(o => o.outputId === output.outputId), deleteCount: 1, newOutputs: [output] });
         }));
+
+        if (this.editor) {
+            this.toDispose.push(this.editor.onPostKernelMessage(message => {
+                this.webviewWidget.sendMessage({
+                    type: 'customKernelMessage',
+                    message
+                });
+            }));
+        }
 
         this.webviewWidget = await this.widgetManager.getOrCreateWidget(WebviewWidget.FACTORY_ID, { id: this.id });
         this.webviewWidget.setContentOptions({ allowScripts: true });
@@ -134,8 +159,8 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
 
     private async requestOutputPresentationUpdate(output: NotebookCellOutputModel): Promise<void> {
         const selectedMime = await this.quickPickService.show(
-            output.outputs.map(item => ({label: item.mime})),
-            {description: nls.localizeByDefault('Select mimetype to render for current output' )});
+            output.outputs.map(item => ({ label: item.mime })),
+            { description: nls.localizeByDefault('Select mimetype to render for current output') });
         if (selectedMime) {
             this.webviewWidget.sendMessage({
                 type: 'changePreferredMimetype',
@@ -146,35 +171,54 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
     }
 
     private handleWebviewMessage(message: FromWebviewMessage): void {
+        if (!this.editor) {
+            throw new Error('No editor found for cell output webview');
+        }
+
         switch (message.type) {
             case 'initialized':
-                this.updateOutput({newOutputs: this.cell.outputs, start: 0, deleteCount: 0});
+                this.updateOutput({ newOutputs: this.cell.outputs, start: 0, deleteCount: 0 });
+                this.getPreloads();
                 break;
             case 'customRendererMessage':
-                this.messagingService.getScoped('').postMessage(message.rendererId, message.message);
+                this.messagingService.getScoped(this.editor.id).postMessage(message.rendererId, message.message);
                 break;
             case 'didRenderOutput':
                 this.webviewWidget.setIframeHeight(message.contentHeight + 5);
                 break;
             case 'did-scroll-wheel':
-                this.notebookEditorWidgetService.getNotebookEditor(`notebook:${CellUri.parse(this.cell.uri)?.notebook}`)?.node.scrollBy(message.deltaX, message.deltaY);
+                this.editor.node.scrollBy(message.deltaX, message.deltaY);
+                break;
+            case 'customKernelMessage':
+                this.editor.recieveKernelMessage(message.message);
+                console.log('Kernel message from webview', message.message);
                 break;
         }
+    }
+
+    getPreloads(): string[] {
+        const kernel = this.notebookKernelService.getSelectedOrSuggestedKernel(this.notebook);
+        const kernelPreloads = kernel?.preloadUris.map(uri => uri.toString()) ?? [];
+
+        const staticPreloads = this.notebookRendererRegistry.staticNotebookPreloads
+            .filter(preload => preload.type === this.notebook.viewType)
+            .map(preload => preload.entrypoint);
+        return kernelPreloads.concat(staticPreloads);
     }
 
     private async createWebviewContent(): Promise<string> {
         const isWorkspaceTrusted = await this.workspaceTrustService.getWorkspaceTrust();
         const preloads = this.preloadsScriptString(isWorkspaceTrusted);
         const content = `
-            <html>
-                <head>
-                    <meta charset="UTF-8">
-                </head>
-                <body>
-                    <script type="module">${preloads}</script>
-                </body>
-            </html>
-        `;
+                <html>
+                    <head>
+                        <meta charset="UTF-8">
+                    </head>
+                    <body>
+                        <script type="module">${preloads}</script>
+                    </body>
+                </html>
+                `;
         return content;
     }
 
@@ -186,13 +230,14 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
                 lineLimit: 30,
                 outputScrolling: false,
                 outputWordWrap: false,
-            }
+            },
+            staticPreloadsData: this.getPreloads()
         };
         // TS will try compiling `import()` in webviewPreloads, so use a helper function instead
         // of using `import(...)` directly
         return `
             const __import = (x) => import(x);
-            (${outputWebviewPreload})(JSON.parse(decodeURIComponent("${encodeURIComponent(JSON.stringify(ctx))}")))`;
+                (${outputWebviewPreload})(JSON.parse(decodeURIComponent("${encodeURIComponent(JSON.stringify(ctx))}")))`;
     }
 
     dispose(): void {

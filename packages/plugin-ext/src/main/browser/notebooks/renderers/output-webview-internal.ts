@@ -58,6 +58,16 @@ export interface PreloadContext {
     readonly isWorkspaceTrusted: boolean;
     readonly rendererData: readonly webviewCommunication.RendererMetadata[];
     readonly renderOptions: RenderOptions;
+    readonly staticPreloadsData: readonly string[];
+}
+
+interface KernelPreloadContext {
+    readonly onDidReceiveKernelMessage: Event<unknown>;
+    postKernelMessage(data: unknown): void;
+}
+
+interface KernelPreloadModule {
+    activate(ctx: KernelPreloadContext): Promise<void> | void;
 }
 
 export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
@@ -97,6 +107,37 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
     };
 
     const settingChange: EmitterLike<RenderOptions> = createEmitter<RenderOptions>();
+
+    const onDidReceiveKernelMessage = createEmitter<unknown>();
+
+    function createKernelContext(): KernelPreloadContext {
+        return Object.freeze({
+            onDidReceiveKernelMessage: onDidReceiveKernelMessage.event,
+            postKernelMessage: (data: unknown) => {
+                console.log('postKernelMessage ', data);
+                theia.postMessage({ type: 'customKernelMessage', message: data });
+            }
+        });
+    }
+
+    async function runKernelPreload(url: string): Promise<void> {
+        try {
+            return await activateModuleKernelPreload(url);
+        } catch (e) {
+            console.error(e);
+            throw e;
+        }
+    }
+
+    async function activateModuleKernelPreload(url: string): Promise<void> {
+        const baseUri = window.location.href.replace(/\/webview\/index\.html.*/, '');
+        const module: KernelPreloadModule = (await __import(`${baseUri}/${url}`)) as KernelPreloadModule;
+        if (!module.activate) {
+            console.error(`Notebook preload '${url}' was expected to be a module but it does not export an 'activate' function`);
+            return;
+        }
+        return module.activate(createKernelContext());
+    }
 
     class Output {
         readonly outputId: string;
@@ -385,6 +426,43 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
         }
     }();
 
+    const kernelPreloads = new class {
+        private readonly preloads = new Map<string /* uri */, Promise<unknown>>();
+
+        /**
+         * Returns a promise that resolves when the given preload is activated.
+         */
+        public waitFor(uri: string): Promise<unknown> {
+            return this.preloads.get(uri) || Promise.resolve(new Error(`Preload not ready: ${uri}`));
+        }
+
+        /**
+         * Loads a preload.
+         * @param uri URI to load from
+         * @param originalUri URI to show in an error message if the preload is invalid.
+         */
+        public load(uri: string): Promise<unknown> {
+            const promise = Promise.all([
+                runKernelPreload(uri),
+                this.waitForAllCurrent(),
+            ]);
+
+            this.preloads.set(uri, promise);
+            return promise;
+        }
+
+        /**
+         * Returns a promise that waits for all currently-registered preloads to
+         * activate before resolving.
+         */
+        public waitForAllCurrent(): Promise<unknown[]> {
+            return Promise.all([...this.preloads.values()].map(p => p.catch(err => err)));
+        }
+    };
+
+    console.log('loading preload ', ctx.staticPreloadsData);
+    await Promise.all(ctx.staticPreloadsData.map(preload => kernelPreloads.load(preload)));
+
     function clearOutput(output: Output): void {
         output.clear();
         output.element.remove();
@@ -458,9 +536,10 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
         }
     };
 
+    console.log('adding message listener');
     window.addEventListener('message', async rawEvent => {
         const event = rawEvent as ({ data: webviewCommunication.ToWebviewMessage });
-
+        console.log('message ', event.data);
         switch (event.data.type) {
             case 'updateRenderers':
                 renderers.updateRendererData(event.data.rendererData);
@@ -478,6 +557,17 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
                 clearOutput(outputs.splice(index, 1)[0]);
                 renderers.render(outputs[index], event.data.mimeType, undefined, new AbortController().signal);
                 break;
+            case 'customKernelMessage':
+                console.log('customKernelMessage ', event.data.message);
+                onDidReceiveKernelMessage.fire(event.data.message);
+                break;
+            case 'preload': {
+                const resources = event.data.resources;
+                for (const uri of resources) {
+                    kernelPreloads.load(uri);
+                }
+                break;
+            }
         }
     });
     window.addEventListener('wheel', handleWheel);

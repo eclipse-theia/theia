@@ -61,7 +61,7 @@ export class NotebookCodeCellRenderer implements CellRenderer {
                 </div>
             </div>
             <div className='theia-notebook-cell-with-sidebar'>
-                <NotebookCodeCellOutputs cell={cell} outputWebviewFactory={this.cellOutputWebviewFactory}
+                <NotebookCodeCellOutputs cell={cell} notebook={notebookModel} outputWebviewFactory={this.cellOutputWebviewFactory}
                     renderSidebar={() =>
                         this.notebookCellToolbarFactory.renderSidebar(NotebookCellActionContribution.OUTPUT_SIDEBAR_MENU, notebookModel, cell, cell.outputs[0])} />
             </div>
@@ -166,6 +166,7 @@ export class NotebookCodeCellStatus extends React.Component<NotebookCodeCellStat
 
 interface NotebookCellOutputProps {
     cell: NotebookCellModel;
+    notebook: NotebookModel;
     outputWebviewFactory: CellOutputWebviewFactory;
     renderSidebar: () => React.ReactNode;
 }
@@ -182,14 +183,14 @@ export class NotebookCodeCellOutputs extends React.Component<NotebookCellOutputP
     }
 
     override async componentDidMount(): Promise<void> {
-        const { cell, outputWebviewFactory } = this.props;
+        const { cell, notebook, outputWebviewFactory } = this.props;
         this.toDispose.push(cell.onDidChangeOutputs(async () => {
             if (!this.outputsWebviewPromise && cell.outputs.length > 0) {
-                this.outputsWebviewPromise = outputWebviewFactory(cell).then(webview => {
+                this.outputsWebviewPromise = outputWebviewFactory(cell, notebook).then(webview => {
                     this.outputsWebview = webview;
                     this.forceUpdate();
                     return webview;
-                    });
+                });
                 this.forceUpdate();
             } else if (this.outputsWebviewPromise && cell.outputs.length === 0 && cell.internalMetadata.runEndTime) {
                 (await this.outputsWebviewPromise).dispose();
@@ -199,7 +200,7 @@ export class NotebookCodeCellOutputs extends React.Component<NotebookCellOutputP
             }
         }));
         if (cell.outputs.length > 0) {
-            this.outputsWebviewPromise = outputWebviewFactory(cell).then(webview => {
+            this.outputsWebviewPromise = outputWebviewFactory(cell, notebook).then(webview => {
                 this.outputsWebview = webview;
                 this.forceUpdate();
                 return webview;

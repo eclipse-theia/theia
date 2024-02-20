@@ -447,6 +447,14 @@ export class PluginContributionHandler {
             }
         }
 
+        if (contributions.notebookPreload) {
+            for (const preload of contributions.notebookPreload) {
+                pushContribution(`notebookPreloads.${preload.type}:${preload.entrypoint}`,
+                    () => this.notebookRendererRegistry.registerStaticNotebookPreload(preload.type, preload.entrypoint, PluginPackage.toPluginUrl(plugin.metadata.model, ''))
+                );
+            }
+        }
+
         return toDispose;
     }
 
