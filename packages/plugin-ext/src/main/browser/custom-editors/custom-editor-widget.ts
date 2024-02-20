@@ -41,7 +41,9 @@ export class CustomEditorWidget extends WebviewWidget implements SaveableSource,
         Saveable.apply(
             this,
             () => this.shell.widgets.filter(widget => !!Saveable.get(widget)),
-            (widget, options) => this.saveService.save(widget, options),
+            async (widget, options) => {
+                await this.saveService.save(widget, options);
+            },
         );
     }
     get saveable(): Saveable {
