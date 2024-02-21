@@ -138,8 +138,8 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
 
     protected editableCommandHandler(execute: (notebookModel: NotebookModel) => void): CommandHandler {
         return {
-            isEnabled: (notebookModel: NotebookModel) => !Boolean(notebookModel.readOnly),
-            isVisible: (notebookModel: NotebookModel) => !Boolean(notebookModel.readOnly),
+            isEnabled: (notebookModel: NotebookModel) => !Boolean(notebookModel?.readOnly),
+            isVisible: (notebookModel: NotebookModel) => !Boolean(notebookModel?.readOnly),
             execute: (notebookModel: NotebookModel) => {
                 execute(notebookModel);
             }

@@ -199,8 +199,8 @@ export class NotebookCellActionContribution implements MenuContribution, Command
 
     protected editableCellCommandHandler(execute: (notebookModel: NotebookModel, cell: NotebookCellModel, output?: NotebookCellOutputModel) => void): CommandHandler {
         return {
-            isEnabled: (notebookModel: NotebookModel) => !Boolean(notebookModel.readOnly),
-            isVisible: (notebookModel: NotebookModel) => !Boolean(notebookModel.readOnly),
+            isEnabled: (notebookModel: NotebookModel) => !Boolean(notebookModel?.readOnly),
+            isVisible: (notebookModel: NotebookModel) => !Boolean(notebookModel?.readOnly),
             execute: (notebookModel: NotebookModel, cell: NotebookCellModel, output?: NotebookCellOutputModel) => {
                 execute(notebookModel, cell, output);
             }

@@ -303,7 +303,7 @@ export class NotebookModel implements Saveable, Disposable {
         }
     }
 
-    private replaceCells(start: number, deleteCount: number, newCells: CellData[], computeUndoRedo: boolean): void {
+    protected async replaceCells(start: number, deleteCount: number, newCells: CellData[], computeUndoRedo: boolean): Promise<void> {
         const cells = newCells.map(cell => {
             const handle = this.nextHandle++;
             return this.cellModelFactory({
@@ -334,11 +334,15 @@ export class NotebookModel implements Saveable, Disposable {
                 async () => this.replaceCells(start, deleteCount, newCells, false));
         }
 
+        // Ensure that all text model have been created
+        // Otherwise we run into a race condition once we fire `onDidChangeContent`
+        await Promise.all(cells.map(cell => cell.resolveTextModel()));
+
         this.onDidAddOrRemoveCellEmitter.fire({ rawEvent: { kind: NotebookCellsChangeType.ModelChange, changes }, newCellIds: cells.map(cell => cell.handle) });
         this.onDidChangeContentEmitter.fire([{ kind: NotebookCellsChangeType.ModelChange, changes }]);
     }
 
-    private changeCellInternalMetadataPartial(cell: NotebookCellModel, internalMetadata: NullablePartialNotebookCellInternalMetadata): void {
+    protected changeCellInternalMetadataPartial(cell: NotebookCellModel, internalMetadata: NullablePartialNotebookCellInternalMetadata): void {
         const newInternalMetadata: NotebookCellInternalMetadata = {
             ...cell.internalMetadata
         };
@@ -354,7 +358,7 @@ export class NotebookModel implements Saveable, Disposable {
         ]);
     }
 
-    private updateNotebookMetadata(metadata: NotebookDocumentMetadata, computeUndoRedo: boolean): void {
+    protected updateNotebookMetadata(metadata: NotebookDocumentMetadata, computeUndoRedo: boolean): void {
         const oldMetadata = this.metadata;
         if (computeUndoRedo) {
             this.undoRedoService.pushElement(this.uri,
@@ -367,7 +371,7 @@ export class NotebookModel implements Saveable, Disposable {
         this.onDidChangeContentEmitter.fire([{ kind: NotebookCellsChangeType.ChangeDocumentMetadata, metadata: this.metadata }]);
     }
 
-    private changeCellLanguage(cell: NotebookCellModel, languageId: string, computeUndoRedo: boolean): void {
+    protected changeCellLanguage(cell: NotebookCellModel, languageId: string, computeUndoRedo: boolean): void {
         if (cell.language === languageId) {
             return;
         }
@@ -377,7 +381,7 @@ export class NotebookModel implements Saveable, Disposable {
         this.onDidChangeContentEmitter.fire([{ kind: NotebookCellsChangeType.ChangeCellLanguage, index: this.cells.indexOf(cell), language: languageId }]);
     }
 
-    private moveCellToIndex(fromIndex: number, length: number, toIndex: number, computeUndoRedo: boolean): boolean {
+    protected moveCellToIndex(fromIndex: number, length: number, toIndex: number, computeUndoRedo: boolean): boolean {
         if (computeUndoRedo) {
             this.undoRedoService.pushElement(this.uri,
                 async () => { this.moveCellToIndex(toIndex, length, fromIndex, false); },
@@ -392,7 +396,7 @@ export class NotebookModel implements Saveable, Disposable {
         return true;
     }
 
-    private getCellIndexByHandle(handle: number): number {
+    protected getCellIndexByHandle(handle: number): number {
         return this.cells.findIndex(c => c.handle === handle);
     }
 }

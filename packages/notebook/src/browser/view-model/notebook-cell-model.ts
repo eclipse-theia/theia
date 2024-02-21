@@ -150,7 +150,7 @@ export class NotebookCellModel implements NotebookCell, Disposable {
 
     }
 
-    textModel: MonacoEditorModel;
+    protected textModel?: MonacoEditorModel;
 
     protected htmlContext: HTMLLIElement;
 
@@ -220,12 +220,12 @@ export class NotebookCellModel implements NotebookCell, Disposable {
         this.onDidChangeInternalMetadataEmitter.dispose();
         this.onDidChangeLanguageEmitter.dispose();
         this.notebookCellContextManager.dispose();
-        this.textModel.dispose();
+        this.textModel?.dispose();
         this.toDispose.dispose();
     }
 
     requestEdit(): void {
-        if (!this.textModel.readOnly) {
+        if (!this.textModel || !this.textModel.readOnly) {
             this.onDidRequestCellEditChangeEmitter.fire(true);
         }
     }
