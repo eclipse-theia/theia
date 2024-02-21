@@ -17,7 +17,7 @@
 import PerfectScrollbar from 'perfect-scrollbar';
 import { TabBar, Title, Widget } from '@phosphor/widgets';
 import { VirtualElement, h, VirtualDOM, ElementInlineStyle } from '@phosphor/virtualdom';
-import { Disposable, DisposableCollection, MenuPath, notEmpty, SelectionService, CommandService, nls } from '../../common';
+import { Disposable, DisposableCollection, MenuPath, notEmpty, SelectionService, CommandService, nls, ArrayUtils } from '../../common';
 import { ContextMenuRenderer } from '../context-menu-renderer';
 import { Signal, Slot } from '@phosphor/signaling';
 import { Message, MessageLoop } from '@phosphor/messaging';
@@ -188,6 +188,7 @@ export class TabBarRenderer extends TabBar.Renderer {
                 { className: 'theia-tab-icon-label' },
                 this.renderIcon(data, isInSidePanel),
                 this.renderLabel(data, isInSidePanel),
+                this.renderTailDecorations(data, isInSidePanel),
                 this.renderBadge(data, isInSidePanel),
                 this.renderLock(data, isInSidePanel)
             ),
@@ -287,6 +288,37 @@ export class TabBarRenderer extends TabBar.Renderer {
                 h.div({ className: 'p-TabBar-tabLabelDetails', style }, labelDetails));
         }
         return h.div({ className: 'p-TabBar-tabLabel', style }, data.title.label);
+    }
+
+    protected renderTailDecorations(renderData: SideBarRenderData, isInSidePanel?: boolean): VirtualElement[] {
+        if (!this.corePreferences?.get('workbench.editor.decorations.badges')) {
+            return [];
+        }
+        const tailDecorations = ArrayUtils.coalesce(this.getDecorationData(renderData.title, 'tailDecorations')).flat();
+        if (tailDecorations === undefined || tailDecorations.length === 0) {
+            return [];
+        }
+        let dotDecoration: WidgetDecoration.TailDecoration.AnyPartial | undefined;
+        const otherDecorations: WidgetDecoration.TailDecoration.AnyPartial[] = [];
+        tailDecorations.reverse().forEach(decoration => {
+            const partial = decoration as WidgetDecoration.TailDecoration.AnyPartial;
+            if (WidgetDecoration.TailDecoration.isDotDecoration(partial)) {
+                dotDecoration ||= partial;
+            } else if (partial.data || partial.icon || partial.iconClass) {
+                otherDecorations.push(partial);
+            }
+        });
+        const decorationsToRender = dotDecoration ? [dotDecoration, ...otherDecorations] : otherDecorations;
+        return decorationsToRender.map((decoration, index) => {
+            const { tooltip, data, fontData, color, icon, iconClass } = decoration;
+            const iconToRender = icon ?? iconClass;
+            const className = ['p-TabBar-tail', 'flex'].join(' ');
+            const style = fontData ? fontData : color ? { color } : undefined;
+            const content = (data ? data : iconToRender
+                ? h.span({ className: this.getIconClass(iconToRender, iconToRender === 'circle' ? [WidgetDecoration.Styles.DECORATOR_SIZE_CLASS] : []) })
+                : '') + (index !== decorationsToRender.length - 1 ? ',' : '');
+            return h.span({ key: ('tailDecoration_' + index), className, style, title: tooltip ?? content }, content);
+        });
     }
 
     renderBadge(data: SideBarRenderData, isInSidePanel?: boolean): VirtualElement {
