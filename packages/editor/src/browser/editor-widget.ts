@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { Disposable, SelectionService, Event, UNTITLED_SCHEME, DisposableCollection } from '@theia/core/lib/common';
-import { Widget, BaseWidget, Message, Saveable, SaveableSource, Navigatable, StatefulWidget, lock, TabBar, DockPanel } from '@theia/core/lib/browser';
+import { Widget, BaseWidget, Message, Saveable, SaveableSource, Navigatable, StatefulWidget, lock, TabBar, DockPanel, unlock } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { find } from '@theia/core/shared/@phosphor/algorithm';
 import { TextEditor } from './editor';
@@ -38,6 +38,13 @@ export class EditorWidget extends BaseWidget implements SaveableSource, Navigata
         this.toDispose.push(this.toDisposeOnTabbarChange);
         this.toDispose.push(this.editor.onSelectionChanged(() => this.setSelection()));
         this.toDispose.push(this.editor.onFocusChanged(() => this.setSelection()));
+        this.toDispose.push(this.editor.onDidChangeReadOnly(isReadonly => {
+            if (isReadonly) {
+                lock(this.title);
+            } else {
+                unlock(this.title);
+            }
+        }));
         this.toDispose.push(Disposable.create(() => {
             if (this.selectionService.selection === this.editor) {
                 this.selectionService.selection = undefined;

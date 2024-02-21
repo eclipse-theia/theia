@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Command, CommandContribution, CommandRegistry, CompoundMenuNodeRole, MenuContribution, MenuModelRegistry, nls } from '@theia/core';
+import { Command, CommandContribution, CommandHandler, CommandRegistry, CompoundMenuNodeRole, MenuContribution, MenuModelRegistry, nls } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ApplicationShell, codicon, CommonCommands } from '@theia/core/lib/browser';
 import { NotebookModel } from '../view-model/notebook-model';
@@ -100,35 +100,50 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
             }
         });
 
-        commands.registerCommand(NotebookCommands.ADD_NEW_MARKDOWN_CELL_COMMAND, {
-            execute: (notebookModel: NotebookModel) => commands.executeCommand(NotebookCommands.ADD_NEW_CELL_COMMAND.id, notebookModel, CellKind.Markup)
-        });
+        commands.registerCommand(NotebookCommands.ADD_NEW_MARKDOWN_CELL_COMMAND, this.editableCommandHandler(
+            notebookModel => commands.executeCommand(NotebookCommands.ADD_NEW_CELL_COMMAND.id, notebookModel, CellKind.Markup)
+        ));
 
-        commands.registerCommand(NotebookCommands.ADD_NEW_CODE_CELL_COMMAND, {
-            execute: (notebookModel: NotebookModel) => commands.executeCommand(NotebookCommands.ADD_NEW_CELL_COMMAND.id, notebookModel, CellKind.Code)
-        });
+        commands.registerCommand(NotebookCommands.ADD_NEW_CODE_CELL_COMMAND, this.editableCommandHandler(
+            notebookModel => commands.executeCommand(NotebookCommands.ADD_NEW_CELL_COMMAND.id, notebookModel, CellKind.Code)
+        ));
 
-        commands.registerCommand(NotebookCommands.SELECT_KERNEL_COMMAND, {
-            execute: (notebookModel: NotebookModel) => this.notebookKernelQuickPickService.showQuickPick(notebookModel)
-        });
+        commands.registerCommand(NotebookCommands.SELECT_KERNEL_COMMAND, this.editableCommandHandler(
+            notebookModel => this.notebookKernelQuickPickService.showQuickPick(notebookModel)
+        ));
 
-        commands.registerCommand(NotebookCommands.EXECUTE_NOTEBOOK_COMMAND, {
-            execute: (notebookModel: NotebookModel) => this.notebookExecutionService.executeNotebookCells(notebookModel, notebookModel.cells)
-        });
+        commands.registerCommand(NotebookCommands.EXECUTE_NOTEBOOK_COMMAND, this.editableCommandHandler(
+            notebookModel => this.notebookExecutionService.executeNotebookCells(notebookModel, notebookModel.cells)
+        ));
 
-        commands.registerCommand(NotebookCommands.CLEAR_ALL_OUTPUTS_COMMAND, {
-            execute: (notebookModel: NotebookModel) =>
-                notebookModel.cells.forEach(cell => cell.spliceNotebookCellOutputs({ start: 0, deleteCount: cell.outputs.length, newOutputs: [] }))
-        });
+        commands.registerCommand(NotebookCommands.CLEAR_ALL_OUTPUTS_COMMAND, this.editableCommandHandler(
+            notebookModel => notebookModel.cells.forEach(cell => cell.spliceNotebookCellOutputs({ start: 0, deleteCount: cell.outputs.length, newOutputs: [] }))
+        ));
 
         commands.registerHandler(CommonCommands.UNDO.id, {
-            isEnabled: () => this.shell.activeWidget instanceof NotebookEditorWidget,
+            isEnabled: () => {
+                const widget = this.shell.activeWidget;
+                return widget instanceof NotebookEditorWidget && !Boolean(widget.model?.readOnly);
+            },
             execute: () => (this.shell.activeWidget as NotebookEditorWidget).undo()
         });
         commands.registerHandler(CommonCommands.REDO.id, {
-            isEnabled: () => this.shell.activeWidget instanceof NotebookEditorWidget,
+            isEnabled: () => {
+                const widget = this.shell.activeWidget;
+                return widget instanceof NotebookEditorWidget && !Boolean(widget.model?.readOnly);
+            },
             execute: () => (this.shell.activeWidget as NotebookEditorWidget).redo()
         });
+    }
+
+    protected editableCommandHandler(execute: (notebookModel: NotebookModel) => void): CommandHandler {
+        return {
+            isEnabled: (notebookModel: NotebookModel) => !Boolean(notebookModel?.readOnly),
+            isVisible: (notebookModel: NotebookModel) => !Boolean(notebookModel?.readOnly),
+            execute: (notebookModel: NotebookModel) => {
+                execute(notebookModel);
+            }
+        };
     }
 
     registerMenus(menus: MenuModelRegistry): void {

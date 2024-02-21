@@ -14,20 +14,37 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Emitter, Resource, ResourceReadOptions, ResourceResolver, URI } from '@theia/core';
+import { Event, Emitter, Resource, ResourceReadOptions, ResourceResolver, URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
+import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { CellUri } from '../common';
 import { NotebookService } from './service/notebook-service';
 import { NotebookCellModel } from './view-model/notebook-cell-model';
+import { NotebookModel } from './view-model/notebook-model';
 
 export class NotebookCellResource implements Resource {
 
-    protected readonly didChangeContentsEmitter = new Emitter<void>();
-    readonly onDidChangeContents = this.didChangeContentsEmitter.event;
+    protected readonly onDidChangeContentsEmitter = new Emitter<void>();
+    get onDidChangeContents(): Event<void> {
+        return this.onDidChangeContentsEmitter.event;
+    }
 
-    private cell: NotebookCellModel;
+    get onDidChangeReadOnly(): Event<boolean | MarkdownString> | undefined {
+        return this.notebook.onDidChangeReadOnly;
+    }
 
-    constructor(public uri: URI, cell: NotebookCellModel) {
+    get readOnly(): boolean | MarkdownString | undefined {
+        return this.notebook.readOnly;
+    }
+
+    protected cell: NotebookCellModel;
+    protected notebook: NotebookModel;
+
+    uri: URI;
+
+    constructor(uri: URI, notebook: NotebookModel, cell: NotebookCellModel) {
+        this.uri = uri;
+        this.notebook = notebook;
         this.cell = cell;
     }
 
@@ -36,7 +53,7 @@ export class NotebookCellResource implements Resource {
     }
 
     dispose(): void {
-        this.didChangeContentsEmitter.dispose();
+        this.onDidChangeContentsEmitter.dispose();
     }
 
 }
@@ -69,7 +86,7 @@ export class NotebookCellResourceResolver implements ResourceResolver {
             throw new Error(`No cell found with handle '${parsedUri.handle}' in '${parsedUri.notebook}'`);
         }
 
-        return new NotebookCellResource(uri, notebookCellModel);
+        return new NotebookCellResource(uri, notebookModel, notebookCellModel);
     }
 
 }

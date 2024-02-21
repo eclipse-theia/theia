@@ -569,7 +569,7 @@ export class CustomTextEditorModel implements CustomEditorModel {
     };
 
     get readonly(): boolean {
-        return this.editorTextModel.readOnly;
+        return Boolean(this.editorTextModel.readOnly);
     }
 
     get editorTextModel(): MonacoEditorModel {

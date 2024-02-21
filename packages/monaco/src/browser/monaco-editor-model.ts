@@ -32,6 +32,7 @@ import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common
 import { IModelService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/model';
 import { createTextBufferFactoryFromStream } from '@theia/monaco-editor-core/esm/vs/editor/common/model/textModel';
 import { editorGeneratedPreferenceProperties } from '@theia/editor/lib/browser/editor-generated-preference-schema';
+import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 
 export {
     TextDocumentSaveReason
@@ -80,6 +81,8 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
 
     protected readonly onDidChangeEncodingEmitter = new Emitter<string>();
     readonly onDidChangeEncoding = this.onDidChangeEncodingEmitter.event;
+
+    readonly onDidChangeReadOnly: Event<boolean | MarkdownString> = this.resource.onDidChangeReadOnly ?? Event.None;
 
     private preferredEncoding: string | undefined;
     private contentEncoding: string | undefined;
@@ -302,11 +305,11 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
         return this.m2p.asRange(this.model.validateRange(this.p2m.asRange(range)));
     }
 
-    get readOnly(): boolean {
-        return this.resource.saveContents === undefined;
+    get readOnly(): boolean | MarkdownString {
+        return this.resource.readOnly ?? false;
     }
 
-    isReadonly(): boolean {
+    isReadonly(): boolean | MarkdownString {
         return this.readOnly;
     }
 

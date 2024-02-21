@@ -27,6 +27,7 @@ import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { GENERAL_MAX_FILE_SIZE_MB } from './filesystem-preferences';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { nls } from '@theia/core';
+import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 
 export interface FileResourceVersion extends ResourceVersion {
     readonly encoding: string;
@@ -54,6 +55,9 @@ export class FileResource implements Resource {
     protected readonly onDidChangeContentsEmitter = new Emitter<void>();
     readonly onDidChangeContents: Event<void> = this.onDidChangeContentsEmitter.event;
 
+    protected readonly onDidChangeReadOnlyEmitter = new Emitter<boolean | MarkdownString>();
+    readonly onDidChangeReadOnly: Event<boolean | MarkdownString> = this.onDidChangeReadOnlyEmitter.event;
+
     protected _version: FileResourceVersion | undefined;
     get version(): FileResourceVersion | undefined {
         return this._version;
@@ -61,7 +65,7 @@ export class FileResource implements Resource {
     get encoding(): string | undefined {
         return this._version?.encoding;
     }
-    get isReadonly(): boolean {
+    get readOnly(): boolean {
         return this.options.isReadonly || this.fileService.hasCapability(this.uri, FileSystemProviderCapabilities.Readonly);
     }
 
@@ -71,6 +75,7 @@ export class FileResource implements Resource {
         protected readonly options: FileResourceOptions
     ) {
         this.toDispose.push(this.onDidChangeContentsEmitter);
+        this.toDispose.push(this.onDidChangeReadOnlyEmitter);
         this.toDispose.push(this.fileService.onDidFilesChange(event => {
             if (event.contains(this.uri)) {
                 this.sync();
@@ -220,16 +225,23 @@ export class FileResource implements Resource {
     saveContents?: Resource['saveContents'];
     saveContentChanges?: Resource['saveContentChanges'];
     protected updateSavingContentChanges(): void {
-        if (this.isReadonly) {
+        let changed = false;
+        if (this.readOnly) {
+            changed = Boolean(this.saveContents);
             delete this.saveContentChanges;
             delete this.saveContents;
             delete this.saveStream;
         } else {
+            changed = !Boolean(this.saveContents);
             this.saveContents = this.doWrite;
             this.saveStream = this.doWrite;
             if (this.fileService.hasCapability(this.uri, FileSystemProviderCapabilities.Update)) {
                 this.saveContentChanges = this.doSaveContentChanges;
             }
+        }
+        if (changed) {
+            // Only actually bother to call the event if the value has changed.
+            this.onDidChangeReadOnlyEmitter.fire(this.readOnly);
         }
     }
     protected doSaveContentChanges: Resource['saveContentChanges'] = async (changes, options) => {

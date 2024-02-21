@@ -43,6 +43,7 @@ export class SimpleMonacoEditor extends MonacoEditorServices implements Disposab
     readonly onEncodingChanged = this.document.onDidChangeEncoding;
     protected readonly onResizeEmitter = new Emitter<Dimension | null>();
     readonly onDidResize = this.onResizeEmitter.event;
+    readonly onDidChangeReadOnly = this.document.onDidChangeReadOnly;
 
     constructor(
         readonly uri: URI,
@@ -62,7 +63,10 @@ export class SimpleMonacoEditor extends MonacoEditorServices implements Disposab
             this.onLanguageChangedEmitter,
             this.onScrollChangedEmitter
         ]);
-        this.toDispose.push(this.create(options, override));
+        this.toDispose.push(this.create({
+            ...MonacoEditor.createReadOnlyOptions(document.readOnly),
+            ...options
+        }, override));
         this.addHandlers(this.editor);
         this.editor.setModel(document.textEditorModel);
     }
@@ -124,6 +128,9 @@ export class SimpleMonacoEditor extends MonacoEditorServices implements Disposab
         }));
         this.toDispose.push(codeEditor.onDidScrollChange(e => {
             this.onScrollChangedEmitter.fire(undefined);
+        }));
+        this.toDispose.push(this.onDidChangeReadOnly(readOnly => {
+            codeEditor.updateOptions(MonacoEditor.createReadOnlyOptions(readOnly));
         }));
     }
 

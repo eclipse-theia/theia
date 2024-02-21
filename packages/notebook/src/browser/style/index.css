@@ -26,9 +26,12 @@
 }
 
 .theia-notebook-cell {
-  cursor: grab;
   display: flex;
   margin: 10px 0px;
+}
+
+.theia-notebook-cell.draggable {
+  cursor: grab;
 }
 
 .theia-notebook-cell:hover .theia-notebook-cell-marker {

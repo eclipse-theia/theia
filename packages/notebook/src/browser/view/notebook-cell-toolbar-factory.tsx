@@ -29,6 +29,7 @@ export interface NotebookCellToolbarItem {
     icon?: string;
     label?: string;
     onClick: (e: React.MouseEvent) => void;
+    isVisible: () => boolean;
     contextKeys?: Set<string>
 }
 
@@ -87,6 +88,7 @@ export class NotebookCellToolbarFactory {
                         args: [notebookModel, cell, output]
                     }) :
                 () => this.commandRegistry.executeCommand(menuNode.command!, notebookModel, cell, output),
+            isVisible: () => menuPath ? true : Boolean(this.commandRegistry.getVisibleHandler(menuNode.command!, notebookModel, cell, output)),
             contextKeys: menuNode.when ? this.contextKeyService.parseKeys(menuNode.when) : undefined
         };
     }

@@ -16,7 +16,7 @@
 
 import * as React from '@theia/core/shared/react';
 import { CommandRegistry, MenuModelRegistry, URI } from '@theia/core';
-import { ReactWidget, Navigatable, SaveableSource, Message, DelegatingSaveable } from '@theia/core/lib/browser';
+import { ReactWidget, Navigatable, SaveableSource, Message, DelegatingSaveable, lock, unlock } from '@theia/core/lib/browser';
 import { ReactNode } from '@theia/core/shared/react';
 import { CellKind } from '../common';
 import { CellRenderer as CellRenderer, NotebookCellListView } from './view/notebook-cell-list-view';
@@ -29,6 +29,7 @@ import { Emitter } from '@theia/core/shared/vscode-languageserver-protocol';
 import { NotebookEditorWidgetService } from './service/notebook-editor-widget-service';
 import { NotebookMainToolbarRenderer } from './view/notebook-main-toolbar';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 
 const PerfectScrollbar = require('react-perfect-scrollbar');
 
@@ -83,6 +84,9 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
     protected readonly onDidChangeModelEmitter = new Emitter<void>();
     readonly onDidChangeModel = this.onDidChangeModelEmitter.event;
 
+    protected readonly onDidChangeReadOnlyEmitter = new Emitter<boolean | MarkdownString>();
+    readonly onDidChangeReadOnly = this.onDidChangeReadOnlyEmitter.event;
+
     protected readonly renderers = new Map<CellKind, CellRenderer>();
     protected _model?: NotebookModel;
     protected _ready: Deferred<NotebookModel> = new Deferred();
@@ -112,6 +116,7 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
         this.update();
 
         this.toDispose.push(this.onDidChangeModelEmitter);
+        this.toDispose.push(this.onDidChangeReadOnlyEmitter);
 
         this.renderers.set(CellKind.Markup, this.markdownCellRenderer);
         this.renderers.set(CellKind.Code, this.codeCellRenderer);
@@ -122,6 +127,18 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
         this._model = await this.props.notebookData;
         this.saveable.delegate = this._model;
         this.toDispose.push(this._model);
+        this.toDispose.push(this._model.onDidChangeReadOnly(readOnly => {
+            if (readOnly) {
+                lock(this.title);
+            } else {
+                unlock(this.title);
+            }
+            this.onDidChangeReadOnlyEmitter.fire(readOnly);
+            this.update();
+        }));
+        if (this._model.readOnly) {
+            lock(this.title);
+        }
         // Ensure that the model is loaded before adding the editor
         this.notebookEditorService.addNotebookEditor(this);
         this.update();

@@ -29,6 +29,7 @@ import { bindMonacoPreferenceExtractor } from './monaco-editor-preferences/monac
 import { rebindOVSXClientFactory } from '../common/vsx/sample-ovsx-client-factory';
 import { bindSampleAppInfo } from './vsx/sample-frontend-app-info';
 import { bindTestSample } from './test/sample-test-contribution';
+import { bindSampleFileSystemCapabilitiesCommands } from './file-system/sample-file-system-capabilities';
 
 export default new ContainerModule((
     bind: interfaces.Bind,
@@ -47,5 +48,6 @@ export default new ContainerModule((
     bindMonacoPreferenceExtractor(bind);
     bindSampleAppInfo(bind);
     bindTestSample(bind);
+    bindSampleFileSystemCapabilitiesCommands(bind);
     rebindOVSXClientFactory(rebind);
 });
