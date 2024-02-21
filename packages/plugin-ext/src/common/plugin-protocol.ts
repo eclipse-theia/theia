@@ -103,6 +103,7 @@ export interface PluginPackageContribution {
     terminal?: PluginPackageTerminal;
     notebooks?: PluginPackageNotebook[];
     notebookRenderer?: PluginNotebookRendererContribution[];
+    notebookPreload?: PluginPackageNotebookPreload[];
 }
 
 export interface PluginPackageNotebook {
@@ -118,6 +119,11 @@ export interface PluginNotebookRendererContribution {
     readonly mimeTypes: string[];
     readonly entrypoint: string | { readonly extends: string; readonly path: string };
     readonly requiresMessaging?: 'always' | 'optional' | 'never'
+}
+
+export interface PluginPackageNotebookPreload {
+    type: string;
+    entrypoint: string;
 }
 
 export interface PluginPackageAuthenticationProvider {
@@ -610,8 +616,8 @@ export interface PluginContribution {
     terminalProfiles?: TerminalProfile[];
     notebooks?: NotebookContribution[];
     notebookRenderer?: NotebookRendererContribution[];
+    notebookPreload?: notebookPreloadContribution[];
 }
-
 export interface NotebookContribution {
     type: string;
     displayName: string;
@@ -625,6 +631,11 @@ export interface NotebookRendererContribution {
     readonly mimeTypes: string[];
     readonly entrypoint: string | { readonly extends: string; readonly path: string };
     readonly requiresMessaging?: 'always' | 'optional' | 'never'
+}
+
+export interface notebookPreloadContribution {
+    type: string;
+    entrypoint: string;
 }
 
 export interface AuthenticationProviderInformation {

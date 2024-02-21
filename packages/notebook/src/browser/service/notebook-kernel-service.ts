@@ -54,6 +54,11 @@ export interface NotebookKernel {
     // ID of the extension providing this kernel
     readonly extensionId: string;
 
+    readonly localResourceRoot: URI;
+    readonly preloadUris: URI[];
+    readonly preloadProvides: string[];
+
+    readonly handle: number;
     label: string;
     description?: string;
     detail?: string;

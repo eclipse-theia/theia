@@ -203,6 +203,10 @@ export class WebviewsExtImpl implements WebviewsExt {
     public getWebview(handle: string): WebviewImpl | undefined {
         return this.webviews.get(handle);
     }
+
+    public getResourceRoot(): string | undefined {
+        return this.initData?.webviewResourceRoot;
+    }
 }
 
 export class WebviewImpl implements theia.Webview {

@@ -1183,7 +1183,7 @@ export function createAPIFactory(
                     controller: theia.NotebookController) => void | Thenable<void>,
                 rendererScripts?: NotebookRendererScript[]
             ) {
-                return notebookKernels.createNotebookController(plugin.model.id, id, notebookType, label, handler, rendererScripts);
+                return notebookKernels.createNotebookController(plugin.model, id, notebookType, label, handler, rendererScripts);
             },
             createRendererMessaging(rendererId) {
                 return notebookRenderers.createRendererMessaging(rendererId);

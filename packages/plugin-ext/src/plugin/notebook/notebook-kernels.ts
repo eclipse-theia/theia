@@ -18,14 +18,13 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { CancellationToken } from '@theia/plugin';
 import {
-    CellExecuteUpdateDto, NotebookKernelDto, NotebookKernelsExt, NotebookKernelsMain, NotebookKernelSourceActionDto, NotebookOutputDto, PLUGIN_RPC_CONTEXT
+    CellExecuteUpdateDto, NotebookKernelDto, NotebookKernelsExt, NotebookKernelsMain,
+    NotebookKernelSourceActionDto, NotebookOutputDto, PluginModel, PluginPackage, PLUGIN_RPC_CONTEXT
 } from '../../common';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { UriComponents } from '../../common/uri-components';
-import * as theia from '@theia/plugin';
-import { CancellationTokenSource, Disposable, DisposableCollection, Emitter } from '@theia/core';
+import { CancellationTokenSource, Disposable, DisposableCollection, Emitter, Path } from '@theia/core';
 import { Cell } from './notebook-document';
 import { NotebooksExtImpl } from './notebooks';
 import { NotebookCellOutputConverter, NotebookCellOutputItem, NotebookKernelSourceAction } from '../type-converters';
@@ -33,6 +32,8 @@ import { timeout, Deferred } from '@theia/core/lib/common/promise-util';
 import { CellExecutionUpdateType, NotebookCellExecutionState } from '@theia/notebook/lib/common';
 import { CommandRegistryImpl } from '../command-registry';
 import { NotebookCellOutput, NotebookRendererScript, URI } from '../types-impl';
+import { toUriComponents } from '../../main/browser/hierarchy/hierarchy-types-converters';
+import type * as theia from '@theia/plugin';
 
 interface KernelData {
     extensionId: string;
@@ -62,18 +63,18 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
     constructor(
         rpc: RPCProtocol,
         private readonly notebooks: NotebooksExtImpl,
-        private readonly commands: CommandRegistryImpl
+        private readonly commands: CommandRegistryImpl,
     ) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.NOTEBOOK_KERNELS_MAIN);
     }
 
     private currentHandle = 0;
 
-    createNotebookController(extensionId: string, id: string, viewType: string, label: string, handler?: (cells: theia.NotebookCell[],
+    createNotebookController(extension: PluginModel, id: string, viewType: string, label: string, handler?: (cells: theia.NotebookCell[],
         notebook: theia.NotebookDocument, controller: theia.NotebookController) => void | Thenable<void>, rendererScripts?: NotebookRendererScript[]): theia.NotebookController {
 
         for (const kernelData of this.kernelData.values()) {
-            if (kernelData.controller.id === id && extensionId === kernelData.extensionId) {
+            if (kernelData.controller.id === id && extension.id === kernelData.extensionId) {
                 throw new Error(`notebook controller with id '${id}' ALREADY exist`);
             }
         }
@@ -81,9 +82,9 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
         const handle = this.currentHandle++;
         const that = this;
 
-        console.debug(`NotebookController[${handle}], CREATED by ${extensionId}, ${id}`);
+        console.debug(`NotebookController[${handle}], CREATED by ${extension.id}, ${id}`);
 
-        const defaultExecuteHandler = () => console.warn(`NO execute handler from notebook controller '${data.id}' of extension: '${extensionId}'`);
+        const defaultExecuteHandler = () => console.warn(`NO execute handler from notebook controller '${data.id}' of extension: '${extension.id}'`);
 
         let isDisposed = false;
         const commandDisposables = new DisposableCollection();
@@ -92,10 +93,12 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
         const onDidReceiveMessage = new Emitter<{ editor: theia.NotebookEditor; message: unknown }>();
 
         const data: NotebookKernelDto = {
-            id: createKernelId(extensionId, id),
+            id: createKernelId(extension.id, id),
             notebookType: viewType,
-            extensionId: extensionId,
-            label: label || extensionId,
+            extensionId: extension.id,
+            extensionLocation: toUriComponents(extension.packageUri),
+            label: label || extension.id,
+            preloads: rendererScripts?.map(preload => ({ uri: toUriComponents(preload.uri.toString()), provides: preload.provides })) ?? []
         };
 
         //
@@ -131,12 +134,11 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
             get id(): string { return id; },
             get notebookType(): string { return data.notebookType; },
             onDidChangeSelectedNotebooks: onDidChangeSelection.event,
-            onDidReceiveMessage: onDidReceiveMessage.event,
             get label(): string {
                 return data.label;
             },
             set label(value) {
-                data.label = value ?? extensionId;
+                data.label = value ?? extension.id;
                 update();
             },
             get detail(): string {
@@ -168,11 +170,7 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
                 update();
             },
             get rendererScripts(): NotebookRendererScript[] {
-                return data.rendererScripts ?? [];
-            },
-            set rendererScripts(value) {
-                data.rendererScripts = value;
-                update();
+                return data.preloads?.map(preload => (new NotebookRendererScript(URI.from(preload.uri), preload.provides))) ?? [];
             },
             get executeHandler(): (cells: theia.NotebookCell[], notebook: theia.NotebookDocument, controller: theia.NotebookController) => void | Thenable<void> {
                 return executeHandler;
@@ -197,7 +195,7 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
                         Array.from(associatedNotebooks.keys()).map(u => u.toString()));
                     throw new Error(`notebook controller is NOT associated to notebook: ${cell.notebook.uri.toString()}`);
                 }
-                return that.createNotebookCellExecution(cell, createKernelId(extensionId, this.id));
+                return that.createNotebookCellExecution(cell, createKernelId(extension.id, this.id));
             },
             dispose: () => {
                 if (!isDisposed) {
@@ -213,16 +211,18 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
             updateNotebookAffinity(notebook, priority): void {
                 that.proxy.$updateNotebookPriority(handle, notebook.uri, priority);
             },
+            onDidReceiveMessage: onDidReceiveMessage.event,
             async postMessage(message: unknown, editor?: theia.NotebookEditor): Promise<boolean> {
-                return Promise.resolve(true); // TODO needs implementation
+                return that.proxy.$postMessage(handle, 'notebook:' + editor?.notebook.uri.toString(), message);
             },
             asWebviewUri(localResource: theia.Uri): theia.Uri {
-                throw new Error('Method not implemented.');
+                const basePath = PluginPackage.toPluginUrl(extension, '');
+                return URI.from({ path: new Path(basePath).join(localResource.path).toString(), scheme: 'https' });
             }
         };
 
         this.kernelData.set(handle, {
-            extensionId: extensionId,
+            extensionId: extension.id,
             controller,
             onDidReceiveMessage,
             onDidChangeSelection,
@@ -376,7 +376,7 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
         // Proposed Api though seems needed by jupyter for telemetry
     }
 
-    async $provideKernelSourceActions(handle: number, token: CancellationToken): Promise<NotebookKernelSourceActionDto[]> {
+    async $provideKernelSourceActions(handle: number, token: theia.CancellationToken): Promise<NotebookKernelSourceActionDto[]> {
         const provider = this.kernelSourceActionProviders.get(handle);
         if (provider) {
             const disposables = new DisposableCollection();
@@ -496,7 +496,7 @@ class NotebookCellExecutionTask implements Disposable {
     asApiObject(): theia.NotebookCellExecution {
         const that = this;
         const result: theia.NotebookCellExecution = {
-            get token(): CancellationToken { return that.tokenSource.token; },
+            get token(): theia.CancellationToken { return that.tokenSource.token; },
             get cell(): theia.NotebookCell { return that.cell.apiCell; },
             get executionOrder(): number | undefined { return that.executionOrder; },
             set executionOrder(v: number | undefined) {

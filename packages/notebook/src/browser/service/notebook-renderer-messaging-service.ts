@@ -19,8 +19,9 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { Emitter } from '@theia/core';
-import { injectable } from '@theia/core/shared/inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { Disposable } from '@theia/core/shared/vscode-languageserver-protocol';
+import { NotebookEditorWidgetService } from './notebook-editor-widget-service';
 
 interface RendererMessage {
     editorId: string;
@@ -49,6 +50,9 @@ export class NotebookRendererMessagingService implements Disposable {
 
     private readonly willActivateRendererEmitter = new Emitter<string>();
     readonly onWillActivateRenderer = this.willActivateRendererEmitter.event;
+
+    @inject(NotebookEditorWidgetService)
+    private readonly editorWidgetService: NotebookEditorWidgetService;
 
     private readonly activations = new Map<string /* rendererId */, undefined | RendererMessage[]>();
     private readonly scopedMessaging = new Map<string /* editorId */, RendererMessaging>();
@@ -86,6 +90,10 @@ export class NotebookRendererMessagingService implements Disposable {
 
         const messaging: RendererMessaging = {
             postMessage: (rendererId, message) => this.postMessage(editorId, rendererId, message),
+            receiveMessage: async (rendererId, message) => {
+                this.editorWidgetService.getNotebookEditor(editorId)?.postRendererMessage(rendererId, message);
+                return true;
+            },
             dispose: () => this.scopedMessaging.delete(editorId),
         };
 

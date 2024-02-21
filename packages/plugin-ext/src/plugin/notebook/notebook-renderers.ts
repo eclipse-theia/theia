@@ -43,7 +43,6 @@ export class NotebookRenderersExtImpl implements NotebookRenderersExt {
         const messaging: theia.NotebookRendererMessaging = {
             onDidReceiveMessage: (listener, thisArg, disposables) => this.getOrCreateEmitterFor(rendererId).event(listener, thisArg, disposables),
             postMessage: (message, editorOrAlias) => {
-
                 const extHostEditor = editorOrAlias && NotebookEditor.apiEditorsToExtHost.get(editorOrAlias);
                 return this.proxy.$postMessage(extHostEditor?.id, rendererId, message);
             },

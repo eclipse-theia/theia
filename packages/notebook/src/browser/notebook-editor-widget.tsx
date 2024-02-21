@@ -46,6 +46,11 @@ export function createNotebookEditorWidgetContainer(parent: interfaces.Container
 
 const NotebookEditorProps = Symbol('NotebookEditorProps');
 
+interface RenderMessage {
+    rendererId: string;
+    message: unknown;
+}
+
 export interface NotebookEditorProps {
     uri: URI,
     readonly notebookType: string,
@@ -86,6 +91,18 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
 
     protected readonly onDidChangeReadOnlyEmitter = new Emitter<boolean | MarkdownString>();
     readonly onDidChangeReadOnly = this.onDidChangeReadOnlyEmitter.event;
+
+    protected readonly onPostKernelMessageEmitter = new Emitter<unknown>();
+    readonly onPostKernelMessage = this.onPostKernelMessageEmitter.event;
+
+    protected readonly onDidPostKernelMessageEmitter = new Emitter<unknown>();
+    readonly onDidPostKernelMessage = this.onDidPostKernelMessageEmitter.event;
+
+    protected readonly onPostRendererMessageEmitter = new Emitter<RenderMessage>();
+    readonly onPostRendererMessage = this.onPostRendererMessageEmitter.event;
+
+    protected readonly onDidReceiveKernelMessageEmitter = new Emitter<unknown>();
+    readonly onDidRecieveKernelMessage = this.onDidReceiveKernelMessageEmitter.event;
 
     protected readonly renderers = new Map<CellKind, CellRenderer>();
     protected _model?: NotebookModel;
@@ -189,5 +206,25 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
     protected override onAfterDetach(msg: Message): void {
         super.onAfterDetach(msg);
         this.notebookEditorService.removeNotebookEditor(this);
+    }
+
+    postKernelMessage(message: unknown): void {
+        this.onDidPostKernelMessageEmitter.fire(message);
+    }
+
+    postRendererMessage(rendererId: string, message: unknown): void {
+        this.onPostRendererMessageEmitter.fire({ rendererId, message });
+    }
+
+    recieveKernelMessage(message: unknown): void {
+        this.onDidReceiveKernelMessageEmitter.fire(message);
+    }
+
+    override dispose(): void {
+        this.onDidChangeModelEmitter.dispose();
+        this.onDidPostKernelMessageEmitter.dispose();
+        this.onDidReceiveKernelMessageEmitter.dispose();
+        this.onPostRendererMessageEmitter.dispose();
+        super.dispose();
     }
 }

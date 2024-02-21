@@ -16,10 +16,11 @@
 
 import { Disposable } from '@theia/core';
 import { NotebookCellModel } from '../view-model/notebook-cell-model';
+import { NotebookModel } from '../view-model/notebook-model';
 
 export const CellOutputWebviewFactory = Symbol('outputWebviewFactory');
 
-export type CellOutputWebviewFactory = (cell: NotebookCellModel) => Promise<CellOutputWebview>;
+export type CellOutputWebviewFactory = (cell: NotebookCellModel, notebook: NotebookModel) => Promise<CellOutputWebview>;
 
 export interface CellOutputWebview extends Disposable {
 

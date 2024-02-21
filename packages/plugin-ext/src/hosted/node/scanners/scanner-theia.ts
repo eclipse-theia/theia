@@ -341,13 +341,19 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
         try {
             contributions.notebooks = rawPlugin.contributes.notebooks;
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'notebooks'.`, rawPlugin.contributes.authentication, err);
+            console.error(`Could not read '${rawPlugin.name}' contribution 'notebooks'.`, rawPlugin.contributes.notebooks, err);
         }
 
         try {
             contributions.notebookRenderer = rawPlugin.contributes.notebookRenderer;
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'notebooks'.`, rawPlugin.contributes.authentication, err);
+            console.error(`Could not read '${rawPlugin.name}' contribution 'notebook-renderer'.`, rawPlugin.contributes.notebookRenderer, err);
+        }
+
+        try {
+            contributions.notebookPreload = rawPlugin.contributes.notebookPreload;
+        } catch (err) {
+            console.error(`Could not read '${rawPlugin.name}' contribution 'notebooks-preload'.`, rawPlugin.contributes.notebookPreload, err);
         }
 
         try {

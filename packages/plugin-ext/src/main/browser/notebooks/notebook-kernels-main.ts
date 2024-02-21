@@ -23,7 +23,10 @@ import { UriComponents } from '@theia/core/lib/common/uri';
 import { LanguageService } from '@theia/core/lib/browser/language-service';
 import { CellExecuteUpdateDto, CellExecutionCompleteDto, MAIN_RPC_CONTEXT, NotebookKernelDto, NotebookKernelsExt, NotebookKernelsMain } from '../../../common';
 import { RPCProtocol } from '../../../common/rpc-protocol';
-import { CellExecution, NotebookExecutionStateService, NotebookKernelChangeEvent, NotebookKernelService, NotebookService } from '@theia/notebook/lib/browser';
+import {
+    CellExecution, NotebookEditorWidgetService, NotebookExecutionStateService,
+    NotebookKernelChangeEvent, NotebookKernelService, NotebookService
+} from '@theia/notebook/lib/browser';
 import { combinedDisposable } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
 import { interfaces } from '@theia/core/shared/inversify';
 import { NotebookKernelSourceAction } from '@theia/notebook/lib/common';
@@ -54,7 +57,7 @@ abstract class NotebookKernel {
         return this.preloads.map(p => p.provides).flat();
     }
 
-    constructor(data: NotebookKernelDto, private languageService: LanguageService) {
+    constructor(public readonly handle: number, data: NotebookKernelDto, private languageService: LanguageService) {
         this.id = data.id;
         this.viewType = data.notebookType;
         this.extensionId = data.extensionId;
@@ -65,6 +68,7 @@ abstract class NotebookKernel {
         this.detail = data.detail;
         this.supportedLanguages = (data.supportedLanguages && data.supportedLanguages.length > 0) ? data.supportedLanguages : languageService.languages.map(lang => lang.id);
         this.implementsExecutionOrder = data.supportsExecutionOrder ?? false;
+        this.localResourceRoot = URI.fromComponents(data.extensionLocation);
         this.preloads = data.preloads?.map(u => ({ uri: URI.fromComponents(u.uri), provides: u.provides })) ?? [];
     }
 
@@ -125,6 +129,7 @@ export class NotebookKernelsMainImpl implements NotebookKernelsMain {
     private notebookService: NotebookService;
     private languageService: LanguageService;
     private notebookExecutionStateService: NotebookExecutionStateService;
+    private notebookEditorWidgetService: NotebookEditorWidgetService;
 
     private readonly executions = new Map<number, CellExecution>();
 
@@ -138,10 +143,46 @@ export class NotebookKernelsMainImpl implements NotebookKernelsMain {
         this.notebookExecutionStateService = container.get(NotebookExecutionStateService);
         this.notebookService = container.get(NotebookService);
         this.languageService = container.get(LanguageService);
+        this.notebookEditorWidgetService = container.get(NotebookEditorWidgetService);
+
+        this.notebookEditorWidgetService.onDidAddNotebookEditor(editor => {
+            editor.onDidRecieveKernelMessage(async message => {
+                const kernel = this.notebookKernelService.getSelectedOrSuggestedKernel(editor.model!);
+                if (kernel) {
+                    this.proxy.$acceptKernelMessageFromRenderer(kernel.handle, editor.id, message);
+                }
+            });
+        });
     }
 
-    $postMessage(handle: number, editorId: string | undefined, message: unknown): Promise<boolean> {
-        throw new Error('Method not implemented.');
+    async $postMessage(handle: number, editorId: string | undefined, message: unknown): Promise<boolean> {
+        const tuple = this.kernels.get(handle);
+        if (!tuple) {
+            throw new Error('kernel already disposed');
+        }
+        const [kernel] = tuple;
+        let didSend = false;
+        for (const editor of this.notebookEditorWidgetService.getNotebookEditors()) {
+            if (!editor.model) {
+                continue;
+            }
+            if (this.notebookKernelService.getMatchingKernel(editor.model).selected !== kernel) {
+                // different kernel
+                continue;
+            }
+            if (editorId === undefined) {
+                // all editors
+                editor.postKernelMessage(message);
+                didSend = true;
+            } else if (editor.id === editorId) {
+                // selected editors
+                editor.postKernelMessage(message);
+                didSend = true;
+                break;
+            }
+        }
+        return didSend;
+
     }
 
     async $addKernel(handle: number, data: NotebookKernelDto): Promise<void> {
@@ -153,7 +194,7 @@ export class NotebookKernelsMainImpl implements NotebookKernelsMain {
             async cancelNotebookCellExecution(uri: URI, handles: number[]): Promise<void> {
                 await that.proxy.$cancelCells(handle, uri.toComponents(), handles);
             }
-        }(data, this.languageService);
+        }(handle, data, this.languageService);
 
         const listener = this.notebookKernelService.onDidChangeSelectedKernel(e => {
             if (e.oldKernel === kernel.id) {
