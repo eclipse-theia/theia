@@ -16,46 +16,24 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { DiffNavigator } from '@theia/editor/lib/browser';
-import * as monaco from '@theia/monaco-editor-core';
-import { DiffNavigator as MonacoDiffNavigator } from '@theia/monaco-editor-core/esm/vs/editor/browser/widget/diffNavigator';
-import { IStandaloneDiffEditor } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
+import { StandaloneDiffEditor2 } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
 
 @injectable()
 export class MonacoDiffNavigatorFactory {
 
     static nullNavigator = <DiffNavigator>{
-        canNavigate: () => false,
         hasNext: () => false,
         hasPrevious: () => false,
         next: () => { },
         previous: () => { },
     };
 
-    createdDiffNavigator(editor: IStandaloneDiffEditor | monaco.editor.IStandaloneDiffEditor, options?: monaco.editor.IDiffNavigatorOptions): DiffNavigator {
-        const navigator = new MonacoDiffNavigator(editor as IStandaloneDiffEditor, options);
-        const ensureInitialized = (fwd: boolean) => {
-            if (navigator['nextIdx'] < 0) {
-                navigator['_initIdx'](fwd);
-            }
-        };
+    createdDiffNavigator(editor: StandaloneDiffEditor2): DiffNavigator {
         return {
-            canNavigate: () => navigator.canNavigate(),
-            hasNext: () => {
-                if (navigator.canNavigate()) {
-                    ensureInitialized(true);
-                    return navigator['nextIdx'] + 1 < navigator['ranges'].length;
-                }
-                return false;
-            },
-            hasPrevious: () => {
-                if (navigator.canNavigate()) {
-                    ensureInitialized(false);
-                    return navigator['nextIdx'] > 0;
-                }
-                return false;
-            },
-            next: () => navigator.next(),
-            previous: () => navigator.previous(),
+            hasNext: () => true,
+            hasPrevious: () => true,
+            next: () => editor.goToDiff('next'),
+            previous: () => editor.goToDiff('previous')
         };
     }
 }

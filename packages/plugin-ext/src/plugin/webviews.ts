@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { v4 } from 'uuid';
+import { generateUuid, hashValue } from '@theia/core/lib/common/uuid';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { Plugin, WebviewsExt, WebviewPanelViewState, WebviewsMain, PLUGIN_RPC_CONTEXT, WebviewInitData, /* WebviewsMain, PLUGIN_RPC_CONTEXT  */ } from '../common/plugin-api-rpc';
 import * as theia from '@theia/plugin';
@@ -24,7 +24,6 @@ import { fromViewColumn, toViewColumn, toWebviewPanelShowOptions } from './type-
 import { Disposable, WebviewPanelTargetArea, URI } from './types-impl';
 import { WorkspaceExtImpl } from './workspace';
 import { PluginIconPath } from './plugin-icon-path';
-import { hashValue } from '@theia/core/lib/common/uuid';
 
 @injectable()
 export class WebviewsExtImpl implements WebviewsExt {
@@ -118,7 +117,7 @@ export class WebviewsExtImpl implements WebviewsExt {
         options: theia.WebviewPanelOptions & theia.WebviewOptions,
         plugin: Plugin
     ): theia.WebviewPanel {
-        const viewId = v4();
+        const viewId = generateUuid();
         const webviewShowOptions = toWebviewPanelShowOptions(showOptions);
         const webviewOptions = WebviewImpl.toWebviewOptions(options, this.workspace, plugin);
         this.proxy.$createWebviewPanel(viewId, viewType, title, webviewShowOptions, webviewOptions);
@@ -126,19 +125,33 @@ export class WebviewsExtImpl implements WebviewsExt {
         return panel;
     }
 
+    /**
+     * Creates a new webview panel.
+     *
+     * @param viewType Identifies the type of the webview panel.
+     * @param title Title of the panel.
+     * @param showOptions Where webview panel will be reside.
+     * @param options Settings for the new panel.
+     * @param plugin The plugin contributing the webview.
+     * @param viewId The identifier of the webview instance.
+     * @param originBasedOnType true if a stable origin based on the viewType shall be used, false if the viewId should be used.
+     * @returns The new webview panel.
+     */
     createWebviewPanel(
         viewType: string,
         title: string,
         showOptions: theia.ViewColumn | theia.WebviewPanelShowOptions,
         options: theia.WebviewPanelOptions & theia.WebviewOptions,
         plugin: Plugin,
-        viewId: string
+        viewId: string,
+        originBasedOnType = true
     ): WebviewPanelImpl {
         if (!this.initData) {
             throw new Error('Webviews are not initialized');
         }
         const webviewShowOptions = toWebviewPanelShowOptions(showOptions);
-        const webview = new WebviewImpl(viewId, this.proxy, options, this.initData, this.workspace, plugin, hashValue(viewType));
+        const origin = originBasedOnType ? hashValue(viewType) : undefined;
+        const webview = new WebviewImpl(viewId, this.proxy, options, this.initData, this.workspace, plugin, origin);
         const panel = new WebviewPanelImpl(viewId, this.proxy, viewType, title, webviewShowOptions, options, webview);
         this.webviewPanels.set(viewId, panel);
         return panel;

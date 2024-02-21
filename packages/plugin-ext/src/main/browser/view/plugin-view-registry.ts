@@ -40,14 +40,14 @@ import { DebugConsoleContribution } from '@theia/debug/lib/browser/console/debug
 import { TreeViewWidget } from './tree-view-widget';
 import { SEARCH_VIEW_CONTAINER_ID } from '@theia/search-in-workspace/lib/browser/search-in-workspace-factory';
 import { TEST_VIEW_CONTAINER_ID } from '@theia/test/lib/browser/view/test-view-contribution';
-import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
 import { WebviewView, WebviewViewResolver } from '../webview-views/webview-views';
 import { WebviewWidget, WebviewWidgetIdentifier } from '../webview/webview';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
-import { v4 } from 'uuid';
+import { generateUuid } from '@theia/core/lib/common/uuid';
 import { nls } from '@theia/core';
 import { TheiaDockPanel } from '@theia/core/lib/browser/shell/theia-dock-panel';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/base/common/themables';
 
 export const PLUGIN_VIEW_FACTORY_ID = 'plugin-view';
 export const PLUGIN_VIEW_CONTAINER_FACTORY_ID = 'plugin-view-container';
@@ -108,6 +108,16 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     readonly onNewResolverRegistered = this.onNewResolverRegisteredEmitter.event;
 
     private readonly webviewViewRevivals = new Map<string, { readonly webview: WebviewView; readonly revival: Deferred<void> }>();
+
+    private nextViewContainerId = 0;
+
+    private static readonly BUILTIN_VIEW_CONTAINERS = new Set<string>([
+        'explorer',
+        'scm',
+        'search',
+        'test',
+        'debug'
+    ]);
 
     private static readonly ID_MAPPINGS: Map<string, string> = new Map([
         // VS Code Viewlets
@@ -266,14 +276,15 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     }
 
     registerViewContainer(location: string, viewContainer: ViewContainer): Disposable {
-        if (this.viewContainers.has(viewContainer.id)) {
+        const containerId = `workbench.view.extension.${viewContainer.id}`;
+        if (this.viewContainers.has(containerId)) {
             console.warn('view container such id already registered: ', JSON.stringify(viewContainer));
             return Disposable.NULL;
         }
         const toDispose = new DisposableCollection();
         const containerClass = 'theia-plugin-view-container';
         let themeIconClass = '';
-        const iconClass = 'plugin-view-container-icon-' + viewContainer.id;
+        const iconClass = 'plugin-view-container-icon-' + this.nextViewContainerId++; // having dots in class would not work for css, so we need to generate an id.
 
         if (viewContainer.themeIcon) {
             const icon = ThemeIcon.fromString(viewContainer.themeIcon);
@@ -290,7 +301,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             `));
         }
 
-        toDispose.push(this.doRegisterViewContainer(viewContainer.id, location, {
+        toDispose.push(this.doRegisterViewContainer(containerId, location, {
             label: viewContainer.title,
             // The container class automatically sets a mask; if we're using a theme icon, we don't want one.
             iconClass: (themeIconClass || containerClass) + ' ' + iconClass,
@@ -349,6 +360,10 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     }
 
     registerView(viewContainerId: string, view: View): Disposable {
+        if (!PluginViewRegistry.BUILTIN_VIEW_CONTAINERS.has(viewContainerId)) {
+            // if it's not a built-in view container, it must be a contributed view container, see https://github.com/eclipse-theia/theia/issues/13249
+            viewContainerId = `workbench.view.extension.${viewContainerId}`;
+        }
         if (this.views.has(view.id)) {
             console.warn('view with such id already registered: ', JSON.stringify(view));
             return Disposable.NULL;
@@ -425,7 +440,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     protected async createNewWebviewView(viewId: string): Promise<WebviewView> {
         const webview = await this.widgetManager.getOrCreateWidget<WebviewWidget>(
             WebviewWidget.FACTORY_ID, <WebviewWidgetIdentifier>{
-                id: v4(),
+                id: generateUuid(),
                 viewId,
             });
         webview.setContentOptions({ allowScripts: true });

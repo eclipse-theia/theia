@@ -24,7 +24,7 @@ import { codicon } from '../widgets';
 
 // #region Copied from Copied from https://github.com/microsoft/vscode/blob/7d9b1c37f8e5ae3772782ba3b09d827eb3fdd833/src/vs/base/browser/formattedTextRenderer.ts
 export interface ContentActionHandler {
-    callback: (content: string, event?: MouseEvent) => void;
+    callback: (content: string, event?: MouseEvent | KeyboardEvent) => void;
     readonly disposables: DisposableGroup;
 }
 

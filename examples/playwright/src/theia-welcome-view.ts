@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2018 TypeFox and others.
+// Copyright (C) 2023 Toro Cloud Pty Ltd and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -12,16 +12,20 @@
 // https://www.gnu.org/software/classpath/license.html.
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
-// *****************************************************************************
 
-import { TextEditor } from './editor';
+import { TheiaApp } from './theia-app';
+import { TheiaView } from './theia-view';
+import { normalizeId } from './util';
 
-export interface DiffNavigator {
-    hasNext(): boolean;
-    hasPrevious(): boolean;
-    next(): void;
-    previous(): void;
+const TheiaWelcomeViewData = {
+    tabSelector: normalizeId('#shell-tab-getting.started.widget'),
+    viewSelector: normalizeId('#getting.started.widget'),
+    viewName: 'Welcome'
+};
+
+export class TheiaWelcomeView extends TheiaView {
+
+    constructor(app: TheiaApp) {
+        super(TheiaWelcomeViewData, app);
+    }
 }
-
-export const DiffNavigatorProvider = Symbol('DiffNavigatorProvider');
-export type DiffNavigatorProvider = (editor: TextEditor) => DiffNavigator;

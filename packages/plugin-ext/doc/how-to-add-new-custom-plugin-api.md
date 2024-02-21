@@ -82,7 +82,7 @@ Example `node/foo-init.ts`:
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { RPCProtocol } from '@theia/plugin-ext/lib/common/rpc-protocol';
 import { Plugin } from '@theia/plugin-ext/lib/common/plugin-api-rpc';
-import { ApiFactory, PluginContainerModule } from '@theia/plugin-ext/lib/plugin/node/plugin-container-module';
+import { PluginContainerModule } from '@theia/plugin-ext/lib/plugin/node/plugin-container-module';
 import { FooExt } from '../common/foo-api-rpc';
 import { FooExtImpl } from './foo-ext-impl';
 
@@ -92,7 +92,6 @@ type FooBarApi = typeof fooBarAPI;
 type Foo = FooBarApi['Foo'];
 
 const FooBarApiFactory = Symbol('FooBarApiFactory');
-type FooBarApiFactory = ApiFactory<FooBarApi>;
 
 // Retrieved by Theia to configure the Inversify DI container when the plugin is initialized.
 // This is called when the plugin-host process is forked.
@@ -127,10 +126,11 @@ class FooBarApiFactoryImpl {
 
     // The plugin host expects our API factory to export a `createApi()` method
     createApi(plugin: Plugin): FooBarApi {
+        const self = this;
         return {
             fooBar: {
                 getFoo(): Promise<Foo> {
-                    return fooExt.getFooImpl();
+                    return self.fooExt.getFooImpl();
                 }
             }
         };

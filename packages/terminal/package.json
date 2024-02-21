@@ -9,9 +9,9 @@
     "@theia/process": "1.46.0",
     "@theia/variable-resolver": "1.46.0",
     "@theia/workspace": "1.46.0",
-    "xterm": "^4.16.0",
-    "xterm-addon-fit": "^0.5.0",
-    "xterm-addon-search": "^0.8.2"
+    "xterm": "^5.3.0",
+    "xterm-addon-fit": "^0.8.0",
+    "xterm-addon-search": "^0.13.0"
   },
   "publishConfig": {
     "access": "public"

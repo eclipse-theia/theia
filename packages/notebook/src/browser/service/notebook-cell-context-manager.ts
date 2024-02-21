@@ -67,7 +67,6 @@ export class NotebookCellContextManager implements NotebookCellContextManager, D
 
     dispose(): void {
         this.toDispose.dispose();
-        this.currentStore?.dispose();
         this.onDidChangeContextEmitter.dispose();
     }
 }

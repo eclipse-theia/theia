@@ -57,6 +57,16 @@ export namespace SearchInWorkspaceCommands {
         category: SEARCH_CATEGORY,
         label: 'Find in Folder...'
     });
+    export const FOCUS_NEXT_RESULT = Command.toDefaultLocalizedCommand({
+        id: 'search.action.focusNextSearchResult',
+        category: SEARCH_CATEGORY,
+        label: 'Focus Next Search Result'
+    });
+    export const FOCUS_PREV_RESULT = Command.toDefaultLocalizedCommand({
+        id: 'search.action.focusPreviousSearchResult',
+        category: SEARCH_CATEGORY,
+        label: 'Focus Previous Search Result'
+    });
     export const REFRESH_RESULTS = Command.toDefaultLocalizedCommand({
         id: 'search-in-workspace.refresh',
         category: SEARCH_CATEGORY,
@@ -166,6 +176,22 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
             execute: async () => {
                 const widget = await this.openView({ activate: true });
                 widget.updateSearchTerm(this.getSearchTerm(), true);
+            }
+        });
+
+        commands.registerCommand(SearchInWorkspaceCommands.FOCUS_NEXT_RESULT, {
+            isEnabled: () => this.withWidget(undefined, widget => widget.hasResultList()),
+            execute: async () => {
+                const widget = await this.openView({ reveal: true });
+                widget.resultTreeWidget.selectNextResult();
+            }
+        });
+
+        commands.registerCommand(SearchInWorkspaceCommands.FOCUS_PREV_RESULT, {
+            isEnabled: () => this.withWidget(undefined, widget => widget.hasResultList()),
+            execute: async () => {
+                const widget = await this.openView({ reveal: true });
+                widget.resultTreeWidget.selectPreviousResult();
             }
         });
 
@@ -342,6 +368,16 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
             command: SearchInWorkspaceCommands.FIND_IN_FOLDER.id,
             keybinding: 'shift+alt+f',
             when: 'explorerResourceIsFolder'
+        });
+        keybindings.registerKeybinding({
+            command: SearchInWorkspaceCommands.FOCUS_NEXT_RESULT.id,
+            keybinding: 'f4',
+            when: 'hasSearchResult'
+        });
+        keybindings.registerKeybinding({
+            command: SearchInWorkspaceCommands.FOCUS_PREV_RESULT.id,
+            keybinding: 'shift+f4',
+            when: 'hasSearchResult'
         });
         keybindings.registerKeybinding({
             command: SearchInWorkspaceCommands.DISMISS_RESULT.id,

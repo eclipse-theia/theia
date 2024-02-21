@@ -33,13 +33,11 @@ import { nls } from '@theia/core/lib/common/nls';
 
 export const HTTP_UPLOAD_URL: string = new Endpoint({ path: HTTP_FILE_UPLOAD_PATH }).getRestUrl().toString(true);
 
-export interface CustomDataTransfer {
-    values(): Iterable<CustomDataTransferItem>
-}
+export type CustomDataTransfer = Iterable<readonly [string, CustomDataTransferItem]>;
 
 export interface CustomDataTransferItem {
-    readonly id: string;
     asFile(): {
+        readonly id: string;
         readonly name: string;
         data(): Promise<Uint8Array>;
     } | undefined
@@ -420,10 +418,10 @@ export class FileUploadService {
     }
 
     protected async indexCustomDataTransfer(targetUri: URI, dataTransfer: CustomDataTransfer, context: FileUploadService.Context): Promise<void> {
-        for (const item of dataTransfer.values()) {
+        for (const [_, item] of dataTransfer) {
             const fileInfo = item.asFile();
             if (fileInfo) {
-                await this.indexFile(targetUri, new File([await fileInfo.data()], item.id), context);
+                await this.indexFile(targetUri, new File([await fileInfo.data()], fileInfo.id), context);
             }
         }
     }

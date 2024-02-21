@@ -3,7 +3,7 @@
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
-// http://www.eclipse.org/legal/epl-2.0.
+// http://www.eclipse.org/legal/epl-2.0.g
 //
 // This Source Code may also be made available under the following Secondary
 // Licenses when the conditions for such availability set forth in the Eclipse
@@ -682,8 +682,12 @@ export module '@theia/plugin' {
         /**
          * Indicates that this markdown string is from a trusted source. Only *trusted*
          * markdown supports links that execute commands, e.g. `[Run it](command:myCommandId)`.
+         *
+         * Defaults to `false` (commands are disabled).
+         *
+         * If this is an object, only the set of commands listed in `enabledCommands` are allowed.
          */
-        isTrusted?: boolean;
+        isTrusted?: boolean | { readonly enabledCommands: readonly string[] };
 
         /**
          * Indicates that this markdown string can contain {@link ThemeIcon ThemeIcons}, e.g. `$(zap)`.
@@ -7529,6 +7533,29 @@ export module '@theia/plugin' {
         export function findFiles(include: GlobPattern, exclude?: GlobPattern | null, maxResults?: number, token?: CancellationToken): Thenable<Uri[]>;
 
         /**
+         * Saves the editor identified by the given resource and returns the resulting resource or `undefined`
+         * if save was not successful or no editor with the given resource was found.
+         *
+         * **Note** that an editor with the provided resource must be opened in order to be saved.
+         *
+         * @param uri the associated uri for the opened editor to save.
+         * @returns A thenable that resolves when the save operation has finished.
+         */
+        export function save(uri: Uri): Thenable<Uri | undefined>;
+
+        /**
+         * Saves the editor identified by the given resource to a new file name as provided by the user and
+         * returns the resulting resource or `undefined` if save was not successful or cancelled or no editor
+         * with the given resource was found.
+         *
+         * **Note** that an editor with the provided resource must be opened in order to be saved as.
+         *
+         * @param uri the associated uri for the opened editor to save as.
+         * @returns A thenable that resolves when the save-as operation has finished.
+         */
+        export function saveAs(uri: Uri): Thenable<Uri | undefined>;
+
+        /**
          * Save all dirty files.
          *
          * @param includeUntitled Also save files that have been created during this session.
@@ -10254,15 +10281,7 @@ export module '@theia/plugin' {
          * @param uri A resource identifier.
          * @param edits An array of edits.
          */
-        set(uri: Uri, edits: ReadonlyArray<[TextEdit | SnippetTextEdit, WorkspaceEditEntryMetadata]>): void;
-
-        /**
-         * Set (and replace) text edits or snippet edits with metadata for a resource.
-         *
-         * @param uri A resource identifier.
-         * @param edits An array of edits.
-         */
-        set(uri: Uri, edits: ReadonlyArray<[TextEdit | SnippetTextEdit, WorkspaceEditEntryMetadata]>): void;
+        set(uri: Uri, edits: ReadonlyArray<[TextEdit | SnippetTextEdit, WorkspaceEditEntryMetadata | undefined]>): void;
 
         /**
          * Set (and replace) notebook edits for a resource.
@@ -10278,7 +10297,7 @@ export module '@theia/plugin' {
          * @param uri A resource identifier.
          * @param edits An array of edits.
          */
-        set(uri: Uri, edits: ReadonlyArray<[NotebookEdit, WorkspaceEditEntryMetadata]>): void;
+        set(uri: Uri, edits: ReadonlyArray<[NotebookEdit, WorkspaceEditEntryMetadata | undefined]>): void;
 
         /**
          * Get the text edits for a resource.

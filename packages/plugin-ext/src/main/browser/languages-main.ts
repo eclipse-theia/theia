@@ -42,7 +42,7 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import {
     SerializedDocumentFilter, MarkerData, Range, RelatedInformation,
     MarkerSeverity, DocumentLink, WorkspaceSymbolParams, CodeAction, CompletionDto,
-    CodeActionProviderDocumentation, InlayHint, InlayHintLabelPart, CodeActionContext, DocumentDropEditProviderMetadata
+    CodeActionProviderDocumentation, InlayHint, InlayHintLabelPart, CodeActionContext, DocumentDropEditProviderMetadata, SignatureHelpContext
 } from '../../common/plugin-api-rpc-model';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { MonacoLanguages, WorkspaceSymbolProvider } from '@theia/monaco/lib/browser/monaco-languages';
@@ -84,7 +84,7 @@ import {
 import { ITextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
 import { CodeActionTriggerKind, SnippetString } from '../../plugin/types-impl';
 import { DataTransfer } from './data-transfer/data-transfer-type-converters';
-import { VSDataTransfer } from '@theia/monaco-editor-core/esm/vs/base/common/dataTransfer';
+import { IReadonlyVSDataTransfer } from '@theia/monaco-editor-core/esm/vs/base/common/dataTransfer';
 import { FileUploadService } from '@theia/filesystem/lib/browser/file-upload-service';
 
 /**
@@ -647,7 +647,9 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
     protected async provideSignatureHelp(handle: number, model: monaco.editor.ITextModel,
         position: monaco.Position, token: monaco.CancellationToken,
         context: monaco.languages.SignatureHelpContext): Promise<monaco.languages.ProviderResult<monaco.languages.SignatureHelpResult>> {
-        const value = await this.proxy.$provideSignatureHelp(handle, model.uri, position, context, token);
+
+        // need to cast because of vscode issue https://github.com/microsoft/vscode/issues/190584
+        const value = await this.proxy.$provideSignatureHelp(handle, model.uri, position, context as SignatureHelpContext, token);
         if (!value) {
             return undefined;
         }
@@ -749,7 +751,7 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
     }
 
     protected async provideDocumentDropEdits(handle: number, model: ITextModel, position: monaco.IPosition,
-        dataTransfer: VSDataTransfer, token: CancellationToken): Promise<DocumentOnDropEdit | undefined> {
+        dataTransfer: IReadonlyVSDataTransfer, token: CancellationToken): Promise<DocumentOnDropEdit | undefined> {
         await this.fileUploadService.upload(new URI(), { source: dataTransfer, leaveInTemp: true });
         const edit = await this.proxy.$provideDocumentDropEdits(handle, model.uri, position, await DataTransfer.toDataTransferDTO(dataTransfer), token);
         if (edit) {
@@ -759,6 +761,7 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
                 // yieldTo: edit.yieldTo?.map(yTo => {
                 //      return 'mimeType' in yTo ? yTo : { providerId: DocumentOnDropEditAdapter.toInternalProviderId(yTo.extensionId, yTo.providerId) };
                 // }),
+                label: 'no label',
                 insertText: edit.insertText instanceof SnippetString ? { snippet: edit.insertText.value } : edit.insertText,
                 additionalEdit: toMonacoWorkspaceEdit(edit?.additionalEdit)
             };
@@ -888,7 +891,8 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
                 };
             },
             resolveInlayHint: async (hint, token): Promise<monaco.languages.InlayHint | undefined> => {
-                const dto: InlayHintDto = hint;
+                // need to cast because of vscode issue https://github.com/microsoft/vscode/issues/190584
+                const dto: InlayHintDto = hint as InlayHintDto;
                 if (typeof dto.cacheId !== 'number') {
                     return hint;
                 }

@@ -17,7 +17,7 @@
 import * as os from 'os';
 import * as fs from '@theia/core/shared/fs-extra';
 import * as path from 'path';
-import { v4 } from 'uuid';
+import { generateUuid } from '@theia/core/lib/common/uuid';
 import { Request, Response } from '@theia/core/shared/express';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { OK, BAD_REQUEST, METHOD_NOT_ALLOWED, NOT_FOUND, INTERNAL_SERVER_ERROR, REQUESTED_RANGE_NOT_SATISFIABLE, PARTIAL_CONTENT } from 'http-status-codes';
@@ -135,12 +135,12 @@ export abstract class FileDownloadHandler {
             end: (isNaN(end) || end > statSize - 1) ? (statSize - 1) : end
         };
     }
-    protected async archive(inputPath: string, outputPath: string = path.join(os.tmpdir(), v4()), entries?: string[]): Promise<string> {
+    protected async archive(inputPath: string, outputPath: string = path.join(os.tmpdir(), generateUuid()), entries?: string[]): Promise<string> {
         await this.directoryArchiver.archive(inputPath, outputPath, entries);
         return outputPath;
     }
 
-    protected async createTempDir(downloadId: string = v4()): Promise<string> {
+    protected async createTempDir(downloadId: string = generateUuid()): Promise<string> {
         const outputPath = path.join(os.tmpdir(), downloadId);
         await fs.mkdir(outputPath);
         return outputPath;
@@ -221,7 +221,7 @@ export class SingleFileDownloadHandler extends FileDownloadHandler {
             return;
         }
         try {
-            const downloadId = v4();
+            const downloadId = generateUuid();
             const options: PrepareDownloadOptions = { filePath, downloadId, remove: false };
             if (!stat.isDirectory()) {
                 await this.prepareDownload(request, response, options);
@@ -271,7 +271,7 @@ export class MultiFileDownloadHandler extends FileDownloadHandler {
             }
         }
         try {
-            const downloadId = v4();
+            const downloadId = generateUuid();
             const outputRootPath = await this.createTempDir(downloadId);
             const distinctUris = Array.from(new Set(body.uris.map(uri => new URI(uri))));
             const tarPaths = [];

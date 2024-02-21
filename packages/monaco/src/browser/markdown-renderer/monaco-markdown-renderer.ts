@@ -16,14 +16,11 @@
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language';
-import { MarkdownRenderer as CodeMarkdownRenderer } from '@theia/monaco-editor-core/esm/vs/editor/contrib/markdownRenderer/browser/markdownRenderer';
+import { MarkdownRenderer as CodeMarkdownRenderer, IMarkdownRendererOptions } from '@theia/monaco-editor-core/esm/vs/editor/contrib/markdownRenderer/browser/markdownRenderer';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { MonacoCommandServiceFactory } from '../monaco-command-service';
-import { MonacoEditorService } from '../monaco-editor-service';
 import * as monaco from '@theia/monaco-editor-core';
-import { OpenerService as MonacoOpenerService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/openerService';
 import { OpenerService, PreferenceService, WidgetOpenerOptions, open } from '@theia/core/lib/browser';
-import { OpenExternalOptions, OpenInternalOptions } from '@theia/monaco-editor-core/esm/vs/platform/opener/common/opener';
+import { IOpenerService, OpenExternalOptions, OpenInternalOptions } from '@theia/monaco-editor-core/esm/vs/platform/opener/common/opener';
 import { HttpOpenHandlerOptions } from '@theia/core/lib/browser/http-open-handler';
 import { URI } from '@theia/core/lib/common/uri';
 import { MarkdownRenderer, MarkdownRenderOptions, MarkdownRenderResult } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
@@ -34,8 +31,6 @@ import { DisposableCollection, DisposableGroup } from '@theia/core';
 
 @injectable()
 export class MonacoMarkdownRenderer implements MarkdownRenderer {
-    @inject(MonacoEditorService) protected readonly codeEditorService: MonacoEditorService;
-    @inject(MonacoCommandServiceFactory) protected readonly commandServiceFactory: MonacoCommandServiceFactory;
     @inject(OpenerService) protected readonly openerService: OpenerService;
     @inject(PreferenceService) protected readonly preferences: PreferenceService;
 
@@ -72,21 +67,18 @@ export class MonacoMarkdownRenderer implements MarkdownRenderer {
     @postConstruct()
     protected init(): void {
         const languages = StandaloneServices.get(ILanguageService);
-        const openerService = new MonacoOpenerService(this.codeEditorService, this.commandServiceFactory());
+        const openerService = StandaloneServices.get(IOpenerService);
         openerService.registerOpener({
             open: (u, options) => this.interceptOpen(u, options)
         });
-        const getPreference = () => this.preferences.get<string>('editor.fontFamily');
-        const rendererOptions = new Proxy(Object.create(null), { // eslint-disable-line no-null/no-null
-            get(_, field): string | undefined {
-                if (field === 'codeBlockFontFamily') {
-                    return getPreference();
-                } else {
-                    return undefined;
-                }
+        const that = this;
+        const prefs = new class implements IMarkdownRendererOptions {
+            get codeBlockFontFamily(): string | undefined {
+                return that.preferences.get<string>('editor.fontFamily');
             }
-        });
-        this.delegate = new CodeMarkdownRenderer(rendererOptions, languages, openerService);
+        };
+
+        this.delegate = new CodeMarkdownRenderer(prefs, languages, openerService);
     }
 
     protected async interceptOpen(monacoUri: monaco.Uri | string, monacoOptions?: OpenInternalOptions | OpenExternalOptions): Promise<boolean> {

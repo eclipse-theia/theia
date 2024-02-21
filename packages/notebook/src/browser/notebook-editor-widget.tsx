@@ -30,6 +30,8 @@ import { NotebookEditorWidgetService } from './service/notebook-editor-widget-se
 import { NotebookMainToolbarRenderer } from './view/notebook-main-toolbar';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 
+const PerfectScrollbar = require('react-perfect-scrollbar');
+
 export const NotebookEditorWidgetContainerFactory = Symbol('NotebookEditorWidgetContainerFactory');
 
 export function createNotebookEditorWidgetContainer(parent: interfaces.Container, props: NotebookEditorProps): interfaces.Container {
@@ -102,6 +104,10 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
         this.id = NOTEBOOK_EDITOR_ID_PREFIX + this.props.uri.toString();
         this.node.tabIndex = -1;
 
+        this.scrollOptions = {
+            suppressScrollY: true
+        };
+
         this.title.closable = true;
         this.update();
 
@@ -145,12 +151,14 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
 
     protected render(): ReactNode {
         if (this._model) {
-            return <div>
+            return <div className='theia-notebook-main-container'>
                 {this.notebookMainToolbarRenderer.render(this._model)}
-                <NotebookCellListView renderers={this.renderers}
-                    notebookModel={this._model}
-                    toolbarRenderer={this.cellToolbarFactory}
-                    commandRegistry={this.commandRegistry} />
+                <PerfectScrollbar className='theia-notebook-scroll-container'>
+                    <NotebookCellListView renderers={this.renderers}
+                        notebookModel={this._model}
+                        toolbarRenderer={this.cellToolbarFactory}
+                        commandRegistry={this.commandRegistry} />
+                </PerfectScrollbar>
             </div>;
         } else {
             return <div></div>;

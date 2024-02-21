@@ -194,6 +194,6 @@ export class MonacoTextModelService implements ITextModelService {
     }
 
     canHandleResource(resource: monaco.Uri): boolean {
-        return this.fileService.canHandleResource(new URI(resource));
+        return this.fileService.canHandleResource(URI.fromComponents(resource));
     }
 }

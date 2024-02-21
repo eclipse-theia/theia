@@ -18,7 +18,7 @@ import { Endpoint, FrontendApplicationContribution } from '@theia/core/lib/brows
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { v4 } from 'uuid';
+import { generateUuid } from '@theia/core/lib/common/uuid';
 import { MiniBrowserEndpoint } from '../../common/mini-browser-endpoint';
 
 /**
@@ -71,7 +71,7 @@ export class MiniBrowserEnvironment implements FrontendApplicationContribution {
      * Throws if `hostPatternPromise` is not yet resolved.
      */
     getRandomEndpoint(): Endpoint {
-        return this.getEndpoint(v4());
+        return this.getEndpoint(generateUuid());
     }
 
     protected async getHostPattern(): Promise<string> {

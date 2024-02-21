@@ -4,16 +4,21 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
-<!-- ## not yet released
+## v1.47.0 not yet released
 
 - [component] add here
 
 <a name="breaking_changes_not_yet_released">[Breaking Changes:](#breaking_changes_not_yet_released)</a>
-
-- [component] add here -->
+- [monaco] Upgrade Monaco dependency to 1.83.1 [#13217](https://github.com/eclipse-theia/theia/pull/13217)- contributed on behalf of STMicroelectronics\
+  There are a couple of breaking changes that come with this monaco update
+  - Moved `ThemaIcon` and `ThemeColor` to the common folder
+  - Minor typing adjustments in QuickPickService: in parti
+  - FileUploadService: moved id field from data transfer item to the corresponding file info
+  - The way we instantiate monaco services has changed completely: if you touch monaco services in your code, please read the description in the 
+    file comment in `monaco-init.ts`.
 
 ## v1.46.0 - 01/25/2024
-
+- [plugin] Add prefix to contributed view container ids [#13362](https://github.com/eclipse-theia/theia/pull/13362) - contributed on behalf of STMicroelectronics
 - [application-manager] updated message for missing Electron main entries [#13242](https://github.com/eclipse-theia/theia/pull/13242)
 - [application-package] bumped the default supported API from `1.84.2` to `1.85.1` [#13276](https://github.com/eclipse-theia/theia/pull/13276) - contributed on behalf of STMicroelectronics
 - [browser-only] added support for 'browser-only' Theia [#12853](https://github.com/eclipse-theia/theia/pull/12853)
@@ -232,6 +237,8 @@
 
 - [deps] bumped supported Node.js version from 16.x to >=18, you may need to update your environments [#12711](https://github.com/eclipse-theia/theia/pull/12711)
 - [preferences] removed the `welcome.alwaysShowWelcomePage` preference in favor of `workbench.startupEditor` [#12813](https://github.com/eclipse-theia/theia/pull/12813)
+- [terminal] deprecated `terminal.integrated.rendererType` preference [#12691](https://github.com/eclipse-theia/theia/pull/12691)
+- [terminal] removed protected method `TerminalWidgetImpl.getTerminalRendererType` [#12691](https://github.com/eclipse-theia/theia/pull/12691)
 
 ## v1.40.0 - 07/27/2023
 

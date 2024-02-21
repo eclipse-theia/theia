@@ -17,7 +17,7 @@
     "@theia/markers": "1.46.0",
     "@theia/messages": "1.46.0",
     "@theia/monaco": "1.46.0",
-    "@theia/monaco-editor-core": "1.72.3",
+    "@theia/monaco-editor-core": "1.83.101",
     "@theia/navigator": "1.46.0",
     "@theia/notebook": "1.46.0",
     "@theia/output": "1.46.0",
@@ -46,7 +46,6 @@
     "mime": "^2.4.4",
     "ps-tree": "^1.2.0",
     "semver": "^7.5.4",
-    "uuid": "^8.0.0",
     "vhost": "^3.0.2",
     "vscode-textmate": "^9.0.0"
   },

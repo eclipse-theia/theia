@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
+import { getIconRegistry } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/iconRegistry';
 
 // @monaco-uplift
 // Keep this up-to-date with the table at https://code.visualstudio.com/api/references/icons-in-labels#icon-listing
@@ -27,11 +27,12 @@ const codeIconMap: Record<string, string> = {
     'callhierarchy-outgoing': 'call-outgoing',
     'callstack-view-icon': 'debug-alt',
     'callstack-view-session': 'bug',
+    'chat-editor-label-icon': 'comment-discussion',
     'comments-view-icon': 'comment-discussion',
     'debug-breakpoint': 'debug-breakpoint',
     'debug-breakpoint-conditional': 'debug-breakpoint-conditional',
     'debug-breakpoint-conditional-disabled': 'debug-breakpoint-conditional-disabled',
-    'debug-breakpoint-conditional-verified': 'debug-breakpoint-conditional-unverified',
+    'debug-breakpoint-conditional-unverified': 'debug-breakpoint-conditional-unverified',
     'debug-breakpoint-data': 'debug-breakpoint-data',
     'debug-breakpoint-data-disabled': 'debug-breakpoint-data-disabled',
     'debug-breakpoint-data-unverified': 'debug-breakpoint-data-unverified',
@@ -173,9 +174,11 @@ const codeIconMap: Record<string, string> = {
     'remote-explorer-view-icon': 'remote-explorer',
     'review-comment-collapse': 'chevron-up',
     'run-view-icon': 'debug-alt',
+    'runtime-extensions-editor-label-icon': ' extensions',
     'search-clear-results': 'clear-all',
     'search-collapse-results': 'collapse-all',
     'search-details': 'ellipsis',
+    'search-editor-label-icon': 'search',
     'search-expand-results': 'expand-all',
     'search-hide-replace': 'chevron-right',
     'search-new-editor': 'new-file',
@@ -190,6 +193,7 @@ const codeIconMap: Record<string, string> = {
     'settings-add': 'add',
     'settings-discard': 'discard',
     'settings-edit': 'edit',
+    'settings-editor-label-icon': 'settings',
     'settings-folder-dropdown': 'triangle-down',
     'settings-group-collapsed': 'chevron-right',
     'settings-group-expanded': 'chevron-down',
@@ -229,24 +233,14 @@ const codeIconMap: Record<string, string> = {
     'watch-expressions-add-function-breakpoint': 'add',
     'watch-expressions-remove-all': 'close-all',
     'watch-view-icon': 'debug-alt',
-    'widget-close': 'close'
+    'widget-close': 'close',
+    'workspace-trust-editor-label-icon': ' shield'
 };
 
-const originalAsCSSSelector = ThemeIcon.asCSSSelector;
-const originalAsClassName = ThemeIcon.asClassName;
-const originalAsClassNameArray = ThemeIcon.asClassNameArray;
+const registry = getIconRegistry();
 
-function buildMappedIcon(icon: ThemeIcon): ThemeIcon {
-    const id = codeIconMap[icon.id] ?? icon.id;
-    const newIcon: ThemeIcon = {
-        ...icon,
-        id
-    };
-    return newIcon;
+for (const key in codeIconMap) {
+    if (codeIconMap.hasOwnProperty(key)) {
+        registry.registerIcon(key, { id: codeIconMap[key] }, key);
+    }
 }
-
-Object.assign(ThemeIcon, {
-    asCSSSelector: (icon: ThemeIcon) => originalAsCSSSelector(buildMappedIcon(icon)),
-    asClassName: (icon: ThemeIcon) => originalAsClassName(buildMappedIcon(icon)),
-    asClassNameArray: (icon: ThemeIcon) => originalAsClassNameArray(buildMappedIcon(icon))
-});

@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable } from 'inversify';
-import { MessageService, UNTITLED_SCHEME } from '../common';
+import { MessageService, UNTITLED_SCHEME, URI } from '../common';
 import { Navigatable, NavigatableWidget } from './navigatable-types';
 import { Saveable, SaveableSource, SaveOptions } from './saveable';
 import { Widget } from './widgets';
@@ -41,11 +41,12 @@ export class SaveResourceService {
      *
      * No op if the widget is not saveable.
      */
-    async save(widget: Widget | undefined, options?: SaveOptions): Promise<void> {
+    async save(widget: Widget | undefined, options?: SaveOptions): Promise<URI | undefined> {
         if (this.canSaveNotSaveAs(widget)) {
             await Saveable.save(widget, options);
+            return NavigatableWidget.getUri(widget);
         } else if (this.canSaveAs(widget)) {
-            await this.saveAs(widget, options);
+            return this.saveAs(widget, options);
         }
     }
 
@@ -53,7 +54,7 @@ export class SaveResourceService {
         return false;
     }
 
-    saveAs(sourceWidget: Widget & SaveableSource & Navigatable, options?: SaveOptions): Promise<void> {
+    saveAs(sourceWidget: Widget & SaveableSource & Navigatable, options?: SaveOptions): Promise<URI | undefined> {
         return Promise.reject('Unsupported: The base SaveResourceService does not support saveAs action.');
     }
 }

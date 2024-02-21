@@ -19,6 +19,9 @@
       "path": "../filesystem"
     },
     {
+      "path": "../navigator"
+    },
+    {
       "path": "../plugin-ext"
     },
     {

@@ -129,7 +129,7 @@ export class CustomEditorsExtImpl implements CustomEditorsExt {
         if (!entry) {
             throw new Error(`No provider found for '${viewType}'`);
         }
-        const panel = this.webviewExt.createWebviewPanel(viewType, title, {}, options, entry.plugin, handler);
+        const panel = this.webviewExt.createWebviewPanel(viewType, title, {}, options, entry.plugin, handler, false);
         const webviewOptions = WebviewImpl.toWebviewOptions(options, this.workspace, entry.plugin);
         await this.proxy.$createCustomEditorPanel(handler, title, widgetOpenerOptions, webviewOptions);
 

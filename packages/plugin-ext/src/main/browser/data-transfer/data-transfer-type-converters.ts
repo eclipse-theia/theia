@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { IDataTransferItem, VSDataTransfer } from '@theia/monaco-editor-core/esm/vs/base/common/dataTransfer';
+import { IDataTransferItem, IReadonlyVSDataTransfer } from '@theia/monaco-editor-core/esm/vs/base/common/dataTransfer';
 import { DataTransferDTO, DataTransferItemDTO } from '../../../common/plugin-api-rpc-model';
 import { URI } from '../../../plugin/types-impl';
 
@@ -24,7 +24,6 @@ export namespace DataTransferItem {
 
         if (mime === 'text/uri-list') {
             return {
-                id: item.id,
                 asString: '',
                 fileData: undefined,
                 uriListData: serializeUriList(stringValue),
@@ -33,9 +32,8 @@ export namespace DataTransferItem {
 
         const fileValue = item.asFile();
         return {
-            id: item.id,
             asString: stringValue,
-            fileData: fileValue ? { name: fileValue.name, uri: fileValue.uri } : undefined,
+            fileData: fileValue ? { id: fileValue.id, name: fileValue.name, uri: fileValue.uri } : undefined,
         };
     }
 
@@ -57,10 +55,10 @@ export namespace DataTransferItem {
 }
 
 export namespace DataTransfer {
-    export async function toDataTransferDTO(value: VSDataTransfer): Promise<DataTransferDTO> {
+    export async function toDataTransferDTO(value: IReadonlyVSDataTransfer): Promise<DataTransferDTO> {
         return {
             items: await Promise.all(
-                Array.from(value.entries())
+                Array.from(value)
                     .map(
                         async ([mime, item]) => [mime, await DataTransferItem.from(mime, item)]
                     )

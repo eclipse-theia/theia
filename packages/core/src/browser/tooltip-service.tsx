@@ -19,7 +19,7 @@ import * as React from 'react';
 import ReactTooltip from 'react-tooltip';
 import { ReactRenderer, RendererHost } from './widgets/react-renderer';
 import { CorePreferences } from './core-preferences';
-import { v4 } from 'uuid';
+import { generateUuid } from '../common/uuid';
 
 export const TooltipService = Symbol('TooltipService');
 
@@ -59,7 +59,7 @@ export class TooltipServiceImpl extends ReactRenderer implements TooltipService 
         @inject(RendererHost) @optional() host?: RendererHost
     ) {
         super(host);
-        this.tooltipId = v4();
+        this.tooltipId = generateUuid();
     }
 
     @postConstruct()

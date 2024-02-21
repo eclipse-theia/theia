@@ -34,7 +34,7 @@ import { isDefined } from '@theia/core/lib/common/types';
 import { TestingExt, PLUGIN_RPC_CONTEXT, TestingMain } from '../common/plugin-api-rpc';
 import { CommandRegistryImpl } from './command-registry';
 import { RPCProtocol } from '../common/rpc-protocol';
-import { v4 as uuidv4 } from 'uuid';
+import { generateUuid } from '@theia/core/lib/common/uuid';
 import * as Convert from './type-converters';
 import { TestItemImpl, TestItemCollection } from './test-item';
 import { AccumulatingTreeDeltaEmitter, TreeDelta } from '@theia/test/lib/common/tree-delta';
@@ -257,7 +257,7 @@ class TestRun implements theia.TestRun {
         readonly name: string,
         readonly isPersisted: boolean,
         isRunning: boolean) {
-        this.id = uuidv4();
+        this.id = generateUuid();
 
         this.tokenSource = new CancellationTokenSource();
         this.token = this.tokenSource.token;

@@ -19,7 +19,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { ApplicationShell, codicon, CommonCommands } from '@theia/core/lib/browser';
 import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookService } from '../service/notebook-service';
-import { CellEditType, CellKind } from '../../common';
+import { CellEditType, CellKind, NotebookCommand } from '../../common';
 import { NotebookKernelQuickPickService } from '../service/notebook-kernel-quick-pick-service';
 import { NotebookExecutionService } from '../service/notebook-execution-service';
 import { NotebookEditorWidget } from '../notebook-editor-widget';
@@ -32,13 +32,15 @@ export namespace NotebookCommands {
 
     export const ADD_NEW_MARKDOWN_CELL_COMMAND = Command.toDefaultLocalizedCommand({
         id: 'notebook.add-new-markdown-cell',
-        iconClass: codicon('add')
-    });
+        iconClass: codicon('add'),
+        tooltip: nls.localizeByDefault('Add Markdown Cell')
+    } as NotebookCommand);
 
     export const ADD_NEW_CODE_CELL_COMMAND = Command.toDefaultLocalizedCommand({
         id: 'notebook.add-new-code-cell',
-        iconClass: codicon('add')
-    });
+        iconClass: codicon('add'),
+        tooltip: nls.localizeByDefault('Add Code Cell')
+    } as NotebookCommand);
 
     export const SELECT_KERNEL_COMMAND = Command.toDefaultLocalizedCommand({
         id: 'notebook.selectKernel',

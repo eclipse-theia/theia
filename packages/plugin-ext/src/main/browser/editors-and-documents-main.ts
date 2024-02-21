@@ -30,8 +30,9 @@ import { EditorModelService } from './text-editor-model-service';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { TextEditorMain } from './text-editor-main';
-import { DisposableCollection, Emitter } from '@theia/core';
+import { DisposableCollection, Emitter, URI } from '@theia/core';
 import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
+import { SaveResourceService } from '@theia/core/lib/browser/save-resource-service';
 
 export class EditorsAndDocumentsMain implements Disposable {
 
@@ -41,7 +42,8 @@ export class EditorsAndDocumentsMain implements Disposable {
     private readonly textEditors = new Map<string, TextEditorMain>();
 
     private readonly modelService: EditorModelService;
-    private readonly editorService: EditorManager;
+    private readonly editorManager: EditorManager;
+    private readonly saveResourceService: SaveResourceService;
 
     private readonly onTextEditorAddEmitter = new Emitter<TextEditorMain[]>();
     private readonly onTextEditorRemoveEmitter = new Emitter<string[]>();
@@ -60,10 +62,11 @@ export class EditorsAndDocumentsMain implements Disposable {
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.EDITORS_AND_DOCUMENTS_EXT);
 
-        this.editorService = container.get(EditorManager);
+        this.editorManager = container.get(EditorManager);
         this.modelService = container.get(EditorModelService);
+        this.saveResourceService = container.get(SaveResourceService);
 
-        this.stateComputer = new EditorAndDocumentStateComputer(d => this.onDelta(d), this.editorService, this.modelService);
+        this.stateComputer = new EditorAndDocumentStateComputer(d => this.onDelta(d), this.editorManager, this.modelService);
         this.toDispose.push(this.stateComputer);
         this.toDispose.push(this.onTextEditorAddEmitter);
         this.toDispose.push(this.onTextEditorRemoveEmitter);
@@ -167,12 +170,31 @@ export class EditorsAndDocumentsMain implements Disposable {
         return this.textEditors.get(id);
     }
 
+    async save(uri: URI): Promise<URI | undefined> {
+        const editor = await this.editorManager.getByUri(uri);
+        if (!editor) {
+            return undefined;
+        }
+        return this.saveResourceService.save(editor);
+    }
+
+    async saveAs(uri: URI): Promise<URI | undefined> {
+        const editor = await this.editorManager.getByUri(uri);
+        if (!editor) {
+            return undefined;
+        }
+        if (!this.saveResourceService.canSaveAs(editor)) {
+            return undefined;
+        }
+        return this.saveResourceService.saveAs(editor);
+    }
+
     saveAll(includeUntitled?: boolean): Promise<boolean> {
         return this.modelService.saveAll(includeUntitled);
     }
 
     hideEditor(id: string): Promise<void> {
-        for (const editorWidget of this.editorService.all) {
+        for (const editorWidget of this.editorManager.all) {
             const monacoEditor = MonacoEditor.get(editorWidget);
             if (monacoEditor) {
                 if (id === new EditorSnapshot(monacoEditor).id) {

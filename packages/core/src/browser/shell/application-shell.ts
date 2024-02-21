@@ -132,15 +132,18 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
             getDynamicTabOptions());
         this.tabBarClasses.forEach(c => tabBar.addClass(c));
         renderer.tabBar = tabBar;
-        tabBar.disposed.connect(() => renderer.dispose());
         renderer.contextMenuPath = SHELL_TABBAR_CONTEXT_MENU;
         tabBar.currentChanged.connect(this.onCurrentTabChanged, this);
-        this.corePreferences.onPreferenceChanged(change => {
+        const prefChangeDisposable = this.corePreferences.onPreferenceChanged(change => {
             if (change.preferenceName === 'workbench.tab.shrinkToFit.enabled' ||
                 change.preferenceName === 'workbench.tab.shrinkToFit.minimumSize' ||
                 change.preferenceName === 'workbench.tab.shrinkToFit.defaultSize') {
                 tabBar.dynamicTabOptions = getDynamicTabOptions();
             }
+        });
+        tabBar.disposed.connect(() => {
+            prefChangeDisposable.dispose();
+            renderer.dispose();
         });
         this.onDidCreateTabBarEmitter.fire(tabBar);
         return tabBar;
@@ -1229,7 +1232,9 @@ export class ApplicationShell extends Widget {
         Saveable.apply(
             widget,
             () => this.widgets.filter((maybeSaveable): maybeSaveable is Widget & SaveableSource => !!Saveable.get(maybeSaveable)),
-            (toSave, options) => this.saveResourceService.save(toSave, options),
+            async (toSave, options) => {
+                await this.saveResourceService.save(toSave, options);
+            },
         );
         if (ApplicationShell.TrackableWidgetProvider.is(widget)) {
             for (const toTrack of widget.getTrackableWidgets()) {

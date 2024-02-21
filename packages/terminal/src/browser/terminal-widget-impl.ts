@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Terminal, RendererType } from 'xterm';
+import { Terminal } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { ContributionProvider, Disposable, Event, Emitter, ILogger, DisposableCollection, Channel, OS } from '@theia/core';
@@ -32,7 +32,7 @@ import {
     TerminalLocation
 } from './base/terminal-widget';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { TerminalPreferences, TerminalRendererType, isTerminalRendererType, DEFAULT_TERMINAL_RENDERER_TYPE, CursorStyle } from './terminal-preferences';
+import { TerminalPreferences } from './terminal-preferences';
 import URI from '@theia/core/lib/common/uri';
 import { TerminalService } from './base/terminal-service';
 import { TerminalSearchWidgetFactory, TerminalSearchWidget } from './search/terminal-search-widget';
@@ -161,7 +161,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
         this.term = new Terminal({
             cursorBlink: this.preferences['terminal.integrated.cursorBlinking'],
-            cursorStyle: this.getCursorStyle(),
+            cursorStyle: this.preferences['terminal.integrated.cursorStyle'] === 'line' ? 'bar' : this.preferences['terminal.integrated.cursorStyle'],
             cursorWidth: this.preferences['terminal.integrated.cursorWidth'],
             fontFamily: this.preferences['terminal.integrated.fontFamily'],
             fontSize: this.preferences['terminal.integrated.fontSize'],
@@ -172,7 +172,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             lineHeight: this.preferences['terminal.integrated.lineHeight'],
             scrollback: this.preferences['terminal.integrated.scrollback'],
             fastScrollSensitivity: this.preferences['terminal.integrated.fastScrollSensitivity'],
-            rendererType: this.getTerminalRendererType(this.preferences['terminal.integrated.rendererType']),
             theme: this.themeService.theme
         });
 
@@ -182,34 +181,12 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.initializeLinkHover();
 
         this.toDispose.push(this.preferences.onPreferenceChanged(change => {
-            const lastSeparator = change.preferenceName.lastIndexOf('.');
-            if (lastSeparator > 0) {
-                let preferenceName = change.preferenceName.substring(lastSeparator + 1);
-                let preferenceValue = change.newValue;
-
-                if (preferenceName === 'rendererType') {
-                    const newRendererType = preferenceValue as string;
-                    if (newRendererType !== this.getTerminalRendererType(newRendererType)) {
-                        // Given terminal renderer type is not supported or invalid
-                        preferenceValue = DEFAULT_TERMINAL_RENDERER_TYPE;
-                    }
-                } else if (preferenceName === 'cursorBlinking') {
-                    // Convert the terminal preference into a valid `xterm` option
-                    preferenceName = 'cursorBlink';
-                } else if (preferenceName === 'cursorStyle') {
-                    preferenceValue = this.getCursorStyle();
-                }
-                try {
-                    this.term.setOption(preferenceName, preferenceValue);
-                } catch (e) {
-                    console.debug(`xterm configuration: '${preferenceName}' with value '${preferenceValue}' is not valid.`);
-                }
-                this.needsResize = true;
-                this.update();
-            }
+            this.updateConfig();
+            this.needsResize = true;
+            this.update();
         }));
 
-        this.toDispose.push(this.themeService.onDidChange(() => this.term.setOption('theme', this.themeService.theme)));
+        this.toDispose.push(this.themeService.onDidChange(() => this.term.options.theme = this.themeService.theme));
         this.attachCustomKeyEventHandler();
         const titleChangeListenerDispose = this.term.onTitleChange((title: string) => {
             if (this.options.useServerTitle) {
@@ -314,25 +291,38 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         return this.terminalKind;
     }
 
-    /**
-     * Get the cursor style compatible with `xterm`.
-     * @returns CursorStyle
-     */
-    private getCursorStyle(): CursorStyle {
-        const value = this.preferences['terminal.integrated.cursorStyle'];
-        return value === 'line' ? 'bar' : value;
+    updateConfig(): void {
+        this.setCursorBlink(this.preferences.get('terminal.integrated.cursorBlinking'));
+        this.setCursorStyle(this.preferences.get('terminal.integrated.cursorStyle'));
+        this.setCursorWidth(this.preferences.get('terminal.integrated.cursorWidth'));
+        this.term.options.fontFamily = this.preferences.get('terminal.integrated.fontFamily');
+        this.term.options.fontSize = this.preferences.get('terminal.integrated.fontSize');
+        this.term.options.fontWeight = this.preferences.get('terminal.integrated.fontWeight');
+        this.term.options.fontWeightBold = this.preferences.get('terminal.integrated.fontWeightBold');
+        this.term.options.drawBoldTextInBrightColors = this.preferences.get('terminal.integrated.drawBoldTextInBrightColors');
+        this.term.options.letterSpacing = this.preferences.get('terminal.integrated.letterSpacing');
+        this.term.options.lineHeight = this.preferences.get('terminal.integrated.lineHeight');
+        this.term.options.scrollback = this.preferences.get('terminal.integrated.scrollback');
+        this.term.options.fastScrollSensitivity = this.preferences.get('terminal.integrated.fastScrollSensitivity');
     }
 
-    /**
-     * Returns given renderer type if it is valid and supported or default renderer otherwise.
-     *
-     * @param terminalRendererType desired terminal renderer type
-     */
-    private getTerminalRendererType(terminalRendererType?: string | TerminalRendererType): RendererType {
-        if (terminalRendererType && isTerminalRendererType(terminalRendererType)) {
-            return terminalRendererType;
+    private setCursorBlink(blink: boolean): void {
+        if (this.term.options.cursorBlink !== blink) {
+            this.term.options.cursorBlink = blink;
+            this.term.refresh(0, this.term.rows - 1);
         }
-        return DEFAULT_TERMINAL_RENDERER_TYPE;
+    }
+
+    private setCursorStyle(style: 'block' | 'underline' | 'bar' | 'line'): void {
+        if (this.term.options.cursorStyle !== style) {
+            this.term.options.cursorStyle = (style === 'line') ? 'bar' : style;
+        }
+    }
+
+    private setCursorWidth(width: number): void {
+        if (this.term.options.cursorWidth !== width) {
+            this.term.options.cursorWidth = width;
+        }
     }
 
     protected initializeLinkHover(): void {
@@ -670,16 +660,34 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }
         this.term.open(this.node);
 
+        interface ViewportType {
+            register(d: Disposable): void;
+            _refreshAnimationFrame: number | null;
+            _coreBrowserService: {
+                window: Window;
+            }
+        }
+
+        // Workaround for https://github.com/xtermjs/xterm.js/issues/4775. Can be removed for releases > 5.3.0
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const viewPort: ViewportType = (this.term as any)._core.viewport;
+        viewPort.register(Disposable.create(() => {
+            if (typeof viewPort._refreshAnimationFrame === 'number') {
+                viewPort._coreBrowserService.window.cancelAnimationFrame(viewPort._refreshAnimationFrame);
+            }
+        }));
+
         if (isFirefox) {
             // monkey patching intersection observer handling for secondary window support
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const renderService: any = (this.term as any)._core._renderService;
-            const originalFunc: (entry: IntersectionObserverEntry) => void = renderService._onIntersectionChange.bind(renderService);
+
+            const originalFunc: (entry: IntersectionObserverEntry) => void = renderService._handleIntersectionChange.bind(renderService);
             const replacement = function (entry: IntersectionObserverEntry): void {
                 if (entry.target.ownerDocument !== document) {
                     // in Firefox, the intersection observer always reports the widget as non-intersecting if the dom element
                     // is in a different document from when the IntersectionObserver started observing. Since we know
-                    // that the widget is always "visible" when in a secondary window, so we mark the entry as "intersecting"
+                    // that the widget is always "visible" when in a secondary window, so we refresh the rows ourselves
                     const patchedEvent: IntersectionObserverEntry = {
                         ...entry,
                         isIntersecting: true,
@@ -690,7 +698,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                 }
             };
 
-            renderService._onIntersectionChange = replacement;
+            renderService._handleIntersectionChange = replacement.bind(renderService);
         }
 
         if (this.initialData) {
@@ -698,13 +706,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }
         this.termOpened = true;
         this.initialData = '';
-
-        if (isFirefox) {
-            // The software scrollbars don't work with xterm.js, so we disable the scrollbar if we are on firefox.
-            if (this.term.element) {
-                (this.term.element.children.item(0) as HTMLElement).style.overflow = 'hidden';
-            }
-        }
     }
 
     write(data: string): void {
@@ -792,11 +793,13 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             return;
         }
         const geo = this.fitAddon.proposeDimensions();
-        const cols = geo.cols;
-        const rows = geo.rows - 1; // subtract one row for margin
-        this.term.resize(cols, rows);
+        if (geo) {
+            const cols = geo.cols;
+            const rows = geo.rows - 1; // subtract one row for margin
+            this.term.resize(cols, rows);
 
-        this.resizeTerminalProcess();
+            this.resizeTerminalProcess();
+        }
     }
 
     protected resizeTerminalProcess(): void {

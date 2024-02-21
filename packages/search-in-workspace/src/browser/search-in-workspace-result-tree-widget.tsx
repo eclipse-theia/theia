@@ -281,6 +281,79 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         return true;
     }
 
+    selectNextResult(): void {
+        if (!this.model.getFocusedNode()) {
+            return this.selectFirstResult();
+        }
+        let foundNextResult = false;
+        while (!foundNextResult) {
+            const nextNode = this.model.getNextNode();
+            if (!nextNode) {
+                return this.selectFirstResult();
+            } else if (SearchInWorkspaceResultLineNode.is(nextNode)) {
+                foundNextResult = true;
+                this.selectExpandOpenResultNode(nextNode);
+            } else {
+                this.model.selectNext();
+            }
+        }
+    }
+
+    selectPreviousResult(): void {
+        if (!this.model.getFocusedNode()) {
+            return this.selectLastResult();
+        }
+        let foundSelectedNode = false;
+        while (!foundSelectedNode) {
+            const prevNode = this.model.getPrevNode();
+            if (!prevNode) {
+                return this.selectLastResult();
+            } else if (SearchInWorkspaceResultLineNode.is(prevNode)) {
+                foundSelectedNode = true;
+                this.selectExpandOpenResultNode(prevNode);
+            } else if (prevNode.id === 'ResultTree') {
+                return this.selectLastResult();
+            } else {
+                this.model.selectPrev();
+            }
+        }
+    }
+
+    protected selectExpandOpenResultNode(node: SearchInWorkspaceResultLineNode): void {
+        this.model.expandNode(node.parent.parent);
+        this.model.expandNode(node.parent);
+        this.model.selectNode(node);
+        this.model.openNode(node);
+    }
+
+    protected selectFirstResult(): void {
+        for (const rootFolder of this.resultTree.values()) {
+            for (const file of rootFolder.children) {
+                for (const result of file.children) {
+                    if (SelectableTreeNode.is(result)) {
+                        return this.selectExpandOpenResultNode(result);
+                    }
+                }
+            }
+        }
+    }
+
+    protected selectLastResult(): void {
+        const rootFolders = Array.from(this.resultTree.values());
+        for (let i = rootFolders.length - 1; i >= 0; i--) {
+            const rootFolder = rootFolders[i];
+            for (let j = rootFolder.children.length - 1; j >= 0; j--) {
+                const file = rootFolder.children[j];
+                for (let k = file.children.length - 1; k >= 0; k--) {
+                    const result = file.children[k];
+                    if (SelectableTreeNode.is(result)) {
+                        return this.selectExpandOpenResultNode(result);
+                    }
+                }
+            }
+        }
+    }
+
     /**
      * Find matches for the given editor.
      * @param searchTerm the search term.

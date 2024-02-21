@@ -14,7 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { URI } from '@theia/core/shared/vscode-uri';
 import {
     TextEditorsMain,
     MAIN_RPC_CONTEXT,
@@ -40,12 +39,14 @@ import { TextEditorMain } from './text-editor-main';
 import { disposed } from '../../common/errors';
 import { toMonacoWorkspaceEdit } from './languages-main';
 import { MonacoBulkEditService } from '@theia/monaco/lib/browser/monaco-bulk-edit-service';
-import { MonacoEditorService } from '@theia/monaco/lib/browser/monaco-editor-service';
-import { theiaUritoUriComponents, UriComponents } from '../../common/uri-components';
+import { UriComponents } from '../../common/uri-components';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import * as monaco from '@theia/monaco-editor-core';
 import { ResourceEdit } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
 import { IDecorationRenderOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/editorCommon';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';
+import { URI } from '@theia/core';
 
 export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
 
@@ -59,7 +60,6 @@ export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
         private readonly documents: DocumentsMain,
         rpc: RPCProtocol,
         private readonly bulkEditService: MonacoBulkEditService,
-        private readonly monacoEditorService: MonacoEditorService,
     ) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.TEXT_EDITORS_EXT);
         this.toDispose.push(editorsAndDocuments);
@@ -131,8 +131,8 @@ export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
         const workspaceEdit = toMonacoWorkspaceEdit(dto);
         try {
             const edits = ResourceEdit.convert(workspaceEdit);
-            const { success } = await this.bulkEditService.apply(edits, { respectAutoSaveConfig: metadata?.isRefactoring });
-            return success;
+            const { isApplied } = await this.bulkEditService.apply(edits, { respectAutoSaveConfig: metadata?.isRefactoring });
+            return isApplied;
         } catch {
             return false;
         }
@@ -145,9 +145,9 @@ export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
         return Promise.resolve(this.editorsAndDocuments.getEditor(id)!.insertSnippet(template, ranges, opts));
     }
 
-    $registerTextEditorDecorationType(key: string, options: DecorationRenderOptions | IDecorationRenderOptions): void {
+    $registerTextEditorDecorationType(key: string, options: DecorationRenderOptions): void {
         this.injectRemoteUris(options);
-        this.monacoEditorService.registerDecorationType('Plugin decoration', key, options as IDecorationRenderOptions);
+        StandaloneServices.get(ICodeEditorService).registerDecorationType('Plugin decoration', key, options as IDecorationRenderOptions);
         this.toDispose.push(Disposable.create(() => this.$removeTextEditorDecorationType(key)));
     }
 
@@ -171,13 +171,13 @@ export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
 
     protected toRemoteUri(uri?: UriComponents): UriComponents | undefined {
         if (uri && uri.scheme === 'file') {
-            return theiaUritoUriComponents(this.fileEndpoint.withQuery(URI.revive(uri).toString()));
+            return this.fileEndpoint.withQuery(URI.fromComponents(uri).toString()).toComponents();
         }
         return uri;
     }
 
     $removeTextEditorDecorationType(key: string): void {
-        this.monacoEditorService.removeDecorationType(key);
+        StandaloneServices.get(ICodeEditorService).removeDecorationType(key);
     }
 
     $tryHideEditor(id: string): Promise<void> {
@@ -198,6 +198,14 @@ export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
         }
         this.editorsAndDocuments.getEditor(id)!.setDecorationsFast(key, ranges);
         return Promise.resolve();
+    }
+
+    $save(uri: UriComponents): PromiseLike<UriComponents | undefined> {
+        return this.editorsAndDocuments.save(URI.fromComponents(uri)).then(u => u?.toComponents());
+    }
+
+    $saveAs(uri: UriComponents): PromiseLike<UriComponents | undefined> {
+        return this.editorsAndDocuments.saveAs(URI.fromComponents(uri)).then(u => u?.toComponents());
     }
 
     $saveAll(includeUntitled?: boolean): Promise<boolean> {

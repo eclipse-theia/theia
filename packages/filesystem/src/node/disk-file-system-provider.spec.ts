@@ -25,8 +25,8 @@ import { equal, fail } from 'assert';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import * as temp from 'temp';
-import { v4 } from 'uuid';
-import { FilePermission, FileSystemProviderError, FileSystemProviderErrorCode } from '../common/files';
+import { generateUuid } from '@theia/core/lib/common/uuid';
+import { FilePermission, FileSystemProviderCapabilities, FileSystemProviderError, FileSystemProviderErrorCode } from '../common/files';
 import { DiskFileSystemProvider } from './disk-file-system-provider';
 import { bindFileSystemWatcherServer } from './filesystem-backend-module';
 
@@ -53,7 +53,7 @@ describe('disk-file-system-provider', () => {
     describe('stat', () => {
         it("should omit the 'permissions' property of the stat if the file can be both read and write", async () => {
             const tempDirPath = tracked.mkdirSync();
-            const tempFilePath = join(tempDirPath, `${v4()}.txt`);
+            const tempFilePath = join(tempDirPath, `${generateUuid()}.txt`);
             await fs.writeFile(tempFilePath, 'some content', { encoding: 'utf8' });
 
             let content = await fs.readFile(tempFilePath, { encoding: 'utf8' });
@@ -70,7 +70,7 @@ describe('disk-file-system-provider', () => {
 
         it("should set the 'permissions' property to `Readonly` if the file can be read but not write", async () => {
             const tempDirPath = tracked.mkdirSync();
-            const tempFilePath = join(tempDirPath, `${v4()}.txt`);
+            const tempFilePath = join(tempDirPath, `${generateUuid()}.txt`);
             await fs.writeFile(tempFilePath, 'readonly content', {
                 encoding: 'utf8',
             });
@@ -90,6 +90,39 @@ describe('disk-file-system-provider', () => {
 
             const stat = await fsProvider.stat(FileUri.create(tempFilePath));
             equal(stat.permissions, FilePermission.Readonly);
+        });
+    });
+
+    describe('delete', () => {
+        it('delete is able to delete folder', async () => {
+            const tempDirPath = tracked.mkdirSync();
+            const testFolder = join(tempDirPath, 'test');
+            const folderUri = FileUri.create(testFolder);
+            for (const recursive of [true, false]) {
+                // Note: useTrash = true fails on Linux
+                const useTrash = false;
+                if ((fsProvider.capabilities & FileSystemProviderCapabilities.Access) === 0 && useTrash) {
+                    continue;
+                }
+                await fsProvider.mkdir(folderUri);
+                if (recursive) {
+                    await fsProvider.writeFile(FileUri.create(join(testFolder, 'test.file')), Buffer.from('test'), { overwrite: false, create: true });
+                    await fsProvider.mkdir(FileUri.create(join(testFolder, 'subFolder')));
+                }
+                await fsProvider.delete(folderUri, { recursive, useTrash });
+            }
+        });
+
+        it('delete is able to delete file', async () => {
+            const tempDirPath = tracked.mkdirSync();
+            const testFile = join(tempDirPath, 'test.file');
+            const testFileUri = FileUri.create(testFile);
+            for (const recursive of [true, false]) {
+                for (const useTrash of [true, false]) {
+                    await fsProvider.writeFile(testFileUri, Buffer.from('test'), { overwrite: false, create: true });
+                    await fsProvider.delete(testFileUri, { recursive, useTrash });
+                }
+            }
         });
     });
 

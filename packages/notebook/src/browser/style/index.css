@@ -161,9 +161,20 @@
   flex-direction: column;
 }
 
+.theia-notebook-main-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.theia-notebook-scroll-container {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+}
+
 .theia-notebook-main-toolbar {
-  position: sticky;
-  top: 0;
   background: var(--theia-editor-background);
   display: flex;
   flex-direction: row;

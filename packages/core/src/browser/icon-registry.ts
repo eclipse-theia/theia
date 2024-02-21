@@ -19,6 +19,7 @@
  *--------------------------------------------------------------------------------------------*/
 // code copied and modified from https://github.com/Microsoft/vscode/blob/main/src/vs/platform/theme/common/iconRegistry.ts
 
+import { ThemeIcon } from '../common/theme';
 import { URI } from 'vscode-uri';
 
 export interface IconDefinition {
@@ -48,16 +49,6 @@ export interface IconFontSource {
     readonly location: URI;
     readonly format: string;
 }
-
-export interface ThemeIcon {
-    readonly id: string;
-    readonly color?: ThemeColor;
-}
-
-export interface ThemeColor {
-    id: string;
-}
-
 export const IconRegistry = Symbol('IconRegistry');
 export interface IconRegistry {
     /**
