@@ -98,7 +98,7 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
             extensionId: extension.id,
             extensionLocation: toUriComponents(extension.packageUri),
             label: label || extension.id,
-            preloads: rendererScripts ? rendererScripts.map(preload => ({ uri: toUriComponents(preload.uri.toString()), provides: preload.provides })) : []
+            preloads: rendererScripts?.map(preload => ({ uri: toUriComponents(preload.uri.toString()), provides: preload.provides })) ?? []
         };
 
         //

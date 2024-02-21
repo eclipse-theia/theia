@@ -98,7 +98,7 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
         }));
 
         if (this.editor) {
-            this.toDispose.push(this.editor.onPostKernelMessage(message => {
+            this.toDispose.push(this.editor.onDidPostKernelMessage(message => {
                 this.webviewWidget.sendMessage({
                     type: 'customKernelMessage',
                     message

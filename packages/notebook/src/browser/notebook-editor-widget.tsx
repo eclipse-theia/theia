@@ -46,6 +46,11 @@ export function createNotebookEditorWidgetContainer(parent: interfaces.Container
 
 const NotebookEditorProps = Symbol('NotebookEditorProps');
 
+interface RenderMessage {
+    rendererId: string;
+    message: unknown;
+}
+
 export interface NotebookEditorProps {
     uri: URI,
     readonly notebookType: string,
@@ -90,11 +95,14 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
     protected readonly onPostKernelMessageEmitter = new Emitter<unknown>();
     readonly onPostKernelMessage = this.onPostKernelMessageEmitter.event;
 
-    protected readonly onPostRendererMessageEmitter = new Emitter<{ rendererId: string; message: unknown }>();
+    protected readonly onDidPostKernelMessageEmitter = new Emitter<unknown>();
+    readonly onDidPostKernelMessage = this.onDidPostKernelMessageEmitter.event;
+
+    protected readonly onPostRendererMessageEmitter = new Emitter<RenderMessage>();
     readonly onPostRendererMessage = this.onPostRendererMessageEmitter.event;
 
-    protected readonly onDidRecieveKernelMessageEmitter = new Emitter<unknown>();
-    readonly onDidRecieveKernelMessage = this.onDidRecieveKernelMessageEmitter.event;
+    protected readonly onDidReceiveKernelMessageEmitter = new Emitter<unknown>();
+    readonly onDidRecieveKernelMessage = this.onDidReceiveKernelMessageEmitter.event;
 
     protected readonly renderers = new Map<CellKind, CellRenderer>();
     protected _model?: NotebookModel;
@@ -201,7 +209,7 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
     }
 
     postKernelMessage(message: unknown): void {
-        this.onPostKernelMessageEmitter.fire(message);
+        this.onDidPostKernelMessageEmitter.fire(message);
     }
 
     postRendererMessage(rendererId: string, message: unknown): void {
@@ -209,13 +217,14 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
     }
 
     recieveKernelMessage(message: unknown): void {
-        this.onDidRecieveKernelMessageEmitter.fire(message);
+        this.onDidReceiveKernelMessageEmitter.fire(message);
     }
 
     override dispose(): void {
         this.onDidChangeModelEmitter.dispose();
-        this.onPostKernelMessageEmitter.dispose();
-        this.onDidRecieveKernelMessageEmitter.dispose();
+        this.onDidPostKernelMessageEmitter.dispose();
+        this.onDidReceiveKernelMessageEmitter.dispose();
+        this.onPostRendererMessageEmitter.dispose();
         super.dispose();
     }
 }
