@@ -23,7 +23,7 @@ import { MultiKeyMap } from '@theia/core/lib/common/collections';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import * as theia from '@theia/plugin';
 import * as Converter from './type-converters';
-import { Disposable, EnvironmentVariableMutatorType, TerminalExitReason, ThemeIcon } from './types-impl';
+import { Disposable, EnvironmentVariableMutatorType, TerminalExitReason, ThemeIcon, URI } from './types-impl';
 import { NO_ROOT_URI, SerializableEnvironmentVariableCollection } from '@theia/terminal/lib/common/shell-terminal-protocol';
 import { ProvidedTerminalLink } from '../common/plugin-api-rpc-model';
 import { ThemeIcon as MonacoThemeIcon, ThemeColor as MonacoThemeColor } from '@theia/monaco-editor-core/esm/vs/base/common/themables';
@@ -68,7 +68,7 @@ export function getIconClass(
  * Provides high level terminal plugin api to use in the Theia plugins.
  * This service allow(with help proxy) create and use terminal emulator.
  */
- @injectable()
+@injectable()
 export class TerminalServiceExtImpl implements TerminalServiceExt {
     private readonly proxy: TerminalServiceMain;
 
@@ -162,7 +162,15 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
             if (ThemeIcon.is(iconPath)) {
                 options.iconPath = iconPath;
             } else if (typeof iconPath === 'string' || (typeof iconPath === 'object' && ('light' in iconPath || 'path' in iconPath))) {
-                options.iconPath = PluginIconPath.toUrl(iconPath, extension);
+                const converted = PluginIconPath.toUrl(iconPath, extension);
+                if (typeof converted === 'string') {
+                    options.iconPath = URI.parse(converted);
+                } else if (typeof converted === 'object' && ('light' in converted)) {
+                    options.iconPath = {
+                        light: URI.parse(converted.light),
+                        dark: URI.parse(converted.dark)
+                    };
+                }
             }
         }
 

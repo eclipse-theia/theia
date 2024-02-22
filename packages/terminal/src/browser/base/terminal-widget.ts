@@ -179,6 +179,11 @@ export abstract class TerminalWidget extends BaseWidget {
     abstract waitOnExit(waitOnExit?: boolean | string): void;
 }
 
+export interface TerminalIcon {
+    icon: string;
+    color?: string;
+}
+
 /**
  * Terminal widget options.
  */
@@ -193,7 +198,7 @@ export interface TerminalWidgetOptions {
     /**
      * icon class with or without color modifier
      */
-    readonly iconClass?: string | {icon: string, color: string};
+    readonly iconClass?: string | TerminalIcon;
 
     /**
      * Path to the executable shell. For example: `/bin/bash`, `bash`, `sh`.
