@@ -1,0 +1,73 @@
+name: Publish Release
+
+permissions:
+  id-token: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Release Type'
+        required: true
+        default: 'minor'
+        type: choice
+        options:
+          - 'minor'
+          - 'patch'
+
+jobs:
+  publish:
+    name: Perform Publishing
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Use Node.js 18.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Use Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install
+        shell: bash
+        run: |
+          yarn global add node-gyp
+          yarn --skip-integrity-check --network-timeout 100000
+        env:
+          NODE_OPTIONS: --max_old_space_size=4096
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9
+
+      - name: Publish NPM
+        shell: bash
+        run: |
+          yarn publish:latest -- ${{ inputs.release_type }}
+          yarn publish:check
+        env:
+          NPM_CONFIG_PROVENANCE: "true" # enable provenance check
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
+
+      - name: Get Actor User Data
+        uses: octokit/request-action@v2.x
+        id: actor_user_data
+        with:
+          route: GET /users/{user}
+          user: ${{ github.actor }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commiter: ${{ github.actor }} <${{ fromJson(steps.actor_user_data.outputs.data).email }}>
+          author: ${{ github.actor }} <${{ fromJson(steps.actor_user_data.outputs.data).email }}>
+          branch: bot/package-update
+          title: Package update for version ${{ env.NEXT_VERSION_NUMBER }}
+          commit-message: Package update for version ${{ env.NEXT_VERSION_NUMBER }}
+          body: Automated package update for Theia version ${{ env.NEXT_VERSION_NUMBER }}. Triggered by @${{ github.actor }}.

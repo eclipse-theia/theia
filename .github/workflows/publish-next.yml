@@ -1,5 +1,8 @@
 name: Publish Next
 
+permissions:
+  id-token: write
+
 on: workflow_dispatch
 
 jobs:
@@ -15,12 +18,12 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 18.x
-          registry-url: 'https://registry.npmjs.org'
+          registry-url: "https://registry.npmjs.org"
 
       - name: Use Python 3.11
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install
         shell: bash
@@ -36,4 +39,5 @@ jobs:
         run: |
           yarn publish:next
         env:
+          NPM_CONFIG_PROVENANCE: "true"
           NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
