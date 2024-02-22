@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "@electron/get": "^2.0.0",
+    "tslib": "^2.6.2",
     "unzipper": "^0.9.11"
   },
   "devDependencies": {

@@ -29,6 +29,7 @@
     "watch": "theiaext watch"
   },
   "dependencies": {
+    "tslib": "^2.6.2",
     "webpack": "^5.76.0"
   }
 }

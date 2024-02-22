@@ -5,7 +5,8 @@
   "dependencies": {
     "@theia/core": "1.46.0",
     "node-pty": "0.11.0-beta17",
-    "string-argv": "^0.1.1"
+    "string-argv": "^0.1.1",
+    "tslib": "^2.6.2"
   },
   "publishConfig": {
     "access": "public"

@@ -30,7 +30,8 @@
     "@theia/core": "1.46.0",
     "@theia/debug": "1.46.0",
     "@vscode/debugprotocol": "^1.51.0",
-    "long": "^4.0.0"
+    "long": "^4.0.0",
+    "tslib": "^2.6.2"
   },
   "devDependencies": {
     "@types/long": "^4.0.0"

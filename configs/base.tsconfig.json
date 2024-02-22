@@ -12,6 +12,7 @@
     "strictNullChecks": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
+    "importHelpers": true,
     "downlevelIteration": true,
     "resolveJsonModule": true,
     "module": "CommonJS",

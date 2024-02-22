@@ -7,7 +7,8 @@
   "dependencies": {
     "@theia/core": "1.46.0",
     "@theia/plugin-ext": "1.46.0",
-    "@theia/terminal": "1.46.0"
+    "@theia/terminal": "1.46.0",
+    "tslib": "^2.6.2"
   },
   "publishConfig": {
     "access": "public"
