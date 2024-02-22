@@ -146,7 +146,7 @@
      */
     function getDefaultScript(state) {
         return `
-const acquireVsCodeApi = (function() {
+globalThis.acquireVsCodeApi = (function() {
     const originalPostMessage = window.parent.postMessage.bind(window.parent);
     const originalConsole = {...console};
     const targetOrigin = '*';
@@ -198,7 +198,7 @@ const acquireVsCodeApi = (function() {
         });
     };
 })();
-const acquireTheiaApi = acquireVsCodeApi;
+globalThis.acquireTheiaApi = acquireVsCodeApi;
 delete window.parent;
 delete window.top;
 delete window.frameElement;        
