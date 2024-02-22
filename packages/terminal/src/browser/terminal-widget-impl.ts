@@ -166,17 +166,17 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
         if (this.options.iconClass) {
             const iconClass = this.options.iconClass;
-            if (typeof iconClass === 'object' && 'color' in iconClass) {
+            if (typeof iconClass === 'string') {
+                this.title.iconClass = iconClass;
+            } else {
                 const iconClasses: string[] = [];
                 iconClasses.push(iconClass.icon);
                 // TODO: Build different handling for URI icons.
-                if (this.isTerminalAnsiColor(iconClass.color)) {
+                if (iconClass.color && this.isTerminalAnsiColor(iconClass.color)) {
                     const color = this.getCodiconColor(iconClass.color);
                     iconClasses.push(color ? color : '');
                 }
                 this.title.iconClass = iconClasses.join(' ');
-            } else {
-                this.title.iconClass = iconClass;
             }
         }
 
@@ -343,7 +343,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.term.options.fastScrollSensitivity = this.preferences.get('terminal.integrated.fastScrollSensitivity');
     }
 
-    private isTerminalAnsiColor(color: string): boolean {
+    protected isTerminalAnsiColor(color: string): boolean {
         const colorId = color.substring(13);
         const colorName = colorId.charAt(0).toLowerCase() + colorId.slice(1);
         return colorName in this.themeService.theme;
@@ -356,7 +356,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
      * @param colorId the ThemeColor id
      * @returns the corresponding ansi class for the color.
      */
-    private getCodiconColor(colorId: string): string | undefined {
+    protected getCodiconColor(colorId: string): string | undefined {
         if (colorId?.startsWith('terminal.ansi')) {
             const colorClass = colorId.split('.')[1].split(/(?=[A-Z])/).join('-').toLocaleLowerCase();
             return colorClass + '-fg';
