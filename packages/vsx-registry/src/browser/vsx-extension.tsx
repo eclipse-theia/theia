@@ -145,7 +145,7 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
     }
 
     get uri(): URI {
-        return VSCodeExtensionUri.toUri(this.id);
+        return VSCodeExtensionUri.fromId(this.id);
     }
 
     get id(): string {
