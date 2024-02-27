@@ -49,13 +49,13 @@ export class DockerFileContribution implements ContainerCreationContribution {
                 buildargs: containerConfig.build?.args
             });
             // TODO probably have some console windows showing the output of the build
-            const imageId = await new Promise<string>((res, rej) => api.modem.followProgress(buildStream, (err, ouptuts) => {
+            const imageId = await new Promise<string>((res, rej) => api.modem.followProgress(buildStream, (err, outputs) => {
                 if (err) {
                     rej(err);
                 } else {
-                    for (let i = ouptuts.length - 1; i >= 0; i--) {
-                        if (ouptuts[i].aux?.ID) {
-                            res(ouptuts[i].aux.ID);
+                    for (let i = outputs.length - 1; i >= 0; i--) {
+                        if (outputs[i].aux?.ID) {
+                            res(outputs[i].aux.ID);
                             return;
                         }
                     }

@@ -20,10 +20,9 @@ import { RemoteConnection, RemoteExecOptions, RemoteExecResult, RemoteExecTester
 import { RemoteSetupResult, RemoteSetupService } from '@theia/remote/lib/electron-node/setup/remote-setup-service';
 import { RemoteConnectionService } from '@theia/remote/lib/electron-node/remote-connection-service';
 import { RemoteProxyServerProvider } from '@theia/remote/lib/electron-node/remote-proxy-server-provider';
-import { Emitter, Event, MessageService } from '@theia/core';
+import { Emitter, Event, generateUuid, MessageService } from '@theia/core';
 import { Socket } from 'net';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { v4 } from 'uuid';
 import * as Docker from 'dockerode';
 import { DockerContainerService } from './docker-container-service';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -104,7 +103,7 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
 
     async createContainerConnection(container: Docker.Container, docker: Docker, port: number): Promise<RemoteDockerContainerConnection> {
         return Promise.resolve(new RemoteDockerContainerConnection({
-            id: v4(),
+            id: generateUuid(),
             name: 'dev-container',
             type: 'container',
             docker,
@@ -197,7 +196,7 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
                 stderrBuffer += chunk.toString();
             });
             execution.modem.demuxStream(stream, stdout, stderr);
-            stream?.addListener('close', () => deferred.resolve({ stdout: stdoutBuffer.toString(), stderr: stderrBuffer.toString() }));
+            stream?.addListener('close', () => deferred.resolve({ stdout: stdoutBuffer, stderr: stderrBuffer }));
         } catch (e) {
             deferred.reject(e);
         }
@@ -214,7 +213,7 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
             const stream = await execution?.start({});
             stream.on('close', () => {
                 if (deferred.state === 'unresolved') {
-                    deferred.resolve({ stdout: stdoutBuffer.toString(), stderr: stderrBuffer.toString() });
+                    deferred.resolve({ stdout: stdoutBuffer, stderr: stderrBuffer });
                 }
             });
             const stdout = new PassThrough();

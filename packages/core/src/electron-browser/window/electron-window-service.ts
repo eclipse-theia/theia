@@ -21,11 +21,8 @@ import { ElectronMainWindowService } from '../../electron-common/electron-main-w
 import { ElectronWindowPreferences } from './electron-window-preferences';
 import { ConnectionCloseService } from '../../common/messaging/connection-management';
 import { FrontendIdProvider } from '../../browser/messaging/frontend-id-provider';
+import { WindowReloadOptions } from '../../browser/window/window-service';
 
-export interface WindowReloadOptions {
-    search?: WindowSearchParams,
-    hash?: string
-}
 @injectable()
 export class ElectronWindowService extends DefaultWindowService {
 

@@ -18,6 +18,11 @@ import { StopReason } from '../../common/frontend-application-state';
 import { Event } from '../../common/event';
 import { NewWindowOptions, WindowSearchParams } from '../../common/window';
 
+export interface WindowReloadOptions {
+    search?: WindowSearchParams,
+    hash?: string
+}
+
 /**
  * Service for opening new browser windows.
  */
@@ -35,7 +40,7 @@ export interface WindowService {
      * Opens a new default window.
      * - In electron and in the browser it will open the default window without a pre-defined content.
      */
-    openNewDefaultWindow(params?: { search?: WindowSearchParams, hash?: string }): void;
+    openNewDefaultWindow(params?: WindowReloadOptions): void;
 
     /**
      * Fires when the `window` unloads. The unload event is inevitable. On this event, the frontend application can save its state and release resource.
@@ -64,5 +69,5 @@ export interface WindowService {
     /**
      * Reloads the window according to platform.
      */
-    reload(params?: { search?: WindowSearchParams, hash?: string }): void;
+    reload(params?: WindowReloadOptions): void;
 }

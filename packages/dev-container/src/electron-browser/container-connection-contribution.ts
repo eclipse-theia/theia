@@ -19,6 +19,15 @@ import { AbstractRemoteRegistryContribution, RemoteRegistry } from '@theia/remot
 import { LastContainerInfo, RemoteContainerConnectionProvider } from '../electron-common/remote-container-connection-provider';
 import { RemotePreferences } from '@theia/remote/lib/electron-browser/remote-preferences';
 import { WorkspaceStorageService } from '@theia/workspace/lib/browser/workspace-storage-service';
+import { Command } from '@theia/core';
+
+export namespace RemoteContainerCommands {
+    export const REOPEN_IN_CONTAINER = Command.toLocalizedCommand({
+        id: 'dev-container:reopen-in-container',
+        label: 'Reopen in Container',
+        category: 'Dev Container'
+    }, 'theia/dev-container/connect');
+}
 
 const LAST_USED_CONTAINER = 'lastUsedContainer';
 @injectable()
@@ -34,11 +43,7 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
     private workspaceStorageService: WorkspaceStorageService;
 
     registerRemoteCommands(registry: RemoteRegistry): void {
-        registry.registerCommand({
-            id: 'dev-container:reopen-in-container',
-            label: 'Reopen in Container',
-            category: 'Dev Container'
-        }, {
+        registry.registerCommand(RemoteContainerCommands.REOPEN_IN_CONTAINER, {
             execute: () => this.openInContainer()
         });
 
