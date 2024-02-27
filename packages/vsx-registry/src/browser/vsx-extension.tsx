@@ -38,6 +38,7 @@ export const EXTENSIONS_CONTEXT_MENU: MenuPath = ['extensions_context_menu'];
 export namespace VSXExtensionsContextMenu {
     export const INSTALL = [...EXTENSIONS_CONTEXT_MENU, '1_install'];
     export const COPY = [...EXTENSIONS_CONTEXT_MENU, '2_copy'];
+    export const CONTRIBUTION = [...EXTENSIONS_CONTEXT_MENU, '3_contribution'];
 }
 
 @injectable()
@@ -494,6 +495,11 @@ export class VSXExtensionComponent<Props extends VSXExtensionComponent.Props = V
                     target: event.currentTarget,
                     position: 'right'
                 });
+            }}
+            onMouseUp={event => {
+                if (event.button === 2) {
+                    this.manage(event);
+                }
             }}
         >
             {iconUrl ?

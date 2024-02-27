@@ -39,6 +39,7 @@ import { SelectComponent } from '../widgets/select-component';
 import { createElement } from 'react';
 import { PreviewableWidget } from '../widgets/previewable-widget';
 import { EnhancedPreviewWidget } from '../widgets/enhanced-preview-widget';
+import { ContextKeyService } from '../context-key-service';
 
 /** The class name added to hidden content nodes, which are required to render vertical side bars. */
 const HIDDEN_CONTENT_CLASS = 'theia-TabBar-hidden-content';
@@ -102,7 +103,8 @@ export class TabBarRenderer extends TabBar.Renderer {
         protected readonly selectionService?: SelectionService,
         protected readonly commandService?: CommandService,
         protected readonly corePreferences?: CorePreferences,
-        protected readonly hoverService?: HoverService
+        protected readonly hoverService?: HoverService,
+        protected readonly contextKeyService?: ContextKeyService,
     ) {
         super();
         if (this.decoratorService) {
@@ -646,10 +648,12 @@ export class TabBarRenderer extends TabBar.Renderer {
                 this.selectionService.selection = NavigatableWidget.is(widget) ? { uri: widget.getResourceUri() } : widget;
             }
 
+            const contextKeyServiceOverlay = this.contextKeyService?.createOverlay([['isTerminalTab', widget && 'terminalId' in widget]]);
             this.contextMenuRenderer.render({
                 menuPath: this.contextMenuPath!,
                 anchor: event,
                 args: [event],
+                contextKeyService: contextKeyServiceOverlay,
                 // We'd like to wait until the command triggered by the context menu has been run, but this should let it get through the preamble, at least.
                 onHide: () => setTimeout(() => { if (this.selectionService) { this.selectionService.selection = oldSelection; } })
             });

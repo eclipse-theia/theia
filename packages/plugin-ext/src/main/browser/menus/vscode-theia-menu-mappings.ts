@@ -33,6 +33,7 @@ import { WEBVIEW_CONTEXT_MENU, WebviewWidget } from '../webview/webview';
 import { EDITOR_LINENUMBER_CONTEXT_MENU } from '@theia/editor/lib/browser/editor-linenumber-contribution';
 import { TEST_VIEW_CONTEXT_MENU } from '@theia/test/lib/browser/view/test-view-contribution';
 import { TEST_RUNS_CONTEXT_MENU } from '@theia/test/lib/browser/view/test-run-view-contribution';
+import { TerminalMenus } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
 
 export const PLUGIN_EDITOR_TITLE_MENU = ['plugin_editor/title'];
 export const PLUGIN_EDITOR_TITLE_RUN_MENU = ['plugin_editor/title/run'];
@@ -61,7 +62,10 @@ export const implementedVSCodeContributionPoints = [
     'testing/message/context',
     'view/item/context',
     'view/title',
-    'webview/context'
+    'webview/context',
+    'extension/context',
+    'terminal/context',
+    'terminal/title/context'
 ] as const;
 
 export type ContributionPoint = (typeof implementedVSCodeContributionPoints)[number];
@@ -89,7 +93,11 @@ export const codeToTheiaMappings = new Map<ContributionPoint, MenuPath[]>([
     ['timeline/item/context', [TIMELINE_ITEM_CONTEXT_MENU]],
     ['view/item/context', [VIEW_ITEM_CONTEXT_MENU]],
     ['view/title', [PLUGIN_VIEW_TITLE_MENU]],
-    ['webview/context', [WEBVIEW_CONTEXT_MENU]]
+    ['webview/context', [WEBVIEW_CONTEXT_MENU]],
+    ['extension/context', [['extensions_context_menu', '3_contribution']]],
+    ['terminal/context', [TerminalMenus.TERMINAL_CONTRIBUTIONS]],
+    ['terminal/title/context', [TerminalMenus.TERMINAL_TITLE_CONTRIBUTIONS]]
+
 ]);
 
 type CodeEditorWidget = EditorWidget | WebviewWidget;
