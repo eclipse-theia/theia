@@ -648,12 +648,12 @@ export class TabBarRenderer extends TabBar.Renderer {
                 this.selectionService.selection = NavigatableWidget.is(widget) ? { uri: widget.getResourceUri() } : widget;
             }
 
-            const contextKeyServiceOverly = this.contextKeyService?.createOverlay([['isTerminalTab', widget && '_terminalId' in widget]]);
+            const contextKeyServiceOverlay = this.contextKeyService?.createOverlay([['isTerminalTab', widget && 'terminalId' in widget]]);
             this.contextMenuRenderer.render({
                 menuPath: this.contextMenuPath!,
                 anchor: event,
                 args: [event],
-                contextKeyService: contextKeyServiceOverly,
+                contextKeyService: contextKeyServiceOverlay,
                 // We'd like to wait until the command triggered by the context menu has been run, but this should let it get through the preamble, at least.
                 onHide: () => setTimeout(() => { if (this.selectionService) { this.selectionService.selection = oldSelection; } })
             });
