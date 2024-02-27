@@ -26,7 +26,7 @@ import { environment } from '@theia/core/shared/@theia/application-package/lib/e
 import { WsRequestValidatorContribution } from '@theia/core/lib/node/ws-request-validators';
 import { MaybePromise } from '@theia/core/lib/common';
 import { ApplicationPackage } from '@theia/core/shared/@theia/application-package';
-import { BackendRemoteService } from '@theia/core/lib/node/backend-remote-service';
+import { BackendRemoteService } from '@theia/core/lib/node/remote/backend-remote-service';
 
 @injectable()
 export class PluginApiContribution implements BackendApplicationContribution, WsRequestValidatorContribution {

@@ -21,7 +21,7 @@ import * as decompress from 'decompress';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import { DependencyDownload, DirectoryDependencyDownload, RemoteNativeDependencyContribution } from './remote-native-dependency-contribution';
-import { RemotePlatform } from '../remote-types';
+import { RemotePlatform } from '@theia/core/lib/node/remote/remote-cli-contribution';
 
 const decompressTar = require('decompress-tar');
 const decompressTargz = require('decompress-targz');

@@ -83,6 +83,12 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
         return Array.from(this.deployedBackendPlugins.values());
     }
 
+    async getDeployedPlugins(): Promise<DeployedPlugin[]> {
+        await this.frontendPluginsMetadataDeferred.promise;
+        await this.backendPluginsMetadataDeferred.promise;
+        return [...this.deployedFrontendPlugins.values(), ...this.deployedBackendPlugins.values()];
+    }
+
     getDeployedPluginsById(pluginId: string): DeployedPlugin[] {
         const matches: DeployedPlugin[] = [];
         const handle = (plugins: Iterable<DeployedPlugin>): void => {

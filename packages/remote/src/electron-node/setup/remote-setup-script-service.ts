@@ -16,7 +16,7 @@
 
 import { OS } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { RemotePlatform } from '../remote-types';
+import { RemotePlatform } from '@theia/core/lib/node/remote/remote-cli-contribution';
 
 export interface RemoteScriptStrategy {
     exec(): string;

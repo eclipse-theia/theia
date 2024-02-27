@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2023 TypeFox and others.
+// Copyright (C) 2024 TypeFox and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,15 +14,19 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from '@theia/core/shared/inversify';
-import { RemoteCopyContribution, RemoteCopyRegistry } from '@theia/core/lib/node/remote/remote-copy-contribution';
+import { inject, injectable } from '@theia/core/shared/inversify';
+import { PluginDeployerParticipant, PluginDeployerStartContext } from '@theia/plugin-ext';
+import { VsxCli } from './vsx-cli';
+import { VSXExtensionUri } from '../common';
 
 @injectable()
-export class MainCopyContribution implements RemoteCopyContribution {
-    async copy(registry: RemoteCopyRegistry): Promise<void> {
-        registry.file('package.json');
-        await registry.glob('lib/backend/**/*.js');
-        await registry.directory('lib/frontend');
-        await registry.directory('lib/webview');
+export class VsxCliDeployerParticipant implements PluginDeployerParticipant {
+
+    @inject(VsxCli)
+    protected readonly vsxCli: VsxCli;
+
+    async onWillStart(context: PluginDeployerStartContext): Promise<void> {
+        const pluginUris = this.vsxCli.pluginsToInstall.map(id => VSXExtensionUri.toUri(id).toString());
+        context.userEntries.push(...pluginUris);
     }
 }

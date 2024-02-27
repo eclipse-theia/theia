@@ -17,7 +17,7 @@
 import { CliContribution } from '@theia/core/lib/node';
 import { injectable } from '@theia/core/shared/inversify';
 import { Arguments, Argv } from '@theia/core/shared/yargs';
-import { BackendRemoteService } from '@theia/core/lib/node/backend-remote-service';
+import { BackendRemoteService } from '@theia/core/lib/node/remote/backend-remote-service';
 
 export const REMOTE_START = 'remote';
 

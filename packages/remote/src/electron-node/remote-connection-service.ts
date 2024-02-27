@@ -18,8 +18,8 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { RemoteConnection } from './remote-types';
 import { Disposable } from '@theia/core';
 import { RemoteCopyService } from './setup/remote-copy-service';
-import { RemoteNativeDependencyService } from './setup/remote-native-dependency-service';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
+import { RemoteSetupService } from './setup/remote-setup-service';
 
 @injectable()
 export class RemoteConnectionService implements BackendApplicationContribution {
@@ -27,8 +27,9 @@ export class RemoteConnectionService implements BackendApplicationContribution {
     @inject(RemoteCopyService)
     protected readonly copyService: RemoteCopyService;
 
-    @inject(RemoteNativeDependencyService)
-    protected readonly nativeDependencyService: RemoteNativeDependencyService;
+    // Workaround for the fact that connection scoped services cannot directly inject these services.
+    @inject(RemoteSetupService)
+    protected readonly remoteSetupService: RemoteSetupService;
 
     protected readonly connections = new Map<string, RemoteConnection>();
 

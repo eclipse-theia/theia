@@ -41,7 +41,8 @@ import { bindNodeStopwatch, bindBackendStopwatchServer } from './performance';
 import { OSBackendProviderImpl } from './os-backend-provider';
 import { BackendRequestFacade } from './request/backend-request-facade';
 import { FileSystemLocking, FileSystemLockingImpl } from './filesystem-locking';
-import { BackendRemoteService } from './backend-remote-service';
+import { BackendRemoteService } from './remote/backend-remote-service';
+import { RemoteCliContribution } from './remote/remote-cli-contribution';
 
 decorate(injectable(), ApplicationPackage);
 
@@ -127,6 +128,7 @@ export const backendApplicationModule = new ContainerModule(bind => {
     bind(ProxyCliContribution).toSelf().inSingletonScope();
     bind(CliContribution).toService(ProxyCliContribution);
 
+    bindContributionProvider(bind, RemoteCliContribution);
     bind(BackendRemoteService).toSelf().inSingletonScope();
     bind(BackendRequestFacade).toSelf().inSingletonScope();
     bind(ConnectionHandler).toDynamicValue(

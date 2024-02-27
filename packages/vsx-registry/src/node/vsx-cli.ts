@@ -24,15 +24,24 @@ import * as fs from 'fs';
 export class VsxCli implements CliContribution {
 
     ovsxRouterConfig: OVSXRouterConfig | undefined;
+    pluginsToInstall: string[] = [];
 
     configure(conf: Argv<{}>): void {
         conf.option('ovsx-router-config', { description: 'JSON configuration file for the OVSX router client', type: 'string' });
+        conf.option('install-plugins', { description: 'Install plugins from OVSX using their IDs. Multiple plugins are separated by comma.', type: 'string' });
     }
 
     async setArguments(args: Record<string, unknown>): Promise<void> {
-        const { 'ovsx-router-config': ovsxRouterConfig } = args;
+        const {
+            'ovsx-router-config': ovsxRouterConfig,
+            'install-plugins': installPlugins
+        } = args;
         if (typeof ovsxRouterConfig === 'string') {
             this.ovsxRouterConfig = JSON.parse(await fs.promises.readFile(ovsxRouterConfig, 'utf8'));
+        }
+        if (typeof installPlugins === 'string') {
+            const pluginIds = installPlugins.split(',');
+            this.pluginsToInstall.push(...pluginIds);
         }
     }
 }

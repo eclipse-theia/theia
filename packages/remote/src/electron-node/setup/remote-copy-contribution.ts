@@ -16,36 +16,15 @@
 
 import { ApplicationPackage } from '@theia/core/shared/@theia/application-package';
 import { inject, injectable } from '@theia/core/shared/inversify';
+import { RemoteCopyRegistry, RemoteFile, RemoteCopyOptions } from '@theia/core/lib/node/remote/remote-copy-contribution';
 import { glob as globCallback } from 'glob';
 import { promisify } from 'util';
 import * as path from 'path';
-import { MaybePromise } from '@theia/core';
 
 const promiseGlob = promisify(globCallback);
 
-export const RemoteCopyContribution = Symbol('RemoteCopyContribution');
-
-export interface RemoteCopyContribution {
-    copy(registry: RemoteCopyRegistry): MaybePromise<void>
-}
-
-export interface RemoteCopyOptions {
-    /**
-     * The mode that the file should be set to once copied to the remote.
-     *
-     * Only relevant for POSIX-like systems
-     */
-    mode?: number;
-}
-
-export interface RemoteFile {
-    path: string
-    target: string
-    options?: RemoteCopyOptions;
-}
-
 @injectable()
-export class RemoteCopyRegistry {
+export class RemoteCopyRegistryImpl implements RemoteCopyRegistry {
 
     @inject(ApplicationPackage)
     protected readonly applicationPackage: ApplicationPackage;
@@ -57,15 +36,16 @@ export class RemoteCopyRegistry {
     }
 
     async glob(pattern: string, target?: string): Promise<void> {
+        return this.doGlob(pattern, this.applicationPackage.projectPath, target);
+    }
+
+    async doGlob(pattern: string, cwd: string, target?: string): Promise<void> {
         const projectPath = this.applicationPackage.projectPath;
-        const globResult = await promiseGlob(pattern, {
-            cwd: projectPath
-        });
-        const relativeFiles = globResult.map(file => path.relative(projectPath, file));
-        for (const file of relativeFiles) {
+        const globResult = await promiseGlob(pattern, { cwd, nodir: true });
+        for (const file of globResult) {
             const targetFile = this.withTarget(file, target);
             this.files.push({
-                path: file,
+                path: path.relative(projectPath, path.join(cwd, file)),
                 target: targetFile
             });
         }
@@ -81,7 +61,11 @@ export class RemoteCopyRegistry {
     }
 
     async directory(dir: string, target?: string): Promise<void> {
-        return this.glob(dir + '/**', target);
+        let absoluteDir = dir;
+        if (!path.isAbsolute(absoluteDir)) {
+            absoluteDir = path.join(this.applicationPackage.projectPath, dir);
+        }
+        return this.doGlob('**/*', absoluteDir, target ?? dir);
     }
 
     protected withTarget(file: string, target?: string): string {

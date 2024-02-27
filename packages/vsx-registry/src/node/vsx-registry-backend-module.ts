@@ -17,11 +17,14 @@
 import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core';
 import { CliContribution } from '@theia/core/lib/node';
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { PluginDeployerResolver } from '@theia/plugin-ext/lib/common/plugin-protocol';
+import { PluginDeployerParticipant, PluginDeployerResolver } from '@theia/plugin-ext/lib/common/plugin-protocol';
 import { VSXEnvironment, VSX_ENVIRONMENT_PATH } from '../common/vsx-environment';
 import { VsxCli } from './vsx-cli';
 import { VSXEnvironmentImpl } from './vsx-environment-impl';
 import { VSXExtensionResolver } from './vsx-extension-resolver';
+import { VsxCliDeployerParticipant } from './vsx-cli-deployer-participant';
+import { VsxRemoteCli } from './vsx-remote-cli';
+import { RemoteCliContribution } from '@theia/core/lib/node/remote/remote-cli-contribution';
 
 export default new ContainerModule(bind => {
     bind(VSXEnvironment).to(VSXEnvironmentImpl).inSingletonScope();
@@ -32,4 +35,8 @@ export default new ContainerModule(bind => {
         .inSingletonScope();
     bind(VSXExtensionResolver).toSelf().inSingletonScope();
     bind(PluginDeployerResolver).toService(VSXExtensionResolver);
+    bind(VsxCliDeployerParticipant).toSelf().inSingletonScope();
+    bind(PluginDeployerParticipant).toService(VsxCliDeployerParticipant);
+    bind(VsxRemoteCli).toSelf().inSingletonScope();
+    bind(RemoteCliContribution).toService(VsxRemoteCli);
 });
