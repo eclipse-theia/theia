@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import * as assert from 'assert/strict';
-import { firstTrue, waitForEvent } from './promise-util';
+import { Deferred, firstTrue, waitForEvent } from './promise-util';
 import { Emitter } from './event';
 import { CancellationError } from './cancellation';
 
@@ -35,7 +35,30 @@ describe('promise-util', () => {
         });
     });
 
+    type ExecutionHandler<T> = (resolve: (value: T) => void, reject: (error: unknown) => void) => void;
+
     describe('firstTrue', () => {
+        function createSequentialPromises<T>(...executionHandlers: ExecutionHandler<T>[]): Promise<T>[] {
+            const deferreds: Deferred<T>[] = [];
+            let i = 0;
+            for (let k = 0; k < executionHandlers.length; k++) {
+                deferreds.push(new Deferred<T>());
+            }
+
+            const resolveNext = () => {
+                if (i < executionHandlers.length) {
+                    executionHandlers[i](value => deferreds[i].resolve(value), error => deferreds[i].reject(error));
+                    i++;
+                }
+                if (i < executionHandlers.length) {
+                    setTimeout(resolveNext, 1);
+                }
+            };
+
+            setTimeout(resolveNext, 1);
+            return deferreds.map(deferred => deferred.promise);
+        }
+
         it('should resolve to false when the promises arg is empty', async () => {
             const actual = await firstTrue();
             assert.strictEqual(actual, false);
@@ -43,29 +66,36 @@ describe('promise-util', () => {
 
         it('should resolve to true when the first promise resolves to true', async () => {
             const signals: string[] = [];
-            const createPromise = (signal: string, timeout: number, result: boolean) =>
-                new Promise<boolean>(resolve => setTimeout(() => {
+
+            function createHandler(signal: string, result?: boolean): ExecutionHandler<boolean> {
+                return (resolve: (value: boolean) => void, reject: (error: unknown) => void) => {
                     signals.push(signal);
-                    resolve(result);
-                }, timeout));
-            const actual = await firstTrue(
-                createPromise('a', 10, false),
-                createPromise('b', 20, false),
-                createPromise('c', 30, true),
-                createPromise('d', 40, false),
-                createPromise('e', 50, true)
-            );
+                    if (typeof result !== 'undefined') {
+                        resolve(result);
+                    } else {
+                        reject(undefined);
+                    }
+                };
+            }
+
+            const actual = await firstTrue(...createSequentialPromises(
+                createHandler('a', false),
+                createHandler('b', false),
+                createHandler('c', true),
+                createHandler('d', false),
+                createHandler('e', true)
+            ));
             assert.strictEqual(actual, true);
             assert.deepStrictEqual(signals, ['a', 'b', 'c']);
         });
 
         it('should reject when one of the promises rejects', async () => {
-            await assert.rejects(firstTrue(
-                new Promise<boolean>(resolve => setTimeout(() => resolve(false), 10)),
-                new Promise<boolean>(resolve => setTimeout(() => resolve(false), 20)),
-                new Promise<boolean>((_, reject) => setTimeout(() => reject(new Error('my test error')), 30)),
-                new Promise<boolean>(resolve => setTimeout(() => resolve(true), 40)),
-            ), /Error: my test error/);
+            await assert.rejects(firstTrue(...createSequentialPromises<boolean>(
+                (resolve, _) => resolve(false),
+                resolve => resolve(false),
+                (_, reject) => reject(new Error('my test error')),
+                resolve => resolve(true),
+            )), /Error: my test error/);
         });
     });
 
