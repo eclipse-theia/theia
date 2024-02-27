@@ -260,8 +260,8 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
         const knownLocations = this.sourceLocations.get(id) ?? new Set();
         const maybeStoredLocations = entry.getValue('sourceLocations');
         const storedLocations = Array.isArray(maybeStoredLocations) && maybeStoredLocations.every(location => typeof location === 'string')
-            ? maybeStoredLocations.concat(entry.originalPath())
-            : [entry.originalPath()];
+            ? maybeStoredLocations.concat(entry.rootPath)
+            : [entry.rootPath];
         storedLocations.forEach(location => knownLocations.add(location));
         this.sourceLocations.set(id, knownLocations);
     }
