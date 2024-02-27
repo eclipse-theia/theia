@@ -16,8 +16,7 @@
 
 import { Command, CommandHandler, Emitter, Event } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { WindowService } from '@theia/core/lib/browser/window/window-service';
-import { WindowReloadOptions } from '@theia/core/lib/electron-browser/window/electron-window-service';
+import { WindowService, WindowReloadOptions } from '@theia/core/lib/browser/window/window-service';
 
 export const RemoteRegistryContribution = Symbol('RemoteRegistryContribution');
 
