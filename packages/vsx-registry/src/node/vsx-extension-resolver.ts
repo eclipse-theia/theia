@@ -51,13 +51,14 @@ export class VSXExtensionResolver implements PluginDeployerResolver {
         }
         let extension: VSXExtensionRaw | undefined;
         const client = await this.clientProvider();
-        if (options) {
-            console.log(`[${id}]: trying to resolve version ${options.version}...`);
-            const { extensions } = await client.query({ extensionId: id, extensionVersion: options.version, includeAllVersions: true });
+        const version = options?.version || id.version;
+        if (version) {
+            console.log(`[${id}]: trying to resolve version ${version}...`);
+            const { extensions } = await client.query({ extensionId: id.id, extensionVersion: version, includeAllVersions: true });
             extension = extensions[0];
         } else {
             console.log(`[${id}]: trying to resolve latest version...`);
-            const { extensions } = await client.query({ extensionId: id, includeAllVersions: true });
+            const { extensions } = await client.query({ extensionId: id.id, includeAllVersions: true });
             extension = this.vsxApiFilter.getLatestCompatibleExtension(extensions);
         }
         if (!extension) {
@@ -66,12 +67,12 @@ export class VSXExtensionResolver implements PluginDeployerResolver {
         if (extension.error) {
             throw new Error(extension.error);
         }
-        const resolvedId = id + '-' + extension.version;
+        const resolvedId = id.id + '-' + extension.version;
         const downloadUrl = extension.files.download;
-        console.log(`[${id}]: resolved to '${resolvedId}'`);
+        console.log(`[${id.id}]: resolved to '${resolvedId}'`);
 
         if (!options?.ignoreOtherVersions) {
-            const existingVersion = this.hasSameOrNewerVersion(id, extension);
+            const existingVersion = this.hasSameOrNewerVersion(id.id, extension);
             if (existingVersion) {
                 console.log(`[${id}]: is already installed with the same or newer version '${existingVersion}'`);
                 return;

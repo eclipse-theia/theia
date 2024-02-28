@@ -21,26 +21,24 @@ import URI from '@theia/core/lib/common/uri';
  * In practice, this means that it will be resolved and deployed by the Open-VSX system.
  */
 export namespace VSCodeExtensionUri {
-    export const VSCODE_PREFIX = 'vscode:extension/';
-    /**
-     * Should be used to prefix a plugin's ID to ensure that it is identified as a VSX Extension.
-     * @returns `vscode:extension/${id}`
-     */
-    export function toVsxExtensionUriString(id: string): string {
-        return `${VSCODE_PREFIX}${id}`;
-    }
-    export function toUri(name: string, namespace: string): URI;
-    export function toUri(id: string): URI;
-    export function toUri(idOrName: string, namespace?: string): URI {
-        if (typeof namespace === 'string') {
-            return new URI(toVsxExtensionUriString(`${namespace}.${idOrName}`));
+    export const SCHEME = 'vscode-extension';
+
+    export function fromId(id: string, version?: string): URI {
+        if (typeof version === 'string') {
+            return new URI().withScheme(VSCodeExtensionUri.SCHEME).withAuthority(id).withPath(`/${version}`);
         } else {
-            return new URI(toVsxExtensionUriString(idOrName));
+            return new URI().withScheme(VSCodeExtensionUri.SCHEME).withAuthority(id);
         }
     }
-    export function toId(uri: URI): string | undefined {
-        if (uri.scheme === 'vscode' && uri.path.dir.toString() === 'extension') {
-            return uri.path.base;
+
+    export function fromVersionedId(versionedId: string): URI {
+        const versionAndId = versionedId.split('@');
+        return fromId(versionAndId[0], versionAndId[1]);
+    }
+
+    export function toId(uri: URI): { id: string, version?: string } | undefined {
+        if (uri.scheme === VSCodeExtensionUri.SCHEME) {
+            return { id: uri.authority, version: uri.path.isRoot ? undefined : uri.path.base };
         }
         return undefined;
     }

@@ -36,7 +36,7 @@ export class VSXExtensionEditorManager extends WidgetOpenHandler<VSXExtensionEdi
         if (!id) {
             throw new Error('Invalid URI: ' + uri.toString());
         }
-        return { id };
+        return id;
     }
 
 }

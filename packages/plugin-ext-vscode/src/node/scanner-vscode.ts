@@ -91,7 +91,7 @@ export class VsCodePluginScanner extends TheiaPluginScanner implements PluginSca
                 // Iterate over the list of dependencies present, and add them to the collection.
                 dependency.forEach((dep: string) => {
                     const dependencyId = dep.toLowerCase();
-                    dependencies.set(dependencyId, VSCodeExtensionUri.toVsxExtensionUriString(dependencyId));
+                    dependencies.set(dependencyId, VSCodeExtensionUri.fromId(dependencyId).toString());
                 });
             }
         }
