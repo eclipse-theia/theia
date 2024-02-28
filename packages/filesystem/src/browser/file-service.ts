@@ -51,7 +51,7 @@ import {
     toFileOperationResult, toFileSystemProviderErrorCode,
     ResolveFileResult, ResolveFileResultWithMetadata,
     MoveFileOptions, CopyFileOptions, BaseStatWithMetadata, FileDeleteOptions, FileOperationOptions, hasAccessCapability, hasUpdateCapability,
-    hasFileReadStreamCapability, FileSystemProviderWithFileReadStreamCapability
+    hasFileReadStreamCapability, FileSystemProviderWithFileReadStreamCapability, ReadOnlyMessageFileSystemProvider
 } from '../common/files';
 import { BinaryBuffer, BinaryBufferReadable, BinaryBufferReadableStream, BinaryBufferReadableBufferedStream, BinaryBufferWriteableStream } from '@theia/core/lib/common/buffer';
 import { ReadableStream, isReadableStream, isReadableBufferedStream, transform, consumeStream, peekStream, peekReadable, Readable } from '@theia/core/lib/common/stream';
@@ -68,6 +68,7 @@ import { readFileIntoStream } from '../common/io';
 import { FileSystemWatcherErrorHandler } from './filesystem-watcher-error-handler';
 import { FileSystemUtils } from '../common/filesystem-utils';
 import { nls } from '@theia/core';
+import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 
 export interface FileOperationParticipant {
 
@@ -235,6 +236,15 @@ export interface FileSystemProviderCapabilitiesChangeEvent {
     scheme: string;
 }
 
+export interface FileSystemProviderReadOnlyMessageChangeEvent {
+     /** The affected file system provider for which this event was fired. */
+     provider: FileSystemProvider;
+     /** The uri for which the provider is registered */
+     scheme: string;
+     /** The new read only message */
+     message: MarkdownString | undefined;
+}
+
 /**
  * Represents the `FileSystemProviderActivation` event.
  * This event is fired by the {@link FileService} if it wants to activate the
@@ -342,6 +352,9 @@ export class FileService {
     private onDidChangeFileSystemProviderCapabilitiesEmitter = new Emitter<FileSystemProviderCapabilitiesChangeEvent>();
     readonly onDidChangeFileSystemProviderCapabilities = this.onDidChangeFileSystemProviderCapabilitiesEmitter.event;
 
+    private onDidChangeFileSystemProviderReadOnlyMessageEmitter = new Emitter<FileSystemProviderReadOnlyMessageChangeEvent>();
+    readonly onDidChangeFileSystemProviderReadOnlyMessage = this.onDidChangeFileSystemProviderReadOnlyMessageEmitter.event;
+
     private readonly providers = new Map<string, FileSystemProvider>();
     private readonly activations = new Map<string, Promise<FileSystemProvider>>();
 
@@ -364,6 +377,9 @@ export class FileService {
         providerDisposables.push(provider.onDidChangeFile(changes => this.onDidFilesChangeEmitter.fire(new FileChangesEvent(changes))));
         providerDisposables.push(provider.onFileWatchError(() => this.handleFileWatchError()));
         providerDisposables.push(provider.onDidChangeCapabilities(() => this.onDidChangeFileSystemProviderCapabilitiesEmitter.fire({ provider, scheme })));
+        if (ReadOnlyMessageFileSystemProvider.is(provider)) {
+            providerDisposables.push(provider.onDidChangeReadOnlyMessage(message => this.onDidChangeFileSystemProviderReadOnlyMessageEmitter.fire({ provider, scheme, message})));
+        }
 
         return Disposable.create(() => {
             this.onDidChangeFileSystemProviderRegistrationsEmitter.fire({ added: false, scheme, provider });
@@ -411,6 +427,14 @@ export class FileService {
      */
     canHandleResource(resource: URI): boolean {
         return this.providers.has(resource.scheme);
+    }
+
+    getReadOnlyMessage(resource: URI): MarkdownString | undefined {
+        const provider = this.providers.get(resource.scheme);
+        if (ReadOnlyMessageFileSystemProvider.is(provider)) {
+            return provider.readOnlyMessage;
+        }
+        return undefined;
     }
 
     /**

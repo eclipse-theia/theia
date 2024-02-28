@@ -27,6 +27,7 @@ import type { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-l
 import { ReadableStreamEvents } from '@theia/core/lib/common/stream';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { isObject } from '@theia/core/lib/common';
+import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 
 export const enum FileOperation {
     CREATE,
@@ -763,6 +764,18 @@ export interface FileSystemProviderWithUpdateCapability extends FileSystemProvid
 
 export function hasUpdateCapability(provider: FileSystemProvider): provider is FileSystemProviderWithUpdateCapability {
     return !!(provider.capabilities & FileSystemProviderCapabilities.Update);
+}
+
+export interface ReadOnlyMessageFileSystemProvider {
+    readOnlyMessage: MarkdownString | undefined;
+    readonly onDidChangeReadOnlyMessage: Event<MarkdownString | undefined>;
+}
+
+export namespace ReadOnlyMessageFileSystemProvider {
+    export function is(arg: unknown): arg is ReadOnlyMessageFileSystemProvider {
+        return isObject<ReadOnlyMessageFileSystemProvider>(arg)
+        && 'readOnlyMessage' in arg;
+    }
 }
 
 /**

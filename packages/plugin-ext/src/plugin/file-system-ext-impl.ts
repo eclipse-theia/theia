@@ -41,6 +41,7 @@ import { commonPrefixLength } from '@theia/core/lib/common/strings';
 import { CharCode } from '@theia/core/lib/common/char-code';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { Emitter } from '@theia/core/shared/vscode-languageserver-protocol';
+import { MarkdownString } from '../common/plugin-api-rpc-model';
 
 type IDisposable = vscode.Disposable;
 
@@ -223,7 +224,7 @@ export class FileSystemExtImpl implements FileSystemExt {
         this.onWillRegisterFileSystemProviderEmitter.dispose();
     }
 
-    registerFileSystemProvider(scheme: string, provider: vscode.FileSystemProvider, options: { isCaseSensitive?: boolean, isReadonly?: boolean } = {}) {
+    registerFileSystemProvider(scheme: string, provider: vscode.FileSystemProvider, options: { isCaseSensitive?: boolean, isReadonly?: boolean | MarkdownString } = {}) {
 
         if (this._usedSchemes.has(scheme)) {
             throw new Error(`a provider for the scheme '${scheme}' is already registered`);
@@ -252,7 +253,19 @@ export class FileSystemExtImpl implements FileSystemExt {
             capabilities += files.FileSystemProviderCapabilities.FileOpenReadWriteClose;
         }
 
-        this._proxy.$registerFileSystemProvider(handle, scheme, capabilities);
+        let readonlyMessage: MarkdownString | undefined;
+        if (options.isReadonly && MarkdownString.is(options.isReadonly)) {
+            readonlyMessage = {
+                value: options.isReadonly.value,
+                isTrusted: options.isReadonly.isTrusted,
+                supportThemeIcons: options.isReadonly.supportThemeIcons,
+                supportHtml: options.isReadonly.supportHtml,
+                baseUri: options.isReadonly.baseUri,
+                uris: options.isReadonly.uris
+            };
+        }
+
+        this._proxy.$registerFileSystemProvider(handle, scheme, capabilities, readonlyMessage);
 
         const subscription = provider.onDidChangeFile(event => {
             const mapped: IFileChangeDto[] = [];

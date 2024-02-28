@@ -738,7 +738,8 @@ export function createAPIFactory(
             registerTextDocumentContentProvider(scheme: string, provider: theia.TextDocumentContentProvider): theia.Disposable {
                 return workspaceExt.registerTextDocumentContentProvider(scheme, provider);
             },
-            registerFileSystemProvider(scheme: string, provider: theia.FileSystemProvider, options?: { isCaseSensitive?: boolean, isReadonly?: boolean }): theia.Disposable {
+            registerFileSystemProvider(scheme: string, provider: theia.FileSystemProvider, options?: { isCaseSensitive?: boolean, isReadonly?: boolean | MarkdownString}):
+                theia.Disposable {
                 return fileSystemExt.registerFileSystemProvider(scheme, provider, options);
             },
             getWorkspaceFolder(uri: theia.Uri): theia.WorkspaceFolder | undefined {

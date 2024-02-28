@@ -1984,7 +1984,7 @@ export interface IFileChangeDto {
 }
 
 export interface FileSystemMain {
-    $registerFileSystemProvider(handle: number, scheme: string, capabilities: files.FileSystemProviderCapabilities): void;
+    $registerFileSystemProvider(handle: number, scheme: string, capabilities: files.FileSystemProviderCapabilities, readonlyMessage?: MarkdownString): void;
     $unregisterProvider(handle: number): void;
     $onFileSystemChange(handle: number, resource: IFileChangeDto[]): void;
 

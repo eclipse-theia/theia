@@ -7593,7 +7593,7 @@ export module '@theia/plugin' {
          * @param options Immutable metadata about the provider.
          * @return A {@link Disposable disposable} that unregisters this provider when being disposed.
          */
-        export function registerFileSystemProvider(scheme: string, provider: FileSystemProvider, options?: { readonly isCaseSensitive?: boolean, readonly isReadonly?: boolean }): Disposable;
+        export function registerFileSystemProvider(scheme: string, provider: FileSystemProvider, options?: { readonly isCaseSensitive?: boolean, readonly isReadonly?: boolean | MarkdownString }): Disposable;
 
         /**
          * Returns the {@link WorkspaceFolder workspace folder} that contains a given uri.

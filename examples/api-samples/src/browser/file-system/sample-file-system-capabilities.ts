@@ -18,6 +18,7 @@ import { CommandContribution, CommandRegistry } from '@theia/core';
 import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
 import { RemoteFileSystemProvider } from '@theia/filesystem/lib/common/remote-file-system-provider';
 import { FileSystemProviderCapabilities } from '@theia/filesystem/lib/common/files';
+import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 
 @injectable()
 export class SampleFileSystemCapabilities implements CommandContribution {
@@ -37,6 +38,25 @@ export class SampleFileSystemCapabilities implements CommandContribution {
                 } else {
                     this.remoteFileSystemProvider['setCapabilities'](this.remoteFileSystemProvider.capabilities | FileSystemProviderCapabilities.Readonly);
                 }
+            }
+        });
+
+        commands.registerCommand({
+            id: 'addFileSystemReadonlyMessage',
+            label: 'Add a File System ReadonlyMessage for readonly'
+        }, {
+            execute: () => {
+                const readonlyMessage = new MarkdownStringImpl(`Added new **Markdown** string '+${Date.now()}`);
+                this.remoteFileSystemProvider['setReadOnlyMessage'](readonlyMessage);
+            }
+        });
+
+        commands.registerCommand({
+            id: 'removeFileSystemReadonlyMessage',
+            label: 'Remove File System ReadonlyMessage for readonly'
+        }, {
+            execute: () => {
+                this.remoteFileSystemProvider['setReadOnlyMessage'](undefined);
             }
         });
     }
