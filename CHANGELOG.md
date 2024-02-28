@@ -6,6 +6,7 @@
 
 ## v1.47.0 not yet released
 
+- [application-package] bumped the default supported API from `1.85.1` to `1.86.2` [#13429](https://github.com/eclipse-theia/theia/pull/13429) - contributed on behalf of STMicroelectronics
 - [filesystem] Implement readonly markdown message for file system providers [#13414]((<https://github.com/eclipse-theia/theia/pull/13414>) - contributed on behalf of STMicroelectronics
 - [plugin] Add command to install plugins from the command line [#13406](https://github.com/eclipse-theia/theia/issues/13406) - contributed on behalf of STMicroelectronics
 - [testing] support TestRunProfile onDidChangeDefault introduced in VS Code 1.86.0 [#13388](https://github.com/eclipse-theia/theia/pull/13388) - contributed on behalf of STMicroelectronics
