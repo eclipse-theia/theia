@@ -2186,6 +2186,9 @@ export interface TestingExt {
     /** Configures a test run config. */
     $onConfigureRunProfile(controllerId: string, profileId: string): void;
 
+    /** Sets the default on a given run profile */
+    $onDidChangeDefault(controllerId: string, profileId: string, isDefault: boolean): void;
+
     $onRunControllerTests(reqs: TestRunRequestDTO[]): void;
 
     /** Asks the controller to refresh its tests */

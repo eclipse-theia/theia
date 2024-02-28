@@ -417,6 +417,14 @@ export class TestingExtImpl implements TestingExt {
     }
 
     /** @inheritdoc */
+    $onDidChangeDefault(controllerId: string, profileId: string, isDefault: boolean): void {
+        const profile = this.controllersById.get(controllerId)?.getProfile(profileId);
+        if (profile) {
+            profile.doSetDefault(isDefault);
+        }
+    }
+
+    /** @inheritdoc */
     async $refreshTests(controllerId: string, token: CancellationToken): Promise<void> {
         await this.withController(controllerId).refreshHandler?.(token);
     }
@@ -483,8 +491,29 @@ export class TestRunProfile implements theia.TestRunProfile {
     @observableProperty('notifyPropertyChange')
     label: string;
 
-    @observableProperty('notifyPropertyChange')
-    isDefault: boolean;
+    _isDefault: boolean;
+
+    get isDefault(): boolean {
+        return this._isDefault;
+    }
+
+    set isDefault(isDefault: boolean) {
+        if (this.doSetDefault(isDefault)) {
+            this.proxy.$updateTestRunProfile(this.controllerId, this.profileId, { isDefault: isDefault });
+        }
+    }
+
+    doSetDefault(isDefault: boolean): boolean {
+       if (this._isDefault !== isDefault) {
+            this._isDefault = isDefault;
+            this.onDidChangeDefaultEmitter.fire(isDefault);
+            return true;
+        }
+        return false;
+    }
+
+    private onDidChangeDefaultEmitter = new Emitter<boolean>();
+    onDidChangeDefault = this.onDidChangeDefaultEmitter.event;
 
     @observableProperty('notifyTagChange')
     tag: theia.TestTag | undefined;

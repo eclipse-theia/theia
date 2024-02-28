@@ -195,7 +195,16 @@ function itemToPath(item: TestItem): string[] {
 class TestRunProfileImpl implements TestRunProfile {
 
     label: string;
-    isDefault: boolean;
+
+    private _isDefault: boolean;
+    set isDefault(isDefault: boolean) {
+        this._isDefault = isDefault;
+        this.proxy.$onDidChangeDefault(this.controllerId, this.id, isDefault);
+    }
+    get isDefault(): boolean {
+        return this._isDefault;
+    }
+
     tag: string;
     canConfigure: boolean;
 
@@ -205,7 +214,7 @@ class TestRunProfileImpl implements TestRunProfile {
         }
 
         if ('isDefault' in update) {
-            this.isDefault = update.isDefault!;
+            this._isDefault = update.isDefault!;
         }
 
         if ('tag' in update) {
