@@ -37,7 +37,7 @@ export class ScmDecorationsService {
         @inject(EditorManager) protected readonly editorManager: EditorManager,
         @inject(ResourceProvider) protected readonly resourceProvider: ResourceProvider
     ) {
-        const updateTasks = new Map<EditorWidget, () => void>();
+        const updateTasks = new Map<EditorWidget, { (): void; cancel(): void }>();
         this.editorManager.onCreated(editorWidget => {
             const { editor } = editorWidget;
             if (editor.uri.scheme !== 'file') {
@@ -48,6 +48,7 @@ export class ScmDecorationsService {
             updateTasks.set(editorWidget, updateTask);
             toDispose.push(editor.onDocumentContentChanged(() => updateTask()));
             editorWidget.disposed.connect(() => {
+                updateTask.cancel();
                 updateTasks.delete(editorWidget);
                 toDispose.dispose();
             });
@@ -90,7 +91,7 @@ export class ScmDecorationsService {
         }
     }
 
-    protected createUpdateTask(editor: TextEditor): () => void {
+    protected createUpdateTask(editor: TextEditor): { (): void; cancel(): void; } {
         return throttle(() => this.applyEditorDecorations(editor), 500);
     }
 }
