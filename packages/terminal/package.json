@@ -1,14 +1,14 @@
 {
   "name": "@theia/terminal",
-  "version": "1.46.0",
+  "version": "1.47.0",
   "description": "Theia - Terminal Extension",
   "dependencies": {
-    "@theia/core": "1.46.0",
-    "@theia/editor": "1.46.0",
-    "@theia/filesystem": "1.46.0",
-    "@theia/process": "1.46.0",
-    "@theia/variable-resolver": "1.46.0",
-    "@theia/workspace": "1.46.0",
+    "@theia/core": "1.47.0",
+    "@theia/editor": "1.47.0",
+    "@theia/filesystem": "1.47.0",
+    "@theia/process": "1.47.0",
+    "@theia/variable-resolver": "1.47.0",
+    "@theia/workspace": "1.47.0",
     "tslib": "^2.6.2",
     "xterm": "^5.3.0",
     "xterm-addon-fit": "^0.8.0",
@@ -49,7 +49,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.46.0"
+    "@theia/ext-scripts": "1.47.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
