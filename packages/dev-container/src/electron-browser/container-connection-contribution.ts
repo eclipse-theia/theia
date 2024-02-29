@@ -19,7 +19,8 @@ import { AbstractRemoteRegistryContribution, RemoteRegistry } from '@theia/remot
 import { LastContainerInfo, RemoteContainerConnectionProvider } from '../electron-common/remote-container-connection-provider';
 import { RemotePreferences } from '@theia/remote/lib/electron-browser/remote-preferences';
 import { WorkspaceStorageService } from '@theia/workspace/lib/browser/workspace-storage-service';
-import { Command } from '@theia/core';
+import { Command, QuickInputService } from '@theia/core';
+import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 
 export namespace RemoteContainerCommands {
     export const REOPEN_IN_CONTAINER = Command.toLocalizedCommand({
@@ -40,7 +41,13 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
     protected readonly remotePreferences: RemotePreferences;
 
     @inject(WorkspaceStorageService)
-    private workspaceStorageService: WorkspaceStorageService;
+    protected readonly workspaceStorageService: WorkspaceStorageService;
+
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
+
+    @inject(QuickInputService)
+    protected readonly quickInputService: QuickInputService;
 
     registerRemoteCommands(registry: RemoteRegistry): void {
         registry.registerCommand(RemoteContainerCommands.REOPEN_IN_CONTAINER, {
@@ -50,20 +57,41 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
     }
 
     async openInContainer(): Promise<void> {
-        const lastContainerInfo = await this.workspaceStorageService.getData<LastContainerInfo | undefined>(LAST_USED_CONTAINER);
+        const devcontainerFile = await this.getOrSelectDevcontainerFile();
+        if (!devcontainerFile) {
+            return;
+        }
+        const lastContainerInfoKey = `${LAST_USED_CONTAINER}:${devcontainerFile}`;
+        const lastContainerInfo = await this.workspaceStorageService.getData<LastContainerInfo | undefined>(lastContainerInfoKey);
 
         const connectionResult = await this.connectionProvider.connectToContainer({
             nodeDownloadTemplate: this.remotePreferences['remote.nodeDownloadTemplate'],
-            lastContainerInfo
+            lastContainerInfo,
+            devcontainerFile
         });
 
-        this.workspaceStorageService.setData<LastContainerInfo>(LAST_USED_CONTAINER, {
+        this.workspaceStorageService.setData<LastContainerInfo>(lastContainerInfoKey, {
             id: connectionResult.containerId,
-            port: connectionResult.containerPort,
             lastUsed: Date.now()
         });
 
         this.openRemote(connectionResult.port, false, connectionResult.workspacePath);
     }
 
+    async getOrSelectDevcontainerFile(): Promise<string | undefined> {
+        const devcontainerFiles = await this.connectionProvider.getDevContainerFiles();
+
+        if (devcontainerFiles.length === 1) {
+            return devcontainerFiles[0].path;
+        }
+
+        return (await this.quickInputService.pick(devcontainerFiles.map(file => ({
+            type: 'item',
+            label: file.name,
+            description: file.path,
+            file: file.path,
+        })), {
+            title: 'Select a devcontainer.json file'
+        }))?.file;
+    }
 }

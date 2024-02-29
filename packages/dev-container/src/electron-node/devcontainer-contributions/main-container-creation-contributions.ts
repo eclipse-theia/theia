@@ -17,6 +17,7 @@ import * as Docker from 'dockerode';
 import { injectable, interfaces } from '@theia/core/shared/inversify';
 import { ContainerCreationContribution } from '../docker-container-service';
 import { DevContainerConfiguration, DockerfileContainer, ImageContainer } from '../devcontainer-file';
+import { Path } from '@theia/core';
 
 export function registerContainerCreationContributions(bind: interfaces.Bind): void {
     bind(ContainerCreationContribution).to(ImageFileContribution).inSingletonScope();
@@ -43,7 +44,7 @@ export class DockerFileContribution implements ContainerCreationContribution {
         if (containerConfig.dockerFile || containerConfig.build?.dockerfile) {
             const dockerfile = (containerConfig.dockerFile ?? containerConfig.build?.dockerfile) as string;
             const buildStream = await api.buildImage({
-                context: containerConfig.context ?? containerConfig.location,
+                context: containerConfig.context ?? new Path(containerConfig.location as string).dir.fsPath(),
                 src: [dockerfile],
             } as Docker.ImageBuildContext, {
                 buildargs: containerConfig.build?.args

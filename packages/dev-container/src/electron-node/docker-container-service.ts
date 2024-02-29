@@ -17,11 +17,11 @@
 import { ContributionProvider, URI } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { WorkspaceServer } from '@theia/workspace/lib/common';
-import { parse } from 'jsonc-parser';
 import * as fs from '@theia/core/shared/fs-extra';
 import * as Docker from 'dockerode';
 import { LastContainerInfo } from '../electron-common/remote-container-connection-provider';
 import { DevContainerConfiguration } from './devcontainer-file';
+import { DevContainerFileService } from './dev-container-file-service';
 
 export const ContainerCreationContribution = Symbol('ContainerCreationContributions');
 
@@ -38,18 +38,15 @@ export class DockerContainerService {
     @inject(ContributionProvider) @named(ContainerCreationContribution)
     protected readonly containerCreationContributions: ContributionProvider<ContainerCreationContribution>;
 
-    async getOrCreateContainer(docker: Docker, lastContainerInfo?: LastContainerInfo): Promise<[Docker.Container, number]> {
-        let port = Math.floor(Math.random() * (49151 - 10000)) + 10000;
+    @inject(DevContainerFileService)
+    protected readonly devContainerFileService: DevContainerFileService;
+
+    async getOrCreateContainer(docker: Docker, devcontainerFile: string, lastContainerInfo?: LastContainerInfo): Promise<Docker.Container> {
         let container;
 
         const workspace = new URI(await this.workspaceServer.getMostRecentlyUsedWorkspace());
-        if (!workspace) {
-            throw new Error('No workspace');
-        }
 
-        const devcontainerFile = workspace.resolve('.devcontainer/devcontainer.json');
-
-        if (lastContainerInfo && fs.statSync(devcontainerFile.path.fsPath()).mtimeMs < lastContainerInfo.lastUsed) {
+        if (lastContainerInfo && fs.statSync(devcontainerFile).mtimeMs < lastContainerInfo.lastUsed) {
             try {
                 container = docker.getContainer(lastContainerInfo.id);
                 if ((await container.inspect()).State.Running) {
@@ -57,21 +54,19 @@ export class DockerContainerService {
                 } else {
                     await container.start();
                 }
-                port = lastContainerInfo.port;
             } catch (e) {
                 container = undefined;
                 console.warn('DevContainer: could not find last used container');
             }
         }
         if (!container) {
-            container = await this.buildContainer(docker, port, devcontainerFile, workspace);
+            container = await this.buildContainer(docker, devcontainerFile, workspace);
         }
-        return [container, port];
+        return container;
     }
 
-    protected async buildContainer(docker: Docker, port: number, devcontainerFile: URI, workspace: URI): Promise<Docker.Container> {
-        const devcontainerConfig = parse(await fs.readFile(devcontainerFile.path.fsPath(), 'utf-8').catch(() => '0')) as DevContainerConfiguration;
-        devcontainerConfig.location = devcontainerFile.path.dir.fsPath();
+    protected async buildContainer(docker: Docker, devcontainerFile: string, workspace: URI): Promise<Docker.Container> {
+        const devcontainerConfig = await this.devContainerFileService.getConfiguration(devcontainerFile);
 
         if (!devcontainerConfig) {
             // TODO add ability for user to create new config
@@ -80,13 +75,9 @@ export class DockerContainerService {
 
         const containerCreateOptions: Docker.ContainerCreateOptions = {
             Tty: true,
-            ExposedPorts: {
-                // [`${port}/tcp`]: {},
-            },
+            ExposedPorts: {},
             HostConfig: {
-                PortBindings: {
-                    // [`${port}/tcp`]: [{ HostPort: '0' }],
-                },
+                PortBindings: {},
                 Mounts: [{
                     Source: workspace.path.toString(),
                     Target: `/workspaces/${workspace.path.name}`,
@@ -101,8 +92,7 @@ export class DockerContainerService {
 
         // TODO add more config
         const container = await docker.createContainer(containerCreateOptions);
-        const start = await container.start();
-        console.log(start);
+        await container.start();
 
         return container;
     }

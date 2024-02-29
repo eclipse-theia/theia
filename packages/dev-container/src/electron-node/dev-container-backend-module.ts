@@ -21,6 +21,7 @@ import { RemoteContainerConnectionProvider, RemoteContainerConnectionProviderPat
 import { ContainerCreationContribution, DockerContainerService } from './docker-container-service';
 import { bindContributionProvider } from '@theia/core';
 import { registerContainerCreationContributions } from './devcontainer-contributions/main-container-creation-contributions';
+import { DevContainerFileService } from './dev-container-file-service';
 
 export const remoteConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {
     bindContributionProvider(bind, ContainerCreationContribution);
@@ -34,4 +35,6 @@ export const remoteConnectionModule = ConnectionContainerModule.create(({ bind, 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(DockerContainerService).toSelf().inSingletonScope();
     bind(ConnectionContainerModule).toConstantValue(remoteConnectionModule);
+
+    bind(DevContainerFileService).toSelf().inSingletonScope();
 });
