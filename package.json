@@ -110,8 +110,6 @@
   "theiaPluginsExcludeIds": [
     "ms-vscode.js-debug-companion",
     "vscode.extension-editing",
-    "vscode.git",
-    "vscode.git-base",
     "vscode.github",
     "vscode.github-authentication",
     "vscode.microsoft-authentication",

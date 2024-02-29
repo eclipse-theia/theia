@@ -14,10 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+
 // @ts-check
 describe('SCM', function () {
 
     const { assert } = chai;
+    const { fail } = require('assert');
 
     const Uri = require('@theia/core/lib/common/uri');
     const { ApplicationShell } = require('@theia/core/lib/browser/shell/application-shell');
@@ -25,6 +27,7 @@ describe('SCM', function () {
     const { ScmContribution } = require('@theia/scm/lib/browser/scm-contribution');
     const { ScmService } = require('@theia/scm/lib/browser/scm-service');
     const { ScmWidget } = require('@theia/scm/lib/browser/scm-widget');
+    const { CommandRegistry } = require('@theia/core/lib/common');
 
     /** @type {import('inversify').Container} */
     const container = window['theia'].container;
@@ -32,12 +35,18 @@ describe('SCM', function () {
     const scmContribution = container.get(ScmContribution);
     const shell = container.get(ApplicationShell);
     const service = container.get(ScmService);
+    const commandRegistry = container.get(CommandRegistry);
 
     /** @type {ScmWidget} */
     let scmWidget;
 
     /** @type {ScmService} */
     let scmService;
+
+    before((done) => {
+        commandRegistry.executeCommand('git.init');
+        done();
+    })
 
     beforeEach(async () => {
         await shell.leftPanelHandler.collapse();
@@ -125,6 +134,9 @@ describe('SCM', function () {
                 const foundRepository = scmService.findRepository(new Uri.default(rootUri));
                 assert.notEqual(foundRepository, undefined);
             }
+            else {
+                fail("Slected repository is undefined");
+            }
         });
 
         it('should not find a repository for an unknown uri', () => {
@@ -149,6 +161,9 @@ describe('SCM', function () {
                     const commit = await amendSupport.getLastCommit();
                     assert.notEqual(commit, undefined);
                 }
+            }
+            else {
+                fail("Slected repository is undefined");
             }
         });
 
