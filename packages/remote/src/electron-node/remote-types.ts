@@ -49,7 +49,7 @@ export interface RemoteConnection extends Disposable {
     localPort: number;
     remotePort: number;
     onDidDisconnect: Event<void>;
-    forwardOut(socket: net.Socket): void;
+    forwardOut(socket: net.Socket, port?: number): void;
 
     /**
      * execute a single command on the remote machine

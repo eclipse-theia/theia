@@ -188,12 +188,12 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
         this.remotePort = options.port;
     }
 
-    async forwardOut(socket: Socket): Promise<void> {
+    async forwardOut(socket: Socket, port?: number): Promise<void> {
         const node = `${this.remoteSetupResult.nodeDirectory}/bin/node`;
         const devContainerServer = `${this.remoteSetupResult.applicationDirectory}/backend/dev-container-server.js`;
         try {
             const ttySession = await this.container.exec({
-                Cmd: ['sh', '-c', `${node} ${devContainerServer} -target-port=${this.remotePort}`],
+                Cmd: ['sh', '-c', `${node} ${devContainerServer} -target-port=${port ?? this.remotePort}`],
                 AttachStdin: true, AttachStdout: true, AttachStderr: true
             });
 

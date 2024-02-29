@@ -1,0 +1,24 @@
+.port-table {
+  width: 100%;
+  margin: calc(var(--theia-ui-padding) * 2);
+  table-layout: fixed;
+}
+
+.port-table-header {
+  text-align: left;
+}
+
+.forward-port-button {
+  margin-left: 0;
+  width: 100%;
+}
+
+.button-cell {
+  display: flex;
+  padding-right: var(--theia-ui-padding);
+}
+
+.forwarded-address:hover {
+  cursor: pointer;
+  text-decoration: underline;
+}
