@@ -4,14 +4,55 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
-## v1.47.0 not yet released
+<!-- ## not yet released
 
-- [application-package] bumped the default supported API from `1.85.1` to `1.86.2` [#13429](https://github.com/eclipse-theia/theia/pull/13429) - contributed on behalf of STMicroelectronics
-- [filesystem] Implement readonly markdown message for file system providers [#13414]((<https://github.com/eclipse-theia/theia/pull/13414>) - contributed on behalf of STMicroelectronics
-- [plugin] Add command to install plugins from the command line [#13406](https://github.com/eclipse-theia/theia/issues/13406) - contributed on behalf of STMicroelectronics
-- [testing] support TestRunProfile onDidChangeDefault introduced in VS Code 1.86.0 [#13388](https://github.com/eclipse-theia/theia/pull/13388) - contributed on behalf of STMicroelectronics
+- [component] add here
 
 <a name="breaking_changes_not_yet_released">[Breaking Changes:](#breaking_changes_not_yet_released)</a>
+
+- [component] add here -->
+
+## v1.47.0 - 02/29/2024
+
+- [application-package] bumped the default supported API from `1.85.1` to `1.86.2` [#13429](https://github.com/eclipse-theia/theia/pull/13429) - contributed on behalf of STMicroelectronics
+- [core] added logic to show decorations in the editor tabs [#13371](https://github.com/eclipse-theia/theia/pull/13371)
+- [core] added ts-docs for several key utility classes [#13324](https://github.com/eclipse-theia/theia/pull/13324)
+- [core] fixed core localizations for electron [#13331](https://github.com/eclipse-theia/theia/pull/13331)
+- [core] fixed memory leak in `DockPanelRenderer` and `ToolbarAwareTabBar` [#13327](https://github.com/eclipse-theia/theia/pull/13327)
+- [core] fixed update of CompositeMenuNode properties [#13425](https://github.com/eclipse-theia/theia/pull/13425)
+- [core] improved title rendering on menu bar change [#13317](https://github.com/eclipse-theia/theia/pull/13317)
+- [core] updated code to use common uuid generator everywhere [#13255](https://github.com/eclipse-theia/theia/pull/13255)
+- [core] updated logic to use `tslib` in order to reduce bundle size [#13350](https://github.com/eclipse-theia/theia/pull/13350)
+- [core] upgraded msgpackr to 1.10.1 [#13365](https://github.com/eclipse-theia/theia/pull/13365) - contributed on behalf of STMicroelectronics
+- [debug] fixed issue with unexpected breakpoint in python [#12543](https://github.com/eclipse-theia/theia/pull/12543)
+- [documentation] extended custom plugin API documentation [#13358](https://github.com/eclipse-theia/theia/pull/13358)
+- [editor] improved readonly editor behaviour [#13403](https://github.com/eclipse-theia/theia/pull/13403)
+- [filesystem] fixed issue with non recursive folder deletion [#13361](https://github.com/eclipse-theia/theia/pull/13361)
+- [filesystem] implemented readonly markdown message for file system providers [#13414](https://github.com/eclipse-theia/theia/pull/13414) - contributed on behalf of STMicroelectronics
+- [monaco] upgraded Monaco to 1.83.1 [#13217](https://github.com/eclipse-theia/theia/pull/13217)
+- [notebook] added support for proposed notebook kernel messaging and preload contribution point [#13401](https://github.com/eclipse-theia/theia/pull/13401)
+- [notebook] fixed notebook renderer messaging [#13401](https://github.com/eclipse-theia/theia/pull/13401)
+- [notebook] fixed race condition in notebook kernel association [#13364](https://github.com/eclipse-theia/theia/pull/13364)
+- [notebook] improved logic to update notebook execution timer [#13366](https://github.com/eclipse-theia/theia/pull/13366)
+- [notebook] improved notebook scrolling behaviour [#13338](https://github.com/eclipse-theia/theia/pull/13338)
+- [notebook] improved styling for notebook toolbar items [#13334](https://github.com/eclipse-theia/theia/pull/13334)
+- [notebook] fixed scroll behaviour of Notebooks [#13430](https://github.com/eclipse-theia/theia/pull/13430)
+- [plugin] added command to install plugins from the command line [#13406](https://github.com/eclipse-theia/theia/issues/13406) - contributed on behalf of STMicroelectronics
+- [plugin] added logic to support `workspace.save(URI)` and `workspace.saveAs(URI)` [#13393](https://github.com/eclipse-theia/theia/pull/13393) - contributed on behalf of STMicroelectronics
+- [plugin] added support for `extension/context`, `terminal/context`, and `terminal/title/context` menu contribution points [#13226](https://github.com/eclipse-theia/theia/pull/13226)
+- [plugin] fixed custom editors asset loading [#13382](https://github.com/eclipse-theia/theia/pull/13382)
+- [plugin] fixed logic to use correct path for hosted plugin deployer handler [#13427](https://github.com/eclipse-theia/theia/pull/13427) - contributed on behalf of STMicroelectronics
+- [plugin] fixed regressions from headless plugins introduction [#13337](https://github.com/eclipse-theia/theia/pull/13337) - contributed on behalf of STMicroelectronics
+- [plugin] support TestRunProfile onDidChangeDefault introduced in VS Code 1.86.0 [#13388](https://github.com/eclipse-theia/theia/pull/13388) - contributed on behalf of STMicroelectronics
+- [plugin] updated `WorkspaceEdit` metadata typing [#13395](https://github.com/eclipse-theia/theia/pull/13395) - contributed on behalf of STMicroelectronics
+- [search-in-workspace] added logic to focus on next and previous search results [#12703](https://github.com/eclipse-theia/theia/pull/12703)
+- [task] fixed logic to configure tasks [#13367](https://github.com/eclipse-theia/theia/pull/13367) - contributed on behalf of STMicroelectronics
+- [terminal] updated to latest xterm version [#12691](https://github.com/eclipse-theia/theia/pull/12691)
+- [vsx-registry] added `--install-plugin` cli command [#13421](https://github.com/eclipse-theia/theia/pull/13421) - contributed on behalf of STMicroelectronics
+- [vsx-registry] added possibility to install vsix files from the explorer view [#13291](https://github.com/eclipse-theia/theia/pull/13291)
+
+<a name="breaking_changes_1.47.0">[Breaking Changes:](#breaking_changes_1.47.0)</a>
+
 - [monaco] Upgrade Monaco dependency to 1.83.1 [#13217](https://github.com/eclipse-theia/theia/pull/13217)- contributed on behalf of STMicroelectronics\
   There are a couple of breaking changes that come with this monaco update
   - Moved `ThemaIcon` and `ThemeColor` to the common folder
