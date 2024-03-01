@@ -22,3 +22,7 @@
   cursor: pointer;
   text-decoration: underline;
 }
+
+.port-edit-input-error {
+  outline-color: var(--theia-inputValidation-errorBorder);
+}

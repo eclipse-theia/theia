@@ -70,4 +70,15 @@ export class PortForwardingService {
             this.onDidChangePortsEmitter.fire();
         }
     }
+
+    isValidAddress(address: string): boolean {
+        const match = address.match(/^(.*:)?\d+$/);
+        if (!match) {
+            return false;
+        }
+
+        const port = parseInt(address.split(':')[1]);
+
+        return !this.forwardedPorts.some(p => p.localPort === port);
+    }
 }

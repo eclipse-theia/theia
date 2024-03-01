@@ -68,7 +68,7 @@ export class PortForwardingWidget extends ReactWidget {
                 </thead>
                 <tbody>
                     {this.portForwardingService.forwardedPorts.map(port => (
-                        <tr key={port.localPort}>
+                        <tr key={port.localPort ?? 'editing'}>
                             {this.renderPortColumn(port)}
                             {this.renderAddressColumn(port)}
                             <td></td>
@@ -101,22 +101,19 @@ export class PortForwardingWidget extends ReactWidget {
                 }} title={nls.localizeByDefault('Follow link') + ' (ctrl/cmd + click)'}>
                     {port.localPort ? address : ''}
                 </span>
-                <span className='codicon codicon-clippy action-label' title={nls.localizeByDefault('Copy Local Address')} onClick={() => {
-                    this.clipboardService.writeText(address);
-                }}></span>
+                {
+                    port.localPort &&
+                    <span className='codicon codicon-clippy action-label' title={nls.localizeByDefault('Copy Local Address')} onClick={() => {
+                        this.clipboardService.writeText(address);
+                    }}></span>
+                }
             </div>
         </td>;
     }
 
     protected renderPortColumn(port: ForwardedPort): ReactNode {
         return port.editing ?
-            <td><input className='theia-input forward-port-button' autoFocus defaultValue={port.address ? `${port.address}:${port.localPort}` : port.localPort ?? ''}
-                placeholder={nls.localizeByDefault('Port number or address (eg. 3000 or 10.10.10.10:2000).')}
-                onKeyDown={e => {
-                    if (e.key === 'Enter') {
-                        this.portForwardingService.updatePort(port, e.currentTarget.value);
-                    }
-                }}></input></td> :
+            <td><PortEditingInput port={port} service={this.portForwardingService} /></td> :
             <td>
                 <div className='button-cell'>
                     <span style={{ flexGrow: 1 }}>{port.localPort}</span>
@@ -127,5 +124,15 @@ export class PortForwardingWidget extends ReactWidget {
                 </div>
             </td>;
     }
+
+}
+
+function PortEditingInput({ port, service }: { port: ForwardedPort, service: PortForwardingService }): React.JSX.Element {
+    const [error, setError] = React.useState(false);
+    return <input className={`theia-input forward-port-button${error ? ' port-edit-input-error' : ''}`} port-edit-input-error={error}
+        autoFocus defaultValue={port.address ? `${port.address}:${port.localPort}` : port.localPort ?? ''}
+        placeholder={nls.localizeByDefault('Port number or address (eg. 3000 or 10.10.10.10:2000).')}
+        onKeyDown={e => e.key === 'Enter' && !error && service.updatePort(port, e.currentTarget.value)}
+        onKeyUp={e => setError(!service.isValidAddress(e.currentTarget.value))}></input>;
 
 }
