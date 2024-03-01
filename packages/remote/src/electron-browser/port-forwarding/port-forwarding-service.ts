@@ -77,7 +77,7 @@ export class PortForwardingService {
             return false;
         }
 
-        const port = parseInt(address.split(':')[1]);
+        const port = parseInt(address.includes(':') ? address.split(':')[1] : address);
 
         return !this.forwardedPorts.some(p => p.localPort === port);
     }
