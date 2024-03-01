@@ -118,7 +118,7 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
         return this.devContainerFileService.getAvailableFiles();
     }
 
-    async createContainerConnection(container: Docker.Container, docker: Docker, port: number): Promise<RemoteDockerContainerConnection> {
+    async createContainerConnection(container: Docker.Container, docker: Docker): Promise<RemoteDockerContainerConnection> {
         return Promise.resolve(new RemoteDockerContainerConnection({
             id: generateUuid(),
             name: 'dev-container',
@@ -140,7 +140,6 @@ export interface RemoteContainerConnectionOptions {
     type: string;
     docker: Docker;
     container: Docker.Container;
-    port: number;
 }
 
 interface ContainerTerminalSession {
@@ -185,7 +184,6 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
 
         this.docker = options.docker;
         this.container = options.container;
-        this.remotePort = options.port;
     }
 
     async forwardOut(socket: Socket, port?: number): Promise<void> {
