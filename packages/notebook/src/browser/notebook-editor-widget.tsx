@@ -39,7 +39,6 @@ export function createNotebookEditorWidgetContainer(parent: interfaces.Container
     const child = parent.createChild();
 
     child.bind(NotebookEditorProps).toConstantValue(props);
-    child.bind(NotebookMainToolbarRenderer).toSelf().inSingletonScope();
     child.bind(NotebookEditorWidget).toSelf();
 
     return child;

@@ -44,6 +44,7 @@ import { NotebookRendererMessagingService } from './service/notebook-renderer-me
 import { NotebookColorContribution } from './contributions/notebook-color-contribution';
 import { NotebookCellContextManager } from './service/notebook-cell-context-manager';
 import { NotebookContextManager } from './service/notebook-context-manager';
+import { NotebookMainToolbarRenderer } from './view/notebook-main-toolbar';
 
 export default new ContainerModule(bind => {
     bind(NotebookColorContribution).toSelf().inSingletonScope();
@@ -81,6 +82,7 @@ export default new ContainerModule(bind => {
 
     bind(NotebookCodeCellRenderer).toSelf().inSingletonScope();
     bind(NotebookMarkdownCellRenderer).toSelf().inSingletonScope();
+    bind(NotebookMainToolbarRenderer).toSelf().inSingletonScope();
 
     bind(NotebookContextManager).toSelf();
 
