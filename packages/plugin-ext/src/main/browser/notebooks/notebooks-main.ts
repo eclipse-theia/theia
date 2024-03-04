@@ -66,6 +66,7 @@ export class NotebooksMainImpl implements NotebooksMain {
                 if (arg instanceof NotebookModel) {
                     return arg.uri;
                 }
+                return arg;
             }
         });
     }
