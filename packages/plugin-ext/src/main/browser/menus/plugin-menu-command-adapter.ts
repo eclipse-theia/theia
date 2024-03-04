@@ -22,7 +22,7 @@ import { TreeWidgetSelection } from '@theia/core/lib/browser/tree/tree-widget-se
 import { ScmRepository } from '@theia/scm/lib/browser/scm-repository';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { DirtyDiffWidget } from '@theia/scm/lib/browser/dirty-diff/dirty-diff-widget';
-import { ChangeRangeMapping, LineRange, NormalizedEmptyLineRange } from '@theia/scm/lib/browser/dirty-diff/diff-computer';
+import { RangeMapping, LineRange, NormalizedEmptyLineRange } from '@theia/scm/lib/browser/dirty-diff/diff-computer';
 import { IChange } from '@theia/monaco-editor-core/esm/vs/editor/common/diff/legacyLinesDiffComputer';
 import { TimelineItem } from '@theia/timeline/lib/common/timeline-model';
 import { ScmCommandArg, TimelineCommandArg, TreeViewItemReference } from '../../../common';
@@ -236,7 +236,7 @@ export class PluginMenuCommandAdapter implements MenuCommandAdapter {
     protected toScmChangeArgs(...args: any[]): any[] {
         const arg = args[0];
         if (arg instanceof DirtyDiffWidget) {
-            const toIChange = (change: ChangeRangeMapping): IChange => {
+            const toIChange = (change: RangeMapping): IChange => {
                 const convert = (range: LineRange | NormalizedEmptyLineRange): [number, number] => {
                     let startLineNumber;
                     let endLineNumber;
