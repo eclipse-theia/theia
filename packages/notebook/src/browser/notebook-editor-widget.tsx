@@ -146,7 +146,6 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
         this.renderers.set(CellKind.Markup, this.markdownCellRenderer);
         this.renderers.set(CellKind.Code, this.codeCellRenderer);
         this._ready.resolve(this.waitForData());
-
     }
 
     protected async waitForData(): Promise<NotebookModel> {
