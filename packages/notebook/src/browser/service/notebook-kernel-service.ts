@@ -253,7 +253,6 @@ export class NotebookKernelService {
     getSelectedNotebookKernel(notebook: NotebookTextModelLike): NotebookKernel | undefined {
         const selectedId = this.notebookBindings[`${notebook.viewType}/${notebook.uri}`];
         return selectedId ? this.kernels.get(selectedId)?.kernel : undefined;
-
     }
 
     selectKernelForNotebook(kernel: NotebookKernel | undefined, notebook: NotebookTextModelLike): void {
@@ -267,7 +266,6 @@ export class NotebookKernelService {
             }
             this.storageService.setData(NOTEBOOK_KERNEL_BINDING_STORAGE_KEY, this.notebookBindings);
             this.onDidChangeSelectedNotebookKernelBindingEmitter.fire({ notebook: notebook.uri, oldKernel, newKernel: kernel?.id });
-
         }
     }
 
