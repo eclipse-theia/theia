@@ -42,14 +42,6 @@ import { CancellationToken, Event } from '@theia/core';
 import { MonacoColorRegistry } from './monaco-color-registry';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { IStandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
-import {
-    activeContrastBorder, asCssVariable, pickerGroupBorder, pickerGroupForeground, quickInputBackground, quickInputForeground, quickInputListFocusBackground,
-    quickInputListFocusForeground, quickInputListFocusIconForeground, quickInputTitleBackground, widgetBorder, widgetShadow
-} from '@theia/monaco-editor-core/esm/vs/platform/theme/common/colorRegistry';
-
-import {
-    defaultButtonStyles, defaultCountBadgeStyles, defaultInputBoxStyles, defaultKeybindingLabelStyles, defaultProgressBarStyles, defaultToggleStyles, getListStyles
-} from '@theia/monaco-editor-core/esm/vs/platform/theme/browser/defaultStyles';
 
 // Copied from @vscode/src/vs/base/parts/quickInput/browser/quickInputList.ts
 export interface IListElement {
@@ -230,34 +222,89 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
     // Keep the styles up to date with https://github.com/microsoft/vscode/blob/7888ff3a6b104e9e2e3d0f7890ca92dd0828215f/src/vs/platform/quickinput/browser/quickInput.ts#L171.
     private computeStyles(): IQuickInputStyles {
         return {
-            widget: {
-                quickInputBackground: asCssVariable(quickInputBackground),
-                quickInputForeground: asCssVariable(quickInputForeground),
-                quickInputTitleBackground: asCssVariable(quickInputTitleBackground),
-                widgetBorder: asCssVariable(widgetBorder),
-                widgetShadow: asCssVariable(widgetShadow),
+            toggle: {
+                inputActiveOptionBorder: this.colorRegistry.toCssVariableName('inputOption.activeBorder'),
+                inputActiveOptionForeground: this.colorRegistry.toCssVariableName('inputOption.activeForeground'),
+                inputActiveOptionBackground: this.colorRegistry.toCssVariableName('inputOption.activeBackground')
             },
-            inputBox: defaultInputBoxStyles,
-            toggle: defaultToggleStyles,
-            countBadge: defaultCountBadgeStyles,
-            button: defaultButtonStyles,
-            progressBar: defaultProgressBarStyles,
-            keybindingLabel: defaultKeybindingLabelStyles,
-            list: getListStyles({
-                listBackground: quickInputBackground,
-                listFocusBackground: quickInputListFocusBackground,
-                listFocusForeground: quickInputListFocusForeground,
-                // Look like focused when inactive.
-                listInactiveFocusForeground: quickInputListFocusForeground,
-                listInactiveSelectionIconForeground: quickInputListFocusIconForeground,
-                listInactiveFocusBackground: quickInputListFocusBackground,
-                listFocusOutline: activeContrastBorder,
-                listInactiveFocusOutline: activeContrastBorder,
-            }),
             pickerGroup: {
-                pickerGroupBorder: asCssVariable(pickerGroupBorder),
-                pickerGroupForeground: asCssVariable(pickerGroupForeground),
-            }
+                pickerGroupBorder: this.colorRegistry.toCssVariableName('pickerGroup.Border'),
+                pickerGroupForeground: this.colorRegistry.toCssVariableName('pickerGroupForeground')
+            },
+            widget: {
+                quickInputBackground: this.colorRegistry.toCssVariableName('quickInput.background'),
+                quickInputForeground: this.colorRegistry.toCssVariableName('quickInput.foreground'),
+                quickInputTitleBackground: this.colorRegistry.toCssVariableName('quickInputTitle.background'),
+                widgetBorder: this.colorRegistry.toCssVariableName('widget.border'),
+                widgetShadow: this.colorRegistry.toCssVariableName('widget.shadow')
+            },
+            list: {
+                listBackground: this.colorRegistry.toCssVariableName('quickInput.background'),
+                listInactiveFocusForeground: this.colorRegistry.toCssVariableName('quickInputList.focusForeground'),
+                listInactiveSelectionIconForeground: this.colorRegistry.toCssVariableName('quickInputList.focusIconForeground'),
+                listInactiveFocusBackground: this.colorRegistry.toCssVariableName('quickInputList.focusBackground'),
+                listFocusOutline: this.colorRegistry.toCssVariableName('activeContrastBorder'),
+                listInactiveFocusOutline: this.colorRegistry.toCssVariableName('activeContrastBorder'),
+
+                listFocusBackground: this.colorRegistry.toCssVariableName('list.focusBackground'),
+                listFocusForeground: this.colorRegistry.toCssVariableName('list.focusForeground'),
+                listActiveSelectionBackground: this.colorRegistry.toCssVariableName('list.activeSelectionBackground'),
+                listActiveSelectionForeground: this.colorRegistry.toCssVariableName('list.ActiveSelectionForeground'),
+                listActiveSelectionIconForeground: this.colorRegistry.toCssVariableName('list.ActiveSelectionIconForeground'),
+                listFocusAndSelectionOutline: this.colorRegistry.toCssVariableName('list.FocusAndSelectionOutline'),
+                listFocusAndSelectionBackground: this.colorRegistry.toCssVariableName('list.ActiveSelectionBackground'),
+                listFocusAndSelectionForeground: this.colorRegistry.toCssVariableName('list.ActiveSelectionForeground'),
+                listInactiveSelectionBackground: this.colorRegistry.toCssVariableName('list.InactiveSelectionBackground'),
+                listInactiveSelectionForeground: this.colorRegistry.toCssVariableName('list.InactiveSelectionForeground'),
+                listHoverBackground: this.colorRegistry.toCssVariableName('list.HoverBackground'),
+                listHoverForeground: this.colorRegistry.toCssVariableName('list.HoverForeground'),
+                listDropBackground: this.colorRegistry.toCssVariableName('list.DropBackground'),
+                listSelectionOutline: this.colorRegistry.toCssVariableName('activeContrastBorder'),
+                listHoverOutline: this.colorRegistry.toCssVariableName('activeContrastBorder'),
+                treeIndentGuidesStroke: this.colorRegistry.toCssVariableName('tree.indentGuidesStroke'),
+                treeInactiveIndentGuidesStroke: this.colorRegistry.toCssVariableName('tree.inactiveIndentGuidesStroke'),
+                tableColumnsBorder: this.colorRegistry.toCssVariableName('tree.tableColumnsBorder'),
+                tableOddRowsBackgroundColor: this.colorRegistry.toCssVariableName('tree.tableOddRowsBackground'),
+            },
+            inputBox: {
+                inputForeground: this.colorRegistry.toCssVariableName('inputForeground'),
+                inputBackground: this.colorRegistry.toCssVariableName('inputBackground'),
+                inputBorder: this.colorRegistry.toCssVariableName('inputBorder'),
+                inputValidationInfoBackground: this.colorRegistry.toCssVariableName('inputValidation.infoBackground'),
+                inputValidationInfoForeground: this.colorRegistry.toCssVariableName('inputValidation.infoForeground'),
+                inputValidationInfoBorder: this.colorRegistry.toCssVariableName('inputValidation.infoBorder'),
+                inputValidationWarningBackground: this.colorRegistry.toCssVariableName('inputValidation.warningBackground'),
+                inputValidationWarningForeground: this.colorRegistry.toCssVariableName('inputValidation.warningForeground'),
+                inputValidationWarningBorder: this.colorRegistry.toCssVariableName('inputValidation.warningBorder'),
+                inputValidationErrorBackground: this.colorRegistry.toCssVariableName('inputValidation.errorBackground'),
+                inputValidationErrorForeground: this.colorRegistry.toCssVariableName('inputValidation.errorForeground'),
+                inputValidationErrorBorder: this.colorRegistry.toCssVariableName('inputValidation.errorBorder'),
+            },
+            countBadge: {
+                badgeBackground: this.colorRegistry.toCssVariableName('badge.background'),
+                badgeForeground: this.colorRegistry.toCssVariableName('badge.foreground'),
+                badgeBorder: this.colorRegistry.toCssVariableName('contrastBorder')
+            },
+            button: {
+                buttonForeground: this.colorRegistry.toCssVariableName('button.foreground'),
+                buttonBackground: this.colorRegistry.toCssVariableName('button.background'),
+                buttonHoverBackground: this.colorRegistry.toCssVariableName('button.hoverBackground'),
+                buttonBorder: this.colorRegistry.toCssVariableName('contrastBorder'),
+                buttonSeparator: this.colorRegistry.toCssVariableName('button.Separator'),
+                buttonSecondaryForeground: this.colorRegistry.toCssVariableName('button.secondaryForeground'),
+                buttonSecondaryBackground: this.colorRegistry.toCssVariableName('button.secondaryBackground'),
+                buttonSecondaryHoverBackground: this.colorRegistry.toCssVariableName('button.secondaryHoverBackground'),
+            },
+            progressBar: {
+                progressBarBackground: this.colorRegistry.toCssVariableName('progressBar.background')
+            },
+            keybindingLabel: {
+                keybindingLabelBackground: this.colorRegistry.toCssVariableName('keybindingLabe.background'),
+                keybindingLabelForeground: this.colorRegistry.toCssVariableName('keybindingLabel.foreground'),
+                keybindingLabelBorder: this.colorRegistry.toCssVariableName('keybindingLabel.border'),
+                keybindingLabelBottomBorder: this.colorRegistry.toCssVariableName('keybindingLabel.bottomBorder'),
+                keybindingLabelShadow: this.colorRegistry.toCssVariableName('widget.shadow')
+            },
         };
     }
 }
