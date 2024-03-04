@@ -21,7 +21,7 @@
 
 import { Emitter } from '@theia/core';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { ApplicationShell, OpenerService, WidgetFactory } from '@theia/core/lib/browser';
+import { ApplicationShell } from '@theia/core/lib/browser';
 import { NotebookEditorWidget } from '../notebook-editor-widget';
 
 @injectable()
@@ -29,9 +29,6 @@ export class NotebookEditorWidgetService {
 
     @inject(ApplicationShell)
     protected applicationShell: ApplicationShell;
-
-    @inject(WidgetFactory)
-    protected openerService: OpenerService;
 
     private readonly notebookEditors = new Map<string, NotebookEditorWidget>();
 
