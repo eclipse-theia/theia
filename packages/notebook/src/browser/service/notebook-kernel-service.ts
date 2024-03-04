@@ -266,6 +266,7 @@ export class NotebookKernelService {
             }
             this.storageService.setData(NOTEBOOK_KERNEL_BINDING_STORAGE_KEY, this.notebookBindings);
             this.onDidChangeSelectedNotebookKernelBindingEmitter.fire({ notebook: notebook.uri, oldKernel, newKernel: kernel?.id });
+
         }
     }
 
