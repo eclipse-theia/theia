@@ -38,13 +38,12 @@ export class NotebookMainToolbarRenderer {
     @inject(MenuModelRegistry) protected readonly menuRegistry: MenuModelRegistry;
     @inject(ContextKeyService) protected readonly contextKeyService: ContextKeyService;
 
-    render(notebookModel: NotebookModel): React.ReactNode {
+    render(notebookModel: NotebookModel, editorNode: HTMLElement): React.ReactNode {
         return <NotebookMainToolbar notebookModel={notebookModel}
             menuRegistry={this.menuRegistry}
             notebookKernelService={this.notebookKernelService}
             commandRegistry={this.commandRegistry}
-            contextKeyService={this.contextKeyService}
-        />;
+            contextKeyService={this.contextKeyService} />;
     }
 }
 
@@ -70,12 +69,13 @@ export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProp
 
         // TODO maybe we need a mechanism to check for changes in the menu to update this toolbar
         const contextKeys = new Set<string>();
-        this.getMenuItems().filter(item => item.when).forEach(item => props.contextKeyService.parseKeys(item.when!)?.forEach(key => contextKeys.add(key)));
+        this.getAllContextKeys(this.getMenuItems(), contextKeys);
         props.contextKeyService.onDidChange(e => {
             if (e.affects(contextKeys)) {
                 this.forceUpdate();
             }
         });
+
     }
 
     override componentWillUnmount(): void {
@@ -125,6 +125,16 @@ export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProp
     private getMenuItems(): readonly MenuNode[] {
         const menuPath = NotebookMenus.NOTEBOOK_MAIN_TOOLBAR;
         const pluginCommands = this.props.menuRegistry.getMenuNode(menuPath).children;
-        return this.props.menuRegistry.getMenu([menuPath]).children.concat(pluginCommands);
+        const theiaCommands = this.props.menuRegistry.getMenu([menuPath]).children;
+        // TODO add specifc arguments to commands
+        return theiaCommands.concat(pluginCommands);
+    }
+
+    private getAllContextKeys(menus: readonly MenuNode[], keySet: Set<string>): void {
+        menus.filter(item => item.when)
+            .forEach(item => this.props.contextKeyService.parseKeys(item.when!)?.forEach(key => keySet.add(key)));
+
+        menus.filter(item => item.children && item.children.length > 0)
+            .forEach(item => this.getAllContextKeys(item.children!, keySet));
     }
 }

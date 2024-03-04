@@ -43,7 +43,7 @@ import { NotebookEditorWidgetService } from './service/notebook-editor-widget-se
 import { NotebookRendererMessagingService } from './service/notebook-renderer-messaging-service';
 import { NotebookColorContribution } from './contributions/notebook-color-contribution';
 import { NotebookCellContextManager } from './service/notebook-cell-context-manager';
-import { NotebookMainToolbarRenderer } from './view/notebook-main-toolbar';
+import { NotebookContextManager } from './service/notebook-context-manager';
 
 export default new ContainerModule(bind => {
     bind(NotebookColorContribution).toSelf().inSingletonScope();
@@ -81,7 +81,8 @@ export default new ContainerModule(bind => {
 
     bind(NotebookCodeCellRenderer).toSelf().inSingletonScope();
     bind(NotebookMarkdownCellRenderer).toSelf().inSingletonScope();
-    bind(NotebookMainToolbarRenderer).toSelf().inSingletonScope();
+
+    bind(NotebookContextManager).toSelf();
 
     bind(NotebookEditorWidgetContainerFactory).toFactory(ctx => (props: NotebookEditorProps) =>
         createNotebookEditorWidgetContainer(ctx.container, props).get(NotebookEditorWidget)

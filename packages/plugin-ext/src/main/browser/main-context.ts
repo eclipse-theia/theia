@@ -59,10 +59,8 @@ import { UntitledResourceResolver } from '@theia/core/lib/common/resource';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { TabsMainImpl } from './tabs/tabs-main';
 import { NotebooksMainImpl } from './notebooks/notebooks-main';
-import { NotebookService } from '@theia/notebook/lib/browser';
 import { LocalizationMainImpl } from './localization-main';
 import { NotebookRenderersMainImpl } from './notebooks/notebook-renderers-main';
-import { HostedPluginSupport } from '../../hosted/browser/hosted-plugin';
 import { NotebookEditorsMainImpl } from './notebooks/notebook-editors-main';
 import { NotebookDocumentsMainImpl } from './notebooks/notebook-documents-main';
 import { NotebookKernelsMainImpl } from './notebooks/notebook-kernels-main';
@@ -102,9 +100,7 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
     const documentsMain = new DocumentsMainImpl(editorsAndDocuments, modelService, rpc, editorManager, openerService, shell, untitledResourceResolver, languageService);
     rpc.set(PLUGIN_RPC_CONTEXT.DOCUMENTS_MAIN, documentsMain);
 
-    const notebookService = container.get(NotebookService);
-    const pluginSupport = container.get(HostedPluginSupport);
-    rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOKS_MAIN, new NotebooksMainImpl(rpc, notebookService, pluginSupport));
+    rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOKS_MAIN, new NotebooksMainImpl(rpc, container, commandRegistryMain));
     rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_RENDERERS_MAIN, new NotebookRenderersMainImpl(rpc, container));
     const notebookEditorsMain = new NotebookEditorsMainImpl(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_EDITORS_MAIN, notebookEditorsMain);

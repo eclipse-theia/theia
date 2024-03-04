@@ -39,6 +39,7 @@ export function createNotebookEditorWidgetContainer(parent: interfaces.Container
     const child = parent.createChild();
 
     child.bind(NotebookEditorProps).toConstantValue(props);
+    child.bind(NotebookMainToolbarRenderer).toSelf().inSingletonScope();
     child.bind(NotebookEditorWidget).toSelf();
 
     return child;
@@ -138,6 +139,7 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
         this.renderers.set(CellKind.Markup, this.markdownCellRenderer);
         this.renderers.set(CellKind.Code, this.codeCellRenderer);
         this._ready.resolve(this.waitForData());
+
     }
 
     protected async waitForData(): Promise<NotebookModel> {
@@ -186,7 +188,7 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
     protected render(): ReactNode {
         if (this._model) {
             return <div className='theia-notebook-main-container'>
-                {this.notebookMainToolbarRenderer.render(this._model)}
+                {this.notebookMainToolbarRenderer.render(this._model, this.node)}
                 <PerfectScrollbar className='theia-notebook-scroll-container'>
                     <NotebookCellListView renderers={this.renderers}
                         notebookModel={this._model}
