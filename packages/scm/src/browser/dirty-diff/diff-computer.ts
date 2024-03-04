@@ -29,7 +29,7 @@ export class DiffComputer {
         const added: LineRange[] = [];
         const removed: number[] = [];
         const modified: LineRange[] = [];
-        const rangeMappings: ChangeRangeMapping[] | undefined = options?.rangeMappings ? [] : undefined;
+        const rangeMappings: RangeMapping[] | undefined = options?.rangeMappings ? [] : undefined;
         const changes = this.computeDiff(previous, current);
         let currentRevisionLine = -1;
         let previousRevisionLine = -1;
@@ -161,7 +161,7 @@ export interface DirtyDiff {
     /**
      * Range mappings for the diff, if {@link DirtyDiffOptions.rangeMappings requested}.
      */
-    readonly rangeMappings?: ChangeRangeMapping[];
+    readonly rangeMappings?: RangeMapping[];
 }
 
 /**
@@ -227,7 +227,7 @@ export namespace EmptyLineRange {
     }
 }
 
-export type ChangeRangeMapping = AddedRangeMapping | RemovedRangeMapping | ModifiedRangeMapping;
+export type RangeMapping = AddedRangeMapping | RemovedRangeMapping | ModifiedRangeMapping;
 
 export interface AddedRangeMapping {
     previousRange: NormalizedEmptyLineRange;
