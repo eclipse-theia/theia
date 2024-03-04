@@ -59,7 +59,6 @@ export class NotebookEditorWidgetService {
                 this.onDidChangeFocusedEditorEmitter.fire(undefined);
             }
         });
-        this.openerService.
     }
 
     // --- editor management
