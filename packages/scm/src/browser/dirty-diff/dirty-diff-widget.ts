@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
-import { ActionMenuNode, Disposable, Event, MenuCommandExecutor, MenuModelRegistry, MenuPath, URI, nls } from '@theia/core';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { ActionMenuNode, Disposable, Emitter, Event, MenuCommandExecutor, MenuModelRegistry, MenuPath, URI, nls } from '@theia/core';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { ChangeRangeMapping, LineRange, NormalizedEmptyLineRange } from './diff-computer';
@@ -55,19 +55,23 @@ export type DirtyDiffWidgetFactory = (props: DirtyDiffWidgetProps) => DirtyDiffW
 @injectable()
 export class DirtyDiffWidget implements Disposable {
 
-    readonly onDidClose: Event<unknown>;
+    private readonly onDidCloseEmitter = new Emitter<unknown>();
+    readonly onDidClose: Event<unknown> = this.onDidCloseEmitter.event;
     protected index: number = -1;
-    private readonly peekView: DirtyDiffPeekView;
-    private readonly diffEditorPromise: Promise<monaco.editor.IDiffEditor>;
+    private peekView?: DirtyDiffPeekView;
+    private diffEditorPromise?: Promise<monaco.editor.IDiffEditor>;
 
     constructor(
         @inject(DirtyDiffWidgetProps) protected readonly props: DirtyDiffWidgetProps,
         @inject(ContextKeyService) readonly contextKeyService: ContextKeyService,
         @inject(MenuModelRegistry) readonly menuModelRegistry: MenuModelRegistry,
         @inject(MenuCommandExecutor) readonly menuCommandExecutor: MenuCommandExecutor
-    ) {
+    ) { }
+
+    @postConstruct()
+    create(): void {
         this.peekView = new DirtyDiffPeekView(this);
-        this.onDidClose = this.peekView.onDidClose;
+        this.peekView.onDidClose(e => this.onDidCloseEmitter.fire(e));
         this.diffEditorPromise = this.peekView.create();
     }
 
@@ -96,6 +100,7 @@ export class DirtyDiffWidget implements Disposable {
     }
 
     showChange(index: number): void {
+        this.checkCreated();
         if (index >= 0 && index < this.changes.length) {
             this.index = index;
             this.showCurrentChange();
@@ -103,6 +108,7 @@ export class DirtyDiffWidget implements Disposable {
     }
 
     showNextChange(): void {
+        this.checkCreated();
         const index = this.index;
         const length = this.changes.length;
         if (length > 0 && (index < 0 || length > 1)) {
@@ -112,6 +118,7 @@ export class DirtyDiffWidget implements Disposable {
     }
 
     showPreviousChange(): void {
+        this.checkCreated();
         const index = this.index;
         const length = this.changes.length;
         if (length > 0 && (index < 0 || length > 1)) {
@@ -121,22 +128,24 @@ export class DirtyDiffWidget implements Disposable {
     }
 
     async getContentWithSelectedChanges(predicate: (change: ChangeRangeMapping, index: number, changes: readonly ChangeRangeMapping[]) => boolean): Promise<string> {
+        this.checkCreated();
         const changes = this.changes.filter(predicate);
-        const diffEditor = await this.diffEditorPromise;
+        const diffEditor = await this.diffEditorPromise!;
         const diffEditorModel = diffEditor.getModel()!;
         return applyChanges(changes, diffEditorModel.original, diffEditorModel.modified);
     }
 
     dispose(): void {
-        this.peekView.dispose();
+        this.peekView?.dispose();
+        this.onDidCloseEmitter.dispose();
     }
 
     protected showCurrentChange(): void {
-        this.peekView.setTitle(this.computePrimaryHeading(), this.computeSecondaryHeading());
+        this.peekView!.setTitle(this.computePrimaryHeading(), this.computeSecondaryHeading());
         const { previousRange, currentRange } = this.changes[this.index];
-        this.peekView.show(new Position(LineRange.getEndPosition(currentRange).line + 1, 1), // monaco position is 1-based
+        this.peekView!.show(new Position(LineRange.getEndPosition(currentRange).line + 1, 1), // monaco position is 1-based
             this.computeHeightInLines());
-        this.diffEditorPromise.then(diffEditor => {
+        this.diffEditorPromise!.then(diffEditor => {
             let startLine = LineRange.getStartPosition(currentRange).line;
             let endLine = LineRange.getEndPosition(currentRange).line;
             if (LineRange.isEmpty(currentRange)) { // the change is a removal
@@ -172,6 +181,12 @@ export class DirtyDiffWidget implements Disposable {
         const changeHeightInLines = LineRange.getLineCount(currentRange) + LineRange.getLineCount(previousRange);
 
         return Math.min(changeHeightInLines + /* padding */ 8, Math.floor(editorHeightInLines / 3));
+    }
+
+    protected checkCreated(): void {
+        if (!this.peekView) {
+            throw new Error('create() method needs to be called first.');
+        }
     }
 }
 
