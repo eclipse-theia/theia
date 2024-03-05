@@ -299,7 +299,7 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
                 progressBarBackground: this.colorRegistry.toCssVariableName('progressBar.background')
             },
             keybindingLabel: {
-                keybindingLabelBackground: this.colorRegistry.toCssVariableName('keybindingLabe.background'),
+                keybindingLabelBackground: this.colorRegistry.toCssVariableName('keybindingLabel.background'),
                 keybindingLabelForeground: this.colorRegistry.toCssVariableName('keybindingLabel.foreground'),
                 keybindingLabelBorder: this.colorRegistry.toCssVariableName('keybindingLabel.border'),
                 keybindingLabelBottomBorder: this.colorRegistry.toCssVariableName('keybindingLabel.bottomBorder'),
