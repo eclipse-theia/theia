@@ -4,13 +4,13 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
-<!-- ## not yet released
+## not yet released
 
-- [component] add here
+- [core]  Fix quickpick problems found in IDE testing [#13451](https://github.com/eclipse-theia/theia/pull/13451) - contributed on behalf of STMicroelectronics
 
 <a name="breaking_changes_not_yet_released">[Breaking Changes:](#breaking_changes_not_yet_released)</a>
 
-- [component] add here -->
+- [component] add here
 
 ## v1.47.0 - 02/29/2024
 
