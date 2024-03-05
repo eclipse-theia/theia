@@ -70,11 +70,11 @@ export class TabBarToolbar extends ReactWidget {
 
     @postConstruct()
     protected init(): void {
-        this.toDispose.push(this.keybindings.onKeybindingsChanged(() => this.update()));
+        this.toDispose.push(this.keybindings.onKeybindingsChanged(() => this.maybeUpdate()));
 
         this.toDispose.push(this.contextKeyService.onDidChange(e => {
             if (e.affects(this.keybindingContextKeys)) {
-                this.update();
+                this.maybeUpdate();
             }
         }));
     }
@@ -90,7 +90,7 @@ export class TabBarToolbar extends ReactWidget {
             if ('command' in item) {
                 this.commands.getAllHandlers(item.command).forEach(handler => {
                     if (handler.onDidChangeEnabled) {
-                        this.toDisposeOnUpdateItems.push(handler.onDidChangeEnabled(() => this.update()));
+                        this.toDisposeOnUpdateItems.push(handler.onDidChangeEnabled(() => this.maybeUpdate()));
                     }
                 });
             }
@@ -113,7 +113,7 @@ export class TabBarToolbar extends ReactWidget {
         } else {
             this.hide();
         }
-        this.update();
+        this.maybeUpdate();
     }
 
     updateTarget(current?: Widget): void {
@@ -130,7 +130,7 @@ export class TabBarToolbar extends ReactWidget {
         if (current) {
             const resetCurrent = () => {
                 this.setCurrent(undefined);
-                this.update();
+                this.maybeUpdate();
             };
             current.disposed.connect(resetCurrent);
             this.toDisposeOnSetCurrent.push(Disposable.create(() =>
@@ -144,7 +144,7 @@ export class TabBarToolbar extends ReactWidget {
         if (contextKeys.size > 0) {
             this.contextKeyListener = this.contextKeyService.onDidChange(event => {
                 if (event.affects(contextKeys)) {
-                    this.update();
+                    this.maybeUpdate();
                 }
             });
         }
@@ -321,8 +321,8 @@ export class TabBarToolbar extends ReactWidget {
     protected renderMenuItem(item: TabBarToolbarItem & MenuToolbarItem): React.ReactNode {
         const icon = typeof item.icon === 'function' ? item.icon() : item.icon ?? 'ellipsis';
         return <div key={item.id}
-                    className={TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM + ' enabled menu'}
-                    onClick={this.showPopupMenu.bind(this, item.menuPath)}>
+            className={TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM + ' enabled menu'}
+            onClick={this.showPopupMenu.bind(this, item.menuPath)}>
             <div id={item.id} className={codicon(icon, true)}
                 title={item.text} />
             <div className={codicon('chevron-down') + ' chevron'} />
@@ -397,8 +397,14 @@ export class TabBarToolbar extends ReactWidget {
         } else if (item.menuPath) {
             this.renderMoreContextMenu(this.toAnchor(e), item.menuPath);
         }
-        this.update();
+        this.maybeUpdate();
     };
+
+    protected maybeUpdate(): void {
+        if (!this.isDisposed) {
+            this.update();
+        }
+    }
 
     protected onMouseDownEvent = (e: React.MouseEvent<HTMLElement>) => {
         if (e.button === 0) {
@@ -419,5 +425,4 @@ export namespace TabBarToolbar {
         export const TAB_BAR_TOOLBAR_ITEM = 'item';
 
     }
-
 }
