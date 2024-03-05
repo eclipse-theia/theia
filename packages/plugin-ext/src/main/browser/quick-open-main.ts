@@ -49,7 +49,7 @@ import { isUriComponents } from '@theia/monaco-editor-core/esm/vs/base/common/ur
 
 export interface QuickInputSession {
     input: QuickInput;
-    handlesToItems: Map<number, TransferQuickPickItem>;
+    handlesToItems: Map<number, QuickPickItem>;
 }
 
 interface IconPath {
@@ -309,10 +309,13 @@ export class QuickOpenMainImpl implements QuickOpenMain, Disposable {
                     }
                 } else if (param === 'items') {
                     handlesToItems.clear();
-                    params[param].forEach((item: TransferQuickPickItem) => {
-                        handlesToItems.set(item.handle, item);
+                    const items: QuickPickItem[] = [];
+                    params[param].forEach((transferItem: TransferQuickPickItem) => {
+                        const item = this.toQuickPickItem(transferItem);
+                        items.push(item);
+                        handlesToItems.set(transferItem.handle, item);
                     });
-                    (input as any)[param] = params[param];
+                    (input as any)[param] = items;
                 } else if (param === 'activeItems' || param === 'selectedItems') {
                     (input as any)[param] = params[param]
                         .filter((handle: number) => handlesToItems.has(handle))
