@@ -151,13 +151,16 @@ export class TextEditorMain implements Disposable {
         }
 
         if (typeof newConfiguration.lineNumbers !== 'undefined') {
-            let lineNumbers: 'on' | 'off' | 'relative';
+            let lineNumbers: 'on' | 'off' | 'relative' | 'interval';
             switch (newConfiguration.lineNumbers) {
                 case TextEditorLineNumbersStyle.On:
                     lineNumbers = 'on';
                     break;
                 case TextEditorLineNumbersStyle.Relative:
                     lineNumbers = 'relative';
+                    break;
+                case TextEditorLineNumbersStyle.Interval:
+                    lineNumbers = 'interval';
                     break;
                 default:
                     lineNumbers = 'off';
@@ -399,6 +402,9 @@ export class TextEditorPropertiesMain {
                     break;
                 case monaco.editor.RenderLineNumbersType.Relative:
                     lineNumbers = TextEditorLineNumbersStyle.Relative;
+                    break;
+                case monaco.editor.RenderLineNumbersType.Interval:
+                    lineNumbers = TextEditorLineNumbersStyle.Interval;
                     break;
                 default:
                     lineNumbers = TextEditorLineNumbersStyle.On;

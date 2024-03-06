@@ -1897,7 +1897,11 @@ export module '@theia/plugin' {
         /**
          * Render the line numbers with values relative to the primary cursor location.
          */
-        Relative = 2
+        Relative = 2,
+        /**
+         * Render the line numbers on every 10th line number.
+         */
+        Interval = 3
     }
 
     /**

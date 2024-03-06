@@ -7,6 +7,7 @@
 ## not yet released
 
 - [core]  Fix quickpick problems found in IDE testing [#13451](https://github.com/eclipse-theia/theia/pull/13451) - contributed on behalf of STMicroelectronics
+- [plugin] Extend TextEditorLineNumbersStyle with Interval [#13458](https://github.com/eclipse-theia/theia/pull/13458) - contributed on behalf of STMicroelectronics
 
 <a name="breaking_changes_not_yet_released">[Breaking Changes:](#breaking_changes_not_yet_released)</a>
 
