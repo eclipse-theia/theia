@@ -1,13 +1,13 @@
 {
   "name": "@theia/test",
-  "version": "1.47.0",
+  "version": "1.47.1",
   "description": "Theia - Test Extension",
   "dependencies": {
-    "@theia/core": "1.47.0",
-    "@theia/editor": "1.47.0",
-    "@theia/filesystem": "1.47.0",
-    "@theia/navigator": "1.47.0",
-    "@theia/terminal": "1.47.0",
+    "@theia/core": "1.47.1",
+    "@theia/editor": "1.47.1",
+    "@theia/filesystem": "1.47.1",
+    "@theia/navigator": "1.47.1",
+    "@theia/terminal": "1.47.1",
     "xterm": "^4.16.0",
     "xterm-addon-fit": "^0.5.0"
   },
@@ -44,9 +44,10 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.47.0"
+    "@theia/ext-scripts": "1.47.1"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
-  }
+  },
+  "gitHead": "ddc29054061700e54fe819f147a7ec335a6d8037"
 }

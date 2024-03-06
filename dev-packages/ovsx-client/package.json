@@ -1,6 +1,6 @@
 {
   "name": "@theia/ovsx-client",
-  "version": "1.47.0",
+  "version": "1.47.1",
   "description": "Theia Open-VSX Client",
   "publishConfig": {
     "access": "public"
@@ -29,8 +29,9 @@
     "watch": "theiaext watch"
   },
   "dependencies": {
-    "@theia/request": "1.47.0",
+    "@theia/request": "1.47.1",
     "semver": "^7.5.4",
     "tslib": "^2.6.2"
-  }
+  },
+  "gitHead": "ddc29054061700e54fe819f147a7ec335a6d8037"
 }
