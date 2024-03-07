@@ -172,7 +172,7 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
     }
 
     createMoveToUri(resourceUri: URI): URI | undefined {
-        return this.props.uri;
+        return this.model?.uri.withPath(resourceUri.path);
     }
 
     undo(): void {
