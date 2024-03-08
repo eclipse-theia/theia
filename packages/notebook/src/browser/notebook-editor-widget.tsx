@@ -199,12 +199,8 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
         }
     }
 
-    protected override onAfterAttach(msg: Message): void {
-        super.onAfterAttach(msg);
-    }
-
-    protected override onAfterDetach(msg: Message): void {
-        super.onAfterDetach(msg);
+    protected override onCloseRequest(msg: Message): void {
+        super.onCloseRequest(msg);
         this.notebookEditorService.removeNotebookEditor(this);
     }
 
