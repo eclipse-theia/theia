@@ -70,6 +70,8 @@ export class ScmDecorationsService {
         const currentRepo = this.scmService.selectedRepository;
         if (currentRepo) {
             try {
+                // Currently, the uri used here is specific to vscode.git; other SCM providers are thus not supported.
+                // See https://github.com/eclipse-theia/theia/pull/13104#discussion_r1494540628 for a detailed discussion.
                 const query = { path: editor.uri['codeUri'].fsPath, ref: '~' };
                 const uri = editor.uri.withScheme(currentRepo.provider.id).withQuery(JSON.stringify(query));
                 const previousResource = await this.resourceProvider(uri);
