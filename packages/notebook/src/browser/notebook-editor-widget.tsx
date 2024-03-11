@@ -31,7 +31,7 @@ import { NotebookMainToolbarRenderer } from './view/notebook-main-toolbar';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { NotebookContextManager } from './service/notebook-context-manager';
-
+import { NotebookViewportService } from './view/notebook-viewport-service';
 const PerfectScrollbar = require('react-perfect-scrollbar');
 
 export const NotebookEditorWidgetContainerFactory = Symbol('NotebookEditorWidgetContainerFactory');
@@ -45,6 +45,7 @@ export function createNotebookEditorWidgetContainer(parent: interfaces.Container
     child.bind(NotebookMainToolbarRenderer).toSelf().inSingletonScope();
     child.bind(NotebookCodeCellRenderer).toSelf().inSingletonScope();
     child.bind(NotebookMarkdownCellRenderer).toSelf().inSingletonScope();
+    child.bind(NotebookViewportService).toSelf().inSingletonScope();
 
     child.bind(NotebookEditorWidget).toSelf();
 
@@ -95,6 +96,9 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
     protected markdownCellRenderer: NotebookMarkdownCellRenderer;
     @inject(NotebookEditorProps)
     protected readonly props: NotebookEditorProps;
+
+    @inject(NotebookViewportService)
+    protected readonly viewportService: NotebookViewportService;
 
     protected readonly onDidChangeModelEmitter = new Emitter<void>();
     readonly onDidChangeModel = this.onDidChangeModelEmitter.event;
@@ -198,13 +202,16 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
         if (this._model) {
             return <div className='theia-notebook-main-container'>
                 {this.notebookMainToolbarRenderer.render(this._model, this.node)}
-                <PerfectScrollbar className='theia-notebook-scroll-container'>
-                    <NotebookCellListView renderers={this.renderers}
-                        notebookModel={this._model}
-                        toolbarRenderer={this.cellToolbarFactory}
-                        commandRegistry={this.commandRegistry} />
-                </PerfectScrollbar>
-            </div>;
+                <div className='theia-notebook-viewport' ref={(ref: HTMLDivElement) => this.viewportService.viewportElement = ref}>
+                    <PerfectScrollbar className='theia-notebook-scroll-container'
+                        onScrollY={(e: HTMLDivElement) => this.viewportService.onScroll(e)}>
+                        <NotebookCellListView renderers={this.renderers}
+                            notebookModel={this._model}
+                            toolbarRenderer={this.cellToolbarFactory}
+                            commandRegistry={this.commandRegistry} />
+                    </PerfectScrollbar>
+                </div>
+            </div >;
         } else {
             return <div></div>;
         }
