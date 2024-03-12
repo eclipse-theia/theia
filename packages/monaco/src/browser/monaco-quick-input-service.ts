@@ -596,11 +596,11 @@ class MonacoQuickPick<T extends QuickPickItem> extends MonacoQuickInput implemen
         });
     }
 
-    get buttons(): ReadonlyArray<IQuickInputButton> {
-        return this.wrapped.buttons;
+    get buttons(): ReadonlyArray<QuickInputButton> {
+        return this.wrapped.buttons as QuickInputButton[];
     }
 
-    set buttons(buttons: ReadonlyArray<IQuickInputButton>) {
+    set buttons(buttons: ReadonlyArray<QuickInputButton>) {
         this.wrapped.buttons = buttons;
     }
 
