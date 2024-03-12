@@ -653,7 +653,7 @@ export class SidePanelHandler {
     }
 
     protected onTabsOverflowChanged(sender: SideTabBar, event: { titles: Title<Widget>[], startIndex: number }): void {
-        if (event.startIndex >= 0 && event.startIndex <= sender.currentIndex) {
+        if (event.startIndex > 0 && event.startIndex <= sender.currentIndex) {
             sender.revealTab(sender.currentIndex);
         } else {
             this.additionalViewsMenu.updateAdditionalViews(sender, event);
