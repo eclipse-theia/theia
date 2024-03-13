@@ -596,6 +596,14 @@ class MonacoQuickPick<T extends QuickPickItem> extends MonacoQuickInput implemen
         });
     }
 
+    get buttons(): ReadonlyArray<QuickInputButton> {
+        return this.wrapped.buttons as QuickInputButton[];
+    }
+
+    set buttons(buttons: ReadonlyArray<QuickInputButton>) {
+        this.wrapped.buttons = buttons;
+    }
+
     set items(itemList: readonly (T | QuickPickSeparator)[]) {
         // We need to store and apply the currently selected active items.
         // Since monaco compares these items by reference equality, creating new wrapped items will unmark any active items.
