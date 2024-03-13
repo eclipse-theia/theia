@@ -91,21 +91,23 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
 
     const editorsAndDocuments = new EditorsAndDocumentsMain(rpc, container);
 
+    const notebookDocumentsMain = new NotebookDocumentsMainImpl(rpc, container);
+    rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_MAIN, notebookDocumentsMain);
+
     const modelService = container.get(EditorModelService);
     const editorManager = container.get(EditorManager);
     const openerService = container.get<OpenerService>(OpenerService);
     const shell = container.get(ApplicationShell);
     const untitledResourceResolver = container.get(UntitledResourceResolver);
     const languageService = container.get(MonacoLanguages);
-    const documentsMain = new DocumentsMainImpl(editorsAndDocuments, modelService, rpc, editorManager, openerService, shell, untitledResourceResolver, languageService);
+    const documentsMain = new DocumentsMainImpl(editorsAndDocuments, notebookDocumentsMain, modelService, rpc,
+        editorManager, openerService, shell, untitledResourceResolver, languageService);
     rpc.set(PLUGIN_RPC_CONTEXT.DOCUMENTS_MAIN, documentsMain);
 
     rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOKS_MAIN, new NotebooksMainImpl(rpc, container, commandRegistryMain));
     rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_RENDERERS_MAIN, new NotebookRenderersMainImpl(rpc, container));
     const notebookEditorsMain = new NotebookEditorsMainImpl(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_EDITORS_MAIN, notebookEditorsMain);
-    const notebookDocumentsMain = new NotebookDocumentsMainImpl(rpc, container);
-    rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_MAIN, notebookDocumentsMain);
     rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_AND_EDITORS_MAIN, new NotebooksAndEditorsMain(rpc, container, notebookDocumentsMain, notebookEditorsMain));
     rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_KERNELS_MAIN, new NotebookKernelsMainImpl(rpc, container));
 

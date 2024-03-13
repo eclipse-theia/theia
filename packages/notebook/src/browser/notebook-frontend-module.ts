@@ -41,7 +41,7 @@ import { NotebookEditorWidgetService } from './service/notebook-editor-widget-se
 import { NotebookRendererMessagingService } from './service/notebook-renderer-messaging-service';
 import { NotebookColorContribution } from './contributions/notebook-color-contribution';
 
-export default new ContainerModule(bind => {
+export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(NotebookColorContribution).toSelf().inSingletonScope();
     bind(ColorContribution).toService(NotebookColorContribution);
 
@@ -86,4 +86,6 @@ export default new ContainerModule(bind => {
     bind(NotebookCellModelFactory).toFactory(ctx => (props: NotebookCellModelProps) =>
         createNotebookCellModelContainer(ctx.container, props).get(NotebookCellModel)
     );
+
+    rebind(MonacoTextModelService).to(NotebookMonacoTextModelService).inSingletonScope();
 });

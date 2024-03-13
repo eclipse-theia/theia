@@ -23,6 +23,7 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { NotebookCellModel, NotebookCellModelFactory, NotebookCellModelProps } from '../view-model/notebook-cell-model';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { NotebookMonacoTextModelService } from './notebook-monaco-text-model-service';
 
 export const NotebookProvider = Symbol('notebook provider');
 
@@ -51,6 +52,9 @@ export class NotebookService implements Disposable {
 
     @inject(NotebookCellModelFactory)
     protected notebookCellModelFactory: (props: NotebookCellModelProps) => NotebookCellModel;
+
+    @inject(MonacoTextModelService)
+    protected textModelService: NotebookMonacoTextModelService;
 
     protected willUseNotebookSerializerEmitter = new Emitter<string>();
     readonly onWillUseNotebookSerializer = this.willUseNotebookSerializerEmitter.event;
@@ -102,6 +106,7 @@ export class NotebookService implements Disposable {
     }
 
     async createNotebookModel(data: NotebookData, viewType: string, resource: Resource): Promise<NotebookModel> {
+        const start = Date.now();
         const serializer = this.notebookProviders.get(viewType)?.serializer;
         if (!serializer) {
             throw new Error('no notebook serializer for ' + viewType);
@@ -111,8 +116,10 @@ export class NotebookService implements Disposable {
         this.notebookModels.set(resource.uri.toString(), model);
         // Resolve cell text models right after creating the notebook model
         // This ensures that all text models are available in the plugin host
-        await Promise.all(model.cells.map(e => e.resolveTextModel()));
+        // model.cells.map(e => e.resolveTextModel());
+        this.textModelService.createTextModelsForNotebook(model);
         this.didAddNotebookDocumentEmitter.fire(model);
+        console.log(`Created notebook model in ${Date.now() - start}ms`);
         return model;
     }
 

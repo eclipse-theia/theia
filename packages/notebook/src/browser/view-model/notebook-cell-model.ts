@@ -28,6 +28,7 @@ import {
 } from '../../common';
 import { NotebookCellOutputsSplice } from '../notebook-types';
 import { NotebookCellOutputModel } from './notebook-cell-output-model';
+import { NotebookMonacoTextModelService } from '../service/notebook-monaco-text-model-service';
 
 export const NotebookCellModelFactory = Symbol('NotebookModelFactory');
 export type NotebookCellModelFactory = (props: NotebookCellModelProps) => NotebookCellModel;
@@ -103,7 +104,7 @@ export class NotebookCellModel implements NotebookCell, Disposable {
     @inject(NotebookCellModelProps)
     protected readonly props: NotebookCellModelProps;
     @inject(MonacoTextModelService)
-    protected readonly textModelService: MonacoTextModelService;
+    protected readonly textModelService: NotebookMonacoTextModelService;
 
     get outputs(): NotebookCellOutputModel[] {
         return this._outputs;
@@ -277,7 +278,7 @@ export class NotebookCellModel implements NotebookCell, Disposable {
             return this.textModel;
         }
 
-        const ref = await this.textModelService.createModelReference(this.uri);
+        const ref = await this.textModelService.getOrCreateNotebookCellModelReference(this.uri);
         this.textModel = ref.object;
         this.textModel.onDidChangeContent(e => {
             this.props.source = e.model.getText();
