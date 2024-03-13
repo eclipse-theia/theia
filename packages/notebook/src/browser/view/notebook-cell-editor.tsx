@@ -20,17 +20,19 @@ import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import { SimpleMonacoEditor } from '@theia/monaco/lib/browser/simple-monaco-editor';
 import { MonacoEditor, MonacoEditorServices } from '@theia/monaco/lib/browser/monaco-editor';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
-import { DisposableCollection } from '@theia/core';
 import { IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
 import { NotebookContextManager } from '../service/notebook-context-manager';
+import { DisposableCollection, OS } from '@theia/core';
 import { NotebookViewportService } from './notebook-viewport-service';
+import { BareFontInfo } from '@theia/monaco-editor-core/esm/vs/editor/common/config/fontInfo';
 
 interface CellEditorProps {
     notebookModel: NotebookModel,
     cell: NotebookCellModel,
     monacoServices: MonacoEditorServices,
     notebookContextManager: NotebookContextManager;
-    notebookViewportService?: NotebookViewportService
+    notebookViewportService?: NotebookViewportService,
+    fontInfo?: BareFontInfo;
 }
 
 const DEFAULT_EDITOR_OPTIONS: MonacoEditor.IOptions = {
@@ -106,7 +108,8 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
     };
 
     protected estimateHeight(): string {
-        return this.props.cell.text.split('\n').length * 20 + 7 + 'px';
+        const lineHeight = this.props.fontInfo?.lineHeight ?? 20;
+        return this.props.cell.text.split(OS.backend.EOL).length * lineHeight + 7 + 'px';
     }
 
     override render(): React.ReactNode {
