@@ -43,35 +43,35 @@ Using the `TheiaApp` instance, we open an editor of type `TheiaTextEditor`, whic
 At any time, we can also get information from the text editor, such as obtaining dirty state and verify whether this information is what we expect.
 
 ```typescript
-test("should undo and redo text changes and correctly update the dirty state", async () => {
+test('should undo and redo text changes and correctly update the dirty state', async ({ playwright, browser }) => {
     // 1. set up workspace contents and open Theia app
-    const ws = new TheiaWorkspace(["src/tests/resources/sample-files1"]);
-    const app = await TheiaApp.load(page, ws);
+    const ws = new TheiaWorkspace(['src/tests/resources/sample-files1']);
+    app = await TheiaAppLoader.load( { playwright, browser }, ws);
 
     // 2. open Theia text editor
     const sampleTextEditor = await app.openEditor(
-        "sample.txt",
+        'sample.txt',
         TheiaTextEditor
     );
 
     // 3. make a change and verify contents and dirty
-    await sampleTextEditor.replaceLineWithLineNumber("change", 1);
+    await sampleTextEditor.replaceLineWithLineNumber('change', 1);
     expect(await sampleTextEditor.textContentOfLineByLineNumber(1)).toBe(
-        "change"
+        'change'
     );
     expect(await sampleTextEditor.isDirty()).toBe(true);
 
     // 4. undo and verify contents and dirty state
     await sampleTextEditor.undo(2);
     expect(await sampleTextEditor.textContentOfLineByLineNumber(1)).toBe(
-        "this is just a sample file"
+        'this is just a sample file'
     );
     expect(await sampleTextEditor.isDirty()).toBe(false);
 
     // 5. undo and verify contents and dirty state
     await sampleTextEditor.redo(2);
     expect(await sampleTextEditor.textContentOfLineByLineNumber(1)).toBe(
-        "change"
+        'change'
     );
     expect(await sampleTextEditor.isDirty()).toBe(true);
 
@@ -81,9 +81,9 @@ test("should undo and redo text changes and correctly update the dirty state", a
     await sampleTextEditor.close();
 
     // 7. reopen editor and verify dirty state
-    const reopenedEditor = await app.openEditor("sample.txt", TheiaTextEditor);
+    const reopenedEditor = await app.openEditor('sample.txt', TheiaTextEditor);
     expect(await reopenedEditor.textContentOfLineByLineNumber(1)).toBe(
-        "change"
+        'change'
     );
 
     await reopenedEditor.close();
