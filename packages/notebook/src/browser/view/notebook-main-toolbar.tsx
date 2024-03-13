@@ -22,6 +22,7 @@ import { NotebookKernelService } from '../service/notebook-kernel-service';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { NotebookCommand } from '../../common';
+import { NotebookContextManager } from '../service/notebook-context-manager';
 
 export interface NotebookMainToolbarProps {
     notebookModel: NotebookModel
@@ -29,6 +30,8 @@ export interface NotebookMainToolbarProps {
     notebookKernelService: NotebookKernelService;
     commandRegistry: CommandRegistry;
     contextKeyService: ContextKeyService;
+    editorNode: HTMLElement;
+    notebookContextManager: NotebookContextManager;
 }
 
 @injectable()
@@ -37,13 +40,16 @@ export class NotebookMainToolbarRenderer {
     @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry;
     @inject(MenuModelRegistry) protected readonly menuRegistry: MenuModelRegistry;
     @inject(ContextKeyService) protected readonly contextKeyService: ContextKeyService;
+    @inject(NotebookContextManager) protected readonly notebookContextManager: NotebookContextManager;
 
     render(notebookModel: NotebookModel, editorNode: HTMLElement): React.ReactNode {
         return <NotebookMainToolbar notebookModel={notebookModel}
             menuRegistry={this.menuRegistry}
             notebookKernelService={this.notebookKernelService}
             commandRegistry={this.commandRegistry}
-            contextKeyService={this.contextKeyService} />;
+            contextKeyService={this.contextKeyService}
+            editorNode={editorNode}
+            notebookContextManager={this.notebookContextManager} />;
     }
 }
 
@@ -70,7 +76,7 @@ export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProp
         // TODO maybe we need a mechanism to check for changes in the menu to update this toolbar
         const contextKeys = new Set<string>();
         this.getAllContextKeys(this.getMenuItems(), contextKeys);
-        props.contextKeyService.onDidChange(e => {
+        props.notebookContextManager.onDidChangeContext(e => {
             if (e.affects(contextKeys)) {
                 this.forceUpdate();
             }
@@ -103,7 +109,7 @@ export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProp
                 {itemNodes}
                 {itemNodes && itemNodes.length > 0 && <span key={`${item.id}-separator`} className='theia-notebook-toolbar-separator'></span>}
             </React.Fragment>;
-        } else if (!item.when || this.props.contextKeyService.match(item.when)) {
+        } else if (!item.when || this.props.contextKeyService.match(item.when, this.props.editorNode)) {
             const visibleCommand = Boolean(this.props.commandRegistry.getVisibleHandler(item.command ?? '', this.props.notebookModel));
             if (!visibleCommand) {
                 return undefined;

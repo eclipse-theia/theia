@@ -30,6 +30,7 @@ import { NotebookEditorWidgetService } from './service/notebook-editor-widget-se
 import { NotebookMainToolbarRenderer } from './view/notebook-main-toolbar';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
+import { NotebookContextManager } from './service/notebook-context-manager';
 
 const PerfectScrollbar = require('react-perfect-scrollbar');
 
@@ -39,12 +40,16 @@ export function createNotebookEditorWidgetContainer(parent: interfaces.Container
     const child = parent.createChild();
 
     child.bind(NotebookEditorProps).toConstantValue(props);
+
+    child.bind(NotebookContextManager).toSelf().inSingletonScope();
+    child.bind(NotebookMainToolbarRenderer).toSelf().inSingletonScope();
+
     child.bind(NotebookEditorWidget).toSelf();
 
     return child;
 }
 
-const NotebookEditorProps = Symbol('NotebookEditorProps');
+export const NotebookEditorProps = Symbol('NotebookEditorProps');
 
 interface RenderMessage {
     rendererId: string;
@@ -78,6 +83,9 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
 
     @inject(NotebookMainToolbarRenderer)
     protected notebookMainToolbarRenderer: NotebookMainToolbarRenderer;
+
+    @inject(NotebookContextManager)
+    protected notebookContextManager: NotebookContextManager;
 
     @inject(NotebookCodeCellRenderer)
     protected codeCellRenderer: NotebookCodeCellRenderer;
@@ -159,6 +167,7 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
         // Ensure that the model is loaded before adding the editor
         this.notebookEditorService.addNotebookEditor(this);
         this.update();
+        this.notebookContextManager.init(this);
         return this._model;
     }
 
@@ -221,6 +230,7 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
     }
 
     override dispose(): void {
+        this.notebookContextManager.dispose();
         this.onDidChangeModelEmitter.dispose();
         this.onDidPostKernelMessageEmitter.dispose();
         this.onDidReceiveKernelMessageEmitter.dispose();

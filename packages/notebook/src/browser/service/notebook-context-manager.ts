@@ -14,13 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
-import { DisposableCollection } from '@theia/core';
+import { inject, injectable } from '@theia/core/shared/inversify';
+import { ContextKeyChangeEvent, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
+import { DisposableCollection, Emitter } from '@theia/core';
 import { NotebookKernelService } from './notebook-kernel-service';
 import { NOTEBOOK_KERNEL, NOTEBOOK_KERNEL_SELECTED, NOTEBOOK_VIEW_TYPE } from '../contributions/notebook-context-keys';
 import { NotebookEditorWidget } from '../notebook-editor-widget';
-import { NotebookEditorWidgetService } from './notebook-editor-widget-service';
 
 @injectable()
 export class NotebookContextManager {
@@ -29,34 +28,38 @@ export class NotebookContextManager {
     @inject(NotebookKernelService)
     protected readonly notebookKernelService: NotebookKernelService;
 
-    @inject(NotebookEditorWidgetService)
-    protected readonly notebookEditorWidgetService: NotebookEditorWidgetService;
-
     protected readonly toDispose = new DisposableCollection();
 
-    @postConstruct()
-    init(): void {
-        this.notebookEditorWidgetService.onDidChangeFocusedEditor(e => {
-            this.update(e);
-        });
-        if (this.notebookEditorWidgetService.focusedEditor) {
-            this.update(this.notebookEditorWidgetService.focusedEditor);
-        }
-    }
+    protected readonly onDidChangeContextEmitter = new Emitter<ContextKeyChangeEvent>();
+    readonly onDidChangeContext = this.onDidChangeContextEmitter.event;
 
-    update(widget: NotebookEditorWidget | undefined): void {
+    init(widget: NotebookEditorWidget): void {
+        this.toDispose.push(this.contextKeyService.onDidChange(e => this.onDidChangeContextEmitter.fire(e)));
+
+        const scopedStore = this.contextKeyService.createScoped(widget.node);
+
         this.toDispose.dispose();
 
-        this.contextKeyService.setContext(NOTEBOOK_VIEW_TYPE, widget?.notebookType);
+        scopedStore.setContext(NOTEBOOK_VIEW_TYPE, widget?.notebookType);
 
         const kernel = widget?.model ? this.notebookKernelService.getSelectedNotebookKernel(widget.model) : undefined;
-        this.contextKeyService.setContext(NOTEBOOK_KERNEL_SELECTED, !!kernel);
-        this.contextKeyService.setContext(NOTEBOOK_KERNEL, kernel?.id);
+        scopedStore.setContext(NOTEBOOK_KERNEL_SELECTED, !!kernel);
+        scopedStore.setContext(NOTEBOOK_KERNEL, kernel?.id);
         this.toDispose.push(this.notebookKernelService.onDidChangeSelectedKernel(e => {
             if (e.notebook.toString() === widget?.getResourceUri()?.toString()) {
-                this.contextKeyService.setContext(NOTEBOOK_KERNEL_SELECTED, !!e.newKernel);
-                this.contextKeyService.setContext(NOTEBOOK_KERNEL, e.newKernel);
+                scopedStore.setContext(NOTEBOOK_KERNEL_SELECTED, !!e.newKernel);
+                scopedStore.setContext(NOTEBOOK_KERNEL, e.newKernel);
+                this.onDidChangeContextEmitter.fire(this.createContextKeyChangedEvent([NOTEBOOK_KERNEL_SELECTED, NOTEBOOK_KERNEL]));
             }
         }));
+        this.onDidChangeContextEmitter.fire(this.createContextKeyChangedEvent([NOTEBOOK_VIEW_TYPE, NOTEBOOK_KERNEL_SELECTED, NOTEBOOK_KERNEL]));
+    }
+
+    createContextKeyChangedEvent(affectedKeys: string[]): ContextKeyChangeEvent {
+        return { affects: keys => affectedKeys.some(key => keys.has(key)) };
+    }
+
+    dispose(): void {
+        this.toDispose.dispose();
     }
 }

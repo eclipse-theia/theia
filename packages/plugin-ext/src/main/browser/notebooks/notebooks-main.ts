@@ -18,7 +18,6 @@ import { CancellationToken, DisposableCollection, Emitter, Event } from '@theia/
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { NotebookCellStatusBarItem, NotebookData, TransientOptions } from '@theia/notebook/lib/common';
 import { NotebookService } from '@theia/notebook/lib/browser';
-import { NotebookContextManager } from '@theia/notebook/lib/browser/service/notebook-context-manager';
 import { Disposable } from '@theia/plugin';
 import { CommandRegistryMain, MAIN_RPC_CONTEXT, NotebooksExt, NotebooksMain } from '../../../common';
 import { RPCProtocol } from '../../../common/rpc-protocol';
@@ -56,7 +55,6 @@ export class NotebooksMainImpl implements NotebooksMain {
     ) {
         this.notebookService = container.get(NotebookService);
         const plugins = container.get(HostedPluginSupport);
-        container.get(NotebookContextManager);
 
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.NOTEBOOKS_EXT);
         this.notebookService.onWillUseNotebookSerializer(async event => plugins.activateByNotebookSerializer(event));
