@@ -10,11 +10,11 @@ Commands and menu items are handled by their label, so no further customization 
 Simply interact with them via the menu or quick commands.
 
 ```typescript
-const app = await TheiaApp.load(page);
+const app = await TheiaAppLoader.load({ playwright, browser });
 const menuBar = app.menuBar;
 
-const yourMenu = await menuBar.openMenu("Your Menu");
-const yourItem = await mainMenu.menuItemByName("Your Item");
+const yourMenu = await menuBar.openMenu('Your Menu');
+const yourItem = await mainMenu.menuItemByName('Your Item');
 
 expect(await yourItem?.hasSubmenu()).toBe(true);
 ```
@@ -30,14 +30,14 @@ export class MyTheiaApp extends TheiaApp {
 }
 
 export class MyToolbar extends TheiaPageObject {
-  selector = "div#myToolbar";
+  selector = 'div#myToolbar';
   async clickItem1(): Promise<void> {
     await this.page.click(`${this.selector} .item1`);
   }
 }
 
-const ws = new TheiaWorkspace(["src/tests/resources/sample-files1"]);
-const app = await MyTheiaApp.loadApp(page, MyTheiaApp, ws);
+const ws = new TheiaWorkspace(['src/tests/resources/sample-files1']);
+const app = await TheiaAppLoader.load({ playwright, browser }, ws, MyTheiaApp);
 await app.toolbar.clickItem1();
 ```
 
@@ -55,9 +55,9 @@ export class MyView extends TheiaView {
   constructor(public app: TheiaApp) {
     super(
       {
-        tabSelector: "#shell-tab-my-view", // the id of the tab
-        viewSelector: "#my-view-container", // the id of the view container
-        viewName: "My View", // the user visible view name
+        tabSelector: '#shell-tab-my-view', // the id of the tab
+        viewSelector: '#my-view-container', // the id of the view container
+        viewName: 'My View', // the user visible view name
       },
       app
     );
@@ -66,7 +66,7 @@ export class MyView extends TheiaView {
   async clickMyButton(): Promise<void> {
     await this.activate();
     const viewElement = await this.viewElement();
-    const button = await viewElement?.waitForSelector("#idOfMyButton");
+    const button = await viewElement?.waitForSelector('#idOfMyButton');
     await button?.click();
   }
 }
@@ -83,7 +83,7 @@ As an example, `MyView` above introduces a method that allows to click a button.
 To use this custom page object in a test, we pass our custom page object as a parameter when opening the view with `app.openView`.
 
 ```typescript
-const app = await TheiaApp.load(page, ws);
+const app = await TheiaAppLoader.load({ playwright, browser });
 const myView = await app.openView(MyView);
 await myView.clickMyButton();
 ```
@@ -94,7 +94,7 @@ As a reference for custom views and editors, please refer to the existing page o
 Custom status indicators are supported with the same mechanism. They are accessed via `TheiaApp.statusBar`.
 
 ```typescript
-const app = await TheiaApp.load(page);
+const app = await TheiaAppLoader.load({ playwright, browser });
 const problemIndicator = await app.statusBar.statusIndicator(
   TheiaProblemIndicator
 );
