@@ -34,8 +34,6 @@ export class NotebookContextManager {
     readonly onDidChangeContext = this.onDidChangeContextEmitter.event;
 
     init(widget: NotebookEditorWidget): void {
-        this.toDispose.push(this.contextKeyService.onDidChange(e => this.onDidChangeContextEmitter.fire(e)));
-
         const scopedStore = this.contextKeyService.createScoped(widget.node);
 
         this.toDispose.dispose();

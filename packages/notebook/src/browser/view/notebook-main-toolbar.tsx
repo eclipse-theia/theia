@@ -81,6 +81,11 @@ export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProp
                 this.forceUpdate();
             }
         });
+        props.contextKeyService.onDidChange(e => {
+            if (e.affects(contextKeys)) {
+                this.forceUpdate();
+            }
+        });
 
     }
 
