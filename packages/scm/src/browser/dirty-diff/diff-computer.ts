@@ -95,7 +95,7 @@ export class DiffComputer {
                 previousRevisionLine += change.count!;
             }
         }
-        return <DirtyDiff>{ added, removed, modified, rangeMappings };
+        return { added, removed, modified, rangeMappings };
     }
 
 }
