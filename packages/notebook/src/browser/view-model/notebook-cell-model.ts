@@ -20,7 +20,6 @@
 
 import { Disposable, DisposableCollection, Emitter, Event, URI } from '@theia/core';
 import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
-import { ContextKeyChangeEvent } from '@theia/core/lib/browser/context-key-service';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import {
@@ -33,23 +32,13 @@ import { NotebookCellOutputModel } from './notebook-cell-output-model';
 export const NotebookCellModelFactory = Symbol('NotebookModelFactory');
 export type NotebookCellModelFactory = (props: NotebookCellModelProps) => NotebookCellModel;
 
-export function createNotebookCellModelContainer(parent: interfaces.Container, props: NotebookCellModelProps,
-    notebookCellContextManager: new (...args: never[]) => unknown): interfaces.Container {
+export function createNotebookCellModelContainer(parent: interfaces.Container, props: NotebookCellModelProps): interfaces.Container {
     const child = parent.createChild();
 
     child.bind(NotebookCellModelProps).toConstantValue(props);
-    // We need the constructor as property here to avoid circular dependencies for the context manager
-    child.bind(NotebookCellContextManager).to(notebookCellContextManager).inSingletonScope();
     child.bind(NotebookCellModel).toSelf();
 
     return child;
-}
-
-const NotebookCellContextManager = Symbol('NotebookCellContextManager');
-interface NotebookCellContextManager {
-    updateCellContext(cell: NotebookCellModel, context: HTMLElement): void;
-    dispose(): void;
-    onDidChangeContext: Event<ContextKeyChangeEvent>;
 }
 
 export interface CellInternalMetadataChangedEvent {
@@ -111,9 +100,6 @@ export class NotebookCellModel implements NotebookCell, Disposable {
     protected readonly onDidRequestCellEditChangeEmitter = new Emitter<boolean>();
     readonly onDidRequestCellEditChange = this.onDidRequestCellEditChangeEmitter.event;
 
-    @inject(NotebookCellContextManager)
-    readonly notebookCellContextManager: NotebookCellContextManager;
-
     @inject(NotebookCellModelProps)
     protected readonly props: NotebookCellModelProps;
     @inject(MonacoTextModelService)
@@ -151,12 +137,6 @@ export class NotebookCellModel implements NotebookCell, Disposable {
     }
 
     protected textModel?: MonacoEditorModel;
-
-    protected htmlContext: HTMLLIElement;
-
-    get context(): HTMLLIElement {
-        return this.htmlContext;
-    }
 
     get text(): string {
         return this.textModel ? this.textModel.getText() : this.source;
@@ -198,18 +178,16 @@ export class NotebookCellModel implements NotebookCell, Disposable {
         return this.props.cellKind;
     }
 
+    protected _editing: boolean = false;
+    get editing(): boolean {
+        return this._editing;
+    }
+
     @postConstruct()
     protected init(): void {
         this._outputs = this.props.outputs.map(op => new NotebookCellOutputModel(op));
         this._metadata = this.props.metadata ?? {};
         this._internalMetadata = this.props.internalMetadata ?? {};
-    }
-
-    refChanged(node: HTMLLIElement): void {
-        if (node) {
-            this.htmlContext = node;
-            this.notebookCellContextManager.updateCellContext(this, node);
-        }
     }
 
     dispose(): void {
@@ -219,18 +197,19 @@ export class NotebookCellModel implements NotebookCell, Disposable {
         this.onDidChangeMetadataEmitter.dispose();
         this.onDidChangeInternalMetadataEmitter.dispose();
         this.onDidChangeLanguageEmitter.dispose();
-        this.notebookCellContextManager.dispose();
         this.textModel?.dispose();
         this.toDispose.dispose();
     }
 
     requestEdit(): void {
         if (!this.textModel || !this.textModel.readOnly) {
+            this._editing = true;
             this.onDidRequestCellEditChangeEmitter.fire(true);
         }
     }
 
     requestStopEdit(): void {
+        this._editing = false;
         this.onDidRequestCellEditChangeEmitter.fire(false);
     }
 

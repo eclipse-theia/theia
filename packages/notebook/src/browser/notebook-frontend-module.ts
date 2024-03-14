@@ -42,7 +42,6 @@ import { NotebookKernelHistoryService } from './service/notebook-kernel-history-
 import { NotebookEditorWidgetService } from './service/notebook-editor-widget-service';
 import { NotebookRendererMessagingService } from './service/notebook-renderer-messaging-service';
 import { NotebookColorContribution } from './contributions/notebook-color-contribution';
-import { NotebookCellContextManager } from './service/notebook-cell-context-manager';
 
 export default new ContainerModule(bind => {
     bind(NotebookColorContribution).toSelf().inSingletonScope();
@@ -88,6 +87,6 @@ export default new ContainerModule(bind => {
         createNotebookModelContainer(ctx.container, props).get(NotebookModel)
     );
     bind(NotebookCellModelFactory).toFactory(ctx => (props: NotebookCellModelProps) =>
-        createNotebookCellModelContainer(ctx.container, props, NotebookCellContextManager).get(NotebookCellModel)
+        createNotebookCellModelContainer(ctx.container, props).get(NotebookCellModel)
     );
 });
