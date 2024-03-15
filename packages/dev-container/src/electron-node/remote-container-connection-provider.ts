@@ -23,7 +23,7 @@ import { RemoteConnection, RemoteExecOptions, RemoteExecResult, RemoteExecTester
 import { RemoteSetupResult, RemoteSetupService } from '@theia/remote/lib/electron-node/setup/remote-setup-service';
 import { RemoteConnectionService } from '@theia/remote/lib/electron-node/remote-connection-service';
 import { RemoteProxyServerProvider } from '@theia/remote/lib/electron-node/remote-proxy-server-provider';
-import { Emitter, Event, generateUuid, MessageService } from '@theia/core';
+import { Emitter, Event, generateUuid, MessageService, RpcServer } from '@theia/core';
 import { Socket } from 'net';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import * as Docker from 'dockerode';
@@ -33,9 +33,10 @@ import { WriteStream } from 'tty';
 import { PassThrough } from 'stream';
 import { exec } from 'child_process';
 import { DevContainerFileService } from './dev-container-file-service';
+import { ContainerOutputProvider } from '../electron-common/container-output-provider';
 
 @injectable()
-export class DevContainerConnectionProvider implements RemoteContainerConnectionProvider {
+export class DevContainerConnectionProvider implements RemoteContainerConnectionProvider, RpcServer<ContainerOutputProvider> {
 
     @inject(RemoteConnectionService)
     protected readonly remoteConnectionService: RemoteConnectionService;
@@ -55,6 +56,12 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
     @inject(DevContainerFileService)
     protected readonly devContainerFileService: DevContainerFileService;
 
+    protected outputProvider: ContainerOutputProvider | undefined;
+
+    setClient(client: ContainerOutputProvider): void {
+        this.outputProvider = client;
+    }
+
     async connectToContainer(options: ContainerConnectionOptions): Promise<ContainerConnectionResult> {
         const dockerConnection = new Docker();
         const version = await dockerConnection.version().catch(() => undefined);
@@ -66,10 +73,10 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
 
         // create container
         const progress = await this.messageService.showProgress({
-            text: 'create container',
+            text: 'Creating container',
         });
         try {
-            const container = await this.containerService.getOrCreateContainer(dockerConnection, options.devcontainerFile, options.lastContainerInfo);
+            const container = await this.containerService.getOrCreateContainer(dockerConnection, options.devcontainerFile, options.lastContainerInfo, this.outputProvider);
 
             // create actual connection
             const report: RemoteStatusReport = message => progress.report({ message });
@@ -119,6 +126,10 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
             docker,
             container,
         }));
+    }
+
+    dispose(): void {
+
     }
 
 }

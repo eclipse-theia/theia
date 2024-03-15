@@ -22,11 +22,15 @@ import * as Docker from 'dockerode';
 import { LastContainerInfo } from '../electron-common/remote-container-connection-provider';
 import { DevContainerConfiguration } from './devcontainer-file';
 import { DevContainerFileService } from './dev-container-file-service';
+import { ContainerOutputProvider } from '../electron-common/container-output-provider';
 
 export const ContainerCreationContribution = Symbol('ContainerCreationContributions');
 
 export interface ContainerCreationContribution {
-    handleContainerCreation(createOptions: Docker.ContainerCreateOptions, containerConfig: DevContainerConfiguration, api: Docker): Promise<void>;
+    handleContainerCreation(createOptions: Docker.ContainerCreateOptions,
+        containerConfig: DevContainerConfiguration,
+        api: Docker,
+        outputProvider?: ContainerOutputProvider): Promise<void>;
 }
 
 @injectable()
@@ -41,7 +45,8 @@ export class DockerContainerService {
     @inject(DevContainerFileService)
     protected readonly devContainerFileService: DevContainerFileService;
 
-    async getOrCreateContainer(docker: Docker, devcontainerFile: string, lastContainerInfo?: LastContainerInfo): Promise<Docker.Container> {
+    async getOrCreateContainer(docker: Docker, devcontainerFile: string,
+        lastContainerInfo?: LastContainerInfo, outputProvider?: ContainerOutputProvider): Promise<Docker.Container> {
         let container;
 
         const workspace = new URI(await this.workspaceServer.getMostRecentlyUsedWorkspace());
@@ -60,12 +65,12 @@ export class DockerContainerService {
             }
         }
         if (!container) {
-            container = await this.buildContainer(docker, devcontainerFile, workspace);
+            container = await this.buildContainer(docker, devcontainerFile, workspace, outputProvider);
         }
         return container;
     }
 
-    protected async buildContainer(docker: Docker, devcontainerFile: string, workspace: URI): Promise<Docker.Container> {
+    protected async buildContainer(docker: Docker, devcontainerFile: string, workspace: URI, outputProvider?: ContainerOutputProvider): Promise<Docker.Container> {
         const devcontainerConfig = await this.devContainerFileService.getConfiguration(devcontainerFile);
 
         if (!devcontainerConfig) {
@@ -87,7 +92,7 @@ export class DockerContainerService {
         };
 
         for (const containerCreateContrib of this.containerCreationContributions.getContributions()) {
-            await containerCreateContrib.handleContainerCreation(containerCreateOptions, devcontainerConfig, docker);
+            await containerCreateContrib.handleContainerCreation(containerCreateOptions, devcontainerConfig, docker, outputProvider);
         }
 
         // TODO add more config

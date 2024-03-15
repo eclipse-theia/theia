@@ -21,6 +21,7 @@ import { RemotePreferences } from '@theia/remote/lib/electron-browser/remote-pre
 import { WorkspaceStorageService } from '@theia/workspace/lib/browser/workspace-storage-service';
 import { Command, QuickInputService } from '@theia/core';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import { ContainerOutputProvider } from './container-output-provider';
 
 export namespace RemoteContainerCommands {
     export const REOPEN_IN_CONTAINER = Command.toLocalizedCommand({
@@ -49,11 +50,13 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
     @inject(QuickInputService)
     protected readonly quickInputService: QuickInputService;
 
+    @inject(ContainerOutputProvider)
+    protected readonly containerOutputProvider: ContainerOutputProvider;
+
     registerRemoteCommands(registry: RemoteRegistry): void {
         registry.registerCommand(RemoteContainerCommands.REOPEN_IN_CONTAINER, {
             execute: () => this.openInContainer()
         });
-
     }
 
     async openInContainer(): Promise<void> {
@@ -63,6 +66,8 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
         }
         const lastContainerInfoKey = `${LAST_USED_CONTAINER}:${devcontainerFile}`;
         const lastContainerInfo = await this.workspaceStorageService.getData<LastContainerInfo | undefined>(lastContainerInfoKey);
+
+        this.containerOutputProvider.openChannel();
 
         const connectionResult = await this.connectionProvider.connectToContainer({
             nodeDownloadTemplate: this.remotePreferences['remote.nodeDownloadTemplate'],
@@ -94,4 +99,5 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
             title: 'Select a devcontainer.json file'
         }))?.file;
     }
+
 }

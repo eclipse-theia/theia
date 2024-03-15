@@ -12,6 +12,10 @@
 // https://www.gnu.org/software/classpath/license.html.
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+
+import { RpcServer } from '@theia/core';
+import { ContainerOutputProvider } from './container-output-provider';
+
 // *****************************************************************************
 export const RemoteContainerConnectionProviderPath = '/remote/container';
 
@@ -38,7 +42,7 @@ export interface DevContainerFile {
     name: string;
     path: string;
 }
-export interface RemoteContainerConnectionProvider {
+export interface RemoteContainerConnectionProvider extends RpcServer<ContainerOutputProvider> {
     connectToContainer(options: ContainerConnectionOptions): Promise<ContainerConnectionResult>;
     getDevContainerFiles(): Promise<DevContainerFile[]>;
 }

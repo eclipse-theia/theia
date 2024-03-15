@@ -13,6 +13,9 @@
       "path": "../core"
     },
     {
+      "path": "../output"
+    },
+    {
       "path": "../remote"
     },
     {

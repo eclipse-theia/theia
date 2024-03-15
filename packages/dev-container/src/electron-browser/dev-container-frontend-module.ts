@@ -18,13 +18,16 @@ import { RemoteRegistryContribution } from '@theia/remote/lib/electron-browser/r
 import { RemoteContainerConnectionProvider, RemoteContainerConnectionProviderPath } from '../electron-common/remote-container-connection-provider';
 import { ContainerConnectionContribution } from './container-connection-contribution';
 import { ServiceConnectionProvider } from '@theia/core/lib/browser/messaging/service-connection-provider';
+import { ContainerOutputProvider } from './container-output-provider';
 
-export default new ContainerModule((bind, unbind, isBound, rebind) => {
+export default new ContainerModule(bind => {
     bind(ContainerConnectionContribution).toSelf().inSingletonScope();
     bind(RemoteRegistryContribution).toService(ContainerConnectionContribution);
 
-    bind(RemoteContainerConnectionProvider).toDynamicValue(ctx =>
-        ServiceConnectionProvider.createLocalProxy<RemoteContainerConnectionProvider>(ctx.container, RemoteContainerConnectionProviderPath)
-    ).inSingletonScope();
+    bind(ContainerOutputProvider).toSelf().inSingletonScope();
 
+    bind(RemoteContainerConnectionProvider).toDynamicValue(ctx => {
+        const outputProvider = ctx.container.get(ContainerOutputProvider);
+        return ServiceConnectionProvider.createLocalProxy<RemoteContainerConnectionProvider>(ctx.container, RemoteContainerConnectionProviderPath, outputProvider);
+    }).inSingletonScope();
 });

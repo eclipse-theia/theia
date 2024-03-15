@@ -18,6 +18,7 @@ import { injectable, interfaces } from '@theia/core/shared/inversify';
 import { ContainerCreationContribution } from '../docker-container-service';
 import { DevContainerConfiguration, DockerfileContainer, ImageContainer } from '../devcontainer-file';
 import { Path } from '@theia/core';
+import { ContainerOutputProvider } from '../../electron-common/container-output-provider';
 
 export function registerContainerCreationContributions(bind: interfaces.Bind): void {
     bind(ContainerCreationContribution).to(ImageFileContribution).inSingletonScope();
@@ -28,10 +29,18 @@ export function registerContainerCreationContributions(bind: interfaces.Bind): v
 
 @injectable()
 export class ImageFileContribution implements ContainerCreationContribution {
-    async handleContainerCreation(createOptions: Docker.ContainerCreateOptions, containerConfig: ImageContainer, api: Docker): Promise<void> {
-        // check if image container
+    async handleContainerCreation(createOptions: Docker.ContainerCreateOptions, containerConfig: ImageContainer,
+        api: Docker, outputprovider: ContainerOutputProvider): Promise<void> {
         if (containerConfig.image) {
-            await api.pull(containerConfig.image);
+            await new Promise<void>((res, rej) => api.pull(containerConfig.image, {}, (err, stream) => {
+                if (err) {
+                    rej(err);
+                } else {
+                    api.modem.followProgress(stream, (error, output) => error ?
+                        rej(error) :
+                        res(), progress => outputprovider.onRemoteOutput(OutputHelper.parseProgress(progress)));
+                }
+            }));
             createOptions.Image = containerConfig.image;
         }
     }
@@ -39,7 +48,8 @@ export class ImageFileContribution implements ContainerCreationContribution {
 
 @injectable()
 export class DockerFileContribution implements ContainerCreationContribution {
-    async handleContainerCreation(createOptions: Docker.ContainerCreateOptions, containerConfig: DockerfileContainer, api: Docker): Promise<void> {
+    async handleContainerCreation(createOptions: Docker.ContainerCreateOptions, containerConfig: DockerfileContainer,
+        api: Docker, outputprovider: ContainerOutputProvider): Promise<void> {
         // check if dockerfile container
         if (containerConfig.dockerFile || containerConfig.build?.dockerfile) {
             const dockerfile = (containerConfig.dockerFile ?? containerConfig.build?.dockerfile) as string;
@@ -61,7 +71,7 @@ export class DockerFileContribution implements ContainerCreationContribution {
                         }
                     }
                 }
-            }));
+            }, progress => outputprovider.onRemoteOutput(OutputHelper.parseProgress(progress))));
             createOptions.Image = imageId;
         }
     }
@@ -113,5 +123,18 @@ export class MountsContribution implements ContainerCreationContribution {
             Target: parts.find(part => part.startsWith('target=') || part.startsWith('dst='))?.split('=')[1]!,
             Type: (parts.find(part => part.startsWith('type='))?.split('=')[1] ?? 'bind') as Docker.MountType
         };
+    }
+}
+
+export namespace OutputHelper {
+    export interface Progress {
+        id?: string;
+        stream: string;
+        status?: string;
+        progress?: string;
+    }
+
+    export function parseProgress(progress: Progress): string {
+        return progress.stream ?? progress.progress ?? progress.status ?? '';
     }
 }

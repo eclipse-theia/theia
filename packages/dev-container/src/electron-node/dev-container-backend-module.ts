@@ -19,9 +19,10 @@ import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connec
 import { DevContainerConnectionProvider } from './remote-container-connection-provider';
 import { RemoteContainerConnectionProvider, RemoteContainerConnectionProviderPath } from '../electron-common/remote-container-connection-provider';
 import { ContainerCreationContribution, DockerContainerService } from './docker-container-service';
-import { bindContributionProvider } from '@theia/core';
+import { bindContributionProvider, ConnectionHandler, RpcConnectionHandler } from '@theia/core';
 import { registerContainerCreationContributions } from './devcontainer-contributions/main-container-creation-contributions';
 import { DevContainerFileService } from './dev-container-file-service';
+import { ContainerOutputProvider } from '../electron-common/container-output-provider';
 
 export const remoteConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {
     bindContributionProvider(bind, ContainerCreationContribution);
@@ -29,7 +30,13 @@ export const remoteConnectionModule = ConnectionContainerModule.create(({ bind, 
 
     bind(DevContainerConnectionProvider).toSelf().inSingletonScope();
     bind(RemoteContainerConnectionProvider).toService(DevContainerConnectionProvider);
-    bindBackendService(RemoteContainerConnectionProviderPath, RemoteContainerConnectionProvider);
+    bind(ConnectionHandler).toDynamicValue(ctx =>
+        new RpcConnectionHandler<ContainerOutputProvider>(RemoteContainerConnectionProviderPath, client => {
+            const server = ctx.container.get<RemoteContainerConnectionProvider>(RemoteContainerConnectionProvider);
+            server.setClient(client);
+            client.onDidCloseConnection(() => server.dispose());
+            return server;
+        }));
 });
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
