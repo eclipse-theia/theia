@@ -20,10 +20,10 @@ jobs:
           node-version: "18.x"
           registry-url: "https://registry.npmjs.org"
 
-      - name: Use Python 3.x
+      - name: Use Python 3.11
         uses: actions/setup-python@v4
         with:
-          python-version: "3.x"
+          python-version: '3.11'
 
       - name: Build
         shell: bash
@@ -36,14 +36,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9
 
       - name: Performance (browser)
-        uses: coactions/setup-xvfb@v1
-        with:
-          run: yarn performance:startup:browser
+        shell: bash
+        run: yarn performance:startup:browser
 
       - name: Performance (Electron)
-        uses: coactions/setup-xvfb@v1
-        with:
-          run: yarn performance:startup:electron
+        shell: bash
+        run: xvfb-run yarn performance:startup:electron
 
       - name: Analyze performance results
         uses: benchmark-action/github-action-benchmark@v1
