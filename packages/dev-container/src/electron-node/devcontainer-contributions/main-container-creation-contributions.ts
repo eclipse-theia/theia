@@ -16,7 +16,7 @@
 import * as Docker from 'dockerode';
 import { injectable, interfaces } from '@theia/core/shared/inversify';
 import { ContainerCreationContribution } from '../docker-container-service';
-import { DevContainerConfiguration, DockerfileContainer, ImageContainer } from '../devcontainer-file';
+import { DevContainerConfiguration, DockerfileContainer, ImageContainer, NonComposeContainerBase } from '../devcontainer-file';
 import { Path } from '@theia/core';
 import { ContainerOutputProvider } from '../../electron-common/container-output-provider';
 
@@ -110,10 +110,10 @@ export class MountsContribution implements ContainerCreationContribution {
             return;
         }
 
-        createOptions.HostConfig!.Mounts!.push(...containerConfig.mounts
-            .map(mount => typeof mount === 'string' ?
+        createOptions.HostConfig!.Mounts!.push(...(containerConfig as NonComposeContainerBase)?.mounts
+            ?.map(mount => typeof mount === 'string' ?
                 this.parseMountString(mount) :
-                { Source: mount.source, Target: mount.target, Type: mount.type ?? 'bind' }));
+                { Source: mount.source, Target: mount.target, Type: mount.type ?? 'bind' }) ?? []);
     }
 
     parseMountString(mount: string): Docker.MountSettings {
