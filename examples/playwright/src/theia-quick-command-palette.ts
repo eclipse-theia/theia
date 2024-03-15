@@ -64,12 +64,10 @@ export class TheiaQuickCommandPalette extends TheiaPageObject {
             this.open();
         }
         const input = this.page.locator(`${this.selector} .monaco-inputbox .input`);
-        if (input != null) {
-            await input.focus();
-            await input.pressSequentially(value, { delay: USER_KEY_TYPING_DELAY });
-            if (confirm) {
-                await this.page.keyboard.press('Enter');
-            }
+        await input.focus();
+        await input.pressSequentially(value, { delay: USER_KEY_TYPING_DELAY });
+        if (confirm) {
+            await this.page.keyboard.press('Enter');
         }
     }
 
