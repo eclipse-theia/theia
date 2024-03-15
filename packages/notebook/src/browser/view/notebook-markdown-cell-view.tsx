@@ -24,6 +24,7 @@ import { CellEditor } from './notebook-cell-editor';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { MonacoEditorServices } from '@theia/monaco/lib/browser/monaco-editor';
 import { nls } from '@theia/core';
+import { NotebookContextManager } from '../service/notebook-context-manager';
 
 @injectable()
 export class NotebookMarkdownCellRenderer implements CellRenderer {
@@ -33,9 +34,12 @@ export class NotebookMarkdownCellRenderer implements CellRenderer {
     @inject(MonacoEditorServices)
     protected readonly monacoServices: MonacoEditorServices;
 
+    @inject(NotebookContextManager)
+    protected readonly notebookContextManager: NotebookContextManager;
+
     render(notebookModel: NotebookModel, cell: NotebookCellModel): React.ReactNode {
         return <MarkdownCell markdownRenderer={this.markdownRenderer} monacoServices={this.monacoServices}
-            cell={cell} notebookModel={notebookModel} />;
+            cell={cell} notebookModel={notebookModel} notebookContextManager={this.notebookContextManager} />;
     }
 
 }
@@ -46,9 +50,10 @@ interface MarkdownCellProps {
 
     cell: NotebookCellModel,
     notebookModel: NotebookModel
+    notebookContextManager: NotebookContextManager;
 }
 
-function MarkdownCell({ markdownRenderer, monacoServices, cell, notebookModel }: MarkdownCellProps): React.JSX.Element {
+function MarkdownCell({ markdownRenderer, monacoServices, cell, notebookModel, notebookContextManager }: MarkdownCellProps): React.JSX.Element {
     const [editMode, setEditMode] = React.useState(false);
 
     React.useEffect(() => {
@@ -62,7 +67,7 @@ function MarkdownCell({ markdownRenderer, monacoServices, cell, notebookModel }:
     }
 
     return editMode ?
-        <CellEditor cell={cell} notebookModel={notebookModel} monacoServices={monacoServices} /> :
+        <CellEditor cell={cell} notebookModel={notebookModel} monacoServices={monacoServices} notebookContextManager={notebookContextManager} /> :
         <div className='theia-notebook-markdown-content'
             onDoubleClick={() => cell.requestEdit()}
             // This sets the non React HTML node from the markdown renderers output as a child node to this react component

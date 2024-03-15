@@ -53,6 +53,10 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
                 this.setState({ ...this.state, selectedCell: this.props.notebookModel.cells.find(cell => cell === this.state.selectedCell) });
             }
         }));
+
+        this.toDispose.push(props.notebookModel.onDidChangeSelectedCell(cell => {
+            this.setState({ ...this.state, selectedCell: cell });
+        }));
     }
 
     override componentWillUnmount(): void {

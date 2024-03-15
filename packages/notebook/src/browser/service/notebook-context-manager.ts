@@ -19,6 +19,7 @@ import { ContextKeyChangeEvent, ContextKeyService, ScopedValueStore } from '@the
 import { DisposableCollection, Emitter } from '@theia/core';
 import { NotebookKernelService } from './notebook-kernel-service';
 import {
+    NOTEBOOK_CELL_EDITABLE,
     NOTEBOOK_CELL_EXECUTING, NOTEBOOK_CELL_EXECUTION_STATE,
     NOTEBOOK_CELL_FOCUSED, NOTEBOOK_CELL_MARKDOWN_EDIT_MODE,
     NOTEBOOK_CELL_TYPE, NOTEBOOK_KERNEL, NOTEBOOK_KERNEL_SELECTED,
@@ -46,59 +47,63 @@ export class NotebookContextManager {
 
     protected _context?: HTMLElement;
 
+    scopedStore: ScopedValueStore;
+
     get context(): HTMLElement | undefined {
         return this._context;
     }
 
     init(widget: NotebookEditorWidget): void {
         this._context = widget.node;
-        const scopedStore = this.contextKeyService.createScoped(widget.node);
+        this.scopedStore = this.contextKeyService.createScoped(widget.node);
 
         this.toDispose.dispose();
 
-        scopedStore.setContext(NOTEBOOK_VIEW_TYPE, widget?.notebookType);
+        this.scopedStore.setContext(NOTEBOOK_VIEW_TYPE, widget?.notebookType);
 
         // Kernel related keys
         const kernel = widget?.model ? this.notebookKernelService.getSelectedNotebookKernel(widget.model) : undefined;
-        scopedStore.setContext(NOTEBOOK_KERNEL_SELECTED, !!kernel);
-        scopedStore.setContext(NOTEBOOK_KERNEL, kernel?.id);
+        this.scopedStore.setContext(NOTEBOOK_KERNEL_SELECTED, !!kernel);
+        this.scopedStore.setContext(NOTEBOOK_KERNEL, kernel?.id);
         this.toDispose.push(this.notebookKernelService.onDidChangeSelectedKernel(e => {
             if (e.notebook.toString() === widget?.getResourceUri()?.toString()) {
-                scopedStore.setContext(NOTEBOOK_KERNEL_SELECTED, !!e.newKernel);
-                scopedStore.setContext(NOTEBOOK_KERNEL, e.newKernel);
+                this.scopedStore.setContext(NOTEBOOK_KERNEL_SELECTED, !!e.newKernel);
+                this.scopedStore.setContext(NOTEBOOK_KERNEL, e.newKernel);
                 this.onDidChangeContextEmitter.fire(this.createContextKeyChangedEvent([NOTEBOOK_KERNEL_SELECTED, NOTEBOOK_KERNEL]));
             }
         }));
 
         // Cell Selection realted keys
-        scopedStore.setContext(NOTEBOOK_CELL_FOCUSED, !!widget.model?.selectedCell);
+        this.scopedStore.setContext(NOTEBOOK_CELL_FOCUSED, !!widget.model?.selectedCell);
         widget.model?.onDidChangeSelectedCell(e => {
-            scopedStore.setContext(NOTEBOOK_CELL_FOCUSED, !!e);
+            this.scopedStore.setContext(NOTEBOOK_CELL_FOCUSED, !!e);
             this.onDidChangeContextEmitter.fire(this.createContextKeyChangedEvent([NOTEBOOK_CELL_FOCUSED]));
         });
 
-        widget.model?.onDidChangeSelectedCell(e => this.selectedCellChanged(e, scopedStore));
+        widget.model?.onDidChangeSelectedCell(e => this.selectedCellChanged(e));
 
         this.onDidChangeContextEmitter.fire(this.createContextKeyChangedEvent([NOTEBOOK_VIEW_TYPE, NOTEBOOK_KERNEL_SELECTED, NOTEBOOK_KERNEL]));
     }
 
     protected cellDisposables = new DisposableCollection();
 
-    selectedCellChanged(cell: NotebookCellModel | undefined, scopedStore: ScopedValueStore): void {
+    selectedCellChanged(cell: NotebookCellModel | undefined): void {
         this.cellDisposables.dispose();
 
-        scopedStore.setContext(NOTEBOOK_CELL_TYPE, cell ? cell.cellKind === CellKind.Code ? 'code' : 'markdown' : undefined);
+        this.scopedStore.setContext(NOTEBOOK_CELL_TYPE, cell ? cell.cellKind === CellKind.Code ? 'code' : 'markdown' : undefined);
 
         if (cell) {
-            scopedStore.setContext(NOTEBOOK_CELL_MARKDOWN_EDIT_MODE, cell.editing);
+            this.scopedStore.setContext(NOTEBOOK_CELL_MARKDOWN_EDIT_MODE, cell.editing);
+            this.scopedStore.setContext(NOTEBOOK_CELL_EDITABLE, cell.cellKind === CellKind.Markup && !cell.editing);
             this.cellDisposables.push(cell.onDidRequestCellEditChange(cellEdit => {
-                scopedStore?.setContext(NOTEBOOK_CELL_MARKDOWN_EDIT_MODE, cellEdit);
+                this.scopedStore.setContext(NOTEBOOK_CELL_MARKDOWN_EDIT_MODE, cellEdit);
+                this.scopedStore.setContext(NOTEBOOK_CELL_EDITABLE, cell.cellKind === CellKind.Markup && !cellEdit);
                 this.onDidChangeContextEmitter.fire(this.createContextKeyChangedEvent([NOTEBOOK_CELL_MARKDOWN_EDIT_MODE]));
             }));
             this.cellDisposables.push(this.executionStateService.onDidChangeExecution(e => {
                 if (cell && e.affectsCell(cell.uri)) {
-                    scopedStore?.setContext(NOTEBOOK_CELL_EXECUTING, !!e.changed);
-                    scopedStore?.setContext(NOTEBOOK_CELL_EXECUTION_STATE, e.changed?.state ?? 'idle');
+                    this.scopedStore.setContext(NOTEBOOK_CELL_EXECUTING, !!e.changed);
+                    this.scopedStore.setContext(NOTEBOOK_CELL_EXECUTION_STATE, e.changed?.state ?? 'idle');
                     this.onDidChangeContextEmitter.fire(this.createContextKeyChangedEvent([NOTEBOOK_CELL_EXECUTING, NOTEBOOK_CELL_EXECUTION_STATE]));
                 }
             }));

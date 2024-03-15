@@ -18,17 +18,20 @@ import * as React from '@theia/core/shared/react';
 import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import { SimpleMonacoEditor } from '@theia/monaco/lib/browser/simple-monaco-editor';
-import { MonacoEditorServices } from '@theia/monaco/lib/browser/monaco-editor';
+import { MonacoEditor, MonacoEditorServices } from '@theia/monaco/lib/browser/monaco-editor';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { DisposableCollection } from '@theia/core';
+import { IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
+import { NotebookContextManager } from '../service/notebook-context-manager';
 
 interface CellEditorProps {
     notebookModel: NotebookModel,
     cell: NotebookCellModel,
-    monacoServices: MonacoEditorServices
+    monacoServices: MonacoEditorServices,
+    notebookContextManager: NotebookContextManager;
 }
 
-const DEFAULT_EDITOR_OPTIONS = {
+const DEFAULT_EDITOR_OPTIONS: MonacoEditor.IOptions = {
     ...MonacoEditorProvider.inlineOptions,
     minHeight: -1,
     maxHeight: -1,
@@ -68,7 +71,8 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
                 editorModel,
                 editorNode,
                 monacoServices,
-                DEFAULT_EDITOR_OPTIONS);
+                DEFAULT_EDITOR_OPTIONS,
+                [[IContextKeyService, this.props.notebookContextManager.scopedStore]]);
             this.toDispose.push(this.editor);
             this.editor.setLanguage(cell.language);
             this.toDispose.push(this.editor.getControl().onDidContentSizeChange(() => {
@@ -91,9 +95,9 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
 
     override render(): React.ReactNode {
         return <div className='theia-notebook-cell-editor' onResize={this.handleResize} id={this.props.cell.uri.toString()}
-                    ref={container => this.setContainer(container)}>
+            ref={container => this.setContainer(container)}>
 
         </div>;
-     }
+    }
 
 }

@@ -25,7 +25,6 @@ import { NotebookContentChangedEvent, NotebookModelWillAddRemoveEvent, CellEditO
 import { NotebookSerializer } from '../service/notebook-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { NotebookCellModel, NotebookCellModelFactory } from './notebook-cell-model';
-import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
 import { UndoRedoService } from '@theia/editor/lib/browser/undo-redo-service';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
@@ -79,9 +78,6 @@ export class NotebookModel implements Saveable, Disposable {
 
     @inject(NotebookModelProps)
     protected props: NotebookModelProps;
-
-    @inject(MonacoTextModelService)
-    protected modelService: MonacoTextModelService;
 
     @inject(NotebookCellModelFactory)
     protected cellModelFactory: NotebookCellModelFactory;

@@ -15,15 +15,20 @@
 // *****************************************************************************
 
 import { Command, CommandContribution, CommandHandler, CommandRegistry, CompoundMenuNodeRole, MenuContribution, MenuModelRegistry, nls } from '@theia/core';
-import { codicon } from '@theia/core/lib/browser';
+import { codicon, Key, KeybindingContribution, KeybindingRegistry, KeyCode, KeyModifier } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookCellModel } from '../view-model/notebook-cell-model';
-import { NOTEBOOK_CELL_MARKDOWN_EDIT_MODE, NOTEBOOK_CELL_TYPE, NotebookContextKeys, NOTEBOOK_CELL_EXECUTING } from './notebook-context-keys';
+import {
+    NOTEBOOK_CELL_MARKDOWN_EDIT_MODE, NOTEBOOK_CELL_TYPE,
+    NotebookContextKeys, NOTEBOOK_CELL_EXECUTING, NOTEBOOK_EDITOR_FOCUSED,
+    NOTEBOOK_CELL_FOCUSED, NOTEBOOK_CELL_EDITABLE
+} from './notebook-context-keys';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { NotebookExecutionService } from '../service/notebook-execution-service';
 import { NotebookCellOutputModel } from '../view-model/notebook-cell-output-model';
 import { CellEditType } from '../../common';
+import { NotebookEditorWidgetService } from '../service/notebook-editor-widget-service';
 
 export namespace NotebookCellCommands {
     /** Parameters: notebookModel: NotebookModel | undefined, cell: NotebookCellModel */
@@ -69,13 +74,16 @@ export namespace NotebookCellCommands {
 }
 
 @injectable()
-export class NotebookCellActionContribution implements MenuContribution, CommandContribution {
+export class NotebookCellActionContribution implements MenuContribution, CommandContribution, KeybindingContribution {
 
     @inject(ContextKeyService)
     protected contextKeyService: ContextKeyService;
 
     @inject(NotebookExecutionService)
     protected notebookExecutionService: NotebookExecutionService;
+
+    @inject(NotebookEditorWidgetService)
+    protected notebookEditorWidgetService: NotebookEditorWidgetService;
 
     @postConstruct()
     protected init(): void {
@@ -172,8 +180,8 @@ export class NotebookCellActionContribution implements MenuContribution, Command
     }
 
     registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand(NotebookCellCommands.EDIT_COMMAND, this.editableCellCommandHandler((_, cell) => cell.requestEdit()));
-        commands.registerCommand(NotebookCellCommands.STOP_EDIT_COMMAND, { execute: (_, cell: NotebookCellModel) => cell.requestStopEdit() });
+        commands.registerCommand(NotebookCellCommands.EDIT_COMMAND, this.editableCellCommandHandler((_, cell) => (cell ?? this.getSelectedCell()).requestEdit()));
+        commands.registerCommand(NotebookCellCommands.STOP_EDIT_COMMAND, { execute: (_, cell: NotebookCellModel) => (cell ?? this.getSelectedCell()).requestStopEdit() });
         commands.registerCommand(NotebookCellCommands.DELETE_COMMAND,
             this.editableCellCommandHandler((notebookModel, cell) => notebookModel.applyEdits([{
                 editType: CellEditType.Replace,
@@ -205,6 +213,25 @@ export class NotebookCellActionContribution implements MenuContribution, Command
                 execute(notebookModel, cell, output);
             }
         };
+    }
+
+    protected getSelectedCell(): NotebookCellModel | undefined {
+        return this.notebookEditorWidgetService.focusedEditor?.model?.selectedCell;
+    }
+
+    registerKeybindings(keybindings: KeybindingRegistry): void {
+        keybindings.registerKeybindings(
+            {
+                command: NotebookCellCommands.EDIT_COMMAND.id,
+                keybinding: 'Enter',
+                when: `${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED} && ${NOTEBOOK_CELL_EDITABLE}`,
+            },
+            {
+                command: NotebookCellCommands.STOP_EDIT_COMMAND.id,
+                keybinding: KeyCode.createKeyCode({ first: Key.ENTER, modifiers: [KeyModifier.Alt] }).toString(),
+                when: `editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED}`,
+            }
+        );
     }
 }
 

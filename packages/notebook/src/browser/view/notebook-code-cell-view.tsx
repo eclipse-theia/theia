@@ -29,6 +29,7 @@ import { CellExecution, NotebookExecutionStateService } from '../service/noteboo
 import { codicon } from '@theia/core/lib/browser';
 import { NotebookCellExecutionState } from '../../common';
 import { DisposableCollection } from '@theia/core';
+import { NotebookContextManager } from '../service/notebook-context-manager';
 
 @injectable()
 export class NotebookCodeCellRenderer implements CellRenderer {
@@ -47,6 +48,9 @@ export class NotebookCodeCellRenderer implements CellRenderer {
     @inject(NotebookExecutionStateService)
     protected readonly executionStateService: NotebookExecutionStateService;
 
+    @inject(NotebookContextManager)
+    protected readonly notebookContextManager: NotebookContextManager;
+
     render(notebookModel: NotebookModel, cell: NotebookCellModel, handle: number): React.ReactNode {
         return <div>
             <div className='theia-notebook-cell-with-sidebar'>
@@ -56,7 +60,7 @@ export class NotebookCodeCellRenderer implements CellRenderer {
                     <p className='theia-notebook-code-cell-execution-order'>{`[${cell.exec ?? ' '}]`}</p> */}
                 </div>
                 <div className='theia-notebook-cell-editor-container'>
-                    <CellEditor notebookModel={notebookModel} cell={cell} monacoServices={this.monacoServices} />
+                    <CellEditor notebookModel={notebookModel} cell={cell} monacoServices={this.monacoServices} notebookContextManager={this.notebookContextManager} />
                     <NotebookCodeCellStatus cell={cell} executionStateService={this.executionStateService}></NotebookCodeCellStatus>
                 </div>
             </div>
