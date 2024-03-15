@@ -71,13 +71,13 @@ export class DirtyDiffManager {
 
     protected async handleEditorCreated(editorWidget: EditorWidget): Promise<void> {
         const editor = editorWidget.editor;
-        const uri = editor.uri.toString();
-        if (editor.uri.scheme !== 'file') {
+        if (!this.supportsDirtyDiff(editor)) {
             return;
         }
         const toDispose = new DisposableCollection();
         const model = this.createNewModel(editor);
         toDispose.push(model);
+        const uri = editor.uri.toString();
         this.models.set(uri, model);
         toDispose.push(editor.onDocumentContentChanged(throttle((event: TextDocumentChangeEvent) => model.handleDocumentChanged(event.document), 1000)));
         editorWidget.disposed.connect(() => {
@@ -91,6 +91,10 @@ export class DirtyDiffManager {
             await model.handleGitStatusUpdate(repository, changes);
         }
         model.handleDocumentChanged(editor.document);
+    }
+
+    protected supportsDirtyDiff(editor: TextEditor): boolean {
+        return editor.uri.scheme === 'file' && editor.shouldDisplayDirtyDiff();
     }
 
     protected createNewModel(editor: TextEditor): DirtyDiffModel {

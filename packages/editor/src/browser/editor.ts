@@ -293,6 +293,8 @@ export interface TextEditor extends Disposable, TextEditorSelection, Navigatable
     setEncoding(encoding: string, mode: EncodingMode): void;
 
     readonly onEncodingChanged: Event<string>;
+
+    shouldDisplayDirtyDiff(): boolean;
 }
 
 export interface Dimension {
