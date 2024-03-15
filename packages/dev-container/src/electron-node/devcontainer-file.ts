@@ -18,7 +18,7 @@
  * Defines a dev container
  * type generated from https://containers.dev/implementors/json_schema/ and modified
  */
-export type DevContainerConfiguration = (DockerfileContainer | ImageContainer) & NonComposeContainerBase & DevContainerCommon & { location?: string };
+export type DevContainerConfiguration = (((DockerfileContainer | ImageContainer) & (NonComposeContainerBase)) | ComposeContainer) & DevContainerCommon & { location?: string };
 
 export type DockerfileContainer = {
     /**
@@ -136,34 +136,33 @@ export interface NonComposeContainerBase {
     [k: string]: unknown
 }
 
-// NOT SUPPORTED YET
-// export interface ComposeContainer {
-//     /**
-//      * The name of the docker-compose file(s) used to start the services.
-//      */
-//     dockerComposeFile: string | string[]
-//     /**
-//      * The service you want to work on. This is considered the primary container for your dev environment which your editor will connect to.
-//      */
-//     service: string
-//     /**
-//      * An array of services that should be started and stopped.
-//      */
-//     runServices?: string[]
-//     /**
-//      * The path of the workspace folder inside the container. This is typically the target path of a volume mount in the docker-compose.yml.
-//      */
-//     workspaceFolder: string
-//     /**
-//      * Action to take when the user disconnects from the primary container in their editor. The default is to stop all of the compose containers.
-//      */
-//     shutdownAction?: 'none' | 'stopCompose'
-//     /**
-//      * Whether to overwrite the command specified in the image. The default is false.
-//      */
-//     overrideCommand?: boolean
-//     [k: string]: unknown
-// }
+export interface ComposeContainer {
+    /**
+     * The name of the docker-compose file(s) used to start the services.
+     */
+    dockerComposeFile: string | string[]
+    /**
+     * The service you want to work on. This is considered the primary container for your dev environment which your editor will connect to.
+     */
+    service: string
+    /**
+     * An array of services that should be started and stopped.
+     */
+    runServices?: string[]
+    /**
+     * The path of the workspace folder inside the container. This is typically the target path of a volume mount in the docker-compose.yml.
+     */
+    workspaceFolder: string
+    /**
+     * Action to take when the user disconnects from the primary container in their editor. The default is to stop all of the compose containers.
+     */
+    shutdownAction?: 'none' | 'stopCompose'
+    /**
+     * Whether to overwrite the command specified in the image. The default is false.
+     */
+    overrideCommand?: boolean
+    [k: string]: unknown
+}
 
 export interface DevContainerCommon {
     /**

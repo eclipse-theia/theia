@@ -42,6 +42,7 @@ export interface DevContainerFile {
     name: string;
     path: string;
 }
+
 export interface RemoteContainerConnectionProvider extends RpcServer<ContainerOutputProvider> {
     connectToContainer(options: ContainerConnectionOptions): Promise<ContainerConnectionResult>;
     getDevContainerFiles(): Promise<DevContainerFile[]>;

@@ -187,6 +187,7 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
                 Cmd: ['sh', '-c', `${node} ${devContainerServer} -target-port=${this.remotePort}`],
                 AttachStdin: true, AttachStdout: true, AttachStderr: true
             });
+
             const stream = await ttySession.start({ hijack: true, stdin: true });
 
             socket.pipe(stream);

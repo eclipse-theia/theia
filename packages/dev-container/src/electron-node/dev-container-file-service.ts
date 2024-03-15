@@ -20,7 +20,7 @@ import { DevContainerFile } from '../electron-common/remote-container-connection
 import { DevContainerConfiguration } from './devcontainer-file';
 import { parse } from 'jsonc-parser';
 import * as fs from '@theia/core/shared/fs-extra';
-import { URI } from '@theia/core';
+import { Path, URI } from '@theia/core';
 
 @injectable()
 export class DevContainerFileService {
@@ -44,20 +44,29 @@ export class DevContainerFileService {
             return [];
         }
 
-        const devcontainerPath = new URI(workspace).path.join('.devcontainer');
+        const devcontainerPath = new URI(workspace).path.join('.devcontainer').fsPath();
 
-        const files = await fs.readdir(devcontainerPath.fsPath());
-        return files.flatMap(filename => {
-            const fileStat = fs.statSync(devcontainerPath.join(filename).fsPath());
-            return fileStat.isDirectory() ?
-                fs.readdirSync(devcontainerPath.join(filename).fsPath()).map(inner => devcontainerPath.join(filename).join(inner).fsPath()) :
-                [devcontainerPath.join(filename).fsPath()];
-        })
-            .filter(file => file.endsWith('devcontainer.json'))
-            .map(file => ({
-                name: parse(fs.readFileSync(file, 'utf-8')).name ?? 'devcontainer',
-                path: file
-            }));
+        return (await this.searchForDevontainerJsonFiles(devcontainerPath, 1)).map(file => ({
+            name: parse(fs.readFileSync(file, 'utf-8')).name ?? 'devcontainer',
+            path: file
+        }));
 
+    }
+
+    protected async searchForDevontainerJsonFiles(directory: string, depth: number): Promise<string[]> {
+        if (depth < 0) {
+            return [];
+        }
+        const filesPaths = (await fs.readdir(directory)).map(file => new Path(directory).join(file).fsPath());
+
+        const devcontainerFiles = [];
+        for (const file of filesPaths) {
+            if (file.endsWith('devcontainer.json')) {
+                devcontainerFiles.push(file);
+            } else if ((await fs.stat(file)).isDirectory()) {
+                devcontainerFiles.push(...await this.searchForDevontainerJsonFiles(file, depth - 1));
+            }
+        }
+        return devcontainerFiles;
     }
 }
