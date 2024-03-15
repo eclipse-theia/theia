@@ -589,6 +589,9 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
         return this.uri.withPath(resourceUri.path);
     }
 
+    shouldDisplayDirtyDiff(): boolean {
+        return true;
+    }
 }
 
 export namespace MonacoEditor {

@@ -40,7 +40,7 @@ export class ScmDecorationsService {
         const updateTasks = new Map<EditorWidget, { (): void; cancel(): void }>();
         this.editorManager.onCreated(editorWidget => {
             const { editor } = editorWidget;
-            if (editor.uri.scheme !== 'file') {
+            if (!this.supportsDirtyDiff(editor)) {
                 return;
             }
             const toDispose = new DisposableCollection();
@@ -91,6 +91,10 @@ export class ScmDecorationsService {
                 // Scm resource may not be found, do nothing.
             }
         }
+    }
+
+    protected supportsDirtyDiff(editor: TextEditor): boolean {
+        return editor.shouldDisplayDirtyDiff();
     }
 
     protected createUpdateTask(editor: TextEditor): { (): void; cancel(): void; } {
