@@ -93,8 +93,17 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(NotebookCommands.ADD_NEW_CELL_COMMAND, {
-            execute: (notebookModel: NotebookModel, cellKind: CellKind, index?: number) => {
-                const insertIndex = index ?? (notebookModel.selectedCell ? notebookModel.cells.indexOf(notebookModel.selectedCell) : 0);
+            execute: (notebookModel: NotebookModel, cellKind: CellKind = CellKind.Markup, index?: number | 'above' | 'below') => {
+                notebookModel = notebookModel ?? this.notebookEditorWidgetService.focusedEditor?.model;
+
+                let insertIndex: number = 0;
+                if (index && index >= 0) {
+                    insertIndex = index as number;
+                } else if (notebookModel.selectedCell && typeof index === 'string') {
+                    // if index is -1 insert below otherwise at the index of the selected cell which is above the selected.
+                    insertIndex = notebookModel.cells.indexOf(notebookModel.selectedCell) + (index === 'below' ? 1 : 0);
+                }
+
                 let firstCodeCell;
                 if (cellKind === CellKind.Code) {
                     firstCodeCell = notebookModel.cells.find(cell => cell.cellKind === CellKind.Code);
@@ -226,7 +235,7 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
                 keybinding: 'down',
                 args: CellChangeDirection.Down,
                 when: `!editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`
-            }
+            },
         );
     }
 

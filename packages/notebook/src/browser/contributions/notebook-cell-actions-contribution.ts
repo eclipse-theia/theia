@@ -27,8 +27,9 @@ import {
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { NotebookExecutionService } from '../service/notebook-execution-service';
 import { NotebookCellOutputModel } from '../view-model/notebook-cell-output-model';
-import { CellEditType } from '../../common';
+import { CellEditType, CellKind } from '../../common';
 import { NotebookEditorWidgetService } from '../service/notebook-editor-widget-service';
+import { NotebookCommands } from './notebook-actions-contribution';
 
 export namespace NotebookCellCommands {
     /** Parameters: notebookModel: NotebookModel | undefined, cell: NotebookCellModel */
@@ -70,6 +71,25 @@ export namespace NotebookCellCommands {
     export const CHANGE_OUTPUT_PRESENTATION_COMMAND = Command.toDefaultLocalizedCommand({
         id: 'notebook.cell.change-presentation',
         label: 'Change Presentation',
+    });
+
+    export const INSERT_NEW_CELL_ABOVE_COMMAND = Command.toDefaultLocalizedCommand({
+        id: 'notebook.cell.insertCodeCellAboveAndFocusContainer',
+        label: 'Insert Code Cell Above and Focus Container'
+    });
+
+    export const INSERT_NEW_CELL_BELOW_COMMAND = Command.toDefaultLocalizedCommand({
+        id: 'notebook.cell.insertCodeCellBelowAndFocusContainer',
+        label: 'Insert Code Cell Below and Focus Container'
+    });
+
+    export const INSERT_MARKDOWN_CELL_ABOVE_COMMAND = Command.toLocalizedCommand({
+        id: 'notebook.cell.insertMarkdownCellAbove',
+        label: 'Insert Markdown Cell Above'
+    });
+    export const INSERT_MARKDOWN_CELL_BELOW_COMMAND = Command.toLocalizedCommand({
+        id: 'notebook.cell.insertMarkdownCellBelow',
+        label: 'Insert Markdown Cell Below'
     });
 }
 
@@ -183,12 +203,17 @@ export class NotebookCellActionContribution implements MenuContribution, Command
         commands.registerCommand(NotebookCellCommands.EDIT_COMMAND, this.editableCellCommandHandler((_, cell) => (cell ?? this.getSelectedCell()).requestEdit()));
         commands.registerCommand(NotebookCellCommands.STOP_EDIT_COMMAND, { execute: (_, cell: NotebookCellModel) => (cell ?? this.getSelectedCell()).requestStopEdit() });
         commands.registerCommand(NotebookCellCommands.DELETE_COMMAND,
-            this.editableCellCommandHandler((notebookModel, cell) => notebookModel.applyEdits([{
-                editType: CellEditType.Replace,
-                index: notebookModel.cells.indexOf(cell),
-                count: 1,
-                cells: []
-            }], true)));
+            this.editableCellCommandHandler((notebookModel, cell) => {
+                notebookModel = notebookModel ?? this.notebookEditorWidgetService.focusedEditor?.model;
+                cell = cell ?? this.getSelectedCell();
+                notebookModel.applyEdits([{
+                    editType: CellEditType.Replace,
+                    index: notebookModel.cells.indexOf(cell),
+                    count: 1,
+                    cells: []
+                }]
+                    , true);
+            }));
         commands.registerCommand(NotebookCellCommands.SPLIT_CELL_COMMAND);
 
         commands.registerCommand(NotebookCellCommands.EXECUTE_SINGLE_CELL_COMMAND, this.editableCellCommandHandler(
@@ -203,6 +228,16 @@ export class NotebookCellActionContribution implements MenuContribution, Command
         commands.registerCommand(NotebookCellCommands.CHANGE_OUTPUT_PRESENTATION_COMMAND, this.editableCellCommandHandler(
             (_, __, output) => output?.requestOutputPresentationUpdate()
         ));
+
+        const insertCommand = (type: CellKind, index: number | 'above' | 'below'): CommandHandler => ({
+            execute: () => {
+                commands.executeCommand(NotebookCommands.ADD_NEW_CELL_COMMAND.id, undefined, type, index);
+            }
+        });
+        commands.registerCommand(NotebookCellCommands.INSERT_NEW_CELL_ABOVE_COMMAND, insertCommand(CellKind.Code, 'above'));
+        commands.registerCommand(NotebookCellCommands.INSERT_NEW_CELL_BELOW_COMMAND, insertCommand(CellKind.Code, 'below'));
+        commands.registerCommand(NotebookCellCommands.INSERT_MARKDOWN_CELL_ABOVE_COMMAND, insertCommand(CellKind.Markup, 'above'));
+        commands.registerCommand(NotebookCellCommands.INSERT_MARKDOWN_CELL_BELOW_COMMAND, insertCommand(CellKind.Markup, 'below'));
     }
 
     protected editableCellCommandHandler(execute: (notebookModel: NotebookModel, cell: NotebookCellModel, output?: NotebookCellOutputModel) => void): CommandHandler {
@@ -235,11 +270,6 @@ export class NotebookCellActionContribution implements MenuContribution, Command
                 command: NotebookCellCommands.EXECUTE_SINGLE_CELL_COMMAND.id,
                 keybinding: KeyCode.createKeyCode({ first: Key.ENTER, modifiers: [KeyModifier.CtrlCmd] }).toString(),
                 when: `${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED} && ${NOTEBOOK_CELL_TYPE} == 'code'`,
-            },
-            {
-                command: NotebookCellCommands.DELETE_COMMAND.id,
-                keybinding: 'd d',
-                when: `${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`,
             },
             {
                 command: NotebookCellCommands.CLEAR_OUTPUTS_COMMAND.id,
