@@ -230,6 +230,26 @@ export class NotebookCellActionContribution implements MenuContribution, Command
                 command: NotebookCellCommands.STOP_EDIT_COMMAND.id,
                 keybinding: KeyCode.createKeyCode({ first: Key.ENTER, modifiers: [KeyModifier.Alt] }).toString(),
                 when: `editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED}`,
+            },
+            {
+                command: NotebookCellCommands.EXECUTE_SINGLE_CELL_COMMAND.id,
+                keybinding: KeyCode.createKeyCode({ first: Key.ENTER, modifiers: [KeyModifier.CtrlCmd] }).toString(),
+                when: `${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED} && ${NOTEBOOK_CELL_TYPE} == 'code'`,
+            },
+            {
+                command: NotebookCellCommands.DELETE_COMMAND.id,
+                keybinding: 'd d',
+                when: `${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`,
+            },
+            {
+                command: NotebookCellCommands.CLEAR_OUTPUTS_COMMAND.id,
+                keybinding: KeyCode.createKeyCode({ first: Key.KEY_O, modifiers: [KeyModifier.Alt] }).toString(),
+                when: `${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED} && ${NOTEBOOK_CELL_TYPE} == 'code' && ${NOTEBOOK_CELL_EXECUTING}`,
+            },
+            {
+                command: NotebookCellCommands.CHANGE_OUTPUT_PRESENTATION_COMMAND.id,
+                keybinding: KeyCode.createKeyCode({ first: Key.KEY_P, modifiers: [KeyModifier.Alt] }).toString(),
+                when: `${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED} && ${NOTEBOOK_CELL_TYPE} == 'code' && ${NOTEBOOK_CELL_EXECUTING}`,
             }
         );
     }

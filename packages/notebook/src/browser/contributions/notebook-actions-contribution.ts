@@ -23,7 +23,8 @@ import { CellEditType, CellKind, NotebookCommand } from '../../common';
 import { NotebookKernelQuickPickService } from '../service/notebook-kernel-quick-pick-service';
 import { NotebookExecutionService } from '../service/notebook-execution-service';
 import { NotebookEditorWidget } from '../notebook-editor-widget';
-import { NotebookEditorWidgetService } from '..';
+import { NotebookEditorWidgetService } from '../service/notebook-editor-widget-service';
+import { NOTEBOOK_CELL_FOCUSED, NOTEBOOK_EDITOR_FOCUSED } from './notebook-context-keys';
 
 export namespace NotebookCommands {
     export const ADD_NEW_CELL_COMMAND = Command.toDefaultLocalizedCommand({
@@ -144,7 +145,7 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
                         const currentIndex = model.cells.indexOf(model.selectedCell);
                         if (change === CellChangeDirection.Up && currentIndex > 0) {
                             model.setSelectedCell(model.cells[currentIndex - 1]);
-                        } else if (currentIndex < model.cells.length - 1) {
+                        } else if (change === CellChangeDirection.Down && currentIndex < model.cells.length - 1) {
                             model.setSelectedCell(model.cells[currentIndex + 1]);
                         }
                     }
@@ -216,13 +217,15 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
         keybindings.registerKeybindings(
             {
                 command: NotebookCommands.CHANGE_SELECTED_CELL.id,
-                keybinding: 'ArrowUp',
-                args: CellChangeDirection.Up
+                keybinding: 'up',
+                args: CellChangeDirection.Up,
+                when: `!editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`
             },
             {
                 command: NotebookCommands.CHANGE_SELECTED_CELL.id,
-                keybinding: 'ArrowDown',
-                args: CellChangeDirection.Down
+                keybinding: 'down',
+                args: CellChangeDirection.Down,
+                when: `!editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`
             }
         );
     }
