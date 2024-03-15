@@ -47,6 +47,5 @@ jobs:
           yarn --cwd examples/playwright build
 
       - name: Run Smoke Test (examples/playwright/src/tests/theia-app)
-        uses: GabrielBB/xvfb-action@v1
-        with:
-          run: yarn test:playwright theia-app
+        shell: bash
+        run: yarn test:playwright theia-app

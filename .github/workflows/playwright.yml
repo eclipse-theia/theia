@@ -49,6 +49,5 @@ jobs:
           yarn --cwd examples/playwright build
 
       - name: Test (playwright)
-        uses: GabrielBB/xvfb-action@v1
-        with:
-          run: yarn --cwd examples/playwright ui-tests-ci
+        shell: bash
+        run: yarn --cwd examples/playwright ui-tests-ci

@@ -38,7 +38,7 @@ export class TheiaTerminal extends TheiaView {
     async write(text: string): Promise<void> {
         await this.activate();
         const input = await this.waitForInputArea();
-        await input.type(text);
+        await input.fill(text);
     }
 
     async contents(): Promise<string> {
