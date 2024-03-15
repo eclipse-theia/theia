@@ -50,7 +50,20 @@ export interface RemoteConnection extends Disposable {
     remotePort: number;
     onDidDisconnect: Event<void>;
     forwardOut(socket: net.Socket): void;
+
+    /**
+     * execute a single command on the remote machine
+     */
     exec(cmd: string, args?: string[], options?: RemoteExecOptions): Promise<RemoteExecResult>;
+
+    /**
+     * execute a command on the remote machine and wait for a specific output
+     * @param tester function which returns true if the output is as expected
+     */
     execPartial(cmd: string, tester: RemoteExecTester, args?: string[], options?: RemoteExecOptions): Promise<RemoteExecResult>;
+
+    /**
+     * copy files from local to remote
+     */
     copy(localPath: string | Buffer | NodeJS.ReadableStream, remotePath: string): Promise<void>;
 }

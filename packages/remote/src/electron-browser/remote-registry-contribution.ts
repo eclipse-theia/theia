@@ -16,8 +16,7 @@
 
 import { Command, CommandHandler, Emitter, Event } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { WindowService } from '@theia/core/lib/browser/window/window-service';
-import { WindowSearchParams } from '@theia/core/lib/common/window';
+import { WindowService, WindowReloadOptions } from '@theia/core/lib/browser/window/window-service';
 
 export const RemoteRegistryContribution = Symbol('RemoteRegistryContribution');
 
@@ -33,15 +32,19 @@ export abstract class AbstractRemoteRegistryContribution implements RemoteRegist
 
     abstract registerRemoteCommands(registry: RemoteRegistry): void;
 
-    protected openRemote(port: string, newWindow: boolean): void {
+    protected openRemote(port: string, newWindow: boolean, workspace?: string): void {
         const searchParams = new URLSearchParams(location.search);
         const localPort = searchParams.get('localPort') || searchParams.get('port');
-        const options: WindowSearchParams = {
-            port
+        const options: WindowReloadOptions = {
+            search: { port }
         };
         if (localPort) {
-            options.localPort = localPort;
+            options.search!.localPort = localPort;
         }
+        if (workspace) {
+            options.hash = workspace;
+        }
+
         if (newWindow) {
             this.windowService.openNewDefaultWindow(options);
         } else {
