@@ -16,7 +16,7 @@
 
 import * as jsdiff from 'diff';
 import { ContentLinesArrayLike } from './content-lines';
-import { Position } from '@theia/core/shared/vscode-languageserver-protocol';
+import { Position, Range, uinteger } from '@theia/core/shared/vscode-languageserver-protocol';
 
 export class DiffComputer {
 
@@ -25,69 +25,45 @@ export class DiffComputer {
         return diffResult;
     }
 
-    computeDirtyDiff(previous: ContentLinesArrayLike, current: ContentLinesArrayLike, options?: DirtyDiffOptions): DirtyDiff {
-        const added: LineRange[] = [];
-        const removed: number[] = [];
-        const modified: LineRange[] = [];
-        const rangeMappings: RangeMapping[] | undefined = options?.rangeMappings ? [] : undefined;
-        const changes = this.computeDiff(previous, current);
+    computeDirtyDiff(previous: ContentLinesArrayLike, current: ContentLinesArrayLike): DirtyDiff {
+        const changes: Change[] = [];
+        const diffResult = this.computeDiff(previous, current);
         let currentRevisionLine = -1;
         let previousRevisionLine = -1;
-        for (let i = 0; i < changes.length; i++) {
-            const change = changes[i];
-            const next = changes[i + 1];
+        for (let i = 0; i < diffResult.length; i++) {
+            const change = diffResult[i];
+            const next = diffResult[i + 1];
             if (change.added) {
                 // case: addition
-                const currentRange = toLineRange(change);
-                added.push(currentRange);
-                if (rangeMappings) {
-                    rangeMappings.push(<AddedRangeMapping>{ previousRange: EmptyLineRange.afterLine(previousRevisionLine), currentRange });
-                }
+                changes.push({ previousRange: LineRange.createEmptyLineRange(previousRevisionLine + 1), currentRange: toLineRange(change) });
                 currentRevisionLine += change.count!;
             } else if (change.removed && next && next.added) {
                 const isFirstChange = i === 0;
-                const isLastChange = i === changes.length - 2;
+                const isLastChange = i === diffResult.length - 2;
                 const isNextEmptyLine = next.value.length > 0 && current[next.value[0]].length === 0;
                 const isPrevEmptyLine = change.value.length > 0 && previous[change.value[0]].length === 0;
 
                 if (isFirstChange && isNextEmptyLine) {
                     // special case: removing at the beginning
-                    removed.push(0);
-                    if (rangeMappings) {
-                        rangeMappings.push(<RemovedRangeMapping>{ previousRange: toLineRange(change), currentRange: EmptyLineRange.atBeginning });
-                    }
+                    changes.push({ previousRange: toLineRange(change), currentRange: LineRange.createEmptyLineRange(0) });
                     previousRevisionLine += change.count!;
                 } else if (isFirstChange && isPrevEmptyLine) {
                     // special case: adding at the beginning
-                    const currentRange = toLineRange(next);
-                    added.push(currentRange);
-                    if (rangeMappings) {
-                        rangeMappings.push(<AddedRangeMapping>{ previousRange: EmptyLineRange.atBeginning, currentRange });
-                    }
+                    changes.push({ previousRange: LineRange.createEmptyLineRange(0), currentRange: toLineRange(next) });
                     currentRevisionLine += next.count!;
                 } else if (isLastChange && isNextEmptyLine) {
-                    removed.push(currentRevisionLine + 1 /* = empty line */);
-                    if (rangeMappings) {
-                        rangeMappings.push(<RemovedRangeMapping>{ previousRange: toLineRange(change), currentRange: EmptyLineRange.afterLine(currentRevisionLine + 1) });
-                    }
+                    changes.push({ previousRange: toLineRange(change), currentRange: LineRange.createEmptyLineRange(currentRevisionLine + 2) });
                     previousRevisionLine += change.count!;
                 } else {
                     // default case is a modification
-                    const currentRange = toLineRange(next);
-                    modified.push(currentRange);
-                    if (rangeMappings) {
-                        rangeMappings.push(<ModifiedRangeMapping>{ previousRange: toLineRange(change), currentRange });
-                    }
+                    changes.push({ previousRange: toLineRange(change), currentRange: toLineRange(next) });
                     currentRevisionLine += next.count!;
                     previousRevisionLine += change.count!;
                 }
                 i++; // consume next eagerly
             } else if (change.removed && !(next && next.added)) {
                 // case: removal
-                removed.push(Math.max(0, currentRevisionLine));
-                if (rangeMappings) {
-                    rangeMappings.push(<RemovedRangeMapping>{ previousRange: toLineRange(change), currentRange: EmptyLineRange.afterLine(currentRevisionLine) });
-                }
+                changes.push({ previousRange: toLineRange(change), currentRange: LineRange.createEmptyLineRange(currentRevisionLine + 1) });
                 previousRevisionLine += change.count!;
             } else {
                 // case: unchanged region
@@ -95,7 +71,7 @@ export class DiffComputer {
                 previousRevisionLine += change.count!;
             }
         }
-        return { added, removed, modified, rangeMappings };
+        return { changes };
     }
 
 }
@@ -128,7 +104,7 @@ function diffArrays(oldArr: ContentLinesArrayLike, newArr: ContentLinesArrayLike
 
 function toLineRange({ value }: DiffResult): LineRange {
     const [start, end] = value;
-    return { start, end };
+    return LineRange.create(start, end + 1);
 }
 
 export interface DiffResult {
@@ -138,108 +114,64 @@ export interface DiffResult {
     removed?: boolean;
 }
 
-export interface DirtyDiffOptions {
-    /**
-     * Indicates whether {@link DirtyDiff.rangeMappings} need to be computed.
-     */
-    rangeMappings?: boolean;
-}
-
 export interface DirtyDiff {
-    /**
-     * Lines added by comparison to previous revision.
-     */
-    readonly added: LineRange[];
-    /**
-     * Lines, after which lines were removed by comparison to previous revision.
-     */
-    readonly removed: number[];
-    /**
-     * Lines modified by comparison to previous revision.
-     */
-    readonly modified: LineRange[];
-    /**
-     * Range mappings for the diff, if {@link DirtyDiffOptions.rangeMappings requested}.
-     */
-    readonly rangeMappings?: RangeMapping[];
+    readonly changes: readonly Change[];
 }
 
-/**
- * Represents a range that starts at the beginning of the {@link start} line
- * and spans up to the end of the {@link end} line.
- */
+export interface Change {
+    readonly previousRange: LineRange;
+    readonly currentRange: LineRange;
+}
+
+export namespace Change {
+    export function isAddition(change: Change): boolean {
+        return LineRange.isEmpty(change.previousRange);
+    }
+    export function isRemoval(change: Change): boolean {
+        return LineRange.isEmpty(change.currentRange);
+    }
+    export function isModification(change: Change): boolean {
+        return !isAddition(change) && !isRemoval(change);
+    }
+}
+
 export interface LineRange {
-    start: number;
-    end: number;
+    readonly start: number;
+    readonly end: number;
 }
-
-/**
- * Represents a range that starts and ends either at the beginning of the {@link start} line or at the end of the {@link end} line.
- */
-export type EmptyLineRange = { start: number; end?: undefined; } | { start?: undefined; end: number };
-
-/**
- * Represents a range that starts and ends either at the beginning of the file or at the end of the {@link end} line.
- */
-export type NormalizedEmptyLineRange = { start: 0; end?: undefined; } | { start?: undefined; end: number };
 
 export namespace LineRange {
-    export function isEmpty(range: LineRange | EmptyLineRange): range is EmptyLineRange {
-        return range.start === undefined || range.end === undefined;
+    export function create(start: number, end: number): LineRange {
+        if (start < 0 || end < 0 || start > end) {
+            throw new Error(`Invalid line range: { start: ${start}, end: ${end} }`);
+        }
+        return { start, end };
     }
-    export function getStartPosition(range: LineRange | EmptyLineRange): Position {
-        if (range.start === undefined) {
-            return Position.create(range.end, Number.MAX_SAFE_INTEGER);
+    export function createSingleLineRange(line: number): LineRange {
+        return create(line, line + 1);
+    }
+    export function createEmptyLineRange(line: number): LineRange {
+        return create(line, line);
+    }
+    export function isEmpty(range: LineRange): boolean {
+        return range.start === range.end;
+    }
+    export function getStartPosition(range: LineRange): Position {
+        if (isEmpty(range)) {
+            return getEndPosition(range);
         }
         return Position.create(range.start, 0);
     }
-    export function getEndPosition(range: LineRange | EmptyLineRange): Position {
-        if (range.end === undefined) {
-            return Position.create(range.start, 0);
+    export function getEndPosition(range: LineRange): Position {
+        if (range.end < 1) {
+            return Position.create(0, 0);
         }
-        return Position.create(range.end, Number.MAX_SAFE_INTEGER);
+        return Position.create(range.end - 1, uinteger.MAX_VALUE);
     }
-    export function getLineCount(range: LineRange | EmptyLineRange): number {
-        if (isEmpty(range)) {
-            return 0;
-        }
-        return range.end - range.start + 1;
+    export function toRange(range: LineRange): Range {
+        return Range.create(getStartPosition(range), getEndPosition(range));
     }
-}
-
-export namespace EmptyLineRange {
-    /**
-     * A {@link NormalizedEmptyLineRange} that starts and ends at the beginning of the file.
-     */
-    export const atBeginning: { readonly start: 0 } = { start: 0 };
-
-    /**
-     * Returns a {@link NormalizedEmptyLineRange} positioned just after the given line.
-     * @param line line, after which an empty line range is to be returned.
-     *  May be negative, in which case an empty line range at the beginning of the file is returned
-     * @returns an empty line range that starts and ends just after the given line
-     */
-    export function afterLine(line: number): NormalizedEmptyLineRange {
-        if (line < 0) {
-            return atBeginning;
-        }
-        return { end: line };
+    export function getLineCount(range: LineRange): number {
+        return range.end - range.start;
     }
-}
-
-export type RangeMapping = AddedRangeMapping | RemovedRangeMapping | ModifiedRangeMapping;
-
-export interface AddedRangeMapping {
-    previousRange: NormalizedEmptyLineRange;
-    currentRange: LineRange;
-}
-
-export interface RemovedRangeMapping {
-    previousRange: LineRange;
-    currentRange: NormalizedEmptyLineRange;
-}
-
-export interface ModifiedRangeMapping {
-    previousRange: LineRange;
-    currentRange: LineRange;
 }

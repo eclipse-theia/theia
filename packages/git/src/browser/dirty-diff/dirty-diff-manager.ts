@@ -188,7 +188,7 @@ export class DirtyDiffModel implements Disposable {
     update(): void {
         const editor = this.editor;
         if (!this.shouldRender()) {
-            this.onDirtyDiffUpdateEmitter.fire({ editor, added: [], removed: [], modified: [] });
+            this.onDirtyDiffUpdateEmitter.fire({ editor, changes: [] });
             return;
         }
         if (this.updateTimeout) {
@@ -286,8 +286,7 @@ export namespace DirtyDiffModel {
      */
     export function computeDirtyDiff(previous: ContentLines, current: ContentLines): DirtyDiff | undefined {
         try {
-            return diffComputer.computeDirtyDiff(ContentLines.arrayLike(previous), ContentLines.arrayLike(current),
-                { rangeMappings: true });
+            return diffComputer.computeDirtyDiff(ContentLines.arrayLike(previous), ContentLines.arrayLike(current));
         } catch {
             return undefined;
         }

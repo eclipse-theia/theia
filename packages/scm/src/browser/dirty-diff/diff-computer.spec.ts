@@ -18,7 +18,7 @@ import * as chai from 'chai';
 import { expect } from 'chai';
 chai.use(require('chai-string'));
 
-import { DiffComputer, DirtyDiff, EmptyLineRange } from './diff-computer';
+import { DiffComputer, DirtyDiff } from './diff-computer';
 import { ContentLines } from './content-lines';
 
 let diffComputer: DiffComputer;
@@ -42,13 +42,10 @@ describe('dirty-diff-computer', () => {
             ],
         );
         expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
-            added: [],
-            modified: [],
-            removed: [0],
-            rangeMappings: [
+            changes: [
                 {
-                    previousRange: { start: 1, end: 1 },
-                    currentRange: EmptyLineRange.afterLine(0),
+                    previousRange: { start: 1, end: 2 },
+                    currentRange: { start: 1, end: 1 },
                 },
             ],
         });
@@ -62,13 +59,10 @@ describe('dirty-diff-computer', () => {
                 sequenceOfN(2),
             );
             expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
-                modified: [],
-                removed: [1],
-                added: [],
-                rangeMappings: [
+                changes: [
                     {
-                        previousRange: { start: 2, end: 2 + lines - 1 },
-                        currentRange: EmptyLineRange.afterLine(1),
+                        previousRange: { start: 2, end: 2 + lines },
+                        currentRange: { start: 2, end: 2 },
                     },
                 ],
             });
@@ -82,13 +76,10 @@ describe('dirty-diff-computer', () => {
             ['']
         );
         expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
-            added: [],
-            modified: [],
-            removed: [0],
-            rangeMappings: [
+            changes: [
                 {
-                    previousRange: { start: 0, end: numberOfLines - 1 },
-                    currentRange: EmptyLineRange.atBeginning,
+                    previousRange: { start: 0, end: numberOfLines },
+                    currentRange: { start: 0, end: 0 },
                 },
             ],
         });
@@ -102,13 +93,10 @@ describe('dirty-diff-computer', () => {
                 sequenceOfN(2),
             );
             expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
-                modified: [],
-                removed: [0],
-                added: [],
-                rangeMappings: [
+                changes: [
                     {
-                        previousRange: { start: 0, end: lines - 1 },
-                        currentRange: EmptyLineRange.atBeginning,
+                        previousRange: { start: 0, end: lines },
+                        currentRange: { start: 0, end: 0 },
                     },
                 ],
             });
@@ -121,13 +109,10 @@ describe('dirty-diff-computer', () => {
             const modified = insertIntoArray(previous, 2, ...sequenceOfN(lines, () => 'ADDED LINE'));
             const dirtyDiff = computeDirtyDiff(previous, modified);
             expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
-                modified: [],
-                removed: [],
-                added: [{ start: 2, end: 2 + lines - 1 }],
-                rangeMappings: [
+                changes: [
                     {
-                        previousRange: EmptyLineRange.afterLine(1),
-                        currentRange: { start: 2, end: 2 + lines - 1 },
+                        previousRange: { start: 2, end: 2 },
+                        currentRange: { start: 2, end: 2 + lines },
                     },
                 ],
             });
@@ -142,13 +127,10 @@ describe('dirty-diff-computer', () => {
                     .concat(sequenceOfN(2))
             );
             expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
-                modified: [],
-                removed: [],
-                added: [{ start: 0, end: lines - 1 }],
-                rangeMappings: [
+                changes: [
                     {
-                        previousRange: EmptyLineRange.atBeginning,
-                        currentRange: { start: 0, end: lines - 1 },
+                        previousRange: { start: 0, end: 0 },
+                        currentRange: { start: 0, end: lines },
                     },
                 ],
             });
@@ -162,13 +144,10 @@ describe('dirty-diff-computer', () => {
             sequenceOfN(numberOfLines, () => 'ADDED LINE')
         );
         expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
-            modified: [],
-            removed: [],
-            added: [{ start: 0, end: numberOfLines - 1 }],
-            rangeMappings: [
+            changes: [
                 {
-                    previousRange: EmptyLineRange.atBeginning,
-                    currentRange: { start: 0, end: numberOfLines - 1 },
+                    previousRange: { start: 0, end: 0 },
+                    currentRange: { start: 0, end: numberOfLines },
                 },
             ],
         });
@@ -188,13 +167,10 @@ describe('dirty-diff-computer', () => {
             ]
         );
         expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
-            modified: [],
-            removed: [],
-            added: [{ start: 1, end: 2 }],
-            rangeMappings: [
+            changes: [
                 {
-                    previousRange: EmptyLineRange.afterLine(0),
-                    currentRange: { start: 1, end: 2 },
+                    previousRange: { start: 1, end: 1 },
+                    currentRange: { start: 1, end: 3 },
                 },
             ],
         });
@@ -211,13 +187,10 @@ describe('dirty-diff-computer', () => {
             ]
         );
         expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
-            modified: [],
-            removed: [],
-            added: [{ start: 1, end: 1 }],
-            rangeMappings: [
+            changes: [
                 {
-                    previousRange: EmptyLineRange.afterLine(0),
-                    currentRange: { start: 1, end: 1 },
+                    previousRange: { start: 1, end: 1 },
+                    currentRange: { start: 1, end: 2 },
                 },
             ],
         });
@@ -231,13 +204,10 @@ describe('dirty-diff-computer', () => {
                     .concat(new Array(lines).map(() => ''))
             );
             expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
-                modified: [],
-                removed: [],
-                added: [{ start: 2, end: 2 + lines - 1 }],
-                rangeMappings: [
+                changes: [
                     {
-                        previousRange: EmptyLineRange.afterLine(1),
-                        currentRange: { start: 2, end: 2 + lines - 1 },
+                        previousRange: { start: 2, end: 2 },
+                        currentRange: { start: 2, end: 2 + lines },
                     },
                 ],
             });
@@ -261,13 +231,10 @@ describe('dirty-diff-computer', () => {
             ]
         );
         expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
-            modified: [],
-            removed: [],
-            added: [{ start: 1, end: 5 }],
-            rangeMappings: [
+            changes: [
                 {
-                    previousRange: EmptyLineRange.afterLine(0),
-                    currentRange: { start: 1, end: 5 },
+                    previousRange: { start: 1, end: 1 },
+                    currentRange: { start: 1, end: 6 },
                 },
             ],
         });
@@ -280,13 +247,10 @@ describe('dirty-diff-computer', () => {
                 ['0'].concat(sequenceOfN(lines, () => 'ADDED LINE'))
             );
             expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
-                modified: [],
-                removed: [],
-                added: [{ start: 1, end: lines }],
-                rangeMappings: [
+                changes: [
                     {
-                        previousRange: EmptyLineRange.afterLine(0),
-                        currentRange: { start: 1, end: lines },
+                        previousRange: { start: 1, end: 1 },
+                        currentRange: { start: 1, end: lines + 1 },
                     },
                 ],
             });
@@ -307,13 +271,10 @@ describe('dirty-diff-computer', () => {
             ]
         );
         expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
-            removed: [],
-            added: [],
-            modified: [{ start: 1, end: 1 }],
-            rangeMappings: [
+            changes: [
                 {
-                    previousRange: { start: 1, end: 1 },
-                    currentRange: { start: 1, end: 1 },
+                    previousRange: { start: 1, end: 2 },
+                    currentRange: { start: 1, end: 2 },
                 },
             ],
         });
@@ -326,13 +287,10 @@ describe('dirty-diff-computer', () => {
             sequenceOfN(numberOfLines, () => 'MODIFIED')
         );
         expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
-            removed: [],
-            added: [],
-            modified: [{ start: 0, end: numberOfLines - 1 }],
-            rangeMappings: [
+            changes: [
                 {
-                    previousRange: { start: 0, end: numberOfLines - 1 },
-                    currentRange: { start: 0, end: numberOfLines - 1 },
+                    previousRange: { start: 0, end: numberOfLines },
+                    currentRange: { start: 0, end: numberOfLines },
                 },
             ],
         });
@@ -353,13 +311,10 @@ describe('dirty-diff-computer', () => {
             ]
         );
         expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
-            removed: [],
-            added: [],
-            modified: [{ start: 1, end: 2 }],
-            rangeMappings: [
+            changes: [
                 {
-                    previousRange: { start: 1, end: 3 },
-                    currentRange: { start: 1, end: 2 },
+                    previousRange: { start: 1, end: 4 },
+                    currentRange: { start: 1, end: 3 },
                 },
             ],
         });
@@ -396,21 +351,18 @@ describe('dirty-diff-computer', () => {
             ]
         );
         expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
-            removed: [3],
-            added: [{ start: 10, end: 11 }],
-            modified: [{ start: 0, end: 0 }],
-            rangeMappings: [
+            changes: [
                 {
-                    previousRange: { start: 0, end: 0 },
-                    currentRange: { start: 0, end: 0 },
+                    previousRange: { start: 0, end: 1 },
+                    currentRange: { start: 0, end: 1 },
                 },
                 {
-                    previousRange: { start: 4, end: 4 },
-                    currentRange: EmptyLineRange.afterLine(3),
+                    previousRange: { start: 4, end: 5 },
+                    currentRange: { start: 4, end: 4 },
                 },
                 {
-                    previousRange: EmptyLineRange.afterLine(10),
-                    currentRange: { start: 10, end: 11 },
+                    previousRange: { start: 11, end: 11 },
+                    currentRange: { start: 10, end: 12 },
                 },
             ],
         });
@@ -445,21 +397,18 @@ describe('dirty-diff-computer', () => {
                 ''
             ]);
         expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
-            removed: [11],
-            added: [{ start: 5, end: 5 }, { start: 9, end: 9 }],
-            modified: [],
-            rangeMappings: [
+            changes: [
                 {
-                    previousRange: EmptyLineRange.afterLine(4),
-                    currentRange: { start: 5, end: 5 },
+                    previousRange: { start: 5, end: 5 },
+                    currentRange: { start: 5, end: 6 },
                 },
                 {
-                    previousRange: EmptyLineRange.afterLine(7),
-                    currentRange: { start: 9, end: 9 },
+                    previousRange: { start: 8, end: 8 },
+                    currentRange: { start: 9, end: 10 },
                 },
                 {
-                    previousRange: { start: 9, end: 9 },
-                    currentRange: EmptyLineRange.afterLine(11),
+                    previousRange: { start: 9, end: 10 },
+                    currentRange: { start: 12, end: 12 },
                 },
             ],
         });
@@ -488,7 +437,7 @@ function computeDirtyDiff(previous: string[], modified: string[]): DirtyDiff {
             return value;
         },
     });
-    return diffComputer.computeDirtyDiff(a, b, { rangeMappings: true });
+    return diffComputer.computeDirtyDiff(a, b);
 }
 
 function sequenceOfN(n: number, mapFn: (index: number) => string = i => i.toString()): string[] {

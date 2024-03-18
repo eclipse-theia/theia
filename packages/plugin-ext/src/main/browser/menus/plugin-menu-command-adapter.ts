@@ -22,7 +22,7 @@ import { TreeWidgetSelection } from '@theia/core/lib/browser/tree/tree-widget-se
 import { ScmRepository } from '@theia/scm/lib/browser/scm-repository';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { DirtyDiffWidget } from '@theia/scm/lib/browser/dirty-diff/dirty-diff-widget';
-import { RangeMapping, LineRange, NormalizedEmptyLineRange } from '@theia/scm/lib/browser/dirty-diff/diff-computer';
+import { Change, LineRange } from '@theia/scm/lib/browser/dirty-diff/diff-computer';
 import { IChange } from '@theia/monaco-editor-core/esm/vs/editor/common/diff/legacyLinesDiffComputer';
 import { TimelineItem } from '@theia/timeline/lib/common/timeline-model';
 import { ScmCommandArg, TimelineCommandArg, TreeViewItemReference } from '../../../common';
@@ -236,15 +236,15 @@ export class PluginMenuCommandAdapter implements MenuCommandAdapter {
     protected toScmChangeArgs(...args: any[]): any[] {
         const arg = args[0];
         if (arg instanceof DirtyDiffWidget) {
-            const toIChange = (change: RangeMapping): IChange => {
-                const convert = (range: LineRange | NormalizedEmptyLineRange): [number, number] => {
+            const toIChange = (change: Change): IChange => {
+                const convert = (range: LineRange): [number, number] => {
                     let startLineNumber;
                     let endLineNumber;
                     if (!LineRange.isEmpty(range)) {
                         startLineNumber = range.start + 1;
-                        endLineNumber = range.end + 1;
+                        endLineNumber = range.end;
                     } else {
-                        startLineNumber = range.start === 0 ? 0 : range.end + 1;
+                        startLineNumber = range.start;
                         endLineNumber = 0;
                     }
                     return [startLineNumber, endLineNumber];
