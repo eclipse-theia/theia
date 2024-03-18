@@ -18,7 +18,7 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { ActionMenuNode, Disposable, Emitter, Event, MenuCommandExecutor, MenuModelRegistry, MenuPath, URI, nls } from '@theia/core';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
-import { RangeMapping, LineRange, NormalizedEmptyLineRange } from './diff-computer';
+import { Change, LineRange } from './diff-computer';
 import { ScmColors } from '../scm-colors';
 import * as monaco from '@theia/monaco-editor-core';
 import { PeekViewWidget, peekViewBorder, peekViewTitleBackground, peekViewTitleForeground, peekViewTitleInfoForeground }
@@ -46,7 +46,7 @@ export const DirtyDiffWidgetProps = Symbol('DirtyDiffWidgetProps');
 export interface DirtyDiffWidgetProps {
     readonly editor: MonacoEditor;
     readonly previousRevisionUri: URI;
-    readonly changes: readonly RangeMapping[];
+    readonly changes: readonly Change[];
 }
 
 export const DirtyDiffWidgetFactory = Symbol('DirtyDiffWidgetFactory');
@@ -87,11 +87,11 @@ export class DirtyDiffWidget implements Disposable {
         return this.props.previousRevisionUri;
     }
 
-    get changes(): readonly RangeMapping[] {
+    get changes(): readonly Change[] {
         return this.props.changes;
     }
 
-    get currentChange(): RangeMapping | undefined {
+    get currentChange(): Change | undefined {
         return this.changes[this.index];
     }
 
@@ -127,7 +127,7 @@ export class DirtyDiffWidget implements Disposable {
         }
     }
 
-    async getContentWithSelectedChanges(predicate: (change: RangeMapping, index: number, changes: readonly RangeMapping[]) => boolean): Promise<string> {
+    async getContentWithSelectedChanges(predicate: (change: Change, index: number, changes: readonly Change[]) => boolean): Promise<string> {
         this.checkCreated();
         const changes = this.changes.filter(predicate);
         const diffEditor = await this.diffEditorPromise!;
@@ -195,7 +195,7 @@ function cycle(index: number, offset: -1 | 1, length: number): number {
 }
 
 // adapted from https://github.com/microsoft/vscode/blob/823d54f86ee13eb357bc6e8e562e89d793f3c43b/extensions/git/src/staging.ts
-function applyChanges(changes: readonly RangeMapping[], original: monaco.editor.ITextModel, modified: monaco.editor.ITextModel): string {
+function applyChanges(changes: readonly Change[], original: monaco.editor.ITextModel, modified: monaco.editor.ITextModel): string {
     const result: string[] = [];
     let currentLine = 1;
 
@@ -205,14 +205,14 @@ function applyChanges(changes: readonly RangeMapping[], original: monaco.editor.
         const isInsertion = LineRange.isEmpty(previousRange);
         const isDeletion = LineRange.isEmpty(currentRange);
 
-        const convert = (range: LineRange | NormalizedEmptyLineRange): [number, number] => {
+        const convert = (range: LineRange): [number, number] => {
             let startLineNumber;
             let endLineNumber;
             if (!LineRange.isEmpty(range)) {
                 startLineNumber = range.start + 1;
-                endLineNumber = range.end + 1;
+                endLineNumber = range.end;
             } else {
-                startLineNumber = range.start === 0 ? 0 : range.end + 1;
+                startLineNumber = range.start;
                 endLineNumber = 0;
             }
             return [startLineNumber, endLineNumber];
@@ -390,10 +390,9 @@ class DirtyDiffPeekView extends PeekViewWidget {
         if (!currentChange) {
             return theme.getColor(peekViewBorder);
         }
-        const { previousRange, currentRange } = currentChange;
-        if (LineRange.isEmpty(previousRange)) {
+        if (Change.isAddition(currentChange)) {
             return theme.getColor(ScmColors.editorGutterAddedBackground);
-        } else if (LineRange.isEmpty(currentRange)) {
+        } else if (Change.isRemoval(currentChange)) {
             return theme.getColor(ScmColors.editorGutterDeletedBackground);
         } else {
             return theme.getColor(ScmColors.editorGutterModifiedBackground);

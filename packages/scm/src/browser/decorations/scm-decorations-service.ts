@@ -79,8 +79,7 @@ export class ScmDecorationsService {
                     const previousContent = await previousResource.readContents();
                     const previousLines = ContentLines.fromString(previousContent);
                     const currentLines = ContentLines.fromTextEditorDocument(editor.document);
-                    const dirtyDiff = this.diffComputer.computeDirtyDiff(ContentLines.arrayLike(previousLines), ContentLines.arrayLike(currentLines),
-                        { rangeMappings: true });
+                    const dirtyDiff = this.diffComputer.computeDirtyDiff(ContentLines.arrayLike(previousLines), ContentLines.arrayLike(currentLines));
                     const update = <DirtyDiffUpdate>{ editor, previousRevisionUri: uri, ...dirtyDiff };
                     this.decorator.applyDecorations(update);
                     this.onDirtyDiffUpdateEmitter.fire(update);
