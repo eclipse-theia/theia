@@ -125,11 +125,11 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
         });
 
         commands.registerCommand(NotebookCommands.ADD_NEW_MARKDOWN_CELL_COMMAND, this.editableCommandHandler(
-            notebookModel => commands.executeCommand(NotebookCommands.ADD_NEW_CELL_COMMAND.id, notebookModel, CellKind.Markup)
+            notebookModel => commands.executeCommand(NotebookCommands.ADD_NEW_CELL_COMMAND.id, notebookModel, CellKind.Markup, 'below')
         ));
 
         commands.registerCommand(NotebookCommands.ADD_NEW_CODE_CELL_COMMAND, this.editableCommandHandler(
-            notebookModel => commands.executeCommand(NotebookCommands.ADD_NEW_CELL_COMMAND.id, notebookModel, CellKind.Code)
+            notebookModel => commands.executeCommand(NotebookCommands.ADD_NEW_CELL_COMMAND.id, notebookModel, CellKind.Code, 'below')
         ));
 
         commands.registerCommand(NotebookCommands.SELECT_KERNEL_COMMAND, this.editableCommandHandler(

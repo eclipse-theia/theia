@@ -139,7 +139,7 @@ export class NotebookCellModel implements NotebookCell, Disposable {
     protected textModel?: MonacoEditorModel;
 
     get text(): string {
-        return this.textModel ? this.textModel.getText() : this.source;
+        return this.textModel && !this.textModel.isDisposed() ? this.textModel.getText() : this.source;
     }
 
     get source(): string {
