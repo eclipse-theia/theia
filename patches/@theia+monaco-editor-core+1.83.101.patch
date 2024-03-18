@@ -1,0 +1,32 @@
+diff --git a/node_modules/@theia/monaco-editor-core/esm/vs/base/browser/ui/sash/sash.js b/node_modules/@theia/monaco-editor-core/esm/vs/base/browser/ui/sash/sash.js
+index 111dec4..b196066 100644
+--- a/node_modules/@theia/monaco-editor-core/esm/vs/base/browser/ui/sash/sash.js
++++ b/node_modules/@theia/monaco-editor-core/esm/vs/base/browser/ui/sash/sash.js
+@@ -47,14 +47,15 @@ function setGlobalHoverDelay(size) {
+ }
+ exports.setGlobalHoverDelay = setGlobalHoverDelay;
+ class MouseEventFactory {
+-    constructor() {
++    constructor(el) {
++        this.el = el;
+         this.disposables = new lifecycle_1.DisposableStore();
+     }
+     get onPointerMove() {
+-        return this.disposables.add(new event_1.DomEmitter(window, 'mousemove')).event;
++        return this.disposables.add(new event_1.DomEmitter(this.el.ownerDocument.defaultView, 'mousemove')).event;
+     }
+     get onPointerUp() {
+-        return this.disposables.add(new event_1.DomEmitter(window, 'mouseup')).event;
++        return this.disposables.add(new event_1.DomEmitter(this.el.ownerDocument.defaultView, 'mouseup')).event;
+     }
+     dispose() {
+         this.disposables.dispose();
+@@ -243,7 +244,7 @@ class Sash extends lifecycle_1.Disposable {
+             this.el.classList.add('mac');
+         }
+         const onMouseDown = this._register(new event_1.DomEmitter(this.el, 'mousedown')).event;
+-        this._register(onMouseDown(e => this.onPointerStart(e, new MouseEventFactory()), this));
++        this._register(onMouseDown(e => this.onPointerStart(e, new MouseEventFactory(this.el)), this));
+         const onMouseDoubleClick = this._register(new event_1.DomEmitter(this.el, 'dblclick')).event;
+         this._register(onMouseDoubleClick(this.onPointerDoublePress, this));
+         const onMouseEnter = this._register(new event_1.DomEmitter(this.el, 'mouseenter')).event;
