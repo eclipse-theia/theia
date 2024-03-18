@@ -23,12 +23,13 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { TerminalWidget } from './base/terminal-widget';
 import { TerminalLink, TerminalLinkProvider } from './terminal-link-provider';
 import { TerminalWidgetImpl } from './terminal-widget-impl';
-
+import { FileSearchService } from '@theia/file-search/lib/common/file-search-service';
 @injectable()
 export class FileLinkProvider implements TerminalLinkProvider {
 
     @inject(OpenerService) protected readonly openerService: OpenerService;
     @inject(FileService) protected fileService: FileService;
+    @inject(FileSearchService) private searchService: FileSearchService;
 
     async provideLinks(line: string, terminal: TerminalWidget): Promise<TerminalLink[]> {
         const links: TerminalLink[] = [];
@@ -42,6 +43,32 @@ export class FileLinkProvider implements TerminalLinkProvider {
                     length: match.length,
                     handle: () => this.open(match, terminal)
                 });
+            } else {
+                const cwd = await this.getCwd(terminal);
+                let searchTerm = await this.extractPath(match);
+                if (searchTerm) {
+                    // remove any leading ./, ../ etc. as they can't be searched
+                    searchTerm = searchTerm.replace(/^(\.+[\\/])+/, '');
+                    // try and find a matching file in the workspace
+                    const files = (await this.searchService.find(searchTerm, {
+                        rootUris: [cwd.toString()],
+                        fuzzyMatch: true,
+                        limit: 1
+                    }));
+                    if (files.length) {
+                        const fileUri = new URI(files[0]);
+                        const valid = await this.isValidFileURI(fileUri);
+                        if (valid) {
+                            const position = await this.extractPosition(match);
+                            links.push({
+                                startIndex: regExp.lastIndex - match.length,
+                                length: match.length,
+                                handle: () => this.openURI(fileUri, position)
+                            });
+                        }
+
+                    }
+                }
             }
         }
         return links;
@@ -57,14 +84,19 @@ export class FileLinkProvider implements TerminalLinkProvider {
             const toOpen = await this.toURI(match, await this.getCwd(terminal));
             if (toOpen) {
                 // TODO: would be better to ask the opener service, but it returns positively even for unknown files.
-                try {
-                    const stat = await this.fileService.resolve(toOpen);
-                    return !stat.isDirectory;
-                } catch { }
+                return this.isValidFileURI(toOpen);
             }
         } catch (err) {
             console.trace('Error validating ' + match, err);
         }
+        return false;
+    }
+
+    protected async isValidFileURI(uri: URI): Promise<boolean> {
+        try {
+            const stat = await this.fileService.resolve(uri);
+            return !stat.isDirectory;
+        } catch { }
         return false;
     }
 
@@ -97,8 +129,11 @@ export class FileLinkProvider implements TerminalLinkProvider {
         if (!toOpen) {
             return;
         }
-
         const position = await this.extractPosition(match);
+        return this.openURI(toOpen, position);
+    }
+
+    async openURI(toOpen: URI, position: Position): Promise<void> {
         let options = {};
         if (position) {
             options = { selection: { start: position } };
@@ -108,7 +143,7 @@ export class FileLinkProvider implements TerminalLinkProvider {
             const opener = await this.openerService.getOpener(toOpen, options);
             opener.open(toOpen, options);
         } catch (err) {
-            console.error('Cannot open link ' + match, err);
+            console.error('Cannot open link ' + toOpen, err);
         }
     }
 
