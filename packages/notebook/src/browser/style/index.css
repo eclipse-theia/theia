@@ -171,10 +171,16 @@
   overflow: hidden;
 }
 
+.theia-notebook-viewport {
+  display: flex;
+  overflow: hidden;
+  height: 100%;
+}
+
 .theia-notebook-scroll-container {
-    flex: 1;
-    overflow: hidden;
-    position: relative;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
 }
 
 .theia-notebook-main-toolbar {

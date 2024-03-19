@@ -194,7 +194,7 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
                 this.webviewWidget.setIframeHeight(message.contentHeight + 5);
                 break;
             case 'did-scroll-wheel':
-                this.editor.node.children[0].children[1].scrollBy(message.deltaX, message.deltaY);
+                this.editor.node.getElementsByClassName('theia-notebook-viewport')[0].children[0].scrollBy(message.deltaX, message.deltaY);
                 break;
             case 'customKernelMessage':
                 this.editor.recieveKernelMessage(message.message);

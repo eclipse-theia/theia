@@ -20,15 +20,19 @@ import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import { SimpleMonacoEditor } from '@theia/monaco/lib/browser/simple-monaco-editor';
 import { MonacoEditor, MonacoEditorServices } from '@theia/monaco/lib/browser/monaco-editor';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
-import { DisposableCollection } from '@theia/core';
 import { IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
 import { NotebookContextManager } from '../service/notebook-context-manager';
+import { DisposableCollection, OS } from '@theia/core';
+import { NotebookViewportService } from './notebook-viewport-service';
+import { BareFontInfo } from '@theia/monaco-editor-core/esm/vs/editor/common/config/fontInfo';
 
 interface CellEditorProps {
     notebookModel: NotebookModel,
     cell: NotebookCellModel,
     monacoServices: MonacoEditorServices,
     notebookContextManager: NotebookContextManager;
+    notebookViewportService?: NotebookViewportService,
+    fontInfo?: BareFontInfo;
 }
 
 const DEFAULT_EDITOR_OPTIONS: MonacoEditor.IOptions = {
@@ -49,7 +53,17 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
 
     override componentDidMount(): void {
         this.disposeEditor();
-        this.initEditor();
+        if (!this.props.notebookViewportService || (this.container && this.props.notebookViewportService.isElementInViewport(this.container))) {
+            this.initEditor();
+        } else {
+            const disposable = this.props.notebookViewportService?.onDidChangeViewport(() => {
+                if (!this.editor && this.container && this.props.notebookViewportService!.isElementInViewport(this.container)) {
+                    this.initEditor();
+                    disposable.dispose();
+                }
+            });
+            this.toDispose.push(disposable);
+        }
     }
 
     override componentWillUnmount(): void {
@@ -65,6 +79,7 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
         const { cell, notebookModel, monacoServices } = this.props;
         if (this.container) {
             const editorNode = this.container;
+            editorNode.style.height = '';
             const editorModel = await cell.resolveTextModel();
             const uri = cell.uri;
             this.editor = new SimpleMonacoEditor(uri,
@@ -93,10 +108,14 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
         this.editor?.refresh();
     };
 
+    protected estimateHeight(): string {
+        const lineHeight = this.props.fontInfo?.lineHeight ?? 20;
+        return this.props.cell.text.split(OS.backend.EOL).length * lineHeight + 10 + 7 + 'px';
+    }
+
     override render(): React.ReactNode {
         return <div className='theia-notebook-cell-editor' onResize={this.handleResize} id={this.props.cell.uri.toString()}
-            ref={container => this.setContainer(container)}>
-
+            ref={container => this.setContainer(container)} style={{ height: this.editor ? undefined : this.estimateHeight() }}>
         </div>;
     }
 
