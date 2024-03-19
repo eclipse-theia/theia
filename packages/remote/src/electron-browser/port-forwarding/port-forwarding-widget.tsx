@@ -20,7 +20,6 @@ import { OpenerService, ReactWidget } from '@theia/core/lib/browser';
 import { nls, URI } from '@theia/core';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { ForwardedPort, PortForwardingService } from './port-forwarding-service';
-import '../../../src/electron-browser/port-forwarding/port-forwarding-widget.css';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 
 export const PORT_FORWARDING_WIDGET_ID = 'port-forwarding-widget';
@@ -51,7 +50,9 @@ export class PortForwardingWidget extends ReactWidget {
     protected render(): ReactNode {
         if (this.portForwardingService.forwardedPorts.length === 0) {
             return <div>
-                <p>{'No forwarded ports. Forward a port to access your locally running services over the internet'}</p>
+                <p>
+                    {nls.localizeByDefault('No forwarded ports. Forward a port to access your locally running services over the internet.\n[Forward a Port]({0})').split('\n')[0]}
+                </p>
                 {this.renderForwardPortButton()}
             </div>;
         }
@@ -72,7 +73,7 @@ export class PortForwardingWidget extends ReactWidget {
                             {this.renderPortColumn(port)}
                             {this.renderAddressColumn(port)}
                             <td></td>
-                            <td>{port.origin}</td>
+                            <td>{port.origin ? nls.localizeByDefault(port.origin) : ''}</td>
                         </tr>
                     ))}
                     {!this.portForwardingService.forwardedPorts.some(port => port.editing) && <tr><td>{this.renderForwardPortButton()}</td></tr>}
@@ -83,7 +84,7 @@ export class PortForwardingWidget extends ReactWidget {
 
     protected renderForwardPortButton(): ReactNode {
         return <button className='theia-button' onClick={() => {
-            this.portForwardingService.forwardNewPort(nls.localizeByDefault('User Forwarded'));
+            this.portForwardingService.forwardNewPort('User Forwarded');
             this.update();
         }
         }>{nls.localizeByDefault('Forward a Port')}</button>;

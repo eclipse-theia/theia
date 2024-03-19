@@ -31,6 +31,7 @@ import { PortForwardingContribution } from './port-forwarding/port-forwading-con
 import { PortForwardingService } from './port-forwarding/port-forwarding-service';
 import { RemotePortForwardingProvider, RemoteRemotePortForwardingProviderPath } from '../electron-common/remote-port-forwarding-provider';
 import { ServiceConnectionProvider } from '@theia/core/lib/browser/messaging/service-connection-provider';
+import '../../src/electron-browser/style/port-forwarding-widget.css';
 
 export default new ContainerModule((bind, _, __, rebind) => {
     bind(RemoteFrontendContribution).toSelf().inSingletonScope();

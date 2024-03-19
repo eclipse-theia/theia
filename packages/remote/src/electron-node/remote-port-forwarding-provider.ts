@@ -37,7 +37,6 @@ export class RemotePortForwardingProviderImpl implements RemotePortForwardingPro
             currentConnection?.forwardOut(socket, portToForward.port);
         }).listen(portToForward.port, portToForward.address);
         this.forwardedPorts.set(portToForward.port, server);
-
     }
 
     async portRemoved(forwardedPort: ForwardedPort): Promise<void> {
