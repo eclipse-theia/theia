@@ -25,7 +25,6 @@ import { NotebookContentChangedEvent, NotebookModelWillAddRemoveEvent, CellEditO
 import { NotebookSerializer } from '../service/notebook-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { NotebookCellModel, NotebookCellModelFactory } from './notebook-cell-model';
-import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
 import { UndoRedoService } from '@theia/editor/lib/browser/undo-redo-service';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
@@ -64,6 +63,9 @@ export class NotebookModel implements Saveable, Disposable {
     protected readonly onDidChangeContentEmitter = new Emitter<NotebookContentChangedEvent[]>();
     readonly onDidChangeContent = this.onDidChangeContentEmitter.event;
 
+    protected readonly onDidChangeSelectedCellEmitter = new Emitter<NotebookCellModel | undefined>();
+    readonly onDidChangeSelectedCell = this.onDidChangeSelectedCellEmitter.event;
+
     get onDidChangeReadOnly(): Event<boolean | MarkdownString> {
         return this.props.resource.onDidChangeReadOnly ?? Event.None;
     }
@@ -76,9 +78,6 @@ export class NotebookModel implements Saveable, Disposable {
 
     @inject(NotebookModelProps)
     protected props: NotebookModelProps;
-
-    @inject(MonacoTextModelService)
-    protected modelService: MonacoTextModelService;
 
     @inject(NotebookCellModelFactory)
     protected cellModelFactory: NotebookCellModelFactory;
@@ -232,6 +231,7 @@ export class NotebookModel implements Saveable, Disposable {
 
     setSelectedCell(cell: NotebookCellModel): void {
         this.selectedCell = cell;
+        this.onDidChangeSelectedCellEmitter.fire(cell);
     }
 
     private addCellOutputListeners(cells: NotebookCellModel[]): void {
@@ -298,9 +298,13 @@ export class NotebookModel implements Saveable, Disposable {
                 case CellEditType.Move:
                     this.moveCellToIndex(cellIndex, edit.length, edit.newIdx, computeUndoRedo);
                     break;
-
+            }
+            // if selected cell is affected update it because it can potentially have been replaced
+            if (cell === this.selectedCell) {
+                this.setSelectedCell(this.cells[cellIndex]);
             }
         }
+
     }
 
     protected async replaceCells(start: number, deleteCount: number, newCells: CellData[], computeUndoRedo: boolean): Promise<void> {

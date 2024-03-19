@@ -43,6 +43,8 @@ export function createNotebookEditorWidgetContainer(parent: interfaces.Container
 
     child.bind(NotebookContextManager).toSelf().inSingletonScope();
     child.bind(NotebookMainToolbarRenderer).toSelf().inSingletonScope();
+    child.bind(NotebookCodeCellRenderer).toSelf().inSingletonScope();
+    child.bind(NotebookMarkdownCellRenderer).toSelf().inSingletonScope();
 
     child.bind(NotebookEditorWidget).toSelf();
 

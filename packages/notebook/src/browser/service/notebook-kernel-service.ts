@@ -24,7 +24,6 @@ import { StorageService } from '@theia/core/lib/browser';
 import { NotebookKernelSourceAction } from '../../common';
 import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookService } from './notebook-service';
-import { NotebookEditorWidgetService } from './notebook-editor-widget-service';
 
 export interface SelectedNotebookKernelChangeEvent {
     notebook: URI;
@@ -157,9 +156,6 @@ export class NotebookKernelService {
 
     @inject(StorageService)
     protected storageService: StorageService;
-
-    @inject(NotebookEditorWidgetService)
-    protected notebookEditorService: NotebookEditorWidgetService;
 
     protected readonly kernels = new Map<string, KernelInfo>();
 

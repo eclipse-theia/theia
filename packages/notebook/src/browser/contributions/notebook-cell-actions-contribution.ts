@@ -15,15 +15,22 @@
 // *****************************************************************************
 
 import { Command, CommandContribution, CommandHandler, CommandRegistry, CompoundMenuNodeRole, MenuContribution, MenuModelRegistry, nls } from '@theia/core';
-import { codicon } from '@theia/core/lib/browser';
+import { codicon, Key, KeybindingContribution, KeybindingRegistry, KeyCode, KeyModifier } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookCellModel } from '../view-model/notebook-cell-model';
-import { NOTEBOOK_CELL_MARKDOWN_EDIT_MODE, NOTEBOOK_CELL_TYPE, NotebookContextKeys, NOTEBOOK_CELL_EXECUTING } from './notebook-context-keys';
+import {
+    NOTEBOOK_CELL_MARKDOWN_EDIT_MODE, NOTEBOOK_CELL_TYPE,
+    NotebookContextKeys, NOTEBOOK_CELL_EXECUTING, NOTEBOOK_EDITOR_FOCUSED,
+    NOTEBOOK_CELL_FOCUSED, NOTEBOOK_CELL_EDITABLE
+} from './notebook-context-keys';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { NotebookExecutionService } from '../service/notebook-execution-service';
 import { NotebookCellOutputModel } from '../view-model/notebook-cell-output-model';
-import { CellEditType } from '../../common';
+import { CellEditType, CellKind } from '../../common';
+import { NotebookEditorWidgetService } from '../service/notebook-editor-widget-service';
+import { NotebookCommands } from './notebook-actions-contribution';
+import { changeCellType } from './cell-operations';
 
 export namespace NotebookCellCommands {
     /** Parameters: notebookModel: NotebookModel | undefined, cell: NotebookCellModel */
@@ -52,6 +59,10 @@ export namespace NotebookCellCommands {
         iconClass: codicon('play'),
     });
     /** Parameters: notebookModel: NotebookModel, cell: NotebookCellModel */
+    export const EXECUTE_SINGLE_CELL_AND_FOCUS_NEXT_COMMAND = Command.toDefaultLocalizedCommand({
+        id: 'notebook.cell.execute-cell-and-focus-next',
+    });
+    /** Parameters: notebookModel: NotebookModel, cell: NotebookCellModel */
     export const STOP_CELL_EXECUTION_COMMAND = Command.toDefaultLocalizedCommand({
         id: 'notebook.cell.stop-cell-execution',
         iconClass: codicon('stop'),
@@ -66,16 +77,48 @@ export namespace NotebookCellCommands {
         id: 'notebook.cell.change-presentation',
         label: 'Change Presentation',
     });
+
+    export const INSERT_NEW_CELL_ABOVE_COMMAND = Command.toDefaultLocalizedCommand({
+        id: 'notebook.cell.insertCodeCellAboveAndFocusContainer',
+        label: 'Insert Code Cell Above and Focus Container'
+    });
+
+    export const INSERT_NEW_CELL_BELOW_COMMAND = Command.toDefaultLocalizedCommand({
+        id: 'notebook.cell.insertCodeCellBelowAndFocusContainer',
+        label: 'Insert Code Cell Below and Focus Container'
+    });
+
+    export const INSERT_MARKDOWN_CELL_ABOVE_COMMAND = Command.toLocalizedCommand({
+        id: 'notebook.cell.insertMarkdownCellAbove',
+        label: 'Insert Markdown Cell Above'
+    });
+    export const INSERT_MARKDOWN_CELL_BELOW_COMMAND = Command.toLocalizedCommand({
+        id: 'notebook.cell.insertMarkdownCellBelow',
+        label: 'Insert Markdown Cell Below'
+    });
+
+    export const TO_CODE_CELL_COMMAND = Command.toLocalizedCommand({
+        id: 'notebook.cell.to-code-cell',
+        label: 'Change Cell to Code'
+    });
+
+    export const TO_MARKDOWN_CELL_COMMAND = Command.toLocalizedCommand({
+        id: 'notebook.cell.to-markdown-cell',
+        label: 'Change Cell to Mardown'
+    });
 }
 
 @injectable()
-export class NotebookCellActionContribution implements MenuContribution, CommandContribution {
+export class NotebookCellActionContribution implements MenuContribution, CommandContribution, KeybindingContribution {
 
     @inject(ContextKeyService)
     protected contextKeyService: ContextKeyService;
 
     @inject(NotebookExecutionService)
     protected notebookExecutionService: NotebookExecutionService;
+
+    @inject(NotebookEditorWidgetService)
+    protected notebookEditorWidgetService: NotebookEditorWidgetService;
 
     @postConstruct()
     protected init(): void {
@@ -173,28 +216,65 @@ export class NotebookCellActionContribution implements MenuContribution, Command
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(NotebookCellCommands.EDIT_COMMAND, this.editableCellCommandHandler((_, cell) => cell.requestEdit()));
-        commands.registerCommand(NotebookCellCommands.STOP_EDIT_COMMAND, { execute: (_, cell: NotebookCellModel) => cell.requestStopEdit() });
+        commands.registerCommand(NotebookCellCommands.STOP_EDIT_COMMAND, { execute: (_, cell: NotebookCellModel) => (cell ?? this.getSelectedCell()).requestStopEdit() });
         commands.registerCommand(NotebookCellCommands.DELETE_COMMAND,
-            this.editableCellCommandHandler((notebookModel, cell) => notebookModel.applyEdits([{
-                editType: CellEditType.Replace,
-                index: notebookModel.cells.indexOf(cell),
-                count: 1,
-                cells: []
-            }], true)));
+            this.editableCellCommandHandler((notebookModel, cell) => {
+                notebookModel.applyEdits([{
+                    editType: CellEditType.Replace,
+                    index: notebookModel.cells.indexOf(cell),
+                    count: 1,
+                    cells: []
+                }]
+                    , true);
+            }));
         commands.registerCommand(NotebookCellCommands.SPLIT_CELL_COMMAND);
 
         commands.registerCommand(NotebookCellCommands.EXECUTE_SINGLE_CELL_COMMAND, this.editableCellCommandHandler(
-            (notebookModel, cell) => this.notebookExecutionService.executeNotebookCells(notebookModel, [cell])
-        ));
+            (notebookModel, cell) => {
+                this.notebookExecutionService.executeNotebookCells(notebookModel, [cell]);
+            })
+        );
+
+        commands.registerCommand(NotebookCellCommands.EXECUTE_SINGLE_CELL_AND_FOCUS_NEXT_COMMAND, this.editableCellCommandHandler(
+            (notebookModel, cell) => {
+                commands.executeCommand(NotebookCellCommands.EXECUTE_SINGLE_CELL_COMMAND.id, notebookModel, cell);
+                const index = notebookModel.cells.indexOf(cell);
+                if (index < notebookModel.cells.length - 1) {
+                    notebookModel.setSelectedCell(notebookModel.cells[index + 1]);
+                } else {
+                    commands.executeCommand(NotebookCellCommands.INSERT_NEW_CELL_BELOW_COMMAND.id, notebookModel, CellKind.Code, 'below');
+                }
+            })
+        );
+
         commands.registerCommand(NotebookCellCommands.STOP_CELL_EXECUTION_COMMAND, {
-            execute: (notebookModel: NotebookModel, cell: NotebookCellModel) => this.notebookExecutionService.cancelNotebookCells(notebookModel, [cell])
+            execute: (notebookModel: NotebookModel, cell: NotebookCellModel) => {
+                notebookModel = notebookModel ?? this.notebookEditorWidgetService.focusedEditor?.model;
+                cell = cell ?? this.getSelectedCell();
+                this.notebookExecutionService.cancelNotebookCells(notebookModel, [cell]);
+            }
         });
         commands.registerCommand(NotebookCellCommands.CLEAR_OUTPUTS_COMMAND, this.editableCellCommandHandler(
-            (_, cell) => cell.spliceNotebookCellOutputs({ start: 0, deleteCount: cell.outputs.length, newOutputs: [] })
+            (_, cell) => cell.spliceNotebookCellOutputs({ start: 0, deleteCount: (cell ?? this.getSelectedCell()).outputs.length, newOutputs: [] })
         ));
         commands.registerCommand(NotebookCellCommands.CHANGE_OUTPUT_PRESENTATION_COMMAND, this.editableCellCommandHandler(
             (_, __, output) => output?.requestOutputPresentationUpdate()
         ));
+
+        const insertCommand = (type: CellKind, index: number | 'above' | 'below'): CommandHandler => this.editableCellCommandHandler(() =>
+            commands.executeCommand(NotebookCommands.ADD_NEW_CELL_COMMAND.id, undefined, type, index)
+        );
+        commands.registerCommand(NotebookCellCommands.INSERT_NEW_CELL_ABOVE_COMMAND, insertCommand(CellKind.Code, 'above'));
+        commands.registerCommand(NotebookCellCommands.INSERT_NEW_CELL_BELOW_COMMAND, insertCommand(CellKind.Code, 'below'));
+        commands.registerCommand(NotebookCellCommands.INSERT_MARKDOWN_CELL_ABOVE_COMMAND, insertCommand(CellKind.Markup, 'above'));
+        commands.registerCommand(NotebookCellCommands.INSERT_MARKDOWN_CELL_BELOW_COMMAND, insertCommand(CellKind.Markup, 'below'));
+
+        commands.registerCommand(NotebookCellCommands.TO_CODE_CELL_COMMAND, this.editableCellCommandHandler((notebookModel, cell) => {
+            changeCellType(notebookModel, cell, CellKind.Code);
+        }));
+        commands.registerCommand(NotebookCellCommands.TO_MARKDOWN_CELL_COMMAND, this.editableCellCommandHandler((notebookModel, cell) => {
+            changeCellType(notebookModel, cell, CellKind.Markup);
+        }));
     }
 
     protected editableCellCommandHandler(execute: (notebookModel: NotebookModel, cell: NotebookCellModel, output?: NotebookCellOutputModel) => void): CommandHandler {
@@ -202,9 +282,60 @@ export class NotebookCellActionContribution implements MenuContribution, Command
             isEnabled: (notebookModel: NotebookModel) => !Boolean(notebookModel?.readOnly),
             isVisible: (notebookModel: NotebookModel) => !Boolean(notebookModel?.readOnly),
             execute: (notebookModel: NotebookModel, cell: NotebookCellModel, output?: NotebookCellOutputModel) => {
+                notebookModel = notebookModel ?? this.notebookEditorWidgetService.focusedEditor?.model;
+                cell = cell ?? this.getSelectedCell();
                 execute(notebookModel, cell, output);
             }
         };
+    }
+
+    protected getSelectedCell(): NotebookCellModel | undefined {
+        return this.notebookEditorWidgetService.focusedEditor?.model?.selectedCell;
+    }
+
+    registerKeybindings(keybindings: KeybindingRegistry): void {
+        keybindings.registerKeybindings(
+            {
+                command: NotebookCellCommands.EDIT_COMMAND.id,
+                keybinding: 'Enter',
+                when: `${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED} && ${NOTEBOOK_CELL_EDITABLE}`,
+            },
+            {
+                command: NotebookCellCommands.STOP_EDIT_COMMAND.id,
+                keybinding: KeyCode.createKeyCode({ first: Key.ENTER, modifiers: [KeyModifier.Alt] }).toString(),
+                when: `editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED}`,
+            },
+            {
+                command: NotebookCellCommands.EXECUTE_SINGLE_CELL_COMMAND.id,
+                keybinding: KeyCode.createKeyCode({ first: Key.ENTER, modifiers: [KeyModifier.CtrlCmd] }).toString(),
+                when: `${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED} && ${NOTEBOOK_CELL_TYPE} == 'code'`,
+            },
+            {
+                command: NotebookCellCommands.EXECUTE_SINGLE_CELL_AND_FOCUS_NEXT_COMMAND.id,
+                keybinding: KeyCode.createKeyCode({ first: Key.ENTER, modifiers: [KeyModifier.Shift] }).toString(),
+                when: `${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED} && ${NOTEBOOK_CELL_TYPE} == 'code'`,
+            },
+            {
+                command: NotebookCellCommands.CLEAR_OUTPUTS_COMMAND.id,
+                keybinding: KeyCode.createKeyCode({ first: Key.KEY_O, modifiers: [KeyModifier.Alt] }).toString(),
+                when: `${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED} && ${NOTEBOOK_CELL_TYPE} == 'code'`,
+            },
+            {
+                command: NotebookCellCommands.CHANGE_OUTPUT_PRESENTATION_COMMAND.id,
+                keybinding: KeyCode.createKeyCode({ first: Key.KEY_P, modifiers: [KeyModifier.Alt] }).toString(),
+                when: `${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED} && ${NOTEBOOK_CELL_TYPE} == 'code'`,
+            },
+            {
+                command: NotebookCellCommands.TO_CODE_CELL_COMMAND.id,
+                keybinding: 'Y',
+                when: `${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED} && ${NOTEBOOK_CELL_TYPE} == 'markdown'`,
+            },
+            {
+                command: NotebookCellCommands.TO_MARKDOWN_CELL_COMMAND.id,
+                keybinding: 'M',
+                when: `${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED} && ${NOTEBOOK_CELL_TYPE} == 'code'`,
+            }
+        );
     }
 }
 
@@ -218,3 +349,4 @@ export namespace NotebookCellActionContribution {
     export const ADDITIONAL_OUTPUT_SIDEBAR_MENU = [...OUTPUT_SIDEBAR_MENU, 'more'];
 
 }
+

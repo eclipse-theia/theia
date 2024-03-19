@@ -23,12 +23,17 @@ import { Emitter } from '@theia/core';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { ApplicationShell } from '@theia/core/lib/browser';
 import { NotebookEditorWidget } from '../notebook-editor-widget';
+import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
+import { NOTEBOOK_EDITOR_FOCUSED } from '../contributions/notebook-context-keys';
 
 @injectable()
 export class NotebookEditorWidgetService {
 
     @inject(ApplicationShell)
     protected applicationShell: ApplicationShell;
+
+    @inject(ContextKeyService)
+    protected contextKeyService: ContextKeyService;
 
     private readonly notebookEditors = new Map<string, NotebookEditorWidget>();
 
@@ -48,11 +53,13 @@ export class NotebookEditorWidgetService {
             if (event.newValue instanceof NotebookEditorWidget) {
                 if (event.newValue !== this.focusedEditor) {
                     this.focusedEditor = event.newValue;
+                    this.contextKeyService.setContext(NOTEBOOK_EDITOR_FOCUSED, true);
                     this.onDidChangeFocusedEditorEmitter.fire(this.focusedEditor);
                 }
             } else if (event.newValue) {
                 // Only unfocus editor if a new widget has been focused
                 this.focusedEditor = undefined;
+                this.contextKeyService.setContext(NOTEBOOK_EDITOR_FOCUSED, true);
                 this.onDidChangeFocusedEditorEmitter.fire(undefined);
             }
         });

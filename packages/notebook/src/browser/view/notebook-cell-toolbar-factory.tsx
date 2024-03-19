@@ -23,6 +23,7 @@ import { ContextMenuRenderer } from '@theia/core/lib/browser';
 import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import { NotebookCellOutputModel } from '../view-model/notebook-cell-output-model';
+import { NotebookContextManager } from '../service/notebook-context-manager';
 
 export interface NotebookCellToolbarItem {
     id: string;
@@ -48,21 +49,24 @@ export class NotebookCellToolbarFactory {
     @inject(CommandRegistry)
     protected readonly commandRegistry: CommandRegistry;
 
+    @inject(NotebookContextManager)
+    protected readonly notebookContextManager: NotebookContextManager;
+
     renderCellToolbar(menuPath: string[], notebookModel: NotebookModel, cell: NotebookCellModel): React.ReactNode {
         return <NotebookCellToolbar getMenuItems={() => this.getMenuItems(menuPath, notebookModel, cell)}
-            onContextKeysChanged={cell.notebookCellContextManager.onDidChangeContext} />;
+            onContextKeysChanged={this.notebookContextManager.onDidChangeContext} />;
     }
 
     renderSidebar(menuPath: string[], notebookModel: NotebookModel, cell: NotebookCellModel, output?: NotebookCellOutputModel): React.ReactNode {
         return <NotebookCellSidebar getMenuItems={() => this.getMenuItems(menuPath, notebookModel, cell, output)}
-            onContextKeysChanged={cell.notebookCellContextManager.onDidChangeContext} />;
+            onContextKeysChanged={this.notebookContextManager.onDidChangeContext} />;
     }
 
     private getMenuItems(menuItemPath: string[], notebookModel: NotebookModel, cell: NotebookCellModel, output?: NotebookCellOutputModel): NotebookCellToolbarItem[] {
         const inlineItems: NotebookCellToolbarItem[] = [];
 
         for (const menuNode of this.menuRegistry.getMenu(menuItemPath).children) {
-            if (!menuNode.when || this.contextKeyService.match(menuNode.when, cell.context ?? undefined)) {
+            if (!menuNode.when || this.contextKeyService.match(menuNode.when, this.notebookContextManager.context)) {
                 if (menuNode.role === CompoundMenuNodeRole.Flat) {
                     inlineItems.push(...menuNode.children?.map(child => this.createToolbarItem(child, notebookModel, cell, output)) ?? []);
                 } else {

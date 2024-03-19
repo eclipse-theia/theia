@@ -50,8 +50,12 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
             if (e.newCellIds && e.newCellIds.length > 0) {
                 this.setState({ ...this.state, selectedCell: this.props.notebookModel.cells.find(model => model.handle === e.newCellIds![e.newCellIds!.length - 1]) });
             } else {
-                this.setState({ ...this.state, selectedCell: this.props.notebookModel.cells.find(cell => cell === this.state.selectedCell)});
+                this.setState({ ...this.state, selectedCell: this.props.notebookModel.cells.find(cell => cell === this.state.selectedCell) });
             }
+        }));
+
+        this.toDispose.push(props.notebookModel.onDidChangeSelectedCell(cell => {
+            this.setState({ ...this.state, selectedCell: cell });
         }));
     }
 
@@ -71,15 +75,15 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
                             onDragOver={e => this.onDragOver(e, cell, 'top')} />
                         {this.shouldRenderDragOverIndicator(cell, 'top') && <CellDropIndicator />}
                         <li className={'theia-notebook-cell' + (this.state.selectedCell === cell ? ' focused' : '') + (this.isEnabled() ? ' draggable' : '')}
-                            onClick={() => {
-                                this.setState({ selectedCell: cell });
+                            onClick={e => {
+                                this.setState({ ...this.state, selectedCell: cell });
                                 this.props.notebookModel.setSelectedCell(cell);
                             }}
                             onDragStart={e => this.onDragStart(e, index)}
                             onDragOver={e => this.onDragOver(e, cell)}
                             onDrop={e => this.onDrop(e, index)}
                             draggable={true}
-                            ref={(node: HTMLLIElement) => cell.refChanged(node)}>
+                            ref={ref => cell === this.state.selectedCell && ref?.scrollIntoView({ block: 'nearest' })}>
                             <div className={'theia-notebook-cell-marker' + (this.state.selectedCell === cell ? ' theia-notebook-cell-marker-selected' : '')}></div>
                             <div className='theia-notebook-cell-content'>
                                 {this.renderCellContent(cell, index)}

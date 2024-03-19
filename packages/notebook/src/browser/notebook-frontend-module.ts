@@ -16,7 +16,7 @@
 import '../../src/browser/style/index.css';
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { OpenHandler, WidgetFactory } from '@theia/core/lib/browser';
+import { KeybindingContribution, OpenHandler, WidgetFactory } from '@theia/core/lib/browser';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { NotebookOpenHandler } from './notebook-open-handler';
 import { CommandContribution, MenuContribution, ResourceResolver, } from '@theia/core';
@@ -31,8 +31,6 @@ import { NotebookCellToolbarFactory } from './view/notebook-cell-toolbar-factory
 import { createNotebookModelContainer, NotebookModel, NotebookModelFactory, NotebookModelProps } from './view-model/notebook-model';
 import { createNotebookCellModelContainer, NotebookCellModel, NotebookCellModelFactory, NotebookCellModelProps } from './view-model/notebook-cell-model';
 import { createNotebookEditorWidgetContainer, NotebookEditorWidgetContainerFactory, NotebookEditorProps, NotebookEditorWidget } from './notebook-editor-widget';
-import { NotebookCodeCellRenderer } from './view/notebook-code-cell-view';
-import { NotebookMarkdownCellRenderer } from './view/notebook-markdown-cell-view';
 import { NotebookActionsContribution } from './contributions/notebook-actions-contribution';
 import { NotebookExecutionService } from './service/notebook-execution-service';
 import { NotebookExecutionStateService } from './service/notebook-execution-state-service';
@@ -42,7 +40,6 @@ import { NotebookKernelHistoryService } from './service/notebook-kernel-history-
 import { NotebookEditorWidgetService } from './service/notebook-editor-widget-service';
 import { NotebookRendererMessagingService } from './service/notebook-renderer-messaging-service';
 import { NotebookColorContribution } from './contributions/notebook-color-contribution';
-import { NotebookCellContextManager } from './service/notebook-cell-context-manager';
 
 export default new ContainerModule(bind => {
     bind(NotebookColorContribution).toSelf().inSingletonScope();
@@ -73,13 +70,12 @@ export default new ContainerModule(bind => {
     bind(NotebookCellActionContribution).toSelf().inSingletonScope();
     bind(MenuContribution).toService(NotebookCellActionContribution);
     bind(CommandContribution).toService(NotebookCellActionContribution);
+    bind(KeybindingContribution).toService(NotebookCellActionContribution);
 
     bind(NotebookActionsContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(NotebookActionsContribution);
     bind(MenuContribution).toService(NotebookActionsContribution);
-
-    bind(NotebookCodeCellRenderer).toSelf().inSingletonScope();
-    bind(NotebookMarkdownCellRenderer).toSelf().inSingletonScope();
+    bind(KeybindingContribution).toService(NotebookActionsContribution);
 
     bind(NotebookEditorWidgetContainerFactory).toFactory(ctx => (props: NotebookEditorProps) =>
         createNotebookEditorWidgetContainer(ctx.container, props).get(NotebookEditorWidget)
@@ -88,6 +84,6 @@ export default new ContainerModule(bind => {
         createNotebookModelContainer(ctx.container, props).get(NotebookModel)
     );
     bind(NotebookCellModelFactory).toFactory(ctx => (props: NotebookCellModelProps) =>
-        createNotebookCellModelContainer(ctx.container, props, NotebookCellContextManager).get(NotebookCellModel)
+        createNotebookCellModelContainer(ctx.container, props).get(NotebookCellModel)
     );
 });

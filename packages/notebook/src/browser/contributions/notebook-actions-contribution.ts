@@ -16,13 +16,15 @@
 
 import { Command, CommandContribution, CommandHandler, CommandRegistry, CompoundMenuNodeRole, MenuContribution, MenuModelRegistry, nls } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { ApplicationShell, codicon, CommonCommands } from '@theia/core/lib/browser';
+import { ApplicationShell, codicon, CommonCommands, KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
 import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookService } from '../service/notebook-service';
 import { CellEditType, CellKind, NotebookCommand } from '../../common';
 import { NotebookKernelQuickPickService } from '../service/notebook-kernel-quick-pick-service';
 import { NotebookExecutionService } from '../service/notebook-execution-service';
 import { NotebookEditorWidget } from '../notebook-editor-widget';
+import { NotebookEditorWidgetService } from '../service/notebook-editor-widget-service';
+import { NOTEBOOK_CELL_FOCUSED, NOTEBOOK_EDITOR_FOCUSED } from './notebook-context-keys';
 
 export namespace NotebookCommands {
     export const ADD_NEW_CELL_COMMAND = Command.toDefaultLocalizedCommand({
@@ -59,10 +61,20 @@ export namespace NotebookCommands {
         category: 'Notebook',
         iconClass: codicon('clear-all')
     });
+
+    export const CHANGE_SELECTED_CELL = Command.toDefaultLocalizedCommand({
+        id: 'notebook.change-selected-cell',
+        category: 'Notebook',
+    });
+}
+
+export enum CellChangeDirection {
+    Up = 'up',
+    Down = 'down'
 }
 
 @injectable()
-export class NotebookActionsContribution implements CommandContribution, MenuContribution {
+export class NotebookActionsContribution implements CommandContribution, MenuContribution, KeybindingContribution {
 
     @inject(NotebookService)
     protected notebookService: NotebookService;
@@ -76,10 +88,22 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
     @inject(ApplicationShell)
     protected shell: ApplicationShell;
 
+    @inject(NotebookEditorWidgetService)
+    protected notebookEditorWidgetService: NotebookEditorWidgetService;
+
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(NotebookCommands.ADD_NEW_CELL_COMMAND, {
-            execute: (notebookModel: NotebookModel, cellKind: CellKind, index?: number) => {
-                const insertIndex = index ?? (notebookModel.selectedCell ? notebookModel.cells.indexOf(notebookModel.selectedCell) : 0);
+            execute: (notebookModel: NotebookModel, cellKind: CellKind = CellKind.Markup, index?: number | 'above' | 'below') => {
+                notebookModel = notebookModel ?? this.notebookEditorWidgetService.focusedEditor?.model;
+
+                let insertIndex: number = 0;
+                if (index && index >= 0) {
+                    insertIndex = index as number;
+                } else if (notebookModel.selectedCell && typeof index === 'string') {
+                    // if index is -1 insert below otherwise at the index of the selected cell which is above the selected.
+                    insertIndex = notebookModel.cells.indexOf(notebookModel.selectedCell) + (index === 'below' ? 1 : 0);
+                }
+
                 let firstCodeCell;
                 if (cellKind === CellKind.Code) {
                     firstCodeCell = notebookModel.cells.find(cell => cell.cellKind === CellKind.Code);
@@ -101,11 +125,11 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
         });
 
         commands.registerCommand(NotebookCommands.ADD_NEW_MARKDOWN_CELL_COMMAND, this.editableCommandHandler(
-            notebookModel => commands.executeCommand(NotebookCommands.ADD_NEW_CELL_COMMAND.id, notebookModel, CellKind.Markup)
+            notebookModel => commands.executeCommand(NotebookCommands.ADD_NEW_CELL_COMMAND.id, notebookModel, CellKind.Markup, 'below')
         ));
 
         commands.registerCommand(NotebookCommands.ADD_NEW_CODE_CELL_COMMAND, this.editableCommandHandler(
-            notebookModel => commands.executeCommand(NotebookCommands.ADD_NEW_CELL_COMMAND.id, notebookModel, CellKind.Code)
+            notebookModel => commands.executeCommand(NotebookCommands.ADD_NEW_CELL_COMMAND.id, notebookModel, CellKind.Code, 'below')
         ));
 
         commands.registerCommand(NotebookCommands.SELECT_KERNEL_COMMAND, this.editableCommandHandler(
@@ -119,6 +143,24 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
         commands.registerCommand(NotebookCommands.CLEAR_ALL_OUTPUTS_COMMAND, this.editableCommandHandler(
             notebookModel => notebookModel.cells.forEach(cell => cell.spliceNotebookCellOutputs({ start: 0, deleteCount: cell.outputs.length, newOutputs: [] }))
         ));
+
+        commands.registerCommand(NotebookCommands.CHANGE_SELECTED_CELL,
+            {
+                execute: (change: number | CellChangeDirection) => {
+                    const model = this.notebookEditorWidgetService.focusedEditor?.model;
+                    if (model && typeof change === 'number') {
+                        model.setSelectedCell(model.cells[change]);
+                    } else if (model && model.selectedCell) {
+                        const currentIndex = model.cells.indexOf(model.selectedCell);
+                        if (change === CellChangeDirection.Up && currentIndex > 0) {
+                            model.setSelectedCell(model.cells[currentIndex - 1]);
+                        } else if (change === CellChangeDirection.Down && currentIndex < model.cells.length - 1) {
+                            model.setSelectedCell(model.cells[currentIndex + 1]);
+                        }
+                    }
+                }
+            }
+        );
 
         commands.registerHandler(CommonCommands.UNDO.id, {
             isEnabled: () => {
@@ -134,6 +176,7 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
             },
             execute: () => (this.shell.activeWidget as NotebookEditorWidget).redo()
         });
+
     }
 
     protected editableCommandHandler(execute: (notebookModel: NotebookModel) => void): CommandHandler {
@@ -177,6 +220,23 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
             order: '30'
         });
         // other items
+    }
+
+    registerKeybindings(keybindings: KeybindingRegistry): void {
+        keybindings.registerKeybindings(
+            {
+                command: NotebookCommands.CHANGE_SELECTED_CELL.id,
+                keybinding: 'up',
+                args: CellChangeDirection.Up,
+                when: `!editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`
+            },
+            {
+                command: NotebookCommands.CHANGE_SELECTED_CELL.id,
+                keybinding: 'down',
+                args: CellChangeDirection.Down,
+                when: `!editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`
+            },
+        );
     }
 
 }
