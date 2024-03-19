@@ -53,12 +53,10 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
 
     override componentDidMount(): void {
         this.disposeEditor();
-        console.log('init editor');
         if (!this.props.notebookViewportService || (this.container && this.props.notebookViewportService.isElementInViewport(this.container))) {
             this.initEditor();
         } else {
             const disposable = this.props.notebookViewportService?.onDidChangeViewport(() => {
-                console.log('init editor on viewport change');
                 if (!this.editor && this.container && this.props.notebookViewportService!.isElementInViewport(this.container)) {
                     this.initEditor();
                     disposable.dispose();
