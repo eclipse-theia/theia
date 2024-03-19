@@ -40,7 +40,7 @@ export class NotebookDocumentsMainImpl implements NotebookDocumentsMain {
 
     constructor(
         rpc: RPCProtocol,
-        container: interfaces.Container,
+        container: interfaces.Container
     ) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_EXT);
         this.notebookModelResolverService = container.get(NotebookModelResolverService);
