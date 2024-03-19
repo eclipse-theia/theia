@@ -97,6 +97,12 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
             this.toDispose.push(this.editor.onDocumentContentChanged(e => {
                 notebookModel.cellDirtyChanged(cell, true);
             }));
+            this.toDispose.push(this.editor.getControl().onDidFocusEditorText(() => {
+                this.props.notebookContextManager.onDidEditorTextFocus(true);
+            }));
+            this.toDispose.push(this.editor.getControl().onDidBlurEditorText(() => {
+                this.props.notebookContextManager.onDidEditorTextFocus(false);
+            }));
         }
     }
 
