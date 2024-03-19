@@ -26,6 +26,7 @@ import {
 } from './workspace-trust-preferences';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { WorkspaceService } from './workspace-service';
+import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 
 const STORAGE_TRUSTED = 'trusted';
 
@@ -49,6 +50,9 @@ export class WorkspaceTrustService {
     @inject(WindowService)
     protected readonly windowService: WindowService;
 
+    @inject(ContextKeyService)
+    protected readonly contextKeyService: ContextKeyService;
+
     protected workspaceTrust = new Deferred<boolean>();
 
     @postConstruct()
@@ -71,6 +75,7 @@ export class WorkspaceTrustService {
             const trust = givenTrust ?? await this.calculateWorkspaceTrust();
             if (trust !== undefined) {
                 await this.storeWorkspaceTrust(trust);
+                this.contextKeyService.setContext('isWorkspaceTrusted', trust);
                 this.workspaceTrust.resolve(trust);
             }
         }

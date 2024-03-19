@@ -19,11 +19,13 @@ import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { NotebookCellStatusBarItem, NotebookData, TransientOptions } from '@theia/notebook/lib/common';
 import { NotebookService } from '@theia/notebook/lib/browser';
 import { Disposable } from '@theia/plugin';
-import { MAIN_RPC_CONTEXT, NotebooksExt, NotebooksMain } from '../../../common';
+import { CommandRegistryMain, MAIN_RPC_CONTEXT, NotebooksExt, NotebooksMain } from '../../../common';
 import { RPCProtocol } from '../../../common/rpc-protocol';
 import { NotebookDto } from './notebook-dto';
 import { UriComponents } from '@theia/core/lib/common/uri';
 import { HostedPluginSupport } from '../../../hosted/browser/hosted-plugin';
+import { NotebookModel } from '@theia/notebook/lib/browser/view-model/notebook-model';
+import { interfaces } from '@theia/core/shared/inversify';
 
 export interface NotebookCellStatusBarItemList {
     items: NotebookCellStatusBarItem[];
@@ -38,20 +40,33 @@ export interface NotebookCellStatusBarItemProvider {
 
 export class NotebooksMainImpl implements NotebooksMain {
 
-    private readonly disposables = new DisposableCollection();
+    protected readonly disposables = new DisposableCollection();
 
-    private readonly proxy: NotebooksExt;
-    private readonly notebookSerializer = new Map<number, Disposable>();
-    private readonly notebookCellStatusBarRegistrations = new Map<number, Disposable>();
+    protected notebookService: NotebookService;
+
+    protected readonly proxy: NotebooksExt;
+    protected readonly notebookSerializer = new Map<number, Disposable>();
+    protected readonly notebookCellStatusBarRegistrations = new Map<number, Disposable>();
 
     constructor(
         rpc: RPCProtocol,
-        private notebookService: NotebookService,
-        plugins: HostedPluginSupport
+        container: interfaces.Container,
+        commands: CommandRegistryMain
     ) {
+        this.notebookService = container.get(NotebookService);
+        const plugins = container.get(HostedPluginSupport);
+
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.NOTEBOOKS_EXT);
-        notebookService.onWillUseNotebookSerializer(async event => plugins.activateByNotebookSerializer(event));
-        notebookService.markReady();
+        this.notebookService.onWillUseNotebookSerializer(async event => plugins.activateByNotebookSerializer(event));
+        this.notebookService.markReady();
+        commands.registerArgumentProcessor({
+            processArgument: arg => {
+                if (arg instanceof NotebookModel) {
+                    return arg.uri;
+                }
+                return arg;
+            }
+        });
     }
 
     dispose(): void {
