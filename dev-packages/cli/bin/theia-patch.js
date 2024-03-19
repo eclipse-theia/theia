@@ -19,12 +19,16 @@
 const path = require('path');
 const cp = require('child_process');
 
+const patchPackage= require.resolve('patch-package');
+console.log(`patch-package = ${patchPackage}`);
+
 const patchesDir = path.join('.', 'node_modules', '@theia', 'cli', 'patches');
 
 console.log(`patchesdir = ${patchesDir}`);
 
 const env = Object.assign({}, process.env);
-const scriptProcess = cp.exec(`patch-package --patch-dir "${patchesDir}"`, {
+
+const scriptProcess = cp.exec(`node ${patchPackage} --patch-dir "${patchesDir}"`, {
     cwd: process.cwd(),
     env,
 
