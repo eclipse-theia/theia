@@ -29,7 +29,7 @@ import {
     CssStyleCollector
 } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution, TabBarToolbarRegistry, TabBarToolbarItem } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { CommandRegistry, Command, Disposable, DisposableCollection, CommandService } from '@theia/core/lib/common';
+import { CommandRegistry, Command, Disposable, DisposableCollection, CommandService, MenuModelRegistry } from '@theia/core/lib/common';
 import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
 import { ScmService } from './scm-service';
 import { ScmWidget } from '../browser/scm-widget';
@@ -38,10 +38,13 @@ import { ScmQuickOpenService } from './scm-quick-open-service';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { Color } from '@theia/core/lib/common/color';
+import { ScmColors } from './scm-colors';
 import { ScmCommand } from './scm-provider';
 import { ScmDecorationsService } from '../browser/decorations/scm-decorations-service';
 import { nls } from '@theia/core/lib/common/nls';
 import { isHighContrast } from '@theia/core/lib/common/theme';
+import { EditorMainMenu } from '@theia/editor/lib/browser';
+import { DirtyDiffNavigator } from './dirty-diff/dirty-diff-navigator';
 
 export const SCM_WIDGET_FACTORY_ID = ScmWidget.ID;
 export const SCM_VIEW_CONTAINER_ID = 'scm-view-container';
@@ -50,6 +53,10 @@ export const SCM_VIEW_CONTAINER_TITLE_OPTIONS: ViewContainerTitleOptions = {
     iconClass: codicon('source-control'),
     closeable: true
 };
+
+export namespace ScmMenus {
+    export const CHANGES_GROUP = [...EditorMainMenu.GO, '6_changes_group'];
+}
 
 export namespace SCM_COMMANDS {
     export const CHANGE_REPOSITORY = {
@@ -85,13 +92,36 @@ export namespace SCM_COMMANDS {
         label: nls.localizeByDefault('Collapse All'),
         originalLabel: 'Collapse All'
     };
+    export const GOTO_NEXT_CHANGE = Command.toDefaultLocalizedCommand({
+        id: 'workbench.action.editor.nextChange',
+        category: 'Source Control',
+        label: 'Go to Next Change'
+    });
+    export const GOTO_PREVIOUS_CHANGE = Command.toDefaultLocalizedCommand({
+        id: 'workbench.action.editor.previousChange',
+        category: 'Source Control',
+        label: 'Go to Previous Change'
+    });
+    export const SHOW_NEXT_CHANGE = Command.toDefaultLocalizedCommand({
+        id: 'editor.action.dirtydiff.next',
+        category: 'Source Control',
+        label: 'Show Next Change'
+    });
+    export const SHOW_PREVIOUS_CHANGE = Command.toDefaultLocalizedCommand({
+        id: 'editor.action.dirtydiff.previous',
+        category: 'Source Control',
+        label: 'Show Previous Change'
+    });
+    export const CLOSE_CHANGE_PEEK_VIEW = {
+        id: 'editor.action.dirtydiff.close',
+        category: nls.localizeByDefault('Source Control'),
+        originalCategory: 'Source Control',
+        label: nls.localize('theia/scm/dirtyDiff/close', 'Close Change Peek View'),
+        originalLabel: 'Close Change Peek View'
+    };
 }
 
-export namespace ScmColors {
-    export const editorGutterModifiedBackground = 'editorGutter.modifiedBackground';
-    export const editorGutterAddedBackground = 'editorGutter.addedBackground';
-    export const editorGutterDeletedBackground = 'editorGutter.deletedBackground';
-}
+export { ScmColors };
 
 @injectable()
 export class ScmContribution extends AbstractViewContribution<ScmWidget> implements
@@ -108,6 +138,7 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
     @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry;
     @inject(ContextKeyService) protected readonly contextKeys: ContextKeyService;
     @inject(ScmDecorationsService) protected readonly scmDecorationsService: ScmDecorationsService;
+    @inject(DirtyDiffNavigator) protected readonly dirtyDiffNavigator: DirtyDiffNavigator;
 
     protected scmFocus: ContextKey<boolean>;
 
@@ -144,6 +175,8 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
 
         this.updateContextKeys();
         this.shell.onDidChangeCurrentWidget(() => this.updateContextKeys());
+
+        this.scmDecorationsService.onDirtyDiffUpdate(update => this.dirtyDiffNavigator.handleDirtyDiffUpdate(update));
     }
 
     protected updateContextKeys(): void {
@@ -159,6 +192,39 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
         commandRegistry.registerCommand(SCM_COMMANDS.ACCEPT_INPUT, {
             execute: () => this.acceptInput(),
             isEnabled: () => !!this.scmFocus.get() && !!this.acceptInputCommand()
+        });
+
+        // Note that commands for dirty diff navigation need to be always available.
+        // This is consistent with behavior in VS Code, and also with other similar commands (such as `Next Problem/Previous Problem`) in Theia.
+        // See https://github.com/eclipse-theia/theia/pull/13104#discussion_r1497316614 for a detailed discussion.
+        commandRegistry.registerCommand(SCM_COMMANDS.GOTO_NEXT_CHANGE, {
+            execute: () => this.dirtyDiffNavigator.gotoNextChange()
+        });
+        commandRegistry.registerCommand(SCM_COMMANDS.GOTO_PREVIOUS_CHANGE, {
+            execute: () => this.dirtyDiffNavigator.gotoPreviousChange()
+        });
+        commandRegistry.registerCommand(SCM_COMMANDS.SHOW_NEXT_CHANGE, {
+            execute: () => this.dirtyDiffNavigator.showNextChange()
+        });
+        commandRegistry.registerCommand(SCM_COMMANDS.SHOW_PREVIOUS_CHANGE, {
+            execute: () => this.dirtyDiffNavigator.showPreviousChange()
+        });
+        commandRegistry.registerCommand(SCM_COMMANDS.CLOSE_CHANGE_PEEK_VIEW, {
+            execute: () => this.dirtyDiffNavigator.closeChangePeekView()
+        });
+    }
+
+    override registerMenus(menus: MenuModelRegistry): void {
+        super.registerMenus(menus);
+        menus.registerMenuAction(ScmMenus.CHANGES_GROUP, {
+            commandId: SCM_COMMANDS.SHOW_NEXT_CHANGE.id,
+            label: nls.localizeByDefault('Next Change'),
+            order: '1'
+        });
+        menus.registerMenuAction(ScmMenus.CHANGES_GROUP, {
+            commandId: SCM_COMMANDS.SHOW_PREVIOUS_CHANGE.id,
+            label: nls.localizeByDefault('Previous Change'),
+            order: '2'
         });
     }
 
@@ -218,6 +284,31 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
             command: SCM_COMMANDS.ACCEPT_INPUT.id,
             keybinding: 'ctrlcmd+enter',
             when: 'scmFocus'
+        });
+        keybindings.registerKeybinding({
+            command: SCM_COMMANDS.GOTO_NEXT_CHANGE.id,
+            keybinding: 'alt+f5',
+            when: 'editorTextFocus'
+        });
+        keybindings.registerKeybinding({
+            command: SCM_COMMANDS.GOTO_PREVIOUS_CHANGE.id,
+            keybinding: 'shift+alt+f5',
+            when: 'editorTextFocus'
+        });
+        keybindings.registerKeybinding({
+            command: SCM_COMMANDS.SHOW_NEXT_CHANGE.id,
+            keybinding: 'alt+f3',
+            when: 'editorTextFocus'
+        });
+        keybindings.registerKeybinding({
+            command: SCM_COMMANDS.SHOW_PREVIOUS_CHANGE.id,
+            keybinding: 'shift+alt+f3',
+            when: 'editorTextFocus'
+        });
+        keybindings.registerKeybinding({
+            command: SCM_COMMANDS.CLOSE_CHANGE_PEEK_VIEW.id,
+            keybinding: 'esc',
+            when: 'dirtyDiffVisible'
         });
     }
 

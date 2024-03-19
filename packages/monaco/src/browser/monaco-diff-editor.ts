@@ -97,4 +97,7 @@ export class MonacoDiffEditor extends MonacoEditor {
         return DiffUris.encode(left.withPath(resourceUri.path), right.withPath(resourceUri.path));
     }
 
+    override shouldDisplayDirtyDiff(): boolean {
+        return false;
+    }
 }
