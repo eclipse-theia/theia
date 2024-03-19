@@ -24,7 +24,6 @@ import { StorageService } from '@theia/core/lib/browser';
 import { NotebookKernelSourceAction } from '../../common';
 import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookService } from './notebook-service';
-import { NotebookEditorWidgetService } from './notebook-editor-widget-service';
 
 export interface SelectedNotebookKernelChangeEvent {
     notebook: URI;
