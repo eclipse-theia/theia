@@ -298,9 +298,13 @@ export class NotebookModel implements Saveable, Disposable {
                 case CellEditType.Move:
                     this.moveCellToIndex(cellIndex, edit.length, edit.newIdx, computeUndoRedo);
                     break;
-
+            }
+            // if selected cell is affected update it because it can potentially have been replaced
+            if (cell === this.selectedCell) {
+                this.setSelectedCell(this.cells[cellIndex]);
             }
         }
+
     }
 
     protected async replaceCells(start: number, deleteCount: number, newCells: CellData[], computeUndoRedo: boolean): Promise<void> {
