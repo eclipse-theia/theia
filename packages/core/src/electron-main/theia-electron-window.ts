@@ -37,6 +37,12 @@ export interface TheiaBrowserWindowOptions extends BrowserWindowConstructorOptio
      * in which case we want to invalidate the stored options and use the default options instead.
      */
     screenLayout?: string;
+    /**
+     * By default, the window will be shown as soon as the content is ready to render.
+     * This can be prevented by handing over preventAutomaticShow: `true`.
+     * Use this for fine-grained control over when to show the window, e.g. to coordinate with a splash screen.
+     */
+    preventAutomaticShow?: boolean;
 }
 
 export const TheiaBrowserWindowOptions = Symbol('TheiaBrowserWindowOptions');
@@ -76,7 +82,9 @@ export class TheiaElectronWindow {
     protected init(): void {
         this._window = new BrowserWindow(this.options);
         this._window.setMenuBarVisibility(false);
-        this.attachReadyToShow();
+        if (!this.options.preventAutomaticShow) {
+            this.attachReadyToShow();
+        }
         this.restoreMaximizedState();
         this.attachCloseListeners();
         this.trackApplicationState();

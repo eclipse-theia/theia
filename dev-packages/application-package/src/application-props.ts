@@ -33,8 +33,36 @@ export type ElectronFrontendApplicationConfig = RequiredRecursive<ElectronFronte
 export namespace ElectronFrontendApplicationConfig {
     export const DEFAULT: ElectronFrontendApplicationConfig = {
         windowOptions: {},
-        showWindowEarly: true
+        showWindowEarly: true,
+        splashScreenOptions: {}
     };
+    export interface SplashScreenOptions {
+        /**
+         * Initial width of the splash screen. Defaults to 640.
+         */
+        width?: number;
+        /**
+         * Initial height of the splash screen. Defaults to 480.
+         */
+        height?: number;
+        /**
+         * Minimum amount of time in milliseconds to show the splash screen before main window is shown.
+         * Defaults to 0, i.e. the splash screen will be shown until the frontend application is ready.
+         */
+        minDuration?: number;
+        /**
+         * Maximum amount of time in milliseconds before splash screen is removed and main window is shown.
+         * Defaults to 30000.
+         */
+        maxDuration?: number;
+        /**
+         * The content to load in the splash screen.
+         * Will be resolved from application root.
+         *
+         * Mandatory attribute.
+         */
+        content?: string;
+    }
     export interface Partial {
 
         /**
@@ -50,6 +78,13 @@ export namespace ElectronFrontendApplicationConfig {
          * Defaults to `true`.
          */
         readonly showWindowEarly?: boolean;
+
+        /**
+         * Configuration options for splash screen.
+         *
+         * Defaults to `{}` which results in no splash screen being displayed.
+         */
+        readonly splashScreenOptions?: SplashScreenOptions;
     }
 }
 
