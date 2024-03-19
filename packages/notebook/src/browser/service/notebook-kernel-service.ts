@@ -158,9 +158,6 @@ export class NotebookKernelService {
     @inject(StorageService)
     protected storageService: StorageService;
 
-    @inject(NotebookEditorWidgetService)
-    protected notebookEditorService: NotebookEditorWidgetService;
-
     protected readonly kernels = new Map<string, KernelInfo>();
 
     protected notebookBindings: Record<string, string> = {};
