@@ -53,10 +53,12 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
 
     override componentDidMount(): void {
         this.disposeEditor();
+        console.log('init editor');
         if (!this.props.notebookViewportService || (this.container && this.props.notebookViewportService.isElementInViewport(this.container))) {
             this.initEditor();
         } else {
             const disposable = this.props.notebookViewportService?.onDidChangeViewport(() => {
+                console.log('init editor on viewport change');
                 if (!this.editor && this.container && this.props.notebookViewportService!.isElementInViewport(this.container)) {
                     this.initEditor();
                     disposable.dispose();
@@ -79,6 +81,7 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
         const { cell, notebookModel, monacoServices } = this.props;
         if (this.container) {
             const editorNode = this.container;
+            editorNode.style.height = '';
             const editorModel = await cell.resolveTextModel();
             const uri = cell.uri;
             this.editor = new SimpleMonacoEditor(uri,
@@ -109,7 +112,7 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
 
     protected estimateHeight(): string {
         const lineHeight = this.props.fontInfo?.lineHeight ?? 20;
-        return this.props.cell.text.split(OS.backend.EOL).length * lineHeight + 7 + 'px';
+        return this.props.cell.text.split(OS.backend.EOL).length * lineHeight + 10 + 7 + 'px';
     }
 
     override render(): React.ReactNode {

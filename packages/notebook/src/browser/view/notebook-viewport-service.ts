@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { Disposable } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
 import { Emitter } from '@theia/core/shared/vscode-languageserver-protocol';
 
@@ -22,17 +23,22 @@ import { Emitter } from '@theia/core/shared/vscode-languageserver-protocol';
  * its used both for restoring scroll state after reopening an editor and for cell to check if they are in the viewport.
  */
 @injectable()
-export class NotebookViewportService {
+export class NotebookViewportService implements Disposable {
 
     protected onDidChangeViewportEmitter = new Emitter<void>();
     readonly onDidChangeViewport = this.onDidChangeViewportEmitter.event;
 
     protected _viewportElement: HTMLDivElement | undefined;
 
+    protected resizeObserver: ResizeObserver;
+
     set viewportElement(element: HTMLDivElement | undefined) {
         this._viewportElement = element;
         if (element) {
             this.onDidChangeViewportEmitter.fire();
+            this.resizeObserver?.disconnect();
+            this.resizeObserver = new ResizeObserver(() => this.onDidChangeViewportEmitter.fire());
+            this.resizeObserver.observe(element);
         }
     }
 
@@ -47,5 +53,9 @@ export class NotebookViewportService {
 
     onScroll(e: HTMLDivElement): void {
         this.onDidChangeViewportEmitter.fire();
+    }
+
+    dispose(): void {
+        this.resizeObserver.disconnect();
     }
 }
