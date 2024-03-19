@@ -190,10 +190,10 @@ export class NotebookCellActionContribution implements MenuContribution, Command
         });
 
         // Notebook Cell extra execution options
-        menus.registerIndependentSubmenu(NotebookCellActionContribution.CONTRIBUTED_CELL_EXECUTION_MENU,
-            nls.localizeByDefault('More...'),
-            { role: CompoundMenuNodeRole.Flat, icon: codicon('chevron-down') });
-        menus.getMenu(NotebookCellActionContribution.CODE_CELL_SIDEBAR_MENU).addNode(menus.getMenuNode(NotebookCellActionContribution.CONTRIBUTED_CELL_EXECUTION_MENU));
+        // menus.registerIndependentSubmenu(NotebookCellActionContribution.CONTRIBUTED_CELL_EXECUTION_MENU,
+        //     nls.localizeByDefault('More...'),
+        //     { role: CompoundMenuNodeRole.Flat, icon: codicon('chevron-down') });
+        // menus.getMenu(NotebookCellActionContribution.CODE_CELL_SIDEBAR_MENU).addNode(menus.getMenuNode(NotebookCellActionContribution.CONTRIBUTED_CELL_EXECUTION_MENU));
 
         // code cell output sidebar menu
         menus.registerSubmenu(
