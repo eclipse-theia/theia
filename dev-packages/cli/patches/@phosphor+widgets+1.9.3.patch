@@ -12,7 +12,7 @@ index 5d5053c..7802167 100644
       * Handle the DOM events for the menu.
       *
 diff --git a/node_modules/@phosphor/widgets/lib/menu.js b/node_modules/@phosphor/widgets/lib/menu.js
-index de23022..a203e5f 100644
+index de23022..a8b15b1 100644
 --- a/node_modules/@phosphor/widgets/lib/menu.js
 +++ b/node_modules/@phosphor/widgets/lib/menu.js
 @@ -13,7 +13,7 @@ var __extends = (this && this.__extends) || (function () {
@@ -68,7 +68,7 @@ index de23022..a203e5f 100644
      };
      /**
       * A message handler invoked on an `'activate-request'` message.
-@@ -1124,10 +1131,11 @@ var Private;
+@@ -1124,14 +1131,15 @@ var Private;
      /**
       * Open a menu as a root menu at the target location.
       */
@@ -77,10 +77,25 @@ index de23022..a203e5f 100644
          // Ensure the menu is updated before attaching and measuring.
          messaging_1.MessageLoop.sendMessage(menu, widget_1.Widget.Msg.UpdateRequest);
          // Get the current position and size of the main viewport.
-+        var document = element ? element.ownerDocument : document;
++        var doc = element ? element.ownerDocument : document;
          var px = window.pageXOffset;
          var py = window.pageYOffset;
-         var cw = document.documentElement.clientWidth;
+-        var cw = document.documentElement.clientWidth;
+-        var ch = document.documentElement.clientHeight;
++        var cw = doc.documentElement.clientWidth;
++        var ch = doc.documentElement.clientHeight;
+         // Compute the maximum allowed height for the menu.
+         var maxHeight = ch - (forceY ? y : 0);
+         // Fetch common variables.
+@@ -1145,7 +1153,7 @@ var Private;
+         style.visibility = 'hidden';
+         style.maxHeight = maxHeight + "px";
+         // Attach the menu to the document.
+-        widget_1.Widget.attach(menu, document.body);
++        widget_1.Widget.attach(menu, doc.body);
+         // Measure the size of the menu.
+         var _a = node.getBoundingClientRect(), width = _a.width, height = _a.height;
+         // Adjust the X position of the menu to fit on-screen.
 @@ -1177,8 +1185,8 @@ var Private;
          // Get the current position and size of the main viewport.
          var px = window.pageXOffset;
