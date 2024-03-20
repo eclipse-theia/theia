@@ -14,11 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { MaybePromise } from "@theia/core";
-import { FrontendApplication, FrontendApplicationContribution } from "@theia/core/lib/browser";
-import { inject, injectable } from "@theia/core/shared/inversify";
-import { SecondaryWindowHandler } from "@theia/core/lib/browser/secondary-window-handler";
-import { WebviewWidget } from "./webview";
+import { MaybePromise } from '@theia/core/lib/common';
+import { FrontendApplication, FrontendApplicationContribution } from '@theia/core/lib/browser';
+import { inject, injectable } from '@theia/core/shared/inversify';
+import { SecondaryWindowHandler } from '@theia/core/lib/browser/secondary-window-handler';
+import { WebviewWidget } from './webview';
 
 @injectable()
 export class WebviewSecondaryWindowSupport implements FrontendApplicationContribution {
