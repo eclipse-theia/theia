@@ -24,16 +24,12 @@ export class ElectronSecondaryWindowService extends DefaultSecondaryWindowServic
         window.electronTheiaCore.focusWindow(win.name);
     }
 
-    protected override doCreateSecondaryWindow(widget: ExtractableWidget, shell: ApplicationShell): Window | undefined {
-        const w = super.doCreateSecondaryWindow(widget, shell);
-        if (w) {
-            window.electronTheiaCore.setMenuBarVisible(false, w.name);
-            window.electronTheiaCore.setSecondaryWindowCloseRequestHandler(w.name, () => this.canClose(widget, shell));
-        }
-        return w;
+    protected override windowCreated(newWindow: Window, widget: ExtractableWidget, shell: ApplicationShell): void {
+        window.electronTheiaCore.setMenuBarVisible(false, newWindow.name);
+        window.electronTheiaCore.setSecondaryWindowCloseRequestHandler(newWindow.name, () => this.canClose(widget, shell));
     }
     private async canClose(widget: ExtractableWidget, shell: ApplicationShell): Promise<boolean> {
-        await shell.closeWidget(widget.id, undefined);
+        await shell.closeWidget(widget.id);
         return widget.isDisposed;
     }
 }
