@@ -41,7 +41,7 @@ export class BrowserContextMenuRenderer extends ContextMenuRenderer {
             contextMenu.aboutToClose.connect(() => onHide!());
         }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (contextMenu as any).open(x, y, undefined, context);
+        contextMenu.open(x, y, undefined, context);
         return new BrowserContextMenuAccess(contextMenu);
     }
 
