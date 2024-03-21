@@ -455,7 +455,6 @@ export class QuickInputExt implements theia.QuickInput {
 
     hide(): void {
         this.quickOpenMain.$hide();
-        this.dispose();
     }
 
     protected convertURL(iconPath: URI | { light: string | URI; dark: string | URI } | ThemeIcon):
