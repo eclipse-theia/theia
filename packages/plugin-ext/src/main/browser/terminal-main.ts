@@ -30,6 +30,13 @@ import { getIconClass } from '../../plugin/terminal-ext';
 import { PluginTerminalRegistry } from './plugin-terminal-registry';
 import { CancellationToken } from '@theia/core';
 import { HostedPluginSupport } from '../../hosted/browser/hosted-plugin';
+import debounce = require('@theia/core/shared/lodash.debounce');
+
+interface TerminalObserverData {
+    nrOfLinesToMatch: number;
+    outputMatcherRegex: RegExp
+    disposables: DisposableCollection;
+}
 
 /**
  * Plugin api service allows working with terminal emulator.
@@ -46,6 +53,7 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, TerminalLin
     private readonly terminalLinkProviders: string[] = [];
 
     private readonly toDispose = new DisposableCollection();
+    private readonly observers = new Map<string, TerminalObserverData>();
 
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.terminals = container.get(TerminalService);
@@ -121,6 +129,8 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, TerminalLin
             this.extProxy.$terminalOnInput(terminal.id, data);
             this.extProxy.$terminalStateChanged(terminal.id);
         }));
+
+        this.observers.forEach((observer, id) => this.observeTerminal(id, terminal, observer));
     }
 
     $write(id: string, data: string): void {
@@ -290,6 +300,42 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, TerminalLin
         const index = this.terminalLinkProviders.indexOf(providerId);
         if (index > -1) {
             this.terminalLinkProviders.splice(index, 1);
+        }
+    }
+
+    $registerTerminalObserver(id: string, nrOfLinesToMatch: number, outputMatcherRegex: string): void {
+        const observerData = {
+            nrOfLinesToMatch: nrOfLinesToMatch,
+            outputMatcherRegex: new RegExp(outputMatcherRegex, 'm'),
+            disposables: new DisposableCollection()
+        };
+        this.observers.set(id, observerData);
+        this.terminals.all.forEach(terminal => {
+            this.observeTerminal(id, terminal, observerData);
+        });
+    }
+
+    protected observeTerminal(observerId: string, terminal: TerminalWidget, observerData: TerminalObserverData): void {
+        const doMatch = debounce(() => {
+            const lineCount = Math.min(observerData.nrOfLinesToMatch, terminal.buffer.length);
+            const lines = terminal.buffer.getLines(terminal.buffer.length - lineCount, lineCount);
+            const result = lines.join('\n').match(observerData.outputMatcherRegex);
+            if (result) {
+                this.extProxy.$reportOutputMatch(observerId, result.map(value => value));
+            }
+        });
+        observerData.disposables.push(terminal.onOutput(output => {
+            doMatch();
+        }));
+    }
+
+    $unregisterTerminalObserver(id: string): void {
+        const observer = this.observers.get(id);
+        if (observer) {
+            observer.disposables.dispose();
+            this.observers.delete(id);
+        } else {
+            throw new Error(`Unregistering unknown terminal observer: ${id}`);
         }
     }
 

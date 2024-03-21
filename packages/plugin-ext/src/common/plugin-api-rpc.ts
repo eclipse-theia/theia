@@ -301,6 +301,7 @@ export interface TerminalServiceExt {
     $handleTerminalLink(link: ProvidedTerminalLink): Promise<void>;
     getEnvironmentVariableCollection(extensionIdentifier: string): theia.GlobalEnvironmentVariableCollection;
     $setShell(shell: string): void;
+    $reportOutputMatch(observerId: string, groups: string[]): void;
 }
 export interface OutputChannelRegistryExt {
     createOutputChannel(name: string, pluginInfo: PluginInfo): theia.OutputChannel,
@@ -438,6 +439,20 @@ export interface TerminalServiceMain {
      * @param providerId id of the terminal link provider to be unregistered.
      */
     $unregisterTerminalLinkProvider(providerId: string): Promise<void>;
+
+    /**
+     * Register a new terminal observer.
+     * @param providerId id of the terminal link provider to be registered.
+     * @param nrOfLinesToMatch the number of lines to match the outputMatcherRegex against
+     * @param outputMatcherRegex the regex to match the output to
+     */
+    $registerTerminalObserver(id: string, nrOfLinesToMatch: number, outputMatcherRegex: string): unknown;
+
+    /**
+     * Unregister the terminal observer with the specified id.
+     * @param providerId id of the terminal observer to be unregistered.
+     */
+    $unregisterTerminalObserver(id: string): unknown;
 }
 
 export interface AutoFocus {

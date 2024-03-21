@@ -603,6 +603,12 @@ export function createAPIFactory(
             registerTerminalQuickFixProvider(id: string, provider: theia.TerminalQuickFixProvider): theia.Disposable {
                 return terminalExt.registerTerminalQuickFixProvider(id, provider);
             },
+
+            /** Theia-specific TerminalObserver */
+            registerTerminalObserver(observer: theia.TerminalObserver): theia.Disposable {
+                return terminalExt.registerTerminalObserver(observer);
+            },
+
             /** @stubbed ShareProvider */
             registerShareProvider: () => Disposable.NULL,
         };
