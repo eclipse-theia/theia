@@ -27,9 +27,6 @@
       "path": "../../packages/debug"
     },
     {
-      "path": "../../packages/dev-container"
-    },
-    {
       "path": "../../packages/editor"
     },
     {

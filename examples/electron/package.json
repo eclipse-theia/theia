@@ -27,7 +27,6 @@
     "@theia/console": "1.47.0",
     "@theia/core": "1.47.0",
     "@theia/debug": "1.47.0",
-    "@theia/dev-container": "1.47.0",
     "@theia/editor": "1.47.0",
     "@theia/editor-preview": "1.47.0",
     "@theia/electron": "1.47.0",
