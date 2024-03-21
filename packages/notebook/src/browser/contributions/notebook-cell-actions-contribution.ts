@@ -328,12 +328,12 @@ export class NotebookCellActionContribution implements MenuContribution, Command
             {
                 command: NotebookCellCommands.TO_CODE_CELL_COMMAND.id,
                 keybinding: 'Y',
-                when: `${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED} && ${NOTEBOOK_CELL_TYPE} == 'markdown'`,
+                when: `!editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED} && ${NOTEBOOK_CELL_TYPE} == 'markdown'`,
             },
             {
                 command: NotebookCellCommands.TO_MARKDOWN_CELL_COMMAND.id,
                 keybinding: 'M',
-                when: `${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED} && ${NOTEBOOK_CELL_TYPE} == 'code'`,
+                when: `!editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED} && ${NOTEBOOK_CELL_TYPE} == 'code'`,
             }
         );
     }
