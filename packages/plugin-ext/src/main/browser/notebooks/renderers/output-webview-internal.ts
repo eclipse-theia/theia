@@ -573,5 +573,13 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
     });
     window.addEventListener('wheel', handleWheel);
 
+    (document.head as HTMLHeadElement & { originalAppendChild: typeof document.head.appendChild }).originalAppendChild = document.head.appendChild;
+    (document.head as HTMLHeadElement & { originalAppendChild: typeof document.head.appendChild }).appendChild = function appendChild<T extends Node>(node: T): T {
+        if (node instanceof HTMLScriptElement && node.src.includes('webviewuuid')) {
+            node.src = node.src.replace('webviewuuid', location.hostname.split('.')[0]);
+        }
+        return this.originalAppendChild(node);
+    };
+
     theia.postMessage(<webviewCommunication.WebviewInitialized>{ type: 'initialized' });
 }
