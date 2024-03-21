@@ -135,7 +135,7 @@ export class GettingStartedWidget extends ReactWidget {
                 <hr className='gs-hr' />
                 <div className='flex-grid'>
                     <div className='col'>
-                        {this.renderOpen()}
+                        {this.renderStart()}
                     </div>
                 </div>
                 <div className='flex-grid'>
@@ -176,11 +176,21 @@ export class GettingStartedWidget extends ReactWidget {
     }
 
     /**
-     * Render the `open` section.
-     * Displays a collection of `open` commands.
+     * Render the `Start` section.
+     * Displays a collection of "start-to-work" related commands like `open` commands and some other.
      */
-    protected renderOpen(): React.ReactNode {
+    protected renderStart(): React.ReactNode {
         const requireSingleOpen = isOSX || !environment.electron.is();
+
+        const createFile = <div className='gs-action-container'>
+            <a
+                role={'button'}
+                tabIndex={0}
+                onClick={this.doCreateFile}
+                onKeyDown={this.doCreateFileEnter}>
+                {CommonCommands.NEW_UNTITLED_FILE.label ?? nls.localizeByDefault('New File...')}
+            </a>
+        </div>;
 
         const open = requireSingleOpen && <div className='gs-action-container'>
             <a
@@ -223,7 +233,8 @@ export class GettingStartedWidget extends ReactWidget {
         );
 
         return <div className='gs-section'>
-            <h3 className='gs-section-header'><i className={codicon('folder-opened')}></i>{nls.localizeByDefault('Open')}</h3>
+            <h3 className='gs-section-header'><i className={codicon('folder-opened')}></i>{nls.localizeByDefault('Start')}</h3>
+            {createFile}
             {open}
             {openFile}
             {openFolder}
@@ -391,6 +402,16 @@ export class GettingStartedWidget extends ReactWidget {
         });
         return paths;
     }
+
+    /**
+     * Trigger the create file command.
+     */
+    protected doCreateFile = () => this.commandRegistry.executeCommand(CommonCommands.NEW_UNTITLED_FILE.id);
+    protected doCreateFileEnter = (e: React.KeyboardEvent) => {
+        if (this.isEnterKey(e)) {
+            this.doCreateFile();
+        }
+    };
 
     /**
      * Trigger the open command.

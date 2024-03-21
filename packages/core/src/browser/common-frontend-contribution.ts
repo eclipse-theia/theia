@@ -280,6 +280,15 @@ export namespace CommonCommands {
         category: VIEW_CATEGORY,
         label: 'Toggle Menu Bar'
     });
+    /**
+     * Command Parameters:
+     * - `fileName`: string
+     * - `directory`: URI
+     */
+    export const NEW_FILE = Command.toDefaultLocalizedCommand({
+        id: 'workbench.action.files.newFile',
+        category: FILE_CATEGORY
+    });
     export const NEW_UNTITLED_TEXT_FILE = Command.toDefaultLocalizedCommand({
         id: 'workbench.action.files.newUntitledTextFile',
         category: FILE_CATEGORY,
@@ -1424,6 +1433,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         const items: QuickPickItemOrSeparator[] = [
             {
                 label: nls.localizeByDefault('New Text File'),
+                description: nls.localizeByDefault('Built-in'),
                 execute: async () => this.commandRegistry.executeCommand(CommonCommands.NEW_UNTITLED_TEXT_FILE.id)
             },
             ...newFileContributions.children
@@ -1446,10 +1456,43 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
 
                 })
         ];
+
+        const CREATE_NEW_FILE_ITEM_ID = 'create-new-file';
+        const hasNewFileHandler = this.commandRegistry.getActiveHandler(CommonCommands.NEW_FILE.id) !== undefined;
+        // Create a "Create New File" item only if there is a NEW_FILE command handler.
+        const createNewFileItem: QuickPickItem & { value?: string } | undefined = hasNewFileHandler ? {
+            id: CREATE_NEW_FILE_ITEM_ID,
+            label: nls.localizeByDefault('Create New File ({0})'),
+            description: nls.localizeByDefault('Built-in'),
+            execute: async () => {
+                if (createNewFileItem?.value) {
+                    const parent = await this.workingDirProvider.getUserWorkingDir();
+                    // Exec NEW_FILE command with the file name and parent dir as arguments
+                    return this.commandRegistry.executeCommand(CommonCommands.NEW_FILE.id, createNewFileItem.value, parent);
+                }
+            }
+        } : undefined;
+
         this.quickInputService.showQuickPick(items, {
             title: nls.localizeByDefault('New File...'),
             placeholder: nls.localizeByDefault('Select File Type or Enter File Name...'),
-            canSelectMany: false
+            canSelectMany: false,
+            onDidChangeValue: picker => {
+                if (createNewFileItem === undefined) {
+                    return;
+                }
+                // Dynamically show or hide the "Create New File" item based on the input value.
+                if (picker.value) {
+                    createNewFileItem.alwaysShow = true;
+                    createNewFileItem.value = picker.value;
+                    createNewFileItem.label = nls.localizeByDefault('Create New File ({0})', picker.value);
+                    picker.items = [...items, createNewFileItem];
+                } else {
+                    createNewFileItem.alwaysShow = false;
+                    createNewFileItem.value = undefined;
+                    picker.items = items.filter(item => item !== createNewFileItem);
+                }
+            }
         });
     }
 
