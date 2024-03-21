@@ -225,8 +225,20 @@ export class PluginDeployerImpl implements PluginDeployer {
     }
 
     protected async resolveAndHandle(id: string, type: PluginType, options?: PluginDeployOptions): Promise<PluginDeployerEntry[]> {
-        const entries = await this.resolvePlugin(id, type, options);
-        await this.applyFileHandlers(entries);
+        let entries = await this.resolvePlugin(id, type, options);
+        if (type === PluginType.User) {
+            await this.applyFileHandlers(entries);
+        } else {
+            const filteredEntries: PluginDeployerEntry[] = [];
+            for (const entry of entries) {
+                if (await entry.isFile()) {
+                    this.logger.warn(`Only user plugins will be handled by file handlers, please unpack the plugin '${entry.id()}' manually.`);
+                } else {
+                    filteredEntries.push(entry);
+                }
+            }
+            entries = filteredEntries;
+        }
         await this.applyDirectoryFileHandlers(entries);
         return entries;
     }
