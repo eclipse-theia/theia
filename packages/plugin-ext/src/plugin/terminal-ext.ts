@@ -46,7 +46,7 @@ export function getIconUris(iconPath: theia.TerminalOptions['iconPath']): Monaco
 export function getIconClass(
     options: theia.TerminalOptions | theia.ExtensionTerminalOptions,
     sharedStyle: PluginSharedStyle, disposables: DisposableCollection
-): string | { icon: string, color: string } | undefined {
+): string | ThemeIcon | undefined {
     const iconUriOrCodicon = getIconUris(options.iconPath);
     const iconColor = MonacoThemeColor.isThemeColor(options.color) ? options.color : undefined;
     let iconClass;
@@ -61,7 +61,7 @@ export function getIconClass(
     } else {
         iconClass = (MonacoThemeIcon.asClassName({ id: 'terminal' }));
     }
-    return iconColor ? { icon: iconClass, color: iconColor.id } : iconClass;
+    return iconColor ? { id: iconClass, color: { id: iconColor.id } } : iconClass;
 }
 
 /**
