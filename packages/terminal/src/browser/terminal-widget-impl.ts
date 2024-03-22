@@ -170,10 +170,10 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                 this.title.iconClass = iconClass;
             } else {
                 const iconClasses: string[] = [];
-                iconClasses.push(iconClass.icon);
+                iconClasses.push(iconClass.id);
                 // TODO: Build different handling for URI icons.
-                if (iconClass.color && this.isTerminalAnsiColor(iconClass.color)) {
-                    const color = this.getCodiconColor(iconClass.color);
+                if (iconClass.color && this.isTerminalAnsiColor(iconClass.color.id)) {
+                    const color = this.getCodiconColor(iconClass.color.id);
                     iconClasses.push(color ? color : '');
                 }
                 this.title.iconClass = iconClasses.join(' ');
