@@ -38,16 +38,16 @@ export namespace MonacoCommands {
         ['redo', CommonCommands.REDO.id],
         ['editor.action.selectAll', CommonCommands.SELECT_ALL.id],
         ['actions.find', CommonCommands.FIND.id],
-        ['editor.action.startFindReplaceAction', CommonCommands.REPLACE.id]
+        ['editor.action.startFindReplaceAction', CommonCommands.REPLACE.id],
+        ['editor.action.clipboardCutAction', CommonCommands.CUT.id],
+        ['editor.action.clipboardCopyAction', CommonCommands.COPY.id],
+        ['editor.action.clipboardPasteAction', CommonCommands.PASTE.id]
     ]);
 
     export const GO_TO_DEFINITION = 'editor.action.revealDefinition';
 
     export const EXCLUDE_ACTIONS = new Set([
-        'editor.action.quickCommand',
-        'editor.action.clipboardCutAction',
-        'editor.action.clipboardCopyAction',
-        'editor.action.clipboardPasteAction'
+        'editor.action.quickCommand'
     ]);
 }
 

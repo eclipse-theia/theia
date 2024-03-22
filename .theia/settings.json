@@ -1,5 +1,6 @@
 {
-   "editor.insertSpaces": true,
+  "editor.formatOnSave": true,
+  "editor.insertSpaces": true,
   "[typescript]": {
     "editor.tabSize": 4
   },
