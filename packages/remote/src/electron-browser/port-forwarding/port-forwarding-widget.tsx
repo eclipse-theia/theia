@@ -92,7 +92,7 @@ export class PortForwardingWidget extends ReactWidget {
     }
 
     protected renderAddressColumn(port: ForwardedPort): ReactNode {
-        const address = `${port.address ?? 'localhost'}:${port.localPort}`;
+        const address = `${port.address ?? '0.0.0.0'}:${port.localPort}`;
         return <td>
             <div className='button-cell'>
                 <span style={{ flexGrow: 1 }} className='forwarded-address' onClick={async e => {
