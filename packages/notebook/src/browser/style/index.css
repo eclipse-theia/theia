@@ -143,7 +143,6 @@
 }
 
 .theia-notebook-code-cell-execution-order {
-  height: 35px;
   display: block;
   font-family: var(--monaco-monospace-font);
   font-size: 10px;
