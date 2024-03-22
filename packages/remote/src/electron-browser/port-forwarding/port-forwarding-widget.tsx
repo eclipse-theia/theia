@@ -39,6 +39,7 @@ export class PortForwardingWidget extends ReactWidget {
     @postConstruct()
     protected init(): void {
         this.id = PORT_FORWARDING_WIDGET_ID;
+        this.node.tabIndex = -1;
         this.title.label = nls.localizeByDefault('Ports');
         this.title.caption = this.title.label;
         this.title.closable = true;
@@ -50,7 +51,7 @@ export class PortForwardingWidget extends ReactWidget {
     protected render(): ReactNode {
         if (this.portForwardingService.forwardedPorts.length === 0) {
             return <div>
-                <p>
+                <p style={{ marginLeft: 'calc(var(--theia-ui-padding) * 2)' }}>
                     {nls.localizeByDefault('No forwarded ports. Forward a port to access your locally running services over the internet.\n[Forward a Port]({0})').split('\n')[0]}
                 </p>
                 {this.renderForwardPortButton()}
