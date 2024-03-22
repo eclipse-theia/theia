@@ -50,17 +50,8 @@ export class NotebookEditorWidgetService {
     @postConstruct()
     protected init(): void {
         this.applicationShell.onDidChangeActiveWidget(event => {
-            if (event.newValue instanceof NotebookEditorWidget) {
-                if (event.newValue !== this.focusedEditor) {
-                    this.focusedEditor = event.newValue;
-                    this.contextKeyService.setContext(NOTEBOOK_EDITOR_FOCUSED, true);
-                    this.onDidChangeFocusedEditorEmitter.fire(this.focusedEditor);
-                }
-            } else if (event.newValue) {
-                // Only unfocus editor if a new widget has been focused
-                this.focusedEditor = undefined;
-                this.contextKeyService.setContext(NOTEBOOK_EDITOR_FOCUSED, true);
-                this.onDidChangeFocusedEditorEmitter.fire(undefined);
+            if (event.newValue) {
+                this.notebookEditorFocusChanged(event.newValue as NotebookEditorWidget, event.newValue instanceof NotebookEditorWidget);
             }
         });
     }
@@ -90,6 +81,20 @@ export class NotebookEditorWidgetService {
 
     getNotebookEditors(): readonly NotebookEditorWidget[] {
         return Array.from(this.notebookEditors.values());
+    }
+
+    notebookEditorFocusChanged(editor: NotebookEditorWidget, focus: boolean): void {
+        if (focus) {
+            if (editor !== this.focusedEditor) {
+                this.focusedEditor = editor;
+                this.contextKeyService.setContext(NOTEBOOK_EDITOR_FOCUSED, true);
+                this.onDidChangeFocusedEditorEmitter.fire(this.focusedEditor);
+            }
+        } else if (this.focusedEditor && editor === this.focusedEditor) {
+            this.focusedEditor = undefined;
+            this.contextKeyService.setContext(NOTEBOOK_EDITOR_FOCUSED, false);
+            this.onDidChangeFocusedEditorEmitter.fire(undefined);
+        }
     }
 
 }
