@@ -278,8 +278,8 @@ export class RemoteSSHConnection implements RemoteConnection {
         return sftpClient;
     }
 
-    forwardOut(socket: net.Socket): void {
-        this.client.forwardOut(socket.localAddress!, socket.localPort!, '127.0.0.1', this.remotePort, (err, stream) => {
+    forwardOut(socket: net.Socket, port?: number): void {
+        this.client.forwardOut(socket.localAddress!, socket.localPort!, '127.0.0.1', port ?? this.remotePort, (err, stream) => {
             if (err) {
                 console.debug('Proxy message rejected', err);
             } else {

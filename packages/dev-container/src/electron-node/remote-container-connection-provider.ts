@@ -149,6 +149,13 @@ interface ContainerTerminalSession {
     executeCommand(cmd: string, args?: string[]): Promise<{ stdout: string, stderr: string }>;
 }
 
+interface ContainerTerminalSession {
+    execution: Docker.Exec,
+    stdout: WriteStream,
+    stderr: WriteStream,
+    executeCommand(cmd: string, args?: string[]): Promise<{ stdout: string, stderr: string }>;
+}
+
 export class RemoteDockerContainerConnection implements RemoteConnection {
 
     id: string;
@@ -179,12 +186,12 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
         this.container = options.container;
     }
 
-    async forwardOut(socket: Socket): Promise<void> {
+    async forwardOut(socket: Socket, port?: number): Promise<void> {
         const node = `${this.remoteSetupResult.nodeDirectory}/bin/node`;
         const devContainerServer = `${this.remoteSetupResult.applicationDirectory}/backend/dev-container-server.js`;
         try {
             const ttySession = await this.container.exec({
-                Cmd: ['sh', '-c', `${node} ${devContainerServer} -target-port=${this.remotePort}`],
+                Cmd: ['sh', '-c', `${node} ${devContainerServer} -target-port=${port ?? this.remotePort}`],
                 AttachStdin: true, AttachStdout: true, AttachStderr: true
             });
 
