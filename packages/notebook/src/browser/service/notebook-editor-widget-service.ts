@@ -50,9 +50,7 @@ export class NotebookEditorWidgetService {
     @postConstruct()
     protected init(): void {
         this.applicationShell.onDidChangeActiveWidget(event => {
-            if (event.newValue) {
-                this.notebookEditorFocusChanged(event.newValue as NotebookEditorWidget, event.newValue instanceof NotebookEditorWidget);
-            }
+            this.notebookEditorFocusChanged(event.newValue as NotebookEditorWidget, event.newValue instanceof NotebookEditorWidget);
         });
     }
 
@@ -90,7 +88,7 @@ export class NotebookEditorWidgetService {
                 this.contextKeyService.setContext(NOTEBOOK_EDITOR_FOCUSED, true);
                 this.onDidChangeFocusedEditorEmitter.fire(this.focusedEditor);
             }
-        } else if (this.focusedEditor && editor === this.focusedEditor) {
+        } else if (this.focusedEditor) {
             this.focusedEditor = undefined;
             this.contextKeyService.setContext(NOTEBOOK_EDITOR_FOCUSED, false);
             this.onDidChangeFocusedEditorEmitter.fire(undefined);
