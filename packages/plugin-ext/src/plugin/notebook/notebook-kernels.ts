@@ -35,6 +35,7 @@ import { NotebookCellOutput, NotebookRendererScript, URI } from '../types-impl';
 import { toUriComponents } from '../../main/browser/hierarchy/hierarchy-types-converters';
 import type * as theia from '@theia/plugin';
 import { WebviewsExtImpl } from '../webviews';
+import { WorkspaceExtImpl } from '../workspace';
 
 interface KernelData {
     extensionId: string;
@@ -65,9 +66,21 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
         rpc: RPCProtocol,
         private readonly notebooks: NotebooksExtImpl,
         private readonly commands: CommandRegistryImpl,
-        private readonly webviews: WebviewsExtImpl
+        private readonly webviews: WebviewsExtImpl,
+        workspace: WorkspaceExtImpl
     ) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.NOTEBOOK_KERNELS_MAIN);
+
+        // call onDidChangeSelection for all kernels after trust is granted to inform extensions they can set the kernel as assoiciated
+        // the jupyter extension for example does not set kernel association after trust is granted
+        workspace.onDidGrantWorkspaceTrust(() => {
+            this.kernelData.forEach(kernel => {
+                kernel.associatedNotebooks.forEach(async (_, uri) => {
+                    const notebook = await this.notebooks.waitForNotebookDocument(URI.parse(uri));
+                    kernel.onDidChangeSelection.fire({ selected: true, notebook: notebook.apiNotebook });
+                });
+            });
+        });
     }
 
     private currentHandle = 0;
