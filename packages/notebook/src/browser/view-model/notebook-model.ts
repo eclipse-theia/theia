@@ -344,6 +344,10 @@ export class NotebookModel implements Saveable, Disposable {
 
         this.onDidAddOrRemoveCellEmitter.fire({ rawEvent: { kind: NotebookCellsChangeType.ModelChange, changes }, newCellIds: cells.map(cell => cell.handle) });
         this.onDidChangeContentEmitter.fire([{ kind: NotebookCellsChangeType.ModelChange, changes }]);
+        if (cells.length > 0) {
+            this.setSelectedCell(cells[cells.length - 1]);
+            cells[cells.length - 1].requestEdit();
+        }
     }
 
     protected changeCellInternalMetadataPartial(cell: NotebookCellModel, internalMetadata: NullablePartialNotebookCellInternalMetadata): void {

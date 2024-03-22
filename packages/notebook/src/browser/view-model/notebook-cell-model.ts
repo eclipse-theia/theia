@@ -100,6 +100,9 @@ export class NotebookCellModel implements NotebookCell, Disposable {
     protected readonly onDidRequestCellEditChangeEmitter = new Emitter<boolean>();
     readonly onDidRequestCellEditChange = this.onDidRequestCellEditChangeEmitter.event;
 
+    protected readonly onWillFocusCellEditorEmitter = new Emitter<void>();
+    readonly onWillFocusCellEditor = this.onWillFocusCellEditorEmitter.event;
+
     @inject(NotebookCellModelProps)
     protected readonly props: NotebookCellModelProps;
     @inject(MonacoTextModelService)
@@ -211,6 +214,11 @@ export class NotebookCellModel implements NotebookCell, Disposable {
     requestStopEdit(): void {
         this._editing = false;
         this.onDidRequestCellEditChangeEmitter.fire(false);
+    }
+
+    requestFocusEditor(): void {
+        this.requestEdit();
+        this.onWillFocusCellEditorEmitter.fire();
     }
 
     spliceNotebookCellOutputs(splice: NotebookCellOutputsSplice): void {
