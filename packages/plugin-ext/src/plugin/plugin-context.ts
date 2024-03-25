@@ -276,7 +276,7 @@ export function createAPIFactory(
     const notebooksExt = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOKS_EXT, new NotebooksExtImpl(rpc, commandRegistry, editorsAndDocumentsExt, documents));
     const notebookEditors = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOK_EDITORS_EXT, new NotebookEditorsExtImpl(notebooksExt));
     const notebookRenderers = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOK_RENDERERS_EXT, new NotebookRenderersExtImpl(rpc, notebooksExt));
-    const notebookKernels = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOK_KERNELS_EXT, new NotebookKernelsExtImpl(rpc, notebooksExt, commandRegistry));
+    const notebookKernels = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOK_KERNELS_EXT, new NotebookKernelsExtImpl(rpc, notebooksExt, commandRegistry, webviewExt, workspaceExt));
     const notebookDocuments = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_EXT, new NotebookDocumentsExtImpl(notebooksExt));
     const statusBarMessageRegistryExt = new StatusBarMessageRegistryExt(rpc);
     const terminalExt = rpc.set(MAIN_RPC_CONTEXT.TERMINAL_EXT, new TerminalServiceExtImpl(rpc));
@@ -744,7 +744,7 @@ export function createAPIFactory(
             registerTextDocumentContentProvider(scheme: string, provider: theia.TextDocumentContentProvider): theia.Disposable {
                 return workspaceExt.registerTextDocumentContentProvider(scheme, provider);
             },
-            registerFileSystemProvider(scheme: string, provider: theia.FileSystemProvider, options?: { isCaseSensitive?: boolean, isReadonly?: boolean | MarkdownString}):
+            registerFileSystemProvider(scheme: string, provider: theia.FileSystemProvider, options?: { isCaseSensitive?: boolean, isReadonly?: boolean | MarkdownString }):
                 theia.Disposable {
                 return fileSystemExt.registerFileSystemProvider(scheme, provider, options);
             },

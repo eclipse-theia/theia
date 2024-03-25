@@ -99,6 +99,7 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
 
         if (this.editor) {
             this.toDispose.push(this.editor.onDidPostKernelMessage(message => {
+                // console.log('from extension customKernelMessage ', JSON.stringify(message));
                 this.webviewWidget.sendMessage({
                     type: 'customKernelMessage',
                     message
@@ -106,6 +107,7 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
             }));
 
             this.toDispose.push(this.editor.onPostRendererMessage(messageObj => {
+                // console.log('from extension customRendererMessage ', JSON.stringify(messageObj));
                 this.webviewWidget.sendMessage({
                     type: 'customRendererMessage',
                     ...messageObj
@@ -188,6 +190,7 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
                 this.updateOutput({ newOutputs: this.cell.outputs, start: 0, deleteCount: 0 });
                 break;
             case 'customRendererMessage':
+                // console.log('from webview customRendererMessage ', message.rendererId, '', JSON.stringify(message.message));
                 this.messagingService.getScoped(this.editor.id).postMessage(message.rendererId, message.message);
                 break;
             case 'didRenderOutput':
@@ -197,6 +200,7 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
                 this.editor.node.getElementsByClassName('theia-notebook-viewport')[0].children[0].scrollBy(message.deltaX, message.deltaY);
                 break;
             case 'customKernelMessage':
+                // console.log('from webview customKernelMessage ', JSON.stringify(message.message));
                 this.editor.recieveKernelMessage(message.message);
                 break;
         }

@@ -24,6 +24,7 @@ import { fromViewColumn, toViewColumn, toWebviewPanelShowOptions } from './type-
 import { Disposable, WebviewPanelTargetArea, URI } from './types-impl';
 import { WorkspaceExtImpl } from './workspace';
 import { PluginIconPath } from './plugin-icon-path';
+import { PluginModel, PluginPackage } from '../common';
 
 @injectable()
 export class WebviewsExtImpl implements WebviewsExt {
@@ -194,6 +195,14 @@ export class WebviewsExtImpl implements WebviewsExt {
             return this.webviewPanels.get(viewId);
         }
         return undefined;
+    }
+
+    toGeneralWebviewResource(extension: PluginModel, resource: theia.Uri): theia.Uri {
+        const extensionUri = URI.parse(extension.packageUri);
+        const relativeResourcePath = resource.path.replace(extensionUri.path, '');
+        const basePath = PluginPackage.toPluginUrl(extension, '') + relativeResourcePath;
+
+        return URI.parse(this.initData!.webviewResourceRoot.replace('{{uuid}}', 'webviewUUID')).with({ path: basePath });
     }
 
     public deleteWebview(handle: string): void {

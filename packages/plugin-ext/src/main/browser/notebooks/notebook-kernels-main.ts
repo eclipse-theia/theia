@@ -27,7 +27,6 @@ import {
     CellExecution, NotebookEditorWidgetService, NotebookExecutionStateService,
     NotebookKernelChangeEvent, NotebookKernelService, NotebookService
 } from '@theia/notebook/lib/browser';
-import { combinedDisposable } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
 import { interfaces } from '@theia/core/shared/inversify';
 import { NotebookKernelSourceAction } from '@theia/notebook/lib/common';
 import { NotebookDto } from './notebook-dto';
@@ -153,6 +152,20 @@ export class NotebookKernelsMainImpl implements NotebookKernelsMain {
                 }
             });
         });
+        this.notebookKernelService.onDidChangeSelectedKernel(e => {
+            if (e.newKernel) {
+                const newKernelHandle = Array.from(this.kernels.entries()).find(([_, [kernel]]) => kernel.id === e.newKernel)?.[0];
+                if (newKernelHandle !== undefined) {
+                    this.proxy.$acceptNotebookAssociation(newKernelHandle, e.notebook.toComponents(), true);
+                }
+            } else {
+                const oldKernelHandle = Array.from(this.kernels.entries()).find(([_, [kernel]]) => kernel.id === e.oldKernel)?.[0];
+                if (oldKernelHandle !== undefined) {
+                    this.proxy.$acceptNotebookAssociation(oldKernelHandle, e.notebook.toComponents(), false);
+                }
+
+            }
+        });
     }
 
     async $postMessage(handle: number, editorId: string | undefined, message: unknown): Promise<boolean> {
@@ -196,16 +209,8 @@ export class NotebookKernelsMainImpl implements NotebookKernelsMain {
             }
         }(handle, data, this.languageService);
 
-        const listener = this.notebookKernelService.onDidChangeSelectedKernel(e => {
-            if (e.oldKernel === kernel.id) {
-                this.proxy.$acceptNotebookAssociation(handle, e.notebook.toComponents(), false);
-            } else if (e.newKernel === kernel.id) {
-                this.proxy.$acceptNotebookAssociation(handle, e.notebook.toComponents(), true);
-            }
-        });
-
         const registration = this.notebookKernelService.registerKernel(kernel);
-        this.kernels.set(handle, [kernel, combinedDisposable(listener, registration)]);
+        this.kernels.set(handle, [kernel, registration]);
 
     }
 

@@ -237,12 +237,12 @@ export interface FileSystemProviderCapabilitiesChangeEvent {
 }
 
 export interface FileSystemProviderReadOnlyMessageChangeEvent {
-     /** The affected file system provider for which this event was fired. */
-     provider: FileSystemProvider;
-     /** The uri for which the provider is registered */
-     scheme: string;
-     /** The new read only message */
-     message: MarkdownString | undefined;
+    /** The affected file system provider for which this event was fired. */
+    provider: FileSystemProvider;
+    /** The uri for which the provider is registered */
+    scheme: string;
+    /** The new read only message */
+    message: MarkdownString | undefined;
 }
 
 /**
@@ -378,7 +378,7 @@ export class FileService {
         providerDisposables.push(provider.onFileWatchError(() => this.handleFileWatchError()));
         providerDisposables.push(provider.onDidChangeCapabilities(() => this.onDidChangeFileSystemProviderCapabilitiesEmitter.fire({ provider, scheme })));
         if (ReadOnlyMessageFileSystemProvider.is(provider)) {
-            providerDisposables.push(provider.onDidChangeReadOnlyMessage(message => this.onDidChangeFileSystemProviderReadOnlyMessageEmitter.fire({ provider, scheme, message})));
+            providerDisposables.push(provider.onDidChangeReadOnlyMessage(message => this.onDidChangeFileSystemProviderReadOnlyMessageEmitter.fire({ provider, scheme, message })));
         }
 
         return Disposable.create(() => {
