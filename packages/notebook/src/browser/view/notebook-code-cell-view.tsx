@@ -76,7 +76,7 @@ export class NotebookCodeCellRenderer implements CellRenderer {
                         notebookContextManager={this.notebookContextManager}
                         notebookViewportService={this.notebookViewportService}
                         fontInfo={this.getOrCreateMonacoFontInfo()} />
-                    <NotebookCodeCellStatus cell={cell} executionStateService={this.executionStateService}></NotebookCodeCellStatus>
+                    <NotebookCodeCellStatus cell={cell} executionStateService={this.executionStateService} onClick={() => cell.requestFocusEditor()}></NotebookCodeCellStatus>
                 </div >
             </div >
             <div className='theia-notebook-cell-with-sidebar'>
@@ -110,6 +110,7 @@ export class NotebookCodeCellRenderer implements CellRenderer {
 export interface NotebookCodeCellStatusProps {
     cell: NotebookCellModel;
     executionStateService: NotebookExecutionStateService;
+    onClick: () => void;
 }
 
 export interface NotebookCodeCellStatusState {
@@ -152,7 +153,7 @@ export class NotebookCodeCellStatus extends React.Component<NotebookCodeCellStat
     }
 
     override render(): React.ReactNode {
-        return <div className='notebook-cell-status'>
+        return <div className='notebook-cell-status' onClick={() => this.props.onClick()}>
             <div className='notebook-cell-status-left'>
                 {this.renderExecutionState()}
             </div>

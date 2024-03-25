@@ -53,6 +53,16 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
 
     override componentDidMount(): void {
         this.disposeEditor();
+        this.toDispose.push(this.props.cell.onWillFocusCellEditor(() => {
+            this.editor?.getControl().focus();
+        }));
+        this.toDispose.push(this.props.notebookModel.onDidChangeSelectedCell(() => {
+            if (this.props.notebookModel.selectedCell !== this.props.cell && this.editor?.getControl().hasTextFocus()) {
+                if (document.activeElement && 'blur' in document.activeElement) {
+                    (document.activeElement as HTMLElement).blur();
+                }
+            }
+        }));
         if (!this.props.notebookViewportService || (this.container && this.props.notebookViewportService.isElementInViewport(this.container))) {
             this.initEditor();
         } else {
@@ -103,6 +113,9 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
             this.toDispose.push(this.editor.getControl().onDidBlurEditorText(() => {
                 this.props.notebookContextManager.onDidEditorTextFocus(false);
             }));
+            if (cell.editing && notebookModel.selectedCell === cell) {
+                this.editor.getControl().focus();
+            }
         }
     }
 
