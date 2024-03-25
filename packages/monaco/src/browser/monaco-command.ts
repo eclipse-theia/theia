@@ -163,7 +163,7 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
                         const action = editor && editor.getAction(id);
                         return !!action && action.isSupported();
                     }
-                    if (!!EditorExtensionsRegistry.getEditorCommand(id)) {
+                    if (!!EditorExtensionsRegistry.getEditorCommand(id) || MonacoCommands.COMMON_ACTIONS.has(id)) {
                         return !!editor;
                     }
                     return true;
