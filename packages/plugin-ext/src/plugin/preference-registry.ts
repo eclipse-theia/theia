@@ -198,10 +198,10 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
                 }
 
                 const configInspect: ConfigurationInspect<T> = { key };
-                configInspect.defaultValue = result.default?.value;
-                configInspect.globalValue = result.user?.value;
-                configInspect.workspaceValue = result.workspace?.value;
-                configInspect.workspaceFolderValue = result.workspaceFolder?.value;
+                configInspect.defaultValue = cloneDeep(result.default?.value);
+                configInspect.globalValue = cloneDeep(result.user?.value);
+                configInspect.workspaceValue = cloneDeep(result.workspace?.value);
+                configInspect.workspaceFolderValue = cloneDeep(result.workspaceFolder?.value);
                 return configInspect;
             }
         };
