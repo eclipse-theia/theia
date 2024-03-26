@@ -89,7 +89,7 @@ export class NotebookCellToolbarFactory {
                         anchor: e.nativeEvent,
                         menuPath,
                         includeAnchorArg: false,
-                        args: [notebookModel, cell, output],
+                        args: [cell],
                         context: this.notebookContextManager.context
                     }) :
                 () => this.commandRegistry.executeCommand(menuNode.command!, notebookModel, cell, output),

@@ -16,7 +16,7 @@
 
 import { CancellationToken, DisposableCollection, Emitter, Event, URI } from '@theia/core';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
-import { CellEditType, NotebookCellStatusBarItem, NotebookData, TransientOptions } from '@theia/notebook/lib/common';
+import { CellEditType, NotebookCellModelResource, NotebookCellStatusBarItem, NotebookData, NotebookModelResource, TransientOptions } from '@theia/notebook/lib/common';
 import { NotebookService, NotebookWorkspaceEdit } from '@theia/notebook/lib/browser';
 import { Disposable } from '@theia/plugin';
 import { CommandRegistryMain, MAIN_RPC_CONTEXT, NotebooksExt, NotebooksMain, WorkspaceEditDto, WorkspaceNotebookCellEditDto } from '../../../common';
@@ -25,6 +25,7 @@ import { NotebookDto } from './notebook-dto';
 import { UriComponents } from '@theia/core/lib/common/uri';
 import { HostedPluginSupport } from '../../../hosted/browser/hosted-plugin';
 import { NotebookModel } from '@theia/notebook/lib/browser/view-model/notebook-model';
+import { NotebookCellModel } from '@theia/notebook/lib/browser/view-model/notebook-cell-model';
 import { interfaces } from '@theia/core/shared/inversify';
 
 export interface NotebookCellStatusBarItemList {
@@ -62,7 +63,9 @@ export class NotebooksMainImpl implements NotebooksMain {
         commands.registerArgumentProcessor({
             processArgument: arg => {
                 if (arg instanceof NotebookModel) {
-                    return arg.uri;
+                    return NotebookModelResource.create(arg.uri);
+                } else if (arg instanceof NotebookCellModel) {
+                    return NotebookCellModelResource.create(arg.uri);
                 }
                 return arg;
             }

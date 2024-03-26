@@ -2474,6 +2474,10 @@ export type NotebookRawContentEventDto =
         readonly outputItems: NotebookOutputItemDto[];
         readonly append: boolean;
     }
+    | {
+        readonly kind: notebookCommon.NotebookCellsChangeType.ChangeDocumentMetadata
+        readonly metadata: notebookCommon.NotebookDocumentMetadata;
+    }
     | notebookCommon.NotebookCellsChangeLanguageEvent
     | notebookCommon.NotebookCellsChangeMetadataEvent
     | notebookCommon.NotebookCellsChangeInternalMetadataEvent
