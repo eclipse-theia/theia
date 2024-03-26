@@ -24,12 +24,14 @@ import { TerminalWidget } from './base/terminal-widget';
 import { TerminalLink, TerminalLinkProvider } from './terminal-link-provider';
 import { TerminalWidgetImpl } from './terminal-widget-impl';
 import { FileSearchService } from '@theia/file-search/lib/common/file-search-service';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 @injectable()
 export class FileLinkProvider implements TerminalLinkProvider {
 
     @inject(OpenerService) protected readonly openerService: OpenerService;
     @inject(FileService) protected fileService: FileService;
-    @inject(FileSearchService) private searchService: FileSearchService;
+    @inject(FileSearchService) protected searchService: FileSearchService;
+    @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
 
     async provideLinks(line: string, terminal: TerminalWidget): Promise<TerminalLink[]> {
         const links: TerminalLink[] = [];
@@ -44,34 +46,45 @@ export class FileLinkProvider implements TerminalLinkProvider {
                     handle: () => this.open(match, terminal)
                 });
             } else {
-                const cwd = await this.getCwd(terminal);
-                let searchTerm = await this.extractPath(match);
-                if (searchTerm) {
-                    // remove any leading ./, ../ etc. as they can't be searched
-                    searchTerm = searchTerm.replace(/^(\.+[\\/])+/, '');
-                    // try and find a matching file in the workspace
-                    const files = (await this.searchService.find(searchTerm, {
-                        rootUris: [cwd.toString()],
-                        fuzzyMatch: true,
-                        limit: 1
-                    }));
-                    if (files.length) {
-                        const fileUri = new URI(files[0]);
-                        const valid = await this.isValidFileURI(fileUri);
-                        if (valid) {
-                            const position = await this.extractPosition(match);
-                            links.push({
-                                startIndex: regExp.lastIndex - match.length,
-                                length: match.length,
-                                handle: () => this.openURI(fileUri, position)
-                            });
-                        }
-
-                    }
+                const searchTerm = await this.extractPath(match);
+                const fileUri = await this.isValidWorkspaceFile(searchTerm, terminal);
+                if (fileUri) {
+                    const position = await this.extractPosition(match);
+                    links.push({
+                        startIndex: regExp.lastIndex - match.length,
+                        length: match.length,
+                        handle: () => this.openURI(fileUri, position)
+                    });
                 }
             }
         }
         return links;
+    }
+
+    protected async isValidWorkspaceFile(searchTerm: string | undefined, terminal: TerminalWidget): Promise<URI | undefined> {
+        if (!searchTerm) {
+            return undefined;
+        }
+        const cwd = await this.getCwd(terminal);
+        // remove any leading ./, ../ etc. as they can't be searched
+        searchTerm = searchTerm.replace(/^(\.+[\\/])+/, '');
+        const workspaceRoots = this.workspaceService.tryGetRoots().map(root => root.resource.toString());
+        // try and find a matching file in the workspace
+        const files = (await this.searchService.find(searchTerm, {
+            rootUris: [cwd.toString(), ...workspaceRoots],
+            fuzzyMatch: true,
+            limit: 1
+        }));
+        // checks if the string end in a separator + searchTerm
+        const regex = new RegExp(`[\\\\|\\/]${searchTerm}$`);
+        if (files.length && regex.test(files[0])) {
+            const fileUri = new URI(files[0]);
+            const valid = await this.isValidFileURI(fileUri);
+            if (valid) {
+                return fileUri;
+            }
+
+        }
     }
 
     protected async createRegExp(): Promise<RegExp> {
@@ -185,6 +198,17 @@ export class FileDiffPreLinkProvider extends FileLinkProvider {
 export class FileDiffPostLinkProvider extends FileLinkProvider {
     override async createRegExp(): Promise<RegExp> {
         return /^\+\+\+ b\/(\S*)/g;
+    }
+}
+
+@injectable()
+export class LocalFileLinkProvider extends FileLinkProvider {
+    override async createRegExp(): Promise<RegExp> {
+        // match links that might not start with a separator, e.g. 'foo.bar'
+        const baseLocalLinkClause = OS.backend.isWindows ?
+            '((' + winPathPrefix + '|(' + winExcludedPathCharactersClause + ')+)(' + winPathSeparatorClause + '(' + winExcludedPathCharactersClause + ')+)*)'
+            : '((' + pathPrefix + '|(' + excludedPathCharactersClause + ')+)(' + pathSeparatorClause + '(' + excludedPathCharactersClause + ')+)*)';
+        return new RegExp(`${baseLocalLinkClause}(${lineAndColumnClause})`, 'g');
     }
 }
 
