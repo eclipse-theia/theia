@@ -1563,6 +1563,16 @@ export interface WorkspaceNotebookCellEditDto {
     cellEdit: CellEditOperationDto;
 }
 
+export namespace WorkspaceNotebookCellEditDto {
+    export function is(arg: WorkspaceNotebookCellEditDto | WorkspaceFileEditDto | WorkspaceTextEditDto): arg is WorkspaceNotebookCellEditDto {
+        return !!arg
+            && 'resource' in arg
+            && 'cellEdit' in arg
+            && arg.cellEdit !== null
+            && typeof arg.cellEdit === 'object';
+    }
+}
+
 export interface WorkspaceEditDto {
     edits: Array<WorkspaceTextEditDto | WorkspaceFileEditDto | WorkspaceNotebookCellEditDto>;
 }

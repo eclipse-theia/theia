@@ -148,12 +148,12 @@ export class NotebookCellActionContribution implements MenuContribution, Command
             order: '10'
         });
 
-        menus.registerMenuAction(NotebookCellActionContribution.ACTION_MENU, {
-            commandId: NotebookCellCommands.SPLIT_CELL_COMMAND.id,
-            icon: NotebookCellCommands.SPLIT_CELL_COMMAND.iconClass,
-            label: nls.localizeByDefault('Split Cell'),
-            order: '20'
-        });
+        // menus.registerMenuAction(NotebookCellActionContribution.ACTION_MENU, {
+        //     commandId: NotebookCellCommands.SPLIT_CELL_COMMAND.id,
+        //     icon: NotebookCellCommands.SPLIT_CELL_COMMAND.iconClass,
+        //     label: nls.localizeByDefault('Split Cell'),
+        //     order: '20'
+        // });
         menus.registerMenuAction(NotebookCellActionContribution.ACTION_MENU, {
             commandId: NotebookCellCommands.DELETE_COMMAND.id,
             icon: NotebookCellCommands.DELETE_COMMAND.iconClass,
@@ -190,10 +190,10 @@ export class NotebookCellActionContribution implements MenuContribution, Command
         });
 
         // Notebook Cell extra execution options
-        // menus.registerIndependentSubmenu(NotebookCellActionContribution.CONTRIBUTED_CELL_EXECUTION_MENU,
-        //     nls.localizeByDefault('More...'),
-        //     { role: CompoundMenuNodeRole.Flat, icon: codicon('chevron-down') });
-        // menus.getMenu(NotebookCellActionContribution.CODE_CELL_SIDEBAR_MENU).addNode(menus.getMenuNode(NotebookCellActionContribution.CONTRIBUTED_CELL_EXECUTION_MENU));
+        menus.registerIndependentSubmenu(NotebookCellActionContribution.CONTRIBUTED_CELL_EXECUTION_MENU,
+            nls.localizeByDefault('More...'),
+            { role: CompoundMenuNodeRole.Flat, icon: codicon('chevron-down') });
+        menus.getMenu(NotebookCellActionContribution.CODE_CELL_SIDEBAR_MENU).addNode(menus.getMenuNode(NotebookCellActionContribution.CONTRIBUTED_CELL_EXECUTION_MENU));
 
         // code cell output sidebar menu
         menus.registerSubmenu(

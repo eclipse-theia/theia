@@ -89,7 +89,8 @@ export class NotebookCellToolbarFactory {
                         anchor: e.nativeEvent,
                         menuPath,
                         includeAnchorArg: false,
-                        args: [notebookModel, cell, output]
+                        args: [notebookModel, cell, output],
+                        context: this.notebookContextManager.context
                     }) :
                 () => this.commandRegistry.executeCommand(menuNode.command!, notebookModel, cell, output),
             isVisible: () => menuPath ? true : Boolean(this.commandRegistry.getVisibleHandler(menuNode.command!, notebookModel, cell, output)),
