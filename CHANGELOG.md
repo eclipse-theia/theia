@@ -6,6 +6,7 @@
 
 ## not yet released
 
+- [application-package] bumped the default supported API from `1.86.2` to `1.87.2` [#13514](https://github.com/eclipse-theia/theia/pull/13514) - contributed on behalf of STMicroelectronics
 - [core]  Fix quickpick problems found in IDE testing [#13451](https://github.com/eclipse-theia/theia/pull/13451) - contributed on behalf of STMicroelectronics
 - [plugin] Extend TextEditorLineNumbersStyle with Interval [#13458](https://github.com/eclipse-theia/theia/pull/13458) - contributed on behalf of STMicroelectronics
 
