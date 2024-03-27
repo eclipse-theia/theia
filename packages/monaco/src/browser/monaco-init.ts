@@ -46,6 +46,8 @@ import { IBulkEditService } from '@theia/monaco-editor-core/esm/vs/editor/browse
 import { ICommandService } from '@theia/monaco-editor-core/esm/vs/platform/commands/common/commands';
 import { MonacoQuickInputImplementation } from './monaco-quick-input-service';
 import { IQuickInputService } from '@theia/monaco-editor-core/esm/vs/platform/quickinput/common/quickInput';
+import { IStandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
+import { MonacoStandaloneThemeService } from './monaco-standalone-theme-service';
 
 class MonacoEditorServiceConstructor {
     /**
@@ -109,6 +111,7 @@ export namespace MonacoInit {
             [IBulkEditService.toString()]: new SyncDescriptor(MonacoBulkEditServiceConstructor, [container]),
             [ICommandService.toString()]: new SyncDescriptor(MonacoCommandServiceConstructor, [container]),
             [IQuickInputService.toString()]: new SyncDescriptor(MonacoQuickInputImplementationConstructor, [container]),
+            [IStandaloneThemeService.toString()]: new MonacoStandaloneThemeService()
         });
     }
 }

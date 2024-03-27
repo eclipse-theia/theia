@@ -12,7 +12,8 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/editor-frontend-module"
+      "frontend": "lib/browser/editor-frontend-module",
+      "secondaryWindow": "lib/browser/editor-frontend-module"
     }
   ],
   "keywords": [

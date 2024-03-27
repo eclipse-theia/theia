@@ -15,12 +15,12 @@
 // *****************************************************************************
 
 import { Disposable, SelectionService, Event, UNTITLED_SCHEME, DisposableCollection } from '@theia/core/lib/common';
-import { Widget, BaseWidget, Message, Saveable, SaveableSource, Navigatable, StatefulWidget, lock, TabBar, DockPanel, unlock } from '@theia/core/lib/browser';
+import { Widget, BaseWidget, Message, Saveable, SaveableSource, Navigatable, StatefulWidget, lock, TabBar, DockPanel, unlock, ExtractableWidget } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { find } from '@theia/core/shared/@phosphor/algorithm';
 import { TextEditor } from './editor';
 
-export class EditorWidget extends BaseWidget implements SaveableSource, Navigatable, StatefulWidget {
+export class EditorWidget extends BaseWidget implements SaveableSource, Navigatable, StatefulWidget, ExtractableWidget {
 
     protected toDisposeOnTabbarChange = new DisposableCollection();
     protected currentTabbar: TabBar<Widget> | undefined;
@@ -51,6 +51,8 @@ export class EditorWidget extends BaseWidget implements SaveableSource, Navigata
             }
         }));
     }
+    isExtractable: boolean = true;
+    secondaryWindow: Window | undefined;
 
     setSelection(): void {
         if (this.editor.isFocused() && this.selectionService.selection !== this.editor) {

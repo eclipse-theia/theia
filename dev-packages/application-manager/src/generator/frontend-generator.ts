@@ -188,15 +188,6 @@ ${Array.from(frontendModules.values(), jsModulePath => `\
     }
     </style>
     <link rel="stylesheet" href="./secondary-window.css">
-    <script>
-    window.addEventListener('message', e => {
-        // Only process messages from Theia main window
-        if (e.source === window.opener) {
-            // Delegate message to iframe
-            document.getElementsByTagName('iframe').item(0).contentWindow.postMessage({ ...e.data }, '*');
-        }
-    });
-    </script>
 </head>
 
 <body>
