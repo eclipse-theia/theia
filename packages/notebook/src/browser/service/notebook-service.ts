@@ -20,7 +20,6 @@ import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { NotebookData, TransientOptions } from '../../common';
 import { NotebookModel, NotebookModelFactory, NotebookModelProps } from '../view-model/notebook-model';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { NotebookCellModel, NotebookCellModelFactory, NotebookCellModelProps } from '../view-model/notebook-cell-model';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { NotebookMonacoTextModelService } from './notebook-monaco-text-model-service';
@@ -44,16 +43,13 @@ export class NotebookService implements Disposable {
     @inject(FileService)
     protected fileService: FileService;
 
-    @inject(MonacoTextModelService)
-    protected modelService: MonacoTextModelService;
-
     @inject(NotebookModelFactory)
     protected notebookModelFactory: (props: NotebookModelProps) => NotebookModel;
 
     @inject(NotebookCellModelFactory)
     protected notebookCellModelFactory: (props: NotebookCellModelProps) => NotebookCellModel;
 
-    @inject(MonacoTextModelService)
+    @inject(NotebookMonacoTextModelService)
     protected textModelService: NotebookMonacoTextModelService;
 
     protected willUseNotebookSerializerEmitter = new Emitter<string>();

@@ -40,7 +40,6 @@ import { NotebookKernelHistoryService } from './service/notebook-kernel-history-
 import { NotebookEditorWidgetService } from './service/notebook-editor-widget-service';
 import { NotebookRendererMessagingService } from './service/notebook-renderer-messaging-service';
 import { NotebookColorContribution } from './contributions/notebook-color-contribution';
-import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { NotebookMonacoTextModelService } from './service/notebook-monaco-text-model-service';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
@@ -89,5 +88,5 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
         createNotebookCellModelContainer(ctx.container, props).get(NotebookCellModel)
     );
 
-    rebind(MonacoTextModelService).to(NotebookMonacoTextModelService).inSingletonScope();
+    bind(NotebookMonacoTextModelService).toSelf().inSingletonScope();
 });

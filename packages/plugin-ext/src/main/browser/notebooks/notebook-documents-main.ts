@@ -17,7 +17,6 @@
 import { DisposableCollection, Event } from '@theia/core';
 import { URI, UriComponents } from '@theia/core/lib/common/uri';
 import { interfaces } from '@theia/core/shared/inversify';
-import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { NotebookModelResolverService } from '@theia/notebook/lib/browser';
 import { NotebookModel } from '@theia/notebook/lib/browser/view-model/notebook-model';
 import { NotebookCellsChangeType } from '@theia/notebook/lib/common';
@@ -49,7 +48,7 @@ export class NotebookDocumentsMainImpl implements NotebookDocumentsMain {
         this.disposables.push(this.notebookModelResolverService.onDidChangeDirty(model => this.proxy.$acceptDirtyStateChanged(model.uri.toComponents(), model.isDirty())));
         this.disposables.push(this.notebookModelResolverService.onDidSaveNotebook(e => this.proxy.$acceptModelSaved(e)));
 
-        this.notebookMonacoTextModelService = container.get(MonacoTextModelService) as NotebookMonacoTextModelService;
+        this.notebookMonacoTextModelService = container.get(NotebookMonacoTextModelService) as NotebookMonacoTextModelService;
     }
 
     get onDidAddNotebookCellModel(): Event<MonacoEditorModel> {

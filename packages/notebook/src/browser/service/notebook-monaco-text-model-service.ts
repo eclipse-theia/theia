@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ReferenceCollection, URI, Reference, Event } from '@theia/core';
-import { injectable } from '@theia/core/shared/inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { NotebookModel } from '../view-model/notebook-model';
@@ -25,10 +25,13 @@ import { NotebookModel } from '../view-model/notebook-model';
  * Its for optimization purposes since there is alot of overhead otherwise with calling the backend to create a document for each cell and other smaller things.
  */
 @injectable()
-export class NotebookMonacoTextModelService extends MonacoTextModelService {
+export class NotebookMonacoTextModelService {
+
+    @inject(MonacoTextModelService)
+    protected readonly monacoTextModelService: MonacoTextModelService;
 
     protected readonly cellmodels = new ReferenceCollection<string, MonacoEditorModel>(
-        uri => this.loadModel(new URI(uri))
+        uri => this.monacoTextModelService.createUnmangedModel(new URI(uri))
     );
 
     getOrCreateNotebookCellModelReference(uri: URI): Promise<Reference<MonacoEditorModel>> {
