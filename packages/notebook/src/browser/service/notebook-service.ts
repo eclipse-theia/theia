@@ -23,6 +23,7 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { NotebookCellModel, NotebookCellModelFactory, NotebookCellModelProps } from '../view-model/notebook-cell-model';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { CellEditOperation } from '../notebook-types';
 
 export const NotebookProvider = Symbol('notebook provider');
 
@@ -35,6 +36,13 @@ export interface NotebookSerializer {
     options: TransientOptions;
     toNotebook(data: BinaryBuffer): Promise<NotebookData>;
     fromNotebook(data: NotebookData): Promise<BinaryBuffer>;
+}
+
+export interface NotebookWorkspaceEdit {
+    edits: {
+        resource: URI;
+        edit: CellEditOperation
+    }[]
 }
 
 @injectable()
@@ -177,5 +185,18 @@ export class NotebookService implements Disposable {
 
     listNotebookDocuments(): NotebookModel[] {
         return [...this.notebookModels.values()];
+    }
+
+    applyWorkspaceEdit(workspaceEdit: NotebookWorkspaceEdit): boolean {
+        try {
+            workspaceEdit.edits.forEach(edit => {
+                const notebook = this.getNotebookEditorModel(edit.resource);
+                notebook?.applyEdits([edit.edit], true);
+            });
+            return true;
+        } catch (e) {
+            console.error(e);
+            return false;
+        }
     }
 }

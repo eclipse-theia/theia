@@ -118,6 +118,11 @@ export class NotebookCellModel implements NotebookCell, Disposable {
         return this._metadata;
     }
 
+    set metadata(newMetadata: NotebookCellMetadata) {
+        this._metadata = newMetadata;
+        this.onDidChangeMetadataEmitter.fire();
+    }
+
     protected _metadata: NotebookCellMetadata;
 
     protected toDispose = new DisposableCollection();

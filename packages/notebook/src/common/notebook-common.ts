@@ -179,6 +179,19 @@ export namespace NotebookModelResource {
     }
 }
 
+export interface NotebookCellModelResource {
+    notebookCellModelUri: URI;
+}
+
+export namespace NotebookCellModelResource {
+    export function is(item: unknown): item is NotebookCellModelResource {
+        return isObject<NotebookCellModelResource>(item) && item.notebookCellModelUri instanceof URI;
+    }
+    export function create(uri: URI): NotebookCellModelResource {
+        return { notebookCellModelUri: uri };
+    }
+}
+
 export enum NotebookCellExecutionState {
     Unconfirmed = 1,
     Pending = 2,

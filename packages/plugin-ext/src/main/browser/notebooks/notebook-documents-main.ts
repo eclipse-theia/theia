@@ -102,6 +102,12 @@ export class NotebookDocumentsMainImpl implements NotebookDocumentsMain {
                         case NotebookCellsChangeType.ChangeCellInternalMetadata:
                             eventDto.rawEvents.push(e);
                             break;
+                        case NotebookCellsChangeType.ChangeDocumentMetadata:
+                            eventDto.rawEvents.push({
+                                kind: e.kind,
+                                metadata: e.metadata
+                            });
+                            break;
                     }
                 }
 
