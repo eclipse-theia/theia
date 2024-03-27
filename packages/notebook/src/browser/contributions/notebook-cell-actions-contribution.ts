@@ -282,7 +282,7 @@ export class NotebookCellActionContribution implements MenuContribution, Command
             (notebookModel, cell) => {
                 const index = notebookModel.cells.indexOf(cell);
                 if (index < notebookModel.cells.length - 1) {
-                    this.notebookExecutionService.executeNotebookCells(notebookModel, notebookModel.cells.slice(index + 1).filter(c => c.cellKind === CellKind.Code));
+                    this.notebookExecutionService.executeNotebookCells(notebookModel, notebookModel.cells.slice(index).filter(c => c.cellKind === CellKind.Code));
                 }
             })
         );
