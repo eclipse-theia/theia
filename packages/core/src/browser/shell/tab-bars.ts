@@ -1212,10 +1212,12 @@ export class SideTabBar extends ScrollableTabBar {
                 let overflowStartIndex = -1;
                 for (let i = 0; i < n; i++) {
                     const hiddenTab = hiddenContent.children[i];
-                    // Extract tab padding from the computed style
+                    // Extract tab padding and margin from the computed style
                     const tabStyle = window.getComputedStyle(hiddenTab);
-                    const paddingTop = parseFloat(tabStyle.paddingTop!);
-                    const paddingBottom = parseFloat(tabStyle.paddingBottom!);
+                    const paddingTop = tabStyle.paddingTop ? parseFloat(tabStyle.paddingTop) : 0;
+                    const paddingBottom = tabStyle.paddingBottom ? parseFloat(tabStyle.paddingBottom) : 0;
+                    const marginTop = tabStyle.marginTop ? parseFloat(tabStyle.marginTop) : 0;
+                    const marginBottom = tabStyle.marginBottom ? parseFloat(tabStyle.marginBottom) : 0;
                     const rd: Partial<SideBarRenderData> = {
                         paddingTop,
                         paddingBottom
@@ -1231,28 +1233,20 @@ export class SideTabBar extends ScrollableTabBar {
                     if (iconElements.length === 1) {
                         const icon = iconElements[0];
                         rd.iconSize = { width: icon.clientWidth, height: icon.clientHeight };
-                        actualWidth += icon.clientHeight + paddingTop + paddingBottom + this.tabRowGap;
+                        actualWidth += icon.clientHeight + paddingTop + paddingBottom + marginTop;
 
-                        if (actualWidth > availableWidth && i !== 0) {
+                        if (actualWidth > availableWidth) {
                             rd.visible = false;
                             if (overflowStartIndex === -1) {
                                 overflowStartIndex = i;
                             }
                         }
+                        // Add the tab row gap to the actual width after the visibility check
+                        actualWidth += marginBottom + this.tabRowGap;
                         renderData[i] = rd;
                     }
                 }
 
-                // Special handling if only one element is overflowing.
-                if (overflowStartIndex === n - 1 && renderData[overflowStartIndex]) {
-                    if (!this.tabsOverflowData) {
-                        overflowStartIndex--;
-                        renderData[overflowStartIndex].visible = false;
-                    } else {
-                        renderData[overflowStartIndex].visible = true;
-                        overflowStartIndex = -1;
-                    }
-                }
                 // Render into the visible node
                 this.renderTabs(this.contentNode, renderData);
                 this.computeOverflowingTabsData(overflowStartIndex);
