@@ -16,38 +16,59 @@
 import { UUID } from '@theia/core/shared/@phosphor/coreutils';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { Terminal, TerminalOptions, PseudoTerminalOptions, ExtensionTerminalOptions, TerminalState } from '@theia/plugin';
-import { TerminalServiceExt, TerminalServiceMain, PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc';
+import { TerminalServiceExt, TerminalServiceMain, PLUGIN_RPC_CONTEXT, Plugin } from '../common/plugin-api-rpc';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { Event, Emitter } from '@theia/core/lib/common/event';
 import { MultiKeyMap } from '@theia/core/lib/common/collections';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import * as theia from '@theia/plugin';
 import * as Converter from './type-converters';
-import { Disposable, EnvironmentVariableMutatorType, TerminalExitReason, ThemeIcon } from './types-impl';
+import { Disposable, EnvironmentVariableMutatorType, TerminalExitReason, ThemeIcon, URI } from './types-impl';
 import { NO_ROOT_URI, SerializableEnvironmentVariableCollection } from '@theia/terminal/lib/common/shell-terminal-protocol';
 import { ProvidedTerminalLink } from '../common/plugin-api-rpc-model';
-import { ThemeIcon as MonacoThemeIcon } from '@theia/monaco-editor-core/esm/vs/base/common/themables';
+import { ThemeIcon as MonacoThemeIcon, ThemeColor as MonacoThemeColor } from '@theia/monaco-editor-core/esm/vs/base/common/themables';
+import { PluginSharedStyle } from '../main/browser/plugin-shared-style';
+import { PluginIconPath } from './plugin-icon-path';
+import { IconUrl } from '../common';
+import { DisposableCollection } from '@theia/core';
 
-export function getIconUris(iconPath: theia.TerminalOptions['iconPath']): { id: string } | undefined {
+export function getIconUris(iconPath: theia.TerminalOptions['iconPath']): MonacoThemeIcon | IconUrl | undefined {
     if (ThemeIcon.is(iconPath)) {
         return { id: iconPath.id };
+    } else if (typeof iconPath === 'object' && 'light' in iconPath) {
+        return { light: iconPath.light.toString(), dark: iconPath.dark.toString() };
+    } else if (typeof iconPath === 'string') {
+        return iconPath;
     }
     return undefined;
 }
 
-export function getIconClass(options: theia.TerminalOptions | theia.ExtensionTerminalOptions): string | undefined {
-    const iconClass = getIconUris(options.iconPath);
-    if (iconClass) {
-        return MonacoThemeIcon.asClassName(iconClass);
+export function getIconClass(
+    options: theia.TerminalOptions | theia.ExtensionTerminalOptions,
+    sharedStyle: PluginSharedStyle, disposables: DisposableCollection
+): string | ThemeIcon | undefined {
+    const iconUriOrCodicon = getIconUris(options.iconPath);
+    const iconColor = MonacoThemeColor.isThemeColor(options.color) ? options.color : undefined;
+    let iconClass;
+    if (iconUriOrCodicon) {
+        if (MonacoThemeIcon.isThemeIcon(iconUriOrCodicon)) {
+            iconClass = MonacoThemeIcon.asClassName(iconUriOrCodicon);
+        } else {
+            const iconReference = sharedStyle.toIconClass(iconUriOrCodicon);
+            disposables.push(iconReference);
+            iconClass = iconReference.object.iconClass;
+        }
+    } else {
+        iconClass = (MonacoThemeIcon.asClassName({ id: 'terminal' }));
     }
-    return undefined;
+    return iconColor ? { id: iconClass, color: { id: iconColor.id } } : iconClass;
 }
 
 /**
  * Provides high level terminal plugin api to use in the Theia plugins.
  * This service allow(with help proxy) create and use terminal emulator.
  */
- @injectable()
+@injectable()
 export class TerminalServiceExtImpl implements TerminalServiceExt {
     private readonly proxy: TerminalServiceMain;
 
@@ -97,6 +118,7 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
     }
 
     createTerminal(
+        extension: Plugin,
         nameOrOptions: TerminalOptions | PseudoTerminalOptions | ExtensionTerminalOptions | (string | undefined),
         shellPath?: string, shellArgs?: string[] | string
     ): Terminal {
@@ -133,6 +155,27 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
                     }
                 }
             }
+        }
+
+        if (typeof nameOrOptions === 'object' && 'iconPath' in nameOrOptions) {
+            const iconPath = nameOrOptions.iconPath;
+            if (ThemeIcon.is(iconPath)) {
+                options.iconPath = iconPath;
+            } else if (typeof iconPath === 'string' || (typeof iconPath === 'object' && ('light' in iconPath || 'path' in iconPath))) {
+                const converted = PluginIconPath.toUrl(iconPath, extension);
+                if (typeof converted === 'string') {
+                    options.iconPath = URI.parse(converted);
+                } else if (typeof converted === 'object' && ('light' in converted)) {
+                    options.iconPath = {
+                        light: URI.parse(converted.light),
+                        dark: URI.parse(converted.dark)
+                    };
+                }
+            }
+        }
+
+        if (typeof nameOrOptions === 'object' && 'color' in nameOrOptions) {
+            options.color = nameOrOptions.color;
         }
 
         this.proxy.$createTerminal(id, options, parentId, !!pseudoTerminal);

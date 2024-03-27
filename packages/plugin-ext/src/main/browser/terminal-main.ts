@@ -30,6 +30,7 @@ import { getIconClass } from '../../plugin/terminal-ext';
 import { PluginTerminalRegistry } from './plugin-terminal-registry';
 import { CancellationToken } from '@theia/core';
 import { HostedPluginSupport } from '../../hosted/browser/hosted-plugin';
+import { PluginSharedStyle } from './plugin-shared-style';
 import debounce = require('@theia/core/shared/lodash.debounce');
 
 interface TerminalObserverData {
@@ -49,6 +50,7 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, TerminalLin
     private readonly hostedPluginSupport: HostedPluginSupport;
     private readonly shell: ApplicationShell;
     private readonly extProxy: TerminalServiceExt;
+    private readonly sharedStyle: PluginSharedStyle;
     private readonly shellTerminalServer: ShellTerminalServerProxy;
     private readonly terminalLinkProviders: string[] = [];
 
@@ -60,6 +62,7 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, TerminalLin
         this.terminalProfileService = container.get(TerminalProfileService);
         this.pluginTerminalRegistry = container.get(PluginTerminalRegistry);
         this.hostedPluginSupport = container.get(HostedPluginSupport);
+        this.sharedStyle = container.get(PluginSharedStyle);
         this.shell = container.get(ApplicationShell);
         this.shellTerminalServer = container.get(ShellTerminalServerProxy);
         this.extProxy = rpc.getProxy(MAIN_RPC_CONTEXT.TERMINAL_EXT);
@@ -153,7 +156,7 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, TerminalLin
         const terminal = await this.terminals.newTerminal({
             id,
             title: options.name,
-            iconClass: getIconClass(options),
+            iconClass: getIconClass(options, this.sharedStyle, this.toDispose),
             shellPath: options.shellPath,
             shellArgs: options.shellArgs,
             cwd: options.cwd ? new URI(options.cwd) : undefined,

@@ -3166,7 +3166,7 @@ export module '@theia/plugin' {
         /**
          * The icon path or {@link ThemeIcon} for the terminal.
          */
-        iconPath?: ThemeIcon;
+        iconPath?: Uri | { light: Uri; dark: Uri } | ThemeIcon;
 
         /**
          * The icon {@link ThemeColor} for the terminal.
@@ -3287,7 +3287,7 @@ export module '@theia/plugin' {
         /**
          * The icon path or {@link ThemeIcon} for the terminal.
          */
-        iconPath?: ThemeIcon;
+        iconPath?: Uri | { light: Uri; dark: Uri } | ThemeIcon;
 
         /**
          * The icon {@link ThemeColor} for the terminal.
