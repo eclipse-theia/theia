@@ -109,7 +109,15 @@ export class MonacoTextModelService implements ITextModelService {
         return this._models.acquire(raw.toString());
     }
 
-    protected async loadModel(uri: URI): Promise<MonacoEditorModel> {
+    /**
+     * creates a model which is not saved by the model service.
+     * this will therefore also not be created on backend side.
+     */
+    createUnmangedModel(raw: monaco.Uri | URI): Promise<MonacoEditorModel> {
+        return this.loadModel(new URI(raw.toString()));
+    }
+
+    async loadModel(uri: URI): Promise<MonacoEditorModel> {
         await this.editorPreferences.ready;
         const resource = await this.resourceProvider(uri);
         const model = await (await this.createModel(resource)).load();

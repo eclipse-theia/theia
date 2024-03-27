@@ -357,6 +357,18 @@ export class NotebookDocument implements Disposable {
                 const extCell = new Cell(this, this.editorsAndDocuments, cell);
                 if (!initialization) {
                     addedCellDocuments.push(Cell.asModelAddData(this.apiNotebook, cell));
+                    this.editorsAndDocuments.$acceptEditorsAndDocumentsDelta({
+                        addedDocuments: [
+                            {
+                                uri: cell.uri,
+                                versionId: 1,
+                                lines: cell.source,
+                                EOL: cell.eol,
+                                modeId: '',
+                                isDirty: false
+                            }
+                        ]
+                    });
                 }
                 return extCell;
             });
