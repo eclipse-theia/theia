@@ -40,8 +40,9 @@ import { NotebookKernelHistoryService } from './service/notebook-kernel-history-
 import { NotebookEditorWidgetService } from './service/notebook-editor-widget-service';
 import { NotebookRendererMessagingService } from './service/notebook-renderer-messaging-service';
 import { NotebookColorContribution } from './contributions/notebook-color-contribution';
+import { NotebookMonacoTextModelService } from './service/notebook-monaco-text-model-service';
 
-export default new ContainerModule(bind => {
+export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(NotebookColorContribution).toSelf().inSingletonScope();
     bind(ColorContribution).toService(NotebookColorContribution);
 
@@ -86,4 +87,6 @@ export default new ContainerModule(bind => {
     bind(NotebookCellModelFactory).toFactory(ctx => (props: NotebookCellModelProps) =>
         createNotebookCellModelContainer(ctx.container, props).get(NotebookCellModel)
     );
+
+    bind(NotebookMonacoTextModelService).toSelf().inSingletonScope();
 });

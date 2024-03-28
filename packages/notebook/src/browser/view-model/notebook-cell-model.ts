@@ -21,12 +21,12 @@
 import { Disposable, DisposableCollection, Emitter, Event, URI } from '@theia/core';
 import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
-import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import {
     CellKind, NotebookCellCollapseState, NotebookCellInternalMetadata,
     NotebookCellMetadata, CellOutput, CellData, CellOutputItem
 } from '../../common';
 import { NotebookCellOutputsSplice } from '../notebook-types';
+import { NotebookMonacoTextModelService } from '../service/notebook-monaco-text-model-service';
 import { NotebookCellOutputModel } from './notebook-cell-output-model';
 
 export const NotebookCellModelFactory = Symbol('NotebookModelFactory');
@@ -105,8 +105,9 @@ export class NotebookCellModel implements NotebookCell, Disposable {
 
     @inject(NotebookCellModelProps)
     protected readonly props: NotebookCellModelProps;
-    @inject(MonacoTextModelService)
-    protected readonly textModelService: MonacoTextModelService;
+
+    @inject(NotebookMonacoTextModelService)
+    protected readonly textModelService: NotebookMonacoTextModelService;
 
     get outputs(): NotebookCellOutputModel[] {
         return this._outputs;
@@ -290,7 +291,7 @@ export class NotebookCellModel implements NotebookCell, Disposable {
             return this.textModel;
         }
 
-        const ref = await this.textModelService.createModelReference(this.uri);
+        const ref = await this.textModelService.getOrCreateNotebookCellModelReference(this.uri);
         this.textModel = ref.object;
         this.textModel.onDidChangeContent(e => {
             this.props.source = e.model.getText();
