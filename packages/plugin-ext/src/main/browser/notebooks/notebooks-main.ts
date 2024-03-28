@@ -14,17 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CancellationToken, DisposableCollection, Emitter, Event } from '@theia/core';
+import { CancellationToken, DisposableCollection, Emitter, Event, URI } from '@theia/core';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
-import { NotebookCellStatusBarItem, NotebookData, TransientOptions } from '@theia/notebook/lib/common';
-import { NotebookService } from '@theia/notebook/lib/browser';
+import { CellEditType, NotebookCellModelResource, NotebookCellStatusBarItem, NotebookData, NotebookModelResource, TransientOptions } from '@theia/notebook/lib/common';
+import { NotebookService, NotebookWorkspaceEdit } from '@theia/notebook/lib/browser';
 import { Disposable } from '@theia/plugin';
-import { CommandRegistryMain, MAIN_RPC_CONTEXT, NotebooksExt, NotebooksMain } from '../../../common';
+import { CommandRegistryMain, MAIN_RPC_CONTEXT, NotebooksExt, NotebooksMain, WorkspaceEditDto, WorkspaceNotebookCellEditDto } from '../../../common';
 import { RPCProtocol } from '../../../common/rpc-protocol';
 import { NotebookDto } from './notebook-dto';
 import { UriComponents } from '@theia/core/lib/common/uri';
 import { HostedPluginSupport } from '../../../hosted/browser/hosted-plugin';
 import { NotebookModel } from '@theia/notebook/lib/browser/view-model/notebook-model';
+import { NotebookCellModel } from '@theia/notebook/lib/browser/view-model/notebook-cell-model';
 import { interfaces } from '@theia/core/shared/inversify';
 
 export interface NotebookCellStatusBarItemList {
@@ -62,7 +63,9 @@ export class NotebooksMainImpl implements NotebooksMain {
         commands.registerArgumentProcessor({
             processArgument: arg => {
                 if (arg instanceof NotebookModel) {
-                    return arg.uri;
+                    return NotebookModelResource.create(arg.uri);
+                } else if (arg instanceof NotebookCellModel) {
+                    return NotebookCellModelResource.create(arg.uri);
                 }
                 return arg;
             }
@@ -148,3 +151,14 @@ export class NotebooksMainImpl implements NotebooksMain {
     }
 }
 
+export function toNotebookWorspaceEdit(dto: WorkspaceEditDto): NotebookWorkspaceEdit {
+    return {
+        edits: dto.edits.map((edit: WorkspaceNotebookCellEditDto) => ({
+            resource: URI.fromComponents(edit.resource),
+            edit: edit.cellEdit.editType === CellEditType.Replace ? {
+                ...edit.cellEdit,
+                cells: edit.cellEdit.cells.map(cell => NotebookDto.fromNotebookCellDataDto(cell))
+            } : edit.cellEdit
+        }))
+    };
+}

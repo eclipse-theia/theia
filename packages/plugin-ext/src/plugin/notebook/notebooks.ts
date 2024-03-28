@@ -36,7 +36,7 @@ import { NotebookDocument } from './notebook-document';
 import { NotebookEditor } from './notebook-editor';
 import { EditorsAndDocumentsExtImpl } from '../editors-and-documents';
 import { DocumentsExtImpl } from '../documents';
-import { NotebookModelResource } from '@theia/notebook/lib/common';
+import { CellUri, NotebookCellModelResource, NotebookModelResource } from '@theia/notebook/lib/common';
 
 export class NotebooksExtImpl implements NotebooksExt {
 
@@ -86,6 +86,12 @@ export class NotebooksExtImpl implements NotebooksExt {
             processArgument: arg => {
                 if (NotebookModelResource.is(arg)) {
                     return this.documents.get(arg.notebookModelUri.toString())?.apiNotebook;
+                } else if (NotebookCellModelResource.is(arg)) {
+                    const cellUri = CellUri.parse(arg.notebookCellModelUri);
+                    if (cellUri) {
+                        return this.documents.get(cellUri?.notebook.toString())?.getCell(cellUri.handle)?.apiCell;
+                    }
+                    return undefined;
                 } else {
                     return arg;
                 }

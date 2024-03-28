@@ -18,10 +18,15 @@ import { Disposable, Emitter, Event, Resource, URI } from '@theia/core';
 import { Saveable, SaveOptions } from '@theia/core/lib/browser';
 import {
     CellData, CellEditType, CellUri, NotebookCellInternalMetadata,
+    NotebookCellMetadata,
     NotebookCellsChangeType, NotebookCellTextModelSplice, NotebookData,
     NotebookDocumentMetadata,
 } from '../../common';
-import { NotebookContentChangedEvent, NotebookModelWillAddRemoveEvent, CellEditOperation, NullablePartialNotebookCellInternalMetadata } from '../notebook-types';
+import {
+    NotebookContentChangedEvent, NotebookModelWillAddRemoveEvent,
+    CellEditOperation, NullablePartialNotebookCellInternalMetadata,
+    NullablePartialNotebookCellMetadata
+} from '../notebook-types';
 import { NotebookSerializer } from '../service/notebook-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { NotebookCellModel, NotebookCellModelFactory } from './notebook-cell-model';
@@ -285,7 +290,10 @@ export class NotebookModel implements Saveable, Disposable {
                     cell.changeOutputItems(edit.outputId, !!edit.append, edit.items);
                     break;
                 case CellEditType.Metadata:
-                    this.updateNotebookMetadata(edit.metadata, computeUndoRedo);
+                    this.changeCellMetadata(this.cells[cellIndex], edit.metadata, computeUndoRedo);
+                    break;
+                case CellEditType.PartialMetadata:
+                    this.changeCellMetadataPartial(this.cells[cellIndex], edit.metadata, computeUndoRedo);
                     break;
                 case CellEditType.PartialInternalMetadata:
                     this.changeCellInternalMetadataPartial(this.cells[cellIndex], edit.internalMetadata);
@@ -294,6 +302,7 @@ export class NotebookModel implements Saveable, Disposable {
                     this.changeCellLanguage(this.cells[cellIndex], edit.language, computeUndoRedo);
                     break;
                 case CellEditType.DocumentMetadata:
+                    this.updateNotebookMetadata(edit.metadata, computeUndoRedo);
                     break;
                 case CellEditType.Move:
                     this.moveCellToIndex(cellIndex, edit.length, edit.newIdx, computeUndoRedo);
@@ -379,6 +388,38 @@ export class NotebookModel implements Saveable, Disposable {
         this.onDidChangeContentEmitter.fire([{ kind: NotebookCellsChangeType.ChangeDocumentMetadata, metadata: this.metadata }]);
     }
 
+    protected changeCellMetadataPartial(cell: NotebookCellModel, metadata: NullablePartialNotebookCellMetadata, computeUndoRedo: boolean): void {
+        const newMetadata: NotebookCellMetadata = {
+            ...cell.metadata
+        };
+        let k: keyof NullablePartialNotebookCellMetadata;
+        // eslint-disable-next-line guard-for-in
+        for (k in metadata) {
+            const value = metadata[k] ?? undefined;
+            newMetadata[k] = value as unknown;
+        }
+
+        this.changeCellMetadata(cell, newMetadata, computeUndoRedo);
+    }
+
+    protected changeCellMetadata(cell: NotebookCellModel, metadata: NotebookCellMetadata, computeUndoRedo: boolean): void {
+        const triggerDirtyChange = this.isCellMetadataChanged(cell.metadata, metadata);
+
+        if (triggerDirtyChange) {
+            if (computeUndoRedo) {
+                const oldMetadata = cell.metadata;
+                cell.metadata = metadata;
+                this.undoRedoService.pushElement(this.uri,
+                    async () => { cell.metadata = oldMetadata; },
+                    async () => { cell.metadata = metadata; }
+                );
+            }
+        }
+
+        cell.metadata = metadata;
+        this.onDidChangeContentEmitter.fire([{ kind: NotebookCellsChangeType.ChangeCellMetadata, index: this.cells.indexOf(cell), metadata: cell.metadata }]);
+    }
+
     protected changeCellLanguage(cell: NotebookCellModel, languageId: string, computeUndoRedo: boolean): void {
         if (cell.language === languageId) {
             return;
@@ -407,4 +448,18 @@ export class NotebookModel implements Saveable, Disposable {
     protected getCellIndexByHandle(handle: number): number {
         return this.cells.findIndex(c => c.handle === handle);
     }
+
+    protected isCellMetadataChanged(a: NotebookCellMetadata, b: NotebookCellMetadata): boolean {
+        const keys = new Set([...Object.keys(a || {}), ...Object.keys(b || {})]);
+        for (const key of keys) {
+            if (
+                (a[key as keyof NotebookCellMetadata] !== b[key as keyof NotebookCellMetadata])
+            ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
 }
