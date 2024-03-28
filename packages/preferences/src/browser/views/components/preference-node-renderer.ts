@@ -143,7 +143,10 @@ export class PreferenceHeaderRenderer extends PreferenceNodeRenderer {
         wrapper.id = `${this.preferenceNode.id}-editor`;
         const isCategory = Preference.TreeNode.isTopLevel(this.preferenceNode);
         const hierarchyClassName = isCategory ? HEADER_CLASS : SUBHEADER_CLASS;
-        const name = this.labelProvider.getName(this.preferenceNode);
+        let name = this.labelProvider.getName(this.preferenceNode);
+        if (Preference.CompositeTreeNode.is(this.preferenceNode)) {
+            name = this.preferenceNode.title ?? name;
+        }
         const label = document.createElement('li');
         label.classList.add('settings-section-title', hierarchyClassName);
         label.textContent = name;

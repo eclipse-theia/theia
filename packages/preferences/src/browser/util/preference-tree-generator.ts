@@ -111,7 +111,7 @@ export class PreferenceTreeGenerator {
                 const subgroupName = this.getSubgroupName(labels, groupID);
                 const subgroupID = [groupID, subgroupName].join('.');
                 const toplevelParent = this.getOrCreatePreferencesGroup(groupID, groupID, root, groups);
-                const immediateParent = subgroupName && this.getOrCreatePreferencesGroup(subgroupID, groupID, toplevelParent, groups);
+                const immediateParent = subgroupName && this.getOrCreatePreferencesGroup(subgroupID, groupID, toplevelParent, groups, property);
                 this.createLeafNode(propertyName, immediateParent || toplevelParent, property);
             }
         }
@@ -192,7 +192,7 @@ export class PreferenceTreeGenerator {
         return newNode;
     }
 
-    protected createPreferencesGroup(id: string, group: string, root: CompositeTreeNode): Preference.CompositeTreeNode {
+    protected createPreferencesGroup(id: string, group: string, root: CompositeTreeNode, property?: PreferenceDataProperty): Preference.CompositeTreeNode {
         const newNode = {
             id: `${group}@${id}`,
             visible: true,
@@ -201,6 +201,7 @@ export class PreferenceTreeGenerator {
             expanded: false,
             selected: false,
             depth: 0,
+            title: property?.title,
         };
         const isTopLevel = Preference.TreeNode.isTopLevel(newNode);
         if (!isTopLevel) {
@@ -216,10 +217,11 @@ export class PreferenceTreeGenerator {
         return this.topLevelCategories.get(id);
     }
 
-    protected getOrCreatePreferencesGroup(id: string, group: string, root: CompositeTreeNode, groups: Map<string, Preference.CompositeTreeNode>): Preference.CompositeTreeNode {
+    protected getOrCreatePreferencesGroup(id: string, group: string, root: CompositeTreeNode, groups: Map<string, Preference.CompositeTreeNode>, property?: PreferenceDataProperty):
+        Preference.CompositeTreeNode {
         const existingGroup = groups.get(id);
         if (existingGroup) { return existingGroup; }
-        const newNode = this.createPreferencesGroup(id, group, root);
+        const newNode = this.createPreferencesGroup(id, group, root, property);
         groups.set(id, newNode);
         return newNode;
     };
