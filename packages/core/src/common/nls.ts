@@ -83,7 +83,9 @@ class LocalizationKeyProvider {
 
     private preferredKeys = new Set([
         // We only want the `File` translation used in the menu
-        'vscode/fileActions.contribution/filesCategory'
+        'vscode/fileActions.contribution/filesCategory',
+        // Needed for `Close Editor` translation
+        'vscode/editor.contribution/closeEditor'
     ]);
     private data = this.buildData();
 

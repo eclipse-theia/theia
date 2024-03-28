@@ -66,10 +66,9 @@ export class NotebookCodeCellRenderer implements CellRenderer {
     render(notebookModel: NotebookModel, cell: NotebookCellModel, handle: number): React.ReactNode {
         return <div>
             <div className='theia-notebook-cell-with-sidebar'>
-                <div>
+                <div className='theia-notebook-cell-sidebar'>
                     {this.notebookCellToolbarFactory.renderSidebar(NotebookCellActionContribution.CODE_CELL_SIDEBAR_MENU, notebookModel, cell)}
-                    {/* cell-execution-order needs an own component. Could be a little more complicated
-                    <p className='theia-notebook-code-cell-execution-order'>{`[${cell.exec ?? ' '}]`}</p> */}
+                    <CodeCellExecutionOrder cell={cell} />
                 </div>
                 <div className='theia-notebook-cell-editor-container'>
                     <CellEditor notebookModel={notebookModel} cell={cell}
@@ -77,7 +76,7 @@ export class NotebookCodeCellRenderer implements CellRenderer {
                         notebookContextManager={this.notebookContextManager}
                         notebookViewportService={this.notebookViewportService}
                         fontInfo={this.getOrCreateMonacoFontInfo()} />
-                    <NotebookCodeCellStatus cell={cell} executionStateService={this.executionStateService}></NotebookCodeCellStatus>
+                    <NotebookCodeCellStatus cell={cell} executionStateService={this.executionStateService} onClick={() => cell.requestFocusEditor()}></NotebookCodeCellStatus>
                 </div >
             </div >
             <div className='theia-notebook-cell-with-sidebar'>
@@ -111,6 +110,7 @@ export class NotebookCodeCellRenderer implements CellRenderer {
 export interface NotebookCodeCellStatusProps {
     cell: NotebookCellModel;
     executionStateService: NotebookExecutionStateService;
+    onClick: () => void;
 }
 
 export interface NotebookCodeCellStatusState {
@@ -153,7 +153,7 @@ export class NotebookCodeCellStatus extends React.Component<NotebookCodeCellStat
     }
 
     override render(): React.ReactNode {
-        return <div className='notebook-cell-status'>
+        return <div className='notebook-cell-status' onClick={() => this.props.onClick()}>
             <div className='notebook-cell-status-left'>
                 {this.renderExecutionState()}
             </div>
@@ -268,4 +268,21 @@ export class NotebookCodeCellOutputs extends React.Component<NotebookCellOutputP
 
     }
 
+}
+
+interface NotebookCellExecutionOrderProps {
+    cell: NotebookCellModel;
+}
+
+function CodeCellExecutionOrder({ cell }: NotebookCellExecutionOrderProps): React.JSX.Element {
+    const [executionOrder, setExecutionOrder] = React.useState(cell.internalMetadata.executionOrder ?? ' ');
+
+    React.useEffect(() => {
+        const listener = cell.onDidChangeInternalMetadata(e => {
+            setExecutionOrder(cell.internalMetadata.executionOrder ?? ' ');
+        });
+        return () => listener.dispose();
+    }, []);
+
+    return <span className='theia-notebook-code-cell-execution-order'>{`[${executionOrder}]`}</span>;
 }

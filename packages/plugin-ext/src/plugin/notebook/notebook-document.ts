@@ -287,7 +287,8 @@ export class NotebookDocument implements Disposable {
             } else if (rawEvent.kind === notebookCommon.NotebookCellsChangeType.Output) {
                 this.setCellOutputs(rawEvent.index, rawEvent.outputs);
                 relaxedCellChanges.push({ cell: this.cells[rawEvent.index].apiCell, outputs: this.cells[rawEvent.index].apiCell.outputs });
-
+            } else if (rawEvent.kind === notebookCommon.NotebookCellsChangeType.ChangeDocumentMetadata) {
+                this.metadata = result.metadata ?? {};
                 // } else if (rawEvent.kind === notebookCommon.NotebookCellsChangeType.OutputItem) {
                 //     this._setCellOutputItems(rawEvent.index, rawEvent.outputId, rawEvent.append, rawEvent.outputItems);
                 //     relaxedCellChanges.push({ cell: this.cells[rawEvent.index].apiCell, outputs: this.cells[rawEvent.index].apiCell.outputs });

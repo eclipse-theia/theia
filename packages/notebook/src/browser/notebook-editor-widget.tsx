@@ -243,4 +243,14 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
         this.viewportService.dispose();
         super.dispose();
     }
+
+    protected override onAfterShow(msg: Message): void {
+        super.onAfterShow(msg);
+        this.notebookEditorService.notebookEditorFocusChanged(this, true);
+    }
+
+    protected override onAfterHide(msg: Message): void {
+        super.onAfterHide(msg);
+        this.notebookEditorService.notebookEditorFocusChanged(this, false);
+    }
 }

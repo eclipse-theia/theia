@@ -81,11 +81,11 @@ const api: TheiaCoreAPI = {
     },
     attachSecurityToken: (endpoint: string) => ipcRenderer.invoke(CHANNEL_ATTACH_SECURITY_TOKEN, endpoint),
 
-    popup: async function (menu: MenuDto[], x: number, y: number, onClosed: () => void): Promise<number> {
+    popup: async function (menu: MenuDto[], x: number, y: number, onClosed: () => void, windowName?: string): Promise<number> {
         const menuId = nextMenuId++;
         const handlers = new Map<number, () => void>();
         commandHandlers.set(menuId, handlers);
-        const handle = await ipcRenderer.invoke(CHANNEL_OPEN_POPUP, menuId, convertMenu(menu, handlers), x, y);
+        const handle = await ipcRenderer.invoke(CHANNEL_OPEN_POPUP, menuId, convertMenu(menu, handlers), x, y, windowName);
         const closeListener = () => {
             ipcRenderer.removeListener(CHANNEL_ON_CLOSE_POPUP, closeListener);
             commandHandlers.delete(menuId);

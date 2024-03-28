@@ -82,37 +82,14 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
     }
 
     createSecondaryWindow(widget: ExtractableWidget, shell: ApplicationShell): Window | undefined {
-        const win = this.doCreateSecondaryWindow(widget, shell);
-        if (win) {
-            this.secondaryWindows.push(win);
-            win.addEventListener('close', () => {
-                const extIndex = this.secondaryWindows.indexOf(win);
-                if (extIndex > -1) {
-                    this.secondaryWindows.splice(extIndex, 1);
-                };
-            });
-        }
-        return win;
-    }
-
-    protected findWindow<T>(windowName: string): Window | undefined {
-        for (const w of this.secondaryWindows) {
-            if (w.name === windowName) {
-                return w;
-            }
-        }
-        return undefined;
-    }
-
-    protected doCreateSecondaryWindow(widget: ExtractableWidget, shell: ApplicationShell): Window | undefined {
-        let options;
         const [height, width, left, top] = this.findSecondaryWindowCoordinates(widget);
-        options = `popup=1,width=${width},height=${height},left=${left},top=${top}`;
+        let options = `popup=1,width=${width},height=${height},left=${left},top=${top}`;
         if (this.preferenceService.get('window.secondaryWindowAlwaysOnTop')) {
             options += ',alwaysOnTop=true';
         }
         const newWindow = window.open(DefaultSecondaryWindowService.SECONDARY_WINDOW_URL, this.nextWindowId(), options) ?? undefined;
         if (newWindow) {
+            this.secondaryWindows.push(newWindow);
             newWindow.addEventListener('DOMContentLoaded', () => {
                 newWindow.addEventListener('beforeunload', evt => {
                     const saveable = Saveable.get(widget);
@@ -124,15 +101,36 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
                     }
                 }, { capture: true });
 
-                newWindow.addEventListener('close', () => {
+                newWindow.addEventListener('unload', () => {
                     const saveable = Saveable.get(widget);
                     shell.closeWidget(widget.id, {
                         save: !!saveable && saveable.dirty && saveable.autoSave !== 'off'
                     });
+
+                    const extIndex = this.secondaryWindows.indexOf(newWindow);
+                    if (extIndex > -1) {
+                        this.secondaryWindows.splice(extIndex, 1);
+                    };
                 });
+                this.windowCreated(newWindow, widget, shell);
             });
         }
         return newWindow;
+    }
+
+    protected windowCreated(newWindow: Window, widget: ExtractableWidget, shell: ApplicationShell): void {
+        newWindow.addEventListener('unload', () => {
+            shell.closeWidget(widget.id);
+        });
+    }
+
+    protected findWindow<T>(windowName: string): Window | undefined {
+        for (const w of this.secondaryWindows) {
+            if (w.name === windowName) {
+                return w;
+            }
+        }
+        return undefined;
     }
 
     protected findSecondaryWindowCoordinates(widget: ExtractableWidget): (number | undefined)[] {

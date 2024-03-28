@@ -37,11 +37,17 @@ import { RemoteCopyContribution, RemoteCopyRegistry } from './setup/remote-copy-
 import { MainCopyContribution } from './setup/main-copy-contribution';
 import { RemoteNativeDependencyContribution } from './setup/remote-native-dependency-contribution';
 import { AppNativeDependencyContribution } from './setup/app-native-dependency-contribution';
+import { RemotePortForwardingProviderImpl } from './remote-port-forwarding-provider';
+import { RemotePortForwardingProvider, RemoteRemotePortForwardingProviderPath } from '../electron-common/remote-port-forwarding-provider';
 
 export const remoteConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {
     bind(RemoteSSHConnectionProviderImpl).toSelf().inSingletonScope();
     bind(RemoteSSHConnectionProvider).toService(RemoteSSHConnectionProviderImpl);
     bindBackendService(RemoteSSHConnectionProviderPath, RemoteSSHConnectionProvider);
+
+    bind(RemotePortForwardingProviderImpl).toSelf().inSingletonScope();
+    bind(RemotePortForwardingProvider).toService(RemotePortForwardingProviderImpl);
+    bindBackendService(RemoteRemotePortForwardingProviderPath, RemotePortForwardingProvider);
 });
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {

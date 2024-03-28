@@ -44,6 +44,7 @@ import { SecondaryWindowHandler } from '../secondary-window-handler';
 import URI from '../../common/uri';
 import { OpenerService } from '../opener-service';
 import { PreviewableWidget } from '../widgets/previewable-widget';
+import { WindowService } from '../window/window-service';
 
 /** The class name added to ApplicationShell instances. */
 const APPLICATION_SHELL_CLASS = 'theia-ApplicationShell';
@@ -273,6 +274,7 @@ export class ApplicationShell extends Widget {
         @inject(CorePreferences) protected readonly corePreferences: CorePreferences,
         @inject(SaveResourceService) protected readonly saveResourceService: SaveResourceService,
         @inject(SecondaryWindowHandler) protected readonly secondaryWindowHandler: SecondaryWindowHandler,
+        @inject(WindowService) protected readonly windowService: WindowService
     ) {
         super(options as Widget.IOptions);
 
@@ -338,8 +340,8 @@ export class ApplicationShell extends Widget {
         this.rightPanelHandler.dockPanel.widgetRemoved.connect((_, widget) => this.fireDidRemoveWidget(widget));
 
         this.secondaryWindowHandler.init(this);
-        this.secondaryWindowHandler.onDidAddWidget(widget => this.fireDidAddWidget(widget));
-        this.secondaryWindowHandler.onDidRemoveWidget(widget => this.fireDidRemoveWidget(widget));
+        this.secondaryWindowHandler.onDidAddWidget(([widget, window]) => this.fireDidAddWidget(widget));
+        this.secondaryWindowHandler.onDidRemoveWidget(([widget, window]) => this.fireDidRemoveWidget(widget));
 
         this.layout = this.createLayout();
 
@@ -1323,20 +1325,23 @@ export class ApplicationShell extends Widget {
         let widget = find(this.mainPanel.widgets(), w => w.id === id);
         if (widget) {
             this.mainPanel.activateWidget(widget);
-            return widget;
         }
-        widget = find(this.bottomPanel.widgets(), w => w.id === id);
-        if (widget) {
-            this.expandBottomPanel();
-            this.bottomPanel.activateWidget(widget);
-            return widget;
+        if (!widget) {
+            widget = find(this.bottomPanel.widgets(), w => w.id === id);
+            if (widget) {
+                this.expandBottomPanel();
+                this.bottomPanel.activateWidget(widget);
+            }
         }
-        widget = this.leftPanelHandler.activate(id);
-        if (widget) {
-            return widget;
+        if (!widget) {
+            widget = this.leftPanelHandler.activate(id);
         }
-        widget = this.rightPanelHandler.activate(id);
+
+        if (!widget) {
+            widget = this.rightPanelHandler.activate(id);
+        }
         if (widget) {
+            this.windowService.focus();
             return widget;
         }
         return this.secondaryWindowHandler.activateWidget(id);
@@ -1433,17 +1438,19 @@ export class ApplicationShell extends Widget {
             if (tabBar) {
                 tabBar.currentTitle = widget.title;
             }
-            return widget;
         }
-        widget = this.leftPanelHandler.expand(id);
+        if (!widget) {
+            widget = this.leftPanelHandler.expand(id);
+        }
+        if (!widget) {
+            widget = this.rightPanelHandler.expand(id);
+        }
         if (widget) {
+            this.windowService.focus();
             return widget;
+        } else {
+            return this.secondaryWindowHandler.revealWidget(id);
         }
-        widget = this.rightPanelHandler.expand(id);
-        if (widget) {
-            return widget;
-        }
-        return this.secondaryWindowHandler.revealWidget(id);
     }
 
     /**

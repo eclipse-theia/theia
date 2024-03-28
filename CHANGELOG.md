@@ -6,11 +6,13 @@
 
 ## not yet released
 
+- [application-package] bumped the default supported API from `1.86.2` to `1.87.2` [#13514](https://github.com/eclipse-theia/theia/pull/13514) - contributed on behalf of STMicroelectronics
 - [core]  Fix quickpick problems found in IDE testing [#13451](https://github.com/eclipse-theia/theia/pull/13451) - contributed on behalf of STMicroelectronics
+- [plugin] Extend TextEditorLineNumbersStyle with Interval [#13458](https://github.com/eclipse-theia/theia/pull/13458) - contributed on behalf of STMicroelectronics
 
 <a name="breaking_changes_not_yet_released">[Breaking Changes:](#breaking_changes_not_yet_released)</a>
+- [core] Add secondary windows support for text editors. [#13493](https://github.com/eclipse-theia/theia/pull/13493 ). The changes in require more extensive patches for our dependencies than before. For this purpose, we are using the `patch-package` library. However, this change requires adopters to add the line  `"postinstall": "theia-patch"` to the `package.json` at the root of their monorepo (where the `node_modules` folder is located). - contributed on behalf of STMicroelectronics
 
-- [component] add here
 
 ## v1.47.0 - 02/29/2024
 

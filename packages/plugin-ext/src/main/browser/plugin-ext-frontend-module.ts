@@ -90,6 +90,7 @@ import { CellOutputWebviewImpl, createCellOutputWebviewContainer } from './noteb
 import { NotebookCellModel } from '@theia/notebook/lib/browser/view-model/notebook-cell-model';
 import { NotebookModel } from '@theia/notebook/lib/browser/view-model/notebook-model';
 import { ArgumentProcessorContribution } from './command-registry-main';
+import { WebviewSecondaryWindowSupport } from './webview/webview-secondary-window-support';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
@@ -187,6 +188,8 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(WebviewWidgetFactory).toDynamicValue(ctx => new WebviewWidgetFactory(ctx.container)).inSingletonScope();
     bind(WidgetFactory).toService(WebviewWidgetFactory);
     bind(WebviewContextKeys).toSelf().inSingletonScope();
+    bind(WebviewSecondaryWindowSupport).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(WebviewSecondaryWindowSupport);
     bind(FrontendApplicationContribution).toService(WebviewContextKeys);
 
     bind(CustomEditorContribution).toSelf().inSingletonScope();

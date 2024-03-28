@@ -129,24 +129,6 @@ module.exports = [{
     module: {
         rules: [
             {
-                // Removes the host check in PhosphorJS to enable moving widgets to secondary windows.
-                test: /widget\\.js$/,
-                loader: 'string-replace-loader',
-                include: /node_modules[\\\\/]@phosphor[\\\\/]widgets[\\\\/]lib/,
-                options: {
-                    multiple: [
-                        {
-                            search: /document\\.body\\.contains\\(widget.node\\)/gm,
-                            replace: 'widget.node.ownerDocument.body.contains(widget.node)'
-                        },
-                        {
-                            search: /\\!document\\.body\\.contains\\(host\\)/gm,
-                            replace: ' !host.ownerDocument.body.contains(host)'
-                        }
-                    ]
-                }
-            },
-            {
                 test: /\\.css$/,
                 exclude: /materialcolors\\.css$|\\.useable\\.css$/,
                 use: ['style-loader', 'css-loader']
@@ -280,6 +262,10 @@ module.exports = [{
             {
                 test: /\.css$/i,
                 use: [MiniCssExtractPlugin.loader, "css-loader"]
+            },
+            {
+                test: /\.wasm$/,
+                type: 'asset/resource'
             }
         ]
     },
@@ -379,6 +365,7 @@ for (const [entryPointName, entryPointPath] of Object.entries({
     ${this.ifPackage('@theia/filesystem', "'nsfw-watcher': '@theia/filesystem/lib/node/nsfw-watcher',")}
     ${this.ifPackage('@theia/plugin-ext-vscode', "'plugin-vscode-init': '@theia/plugin-ext-vscode/lib/node/plugin-vscode-init',")}
     ${this.ifPackage('@theia/api-provider-sample', "'gotd-api-init': '@theia/api-provider-sample/lib/plugin/gotd-api-init',")}
+    ${this.ifPackage('@theia/git', "'git-locator-host': '@theia/git/lib/node/git-locator/git-locator-host',")}
 })) {
     commonJsLibraries[entryPointName] = {
         import: require.resolve(entryPointPath),
@@ -433,9 +420,7 @@ const config = {
         ${this.ifPackage('@theia/plugin-ext-headless', () => `// Theia Headless Plugin support:
         'plugin-host-headless': require.resolve('@theia/plugin-ext-headless/lib/hosted/node/plugin-host-headless'),`)}
         ${this.ifPackage('@theia/process', () => `// Make sure the node-pty thread worker can be executed:
-        'worker/conoutSocketWorker': require.resolve('node-pty/lib/worker/conoutSocketWorker'),`)}
-        ${this.ifPackage('@theia/git', () => `// Ensure the git locator process can the started
-        'git-locator-host': require.resolve('@theia/git/lib/node/git-locator/git-locator-host'),`)}
+        'worker/conoutSocketWorker': require.resolve('node-pty/lib/worker/conoutSocketWorker'),`)}        
         ${this.ifElectron("'electron-main': require.resolve('./src-gen/backend/electron-main'),")}
         ${this.ifPackage('@theia/dev-container', () => `// VS Code Dev-Container communication:
         'dev-container-server': require.resolve('@theia/dev-container/lib/dev-container-server/dev-container-server'),`)}

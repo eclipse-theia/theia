@@ -113,6 +113,10 @@ export class NotebookContextManager {
 
     }
 
+    onDidEditorTextFocus(focus: boolean): void {
+        this.scopedStore.setContext('inputFocus', focus);
+    }
+
     createContextKeyChangedEvent(affectedKeys: string[]): ContextKeyChangeEvent {
         return { affects: keys => affectedKeys.some(key => keys.has(key)) };
     }

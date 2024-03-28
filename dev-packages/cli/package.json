@@ -20,7 +20,8 @@
     "src"
   ],
   "bin": {
-    "theia": "./bin/theia"
+    "theia": "./bin/theia",
+    "theia-patch": "./bin/theia-patch.js"
   },
   "scripts": {
     "prepare": "tsc -b",
@@ -30,6 +31,7 @@
     "clean": "theiaext clean"
   },
   "dependencies": {
+    "patch-package": "^8.0.0",
     "@theia/application-manager": "1.47.0",
     "@theia/application-package": "1.47.0",
     "@theia/ffmpeg": "1.47.0",

@@ -54,7 +54,7 @@ interface MarkdownCellProps {
 }
 
 function MarkdownCell({ markdownRenderer, monacoServices, cell, notebookModel, notebookContextManager }: MarkdownCellProps): React.JSX.Element {
-    const [editMode, setEditMode] = React.useState(false);
+    const [editMode, setEditMode] = React.useState(cell.editing);
 
     React.useEffect(() => {
         const listener = cell.onDidRequestCellEditChange(cellEdit => setEditMode(cellEdit));

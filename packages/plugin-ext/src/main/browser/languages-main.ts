@@ -1434,7 +1434,6 @@ export function toMonacoWorkspaceEdit(data: WorkspaceEditDto | undefined): monac
                     metadata: fileEdit.metadata
                 };
             }
-            // TODO implement WorkspaceNotebookCellEditDto
         })
     };
 }

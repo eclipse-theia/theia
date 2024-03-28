@@ -153,7 +153,8 @@ export enum StatusBarAlignment {
 export enum TextEditorLineNumbersStyle {
     Off = 0,
     On = 1,
-    Relative = 2
+    Relative = 2,
+    Interval = 3
 }
 
 /**

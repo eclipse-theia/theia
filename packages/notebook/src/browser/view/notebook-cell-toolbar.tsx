@@ -65,7 +65,7 @@ export class NotebookCellToolbar extends NotebookCellActionBar {
 export class NotebookCellSidebar extends NotebookCellActionBar {
 
     override render(): React.ReactNode {
-        return <div className='theia-notebook-cell-sidebar'>
+        return <div className='theia-notebook-cell-sidebar-toolbar'>
             {this.state.inlineItems.filter(e => e.isVisible()).map(item => this.renderItem(item))}
         </div>;
     }

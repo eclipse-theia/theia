@@ -20,11 +20,11 @@
 
 import {
     CellExecuteUpdateDto, NotebookKernelDto, NotebookKernelsExt, NotebookKernelsMain,
-    NotebookKernelSourceActionDto, NotebookOutputDto, PluginModel, PluginPackage, PLUGIN_RPC_CONTEXT
+    NotebookKernelSourceActionDto, NotebookOutputDto, PluginModel, PLUGIN_RPC_CONTEXT
 } from '../../common';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { UriComponents } from '../../common/uri-components';
-import { CancellationTokenSource, Disposable, DisposableCollection, Emitter, Path } from '@theia/core';
+import { CancellationTokenSource, Disposable, DisposableCollection, Emitter } from '@theia/core';
 import { Cell } from './notebook-document';
 import { NotebooksExtImpl } from './notebooks';
 import { NotebookCellOutputConverter, NotebookCellOutputItem, NotebookKernelSourceAction } from '../type-converters';
@@ -34,6 +34,8 @@ import { CommandRegistryImpl } from '../command-registry';
 import { NotebookCellOutput, NotebookRendererScript, URI } from '../types-impl';
 import { toUriComponents } from '../../main/browser/hierarchy/hierarchy-types-converters';
 import type * as theia from '@theia/plugin';
+import { WebviewsExtImpl } from '../webviews';
+import { WorkspaceExtImpl } from '../workspace';
 
 interface KernelData {
     extensionId: string;
@@ -64,8 +66,21 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
         rpc: RPCProtocol,
         private readonly notebooks: NotebooksExtImpl,
         private readonly commands: CommandRegistryImpl,
+        private readonly webviews: WebviewsExtImpl,
+        workspace: WorkspaceExtImpl
     ) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.NOTEBOOK_KERNELS_MAIN);
+
+        // call onDidChangeSelection for all kernels after trust is granted to inform extensions they can set the kernel as assoiciated
+        // the jupyter extension for example does not set kernel association after trust is granted
+        workspace.onDidGrantWorkspaceTrust(() => {
+            this.kernelData.forEach(kernel => {
+                kernel.associatedNotebooks.forEach(async (_, uri) => {
+                    const notebook = await this.notebooks.waitForNotebookDocument(URI.parse(uri));
+                    kernel.onDidChangeSelection.fire({ selected: true, notebook: notebook.apiNotebook });
+                });
+            });
+        });
     }
 
     private currentHandle = 0;
@@ -216,8 +231,7 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
                 return that.proxy.$postMessage(handle, 'notebook:' + editor?.notebook.uri.toString(), message);
             },
             asWebviewUri(localResource: theia.Uri): theia.Uri {
-                const basePath = PluginPackage.toPluginUrl(extension, '');
-                return URI.from({ path: new Path(basePath).join(localResource.path).toString(), scheme: 'https' });
+                return that.webviews.toGeneralWebviewResource(extension, localResource);
             }
         };
 
@@ -294,20 +308,20 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
         };
     }
 
-    async $acceptNotebookAssociation(handle: number, uri: UriComponents, value: boolean): Promise<void> {
+    async $acceptNotebookAssociation(handle: number, uri: UriComponents, selected: boolean): Promise<void> {
         const obj = this.kernelData.get(handle);
         if (obj) {
             // update data structure
             const notebook = await this.notebooks.waitForNotebookDocument(URI.from(uri));
-            if (value) {
+            if (selected) {
                 obj.associatedNotebooks.set(notebook.uri.toString(), true);
             } else {
                 obj.associatedNotebooks.delete(notebook.uri.toString());
             }
-            console.debug(`NotebookController[${handle}] ASSOCIATE notebook`, notebook.uri.toString(), value);
+            console.debug(`NotebookController[${handle}] ASSOCIATE notebook`, notebook.uri.toString(), selected);
             // send event
             obj.onDidChangeSelection.fire({
-                selected: value,
+                selected: selected,
                 notebook: notebook.apiNotebook
             });
         }

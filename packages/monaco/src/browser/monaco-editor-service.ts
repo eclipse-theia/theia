@@ -143,6 +143,9 @@ export class MonacoEditorService extends StandaloneCodeEditorService {
         }
         const area = (ref && this.shell.getAreaFor(ref)) || 'main';
         const mode = ref && sideBySide ? 'split-right' : undefined;
+        if (area === 'secondaryWindow') {
+            return { area: 'main', mode };
+        }
         return { area, mode, ref };
     }
 

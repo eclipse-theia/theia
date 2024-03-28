@@ -48,6 +48,15 @@ export interface TerminalSplitLocation {
     readonly parentTerminal: string;
 }
 
+export interface TerminalBuffer {
+    readonly length: number;
+    /**
+     * @param start zero based index of the first line to return
+     * @param length the max number or lines to return
+     */
+    getLines(start: number, length: number): string[];
+}
+
 /**
  * Terminal UI widget.
  */
@@ -117,6 +126,10 @@ export abstract class TerminalWidget extends BaseWidget {
 
     /** Event that fires when the terminal input data */
     abstract onData: Event<string>;
+
+    abstract onOutput: Event<string>;
+
+    abstract buffer: TerminalBuffer;
 
     abstract scrollLineUp(): void;
 

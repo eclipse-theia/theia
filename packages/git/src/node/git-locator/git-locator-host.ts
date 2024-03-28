@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import '@theia/core/shared/reflect-metadata';
 import { RpcProxyFactory } from '@theia/core';
 import { IPCEntryPoint } from '@theia/core/lib/node/messaging/ipc-protocol';
 import { GitLocatorImpl } from './git-locator-impl';
