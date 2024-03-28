@@ -4,15 +4,50 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
-## not yet released
+<!-- ## not yet released
+
+<a name="breaking_changes_not_yet_released">[Breaking Changes:](#breaking_changes_not_yet_released)</a> -->
+
+## v1.48.0 - 03/28/2024
 
 - [application-package] bumped the default supported API from `1.86.2` to `1.87.2` [#13514](https://github.com/eclipse-theia/theia/pull/13514) - contributed on behalf of STMicroelectronics
-- [core]  Fix quickpick problems found in IDE testing [#13451](https://github.com/eclipse-theia/theia/pull/13451) - contributed on behalf of STMicroelectronics
-- [plugin] Extend TextEditorLineNumbersStyle with Interval [#13458](https://github.com/eclipse-theia/theia/pull/13458) - contributed on behalf of STMicroelectronics
+- [core] added "New File" default implementation [#13344](https://github.com/eclipse-theia/theia/pull/13344)
+- [core] added logic to check for disposed before sending update message in toolbars [#13454](https://github.com/eclipse-theia/theia/pull/13454) - contributed on behalf of STMicroelectronics
+- [core] fixed default translation of Close Editor command [#13412](https://github.com/eclipse-theia/theia/pull/13412)
+- [core] fixed logic to allow reopening secondary windows [#13509](https://github.com/eclipse-theia/theia/pull/13509) - contributed on behalf of STMicroelectronics
+- [core] fixed rending of quickpick buttons [#13342](https://github.com/eclipse-theia/theia/pull/13342) - contributed on behalf of STMicroelectronics
+- [core] updated logic to remove unneeded URI conversion [#13415](https://github.com/eclipse-theia/theia/pull/13415)
+- [dev-container] added first version of dev-container support [#13372](https://github.com/eclipse-theia/theia/pull/13372)
+- [editor] added secondary window support for text editors [#13493](https://github.com/eclipse-theia/theia/pull/13493) - contributed on behalf of STMicroelectronics
+- [git] fixed detecting changes after git init [#13487](https://github.com/eclipse-theia/theia/pull/13487)
+- [metrics] allowed accessing the metrics endpoint for performance analysis in electron [#13380](https://github.com/eclipse-theia/theia/pull/13380) - contributed on behalf of STMicroelectronics
+- [monaco] fixed monaco quickpick [#13451](https://github.com/eclipse-theia/theia/pull/13451) - contributed on behalf of STMicroelectronics
+- [monaco] fixed rending of quickpick buttons [#13342](https://github.com/eclipse-theia/theia/pull/13342) - contributed on behalf of STMicroelectronics
+- [notebook] added execute cells above/below commands [#13528](https://github.com/eclipse-theia/theia/pull/13528)
+- [notebook] added execution order display to code cells [#13502](https://github.com/eclipse-theia/theia/pull/13502)
+- [notebook] added keybindings to notebook editor [#13497](https://github.com/eclipse-theia/theia/pull/13497)
+- [notebook] added support for custom widget types for notebook outputs [#13517](https://github.com/eclipse-theia/theia/pull/13517)
+- [notebook] fixed cell execution height styling [#13515](https://github.com/eclipse-theia/theia/pull/13515)
+- [notebook] fixed context keys for notebook editor context [#13448](https://github.com/eclipse-theia/theia/pull/13448)
+- [notebook] fixed keybindings triggers when cell editor is focused [#13500](https://github.com/eclipse-theia/theia/pull/13500)
+- [notebook] fixed notebook document metadata edit [#13528](https://github.com/eclipse-theia/theia/pull/13528)
+- [notebook] fixed renaming and moving of open notebooks [#13467](https://github.com/eclipse-theia/theia/pull/13467)
+- [notebook] fixed undo redo keybindings for notebook editor [#13518](https://github.com/eclipse-theia/theia/pull/13518)
+- [notebook] improved focusing of the notebook cell editors [#13516](https://github.com/eclipse-theia/theia/pull/13516)
+- [notebook] improved performance when opening notebooks [#13488](https://github.com/eclipse-theia/theia/pull/13488)
+- [notebook] updated logic to only initialize notebook cell editor when in viewport [#13476](https://github.com/eclipse-theia/theia/pull/13476)
+- [plugin] added `Interval` `TextEditorLineNumbersStyle` [#13458](https://github.com/eclipse-theia/theia/pull/13458) - contributed on behalf of STMicroelectronics
+- [plugin] added terminal observer API [#13402](https://github.com/eclipse-theia/theia/pull/13402)
+- [plugin] changed logic to ensure that showOpenDialog returns correct file URI [#13208](https://github.com/eclipse-theia/theia/pull/13208) - contributed on behalf of STMicroelectronics
+- [plugin] fixed quickpick [#13451](https://github.com/eclipse-theia/theia/pull/13451) - contributed on behalf of STMicroelectronics
+- [plugin] made `acquireVsCodeApi` function available on global objects [#13411](https://github.com/eclipse-theia/theia/pull/13411)
+- [plugin] updated logic to avoid disposal of `QuickInputExt` on hide [#13485](https://github.com/eclipse-theia/theia/pull/13485) - contributed on behalf of STMicroelectronics
+- [remote] added logic to support remote port forwarding [#13439](https://github.com/eclipse-theia/theia/pull/13439)
+- [terminal] added logic to resolve links to workspace files in terminal [#13498](https://github.com/eclipse-theia/theia/pull/13498) - contributed on behalf of STMicroelectronics
+- [terminal] added terminal observer API [#13402](https://github.com/eclipse-theia/theia/pull/13402)
 
-<a name="breaking_changes_not_yet_released">[Breaking Changes:](#breaking_changes_not_yet_released)</a>
+<a name="breaking_changes_1.48.0">[Breaking Changes:](#breaking_changes_1.48.0)</a>
 - [core] Add secondary windows support for text editors. [#13493](https://github.com/eclipse-theia/theia/pull/13493 ). The changes in require more extensive patches for our dependencies than before. For this purpose, we are using the `patch-package` library. However, this change requires adopters to add the line  `"postinstall": "theia-patch"` to the `package.json` at the root of their monorepo (where the `node_modules` folder is located). - contributed on behalf of STMicroelectronics
-
 
 ## v1.47.0 - 02/29/2024
 
