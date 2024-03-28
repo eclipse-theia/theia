@@ -1,5 +1,9 @@
 {
   "debug.breakpoint.editCondition": "Editar condição...",
+  "notebook.cell.insertMarkdownCellAbove": "Inserir célula Markdown acima",
+  "notebook.cell.insertMarkdownCellBelow": "Inserir célula Markdown abaixo",
+  "notebook.cell.to-code-cell": "Alterar célula para código",
+  "notebook.cell.to-markdown-cell": "Alterar Célula para Mardown",
   "terminal:new:profile": "Criar Novo Terminal Integrado a partir de um Perfil",
   "terminal:profile:default": "Escolha o Perfil Terminal padrão",
   "theia": {

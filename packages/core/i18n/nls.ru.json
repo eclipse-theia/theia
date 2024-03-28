@@ -1,5 +1,9 @@
 {
   "debug.breakpoint.editCondition": "Изменить состояние...",
+  "notebook.cell.insertMarkdownCellAbove": "Вставить ячейку для уценки выше",
+  "notebook.cell.insertMarkdownCellBelow": "Вставить ячейку для уценки ниже",
+  "notebook.cell.to-code-cell": "Измените ячейку на код",
+  "notebook.cell.to-markdown-cell": "Измените ячейку на Мардаун",
   "terminal:new:profile": "Создание нового интегрированного терминала из профиля",
   "terminal:profile:default": "Выберите профиль терминала по умолчанию",
   "theia": {
