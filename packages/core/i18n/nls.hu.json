@@ -1,5 +1,9 @@
 {
   "debug.breakpoint.editCondition": "Szerkesztési feltétel...",
+  "notebook.cell.insertMarkdownCellAbove": "Markdown-cella beszúrása fent",
+  "notebook.cell.insertMarkdownCellBelow": "Markdown-cella beszúrása az alábbiakban",
+  "notebook.cell.to-code-cell": "Cellát kódra váltani",
+  "notebook.cell.to-markdown-cell": "Cellát átváltoztatni Mardown-ra",
   "terminal:new:profile": "Új integrált terminál létrehozása profilból",
   "terminal:profile:default": "Válassza ki az alapértelmezett terminálprofilt",
   "theia": {

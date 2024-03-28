@@ -1,5 +1,9 @@
 {
   "debug.breakpoint.editCondition": "Warunek edycji...",
+  "notebook.cell.insertMarkdownCellAbove": "Wstaw komórkę Markdown powyżej",
+  "notebook.cell.insertMarkdownCellBelow": "Wstaw komórkę Markdown poniżej",
+  "notebook.cell.to-code-cell": "Zmień komórkę na kod",
+  "notebook.cell.to-markdown-cell": "Zmień komórkę na Mardown",
   "terminal:new:profile": "Tworzenie nowego zintegrowanego terminalu z profilu",
   "terminal:profile:default": "Wybierz domyślny profil terminala",
   "theia": {
