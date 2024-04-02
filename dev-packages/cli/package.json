@@ -17,7 +17,8 @@
   "files": [
     "bin",
     "lib",
-    "src"
+    "src",
+    "patches"
   ],
   "bin": {
     "theia": "./bin/theia",
