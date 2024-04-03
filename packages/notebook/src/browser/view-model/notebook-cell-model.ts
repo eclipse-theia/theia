@@ -298,6 +298,13 @@ export class NotebookCellModel implements NotebookCell, Disposable {
         });
         return ref.object;
     }
+
+    restartOutputRenderer(outputId: string): void {
+        const output = this.outputs.find(out => out.outputId === outputId);
+        if (output) {
+            this.onDidChangeOutputItemsEmitter.fire(output);
+        }
+    }
 }
 
 function computeRunStartTimeAdjustment(oldMetadata: NotebookCellInternalMetadata, newMetadata: NotebookCellInternalMetadata): number | undefined {

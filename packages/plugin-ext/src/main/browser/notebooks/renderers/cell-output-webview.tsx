@@ -117,7 +117,19 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
         }
 
         this.webviewWidget = await this.widgetManager.getOrCreateWidget(WebviewWidget.FACTORY_ID, { id: this.id });
-        this.webviewWidget.setContentOptions({ allowScripts: true });
+        this.webviewWidget.setContentOptions({
+            allowScripts: true,
+            // list taken from vscode backLayerWebview.ts:758
+            enableCommandUris: [
+                'github-issues.authNow',
+                'workbench.extensions.search',
+                'workbench.action.openSettings',
+                '_notebook.selectKernel',
+                'jupyter.viewOutput',
+                'workbench.action.openLargeOutput',
+                'cellOutput.enableScrolling',
+            ]
+        });
         this.webviewWidget.setHTML(await this.createWebviewContent());
 
         this.webviewWidget.onMessage((message: FromWebviewMessage) => {
