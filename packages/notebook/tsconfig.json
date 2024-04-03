@@ -20,6 +20,9 @@
     },
     {
       "path": "../monaco"
+    },
+    {
+      "path": "../outline-view"
     }
   ]
 }
