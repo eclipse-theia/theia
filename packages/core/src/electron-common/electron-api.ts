@@ -53,7 +53,7 @@ export interface TheiaCoreAPI {
     popup(menu: MenuDto[], x: number, y: number, onClosed: () => void, windowName?: string): Promise<number>;
     closePopup(handle: number): void;
 
-    focusWindow(name: string): void;
+    focusWindow(name?: string): void;
 
     showItemInFolder(fsPath: string): void;
 
