@@ -261,6 +261,8 @@ export class NotebookCellActionContribution implements MenuContribution, Command
             (notebookModel, cell) => {
                 if (cell.cellKind === CellKind.Code) {
                     commands.executeCommand(NotebookCellCommands.EXECUTE_SINGLE_CELL_COMMAND.id, notebookModel, cell);
+                } else {
+                    commands.executeCommand(NotebookCellCommands.STOP_EDIT_COMMAND.id, notebookModel, cell);
                 }
                 const index = notebookModel.cells.indexOf(cell);
                 if (index < notebookModel.cells.length - 1) {
