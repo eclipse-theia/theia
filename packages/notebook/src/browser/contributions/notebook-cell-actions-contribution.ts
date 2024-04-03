@@ -259,12 +259,14 @@ export class NotebookCellActionContribution implements MenuContribution, Command
 
         commands.registerCommand(NotebookCellCommands.EXECUTE_SINGLE_CELL_AND_FOCUS_NEXT_COMMAND, this.editableCellCommandHandler(
             (notebookModel, cell) => {
-                commands.executeCommand(NotebookCellCommands.EXECUTE_SINGLE_CELL_COMMAND.id, notebookModel, cell);
+                if (cell.cellKind === CellKind.Code) {
+                    commands.executeCommand(NotebookCellCommands.EXECUTE_SINGLE_CELL_COMMAND.id, notebookModel, cell);
+                }
                 const index = notebookModel.cells.indexOf(cell);
                 if (index < notebookModel.cells.length - 1) {
                     notebookModel.setSelectedCell(notebookModel.cells[index + 1]);
                 } else {
-                    commands.executeCommand(NotebookCellCommands.INSERT_NEW_CELL_BELOW_COMMAND.id, notebookModel, CellKind.Code, 'below');
+                    commands.executeCommand(NotebookCellCommands.INSERT_NEW_CELL_BELOW_COMMAND.id, notebookModel, cell.cellKind, 'below');
                 }
             })
         );
@@ -353,7 +355,7 @@ export class NotebookCellActionContribution implements MenuContribution, Command
             {
                 command: NotebookCellCommands.EXECUTE_SINGLE_CELL_AND_FOCUS_NEXT_COMMAND.id,
                 keybinding: KeyCode.createKeyCode({ first: Key.ENTER, modifiers: [KeyModifier.Shift] }).toString(),
-                when: `${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED} && ${NOTEBOOK_CELL_TYPE} == 'code'`,
+                when: `${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`,
             },
             {
                 command: NotebookCellCommands.CLEAR_OUTPUTS_COMMAND.id,
