@@ -45,7 +45,7 @@ export class NotebookOutputActionContribution implements CommandContribution {
         commands.registerCommand(NotebookOutputCommands.ENABLE_SCROLLING, {
             execute: outputId => {
                 const [cell, output] = this.findOutputAndCell(outputId) ?? [];
-                if (cell && output && output.metadata) {
+                if (cell && output?.metadata) {
                     output.metadata['scrollable'] = true;
                     cell.restartOutputRenderer(output.outputId);
                 }

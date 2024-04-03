@@ -119,7 +119,8 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
         this.webviewWidget = await this.widgetManager.getOrCreateWidget(WebviewWidget.FACTORY_ID, { id: this.id });
         this.webviewWidget.setContentOptions({
             allowScripts: true,
-            // list taken from vscode backLayerWebview.ts:758
+            // eslint-disable-next-line max-len
+            // list taken from https://github.com/microsoft/vscode/blob/a27099233b956dddc2536d4a0d714ab36266d897/src/vs/workbench/contrib/notebook/browser/view/renderers/backLayerWebView.ts#L762-L774
             enableCommandUris: [
                 'github-issues.authNow',
                 'workbench.extensions.search',

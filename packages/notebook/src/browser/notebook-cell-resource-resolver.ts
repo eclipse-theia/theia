@@ -92,13 +92,13 @@ export class NotebookCellResourceResolver implements ResourceResolver {
 }
 
 @injectable()
-export class NotebookouputResourceResolver implements ResourceResolver {
+export class NotebookOutputResourceResolver implements ResourceResolver {
 
     @inject(NotebookService)
     protected readonly notebookService: NotebookService;
 
     async resolve(uri: URI): Promise<Resource> {
-        if (uri.scheme !== CellUri.ouputUriScheme) {
+        if (uri.scheme !== CellUri.outputUriScheme) {
             throw new Error(`Cannot resolve ouput uri with scheme '${uri.scheme}'`);
         }
 

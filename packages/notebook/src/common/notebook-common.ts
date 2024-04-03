@@ -262,7 +262,7 @@ export function isTextStreamMime(mimeType: string): boolean {
 export namespace CellUri {
 
     export const cellUriScheme = 'vscode-notebook-cell';
-    export const ouputUriScheme = 'vscode-notebook-cell-output';
+    export const outputUriScheme = 'vscode-notebook-cell-output';
 
     const _lengths = ['W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f'];
     const _padRegexp = new RegExp(`^[${_lengths.join('')}]+`);
@@ -301,12 +301,12 @@ export namespace CellUri {
 
     export function generateCellOutputUri(notebook: URI, outputId?: string): URI {
         return notebook
-            .withScheme(ouputUriScheme)
+            .withScheme(outputUriScheme)
             .withQuery(`op${outputId ?? ''},${notebook.scheme !== 'file' ? notebook.scheme : ''}`);
     };
 
     export function parseCellOutputUri(uri: URI): { notebook: URI; outputId?: string } | undefined {
-        if (uri.scheme !== ouputUriScheme) {
+        if (uri.scheme !== outputUriScheme) {
             return;
         }
 
@@ -315,7 +315,7 @@ export namespace CellUri {
             return undefined;
         }
 
-        const outputId = (match[1] && match[1] !== '') ? match[1] : undefined;
+        const outputId = match[1] || undefined;
         const scheme = match[2];
         return {
             outputId,
