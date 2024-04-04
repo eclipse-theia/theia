@@ -267,8 +267,10 @@ export class NotebookCellActionContribution implements MenuContribution, Command
                 const index = notebookModel.cells.indexOf(cell);
                 if (index < notebookModel.cells.length - 1) {
                     notebookModel.setSelectedCell(notebookModel.cells[index + 1]);
+                } else if (cell.cellKind === CellKind.Code) {
+                    commands.executeCommand(NotebookCellCommands.INSERT_NEW_CELL_BELOW_COMMAND.id);
                 } else {
-                    commands.executeCommand(NotebookCellCommands.INSERT_NEW_CELL_BELOW_COMMAND.id, notebookModel, cell.cellKind, 'below');
+                    commands.executeCommand(NotebookCellCommands.INSERT_MARKDOWN_CELL_BELOW_COMMAND.id);
                 }
             })
         );
