@@ -65,7 +65,7 @@ export class NotebookCellResourceResolver implements ResourceResolver {
     protected readonly notebookService: NotebookService;
 
     async resolve(uri: URI): Promise<Resource> {
-        if (uri.scheme !== CellUri.scheme) {
+        if (uri.scheme !== CellUri.cellUriScheme) {
             throw new Error(`Cannot resolve cell uri with scheme '${uri.scheme}'`);
         }
 
@@ -87,6 +87,44 @@ export class NotebookCellResourceResolver implements ResourceResolver {
         }
 
         return new NotebookCellResource(uri, notebookModel, notebookCellModel);
+    }
+
+}
+
+@injectable()
+export class NotebookOutputResourceResolver implements ResourceResolver {
+
+    @inject(NotebookService)
+    protected readonly notebookService: NotebookService;
+
+    async resolve(uri: URI): Promise<Resource> {
+        if (uri.scheme !== CellUri.outputUriScheme) {
+            throw new Error(`Cannot resolve output uri with scheme '${uri.scheme}'`);
+        }
+
+        const parsedUri = CellUri.parseCellOutputUri(uri);
+        if (!parsedUri) {
+            throw new Error(`Cannot parse uri '${uri.toString()}'`);
+        }
+
+        const notebookModel = this.notebookService.getNotebookEditorModel(parsedUri.notebook);
+
+        if (!notebookModel) {
+            throw new Error(`No notebook found for uri '${parsedUri.notebook}'`);
+        }
+
+        const ouputModel = notebookModel.cells.flatMap(cell => cell.outputs).find(output => output.outputId === parsedUri.outputId);
+
+        if (!ouputModel) {
+            throw new Error(`No output found with id '${parsedUri.outputId}' in '${parsedUri.notebook}'`);
+        }
+
+        return {
+            uri: uri,
+            dispose: () => { },
+            readContents: async () => ouputModel.outputs[0].data.toString(),
+            readOnly: true,
+        };
     }
 
 }

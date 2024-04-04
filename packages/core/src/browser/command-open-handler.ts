@@ -41,7 +41,7 @@ export class CommandOpenHandler implements OpenHandler {
             try {
                 args = JSON.parse(uri.query);
             } catch {
-                // ignore error
+                args = uri.query;
             }
         }
         if (!Array.isArray(args)) {

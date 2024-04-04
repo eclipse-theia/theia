@@ -24,7 +24,7 @@ import { NotebookTypeRegistry } from './notebook-type-registry';
 import { NotebookRendererRegistry } from './notebook-renderer-registry';
 import { NotebookService } from './service/notebook-service';
 import { NotebookEditorWidgetFactory } from './notebook-editor-widget-factory';
-import { NotebookCellResourceResolver } from './notebook-cell-resource-resolver';
+import { NotebookCellResourceResolver, NotebookOutputResourceResolver } from './notebook-cell-resource-resolver';
 import { NotebookModelResolverService } from './service/notebook-model-resolver-service';
 import { NotebookCellActionContribution } from './contributions/notebook-cell-actions-contribution';
 import { NotebookCellToolbarFactory } from './view/notebook-cell-toolbar-factory';
@@ -43,6 +43,7 @@ import { NotebookColorContribution } from './contributions/notebook-color-contri
 import { NotebookMonacoTextModelService } from './service/notebook-monaco-text-model-service';
 import { NotebookOutlineContribution } from './contributions/notebook-outline-contribution';
 import { NotebookLabelProviderContribution } from './contributions/notebook-label-provider-contribution';
+import { NotebookOutputActionContribution } from './contributions/notebook-output-action-contribution';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(NotebookColorContribution).toSelf().inSingletonScope();
@@ -69,6 +70,8 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(NotebookCellResourceResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toService(NotebookCellResourceResolver);
     bind(NotebookModelResolverService).toSelf().inSingletonScope();
+    bind(NotebookOutputResourceResolver).toSelf().inSingletonScope();
+    bind(ResourceResolver).toService(NotebookOutputResourceResolver);
 
     bind(NotebookCellActionContribution).toSelf().inSingletonScope();
     bind(MenuContribution).toService(NotebookCellActionContribution);
@@ -79,6 +82,9 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(CommandContribution).toService(NotebookActionsContribution);
     bind(MenuContribution).toService(NotebookActionsContribution);
     bind(KeybindingContribution).toService(NotebookActionsContribution);
+
+    bind(NotebookOutputActionContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(NotebookOutputActionContribution);
 
     bind(NotebookEditorWidgetContainerFactory).toFactory(ctx => (props: NotebookEditorProps) =>
         createNotebookEditorWidgetContainer(ctx.container, props).get(NotebookEditorWidget)

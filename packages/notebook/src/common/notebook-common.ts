@@ -261,7 +261,8 @@ export function isTextStreamMime(mimeType: string): boolean {
 
 export namespace CellUri {
 
-    export const scheme = 'vscode-notebook-cell';
+    export const cellUriScheme = 'vscode-notebook-cell';
+    export const outputUriScheme = 'vscode-notebook-cell-output';
 
     const _lengths = ['W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f'];
     const _padRegexp = new RegExp(`^[${_lengths.join('')}]+`);
@@ -273,11 +274,11 @@ export namespace CellUri {
         const p = s.length < _lengths.length ? _lengths[s.length - 1] : 'z';
 
         const fragment = `${p}${s}s${Buffer.from(BinaryBuffer.fromString(notebook.scheme).buffer).toString('base64')} `;
-        return notebook.withScheme(scheme).withFragment(fragment);
+        return notebook.withScheme(cellUriScheme).withFragment(fragment);
     }
 
     export function parse(cell: URI): { notebook: URI; handle: number } | undefined {
-        if (cell.scheme !== scheme) {
+        if (cell.scheme !== cellUriScheme) {
             return undefined;
         }
 
@@ -298,6 +299,30 @@ export namespace CellUri {
         };
     }
 
+    export function generateCellOutputUri(notebook: URI, outputId?: string): URI {
+        return notebook
+            .withScheme(outputUriScheme)
+            .withQuery(`op${outputId ?? ''},${notebook.scheme !== 'file' ? notebook.scheme : ''}`);
+    };
+
+    export function parseCellOutputUri(uri: URI): { notebook: URI; outputId?: string } | undefined {
+        if (uri.scheme !== outputUriScheme) {
+            return;
+        }
+
+        const match = /^op([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})?\,(.*)$/i.exec(uri.query);
+        if (!match) {
+            return undefined;
+        }
+
+        const outputId = match[1] || undefined;
+        const scheme = match[2];
+        return {
+            outputId,
+            notebook: uri.withScheme(scheme || 'file').withoutQuery()
+        };
+    }
+
     export function generateCellPropertyUri(notebook: URI, handle: number, cellScheme: string): URI {
         return CellUri.generate(notebook, handle).withScheme(cellScheme);
     }
@@ -307,6 +332,6 @@ export namespace CellUri {
             return undefined;
         }
 
-        return CellUri.parse(uri.withScheme(scheme));
+        return CellUri.parse(uri.withScheme(cellUriScheme));
     }
 }
