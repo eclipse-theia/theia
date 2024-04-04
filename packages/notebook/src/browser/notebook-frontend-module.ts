@@ -27,7 +27,6 @@ import { NotebookEditorWidgetFactory } from './notebook-editor-widget-factory';
 import { NotebookCellResourceResolver, NotebookOutputResourceResolver } from './notebook-cell-resource-resolver';
 import { NotebookModelResolverService } from './service/notebook-model-resolver-service';
 import { NotebookCellActionContribution } from './contributions/notebook-cell-actions-contribution';
-import { NotebookCellToolbarFactory } from './view/notebook-cell-toolbar-factory';
 import { createNotebookModelContainer, NotebookModel, NotebookModelFactory, NotebookModelProps } from './view-model/notebook-model';
 import { createNotebookCellModelContainer, NotebookCellModel, NotebookCellModelFactory, NotebookCellModelProps } from './view-model/notebook-cell-model';
 import { createNotebookEditorWidgetContainer, NotebookEditorWidgetContainerFactory, NotebookEditorProps, NotebookEditorWidget } from './notebook-editor-widget';
@@ -54,7 +53,6 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(NotebookRendererRegistry).toSelf().inSingletonScope();
 
     bind(WidgetFactory).to(NotebookEditorWidgetFactory).inSingletonScope();
-    bind(NotebookCellToolbarFactory).toSelf().inSingletonScope();
 
     bind(NotebookService).toSelf().inSingletonScope();
     bind(NotebookEditorWidgetService).toSelf().inSingletonScope();
