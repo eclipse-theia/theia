@@ -25,7 +25,6 @@ import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import { DisposableCollection, URI } from '@theia/core';
 import { CellKind, CellUri } from '../../common';
 import { NotebookService } from '../service/notebook-service';
-
 export interface NotebookCellOutlineNode extends OutlineSymbolInformationNode {
     notebookCell: NotebookCellModel;
     uri: URI;

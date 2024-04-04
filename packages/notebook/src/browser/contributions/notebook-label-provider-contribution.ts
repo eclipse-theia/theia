@@ -19,7 +19,12 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { CellKind } from '../../common';
 import { NotebookService } from '../service/notebook-service';
 import { NotebookCellOutlineNode } from './notebook-outline-contribution';
+import markdownit = require('@theia/core/shared/markdown-it')
 
+interface Token {
+    content: string,
+    children: Token[] | null
+}
 @injectable()
 export class NotebookLabelProviderContribution implements LabelProviderContribution {
 
@@ -28,6 +33,8 @@ export class NotebookLabelProviderContribution implements LabelProviderContribut
 
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
+
+    protected markdownIt = markdownit();
 
     canHandle(element: object): number {
         if (NotebookCellOutlineNode.is(element)) {
@@ -41,11 +48,19 @@ export class NotebookLabelProviderContribution implements LabelProviderContribut
     }
 
     getName(element: NotebookCellOutlineNode): string {
-        return element.notebookCell.text.split('\n')[0];
+        return element.notebookCell.cellKind === CellKind.Code ?
+            element.notebookCell.text.split('\n')[0] :
+            this.extractPlaintext(this.markdownIt.parse(element.notebookCell.text.split('\n')[0], {}));
     }
 
     getLongName(element: NotebookCellOutlineNode): string {
-        return element.notebookCell.text.split('\n')[0];
+        return element.notebookCell.cellKind === CellKind.Code ?
+            element.notebookCell.text.split('\n')[0] :
+            this.extractPlaintext(this.markdownIt.parse(element.notebookCell.text.split('\n')[0], {}));
+    }
+
+    extractPlaintext(parsedMarkdown: Token[]): string {
+        return parsedMarkdown.map(token => token.children ? this.extractPlaintext(token.children) : token.content).join('');
     }
 
 }
