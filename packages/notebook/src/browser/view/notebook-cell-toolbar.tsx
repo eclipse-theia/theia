@@ -35,8 +35,9 @@ abstract class NotebookCellActionBar extends React.Component<NotebookCellToolbar
     constructor(props: NotebookCellToolbarProps) {
         super(props);
         this.toDispose.push(props.onContextKeysChanged(e => {
-            if (this.props.getMenuItems().some(item => item.contextKeys ? e.affects(item.contextKeys) : false)) {
-                this.setState({ inlineItems: this.props.getMenuItems() });
+            const menuItems = this.props.getMenuItems();
+            if (menuItems.some(item => item.contextKeys ? e.affects(item.contextKeys) : false)) {
+                this.setState({ inlineItems: menuItems });
             }
         }));
         this.state = { inlineItems: this.props.getMenuItems() };

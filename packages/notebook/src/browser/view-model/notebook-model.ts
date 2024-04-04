@@ -235,8 +235,10 @@ export class NotebookModel implements Saveable, Disposable {
     }
 
     setSelectedCell(cell: NotebookCellModel): void {
-        this.selectedCell = cell;
-        this.onDidChangeSelectedCellEmitter.fire(cell);
+        if (this.selectedCell !== cell) {
+            this.selectedCell = cell;
+            this.onDidChangeSelectedCellEmitter.fire(cell);
+        }
     }
 
     private addCellOutputListeners(cells: NotebookCellModel[]): void {

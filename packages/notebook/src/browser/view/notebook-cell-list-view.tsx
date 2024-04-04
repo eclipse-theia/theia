@@ -45,7 +45,7 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
 
     constructor(props: CellListProps) {
         super(props);
-        this.state = { selectedCell: undefined, dragOverIndicator: undefined };
+        this.state = { selectedCell: props.notebookModel.selectedCell, dragOverIndicator: undefined };
         this.toDispose.push(props.notebookModel.onDidAddOrRemoveCell(e => {
             if (e.newCellIds && e.newCellIds.length > 0) {
                 this.setState({ ...this.state, selectedCell: this.props.notebookModel.cells.find(model => model.handle === e.newCellIds![e.newCellIds!.length - 1]) });
