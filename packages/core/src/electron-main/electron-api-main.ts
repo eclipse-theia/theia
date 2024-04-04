@@ -147,7 +147,9 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
 
         // focus windows for secondary window support
         ipcMain.on(CHANNEL_FOCUS_WINDOW, (event, windowName) => {
-            const electronWindow = BrowserWindow.getAllWindows().find(win => win.webContents.mainFrame.name === windowName);
+            const electronWindow = windowName
+                ? BrowserWindow.getAllWindows().find(win => win.webContents.mainFrame.name === windowName)
+                : BrowserWindow.fromWebContents(event.sender);
             if (electronWindow) {
                 if (electronWindow.isMinimized()) {
                     electronWindow.restore();
