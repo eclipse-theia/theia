@@ -19,12 +19,9 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { CellKind } from '../../common';
 import { NotebookService } from '../service/notebook-service';
 import { NotebookCellOutlineNode } from './notebook-outline-contribution';
-import markdownit = require('@theia/core/shared/markdown-it')
+import Token = require('markdown-it/lib/token');
+import markdownit = require('@theia/core/shared/markdown-it');
 
-interface Token {
-    content: string,
-    children: Token[] | null
-}
 @injectable()
 export class NotebookLabelProviderContribution implements LabelProviderContribution {
 
