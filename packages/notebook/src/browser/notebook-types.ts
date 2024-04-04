@@ -17,6 +17,7 @@
 import {
     CellData, CellEditType, CellMetadataEdit, CellOutput, CellOutputItem, CellRange, NotebookCellContentChangeEvent,
     NotebookCellInternalMetadata,
+    NotebookCellMetadata,
     NotebookCellsChangeInternalMetadataEvent,
     NotebookCellsChangeLanguageEvent,
     NotebookCellsChangeMetadataEvent,
@@ -152,13 +153,24 @@ export interface CellReplaceEdit {
     cells: CellData[];
 }
 
+export interface CellPartialMetadataEdit {
+    editType: CellEditType.PartialMetadata;
+    index: number;
+    metadata: NullablePartialNotebookCellMetadata;
+}
+
 export type ImmediateCellEditOperation = CellOutputEditByHandle | CellOutputItemEdit | CellPartialInternalMetadataEditByHandle; // add more later on
 export type CellEditOperation = ImmediateCellEditOperation | CellReplaceEdit | CellOutputEdit |
-    CellMetadataEdit | CellLanguageEdit | DocumentMetadataEdit | CellMoveEdit; // add more later on
+    CellMetadataEdit | CellLanguageEdit | DocumentMetadataEdit | CellMoveEdit | CellPartialMetadataEdit; // add more later on
 
 export type NullablePartialNotebookCellInternalMetadata = {
     [Key in keyof Partial<NotebookCellInternalMetadata>]: NotebookCellInternalMetadata[Key] | null
 };
+
+export type NullablePartialNotebookCellMetadata = {
+    [Key in keyof Partial<NotebookCellMetadata>]: NotebookCellMetadata[Key] | null
+};
+
 export interface CellPartialInternalMetadataEditByHandle {
     editType: CellEditType.PartialInternalMetadata;
     handle: number;

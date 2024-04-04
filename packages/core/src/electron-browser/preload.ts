@@ -75,17 +75,17 @@ const api: TheiaCoreAPI = {
         ipcRenderer.send(CHANNEL_SET_MENU, mainMenuId, convertMenu(menu, handlers));
     },
     getSecurityToken: () => ipcRenderer.sendSync(CHANNEL_GET_SECURITY_TOKEN),
-    focusWindow: (name: string) => ipcRenderer.send(CHANNEL_FOCUS_WINDOW, name),
+    focusWindow: (name?: string) => ipcRenderer.send(CHANNEL_FOCUS_WINDOW, name),
     showItemInFolder: fsPath => {
         ipcRenderer.send(CHANNEL_SHOW_ITEM_IN_FOLDER, fsPath);
     },
     attachSecurityToken: (endpoint: string) => ipcRenderer.invoke(CHANNEL_ATTACH_SECURITY_TOKEN, endpoint),
 
-    popup: async function (menu: MenuDto[], x: number, y: number, onClosed: () => void): Promise<number> {
+    popup: async function (menu: MenuDto[], x: number, y: number, onClosed: () => void, windowName?: string): Promise<number> {
         const menuId = nextMenuId++;
         const handlers = new Map<number, () => void>();
         commandHandlers.set(menuId, handlers);
-        const handle = await ipcRenderer.invoke(CHANNEL_OPEN_POPUP, menuId, convertMenu(menu, handlers), x, y);
+        const handle = await ipcRenderer.invoke(CHANNEL_OPEN_POPUP, menuId, convertMenu(menu, handlers), x, y, windowName);
         const closeListener = () => {
             ipcRenderer.removeListener(CHANNEL_ON_CLOSE_POPUP, closeListener);
             commandHandlers.delete(menuId);

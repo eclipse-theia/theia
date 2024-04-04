@@ -287,7 +287,8 @@ export class NotebookDocument implements Disposable {
             } else if (rawEvent.kind === notebookCommon.NotebookCellsChangeType.Output) {
                 this.setCellOutputs(rawEvent.index, rawEvent.outputs);
                 relaxedCellChanges.push({ cell: this.cells[rawEvent.index].apiCell, outputs: this.cells[rawEvent.index].apiCell.outputs });
-
+            } else if (rawEvent.kind === notebookCommon.NotebookCellsChangeType.ChangeDocumentMetadata) {
+                this.metadata = result.metadata ?? {};
                 // } else if (rawEvent.kind === notebookCommon.NotebookCellsChangeType.OutputItem) {
                 //     this._setCellOutputItems(rawEvent.index, rawEvent.outputId, rawEvent.append, rawEvent.outputItems);
                 //     relaxedCellChanges.push({ cell: this.cells[rawEvent.index].apiCell, outputs: this.cells[rawEvent.index].apiCell.outputs });
@@ -357,6 +358,18 @@ export class NotebookDocument implements Disposable {
                 const extCell = new Cell(this, this.editorsAndDocuments, cell);
                 if (!initialization) {
                     addedCellDocuments.push(Cell.asModelAddData(this.apiNotebook, cell));
+                    this.editorsAndDocuments.$acceptEditorsAndDocumentsDelta({
+                        addedDocuments: [
+                            {
+                                uri: cell.uri,
+                                versionId: 1,
+                                lines: cell.source,
+                                EOL: cell.eol,
+                                modeId: '',
+                                isDirty: false
+                            }
+                        ]
+                    });
                 }
                 return extCell;
             });

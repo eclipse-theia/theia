@@ -36,7 +36,7 @@ import { NotebookDocument } from './notebook-document';
 import { NotebookEditor } from './notebook-editor';
 import { EditorsAndDocumentsExtImpl } from '../editors-and-documents';
 import { DocumentsExtImpl } from '../documents';
-import { NotebookModelResource } from '@theia/notebook/lib/common';
+import { CellUri, NotebookCellModelResource, NotebookModelResource } from '@theia/notebook/lib/common';
 
 export class NotebooksExtImpl implements NotebooksExt {
 
@@ -76,7 +76,7 @@ export class NotebooksExtImpl implements NotebooksExt {
         rpc: RPCProtocol,
         commands: CommandRegistryExt,
         private textDocumentsAndEditors: EditorsAndDocumentsExtImpl,
-        private textDocuments: DocumentsExtImpl
+        private textDocuments: DocumentsExtImpl,
     ) {
         this.notebookProxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.NOTEBOOKS_MAIN);
         this.notebookDocumentsProxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_MAIN);
@@ -86,6 +86,12 @@ export class NotebooksExtImpl implements NotebooksExt {
             processArgument: arg => {
                 if (NotebookModelResource.is(arg)) {
                     return this.documents.get(arg.notebookModelUri.toString())?.apiNotebook;
+                } else if (NotebookCellModelResource.is(arg)) {
+                    const cellUri = CellUri.parse(arg.notebookCellModelUri);
+                    if (cellUri) {
+                        return this.documents.get(cellUri?.notebook.toString())?.getCell(cellUri.handle)?.apiCell;
+                    }
+                    return undefined;
                 } else {
                     return arg;
                 }
@@ -235,6 +241,17 @@ export class NotebooksExtImpl implements NotebooksExt {
 
                 this.documents.get(uri.toString())?.dispose();
                 this.documents.set(uri.toString(), document);
+
+                this.textDocumentsAndEditors.$acceptEditorsAndDocumentsDelta({
+                    addedDocuments: modelData.cells.map(cell => ({
+                        uri: cell.uri,
+                        versionId: 1,
+                        lines: cell.source,
+                        EOL: cell.eol,
+                        modeId: '',
+                        isDirty: false
+                    }))
+                });
 
                 this.onDidOpenNotebookDocumentEmitter.fire(document.apiNotebook);
             }

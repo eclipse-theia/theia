@@ -14,24 +14,28 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { DisposableCollection } from '@theia/core';
+import { DisposableCollection, Event } from '@theia/core';
 import { URI, UriComponents } from '@theia/core/lib/common/uri';
 import { interfaces } from '@theia/core/shared/inversify';
 import { NotebookModelResolverService } from '@theia/notebook/lib/browser';
 import { NotebookModel } from '@theia/notebook/lib/browser/view-model/notebook-model';
 import { NotebookCellsChangeType } from '@theia/notebook/lib/common';
+import { NotebookMonacoTextModelService } from '@theia/notebook/lib/browser/service/notebook-monaco-text-model-service';
 import { MAIN_RPC_CONTEXT, NotebookCellsChangedEventDto, NotebookDataDto, NotebookDocumentsExt, NotebookDocumentsMain } from '../../../common';
 import { RPCProtocol } from '../../../common/rpc-protocol';
 import { NotebookDto } from './notebook-dto';
+import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 
 export class NotebookDocumentsMainImpl implements NotebookDocumentsMain {
 
-    private readonly disposables = new DisposableCollection();
+    protected readonly disposables = new DisposableCollection();
 
-    private readonly proxy: NotebookDocumentsExt;
-    private readonly documentEventListenersMapping = new Map<string, DisposableCollection>();
+    protected readonly proxy: NotebookDocumentsExt;
+    protected readonly documentEventListenersMapping = new Map<string, DisposableCollection>();
 
-    private readonly notebookModelResolverService: NotebookModelResolverService;
+    protected readonly notebookModelResolverService: NotebookModelResolverService;
+
+    protected notebookMonacoTextModelService: NotebookMonacoTextModelService;
 
     constructor(
         rpc: RPCProtocol,
@@ -44,6 +48,11 @@ export class NotebookDocumentsMainImpl implements NotebookDocumentsMain {
         this.disposables.push(this.notebookModelResolverService.onDidChangeDirty(model => this.proxy.$acceptDirtyStateChanged(model.uri.toComponents(), model.isDirty())));
         this.disposables.push(this.notebookModelResolverService.onDidSaveNotebook(e => this.proxy.$acceptModelSaved(e)));
 
+        this.notebookMonacoTextModelService = container.get(NotebookMonacoTextModelService) as NotebookMonacoTextModelService;
+    }
+
+    get onDidAddNotebookCellModel(): Event<MonacoEditorModel> {
+        return this.notebookMonacoTextModelService.onDidCreateNotebookCellModel;
     }
 
     dispose(): void {
@@ -101,6 +110,12 @@ export class NotebookDocumentsMainImpl implements NotebookDocumentsMain {
                         case NotebookCellsChangeType.ChangeCellMetadata:
                         case NotebookCellsChangeType.ChangeCellInternalMetadata:
                             eventDto.rawEvents.push(e);
+                            break;
+                        case NotebookCellsChangeType.ChangeDocumentMetadata:
+                            eventDto.rawEvents.push({
+                                kind: e.kind,
+                                metadata: e.metadata
+                            });
                             break;
                     }
                 }

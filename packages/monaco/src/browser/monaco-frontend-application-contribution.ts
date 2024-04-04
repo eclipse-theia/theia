@@ -27,6 +27,12 @@ import { editorOptionsRegistry, IEditorOption } from '@theia/monaco-editor-core/
 import { MAX_SAFE_INTEGER } from '@theia/core';
 import { editorGeneratedPreferenceProperties } from '@theia/editor/lib/browser/editor-generated-preference-schema';
 import { WorkspaceFileService } from '@theia/workspace/lib/common/workspace-file-service';
+import { SecondaryWindowHandler } from '@theia/core/lib/browser/secondary-window-handler';
+import { EditorWidget } from '@theia/editor/lib/browser';
+import { MonacoEditor } from './monaco-editor';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { StandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneThemeService';
+import { IStandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
 
 @injectable()
 export class MonacoFrontendApplicationContribution implements FrontendApplicationContribution, StylingParticipant {
@@ -46,6 +52,9 @@ export class MonacoFrontendApplicationContribution implements FrontendApplicatio
     @inject(MonacoThemingService) protected readonly monacoThemingService: MonacoThemingService;
 
     @inject(WorkspaceFileService) protected readonly workspaceFileService: WorkspaceFileService;
+
+    @inject(SecondaryWindowHandler)
+    protected readonly secondaryWindowHandler: SecondaryWindowHandler;
 
     @postConstruct()
     protected init(): void {
@@ -80,6 +89,14 @@ export class MonacoFrontendApplicationContribution implements FrontendApplicatio
                 'JSON with Comments'
             ],
             'extensions': workspaceExtensions.map(ext => `.${ext}`)
+        });
+    }
+    onStart(): void {
+        this.secondaryWindowHandler.onDidAddWidget(([widget, window]) => {
+            if (widget instanceof EditorWidget && widget.editor instanceof MonacoEditor) {
+                const themeService = StandaloneServices.get(IStandaloneThemeService) as StandaloneThemeService;
+                themeService.registerEditorContainer(widget.node);
+            }
         });
     }
 

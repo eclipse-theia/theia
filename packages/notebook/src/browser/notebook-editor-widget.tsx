@@ -32,6 +32,7 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { NotebookContextManager } from './service/notebook-context-manager';
 import { NotebookViewportService } from './view/notebook-viewport-service';
+import { NotebookCellCommands } from './contributions/notebook-cell-actions-contribution';
 const PerfectScrollbar = require('react-perfect-scrollbar');
 
 export const NotebookEditorWidgetContainerFactory = Symbol('NotebookEditorWidgetContainerFactory');
@@ -43,6 +44,7 @@ export function createNotebookEditorWidgetContainer(parent: interfaces.Container
 
     child.bind(NotebookContextManager).toSelf().inSingletonScope();
     child.bind(NotebookMainToolbarRenderer).toSelf().inSingletonScope();
+    child.bind(NotebookCellToolbarFactory).toSelf().inSingletonScope();
     child.bind(NotebookCodeCellRenderer).toSelf().inSingletonScope();
     child.bind(NotebookMarkdownCellRenderer).toSelf().inSingletonScope();
     child.bind(NotebookViewportService).toSelf().inSingletonScope();
@@ -152,6 +154,12 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
         this.renderers.set(CellKind.Markup, this.markdownCellRenderer);
         this.renderers.set(CellKind.Code, this.codeCellRenderer);
         this._ready.resolve(this.waitForData());
+        this.ready.then(model => {
+            if (model.cells.length === 1 && model.cells[0].source === '') {
+                this.commandRegistry.executeCommand(NotebookCellCommands.EDIT_COMMAND.id, model, model.cells[0]);
+                model.setSelectedCell(model.cells[0]);
+            }
+        });
     }
 
     protected async waitForData(): Promise<NotebookModel> {

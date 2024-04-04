@@ -50,10 +50,10 @@ export interface TheiaCoreAPI {
     setMenuBarVisible(visible: boolean, windowName?: string): void;
     setMenu(menu: MenuDto[] | undefined): void;
 
-    popup(menu: MenuDto[], x: number, y: number, onClosed: () => void): Promise<number>;
+    popup(menu: MenuDto[], x: number, y: number, onClosed: () => void, windowName?: string): Promise<number>;
     closePopup(handle: number): void;
 
-    focusWindow(name: string): void;
+    focusWindow(name?: string): void;
 
     showItemInFolder(fsPath: string): void;
 

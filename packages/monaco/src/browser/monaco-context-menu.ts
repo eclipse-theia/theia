@@ -51,9 +51,20 @@ export class MonacoContextMenuService implements IContextMenuService {
         }
     }
 
+    private getContext(delegate: IContextMenuDelegate): HTMLElement | undefined {
+        const anchor = delegate.getAnchor();
+        if (anchor instanceof HTMLElement) {
+            return anchor;
+        } else if (anchor instanceof StandardMouseEvent) {
+            return anchor.target;
+        } else {
+            return undefined;
+        }
+    }
     showContextMenu(delegate: IContextMenuDelegate): void {
         const anchor = this.toAnchor(delegate.getAnchor());
         const actions = delegate.getActions();
+        const context = this.getContext(delegate);
         const onHide = () => {
             delegate.onHide?.(false);
             this.onDidHideContextMenuEmitter.fire();
@@ -63,6 +74,7 @@ export class MonacoContextMenuService implements IContextMenuService {
         // In case of 'Quick Fix' actions come as 'CodeActionAction' items
         if (actions.length > 0 && actions[0] instanceof MenuItemAction) {
             this.contextMenuRenderer.render({
+                context: context,
                 menuPath: this.menuPath(),
                 anchor,
                 onHide

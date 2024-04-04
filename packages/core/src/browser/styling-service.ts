@@ -21,7 +21,7 @@ import { ColorRegistry } from './color-registry';
 import { DecorationStyle } from './decoration-style';
 import { FrontendApplicationContribution } from './frontend-application-contribution';
 import { ThemeService } from './theming';
-import { Disposable } from '../common';
+import { SecondaryWindowHandler } from './secondary-window-handler';
 
 export const StylingParticipant = Symbol('StylingParticipant');
 
@@ -52,16 +52,25 @@ export class StylingService implements FrontendApplicationContribution {
     @inject(ContributionProvider) @named(StylingParticipant)
     protected readonly themingParticipants: ContributionProvider<StylingParticipant>;
 
+    @inject(SecondaryWindowHandler)
+    protected readonly secondaryWindowHandler: SecondaryWindowHandler;
+
     onStart(): void {
         this.registerWindow(window);
+        this.secondaryWindowHandler.onWillAddWidget(([widget, window]) => {
+            this.registerWindow(window);
+        });
+        this.secondaryWindowHandler.onWillRemoveWidget(([widget, window]) => {
+            this.cssElements.delete(window);
+        });
+
         this.themeService.onDidColorThemeChange(e => this.applyStylingToWindows(e.newTheme));
     }
 
-    registerWindow(win: Window): Disposable {
+    registerWindow(win: Window): void {
         const cssElement = DecorationStyle.createStyleElement('contributedColorTheme', win.document.head);
         this.cssElements.set(win, cssElement);
         this.applyStyling(this.themeService.getCurrentTheme(), cssElement);
-        return Disposable.create(() => this.cssElements.delete(win));
     }
 
     protected applyStylingToWindows(theme: Theme): void {

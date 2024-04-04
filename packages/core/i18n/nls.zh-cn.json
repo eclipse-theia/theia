@@ -1,5 +1,9 @@
 {
   "debug.breakpoint.editCondition": "编辑条件...",
+  "notebook.cell.insertMarkdownCellAbove": "在上方插入 Markdown 单元格",
+  "notebook.cell.insertMarkdownCellBelow": "在下面插入 Markdown 单元格",
+  "notebook.cell.to-code-cell": "将单元格更改为代码",
+  "notebook.cell.to-markdown-cell": "将 Cell 改为 Mardown",
   "terminal:new:profile": "从配置文件中创建新的集成终端",
   "terminal:profile:default": "选择默认的终端配置文件",
   "theia": {

@@ -24,10 +24,9 @@ import { NotebookTypeRegistry } from './notebook-type-registry';
 import { NotebookRendererRegistry } from './notebook-renderer-registry';
 import { NotebookService } from './service/notebook-service';
 import { NotebookEditorWidgetFactory } from './notebook-editor-widget-factory';
-import { NotebookCellResourceResolver } from './notebook-cell-resource-resolver';
+import { NotebookCellResourceResolver, NotebookOutputResourceResolver } from './notebook-cell-resource-resolver';
 import { NotebookModelResolverService } from './service/notebook-model-resolver-service';
 import { NotebookCellActionContribution } from './contributions/notebook-cell-actions-contribution';
-import { NotebookCellToolbarFactory } from './view/notebook-cell-toolbar-factory';
 import { createNotebookModelContainer, NotebookModel, NotebookModelFactory, NotebookModelProps } from './view-model/notebook-model';
 import { createNotebookCellModelContainer, NotebookCellModel, NotebookCellModelFactory, NotebookCellModelProps } from './view-model/notebook-cell-model';
 import { createNotebookEditorWidgetContainer, NotebookEditorWidgetContainerFactory, NotebookEditorProps, NotebookEditorWidget } from './notebook-editor-widget';
@@ -40,8 +39,10 @@ import { NotebookKernelHistoryService } from './service/notebook-kernel-history-
 import { NotebookEditorWidgetService } from './service/notebook-editor-widget-service';
 import { NotebookRendererMessagingService } from './service/notebook-renderer-messaging-service';
 import { NotebookColorContribution } from './contributions/notebook-color-contribution';
+import { NotebookMonacoTextModelService } from './service/notebook-monaco-text-model-service';
+import { NotebookOutputActionContribution } from './contributions/notebook-output-action-contribution';
 
-export default new ContainerModule(bind => {
+export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(NotebookColorContribution).toSelf().inSingletonScope();
     bind(ColorContribution).toService(NotebookColorContribution);
 
@@ -52,7 +53,6 @@ export default new ContainerModule(bind => {
     bind(NotebookRendererRegistry).toSelf().inSingletonScope();
 
     bind(WidgetFactory).to(NotebookEditorWidgetFactory).inSingletonScope();
-    bind(NotebookCellToolbarFactory).toSelf().inSingletonScope();
 
     bind(NotebookService).toSelf().inSingletonScope();
     bind(NotebookEditorWidgetService).toSelf().inSingletonScope();
@@ -66,6 +66,8 @@ export default new ContainerModule(bind => {
     bind(NotebookCellResourceResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toService(NotebookCellResourceResolver);
     bind(NotebookModelResolverService).toSelf().inSingletonScope();
+    bind(NotebookOutputResourceResolver).toSelf().inSingletonScope();
+    bind(ResourceResolver).toService(NotebookOutputResourceResolver);
 
     bind(NotebookCellActionContribution).toSelf().inSingletonScope();
     bind(MenuContribution).toService(NotebookCellActionContribution);
@@ -77,6 +79,9 @@ export default new ContainerModule(bind => {
     bind(MenuContribution).toService(NotebookActionsContribution);
     bind(KeybindingContribution).toService(NotebookActionsContribution);
 
+    bind(NotebookOutputActionContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(NotebookOutputActionContribution);
+
     bind(NotebookEditorWidgetContainerFactory).toFactory(ctx => (props: NotebookEditorProps) =>
         createNotebookEditorWidgetContainer(ctx.container, props).get(NotebookEditorWidget)
     );
@@ -86,4 +91,6 @@ export default new ContainerModule(bind => {
     bind(NotebookCellModelFactory).toFactory(ctx => (props: NotebookCellModelProps) =>
         createNotebookCellModelContainer(ctx.container, props).get(NotebookCellModel)
     );
+
+    bind(NotebookMonacoTextModelService).toSelf().inSingletonScope();
 });

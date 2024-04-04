@@ -62,6 +62,18 @@ export namespace NotebookCellCommands {
     export const EXECUTE_SINGLE_CELL_AND_FOCUS_NEXT_COMMAND = Command.toDefaultLocalizedCommand({
         id: 'notebook.cell.execute-cell-and-focus-next',
     });
+
+    export const EXECUTE_ABOVE_CELLS_COMMAND = Command.toDefaultLocalizedCommand({
+        id: 'notebookActions.executeAbove',
+        label: 'Execute Above Cells',
+        iconClass: codicon('run-above')
+    });
+
+    export const EXECUTE_CELL_AND_BELOW_COMMAND = Command.toDefaultLocalizedCommand({
+        id: 'notebookActions.executeBelow',
+        label: 'Execute Cell and Below',
+        iconClass: codicon('run-below')
+    });
     /** Parameters: notebookModel: NotebookModel, cell: NotebookCellModel */
     export const STOP_CELL_EXECUTION_COMMAND = Command.toDefaultLocalizedCommand({
         id: 'notebook.cell.stop-cell-execution',
@@ -140,20 +152,30 @@ export class NotebookCellActionContribution implements MenuContribution, Command
             label: nls.localizeByDefault('Stop Editing Cell'),
             order: '10'
         });
+
         menus.registerMenuAction(NotebookCellActionContribution.ACTION_MENU, {
-            commandId: NotebookCellCommands.EXECUTE_SINGLE_CELL_COMMAND.id,
-            icon: NotebookCellCommands.EXECUTE_SINGLE_CELL_COMMAND.iconClass,
+            commandId: NotebookCellCommands.EXECUTE_ABOVE_CELLS_COMMAND.id,
+            icon: NotebookCellCommands.EXECUTE_ABOVE_CELLS_COMMAND.iconClass,
             when: `${NOTEBOOK_CELL_TYPE} == 'code'`,
-            label: nls.localizeByDefault('Execute Cell'),
+            label: nls.localizeByDefault('Execute Above Cells'),
             order: '10'
         });
 
         menus.registerMenuAction(NotebookCellActionContribution.ACTION_MENU, {
-            commandId: NotebookCellCommands.SPLIT_CELL_COMMAND.id,
-            icon: NotebookCellCommands.SPLIT_CELL_COMMAND.iconClass,
-            label: nls.localizeByDefault('Split Cell'),
+            commandId: NotebookCellCommands.EXECUTE_CELL_AND_BELOW_COMMAND.id,
+            icon: NotebookCellCommands.EXECUTE_CELL_AND_BELOW_COMMAND.iconClass,
+            when: `${NOTEBOOK_CELL_TYPE} == 'code'`,
+            label: nls.localizeByDefault('Execute Cell and Below'),
             order: '20'
         });
+
+        // menus.registerMenuAction(NotebookCellActionContribution.ACTION_MENU, {
+        //     commandId: NotebookCellCommands.SPLIT_CELL_COMMAND.id,
+        //     icon: NotebookCellCommands.SPLIT_CELL_COMMAND.iconClass,
+        //     label: nls.localizeByDefault('Split Cell'),
+        //     order: '20'
+        // });
+
         menus.registerMenuAction(NotebookCellActionContribution.ACTION_MENU, {
             commandId: NotebookCellCommands.DELETE_COMMAND.id,
             icon: NotebookCellCommands.DELETE_COMMAND.iconClass,
@@ -190,9 +212,9 @@ export class NotebookCellActionContribution implements MenuContribution, Command
         });
 
         // Notebook Cell extra execution options
-        // menus.registerIndependentSubmenu(NotebookCellActionContribution.CONTRIBUTED_CELL_EXECUTION_MENU,
-        //     nls.localizeByDefault('More...'),
-        //     { role: CompoundMenuNodeRole.Flat, icon: codicon('chevron-down') });
+        menus.registerIndependentSubmenu(NotebookCellActionContribution.CONTRIBUTED_CELL_EXECUTION_MENU,
+            nls.localizeByDefault('More...'),
+            { role: CompoundMenuNodeRole.Flat, icon: codicon('chevron-down') });
         // menus.getMenu(NotebookCellActionContribution.CODE_CELL_SIDEBAR_MENU).addNode(menus.getMenuNode(NotebookCellActionContribution.CONTRIBUTED_CELL_EXECUTION_MENU));
 
         // code cell output sidebar menu
@@ -237,12 +259,36 @@ export class NotebookCellActionContribution implements MenuContribution, Command
 
         commands.registerCommand(NotebookCellCommands.EXECUTE_SINGLE_CELL_AND_FOCUS_NEXT_COMMAND, this.editableCellCommandHandler(
             (notebookModel, cell) => {
-                commands.executeCommand(NotebookCellCommands.EXECUTE_SINGLE_CELL_COMMAND.id, notebookModel, cell);
+                if (cell.cellKind === CellKind.Code) {
+                    commands.executeCommand(NotebookCellCommands.EXECUTE_SINGLE_CELL_COMMAND.id, notebookModel, cell);
+                } else {
+                    commands.executeCommand(NotebookCellCommands.STOP_EDIT_COMMAND.id, notebookModel, cell);
+                }
                 const index = notebookModel.cells.indexOf(cell);
                 if (index < notebookModel.cells.length - 1) {
                     notebookModel.setSelectedCell(notebookModel.cells[index + 1]);
+                } else if (cell.cellKind === CellKind.Code) {
+                    commands.executeCommand(NotebookCellCommands.INSERT_NEW_CELL_BELOW_COMMAND.id);
                 } else {
-                    commands.executeCommand(NotebookCellCommands.INSERT_NEW_CELL_BELOW_COMMAND.id, notebookModel, CellKind.Code, 'below');
+                    commands.executeCommand(NotebookCellCommands.INSERT_MARKDOWN_CELL_BELOW_COMMAND.id);
+                }
+            })
+        );
+
+        commands.registerCommand(NotebookCellCommands.EXECUTE_ABOVE_CELLS_COMMAND, this.editableCellCommandHandler(
+            (notebookModel, cell) => {
+                const index = notebookModel.cells.indexOf(cell);
+                if (index > 0) {
+                    this.notebookExecutionService.executeNotebookCells(notebookModel, notebookModel.cells.slice(0, index).filter(c => c.cellKind === CellKind.Code));
+                }
+            })
+        );
+
+        commands.registerCommand(NotebookCellCommands.EXECUTE_CELL_AND_BELOW_COMMAND, this.editableCellCommandHandler(
+            (notebookModel, cell) => {
+                const index = notebookModel.cells.indexOf(cell);
+                if (index < notebookModel.cells.length - 1) {
+                    this.notebookExecutionService.executeNotebookCells(notebookModel, notebookModel.cells.slice(index).filter(c => c.cellKind === CellKind.Code));
                 }
             })
         );
@@ -313,7 +359,7 @@ export class NotebookCellActionContribution implements MenuContribution, Command
             {
                 command: NotebookCellCommands.EXECUTE_SINGLE_CELL_AND_FOCUS_NEXT_COMMAND.id,
                 keybinding: KeyCode.createKeyCode({ first: Key.ENTER, modifiers: [KeyModifier.Shift] }).toString(),
-                when: `${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED} && ${NOTEBOOK_CELL_TYPE} == 'code'`,
+                when: `${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`,
             },
             {
                 command: NotebookCellCommands.CLEAR_OUTPUTS_COMMAND.id,

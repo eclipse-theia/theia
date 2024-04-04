@@ -20,9 +20,10 @@ import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { NotebookData, TransientOptions } from '../../common';
 import { NotebookModel, NotebookModelFactory, NotebookModelProps } from '../view-model/notebook-model';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { NotebookCellModel, NotebookCellModelFactory, NotebookCellModelProps } from '../view-model/notebook-cell-model';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { NotebookMonacoTextModelService } from './notebook-monaco-text-model-service';
+import { CellEditOperation } from '../notebook-types';
 
 export const NotebookProvider = Symbol('notebook provider');
 
@@ -37,20 +38,27 @@ export interface NotebookSerializer {
     fromNotebook(data: NotebookData): Promise<BinaryBuffer>;
 }
 
+export interface NotebookWorkspaceEdit {
+    edits: {
+        resource: URI;
+        edit: CellEditOperation
+    }[]
+}
+
 @injectable()
 export class NotebookService implements Disposable {
 
     @inject(FileService)
     protected fileService: FileService;
 
-    @inject(MonacoTextModelService)
-    protected modelService: MonacoTextModelService;
-
     @inject(NotebookModelFactory)
     protected notebookModelFactory: (props: NotebookModelProps) => NotebookModel;
 
     @inject(NotebookCellModelFactory)
     protected notebookCellModelFactory: (props: NotebookCellModelProps) => NotebookCellModel;
+
+    @inject(NotebookMonacoTextModelService)
+    protected textModelService: NotebookMonacoTextModelService;
 
     protected willUseNotebookSerializerEmitter = new Emitter<string>();
     readonly onWillUseNotebookSerializer = this.willUseNotebookSerializerEmitter.event;
@@ -111,7 +119,7 @@ export class NotebookService implements Disposable {
         this.notebookModels.set(resource.uri.toString(), model);
         // Resolve cell text models right after creating the notebook model
         // This ensures that all text models are available in the plugin host
-        await Promise.all(model.cells.map(e => e.resolveTextModel()));
+        this.textModelService.createTextModelsForNotebook(model);
         this.didAddNotebookDocumentEmitter.fire(model);
         return model;
     }
@@ -177,5 +185,18 @@ export class NotebookService implements Disposable {
 
     listNotebookDocuments(): NotebookModel[] {
         return [...this.notebookModels.values()];
+    }
+
+    applyWorkspaceEdit(workspaceEdit: NotebookWorkspaceEdit): boolean {
+        try {
+            workspaceEdit.edits.forEach(edit => {
+                const notebook = this.getNotebookEditorModel(edit.resource);
+                notebook?.applyEdits([edit.edit], true);
+            });
+            return true;
+        } catch (e) {
+            console.error(e);
+            return false;
+        }
     }
 }
