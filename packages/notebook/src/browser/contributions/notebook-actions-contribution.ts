@@ -25,7 +25,6 @@ import { NotebookExecutionService } from '../service/notebook-execution-service'
 import { NotebookEditorWidget } from '../notebook-editor-widget';
 import { NotebookEditorWidgetService } from '../service/notebook-editor-widget-service';
 import { NOTEBOOK_CELL_FOCUSED, NOTEBOOK_EDITOR_FOCUSED } from './notebook-context-keys';
-import { OutlineViewContribution } from '@theia/outline-view/lib/browser/outline-view-contribution';
 
 export namespace NotebookCommands {
     export const ADD_NEW_CELL_COMMAND = Command.toDefaultLocalizedCommand({
@@ -91,9 +90,6 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
 
     @inject(NotebookEditorWidgetService)
     protected notebookEditorWidgetService: NotebookEditorWidgetService;
-
-    @inject(OutlineViewContribution)
-    protected outlineViewContribution: OutlineViewContribution;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(NotebookCommands.ADD_NEW_CELL_COMMAND, {
@@ -179,11 +175,6 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
                 return widget instanceof NotebookEditorWidget && !Boolean(widget.model?.readOnly);
             },
             execute: () => (this.shell.activeWidget as NotebookEditorWidget).redo()
-        });
-
-        // required by Jupyter for the show table of contents action
-        commands.registerCommand({ id: 'outline.focus' }, {
-            execute: () => this.outlineViewContribution.openView({ activate: true })
         });
 
     }

@@ -36,6 +36,7 @@ export namespace NotebookCellOutlineNode {
         return TreeNode.is(element) && OutlineSymbolInformationNode.is(element) && 'notebookCell' in element;
     }
 }
+
 @injectable()
 export class NotebookOutlineContribution implements FrontendApplicationContribution {
 

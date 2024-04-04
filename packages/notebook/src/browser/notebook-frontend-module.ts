@@ -41,7 +41,7 @@ import { NotebookEditorWidgetService } from './service/notebook-editor-widget-se
 import { NotebookRendererMessagingService } from './service/notebook-renderer-messaging-service';
 import { NotebookColorContribution } from './contributions/notebook-color-contribution';
 import { NotebookMonacoTextModelService } from './service/notebook-monaco-text-model-service';
-import { NotebookOutlineContribution } from './contributions/notebook-ouline-contribution';
+import { NotebookOutlineContribution } from './contributions/notebook-outline-contribution';
 import { NotebookLabelProviderContribution } from './contributions/notebook-label-provider-contribution';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {

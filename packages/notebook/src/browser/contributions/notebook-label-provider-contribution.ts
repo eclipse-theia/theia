@@ -18,7 +18,7 @@ import { codicon, LabelProvider, LabelProviderContribution } from '@theia/core/l
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { CellKind } from '../../common';
 import { NotebookService } from '../service/notebook-service';
-import { NotebookCellOutlineNode } from './notebook-ouline-contribution';
+import { NotebookCellOutlineNode } from './notebook-outline-contribution';
 
 @injectable()
 export class NotebookLabelProviderContribution implements LabelProviderContribution {
@@ -37,8 +37,7 @@ export class NotebookLabelProviderContribution implements LabelProviderContribut
     }
 
     getIcon(element: NotebookCellOutlineNode): string {
-        const cell = NotebookCellOutlineNode.is(element) ? element.notebookCell : element;
-        return cell.cellKind === CellKind.Markup ? codicon('markdown') : codicon('code');
+        return element.notebookCell.cellKind === CellKind.Markup ? codicon('markdown') : codicon('code');
     }
 
     getName(element: NotebookCellOutlineNode): string {
