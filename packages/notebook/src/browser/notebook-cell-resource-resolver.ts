@@ -99,7 +99,7 @@ export class NotebookOutputResourceResolver implements ResourceResolver {
 
     async resolve(uri: URI): Promise<Resource> {
         if (uri.scheme !== CellUri.outputUriScheme) {
-            throw new Error(`Cannot resolve ouput uri with scheme '${uri.scheme}'`);
+            throw new Error(`Cannot resolve output uri with scheme '${uri.scheme}'`);
         }
 
         const parsedUri = CellUri.parseCellOutputUri(uri);
