@@ -58,7 +58,7 @@ export class ElectronWindowService extends DefaultWindowService {
     }
 
     override focus(): void {
-        window.electronTheiaCore.focusWindow(window.name);
+        window.electronTheiaCore.focusWindow();
     }
     @postConstruct()
     protected init(): void {
