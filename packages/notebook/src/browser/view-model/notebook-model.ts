@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Disposable, Emitter, Event, Resource, URI } from '@theia/core';
+import { Disposable, Emitter, Event, QueueableEmitter, Resource, URI } from '@theia/core';
 import { Saveable, SaveOptions } from '@theia/core/lib/browser';
 import {
     CellData, CellEditType, CellUri, NotebookCellInternalMetadata,
@@ -65,7 +65,7 @@ export class NotebookModel implements Saveable, Disposable {
     protected readonly onDidAddOrRemoveCellEmitter = new Emitter<NotebookModelWillAddRemoveEvent>();
     readonly onDidAddOrRemoveCell = this.onDidAddOrRemoveCellEmitter.event;
 
-    protected readonly onDidChangeContentEmitter = new Emitter<NotebookContentChangedEvent[]>();
+    protected readonly onDidChangeContentEmitter = new QueueableEmitter<NotebookContentChangedEvent>();
     readonly onDidChangeContent = this.onDidChangeContentEmitter.event;
 
     protected readonly onDidChangeSelectedCellEmitter = new Emitter<NotebookCellModel | undefined>();
@@ -284,13 +284,18 @@ export class NotebookModel implements Saveable, Disposable {
                     } else {
                         // could definitely be more efficient. See vscode __spliceNotebookCellOutputs2
                         // For now, just replace the whole existing output with the new output
-                        cell.spliceNotebookCellOutputs({ start: 0, deleteCount: cell.outputs.length, newOutputs: edit.outputs });
+                        cell.spliceNotebookCellOutputs({ start: 0, deleteCount: edit.deleteCount ?? cell.outputs.length, newOutputs: edit.outputs });
                     }
-
+                    this.onDidChangeContentEmitter.queue({ kind: NotebookCellsChangeType.Output, index: cellIndex, outputs: cell.outputs, append: edit.append ?? false });
                     break;
                 }
                 case CellEditType.OutputItems:
                     cell.changeOutputItems(edit.outputId, !!edit.append, edit.items);
+                    this.onDidChangeContentEmitter.queue({
+                        kind: NotebookCellsChangeType.OutputItem, index: cellIndex, outputItems: edit.items,
+                        outputId: edit.outputId, append: edit.append ?? false
+                    });
+
                     break;
                 case CellEditType.Metadata:
                     this.changeCellMetadata(this.cells[cellIndex], edit.metadata, computeUndoRedo);
@@ -311,11 +316,14 @@ export class NotebookModel implements Saveable, Disposable {
                     this.moveCellToIndex(cellIndex, edit.length, edit.newIdx, computeUndoRedo);
                     break;
             }
+
             // if selected cell is affected update it because it can potentially have been replaced
             if (cell === this.selectedCell) {
                 this.setSelectedCell(this.cells[cellIndex]);
             }
         }
+
+        this.onDidChangeContentEmitter.fire();
 
     }
 
@@ -355,7 +363,7 @@ export class NotebookModel implements Saveable, Disposable {
         await Promise.all(cells.map(cell => cell.resolveTextModel()));
 
         this.onDidAddOrRemoveCellEmitter.fire({ rawEvent: { kind: NotebookCellsChangeType.ModelChange, changes }, newCellIds: cells.map(cell => cell.handle) });
-        this.onDidChangeContentEmitter.fire([{ kind: NotebookCellsChangeType.ModelChange, changes }]);
+        this.onDidChangeContentEmitter.queue({ kind: NotebookCellsChangeType.ModelChange, changes });
         if (cells.length > 0) {
             this.setSelectedCell(cells[cells.length - 1]);
             cells[cells.length - 1].requestEdit();
@@ -373,9 +381,7 @@ export class NotebookModel implements Saveable, Disposable {
         }
 
         cell.internalMetadata = newInternalMetadata;
-        this.onDidChangeContentEmitter.fire([
-            { kind: NotebookCellsChangeType.ChangeCellInternalMetadata, index: this.cells.indexOf(cell), internalMetadata: newInternalMetadata }
-        ]);
+        this.onDidChangeContentEmitter.queue({ kind: NotebookCellsChangeType.ChangeCellInternalMetadata, index: this.cells.indexOf(cell), internalMetadata: newInternalMetadata });
     }
 
     protected updateNotebookMetadata(metadata: NotebookDocumentMetadata, computeUndoRedo: boolean): void {
@@ -388,7 +394,7 @@ export class NotebookModel implements Saveable, Disposable {
         }
 
         this.metadata = metadata;
-        this.onDidChangeContentEmitter.fire([{ kind: NotebookCellsChangeType.ChangeDocumentMetadata, metadata: this.metadata }]);
+        this.onDidChangeContentEmitter.queue({ kind: NotebookCellsChangeType.ChangeDocumentMetadata, metadata: this.metadata });
     }
 
     protected changeCellMetadataPartial(cell: NotebookCellModel, metadata: NullablePartialNotebookCellMetadata, computeUndoRedo: boolean): void {
@@ -420,7 +426,7 @@ export class NotebookModel implements Saveable, Disposable {
         }
 
         cell.metadata = metadata;
-        this.onDidChangeContentEmitter.fire([{ kind: NotebookCellsChangeType.ChangeCellMetadata, index: this.cells.indexOf(cell), metadata: cell.metadata }]);
+        this.onDidChangeContentEmitter.queue({ kind: NotebookCellsChangeType.ChangeCellMetadata, index: this.cells.indexOf(cell), metadata: cell.metadata });
     }
 
     protected changeCellLanguage(cell: NotebookCellModel, languageId: string, computeUndoRedo: boolean): void {
@@ -430,7 +436,7 @@ export class NotebookModel implements Saveable, Disposable {
 
         cell.language = languageId;
 
-        this.onDidChangeContentEmitter.fire([{ kind: NotebookCellsChangeType.ChangeCellLanguage, index: this.cells.indexOf(cell), language: languageId }]);
+        this.onDidChangeContentEmitter.queue({ kind: NotebookCellsChangeType.ChangeCellLanguage, index: this.cells.indexOf(cell), language: languageId });
     }
 
     protected moveCellToIndex(fromIndex: number, length: number, toIndex: number, computeUndoRedo: boolean): boolean {
@@ -443,7 +449,7 @@ export class NotebookModel implements Saveable, Disposable {
 
         const cells = this.cells.splice(fromIndex, length);
         this.cells.splice(toIndex, 0, ...cells);
-        this.onDidChangeContentEmitter.fire([{ kind: NotebookCellsChangeType.Move, index: fromIndex, length, newIdx: toIndex, cells }]);
+        this.onDidChangeContentEmitter.queue({ kind: NotebookCellsChangeType.Move, index: fromIndex, length, newIdx: toIndex, cells });
 
         return true;
     }

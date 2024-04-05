@@ -111,6 +111,7 @@ export interface CellOutputEdit {
     editType: CellEditType.Output;
     index: number;
     outputs: CellOutput[];
+    deleteCount?: number;
     append?: boolean;
 }
 
@@ -118,6 +119,7 @@ export interface CellOutputEditByHandle {
     editType: CellEditType.Output;
     handle: number;
     outputs: CellOutput[];
+    deleteCount?: number;
     append?: boolean;
 }
 

@@ -24,7 +24,7 @@ import { NotebookKernelQuickPickService } from '../service/notebook-kernel-quick
 import { NotebookExecutionService } from '../service/notebook-execution-service';
 import { NotebookEditorWidget } from '../notebook-editor-widget';
 import { NotebookEditorWidgetService } from '../service/notebook-editor-widget-service';
-import { NOTEBOOK_CELL_FOCUSED, NOTEBOOK_EDITOR_FOCUSED } from './notebook-context-keys';
+import { NOTEBOOK_CELL_FOCUSED, NOTEBOOK_EDITOR_FOCUSED, NOTEBOOK_HAS_OUTPUTS } from './notebook-context-keys';
 
 export namespace NotebookCommands {
     export const ADD_NEW_CELL_COMMAND = Command.toDefaultLocalizedCommand({
@@ -141,7 +141,10 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
         ));
 
         commands.registerCommand(NotebookCommands.CLEAR_ALL_OUTPUTS_COMMAND, this.editableCommandHandler(
-            notebookModel => notebookModel.cells.forEach(cell => cell.spliceNotebookCellOutputs({ start: 0, deleteCount: cell.outputs.length, newOutputs: [] }))
+            notebookModel => notebookModel.applyEdits(notebookModel.cells.map(cell => ({
+                editType: CellEditType.Output,
+                handle: cell.handle, deleteCount: cell.outputs.length, outputs: []
+            })), false)
         ));
 
         commands.registerCommand(NotebookCommands.CHANGE_SELECTED_CELL,
@@ -217,7 +220,8 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
             commandId: NotebookCommands.CLEAR_ALL_OUTPUTS_COMMAND.id,
             label: nls.localizeByDefault('Clear All Outputs'),
             icon: codicon('clear-all'),
-            order: '30'
+            order: '30',
+            when: NOTEBOOK_HAS_OUTPUTS
         });
         // other items
     }

@@ -22,12 +22,12 @@ import {
     NOTEBOOK_CELL_EDITABLE,
     NOTEBOOK_CELL_EXECUTING, NOTEBOOK_CELL_EXECUTION_STATE,
     NOTEBOOK_CELL_FOCUSED, NOTEBOOK_CELL_MARKDOWN_EDIT_MODE,
-    NOTEBOOK_CELL_TYPE, NOTEBOOK_KERNEL, NOTEBOOK_KERNEL_SELECTED,
+    NOTEBOOK_CELL_TYPE, NOTEBOOK_HAS_OUTPUTS, NOTEBOOK_KERNEL, NOTEBOOK_KERNEL_SELECTED,
     NOTEBOOK_VIEW_TYPE
 } from '../contributions/notebook-context-keys';
 import { NotebookEditorWidget } from '../notebook-editor-widget';
 import { NotebookCellModel } from '../view-model/notebook-cell-model';
-import { CellKind } from '../../common';
+import { CellKind, NotebookCellsChangeType } from '../../common';
 import { NotebookExecutionStateService } from './notebook-execution-state-service';
 
 @injectable()
@@ -72,6 +72,15 @@ export class NotebookContextManager {
                 this.onDidChangeContextEmitter.fire(this.createContextKeyChangedEvent([NOTEBOOK_KERNEL_SELECTED, NOTEBOOK_KERNEL]));
             }
         }));
+
+        widget.model?.onDidChangeContent(events => {
+            if (events.some(e => e.kind === NotebookCellsChangeType.ModelChange || e.kind === NotebookCellsChangeType.Output)) {
+                this.scopedStore.setContext(NOTEBOOK_HAS_OUTPUTS, widget.model?.cells.some(cell => cell.outputs.length > 0));
+                this.onDidChangeContextEmitter.fire(this.createContextKeyChangedEvent([NOTEBOOK_HAS_OUTPUTS]));
+            }
+        });
+
+        this.scopedStore.setContext(NOTEBOOK_HAS_OUTPUTS, !!widget.model?.cells.find(cell => cell.outputs.length > 0));
 
         // Cell Selection realted keys
         this.scopedStore.setContext(NOTEBOOK_CELL_FOCUSED, !!widget.model?.selectedCell);
