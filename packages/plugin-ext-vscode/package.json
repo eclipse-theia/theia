@@ -16,6 +16,7 @@
     "@theia/typehierarchy": "1.48.0",
     "@theia/userstorage": "1.48.0",
     "@theia/workspace": "1.48.0",
+    "@theia/outline-view": "1.48.0",
     "decompress": "^4.2.1",
     "filenamify": "^4.1.0",
     "tslib": "^2.6.2"

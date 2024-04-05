@@ -79,6 +79,7 @@ import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import * as monaco from '@theia/monaco-editor-core';
 import { VSCodeExtensionUri } from '../common/plugin-vscode-uri';
 import { CodeEditorWidgetUtil } from '@theia/plugin-ext/lib/main/browser/menus/vscode-theia-menu-mappings';
+import { OutlineViewContribution } from '@theia/outline-view/lib/browser/outline-view-contribution';
 
 export namespace VscodeCommands {
     export const OPEN: Command = {
@@ -180,6 +181,8 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
     protected readonly windowService: WindowService;
     @inject(MessageService)
     protected readonly messageService: MessageService;
+    @inject(OutlineViewContribution)
+    protected outlineViewContribution: OutlineViewContribution;
 
     private async openWith(commandId: string, resource: URI, columnOrOptions?: ViewColumn | TextDocumentShowOptions, openerId?: string): Promise<boolean> {
         if (!resource) {
@@ -911,6 +914,11 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                     collections: device.collections
                 };
             }
+        });
+
+        // required by Jupyter for the show table of contents action
+        commands.registerCommand({ id: 'outline.focus' }, {
+            execute: () => this.outlineViewContribution.openView({ activate: true })
         });
     }
 

@@ -148,6 +148,7 @@ export class NotebookModel implements Saveable, Disposable {
         this.onDidSaveNotebookEmitter.dispose();
         this.onDidAddOrRemoveCellEmitter.dispose();
         this.onDidChangeContentEmitter.dispose();
+        this.onDidChangeSelectedCellEmitter.dispose();
         this.cells.forEach(cell => cell.dispose());
     }
 
