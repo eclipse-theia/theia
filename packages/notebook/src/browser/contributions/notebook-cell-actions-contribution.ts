@@ -301,7 +301,10 @@ export class NotebookCellActionContribution implements MenuContribution, Command
             }
         });
         commands.registerCommand(NotebookCellCommands.CLEAR_OUTPUTS_COMMAND, this.editableCellCommandHandler(
-            (_, cell) => cell.spliceNotebookCellOutputs({ start: 0, deleteCount: (cell ?? this.getSelectedCell()).outputs.length, newOutputs: [] })
+            (notebook, cell) => notebook.applyEdits([{
+                editType: CellEditType.Output,
+                handle: cell.handle, outputs: [], deleteCount: cell.outputs.length, append: false
+            }], true)
         ));
         commands.registerCommand(NotebookCellCommands.CHANGE_OUTPUT_PRESENTATION_COMMAND, this.editableCellCommandHandler(
             (_, __, output) => output?.requestOutputPresentationUpdate()

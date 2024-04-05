@@ -467,3 +467,21 @@ export class AsyncEmitter<T extends WaitUntilEvent> extends Emitter<T> {
     }
 
 }
+
+export class QueueableEmitter<T> extends Emitter<T[]> {
+
+    currentQueue?: T[];
+
+    queue(...arg: T[]): void {
+        if (!this.currentQueue) {
+            this.currentQueue = [];
+        }
+        this.currentQueue.push(...arg);
+    }
+
+    override fire(): void {
+        super.fire(this.currentQueue || []);
+        this.currentQueue = undefined;
+    }
+
+}

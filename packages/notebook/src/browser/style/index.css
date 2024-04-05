@@ -213,8 +213,9 @@
   cursor: pointer;
 }
 
-.theia-notebook-main-toolbar-item:hover {
-  background-color: var(--theia-toolbar-hoverBackground);
+.theia-notebook-main-toolbar-item.theia-mod-disabled:hover {
+  background-color: transparent;
+  cursor: default;
 }
 
 .theia-notebook-main-toolbar-item-text {
