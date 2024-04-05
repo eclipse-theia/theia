@@ -29,7 +29,6 @@ import { NotebookEditorWidget } from '../notebook-editor-widget';
 import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import { CellKind, NotebookCellsChangeType } from '../../common';
 import { NotebookExecutionStateService } from './notebook-execution-state-service';
-import debounce = require('@theia/core/shared/lodash.debounce');
 
 @injectable()
 export class NotebookContextManager {
