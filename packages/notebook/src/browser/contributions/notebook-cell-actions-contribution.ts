@@ -303,7 +303,10 @@ export class NotebookCellActionContribution implements MenuContribution, Command
         commands.registerCommand(NotebookCellCommands.CLEAR_OUTPUTS_COMMAND, this.editableCellCommandHandler(
             (notebook, cell) => notebook.applyEdits([{
                 editType: CellEditType.Output,
-                handle: cell.handle, outputs: [], deleteCount: cell.outputs.length, append: false
+                handle: cell.handle,
+                outputs: [],
+                deleteCount: cell.outputs.length,
+                append: false
             }], true)
         ));
         commands.registerCommand(NotebookCellCommands.CHANGE_OUTPUT_PRESENTATION_COMMAND, this.editableCellCommandHandler(
