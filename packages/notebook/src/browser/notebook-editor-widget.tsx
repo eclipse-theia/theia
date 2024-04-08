@@ -16,7 +16,7 @@
 
 import * as React from '@theia/core/shared/react';
 import { CommandRegistry, MenuModelRegistry, URI } from '@theia/core';
-import { ReactWidget, Navigatable, SaveableSource, Message, DelegatingSaveable, lock, unlock } from '@theia/core/lib/browser';
+import { ReactWidget, Navigatable, SaveableSource, Message, DelegatingSaveable, lock, unlock, animationFrame } from '@theia/core/lib/browser';
 import { ReactNode } from '@theia/core/shared/react';
 import { CellKind } from '../common';
 import { CellRenderer as CellRenderer, NotebookCellListView } from './view/notebook-cell-list-view';
@@ -123,6 +123,7 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
     protected readonly renderers = new Map<CellKind, CellRenderer>();
     protected _model?: NotebookModel;
     protected _ready: Deferred<NotebookModel> = new Deferred();
+    protected scrollBarRef = React.createRef<{ updateScroll(): void }>();
 
     get notebookType(): string {
         return this.props.notebookType;
@@ -166,6 +167,11 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
         this._model = await this.props.notebookData;
         this.saveable.delegate = this._model;
         this.toDispose.push(this._model);
+        this.toDispose.push(this._model.onDidChangeContent(() => {
+            // Update the scroll bar content after the content has changed
+            // Wait one frame to ensure that the content has been rendered
+            animationFrame().then(() => this.scrollBarRef.current?.updateScroll());
+        }));
         this.toDispose.push(this._model.onDidChangeReadOnly(readOnly => {
             if (readOnly) {
                 lock(this.title);
@@ -212,6 +218,7 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
                 {this.notebookMainToolbarRenderer.render(this._model, this.node)}
                 <div className='theia-notebook-viewport' ref={(ref: HTMLDivElement) => this.viewportService.viewportElement = ref}>
                     <PerfectScrollbar className='theia-notebook-scroll-container'
+                        ref={this.scrollBarRef}
                         onScrollY={(e: HTMLDivElement) => this.viewportService.onScroll(e)}>
                         <NotebookCellListView renderers={this.renderers}
                             notebookModel={this._model}
