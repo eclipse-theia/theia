@@ -52,11 +52,12 @@ export namespace FileNavigatorCommands {
         category: CommonCommands.FILE_CATEGORY,
         label: 'Focus on Files Explorer'
     });
-    export const OPEN = Command.toDefaultLocalizedCommand({
+    export const OPEN: Command = {
         id: 'navigator.open',
-        category: CommonCommands.FILE_CATEGORY,
-        label: 'Open'
-    });
+    };
+    export const OPEN_WITH: Command = {
+        id: 'navigator.openWith',
+    };
     export const NEW_FILE_TOOLBAR: Command = {
         id: `${WorkspaceCommands.NEW_FILE.id}.toolbar`,
         iconClass: codicon('new-file')

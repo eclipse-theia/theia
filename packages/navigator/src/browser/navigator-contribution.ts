@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import {
     CommonCommands,
@@ -31,7 +31,8 @@ import {
     ApplicationShell,
     TabBar,
     Title,
-    SHELL_TABBAR_CONTEXT_MENU
+    SHELL_TABBAR_CONTEXT_MENU,
+    OpenWithService
 } from '@theia/core/lib/browser';
 import { FileDownloadCommands } from '@theia/filesystem/lib/browser/download/file-download-command-contribution';
 import {
@@ -40,6 +41,7 @@ import {
     MenuModelRegistry,
     MenuPath,
     Mutable,
+    QuickInputService,
 } from '@theia/core/lib/common';
 import {
     DidCreateNewResourceEvent,
@@ -113,6 +115,7 @@ export namespace NavigatorContextMenu {
     /** @deprecated use MODIFICATION */
     export const ACTIONS = MODIFICATION;
 
+    /** @deprecated use the `FileNavigatorCommands.OPEN_WITH` command */
     export const OPEN_WITH = [...NAVIGATION, 'open_with'];
 }
 
@@ -147,6 +150,12 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
 
     @inject(WorkspaceCommandContribution)
     protected readonly workspaceCommandContribution: WorkspaceCommandContribution;
+
+    @inject(OpenWithService)
+    protected readonly openWithService: OpenWithService;
+
+    @inject(QuickInputService) @optional()
+    protected readonly quickInputService: QuickInputService;
 
     constructor(
         @inject(FileNavigatorPreferences) protected readonly fileNavigatorPreferences: FileNavigatorPreferences,
@@ -293,6 +302,11 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
                 });
             }
         });
+        registry.registerCommand(FileNavigatorCommands.OPEN_WITH, UriAwareCommandHandler.MonoSelect(this.selectionService, {
+            isEnabled: uri => this.openWithService.getHandlers(uri).length > 0,
+            isVisible: uri => this.openWithService.getHandlers(uri).length > 0,
+            execute: uri => this.openWithService.openWith(uri)
+        }));
         registry.registerCommand(OpenEditorsCommands.CLOSE_ALL_TABS_FROM_TOOLBAR, {
             execute: widget => this.withOpenEditorsWidget(widget, () => this.shell.closeMany(this.editorWidgets)),
             isEnabled: widget => this.withOpenEditorsWidget(widget, () => true),
@@ -366,18 +380,11 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
 
         registry.registerMenuAction(NavigatorContextMenu.NAVIGATION, {
             commandId: FileNavigatorCommands.OPEN.id,
-            label: FileNavigatorCommands.OPEN.label
+            label: nls.localizeByDefault('Open')
         });
-        registry.registerSubmenu(NavigatorContextMenu.OPEN_WITH, nls.localizeByDefault('Open With...'));
-        this.openerService.getOpeners().then(openers => {
-            for (const opener of openers) {
-                const openWithCommand = WorkspaceCommands.FILE_OPEN_WITH(opener);
-                registry.registerMenuAction(NavigatorContextMenu.OPEN_WITH, {
-                    commandId: openWithCommand.id,
-                    label: opener.label,
-                    icon: opener.iconClass
-                });
-            }
+        registry.registerMenuAction(NavigatorContextMenu.NAVIGATION, {
+            commandId: FileNavigatorCommands.OPEN_WITH.id,
+            label: nls.localizeByDefault('Open With...')
         });
 
         registry.registerMenuAction(NavigatorContextMenu.CLIPBOARD, {

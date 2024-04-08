@@ -15,15 +15,11 @@
 // *****************************************************************************
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { CustomEditor } from '../../../common';
+import { CustomEditor, DeployedPlugin } from '../../../common';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { CustomEditorOpener } from './custom-editor-opener';
-import { WorkspaceCommands } from '@theia/workspace/lib/browser';
-import { CommandRegistry, Emitter, MenuModelRegistry } from '@theia/core';
-import { SelectionService } from '@theia/core/lib/common';
-import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
-import { NavigatorContextMenu } from '@theia/navigator/lib//browser/navigator-contribution';
-import { ApplicationShell, DefaultOpenerService, WidgetManager, WidgetOpenerOptions } from '@theia/core/lib/browser';
+import { Emitter } from '@theia/core';
+import { ApplicationShell, DefaultOpenerService, OpenWithService, WidgetManager, WidgetOpenerOptions } from '@theia/core/lib/browser';
 import { CustomEditorWidget } from './custom-editor-widget';
 
 @injectable()
@@ -38,20 +34,14 @@ export class PluginCustomEditorRegistry {
     @inject(DefaultOpenerService)
     protected readonly defaultOpenerService: DefaultOpenerService;
 
-    @inject(MenuModelRegistry)
-    protected readonly menuModelRegistry: MenuModelRegistry;
-
-    @inject(CommandRegistry)
-    protected readonly commandRegistry: CommandRegistry;
-
-    @inject(SelectionService)
-    protected readonly selectionService: SelectionService;
-
     @inject(WidgetManager)
     protected readonly widgetManager: WidgetManager;
 
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
+
+    @inject(OpenWithService)
+    protected readonly openWithService: OpenWithService;
 
     @postConstruct()
     protected init(): void {
@@ -71,7 +61,7 @@ export class PluginCustomEditorRegistry {
         });
     }
 
-    registerCustomEditor(editor: CustomEditor): Disposable {
+    registerCustomEditor(editor: CustomEditor, plugin: DeployedPlugin): Disposable {
         if (this.editors.has(editor.viewType)) {
             console.warn('editor with such id already registered: ', JSON.stringify(editor));
             return Disposable.NULL;
@@ -87,26 +77,14 @@ export class PluginCustomEditorRegistry {
             this.widgetManager
         );
         toDispose.push(this.defaultOpenerService.addHandler(editorOpenHandler));
-
-        const openWithCommand = WorkspaceCommands.FILE_OPEN_WITH(editorOpenHandler);
         toDispose.push(
-            this.menuModelRegistry.registerMenuAction(
-                NavigatorContextMenu.OPEN_WITH,
-                {
-                    commandId: openWithCommand.id,
-                    label: editorOpenHandler.label
-                }
-            )
-        );
-        toDispose.push(
-            this.commandRegistry.registerCommand(
-                openWithCommand,
-                UriAwareCommandHandler.MonoSelect(this.selectionService, {
-                    execute: uri => editorOpenHandler.open(uri),
-                    isEnabled: uri => editorOpenHandler.canHandle(uri) > 0,
-                    isVisible: uri => editorOpenHandler.canHandle(uri) > 0
-                })
-            )
+            this.openWithService.registerHandler({
+                id: editor.viewType,
+                label: editorOpenHandler.label,
+                providerName: plugin.metadata.model.displayName,
+                canHandle: uri => editorOpenHandler.canHandle(uri),
+                open: uri => editorOpenHandler.open(uri)
+            })
         );
         toDispose.push(
             editorOpenHandler.onDidOpenCustomEditor(event => this.resolveWidget(event[0], event[1]))
