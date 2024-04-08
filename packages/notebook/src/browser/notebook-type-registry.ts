@@ -16,21 +16,18 @@
 
 import { Disposable, DisposableCollection } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { DefaultOpenerService, OpenWithService } from '@theia/core/lib/browser';
+import { OpenWithService } from '@theia/core/lib/browser';
 import { NotebookTypeDescriptor } from '../common/notebook-protocol';
-import { NotebookOpenHandlerFactory } from './notebook-open-handler';
+import { NotebookOpenHandler } from './notebook-open-handler';
 
 @injectable()
 export class NotebookTypeRegistry {
 
-    @inject(DefaultOpenerService)
-    protected readonly defaultOpenerService: DefaultOpenerService;
-
     @inject(OpenWithService)
     protected readonly openWithService: OpenWithService;
 
-    @inject(NotebookOpenHandlerFactory)
-    protected readonly notebookOpenHandlerFactory: NotebookOpenHandlerFactory;
+    @inject(NotebookOpenHandler)
+    protected readonly notebookOpenHandler: NotebookOpenHandler;
 
     private readonly _notebookTypes: NotebookTypeDescriptor[] = [];
 
@@ -44,14 +41,13 @@ export class NotebookTypeRegistry {
             this._notebookTypes.splice(this._notebookTypes.indexOf(type), 1);
         }));
         this._notebookTypes.push(type);
-        const handler = this.notebookOpenHandlerFactory(type);
-        toDispose.push(this.defaultOpenerService.addHandler(handler));
+        toDispose.push(this.notebookOpenHandler.registerNotebookType(type));
         toDispose.push(this.openWithService.registerHandler({
             id: type.type,
             label: type.displayName,
             providerName,
-            canHandle: uri => handler.canHandle(uri) as number,
-            open: uri => handler.open(uri)
+            canHandle: uri => this.notebookOpenHandler.canHandleType(uri, type),
+            open: uri => this.notebookOpenHandler.open(uri, { notebookType: type.type })
         }));
         return toDispose;
     }
