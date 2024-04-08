@@ -19,6 +19,7 @@ export * from './frontend-application';
 export * from './frontend-application-contribution';
 export * from './keyboard';
 export * from './opener-service';
+export * from './open-with-service';
 export * from './browser';
 export * from './context-menu-renderer';
 export * from './widgets';

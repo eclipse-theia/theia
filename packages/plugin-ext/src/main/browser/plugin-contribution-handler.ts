@@ -288,7 +288,7 @@ export class PluginContributionHandler {
         if (contributions.customEditors) {
             for (const customEditor of contributions.customEditors) {
                 pushContribution(`customEditors.${customEditor.viewType}`,
-                    () => this.customEditorRegistry.registerCustomEditor(customEditor)
+                    () => this.customEditorRegistry.registerCustomEditor(customEditor, plugin)
                 );
             }
         }
@@ -434,7 +434,7 @@ export class PluginContributionHandler {
         if (contributions.notebooks) {
             for (const notebook of contributions.notebooks) {
                 pushContribution(`notebook.${notebook.type}`,
-                    () => this.notebookTypeRegistry.registerNotebookType(notebook)
+                    () => this.notebookTypeRegistry.registerNotebookType(notebook, plugin.metadata.model.displayName)
                 );
             }
         }

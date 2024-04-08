@@ -98,6 +98,7 @@ export namespace WorkspaceCommands {
         category: FILE_CATEGORY,
         label: 'New Folder...'
     });
+    /** @deprecated Use the `OpenWithService` instead */
     export const FILE_OPEN_WITH = (opener: OpenHandler): Command => ({
         id: `file.openWith.${opener.id}`
     });
@@ -224,7 +225,6 @@ export class WorkspaceCommandContribution implements CommandContribution {
     }
 
     registerCommands(registry: CommandRegistry): void {
-        this.registerOpenWith(registry);
         registry.registerCommand(WorkspaceCommands.NEW_FILE, this.newWorkspaceRootUriAwareCommandHandler({
             execute: uri => this.getDirectory(uri).then(parent => {
                 if (parent) {
@@ -354,24 +354,6 @@ export class WorkspaceCommandContribution implements CommandContribution {
             isEnabled: () => this.workspaceService.isMultiRootWorkspaceOpened,
             isVisible: uris => this.areWorkspaceRoots(uris) && this.workspaceService.saved
         }));
-    }
-
-    openers: OpenHandler[];
-    protected async registerOpenWith(registry: CommandRegistry): Promise<void> {
-        if (this.openerService.onDidChangeOpeners) {
-            this.openerService.onDidChangeOpeners(async e => {
-                this.openers = await this.openerService.getOpeners();
-            });
-        }
-        this.openers = await this.openerService.getOpeners();
-        for (const opener of this.openers) {
-            const openWithCommand = WorkspaceCommands.FILE_OPEN_WITH(opener);
-            registry.registerCommand(openWithCommand, this.newUriAwareCommandHandler({
-                execute: uri => opener.open(uri),
-                isEnabled: uri => opener.canHandle(uri) > 0,
-                isVisible: uri => opener.canHandle(uri) > 0 && this.areMultipleOpenHandlersPresent(this.openers, uri)
-            }));
-        }
     }
 
     protected newUriAwareCommandHandler(handler: UriCommandHandler<URI>): UriAwareCommandHandler<URI> {

@@ -16,9 +16,9 @@
 import '../../src/browser/style/index.css';
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { FrontendApplicationContribution, KeybindingContribution, LabelProviderContribution, OpenHandler, WidgetFactory } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, KeybindingContribution, LabelProviderContribution, WidgetFactory } from '@theia/core/lib/browser';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
-import { NotebookOpenHandler } from './notebook-open-handler';
+import { NotebookOpenHandler, NotebookOpenHandlerFactory } from './notebook-open-handler';
 import { CommandContribution, MenuContribution, ResourceResolver, } from '@theia/core';
 import { NotebookTypeRegistry } from './notebook-type-registry';
 import { NotebookRendererRegistry } from './notebook-renderer-registry';
@@ -43,13 +43,18 @@ import { NotebookMonacoTextModelService } from './service/notebook-monaco-text-m
 import { NotebookOutlineContribution } from './contributions/notebook-outline-contribution';
 import { NotebookLabelProviderContribution } from './contributions/notebook-label-provider-contribution';
 import { NotebookOutputActionContribution } from './contributions/notebook-output-action-contribution';
+import { NotebookTypeDescriptor } from '../common/notebook-protocol';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(NotebookColorContribution).toSelf().inSingletonScope();
     bind(ColorContribution).toService(NotebookColorContribution);
 
-    bind(NotebookOpenHandler).toSelf().inSingletonScope();
-    bind(OpenHandler).toService(NotebookOpenHandler);
+    bind(NotebookOpenHandlerFactory).toFactory(ctx => (notebookType: NotebookTypeDescriptor) => {
+        const child = ctx.container.createChild();
+        child.bind(NotebookTypeDescriptor).toConstantValue(notebookType);
+        child.bind(NotebookOpenHandler).toSelf().inSingletonScope();
+        return child.get(NotebookOpenHandler);
+    });
 
     bind(NotebookTypeRegistry).toSelf().inSingletonScope();
     bind(NotebookRendererRegistry).toSelf().inSingletonScope();
