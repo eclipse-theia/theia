@@ -32,7 +32,7 @@ import { UriComponents } from '../../common/uri-components';
 import { CommandsConverter } from '../command-registry';
 import * as typeConverters from '../type-converters';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
-import { NotebookDocument } from './notebook-document';
+import { Cell, NotebookDocument } from './notebook-document';
 import { NotebookEditor } from './notebook-editor';
 import { EditorsAndDocumentsExtImpl } from '../editors-and-documents';
 import { DocumentsExtImpl } from '../documents';
@@ -243,14 +243,7 @@ export class NotebooksExtImpl implements NotebooksExt {
                 this.documents.set(uri.toString(), document);
 
                 this.textDocumentsAndEditors.$acceptEditorsAndDocumentsDelta({
-                    addedDocuments: modelData.cells.map(cell => ({
-                        uri: cell.uri,
-                        versionId: 1,
-                        lines: cell.source,
-                        EOL: cell.eol,
-                        modeId: '',
-                        isDirty: false
-                    }))
+                    addedDocuments: modelData.cells.map(cell => Cell.asModelAddData(cell))
                 });
 
                 this.onDidOpenNotebookDocumentEmitter.fire(document.apiNotebook);
