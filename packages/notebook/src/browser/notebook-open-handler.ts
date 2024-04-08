@@ -26,7 +26,9 @@ import { NotebookEditorWidgetOptions } from './notebook-editor-widget-factory';
 @injectable()
 export class NotebookOpenHandler extends NavigatableWidgetOpenHandler<NotebookEditorWidget> {
 
-    id: string = 'notebook';
+    readonly id = 'notebook';
+
+    readonly label = 'Notebook Editor';
 
     @inject(NotebookTypeRegistry)
     protected notebookTypeRegistry: NotebookTypeRegistry;
