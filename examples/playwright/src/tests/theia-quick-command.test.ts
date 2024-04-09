@@ -61,8 +61,8 @@ test.describe('Theia Quick Command', () => {
     });
 
     test('should trigger \'Toggle Explorer View\' command after typing', async () => {
-        await quickCommand.type('Toggle Explorer');
-        await quickCommand.trigger('Toggle Explorer View');
+        await quickCommand.type('Toggle Exp');
+        await quickCommand.trigger('View: Toggle Explorer');
         expect(await quickCommand.isOpen()).toBe(false);
         const explorerView = new TheiaExplorerView(app);
         expect(await explorerView.isDisplayed()).toBe(true);
