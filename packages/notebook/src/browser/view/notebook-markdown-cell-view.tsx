@@ -61,18 +61,23 @@ function MarkdownCell({ markdownRenderer, monacoServices, cell, notebookModel, n
         return () => listener.dispose();
     }, [editMode]);
 
-    let markdownContent = React.useMemo(() => markdownRenderer.render(new MarkdownStringImpl(cell.source)).element.innerHTML, [cell, editMode]);
-    if (markdownContent.length === 0) {
-        markdownContent = `<i class="theia-notebook-empty-markdown">${nls.localizeByDefault('Empty markdown cell, double-click or press enter to edit.')}</i>`;
+    let markdownContent: HTMLElement = React.useMemo(() => {
+        const markdownString = new MarkdownStringImpl(cell.source, { supportHtml: true, isTrusted: true });
+        return markdownRenderer.render(markdownString).element;
+    }, [cell, editMode]);
+
+    if (!markdownContent.hasChildNodes()) {
+        const italic = document.createElement('i');
+        italic.className = 'theia-notebook-empty-markdown';
+        italic.innerText = nls.localizeByDefault('Empty markdown cell, double-click or press enter to edit.');
+        italic.style.pointerEvents = 'none';
+        markdownContent = italic;
     }
 
     return editMode ?
         <CellEditor cell={cell} notebookModel={notebookModel} monacoServices={monacoServices} notebookContextManager={notebookContextManager} /> :
         <div className='theia-notebook-markdown-content'
             onDoubleClick={() => cell.requestEdit()}
-            // This sets the non React HTML node from the markdown renderers output as a child node to this react component
-            // This is currently sadly the best way we have to combine React (Virtual Nodes) and normal dom nodes
-            // the HTML is already sanitized by the markdown renderer, so we don't need to sanitize it again
-            dangerouslySetInnerHTML={{ __html: markdownContent }} // eslint-disable-line react/no-danger
+            ref={node => node?.replaceChildren(markdownContent)}
         />;
 }
