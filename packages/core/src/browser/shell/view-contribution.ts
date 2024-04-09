@@ -18,7 +18,7 @@ import { injectable, inject, interfaces, optional } from 'inversify';
 import { Widget } from '@phosphor/widgets';
 import {
     MenuModelRegistry, Command, CommandContribution,
-    MenuContribution, CommandRegistry
+    MenuContribution, CommandRegistry, nls
 } from '../../common';
 import { KeybindingContribution, KeybindingRegistry } from '../keybinding';
 import { WidgetManager } from '../widget-manager';
@@ -69,7 +69,8 @@ export abstract class AbstractViewContribution<T extends Widget> implements Comm
         if (options.toggleCommandId) {
             this.toggleCommand = {
                 id: options.toggleCommandId,
-                label: 'Toggle ' + this.viewLabel + ' View'
+                category: nls.localizeByDefault('View'),
+                label: nls.localizeByDefault('Toggle {0}', this.viewLabel)
             };
         }
     }

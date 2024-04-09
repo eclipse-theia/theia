@@ -55,6 +55,13 @@ export const PLUGIN_VIEW_DATA_FACTORY_ID = 'plugin-view-data';
 
 export type ViewDataProvider = (params: { state?: object, viewInfo: View }) => Promise<TreeViewWidget>;
 
+export interface ViewContainerInfo {
+    id: string
+    location: string
+    options: ViewContainerTitleOptions
+    onViewAdded: () => void
+}
+
 @injectable()
 export class PluginViewRegistry implements FrontendApplicationContribution {
 
@@ -96,7 +103,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
 
     private readonly views = new Map<string, [string, View]>();
     private readonly viewsWelcome = new Map<string, ViewWelcome[]>();
-    private readonly viewContainers = new Map<string, [string, ViewContainerTitleOptions]>();
+    private readonly viewContainers = new Map<string, ViewContainerInfo>();
     private readonly containerViews = new Map<string, string[]>();
     private readonly viewClauseContexts = new Map<string, Set<string> | undefined>();
 
@@ -324,34 +331,47 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
 
     protected doRegisterViewContainer(id: string, location: string, options: ViewContainerTitleOptions): Disposable {
         const toDispose = new DisposableCollection();
-        this.viewContainers.set(id, [location, options]);
         toDispose.push(Disposable.create(() => this.viewContainers.delete(id)));
         const toggleCommandId = `plugin.view-container.${id}.toggle`;
-        toDispose.push(this.commands.registerCommand({
-            id: toggleCommandId,
-            label: 'Toggle ' + options.label + ' View'
-        }, {
-            execute: () => this.toggleViewContainer(id)
-        }));
-        toDispose.push(this.menus.registerMenuAction(CommonMenus.VIEW_VIEWS, {
-            commandId: toggleCommandId,
-            label: options.label
-        }));
-        toDispose.push(this.quickView?.registerItem({
-            label: options.label,
-            open: async () => {
-                const widget = await this.openViewContainer(id);
-                if (widget) {
-                    this.shell.activateWidget(widget.id);
+        // Some plugins may register empty view containers.
+        // We should not register commands for them immediately, as that leads to bad UX.
+        // Instead, we register commands the first time we add a view to them.
+        let activate = () => {
+            toDispose.push(this.commands.registerCommand({
+                id: toggleCommandId,
+                category: nls.localizeByDefault('View'),
+                label: nls.localizeByDefault('Toggle {0}', options.label)
+            }, {
+                execute: () => this.toggleViewContainer(id)
+            }));
+            toDispose.push(this.menus.registerMenuAction(CommonMenus.VIEW_VIEWS, {
+                commandId: toggleCommandId,
+                label: options.label
+            }));
+            toDispose.push(this.quickView?.registerItem({
+                label: options.label,
+                open: async () => {
+                    const widget = await this.openViewContainer(id);
+                    if (widget) {
+                        this.shell.activateWidget(widget.id);
+                    }
                 }
-            }
-        }));
-        toDispose.push(Disposable.create(async () => {
-            const widget = await this.getPluginViewContainer(id);
-            if (widget) {
-                widget.dispose();
-            }
-        }));
+            }));
+            toDispose.push(Disposable.create(async () => {
+                const widget = await this.getPluginViewContainer(id);
+                if (widget) {
+                    widget.dispose();
+                }
+            }));
+            // Ignore every subsequent activation call
+            activate = () => { };
+        };
+        this.viewContainers.set(id, {
+            id,
+            location,
+            options,
+            onViewAdded: () => activate()
+        });
         return toDispose;
     }
 
@@ -373,6 +393,11 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         view.when = view.when?.trim();
         this.views.set(view.id, [viewContainerId, view]);
         toDispose.push(Disposable.create(() => this.views.delete(view.id)));
+
+        const containerInfo = this.viewContainers.get(viewContainerId);
+        if (containerInfo) {
+            containerInfo.onViewAdded();
+        }
 
         const containerViews = this.getContainerViews(viewContainerId);
         containerViews.push(view.id);
@@ -634,7 +659,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         if (!data) {
             return undefined;
         }
-        const [location] = data;
+        const { location } = data;
         const containerWidget = await this.getOrCreateViewContainerWidget(containerId);
         if (!containerWidget.isAttached) {
             await this.shell.addWidget(containerWidget, {
@@ -648,7 +673,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     protected async prepareViewContainer(viewContainerId: string, containerWidget: ViewContainerWidget): Promise<void> {
         const data = this.viewContainers.get(viewContainerId);
         if (data) {
-            const [, options] = data;
+            const { options } = data;
             containerWidget.setTitleOptions(options);
         }
         for (const viewId of this.getContainerViews(viewContainerId)) {
