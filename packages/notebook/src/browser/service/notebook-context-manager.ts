@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { ContextKeyChangeEvent, ContextKeyService, ScopedValueStore } from '@theia/core/lib/browser/context-key-service';
+import { ContextKeyChangeEvent, ContextKeyService, ContextMatcher, ScopedValueStore } from '@theia/core/lib/browser/context-key-service';
 import { DisposableCollection, Emitter } from '@theia/core';
 import { NotebookKernelService } from './notebook-kernel-service';
 import {
@@ -53,6 +53,8 @@ export class NotebookContextManager {
         return this._context;
     }
 
+    protected cellContexts: Map<number, Record<string, unknown>> = new Map();
+
     init(widget: NotebookEditorWidget): void {
         this._context = widget.node;
         this.scopedStore = this.contextKeyService.createScoped(widget.node);
@@ -89,6 +91,14 @@ export class NotebookContextManager {
             this.onDidChangeContextEmitter.fire(this.createContextKeyChangedEvent([NOTEBOOK_CELL_FOCUSED]));
         });
 
+        this.toDispose.push(this.executionStateService.onDidChangeExecution(e => {
+            if (e.notebook.toString() === widget.model?.uri.toString()) {
+                this.setCellContext(e.cellHandle, NOTEBOOK_CELL_EXECUTING, !!e.changed);
+                this.setCellContext(e.cellHandle, NOTEBOOK_CELL_EXECUTION_STATE, e.changed?.state ?? 'idle');
+                this.onDidChangeContextEmitter.fire(this.createContextKeyChangedEvent([NOTEBOOK_CELL_EXECUTING, NOTEBOOK_CELL_EXECUTION_STATE]));
+            }
+        }));
+
         widget.model?.onDidChangeSelectedCell(e => this.selectedCellChanged(e));
 
         this.onDidChangeContextEmitter.fire(this.createContextKeyChangedEvent([NOTEBOOK_VIEW_TYPE, NOTEBOOK_KERNEL_SELECTED, NOTEBOOK_KERNEL]));
@@ -109,17 +119,24 @@ export class NotebookContextManager {
                 this.scopedStore.setContext(NOTEBOOK_CELL_EDITABLE, cell.cellKind === CellKind.Markup && !cellEdit);
                 this.onDidChangeContextEmitter.fire(this.createContextKeyChangedEvent([NOTEBOOK_CELL_MARKDOWN_EDIT_MODE]));
             }));
-            this.cellDisposables.push(this.executionStateService.onDidChangeExecution(e => {
-                if (cell && e.affectsCell(cell.uri)) {
-                    this.scopedStore.setContext(NOTEBOOK_CELL_EXECUTING, !!e.changed);
-                    this.scopedStore.setContext(NOTEBOOK_CELL_EXECUTION_STATE, e.changed?.state ?? 'idle');
-                    this.onDidChangeContextEmitter.fire(this.createContextKeyChangedEvent([NOTEBOOK_CELL_EXECUTING, NOTEBOOK_CELL_EXECUTION_STATE]));
-                }
-            }));
         }
 
         this.onDidChangeContextEmitter.fire(this.createContextKeyChangedEvent([NOTEBOOK_CELL_TYPE]));
 
+    }
+
+    protected setCellContext(cellHandle: number, key: string, value: unknown): void {
+        let cellContext = this.cellContexts.get(cellHandle);
+        if (!cellContext) {
+            cellContext = {};
+            this.cellContexts.set(cellHandle, cellContext);
+        }
+
+        cellContext[key] = value;
+    }
+
+    getCellContext(cellHandle: number): ContextMatcher {
+        return this.contextKeyService.createOverlay(Object.entries(this.cellContexts.get(cellHandle) ?? {}));
     }
 
     onDidEditorTextFocus(focus: boolean): void {

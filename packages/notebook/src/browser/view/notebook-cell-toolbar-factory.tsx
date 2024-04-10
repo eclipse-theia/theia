@@ -64,9 +64,8 @@ export class NotebookCellToolbarFactory {
 
     private getMenuItems(menuItemPath: string[], notebookModel: NotebookModel, cell: NotebookCellModel, output?: NotebookCellOutputModel): NotebookCellToolbarItem[] {
         const inlineItems: NotebookCellToolbarItem[] = [];
-
         for (const menuNode of this.menuRegistry.getMenu(menuItemPath).children) {
-            if (!menuNode.when || this.contextKeyService.match(menuNode.when, this.notebookContextManager.context)) {
+            if (!menuNode.when || this.notebookContextManager.getCellContext(cell.handle).match(menuNode.when, this.notebookContextManager.context)) {
                 if (menuNode.role === CompoundMenuNodeRole.Flat) {
                     inlineItems.push(...menuNode.children?.map(child => this.createToolbarItem(child, notebookModel, cell, output)) ?? []);
                 } else {
