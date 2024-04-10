@@ -127,7 +127,7 @@ export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProp
             return <div key={item.id} title={title} className={`theia-notebook-main-toolbar-item action-label${this.getAdditionalClasses(item)}`}
                 onClick={() => {
                     if (item.command && (!item.when || this.props.contextKeyService.match(item.when, this.props.editorNode))) {
-                        this.props.commandRegistry.executeCommand(item.command, this.props.notebookModel);
+                        this.props.commandRegistry.executeCommand(item.command, this.props.notebookModel.uri);
                     }
                 }}>
                 <span className={item.icon} />
