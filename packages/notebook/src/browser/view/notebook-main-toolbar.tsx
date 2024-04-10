@@ -123,7 +123,9 @@ export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProp
             if (!visibleCommand) {
                 return undefined;
             }
-            const title = (this.props.commandRegistry.getCommand(item.command ?? '') as NotebookCommand)?.tooltip ?? item.label;
+            const command = this.props.commandRegistry.getCommand(item.command ?? '') as NotebookCommand | undefined;
+            const label = command?.shortTitle ?? item.label;
+            const title = command?.tooltip ?? item.label;
             return <div key={item.id} title={title} className={`theia-notebook-main-toolbar-item action-label${this.getAdditionalClasses(item)}`}
                 onClick={() => {
                     if (item.command && (!item.when || this.props.contextKeyService.match(item.when, this.props.editorNode))) {
@@ -131,7 +133,7 @@ export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProp
                     }
                 }}>
                 <span className={item.icon} />
-                <span className='theia-notebook-main-toolbar-item-text'>{item.label}</span>
+                <span className='theia-notebook-main-toolbar-item-text'>{label}</span>
             </div>;
         }
         return undefined;

@@ -42,6 +42,10 @@ export interface Command {
      */
     iconClass?: string;
     /**
+     * A short title used for display in menus.
+     */
+    shortTitle?: string;
+    /**
      * A category of this command.
      */
     category?: string;

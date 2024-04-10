@@ -198,6 +198,7 @@ export interface PluginPackageViewWelcome {
 export interface PluginPackageCommand {
     command: string;
     title: string;
+    shortTitle?: string;
     original?: string;
     category?: string;
     icon?: string | { light: string; dark: string; };
@@ -858,6 +859,7 @@ export interface ViewWelcome {
 export interface PluginCommand {
     command: string;
     title: string;
+    shortTitle?: string;
     originalTitle?: string;
     category?: string;
     iconUrl?: IconUrl;
