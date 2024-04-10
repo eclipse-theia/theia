@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Command, CommandContribution, CommandHandler, CommandRegistry, CompoundMenuNodeRole, MenuContribution, MenuModelRegistry, nls } from '@theia/core';
+import { Command, CommandContribution, CommandHandler, CommandRegistry, CompoundMenuNodeRole, MenuContribution, MenuModelRegistry, nls, URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ApplicationShell, codicon, CommonCommands, KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
 import { NotebookModel } from '../view-model/notebook-model';
@@ -184,12 +184,23 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
 
     protected editableCommandHandler(execute: (notebookModel: NotebookModel) => void): CommandHandler {
         return {
-            isEnabled: (notebookModel: NotebookModel) => !Boolean(notebookModel?.readOnly),
-            isVisible: (notebookModel: NotebookModel) => !Boolean(notebookModel?.readOnly),
-            execute: (notebookModel: NotebookModel) => {
-                execute(notebookModel);
+            isEnabled: (item: URI | NotebookModel) => this.withModel(item, model => !Boolean(model?.readOnly), false),
+            isVisible: (item: URI | NotebookModel) => this.withModel(item, model => !Boolean(model?.readOnly), false),
+            execute: (uri: URI | NotebookModel) => {
+                this.withModel(uri, execute, undefined);
             }
         };
+    }
+
+    protected withModel<T>(item: URI | NotebookModel, execute: (notebookModel: NotebookModel) => T, defaultValue: T): T {
+        if (item instanceof URI) {
+            const model = this.notebookService.getNotebookEditorModel(item);
+            if (!model) {
+                return defaultValue;
+            }
+            item = model;
+        }
+        return execute(item);
     }
 
     registerMenus(menus: MenuModelRegistry): void {
