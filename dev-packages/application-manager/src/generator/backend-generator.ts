@@ -52,10 +52,12 @@ if (process.env.LC_ALL) {
 }
 process.env.LC_NUMERIC = 'C';
 
+const { resolve } = require('path');
+const theiaAppProjectPath = resolve(__dirname, '..', '..');
+process.env.THEIA_APP_PROJECT_PATH = theiaAppProjectPath;
 const { default: electronMainApplicationModule } = require('@theia/core/lib/electron-main/electron-main-application-module');
 const { ElectronMainApplication, ElectronMainApplicationGlobals } = require('@theia/core/lib/electron-main/electron-main-application');
 const { Container } = require('inversify');
-const { resolve } = require('path');
 const { app } = require('electron');
 
 const config = ${this.prettyStringify(this.pck.props.frontend.config)};
@@ -71,7 +73,7 @@ const isSingleInstance = ${this.pck.props.backend.config.singleInstance === true
     const container = new Container();
     container.load(electronMainApplicationModule);
     container.bind(ElectronMainApplicationGlobals).toConstantValue({
-        THEIA_APP_PROJECT_PATH: resolve(__dirname, '..', '..'),
+        THEIA_APP_PROJECT_PATH: theiaAppProjectPath,
         THEIA_BACKEND_MAIN_PATH: resolve(__dirname, 'main.js'),
         THEIA_FRONTEND_HTML_PATH: resolve(__dirname, '..', '..', 'lib', 'frontend', 'index.html'),
     });
@@ -119,6 +121,7 @@ if ('ELECTRON_RUN_AS_NODE' in process.env) {
 }
 
 const path = require('path');
+process.env.THEIA_APP_PROJECT_PATH = path.resolve(__dirname, '..', '..')
 const express = require('express');
 const { Container } = require('inversify');
 const { BackendApplication, BackendApplicationServer, CliManager } = require('@theia/core/lib/node');

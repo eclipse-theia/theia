@@ -27,8 +27,13 @@ import { CliContribution } from './cli';
 import { Deferred } from '../common/promise-util';
 import { environment } from '../common/index';
 import { AddressInfo } from 'net';
-import { ApplicationPackage } from '@theia/application-package';
 import { ProcessUtils } from './process-utils';
+
+/**
+ * The path to the application project directory. This is the directory where the application code is located.
+ * Mostly contains the `package.json` file and the `lib` directory.
+ */
+export const BackendApplicationPath = process.env.THEIA_APP_PROJECT_PATH || process.cwd();
 
 export type DnsResultOrder = 'ipv4first' | 'verbatim' | 'nodeDefault';
 
@@ -115,7 +120,8 @@ export class BackendApplicationCliContribution implements CliContribution {
     ssl: boolean | undefined;
     cert: string | undefined;
     certkey: string | undefined;
-    projectPath: string;
+    /** @deprecated Use the `BackendApplicationPath` constant or `process.env.THEIA_APP_PROJECT_PATH` environment variable instead */
+    projectPath = BackendApplicationPath;
 
     configure(conf: yargs.Argv): void {
         conf.option('port', { alias: 'p', description: 'The port the backend server listens on.', type: 'number', default: DEFAULT_PORT });
@@ -123,7 +129,7 @@ export class BackendApplicationCliContribution implements CliContribution {
         conf.option('ssl', { description: 'Use SSL (HTTPS), cert and certkey must also be set', type: 'boolean', default: DEFAULT_SSL });
         conf.option('cert', { description: 'Path to SSL certificate.', type: 'string' });
         conf.option('certkey', { description: 'Path to SSL certificate key.', type: 'string' });
-        conf.option(APP_PROJECT_PATH, { description: 'Sets the application project directory', default: this.appProjectPath() });
+        conf.option(APP_PROJECT_PATH, { description: 'Sets the application project directory', deprecated: true });
         conf.option('dnsDefaultResultOrder', {
             type: 'string',
             description: 'Configure Node\'s DNS resolver default behavior, see https://nodejs.org/docs/latest-v18.x/api/dns.html#dnssetdefaultresultorderorder',
@@ -138,18 +144,7 @@ export class BackendApplicationCliContribution implements CliContribution {
         this.ssl = args.ssl as boolean;
         this.cert = args.cert as string;
         this.certkey = args.certkey as string;
-        this.projectPath = args[APP_PROJECT_PATH] as string;
         this.dnsDefaultResultOrder = args.dnsDefaultResultOrder as DnsResultOrder;
-    }
-
-    protected appProjectPath(): string {
-        if (environment.electron.is()) {
-            if (process.env.THEIA_APP_PROJECT_PATH) {
-                return process.env.THEIA_APP_PROJECT_PATH;
-            }
-            throw new Error('The \'THEIA_APP_PROJECT_PATH\' environment variable must be set when running in electron.');
-        }
-        return process.cwd();
     }
 }
 
@@ -160,9 +155,6 @@ export class BackendApplicationCliContribution implements CliContribution {
 export class BackendApplication {
 
     protected readonly app: express.Application = express();
-
-    @inject(ApplicationPackage)
-    protected readonly applicationPackage: ApplicationPackage;
 
     @inject(ProcessUtils)
     protected readonly processUtils: ProcessUtils;
@@ -352,7 +344,7 @@ export class BackendApplication {
         const acceptedEncodings = req.acceptsEncodings();
 
         const gzUrl = `${req.url}.gz`;
-        const gzPath = path.join(this.applicationPackage.projectPath, 'lib', 'frontend', gzUrl);
+        const gzPath = path.join(BackendApplicationPath, 'lib', 'frontend', gzUrl);
         if (acceptedEncodings.indexOf('gzip') === -1 || !(await fs.pathExists(gzPath))) {
             next();
             return;

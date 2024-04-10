@@ -22,6 +22,7 @@ import { pathExists, mkdir } from 'fs-extra';
 import { EnvVariable, EnvVariablesServer } from '../../common/env-variables';
 import { isWindows } from '../../common/os';
 import { FileUri } from '../../common/file-uri';
+import { BackendApplicationPath } from '../backend-application';
 
 @injectable()
 export class EnvVariablesServerImpl implements EnvVariablesServer {
@@ -45,10 +46,7 @@ export class EnvVariablesServerImpl implements EnvVariablesServer {
     }
 
     protected async createConfigDirUri(): Promise<string> {
-        let dataFolderPath: string = '';
-        if (process.env.THEIA_APP_PROJECT_PATH) {
-            dataFolderPath = join(process.env.THEIA_APP_PROJECT_PATH, 'data');
-        }
+        const dataFolderPath = join(BackendApplicationPath, 'data');
         const userDataPath = join(dataFolderPath, 'user-data');
         const dataFolderExists = this.pathExistenceCache[dataFolderPath] ??= await pathExists(dataFolderPath);
         if (dataFolderExists) {
