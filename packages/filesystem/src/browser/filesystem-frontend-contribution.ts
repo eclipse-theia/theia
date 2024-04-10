@@ -127,6 +127,9 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
             await this.runEach((uri, widget) => this.applyMove(uri, widget, event));
             this.resolveUserOperation(event);
         })()));
+        this.uploadService.onDidUpload(files => {
+            this.doHandleUpload(files);
+        });
     }
 
     onStart?(app: FrontendApplication): MaybePromise<void> {
@@ -175,6 +178,22 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
             if (!isCancelled(e)) {
                 console.error(e);
             }
+        }
+    }
+
+    protected async doHandleUpload(uploads: string[]): Promise<void> {
+        // Only handle single file uploads
+        if (uploads.length === 1) {
+            const uri = new URI(uploads[0]);
+            // Close all existing widgets for this URI
+            const widgets = this.shell.widgets.filter(widget => NavigatableWidget.getUri(widget)?.isEqual(uri));
+            await this.shell.closeMany(widgets, {
+                // Don't ask to save the file if it's dirty
+                // The user has already confirmed the file overwrite
+                save: false
+            });
+            // Open a new editor for this URI
+            open(this.openerService, uri);
         }
     }
 
