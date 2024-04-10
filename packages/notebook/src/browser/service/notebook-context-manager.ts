@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { ContextKeyChangeEvent, ContextKeyService, ScopedValueStore } from '@theia/core/lib/browser/context-key-service';
+import { ContextKeyChangeEvent, ContextKeyService, ContextMatcher, ScopedValueStore } from '@theia/core/lib/browser/context-key-service';
 import { DisposableCollection, Emitter } from '@theia/core';
 import { NotebookKernelService } from './notebook-kernel-service';
 import {
@@ -126,8 +126,8 @@ export class NotebookContextManager {
         cellContext[key] = value;
     }
 
-    withCellContext<T>(cellHandle: number, action: () => unknown): unknown {
-        return this.contextKeyService.with(this.cellContexts.get(cellHandle) ?? {}, action);
+    getCellContext(cellHandle: number): ContextMatcher {
+        return this.contextKeyService.createOverlay(Object.entries(this.cellContexts.get(cellHandle) ?? {}));
     }
 
     onDidEditorTextFocus(focus: boolean): void {
