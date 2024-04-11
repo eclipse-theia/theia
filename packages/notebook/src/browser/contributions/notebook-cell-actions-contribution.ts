@@ -110,23 +110,25 @@ export namespace NotebookCellCommands {
     });
 
     export const TO_CODE_CELL_COMMAND = Command.toLocalizedCommand({
-        id: 'notebook.cell.to-code-cell',
+        id: 'notebook.cell.changeToCode',
         label: 'Change Cell to Code'
     });
 
     export const TO_MARKDOWN_CELL_COMMAND = Command.toLocalizedCommand({
-        id: 'notebook.cell.to-markdown-cell',
+        id: 'notebook.cell.changeToMarkdown',
         label: 'Change Cell to Mardown'
     });
 
-    export const TOGGLE_LINE_NUMBERS = Command.toDefaultLocalizedCommand({
-        id: 'notebook.toggle-line-numbers',
+    export const COLLAPSE_CELL_OUTPUT = Command.toDefaultLocalizedCommand({
+        id: 'notebook.cell.expandCellOutput',
         category: 'Notebook',
+        label: 'Collapse Cell Output',
     });
 
-    export const TOOGLE_OUTPUTS = Command.toDefaultLocalizedCommand({
-        id: 'notebook.toggle-outputs',
+    export const EXPAND_CELL_OUTPUT = Command.toDefaultLocalizedCommand({
+        id: 'notebook.cell.expandCellOutput',
         category: 'Notebook',
+        label: 'Expand Cell Output',
     });
 
 }
@@ -339,20 +341,20 @@ export class NotebookCellActionContribution implements MenuContribution, Command
             changeCellType(notebookModel, cell, CellKind.Markup);
         }));
 
-        commands.registerCommand(NotebookCellCommands.TOGGLE_LINE_NUMBERS, {
+        commands.registerCommand(NotebookCellCommands.COLLAPSE_CELL_OUTPUT, {
             execute: () => {
                 const selectedCell = this.notebookEditorWidgetService.focusedEditor?.model?.selectedCell;
                 if (selectedCell) {
-                    selectedCell.editorOptions = { ...selectedCell.editorOptions, lineNumbers: selectedCell.editorOptions?.lineNumbers === 'on' ? 'off' : 'on' };
+                    selectedCell.outputVisible = false;
                 }
             }
         });
 
-        commands.registerCommand(NotebookCellCommands.TOOGLE_OUTPUTS, {
+        commands.registerCommand(NotebookCellCommands.EXPAND_CELL_OUTPUT, {
             execute: () => {
                 const selectedCell = this.notebookEditorWidgetService.focusedEditor?.model?.selectedCell;
                 if (selectedCell) {
-                    selectedCell.outputVisible = !selectedCell.outputVisible;
+                    selectedCell.outputVisible = true;
                 }
             }
         });
@@ -422,16 +424,6 @@ export class NotebookCellActionContribution implements MenuContribution, Command
                 keybinding: 'M',
                 when: `!editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED} && ${NOTEBOOK_CELL_TYPE} == 'code'`,
             },
-            {
-                command: NotebookCellCommands.TOGGLE_LINE_NUMBERS.id,
-                keybinding: 'L',
-                when: `!editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED} && ${NOTEBOOK_CELL_TYPE} == 'code'`,
-            },
-            {
-                command: NotebookCellCommands.TOOGLE_OUTPUTS.id,
-                keybinding: 'O',
-                when: `!editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED} && ${NOTEBOOK_CELL_TYPE} == 'code'`,
-            }
         );
     }
 }

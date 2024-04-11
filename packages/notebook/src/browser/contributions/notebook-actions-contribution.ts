@@ -82,11 +82,6 @@ export namespace NotebookCommands {
         id: 'notebook.paste-cell',
         category: 'Notebook',
     });
-
-    export const NOTEBOOK_UNDO = Command.toDefaultLocalizedCommand({
-        id: 'notebook.undo',
-        category: 'Notebook',
-    });
 }
 
 export enum CellChangeDirection {
@@ -227,7 +222,7 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
         commands.registerCommand(NotebookCommands.PASTE_CELL, {
             isEnabled: () => !Boolean(this.notebookEditorWidgetService.focusedEditor?.model?.readOnly),
             isVisible: () => !Boolean(this.notebookEditorWidgetService.focusedEditor?.model?.readOnly),
-            execute: (position: 'above' | 'below') => {
+            execute: (position?: 'above') => {
                 const copiedCell = this.notebookClipboardService.getCell();
                 if (copiedCell) {
                     const model = this.notebookEditorWidgetService.focusedEditor?.model;
@@ -237,10 +232,6 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
             }
         });
 
-        commands.registerCommand(NotebookCommands.NOTEBOOK_UNDO, {
-            isEnabled: () => !Boolean(this.notebookEditorWidgetService.focusedEditor?.model?.readOnly),
-            execute: () => this.notebookEditorWidgetService.focusedEditor?.undo()
-        });
     }
 
     protected editableCommandHandler(execute: (notebookModel: NotebookModel) => void): CommandHandler {
@@ -302,32 +293,19 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
             },
             {
                 command: NotebookCommands.CUT_SELECTED_CELL.id,
-                keybinding: 'x',
+                keybinding: 'ctrlcmd+x',
                 when: `!editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`
             },
             {
                 command: NotebookCommands.COPY_SELECTED_CELL.id,
-                keybinding: 'c',
+                keybinding: 'ctrlcmd+c',
                 when: `!editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`
             },
             {
                 command: NotebookCommands.PASTE_CELL.id,
-                keybinding: 'v',
-                when: `!editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`
+                keybinding: 'ctrlcmd+v',
+                when: `!editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED}`
             },
-            {
-                command: NotebookCommands.PASTE_CELL.id,
-                keybinding: 'shift+v',
-                when: `!editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`,
-                args: 'above'
-            },
-            {
-                command: NotebookCommands.NOTEBOOK_UNDO.id,
-                keybinding: 'z',
-                // notebook type check is to check that we are using the editors context
-                when: `!editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED} && notebookType`
-            },
-
         );
     }
 

@@ -29,6 +29,8 @@ import {
 import { NotebookCellOutputsSplice } from '../notebook-types';
 import { NotebookMonacoTextModelService } from '../service/notebook-monaco-text-model-service';
 import { NotebookCellOutputModel } from './notebook-cell-output-model';
+import { PreferenceService } from '@theia/core/lib/browser';
+import { NOTEBOOK_LINE_NUMBERS } from '../contributions/notebook-preferences';
 
 export const NotebookCellModelFactory = Symbol('NotebookModelFactory');
 export type NotebookCellModelFactory = (props: NotebookCellModelProps) => NotebookCellModel;
@@ -118,6 +120,9 @@ export class NotebookCellModel implements NotebookCell, Disposable {
 
     @inject(NotebookMonacoTextModelService)
     protected readonly textModelService: NotebookMonacoTextModelService;
+
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
 
     get outputs(): NotebookCellOutputModel[] {
         return this._outputs;
@@ -229,6 +234,18 @@ export class NotebookCellModel implements NotebookCell, Disposable {
         this._outputs = this.props.outputs.map(op => new NotebookCellOutputModel(op));
         this._metadata = this.props.metadata ?? {};
         this._internalMetadata = this.props.internalMetadata ?? {};
+
+        this.editorOptions = {
+            lineNumbers: this.preferenceService.get(NOTEBOOK_LINE_NUMBERS)
+        };
+        this.toDispose.push(this.preferenceService.onPreferenceChanged(e => {
+            if (e.preferenceName === NOTEBOOK_LINE_NUMBERS) {
+                this.editorOptions = {
+                    ...this.editorOptions,
+                    lineNumbers: this.preferenceService.get(NOTEBOOK_LINE_NUMBERS)
+                };
+            }
+        }));
     }
 
     dispose(): void {
