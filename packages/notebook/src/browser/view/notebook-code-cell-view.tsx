@@ -223,19 +223,15 @@ export class NotebookCodeCellOutputs extends React.Component<NotebookCellOutputP
 
     override async componentDidMount(): Promise<void> {
         const { cell, notebook, outputWebviewFactory } = this.props;
-        this.toDispose.push(cell.onDidChangeOutputs(async () => {
-            if (!this.outputsWebviewPromise && cell.outputs.length > 0) {
-                this.outputsWebviewPromise = outputWebviewFactory(cell, notebook).then(webview => {
-                    this.outputsWebview = webview;
-                    this.forceUpdate();
-                    return webview;
-                });
-                this.forceUpdate();
-            } else if (this.outputsWebviewPromise && cell.outputs.length === 0 && cell.internalMetadata.runEndTime) {
-                (await this.outputsWebviewPromise).dispose();
+        this.toDispose.push(cell.onDidChangeOutputs(() => this.updateOutputs()));
+        this.toDispose.push(cell.onDidChangeOutputVisibility(visible => {
+            this.forceUpdate();
+            if (!visible && this.outputsWebview) {
+                this.outputsWebview?.dispose();
                 this.outputsWebview = undefined;
                 this.outputsWebviewPromise = undefined;
-                this.forceUpdate();
+            } else {
+                this.updateOutputs();
             }
         }));
         if (cell.outputs.length > 0) {
@@ -244,6 +240,23 @@ export class NotebookCodeCellOutputs extends React.Component<NotebookCellOutputP
                 this.forceUpdate();
                 return webview;
             });
+        }
+    }
+
+    protected async updateOutputs(): Promise<void> {
+        const { cell, notebook, outputWebviewFactory } = this.props;
+        if (!this.outputsWebviewPromise && cell.outputs.length > 0) {
+            this.outputsWebviewPromise = outputWebviewFactory(cell, notebook).then(webview => {
+                this.outputsWebview = webview;
+                this.forceUpdate();
+                return webview;
+            });
+            this.forceUpdate();
+        } else if (this.outputsWebviewPromise && cell.outputs.length === 0 && cell.internalMetadata.runEndTime) {
+            (await this.outputsWebviewPromise).dispose();
+            this.outputsWebview = undefined;
+            this.outputsWebviewPromise = undefined;
+            this.forceUpdate();
         }
     }
 
@@ -259,7 +272,7 @@ export class NotebookCodeCellOutputs extends React.Component<NotebookCellOutputP
     }
 
     override render(): React.ReactNode {
-        return this.outputsWebview ?
+        return this.outputsWebview && this.props.cell.outputVisible ?
             <>
                 {this.props.renderSidebar()}
                 {this.outputsWebview.render()}

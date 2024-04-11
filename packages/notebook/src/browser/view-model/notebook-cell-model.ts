@@ -21,6 +21,7 @@
 import { Disposable, DisposableCollection, Emitter, Event, URI } from '@theia/core';
 import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
+import { type MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import {
     CellKind, NotebookCellCollapseState, NotebookCellInternalMetadata,
     NotebookCellMetadata, CellOutput, CellData, CellOutputItem
@@ -102,6 +103,15 @@ export class NotebookCellModel implements NotebookCell, Disposable {
 
     protected readonly onWillFocusCellEditorEmitter = new Emitter<void>();
     readonly onWillFocusCellEditor = this.onWillFocusCellEditorEmitter.event;
+
+    protected readonly onWillBlurCellEditorEmitter = new Emitter<void>();
+    readonly onWillBlurCellEditor = this.onWillBlurCellEditorEmitter.event;
+
+    protected readonly onDidChangeEditorOptionsEmitter = new Emitter<MonacoEditor.IOptions>();
+    readonly onDidChangeEditorOptions: Event<MonacoEditor.IOptions> = this.onDidChangeEditorOptionsEmitter.event;
+
+    protected readonly outputVisibilityChangeEmitter = new Emitter<boolean>();
+    readonly onDidChangeOutputVisibility: Event<boolean> = this.outputVisibilityChangeEmitter.event;
 
     @inject(NotebookCellModelProps)
     protected readonly props: NotebookCellModelProps;
@@ -192,6 +202,28 @@ export class NotebookCellModel implements NotebookCell, Disposable {
         return this._editing;
     }
 
+    protected _editorOptions: MonacoEditor.IOptions = {};
+    get editorOptions(): Readonly<MonacoEditor.IOptions> {
+        return this._editorOptions;
+    }
+
+    set editorOptions(options: MonacoEditor.IOptions) {
+        this._editorOptions = options;
+        this.onDidChangeEditorOptionsEmitter.fire(options);
+    }
+
+    protected _outputVisible: boolean = true;
+    get outputVisible(): boolean {
+        return this._outputVisible;
+    }
+
+    set outputVisible(visible: boolean) {
+        if (this._outputVisible !== visible) {
+            this._outputVisible = visible;
+            this.outputVisibilityChangeEmitter.fire(visible);
+        }
+    }
+
     @postConstruct()
     protected init(): void {
         this._outputs = this.props.outputs.map(op => new NotebookCellOutputModel(op));
@@ -225,6 +257,11 @@ export class NotebookCellModel implements NotebookCell, Disposable {
     requestFocusEditor(): void {
         this.requestEdit();
         this.onWillFocusCellEditorEmitter.fire();
+    }
+
+    requestBlurEditor(): void {
+        this.requestStopEdit();
+        this.onWillBlurCellEditorEmitter.fire();
     }
 
     spliceNotebookCellOutputs(splice: NotebookCellOutputsSplice): void {

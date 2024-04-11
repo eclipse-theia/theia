@@ -42,7 +42,8 @@ const DEFAULT_EDITOR_OPTIONS: MonacoEditor.IOptions = {
     scrollbar: {
         ...MonacoEditorProvider.inlineOptions.scrollbar,
         alwaysConsumeMouseWheel: false
-    }
+    },
+    lineDecorationsWidth: 10,
 };
 
 export class CellEditor extends React.Component<CellEditorProps, {}> {
@@ -56,6 +57,11 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
         this.toDispose.push(this.props.cell.onWillFocusCellEditor(() => {
             this.editor?.getControl().focus();
         }));
+
+        this.toDispose.push(this.props.cell.onDidChangeEditorOptions(options => {
+            this.editor?.getControl().updateOptions(options);
+        }));
+
         this.toDispose.push(this.props.notebookModel.onDidChangeSelectedCell(() => {
             if (this.props.notebookModel.selectedCell !== this.props.cell && this.editor?.getControl().hasTextFocus()) {
                 if (document.activeElement && 'blur' in document.activeElement) {
@@ -96,7 +102,7 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
                 editorModel,
                 editorNode,
                 monacoServices,
-                DEFAULT_EDITOR_OPTIONS,
+                { ...DEFAULT_EDITOR_OPTIONS, ...cell.editorOptions },
                 [[IContextKeyService, this.props.notebookContextManager.scopedStore]]);
             this.toDispose.push(this.editor);
             this.editor.setLanguage(cell.language);

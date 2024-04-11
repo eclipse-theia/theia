@@ -160,6 +160,8 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
                 this.commandRegistry.executeCommand(NotebookCellCommands.EDIT_COMMAND.id, model, model.cells[0]);
                 model.setSelectedCell(model.cells[0]);
             }
+            model.cells.forEach(cell => cell.onWillBlurCellEditor(() => this.node.focus()));
+            model.onDidAddOrRemoveCell(e => e.newCellIds?.forEach(cellId => model.cells.find(cell => cell.handle === cellId)?.onWillBlurCellEditor(() => this.node.focus())));
         });
     }
 

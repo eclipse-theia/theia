@@ -43,6 +43,7 @@ import { NotebookMonacoTextModelService } from './service/notebook-monaco-text-m
 import { NotebookOutlineContribution } from './contributions/notebook-outline-contribution';
 import { NotebookLabelProviderContribution } from './contributions/notebook-label-provider-contribution';
 import { NotebookOutputActionContribution } from './contributions/notebook-output-action-contribution';
+import { NotebookClipboardService } from './service/notebook-clipboard-service';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(NotebookColorContribution).toSelf().inSingletonScope();
@@ -64,6 +65,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(NotebookRendererMessagingService).toSelf().inSingletonScope();
     bind(NotebookKernelHistoryService).toSelf().inSingletonScope();
     bind(NotebookKernelQuickPickService).toSelf().inSingletonScope();
+    bind(NotebookClipboardService).toSelf().inSingletonScope();
 
     bind(NotebookCellResourceResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toService(NotebookCellResourceResolver);

@@ -211,7 +211,7 @@ export class MonacoEditorProvider {
         return editor;
     }
 
-    protected updateReadOnlyMessage(options: MonacoEditor.IOptions, readOnly: boolean | MarkdownString ): void {
+    protected updateReadOnlyMessage(options: MonacoEditor.IOptions, readOnly: boolean | MarkdownString): void {
         options.readOnlyMessage = MarkdownString.is(readOnly) ? readOnly : undefined;
     }
 
