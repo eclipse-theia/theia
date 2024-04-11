@@ -6,9 +6,11 @@
 
 ## not yet released
 
+- [application-manager] Generate Extension Info in server application to avoid empty About Dialog [#13590](https://github.com/eclipse-theia/theia/pull/13590) - contributed on behalf of STMicroelectronics
 - [scm] added support for dirty diff peek view [#13104](https://github.com/eclipse-theia/theia/pull/13104)
 
 <a name="breaking_changes_not_yet_released">[Breaking Changes:](#breaking_changes_not_yet_released)</a>
+
 - [scm] revised some of the dirty diff related types [#13104](https://github.com/eclipse-theia/theia/pull/13104)
   - replaced `DirtyDiff.added/removed/modified` with `changes`, which provides more detailed information about the changes
   - changed the semantics of `LineRange` to represent a range that spans up to but not including the `end` line (previously, it included the `end` line)
