@@ -120,7 +120,7 @@ export namespace NotebookCellCommands {
     });
 
     export const COLLAPSE_CELL_OUTPUT = Command.toDefaultLocalizedCommand({
-        id: 'notebook.cell.expandCellOutput',
+        id: 'notebook.cell.collapseCellOutput',
         category: 'Notebook',
         label: 'Collapse Cell Output',
     });

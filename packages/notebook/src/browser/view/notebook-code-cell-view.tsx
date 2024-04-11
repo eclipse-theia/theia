@@ -28,7 +28,7 @@ import { NotebookCellActionContribution } from '../contributions/notebook-cell-a
 import { CellExecution, NotebookExecutionStateService } from '../service/notebook-execution-state-service';
 import { codicon } from '@theia/core/lib/browser';
 import { NotebookCellExecutionState } from '../../common';
-import { DisposableCollection } from '@theia/core';
+import { DisposableCollection, nls } from '@theia/core';
 import { NotebookContextManager } from '../service/notebook-context-manager';
 import { NotebookViewportService } from './notebook-viewport-service';
 import { EditorPreferences } from '@theia/editor/lib/browser';
@@ -225,11 +225,11 @@ export class NotebookCodeCellOutputs extends React.Component<NotebookCellOutputP
         const { cell, notebook, outputWebviewFactory } = this.props;
         this.toDispose.push(cell.onDidChangeOutputs(() => this.updateOutputs()));
         this.toDispose.push(cell.onDidChangeOutputVisibility(visible => {
-            this.forceUpdate();
             if (!visible && this.outputsWebview) {
                 this.outputsWebview?.dispose();
                 this.outputsWebview = undefined;
                 this.outputsWebviewPromise = undefined;
+                this.forceUpdate();
             } else {
                 this.updateOutputs();
             }
@@ -277,7 +277,7 @@ export class NotebookCodeCellOutputs extends React.Component<NotebookCellOutputP
                 {this.props.renderSidebar()}
                 {this.outputsWebview.render()}
             </> :
-            <></>;
+            this.props.cell.outputs?.length ? <i className='theia-notebook-collapsed-output'>{nls.localizeByDefault('Outputs are collapsed')}</i> : <></>;
 
     }
 
