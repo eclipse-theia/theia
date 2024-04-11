@@ -82,6 +82,11 @@ export namespace NotebookCommands {
         id: 'notebook.paste-cell',
         category: 'Notebook',
     });
+
+    export const NOTEBOOK_UNDO = Command.toDefaultLocalizedCommand({
+        id: 'notebook.undo',
+        category: 'Notebook',
+    });
 }
 
 export enum CellChangeDirection {
@@ -231,6 +236,11 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
                 }
             }
         });
+
+        commands.registerCommand(NotebookCommands.NOTEBOOK_UNDO, {
+            isEnabled: () => !Boolean(this.notebookEditorWidgetService.focusedEditor?.model?.readOnly),
+            execute: () => this.notebookEditorWidgetService.focusedEditor?.undo()
+        });
     }
 
     protected editableCommandHandler(execute: (notebookModel: NotebookModel) => void): CommandHandler {
@@ -311,6 +321,13 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
                 when: `!editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`,
                 args: 'above'
             },
+            {
+                command: NotebookCommands.NOTEBOOK_UNDO.id,
+                keybinding: 'z',
+                // notebook type check is to check that we are using the editors context
+                when: `!editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED} && notebookType`
+            },
+
         );
     }
 
