@@ -21,6 +21,7 @@
 import { Disposable, DisposableCollection, Emitter, Event, URI } from '@theia/core';
 import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
+import { type MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import {
     CellKind, NotebookCellCollapseState, NotebookCellInternalMetadata,
     NotebookCellMetadata, CellOutput, CellData, CellOutputItem
@@ -28,6 +29,8 @@ import {
 import { NotebookCellOutputsSplice } from '../notebook-types';
 import { NotebookMonacoTextModelService } from '../service/notebook-monaco-text-model-service';
 import { NotebookCellOutputModel } from './notebook-cell-output-model';
+import { PreferenceService } from '@theia/core/lib/browser';
+import { NOTEBOOK_LINE_NUMBERS } from '../contributions/notebook-preferences';
 
 export const NotebookCellModelFactory = Symbol('NotebookModelFactory');
 export type NotebookCellModelFactory = (props: NotebookCellModelProps) => NotebookCellModel;
@@ -103,11 +106,23 @@ export class NotebookCellModel implements NotebookCell, Disposable {
     protected readonly onWillFocusCellEditorEmitter = new Emitter<void>();
     readonly onWillFocusCellEditor = this.onWillFocusCellEditorEmitter.event;
 
+    protected readonly onWillBlurCellEditorEmitter = new Emitter<void>();
+    readonly onWillBlurCellEditor = this.onWillBlurCellEditorEmitter.event;
+
+    protected readonly onDidChangeEditorOptionsEmitter = new Emitter<MonacoEditor.IOptions>();
+    readonly onDidChangeEditorOptions: Event<MonacoEditor.IOptions> = this.onDidChangeEditorOptionsEmitter.event;
+
+    protected readonly outputVisibilityChangeEmitter = new Emitter<boolean>();
+    readonly onDidChangeOutputVisibility: Event<boolean> = this.outputVisibilityChangeEmitter.event;
+
     @inject(NotebookCellModelProps)
     protected readonly props: NotebookCellModelProps;
 
     @inject(NotebookMonacoTextModelService)
     protected readonly textModelService: NotebookMonacoTextModelService;
+
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
 
     get outputs(): NotebookCellOutputModel[] {
         return this._outputs;
@@ -192,11 +207,45 @@ export class NotebookCellModel implements NotebookCell, Disposable {
         return this._editing;
     }
 
+    protected _editorOptions: MonacoEditor.IOptions = {};
+    get editorOptions(): Readonly<MonacoEditor.IOptions> {
+        return this._editorOptions;
+    }
+
+    set editorOptions(options: MonacoEditor.IOptions) {
+        this._editorOptions = options;
+        this.onDidChangeEditorOptionsEmitter.fire(options);
+    }
+
+    protected _outputVisible: boolean = true;
+    get outputVisible(): boolean {
+        return this._outputVisible;
+    }
+
+    set outputVisible(visible: boolean) {
+        if (this._outputVisible !== visible) {
+            this._outputVisible = visible;
+            this.outputVisibilityChangeEmitter.fire(visible);
+        }
+    }
+
     @postConstruct()
     protected init(): void {
         this._outputs = this.props.outputs.map(op => new NotebookCellOutputModel(op));
         this._metadata = this.props.metadata ?? {};
         this._internalMetadata = this.props.internalMetadata ?? {};
+
+        this.editorOptions = {
+            lineNumbers: this.preferenceService.get(NOTEBOOK_LINE_NUMBERS)
+        };
+        this.toDispose.push(this.preferenceService.onPreferenceChanged(e => {
+            if (e.preferenceName === NOTEBOOK_LINE_NUMBERS) {
+                this.editorOptions = {
+                    ...this.editorOptions,
+                    lineNumbers: this.preferenceService.get(NOTEBOOK_LINE_NUMBERS)
+                };
+            }
+        }));
     }
 
     dispose(): void {
@@ -225,6 +274,11 @@ export class NotebookCellModel implements NotebookCell, Disposable {
     requestFocusEditor(): void {
         this.requestEdit();
         this.onWillFocusCellEditorEmitter.fire();
+    }
+
+    requestBlurEditor(): void {
+        this.requestStopEdit();
+        this.onWillBlurCellEditorEmitter.fire();
     }
 
     spliceNotebookCellOutputs(splice: NotebookCellOutputsSplice): void {

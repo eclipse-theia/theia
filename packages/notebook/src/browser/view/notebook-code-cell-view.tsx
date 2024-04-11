@@ -28,7 +28,7 @@ import { NotebookCellActionContribution } from '../contributions/notebook-cell-a
 import { CellExecution, NotebookExecutionStateService } from '../service/notebook-execution-state-service';
 import { codicon } from '@theia/core/lib/browser';
 import { NotebookCellExecutionState } from '../../common';
-import { DisposableCollection } from '@theia/core';
+import { DisposableCollection, nls } from '@theia/core';
 import { NotebookContextManager } from '../service/notebook-context-manager';
 import { NotebookViewportService } from './notebook-viewport-service';
 import { EditorPreferences } from '@theia/editor/lib/browser';
@@ -223,19 +223,15 @@ export class NotebookCodeCellOutputs extends React.Component<NotebookCellOutputP
 
     override async componentDidMount(): Promise<void> {
         const { cell, notebook, outputWebviewFactory } = this.props;
-        this.toDispose.push(cell.onDidChangeOutputs(async () => {
-            if (!this.outputsWebviewPromise && cell.outputs.length > 0) {
-                this.outputsWebviewPromise = outputWebviewFactory(cell, notebook).then(webview => {
-                    this.outputsWebview = webview;
-                    this.forceUpdate();
-                    return webview;
-                });
-                this.forceUpdate();
-            } else if (this.outputsWebviewPromise && cell.outputs.length === 0 && cell.internalMetadata.runEndTime) {
-                (await this.outputsWebviewPromise).dispose();
+        this.toDispose.push(cell.onDidChangeOutputs(() => this.updateOutputs()));
+        this.toDispose.push(cell.onDidChangeOutputVisibility(visible => {
+            if (!visible && this.outputsWebview) {
+                this.outputsWebview?.dispose();
                 this.outputsWebview = undefined;
                 this.outputsWebviewPromise = undefined;
                 this.forceUpdate();
+            } else {
+                this.updateOutputs();
             }
         }));
         if (cell.outputs.length > 0) {
@@ -244,6 +240,23 @@ export class NotebookCodeCellOutputs extends React.Component<NotebookCellOutputP
                 this.forceUpdate();
                 return webview;
             });
+        }
+    }
+
+    protected async updateOutputs(): Promise<void> {
+        const { cell, notebook, outputWebviewFactory } = this.props;
+        if (!this.outputsWebviewPromise && cell.outputs.length > 0) {
+            this.outputsWebviewPromise = outputWebviewFactory(cell, notebook).then(webview => {
+                this.outputsWebview = webview;
+                this.forceUpdate();
+                return webview;
+            });
+            this.forceUpdate();
+        } else if (this.outputsWebviewPromise && cell.outputs.length === 0 && cell.internalMetadata.runEndTime) {
+            (await this.outputsWebviewPromise).dispose();
+            this.outputsWebview = undefined;
+            this.outputsWebviewPromise = undefined;
+            this.forceUpdate();
         }
     }
 
@@ -259,12 +272,12 @@ export class NotebookCodeCellOutputs extends React.Component<NotebookCellOutputP
     }
 
     override render(): React.ReactNode {
-        return this.outputsWebview ?
+        return this.outputsWebview && this.props.cell.outputVisible ?
             <>
                 {this.props.renderSidebar()}
                 {this.outputsWebview.render()}
             </> :
-            <></>;
+            this.props.cell.outputs?.length ? <i className='theia-notebook-collapsed-output'>{nls.localizeByDefault('Outputs are collapsed')}</i> : <></>;
 
     }
 

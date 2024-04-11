@@ -25,6 +25,7 @@ import { NotebookExecutionService } from '../service/notebook-execution-service'
 import { NotebookEditorWidget } from '../notebook-editor-widget';
 import { NotebookEditorWidgetService } from '../service/notebook-editor-widget-service';
 import { NOTEBOOK_CELL_FOCUSED, NOTEBOOK_EDITOR_FOCUSED, NOTEBOOK_HAS_OUTPUTS } from './notebook-context-keys';
+import { NotebookClipboardService } from '../service/notebook-clipboard-service';
 
 export namespace NotebookCommands {
     export const ADD_NEW_CELL_COMMAND = Command.toDefaultLocalizedCommand({
@@ -66,6 +67,21 @@ export namespace NotebookCommands {
         id: 'notebook.change-selected-cell',
         category: 'Notebook',
     });
+
+    export const CUT_SELECTED_CELL = Command.toDefaultLocalizedCommand({
+        id: 'notebook.cut-selected-cell',
+        category: 'Notebook',
+    });
+
+    export const COPY_SELECTED_CELL = Command.toDefaultLocalizedCommand({
+        id: 'notebook.copy-selected-cell',
+        category: 'Notebook',
+    });
+
+    export const PASTE_CELL = Command.toDefaultLocalizedCommand({
+        id: 'notebook.paste-cell',
+        category: 'Notebook',
+    });
 }
 
 export enum CellChangeDirection {
@@ -90,6 +106,9 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
 
     @inject(NotebookEditorWidgetService)
     protected notebookEditorWidgetService: NotebookEditorWidgetService;
+
+    @inject(NotebookClipboardService)
+    protected notebookClipboardService: NotebookClipboardService;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(NotebookCommands.ADD_NEW_CELL_COMMAND, {
@@ -180,6 +199,39 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
             execute: () => (this.shell.activeWidget as NotebookEditorWidget).redo()
         });
 
+        commands.registerCommand(NotebookCommands.CUT_SELECTED_CELL, this.editableCommandHandler(
+            () => {
+                const model = this.notebookEditorWidgetService.focusedEditor?.model;
+                const selectedCell = model?.selectedCell;
+                if (selectedCell) {
+                    model.applyEdits([{ editType: CellEditType.Replace, index: model.cells.indexOf(selectedCell), count: 1, cells: [] }], true);
+                    this.notebookClipboardService.copyCell(selectedCell);
+                }
+            }));
+
+        commands.registerCommand(NotebookCommands.COPY_SELECTED_CELL, {
+            execute: () => {
+                const model = this.notebookEditorWidgetService.focusedEditor?.model;
+                const selectedCell = model?.selectedCell;
+                if (selectedCell) {
+                    this.notebookClipboardService.copyCell(selectedCell);
+                }
+            }
+        });
+
+        commands.registerCommand(NotebookCommands.PASTE_CELL, {
+            isEnabled: () => !Boolean(this.notebookEditorWidgetService.focusedEditor?.model?.readOnly),
+            isVisible: () => !Boolean(this.notebookEditorWidgetService.focusedEditor?.model?.readOnly),
+            execute: (position?: 'above') => {
+                const copiedCell = this.notebookClipboardService.getCell();
+                if (copiedCell) {
+                    const model = this.notebookEditorWidgetService.focusedEditor?.model;
+                    const insertIndex = model?.selectedCell ? model.cells.indexOf(model.selectedCell) + (position === 'above' ? 0 : 1) : 0;
+                    model?.applyEdits([{ editType: CellEditType.Replace, index: insertIndex, count: 0, cells: [copiedCell] }], true);
+                }
+            }
+        });
+
     }
 
     protected editableCommandHandler(execute: (notebookModel: NotebookModel) => void): CommandHandler {
@@ -234,7 +286,6 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
             order: '30',
             when: NOTEBOOK_HAS_OUTPUTS
         });
-        // other items
     }
 
     registerKeybindings(keybindings: KeybindingRegistry): void {
@@ -250,6 +301,21 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
                 keybinding: 'down',
                 args: CellChangeDirection.Down,
                 when: `!editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`
+            },
+            {
+                command: NotebookCommands.CUT_SELECTED_CELL.id,
+                keybinding: 'ctrlcmd+x',
+                when: `!editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`
+            },
+            {
+                command: NotebookCommands.COPY_SELECTED_CELL.id,
+                keybinding: 'ctrlcmd+c',
+                when: `!editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`
+            },
+            {
+                command: NotebookCommands.PASTE_CELL.id,
+                keybinding: 'ctrlcmd+v',
+                when: `!editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED}`
             },
         );
     }
