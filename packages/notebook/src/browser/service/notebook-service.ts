@@ -121,6 +121,10 @@ export class NotebookService implements Disposable {
         // This ensures that all text models are available in the plugin host
         this.textModelService.createTextModelsForNotebook(model);
         this.didAddNotebookDocumentEmitter.fire(model);
+        model.onDidDispose(() => {
+            this.notebookModels.delete(resource.uri.toString());
+            this.didRemoveNotebookDocumentEmitter.fire(model);
+        });
         return model;
     }
 
