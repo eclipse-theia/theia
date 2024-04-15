@@ -22,7 +22,7 @@ import { CancellationToken, Disposable, DisposableCollection, Emitter, Event, UR
 import { URI as TheiaURI } from '../types-impl';
 import * as theia from '@theia/plugin';
 import {
-    CommandRegistryExt, NotebookCellStatusBarListDto, NotebookDataDto,
+    CommandRegistryExt, ModelAddedData, NotebookCellStatusBarListDto, NotebookDataDto,
     NotebookDocumentsAndEditorsDelta, NotebookDocumentShowOptions, NotebookDocumentsMain, NotebookEditorAddData, NotebookEditorsMain, NotebooksExt, NotebooksMain, Plugin,
     PLUGIN_RPC_CONTEXT
 } from '../../common';
@@ -204,6 +204,8 @@ export class NotebooksExtImpl implements NotebooksExt {
     }
 
     async $acceptDocumentsAndEditorsDelta(delta: NotebookDocumentsAndEditorsDelta): Promise<void> {
+        const removedCellDocuments: UriComponents[] = [];
+        const addedCellDocuments: ModelAddedData[] = [];
         if (delta.removedDocuments) {
             for (const uri of delta.removedDocuments) {
                 const revivedUri = URI.fromComponents(uri);
@@ -213,6 +215,7 @@ export class NotebooksExtImpl implements NotebooksExt {
                     document.dispose();
                     this.documents.delete(revivedUri.toString());
                     this.onDidCloseNotebookDocumentEmitter.fire(document.apiNotebook);
+                    removedCellDocuments.push(...document.apiNotebook.getCells().map(cell => cell.document.uri));
                 }
 
                 for (const editor of this.editors.values()) {
@@ -222,6 +225,11 @@ export class NotebooksExtImpl implements NotebooksExt {
                 }
             }
         }
+
+        // publish all removed cell documents first
+        await this.textDocumentsAndEditors.$acceptEditorsAndDocumentsDelta({
+            removedDocuments: removedCellDocuments
+        });
 
         if (delta.addedDocuments) {
             for (const modelData of delta.addedDocuments) {
@@ -242,13 +250,16 @@ export class NotebooksExtImpl implements NotebooksExt {
                 this.documents.get(uri.toString())?.dispose();
                 this.documents.set(uri.toString(), document);
 
-                this.textDocumentsAndEditors.$acceptEditorsAndDocumentsDelta({
-                    addedDocuments: modelData.cells.map(cell => Cell.asModelAddData(cell))
-                });
+                addedCellDocuments.push(...modelData.cells.map(cell => Cell.asModelAddData(cell)));
 
                 this.onDidOpenNotebookDocumentEmitter.fire(document.apiNotebook);
             }
         }
+
+        // publish all added cell documents in a separate call
+        await this.textDocumentsAndEditors.$acceptEditorsAndDocumentsDelta({
+            addedDocuments: addedCellDocuments
+        });
 
         if (delta.addedEditors) {
             for (const editorModelData of delta.addedEditors) {
