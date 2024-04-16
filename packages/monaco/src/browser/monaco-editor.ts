@@ -48,9 +48,20 @@ import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/stan
 import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language';
 import { IInstantiationService, ServiceIdentifier } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation';
 import { ICodeEditor, IMouseTargetMargin } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorBrowser';
-import { IStandaloneEditorConstructionOptions, StandaloneEditor } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
+import { IStandaloneEditorConstructionOptions, StandaloneCodeEditor, StandaloneEditor } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
 import { ServiceCollection } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/serviceCollection';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
+import { ConfigurationChangedEvent, IEditorOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
+import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';
+import { ICommandService } from '@theia/monaco-editor-core/esm/vs/platform/commands/common/commands';
+import { IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
+import { IKeybindingService } from '@theia/monaco-editor-core/esm/vs/platform/keybinding/common/keybinding';
+import { IThemeService } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
+import { INotificationService } from '@theia/monaco-editor-core/esm/vs/platform/notification/common/notification';
+import { IAccessibilityService } from '@theia/monaco-editor-core/esm/vs/platform/accessibility/common/accessibility';
+import { ILanguageConfigurationService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/languageConfigurationRegistry';
+import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures';
+import * as objects from '@theia/monaco-editor-core/esm/vs/base/common/objects';
 
 export type ServicePair<T> = [ServiceIdentifier<T>, T];
 
@@ -103,7 +114,8 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
         readonly node: HTMLElement,
         services: MonacoEditorServices,
         options?: MonacoEditor.IOptions,
-        override?: EditorServiceOverrides
+        override?: EditorServiceOverrides,
+        readonly parentEditor?: MonacoEditor
     ) {
         super(services);
         this.toDispose.pushAll([
@@ -153,7 +165,9 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
          * @monaco-uplift. Should be guaranteed to work.
          * Incomparable enums prevent TypeScript from believing that public IStandaloneCodeEditor is satisfied by private StandaloneCodeEditor
          */
-        return this.editor = instantiator.createInstance(StandaloneEditor, this.node, combinedOptions) as unknown as monaco.editor.IStandaloneCodeEditor;
+        return this.editor = (this.parentEditor ?
+            instantiator.createInstance(EmbeddedCodeEditor, this.node, combinedOptions, this.parentEditor.getControl() as unknown as ICodeEditor) :
+            instantiator.createInstance(StandaloneEditor, this.node, combinedOptions)) as unknown as monaco.editor.IStandaloneCodeEditor;
     }
 
     protected getInstantiatorWithOverrides(override?: EditorServiceOverrides): IInstantiationService {
@@ -662,5 +676,54 @@ export namespace MonacoEditor {
             return { readOnly: true, readOnlyMessage: readOnly };
         }
         return {};
+    }
+}
+
+// adapted from https://github.com/microsoft/vscode/blob/0bd70d48ad8b3e2fb1922aa54f87c786ff2b4bd8/src/vs/editor/browser/widget/codeEditor/embeddedCodeEditorWidget.ts
+// This class reproduces the logic in EmbeddedCodeEditorWidget but extends StandaloneCodeEditor rather than CodeEditorWidget.
+class EmbeddedCodeEditor extends StandaloneCodeEditor {
+
+    private readonly _parentEditor: ICodeEditor;
+    private readonly _overwriteOptions: IEditorOptions;
+
+    constructor(
+        domElement: HTMLElement,
+        options: Readonly<IStandaloneEditorConstructionOptions>,
+        parentEditor: ICodeEditor,
+        @IInstantiationService instantiationService: IInstantiationService,
+        @ICodeEditorService codeEditorService: ICodeEditorService,
+        @ICommandService commandService: ICommandService,
+        @IContextKeyService contextKeyService: IContextKeyService,
+        @IKeybindingService keybindingService: IKeybindingService,
+        @IThemeService themeService: IThemeService,
+        @INotificationService notificationService: INotificationService,
+        @IAccessibilityService accessibilityService: IAccessibilityService,
+        @ILanguageConfigurationService languageConfigurationService: ILanguageConfigurationService,
+        @ILanguageFeaturesService languageFeaturesService: ILanguageFeaturesService,
+    ) {
+        super(domElement, { ...parentEditor.getRawOptions(), overflowWidgetsDomNode: parentEditor.getOverflowWidgetsDomNode() }, instantiationService, codeEditorService,
+            commandService, contextKeyService, keybindingService, themeService, notificationService, accessibilityService, languageConfigurationService, languageFeaturesService);
+
+        this._parentEditor = parentEditor;
+        this._overwriteOptions = options;
+
+        // Overwrite parent's options
+        super.updateOptions(this._overwriteOptions);
+
+        this._register(parentEditor.onDidChangeConfiguration((e: ConfigurationChangedEvent) => this._onParentConfigurationChanged(e)));
+    }
+
+    getParentEditor(): ICodeEditor {
+        return this._parentEditor;
+    }
+
+    private _onParentConfigurationChanged(e: ConfigurationChangedEvent): void {
+        super.updateOptions(this._parentEditor.getRawOptions());
+        super.updateOptions(this._overwriteOptions);
+    }
+
+    override updateOptions(newOptions: IEditorOptions): void {
+        objects.mixin(this._overwriteOptions, newOptions, true);
+        super.updateOptions(this._overwriteOptions);
     }
 }

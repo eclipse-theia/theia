@@ -22,8 +22,15 @@ import { EditorServiceOverrides, MonacoEditor, MonacoEditorServices } from './mo
 import { MonacoDiffNavigatorFactory } from './monaco-diff-navigator-factory';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import * as monaco from '@theia/monaco-editor-core';
-import { IDiffEditorConstructionOptions } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorBrowser';
-import { StandaloneDiffEditor2 } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
+import { ICodeEditor, IDiffEditorConstructionOptions } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorBrowser';
+import { IActionDescriptor, IStandaloneCodeEditor, IStandaloneDiffEditor, StandaloneCodeEditor, StandaloneDiffEditor2 }
+    from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
+import { IEditorConstructionOptions } from '@theia/monaco-editor-core/esm/vs/editor/browser/config/editorConfiguration';
+import { EmbeddedDiffEditorWidget } from '@theia/monaco-editor-core/esm/vs/editor/browser/widget/embeddedCodeEditorWidget';
+import { IInstantiationService } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation';
+import { ContextKeyValue, IContextKey } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
+import { IDisposable } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
+import { ICommandHandler } from '@theia/monaco-editor-core/esm/vs/platform/commands/common/commands';
 
 export namespace MonacoDiffEditor {
     export interface IOptions extends MonacoEditor.ICommonOptions, IDiffEditorConstructionOptions {
@@ -31,7 +38,7 @@ export namespace MonacoDiffEditor {
 }
 
 export class MonacoDiffEditor extends MonacoEditor {
-    protected _diffEditor: StandaloneDiffEditor2;
+    protected _diffEditor: IStandaloneDiffEditor;
     protected _diffNavigator: DiffNavigator;
 
     constructor(
@@ -42,9 +49,10 @@ export class MonacoDiffEditor extends MonacoEditor {
         services: MonacoEditorServices,
         protected readonly diffNavigatorFactory: MonacoDiffNavigatorFactory,
         options?: MonacoDiffEditor.IOptions,
-        override?: EditorServiceOverrides
+        override?: EditorServiceOverrides,
+        parentEditor?: MonacoEditor
     ) {
-        super(uri, modifiedModel, node, services, options, override);
+        super(uri, modifiedModel, node, services, options, override, parentEditor);
         this.documents.add(originalModel);
         const original = originalModel.textEditorModel;
         const modified = modifiedModel.textEditorModel;
@@ -61,13 +69,15 @@ export class MonacoDiffEditor extends MonacoEditor {
     }
 
     protected override create(options?: IDiffEditorConstructionOptions, override?: EditorServiceOverrides): Disposable {
+        options = { ...options, fixedOverflowWidgets: true };
         const instantiator = this.getInstantiatorWithOverrides(override);
         /**
          *  @monaco-uplift. Should be guaranteed to work.
          *  Incomparable enums prevent TypeScript from believing that public IStandaloneDiffEditor is satisfied by private StandaloneDiffEditor
          */
-        this._diffEditor = instantiator
-            .createInstance(StandaloneDiffEditor2, this.node, { ...options, fixedOverflowWidgets: true });
+        this._diffEditor = this.parentEditor ?
+            instantiator.createInstance(EmbeddedDiffEditor, this.node, options, {}, this.parentEditor.getControl() as unknown as ICodeEditor) :
+            instantiator.createInstance(StandaloneDiffEditor2, this.node, options);
         this.editor = this._diffEditor.getModifiedEditor() as unknown as monaco.editor.IStandaloneCodeEditor;
         return this._diffEditor;
     }
@@ -99,5 +109,33 @@ export class MonacoDiffEditor extends MonacoEditor {
 
     override shouldDisplayDirtyDiff(): boolean {
         return false;
+    }
+}
+
+class EmbeddedDiffEditor extends EmbeddedDiffEditorWidget implements IStandaloneDiffEditor {
+
+    protected override _createInnerEditor(instantiationService: IInstantiationService, container: HTMLElement,
+        options: Readonly<IEditorConstructionOptions>): StandaloneCodeEditor {
+        return instantiationService.createInstance(StandaloneCodeEditor, container, options);
+    }
+
+    override getOriginalEditor(): IStandaloneCodeEditor {
+        return super.getOriginalEditor() as IStandaloneCodeEditor;
+    }
+
+    override getModifiedEditor(): IStandaloneCodeEditor {
+        return super.getModifiedEditor() as IStandaloneCodeEditor;
+    }
+
+    addCommand(keybinding: number, handler: ICommandHandler, context?: string): string | null {
+        return this.getModifiedEditor().addCommand(keybinding, handler, context);
+    }
+
+    createContextKey<T extends ContextKeyValue = ContextKeyValue>(key: string, defaultValue: T): IContextKey<T> {
+        return this.getModifiedEditor().createContextKey(key, defaultValue);
+    }
+
+    addAction(descriptor: IActionDescriptor): IDisposable {
+        return this.getModifiedEditor().addAction(descriptor);
     }
 }

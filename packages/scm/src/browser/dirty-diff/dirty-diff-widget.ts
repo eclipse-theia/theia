@@ -15,28 +15,18 @@
 // *****************************************************************************
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { Position, Range } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ActionMenuNode, Disposable, Emitter, Event, MenuCommandExecutor, MenuModelRegistry, MenuPath, URI, nls } from '@theia/core';
+import { codicon } from '@theia/core/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
+import { MonacoDiffEditor } from '@theia/monaco/lib/browser/monaco-diff-editor';
+import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
+import { MonacoEditorPeekViewWidget, peekViewBorder, peekViewTitleBackground, peekViewTitleForeground, peekViewTitleInfoForeground }
+    from '@theia/monaco/lib/browser/monaco-editor-peek-view-widget';
 import { Change, LineRange } from './diff-computer';
 import { ScmColors } from '../scm-colors';
 import * as monaco from '@theia/monaco-editor-core';
-import { PeekViewWidget, peekViewBorder, peekViewTitleBackground, peekViewTitleForeground, peekViewTitleInfoForeground }
-    from '@theia/monaco-editor-core/esm/vs/editor/contrib/peekView/browser/peekView';
-import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { IInstantiationService } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation';
-import { ICodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorBrowser';
-import { IPosition, Position } from '@theia/monaco-editor-core/esm/vs/editor/common/core/position';
-import { IRange, Range } from '@theia/monaco-editor-core/esm/vs/editor/common/core/range';
-import { IDiffEditorOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
-import { EmbeddedDiffEditorWidget } from '@theia/monaco-editor-core/esm/vs/editor/browser/widget/embeddedCodeEditorWidget';
-import { ITextModelService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/resolverService';
-import { Action, IAction } from '@theia/monaco-editor-core/esm/vs/base/common/actions';
-import { Codicon } from '@theia/monaco-editor-core/esm/vs/base/common/codicons';
-import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/base/common/themables';
-import { ScrollType } from '@theia/monaco-editor-core/esm/vs/editor/common/editorCommon';
-import { Color } from '@theia/monaco-editor-core/esm/vs/base/common/color';
-import { IColorTheme, IThemeService } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
 
 export const SCM_CHANGE_TITLE_MENU: MenuPath = ['scm-change-title-menu'];
 /** Reserved for plugin contributions, corresponds to contribution point 'scm/change/title'. */
@@ -59,10 +49,11 @@ export class DirtyDiffWidget implements Disposable {
     readonly onDidClose: Event<unknown> = this.onDidCloseEmitter.event;
     protected index: number = -1;
     private peekView?: DirtyDiffPeekView;
-    private diffEditorPromise?: Promise<monaco.editor.IDiffEditor>;
+    private diffEditorPromise?: Promise<MonacoDiffEditor>;
 
     constructor(
         @inject(DirtyDiffWidgetProps) protected readonly props: DirtyDiffWidgetProps,
+        @inject(MonacoEditorProvider) readonly editorProvider: MonacoEditorProvider,
         @inject(ContextKeyService) readonly contextKeyService: ContextKeyService,
         @inject(MenuModelRegistry) readonly menuModelRegistry: MenuModelRegistry,
         @inject(MenuCommandExecutor) readonly menuCommandExecutor: MenuCommandExecutor
@@ -130,7 +121,7 @@ export class DirtyDiffWidget implements Disposable {
     async getContentWithSelectedChanges(predicate: (change: Change, index: number, changes: readonly Change[]) => boolean): Promise<string> {
         this.checkCreated();
         const changes = this.changes.filter(predicate);
-        const diffEditor = await this.diffEditorPromise!;
+        const { diffEditor } = await this.diffEditorPromise!;
         const diffEditorModel = diffEditor.getModel()!;
         return applyChanges(changes, diffEditorModel.original, diffEditorModel.modified);
     }
@@ -143,9 +134,9 @@ export class DirtyDiffWidget implements Disposable {
     protected showCurrentChange(): void {
         this.peekView!.setTitle(this.computePrimaryHeading(), this.computeSecondaryHeading());
         const { previousRange, currentRange } = this.changes[this.index];
-        this.peekView!.show(new Position(LineRange.getEndPosition(currentRange).line + 1, 1), // monaco position is 1-based
+        this.peekView!.show(Position.create(LineRange.getEndPosition(currentRange).line, 0),
             this.computeHeightInLines());
-        this.diffEditorPromise!.then(diffEditor => {
+        this.diffEditorPromise!.then(({ diffEditor }) => {
             let startLine = LineRange.getStartPosition(currentRange).line;
             let endLine = LineRange.getEndPosition(currentRange).line;
             if (LineRange.isEmpty(currentRange)) { // the change is a removal
@@ -257,46 +248,63 @@ function applyChanges(changes: readonly Change[], original: monaco.editor.ITextM
     return result.join('');
 }
 
-class DirtyDiffPeekView extends PeekViewWidget {
+class DirtyDiffPeekView extends MonacoEditorPeekViewWidget {
 
-    private diffEditor?: EmbeddedDiffEditorWidget;
+    private diffEditorPromise?: Promise<MonacoDiffEditor>;
     private height?: number;
 
     constructor(readonly widget: DirtyDiffWidget) {
-        super(
-            widget.editor.getControl() as unknown as ICodeEditor,
-            { isResizeable: true, showArrow: true, frameWidth: 1, keepEditorSelection: true, className: 'dirty-diff' },
-            StandaloneServices.get(IInstantiationService)
-        );
-        StandaloneServices.get(IThemeService).onDidColorThemeChange(this.applyTheme, this, this._disposables);
+        super(widget.editor, { isResizeable: true, showArrow: true, frameWidth: 1, keepEditorSelection: true, className: 'dirty-diff' });
     }
 
-    override create(): Promise<monaco.editor.IDiffEditor> {
-        super.create();
-        const { diffEditor } = this;
-        return new Promise(resolve => {
+    override async create(): Promise<MonacoDiffEditor> {
+        try {
+            super.create();
+            const diffEditor = await this.diffEditorPromise!;
+            return new Promise(resolve => {
             // setTimeout is needed here because the non-side-by-side diff editor might still not have created the view zones;
             // otherwise, the first change shown might not be properly revealed in the diff editor.
             // see also https://github.com/microsoft/vscode/blob/b30900b56c4b3ca6c65d7ab92032651f4cb23f15/src/vs/workbench/contrib/scm/browser/dirtydiffDecorator.ts#L248
-            const disposable = diffEditor!.onDidUpdateDiff(() => setTimeout(() => {
-                resolve(diffEditor! as unknown as monaco.editor.IDiffEditor);
-                disposable.dispose();
-            }));
-        });
+                const disposable = diffEditor.diffEditor.onDidUpdateDiff(() => setTimeout(() => {
+                    resolve(diffEditor);
+                    disposable.dispose();
+                }));
+            });
+        } catch (e) {
+            this.dispose();
+            throw e;
+        }
     }
 
-    override show(rangeOrPos: IRange | IPosition, heightInLines: number): void {
-        this.applyTheme(StandaloneServices.get(IThemeService).getColorTheme());
+    override show(rangeOrPos: Range | Position, heightInLines: number): void {
+        const borderColor = this.getBorderColor();
+        this.style({
+            arrowColor: borderColor,
+            frameColor: borderColor,
+            headerBackgroundColor: peekViewTitleBackground,
+            primaryHeadingColor: peekViewTitleForeground,
+            secondaryHeadingColor: peekViewTitleInfoForeground
+        });
         this.updateActions();
         super.show(rangeOrPos, heightInLines);
     }
 
-    private updateActions(): void {
-        const actionBar = this._actionbarWidget;
-        if (!actionBar) {
-            return;
+    private getBorderColor(): string {
+        const { currentChange } = this.widget;
+        if (!currentChange) {
+            return peekViewBorder;
         }
-        const actions: IAction[] = [];
+        if (Change.isAddition(currentChange)) {
+            return ScmColors.editorGutterAddedBackground;
+        } else if (Change.isRemoval(currentChange)) {
+            return ScmColors.editorGutterDeletedBackground;
+        } else {
+            return ScmColors.editorGutterModifiedBackground;
+        }
+    }
+
+    private updateActions(): void {
+        this.clearActions();
         const { contextKeyService, menuModelRegistry, menuCommandExecutor } = this.widget;
         contextKeyService.with({ originalResourceScheme: this.widget.previousRevisionUri.scheme }, () => {
             for (const menuPath of [SCM_CHANGE_TITLE_MENU, PLUGIN_SCM_CHANGE_TITLE_MENU]) {
@@ -305,97 +313,52 @@ class DirtyDiffPeekView extends PeekViewWidget {
                     if (item instanceof ActionMenuNode) {
                         const { command, id, label, icon, when } = item;
                         if (icon && menuCommandExecutor.isVisible(menuPath, command, this.widget) && (!when || contextKeyService.match(when))) {
-                            actions.push(new Action(id, label, icon, menuCommandExecutor.isEnabled(menuPath, command, this.widget), () => {
+                            this.addAction(id, label, icon, menuCommandExecutor.isEnabled(menuPath, command, this.widget), () => {
                                 menuCommandExecutor.executeCommand(menuPath, command, this.widget);
-                            }));
+                            });
                         }
                     }
                 }
             }
         });
-        actions.push(new Action('dirtydiff.next', nls.localizeByDefault('Show Next Change'), ThemeIcon.asClassName(Codicon.arrowDown), true,
-            () => this.widget.showNextChange()));
-        actions.push(new Action('dirtydiff.previous', nls.localizeByDefault('Show Previous Change'), ThemeIcon.asClassName(Codicon.arrowUp), true,
-            () => this.widget.showPreviousChange()));
-        actions.push(new Action('peekview.close', nls.localizeByDefault('Close'), ThemeIcon.asClassName(Codicon.close), true,
-            () => this.dispose()));
-        actionBar.clear();
-        actionBar.push(actions, { label: false, icon: true });
+        this.addAction('dirtydiff.next', nls.localizeByDefault('Show Next Change'), codicon('arrow-down'), true,
+            () => this.widget.showNextChange());
+        this.addAction('dirtydiff.previous', nls.localizeByDefault('Show Previous Change'), codicon('arrow-up'), true,
+            () => this.widget.showPreviousChange());
+        this.addAction('peekview.close', nls.localizeByDefault('Close'), codicon('close'), true,
+            () => this.dispose());
     }
 
-    protected override _fillHead(container: HTMLElement): void {
-        super._fillHead(container, true);
+    protected override fillHead(container: HTMLElement): void {
+        super.fillHead(container, true);
     }
 
-    protected override _fillBody(container: HTMLElement): void {
-        const options: IDiffEditorOptions = {
-            scrollBeyondLastLine: true,
-            scrollbar: {
-                verticalScrollbarSize: 14,
-                horizontal: 'auto',
-                useShadows: true,
-                verticalHasArrows: false,
-                horizontalHasArrows: false
-            },
-            overviewRulerLanes: 2,
-            fixedOverflowWidgets: true,
-            minimap: { enabled: false },
-            renderSideBySide: false,
-            readOnly: true,
-            renderIndicators: false,
-            diffAlgorithm: 'advanced',
-            stickyScroll: { enabled: false }
-        };
-        this.diffEditor = this._disposables.add(this.instantiationService.createInstance(
-            EmbeddedDiffEditorWidget, container, options, {}, this.editor));
-        StandaloneServices.get(ITextModelService).createModelReference(this.widget.previousRevisionUri['codeUri']).then(modelRef => {
-            this._disposables.add(modelRef);
-            this.diffEditor!.setModel({ original: modelRef.object.textEditorModel, modified: this.editor.getModel()! });
-        }, error => {
-            console.error(error);
-            this.dispose();
+    protected override fillBody(container: HTMLElement): void {
+        this.diffEditorPromise = this.widget.editorProvider.createEmbeddedDiffEditor(this.editor, container, this.widget.previousRevisionUri).then(diffEditor => {
+            this.toDispose.push(diffEditor);
+            return diffEditor;
         });
     }
 
-    protected override _doLayoutBody(height: number, width: number): void {
-        super._doLayoutBody(height, width);
-        this.diffEditor?.layout({ height, width });
+    protected override doLayoutBody(height: number, width: number): void {
+        super.doLayoutBody(height, width);
+        this.layout(height, width);
         this.height = height;
     }
 
-    protected override _onWidth(width: number): void {
-        const { diffEditor, height } = this;
-        if (diffEditor && height !== undefined) {
-            diffEditor.layout({ height, width });
+    protected override onWidth(width: number): void {
+        super.onWidth(width);
+        const { height } = this;
+        if (height !== undefined) {
+            this.layout(height, width);
         }
     }
 
-    protected override revealRange(range: Range): void {
-        this.editor.revealLineInCenterIfOutsideViewport(range.endLineNumber, ScrollType.Smooth);
+    private layout(height: number, width: number): void {
+        this.diffEditorPromise?.then(({ diffEditor }) => diffEditor.layout({ height, width }));
     }
 
-    private applyTheme(theme: IColorTheme): void {
-        const borderColor = this.getBorderColor(theme) || Color.transparent;
-        this.style({
-            arrowColor: borderColor,
-            frameColor: borderColor,
-            headerBackgroundColor: theme.getColor(peekViewTitleBackground) || Color.transparent,
-            primaryHeadingColor: theme.getColor(peekViewTitleForeground),
-            secondaryHeadingColor: theme.getColor(peekViewTitleInfoForeground)
-        });
-    }
-
-    private getBorderColor(theme: IColorTheme): Color | undefined {
-        const { currentChange } = this.widget;
-        if (!currentChange) {
-            return theme.getColor(peekViewBorder);
-        }
-        if (Change.isAddition(currentChange)) {
-            return theme.getColor(ScmColors.editorGutterAddedBackground);
-        } else if (Change.isRemoval(currentChange)) {
-            return theme.getColor(ScmColors.editorGutterDeletedBackground);
-        } else {
-            return theme.getColor(ScmColors.editorGutterModifiedBackground);
-        }
+    protected override doRevealRange(range: Range): void {
+        this.editor.revealPosition(Position.create(range.end.line, 0), { vertical: 'centerIfOutsideViewport' });
     }
 }
