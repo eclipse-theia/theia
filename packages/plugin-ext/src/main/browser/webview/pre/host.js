@@ -31,7 +31,7 @@
                 let sourceIsChildFrame = false;
                 for (let i = 0; i < window.frames.length; i++) {
                     const frame = window.frames[i];
-                    if (e.source === frame) {
+                    if (e.origin === frame.origin) {
                         sourceIsChildFrame = true;
                         break;
                     }
