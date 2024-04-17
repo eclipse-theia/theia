@@ -118,7 +118,7 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
     readonly onPostRendererMessage = this.onPostRendererMessageEmitter.event;
 
     protected readonly onDidReceiveKernelMessageEmitter = new Emitter<unknown>();
-    readonly onDidRecieveKernelMessage = this.onDidReceiveKernelMessageEmitter.event;
+    readonly onDidReceiveKernelMessage = this.onDidReceiveKernelMessageEmitter.event;
 
     protected readonly renderers = new Map<CellKind, CellRenderer>();
     protected _model?: NotebookModel;
