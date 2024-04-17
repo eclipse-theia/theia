@@ -32,11 +32,17 @@ export class ApplicationProcess {
     ) { }
 
     spawn(command: string, args?: string[], options?: cp.SpawnOptions): cp.ChildProcess {
-        return cp.spawn(command, args || [], Object.assign({}, this.defaultOptions, options));
+        return cp.spawn(command, args || [], Object.assign({}, this.defaultOptions, {
+            ...options,
+            shell: true
+        }));
     }
 
     fork(modulePath: string, args?: string[], options?: cp.ForkOptions): cp.ChildProcess {
-        return cp.fork(modulePath, args, Object.assign({}, this.defaultOptions, options));
+        return cp.fork(modulePath, args, Object.assign({}, this.defaultOptions, {
+            ...options,
+            shell: true
+        }));
     }
 
     canRun(command: string): boolean {
@@ -44,13 +50,19 @@ export class ApplicationProcess {
     }
 
     run(command: string, args: string[], options?: cp.SpawnOptions): Promise<void> {
-        const commandProcess = this.spawnBin(command, args, options);
+        const commandProcess = this.spawnBin(command, args, {
+            ...options,
+            shell: true
+        });
         return this.promisify(command, commandProcess);
     }
 
     spawnBin(command: string, args: string[], options?: cp.SpawnOptions): cp.ChildProcess {
         const binPath = this.resolveBin(command);
-        return this.spawn(binPath, args, options);
+        return this.spawn(binPath, args, {
+            ...options,
+            shell: true
+        });
     }
 
     protected resolveBin(command: string): string {
