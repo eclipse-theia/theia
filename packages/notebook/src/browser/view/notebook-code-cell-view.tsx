@@ -24,11 +24,11 @@ import { NotebookModel } from '../view-model/notebook-model';
 import { CellEditor } from './notebook-cell-editor';
 import { CellRenderer } from './notebook-cell-list-view';
 import { NotebookCellToolbarFactory } from './notebook-cell-toolbar-factory';
-import { NotebookCellActionContribution } from '../contributions/notebook-cell-actions-contribution';
+import { NotebookCellActionContribution, NotebookCellCommands } from '../contributions/notebook-cell-actions-contribution';
 import { CellExecution, NotebookExecutionStateService } from '../service/notebook-execution-state-service';
 import { codicon } from '@theia/core/lib/browser';
 import { NotebookCellExecutionState } from '../../common';
-import { DisposableCollection, nls } from '@theia/core';
+import { CommandRegistry, DisposableCollection, nls } from '@theia/core';
 import { NotebookContextManager } from '../service/notebook-context-manager';
 import { NotebookViewportService } from './notebook-viewport-service';
 import { EditorPreferences } from '@theia/editor/lib/browser';
@@ -61,6 +61,9 @@ export class NotebookCodeCellRenderer implements CellRenderer {
     @inject(EditorPreferences)
     protected readonly editorPreferences: EditorPreferences;
 
+    @inject(CommandRegistry)
+    protected readonly commandRegistry: CommandRegistry;
+
     protected fontInfo: BareFontInfo | undefined;
 
     render(notebookModel: NotebookModel, cell: NotebookCellModel, handle: number): React.ReactNode {
@@ -76,7 +79,10 @@ export class NotebookCodeCellRenderer implements CellRenderer {
                         notebookContextManager={this.notebookContextManager}
                         notebookViewportService={this.notebookViewportService}
                         fontInfo={this.getOrCreateMonacoFontInfo()} />
-                    <NotebookCodeCellStatus cell={cell} executionStateService={this.executionStateService} onClick={() => cell.requestFocusEditor()}></NotebookCodeCellStatus>
+                    <NotebookCodeCellStatus cell={cell} notebook={notebookModel}
+                        commandRegistry={this.commandRegistry}
+                        executionStateService={this.executionStateService}
+                        onClick={() => cell.requestFocusEditor()} />
                 </div >
             </div >
             <div className='theia-notebook-cell-with-sidebar'>
@@ -108,7 +114,9 @@ export class NotebookCodeCellRenderer implements CellRenderer {
 }
 
 export interface NotebookCodeCellStatusProps {
+    notebook: NotebookModel;
     cell: NotebookCellModel;
+    commandRegistry: CommandRegistry;
     executionStateService: NotebookExecutionStateService;
     onClick: () => void;
 }
@@ -146,6 +154,10 @@ export class NotebookCodeCellStatus extends React.Component<NotebookCodeCellStat
                 }
             }
         }));
+
+        this.toDispose.push(props.cell.onDidChangeLanguage(() => {
+            this.forceUpdate();
+        }));
     }
 
     override componentWillUnmount(): void {
@@ -158,7 +170,9 @@ export class NotebookCodeCellStatus extends React.Component<NotebookCodeCellStat
                 {this.renderExecutionState()}
             </div>
             <div className='notebook-cell-status-right'>
-                <span>{this.props.cell.language}</span>
+                <span className='notebook-cell-language-label' onClick={() => {
+                    this.props.commandRegistry.executeCommand(NotebookCellCommands.CHANGE_CELL_LANGUAGE.id, this.props.notebook, this.props.cell);
+                }}>{this.props.cell.language}</span>
             </div>
         </div>;
     }

@@ -31,6 +31,7 @@ import { CellEditType, CellKind } from '../../common';
 import { NotebookEditorWidgetService } from '../service/notebook-editor-widget-service';
 import { NotebookCommands } from './notebook-actions-contribution';
 import { changeCellType } from './cell-operations';
+import { EditorLanguageQuickPickService } from '@theia/editor/lib/browser/editor-language-quick-pick-service';
 
 export namespace NotebookCellCommands {
     /** Parameters: notebookModel: NotebookModel | undefined, cell: NotebookCellModel */
@@ -131,6 +132,12 @@ export namespace NotebookCellCommands {
         label: 'Expand Cell Output',
     });
 
+    export const CHANGE_CELL_LANGUAGE = Command.toDefaultLocalizedCommand({
+        id: 'notebook.cell.changeLanguage',
+        category: 'Notebook',
+        label: 'Change Cell Language',
+    });
+
 }
 
 @injectable()
@@ -144,6 +151,9 @@ export class NotebookCellActionContribution implements MenuContribution, Command
 
     @inject(NotebookEditorWidgetService)
     protected notebookEditorWidgetService: NotebookEditorWidgetService;
+
+    @inject(EditorLanguageQuickPickService)
+    protected languageQuickPickService: EditorLanguageQuickPickService;
 
     @postConstruct()
     protected init(): void {
@@ -359,6 +369,24 @@ export class NotebookCellActionContribution implements MenuContribution, Command
             }
         });
 
+        commands.registerCommand(NotebookCellCommands.CHANGE_CELL_LANGUAGE, {
+            isVisible: () => !!this.notebookEditorWidgetService.focusedEditor?.model?.selectedCell,
+            execute: async (notebook?: NotebookModel, cell?: NotebookCellModel) => {
+                const selectedCell = cell ?? this.notebookEditorWidgetService.focusedEditor?.model?.selectedCell;
+                const activeNotebook = notebook ?? this.notebookEditorWidgetService.focusedEditor?.model;
+                if (selectedCell && activeNotebook) {
+                    const language = await this.languageQuickPickService.pickEditorLanguage(selectedCell.language);
+                    if (language?.value && language.value !== 'autoDetect') {
+                        this.notebookEditorWidgetService.focusedEditor?.model?.applyEdits([{
+                            editType: CellEditType.CellLanguage,
+                            index: activeNotebook.cells.indexOf(selectedCell),
+                            language: language.value.id
+                        }], true);
+                    }
+                }
+            }
+        });
+
     }
 
     protected editableCellCommandHandler(execute: (notebookModel: NotebookModel, cell: NotebookCellModel, output?: NotebookCellOutputModel) => void): CommandHandler {
@@ -382,7 +410,7 @@ export class NotebookCellActionContribution implements MenuContribution, Command
             {
                 command: NotebookCellCommands.EDIT_COMMAND.id,
                 keybinding: 'Enter',
-                when: `${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`,
+                when: `!editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`,
             },
             {
                 command: NotebookCellCommands.STOP_EDIT_COMMAND.id,
