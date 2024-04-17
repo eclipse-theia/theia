@@ -21,7 +21,7 @@ import {
     bindContributionProvider, MessageService, MessageClient, ConnectionHandler, RpcConnectionHandler,
     CommandService, commandServicePath, messageServicePath, OSBackendProvider, OSBackendProviderPath
 } from '../common';
-import { BackendApplication, BackendApplicationContribution, BackendApplicationCliContribution, BackendApplicationServer } from './backend-application';
+import { BackendApplication, BackendApplicationContribution, BackendApplicationCliContribution, BackendApplicationServer, BackendApplicationPath } from './backend-application';
 import { CliManager, CliContribution } from './cli';
 import { IPCConnectionProvider } from './messaging';
 import { ApplicationServerImpl } from './application-server';
@@ -101,10 +101,7 @@ export const backendApplicationModule = new ContainerModule(bind => {
         })
     ).inSingletonScope();
 
-    bind(ApplicationPackage).toDynamicValue(({ container }) => {
-        const { projectPath } = container.get(BackendApplicationCliContribution);
-        return new ApplicationPackage({ projectPath });
-    }).inSingletonScope();
+    bind(ApplicationPackage).toConstantValue(new ApplicationPackage({ projectPath: BackendApplicationPath }));
 
     bind(WsRequestValidator).toSelf().inSingletonScope();
     bindContributionProvider(bind, WsRequestValidatorContribution);
