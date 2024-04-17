@@ -209,9 +209,16 @@ export class NotebookKernelsMainImpl implements NotebookKernelsMain {
             }
         }(handle, data, this.languageService);
 
+        // this is for when a kernel is bound to a notebook while being registered
+        const autobindListener = this.notebookKernelService.onDidChangeSelectedKernel(e => {
+            if (e.newKernel === kernel.id) {
+                this.proxy.$acceptNotebookAssociation(handle, e.notebook.toComponents(), true);
+            }
+        });
+
         const registration = this.notebookKernelService.registerKernel(kernel);
         this.kernels.set(handle, [kernel, registration]);
-
+        autobindListener.dispose();
     }
 
     $updateKernel(handle: number, data: Partial<NotebookKernelDto>): void {
