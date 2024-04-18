@@ -123,8 +123,8 @@ export abstract class Process implements ManagedProcess {
         return this.closeEmitter.event;
     }
 
-    protected emitOnStarted(): void {
-        this.startEmitter.fire({});
+    protected emitOnStarted(event?: IProcessStartEvent): void {
+        this.startEmitter.fire(event ?? {});
     }
 
     /**

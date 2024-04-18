@@ -8594,10 +8594,10 @@ node-preload@^0.2.1:
   dependencies:
     process-on-spawn "^1.0.0"
 
-node-pty@1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/node-pty/-/node-pty-1.0.0.tgz#7daafc0aca1c4ca3de15c61330373af4af5861fd"
-  integrity sha512-wtBMWWS7dFZm/VgqElrTvtfMq4GzJ6+edFI0Y0zyzygUSZMgZdraDUMUhCIvkjhJjme15qWmbyJbtAx4ot4uZA==
+node-pty@1.1.0-beta5:
+  version "1.1.0-beta5"
+  resolved "https://registry.yarnpkg.com/node-pty/-/node-pty-1.1.0-beta5.tgz#364386b7058a93070234064f13164ec1ef914993"
+  integrity sha512-j3QdgFHnLY0JWxztrvM3g67RaQLOGvytv+C6mFu0PqD+JILlzqfwuoyqRqVxdZZjoOTUXPfSRj1qPVCaCH+eOw==
   dependencies:
     nan "^2.17.0"
 
