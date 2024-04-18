@@ -31,6 +31,7 @@ import { NotebookMonacoTextModelService } from '../service/notebook-monaco-text-
 import { NotebookCellOutputModel } from './notebook-cell-output-model';
 import { PreferenceService } from '@theia/core/lib/browser';
 import { NOTEBOOK_LINE_NUMBERS } from '../contributions/notebook-preferences';
+import { LanguageService } from '@theia/core/lib/browser/language-service';
 
 export const NotebookCellModelFactory = Symbol('NotebookModelFactory');
 export type NotebookCellModelFactory = (props: NotebookCellModelProps) => NotebookCellModel;
@@ -121,6 +122,9 @@ export class NotebookCellModel implements NotebookCell, Disposable {
     @inject(NotebookMonacoTextModelService)
     protected readonly textModelService: NotebookMonacoTextModelService;
 
+    @inject(LanguageService)
+    protected readonly languageService: LanguageService;
+
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
@@ -190,6 +194,10 @@ export class NotebookCellModel implements NotebookCell, Disposable {
         this.language = newLanguage;
         this.onDidChangeLanguageEmitter.fire(newLanguage);
         this.onDidChangeContentEmitter.fire('language');
+    }
+
+    get languageName(): string {
+        return this.languageService.getLanguage(this.language)?.name ?? this.language;
     }
 
     get uri(): URI {

@@ -172,7 +172,7 @@ export class NotebookCodeCellStatus extends React.Component<NotebookCodeCellStat
             <div className='notebook-cell-status-right'>
                 <span className='notebook-cell-language-label' onClick={() => {
                     this.props.commandRegistry.executeCommand(NotebookCellCommands.CHANGE_CELL_LANGUAGE.id, this.props.notebook, this.props.cell);
-                }}>{this.props.cell.language}</span>
+                }}>{this.props.cell.languageName}</span>
             </div>
         </div>;
     }
