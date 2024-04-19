@@ -30,8 +30,8 @@ import { convertToTransferQuickPickItems } from './type-converters';
 import { PluginPackage } from '../common/plugin-protocol';
 import { QuickInputButtonHandle } from '@theia/core/lib/browser';
 import { MaybePromise } from '@theia/core/lib/common/types';
-import Severity from '@theia/monaco-editor-core/esm/vs/base/common/severity';
 import { ThemeIcon as MonacoThemeIcon } from '@theia/monaco-editor-core/esm/vs/base/common/themables';
+import { Severity } from '@theia/core/lib/common/severity';
 
 const canceledName = 'Canceled';
 /**

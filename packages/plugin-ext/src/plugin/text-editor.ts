@@ -499,7 +499,7 @@ export interface TextEditOperation {
 export interface EditData {
     documentVersionId: number;
     edits: TextEditOperation[];
-    setEndOfLine: EndOfLine;
+    setEndOfLine: EndOfLine | undefined;
     undoStopBefore: boolean;
     undoStopAfter: boolean;
 }
@@ -507,13 +507,12 @@ export interface EditData {
 export class TextEditorEdit {
     private readonly documentVersionId: number;
     private collectedEdits: TextEditOperation[];
-    private eol: EndOfLine;
+    private eol: EndOfLine | undefined;
     private readonly undoStopBefore: boolean;
     private readonly undoStopAfter: boolean;
     constructor(private document: theia.TextDocument, options: { undoStopBefore: boolean; undoStopAfter: boolean }) {
         this.documentVersionId = document.version;
         this.collectedEdits = [];
-        this.eol = 0;
         this.undoStopBefore = options.undoStopBefore;
         this.undoStopAfter = options.undoStopAfter;
     }

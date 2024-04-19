@@ -52,6 +52,14 @@ class SingleFileServiceHost implements ts.LanguageServiceHost {
     getScriptSnapshot = (name: string) => name === this.filename ? this.file : this.lib;
     getCurrentDirectory = () => '';
     getDefaultLibFileName = () => 'lib.d.ts';
+    readFile(file: string, encoding?: string | undefined): string | undefined {
+        if (file === this.filename) {
+            return this.file.getText(0, this.file.getLength());
+        }
+    }
+    fileExists(file: string): boolean {
+        return this.filename === file;
+    }
 }
 
 class TypeScriptError extends Error {
