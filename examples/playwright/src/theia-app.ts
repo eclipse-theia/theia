@@ -100,7 +100,8 @@ export class TheiaApp {
         return view;
     }
 
-    async openEditor<T extends TheiaEditor>(filePath: string, editorFactory: { new(filePath: string, app: TheiaApp): T },
+    async openEditor<T extends TheiaEditor>(filePath: string,
+        editorFactory: { new(fp: string, app: TheiaApp): T },
         editorName?: string, expectFileNodes = true): Promise<T> {
         const explorer = await this.openView(TheiaExplorerView);
         if (!explorer) {
@@ -135,7 +136,7 @@ export class TheiaApp {
         return editor;
     }
 
-    async activateExistingEditor<T extends TheiaEditor>(filePath: string, editorFactory: { new(filePath: string, app: TheiaApp): T }): Promise<T> {
+    async activateExistingEditor<T extends TheiaEditor>(filePath: string, editorFactory: { new(fp: string, app: TheiaApp): T }): Promise<T> {
         const editor = new editorFactory(filePath, this);
         if (!await editor.isTabVisible()) {
             throw new Error(`Could not find opened editor for file ${filePath}`);
