@@ -14,12 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject } from '@theia/core/shared/inversify';
-import { MenuContribution, MenuModelRegistry, MAIN_MENU_BAR, MenuPath, MenuAction } from '@theia/core/lib/common';
-import { EditorMainMenu, EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
-import { MonacoCommandRegistry } from './monaco-command-registry';
+import { MAIN_MENU_BAR, MenuAction, MenuContribution, MenuModelRegistry, MenuPath } from '@theia/core/lib/common';
 import { nls } from '@theia/core/lib/common/nls';
-import { IMenuItem, isIMenuItem, MenuId, MenuRegistry } from '@theia/monaco-editor-core/esm/vs/platform/actions/common/actions';
+import { inject, injectable } from '@theia/core/shared/inversify';
+import { EDITOR_CONTEXT_MENU, EditorMainMenu } from '@theia/editor/lib/browser';
+import { IMenuItem, MenuId, MenuRegistry, isIMenuItem } from '@theia/monaco-editor-core/esm/vs/platform/actions/common/actions';
+import { MonacoCommands } from './monaco-command';
+import { MonacoCommandRegistry } from './monaco-command-registry';
 
 export interface MonacoActionGroup {
     id: string;
@@ -46,7 +47,11 @@ export class MonacoEditorMenuContribution implements MenuContribution {
             const commandId = this.commands.validate(item.command.id);
             if (commandId) {
                 const menuPath = [...EDITOR_CONTEXT_MENU, (item.group || '')];
-                registry.registerMenuAction(menuPath, this.buildMenuAction(commandId, item));
+                const coreId = MonacoCommands.COMMON_ACTIONS.get(commandId);
+                if (!(coreId && registry.getMenu(menuPath).children.some(it => it.id === coreId))) {
+                    // Don't add additional actions if the item is already registered with a core ID.
+                    registry.registerMenuAction(menuPath, this.buildMenuAction(commandId, item));
+                }
             }
         }
 
