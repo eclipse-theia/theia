@@ -28,18 +28,18 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           fetch-depth: 2
 
       - name: Use Node.js ${{ matrix.node }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@1a4442cacd436585916779262731d5b162bc6ec7 # v3.8.2
         with:
           node-version: ${{ matrix.node }}
           registry-url: 'https://registry.npmjs.org'
 
       - name: Use Java ${{ matrix.java }}
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@1df8dbefe2a8cbc99770194893dd902763bee34b # v3.9.0
         with:
           distribution: 'adopt'
           java-version: ${{ matrix.java }}
