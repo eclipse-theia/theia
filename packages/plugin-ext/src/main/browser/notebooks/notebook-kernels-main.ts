@@ -145,7 +145,7 @@ export class NotebookKernelsMainImpl implements NotebookKernelsMain {
         this.notebookEditorWidgetService = container.get(NotebookEditorWidgetService);
 
         this.notebookEditorWidgetService.onDidAddNotebookEditor(editor => {
-            editor.onDidRecieveKernelMessage(async message => {
+            editor.onDidReceiveKernelMessage(async message => {
                 const kernel = this.notebookKernelService.getSelectedOrSuggestedKernel(editor.model!);
                 if (kernel) {
                     this.proxy.$acceptKernelMessageFromRenderer(kernel.handle, editor.id, message);
