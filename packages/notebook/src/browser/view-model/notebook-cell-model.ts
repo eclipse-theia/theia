@@ -186,12 +186,11 @@ export class NotebookCellModel implements NotebookCell, Disposable {
             return;
         }
 
-        this.props.language = newLanguage;
         if (this.textModel) {
             this.textModel.setLanguageId(newLanguage);
         }
 
-        this.language = newLanguage;
+        this.props.language = newLanguage;
         this.onDidChangeLanguageEmitter.fire(newLanguage);
         this.onDidChangeContentEmitter.fire('language');
     }
