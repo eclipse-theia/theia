@@ -141,7 +141,7 @@ export class NotebookModel implements Saveable, Disposable {
 
         this.addCellOutputListeners(this.cells);
 
-        this.metadata = this.metadata;
+        this.metadata = this.props.data.metadata;
 
         this.nextHandle = this.cells.length;
     }
