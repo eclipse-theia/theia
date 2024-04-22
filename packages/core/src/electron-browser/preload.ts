@@ -26,7 +26,7 @@ import {
     CHANNEL_IS_FULL_SCREEN, CHANNEL_SET_MENU_BAR_VISIBLE, CHANNEL_REQUEST_CLOSE, CHANNEL_SET_TITLE_STYLE, CHANNEL_RESTART,
     CHANNEL_REQUEST_RELOAD, CHANNEL_APP_STATE_CHANGED, CHANNEL_SHOW_ITEM_IN_FOLDER, CHANNEL_READ_CLIPBOARD, CHANNEL_WRITE_CLIPBOARD,
     CHANNEL_KEYBOARD_LAYOUT_CHANGED, CHANNEL_IPC_CONNECTION, InternalMenuDto, CHANNEL_REQUEST_SECONDARY_CLOSE, CHANNEL_SET_BACKGROUND_COLOR,
-    CHANNEL_WC_METADATA, CHANNEL_ABOUT_TO_CLOSE
+    CHANNEL_WC_METADATA, CHANNEL_ABOUT_TO_CLOSE, CHANNEL_OPEN_WITH_SYSTEM_APP
 } from '../electron-common/electron-api';
 
 // eslint-disable-next-line import/no-extraneous-dependencies
@@ -78,6 +78,9 @@ const api: TheiaCoreAPI = {
     focusWindow: (name?: string) => ipcRenderer.send(CHANNEL_FOCUS_WINDOW, name),
     showItemInFolder: fsPath => {
         ipcRenderer.send(CHANNEL_SHOW_ITEM_IN_FOLDER, fsPath);
+    },
+    openWithSystemApp: fsPath => {
+        ipcRenderer.send(CHANNEL_OPEN_WITH_SYSTEM_APP, fsPath);
     },
     attachSecurityToken: (endpoint: string) => ipcRenderer.invoke(CHANNEL_ATTACH_SECURITY_TOKEN, endpoint),
 

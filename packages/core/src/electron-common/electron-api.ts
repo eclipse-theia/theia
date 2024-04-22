@@ -56,6 +56,7 @@ export interface TheiaCoreAPI {
     focusWindow(name?: string): void;
 
     showItemInFolder(fsPath: string): void;
+    openWithSystemApp(fsPath: string): void;
 
     getTitleBarStyleAtStartup(): Promise<string>;
     setTitleBarStyle(style: string): void;
@@ -112,6 +113,7 @@ export const CHANNEL_FOCUS_WINDOW = 'FocusWindow';
 export const CHANNEL_SHOW_OPEN = 'ShowOpenDialog';
 export const CHANNEL_SHOW_SAVE = 'ShowSaveDialog';
 export const CHANNEL_SHOW_ITEM_IN_FOLDER = 'ShowItemInFolder';
+export const CHANNEL_OPEN_WITH_SYSTEM_APP = 'OpenWithSystemApp';
 export const CHANNEL_ATTACH_SECURITY_TOKEN = 'AttachSecurityToken';
 
 export const CHANNEL_GET_TITLE_STYLE_AT_STARTUP = 'GetTitleStyleAtStartup';
