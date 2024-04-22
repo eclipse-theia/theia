@@ -109,8 +109,13 @@
   flex-grow: 1;
 }
 
-.notebook-cell-status-right {
-  margin: 0 5px;
+.notebook-cell-language-label {
+  padding: 0 5px;
+}
+
+.notebook-cell-language-label:hover {
+  cursor: pointer;
+  background-color: var(--theia-toolbar-hoverBackground);
 }
 
 .notebook-cell-status-item {

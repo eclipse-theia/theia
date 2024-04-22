@@ -62,6 +62,10 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
             this.editor?.getControl().updateOptions(options);
         }));
 
+        this.toDispose.push(this.props.cell.onDidChangeLanguage(language => {
+            this.editor?.setLanguage(language);
+        }));
+
         this.toDispose.push(this.props.notebookModel.onDidChangeSelectedCell(() => {
             if (this.props.notebookModel.selectedCell !== this.props.cell && this.editor?.getControl().hasTextFocus()) {
                 if (document.activeElement && 'blur' in document.activeElement) {

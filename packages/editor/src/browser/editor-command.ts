@@ -16,15 +16,15 @@
 
 import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
 import { CommandContribution, CommandRegistry, Command } from '@theia/core/lib/common';
-import URI from '@theia/core/lib/common/uri';
-import { CommonCommands, PreferenceService, LabelProvider, ApplicationShell, QuickInputService, QuickPickValue, QuickPickItemOrSeparator } from '@theia/core/lib/browser';
+import { CommonCommands, PreferenceService, LabelProvider, ApplicationShell, QuickInputService, QuickPickValue } from '@theia/core/lib/browser';
 import { EditorManager } from './editor-manager';
 import { EditorPreferences } from './editor-preferences';
 import { ResourceProvider, MessageService } from '@theia/core';
-import { LanguageService, Language } from '@theia/core/lib/browser/language-service';
+import { LanguageService } from '@theia/core/lib/browser/language-service';
 import { SUPPORTED_ENCODINGS } from '@theia/core/lib/browser/supported-encodings';
 import { EncodingMode } from './editor';
 import { nls } from '@theia/core/lib/common/nls';
+import { EditorLanguageQuickPickService } from './editor-language-quick-pick-service';
 
 export namespace EditorCommands {
 
@@ -237,6 +237,9 @@ export class EditorCommandContribution implements CommandContribution {
     @inject(ResourceProvider)
     protected readonly resourceProvider: ResourceProvider;
 
+    @inject(EditorLanguageQuickPickService)
+    protected readonly codeLanguageQuickPickService: EditorLanguageQuickPickService;
+
     @postConstruct()
     protected init(): void {
         this.editorPreferences.onPreferenceChanged(e => {
@@ -293,12 +296,7 @@ export class EditorCommandContribution implements CommandContribution {
             return;
         }
         const current = editor.document.languageId;
-        const items: Array<QuickPickValue<'autoDetect' | Language> | QuickPickItemOrSeparator> = [
-            { label: nls.localizeByDefault('Auto Detect'), value: 'autoDetect' },
-            { type: 'separator', label: nls.localizeByDefault('languages (identifier)') },
-            ... (this.languages.languages.map(language => this.toQuickPickLanguage(language, current))).sort((e, e2) => e.label.localeCompare(e2.label))
-        ];
-        const selectedMode = await this.quickInputService?.showQuickPick(items, { placeholder: nls.localizeByDefault('Select Language Mode') });
+        const selectedMode = await this.codeLanguageQuickPickService.pickEditorLanguage(current);
         if (selectedMode && ('value' in selectedMode)) {
             if (selectedMode.value === 'autoDetect') {
                 editor.detectLanguage();
@@ -377,30 +375,6 @@ export class EditorCommandContribution implements CommandContribution {
         } else if (selectedFileEncoding.value) {
             editor.setEncoding(selectedFileEncoding.value.id, isReopenWithEncoding ? EncodingMode.Decode : EncodingMode.Encode);
         }
-    }
-
-    protected toQuickPickLanguage(value: Language, current: string): QuickPickValue<Language> {
-        const languageUri = this.toLanguageUri(value);
-        const icon = this.labelProvider.getIcon(languageUri);
-        const iconClasses = icon !== '' ? [icon + ' file-icon'] : undefined;
-        const configured = current === value.id;
-        return {
-            value,
-            label: value.name,
-            description: nls.localizeByDefault(`({0})${configured ? ' - Configured Language' : ''}`, value.id),
-            iconClasses
-        };
-    }
-    protected toLanguageUri(language: Language): URI {
-        const extension = language.extensions.values().next();
-        if (extension.value) {
-            return new URI('file:///' + extension.value);
-        }
-        const filename = language.filenames.values().next();
-        if (filename.value) {
-            return new URI('file:///' + filename.value);
-        }
-        return new URI('file:///.txt');
     }
 
     protected isAutoSaveOn(): boolean {
