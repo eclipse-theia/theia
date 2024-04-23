@@ -1643,15 +1643,11 @@ export class DocumentLink {
 
 @es5ClassCompat
 export class DocumentDropEdit {
-
-    id?: string;
-
-    priority?: number;
-
-    label?: string;
-
+    title?: string;
+    kind: DocumentPasteEditKind;
+    handledMimeType?: string;
+    yieldTo?: ReadonlyArray<DocumentPasteEditKind>;
     insertText: string | SnippetString;
-
     additionalEdit?: WorkspaceEdit;
 
     constructor(insertText: string | SnippetString) {
@@ -3674,19 +3670,57 @@ export class InteractiveWindowInput {
 // #endregion
 
 // #region DocumentPaste
+export class DocumentPasteEditKind {
+    static Empty: DocumentPasteEditKind;
+
+    constructor(public readonly value: string) { }
+
+    /** @stubbed */
+    append(...parts: string[]): CodeActionKind {
+        return CodeActionKind.Empty;
+    };
+
+    /** @stubbed */
+    intersects(other: CodeActionKind): boolean {
+        return false;
+    }
+
+    /** @stubbed */
+    contains(other: CodeActionKind): boolean {
+        return false;
+    }
+}
+DocumentPasteEditKind.Empty = new DocumentPasteEditKind('');
+
 @es5ClassCompat
 export class DocumentPasteEdit {
-    constructor(insertText: string | SnippetString, id: string, label: string) {
+    constructor(insertText: string | SnippetString, title: string, kind: DocumentPasteEditKind) {
         this.insertText = insertText;
-        this.id = id;
-        this.label = label;
+        this.title = title;
+        this.kind = kind;
     }
+    title: string;
+    kind: DocumentPasteEditKind;
     insertText: string | SnippetString;
     additionalEdit?: WorkspaceEdit;
-    id: string;
-    label: string;
-    priority?: number;
+    yieldTo?: readonly DocumentPasteEditKind[];
 }
+
+/**
+ * The reason why paste edits were requested.
+ */
+export enum DocumentPasteTriggerKind {
+    /**
+     * Pasting was requested as part of a normal paste operation.
+     */
+    Automatic = 0,
+
+    /**
+     * Pasting was requested by the user with the `paste as` command.
+     */
+    PasteAs = 1,
+}
+
 // #endregion
 
 // #region DocumentPaste

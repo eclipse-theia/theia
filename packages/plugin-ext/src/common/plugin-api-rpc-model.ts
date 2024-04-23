@@ -18,7 +18,7 @@ import * as theia from '@theia/plugin';
 import type * as monaco from '@theia/monaco-editor-core';
 import { MarkdownString as MarkdownStringDTO } from '@theia/core/lib/common/markdown-rendering';
 import { UriComponents } from './uri-components';
-import { CompletionItemTag, SnippetString } from '../plugin/types-impl';
+import { CompletionItemTag, DocumentPasteEditKind, SnippetString } from '../plugin/types-impl';
 import { Event as TheiaEvent } from '@theia/core/lib/common/event';
 import { URI } from '@theia/core/shared/vscode-uri';
 import { SerializedRegExp } from './plugin-api-rpc';
@@ -330,7 +330,7 @@ export interface DocumentDropEdit {
 }
 
 export interface DocumentDropEditProviderMetadata {
-    readonly id: string;
+    readonly providedDropEditKinds?: readonly DocumentPasteEditKind[];
     readonly dropMimeTypes: readonly string[];
 }
 
