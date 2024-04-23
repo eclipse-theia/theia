@@ -78,6 +78,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
                 progressLocationId: 'extensions'
             });
             child.bind(VSXExtensionsViewContainer).toSelf();
+            child.bind(VSXExtensionsSearchBar).toSelf().inSingletonScope();
             const viewContainer = child.get(VSXExtensionsViewContainer);
             const widgetManager = child.get(WidgetManager);
             for (const id of [
@@ -96,7 +97,6 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     })).inSingletonScope();
 
     bind(VSXExtensionsSearchModel).toSelf().inSingletonScope();
-    bind(VSXExtensionsSearchBar).toSelf().inSingletonScope();
 
     rebind(LanguageQuickPickService).to(VSXLanguageQuickPickService).inSingletonScope();
 
