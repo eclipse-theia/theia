@@ -7,6 +7,7 @@
 ## not yet released
 
 - [scm] added support for dirty diff peek view [#13104](https://github.com/eclipse-theia/theia/pull/13104)
+- [test] stub VS Code `Test Coverage` API [#13631](https://github.com/eclipse-theia/theia/pull/13631)
 
 <a name="breaking_changes_not_yet_released">[Breaking Changes:](#breaking_changes_not_yet_released)</a>
 - [scm] revised some of the dirty diff related types [#13104](https://github.com/eclipse-theia/theia/pull/13104)
