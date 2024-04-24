@@ -185,6 +185,8 @@ const main = require('@theia/core/lib/node/main');
 
 BackendApplicationConfigProvider.set(${this.prettyStringify(this.pck.props.backend.config)});
 
+globalThis.extensionInfo = ${this.prettyStringify(this.pck.extensionPackages.map(({ name, version }) => ({ name, version }))) };
+
 const serverModule = require('./server');
 const serverAddress = main.start(serverModule());
 
