@@ -42,7 +42,6 @@ export interface IProcessExitEvent {
  * Data emitted when a process has been successfully started.
  */
 export interface IProcessStartEvent {
-    readonly pid?: number;
 }
 
 /**

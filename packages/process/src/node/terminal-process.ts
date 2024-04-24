@@ -25,7 +25,6 @@ import { DevNullStream } from './dev-null-stream';
 import { signame } from './utils';
 import { PseudoPty } from './pseudo-pty';
 import { Writable } from 'stream';
-import * as fs from 'fs';
 
 export const TerminalProcessOptions = Symbol('TerminalProcessOptions');
 export interface TerminalProcessOptions extends ProcessOptions {
@@ -145,26 +144,13 @@ export class TerminalProcess extends Process {
      * @returns the terminal PTY and a stream by which it may be sent input
      */
     private createPseudoTerminal(command: string, options: TerminalProcessOptions, ringBuffer: MultiRingBuffer): { terminal: IPty | undefined, inputStream: Writable } {
-        // Only test the command file on non-Windows platforms.
-        // On Windows, calling `spawn` on an invalid file throws an error. On Linux/macOS, it does not.
-        if (!isWindows) {
-            try {
-                const stat = fs.statSync(command);
-                if (stat.isDirectory()) {
-                    throw new Error('Permission denied');
-                }
-            } catch (error) {
-                throw new Error('File not found: ' + command);
-            }
-        }
-
         const terminal = spawn(
             command,
             (isWindows && options.commandLine) || options.args || [],
             options.options || {}
         );
 
-        setImmediate(() => this.emitOnStarted({ pid: terminal.pid }));
+        process.nextTick(() => this.emitOnStarted());
 
         // node-pty actually wait for the underlying streams to be closed before emitting exit.
         // We should emulate the `exit` and `close` sequence.
