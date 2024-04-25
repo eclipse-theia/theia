@@ -298,13 +298,12 @@ export class PluginDeployerImpl implements PluginDeployer {
         const pluginPaths = [...acceptedBackendPlugins, ...acceptedHeadlessPlugins].map(pluginEntry => pluginEntry.path());
         this.logger.debug('local path to deploy on remote instance', pluginPaths);
 
-        const deployments = await Promise.all([
-            // headless plugins are deployed like backend plugins
-            this.pluginDeployerHandler.deployBackendPlugins(acceptedHeadlessPlugins),
-            // start the backend plugins
-            this.pluginDeployerHandler.deployBackendPlugins(acceptedBackendPlugins),
-            this.pluginDeployerHandler.deployFrontendPlugins(acceptedFrontendPlugins)
-        ]);
+        const deployments = [];
+        // start the backend plugins
+        deployments.push(await this.pluginDeployerHandler.deployBackendPlugins(acceptedBackendPlugins));
+        // headless plugins are deployed like backend plugins
+        deployments.push(await this.pluginDeployerHandler.deployBackendPlugins(acceptedHeadlessPlugins));
+        deployments.push(await this.pluginDeployerHandler.deployFrontendPlugins(acceptedFrontendPlugins));
         this.onDidDeployEmitter.fire(undefined);
         return deployments.reduce<number>((accumulated, current) => accumulated += current ?? 0, 0);
     }
