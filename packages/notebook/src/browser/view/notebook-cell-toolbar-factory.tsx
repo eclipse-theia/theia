@@ -33,8 +33,8 @@ export interface NotebookCellToolbarItem {
 }
 
 export interface toolbarItemOptions {
-    contextMenuArgs?: unknown[];
-    commandArgs?: unknown[];
+    contextMenuArgs?: () => unknown[];
+    commandArgs?: () => unknown[];
 }
 
 @injectable()
@@ -91,11 +91,11 @@ export class NotebookCellToolbarFactory {
                         anchor: e.nativeEvent,
                         menuPath,
                         includeAnchorArg: false,
-                        args: itemOptions.contextMenuArgs,
+                        args: itemOptions.contextMenuArgs?.(),
                         context: this.notebookContextManager.context
                     }) :
-                () => this.commandRegistry.executeCommand(menuNode.command!, ...(itemOptions.commandArgs ?? [])),
-            isVisible: () => menuPath ? true : Boolean(this.commandRegistry.getVisibleHandler(menuNode.command!, ...(itemOptions.commandArgs ?? []))),
+                () => this.commandRegistry.executeCommand(menuNode.command!, ...(itemOptions.commandArgs?.() ?? [])),
+            isVisible: () => menuPath ? true : Boolean(this.commandRegistry.getVisibleHandler(menuNode.command!, ...(itemOptions.commandArgs?.() ?? []))),
             contextKeys: menuNode.when ? this.contextKeyService.parseKeys(menuNode.when) : undefined
         };
     }

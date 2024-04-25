@@ -90,7 +90,7 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
                             </div>
                             {this.state.selectedCell === cell &&
                                 this.props.toolbarRenderer.renderCellToolbar(NotebookCellActionContribution.ACTION_MENU, cell, {
-                                    contextMenuArgs: [cell], commandArgs: [this.props.notebookModel]
+                                    contextMenuArgs: () => [cell], commandArgs: () => [this.props.notebookModel]
                                 })
                             }
                         </li>
