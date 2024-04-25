@@ -39,10 +39,7 @@ export class ApplicationProcess {
     }
 
     fork(modulePath: string, args?: string[], options?: cp.ForkOptions): cp.ChildProcess {
-        return cp.fork(modulePath, args, Object.assign({}, this.defaultOptions, {
-            ...options,
-            shell: true
-        }));
+        return cp.fork(modulePath, args, Object.assign({}, this.defaultOptions, options));
     }
 
     canRun(command: string): boolean {
@@ -50,10 +47,7 @@ export class ApplicationProcess {
     }
 
     run(command: string, args: string[], options?: cp.SpawnOptions): Promise<void> {
-        const commandProcess = this.spawnBin(command, args, {
-            ...options,
-            shell: true
-        });
+        const commandProcess = this.spawnBin(command, args, options);
         return this.promisify(command, commandProcess);
     }
 
