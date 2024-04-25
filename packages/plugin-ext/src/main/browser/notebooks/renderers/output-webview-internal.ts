@@ -316,7 +316,6 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
         }
 
         public async render(output: Output, preferredMimeType: string | undefined, preferredRendererId: string | undefined, signal: AbortSignal): Promise<void> {
-            console.log('render output ', output.outputId, preferredMimeType);
             const item = output.findItemToRender(preferredMimeType);
             const primaryRenderer = this.findRenderer(preferredRendererId, item);
             if (!primaryRenderer) {
@@ -378,6 +377,7 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
 
         private async doRender(item: rendererApi.OutputItem, element: HTMLElement, renderer: Renderer, signal: AbortSignal): Promise<{ continue: boolean }> {
             try {
+                console.log(item.mime, item.text());
                 (await renderer.getOrLoad())?.renderOutputItem(item, element, signal);
                 return { continue: false }; // We rendered successfully
             } catch (e) {
@@ -469,7 +469,6 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
     await Promise.all(ctx.staticPreloadsData.map(preload => kernelPreloads.load(preload)));
 
     function clearOutput(output: Output): void {
-        console.log('clear output ', output.outputId);
         output.clear();
         output.element.remove();
     }
@@ -557,7 +556,7 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
             case 'changePreferredMimetype':
                 const mimeType = event.data.mimeType;
                 outputs.forEach(output => {
-                    output.clear();
+                    output.element.innerHTML = '';
                     renderers.render(output, mimeType, undefined, new AbortController().signal);
                 });
                 break;
