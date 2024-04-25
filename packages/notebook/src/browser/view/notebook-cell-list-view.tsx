@@ -89,7 +89,10 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
                                 {this.renderCellContent(cell, index)}
                             </div>
                             {this.state.selectedCell === cell &&
-                                this.props.toolbarRenderer.renderCellToolbar(NotebookCellActionContribution.ACTION_MENU, this.props.notebookModel, cell)}
+                                this.props.toolbarRenderer.renderCellToolbar(NotebookCellActionContribution.ACTION_MENU, cell, {
+                                    contextMenuArgs: () => [cell], commandArgs: () => [this.props.notebookModel]
+                                })
+                            }
                         </li>
                         {this.shouldRenderDragOverIndicator(cell, 'bottom') && <CellDropIndicator />}
                     </React.Fragment>

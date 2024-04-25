@@ -70,7 +70,10 @@ export class NotebookCodeCellRenderer implements CellRenderer {
         return <div>
             <div className='theia-notebook-cell-with-sidebar'>
                 <div className='theia-notebook-cell-sidebar'>
-                    {this.notebookCellToolbarFactory.renderSidebar(NotebookCellActionContribution.CODE_CELL_SIDEBAR_MENU, notebookModel, cell)}
+                    {this.notebookCellToolbarFactory.renderSidebar(NotebookCellActionContribution.CODE_CELL_SIDEBAR_MENU, cell, {
+                        contextMenuArgs: () => [cell], commandArgs: () => [notebookModel, cell]
+                    })
+                    }
                     <CodeCellExecutionOrder cell={cell} />
                 </div>
                 <div className='theia-notebook-cell-editor-container'>
@@ -88,7 +91,10 @@ export class NotebookCodeCellRenderer implements CellRenderer {
             <div className='theia-notebook-cell-with-sidebar'>
                 <NotebookCodeCellOutputs cell={cell} notebook={notebookModel} outputWebviewFactory={this.cellOutputWebviewFactory}
                     renderSidebar={() =>
-                        this.notebookCellToolbarFactory.renderSidebar(NotebookCellActionContribution.OUTPUT_SIDEBAR_MENU, notebookModel, cell, cell.outputs[0])} />
+                        this.notebookCellToolbarFactory.renderSidebar(NotebookCellActionContribution.OUTPUT_SIDEBAR_MENU, cell, {
+                            contextMenuArgs: () => [notebookModel, cell, cell.outputs[0]]
+                        })
+                    } />
             </div>
         </div >;
     }
