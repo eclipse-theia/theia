@@ -216,6 +216,8 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
                 // console.log('from webview customKernelMessage ', JSON.stringify(message.message));
                 this.editor.recieveKernelMessage(message.message);
                 break;
+            case 'inputFocusChanged':
+                this.editor?.outputInputFocusChanged(message.focused);
         }
     }
 

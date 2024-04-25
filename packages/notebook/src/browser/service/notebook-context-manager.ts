@@ -23,6 +23,7 @@ import {
     NOTEBOOK_CELL_EXECUTING, NOTEBOOK_CELL_EXECUTION_STATE,
     NOTEBOOK_CELL_FOCUSED, NOTEBOOK_CELL_MARKDOWN_EDIT_MODE,
     NOTEBOOK_CELL_TYPE, NOTEBOOK_HAS_OUTPUTS, NOTEBOOK_KERNEL, NOTEBOOK_KERNEL_SELECTED,
+    NOTEBOOK_OUTPUT_INPUT_FOCUSED,
     NOTEBOOK_VIEW_TYPE
 } from '../contributions/notebook-context-keys';
 import { NotebookEditorWidget } from '../notebook-editor-widget';
@@ -100,6 +101,11 @@ export class NotebookContextManager {
         }));
 
         widget.model?.onDidChangeSelectedCell(e => this.selectedCellChanged(e));
+
+        widget.onDidChangeOutputInputFocus(focus => {
+            this.scopedStore.setContext(NOTEBOOK_OUTPUT_INPUT_FOCUSED, focus);
+            this.onDidChangeContextEmitter.fire(this.createContextKeyChangedEvent([NOTEBOOK_OUTPUT_INPUT_FOCUSED]));
+        });
 
         this.onDidChangeContextEmitter.fire(this.createContextKeyChangedEvent([NOTEBOOK_VIEW_TYPE, NOTEBOOK_KERNEL_SELECTED, NOTEBOOK_KERNEL]));
     }

@@ -581,5 +581,15 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
         return this.originalAppendChild(node);
     };
 
+    const focusChange = (event: FocusEvent, focus: boolean) => {
+        if (event.target instanceof HTMLInputElement) {
+            theia.postMessage({ type: 'inputFocusChanged', focused: focus } as webviewCommunication.InputFocusChange);
+        }
+    };
+
+    window.addEventListener('focusin', (event: FocusEvent) => focusChange(event, true));
+
+    window.addEventListener('focusout', (event: FocusEvent) => focusChange(event, false));
+
     theia.postMessage(<webviewCommunication.WebviewInitialized>{ type: 'initialized' });
 }

@@ -76,7 +76,12 @@ export interface WheelMessage {
     readonly deltaX: number;
 }
 
-export type FromWebviewMessage = WebviewInitialized | OnDidRenderOutput | WheelMessage | CustomRendererMessage | KernelMessage;
+export interface InputFocusChange {
+    readonly type: 'inputFocusChanged';
+    readonly focused: boolean;
+}
+
+export type FromWebviewMessage = WebviewInitialized | OnDidRenderOutput | WheelMessage | CustomRendererMessage | KernelMessage | InputFocusChange;
 
 export interface Output {
     id: string
@@ -88,3 +93,4 @@ export interface OutputItem {
     readonly mime: string;
     readonly data: Uint8Array;
 }
+

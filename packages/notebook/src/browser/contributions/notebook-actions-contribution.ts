@@ -69,17 +69,17 @@ export namespace NotebookCommands {
     });
 
     export const CUT_SELECTED_CELL = Command.toDefaultLocalizedCommand({
-        id: 'notebook.cut-selected-cell',
+        id: 'notebook.cell.cut',
         category: 'Notebook',
     });
 
     export const COPY_SELECTED_CELL = Command.toDefaultLocalizedCommand({
-        id: 'notebook.copy-selected-cell',
+        id: 'notebook.cell.copy',
         category: 'Notebook',
     });
 
     export const PASTE_CELL = Command.toDefaultLocalizedCommand({
-        id: 'notebook.paste-cell',
+        id: 'notebook.cell.paste',
         category: 'Notebook',
     });
 }

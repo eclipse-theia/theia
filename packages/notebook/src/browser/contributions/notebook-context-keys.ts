@@ -30,6 +30,7 @@ export const KEYBINDING_CONTEXT_NOTEBOOK_FIND_WIDGET_FOCUSED = 'notebookFindWidg
 export const NOTEBOOK_EDITOR_FOCUSED = 'notebookEditorFocused';
 export const NOTEBOOK_CELL_LIST_FOCUSED = 'notebookCellListFocused';
 export const NOTEBOOK_OUTPUT_FOCUSED = 'notebookOutputFocused';
+export const NOTEBOOK_OUTPUT_INPUT_FOCUSED = 'notebookOutputInputFocused';
 export const NOTEBOOK_EDITOR_EDITABLE = 'notebookEditable';
 export const NOTEBOOK_HAS_RUNNING_CELL = 'notebookHasRunningCell';
 export const NOTEBOOK_USE_CONSOLIDATED_OUTPUT_BUTTON = 'notebookUseConsolidatedOutputButton';
@@ -71,6 +72,7 @@ export namespace NotebookContextKeys {
         service.createKey(NOTEBOOK_EDITOR_FOCUSED, false);
         service.createKey(NOTEBOOK_CELL_LIST_FOCUSED, false);
         service.createKey(NOTEBOOK_OUTPUT_FOCUSED, false);
+        service.createKey(NOTEBOOK_OUTPUT_INPUT_FOCUSED, false);
         service.createKey(NOTEBOOK_EDITOR_EDITABLE, true);
         service.createKey(NOTEBOOK_HAS_RUNNING_CELL, false);
         service.createKey(NOTEBOOK_USE_CONSOLIDATED_OUTPUT_BUTTON, false);
