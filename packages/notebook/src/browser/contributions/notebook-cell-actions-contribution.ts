@@ -324,7 +324,7 @@ export class NotebookCellActionContribution implements MenuContribution, Command
             }
         });
         commands.registerCommand(NotebookCellCommands.CLEAR_OUTPUTS_COMMAND, this.editableCellCommandHandler(
-            (notebook, cell) => notebook.applyEdits([{
+            (notebook, cell) => (notebook ?? this.notebookEditorWidgetService.focusedEditor?.model)?.applyEdits([{
                 editType: CellEditType.Output,
                 handle: cell.handle,
                 outputs: [],
