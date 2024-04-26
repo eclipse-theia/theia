@@ -21,18 +21,16 @@ import { OutlineViewService } from '@theia/outline-view/lib/browser/outline-view
 import { NotebookModel } from '../view-model/notebook-model';
 import { OutlineSymbolInformationNode } from '@theia/outline-view/lib/browser/outline-view-widget';
 import { NotebookEditorWidget } from '../notebook-editor-widget';
-import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import { DisposableCollection, URI } from '@theia/core';
 import { CellKind, CellUri } from '../../common';
 import { NotebookService } from '../service/notebook-service';
 export interface NotebookCellOutlineNode extends OutlineSymbolInformationNode {
-    notebookCell: NotebookCellModel;
-    uri: URI;
+    uri: string;
 }
 
 export namespace NotebookCellOutlineNode {
     export function is(element: object): element is NotebookCellOutlineNode {
-        return TreeNode.is(element) && OutlineSymbolInformationNode.is(element) && 'notebookCell' in element;
+        return TreeNode.is(element) && OutlineSymbolInformationNode.is(element) && 'uri' in element && (element as NotebookCellOutlineNode).uri.startsWith(CellUri.cellUriScheme);
     }
 }
 
@@ -94,17 +92,17 @@ export class NotebookOutlineContribution implements FrontendApplicationContribut
             children: [],
             selected: model.selectedCell === cell,
             expanded: false,
-            notebookCell: cell,
-            uri: model.uri,
+            uri: cell.uri.toString(),
         } as NotebookCellOutlineNode));
     }
 
     selectCell(node: object): void {
         if (NotebookCellOutlineNode.is(node)) {
-            const parsed = CellUri.parse(node.notebookCell.uri);
+            const parsed = CellUri.parse(new URI(node.uri));
             const model = parsed && this.notebookService.getNotebookEditorModel(parsed.notebook);
-            if (model) {
-                model.setSelectedCell(node.notebookCell);
+            const cell = model?.cells.find(c => c.handle === parsed?.handle);
+            if (model && cell) {
+                model.setSelectedCell(cell);
             }
         }
     }

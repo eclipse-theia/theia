@@ -16,11 +16,13 @@
 
 import { codicon, LabelProvider, LabelProviderContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { CellKind } from '../../common';
+import { CellKind, CellUri } from '../../common';
 import { NotebookService } from '../service/notebook-service';
 import { NotebookCellOutlineNode } from './notebook-outline-contribution';
 import type Token = require('markdown-it/lib/token');
 import markdownit = require('@theia/core/shared/markdown-it');
+import { NotebookCellModel } from '../view-model/notebook-cell-model';
+import { URI } from '@theia/core';
 
 @injectable()
 export class NotebookLabelProviderContribution implements LabelProviderContribution {
@@ -41,23 +43,43 @@ export class NotebookLabelProviderContribution implements LabelProviderContribut
     }
 
     getIcon(element: NotebookCellOutlineNode): string {
-        return element.notebookCell.cellKind === CellKind.Markup ? codicon('markdown') : codicon('code');
+        const cell = this.findCellByUri(element.uri.toString());
+        if (cell) {
+            return cell.cellKind === CellKind.Markup ? codicon('markdown') : codicon('code');
+        }
+        return '';
     }
 
     getName(element: NotebookCellOutlineNode): string {
-        return element.notebookCell.cellKind === CellKind.Code ?
-            element.notebookCell.text.split('\n')[0] :
-            this.extractPlaintext(this.markdownIt.parse(element.notebookCell.text.split('\n')[0], {}));
+        const cell = this.findCellByUri(element.uri.toString());
+        if (cell) {
+            return cell.cellKind === CellKind.Code ?
+                cell.text.split('\n')[0] :
+                this.extractPlaintext(this.markdownIt.parse(cell.text.split('\n')[0], {}));
+        }
+        return '';
     }
 
     getLongName(element: NotebookCellOutlineNode): string {
-        return element.notebookCell.cellKind === CellKind.Code ?
-            element.notebookCell.text.split('\n')[0] :
-            this.extractPlaintext(this.markdownIt.parse(element.notebookCell.text.split('\n')[0], {}));
+        const cell = this.findCellByUri(element.uri);
+        if (cell) {
+            return cell.cellKind === CellKind.Code ?
+                cell.text.split('\n')[0] :
+                this.extractPlaintext(this.markdownIt.parse(cell.text.split('\n')[0], {}));
+        }
+        return '';
     }
 
     extractPlaintext(parsedMarkdown: Token[]): string {
         return parsedMarkdown.map(token => token.children ? this.extractPlaintext(token.children) : token.content).join('');
+    }
+
+    findCellByUri(uri: string): NotebookCellModel | undefined {
+        const parsed = CellUri.parse(new URI(uri));
+        if (parsed) {
+            return this.notebookService.getNotebookEditorModel(parsed.notebook)?.cells.find(cell => cell.handle === parsed?.handle);
+        }
+        return undefined;
     }
 
 }
