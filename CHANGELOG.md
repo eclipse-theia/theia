@@ -7,6 +7,7 @@
 ## not yet released
 
 - [application-manager] Generate Extension Info in server application to avoid empty About Dialog [#13590](https://github.com/eclipse-theia/theia/pull/13590) - contributed on behalf of STMicroelectronics
+- [application-package] bumped the default supported API from `1.87.2` to `1.88.1` [#13646](https://github.com/eclipse-theia/theia/pull/13646) - contributed on behalf of STMicroelectronics
 - [scm] added support for dirty diff peek view [#13104](https://github.com/eclipse-theia/theia/pull/13104)
 - [test] stub VS Code `Test Coverage` API [#13631](https://github.com/eclipse-theia/theia/pull/13631)
 
