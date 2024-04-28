@@ -17,6 +17,9 @@
     },
     {
       "path": "../filesystem"
+    },
+    {
+      "path": "../monaco"
     }
   ]
 }

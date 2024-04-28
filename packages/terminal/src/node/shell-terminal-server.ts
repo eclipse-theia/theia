@@ -69,7 +69,9 @@ export class ShellTerminalServer extends BaseTerminalServer implements IShellTer
     private spawnAsPromised(command: string, args: string[]): Promise<string> {
         return new Promise((resolve, reject) => {
             let stdout = '';
-            const child = cp.spawn(command, args);
+            const child = cp.spawn(command, args, {
+                shell: true
+            });
             if (child.pid) {
                 child.stdout.on('data', (data: Buffer) => {
                     stdout += data.toString();

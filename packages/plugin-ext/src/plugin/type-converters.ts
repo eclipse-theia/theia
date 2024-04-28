@@ -749,9 +749,9 @@ export function isUriComponents(arg: unknown): arg is UriComponents {
     return isObject<UriComponents>(arg) &&
         typeof arg.scheme === 'string' &&
         (arg['$mid'] === 1 || (
-        typeof arg.path === 'string' &&
-        typeof arg.query === 'string' &&
-        typeof arg.fragment === 'string'));
+            typeof arg.path === 'string' &&
+            typeof arg.query === 'string' &&
+            typeof arg.fragment === 'string'));
 }
 
 export function isModelCallHierarchyItem(arg: unknown): arg is model.CallHierarchyItem {
@@ -1522,8 +1522,8 @@ export namespace NotebookCellData {
             cellKind: NotebookCellKind.from(data.kind),
             language: data.languageId,
             source: data.value,
-            // metadata: data.metadata,
-            // internalMetadata: NotebookCellExecutionSummary.from(data.executionSummary ?? {}),
+            metadata: data.metadata,
+            internalMetadata: NotebookCellExecutionSummary.from(data.executionSummary ?? {}),
             outputs: data.outputs ? data.outputs.map(NotebookCellOutputConverter.from) : []
         };
     }

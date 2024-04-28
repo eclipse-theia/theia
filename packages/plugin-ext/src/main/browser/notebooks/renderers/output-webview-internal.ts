@@ -553,11 +553,11 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
                 renderers.getRenderer(event.data.rendererId)?.receiveMessage(event.data.message);
                 break;
             case 'changePreferredMimetype':
-                const outputId = event.data.outputId;
-                const index = outputs.findIndex(output => output.outputId === outputId);
-                outputs.splice(index, 1);
-                clearOutput(outputs.splice(index, 1)[0]);
-                renderers.render(outputs[index], event.data.mimeType, undefined, new AbortController().signal);
+                const mimeType = event.data.mimeType;
+                outputs.forEach(output => {
+                    output.element.innerHTML = '';
+                    renderers.render(output, mimeType, undefined, new AbortController().signal);
+                });
                 break;
             case 'customKernelMessage':
                 onDidReceiveKernelMessage.fire(event.data.message);

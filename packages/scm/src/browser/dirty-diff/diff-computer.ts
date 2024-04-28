@@ -16,6 +16,7 @@
 
 import * as jsdiff from 'diff';
 import { ContentLinesArrayLike } from './content-lines';
+import { Position, Range, uinteger } from '@theia/core/shared/vscode-languageserver-protocol';
 
 export class DiffComputer {
 
@@ -25,52 +26,52 @@ export class DiffComputer {
     }
 
     computeDirtyDiff(previous: ContentLinesArrayLike, current: ContentLinesArrayLike): DirtyDiff {
-        const added: LineRange[] = [];
-        const removed: number[] = [];
-        const modified: LineRange[] = [];
-        const changes = this.computeDiff(previous, current);
-        let lastLine = -1;
-        for (let i = 0; i < changes.length; i++) {
-            const change = changes[i];
-            const next = changes[i + 1];
+        const changes: Change[] = [];
+        const diffResult = this.computeDiff(previous, current);
+        let currentRevisionLine = -1;
+        let previousRevisionLine = -1;
+        for (let i = 0; i < diffResult.length; i++) {
+            const change = diffResult[i];
+            const next = diffResult[i + 1];
             if (change.added) {
                 // case: addition
-                const start = lastLine + 1;
-                const end = lastLine + change.count!;
-                added.push(<LineRange>{ start, end });
-                lastLine = end;
+                changes.push({ previousRange: LineRange.createEmptyLineRange(previousRevisionLine + 1), currentRange: toLineRange(change) });
+                currentRevisionLine += change.count!;
             } else if (change.removed && next && next.added) {
                 const isFirstChange = i === 0;
-                const isLastChange = i === changes.length - 2;
+                const isLastChange = i === diffResult.length - 2;
                 const isNextEmptyLine = next.value.length > 0 && current[next.value[0]].length === 0;
                 const isPrevEmptyLine = change.value.length > 0 && previous[change.value[0]].length === 0;
 
                 if (isFirstChange && isNextEmptyLine) {
                     // special case: removing at the beginning
-                    removed.push(0);
+                    changes.push({ previousRange: toLineRange(change), currentRange: LineRange.createEmptyLineRange(0) });
+                    previousRevisionLine += change.count!;
                 } else if (isFirstChange && isPrevEmptyLine) {
                     // special case: adding at the beginning
-                    const start = 0;
-                    const end = next.count! - 1;
-                    added.push(<LineRange>{ start, end });
-                    lastLine = end;
+                    changes.push({ previousRange: LineRange.createEmptyLineRange(0), currentRange: toLineRange(next) });
+                    currentRevisionLine += next.count!;
                 } else if (isLastChange && isNextEmptyLine) {
-                    removed.push(lastLine + 1 /* = empty line */);
+                    changes.push({ previousRange: toLineRange(change), currentRange: LineRange.createEmptyLineRange(currentRevisionLine + 2) });
+                    previousRevisionLine += change.count!;
                 } else {
                     // default case is a modification
-                    const start = lastLine + 1;
-                    const end = lastLine + next.count!;
-                    modified.push(<LineRange>{ start, end });
-                    lastLine = end;
+                    changes.push({ previousRange: toLineRange(change), currentRange: toLineRange(next) });
+                    currentRevisionLine += next.count!;
+                    previousRevisionLine += change.count!;
                 }
                 i++; // consume next eagerly
             } else if (change.removed && !(next && next.added)) {
-                removed.push(Math.max(0, lastLine));
+                // case: removal
+                changes.push({ previousRange: toLineRange(change), currentRange: LineRange.createEmptyLineRange(currentRevisionLine + 1) });
+                previousRevisionLine += change.count!;
             } else {
-                lastLine += change.count!;
+                // case: unchanged region
+                currentRevisionLine += change.count!;
+                previousRevisionLine += change.count!;
             }
         }
-        return <DirtyDiff>{ added, removed, modified };
+        return { changes };
     }
 
 }
@@ -101,6 +102,11 @@ function diffArrays(oldArr: ContentLinesArrayLike, newArr: ContentLinesArrayLike
     return arrayDiff.diff(oldArr as any, newArr as any) as any;
 }
 
+function toLineRange({ value }: DiffResult): LineRange {
+    const [start, end] = value;
+    return LineRange.create(start, end + 1);
+}
+
 export interface DiffResult {
     value: [number, number];
     count?: number;
@@ -109,21 +115,63 @@ export interface DiffResult {
 }
 
 export interface DirtyDiff {
-    /**
-     * Lines added by comparison to previous revision.
-     */
-    readonly added: LineRange[];
-    /**
-     * Lines, after which lines were removed by comparison to previous revision.
-     */
-    readonly removed: number[];
-    /**
-     * Lines modified by comparison to previous revision.
-     */
-    readonly modified: LineRange[];
+    readonly changes: readonly Change[];
+}
+
+export interface Change {
+    readonly previousRange: LineRange;
+    readonly currentRange: LineRange;
+}
+
+export namespace Change {
+    export function isAddition(change: Change): boolean {
+        return LineRange.isEmpty(change.previousRange);
+    }
+    export function isRemoval(change: Change): boolean {
+        return LineRange.isEmpty(change.currentRange);
+    }
+    export function isModification(change: Change): boolean {
+        return !isAddition(change) && !isRemoval(change);
+    }
 }
 
 export interface LineRange {
-    start: number;
-    end: number;
+    readonly start: number;
+    readonly end: number;
+}
+
+export namespace LineRange {
+    export function create(start: number, end: number): LineRange {
+        if (start < 0 || end < 0 || start > end) {
+            throw new Error(`Invalid line range: { start: ${start}, end: ${end} }`);
+        }
+        return { start, end };
+    }
+    export function createSingleLineRange(line: number): LineRange {
+        return create(line, line + 1);
+    }
+    export function createEmptyLineRange(line: number): LineRange {
+        return create(line, line);
+    }
+    export function isEmpty(range: LineRange): boolean {
+        return range.start === range.end;
+    }
+    export function getStartPosition(range: LineRange): Position {
+        if (isEmpty(range)) {
+            return getEndPosition(range);
+        }
+        return Position.create(range.start, 0);
+    }
+    export function getEndPosition(range: LineRange): Position {
+        if (range.end < 1) {
+            return Position.create(0, 0);
+        }
+        return Position.create(range.end - 1, uinteger.MAX_VALUE);
+    }
+    export function toRange(range: LineRange): Range {
+        return Range.create(getStartPosition(range), getEndPosition(range));
+    }
+    export function getLineCount(range: LineRange): number {
+        return range.end - range.start;
+    }
 }

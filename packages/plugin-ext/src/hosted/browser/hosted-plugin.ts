@@ -409,6 +409,7 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
     }
 
     async activateByLanguage(languageId: string): Promise<void> {
+        await this.activateByEvent('onLanguage');
         await this.activateByEvent(`onLanguage:${languageId}`);
     }
 

@@ -38,6 +38,7 @@ import { QuickEditorService } from './quick-editor-service';
 import { EditorLanguageStatusService } from './language-status/editor-language-status-service';
 import { EditorLineNumberContribution } from './editor-linenumber-contribution';
 import { UndoRedoService } from './undo-redo-service';
+import { EditorLanguageQuickPickService } from './editor-language-quick-pick-service';
 
 export default new ContainerModule(bind => {
     bindEditorPreferences(bind);
@@ -84,4 +85,6 @@ export default new ContainerModule(bind => {
     bind(EditorAccess).to(ActiveEditorAccess).inSingletonScope().whenTargetNamed(EditorAccess.ACTIVE);
 
     bind(UndoRedoService).toSelf().inSingletonScope();
+
+    bind(EditorLanguageQuickPickService).toSelf().inSingletonScope();
 });

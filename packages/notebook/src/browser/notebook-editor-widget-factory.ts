@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { URI } from '@theia/core';
+import { nls, URI } from '@theia/core';
 import { WidgetFactory, NavigatableWidgetOptions, LabelProvider } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { NotebookEditorWidget, NotebookEditorWidgetContainerFactory, NotebookEditorProps } from './notebook-editor-widget';
@@ -51,10 +51,13 @@ export class NotebookEditorWidgetFactory implements WidgetFactory {
 
         const editor = await this.createEditor(uri, options.notebookType);
 
-        const icon = this.labelProvider.getIcon(uri);
-        editor.title.label = this.labelProvider.getName(uri);
-        editor.title.iconClass = icon + ' file-icon';
-
+        this.setLabels(editor, uri);
+        const labelListener = this.labelProvider.onDidChange(event => {
+            if (event.affects(uri)) {
+                this.setLabels(editor, uri);
+            }
+        });
+        editor.onDidDispose(() => labelListener.dispose());
         return editor;
     }
 
@@ -65,6 +68,16 @@ export class NotebookEditorWidgetFactory implements WidgetFactory {
             notebookType,
             notebookData: this.notebookModelResolver.resolve(uri, notebookType),
         });
+    }
+
+    private setLabels(editor: NotebookEditorWidget, uri: URI): void {
+        editor.title.caption = uri.path.fsPath();
+        if (editor.model?.readOnly) {
+            editor.title.caption += ` • ${nls.localizeByDefault('Read-only')}`;
+        }
+        const icon = this.labelProvider.getIcon(uri);
+        editor.title.label = this.labelProvider.getName(uri);
+        editor.title.iconClass = icon + ' file-icon';
     }
 
 }

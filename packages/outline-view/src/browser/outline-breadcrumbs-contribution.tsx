@@ -30,10 +30,14 @@ export interface BreadcrumbPopupOutlineViewFactory {
 export class BreadcrumbPopupOutlineView extends OutlineViewWidget {
     @inject(OpenerService) protected readonly openerService: OpenerService;
 
+    @inject(OutlineViewService)
+    protected readonly outlineViewService: OutlineViewService;
+
     protected override tapNode(node?: TreeNode): void {
         if (UriSelection.is(node) && OutlineSymbolInformationNode.hasRange(node)) {
             open(this.openerService, node.uri, { selection: node.range });
         } else {
+            this.outlineViewService.didTapNode(node as OutlineSymbolInformationNode);
             super.tapNode(node);
         }
     }

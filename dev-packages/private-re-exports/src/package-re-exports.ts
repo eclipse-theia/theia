@@ -177,7 +177,8 @@ export class PackageReExports {
                 ELECTRON_RUN_AS_NODE: '1'
             },
             encoding: 'utf8',
-            stdio: ['ignore', 'pipe', 'inherit']
+            stdio: ['ignore', 'pipe', 'inherit'],
+            shell: true
         });
         const [packageRoot, reExports] = JSON.parse(stdout) as [string, ReExport[]];
         return new PackageReExports(packageName, packageRoot, reExports);

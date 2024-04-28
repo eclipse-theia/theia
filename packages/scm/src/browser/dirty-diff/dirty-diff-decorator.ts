@@ -16,8 +16,6 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import {
-    Range,
-    Position,
     EditorDecoration,
     EditorDecorationOptions,
     OverviewRulerLane,
@@ -25,7 +23,8 @@ import {
     TextEditor,
     MinimapPosition
 } from '@theia/editor/lib/browser';
-import { DirtyDiff, LineRange } from './diff-computer';
+import { DirtyDiff, LineRange, Change } from './diff-computer';
+import { URI } from '@theia/core';
 
 export enum DirtyDiffDecorationType {
     AddedLine = 'dirty-diff-added-line',
@@ -84,24 +83,32 @@ const ModifiedLineDecoration = <EditorDecorationOptions>{
     isWholeLine: true
 };
 
+function getEditorDecorationOptions(change: Change): EditorDecorationOptions {
+    if (Change.isAddition(change)) {
+        return AddedLineDecoration;
+    }
+    if (Change.isRemoval(change)) {
+        return RemovedLineDecoration;
+    }
+    return ModifiedLineDecoration;
+}
+
 export interface DirtyDiffUpdate extends DirtyDiff {
     readonly editor: TextEditor;
+    readonly previousRevisionUri?: URI;
 }
 
 @injectable()
 export class DirtyDiffDecorator extends EditorDecorator {
 
     applyDecorations(update: DirtyDiffUpdate): void {
-        const modifications = update.modified.map(range => this.toDeltaDecoration(range, ModifiedLineDecoration));
-        const additions = update.added.map(range => this.toDeltaDecoration(range, AddedLineDecoration));
-        const removals = update.removed.map(line => this.toDeltaDecoration(line, RemovedLineDecoration));
-        const decorations = [...modifications, ...additions, ...removals];
+        const decorations = update.changes.map(change => this.toDeltaDecoration(change));
         this.setDecorations(update.editor, decorations);
     }
 
-    protected toDeltaDecoration(from: LineRange | number, options: EditorDecorationOptions): EditorDecoration {
-        const [start, end] = (typeof from === 'number') ? [from, from] : [from.start, from.end];
-        const range = Range.create(Position.create(start, 0), Position.create(end, 0));
+    protected toDeltaDecoration(change: Change): EditorDecoration {
+        const range = LineRange.toRange(change.currentRange);
+        const options = getEditorDecorationOptions(change);
         return { range, options };
     }
 }

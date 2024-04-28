@@ -14,32 +14,56 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { URI, MaybePromise } from '@theia/core';
+import { URI, MaybePromise, Disposable } from '@theia/core';
 import { NavigatableWidgetOpenHandler, WidgetOpenerOptions } from '@theia/core/lib/browser';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { injectable } from '@theia/core/shared/inversify';
 import { NotebookFileSelector, NotebookTypeDescriptor } from '../common/notebook-protocol';
-import { NotebookTypeRegistry } from './notebook-type-registry';
 import { NotebookEditorWidget } from './notebook-editor-widget';
 import { match } from '@theia/core/lib/common/glob';
 import { NotebookEditorWidgetOptions } from './notebook-editor-widget-factory';
 
+export interface NotebookWidgetOpenerOptions extends WidgetOpenerOptions {
+    notebookType?: string;
+}
+
 @injectable()
 export class NotebookOpenHandler extends NavigatableWidgetOpenHandler<NotebookEditorWidget> {
 
-    id: string = 'notebook';
+    readonly id = NotebookEditorWidget.ID;
 
-    @inject(NotebookTypeRegistry)
-    protected notebookTypeRegistry: NotebookTypeRegistry;
+    protected notebookTypes: NotebookTypeDescriptor[] = [];
 
-    canHandle(uri: URI, options?: WidgetOpenerOptions | undefined): MaybePromise<number> {
-        const priorities = this.notebookTypeRegistry.notebookTypes
-            .filter(notebook => notebook.selector && this.matches(notebook.selector, uri))
-            .map(notebook => this.calculatePriority(notebook));
-        return Math.max(...priorities);
+    registerNotebookType(notebookType: NotebookTypeDescriptor): Disposable {
+        this.notebookTypes.push(notebookType);
+        return Disposable.create(() => {
+            this.notebookTypes.splice(this.notebookTypes.indexOf(notebookType), 1);
+        });
+    }
+
+    canHandle(uri: URI, options?: NotebookWidgetOpenerOptions): MaybePromise<number> {
+        if (options?.notebookType) {
+            return this.canHandleType(uri, this.notebookTypes.find(type => type.type === options.notebookType));
+        }
+        return Math.max(...this.notebookTypes.map(type => this.canHandleType(uri, type)));
+    }
+
+    canHandleType(uri: URI, notebookType?: NotebookTypeDescriptor): number {
+        if (notebookType?.selector && this.matches(notebookType.selector, uri)) {
+            return this.calculatePriority(notebookType);
+        } else {
+            return 0;
+        }
+    }
+
+    protected calculatePriority(notebookType: NotebookTypeDescriptor | undefined): number {
+        if (!notebookType) {
+            return 0;
+        }
+        return notebookType.priority === 'option' ? 100 : 200;
     }
 
     protected findHighestPriorityType(uri: URI): NotebookTypeDescriptor | undefined {
-        const matchingTypes = this.notebookTypeRegistry.notebookTypes
+        const matchingTypes = this.notebookTypes
             .filter(notebookType => notebookType.selector && this.matches(notebookType.selector, uri))
             .map(notebookType => ({ descriptor: notebookType, priority: this.calculatePriority(notebookType) }));
 
@@ -56,15 +80,19 @@ export class NotebookOpenHandler extends NavigatableWidgetOpenHandler<NotebookEd
         return type.descriptor;
     }
 
-    protected calculatePriority(notebookType: NotebookTypeDescriptor | undefined): number {
-        if (!notebookType) {
-            return 0;
-        }
-        return notebookType.priority === 'option' ? 100 : 200;
+    // Override for better options typing
+    override open(uri: URI, options?: NotebookWidgetOpenerOptions): Promise<NotebookEditorWidget> {
+        return super.open(uri, options);
     }
 
-    protected override createWidgetOptions(uri: URI, options?: WidgetOpenerOptions | undefined): NotebookEditorWidgetOptions {
+    protected override createWidgetOptions(uri: URI, options?: NotebookWidgetOpenerOptions): NotebookEditorWidgetOptions {
         const widgetOptions = super.createWidgetOptions(uri, options);
+        if (options?.notebookType) {
+            return {
+                notebookType: options.notebookType,
+                ...widgetOptions
+            };
+        }
         const notebookType = this.findHighestPriorityType(uri);
         if (!notebookType) {
             throw new Error('No notebook types registered for uri: ' + uri.toString());
@@ -75,11 +103,11 @@ export class NotebookOpenHandler extends NavigatableWidgetOpenHandler<NotebookEd
         };
     }
 
-    matches(selectors: readonly NotebookFileSelector[], resource: URI): boolean {
+    protected matches(selectors: readonly NotebookFileSelector[], resource: URI): boolean {
         return selectors.some(selector => this.selectorMatches(selector, resource));
     }
 
-    selectorMatches(selector: NotebookFileSelector, resource: URI): boolean {
+    protected selectorMatches(selector: NotebookFileSelector, resource: URI): boolean {
         return !!selector.filenamePattern
             && match(selector.filenamePattern, resource.path.name + resource.path.ext);
     }

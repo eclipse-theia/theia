@@ -642,10 +642,6 @@ export class ElectronMainApplication {
     protected async startBackend(): Promise<number> {
         // Check if we should run everything as one process.
         const noBackendFork = process.argv.indexOf('--no-cluster') !== -1;
-        // We cannot use the `process.cwd()` as the application project path (the location of the `package.json` in other words)
-        // in a bundled electron application because it depends on the way we start it. For instance, on OS X, these are a differences:
-        // https://github.com/eclipse-theia/theia/issues/3297#issuecomment-439172274
-        process.env.THEIA_APP_PROJECT_PATH = this.globals.THEIA_APP_PROJECT_PATH;
         // Set the electron version for both the dev and the production mode. (https://github.com/eclipse-theia/theia/issues/3254)
         // Otherwise, the forked backend processes will not know that they're serving the electron frontend.
         process.env.THEIA_ELECTRON_VERSION = process.versions.electron;

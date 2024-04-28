@@ -26,7 +26,6 @@ import { Disposable, URI } from '@theia/core';
 import * as typeConverters from '../type-converters';
 import { ModelAddedData, NotebookCellDto, NotebookCellsChangedEventDto, NotebookModelAddedData, NotebookOutputDto } from '../../common';
 import { NotebookRange } from '../types-impl';
-import { UriComponents } from '../../common/uri-components';
 import { DocumentsExtImpl } from '../documents';
 
 class RawContentChangeEvent {
@@ -49,7 +48,7 @@ class RawContentChangeEvent {
 
 export class Cell {
 
-    static asModelAddData(notebook: theia.NotebookDocument, cell: NotebookCellDto): ModelAddedData & { notebook: theia.NotebookDocument } {
+    static asModelAddData(cell: NotebookCellDto): ModelAddedData {
         return {
             EOL: cell.eol,
             lines: cell.source,
@@ -57,7 +56,6 @@ export class Cell {
             uri: cell.uri,
             isDirty: false,
             versionId: 1,
-            notebook,
             modeId: ''
         };
     }
@@ -348,8 +346,6 @@ export class NotebookDocument implements Disposable {
         }
 
         const contentChangeEvents: RawContentChangeEvent[] = [];
-        const addedCellDocuments: ModelAddedData[] = [];
-        const removedCellDocuments: UriComponents[] = [];
 
         splices.reverse().forEach(splice => {
             const cellDtos = splice.newItems;
@@ -357,18 +353,8 @@ export class NotebookDocument implements Disposable {
 
                 const extCell = new Cell(this, this.editorsAndDocuments, cell);
                 if (!initialization) {
-                    addedCellDocuments.push(Cell.asModelAddData(this.apiNotebook, cell));
                     this.editorsAndDocuments.$acceptEditorsAndDocumentsDelta({
-                        addedDocuments: [
-                            {
-                                uri: cell.uri,
-                                versionId: 1,
-                                lines: cell.source,
-                                EOL: cell.eol,
-                                modeId: '',
-                                isDirty: false
-                            }
-                        ]
+                        addedDocuments: [Cell.asModelAddData(cell)]
                     });
                 }
                 return extCell;
@@ -377,7 +363,6 @@ export class NotebookDocument implements Disposable {
             const changeEvent = new RawContentChangeEvent(splice.start, splice.deleteCount, [], newCells);
             const deletedItems = this.cells.splice(splice.start, splice.deleteCount, ...newCells);
             for (const cell of deletedItems) {
-                removedCellDocuments.push(cell.uri.toComponents());
                 changeEvent.deletedItems.push(cell.apiCell);
             }
             contentChangeEvents.push(changeEvent);

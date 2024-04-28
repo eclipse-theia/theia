@@ -21,6 +21,9 @@ import { URI as CodeUri } from '@theia/core/shared/vscode-uri';
 import { TreeWidgetSelection } from '@theia/core/lib/browser/tree/tree-widget-selection';
 import { ScmRepository } from '@theia/scm/lib/browser/scm-repository';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
+import { DirtyDiffWidget } from '@theia/scm/lib/browser/dirty-diff/dirty-diff-widget';
+import { Change, LineRange } from '@theia/scm/lib/browser/dirty-diff/diff-computer';
+import { IChange } from '@theia/monaco-editor-core/esm/vs/editor/common/diff/legacyLinesDiffComputer';
 import { TimelineItem } from '@theia/timeline/lib/common/timeline-model';
 import { ScmCommandArg, TimelineCommandArg, TreeViewItemReference } from '../../../common';
 import { TestItemReference, TestMessageArg } from '../../../common/test-types';
@@ -105,6 +108,7 @@ export class PluginMenuCommandAdapter implements MenuCommandAdapter {
             ['scm/resourceState/context', toScmArgs],
             ['scm/title', () => [this.toScmArg(this.scmService.selectedRepository)]],
             ['testing/message/context', toTestMessageArgs],
+            ['scm/change/title', (...args) => this.toScmChangeArgs(...args)],
             ['timeline/item/context', (...args) => this.toTimelineArgs(...args)],
             ['view/item/context', (...args) => this.toTreeArgs(...args)],
             ['view/title', noArgs],
@@ -227,6 +231,41 @@ export class PluginMenuCommandAdapter implements MenuCommandAdapter {
                 resourceStateHandle: arg.handle
             };
         }
+    }
+
+    protected toScmChangeArgs(...args: any[]): any[] {
+        const arg = args[0];
+        if (arg instanceof DirtyDiffWidget) {
+            const toIChange = (change: Change): IChange => {
+                const convert = (range: LineRange): [number, number] => {
+                    let startLineNumber;
+                    let endLineNumber;
+                    if (!LineRange.isEmpty(range)) {
+                        startLineNumber = range.start + 1;
+                        endLineNumber = range.end;
+                    } else {
+                        startLineNumber = range.start;
+                        endLineNumber = 0;
+                    }
+                    return [startLineNumber, endLineNumber];
+                };
+                const { previousRange, currentRange } = change;
+                const [originalStartLineNumber, originalEndLineNumber] = convert(previousRange);
+                const [modifiedStartLineNumber, modifiedEndLineNumber] = convert(currentRange);
+                return {
+                    originalStartLineNumber,
+                    originalEndLineNumber,
+                    modifiedStartLineNumber,
+                    modifiedEndLineNumber
+                };
+            };
+            return [
+                arg.uri['codeUri'],
+                arg.changes.map(toIChange),
+                arg.currentChangeIndex
+            ];
+        }
+        return [];
     }
 
     protected toTimelineArgs(...args: any[]): any[] {

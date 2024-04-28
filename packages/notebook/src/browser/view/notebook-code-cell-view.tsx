@@ -24,11 +24,11 @@ import { NotebookModel } from '../view-model/notebook-model';
 import { CellEditor } from './notebook-cell-editor';
 import { CellRenderer } from './notebook-cell-list-view';
 import { NotebookCellToolbarFactory } from './notebook-cell-toolbar-factory';
-import { NotebookCellActionContribution } from '../contributions/notebook-cell-actions-contribution';
+import { NotebookCellActionContribution, NotebookCellCommands } from '../contributions/notebook-cell-actions-contribution';
 import { CellExecution, NotebookExecutionStateService } from '../service/notebook-execution-state-service';
 import { codicon } from '@theia/core/lib/browser';
 import { NotebookCellExecutionState } from '../../common';
-import { DisposableCollection } from '@theia/core';
+import { CommandRegistry, DisposableCollection, nls } from '@theia/core';
 import { NotebookContextManager } from '../service/notebook-context-manager';
 import { NotebookViewportService } from './notebook-viewport-service';
 import { EditorPreferences } from '@theia/editor/lib/browser';
@@ -61,13 +61,19 @@ export class NotebookCodeCellRenderer implements CellRenderer {
     @inject(EditorPreferences)
     protected readonly editorPreferences: EditorPreferences;
 
+    @inject(CommandRegistry)
+    protected readonly commandRegistry: CommandRegistry;
+
     protected fontInfo: BareFontInfo | undefined;
 
     render(notebookModel: NotebookModel, cell: NotebookCellModel, handle: number): React.ReactNode {
         return <div>
             <div className='theia-notebook-cell-with-sidebar'>
                 <div className='theia-notebook-cell-sidebar'>
-                    {this.notebookCellToolbarFactory.renderSidebar(NotebookCellActionContribution.CODE_CELL_SIDEBAR_MENU, notebookModel, cell)}
+                    {this.notebookCellToolbarFactory.renderSidebar(NotebookCellActionContribution.CODE_CELL_SIDEBAR_MENU, cell, {
+                        contextMenuArgs: () => [cell], commandArgs: () => [notebookModel, cell]
+                    })
+                    }
                     <CodeCellExecutionOrder cell={cell} />
                 </div>
                 <div className='theia-notebook-cell-editor-container'>
@@ -76,13 +82,19 @@ export class NotebookCodeCellRenderer implements CellRenderer {
                         notebookContextManager={this.notebookContextManager}
                         notebookViewportService={this.notebookViewportService}
                         fontInfo={this.getOrCreateMonacoFontInfo()} />
-                    <NotebookCodeCellStatus cell={cell} executionStateService={this.executionStateService} onClick={() => cell.requestFocusEditor()}></NotebookCodeCellStatus>
+                    <NotebookCodeCellStatus cell={cell} notebook={notebookModel}
+                        commandRegistry={this.commandRegistry}
+                        executionStateService={this.executionStateService}
+                        onClick={() => cell.requestFocusEditor()} />
                 </div >
             </div >
             <div className='theia-notebook-cell-with-sidebar'>
                 <NotebookCodeCellOutputs cell={cell} notebook={notebookModel} outputWebviewFactory={this.cellOutputWebviewFactory}
                     renderSidebar={() =>
-                        this.notebookCellToolbarFactory.renderSidebar(NotebookCellActionContribution.OUTPUT_SIDEBAR_MENU, notebookModel, cell, cell.outputs[0])} />
+                        this.notebookCellToolbarFactory.renderSidebar(NotebookCellActionContribution.OUTPUT_SIDEBAR_MENU, cell, {
+                            contextMenuArgs: () => [notebookModel, cell, cell.outputs[0]]
+                        })
+                    } />
             </div>
         </div >;
     }
@@ -108,7 +120,9 @@ export class NotebookCodeCellRenderer implements CellRenderer {
 }
 
 export interface NotebookCodeCellStatusProps {
+    notebook: NotebookModel;
     cell: NotebookCellModel;
+    commandRegistry: CommandRegistry;
     executionStateService: NotebookExecutionStateService;
     onClick: () => void;
 }
@@ -146,6 +160,10 @@ export class NotebookCodeCellStatus extends React.Component<NotebookCodeCellStat
                 }
             }
         }));
+
+        this.toDispose.push(props.cell.onDidChangeLanguage(() => {
+            this.forceUpdate();
+        }));
     }
 
     override componentWillUnmount(): void {
@@ -158,7 +176,9 @@ export class NotebookCodeCellStatus extends React.Component<NotebookCodeCellStat
                 {this.renderExecutionState()}
             </div>
             <div className='notebook-cell-status-right'>
-                <span>{this.props.cell.language}</span>
+                <span className='notebook-cell-language-label' onClick={() => {
+                    this.props.commandRegistry.executeCommand(NotebookCellCommands.CHANGE_CELL_LANGUAGE.id, this.props.notebook, this.props.cell);
+                }}>{this.props.cell.languageName}</span>
             </div>
         </div>;
     }
@@ -223,19 +243,15 @@ export class NotebookCodeCellOutputs extends React.Component<NotebookCellOutputP
 
     override async componentDidMount(): Promise<void> {
         const { cell, notebook, outputWebviewFactory } = this.props;
-        this.toDispose.push(cell.onDidChangeOutputs(async () => {
-            if (!this.outputsWebviewPromise && cell.outputs.length > 0) {
-                this.outputsWebviewPromise = outputWebviewFactory(cell, notebook).then(webview => {
-                    this.outputsWebview = webview;
-                    this.forceUpdate();
-                    return webview;
-                });
-                this.forceUpdate();
-            } else if (this.outputsWebviewPromise && cell.outputs.length === 0 && cell.internalMetadata.runEndTime) {
-                (await this.outputsWebviewPromise).dispose();
+        this.toDispose.push(cell.onDidChangeOutputs(() => this.updateOutputs()));
+        this.toDispose.push(cell.onDidChangeOutputVisibility(visible => {
+            if (!visible && this.outputsWebview) {
+                this.outputsWebview?.dispose();
                 this.outputsWebview = undefined;
                 this.outputsWebviewPromise = undefined;
                 this.forceUpdate();
+            } else {
+                this.updateOutputs();
             }
         }));
         if (cell.outputs.length > 0) {
@@ -244,6 +260,23 @@ export class NotebookCodeCellOutputs extends React.Component<NotebookCellOutputP
                 this.forceUpdate();
                 return webview;
             });
+        }
+    }
+
+    protected async updateOutputs(): Promise<void> {
+        const { cell, notebook, outputWebviewFactory } = this.props;
+        if (!this.outputsWebviewPromise && cell.outputs.length > 0) {
+            this.outputsWebviewPromise = outputWebviewFactory(cell, notebook).then(webview => {
+                this.outputsWebview = webview;
+                this.forceUpdate();
+                return webview;
+            });
+            this.forceUpdate();
+        } else if (this.outputsWebviewPromise && cell.outputs.length === 0 && cell.internalMetadata.runEndTime) {
+            (await this.outputsWebviewPromise).dispose();
+            this.outputsWebview = undefined;
+            this.outputsWebviewPromise = undefined;
+            this.forceUpdate();
         }
     }
 
@@ -259,12 +292,12 @@ export class NotebookCodeCellOutputs extends React.Component<NotebookCellOutputP
     }
 
     override render(): React.ReactNode {
-        return this.outputsWebview ?
+        return this.outputsWebview && this.props.cell.outputVisible ?
             <>
                 {this.props.renderSidebar()}
                 {this.outputsWebview.render()}
             </> :
-            <></>;
+            this.props.cell.outputs?.length ? <i className='theia-notebook-collapsed-output'>{nls.localizeByDefault('Outputs are collapsed')}</i> : <></>;
 
     }
 

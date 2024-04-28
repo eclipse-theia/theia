@@ -16,7 +16,7 @@
 import '../../src/browser/style/index.css';
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { KeybindingContribution, OpenHandler, WidgetFactory } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, KeybindingContribution, LabelProviderContribution, OpenHandler, PreferenceContribution, WidgetFactory } from '@theia/core/lib/browser';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { NotebookOpenHandler } from './notebook-open-handler';
 import { CommandContribution, MenuContribution, ResourceResolver, } from '@theia/core';
@@ -40,7 +40,11 @@ import { NotebookEditorWidgetService } from './service/notebook-editor-widget-se
 import { NotebookRendererMessagingService } from './service/notebook-renderer-messaging-service';
 import { NotebookColorContribution } from './contributions/notebook-color-contribution';
 import { NotebookMonacoTextModelService } from './service/notebook-monaco-text-model-service';
+import { NotebookOutlineContribution } from './contributions/notebook-outline-contribution';
+import { NotebookLabelProviderContribution } from './contributions/notebook-label-provider-contribution';
 import { NotebookOutputActionContribution } from './contributions/notebook-output-action-contribution';
+import { NotebookClipboardService } from './service/notebook-clipboard-service';
+import { notebookPreferenceSchema } from './contributions/notebook-preferences';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(NotebookColorContribution).toSelf().inSingletonScope();
@@ -62,6 +66,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(NotebookRendererMessagingService).toSelf().inSingletonScope();
     bind(NotebookKernelHistoryService).toSelf().inSingletonScope();
     bind(NotebookKernelQuickPickService).toSelf().inSingletonScope();
+    bind(NotebookClipboardService).toSelf().inSingletonScope();
 
     bind(NotebookCellResourceResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toService(NotebookCellResourceResolver);
@@ -93,4 +98,11 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     );
 
     bind(NotebookMonacoTextModelService).toSelf().inSingletonScope();
+
+    bind(NotebookOutlineContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(NotebookOutlineContribution);
+    bind(NotebookLabelProviderContribution).toSelf().inSingletonScope();
+    bind(LabelProviderContribution).toService(NotebookLabelProviderContribution);
+
+    bind(PreferenceContribution).toConstantValue({ schema: notebookPreferenceSchema });
 });

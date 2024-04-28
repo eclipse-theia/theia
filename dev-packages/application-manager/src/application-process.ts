@@ -32,7 +32,10 @@ export class ApplicationProcess {
     ) { }
 
     spawn(command: string, args?: string[], options?: cp.SpawnOptions): cp.ChildProcess {
-        return cp.spawn(command, args || [], Object.assign({}, this.defaultOptions, options));
+        return cp.spawn(command, args || [], Object.assign({}, this.defaultOptions, {
+            ...options,
+            shell: true
+        }));
     }
 
     fork(modulePath: string, args?: string[], options?: cp.ForkOptions): cp.ChildProcess {
@@ -50,7 +53,10 @@ export class ApplicationProcess {
 
     spawnBin(command: string, args: string[], options?: cp.SpawnOptions): cp.ChildProcess {
         const binPath = this.resolveBin(command);
-        return this.spawn(binPath, args, options);
+        return this.spawn(binPath, args, {
+            ...options,
+            shell: true
+        });
     }
 
     protected resolveBin(command: string): string {

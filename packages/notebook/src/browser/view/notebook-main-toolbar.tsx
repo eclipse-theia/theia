@@ -57,6 +57,10 @@ export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProp
 
     protected toDispose = new DisposableCollection();
 
+    protected nativeSubmenus = [
+        NotebookMenus.NOTEBOOK_MAIN_TOOLBAR_CELL_ADD_GROUP[NotebookMenus.NOTEBOOK_MAIN_TOOLBAR_CELL_ADD_GROUP.length - 1],
+        NotebookMenus.NOTEBOOK_MAIN_TOOLBAR_EXECUTION_GROUP[NotebookMenus.NOTEBOOK_MAIN_TOOLBAR_EXECUTION_GROUP.length - 1]];
+
     constructor(props: NotebookMainToolbarProps) {
         super(props);
 
@@ -107,41 +111,46 @@ export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProp
         </div>;
     }
 
-    protected renderMenuItem(item: MenuNode): React.ReactNode {
+    protected renderMenuItem(item: MenuNode, submenu?: string): React.ReactNode {
         if (item.role === CompoundMenuNodeRole.Group) {
-            const itemNodes = ArrayUtils.coalesce(item.children?.map(child => this.renderMenuItem(child)) ?? []);
+            const itemNodes = ArrayUtils.coalesce(item.children?.map(child => this.renderMenuItem(child, item.id)) ?? []);
             return <React.Fragment key={item.id}>
                 {itemNodes}
                 {itemNodes && itemNodes.length > 0 && <span key={`${item.id}-separator`} className='theia-notebook-toolbar-separator'></span>}
             </React.Fragment>;
-        } else if (!item.when || this.props.contextKeyService.match(item.when, this.props.editorNode)) {
+        } else if ((this.nativeSubmenus.includes(submenu ?? '')) || !item.when || this.props.contextKeyService.match(item.when, this.props.editorNode)) {
             const visibleCommand = Boolean(this.props.commandRegistry.getVisibleHandler(item.command ?? '', this.props.notebookModel));
             if (!visibleCommand) {
                 return undefined;
             }
-            const title = (this.props.commandRegistry.getCommand(item.command ?? '') as NotebookCommand)?.tooltip ?? item.label;
-            return <div key={item.id} title={title} className='theia-notebook-main-toolbar-item action-label'
+            const command = this.props.commandRegistry.getCommand(item.command ?? '') as NotebookCommand | undefined;
+            const label = command?.shortTitle ?? item.label;
+            const title = command?.tooltip ?? item.label;
+            return <div key={item.id} title={title} className={`theia-notebook-main-toolbar-item action-label${this.getAdditionalClasses(item)}`}
                 onClick={() => {
-                    if (item.command) {
-                        this.props.commandRegistry.executeCommand(item.command, this.props.notebookModel);
+                    if (item.command && (!item.when || this.props.contextKeyService.match(item.when, this.props.editorNode))) {
+                        this.props.commandRegistry.executeCommand(item.command, this.props.notebookModel.uri);
                     }
                 }}>
                 <span className={item.icon} />
-                <span className='theia-notebook-main-toolbar-item-text'>{item.label}</span>
+                <span className='theia-notebook-main-toolbar-item-text'>{label}</span>
             </div>;
         }
         return undefined;
     }
 
-    private getMenuItems(): readonly MenuNode[] {
+    protected getMenuItems(): readonly MenuNode[] {
         const menuPath = NotebookMenus.NOTEBOOK_MAIN_TOOLBAR;
         const pluginCommands = this.props.menuRegistry.getMenuNode(menuPath).children;
         const theiaCommands = this.props.menuRegistry.getMenu([menuPath]).children;
-        // TODO add specifc arguments to commands
         return theiaCommands.concat(pluginCommands);
     }
 
-    private getAllContextKeys(menus: readonly MenuNode[], keySet: Set<string>): void {
+    protected getAdditionalClasses(item: MenuNode): string {
+        return !item.when || this.props.contextKeyService.match(item.when, this.props.editorNode) ? '' : ' theia-mod-disabled';
+    }
+
+    protected getAllContextKeys(menus: readonly MenuNode[], keySet: Set<string>): void {
         menus.filter(item => item.when)
             .forEach(item => this.props.contextKeyService.parseKeys(item.when!)?.forEach(key => keySet.add(key)));
 

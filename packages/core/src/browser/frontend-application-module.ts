@@ -140,6 +140,7 @@ import { HoverService } from './hover-service';
 import { AdditionalViewsMenuWidget, AdditionalViewsMenuWidgetFactory } from './shell/additional-views-menu-widget';
 import { LanguageIconLabelProvider } from './language-icon-provider';
 import { bindTreePreferences } from './tree';
+import { OpenWithService } from './open-with-service';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
@@ -223,6 +224,8 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
 
     bind(CommandOpenHandler).toSelf().inSingletonScope();
     bind(OpenHandler).toService(CommandOpenHandler);
+
+    bind(OpenWithService).toSelf().inSingletonScope();
 
     bind(TooltipServiceImpl).toSelf().inSingletonScope();
     bind(TooltipService).toService(TooltipServiceImpl);

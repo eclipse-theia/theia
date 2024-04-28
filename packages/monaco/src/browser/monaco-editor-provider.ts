@@ -211,7 +211,7 @@ export class MonacoEditorProvider {
         return editor;
     }
 
-    protected updateReadOnlyMessage(options: MonacoEditor.IOptions, readOnly: boolean | MarkdownString ): void {
+    protected updateReadOnlyMessage(options: MonacoEditor.IOptions, readOnly: boolean | MarkdownString): void {
         options.readOnlyMessage = MarkdownString.is(readOnly) ? readOnly : undefined;
     }
 
@@ -415,4 +415,41 @@ export class MonacoEditorProvider {
         }
     };
 
+    async createEmbeddedDiffEditor(parentEditor: MonacoEditor, node: HTMLElement, originalUri: URI, modifiedUri: URI = parentEditor.uri,
+        options?: MonacoDiffEditor.IOptions): Promise<MonacoDiffEditor> {
+        options = {
+            scrollBeyondLastLine: true,
+            overviewRulerLanes: 2,
+            fixedOverflowWidgets: true,
+            minimap: { enabled: false },
+            renderSideBySide: false,
+            readOnly: true,
+            renderIndicators: false,
+            diffAlgorithm: 'advanced',
+            stickyScroll: { enabled: false },
+            ...options,
+            scrollbar: {
+                verticalScrollbarSize: 14,
+                horizontal: 'auto',
+                useShadows: true,
+                verticalHasArrows: false,
+                horizontalHasArrows: false,
+                ...options?.scrollbar
+            }
+        };
+        const uri = DiffUris.encode(originalUri, modifiedUri);
+        return await this.doCreateEditor(uri, async (override, toDispose) =>
+            new MonacoDiffEditor(
+                uri,
+                node,
+                await this.getModel(originalUri, toDispose),
+                await this.getModel(modifiedUri, toDispose),
+                this.services,
+                this.diffNavigatorFactory,
+                options,
+                override,
+                parentEditor
+            )
+        ) as MonacoDiffEditor;
+    }
 }

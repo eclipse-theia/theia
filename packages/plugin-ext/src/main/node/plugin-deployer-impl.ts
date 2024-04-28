@@ -225,8 +225,20 @@ export class PluginDeployerImpl implements PluginDeployer {
     }
 
     protected async resolveAndHandle(id: string, type: PluginType, options?: PluginDeployOptions): Promise<PluginDeployerEntry[]> {
-        const entries = await this.resolvePlugin(id, type, options);
-        await this.applyFileHandlers(entries);
+        let entries = await this.resolvePlugin(id, type, options);
+        if (type === PluginType.User) {
+            await this.applyFileHandlers(entries);
+        } else {
+            const filteredEntries: PluginDeployerEntry[] = [];
+            for (const entry of entries) {
+                if (await entry.isFile()) {
+                    this.logger.warn(`Only user plugins will be handled by file handlers, please unpack the plugin '${entry.id()}' manually.`);
+                } else {
+                    filteredEntries.push(entry);
+                }
+            }
+            entries = filteredEntries;
+        }
         await this.applyDirectoryFileHandlers(entries);
         return entries;
     }
@@ -286,13 +298,12 @@ export class PluginDeployerImpl implements PluginDeployer {
         const pluginPaths = [...acceptedBackendPlugins, ...acceptedHeadlessPlugins].map(pluginEntry => pluginEntry.path());
         this.logger.debug('local path to deploy on remote instance', pluginPaths);
 
-        const deployments = await Promise.all([
-            // headless plugins are deployed like backend plugins
-            this.pluginDeployerHandler.deployBackendPlugins(acceptedHeadlessPlugins),
-            // start the backend plugins
-            this.pluginDeployerHandler.deployBackendPlugins(acceptedBackendPlugins),
-            this.pluginDeployerHandler.deployFrontendPlugins(acceptedFrontendPlugins)
-        ]);
+        const deployments = [];
+        // start the backend plugins
+        deployments.push(await this.pluginDeployerHandler.deployBackendPlugins(acceptedBackendPlugins));
+        // headless plugins are deployed like backend plugins
+        deployments.push(await this.pluginDeployerHandler.deployBackendPlugins(acceptedHeadlessPlugins));
+        deployments.push(await this.pluginDeployerHandler.deployFrontendPlugins(acceptedFrontendPlugins));
         this.onDidDeployEmitter.fire(undefined);
         return deployments.reduce<number>((accumulated, current) => accumulated += current ?? 0, 0);
     }

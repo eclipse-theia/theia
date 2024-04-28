@@ -6,9 +6,18 @@
 
 ## not yet released
 
+- [application-manager] Generate Extension Info in server application to avoid empty About Dialog [#13590](https://github.com/eclipse-theia/theia/pull/13590) - contributed on behalf of STMicroelectronics
+- [application-package] bumped the default supported API from `1.87.2` to `1.88.1` [#13646](https://github.com/eclipse-theia/theia/pull/13646) - contributed on behalf of STMicroelectronics
 - [core] Splash Screen Support for Electron [#13505](https://github.com/eclipse-theia/theia/pull/13505) - contributed on behalf of Pragmatiqu IT GmbH
+- [scm] added support for dirty diff peek view [#13104](https://github.com/eclipse-theia/theia/pull/13104)
+- [test] stub VS Code `Test Coverage` API [#13631](https://github.com/eclipse-theia/theia/pull/13631)
 
 <a name="breaking_changes_not_yet_released">[Breaking Changes:](#breaking_changes_not_yet_released)</a>
+
+- [scm] revised some of the dirty diff related types [#13104](https://github.com/eclipse-theia/theia/pull/13104)
+  - replaced `DirtyDiff.added/removed/modified` with `changes`, which provides more detailed information about the changes
+  - changed the semantics of `LineRange` to represent a range that spans up to but not including the `end` line (previously, it included the `end` line)
+  - changed the signature of `DirtyDiffDecorator.toDeltaDecoration(LineRange | number, EditorDecorationOptions)` to `toDeltaDecoration(Change)`
 
 ## v1.48.0 - 03/28/2024
 
@@ -97,7 +106,7 @@
   - Moved `ThemaIcon` and `ThemeColor` to the common folder
   - Minor typing adjustments in QuickPickService: in parti
   - FileUploadService: moved id field from data transfer item to the corresponding file info
-  - The way we instantiate monaco services has changed completely: if you touch monaco services in your code, please read the description in the 
+  - The way we instantiate monaco services has changed completely: if you touch monaco services in your code, please read the description in the
     file comment in `monaco-init.ts`.
 
 ## v1.46.0 - 01/25/2024

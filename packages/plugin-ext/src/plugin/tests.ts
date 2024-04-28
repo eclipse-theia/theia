@@ -240,6 +240,8 @@ class TestRun implements theia.TestRun {
     onDidEnd: Event<void> = this.onDidEndEmitter.event;
     private onWillFlushEmitter = new Emitter<void>();
     onWillFlush: Event<void> = this.onWillFlushEmitter.event;
+    private onDidDisposeEmitter = new Emitter<void>();
+    onDidDispose: Event<void> = this.onDidDisposeEmitter.event;
 
     readonly id: string;
     private testStateDeltas = new Map<theia.TestItem, TestStateChangeDTO>();
@@ -292,6 +294,9 @@ class TestRun implements theia.TestRun {
         this.ended = true;
         this.proxy.$notifyTestRunEnded(this.controller.id, this.id);
     }
+
+    /** @stubbed */
+    addCoverage(fileCoverage: theia.FileCoverage): void { }
 
     private checkNotEnded(test: theia.TestItem): boolean {
         if (this.ended) {

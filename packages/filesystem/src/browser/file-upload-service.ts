@@ -30,6 +30,7 @@ import { FileSystemPreferences } from './filesystem-preferences';
 import { FileService } from './file-service';
 import { ConfirmDialog, Dialog } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
+import { Emitter, Event } from '@theia/core/lib/common/event';
 
 export const HTTP_UPLOAD_URL: string = new Endpoint({ path: HTTP_FILE_UPLOAD_PATH }).getRestUrl().toString(true);
 
@@ -61,6 +62,12 @@ export class FileUploadService {
 
     static TARGET = 'target';
     static UPLOAD = 'upload';
+
+    protected readonly onDidUploadEmitter = new Emitter<string[]>();
+
+    get onDidUpload(): Event<string[]> {
+        return this.onDidUploadEmitter.event;
+    }
 
     protected uploadForm: FileUploadService.Form;
     protected deferredUpload?: Deferred<FileUploadResult>;
@@ -250,6 +257,7 @@ export class FileUploadService {
                 throw error;
             }
         }
+        this.onDidUploadEmitter.fire(result.uploaded);
         return result;
     }
 

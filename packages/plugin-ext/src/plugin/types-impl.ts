@@ -1643,15 +1643,11 @@ export class DocumentLink {
 
 @es5ClassCompat
 export class DocumentDropEdit {
-
-    id?: string;
-
-    priority?: number;
-
-    label?: string;
-
+    title?: string;
+    kind: DocumentPasteEditKind;
+    handledMimeType?: string;
+    yieldTo?: ReadonlyArray<DocumentPasteEditKind>;
     insertText: string | SnippetString;
-
     additionalEdit?: WorkspaceEdit;
 
     constructor(insertText: string | SnippetString) {
@@ -3331,6 +3327,72 @@ export class TestMessage implements theia.TestMessage {
 }
 
 @es5ClassCompat
+export class TestCoverageCount {
+    constructor( public covered: number,  public total: number) { }
+}
+
+@es5ClassCompat
+export class FileCoverage {
+
+    detailedCoverage?: theia.FileCoverageDetail[];
+
+    static fromDetails(uri: theia.Uri, details: theia.FileCoverageDetail[]): FileCoverage {
+        const statements = new TestCoverageCount(0, 0);
+        const branches = new TestCoverageCount(0, 0);
+        const decl = new TestCoverageCount(0, 0);
+
+        for (const detail of details) {
+            if (detail instanceof StatementCoverage) {
+                statements.total += 1;
+                statements.covered += detail.executed ? 1 : 0;
+
+                for (const branch of detail.branches) {
+                    branches.total += 1;
+                    branches.covered += branch.executed ? 1 : 0;
+                }
+            } else {
+                decl.total += 1;
+                decl.covered += detail.executed ? 1 : 0;
+            }
+        }
+
+        const coverage = new FileCoverage(
+            uri,
+            statements,
+            branches.total > 0 ? branches : undefined,
+            decl.total > 0 ? decl : undefined,
+        );
+
+        coverage.detailedCoverage = details;
+
+        return coverage;
+    }
+
+    constructor(
+        public uri: theia.Uri,
+        public statementCoverage: TestCoverageCount,
+        public branchCoverage?: TestCoverageCount,
+        public declarationCoverage?: TestCoverageCount,
+    ) { }
+}
+
+@es5ClassCompat
+export class StatementCoverage implements theia.StatementCoverage {
+    constructor(public executed: number | boolean, public location: Position | Range, public branches: BranchCoverage[] = []) { }
+}
+
+export class BranchCoverage implements theia.BranchCoverage {
+    constructor(public executed: number | boolean, public location?: Position | Range, public label?: string) { }
+}
+
+@es5ClassCompat
+export class DeclarationCoverage implements theia.DeclarationCoverage {
+    constructor(public name: string, public executed: number | boolean, public location: Position | Range) { }
+}
+
+export type FileCoverageDetail = StatementCoverage | DeclarationCoverage;
+
+@es5ClassCompat
 export class TimelineItem {
     timestamp: number;
     label: string;
@@ -3674,19 +3736,57 @@ export class InteractiveWindowInput {
 // #endregion
 
 // #region DocumentPaste
+export class DocumentPasteEditKind {
+    static Empty: DocumentPasteEditKind;
+
+    constructor(public readonly value: string) { }
+
+    /** @stubbed */
+    append(...parts: string[]): CodeActionKind {
+        return CodeActionKind.Empty;
+    };
+
+    /** @stubbed */
+    intersects(other: CodeActionKind): boolean {
+        return false;
+    }
+
+    /** @stubbed */
+    contains(other: CodeActionKind): boolean {
+        return false;
+    }
+}
+DocumentPasteEditKind.Empty = new DocumentPasteEditKind('');
+
 @es5ClassCompat
 export class DocumentPasteEdit {
-    constructor(insertText: string | SnippetString, id: string, label: string) {
+    constructor(insertText: string | SnippetString, title: string, kind: DocumentPasteEditKind) {
         this.insertText = insertText;
-        this.id = id;
-        this.label = label;
+        this.title = title;
+        this.kind = kind;
     }
+    title: string;
+    kind: DocumentPasteEditKind;
     insertText: string | SnippetString;
     additionalEdit?: WorkspaceEdit;
-    id: string;
-    label: string;
-    priority?: number;
+    yieldTo?: readonly DocumentPasteEditKind[];
 }
+
+/**
+ * The reason why paste edits were requested.
+ */
+export enum DocumentPasteTriggerKind {
+    /**
+     * Pasting was requested as part of a normal paste operation.
+     */
+    Automatic = 0,
+
+    /**
+     * Pasting was requested by the user with the `paste as` command.
+     */
+    PasteAs = 1,
+}
+
 // #endregion
 
 // #region DocumentPaste

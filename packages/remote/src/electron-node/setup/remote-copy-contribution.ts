@@ -61,8 +61,7 @@ export class RemoteCopyRegistry {
         const globResult = await promiseGlob(pattern, {
             cwd: projectPath
         });
-        const relativeFiles = globResult.map(file => path.relative(projectPath, file));
-        for (const file of relativeFiles) {
+        for (const file of globResult) {
             const targetFile = this.withTarget(file, target);
             this.files.push({
                 path: file,

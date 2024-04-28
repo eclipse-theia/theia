@@ -455,9 +455,9 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
         return translation;
     }
 
-    protected readCommand({ command, title, original, category, icon, enablement }: PluginPackageCommand, pck: PluginPackage): PluginCommand {
+    protected readCommand({ command, title, shortTitle, original, category, icon, enablement }: PluginPackageCommand, pck: PluginPackage): PluginCommand {
         const { themeIcon, iconUrl } = this.transformIconUrl(pck, icon) ?? {};
-        return { command, title, originalTitle: original, category, iconUrl, themeIcon, enablement };
+        return { command, title, shortTitle, originalTitle: original, category, iconUrl, themeIcon, enablement };
     }
 
     protected transformIconUrl(plugin: PluginPackage, original?: IconUrl): { iconUrl?: IconUrl; themeIcon?: string } | undefined {

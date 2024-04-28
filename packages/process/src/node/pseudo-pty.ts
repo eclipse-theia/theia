@@ -51,4 +51,6 @@ export class PseudoPty implements IPty {
     pause(): void { }
 
     resume(): void { }
+
+    clear(): void { }
 }

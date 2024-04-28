@@ -198,12 +198,19 @@ import {
     TextMergeTabInput,
     WebviewEditorTabInput,
     DocumentPasteEdit,
+    DocumentPasteEditKind,
+    DocumentPasteTriggerKind,
     ExternalUriOpenerPriority,
     EditSessionIdentityMatch,
     TerminalOutputAnchor,
     TerminalQuickFixTerminalCommand,
     TerminalQuickFixOpener,
-    TestResultState
+    TestResultState,
+    BranchCoverage,
+    DeclarationCoverage,
+    FileCoverage,
+    StatementCoverage,
+    TestCoverageCount
 } from './types-impl';
 import { AuthenticationExtImpl } from './authentication-ext';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
@@ -1398,11 +1405,18 @@ export function createAPIFactory(
             TerminalOutputAnchor,
             TerminalExitReason,
             DocumentPasteEdit,
+            DocumentPasteEditKind,
+            DocumentPasteTriggerKind,
             ExternalUriOpenerPriority,
             TerminalQuickFixTerminalCommand,
             TerminalQuickFixOpener,
             EditSessionIdentityMatch,
-            TestResultState
+            TestResultState,
+            BranchCoverage,
+            DeclarationCoverage,
+            FileCoverage,
+            StatementCoverage,
+            TestCoverageCount
         };
     };
 }
