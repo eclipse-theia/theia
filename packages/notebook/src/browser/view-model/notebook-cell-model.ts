@@ -36,6 +36,8 @@ import { LanguageService } from '@theia/core/lib/browser/language-service';
 export const NotebookCellModelFactory = Symbol('NotebookModelFactory');
 export type NotebookCellModelFactory = (props: NotebookCellModelProps) => NotebookCellModel;
 
+export type CellEditorFocusRequest = number | 'lastLine' | undefined;
+
 export function createNotebookCellModelContainer(parent: interfaces.Container, props: NotebookCellModelProps): interfaces.Container {
     const child = parent.createChild();
 
@@ -104,7 +106,7 @@ export class NotebookCellModel implements NotebookCell, Disposable {
     protected readonly onDidRequestCellEditChangeEmitter = new Emitter<boolean>();
     readonly onDidRequestCellEditChange = this.onDidRequestCellEditChangeEmitter.event;
 
-    protected readonly onWillFocusCellEditorEmitter = new Emitter<void>();
+    protected readonly onWillFocusCellEditorEmitter = new Emitter<CellEditorFocusRequest>();
     readonly onWillFocusCellEditor = this.onWillFocusCellEditorEmitter.event;
 
     protected readonly onWillBlurCellEditorEmitter = new Emitter<void>();
@@ -278,9 +280,9 @@ export class NotebookCellModel implements NotebookCell, Disposable {
         this.onDidRequestCellEditChangeEmitter.fire(false);
     }
 
-    requestFocusEditor(): void {
+    requestFocusEditor(focusRequest?: CellEditorFocusRequest): void {
         this.requestEdit();
-        this.onWillFocusCellEditorEmitter.fire();
+        this.onWillFocusCellEditorEmitter.fire(focusRequest);
     }
 
     requestBlurEditor(): void {

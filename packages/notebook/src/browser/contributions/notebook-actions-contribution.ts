@@ -24,8 +24,9 @@ import { NotebookKernelQuickPickService } from '../service/notebook-kernel-quick
 import { NotebookExecutionService } from '../service/notebook-execution-service';
 import { NotebookEditorWidget } from '../notebook-editor-widget';
 import { NotebookEditorWidgetService } from '../service/notebook-editor-widget-service';
-import { NOTEBOOK_CELL_FOCUSED, NOTEBOOK_EDITOR_FOCUSED, NOTEBOOK_HAS_OUTPUTS } from './notebook-context-keys';
+import { NOTEBOOK_CELL_CURSOR_FIRST_LINE, NOTEBOOK_CELL_CURSOR_LAST_LINE, NOTEBOOK_CELL_FOCUSED, NOTEBOOK_EDITOR_FOCUSED, NOTEBOOK_HAS_OUTPUTS } from './notebook-context-keys';
 import { NotebookClipboardService } from '../service/notebook-clipboard-service';
+import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 
 export namespace NotebookCommands {
     export const ADD_NEW_CELL_COMMAND = Command.toDefaultLocalizedCommand({
@@ -110,6 +111,9 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
     @inject(NotebookClipboardService)
     protected notebookClipboardService: NotebookClipboardService;
 
+    @inject(ContextKeyService)
+    protected contextKeyService: ContextKeyService;
+
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(NotebookCommands.ADD_NEW_CELL_COMMAND, {
             execute: (notebookModel: NotebookModel, cellKind: CellKind = CellKind.Markup, index?: number | 'above' | 'below') => {
@@ -169,15 +173,29 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
         commands.registerCommand(NotebookCommands.CHANGE_SELECTED_CELL,
             {
                 execute: (change: number | CellChangeDirection) => {
-                    const model = this.notebookEditorWidgetService.focusedEditor?.model;
+                    const focusedEditor = this.notebookEditorWidgetService.focusedEditor;
+                    const model = focusedEditor?.model;
                     if (model && typeof change === 'number') {
                         model.setSelectedCell(model.cells[change]);
                     } else if (model && model.selectedCell) {
                         const currentIndex = model.cells.indexOf(model.selectedCell);
+                        const shouldFocusEditor = this.contextKeyService.match('editorTextFocus');
+
                         if (change === CellChangeDirection.Up && currentIndex > 0) {
                             model.setSelectedCell(model.cells[currentIndex - 1]);
+                            if (model.selectedCell?.cellKind === CellKind.Code && shouldFocusEditor) {
+                                model.selectedCell.requestFocusEditor('lastLine');
+                            }
                         } else if (change === CellChangeDirection.Down && currentIndex < model.cells.length - 1) {
                             model.setSelectedCell(model.cells[currentIndex + 1]);
+                            if (model.selectedCell?.cellKind === CellKind.Code && shouldFocusEditor) {
+                                model.selectedCell.requestFocusEditor();
+                            }
+                        }
+
+                        if (model.selectedCell.cellKind === CellKind.Markup) {
+                            // since were losing focus from the cell editor, we need to focus the notebook editor again
+                            focusedEditor?.node.focus();
                         }
                     }
                 }
@@ -294,13 +312,13 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
                 command: NotebookCommands.CHANGE_SELECTED_CELL.id,
                 keybinding: 'up',
                 args: CellChangeDirection.Up,
-                when: `!editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`
+                when: `(!editorTextFocus || ${NOTEBOOK_CELL_CURSOR_FIRST_LINE}) && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`
             },
             {
                 command: NotebookCommands.CHANGE_SELECTED_CELL.id,
                 keybinding: 'down',
                 args: CellChangeDirection.Down,
-                when: `!editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`
+                when: `(!editorTextFocus || ${NOTEBOOK_CELL_CURSOR_LAST_LINE})  && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`
             },
             {
                 command: NotebookCommands.CUT_SELECTED_CELL.id,

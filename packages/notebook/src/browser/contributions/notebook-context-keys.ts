@@ -58,6 +58,9 @@ export const NOTEBOOK_INTERRUPTIBLE_KERNEL = 'notebookInterruptibleKernel';
 export const NOTEBOOK_MISSING_KERNEL_EXTENSION = 'notebookMissingKernelExtension';
 export const NOTEBOOK_HAS_OUTPUTS = 'notebookHasOutputs';
 
+export const NOTEBOOK_CELL_CURSOR_FIRST_LINE = 'cellEditorCursorPositionFirstLine';
+export const NOTEBOOK_CELL_CURSOR_LAST_LINE = 'cellEditorCursorPositionLastLine';
+
 export namespace NotebookContextKeys {
     export function initNotebookContextKeys(service: ContextKeyService): void {
         service.createKey(HAS_OPENED_NOTEBOOK, false);
@@ -93,6 +96,8 @@ export namespace NotebookContextKeys {
         service.createKey(NOTEBOOK_CELL_INPUT_COLLAPSED, false);
         service.createKey(NOTEBOOK_CELL_OUTPUT_COLLAPSED, false);
         service.createKey(NOTEBOOK_CELL_RESOURCE, '');
+        service.createKey(NOTEBOOK_CELL_CURSOR_FIRST_LINE, false);
+        service.createKey(NOTEBOOK_CELL_CURSOR_LAST_LINE, false);
 
         // Kernels
         service.createKey(NOTEBOOK_KERNEL, undefined);
