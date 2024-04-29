@@ -1,9 +1,9 @@
 {
   "debug.breakpoint.editCondition": "Edit Condition...",
+  "notebook.cell.changeToCode": "Change Cell to Code",
+  "notebook.cell.changeToMarkdown": "Change Cell to Mardown",
   "notebook.cell.insertMarkdownCellAbove": "Insert Markdown Cell Above",
   "notebook.cell.insertMarkdownCellBelow": "Insert Markdown Cell Below",
-  "notebook.cell.to-code-cell": "Change Cell to Code",
-  "notebook.cell.to-markdown-cell": "Change Cell to Mardown",
   "terminal:new:profile": "Create New Integrated Terminal from a Profile",
   "terminal:profile:default": "Choose the default Terminal Profile",
   "theia": {
@@ -410,6 +410,9 @@
       "config.untrackedChanges.hidden": "hidden",
       "config.untrackedChanges.mixed": "mixed",
       "config.untrackedChanges.separate": "separate",
+      "dirtyDiff": {
+        "close": "Close Change Peek View"
+      },
       "history": "History",
       "noRepositoryFound": "No repository found",
       "unamend": "Unamend",

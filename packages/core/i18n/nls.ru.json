@@ -1,9 +1,9 @@
 {
   "debug.breakpoint.editCondition": "Изменить состояние...",
+  "notebook.cell.changeToCode": "Измените ячейку на код",
+  "notebook.cell.changeToMarkdown": "Измените ячейку на Мардаун",
   "notebook.cell.insertMarkdownCellAbove": "Вставить ячейку для уценки выше",
   "notebook.cell.insertMarkdownCellBelow": "Вставить ячейку для уценки ниже",
-  "notebook.cell.to-code-cell": "Измените ячейку на код",
-  "notebook.cell.to-markdown-cell": "Измените ячейку на Мардаун",
   "terminal:new:profile": "Создание нового интегрированного терминала из профиля",
   "terminal:profile:default": "Выберите профиль терминала по умолчанию",
   "theia": {
@@ -410,6 +410,9 @@
       "config.untrackedChanges.hidden": "скрытый",
       "config.untrackedChanges.mixed": "смешанный",
       "config.untrackedChanges.separate": "отдельный",
+      "dirtyDiff": {
+        "close": "Закрыть Изменить Посмотреть"
+      },
       "history": "История",
       "noRepositoryFound": "Репозиторий не найден",
       "unamend": "не изменять",

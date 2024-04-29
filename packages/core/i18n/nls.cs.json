@@ -1,9 +1,9 @@
 {
   "debug.breakpoint.editCondition": "Upravit stav...",
+  "notebook.cell.changeToCode": "Změna buňky na kód",
+  "notebook.cell.changeToMarkdown": "Změna buňky na Mardown",
   "notebook.cell.insertMarkdownCellAbove": "Vložení buňky Markdown nad",
   "notebook.cell.insertMarkdownCellBelow": "Vložení buňky Markdown níže",
-  "notebook.cell.to-code-cell": "Změna buňky na kód",
-  "notebook.cell.to-markdown-cell": "Změna buňky na Mardown",
   "terminal:new:profile": "Vytvoření nového integrovaného terminálu z profilu",
   "terminal:profile:default": "Zvolte výchozí profil terminálu",
   "theia": {
@@ -410,6 +410,9 @@
       "config.untrackedChanges.hidden": "skryté",
       "config.untrackedChanges.mixed": "smíšené",
       "config.untrackedChanges.separate": "samostatné stránky",
+      "dirtyDiff": {
+        "close": "Zavřít Změnit pohled"
+      },
       "history": "Historie",
       "noRepositoryFound": "Nebylo nalezeno žádné úložiště",
       "unamend": "Odstranit změny",
