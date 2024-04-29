@@ -21,16 +21,20 @@ import { OutlineViewService } from '@theia/outline-view/lib/browser/outline-view
 import { NotebookModel } from '../view-model/notebook-model';
 import { OutlineSymbolInformationNode } from '@theia/outline-view/lib/browser/outline-view-widget';
 import { NotebookEditorWidget } from '../notebook-editor-widget';
-import { DisposableCollection, URI } from '@theia/core';
+import { DisposableCollection, isObject, URI } from '@theia/core';
 import { CellKind, CellUri } from '../../common';
 import { NotebookService } from '../service/notebook-service';
 export interface NotebookCellOutlineNode extends OutlineSymbolInformationNode {
-    uri: string;
+    uri: URI;
 }
 
 export namespace NotebookCellOutlineNode {
     export function is(element: object): element is NotebookCellOutlineNode {
-        return TreeNode.is(element) && OutlineSymbolInformationNode.is(element) && 'uri' in element && (element as NotebookCellOutlineNode).uri.startsWith(CellUri.cellUriScheme);
+        return TreeNode.is(element)
+            && OutlineSymbolInformationNode.is(element)
+            && isObject<NotebookCellOutlineNode>(element)
+            && typeof element.uri === 'object'
+            && (element as NotebookCellOutlineNode).uri.scheme === CellUri.cellUriScheme;
     }
 }
 
@@ -92,13 +96,13 @@ export class NotebookOutlineContribution implements FrontendApplicationContribut
             children: [],
             selected: model.selectedCell === cell,
             expanded: false,
-            uri: cell.uri.toString(),
+            uri: cell.uri,
         } as NotebookCellOutlineNode));
     }
 
     selectCell(node: object): void {
         if (NotebookCellOutlineNode.is(node)) {
-            const parsed = CellUri.parse(new URI(node.uri));
+            const parsed = CellUri.parse(node.uri);
             const model = parsed && this.notebookService.getNotebookEditorModel(parsed.notebook);
             const cell = model?.cells.find(c => c.handle === parsed?.handle);
             if (model && cell) {

@@ -43,7 +43,7 @@ export class NotebookLabelProviderContribution implements LabelProviderContribut
     }
 
     getIcon(element: NotebookCellOutlineNode): string {
-        const cell = this.findCellByUri(element.uri.toString());
+        const cell = this.findCellByUri(element.uri);
         if (cell) {
             return cell.cellKind === CellKind.Markup ? codicon('markdown') : codicon('code');
         }
@@ -51,7 +51,7 @@ export class NotebookLabelProviderContribution implements LabelProviderContribut
     }
 
     getName(element: NotebookCellOutlineNode): string {
-        const cell = this.findCellByUri(element.uri.toString());
+        const cell = this.findCellByUri(element.uri);
         if (cell) {
             return cell.cellKind === CellKind.Code ?
                 cell.text.split('\n')[0] :
@@ -74,8 +74,8 @@ export class NotebookLabelProviderContribution implements LabelProviderContribut
         return parsedMarkdown.map(token => token.children ? this.extractPlaintext(token.children) : token.content).join('');
     }
 
-    findCellByUri(uri: string): NotebookCellModel | undefined {
-        const parsed = CellUri.parse(new URI(uri));
+    findCellByUri(uri: URI): NotebookCellModel | undefined {
+        const parsed = CellUri.parse(uri);
         if (parsed) {
             return this.notebookService.getNotebookEditorModel(parsed.notebook)?.cells.find(cell => cell.handle === parsed?.handle);
         }
