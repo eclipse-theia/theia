@@ -4,15 +4,56 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
-## not yet released
+<!-- ## not yet released
 
-- [application-manager] Generate Extension Info in server application to avoid empty About Dialog [#13590](https://github.com/eclipse-theia/theia/pull/13590) - contributed on behalf of STMicroelectronics
+<a name="breaking_changes_not_yet_released">[Breaking Changes:](#breaking_changes_not_yet_released)</a> -->
+
+## v1.49.0 - 04/29/2024
+
+- [application-manager] added logic to generate Extension Info in server application to avoid empty About Dialog [#13590](https://github.com/eclipse-theia/theia/pull/13590) - contributed on behalf of STMicroelectronics
+- [application-manager] fixed spawn calls for node LTS versions [#13614](https://github.com/eclipse-theia/theia/pull/13614)
 - [application-package] bumped the default supported API from `1.87.2` to `1.88.1` [#13646](https://github.com/eclipse-theia/theia/pull/13646) - contributed on behalf of STMicroelectronics
-- [core] Splash Screen Support for Electron [#13505](https://github.com/eclipse-theia/theia/pull/13505) - contributed on behalf of Pragmatiqu IT GmbH
+- [cli] added "patches" folder to package.json "files" field [#13554](https://github.com/eclipse-theia/theia/pull/13554) - contributed on behalf of STMicroelectronics
+- [core] added a new built-in handler to open files with system application [#13601](https://github.com/eclipse-theia/theia/pull/13601)
+- [core] added logic to always consider the "passthrough" commmand enabled for keybindings [#13564](https://github.com/eclipse-theia/theia/pull/13564) - contributed on behalf of STMicroelectronics
+- [core] added Splash Screen Support for Electron [#13505](https://github.com/eclipse-theia/theia/pull/13505) - contributed on behalf of Pragmatiqu IT GmbH
+- [core] fixed window revealing when navigating with multiple windows [#13561](https://github.com/eclipse-theia/theia/pull/13561) - contributed on behalf of STMicroelectronics
+- [core] improved "Open With..." command UX [#13573](https://github.com/eclipse-theia/theia/pull/13573)
+- [filesystem] added logic to open editor on file upload [#13578](https://github.com/eclipse-theia/theia/pull/13578)
+- [monaco] added logic to prevent duplicate Clipboard actions in editor context menu [#13626](https://github.com/eclipse-theia/theia/pull/13626)
+- [monaco] fixed monaco localization [#13557](https://github.com/eclipse-theia/theia/pull/13557)
+- [notebook] added additional keybings to the notebook editor [#13594](https://github.com/eclipse-theia/theia/pull/13594)
+- [notebook] added logic to force notebook scrollbar update after content change [#13575](https://github.com/eclipse-theia/theia/pull/13575)
+- [notebook] added logic to read execution summary [#13567](https://github.com/eclipse-theia/theia/pull/13567)
+- [notebook] added logic to select notebook cell language [#13615](https://github.com/eclipse-theia/theia/pull/13615)
+- [notebook] added logic to show short title for notebook toolbar commands [#13586](https://github.com/eclipse-theia/theia/pull/13586)
+- [notebook] added logic to use notebook URI as context for toolbar commands [#13585](https://github.com/eclipse-theia/theia/pull/13585)
+- [notebook] added shift+enter keybinding for markdown cells [#13563](https://github.com/eclipse-theia/theia/pull/13563)
+- [notebook] added support for Outline-View and Breadcrumbs [#13562](https://github.com/eclipse-theia/theia/pull/13562)
+- [notebook] added support for truncated notebook output commands [#13555](https://github.com/eclipse-theia/theia/pull/13555)
+- [notebook] disabled clear all outputs in notebook main toolbar [#13569](https://github.com/eclipse-theia/theia/pull/13569)
+- [notebook] fixed clear cell outputs command [#13640](https://github.com/eclipse-theia/theia/pull/13640)
+- [notebook] fixed kernel autobind for on startup opened notebooks [#13598](https://github.com/eclipse-theia/theia/pull/13598)
+- [notebook] fixed logic to set context for multiple notebooks [#13566](https://github.com/eclipse-theia/theia/pull/13566)
+- [notebook] fixed notebook cell EOL splitting [#13574](https://github.com/eclipse-theia/theia/pull/13574)
+- [notebook] fixed notebook model/cell disposal [#13606](https://github.com/eclipse-theia/theia/pull/13606)
+- [notebook] fixed notebook widget icon on reload [#13612](https://github.com/eclipse-theia/theia/pull/13612)
+- [notebook] improved notebook cell context key handling [#13572](https://github.com/eclipse-theia/theia/pull/13572)
+- [notebook] improved notebook markdown cell rendering [#13577](https://github.com/eclipse-theia/theia/pull/13577)
+- [plugin] added logic to hide empty plugin view containers from user [#13581](https://github.com/eclipse-theia/theia/pull/13581)
+- [plugin] added logic to ignore vsix files in local-plugins dir [#13435](https://github.com/eclipse-theia/theia/pull/13435) - contributed on behalf of STMicroelectronics
+- [plugin] fixed `onLanguage` activation event [#13630](https://github.com/eclipse-theia/theia/pull/13630)
+- [plugin] fixed issue with webview communication for Safari [#13587](https://github.com/eclipse-theia/theia/pull/13587)
+- [plugin] updated `DropMetada` and `documentPaste` proposed API for 1.88 compatibility [#13632](https://github.com/eclipse-theia/theia/pull/13632)
+- [plugin] updated back-end plugin deployment logic [#13643](https://github.com/eclipse-theia/theia/pull/13643) - contributed on behalf of STMicroelectronics
+- [process] fixed spawn calls for node LTS versions [#13614](https://github.com/eclipse-theia/theia/pull/13614)
+- [remote] fixed remote support in packaged apps [#13584](https://github.com/eclipse-theia/theia/pull/13584)
 - [scm] added support for dirty diff peek view [#13104](https://github.com/eclipse-theia/theia/pull/13104)
-- [test] stub VS Code `Test Coverage` API [#13631](https://github.com/eclipse-theia/theia/pull/13631)
+- [terminal] fixed spawn calls for node LTS versions [#13614](https://github.com/eclipse-theia/theia/pull/13614)
+- [test] stubbed VS Code `Test Coverage` API [#13631](https://github.com/eclipse-theia/theia/pull/13631) - contributed on behalf of STMicroelectronics
+- [vsx-registry] fixed logic to bind Extension search bar within view container [#13623](https://github.com/eclipse-theia/theia/pull/13623)
 
-<a name="breaking_changes_not_yet_released">[Breaking Changes:](#breaking_changes_not_yet_released)</a>
+<a name="breaking_changes_1.49.0">[Breaking Changes:](#breaking_changes_1.49.0)</a>
 
 - [scm] revised some of the dirty diff related types [#13104](https://github.com/eclipse-theia/theia/pull/13104)
   - replaced `DirtyDiff.added/removed/modified` with `changes`, which provides more detailed information about the changes
