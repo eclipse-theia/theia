@@ -19,7 +19,7 @@ import { Message } from '@theia/core/shared/@phosphor/messaging';
 import URI from '@theia/core/lib/common/uri';
 import { CommandService } from '@theia/core/lib/common';
 import { Key, TreeModel, ContextMenuRenderer, ExpandableTreeNode, TreeProps, TreeNode } from '@theia/core/lib/browser';
-import { DirNode } from '@theia/filesystem/lib/browser';
+import { DirNode, FileStatNodeData } from '@theia/filesystem/lib/browser';
 import { WorkspaceService, WorkspaceCommands } from '@theia/workspace/lib/browser';
 import { WorkspaceNode, WorkspaceRootNode } from './navigator-tree';
 import { FileNavigatorModel } from './navigator-model';
@@ -210,6 +210,10 @@ export class FileNavigatorWidget extends AbstractNavigatorTreeWidget {
 
     protected updateSelectionContextKeys(): void {
         this.contextKeyService.explorerResourceIsFolder.set(DirNode.is(this.model.selectedNodes[0]));
+        // As `FileStatNode` only created if `FileService.resolve` was successful, we can safely assume that
+        // a valid `FileSystemProvider` is available for the selected node. So we skip an additional check
+        // for provider availability here and check the node type.
+        this.contextKeyService.isFileSystemResource.set(FileStatNodeData.is(this.model.selectedNodes[0]));
     }
 
 }
