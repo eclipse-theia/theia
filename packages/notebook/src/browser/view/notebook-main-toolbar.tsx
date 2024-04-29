@@ -75,6 +75,8 @@ export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProp
     protected gapElement: HTMLDivElement | undefined;
     protected lastGapElementWidth: number = 0;
 
+    protected resizeObserver: ResizeObserver = new ResizeObserver(() => this.calculateItemsToHide());
+
     constructor(props: NotebookMainToolbarProps) {
         super(props);
 
@@ -167,10 +169,13 @@ export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProp
     }
 
     protected gapElementChanged(element: HTMLDivElement | null): void {
+        if (this.gapElement) {
+            this.resizeObserver.unobserve(this.gapElement);
+        }
         this.gapElement = element ?? undefined;
         if (this.gapElement) {
             this.lastGapElementWidth = this.gapElement.getBoundingClientRect().width;
-            new ResizeObserver(() => this.calculateItemsToHide()).observe(this.gapElement);
+            this.resizeObserver.observe(this.gapElement);
         }
     }
 
