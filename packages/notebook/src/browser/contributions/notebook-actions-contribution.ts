@@ -286,6 +286,8 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
             order: '30',
             when: NOTEBOOK_HAS_OUTPUTS
         });
+
+        menus.registerIndependentSubmenu(NotebookMenus.NOTEBOOK_MAIN_TOOLBAR_HIDDEN_ITEMS_CONTEXT_MENU, '');
     }
 
     registerKeybindings(keybindings: KeybindingRegistry): void {
@@ -326,4 +328,5 @@ export namespace NotebookMenus {
     export const NOTEBOOK_MAIN_TOOLBAR = 'notebook/toolbar';
     export const NOTEBOOK_MAIN_TOOLBAR_CELL_ADD_GROUP = [NOTEBOOK_MAIN_TOOLBAR, 'cell-add-group'];
     export const NOTEBOOK_MAIN_TOOLBAR_EXECUTION_GROUP = [NOTEBOOK_MAIN_TOOLBAR, 'cell-execution-group'];
+    export const NOTEBOOK_MAIN_TOOLBAR_HIDDEN_ITEMS_CONTEXT_MENU = 'notebook-main-toolbar-hidden-items-context-menu';
 }

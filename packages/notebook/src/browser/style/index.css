@@ -225,6 +225,7 @@
 
 .theia-notebook-main-toolbar-item-text {
   padding: 0 4px;
+  white-space: nowrap;
 }
 
 .theia-notebook-toolbar-separator {
