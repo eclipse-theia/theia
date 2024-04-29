@@ -139,14 +139,14 @@ export class CustomEditorsMainImpl implements CustomEditorsMain, Disposable {
                     widget.onMove(async (newResource: TheiaURI) => {
                         const oldModel = modelRef;
                         modelRef = await this.getOrCreateCustomEditorModel(modelType, newResource, viewType, onMoveCancelTokenSource.token);
-                        this.proxy.$onMoveCustomEditor(identifier.id, URI.file(newResource.path.toString()), viewType);
+                        this.proxy.$onMoveCustomEditor(identifier.id, newResource.toComponents(), viewType);
                         oldModel.dispose();
                     });
                 }
 
                 const _cancellationSource = new CancellationTokenSource();
                 await this.proxy.$resolveWebviewEditor(
-                    URI.file(resource.path.toString()),
+                    resource.toComponents(),
                     identifier.id,
                     viewType,
                     this.labelProvider.getName(resource)!,
@@ -309,7 +309,7 @@ export class MainCustomEditorModel implements CustomEditorModel {
         editorPreferences: EditorPreferences,
         cancellation: CancellationToken,
     ): Promise<MainCustomEditorModel> {
-        const { editable } = await proxy.$createCustomDocument(URI.file(resource.path.toString()), viewType, {}, cancellation);
+        const { editable } = await proxy.$createCustomDocument(resource.toComponents(), viewType, {}, cancellation);
         return new MainCustomEditorModel(proxy, viewType, resource, editable, undoRedoService, fileService, editorPreferences);
     }
 
@@ -339,7 +339,7 @@ export class MainCustomEditorModel implements CustomEditorModel {
     }
 
     get resource(): URI {
-        return URI.file(this.editorResource.path.toString());
+        return URI.from(this.editorResource.toComponents());
     }
 
     get dirty(): boolean {
@@ -441,7 +441,7 @@ export class MainCustomEditorModel implements CustomEditorModel {
     async saveCustomEditorAs(resource: TheiaURI, targetResource: TheiaURI, options?: SaveOptions): Promise<void> {
         if (this.editable) {
             const source = new CancellationTokenSource();
-            await this.proxy.$onSaveAs(this.resource, this.viewType, URI.file(targetResource.path.toString()), source.token);
+            await this.proxy.$onSaveAs(this.resource, this.viewType, targetResource.toComponents(), source.token);
             this.change(() => {
                 this.savePoint = this.currentEditIndex;
             });
@@ -561,7 +561,7 @@ export class CustomTextEditorModel implements CustomEditorModel {
     }
 
     get resource(): URI {
-        return URI.file(this.editorResource.path.toString());
+        return URI.from(this.editorResource.toComponents());
     }
 
     get dirty(): boolean {
