@@ -10,7 +10,13 @@
     "frontend": {
       "config": {
         "applicationName": "Theia Electron Example",
-        "reloadOnReconnect": true
+        "reloadOnReconnect": true,
+        "electron": {
+          "splashScreenOptions": {
+            "content": "resources/theia-logo.svg",
+            "height": 90
+          }
+        }
       }
     },
     "backend": {

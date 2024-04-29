@@ -22,16 +22,16 @@ import { AddressInfo } from 'net';
 import { promises as fs } from 'fs';
 import { existsSync, mkdirSync } from 'fs-extra';
 import { fork, ForkOptions } from 'child_process';
-import { DefaultTheme, FrontendApplicationConfig } from '@theia/application-package/lib/application-props';
+import { DefaultTheme, ElectronFrontendApplicationConfig, FrontendApplicationConfig } from '@theia/application-package/lib/application-props';
 import URI from '../common/uri';
 import { FileUri } from '../common/file-uri';
-import { Deferred } from '../common/promise-util';
+import { Deferred, timeout } from '../common/promise-util';
 import { MaybePromise } from '../common/types';
 import { ContributionProvider } from '../common/contribution-provider';
 import { ElectronSecurityTokenService } from './electron-security-token-service';
 import { ElectronSecurityToken } from '../electron-common/electron-token';
 import Storage = require('electron-store');
-import { Disposable, DisposableCollection, isOSX, isWindows } from '../common';
+import { CancellationTokenSource, Disposable, DisposableCollection, isOSX, isWindows } from '../common';
 import { DEFAULT_WINDOW_HASH, WindowSearchParams } from '../common/window';
 import { TheiaBrowserWindowOptions, TheiaElectronWindow, TheiaElectronWindowFactory } from './theia-electron-window';
 import { ElectronMainApplicationGlobals } from './electron-main-constants';
@@ -182,6 +182,7 @@ export class ElectronMainApplication {
     protected windows = new Map<number, TheiaElectronWindow>();
     protected restarting = false;
 
+    /** Used to temporarily store the reference to an early created main window */
     protected initialWindow?: BrowserWindow;
 
     get config(): FrontendApplicationConfig {
@@ -287,16 +288,108 @@ export class ElectronMainApplication {
         return this.didUseNativeWindowFrameOnStart.get(webContents.id) ? 'native' : 'custom';
     }
 
+    protected async determineSplashScreenBounds(initialWindowBounds: { x: number, y: number, width: number, height: number }):
+        Promise<{ x: number, y: number, width: number, height: number }> {
+        const splashScreenOptions = this.getSplashScreenOptions();
+        const width = splashScreenOptions?.width ?? 640;
+        const height = splashScreenOptions?.height ?? 480;
+
+        // determine the screen on which to show the splash screen via the center of the window to show
+        const windowCenterPoint = { x: initialWindowBounds.x + (initialWindowBounds.width / 2), y: initialWindowBounds.y + (initialWindowBounds.height / 2) };
+        const { bounds } = screen.getDisplayNearestPoint(windowCenterPoint);
+
+        // place splash screen center of screen
+        const screenCenterPoint = { x: bounds.x + (bounds.width / 2), y: bounds.y + (bounds.height / 2) };
+        const x = screenCenterPoint.x - (width / 2);
+        const y = screenCenterPoint.y - (height / 2);
+
+        return {
+            x, y, width, height
+        };
+    }
+
+    protected isShowWindowEarly(): boolean {
+        return !!this.config.electron.showWindowEarly &&
+            !('THEIA_ELECTRON_NO_EARLY_WINDOW' in process.env && process.env.THEIA_ELECTRON_NO_EARLY_WINDOW === '1');
+    }
+
     protected showInitialWindow(): void {
-        if (this.config.electron.showWindowEarly &&
-            !('THEIA_ELECTRON_NO_EARLY_WINDOW' in process.env && process.env.THEIA_ELECTRON_NO_EARLY_WINDOW === '1')) {
-            console.log('Showing main window early');
+        if (this.isShowWindowEarly() || this.isShowSplashScreen()) {
             app.whenReady().then(async () => {
                 const options = await this.getLastWindowOptions();
+                // If we want to show a splash screen, don't auto open the main window
+                if (this.isShowSplashScreen()) {
+                    options.preventAutomaticShow = true;
+                }
                 this.initialWindow = await this.createWindow({ ...options });
-                this.initialWindow.show();
+
+                if (this.isShowSplashScreen()) {
+                    console.log('Showing splash screen');
+                    this.configureAndShowSplashScreen(this.initialWindow);
+                }
+
+                // Show main window early if windows shall be shown early and splash screen is not configured
+                if (this.isShowWindowEarly() && !this.isShowSplashScreen()) {
+                    console.log('Showing main window early');
+                    this.initialWindow.show();
+                }
             });
         }
+    }
+
+    protected async configureAndShowSplashScreen(mainWindow: BrowserWindow): Promise<BrowserWindow> {
+        const splashScreenOptions = this.getSplashScreenOptions()!;
+        console.debug('SplashScreen options', splashScreenOptions);
+
+        const splashScreenBounds = await this.determineSplashScreenBounds(mainWindow.getBounds());
+        const splashScreenWindow = new BrowserWindow({
+            ...splashScreenBounds,
+            frame: false,
+            alwaysOnTop: true,
+            show: false
+        });
+
+        if (this.isShowWindowEarly()) {
+            console.log('Showing splash screen early');
+            splashScreenWindow.show();
+        } else {
+            splashScreenWindow.on('ready-to-show', () => {
+                splashScreenWindow.show();
+            });
+        }
+
+        splashScreenWindow.loadFile(path.resolve(this.globals.THEIA_APP_PROJECT_PATH, splashScreenOptions.content!).toString());
+
+        // close splash screen and show main window once frontend is ready or a timeout is hit
+        const cancelTokenSource = new CancellationTokenSource();
+        const minTime = timeout(splashScreenOptions.minDuration ?? 0, cancelTokenSource.token);
+        const maxTime = timeout(splashScreenOptions.maxDuration ?? 30000, cancelTokenSource.token);
+
+        const showWindowAndCloseSplashScreen = () => {
+            cancelTokenSource.cancel();
+            if (!mainWindow.isVisible()) {
+                mainWindow.show();
+            }
+            splashScreenWindow.close();
+        };
+        TheiaRendererAPI.onApplicationStateChanged(mainWindow.webContents, state => {
+            if (state === 'ready') {
+                minTime.then(() => showWindowAndCloseSplashScreen());
+            }
+        });
+        maxTime.then(() => showWindowAndCloseSplashScreen());
+        return splashScreenWindow;
+    }
+
+    protected isShowSplashScreen(): boolean {
+        return typeof this.config.electron.splashScreenOptions === 'object' && !!this.config.electron.splashScreenOptions.content;
+    }
+
+    protected getSplashScreenOptions(): ElectronFrontendApplicationConfig.SplashScreenOptions | undefined {
+        if (this.isShowSplashScreen()) {
+            return this.config.electron.splashScreenOptions;
+        }
+        return undefined;
     }
 
     /**
@@ -316,6 +409,7 @@ export class ElectronMainApplication {
         electronWindow.window.on('focus', () => TheiaRendererAPI.sendWindowEvent(electronWindow.window.webContents, 'focus'));
         this.attachSaveWindowState(electronWindow.window);
         this.configureNativeSecondaryWindowCreation(electronWindow.window);
+
         return electronWindow.window;
     }
 
