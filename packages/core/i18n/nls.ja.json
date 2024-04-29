@@ -1,9 +1,9 @@
 {
   "debug.breakpoint.editCondition": "編集条件...",
+  "notebook.cell.changeToCode": "セルをコードに変更",
+  "notebook.cell.changeToMarkdown": "セルをマーダウンに変更",
   "notebook.cell.insertMarkdownCellAbove": "マークダウン・セルを上に挿入する",
   "notebook.cell.insertMarkdownCellBelow": "下にマークダウン・セルを挿入する",
-  "notebook.cell.to-code-cell": "セルをコードに変更",
-  "notebook.cell.to-markdown-cell": "セルをマーダウンに変更",
   "terminal:new:profile": "プロファイルから新しい統合端末を作成する",
   "terminal:profile:default": "デフォルトの端末プロファイルを選択",
   "theia": {
@@ -410,6 +410,9 @@
       "config.untrackedChanges.hidden": "隠れ",
       "config.untrackedChanges.mixed": "合成",
       "config.untrackedChanges.separate": "別",
+      "dirtyDiff": {
+        "close": "クローズチェンジ・ピーキング・ビュー"
+      },
       "history": "歴史",
       "noRepositoryFound": "リポジトリが見つからない",
       "unamend": "くり返す",

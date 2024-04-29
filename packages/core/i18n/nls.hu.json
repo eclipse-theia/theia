@@ -1,9 +1,9 @@
 {
   "debug.breakpoint.editCondition": "Szerkesztési feltétel...",
+  "notebook.cell.changeToCode": "Cellát kódra váltani",
+  "notebook.cell.changeToMarkdown": "Cellát átváltoztatni Mardown-ra",
   "notebook.cell.insertMarkdownCellAbove": "Markdown-cella beszúrása fent",
   "notebook.cell.insertMarkdownCellBelow": "Markdown-cella beszúrása az alábbiakban",
-  "notebook.cell.to-code-cell": "Cellát kódra váltani",
-  "notebook.cell.to-markdown-cell": "Cellát átváltoztatni Mardown-ra",
   "terminal:new:profile": "Új integrált terminál létrehozása profilból",
   "terminal:profile:default": "Válassza ki az alapértelmezett terminálprofilt",
   "theia": {
@@ -410,6 +410,9 @@
       "config.untrackedChanges.hidden": "rejtett",
       "config.untrackedChanges.mixed": "vegyes",
       "config.untrackedChanges.separate": "külön",
+      "dirtyDiff": {
+        "close": "Bezárás Változás Peek View"
+      },
       "history": "Történelem",
       "noRepositoryFound": "Nem talált tárolóhely",
       "unamend": "Visszavonja a",

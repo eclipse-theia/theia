@@ -1,9 +1,9 @@
 {
   "debug.breakpoint.editCondition": "编辑条件...",
+  "notebook.cell.changeToCode": "将单元格更改为代码",
+  "notebook.cell.changeToMarkdown": "将 Cell 改为 Mardown",
   "notebook.cell.insertMarkdownCellAbove": "在上方插入 Markdown 单元格",
   "notebook.cell.insertMarkdownCellBelow": "在下面插入 Markdown 单元格",
-  "notebook.cell.to-code-cell": "将单元格更改为代码",
-  "notebook.cell.to-markdown-cell": "将 Cell 改为 Mardown",
   "terminal:new:profile": "从配置文件中创建新的集成终端",
   "terminal:profile:default": "选择默认的终端配置文件",
   "theia": {
@@ -410,6 +410,9 @@
       "config.untrackedChanges.hidden": "隐藏的",
       "config.untrackedChanges.mixed": "混合的",
       "config.untrackedChanges.separate": "分开",
+      "dirtyDiff": {
+        "close": "关闭 更改 窥视"
+      },
       "history": "历史",
       "noRepositoryFound": "没有找到存储库",
       "unamend": "撤销",
