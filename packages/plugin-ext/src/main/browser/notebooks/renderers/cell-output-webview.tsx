@@ -38,13 +38,13 @@ import { NotebookModel } from '@theia/notebook/lib/browser/view-model/notebook-m
 
 const CellModel = Symbol('CellModel');
 const Notebook = Symbol('NotebookModel');
-export const AdditionalOutputCss = Symbol('AdditionalOutputCss');
+export const AdditionalNotebookCellOutputCss = Symbol('AdditionalNotebookCellOutputCss');
 
 export function createCellOutputWebviewContainer(ctx: interfaces.Container, cell: NotebookCellModel, notebook: NotebookModel): interfaces.Container {
     const child = ctx.createChild();
     child.bind(CellModel).toConstantValue(cell);
     child.bind(Notebook).toConstantValue(notebook);
-    child.bind(AdditionalOutputCss).toConstantValue(DEFAULT_NOTEBOOK_OUTPUT_CSS);
+    child.bind(AdditionalNotebookCellOutputCss).toConstantValue(DEFAULT_NOTEBOOK_OUTPUT_CSS);
     child.bind(CellOutputWebviewImpl).toSelf().inSingletonScope();
     return child;
 }
@@ -144,7 +144,7 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
     @inject(QuickPickService)
     protected readonly quickPickService: QuickPickService;
 
-    @inject(AdditionalOutputCss)
+    @inject(AdditionalNotebookCellOutputCss)
     protected readonly additionalOutputCss: string;
 
     readonly id = generateUuid();
