@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2018 TypeFox and others.
+// Copyright (C) 2018-2024 TypeFox and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -21,15 +21,27 @@ export class SocketWriteBuffer {
 
     private disconnectedBuffer: Uint8Array | undefined;
     private bufferWritePosition = 0;
+    private errorReported = false;
 
     buffer(data: Uint8Array): void {
-        this.ensureWriteBuffer(data.byteLength);
+        try {
+            this.ensureWriteBuffer(data.byteLength);
+        } catch (error) {
+            // 13662: Only report the error once, to avoid spamming the logs
+            // once the buffer is full. Following issues are silently ignored.
+            if (!this.errorReported) {
+                this.errorReported = true;
+                throw error;
+            }
+            return;
+        }
         this.disconnectedBuffer?.set(data, this.bufferWritePosition);
         this.bufferWritePosition += data.byteLength;
     }
 
     protected ensureWriteBuffer(byteLength: number): void {
         if (!this.disconnectedBuffer) {
+            this.errorReported = false;
             this.disconnectedBuffer = new Uint8Array(SocketWriteBuffer.DISCONNECTED_BUFFER_SIZE);
             this.bufferWritePosition = 0;
         }

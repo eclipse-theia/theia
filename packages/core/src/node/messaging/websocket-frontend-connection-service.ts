@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2023 STMicroelectronics and others.
+// Copyright (C) 2023-2024 STMicroelectronics and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -126,7 +126,7 @@ export class WebsocketFrontendConnectionService implements FrontendConnectionSer
     }
 }
 
-class ReconnectableSocketChannel extends AbstractChannel {
+export class ReconnectableSocketChannel extends AbstractChannel {
     private socket: Socket | undefined;
     private socketBuffer = new SocketWriteBuffer();
     private disposables = new DisposableCollection();

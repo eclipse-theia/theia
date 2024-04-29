@@ -8,6 +8,7 @@
 
 - [application-manager] Generate Extension Info in server application to avoid empty About Dialog [#13590](https://github.com/eclipse-theia/theia/pull/13590) - contributed on behalf of STMicroelectronics
 - [application-package] bumped the default supported API from `1.87.2` to `1.88.1` [#13646](https://github.com/eclipse-theia/theia/pull/13646) - contributed on behalf of STMicroelectronics
+- [core] Fix rare error-log spam after a client disconnected [#13665](https://github.com/eclipse-theia/theia/pull/13665)
 - [core] Splash Screen Support for Electron [#13505](https://github.com/eclipse-theia/theia/pull/13505) - contributed on behalf of Pragmatiqu IT GmbH
 - [scm] added support for dirty diff peek view [#13104](https://github.com/eclipse-theia/theia/pull/13104)
 - [test] stub VS Code `Test Coverage` API [#13631](https://github.com/eclipse-theia/theia/pull/13631)
