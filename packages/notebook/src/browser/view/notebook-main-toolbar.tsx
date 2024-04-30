@@ -129,8 +129,8 @@ export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProp
         if (this.gapElement && this.gapElement.getBoundingClientRect().width < NotebookMainToolbar.MIN_FREE_AREA && this.state.numberOfHiddenItems < numberOfMenuItems) {
             this.setState({ ...this.state, numberOfHiddenItems: this.state.numberOfHiddenItems + 1 });
             this.lastGapElementWidth = this.gapElement.getBoundingClientRect().width;
-        } else if (this.gapElement && this.gapElement.getBoundingClientRect().width > this.lastGapElementWidth) {
-            this.setState({ ...this.state, numberOfHiddenItems: this.state.numberOfHiddenItems <= 1 ? 0 : this.state.numberOfHiddenItems - 1 });
+        } else if (this.gapElement && this.gapElement.getBoundingClientRect().width > this.lastGapElementWidth && this.state.numberOfHiddenItems > 0) {
+            this.setState({ ...this.state, numberOfHiddenItems: 0 });
             this.lastGapElementWidth = this.gapElement.getBoundingClientRect().width;
         }
     }
