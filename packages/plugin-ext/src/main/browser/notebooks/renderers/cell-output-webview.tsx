@@ -38,14 +38,81 @@ import { NotebookModel } from '@theia/notebook/lib/browser/view-model/notebook-m
 
 const CellModel = Symbol('CellModel');
 const Notebook = Symbol('NotebookModel');
+export const AdditionalNotebookCellOutputCss = Symbol('AdditionalNotebookCellOutputCss');
 
 export function createCellOutputWebviewContainer(ctx: interfaces.Container, cell: NotebookCellModel, notebook: NotebookModel): interfaces.Container {
     const child = ctx.createChild();
     child.bind(CellModel).toConstantValue(cell);
     child.bind(Notebook).toConstantValue(notebook);
+    child.bind(AdditionalNotebookCellOutputCss).toConstantValue(DEFAULT_NOTEBOOK_OUTPUT_CSS);
     child.bind(CellOutputWebviewImpl).toSelf().inSingletonScope();
     return child;
 }
+
+export const DEFAULT_NOTEBOOK_OUTPUT_CSS = `
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+  
+table th,
+table td {
+    border: 1px solid;
+}
+
+table > thead > tr > th {
+    text-align: left;
+    border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+    padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+    border-top: 1px solid;
+}
+
+table,
+thead,
+tr,
+th,
+td,
+tbody {
+    border: none !important;
+    border-color: transparent;
+    border-spacing: 0;
+    border-collapse: collapse;
+}
+
+table,
+th,
+tr {
+    vertical-align: middle;
+    text-align: right;
+}
+
+thead {
+    font-weight: bold;
+    background-color: rgba(130, 130, 130, 0.16);
+}
+
+th,
+td {
+    padding: 4px 8px;
+}
+
+tr:nth-child(even) {
+    background-color: rgba(130, 130, 130, 0.08);
+}
+
+tbody th {
+    font-weight: normal;
+}
+`;
 
 @injectable()
 export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
@@ -76,6 +143,9 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
 
     @inject(QuickPickService)
     protected readonly quickPickService: QuickPickService;
+
+    @inject(AdditionalNotebookCellOutputCss)
+    protected readonly additionalOutputCss: string;
 
     readonly id = generateUuid();
 
@@ -129,7 +199,7 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
                 'jupyter.viewOutput',
                 'workbench.action.openLargeOutput',
                 'cellOutput.enableScrolling',
-            ]
+            ],
         });
         this.webviewWidget.setHTML(await this.createWebviewContent());
 
@@ -236,6 +306,9 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
                 <html>
                     <head>
                         <meta charset="UTF-8">
+                        <style>
+                            ${this.additionalOutputCss}
+                        </style>
                     </head>
                     <body>
                         <script type="module">${preloads}</script>
