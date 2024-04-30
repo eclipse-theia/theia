@@ -134,5 +134,5 @@ export default new ContainerModule(bind => {
         return new DefaultTerminalProfileService(userStore, contributedStore);
     }).inSingletonScope();
 
-    bind(FrontendApplicationContribution).to(TerminalFrontendContribution);
+    bind(FrontendApplicationContribution).toService(TerminalFrontendContribution);
 });
