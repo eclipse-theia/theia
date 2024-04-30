@@ -264,7 +264,7 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
         this.onDidPostKernelMessageEmitter.dispose();
         this.onDidReceiveKernelMessageEmitter.dispose();
         this.onPostRendererMessageEmitter.dispose();
-        this.onDidChangeOutputInputFocusEmitter.dispose()
+        this.onDidChangeOutputInputFocusEmitter.dispose();
         this.viewportService.dispose();
         this._model?.dispose();
         super.dispose();
