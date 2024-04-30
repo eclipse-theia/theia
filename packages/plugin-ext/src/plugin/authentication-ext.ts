@@ -63,6 +63,17 @@ export class AuthenticationExtImpl implements AuthenticationExt {
         }
 
         this.authenticationProviders.set(id, provider);
+
+        provider.getSessions().then(sessions => { // sessions might have been restored from secret storage
+            if (sessions.length > 0) {
+                this.proxy.$onDidChangeSessions(id, {
+                    added: sessions,
+                    removed: [],
+                    changed: []
+                });
+            }
+        });
+
         const listener = provider.onDidChangeSessions(e => {
             this.proxy.$onDidChangeSessions(id, e);
         });
