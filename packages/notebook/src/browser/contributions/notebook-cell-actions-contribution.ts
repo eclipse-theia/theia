@@ -120,22 +120,22 @@ export namespace NotebookCellCommands {
         label: 'Change Cell to Mardown'
     });
 
-    export const COLLAPSE_CELL_OUTPUT = Command.toDefaultLocalizedCommand({
-        id: 'notebook.cell.collapseCellOutput',
+    export const TOGGLE_CELL_OUTPUT = Command.toDefaultLocalizedCommand({
+        id: 'notebook.cell.toggleOutputs',
         category: 'Notebook',
         label: 'Collapse Cell Output',
-    });
-
-    export const EXPAND_CELL_OUTPUT = Command.toDefaultLocalizedCommand({
-        id: 'notebook.cell.expandCellOutput',
-        category: 'Notebook',
-        label: 'Expand Cell Output',
     });
 
     export const CHANGE_CELL_LANGUAGE = Command.toDefaultLocalizedCommand({
         id: 'notebook.cell.changeLanguage',
         category: 'Notebook',
         label: 'Change Cell Language',
+    });
+
+    export const TOGGLE_LINE_NUMBERS = Command.toDefaultLocalizedCommand({
+        id: 'notebook.cell.toggleLineNumbers',
+        category: 'Notebook',
+        label: 'Show Cell Line Numbers',
     });
 
 }
@@ -351,20 +351,11 @@ export class NotebookCellActionContribution implements MenuContribution, Command
             changeCellType(notebookModel, cell, CellKind.Markup);
         }));
 
-        commands.registerCommand(NotebookCellCommands.COLLAPSE_CELL_OUTPUT, {
+        commands.registerCommand(NotebookCellCommands.TOGGLE_CELL_OUTPUT, {
             execute: () => {
                 const selectedCell = this.notebookEditorWidgetService.focusedEditor?.model?.selectedCell;
                 if (selectedCell) {
-                    selectedCell.outputVisible = false;
-                }
-            }
-        });
-
-        commands.registerCommand(NotebookCellCommands.EXPAND_CELL_OUTPUT, {
-            execute: () => {
-                const selectedCell = this.notebookEditorWidgetService.focusedEditor?.model?.selectedCell;
-                if (selectedCell) {
-                    selectedCell.outputVisible = true;
+                    selectedCell.outputVisible = !selectedCell.outputVisible;
                 }
             }
         });
@@ -383,6 +374,16 @@ export class NotebookCellActionContribution implements MenuContribution, Command
                             language: language.value.id
                         }], true);
                     }
+                }
+            }
+        });
+
+        commands.registerCommand(NotebookCellCommands.TOGGLE_LINE_NUMBERS, {
+            execute: () => {
+                const selectedCell = this.notebookEditorWidgetService.focusedEditor?.model?.selectedCell;
+                if (selectedCell) {
+                    const currentLineNumber = selectedCell.editorOptions?.lineNumbers;
+                    selectedCell.editorOptions = { ...selectedCell.editorOptions, lineNumbers: !currentLineNumber || currentLineNumber === 'off' ? 'on' : 'off' };
                 }
             }
         });
