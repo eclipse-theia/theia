@@ -33,8 +33,8 @@ export namespace NotebookCellOutlineNode {
         return TreeNode.is(element)
             && OutlineSymbolInformationNode.is(element)
             && isObject<NotebookCellOutlineNode>(element)
-            && typeof element.uri === 'object'
-            && (element as NotebookCellOutlineNode).uri.scheme === CellUri.cellUriScheme;
+            && element.uri instanceof URI
+            && element.uri.scheme === CellUri.cellUriScheme;
     }
 }
 
