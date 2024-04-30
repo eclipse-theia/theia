@@ -82,6 +82,12 @@ import { CodeEditorWidgetUtil } from '@theia/plugin-ext/lib/main/browser/menus/v
 import { OutlineViewContribution } from '@theia/outline-view/lib/browser/outline-view-contribution';
 
 export namespace VscodeCommands {
+
+    export const GET_CODE_EXCHANGE_ENDPOINTS: Command = {
+        id: 'workbench.getCodeExchangeProxyEndpoints' // this command is used in the github auth built-in
+        // see: https://github.com/microsoft/vscode/blob/191be39e5ac872e03f9d79cc859d9917f40ad935/extensions/github-authentication/src/githubServer.ts#L60
+    };
+
     export const OPEN: Command = {
         id: 'vscode.open'
     };
@@ -230,6 +236,10 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
     }
 
     registerCommands(commands: CommandRegistry): void {
+        commands.registerCommand(VscodeCommands.GET_CODE_EXCHANGE_ENDPOINTS, {
+            execute: () => undefined // this is a dummy implementation: only used in the case of web apps, which is not supported yet.
+        });
+
         commands.registerCommand(VscodeCommands.OPEN, {
             isVisible: () => false,
             execute: async (resource: URI | string, columnOrOptions?: ViewColumn | TextDocumentShowOptions) => {
