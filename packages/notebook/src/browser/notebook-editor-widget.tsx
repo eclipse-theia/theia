@@ -120,8 +120,8 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
     protected readonly onDidReceiveKernelMessageEmitter = new Emitter<unknown>();
     readonly onDidReceiveKernelMessage = this.onDidReceiveKernelMessageEmitter.event;
 
-    protected readonly onDidChangeOutputInputFocuEmitter = new Emitter<boolean>();
-    readonly onDidChangeOutputInputFocus = this.onDidChangeOutputInputFocuEmitter.event;
+    protected readonly onDidChangeOutputInputFocusEmitter = new Emitter<boolean>();
+    readonly onDidChangeOutputInputFocus = this.onDidChangeOutputInputFocusEmitter.event;
 
     protected readonly renderers = new Map<CellKind, CellRenderer>();
     protected _model?: NotebookModel;
@@ -255,7 +255,7 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
     }
 
     outputInputFocusChanged(focused: boolean): void {
-        this.onDidChangeOutputInputFocuEmitter.fire(focused);
+        this.onDidChangeOutputInputFocusEmitter.fire(focused);
     }
 
     override dispose(): void {
@@ -264,6 +264,7 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
         this.onDidPostKernelMessageEmitter.dispose();
         this.onDidReceiveKernelMessageEmitter.dispose();
         this.onPostRendererMessageEmitter.dispose();
+        this.onDidChangeOutputInputFocusEmitter.dispose()
         this.viewportService.dispose();
         this._model?.dispose();
         super.dispose();
