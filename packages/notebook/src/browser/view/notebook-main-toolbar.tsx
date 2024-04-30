@@ -125,7 +125,7 @@ export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProp
     }
 
     protected calculateItemsToHide(): void {
-        const numberOfMenuItems = this.getMenuItems().length
+        const numberOfMenuItems = this.getMenuItems().length;
         if (this.gapElement && this.gapElement.getBoundingClientRect().width < NotebookMainToolbar.MIN_FREE_AREA && this.state.numberOfHiddenItems < numberOfMenuItems) {
             this.setState({ ...this.state, numberOfHiddenItems: this.state.numberOfHiddenItems + 1 });
             this.lastGapElementWidth = this.gapElement.getBoundingClientRect().width;
