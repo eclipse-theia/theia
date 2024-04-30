@@ -125,17 +125,18 @@ export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProp
     }
 
     protected calculateItemsToHide(): void {
-        if (this.gapElement && this.gapElement.getBoundingClientRect().width < NotebookMainToolbar.MIN_FREE_AREA) {
+        const numberOfMenuItems = this.getMenuItems().length
+        if (this.gapElement && this.gapElement.getBoundingClientRect().width < NotebookMainToolbar.MIN_FREE_AREA && this.state.numberOfHiddenItems < numberOfMenuItems) {
             this.setState({ ...this.state, numberOfHiddenItems: this.state.numberOfHiddenItems + 1 });
             this.lastGapElementWidth = this.gapElement.getBoundingClientRect().width;
         } else if (this.gapElement && this.gapElement.getBoundingClientRect().width > this.lastGapElementWidth) {
-            this.setState({ ...this.state, numberOfHiddenItems: this.state.numberOfHiddenItems - 1 });
+            this.setState({ ...this.state, numberOfHiddenItems: this.state.numberOfHiddenItems <= 1 ? 0 : this.state.numberOfHiddenItems - 1 });
             this.lastGapElementWidth = this.gapElement.getBoundingClientRect().width;
         }
     }
 
     protected renderContextMenu(event: MouseEvent, menuItems: readonly MenuNode[]): void {
-        const hiddenItems = menuItems.slice(menuItems.length - this.state.numberOfHiddenItems);
+        const hiddenItems = menuItems.slice(menuItems.length - this.calculateNumberOfHiddenItems(menuItems));
         const contextMenu = this.props.menuRegistry.getMenu([NotebookMenus.NOTEBOOK_MAIN_TOOLBAR_HIDDEN_ITEMS_CONTEXT_MENU]);
 
         contextMenu.children.map(item => item.id).forEach(id => contextMenu.removeNode(id));
@@ -152,7 +153,7 @@ export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProp
     override render(): React.ReactNode {
         const menuItems = this.getMenuItems();
         return <div className='theia-notebook-main-toolbar'>
-            {menuItems.slice(0, menuItems.length - this.state.numberOfHiddenItems).map(item => this.renderMenuItem(item))}
+            {menuItems.slice(0, menuItems.length - this.calculateNumberOfHiddenItems(menuItems)).map(item => this.renderMenuItem(item))}
             {
                 this.state.numberOfHiddenItems > 0 &&
                 <span className={`${codicon('ellipsis')} action-label theia-notebook-main-toolbar-item`} onClick={e => this.renderContextMenu(e.nativeEvent, menuItems)} />
@@ -224,5 +225,11 @@ export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProp
 
         menus.filter(item => item.children && item.children.length > 0)
             .forEach(item => this.getAllContextKeys(item.children!, keySet));
+    }
+
+    protected calculateNumberOfHiddenItems(allMenuItems: readonly MenuNode[]): number {
+        return this.state.numberOfHiddenItems >= allMenuItems.length ?
+            allMenuItems.length :
+            this.state.numberOfHiddenItems % allMenuItems.length;
     }
 }
