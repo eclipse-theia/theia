@@ -233,7 +233,6 @@ export class NotebooksExtImpl implements NotebooksExt {
             });
         }
 
-
         if (delta.addedDocuments) {
             for (const modelData of delta.addedDocuments) {
                 const uri = TheiaURI.from(modelData.uri);
