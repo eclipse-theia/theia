@@ -226,10 +226,13 @@ export class NotebooksExtImpl implements NotebooksExt {
             }
         }
 
-        // publish all removed cell documents first
-        await this.textDocumentsAndEditors.$acceptEditorsAndDocumentsDelta({
-            removedDocuments: removedCellDocuments
-        });
+        if (removedCellDocuments.length > 0) {
+            // publish all removed cell documents first
+            await this.textDocumentsAndEditors.$acceptEditorsAndDocumentsDelta({
+                removedDocuments: removedCellDocuments
+            });
+        }
+
 
         if (delta.addedDocuments) {
             for (const modelData of delta.addedDocuments) {
@@ -256,10 +259,12 @@ export class NotebooksExtImpl implements NotebooksExt {
             }
         }
 
-        // publish all added cell documents in a separate call
-        await this.textDocumentsAndEditors.$acceptEditorsAndDocumentsDelta({
-            addedDocuments: addedCellDocuments
-        });
+        if (addedCellDocuments.length > 0) {
+            // publish all added cell documents in a separate call
+            await this.textDocumentsAndEditors.$acceptEditorsAndDocumentsDelta({
+                addedDocuments: addedCellDocuments
+            });
+        }
 
         if (delta.addedEditors) {
             for (const editorModelData of delta.addedEditors) {

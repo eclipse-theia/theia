@@ -113,7 +113,7 @@ export class MonacoTextModelService implements ITextModelService {
      * creates a model which is not saved by the model service.
      * this will therefore also not be created on backend side.
      */
-    createUnmangedModel(raw: monaco.Uri | URI): Promise<MonacoEditorModel> {
+    createUnmanagedModel(raw: monaco.Uri | URI): Promise<MonacoEditorModel> {
         return this.loadModel(new URI(raw.toString()));
     }
 
