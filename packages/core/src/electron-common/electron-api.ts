@@ -56,7 +56,11 @@ export interface TheiaCoreAPI {
     focusWindow(name?: string): void;
 
     showItemInFolder(fsPath: string): void;
-    openWithSystemApp(fsPath: string): void;
+
+    /**
+     * @param location The location to open with the system app. This can be a file path or a URL.
+     */
+    openWithSystemApp(location: string): void;
 
     getTitleBarStyleAtStartup(): Promise<string>;
     setTitleBarStyle(style: string): void;
