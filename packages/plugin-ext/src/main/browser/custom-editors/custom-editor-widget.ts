@@ -38,13 +38,6 @@ export class CustomEditorWidget extends WebviewWidget implements SaveableSource,
     set modelRef(modelRef: Reference<CustomEditorModel>) {
         this._modelRef = modelRef;
         this.doUpdateContent();
-        Saveable.apply(
-            this,
-            () => this.shell.widgets.filter(widget => !!Saveable.get(widget)),
-            async (widget, options) => {
-                await this.saveService.save(widget, options);
-            },
-        );
     }
     get saveable(): Saveable {
         return this._modelRef.object;

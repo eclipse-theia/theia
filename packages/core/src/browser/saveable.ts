@@ -22,12 +22,22 @@ import { Key } from './keyboard/keys';
 import { AbstractDialog } from './dialogs';
 import { waitForClosed } from './widgets';
 import { nls } from '../common/nls';
-import { Disposable, isObject } from '../common';
+import { DisposableCollection, isObject } from '../common';
+
+export type AutoSaveMode = 'off' | 'afterDelay' | 'onFocusChange' | 'onWindowChange';
 
 export interface Saveable {
     readonly dirty: boolean;
+    /**
+     * This event is fired when the content of the `dirty` variable changes.
+     */
     readonly onDirtyChanged: Event<void>;
-    readonly autoSave: 'off' | 'afterDelay' | 'onFocusChange' | 'onWindowChange';
+    /**
+     * This event is fired when the content of the saveable changes.
+     * While `onDirtyChanged` is fired to notify the UI that the widget is dirty,
+     * `onContentChanged` is used for the auto save throttling.
+     */
+    readonly onContentChanged: Event<void>;
     /**
      * Saves dirty changes.
      */
@@ -53,11 +63,15 @@ export interface SaveableSource {
 export class DelegatingSaveable implements Saveable {
     dirty = false;
     protected readonly onDirtyChangedEmitter = new Emitter<void>();
+    protected readonly onContentChangedEmitter = new Emitter<void>();
 
     get onDirtyChanged(): Event<void> {
         return this.onDirtyChangedEmitter.event;
     }
-    autoSave: 'off' | 'afterDelay' | 'onFocusChange' | 'onWindowChange' = 'off';
+
+    get onContentChanged(): Event<void> {
+        return this.onContentChangedEmitter.event;
+    }
 
     async save(options?: SaveOptions): Promise<void> {
         await this._delegate?.save(options);
@@ -68,16 +82,19 @@ export class DelegatingSaveable implements Saveable {
     applySnapshot?(snapshot: object): void;
 
     protected _delegate?: Saveable;
-    protected toDispose?: Disposable;
+    protected toDispose = new DisposableCollection();
 
     set delegate(delegate: Saveable) {
-        this.toDispose?.dispose();
+        this.toDispose.dispose();
+        this.toDispose = new DisposableCollection();
         this._delegate = delegate;
-        this.toDispose = delegate.onDirtyChanged(() => {
+        this.toDispose.push(delegate.onDirtyChanged(() => {
             this.dirty = delegate.dirty;
             this.onDirtyChangedEmitter.fire();
-        });
-        this.autoSave = delegate.autoSave;
+        }));
+        this.toDispose.push(delegate.onContentChanged(() => {
+            this.onContentChangedEmitter.fire();
+        }));
         if (this.dirty !== delegate.dirty) {
             this.dirty = delegate.dirty;
             this.onDirtyChangedEmitter.fire();
@@ -142,6 +159,7 @@ export namespace Saveable {
 
     function createCloseWithSaving(
         getOtherSaveables?: () => Array<Widget | SaveableWidget>,
+        isAutoSaveEnabled?: () => boolean,
         doSave?: (widget: Widget, options?: SaveOptions) => Promise<void>
     ): (this: SaveableWidget, options?: SaveableWidget.CloseOptions) => Promise<void> {
         let closing = false;
@@ -152,6 +170,9 @@ export namespace Saveable {
             closing = true;
             try {
                 const result = await shouldSave(saveable, () => {
+                    if (isAutoSaveEnabled?.()) {
+                        return true;
+                    }
                     const notLastWithDocument = !closingWidgetWouldLoseSaveable(this, getOtherSaveables?.() ?? []);
                     if (notLastWithDocument) {
                         return this.closeWithoutSaving(false).then(() => undefined);
@@ -209,6 +230,7 @@ export namespace Saveable {
 
     export function apply(
         widget: Widget,
+        isAutoSaveEnabled?: () => boolean,
         getOtherSaveables?: () => Array<Widget | SaveableWidget>,
         doSave?: (widget: Widget, options?: SaveOptions) => Promise<void>,
     ): SaveableWidget | undefined {
@@ -222,7 +244,7 @@ export namespace Saveable {
         const saveableWidget = widget as SaveableWidget;
         setDirty(saveableWidget, saveable.dirty);
         saveable.onDirtyChanged(() => setDirty(saveableWidget, saveable.dirty));
-        const closeWithSaving = createCloseWithSaving(getOtherSaveables, doSave);
+        const closeWithSaving = createCloseWithSaving(getOtherSaveables, isAutoSaveEnabled, doSave);
         return Object.assign(saveableWidget, {
             closeWithoutSaving,
             closeWithSaving,
@@ -233,10 +255,6 @@ export namespace Saveable {
     export async function shouldSave(saveable: Saveable, cb: () => MaybePromise<boolean | undefined>): Promise<boolean | undefined> {
         if (!saveable.dirty) {
             return false;
-        }
-
-        if (saveable.autoSave !== 'off') {
-            return true;
         }
 
         return cb();
@@ -302,11 +320,28 @@ export const enum FormatType {
     DIRTY
 };
 
+export namespace SaveReason {
+
+    export const Manual = 1;
+    export const AfterDelay = 2;
+    export const FocusChange = 3;
+
+    export function isManual(reason?: number): reason is typeof Manual {
+        return reason === Manual;
+    }
+}
+
+export type SaveReason = 1 | 2 | 3;
+
 export interface SaveOptions {
     /**
      * Formatting type to apply when saving.
      */
     readonly formatType?: FormatType;
+    /**
+     * The reason for saving the resource.
+     */
+    readonly saveReason?: SaveReason;
 }
 
 /**

@@ -25,7 +25,7 @@ import { RPCProtocol } from '../../../common/rpc-protocol';
 import { HostedPluginSupport } from '../../../hosted/browser/hosted-plugin';
 import { PluginCustomEditorRegistry } from './plugin-custom-editor-registry';
 import { CustomEditorWidget } from './custom-editor-widget';
-import { Emitter, UNTITLED_SCHEME } from '@theia/core';
+import { Emitter } from '@theia/core';
 import { UriComponents } from '../../../common/uri-components';
 import { URI } from '@theia/core/shared/vscode-uri';
 import TheiaURI from '@theia/core/lib/common/uri';
@@ -189,7 +189,7 @@ export class CustomEditorsMainImpl implements CustomEditorsMain, Disposable {
                 return this.customEditorService.models.add(resource, viewType, model);
             }
             case CustomEditorModelType.Custom: {
-                const model = MainCustomEditorModel.create(this.proxy, viewType, resource, this.undoRedoService, this.fileService, this.editorPreferences, cancellationToken);
+                const model = MainCustomEditorModel.create(this.proxy, viewType, resource, this.undoRedoService, this.fileService, cancellationToken);
                 return this.customEditorService.models.add(resource, viewType, model);
             }
         }
@@ -297,8 +297,8 @@ export class MainCustomEditorModel implements CustomEditorModel {
     private readonly onDirtyChangedEmitter = new Emitter<void>();
     readonly onDirtyChanged = this.onDirtyChangedEmitter.event;
 
-    autoSave: 'off' | 'afterDelay' | 'onFocusChange' | 'onWindowChange';
-    autoSaveDelay: number;
+    private readonly onContentChangedEmitter = new Emitter<void>();
+    readonly onContentChanged = this.onContentChangedEmitter.event;
 
     static async create(
         proxy: CustomEditorsExt,
@@ -306,11 +306,10 @@ export class MainCustomEditorModel implements CustomEditorModel {
         resource: TheiaURI,
         undoRedoService: UndoRedoService,
         fileService: FileService,
-        editorPreferences: EditorPreferences,
         cancellation: CancellationToken,
     ): Promise<MainCustomEditorModel> {
         const { editable } = await proxy.$createCustomDocument(resource.toComponents(), viewType, {}, cancellation);
-        return new MainCustomEditorModel(proxy, viewType, resource, editable, undoRedoService, fileService, editorPreferences);
+        return new MainCustomEditorModel(proxy, viewType, resource, editable, undoRedoService, fileService);
     }
 
     constructor(
@@ -319,22 +318,8 @@ export class MainCustomEditorModel implements CustomEditorModel {
         private readonly editorResource: TheiaURI,
         private readonly editable: boolean,
         private readonly undoRedoService: UndoRedoService,
-        private readonly fileService: FileService,
-        private readonly editorPreferences: EditorPreferences
+        private readonly fileService: FileService
     ) {
-        this.autoSave = this.editorPreferences.get('files.autoSave', undefined, editorResource.toString());
-        this.autoSaveDelay = this.editorPreferences.get('files.autoSaveDelay', undefined, editorResource.toString());
-
-        this.toDispose.push(
-            this.editorPreferences.onPreferenceChanged(event => {
-                if (event.preferenceName === 'files.autoSave') {
-                    this.autoSave = this.editorPreferences.get('files.autoSave', undefined, editorResource.toString());
-                }
-                if (event.preferenceName === 'files.autoSaveDelay') {
-                    this.autoSaveDelay = this.editorPreferences.get('files.autoSaveDelay', undefined, editorResource.toString());
-                }
-            })
-        );
         this.toDispose.push(this.onDirtyChangedEmitter);
     }
 
@@ -505,13 +490,7 @@ export class MainCustomEditorModel implements CustomEditorModel {
         if (this.dirty !== wasDirty) {
             this.onDirtyChangedEmitter.fire();
         }
-
-        if (this.autoSave !== 'off' && this.dirty && this.resource.scheme !== UNTITLED_SCHEME) {
-            const handle = window.setTimeout(() => {
-                this.save();
-                window.clearTimeout(handle);
-            }, this.autoSaveDelay);
-        }
+        this.onContentChangedEmitter.fire();
     }
 
 }
@@ -521,6 +500,8 @@ export class CustomTextEditorModel implements CustomEditorModel {
     private readonly toDispose = new DisposableCollection();
     private readonly onDirtyChangedEmitter = new Emitter<void>();
     readonly onDirtyChanged = this.onDirtyChangedEmitter.event;
+    private readonly onContentChangedEmitter = new Emitter<void>();
+    readonly onContentChanged = this.onContentChangedEmitter.event;
 
     static async create(
         viewType: string,
@@ -544,15 +525,13 @@ export class CustomTextEditorModel implements CustomEditorModel {
                 this.onDirtyChangedEmitter.fire();
             })
         );
+        this.toDispose.push(
+            this.editorTextModel.onContentChanged(e => {
+                this.onContentChangedEmitter.fire();
+            })
+        );
         this.toDispose.push(this.onDirtyChangedEmitter);
-    }
-
-    get autoSave(): 'off' | 'afterDelay' | 'onFocusChange' | 'onWindowChange' {
-        return this.editorTextModel.autoSave;
-    }
-
-    get autoSaveDelay(): number {
-        return this.editorTextModel.autoSaveDelay;
+        this.toDispose.push(this.onContentChangedEmitter);
     }
 
     dispose(): void {

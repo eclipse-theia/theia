@@ -24,7 +24,7 @@ import { Message } from '@phosphor/messaging';
 import { IDragEvent } from '@phosphor/dragdrop';
 import { RecursivePartial, Event as CommonEvent, DisposableCollection, Disposable, environment, isObject } from '../../common';
 import { animationFrame } from '../browser';
-import { Saveable, SaveableWidget, SaveOptions, SaveableSource } from '../saveable';
+import { Saveable, SaveableWidget, SaveOptions } from '../saveable';
 import { StatusBarImpl, StatusBarEntry, StatusBarAlignment } from '../status-bar/status-bar';
 import { TheiaDockPanel, BOTTOM_AREA_ID, MAIN_AREA_ID } from './theia-dock-panel';
 import { SidePanelHandler, SidePanel, SidePanelHandlerFactory } from './side-panel-handler';
@@ -1233,7 +1233,8 @@ export class ApplicationShell extends Widget {
         this.checkActivation(widget);
         Saveable.apply(
             widget,
-            () => this.widgets.filter((maybeSaveable): maybeSaveable is Widget & SaveableSource => !!Saveable.get(maybeSaveable)),
+            () => this.saveResourceService.autoSave !== 'off',
+            () => this.widgets.filter(maybeSaveable => !!Saveable.get(maybeSaveable)),
             async (toSave, options) => {
                 await this.saveResourceService.save(toSave, options);
             },

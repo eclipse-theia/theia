@@ -68,6 +68,9 @@ export class NotebookModel implements Saveable, Disposable {
     protected readonly onDidChangeContentEmitter = new QueueableEmitter<NotebookContentChangedEvent>();
     readonly onDidChangeContent = this.onDidChangeContentEmitter.event;
 
+    protected readonly onContentChangedEmitter = new Emitter<void>();
+    readonly onContentChanged = this.onContentChangedEmitter.event;
+
     protected readonly onDidChangeSelectedCellEmitter = new Emitter<NotebookCellModel | undefined>();
     readonly onDidChangeSelectedCell = this.onDidChangeSelectedCellEmitter.event;
 
@@ -89,15 +92,17 @@ export class NotebookModel implements Saveable, Disposable {
 
     @inject(NotebookCellModelFactory)
     protected cellModelFactory: NotebookCellModelFactory;
-    readonly autoSave: 'off' | 'afterDelay' | 'onFocusChange' | 'onWindowChange';
 
     protected nextHandle: number = 0;
 
     protected _dirty = false;
 
     set dirty(dirty: boolean) {
+        const oldState = this._dirty;
         this._dirty = dirty;
-        this.onDirtyChangedEmitter.fire();
+        if (oldState !== dirty) {
+            this.onDirtyChangedEmitter.fire();
+        }
     }
 
     get dirty(): boolean {
@@ -205,11 +210,7 @@ export class NotebookModel implements Saveable, Disposable {
             this.dirtyCells.splice(this.dirtyCells.indexOf(cell), 1);
         }
 
-        const oldDirtyState = this._dirty;
-        this._dirty = this.dirtyCells.length > 0;
-        if (this.dirty !== oldDirtyState) {
-            this.onDirtyChangedEmitter.fire();
-        }
+        this.dirty = this.dirtyCells.length > 0;
     }
 
     setData(data: NotebookData): void {
@@ -319,7 +320,7 @@ export class NotebookModel implements Saveable, Disposable {
         }
 
         this.onDidChangeContentEmitter.fire();
-
+        this.onContentChangedEmitter.fire();
     }
 
     protected replaceCells(start: number, deleteCount: number, newCells: CellData[], computeUndoRedo: boolean): void {

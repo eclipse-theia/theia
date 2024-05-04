@@ -450,6 +450,8 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bindBackendStopwatch(bind);
 
     bind(SaveResourceService).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(SaveResourceService);
+
     bind(UserWorkingDirectoryProvider).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(UserWorkingDirectoryProvider);
 
