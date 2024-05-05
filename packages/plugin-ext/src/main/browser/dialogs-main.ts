@@ -14,8 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { interfaces } from '@theia/core/shared/inversify';
-import { RPCProtocol } from '../../common/rpc-protocol';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { OpenDialogOptionsMain, SaveDialogOptionsMain, DialogsMain, UploadDialogOptionsMain } from '../../common/plugin-api-rpc';
 import { OpenFileDialogProps, SaveFileDialogProps, FileDialogService } from '@theia/filesystem/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -26,22 +25,19 @@ import { FileStat } from '@theia/filesystem/lib/common/files';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { nls } from '@theia/core';
 
+@injectable()
 export class DialogsMainImpl implements DialogsMain {
 
-    private workspaceService: WorkspaceService;
-    private fileService: FileService;
-    private environments: EnvVariablesServer;
-
-    private fileDialogService: FileDialogService;
-    private uploadService: FileUploadService;
-
-    constructor(rpc: RPCProtocol, container: interfaces.Container) {
-        this.workspaceService = container.get(WorkspaceService);
-        this.fileService = container.get(FileService);
-        this.environments = container.get(EnvVariablesServer);
-        this.fileDialogService = container.get(FileDialogService);
-        this.uploadService = container.get(FileUploadService);
-    }
+    @inject(WorkspaceService)
+    private readonly workspaceService: WorkspaceService;
+    @inject(FileService)
+    private readonly fileService: FileService;
+    @inject(EnvVariablesServer)
+    private readonly environments: EnvVariablesServer;
+    @inject(FileDialogService)
+    private readonly fileDialogService: FileDialogService;
+    @inject(FileUploadService)
+    private readonly uploadService: FileUploadService;
 
     protected async getRootStat(defaultUri: string | undefined): Promise<FileStat | undefined> {
         let rootStat: FileStat | undefined;

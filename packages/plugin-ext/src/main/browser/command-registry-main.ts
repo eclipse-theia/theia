@@ -14,12 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { interfaces } from '@theia/core/shared/inversify';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { CommandRegistry } from '@theia/core/lib/common/command';
 import * as theia from '@theia/plugin';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { CommandRegistryMain, CommandRegistryExt, MAIN_RPC_CONTEXT } from '../../common/plugin-api-rpc';
-import { RPCProtocol } from '../../common/rpc-protocol';
+import { RPCProxy } from '../../common/rpc-protocol';
 import { KeybindingRegistry } from '@theia/core/lib/browser';
 import { PluginContributionHandler } from './plugin-contribution-handler';
 import { ArgumentProcessor } from '../../common/commands';
@@ -27,25 +27,31 @@ import { ContributionProvider } from '@theia/core';
 
 export const ArgumentProcessorContribution = Symbol('ArgumentProcessorContribution');
 
+@injectable()
 export class CommandRegistryMainImpl implements CommandRegistryMain, Disposable {
-    private readonly proxy: CommandRegistryExt;
+
     private readonly commands = new Map<string, Disposable>();
     private readonly handlers = new Map<string, Disposable>();
+    @inject(RPCProxy)
+    @named(MAIN_RPC_CONTEXT.COMMAND_REGISTRY_EXT.id)
+    private readonly proxy: CommandRegistryExt;
+    @inject(CommandRegistry)
     private readonly delegate: CommandRegistry;
+    @inject(KeybindingRegistry)
     private readonly keyBinding: KeybindingRegistry;
+    @inject(PluginContributionHandler)
     private readonly contributions: PluginContributionHandler;
+    @inject(ContributionProvider)
+    @named(ArgumentProcessorContribution)
+    private readonly argumentProcessorProvider: ContributionProvider<ArgumentProcessor>
 
     private readonly argumentProcessors: ArgumentProcessor[] = [];
 
-    protected readonly toDispose = new DisposableCollection();
+    private readonly toDispose = new DisposableCollection();
 
-    constructor(rpc: RPCProtocol, container: interfaces.Container) {
-        this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.COMMAND_REGISTRY_EXT);
-        this.delegate = container.get(CommandRegistry);
-        this.keyBinding = container.get(KeybindingRegistry);
-        this.contributions = container.get(PluginContributionHandler);
-
-        container.getNamed<ContributionProvider<ArgumentProcessor>>(ContributionProvider, ArgumentProcessorContribution).getContributions().forEach(processor => {
+    @postConstruct()
+    protected init(): void {
+        this.argumentProcessorProvider.getContributions().forEach(processor => {
             this.registerArgumentProcessor(processor);
         });
     }

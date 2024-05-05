@@ -18,7 +18,7 @@ import { UriComponents } from '../../common/uri-components';
 import { EditorsAndDocumentsMain } from './editors-and-documents-main';
 import { DisposableCollection, Disposable, UntitledResourceResolver } from '@theia/core';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
-import { RPCProtocol } from '../../common/rpc-protocol';
+import { RPCProxy } from '../../common/rpc-protocol';
 import { EditorModelService } from './text-editor-model-service';
 import { EditorManager, EditorOpenerOptions } from '@theia/editor/lib/browser';
 import URI from '@theia/core/lib/common/uri';
@@ -33,6 +33,7 @@ import { MonacoLanguages } from '@theia/monaco/lib/browser/monaco-languages';
 import * as monaco from '@theia/monaco-editor-core';
 import { TextDocumentChangeReason } from '../../plugin/types-impl';
 import { NotebookDocumentsMainImpl } from './notebooks/notebook-documents-main';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
@@ -79,9 +80,29 @@ export class ModelReferenceCollection {
     }
 }
 
+@injectable()
 export class DocumentsMainImpl implements DocumentsMain, Disposable {
 
+    @inject(RPCProxy)
+    @named(MAIN_RPC_CONTEXT.DOCUMENTS_EXT.id)
     private readonly proxy: DocumentsExt;
+    @inject(EditorsAndDocumentsMain)
+    private readonly editorsAndDocuments: EditorsAndDocumentsMain;
+    @inject(NotebookDocumentsMainImpl)
+    private readonly notebookDocuments: NotebookDocumentsMainImpl;
+    @inject(EditorModelService)
+    private readonly modelService: EditorModelService;
+    @inject(EditorManager)
+    private readonly editorManager: EditorManager;
+    @inject(OpenerService)
+    private readonly openerService: OpenerService;
+    @inject(ApplicationShell)
+    private readonly shell: ApplicationShell;
+    @inject(UntitledResourceResolver)
+    private readonly untitledResourceResolver: UntitledResourceResolver;
+    @inject(MonacoLanguages)
+    private readonly languageService: MonacoLanguages;
+
     private readonly syncedModels = new Map<string, Disposable>();
     private readonly modelReferenceCache = new ModelReferenceCollection();
 
@@ -89,30 +110,19 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
 
     private readonly toDispose = new DisposableCollection(this.modelReferenceCache);
 
-    constructor(
-        editorsAndDocuments: EditorsAndDocumentsMain,
-        notebookDocuments: NotebookDocumentsMainImpl,
-        private readonly modelService: EditorModelService,
-        rpc: RPCProtocol,
-        private editorManager: EditorManager,
-        private openerService: OpenerService,
-        private shell: ApplicationShell,
-        private untitledResourceResolver: UntitledResourceResolver,
-        private languageService: MonacoLanguages,
-    ) {
-        this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.DOCUMENTS_EXT);
+    @postConstruct()
+    protected init(): void {
+        this.toDispose.push(this.editorsAndDocuments);
+        this.toDispose.push(this.editorsAndDocuments.onDocumentAdd(documents => documents.forEach(this.onModelAdded, this)));
+        this.toDispose.push(this.editorsAndDocuments.onDocumentRemove(documents => documents.forEach(this.onModelRemoved, this)));
+        this.toDispose.push(this.modelService.onModelModeChanged(this.onModelChanged, this));
 
-        this.toDispose.push(editorsAndDocuments);
-        this.toDispose.push(editorsAndDocuments.onDocumentAdd(documents => documents.forEach(this.onModelAdded, this)));
-        this.toDispose.push(editorsAndDocuments.onDocumentRemove(documents => documents.forEach(this.onModelRemoved, this)));
-        this.toDispose.push(modelService.onModelModeChanged(this.onModelChanged, this));
+        this.toDispose.push(this.notebookDocuments.onDidAddNotebookCellModel(this.onModelAdded, this));
 
-        this.toDispose.push(notebookDocuments.onDidAddNotebookCellModel(this.onModelAdded, this));
-
-        this.toDispose.push(modelService.onModelSaved(m => {
+        this.toDispose.push(this.modelService.onModelSaved(m => {
             this.proxy.$acceptModelSaved(m.textEditorModel.uri);
         }));
-        this.toDispose.push(modelService.onModelWillSave(onWillSaveModelEvent => {
+        this.toDispose.push(this.modelService.onModelWillSave(onWillSaveModelEvent => {
             onWillSaveModelEvent.waitUntil(new Promise<monaco.editor.IIdentifiedSingleEditOperation[]>(async (resolve, reject) => {
                 setTimeout(() => reject(new Error(`Aborted onWillSaveTextDocument-event after ${this.saveTimeout}ms`)), this.saveTimeout);
                 const edits = await this.proxy.$acceptModelWillSave(onWillSaveModelEvent.model.textEditorModel.uri, onWillSaveModelEvent.reason, this.saveTimeout);
@@ -136,7 +146,7 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
                 resolve(editOperations);
             }));
         }));
-        this.toDispose.push(modelService.onModelDirtyChanged(m => {
+        this.toDispose.push(this.modelService.onModelDirtyChanged(m => {
             this.proxy.$acceptDirtyStateChanged(m.textEditorModel.uri, m.dirty);
         }));
     }

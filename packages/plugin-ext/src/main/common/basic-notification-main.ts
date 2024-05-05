@@ -14,16 +14,20 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { NotificationExt, NotificationMain } from '../../common';
+import { MAIN_RPC_CONTEXT, NotificationExt, NotificationMain } from '../../common';
 import { ProgressService, Progress, ProgressMessage } from '@theia/core/lib/common';
-import { interfaces } from '@theia/core/shared/inversify';
-import { ProxyIdentifier, RPCProtocol } from '../../common/rpc-protocol';
+import { inject, injectable, interfaces, named } from '@theia/core/shared/inversify';
+import { ProxyIdentifier, RPCProtocol, RPCProxy } from '../../common/rpc-protocol';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 
+@injectable()
 export class BasicNotificationMainImpl implements NotificationMain, Disposable {
+    @inject(ProgressService)
     protected readonly progressService: ProgressService;
     protected readonly progressMap = new Map<string, Progress>();
     protected readonly progress2Work = new Map<string, number>();
+    @inject(RPCProxy)
+    @named(MAIN_RPC_CONTEXT.NOTIFICATION_EXT.id)
     protected readonly proxy: NotificationExt;
 
     protected readonly toDispose = new DisposableCollection(

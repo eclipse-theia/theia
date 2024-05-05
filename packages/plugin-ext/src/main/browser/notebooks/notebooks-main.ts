@@ -20,13 +20,14 @@ import { CellEditType, NotebookCellModelResource, NotebookCellStatusBarItem, Not
 import { NotebookService, NotebookWorkspaceEdit } from '@theia/notebook/lib/browser';
 import { Disposable } from '@theia/plugin';
 import { CommandRegistryMain, MAIN_RPC_CONTEXT, NotebooksExt, NotebooksMain, WorkspaceEditDto, WorkspaceNotebookCellEditDto } from '../../../common';
-import { RPCProtocol } from '../../../common/rpc-protocol';
+import { RPCProtocol, RPCProxy } from '../../../common/rpc-protocol';
 import { NotebookDto } from './notebook-dto';
 import { UriComponents } from '@theia/core/lib/common/uri';
 import { HostedPluginSupport } from '../../../hosted/browser/hosted-plugin';
 import { NotebookModel } from '@theia/notebook/lib/browser/view-model/notebook-model';
 import { NotebookCellModel } from '@theia/notebook/lib/browser/view-model/notebook-cell-model';
-import { interfaces } from '@theia/core/shared/inversify';
+import { inject, injectable, interfaces, named } from '@theia/core/shared/inversify';
+import { CommandRegistryMainImpl } from '../command-registry-main';
 
 export interface NotebookCellStatusBarItemList {
     items: NotebookCellStatusBarItem[];
@@ -39,15 +40,22 @@ export interface NotebookCellStatusBarItemProvider {
     provideCellStatusBarItems(uri: UriComponents, index: number, token: CancellationToken): Promise<NotebookCellStatusBarItemList | undefined>;
 }
 
+@injectable()
 export class NotebooksMainImpl implements NotebooksMain {
 
-    protected readonly disposables = new DisposableCollection();
-
-    protected notebookService: NotebookService;
-
+    @inject(RPCProxy)
+    @named(MAIN_RPC_CONTEXT.NOTEBOOKS_EXT.id)
     protected readonly proxy: NotebooksExt;
+    @inject(NotebookService)
+    protected readonly notebookService: NotebookService;
+    @inject(HostedPluginSupport)
+    protected readonly hostedPluginSupport: HostedPluginSupport;
+    @inject(CommandRegistryMainImpl)
+    protected readonly commands: CommandRegistryMain;
+
     protected readonly notebookSerializer = new Map<number, Disposable>();
     protected readonly notebookCellStatusBarRegistrations = new Map<number, Disposable>();
+    protected readonly disposables = new DisposableCollection();
 
     constructor(
         rpc: RPCProtocol,

@@ -15,23 +15,24 @@
 // *****************************************************************************
 
 import { DisposableCollection } from '@theia/core';
-import { interfaces } from '@theia/core/shared/inversify';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { NotebookRendererMessagingService } from '@theia/notebook/lib/browser';
 import { MAIN_RPC_CONTEXT, NotebookRenderersExt, NotebookRenderersMain } from '../../../common';
-import { RPCProtocol } from '../../../common/rpc-protocol';
+import { RPCProxy } from '../../../common/rpc-protocol';
 
+@injectable()
 export class NotebookRenderersMainImpl implements NotebookRenderersMain {
+
+    @inject(RPCProxy)
+    @named(MAIN_RPC_CONTEXT.NOTEBOOK_RENDERERS_EXT.id)
     private readonly proxy: NotebookRenderersExt;
+    @inject(NotebookRendererMessagingService)
     private readonly rendererMessagingService: NotebookRendererMessagingService;
 
     private readonly disposables = new DisposableCollection();
 
-    constructor(
-        rpc: RPCProtocol,
-        container: interfaces.Container
-    ) {
-        this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.NOTEBOOK_RENDERERS_EXT);
-        this.rendererMessagingService = container.get(NotebookRendererMessagingService);
+    @postConstruct()
+    protected init(): void {
         this.rendererMessagingService.onPostMessage(e => {
             this.proxy.$postRendererMessage(e.editorId, e.rendererId, e.message);
         });

@@ -13,12 +13,13 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { interfaces } from '@theia/core/shared/inversify';
+
+import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { CommandRegistryMainImpl } from './command-registry-main';
 import { PreferenceRegistryMainImpl } from './preference-registry-main';
 import { QuickOpenMainImpl } from './quick-open-main';
-import { RPCProtocol } from '../../common/rpc-protocol';
-import { PLUGIN_RPC_CONTEXT, LanguagesMainFactory, OutputChannelRegistryFactory, MAIN_RPC_CONTEXT } from '../../common/plugin-api-rpc';
+import { ProxyIdentifier, RPCProtocol, RPCProxy } from '../../common/rpc-protocol';
+import { PLUGIN_RPC_CONTEXT } from '../../common/plugin-api-rpc';
 import { MessageRegistryMainImpl } from './message-registry-main';
 import { WindowStateMain } from './window-state-main';
 import { WorkspaceMainImpl } from './workspace-main';
@@ -40,11 +41,6 @@ import { DecorationsMainImpl } from './decorations/decorations-main';
 import { ClipboardMainImpl } from './clipboard-main';
 import { DocumentsMainImpl } from './documents-main';
 import { TextEditorsMainImpl } from './text-editors-main';
-import { EditorManager } from '@theia/editor/lib/browser';
-import { EditorModelService } from './text-editor-model-service';
-import { OpenerService } from '@theia/core/lib/browser/opener-service';
-import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
-import { MainFileSystemEventService } from './main-file-system-event-service';
 import { LabelServiceMainImpl } from './label-service-main';
 import { TimelineMainImpl } from './timeline-main';
 import { AuthenticationMainImpl } from './authentication-main';
@@ -53,9 +49,6 @@ import { CommentsMainImp } from './comments/comments-main';
 import { CustomEditorsMainImpl } from './custom-editors/custom-editors-main';
 import { SecretsMainImpl } from './secrets-main';
 import { WebviewViewsMainImpl } from './webview-views/webview-views-main';
-import { MonacoLanguages } from '@theia/monaco/lib/browser/monaco-languages';
-import { UntitledResourceResolver } from '@theia/core/lib/common/resource';
-import { ThemeService } from '@theia/core/lib/browser/theming';
 import { TabsMainImpl } from './tabs/tabs-main';
 import { NotebooksMainImpl } from './notebooks/notebooks-main';
 import { LocalizationMainImpl } from './localization-main';
@@ -65,144 +58,120 @@ import { NotebookDocumentsMainImpl } from './notebooks/notebook-documents-main';
 import { NotebookKernelsMainImpl } from './notebooks/notebook-kernels-main';
 import { NotebooksAndEditorsMain } from './notebooks/notebook-documents-and-editors-main';
 import { TestingMainImpl } from './test-main';
+import { LanguagesMainImpl } from './languages-main';
+import { OutputChannelRegistryMainImpl } from './output-channel-registry-main';
+
+const pluginApiModule = new ContainerModule(bind => {
+    bind(AuthenticationMainImpl).toSelf();
+    bind(CommandRegistryMainImpl).toSelf();
+    bind(QuickOpenMainImpl).toSelf();
+    bind(WorkspaceMainImpl).toSelf();
+    bind(DialogsMainImpl).toSelf();
+    bind(MessageRegistryMainImpl).toSelf();
+    bind(PreferenceRegistryMainImpl).toSelf();
+    bind(NotebookDocumentsMainImpl).toSelf();
+    bind(DocumentsMainImpl).toSelf();
+    bind(NotebooksMainImpl).toSelf();
+    bind(NotebookRenderersMainImpl).toSelf();
+    bind(NotebookEditorsMainImpl).toSelf();
+    bind(NotebooksAndEditorsMain).toSelf();
+    bind(NotebookKernelsMainImpl).toSelf();
+    bind(TextEditorsMainImpl).toSelf();
+    bind(StatusBarMessageRegistryMainImpl).toSelf();
+    bind(EnvMainImpl).toSelf();
+    bind(NotificationMainImpl).toSelf();
+    bind(TestingMainImpl).toSelf();
+    bind(TerminalServiceMainImpl).toSelf();
+    bind(TreeViewsMainImpl).toSelf();
+    bind(OutputChannelRegistryMainImpl).toSelf();
+    bind(LanguagesMainImpl).toSelf();
+    bind(WebviewsMainImpl).toSelf();
+    bind(CustomEditorsMainImpl).toSelf();
+    bind(WebviewViewsMainImpl).toSelf();
+    bind(StorageMainImpl).toSelf();
+    bind(ConnectionImpl).toSelf();
+    bind(TasksMainImpl).toSelf();
+    bind(DebugMainImpl).toSelf();
+    bind(FileSystemMainImpl).toSelf();
+    bind(ScmMainImpl).toSelf();
+    bind(SecretsMainImpl).toSelf();
+    bind(DecorationsMainImpl).toSelf();
+    bind(WindowStateMain).toSelf();
+    bind(ClipboardMainImpl).toSelf();
+    bind(LabelServiceMainImpl).toSelf();
+    bind(TimelineMainImpl).toSelf();
+    bind(ThemingMainImpl).toSelf();
+    bind(CommentsMainImp).toSelf();
+    bind(TabsMainImpl).toSelf();
+    bind(LocalizationMainImpl).toSelf();
+});
 
 export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container): void {
-    const authenticationMain = new AuthenticationMainImpl(rpc, container);
-    rpc.set(PLUGIN_RPC_CONTEXT.AUTHENTICATION_MAIN, authenticationMain);
+    const pluginApi = container.createChild();
+    pluginApi.options.defaultScope = 'Singleton';
+    pluginApi.bind(RPCProtocol).toConstantValue(rpc);
+    pluginApi.bind(RPCProxy)
+        .toDynamicValue(ctx => {
+            const name = ctx.currentRequest.target.getNamedTag()?.value;
+            if (!name) {
+                throw new Error('RPCProxy needs a name to be injected')
+            }
+            return rpc.getProxy(new ProxyIdentifier(false, name));
+        })
+        .inRequestScope();
+    pluginApi.load(pluginApiModule);
 
-    const commandRegistryMain = new CommandRegistryMainImpl(rpc, container);
-    rpc.set(PLUGIN_RPC_CONTEXT.COMMAND_REGISTRY_MAIN, commandRegistryMain);
-
-    const quickOpenMain = new QuickOpenMainImpl(rpc, container);
-    rpc.set(PLUGIN_RPC_CONTEXT.QUICK_OPEN_MAIN, quickOpenMain);
-
-    const workspaceMain = new WorkspaceMainImpl(rpc, container);
-    rpc.set(PLUGIN_RPC_CONTEXT.WORKSPACE_MAIN, workspaceMain);
-
-    const dialogsMain = new DialogsMainImpl(rpc, container);
-    rpc.set(PLUGIN_RPC_CONTEXT.DIALOGS_MAIN, dialogsMain);
-
-    const messageRegistryMain = new MessageRegistryMainImpl(container);
-    rpc.set(PLUGIN_RPC_CONTEXT.MESSAGE_REGISTRY_MAIN, messageRegistryMain);
-
-    const preferenceRegistryMain = new PreferenceRegistryMainImpl(rpc, container);
-    rpc.set(PLUGIN_RPC_CONTEXT.PREFERENCE_REGISTRY_MAIN, preferenceRegistryMain);
-
-    const editorsAndDocuments = new EditorsAndDocumentsMain(rpc, container);
-
-    const notebookDocumentsMain = new NotebookDocumentsMainImpl(rpc, container);
-    rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_MAIN, notebookDocumentsMain);
-
-    const modelService = container.get(EditorModelService);
-    const editorManager = container.get(EditorManager);
-    const openerService = container.get<OpenerService>(OpenerService);
-    const shell = container.get(ApplicationShell);
-    const untitledResourceResolver = container.get(UntitledResourceResolver);
-    const languageService = container.get(MonacoLanguages);
-    const documentsMain = new DocumentsMainImpl(editorsAndDocuments, notebookDocumentsMain, modelService, rpc,
-        editorManager, openerService, shell, untitledResourceResolver, languageService);
-    rpc.set(PLUGIN_RPC_CONTEXT.DOCUMENTS_MAIN, documentsMain);
-
-    rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOKS_MAIN, new NotebooksMainImpl(rpc, container, commandRegistryMain));
-    rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_RENDERERS_MAIN, new NotebookRenderersMainImpl(rpc, container));
-    const notebookEditorsMain = new NotebookEditorsMainImpl(rpc, container);
-    rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_EDITORS_MAIN, notebookEditorsMain);
-    rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_AND_EDITORS_MAIN, new NotebooksAndEditorsMain(rpc, container, notebookDocumentsMain, notebookEditorsMain));
-    rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_KERNELS_MAIN, new NotebookKernelsMainImpl(rpc, container));
-
-    const editorsMain = new TextEditorsMainImpl(editorsAndDocuments, documentsMain, rpc, container);
-    rpc.set(PLUGIN_RPC_CONTEXT.TEXT_EDITORS_MAIN, editorsMain);
+    rpc.set(PLUGIN_RPC_CONTEXT.AUTHENTICATION_MAIN, pluginApi.get(AuthenticationMainImpl));
+    rpc.set(PLUGIN_RPC_CONTEXT.COMMAND_REGISTRY_MAIN, pluginApi.get(CommandRegistryMainImpl));
+    rpc.set(PLUGIN_RPC_CONTEXT.QUICK_OPEN_MAIN, pluginApi.get(QuickOpenMainImpl));
+    rpc.set(PLUGIN_RPC_CONTEXT.WORKSPACE_MAIN, pluginApi.get(WorkspaceMainImpl));
+    rpc.set(PLUGIN_RPC_CONTEXT.DIALOGS_MAIN, pluginApi.get(DialogsMainImpl));
+    rpc.set(PLUGIN_RPC_CONTEXT.MESSAGE_REGISTRY_MAIN, pluginApi.get(MessageRegistryMainImpl));
+    rpc.set(PLUGIN_RPC_CONTEXT.PREFERENCE_REGISTRY_MAIN, pluginApi.get(PreferenceRegistryMainImpl));
+    rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_MAIN, pluginApi.get(NotebookDocumentsMainImpl));
+    rpc.set(PLUGIN_RPC_CONTEXT.DOCUMENTS_MAIN, pluginApi.get(DocumentsMainImpl));
+    rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOKS_MAIN, pluginApi.get(NotebooksMainImpl));
+    rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_RENDERERS_MAIN, pluginApi.get(NotebookRenderersMainImpl));
+    rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_EDITORS_MAIN, pluginApi.get(NotebookEditorsMainImpl));
+    rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_AND_EDITORS_MAIN, pluginApi.get(NotebooksAndEditorsMain));
+    rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_KERNELS_MAIN, pluginApi.get(NotebookKernelsMainImpl));
+    rpc.set(PLUGIN_RPC_CONTEXT.TEXT_EDITORS_MAIN, pluginApi.get(TextEditorsMainImpl));
+    rpc.set(PLUGIN_RPC_CONTEXT.STATUS_BAR_MESSAGE_REGISTRY_MAIN, pluginApi.get(StatusBarMessageRegistryMainImpl));
+    rpc.set(PLUGIN_RPC_CONTEXT.ENV_MAIN, pluginApi.get(EnvMainImpl));
+    rpc.set(PLUGIN_RPC_CONTEXT.NOTIFICATION_MAIN, pluginApi.get(NotificationMainImpl));
+    rpc.set(PLUGIN_RPC_CONTEXT.TESTING_MAIN, pluginApi.get(TestingMainImpl));
+    rpc.set(PLUGIN_RPC_CONTEXT.TERMINAL_MAIN, pluginApi.get(TerminalServiceMainImpl));
+    rpc.set(PLUGIN_RPC_CONTEXT.TREE_VIEWS_MAIN, pluginApi.get(TreeViewsMainImpl));
+    rpc.set(PLUGIN_RPC_CONTEXT.OUTPUT_CHANNEL_REGISTRY_MAIN, pluginApi.get(OutputChannelRegistryMainImpl));
+    rpc.set(PLUGIN_RPC_CONTEXT.LANGUAGES_MAIN, pluginApi.get(LanguagesMainImpl));
+    rpc.set(PLUGIN_RPC_CONTEXT.WEBVIEWS_MAIN, pluginApi.get(WebviewsMainImpl));
+    rpc.set(PLUGIN_RPC_CONTEXT.CUSTOM_EDITORS_MAIN, pluginApi.get(CustomEditorsMainImpl));
+    rpc.set(PLUGIN_RPC_CONTEXT.WEBVIEW_VIEWS_MAIN, pluginApi.get(WebviewViewsMainImpl));
+    rpc.set(PLUGIN_RPC_CONTEXT.STORAGE_MAIN, pluginApi.get(StorageMainImpl));
+    // const connectionMain = new ConnectionImpl(rpc.getProxy(MAIN_RPC_CONTEXT.CONNECTION_EXT));
+    rpc.set(PLUGIN_RPC_CONTEXT.CONNECTION_MAIN, pluginApi.get(ConnectionImpl));
+    rpc.set(PLUGIN_RPC_CONTEXT.TASKS_MAIN, pluginApi.get(TasksMainImpl));
+    rpc.set(PLUGIN_RPC_CONTEXT.DEBUG_MAIN, pluginApi.get(DebugMainImpl));
+    // const fs = new FileSystemMainImpl(rpc, container);
+    // const fsEventService = new MainFileSystemEventService(rpc, container);
+    // const disposeFS = fs.dispose.bind(fs);
+    // fs.dispose = () => {
+    //     fsEventService.dispose();
+    //     disposeFS();
+    // };
+    rpc.set(PLUGIN_RPC_CONTEXT.FILE_SYSTEM_MAIN, pluginApi.get(FileSystemMainImpl));
+    rpc.set(PLUGIN_RPC_CONTEXT.SCM_MAIN, pluginApi.get(ScmMainImpl));
+    rpc.set(PLUGIN_RPC_CONTEXT.SECRETS_MAIN, pluginApi.get(SecretsMainImpl));
+    rpc.set(PLUGIN_RPC_CONTEXT.DECORATIONS_MAIN, pluginApi.get(DecorationsMainImpl));
+    rpc.set(PLUGIN_RPC_CONTEXT.WINDOW_MAIN, pluginApi.get(WindowStateMain));
+    rpc.set(PLUGIN_RPC_CONTEXT.CLIPBOARD_MAIN, pluginApi.get(ClipboardMainImpl));
+    rpc.set(PLUGIN_RPC_CONTEXT.LABEL_SERVICE_MAIN, pluginApi.get(LabelServiceMainImpl));
+    rpc.set(PLUGIN_RPC_CONTEXT.TIMELINE_MAIN, pluginApi.get(TimelineMainImpl));
+    rpc.set(PLUGIN_RPC_CONTEXT.THEMING_MAIN, pluginApi.get(ThemingMainImpl));
+    rpc.set(PLUGIN_RPC_CONTEXT.COMMENTS_MAIN, pluginApi.get(CommentsMainImp));
+    rpc.set(PLUGIN_RPC_CONTEXT.TABS_MAIN, pluginApi.get(TabsMainImpl));
+    rpc.set(PLUGIN_RPC_CONTEXT.LOCALIZATION_MAIN, pluginApi.get(LocalizationMainImpl));
 
     // start listening only after all clients are subscribed to events
-    editorsAndDocuments.listen();
-
-    const statusBarMessageRegistryMain = new StatusBarMessageRegistryMainImpl(container);
-    rpc.set(PLUGIN_RPC_CONTEXT.STATUS_BAR_MESSAGE_REGISTRY_MAIN, statusBarMessageRegistryMain);
-
-    const envMain = new EnvMainImpl(rpc, container);
-    rpc.set(PLUGIN_RPC_CONTEXT.ENV_MAIN, envMain);
-
-    const notificationMain = new NotificationMainImpl(rpc, container);
-    rpc.set(PLUGIN_RPC_CONTEXT.NOTIFICATION_MAIN, notificationMain);
-
-    const testingMain = new TestingMainImpl(rpc, container, commandRegistryMain);
-    rpc.set(PLUGIN_RPC_CONTEXT.TESTING_MAIN, testingMain);
-
-    const terminalMain = new TerminalServiceMainImpl(rpc, container);
-    rpc.set(PLUGIN_RPC_CONTEXT.TERMINAL_MAIN, terminalMain);
-
-    const treeViewsMain = new TreeViewsMainImpl(rpc, container);
-    rpc.set(PLUGIN_RPC_CONTEXT.TREE_VIEWS_MAIN, treeViewsMain);
-
-    const outputChannelRegistryFactory: OutputChannelRegistryFactory = container.get(OutputChannelRegistryFactory);
-    const outputChannelRegistryMain = outputChannelRegistryFactory();
-    rpc.set(PLUGIN_RPC_CONTEXT.OUTPUT_CHANNEL_REGISTRY_MAIN, outputChannelRegistryMain);
-
-    const languagesMainFactory: LanguagesMainFactory = container.get(LanguagesMainFactory);
-    const languagesMain = languagesMainFactory(rpc);
-    rpc.set(PLUGIN_RPC_CONTEXT.LANGUAGES_MAIN, languagesMain);
-
-    const webviewsMain = new WebviewsMainImpl(rpc, container);
-    rpc.set(PLUGIN_RPC_CONTEXT.WEBVIEWS_MAIN, webviewsMain);
-
-    const customEditorsMain = new CustomEditorsMainImpl(rpc, container, webviewsMain);
-    rpc.set(PLUGIN_RPC_CONTEXT.CUSTOM_EDITORS_MAIN, customEditorsMain);
-
-    const webviewViewsMain = new WebviewViewsMainImpl(rpc, container, webviewsMain);
-    rpc.set(PLUGIN_RPC_CONTEXT.WEBVIEW_VIEWS_MAIN, webviewViewsMain);
-
-    const storageMain = new StorageMainImpl(container);
-    rpc.set(PLUGIN_RPC_CONTEXT.STORAGE_MAIN, storageMain);
-
-    const connectionMain = new ConnectionImpl(rpc.getProxy(MAIN_RPC_CONTEXT.CONNECTION_EXT));
-    rpc.set(PLUGIN_RPC_CONTEXT.CONNECTION_MAIN, connectionMain);
-
-    const tasksMain = new TasksMainImpl(rpc, container);
-    rpc.set(PLUGIN_RPC_CONTEXT.TASKS_MAIN, tasksMain);
-
-    const debugMain = new DebugMainImpl(rpc, connectionMain, container);
-    rpc.set(PLUGIN_RPC_CONTEXT.DEBUG_MAIN, debugMain);
-
-    const fs = new FileSystemMainImpl(rpc, container);
-    const fsEventService = new MainFileSystemEventService(rpc, container);
-    const disposeFS = fs.dispose.bind(fs);
-    fs.dispose = () => {
-        fsEventService.dispose();
-        disposeFS();
-    };
-
-    rpc.set(PLUGIN_RPC_CONTEXT.FILE_SYSTEM_MAIN, fs);
-
-    const scmMain = new ScmMainImpl(rpc, container);
-    rpc.set(PLUGIN_RPC_CONTEXT.SCM_MAIN, scmMain);
-
-    const secretsMain = new SecretsMainImpl(rpc, container);
-    rpc.set(PLUGIN_RPC_CONTEXT.SECRETS_MAIN, secretsMain);
-
-    const decorationsMain = new DecorationsMainImpl(rpc, container);
-    rpc.set(PLUGIN_RPC_CONTEXT.DECORATIONS_MAIN, decorationsMain);
-
-    const windowMain = new WindowStateMain(rpc, container);
-    rpc.set(PLUGIN_RPC_CONTEXT.WINDOW_MAIN, windowMain);
-
-    const clipboardMain = new ClipboardMainImpl(container);
-    rpc.set(PLUGIN_RPC_CONTEXT.CLIPBOARD_MAIN, clipboardMain);
-
-    const labelServiceMain = new LabelServiceMainImpl(container);
-    rpc.set(PLUGIN_RPC_CONTEXT.LABEL_SERVICE_MAIN, labelServiceMain);
-
-    const timelineMain = new TimelineMainImpl(rpc, container);
-    rpc.set(PLUGIN_RPC_CONTEXT.TIMELINE_MAIN, timelineMain);
-
-    const themingMain = new ThemingMainImpl(rpc, container.get(ThemeService));
-    rpc.set(PLUGIN_RPC_CONTEXT.THEMING_MAIN, themingMain);
-
-    const commentsMain = new CommentsMainImp(rpc, container);
-    rpc.set(PLUGIN_RPC_CONTEXT.COMMENTS_MAIN, commentsMain);
-
-    const tabsMain = new TabsMainImpl(rpc, container);
-    rpc.set(PLUGIN_RPC_CONTEXT.TABS_MAIN, tabsMain);
-
-    const localizationMain = new LocalizationMainImpl(container);
-    rpc.set(PLUGIN_RPC_CONTEXT.LOCALIZATION_MAIN, localizationMain);
+    pluginApi.get(EditorsAndDocumentsMain).listen();
 }

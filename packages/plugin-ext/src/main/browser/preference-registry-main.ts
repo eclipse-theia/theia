@@ -16,11 +16,10 @@
 
 import {
     PreferenceService,
-    PreferenceServiceImpl,
     PreferenceScope,
     PreferenceProviderProvider
 } from '@theia/core/lib/browser/preferences';
-import { interfaces } from '@theia/core/shared/inversify';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import {
     MAIN_RPC_CONTEXT,
     PreferenceRegistryExt,
@@ -28,7 +27,7 @@ import {
     PreferenceData,
     PreferenceChangeExt,
 } from '../../common/plugin-api-rpc';
-import { RPCProtocol } from '../../common/rpc-protocol';
+import { RPCProxy } from '../../common/rpc-protocol';
 import { ConfigurationTarget } from '../../plugin/types-impl';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileStat } from '@theia/filesystem/lib/common/files';
@@ -52,24 +51,28 @@ export function getPreferences(preferenceProviderProvider: PreferenceProviderPro
     }, {} as PreferenceData);
 }
 
+@injectable()
 export class PreferenceRegistryMainImpl implements PreferenceRegistryMain, Disposable {
+
+    @inject(RPCProxy)
+    @named(MAIN_RPC_CONTEXT.PREFERENCE_REGISTRY_EXT.id)
     private readonly proxy: PreferenceRegistryExt;
+    @inject(PreferenceService)
     private readonly preferenceService: PreferenceService;
+    @inject(WorkspaceService)
+    private readonly workspaceService: WorkspaceService;
+    @inject(PreferenceProviderProvider)
+    private readonly preferenceProviderProvider: PreferenceProviderProvider;
 
     protected readonly toDispose = new DisposableCollection();
 
-    constructor(prc: RPCProtocol, container: interfaces.Container) {
-        this.proxy = prc.getProxy(MAIN_RPC_CONTEXT.PREFERENCE_REGISTRY_EXT);
-        this.preferenceService = container.get(PreferenceService);
-        const preferenceProviderProvider = container.get<PreferenceProviderProvider>(PreferenceProviderProvider);
-        const preferenceServiceImpl = container.get(PreferenceServiceImpl);
-        const workspaceService = container.get(WorkspaceService);
-
-        this.toDispose.push(preferenceServiceImpl.onPreferencesChanged(changes => {
+    @postConstruct()
+    protected init(): void {
+        this.toDispose.push(this.preferenceService.onPreferencesChanged(changes => {
             // it HAS to be synchronous to propagate changes before update/remove response
 
-            const roots = workspaceService.tryGetRoots();
-            const data = getPreferences(preferenceProviderProvider, roots);
+            const roots = this.workspaceService.tryGetRoots();
+            const data = getPreferences(this.preferenceProviderProvider, roots);
             const eventData = Object.values(changes).map<PreferenceChangeExt>(({ scope, newValue, domain, preferenceName }) => {
                 const extScope = scope === PreferenceScope.User ? undefined : domain?.[0];
                 return { preferenceName, newValue, scope: extScope };

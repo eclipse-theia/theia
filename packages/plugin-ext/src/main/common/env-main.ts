@@ -14,22 +14,21 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { interfaces } from '@theia/core/shared/inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
-import { RPCProtocol } from '../../common/rpc-protocol';
 import { EnvMain } from '../../common/plugin-api-rpc';
 import { isWindows, isOSX } from '@theia/core';
 import { OperatingSystem } from '../../plugin/types-impl';
 
+@injectable()
 export class EnvMainImpl implements EnvMain {
-    private envVariableServer: EnvVariablesServer;
 
-    constructor(rpc: RPCProtocol, container: interfaces.Container) {
-        this.envVariableServer = container.get(EnvVariablesServer);
-    }
+    @inject(EnvVariablesServer)
+    private readonly envVariableServer: EnvVariablesServer;
 
-    $getEnvVariable(envVarName: string): Promise<string | undefined> {
-        return this.envVariableServer.getValue(envVarName).then(result => result ? result.value : undefined);
+    async $getEnvVariable(envVarName: string): Promise<string | undefined> {
+        const result = await this.envVariableServer.getValue(envVarName);
+        return result?.value;
     }
 
     async $getClientOperatingSystem(): Promise<OperatingSystem> {

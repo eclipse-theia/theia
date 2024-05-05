@@ -19,12 +19,12 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { Disposable, DisposableCollection } from '@theia/core';
-import { interfaces } from '@theia/core/shared/inversify';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { UriComponents } from '@theia/core/lib/common/uri';
 import { NotebookEditorWidget, NotebookService, NotebookEditorWidgetService } from '@theia/notebook/lib/browser';
 import { NotebookModel } from '@theia/notebook/lib/browser/view-model/notebook-model';
 import { MAIN_RPC_CONTEXT, NotebookDocumentsAndEditorsDelta, NotebookDocumentsAndEditorsMain, NotebookEditorAddData, NotebookModelAddedData, NotebooksExt } from '../../../common';
-import { RPCProtocol } from '../../../common/rpc-protocol';
+import { RPCProxy } from '../../../common/rpc-protocol';
 import { NotebookDto } from './notebook-dto';
 import { WidgetManager } from '@theia/core/lib/browser';
 import { NotebookEditorsMainImpl } from './notebook-editors-main';
@@ -80,8 +80,11 @@ class NotebookAndEditorState {
     }
 }
 
+@injectable()
 export class NotebooksAndEditorsMain implements NotebookDocumentsAndEditorsMain {
 
+    @inject(RPCProxy)
+    @named(MAIN_RPC_CONTEXT.NOTEBOOKS_EXT.id)
     protected readonly proxy: NotebooksExt;
     protected readonly disposables = new DisposableCollection();
 
@@ -90,25 +93,22 @@ export class NotebooksAndEditorsMain implements NotebookDocumentsAndEditorsMain 
     protected currentState?: NotebookAndEditorState;
     protected readonly updateMutex = new Mutex();
 
+    @inject(NotebookService)
     protected readonly notebookService: NotebookService;
+    @inject(NotebookEditorWidgetService)
     protected readonly notebookEditorService: NotebookEditorWidgetService;
-    protected readonly WidgetManager: WidgetManager;
+    @inject(WidgetManager)
+    protected readonly widgetManager: WidgetManager;
+    @inject(NotebookDocumentsMainImpl)
+    protected readonly notebookDocumentsMain: NotebookDocumentsMainImpl;
+    @inject(NotebookEditorsMainImpl)
+    protected readonly notebookEditorsMain: NotebookEditorsMainImpl;
 
-    constructor(
-        rpc: RPCProtocol,
-        container: interfaces.Container,
-        protected readonly notebookDocumentsMain: NotebookDocumentsMainImpl,
-        protected readonly notebookEditorsMain: NotebookEditorsMainImpl
-    ) {
-        this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.NOTEBOOKS_EXT);
-
-        this.notebookService = container.get(NotebookService);
-        this.notebookEditorService = container.get(NotebookEditorWidgetService);
-        this.WidgetManager = container.get(WidgetManager);
-
+    @postConstruct()
+    protected init(): void {
         this.notebookService.onDidAddNotebookDocument(async () => this.updateState(), this, this.disposables);
         this.notebookService.onDidRemoveNotebookDocument(async () => this.updateState(), this, this.disposables);
-        // this.WidgetManager.onActiveEditorChanged(() => this.updateState(), this, this.disposables);
+        // this.widgetManager.onActiveEditorChanged(() => this.updateState(), this, this.disposables);
         this.notebookEditorService.onDidAddNotebookEditor(async editor => this.handleEditorAdd(editor), this, this.disposables);
         this.notebookEditorService.onDidRemoveNotebookEditor(async editor => this.handleEditorRemove(editor), this, this.disposables);
         this.notebookEditorService.onDidChangeFocusedEditor(async editor => this.updateState(editor), this, this.disposables);
@@ -163,7 +163,7 @@ export class NotebooksAndEditorsMain implements NotebookDocumentsAndEditorsMain 
             activeEditor = null;
         }
 
-        const notebookEditors = this.WidgetManager.getWidgets(NotebookEditorWidget.ID) as NotebookEditorWidget[];
+        const notebookEditors = this.widgetManager.getWidgets(NotebookEditorWidget.ID) as NotebookEditorWidget[];
         for (const notebookEditor of notebookEditors) {
             if (editors.has(notebookEditor.id) && notebookEditor.isVisible) {
                 visibleEditorsMap.set(notebookEditor.id, notebookEditor);

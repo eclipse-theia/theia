@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { interfaces } from '@theia/core/shared/inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { MessageRegistryMain, MainMessageType, MainMessageOptions, MainMessageItem } from '../../common/plugin-api-rpc';
 
@@ -22,12 +22,11 @@ import { MessageRegistryMain, MainMessageType, MainMessageOptions, MainMessageIt
  * A basic implementation of the message registry that does not support the modal option
  * as that requires an UI.
  */
+@injectable()
 export class BasicMessageRegistryMainImpl implements MessageRegistryMain {
-    protected readonly messageService: MessageService;
 
-    constructor(container: interfaces.Container) {
-        this.messageService = container.get(MessageService);
-    }
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
 
     async $showMessage(type: MainMessageType, message: string, options: MainMessageOptions, actions: MainMessageItem[]): Promise<number | undefined> {
         const action = await this.doShowMessage(type, message, options, actions);

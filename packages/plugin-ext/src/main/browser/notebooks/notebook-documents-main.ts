@@ -16,39 +16,34 @@
 
 import { DisposableCollection, Event } from '@theia/core';
 import { URI, UriComponents } from '@theia/core/lib/common/uri';
-import { interfaces } from '@theia/core/shared/inversify';
+import { inject, named, postConstruct } from '@theia/core/shared/inversify';
 import { NotebookModelResolverService } from '@theia/notebook/lib/browser';
 import { NotebookModel } from '@theia/notebook/lib/browser/view-model/notebook-model';
 import { NotebookCellsChangeType } from '@theia/notebook/lib/common';
 import { NotebookMonacoTextModelService } from '@theia/notebook/lib/browser/service/notebook-monaco-text-model-service';
 import { MAIN_RPC_CONTEXT, NotebookCellsChangedEventDto, NotebookDataDto, NotebookDocumentsExt, NotebookDocumentsMain } from '../../../common';
-import { RPCProtocol } from '../../../common/rpc-protocol';
+import { RPCProxy } from '../../../common/rpc-protocol';
 import { NotebookDto } from './notebook-dto';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 
 export class NotebookDocumentsMainImpl implements NotebookDocumentsMain {
 
-    protected readonly disposables = new DisposableCollection();
-
+    @inject(RPCProxy)
+    @named(MAIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_EXT.id)
     protected readonly proxy: NotebookDocumentsExt;
-    protected readonly documentEventListenersMapping = new Map<string, DisposableCollection>();
-
+    @inject(NotebookModelResolverService)
     protected readonly notebookModelResolverService: NotebookModelResolverService;
-
+    @inject(NotebookMonacoTextModelService)
     protected notebookMonacoTextModelService: NotebookMonacoTextModelService;
 
-    constructor(
-        rpc: RPCProtocol,
-        container: interfaces.Container
-    ) {
-        this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_EXT);
-        this.notebookModelResolverService = container.get(NotebookModelResolverService);
+    protected readonly documentEventListenersMapping = new Map<string, DisposableCollection>();
+    protected readonly disposables = new DisposableCollection();
 
+    @postConstruct()
+    protected init(): void {
         // forward dirty and save events
         this.disposables.push(this.notebookModelResolverService.onDidChangeDirty(model => this.proxy.$acceptDirtyStateChanged(model.uri.toComponents(), model.isDirty())));
         this.disposables.push(this.notebookModelResolverService.onDidSaveNotebook(e => this.proxy.$acceptModelSaved(e)));
-
-        this.notebookMonacoTextModelService = container.get(NotebookMonacoTextModelService) as NotebookMonacoTextModelService;
     }
 
     get onDidAddNotebookCellModel(): Event<MonacoEditorModel> {

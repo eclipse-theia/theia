@@ -14,18 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { interfaces } from '@theia/core/shared/inversify';
 import { MainMessageType, MainMessageOptions, MainMessageItem } from '../../common/plugin-api-rpc';
 import { ModalNotification, MessageType } from './dialogs/modal-notification';
 import { BasicMessageRegistryMainImpl } from '../common/basic-message-registry-main';
+import { injectable } from '@theia/core/shared/inversify';
 
 /**
  * Message registry implementation that adds support for the model option via dialog in the browser.
  */
+@injectable()
 export class MessageRegistryMainImpl extends BasicMessageRegistryMainImpl {
-    constructor(container: interfaces.Container) {
-        super(container);
-    }
 
     protected override async doShowMessage(type: MainMessageType, message: string,
         options: MainMessageOptions, actions: MainMessageItem[]): Promise<string | undefined> {

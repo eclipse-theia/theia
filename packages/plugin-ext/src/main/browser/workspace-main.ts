@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import * as theia from '@theia/plugin';
-import { interfaces, injectable } from '@theia/core/shared/inversify';
+import { injectable, inject, postConstruct, named } from '@theia/core/shared/inversify';
 import { WorkspaceExt, StorageExt, MAIN_RPC_CONTEXT, WorkspaceMain, WorkspaceFolderPickOptionsMain } from '../../common/plugin-api-rpc';
-import { RPCProtocol } from '../../common/rpc-protocol';
+import { RPCProxy } from '../../common/rpc-protocol';
 import { URI as Uri } from '@theia/core/shared/vscode-uri';
 import { UriComponents } from '../../common/uri-components';
 import { FileSearchService } from '@theia/file-search/lib/common/file-search-service';
@@ -33,54 +33,150 @@ import { FileStat } from '@theia/filesystem/lib/common/files';
 import { MonacoQuickInputService } from '@theia/monaco/lib/browser/monaco-quick-input-service';
 import { RequestService } from '@theia/core/shared/@theia/request';
 
+
+/**
+ * Text content provider for resources with custom scheme.
+ */
+export interface TextContentResourceProvider {
+
+    /**
+     * Provides resource for given URI
+     */
+    provideResource(uri: URI): Resource;
+
+}
+
+@injectable()
+export class TextContentResourceResolver implements ResourceResolver {
+
+    // Resource providers for different schemes
+    private providers = new Map<string, TextContentResourceProvider>();
+
+    // Opened resources
+    private resources = new Map<string, TextContentResource>();
+
+    async resolve(uri: URI): Promise<Resource> {
+        const provider = this.providers.get(uri.scheme);
+        if (provider) {
+            return provider.provideResource(uri);
+        }
+
+        throw new Error(`Unable to find Text Content Resource Provider for scheme '${uri.scheme}'`);
+    }
+
+    registerContentProvider(scheme: string, proxy: WorkspaceExt): void {
+        if (this.providers.has(scheme)) {
+            throw new Error(`Text Content Resource Provider for scheme '${scheme}' is already registered`);
+        }
+
+        const instance = this;
+        this.providers.set(scheme, {
+            provideResource: (uri: URI): Resource => {
+                let resource = instance.resources.get(uri.toString());
+                if (resource) {
+                    return resource;
+                }
+
+                resource = new TextContentResource(uri, proxy, {
+                    dispose(): void {
+                        instance.resources.delete(uri.toString());
+                    }
+                });
+
+                instance.resources.set(uri.toString(), resource);
+                return resource;
+            }
+        });
+    }
+
+    unregisterContentProvider(scheme: string): void {
+        if (!this.providers.delete(scheme)) {
+            throw new Error(`Text Content Resource Provider for scheme '${scheme}' has not been registered`);
+        }
+    }
+
+    onContentChange(uri: string, content: string): void {
+        const resource = this.resources.get(uri);
+        if (resource) {
+            resource.setContent(content);
+        }
+    }
+
+}
+
+export class TextContentResource implements Resource {
+
+    private onDidChangeContentsEmitter: Emitter<void> = new Emitter<void>();
+    readonly onDidChangeContents: Event<void> = this.onDidChangeContentsEmitter.event;
+
+    // cached content
+    cache: string | undefined;
+
+    constructor(public uri: URI, private proxy: WorkspaceExt, protected disposable: Disposable) {
+    }
+
+    async readContents(options?: { encoding?: string }): Promise<string> {
+        if (this.cache) {
+            const content = this.cache;
+            this.cache = undefined;
+            return content;
+        } else {
+            const content = await this.proxy.$provideTextDocumentContent(this.uri.toString());
+            return content ?? '';
+        }
+    }
+
+    dispose(): void {
+        this.disposable.dispose();
+    }
+
+    setContent(content: string): void {
+        this.cache = content;
+        this.onDidChangeContentsEmitter.fire(undefined);
+    }
+
+}
+
+@injectable()
 export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
 
+    @inject(RPCProxy)
+    @named(MAIN_RPC_CONTEXT.WORKSPACE_EXT.id)
     private readonly proxy: WorkspaceExt;
+    @inject(RPCProxy)
+    @named(MAIN_RPC_CONTEXT.STORAGE_EXT.id)
+    private readonly storageProxy: StorageExt;
+    @inject(MonacoQuickInputService)
+    private readonly monacoQuickInputService: MonacoQuickInputService;
+    @inject(FileSearchService)
+    private readonly fileSearchService: FileSearchService;
+    @inject(SearchInWorkspaceService)
+    private readonly searchInWorkspaceService: SearchInWorkspaceService;
+    @inject(TextContentResourceResolver)
+    private readonly resourceResolver: TextContentResourceResolver;
+    @inject(PluginServer)
+    private readonly pluginServer: PluginServer;
+    @inject(RequestService)
+    private readonly requestService: RequestService;
+    @inject(WorkspaceService)
+    private readonly workspaceService: WorkspaceService;
+    @inject(CanonicalUriService)
+    private readonly canonicalUriService: CanonicalUriService;
+    @inject(WorkspaceTrustService)
+    private readonly workspaceTrustService: WorkspaceTrustService;
+    @inject(FileSystemPreferences)
+    private readonly fsPreferences: FileSystemPreferences;
 
-    private storageProxy: StorageExt;
+    private readonly toDispose = new DisposableCollection();
 
-    private monacoQuickInputService: MonacoQuickInputService;
+    private readonly workspaceSearch: Set<number> = new Set<number>();
 
-    private fileSearchService: FileSearchService;
-
-    private searchInWorkspaceService: SearchInWorkspaceService;
+    private readonly canonicalUriProviders = new Map<string, Disposable>();
 
     private roots: string[];
 
-    private resourceResolver: TextContentResourceResolver;
-
-    private pluginServer: PluginServer;
-
-    private requestService: RequestService;
-
-    private workspaceService: WorkspaceService;
-
-    protected readonly canonicalUriService: CanonicalUriService;
-
-    private workspaceTrustService: WorkspaceTrustService;
-
-    private fsPreferences: FileSystemPreferences;
-
-    protected readonly toDispose = new DisposableCollection();
-
-    protected workspaceSearch: Set<number> = new Set<number>();
-
-    protected readonly canonicalUriProviders = new Map<string, Disposable>();
-
-    constructor(rpc: RPCProtocol, container: interfaces.Container) {
-        this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.WORKSPACE_EXT);
-        this.storageProxy = rpc.getProxy(MAIN_RPC_CONTEXT.STORAGE_EXT);
-        this.monacoQuickInputService = container.get(MonacoQuickInputService);
-        this.fileSearchService = container.get(FileSearchService);
-        this.searchInWorkspaceService = container.get(SearchInWorkspaceService);
-        this.resourceResolver = container.get(TextContentResourceResolver);
-        this.pluginServer = container.get(PluginServer);
-        this.requestService = container.get(RequestService);
-        this.workspaceService = container.get(WorkspaceService);
-        this.canonicalUriService = container.get(CanonicalUriService);
-        this.workspaceTrustService = container.get(WorkspaceTrustService);
-        this.fsPreferences = container.get(FileSystemPreferences);
-
+    @postConstruct()
+    protected init(): void {
         this.processWorkspaceFoldersChanged(this.workspaceService.tryGetRoots().map(root => root.resource.toString()));
         this.toDispose.push(this.workspaceService.onWorkspaceChanged(roots => {
             this.processWorkspaceFoldersChanged(roots.map(root => root.resource.toString()));
@@ -318,107 +414,4 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
         const canonicalUri = await this.canonicalUriService.provideCanonicalUri(new URI(uri), targetScheme, token);
         return isUndefined(canonicalUri) ? undefined : canonicalUri.toString();
     }
-}
-
-/**
- * Text content provider for resources with custom scheme.
- */
-export interface TextContentResourceProvider {
-
-    /**
-     * Provides resource for given URI
-     */
-    provideResource(uri: URI): Resource;
-
-}
-
-@injectable()
-export class TextContentResourceResolver implements ResourceResolver {
-
-    // Resource providers for different schemes
-    private providers = new Map<string, TextContentResourceProvider>();
-
-    // Opened resources
-    private resources = new Map<string, TextContentResource>();
-
-    async resolve(uri: URI): Promise<Resource> {
-        const provider = this.providers.get(uri.scheme);
-        if (provider) {
-            return provider.provideResource(uri);
-        }
-
-        throw new Error(`Unable to find Text Content Resource Provider for scheme '${uri.scheme}'`);
-    }
-
-    registerContentProvider(scheme: string, proxy: WorkspaceExt): void {
-        if (this.providers.has(scheme)) {
-            throw new Error(`Text Content Resource Provider for scheme '${scheme}' is already registered`);
-        }
-
-        const instance = this;
-        this.providers.set(scheme, {
-            provideResource: (uri: URI): Resource => {
-                let resource = instance.resources.get(uri.toString());
-                if (resource) {
-                    return resource;
-                }
-
-                resource = new TextContentResource(uri, proxy, {
-                    dispose(): void {
-                        instance.resources.delete(uri.toString());
-                    }
-                });
-
-                instance.resources.set(uri.toString(), resource);
-                return resource;
-            }
-        });
-    }
-
-    unregisterContentProvider(scheme: string): void {
-        if (!this.providers.delete(scheme)) {
-            throw new Error(`Text Content Resource Provider for scheme '${scheme}' has not been registered`);
-        }
-    }
-
-    onContentChange(uri: string, content: string): void {
-        const resource = this.resources.get(uri);
-        if (resource) {
-            resource.setContent(content);
-        }
-    }
-
-}
-
-export class TextContentResource implements Resource {
-
-    private onDidChangeContentsEmitter: Emitter<void> = new Emitter<void>();
-    readonly onDidChangeContents: Event<void> = this.onDidChangeContentsEmitter.event;
-
-    // cached content
-    cache: string | undefined;
-
-    constructor(public uri: URI, private proxy: WorkspaceExt, protected disposable: Disposable) {
-    }
-
-    async readContents(options?: { encoding?: string }): Promise<string> {
-        if (this.cache) {
-            const content = this.cache;
-            this.cache = undefined;
-            return content;
-        } else {
-            const content = await this.proxy.$provideTextDocumentContent(this.uri.toString());
-            return content ?? '';
-        }
-    }
-
-    dispose(): void {
-        this.disposable.dispose();
-    }
-
-    setContent(content: string): void {
-        this.cache = content;
-        this.onDidChangeContentsEmitter.fire(undefined);
-    }
-
 }

@@ -34,7 +34,7 @@ import {
 } from '../../common/plugin-api-rpc';
 import { Range, TextDocumentShowOptions } from '../../common/plugin-api-rpc-model';
 import { EditorsAndDocumentsMain } from './editors-and-documents-main';
-import { RPCProtocol } from '../../common/rpc-protocol';
+import { RPCProxy } from '../../common/rpc-protocol';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { TextEditorMain } from './text-editor-main';
 import { disposed } from '../../common/errors';
@@ -49,33 +49,34 @@ import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/stan
 import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';
 import { ArrayUtils, URI } from '@theia/core';
 import { toNotebookWorspaceEdit } from './notebooks/notebooks-main';
-import { interfaces } from '@theia/core/shared/inversify';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { NotebookService } from '@theia/notebook/lib/browser';
+import { DocumentsMainImpl } from './documents-main';
 
+@injectable()
 export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
 
+    @inject(RPCProxy)
+    @named(MAIN_RPC_CONTEXT.TEXT_EDITORS_EXT.id)
     private readonly proxy: TextEditorsExt;
     private readonly toDispose = new DisposableCollection();
     private readonly editorsToDispose = new Map<string, DisposableCollection>();
     private readonly fileEndpoint = new Endpoint({ path: 'file' }).getRestUrl();
 
+    @inject(MonacoBulkEditService)
     private readonly bulkEditService: MonacoBulkEditService;
+    @inject(NotebookService)
     private readonly notebookService: NotebookService;
+    @inject(EditorsAndDocumentsMain)
+    private readonly editorsAndDocuments: EditorsAndDocumentsMain;
+    @inject(DocumentsMainImpl)
+    private readonly documents: DocumentsMain;
 
-    constructor(
-        private readonly editorsAndDocuments: EditorsAndDocumentsMain,
-        private readonly documents: DocumentsMain,
-        rpc: RPCProtocol,
-        container: interfaces.Container
-    ) {
-        this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.TEXT_EDITORS_EXT);
-
-        this.bulkEditService = container.get(MonacoBulkEditService);
-        this.notebookService = container.get(NotebookService);
-
-        this.toDispose.push(editorsAndDocuments);
-        this.toDispose.push(editorsAndDocuments.onTextEditorAdd(editors => editors.forEach(this.onTextEditorAdd, this)));
-        this.toDispose.push(editorsAndDocuments.onTextEditorRemove(editors => editors.forEach(this.onTextEditorRemove, this)));
+    @postConstruct()
+    protected init(): void {
+        this.toDispose.push(this.editorsAndDocuments);
+        this.toDispose.push(this.editorsAndDocuments.onTextEditorAdd(editors => editors.forEach(this.onTextEditorAdd, this)));
+        this.toDispose.push(this.editorsAndDocuments.onTextEditorRemove(editors => editors.forEach(this.onTextEditorRemove, this)));
     }
 
     dispose(): void {

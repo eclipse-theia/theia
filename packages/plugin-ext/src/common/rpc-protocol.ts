@@ -39,7 +39,7 @@ export interface MessageConnection {
     onMessage: Event<string>;
 }
 
-export const RPCProtocol = Symbol.for('RPCProtocol');
+export const RPCProtocol = Symbol('RPCProtocol');
 export interface RPCProtocol extends Disposable {
     /**
      * Returns a proxy to an object addressable/named in the plugin process or in the main process.
@@ -50,14 +50,15 @@ export interface RPCProtocol extends Disposable {
      * Register manually created instance.
      */
     set<T, R extends T>(identifier: ProxyIdentifier<T>, instance: R): R;
-
 }
+
+export const RPCProxy = Symbol('RPCProxy');
 
 export class ProxyIdentifier<T> {
     public readonly id: string;
-    constructor(public readonly isMain: boolean, id: string | T) {
+    constructor(public readonly isMain: boolean, id: string) {
         // TODO this is nasty, rewrite this
-        this.id = (id as any).toString();
+        this.id = id;
     }
 }
 

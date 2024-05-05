@@ -20,9 +20,9 @@
  *--------------------------------------------------------------------------------------------*/
 // code copied and modified from https://github.com/microsoft/vscode/blob/1.47.3/src/vs/workbench/api/browser/mainThreadAuthentication.ts
 
-import { interfaces } from '@theia/core/shared/inversify';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { AuthenticationExt, AuthenticationMain, MAIN_RPC_CONTEXT } from '../../common/plugin-api-rpc';
-import { RPCProtocol } from '../../common/rpc-protocol';
+import { RPCProxy } from '../../common/rpc-protocol';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { ConfirmDialog, Dialog, StorageService } from '@theia/core/lib/browser';
 import {
@@ -38,19 +38,22 @@ import { isObject } from '@theia/core';
 
 export function getAuthenticationProviderActivationEvent(id: string): string { return `onAuthenticationRequest:${id}`; }
 
+@injectable()
 export class AuthenticationMainImpl implements AuthenticationMain {
-    private readonly proxy: AuthenticationExt;
-    private readonly messageService: MessageService;
-    private readonly storageService: StorageService;
-    private readonly authenticationService: AuthenticationService;
-    private readonly quickPickService: QuickPickService;
-    constructor(rpc: RPCProtocol, container: interfaces.Container) {
-        this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.AUTHENTICATION_EXT);
-        this.messageService = container.get(MessageService);
-        this.storageService = container.get(StorageService);
-        this.authenticationService = container.get(AuthenticationService);
-        this.quickPickService = container.get(QuickPickService);
 
+    @inject(RPCProxy) @named(MAIN_RPC_CONTEXT.AUTHENTICATION_EXT.id)
+    private readonly proxy: AuthenticationExt;
+    @inject(MessageService)
+    private readonly messageService: MessageService;
+    @inject(StorageService)
+    private readonly storageService: StorageService;
+    @inject(QuickPickService)
+    private readonly quickPickService: QuickPickService;
+    @inject(AuthenticationService)
+    private readonly authenticationService: AuthenticationService
+
+    @postConstruct()
+    protected init(): void {
         this.authenticationService.onDidChangeSessions(e => {
             this.proxy.$onDidChangeAuthenticationSessions({ id: e.providerId, label: e.label });
         });

@@ -22,12 +22,12 @@ import { CancellationToken, Disposable, Emitter, Event, URI } from '@theia/core'
 import { UriComponents } from '@theia/core/lib/common/uri';
 import { LanguageService } from '@theia/core/lib/browser/language-service';
 import { CellExecuteUpdateDto, CellExecutionCompleteDto, MAIN_RPC_CONTEXT, NotebookKernelDto, NotebookKernelsExt, NotebookKernelsMain } from '../../../common';
-import { RPCProtocol } from '../../../common/rpc-protocol';
+import { RPCProxy } from '../../../common/rpc-protocol';
 import {
     CellExecution, NotebookEditorWidgetService, NotebookExecutionStateService,
     NotebookKernelChangeEvent, NotebookKernelService, NotebookService
 } from '@theia/notebook/lib/browser';
-import { interfaces } from '@theia/core/shared/inversify';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { NotebookKernelSourceAction } from '@theia/notebook/lib/common';
 import { NotebookDto } from './notebook-dto';
 
@@ -113,8 +113,11 @@ export interface KernelSourceActionProvider {
     provideKernelSourceActions(): Promise<NotebookKernelSourceAction[]>;
 }
 
+@injectable()
 export class NotebookKernelsMainImpl implements NotebookKernelsMain {
 
+    @inject(RPCProxy)
+    @named(MAIN_RPC_CONTEXT.NOTEBOOK_KERNELS_EXT.id)
     private readonly proxy: NotebookKernelsExt;
 
     private readonly kernels = new Map<number, [kernel: NotebookKernel, registration: Disposable]>();
@@ -124,26 +127,21 @@ export class NotebookKernelsMainImpl implements NotebookKernelsMain {
     private readonly kernelSourceActionProviders = new Map<number, [provider: KernelSourceActionProvider, registration: Disposable]>();
     private readonly kernelSourceActionProvidersEventRegistrations = new Map<number, Disposable>();
 
-    private notebookKernelService: NotebookKernelService;
-    private notebookService: NotebookService;
-    private languageService: LanguageService;
-    private notebookExecutionStateService: NotebookExecutionStateService;
-    private notebookEditorWidgetService: NotebookEditorWidgetService;
+    @inject(NotebookKernelService)
+    private readonly notebookKernelService: NotebookKernelService;
+    @inject(NotebookService)
+    private readonly notebookService: NotebookService;
+    @inject(LanguageService)
+    private readonly languageService: LanguageService;
+    @inject(NotebookExecutionStateService)
+    private readonly notebookExecutionStateService: NotebookExecutionStateService;
+    @inject(NotebookEditorWidgetService)
+    private readonly notebookEditorWidgetService: NotebookEditorWidgetService;
 
     private readonly executions = new Map<number, CellExecution>();
 
-    constructor(
-        rpc: RPCProtocol,
-        container: interfaces.Container,
-    ) {
-        this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.NOTEBOOK_KERNELS_EXT);
-
-        this.notebookKernelService = container.get(NotebookKernelService);
-        this.notebookExecutionStateService = container.get(NotebookExecutionStateService);
-        this.notebookService = container.get(NotebookService);
-        this.languageService = container.get(LanguageService);
-        this.notebookEditorWidgetService = container.get(NotebookEditorWidgetService);
-
+    @postConstruct()
+    protected init(): void {
         this.notebookEditorWidgetService.onDidAddNotebookEditor(editor => {
             editor.onDidReceiveKernelMessage(async message => {
                 const kernel = this.notebookKernelService.getSelectedOrSuggestedKernel(editor.model!);

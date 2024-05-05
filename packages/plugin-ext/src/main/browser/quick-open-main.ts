@@ -16,8 +16,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { InputBoxOptions } from '@theia/plugin';
-import { interfaces } from '@theia/core/shared/inversify';
-import { RPCProtocol } from '../../common/rpc-protocol';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
+import { RPCProxy } from '../../common/rpc-protocol';
 import {
     QuickOpenExt,
     QuickOpenMain,
@@ -57,23 +57,23 @@ interface IconPath {
     light?: URI
 };
 
+@injectable()
 export class QuickOpenMainImpl implements QuickOpenMain, Disposable {
 
-    private quickInputService: QuickInputService;
-    private proxy: QuickOpenExt;
-    private delegate: MonacoQuickInputService;
+    @inject(QuickInputService)
+    private readonly quickInputService: QuickInputService;
+    @inject(MonacoQuickInputService)
+    private readonly delegate: MonacoQuickInputService;
+    @inject(RPCProxy)
+    @named(MAIN_RPC_CONTEXT.QUICK_OPEN_EXT.id)
+    private readonly proxy: QuickOpenExt;
+
     private readonly items: Record<number, {
         resolve(items: QuickPickItem[]): void;
         reject(error: Error): void;
     }> = {};
 
     protected readonly toDispose = new DisposableCollection();
-
-    constructor(rpc: RPCProtocol, container: interfaces.Container) {
-        this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.QUICK_OPEN_EXT);
-        this.delegate = container.get(MonacoQuickInputService);
-        this.quickInputService = container.get(QuickInputService);
-    }
 
     dispose(): void {
         this.toDispose.dispose();

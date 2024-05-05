@@ -22,24 +22,20 @@ import { UriComponents, URI } from '@theia/core/lib/common/uri';
 import { CellRange } from '@theia/notebook/lib/common';
 import { NotebookEditorWidget } from '@theia/notebook/lib/browser';
 import { MAIN_RPC_CONTEXT, NotebookDocumentShowOptions, NotebookEditorRevealType, NotebookEditorsExt, NotebookEditorsMain } from '../../../common';
-import { RPCProtocol } from '../../../common/rpc-protocol';
-import { interfaces } from '@theia/core/shared/inversify';
+import { RPCProxy } from '../../../common/rpc-protocol';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { open, OpenerService } from '@theia/core/lib/browser';
 
+@injectable()
 export class NotebookEditorsMainImpl implements NotebookEditorsMain {
 
+    @inject(RPCProxy)
+    @named(MAIN_RPC_CONTEXT.NOTEBOOK_EDITORS_EXT.id)
     protected readonly proxy: NotebookEditorsExt;
+    @inject(OpenerService)
     protected readonly openerService: OpenerService;
 
     protected readonly mainThreadEditors = new Map<string, NotebookEditorWidget>();
-
-    constructor(
-        rpc: RPCProtocol,
-        container: interfaces.Container
-    ) {
-        this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.NOTEBOOK_EDITORS_EXT);
-        this.openerService = container.get(OpenerService);
-    }
 
     async $tryShowNotebookDocument(uriComponents: UriComponents, viewType: string, options: NotebookDocumentShowOptions): Promise<string> {
         const editor = await open(this.openerService, URI.fromComponents(uriComponents), {});

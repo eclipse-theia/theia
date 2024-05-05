@@ -13,7 +13,8 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { interfaces } from '@theia/core/shared/inversify';
+
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import * as types from '../../plugin/types-impl';
 import { StatusBarMessageRegistryMain } from '../../common/plugin-api-rpc';
@@ -21,19 +22,17 @@ import { StatusBar, StatusBarAlignment, StatusBarEntry } from '@theia/core/lib/b
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 
+@injectable()
 export class StatusBarMessageRegistryMainImpl implements StatusBarMessageRegistryMain, Disposable {
+
+    @inject(ColorRegistry)
+    protected readonly colorRegistry: ColorRegistry;
+    @inject(StatusBar)
     private readonly delegate: StatusBar;
     private readonly entries = new Map<string, StatusBarEntry>();
     private readonly toDispose = new DisposableCollection(
         Disposable.create(() => { /* mark as not disposed */ })
     );
-
-    protected readonly colorRegistry: ColorRegistry;
-
-    constructor(container: interfaces.Container) {
-        this.delegate = container.get(StatusBar);
-        this.colorRegistry = container.get(ColorRegistry);
-    }
 
     dispose(): void {
         this.toDispose.dispose();
