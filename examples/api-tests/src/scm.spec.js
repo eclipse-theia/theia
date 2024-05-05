@@ -16,11 +16,14 @@
 
 
 
+
 // @ts-check
 describe('SCM', function () {
 
     const { assert } = chai;
 
+    const { animationFrame } = require('@theia/core/lib/browser/browser');
+    const { HostedPluginSupport } = require('@theia/plugin-ext/lib/hosted/browser/hosted-plugin');
     const Uri = require('@theia/core/lib/common/uri');
     const { ApplicationShell } = require('@theia/core/lib/browser/shell/application-shell');
     const { ContextKeyService } = require('@theia/core/lib/browser/context-key-service');
@@ -36,6 +39,7 @@ describe('SCM', function () {
     const shell = container.get(ApplicationShell);
     const service = container.get(ScmService);
     const commandRegistry = container.get(CommandRegistry);
+    const pluginService = container.get(HostedPluginSupport);
 
     /** @type {ScmWidget} */
     let scmWidget;
@@ -43,10 +47,49 @@ describe('SCM', function () {
     /** @type {ScmService} */
     let scmService;
 
+    const gitPluginId = 'vscode.git';
+
+    /**
+         * @param {() => unknown} condition
+         * @param {number | undefined} [timeout]
+         * @param {string | undefined} [message]
+         * @returns {Promise<void>}
+         */
+    function waitForAnimation(condition, timeout, message) {
+        const success = new Promise(async (resolve, reject) => {
+            if (timeout === undefined) {
+                timeout = 100000;
+            }
+
+            let timedOut = false;
+            const handle = setTimeout(() => {
+                console.log(message);
+                timedOut = true;
+            }, timeout);
+
+            do {
+                await animationFrame();
+            } while (!timedOut && !condition());
+            if (timedOut) {
+                reject(new Error(message ?? 'Wait for animation timed out.'));
+            } else {
+                clearTimeout(handle);
+                resolve(undefined);
+            }
+
+        });
+        return success;
+    }
+
     beforeEach(async () => {
+        if (!pluginService.getPlugin(gitPluginId)) {
+            throw new Error(gitPluginId + ' should be started');
+        }
+        await pluginService.activatePlugin(gitPluginId);
         await shell.leftPanelHandler.collapse();
         scmWidget = await scmContribution.openView({ activate: true, reveal: true });
         scmService = service;
+        await waitForAnimation(() => scmService.selectedRepository, 10000, 'selected repository is not defined');
     });
 
     afterEach(() => {
