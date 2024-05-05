@@ -76,6 +76,15 @@ export class EditorModelService {
         return this.monacoModelService.models;
     }
 
+    async save(uri: URI): Promise<boolean> {
+        const model = this.monacoModelService.get(uri.toString());
+        if (model) {
+            await model.save();
+            return true;
+        }
+        return false;
+    }
+
     async saveAll(includeUntitled?: boolean): Promise<boolean> {
         const saves = [];
         for (const model of this.monacoModelService.models) {
