@@ -384,6 +384,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         });
         registry.registerMenuAction(NavigatorContextMenu.NAVIGATION, {
             commandId: FileNavigatorCommands.OPEN_WITH.id,
+            when: '!explorerResourceIsFolder',
             label: nls.localizeByDefault('Open With...')
         });
 
