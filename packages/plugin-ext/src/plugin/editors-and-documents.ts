@@ -46,6 +46,10 @@ export class EditorsAndDocumentsExtImpl implements EditorsAndDocumentsExt {
     private readonly editors = new Map<string, TextEditorExt>();
 
     async $acceptEditorsAndDocumentsDelta(delta: EditorsAndDocumentsDelta): Promise<void> {
+        this.acceptEditorsAndDocumentsDelta(delta);
+    }
+
+    acceptEditorsAndDocumentsDelta(delta: EditorsAndDocumentsDelta): void {
         const removedDocuments = new Array<DocumentDataExt>();
         const addedDocuments = new Array<DocumentDataExt>();
         const removedEditors = new Array<TextEditorExt>();

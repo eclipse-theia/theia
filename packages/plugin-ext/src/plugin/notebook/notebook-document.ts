@@ -372,7 +372,7 @@ export class NotebookDocument implements Disposable {
         });
 
         if (addedDocuments.length > 0 || removedDocuments.length > 0) {
-            this.editorsAndDocuments.$acceptEditorsAndDocumentsDelta({
+            this.editorsAndDocuments.acceptEditorsAndDocumentsDelta({
                 addedDocuments,
                 removedDocuments
             });
