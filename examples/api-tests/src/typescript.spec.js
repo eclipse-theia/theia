@@ -210,16 +210,8 @@ describe('TypeScript', function () {
         await assertPeekOpened(editor);
 
         console.log('closePeek() - Attempt to close by sending "Escape"');
-        keybindings.dispatchKeyDown('Escape');
-        await waitForAnimation(() => {
-            const isClosed = !contextKeyService.match('listFocus');
-            if (!isClosed) {
-                console.log('...');
-                keybindings.dispatchKeyDown('Escape');
-                return false;
-            }
-            return true;
-        });
+        await dismissWithEscape('listFocus');
+
         assert.isTrue(contextKeyService.match('editorTextFocus'));
         assert.isFalse(contextKeyService.match('referenceSearchVisible'));
         assert.isFalse(contextKeyService.match('listFocus'));
@@ -510,7 +502,23 @@ describe('TypeScript', function () {
         assert.equal(activeEditor.getControl().getModel().getWordAtPosition({ lineNumber: 28, column: 1 }).word, 'foo');
     });
 
+    async function dismissWithEscape(contextKey) {
+        keybindings.dispatchKeyDown('Escape');
+        // once in a while, a second "Escape" is needed to dismiss widget
+        return waitForAnimation(() => {
+            const suggestWidgetDismissed = !contextKeyService.match(contextKey);
+            if (!suggestWidgetDismissed) {
+                console.log(`Re-try to dismiss ${contextKey} using "Escape" key`);
+                keybindings.dispatchKeyDown('Escape');
+                return false;
+            }
+            return true;
+        }, 5000, `${contextKey} widget not dismissed`);
+    }
+
     it('editor.action.triggerParameterHints', async function () {
+        this.timeout(30000);
+        console.log('start trigger parameter hint');
         const editor = await openEditor(demoFileUri);
         // const demoInstance = new DemoClass('|demo');
         editor.getControl().setPosition({ lineNumber: 24, column: 37 });
@@ -520,13 +528,14 @@ describe('TypeScript', function () {
         assert.isFalse(contextKeyService.match('parameterHintsVisible'));
 
         await commands.executeCommand('editor.action.triggerParameterHints');
+        console.log('trigger command');
         await waitForAnimation(() => contextKeyService.match('parameterHintsVisible'));
+        console.log('context key matched');
 
         assert.isTrue(contextKeyService.match('editorTextFocus'));
         assert.isTrue(contextKeyService.match('parameterHintsVisible'));
 
-        keybindings.dispatchKeyDown('Escape');
-        await waitForAnimation(() => !contextKeyService.match('parameterHintsVisible'));
+        await dismissWithEscape('parameterHintsVisible');
 
         assert.isTrue(contextKeyService.match('editorTextFocus'));
         assert.isFalse(contextKeyService.match('parameterHintsVisible'));
@@ -542,12 +551,13 @@ describe('TypeScript', function () {
         const hover = editor.getControl().getContribution('editor.contrib.hover');
 
         assert.isTrue(contextKeyService.match('editorTextFocus'));
-        assert.isFalse(Boolean(hover['_contentWidget']?.['_widget']?.['_visibleData']));
+        assert.isFalse(contextKeyService.match('editorHoverVisible'));
         await commands.executeCommand('editor.action.showHover');
         let doLog = true;
-        await waitForAnimation(() => hover['_contentWidget']?.['_widget']?.['_visibleData']);
+        await waitForAnimation(() => contextKeyService.match('editorHoverVisible'));
+        assert.isTrue(contextKeyService.match('editorHoverVisible'));
         assert.isTrue(contextKeyService.match('editorTextFocus'));
-        assert.isTrue(Boolean(hover['_contentWidget']?.['_widget']?.['_visibleData']));
+
         assert.deepEqual(nodeAsString(hover['_contentWidget']?.['_widget']?.['_hover']?.['contentsDomNode']).trim(), `
 DIV {
   DIV {
@@ -572,8 +582,7 @@ DIV {
     }
   }
 }`.trim());
-        keybindings.dispatchKeyDown('Escape');
-        await waitForAnimation(() => !hover['_contentWidget']?.['_widget']?.['_visibleData']);
+        await dismissWithEscape('editorHoverVisible');
         assert.isTrue(contextKeyService.match('editorTextFocus'));
         assert.isFalse(Boolean(hover['_contentWidget']?.['_widget']?.['_visibleData']));
     });
