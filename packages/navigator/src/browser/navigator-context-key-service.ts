@@ -45,12 +45,22 @@ export class NavigatorContextKeyService {
         return this._explorerResourceIsFolder;
     }
 
+    protected _isFileSystemResource: ContextKey<boolean>;
+
+    /**
+     * True when the Explorer or editor file is a file system resource that can be handled from a file system provider.
+     */
+    get isFileSystemResource(): ContextKey<boolean> {
+        return this._isFileSystemResource;
+    }
+
     @postConstruct()
     protected init(): void {
         this._explorerViewletVisible = this.contextKeyService.createKey<boolean>('explorerViewletVisible', false);
         this._explorerViewletFocus = this.contextKeyService.createKey<boolean>('explorerViewletFocus', false);
         this._filesExplorerFocus = this.contextKeyService.createKey<boolean>('filesExplorerFocus', false);
         this._explorerResourceIsFolder = this.contextKeyService.createKey<boolean>('explorerResourceIsFolder', false);
+        this._isFileSystemResource = this.contextKeyService.createKey<boolean>('isFileSystemResource', false);
     }
 
 }
