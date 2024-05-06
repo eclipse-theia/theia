@@ -115,6 +115,11 @@ export namespace Saveable {
     }
 
     export type Snapshot = { value: string } | { read(): string | null };
+    export namespace Snapshot {
+        export function read(snapshot: Snapshot): string | undefined {
+            return 'value' in snapshot ? snapshot.value : (snapshot.read() ?? undefined);
+        }
+    }
     export function isSource(arg: unknown): arg is SaveableSource {
         return isObject<SaveableSource>(arg) && is(arg.saveable);
     }
