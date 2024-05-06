@@ -28,7 +28,7 @@
     "chalk": "4.0.0",
     "concurrently": "^3.5.0",
     "debug": "^4.3.2",
-    "electron-mocha": "^11.0.2",
+    "electron-mocha": "^12.3.0",
     "eslint": "7",
     "eslint-plugin-deprecation": "~1.2.1",
     "eslint-plugin-import": "^2.27.5",
