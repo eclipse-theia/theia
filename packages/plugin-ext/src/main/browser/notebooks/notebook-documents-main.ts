@@ -25,6 +25,7 @@ import { MAIN_RPC_CONTEXT, NotebookCellsChangedEventDto, NotebookDataDto, Notebo
 import { RPCProtocol } from '../../../common/rpc-protocol';
 import { NotebookDto } from './notebook-dto';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
+import { NotebookOpenHandler } from '@theia/notebook/lib/browser/notebook-open-handler';
 
 export class NotebookDocumentsMainImpl implements NotebookDocumentsMain {
 
@@ -35,7 +36,8 @@ export class NotebookDocumentsMainImpl implements NotebookDocumentsMain {
 
     protected readonly notebookModelResolverService: NotebookModelResolverService;
 
-    protected notebookMonacoTextModelService: NotebookMonacoTextModelService;
+    protected readonly notebookMonacoTextModelService: NotebookMonacoTextModelService;
+    protected readonly notebookOpenHandler: NotebookOpenHandler;
 
     constructor(
         rpc: RPCProtocol,
@@ -43,6 +45,7 @@ export class NotebookDocumentsMainImpl implements NotebookDocumentsMain {
     ) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_EXT);
         this.notebookModelResolverService = container.get(NotebookModelResolverService);
+        this.notebookOpenHandler = container.get(NotebookOpenHandler);
 
         // forward dirty and save events
         this.disposables.push(this.notebookModelResolverService.onDidChangeDirty(model => this.proxy.$acceptDirtyStateChanged(model.uri.toComponents(), model.isDirty())));
@@ -157,10 +160,10 @@ export class NotebookDocumentsMainImpl implements NotebookDocumentsMain {
         this.proxy.$acceptDirtyStateChanged(ref.uri.toComponents(), true);
 
         // apply content changes... slightly HACKY -> this triggers a change event
-        // if (options.content) {
-        //     const data = NotebookDto.fromNotebookDataDto(options.content);
-        //     ref.notebook.reset(data.cells, data.metadata, ref.object.notebook.transientOptions);
-        // }
+        if (options.content) {
+            const data = NotebookDto.fromNotebookDataDto(options.content);
+            ref.reset(data);
+        }
         return ref.uri.toComponents();
     }
 
@@ -171,9 +174,8 @@ export class NotebookDocumentsMainImpl implements NotebookDocumentsMain {
 
     async $trySaveNotebook(uriComponents: UriComponents): Promise<boolean> {
         const uri = URI.fromComponents(uriComponents);
-
         const ref = await this.notebookModelResolverService.resolve(uri);
-        await ref.save({});
+        await ref.save();
         ref.dispose();
         return true;
     }

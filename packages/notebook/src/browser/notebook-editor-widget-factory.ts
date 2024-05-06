@@ -61,8 +61,7 @@ export class NotebookEditorWidgetFactory implements WidgetFactory {
         return editor;
     }
 
-    private async createEditor(uri: URI, notebookType: string): Promise<NotebookEditorWidget> {
-
+    protected async createEditor(uri: URI, notebookType: string): Promise<NotebookEditorWidget> {
         return this.createNotebookEditorWidget({
             uri,
             notebookType,
@@ -70,7 +69,7 @@ export class NotebookEditorWidgetFactory implements WidgetFactory {
         });
     }
 
-    private setLabels(editor: NotebookEditorWidget, uri: URI): void {
+    protected setLabels(editor: NotebookEditorWidget, uri: URI): void {
         editor.title.caption = uri.path.fsPath();
         if (editor.model?.readOnly) {
             editor.title.caption += ` • ${nls.localizeByDefault('Read-only')}`;

@@ -58,7 +58,7 @@ export class NotebooksMainImpl implements NotebooksMain {
         const plugins = container.get(HostedPluginSupport);
 
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.NOTEBOOKS_EXT);
-        this.notebookService.onWillUseNotebookSerializer(async event => plugins.activateByNotebookSerializer(event));
+        this.notebookService.onWillUseNotebookSerializer(event => plugins.activateByNotebookSerializer(event));
         this.notebookService.markReady();
         commands.registerArgumentProcessor({
             processArgument: arg => {

@@ -120,16 +120,17 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
                 notebookModel = notebookModel ?? this.notebookEditorWidgetService.focusedEditor?.model;
 
                 let insertIndex: number = 0;
-                if (index && index >= 0) {
-                    insertIndex = index as number;
+                if (typeof index === 'number' && index >= 0) {
+                    insertIndex = index;
                 } else if (notebookModel.selectedCell && typeof index === 'string') {
                     // if index is -1 insert below otherwise at the index of the selected cell which is above the selected.
                     insertIndex = notebookModel.cells.indexOf(notebookModel.selectedCell) + (index === 'below' ? 1 : 0);
                 }
 
-                let firstCodeCell;
+                let cellLanguage: string = 'markdown';
                 if (cellKind === CellKind.Code) {
-                    firstCodeCell = notebookModel.cells.find(cell => cell.cellKind === CellKind.Code);
+                    const firstCodeCell = notebookModel.cells.find(cell => cell.cellKind === CellKind.Code);
+                    cellLanguage = firstCodeCell?.language ?? 'plaintext';
                 }
 
                 notebookModel.applyEdits([{
@@ -138,7 +139,7 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
                     count: 0,
                     cells: [{
                         cellKind,
-                        language: firstCodeCell?.language ?? 'markdown',
+                        language: cellLanguage,
                         source: '',
                         outputs: [],
                         metadata: {},
