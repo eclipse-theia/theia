@@ -331,7 +331,7 @@ export class NotebookModel implements Saveable, Disposable {
 
     }
 
-    protected async replaceCells(start: number, deleteCount: number, newCells: CellData[], computeUndoRedo: boolean): Promise<void> {
+    protected replaceCells(start: number, deleteCount: number, newCells: CellData[], computeUndoRedo: boolean): void {
         const cells = newCells.map(cell => {
             const handle = this.nextHandle++;
             return this.cellModelFactory({
@@ -361,10 +361,6 @@ export class NotebookModel implements Saveable, Disposable {
                 async () => this.replaceCells(start, newCells.length, deletedCells.map(cell => cell.getData()), false),
                 async () => this.replaceCells(start, deleteCount, newCells, false));
         }
-
-        // Ensure that all text model have been created
-        // Otherwise we run into a race condition once we fire `onDidChangeContent`
-        await Promise.all(cells.map(cell => cell.resolveTextModel()));
 
         this.onDidAddOrRemoveCellEmitter.fire({ rawEvent: { kind: NotebookCellsChangeType.ModelChange, changes }, newCellIds: cells.map(cell => cell.handle) });
         this.onDidChangeContentEmitter.queue({ kind: NotebookCellsChangeType.ModelChange, changes });

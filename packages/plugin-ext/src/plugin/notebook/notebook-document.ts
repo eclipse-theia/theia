@@ -27,6 +27,7 @@ import * as typeConverters from '../type-converters';
 import { ModelAddedData, NotebookCellDto, NotebookCellsChangedEventDto, NotebookModelAddedData, NotebookOutputDto } from '../../common';
 import { NotebookRange } from '../types-impl';
 import { DocumentsExtImpl } from '../documents';
+import { UriComponents } from '../../common/uri-components';
 
 class RawContentChangeEvent {
 
@@ -345,6 +346,9 @@ export class NotebookDocument implements Disposable {
             return;
         }
 
+        const addedDocuments: ModelAddedData[] = [];
+        const removedDocuments: UriComponents[] = [];
+
         const contentChangeEvents: RawContentChangeEvent[] = [];
 
         splices.reverse().forEach(splice => {
@@ -353,9 +357,7 @@ export class NotebookDocument implements Disposable {
 
                 const extCell = new Cell(this, this.editorsAndDocuments, cell);
                 if (!initialization) {
-                    this.editorsAndDocuments.$acceptEditorsAndDocumentsDelta({
-                        addedDocuments: [Cell.asModelAddData(cell)]
-                    });
+                    addedDocuments.push(Cell.asModelAddData(cell));
                 }
                 return extCell;
             });
@@ -364,9 +366,17 @@ export class NotebookDocument implements Disposable {
             const deletedItems = this.cells.splice(splice.start, splice.deleteCount, ...newCells);
             for (const cell of deletedItems) {
                 changeEvent.deletedItems.push(cell.apiCell);
+                removedDocuments.push(cell.uri.toComponents());
             }
             contentChangeEvents.push(changeEvent);
         });
+
+        if (addedDocuments.length > 0 || removedDocuments.length > 0) {
+            this.editorsAndDocuments.acceptEditorsAndDocumentsDelta({
+                addedDocuments,
+                removedDocuments
+            });
+        }
 
         if (bucket) {
             for (const changeEvent of contentChangeEvents) {

@@ -264,7 +264,6 @@ export class NotebookCellModel implements NotebookCell, Disposable {
         this.onDidChangeMetadataEmitter.dispose();
         this.onDidChangeInternalMetadataEmitter.dispose();
         this.onDidChangeLanguageEmitter.dispose();
-        this.textModel?.dispose();
         this.toDispose.dispose();
     }
 
@@ -356,9 +355,10 @@ export class NotebookCellModel implements NotebookCell, Disposable {
 
         const ref = await this.textModelService.getOrCreateNotebookCellModelReference(this.uri);
         this.textModel = ref.object;
-        this.textModel.onDidChangeContent(e => {
+        this.toDispose.push(ref);
+        this.toDispose.push(this.textModel.onDidChangeContent(e => {
             this.props.source = e.model.getText();
-        });
+        }));
         return ref.object;
     }
 

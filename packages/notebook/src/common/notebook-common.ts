@@ -273,7 +273,7 @@ export namespace CellUri {
         const s = handle.toString(_radix);
         const p = s.length < _lengths.length ? _lengths[s.length - 1] : 'z';
 
-        const fragment = `${p}${s}s${Buffer.from(BinaryBuffer.fromString(notebook.scheme).buffer).toString('base64')} `;
+        const fragment = `${p}${s}s${Buffer.from(BinaryBuffer.fromString(notebook.scheme).buffer).toString('base64')}`;
         return notebook.withScheme(cellUriScheme).withFragment(fragment);
     }
 

@@ -31,7 +31,7 @@ export class NotebookMonacoTextModelService {
     protected readonly monacoTextModelService: MonacoTextModelService;
 
     protected readonly cellmodels = new ReferenceCollection<string, MonacoEditorModel>(
-        uri => this.monacoTextModelService.createUnmangedModel(new URI(uri))
+        uri => this.monacoTextModelService.createUnmanagedModel(new URI(uri))
     );
 
     getOrCreateNotebookCellModelReference(uri: URI): Promise<Reference<MonacoEditorModel>> {
@@ -39,7 +39,7 @@ export class NotebookMonacoTextModelService {
     }
 
     async createTextModelsForNotebook(notebook: NotebookModel): Promise<void> {
-        await Promise.all(notebook.cells.map(cell => this.getOrCreateNotebookCellModelReference(cell.uri)));
+        await Promise.all(notebook.cells.map(cell => cell.resolveTextModel()));
     }
 
     get onDidCreateNotebookCellModel(): Event<MonacoEditorModel> {
