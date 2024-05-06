@@ -30,6 +30,7 @@ import './theia.proposed.dropMetadata';
 import './theia.proposed.editSessionIdentityProvider';
 import './theia.proposed.extensionsAny';
 import './theia.proposed.externalUriOpener';
+import './theia.proposed.mappedEditsProvider';
 import './theia.proposed.notebookCellExecutionState';
 import './theia.proposed.notebookKernelSource';
 import './theia.proposed.notebookMessaging';

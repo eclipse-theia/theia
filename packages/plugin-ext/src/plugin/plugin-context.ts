@@ -1218,9 +1218,17 @@ export function createAPIFactory(
             }
         };
 
+        const chat: typeof theia.chat    = {
+            /** @stubbed MappedEditsProvider */
+            registerMappedEditsProvider(documentSelector: theia.DocumentSelector, provider: theia.MappedEditsProvider): Disposable {
+                return Disposable.NULL;
+            }
+        };
+
         return <typeof theia>{
             version: require('../../package.json').version,
             authentication,
+            chat,
             commands,
             comments,
             window,
