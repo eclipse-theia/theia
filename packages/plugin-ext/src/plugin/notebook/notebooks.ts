@@ -372,6 +372,27 @@ export class NotebooksExtImpl implements NotebooksExt {
         this.editors.set(editorId, editor);
     }
 
+    private waitForNotebookEditor(editorId: string, duration = 2000): Promise<theia.NotebookEditor> {
+        const existing = this.editors.get(editorId);
+        if (existing) {
+            return Promise.resolve(existing.apiEditor);
+        }
+        return new Promise<theia.NotebookEditor>((resolve, reject) => {
+            const listener = this.onDidChangeVisibleNotebookEditors(() => {
+                const editor = this.editors.get(editorId);
+                if (editor) {
+                    clearTimeout(timeout);
+                    listener.dispose();
+                    resolve(editor.apiEditor);
+                }
+            });
+            const timeout = setTimeout(() => {
+                listener.dispose();
+                reject(new Error(`Notebook editor did NOT open in ${duration}ms: ${editorId}`));
+            }, duration);
+        });
+    }
+
     async createNotebookDocument(options: { viewType: string; content?: theia.NotebookData }): Promise<TheiaURI> {
         const canonicalUri = await this.notebookDocumentsProxy.$tryCreateNotebook({
             viewType: options.viewType,
@@ -395,7 +416,7 @@ export class NotebooksExtImpl implements NotebooksExt {
             notebookOrUri = await this.openNotebookDocument(notebookOrUri as TheiaURI);
         }
 
-        const notebook = notebookOrUri as theia.NotebookDocument;
+        const notebook = notebookOrUri;
 
         let resolvedOptions: NotebookDocumentShowOptions;
         if (typeof options === 'object') {
@@ -412,7 +433,7 @@ export class NotebooksExtImpl implements NotebooksExt {
         }
 
         const editorId = await this.notebookEditors.$tryShowNotebookDocument(notebook.uri, notebook.notebookType, resolvedOptions);
-        const editor = editorId && this.editors.get(editorId)?.apiEditor;
+        const editor = editorId && await this.waitForNotebookEditor(editorId);
 
         if (editor) {
             return editor;

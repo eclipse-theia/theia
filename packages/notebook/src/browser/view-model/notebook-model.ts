@@ -156,7 +156,7 @@ export class NotebookModel implements Saveable, Disposable {
         this.onDidDisposeEmitter.fire();
     }
 
-    async save(options: SaveOptions): Promise<void> {
+    async save(options?: SaveOptions): Promise<void> {
         this.dirtyCells = [];
         this.dirty = false;
 
@@ -186,25 +186,8 @@ export class NotebookModel implements Saveable, Disposable {
         if (!rawData) {
             throw new Error('could not read notebook snapshot');
         }
-        const data = JSON.parse(rawData);
-        const cells = data.cells.map((cell: CellData, index: number) => {
-            const handle = this.nextHandle++;
-            return this.cellModelFactory({
-                uri: CellUri.generate(this.uri, handle),
-                handle: handle,
-                source: cell.source,
-                language: cell.language,
-                cellKind: cell.cellKind,
-                outputs: cell.outputs,
-                metadata: cell.metadata,
-                internalMetadata: cell.internalMetadata,
-                collapseState: cell.collapseState
-            });
-        });
-        this.addCellOutputListeners(cells);
-
-        this.metadata = data.metadata;
-
+        const data = JSON.parse(rawData) as NotebookData;
+        this.setData(data);
     }
 
     async revert(options?: Saveable.RevertOptions): Promise<void> {
@@ -227,6 +210,14 @@ export class NotebookModel implements Saveable, Disposable {
         if (this.dirty !== oldDirtyState) {
             this.onDirtyChangedEmitter.fire();
         }
+    }
+
+    setData(data: NotebookData): void {
+        // Replace all cells in the model
+        this.replaceCells(0, this.cells.length, data.cells, false);
+        this.metadata = data.metadata;
+        this.dirty = false;
+        this.onDidChangeContentEmitter.fire();
     }
 
     undo(): void {

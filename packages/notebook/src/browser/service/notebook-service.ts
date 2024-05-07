@@ -110,11 +110,8 @@ export class NotebookService implements Disposable {
     }
 
     async createNotebookModel(data: NotebookData, viewType: string, resource: Resource): Promise<NotebookModel> {
-        const serializer = this.notebookProviders.get(viewType)?.serializer;
-        if (!serializer) {
-            throw new Error('no notebook serializer for ' + viewType);
-        }
-
+        const dataProvider = await this.getNotebookDataProvider(viewType);
+        const serializer = dataProvider.serializer;
         const model = this.notebookModelFactory({ data, resource, viewType, serializer });
         this.notebookModels.set(resource.uri.toString(), model);
         // Resolve cell text models right after creating the notebook model
@@ -129,13 +126,11 @@ export class NotebookService implements Disposable {
     }
 
     async getNotebookDataProvider(viewType: string): Promise<NotebookProviderInfo> {
-        await this.ready.promise;
-
-        const result = await this.waitForNotebookProvider(viewType);
-        if (!result) {
+        try {
+            return await this.waitForNotebookProvider(viewType);
+        } catch {
             throw new Error(`No provider registered for view type: '${viewType}'`);
         }
-        return result;
     }
 
     /**
@@ -143,11 +138,12 @@ export class NotebookService implements Disposable {
      * It takes a few seconds for the plugin host to start so that notebook data providers can be registered.
      * This methods waits until the notebook provider is registered.
      */
-    protected async waitForNotebookProvider(type: string): Promise<NotebookProviderInfo | undefined> {
-        if (this.notebookProviders.has(type)) {
-            return this.notebookProviders.get(type);
+    protected waitForNotebookProvider(type: string): Promise<NotebookProviderInfo> {
+        const existing = this.notebookProviders.get(type);
+        if (existing) {
+            return Promise.resolve(existing);
         }
-        const deferred = new Deferred<NotebookProviderInfo | undefined>();
+        const deferred = new Deferred<NotebookProviderInfo>();
         // 20 seconds of timeout
         const timeoutDuration = 20_000;
 
@@ -161,7 +157,12 @@ export class NotebookService implements Disposable {
             if (viewType === type) {
                 clearTimeout(timeout);
                 disposable.dispose();
-                deferred.resolve(this.notebookProviders.get(type));
+                const newProvider = this.notebookProviders.get(type);
+                if (!newProvider) {
+                    deferred.reject(new Error(`Notebook provider for type ${type} is invalid`));
+                } else {
+                    deferred.resolve(newProvider);
+                }
             }
         });
         timeout = setTimeout(() => {
@@ -170,7 +171,9 @@ export class NotebookService implements Disposable {
             deferred.reject(new Error(`Timed out while waiting for notebook serializer for type ${type} to be registered`));
         }, timeoutDuration);
 
-        await Promise.all(this.willUseNotebookSerializerEmitter.fire(type));
+        this.ready.promise.then(() => {
+            this.willUseNotebookSerializerEmitter.fire(type);
+        });
 
         return deferred.promise;
     }
