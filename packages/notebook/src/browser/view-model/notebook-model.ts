@@ -96,6 +96,7 @@ export class NotebookModel implements Saveable, Disposable {
     protected nextHandle: number = 0;
 
     protected _dirty = false;
+    protected _lastData?: NotebookData;
 
     set dirty(dirty: boolean) {
         const oldState = this._dirty;
@@ -132,6 +133,8 @@ export class NotebookModel implements Saveable, Disposable {
     initialize(): void {
         this.dirty = false;
 
+        this._lastData = this.props.data;
+
         this.cells = this.props.data.cells.map((cell, index) => this.cellModelFactory({
             uri: CellUri.generate(this.props.resource.uri, index),
             handle: index,
@@ -165,10 +168,9 @@ export class NotebookModel implements Saveable, Disposable {
         this.dirtyCells = [];
         this.dirty = false;
 
-        const serializedNotebook = await this.props.serializer.fromNotebook({
-            cells: this.cells.map(cell => cell.getData()),
-            metadata: this.metadata
-        });
+        const data = this.getData();
+        this._lastData = data;
+        const serializedNotebook = await this.props.serializer.fromNotebook(data);
         this.fileService.writeFile(this.uri, serializedNotebook);
 
         this.onDidSaveNotebookEmitter.fire();
@@ -178,10 +180,7 @@ export class NotebookModel implements Saveable, Disposable {
         const model = this;
         return {
             read(): string {
-                return JSON.stringify({
-                    cells: model.cells.map(cell => cell.getData()),
-                    metadata: model.metadata
-                });
+                return JSON.stringify(model.getData());
             }
         };
     }
@@ -192,10 +191,14 @@ export class NotebookModel implements Saveable, Disposable {
             throw new Error('could not read notebook snapshot');
         }
         const data = JSON.parse(rawData) as NotebookData;
+        this._lastData = data;
         this.setData(data);
     }
 
     async revert(options?: Saveable.RevertOptions): Promise<void> {
+        if (this._lastData && !options?.soft) {
+            this.setData(this._lastData);
+        }
         this.dirty = false;
     }
 
@@ -217,8 +220,15 @@ export class NotebookModel implements Saveable, Disposable {
         // Replace all cells in the model
         this.replaceCells(0, this.cells.length, data.cells, false);
         this.metadata = data.metadata;
-        this.dirty = false;
+        this.dirty = true;
         this.onDidChangeContentEmitter.fire();
+    }
+
+    getData(): NotebookData {
+        return {
+            cells: this.cells.map(cell => cell.getData()),
+            metadata: this.metadata
+        };
     }
 
     undo(): void {
@@ -263,7 +273,7 @@ export class NotebookModel implements Saveable, Disposable {
                 end: edit.editType === CellEditType.Replace ? edit.index + edit.count : cellIndex,
                 originalIndex: index
             };
-        }).filter(edit => !!edit);
+        });
 
         for (const { edit, cellIndex } of editsWithDetails) {
             const cell = this.cells[cellIndex];
