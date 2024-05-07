@@ -162,7 +162,7 @@ export class NotebookDocumentsMainImpl implements NotebookDocumentsMain {
         // apply content changes... slightly HACKY -> this triggers a change event
         if (options.content) {
             const data = NotebookDto.fromNotebookDataDto(options.content);
-            ref.reset(data);
+            ref.setData(data);
         }
         return ref.uri.toComponents();
     }

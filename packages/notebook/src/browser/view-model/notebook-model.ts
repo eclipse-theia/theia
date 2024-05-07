@@ -187,7 +187,7 @@ export class NotebookModel implements Saveable, Disposable {
             throw new Error('could not read notebook snapshot');
         }
         const data = JSON.parse(rawData) as NotebookData;
-        this.reset(data);
+        this.setData(data);
     }
 
     async revert(options?: Saveable.RevertOptions): Promise<void> {
@@ -212,7 +212,7 @@ export class NotebookModel implements Saveable, Disposable {
         }
     }
 
-    reset(data: NotebookData): void {
+    setData(data: NotebookData): void {
         // Replace all cells in the model
         this.replaceCells(0, this.cells.length, data.cells, false);
         this.metadata = data.metadata;
