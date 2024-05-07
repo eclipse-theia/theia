@@ -124,7 +124,6 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
             return;
         }
 
-
         if (this.dragGhost) {
             this.dragGhost.remove();
         }
