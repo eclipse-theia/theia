@@ -25,6 +25,7 @@ import { NotebookCellActionContribution } from '../contributions/notebook-cell-a
 
 export interface CellRenderer {
     render(notebookData: NotebookModel, cell: NotebookCellModel, index: number): React.ReactNode
+    renderDragImage(cell: NotebookCellModel): HTMLElement
 }
 
 interface CellListProps {
@@ -42,6 +43,8 @@ interface NotebookCellListState {
 export class NotebookCellListView extends React.Component<CellListProps, NotebookCellListState> {
 
     protected toDispose = new DisposableCollection();
+
+    protected dragGhost: HTMLElement | undefined;
 
     constructor(props: CellListProps) {
         super(props);
@@ -79,7 +82,7 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
                                 this.setState({ ...this.state, selectedCell: cell });
                                 this.props.notebookModel.setSelectedCell(cell);
                             }}
-                            onDragStart={e => this.onDragStart(e, index)}
+                            onDragStart={e => this.onDragStart(e, index, cell)}
                             onDragOver={e => this.onDragOver(e, cell)}
                             onDrop={e => this.onDrop(e, index)}
                             draggable={true}
@@ -114,12 +117,23 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
         return renderer.render(this.props.notebookModel, cell, index);
     }
 
-    protected onDragStart(event: React.DragEvent<HTMLLIElement>, index: number): void {
+    protected onDragStart(event: React.DragEvent<HTMLLIElement>, index: number, cell: NotebookCellModel): void {
         event.stopPropagation();
         if (!this.isEnabled()) {
             event.preventDefault();
             return;
         }
+
+
+        if (this.dragGhost) {
+            this.dragGhost.remove();
+        }
+        this.dragGhost = document.createElement('div');
+        this.dragGhost.classList.add('theia-notebook-drag-ghost-image');
+        this.dragGhost.appendChild(this.props.renderers.get(cell.cellKind)?.renderDragImage(cell) ?? document.createElement('div'));
+        document.body.appendChild(this.dragGhost);
+        event.dataTransfer.setDragImage(this.dragGhost, -10, 0);
+
         event.dataTransfer.setData('text/theia-notebook-cell-index', index.toString());
         event.dataTransfer.setData('text/plain', this.props.notebookModel.cells[index].source);
     }
