@@ -281,3 +281,11 @@
   line-height: 22px;
   opacity: 0.7;
 }
+
+.theia-notebook-drag-ghost-image {
+  position: absolute;
+  top: -99999px;
+  left: -99999px;
+  height: 500px;
+  width: 500px;
+}

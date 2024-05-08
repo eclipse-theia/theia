@@ -99,6 +99,13 @@ export class NotebookCodeCellRenderer implements CellRenderer {
         </div >;
     }
 
+    renderDragImage(cell: NotebookCellModel): HTMLElement {
+        const dragImage = document.createElement('div');
+        dragImage.className = 'theia-notebook-drag-image';
+        dragImage.textContent = nls.localize('theia/notebook/dragGhostImage/codeText', 'Code cell selected');
+        return dragImage;
+    }
+
     protected getOrCreateMonacoFontInfo(): BareFontInfo {
         if (!this.fontInfo) {
             this.fontInfo = this.createFontInfo();
