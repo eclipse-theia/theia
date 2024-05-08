@@ -88,6 +88,15 @@ export class NotebookExecutionService {
 
         // request execution
         if (validCellExecutions.length > 0) {
+            const cellRemoveListener = notebook.onDidAddOrRemoveCell(e => {
+                if (e.rawEvent.changes.some(c => c.deleteCount > 0)) {
+                    const executionsToCancel = validCellExecutions.filter(exec => !notebook.cells.find(cell => cell.handle === exec.cellHandle));
+                    if (executionsToCancel.length > 0) {
+                        kernel.cancelNotebookCellExecution(notebook.uri, executionsToCancel.map(c => c.cellHandle));
+                        executionsToCancel.forEach(exec => exec.complete({}));
+                    }
+                }
+            });
             await this.runExecutionParticipants(validCellExecutions);
 
             this.notebookKernelService.selectKernelForNotebook(kernel, notebook);
@@ -97,6 +106,9 @@ export class NotebookExecutionService {
             if (unconfirmed.length) {
                 unconfirmed.forEach(exe => exe.complete({}));
             }
+
+            cellRemoveListener.dispose();
+
         }
     }
 
