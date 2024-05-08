@@ -341,12 +341,6 @@
       "reveal": "Reveal in Explorer",
       "toggleHiddenFiles": "Toggle Hidden Files"
     },
-    "notebook": {
-      "dragGhostImage": {
-        "markdownText": "Mardown Cell Selected",
-        "codeText": "Code Cell Selected"
-      }
-    },
     "output": {
       "clearOutputChannel": "Clear Output Channel...",
       "closeOutputChannel": "Close Output Channel...",

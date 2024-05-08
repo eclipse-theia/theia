@@ -102,7 +102,7 @@ export class NotebookCodeCellRenderer implements CellRenderer {
     renderDragImage(cell: NotebookCellModel): HTMLElement {
         const dragImage = document.createElement('div');
         dragImage.className = 'theia-notebook-drag-image';
-        dragImage.textContent = nls.localize('theia/notebooks/dragGhostImage/codeText', 'Code Cell Selected');
+        dragImage.textContent = nls.localize('theia/notebook/dragGhostImage/codeText', 'Code cell selected');
         return dragImage;
     }
 
