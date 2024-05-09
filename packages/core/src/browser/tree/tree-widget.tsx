@@ -339,7 +339,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             }
         }
         this.rows = new Map(rowsToUpdate);
-        this.updateScrollToRow();
+        this.update();
     }
 
     protected getDepthForNode(node: TreeNode, depths: Map<CompositeTreeNode | undefined, number>): number {
@@ -1575,9 +1575,9 @@ export namespace TreeWidget {
                 }}
                 totalCount={rows.length}
                 itemContent={index => this.props.renderNodeRow(rows[index])}
-                width={width}
+                                width={width}
                 height={height}
-                // This is a pixel value, it will scan 200px to the top and bottom of the current view
+            // This is a pixel value, it will scan 200px to the top and bottom of the current view
                 overscan={500}
             />;
         }
