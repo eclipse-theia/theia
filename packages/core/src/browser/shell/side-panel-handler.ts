@@ -211,6 +211,7 @@ export class SidePanelHandler {
     protected createAdditionalViewsWidget(): AdditionalViewsMenuWidget {
         const widget = this.additionalViewsMenuFactory(this.side);
         widget.addClass('theia-sidebar-menu');
+        widget.addClass('theia-additional-views-menu');
         return widget;
     }
 

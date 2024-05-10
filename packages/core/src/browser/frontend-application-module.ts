@@ -178,7 +178,7 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bind(AdditionalViewsMenuWidget).toSelf();
     bind(AdditionalViewsMenuWidgetFactory).toFactory(ctx => (side: 'left' | 'right') => {
         const widget = ctx.container.resolve(AdditionalViewsMenuWidget);
-        widget.side = side;
+        widget.setSide(side);
         return widget;
     });
     bind(SplitPositionHandler).toSelf().inSingletonScope();
