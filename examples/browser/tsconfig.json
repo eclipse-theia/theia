@@ -9,6 +9,12 @@
       "path": "../../dev-packages/cli"
     },
     {
+      "path": "../../packages/ai-chat"
+    },
+    {
+      "path": "../../packages/ai-openai"
+    },
+    {
       "path": "../../packages/bulk-edit"
     },
     {
