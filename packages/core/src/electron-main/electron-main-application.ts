@@ -346,7 +346,8 @@ export class ElectronMainApplication {
             ...splashScreenBounds,
             frame: false,
             alwaysOnTop: true,
-            show: false
+            show: false,
+            transparent: true,
         });
 
         if (this.isShowWindowEarly()) {
