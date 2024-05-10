@@ -297,18 +297,23 @@ delete window.frameElement;
          * @param {KeyboardEvent} e
          */
         const handleInnerKeydown = (e) => {
-            preventDefaultBrowserHotkeys(e);
+            if (e.ctrlKey && e.key == 'a') {
+                e.preventDefault();
+                console.log('Ctrl+A is disabled')
+            } else {
+                preventDefaultBrowserHotkeys(e);
 
-            host.postMessage('did-keydown', {
-                key: e.key,
-                keyCode: e.keyCode,
-                code: e.code,
-                shiftKey: e.shiftKey,
-                altKey: e.altKey,
-                ctrlKey: e.ctrlKey,
-                metaKey: e.metaKey,
-                repeat: e.repeat
-            });
+                host.postMessage('did-keydown', {
+                    key: e.key,
+                    keyCode: e.keyCode,
+                    code: e.code,
+                    shiftKey: e.shiftKey,
+                    altKey: e.altKey,
+                    ctrlKey: e.ctrlKey,
+                    metaKey: e.metaKey,
+                    repeat: e.repeat
+                });
+            }
         };
 
         /**
