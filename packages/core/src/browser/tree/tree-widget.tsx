@@ -339,7 +339,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             }
         }
         this.rows = new Map(rowsToUpdate);
-        this.updateScrollToRow();
+        this.update();
     }
 
     protected getDepthForNode(node: TreeNode, depths: Map<CompositeTreeNode | undefined, number>): number {
