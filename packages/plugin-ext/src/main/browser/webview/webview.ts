@@ -352,7 +352,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
             /* no-op: webview loses focus only if another element gains focus in the main window */
         }));
         this.toHide.push(this.on(WebviewMessageChannels.doReload, () => this.reload()));
-        this.toHide.push(this.on(WebviewMessageChannels.loadResource, (entry: any) => this.loadResource(entry.path)));
+        this.toHide.push(this.on(WebviewMessageChannels.loadResource, (entry: any) => this.loadResource(entry.path, entry.query)));
         this.toHide.push(this.on(WebviewMessageChannels.loadLocalhost, (entry: any) =>
             this.loadLocalhost(entry.origin)
         ));
@@ -544,10 +544,11 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
         return undefined;
     }
 
-    protected async loadResource(requestPath: string): Promise<void> {
-        const normalizedUri = this.normalizeRequestUri(requestPath);
+    protected async loadResource(requestPath: string, requestQuery: string = ''): Promise<void> {
+        const normalizedUri = this.normalizeRequestUri(requestPath).withQuery(decodeURIComponent(requestQuery));
         // browser cache does not support file scheme, normalize to current endpoint scheme and host
-        const cacheUrl = new Endpoint({ path: normalizedUri.path.toString() }).getRestUrl().toString();
+        // use requestPath rather than normalizedUri.path to preserve the scheme of the requested resource as a path segment
+        const cacheUrl = new Endpoint({ path: requestPath }).getRestUrl().withQuery(decodeURIComponent(requestQuery)).toString();
 
         try {
             if (this.contentOptions.localResourceRoots) {
