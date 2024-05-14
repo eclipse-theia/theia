@@ -1344,6 +1344,11 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                 const type = !!this.props.multiSelect && this.hasCtrlCmdMask(event) ? TreeSelection.SelectionType.TOGGLE : TreeSelection.SelectionType.DEFAULT;
                 this.model.addSelection({ node, type });
             }
+
+            // set global selection for the case if the node is selected by for example restoring the layout but globalSelection is therefore not updated
+            if (this.props.globalSelection && (!this.selectionService.selection || !TreeWidgetSelection.is(this.selectionService.selection))) {
+                this.updateGlobalSelection()
+            }
             this.focusService.setFocus(node);
             const contextMenuPath = this.props.contextMenuPath;
             if (contextMenuPath) {
@@ -1579,6 +1584,7 @@ export namespace TreeWidget {
                 height={height}
                 // This is a pixel value, it will scan 200px to the top and bottom of the current view
                 overscan={500}
+                foc
             />;
         }
     }
