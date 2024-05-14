@@ -302,6 +302,12 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                     }
                 })
             ]);
+
+            this.node.addEventListener('focusin', (e) => {
+                if (this.model.selectedNodes.length && (!this.selectionService.selection || !TreeWidgetSelection.isSource(this.selectionService.selection, this))) {
+                    this.updateGlobalSelection();
+                }
+            })
         }
         this.toDispose.push(this.corePreferences.onPreferenceChanged(preference => {
             if (preference.preferenceName === 'workbench.tree.renderIndentGuides') {
@@ -1343,11 +1349,6 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             if (!this.props.multiSelect || !node.selected) {
                 const type = !!this.props.multiSelect && this.hasCtrlCmdMask(event) ? TreeSelection.SelectionType.TOGGLE : TreeSelection.SelectionType.DEFAULT;
                 this.model.addSelection({ node, type });
-            }
-
-            // set global selection for the case if the node is selected by for example restoring the layout but globalSelection is therefore not updated
-            if (this.props.globalSelection && (!this.selectionService.selection || !TreeWidgetSelection.is(this.selectionService.selection))) {
-                this.updateGlobalSelection()
             }
             this.focusService.setFocus(node);
             const contextMenuPath = this.props.contextMenuPath;
