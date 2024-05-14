@@ -31,21 +31,28 @@ export class WindowStateExtImpl implements WindowStateExt {
 
     constructor(rpc: RPCProtocol) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.WINDOW_MAIN);
-        this.windowStateCached = { focused: true }; // supposed tab is active on start
+        this.windowStateCached = { focused: true, active: true }; // supposed tab is active on start
     }
 
     getWindowState(): WindowState {
         return this.windowStateCached;
     }
 
-    $onWindowStateChanged(focused: boolean): void {
-        const state = { focused: focused };
-        if (state === this.windowStateCached) {
+    $onDidChangeWindowFocus(focused: boolean): void {
+        this.onDidChangeWindowProperty('focused', focused);
+    }
+
+    $onDidChangeWindowActive(active: boolean): void {
+        this.onDidChangeWindowProperty('active', active);
+    }
+
+    onDidChangeWindowProperty(property: keyof WindowState, value: boolean): void {
+        if (value === this.windowStateCached[property]) {
             return;
         }
 
-        this.windowStateCached = state;
-        this.windowStateChangedEmitter.fire(state);
+        this.windowStateCached = { ...this.windowStateCached, [property]: value };
+        this.windowStateChangedEmitter.fire(this.windowStateCached);
     }
 
     openUri(uri: URI): Promise<boolean> {
