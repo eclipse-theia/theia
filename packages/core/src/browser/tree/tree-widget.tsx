@@ -1585,7 +1585,6 @@ export namespace TreeWidget {
                 height={height}
                 // This is a pixel value, it will scan 200px to the top and bottom of the current view
                 overscan={500}
-                foc
             />;
         }
     }
