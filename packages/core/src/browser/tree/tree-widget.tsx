@@ -302,6 +302,12 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                     }
                 })
             ]);
+
+            this.node.addEventListener('focusin', e => {
+                if (this.model.selectedNodes.length && (!this.selectionService.selection || !TreeWidgetSelection.isSource(this.selectionService.selection, this))) {
+                    this.updateGlobalSelection();
+                }
+            });
         }
         this.toDispose.push(this.corePreferences.onPreferenceChanged(preference => {
             if (preference.preferenceName === 'workbench.tree.renderIndentGuides') {
