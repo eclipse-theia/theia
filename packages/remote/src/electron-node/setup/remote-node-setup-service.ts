@@ -21,7 +21,7 @@ import * as os from 'os';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { RequestService } from '@theia/core/shared/@theia/request';
 import { RemoteSetupScriptService } from './remote-setup-script-service';
-import { RemotePlatform } from '../remote-types';
+import { RemotePlatform } from '@theia/core/lib/node/remote/remote-cli-contribution';
 import { OS } from '@theia/core';
 
 /**

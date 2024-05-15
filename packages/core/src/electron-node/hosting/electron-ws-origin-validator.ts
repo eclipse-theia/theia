@@ -16,7 +16,7 @@
 
 import * as http from 'http';
 import { inject, injectable } from 'inversify';
-import { BackendRemoteService } from '../../node/backend-remote-service';
+import { BackendRemoteService } from '../../node/remote/backend-remote-service';
 import { WsRequestValidatorContribution } from '../../node/ws-request-validators';
 
 @injectable()
