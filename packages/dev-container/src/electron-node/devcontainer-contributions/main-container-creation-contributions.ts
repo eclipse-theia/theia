@@ -25,6 +25,7 @@ export function registerContainerCreationContributions(bind: interfaces.Bind): v
     bind(ContainerCreationContribution).to(DockerFileContribution).inSingletonScope();
     bind(ContainerCreationContribution).to(ForwardPortsContribution).inSingletonScope();
     bind(ContainerCreationContribution).to(MountsContribution).inSingletonScope();
+    bind(ContainerCreationContribution).to(RemoteUserContribution).inSingletonScope();
 }
 
 @injectable()
@@ -123,6 +124,33 @@ export class MountsContribution implements ContainerCreationContribution {
             Target: parts.find(part => part.startsWith('target=') || part.startsWith('dst='))?.split('=')[1]!,
             Type: (parts.find(part => part.startsWith('type='))?.split('=')[1] ?? 'bind') as Docker.MountType
         };
+    }
+}
+
+@injectable()
+export class RemoteUserContribution implements ContainerCreationContribution {
+    async handleContainerCreation(createOptions: Docker.ContainerCreateOptions, containerConfig: DevContainerConfiguration, api: Docker): Promise<void> {
+        if (containerConfig.remoteUser) {
+            createOptions.User = containerConfig.remoteUser;
+        }
+    }
+}
+
+@injectable()
+export class PostCreateCommandContribution implements ContainerCreationContribution {
+    async handlePostCreate?(containerConfig: DevContainerConfiguration, container: Docker.Container): Promise<void> {
+        if (containerConfig.postCreateCommand) {
+            const commands = typeof containerConfig.postCreateCommand === 'object' && !(containerConfig.postCreateCommand instanceof Array) ?
+                Object.values(containerConfig.postCreateCommand) : [containerConfig.postCreateCommand];
+            for (const command of commands) {
+                if (command instanceof Array) {
+                    await container.exec({ Cmd: command, });
+                } else {
+                    await container.exec({ Cmd: ['sh', '-c', command], });
+
+                }
+            }
+        }
     }
 }
 

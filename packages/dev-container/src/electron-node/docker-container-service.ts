@@ -27,10 +27,15 @@ import { ContainerOutputProvider } from '../electron-common/container-output-pro
 export const ContainerCreationContribution = Symbol('ContainerCreationContributions');
 
 export interface ContainerCreationContribution {
-    handleContainerCreation(createOptions: Docker.ContainerCreateOptions,
+    handleContainerCreation?(createOptions: Docker.ContainerCreateOptions,
         containerConfig: DevContainerConfiguration,
         api: Docker,
         outputProvider?: ContainerOutputProvider): Promise<void>;
+
+    /**
+     * executed after creating and starting the container
+     */
+    handlePostCreate?(containerConfig: DevContainerConfiguration, container: Docker.Container, api: Docker): Promise<void>;
 }
 
 @injectable()
@@ -92,12 +97,16 @@ export class DockerContainerService {
         };
 
         for (const containerCreateContrib of this.containerCreationContributions.getContributions()) {
-            await containerCreateContrib.handleContainerCreation(containerCreateOptions, devcontainerConfig, docker, outputProvider);
+            await containerCreateContrib.handleContainerCreation?.(containerCreateOptions, devcontainerConfig, docker, outputProvider);
         }
 
         // TODO add more config
         const container = await docker.createContainer(containerCreateOptions);
         await container.start();
+
+        for (const containerCreateContrib of this.containerCreationContributions.getContributions()) {
+            await containerCreateContrib.handlePostCreate?.(devcontainerConfig, container, docker);
+        }
 
         return container;
     }
