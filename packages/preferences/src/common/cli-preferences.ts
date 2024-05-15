@@ -14,24 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from 'inversify';
-import { Argv } from 'yargs';
-import { MaybePromise } from '../../common';
-import { CliContribution } from '../cli';
 
-@injectable()
-export class PreferenceCliContribution implements CliContribution {
+export const CliPreferences = Symbol('CliPreferences');
+export const CliPreferencesPath = '/services/cli-preferences';
 
-    configure(conf: Argv<{}>): void {
-        conf.option('set-preference', {
-            alias: 'preference',
-            nargs: 1,
-            desc: 'Installs or updates a plugin. Argument is a path to the *.vsix file or a plugin id of the form "publisher.name[@version]"'
-        })
-    }
-
-    setArguments(args: Record<string, unknown>): MaybePromise<void> {
-
-    }
-
+export interface CliPreferences {
+    getPreferences(): Promise<[string, unknown][]>;
 }
