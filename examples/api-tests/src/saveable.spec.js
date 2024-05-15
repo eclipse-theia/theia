@@ -81,13 +81,13 @@ describe('Saveable', function () {
 
     afterEach(async () => {
         toTearDown.dispose();
-        await preferences.set('files.autoSave', autoSave, undefined, rootUri.toString());
         // @ts-ignore
         editor = undefined;
         // @ts-ignore
         widget = undefined;
         await editorManager.closeAll({ save: false });
         await fileService.delete(fileUri.parent, { fromUserGesture: false, useTrash: false, recursive: true });
+        await preferences.set('files.autoSave', autoSave, undefined, rootUri.toString());
     });
 
     it('normal save', async function () {
