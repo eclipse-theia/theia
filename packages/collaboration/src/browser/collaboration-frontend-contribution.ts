@@ -289,7 +289,7 @@ export class CollaborationFrontendContribution implements CommandContribution {
         navigator.clipboard.writeText(code);
         const notification = nls.localize('theia/collaboration/copiedInvitation', 'Invitation code copied to clipboard.');
         if (firstTime) {
-            const makeReadonly = nls.localize('theia/collaboration/disableEditing', 'Disable Workspace Editing');
+            const makeReadonly = nls.localize('theia/collaboration/makeReadonly', 'Make readonly');
             const copyAgain = nls.localize('theia/collaboration/copyAgain', 'Copy Again');
             const copyResult = await this.messageService.info(
                 notification,
