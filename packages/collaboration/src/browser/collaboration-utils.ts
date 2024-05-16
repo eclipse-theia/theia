@@ -24,7 +24,10 @@ export class CollaborationUtils {
     @inject(CollaborationWorkspaceService)
     protected readonly workspaceService: CollaborationWorkspaceService;
 
-    getProtocolPath(uri: URI): string | undefined {
+    getProtocolPath(uri?: URI): string | undefined {
+        if (!uri) {
+            return undefined;
+        }
         const path = uri.path.toString();
         const roots = this.workspaceService.tryGetRoots();
         for (const root of roots) {
@@ -36,7 +39,10 @@ export class CollaborationUtils {
         return undefined;
     }
 
-    getResourceUri(path: string): URI | undefined {
+    getResourceUri(path?: string): URI | undefined {
+        if (!path) {
+            return undefined;
+        }
         const parts = path.split('/');
         const root = parts[0];
         const rest = parts.slice(1);

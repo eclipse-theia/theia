@@ -80,6 +80,14 @@ export interface RelativeSelection {
     direction: 'ltr' | 'rtl';
 }
 
+export interface AwarenessState {
+    peer: string;
+    currentSelection?: {
+        path: string;
+        selection: RelativeSelection;
+    }
+}
+
 export const COLLABORATION_SELECTION = 'theia-collaboration-selection';
 export const COLLABORATION_SELECTION_MARKER = 'theia-collaboration-selection-marker';
 export const COLLABORATION_SELECTION_INVERTED = 'theia-collaboration-selection-inverted';
@@ -216,7 +224,7 @@ export class CollaborationInstance implements Disposable {
             }
         });
         connection.peer.onInfo((_, peer) => {
-            this.yjsAwareness.setLocalStateField('_peer', peer.id);
+            this.yjsAwareness.setLocalStateField('peer', peer.id);
             this.identity.resolve(peer);
         });
         connection.peer.onInit(async () => {
@@ -252,6 +260,11 @@ export class CollaborationInstance implements Disposable {
         }));
         this.getOpenEditors().forEach(widget => {
             this.registerPresenceUpdate(widget);
+        });
+        this.shell.onDidChangeActiveWidget(e => {
+            if (e.newValue instanceof EditorWidget) {
+                this.updateEditorPresence(e.newValue);
+            }
         });
 
         this.yjsAwareness.on('change', () => {
@@ -386,49 +399,50 @@ export class CollaborationInstance implements Disposable {
 
     protected rerenderPresence(...widgets: EditorWidget[]): void {
         const decorations = new Map<string, EditorDecoration[]>();
-        for (const [clientID, state] of this.yjsAwareness.getStates().entries()) {
+        const states = this.yjsAwareness.getStates() as Map<number, AwarenessState>;
+        for (const [clientID, state] of states.entries()) {
             if (clientID === this.yjs.clientID) {
                 // Ignore own awareness state
                 continue;
             }
-            const peer = state['_peer'];
-            for (const [key, value] of Object.entries(state).filter(([k]) => k !== '_peer')) {
-                const selection = value;
-                const path = key;
-                const uri = this.utils.getResourceUri(path);
-                if (uri) {
-                    const model = this.getModel(uri);
-                    if (model) {
-                        let existing = decorations.get(path);
-                        if (!existing) {
-                            existing = [];
-                            decorations.set(path, existing);
+            const peer = state.peer;
+            if (!state.currentSelection || !this.peers.has(peer)) {
+                continue;
+            }
+            const { path, selection } = state.currentSelection;
+            const uri = this.utils.getResourceUri(path);
+            if (uri) {
+                const model = this.getModel(uri);
+                if (model) {
+                    let existing = decorations.get(path);
+                    if (!existing) {
+                        existing = [];
+                        decorations.set(path, existing);
+                    }
+                    const forward = selection.direction === 'ltr';
+                    const startIndex = Y.createAbsolutePositionFromRelativePosition(selection.start, this.yjs);
+                    const endIndex = Y.createAbsolutePositionFromRelativePosition(selection.end, this.yjs);
+                    if (startIndex && endIndex) {
+                        const start = model.positionAt(startIndex.index);
+                        const end = model.positionAt(endIndex.index);
+                        const inverted = (forward && end.line === 0) || (!forward && start.line === 0);
+                        const range = {
+                            start,
+                            end
+                        };
+                        const contentClassNames: string[] = [COLLABORATION_SELECTION_MARKER, `${COLLABORATION_SELECTION_MARKER}-${peer}`];
+                        if (inverted) {
+                            contentClassNames.push(COLLABORATION_SELECTION_INVERTED);
                         }
-                        const forward = selection.direction === 'ltr';
-                        const startIndex = Y.createAbsolutePositionFromRelativePosition(selection.start, this.yjs);
-                        const endIndex = Y.createAbsolutePositionFromRelativePosition(selection.end, this.yjs);
-                        if (startIndex && endIndex) {
-                            const start = model.positionAt(startIndex.index);
-                            const end = model.positionAt(endIndex.index);
-                            const inverted = (forward && end.line === 0) || (!forward && start.line === 0);
-                            const range = {
-                                start,
-                                end
-                            };
-                            const contentClassNames: string[] = [COLLABORATION_SELECTION_MARKER, `${COLLABORATION_SELECTION_MARKER}-${peer}`];
-                            if (inverted) {
-                                contentClassNames.push(COLLABORATION_SELECTION_INVERTED);
+                        const item: EditorDecoration = {
+                            range,
+                            options: {
+                                className: `${COLLABORATION_SELECTION} ${COLLABORATION_SELECTION}-${peer}`,
+                                beforeContentClassName: !forward ? contentClassNames.join(' ') : undefined,
+                                afterContentClassName: forward ? contentClassNames.join(' ') : undefined
                             }
-                            const item: EditorDecoration = {
-                                range,
-                                options: {
-                                    className: `${COLLABORATION_SELECTION} ${COLLABORATION_SELECTION}-${peer}`,
-                                    beforeContentClassName: !forward ? contentClassNames.join(' ') : undefined,
-                                    afterContentClassName: forward ? contentClassNames.join(' ') : undefined
-                                }
-                            };
-                            existing.push(item);
-                        }
+                        };
+                        existing.push(item);
                     }
                 }
             }
@@ -439,15 +453,13 @@ export class CollaborationInstance implements Disposable {
     protected rerenderPresenceDecorations(decorations: Map<string, EditorDecoration[]>, ...widgets: EditorWidget[]): void {
         for (const editor of new Set(this.getOpenEditors().concat(widgets))) {
             const uri = editor.getResourceUri();
-            if (uri) {
-                const path = this.utils.getProtocolPath(uri);
-                if (path) {
-                    const old = this.editorDecorations.get(editor) ?? [];
-                    this.editorDecorations.set(editor, editor.editor.deltaDecorations({
-                        newDecorations: decorations.get(path) ?? [],
-                        oldDecorations: old
-                    }));
-                }
+            const path = this.utils.getProtocolPath(uri);
+            if (path) {
+                const old = this.editorDecorations.get(editor) ?? [];
+                this.editorDecorations.set(editor, editor.editor.deltaDecorations({
+                    newDecorations: decorations.get(path) ?? [],
+                    oldDecorations: old
+                }));
             }
         }
     }
@@ -501,52 +513,60 @@ export class CollaborationInstance implements Disposable {
 
     protected async registerPresenceUpdate(widget: EditorWidget): Promise<void> {
         const uri = widget.getResourceUri();
-        if (uri) {
-            const path = this.utils.getProtocolPath(uri);
-            const ytext = this.yjs.getText(path);
-            if (path) {
-                if (!this.isHost) {
-                    this.options.connection.editor.open('', path);
-                }
-                let currentSelection = widget.editor.selection;
-                // // Update presence information immediately when the widget opens
-                this.yjsAwareness.setLocalStateField(path, {
-                    start: Y.createRelativePositionFromTypeIndex(ytext, widget.editor.document.offsetAt(currentSelection.start)),
-                    end: Y.createRelativePositionFromTypeIndex(ytext, widget.editor.document.offsetAt(currentSelection.end)),
-                    direction: 'ltr'
-                });
-                // // Update presence information when the selection changes
-                const selectionChange = widget.editor.onSelectionChanged(selection => {
-                    if (!this.rangeEqual(currentSelection, selection)) {
-                        const start = widget.editor.document.offsetAt(selection.start);
-                        const end = widget.editor.document.offsetAt(selection.end);
-                        const direction = selection.direction;
-                        const editorSelection = {
-                            // Force update the selection
-                            date: Date.now(),
-                            start: Y.createRelativePositionFromTypeIndex(ytext, start),
-                            end: Y.createRelativePositionFromTypeIndex(ytext, end),
-                            direction
-                        };
-                        this.yjsAwareness.setLocalStateField(path, editorSelection);
-                        currentSelection = selection;
-                    }
-                });
-                const widgetDispose = widget.onDidDispose(() => {
-                    widgetDispose.dispose();
-                    selectionChange.dispose();
-                    // Remove presence information when the editor closes
-                    const state = this.yjsAwareness.getLocalState();
-                    if (state) {
-                        delete state[path];
-                    }
-                    this.yjsAwareness.setLocalState(state);
-                });
-                this.toDispose.push(selectionChange);
-                this.toDispose.push(widgetDispose);
-                this.rerenderPresence(widget);
+        const path = this.utils.getProtocolPath(uri);
+        if (path) {
+            if (!this.isHost) {
+                this.options.connection.editor.open('', path);
             }
+            let currentSelection = widget.editor.selection;
+            // // Update presence information when the selection changes
+            const selectionChange = widget.editor.onSelectionChanged(selection => {
+                if (!this.rangeEqual(currentSelection, selection)) {
+                    this.updateEditorPresence(widget);
+                    currentSelection = selection;
+                }
+            });
+            const widgetDispose = widget.onDidDispose(() => {
+                widgetDispose.dispose();
+                selectionChange.dispose();
+                // Remove presence information when the editor closes
+                const state = this.yjsAwareness.getLocalState();
+                if (state?.currentSelection?.path === path) {
+                    delete state.currentSelection;
+                }
+                this.yjsAwareness.setLocalState(state);
+            });
+            this.toDispose.push(selectionChange);
+            this.toDispose.push(widgetDispose);
+            this.rerenderPresence(widget);
         }
+    }
+
+    protected updateEditorPresence(widget: EditorWidget): void {
+        const uri = widget.getResourceUri();
+        const path = this.utils.getProtocolPath(uri);
+        if (path) {
+            const ytext = this.yjs.getText(path);
+            const selection = widget.editor.selection;
+            const start = widget.editor.document.offsetAt(selection.start);
+            const end = widget.editor.document.offsetAt(selection.end);
+            const direction = selection.direction;
+            const editorSelection = {
+                // Force update the selection
+                date: Date.now(),
+                start: Y.createRelativePositionFromTypeIndex(ytext, start),
+                end: Y.createRelativePositionFromTypeIndex(ytext, end),
+                direction
+            };
+            this.setSharedSelection(path, editorSelection);
+        }
+    }
+
+    protected setSharedSelection(path: string, selection: RelativeSelection): void {
+        this.yjsAwareness.setLocalStateField('currentSelection', {
+            path,
+            selection
+        });
     }
 
     protected rangeEqual(a: Range, b: Range): boolean {

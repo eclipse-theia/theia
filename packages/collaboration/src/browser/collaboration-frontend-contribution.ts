@@ -16,7 +16,7 @@
 
 import '../../src/browser/style/index.css';
 
-import { Command, CommandContribution, CommandRegistry, MessageService, nls, QuickInputService, QuickPickItem } from '@theia/core';
+import { Command, CommandContribution, CommandRegistry, MessageService, nls, Progress, QuickInputService, QuickPickItem } from '@theia/core';
 import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
 import { ConnectionProvider } from 'open-collaboration-protocol';
 import { JsonMessageEncoding, WebSocketTransportProvider } from 'open-collaboration-rpc';
@@ -249,6 +249,7 @@ export class CollaborationFrontendContribution implements CommandContribution {
         });
         commands.registerCommand(CollaborationCommands.JOIN_ROOM, {
             execute: async () => {
+                let joinRoomProgress: Progress | undefined;
                 try {
                     const authHandler = await this.authHandlerDeferred.promise;
                     const id = await this.quickInputService?.input({
@@ -257,7 +258,11 @@ export class CollaborationFrontendContribution implements CommandContribution {
                     if (!id) {
                         return;
                     }
+                    joinRoomProgress = await this.messageService.showProgress({
+                        text: nls.localize('theia/collaboration/joiningRoom', 'Joining collaboration session...')
+                    });
                     const roomClaim = await authHandler.joinRoom(id);
+                    joinRoomProgress.cancel();
                     if (roomClaim.loginToken) {
                         localStorage.setItem(COLLABORATION_AUTH_TOKEN, roomClaim.loginToken);
                     }
@@ -273,6 +278,7 @@ export class CollaborationFrontendContribution implements CommandContribution {
                     this.setStatusBarEntryConnected(roomClaim.roomToken);
                     await this.currentInstance.initialize();
                 } catch (err) {
+                    joinRoomProgress?.cancel();
                     await this.messageService.error(nls.localize('theia/collaboration/failedJoin', 'Failed to join room: {0}', err.message));
                 }
             }
