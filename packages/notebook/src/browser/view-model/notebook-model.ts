@@ -314,7 +314,7 @@ export class NotebookModel implements Saveable, Disposable {
 
             // if selected cell is affected update it because it can potentially have been replaced
             if (cell === this.selectedCell) {
-                this.setSelectedCell(this.cells.length > cellIndex ? this.cells[cellIndex] : this.cells[this.cells.length - 1]);
+                this.setSelectedCell(this.cells[Math.min(cellIndex, this.cells.length - 1)]);
             }
         }
 
