@@ -162,8 +162,8 @@ export class PostCreateCommandContribution implements ContainerCreationContribut
                     } else {
                         exec = await container.exec({ Cmd: ['sh', '-c', command], AttachStderr: true, AttachStdout: true });
                     }
-                    const stream = await exec.start({ Tty: true })
-                    stream.on('data', (chunk) => outputprovider.onRemoteOutput(chunk.toString()));
+                    const stream = await exec.start({ Tty: true });
+                    stream.on('data', chunk => outputprovider.onRemoteOutput(chunk.toString()));
                 } catch (error) {
                     outputprovider.onRemoteOutput('could not execute postCreateCommand ' + JSON.stringify(command) + ' reason:' + error.message);
                 }

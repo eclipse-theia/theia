@@ -57,9 +57,9 @@ export class SettingsContribution implements RemoteCliContribution, ContainerCre
         const settings = {
             ...(this.currentConfig.settings ?? {}),
             ...(this.currentConfig.customizations?.vscode?.settings ?? [])
-        }
+        };
         this.currentConfig = undefined;
-        return Object.entries(settings).map(([key, value]) => `--set-preference=${key}=${JSON.stringify(value)}`) ?? []
+        return Object.entries(settings).map(([key, value]) => `--set-preference=${key}=${JSON.stringify(value)}`) ?? [];
     }
 
     async handleContainerCreation(createOptions: Docker.ContainerCreateOptions, containerConfig: DevContainerConfiguration): Promise<void> {

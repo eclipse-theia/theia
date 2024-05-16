@@ -260,13 +260,13 @@ export interface DevContainerCommon {
     remoteUser?: string
 
     /**
-     * extensions to install in the container at launch. The expeceted format is publisher.name[@version].  
+     * extensions to install in the container at launch. The expeceted format is publisher.name[@version].
      * The default is no extensions being installed.
      */
     extensions?: string[]
 
     /**
-     * settings to set in the container at launch in the settings.json. The expected format is key=value.  
+     * settings to set in the container at launch in the settings.json. The expected format is key=value.
      * The default is no preferences being set.
      */
     settings?: {
@@ -383,13 +383,13 @@ export interface DevContainerCommon {
         [k: string]: unknown,
         vscode?: {
             /**
-             * extensions to install in the container at launch. The expeceted format is publisher.name[@version].  
+             * extensions to install in the container at launch. The expeceted format is publisher.name[@version].
              * The default is no extensions being installed.
              */
             extensions?: string[],
 
             /**
-             * settings to set in the container at launch in the settings.json. The expected format is key=value.  
+             * settings to set in the container at launch in the settings.json. The expected format is key=value.
              * The default is no preferences being set.
              */
             settings?: {
