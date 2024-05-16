@@ -19,6 +19,7 @@ import { ContainerCreationContribution } from '../docker-container-service';
 import { DevContainerConfiguration, DockerfileContainer, ImageContainer, NonComposeContainerBase } from '../devcontainer-file';
 import { Path } from '@theia/core';
 import { ContainerOutputProvider } from '../../electron-common/container-output-provider';
+import * as fs from '@theia/core/shared/fs-extra';
 
 export function registerContainerCreationContributions(bind: interfaces.Bind): void {
     bind(ContainerCreationContribution).to(ImageFileContribution).inSingletonScope();
@@ -26,6 +27,7 @@ export function registerContainerCreationContributions(bind: interfaces.Bind): v
     bind(ContainerCreationContribution).to(ForwardPortsContribution).inSingletonScope();
     bind(ContainerCreationContribution).to(MountsContribution).inSingletonScope();
     bind(ContainerCreationContribution).to(RemoteUserContribution).inSingletonScope();
+    bind(ContainerCreationContribution).to(PostCreateCommandContribution).inSingletonScope();
 }
 
 @injectable()
@@ -54,26 +56,35 @@ export class DockerFileContribution implements ContainerCreationContribution {
         // check if dockerfile container
         if (containerConfig.dockerFile || containerConfig.build?.dockerfile) {
             const dockerfile = (containerConfig.dockerFile ?? containerConfig.build?.dockerfile) as string;
-            const buildStream = await api.buildImage({
-                context: containerConfig.context ?? new Path(containerConfig.location as string).dir.fsPath(),
-                src: [dockerfile],
-            } as Docker.ImageBuildContext, {
-                buildargs: containerConfig.build?.args
-            });
-            // TODO probably have some console windows showing the output of the build
-            const imageId = await new Promise<string>((res, rej) => api.modem.followProgress(buildStream, (err, outputs) => {
-                if (err) {
-                    rej(err);
-                } else {
-                    for (let i = outputs.length - 1; i >= 0; i--) {
-                        if (outputs[i].aux?.ID) {
-                            res(outputs[i].aux.ID);
-                            return;
+            const context = containerConfig.context ?? new Path(containerConfig.location as string).dir.fsPath();
+            try {
+                // ensure dockerfile exists
+                await fs.lstat(new Path(context as string).join(dockerfile).fsPath());
+
+                const buildStream = await api.buildImage({
+                    context,
+                    src: [dockerfile],
+                } as Docker.ImageBuildContext, {
+                    buildargs: containerConfig.build?.args
+                });
+                // TODO probably have some console windows showing the output of the build
+                const imageId = await new Promise<string>((res, rej) => api.modem.followProgress(buildStream!, (err, outputs) => {
+                    if (err) {
+                        rej(err);
+                    } else {
+                        for (let i = outputs.length - 1; i >= 0; i--) {
+                            if (outputs[i].aux?.ID) {
+                                res(outputs[i].aux.ID);
+                                return;
+                            }
                         }
                     }
-                }
-            }, progress => outputprovider.onRemoteOutput(OutputHelper.parseProgress(progress))));
-            createOptions.Image = imageId;
+                }, progress => outputprovider.onRemoteOutput(OutputHelper.parseProgress(progress))));
+                createOptions.Image = imageId;
+            } catch (error) {
+                outputprovider.onRemoteOutput(`could not build dockerfile "${dockerfile}" reason: ${error.message}`);
+                throw error;
+            }
         }
     }
 }
@@ -138,16 +149,23 @@ export class RemoteUserContribution implements ContainerCreationContribution {
 
 @injectable()
 export class PostCreateCommandContribution implements ContainerCreationContribution {
-    async handlePostCreate?(containerConfig: DevContainerConfiguration, container: Docker.Container): Promise<void> {
+    async handlePostCreate?(containerConfig: DevContainerConfiguration, container: Docker.Container, api: Docker, outputprovider: ContainerOutputProvider): Promise<void> {
         if (containerConfig.postCreateCommand) {
             const commands = typeof containerConfig.postCreateCommand === 'object' && !(containerConfig.postCreateCommand instanceof Array) ?
                 Object.values(containerConfig.postCreateCommand) : [containerConfig.postCreateCommand];
             for (const command of commands) {
-                if (command instanceof Array) {
-                    await container.exec({ Cmd: command, });
-                } else {
-                    await container.exec({ Cmd: ['sh', '-c', command], });
+                try {
+                    let exec;
+                    if (command instanceof Array) {
+                        exec = await container.exec({ Cmd: command, AttachStderr: true, AttachStdout: true });
 
+                    } else {
+                        exec = await container.exec({ Cmd: ['sh', '-c', command], AttachStderr: true, AttachStdout: true });
+                    }
+                    const stream = await exec.start({ Tty: true })
+                    stream.on('data', (chunk) => outputprovider.onRemoteOutput(chunk.toString()));
+                } catch (error) {
+                    outputprovider.onRemoteOutput('could not execute postCreateCommand ' + JSON.stringify(command) + ' reason:' + error.message);
                 }
             }
         }

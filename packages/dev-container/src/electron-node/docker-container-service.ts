@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContributionProvider, URI } from '@theia/core';
+import { ContributionProvider, MaybePromise, URI } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { WorkspaceServer } from '@theia/workspace/lib/common';
 import * as fs from '@theia/core/shared/fs-extra';
@@ -30,12 +30,15 @@ export interface ContainerCreationContribution {
     handleContainerCreation?(createOptions: Docker.ContainerCreateOptions,
         containerConfig: DevContainerConfiguration,
         api: Docker,
-        outputProvider?: ContainerOutputProvider): Promise<void>;
+        outputProvider?: ContainerOutputProvider): MaybePromise<void>;
 
     /**
      * executed after creating and starting the container
      */
-    handlePostCreate?(containerConfig: DevContainerConfiguration, container: Docker.Container, api: Docker): Promise<void>;
+    handlePostCreate?(containerConfig: DevContainerConfiguration,
+        container: Docker.Container,
+        api: Docker,
+        outputProvider?: ContainerOutputProvider): MaybePromise<void>;
 }
 
 @injectable()
@@ -105,7 +108,7 @@ export class DockerContainerService {
         await container.start();
 
         for (const containerCreateContrib of this.containerCreationContributions.getContributions()) {
-            await containerCreateContrib.handlePostCreate?.(devcontainerConfig, container, docker);
+            await containerCreateContrib.handlePostCreate?.(devcontainerConfig, container, docker, outputProvider);
         }
 
         return container;
