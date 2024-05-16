@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { FrontendApplicationContribution } from '@theia/core/src/browser';
+import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { CliPreferences } from '../common/cli-preferences';
 import { PreferenceService, PreferenceScope } from '@theia/core/lib/browser/preferences/preference-service';
 
@@ -29,7 +29,7 @@ export class PreferenceFrontendContribution implements FrontendApplicationContri
 
     onStart(): void {
         this.CliPreferences.getPreferences().then(async preferences => {
-            await this.preferenceService.ready
+            await this.preferenceService.ready;
             for (const [key, value] of preferences) {
                 this.preferenceService.set(key, value, PreferenceScope.User);
             }

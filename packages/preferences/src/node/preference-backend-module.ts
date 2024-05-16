@@ -21,9 +21,8 @@ import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connec
 import { CliPreferences, CliPreferencesPath } from '../common/cli-preferences';
 
 const preferencesConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {
-    bindBackendService(CliPreferencesPath, CliPreferences)
+    bindBackendService(CliPreferencesPath, CliPreferences);
 });
-
 
 export default new ContainerModule(bind => {
     bind(PreferenceCliContribution).toSelf().inSingletonScope();
@@ -32,5 +31,3 @@ export default new ContainerModule(bind => {
 
     bind(ConnectionContainerModule).toConstantValue(preferencesConnectionModule);
 });
-
-

@@ -55,8 +55,8 @@ export function bindPreferences(bind: interfaces.Bind, unbind: interfaces.Unbind
     bind(PreferenceTransactionFactory).toFactory(preferenceTransactionFactoryCreator);
 
     bind(CliPreferences).toDynamicValue(ctx => ServiceConnectionProvider.createProxy<CliPreferences>(ctx.container, CliPreferencesPath)).inSingletonScope();
-    bind(PreferenceFrontendContribution).toSelf().inSingletonScope()
-    bind(FrontendApplicationContribution).toService(PreferenceFrontendContribution)
+    bind(PreferenceFrontendContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(PreferenceFrontendContribution);
 }
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {

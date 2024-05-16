@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from 'inversify';
-import { Argv } from 'yargs';
+import { injectable } from '@theia/core/shared/inversify';
+import { Argv } from '@theia/core/shared/yargs';
 import { CliContribution } from '@theia/core/lib/node/cli';
 import { CliPreferences } from '../common/cli-preferences';
 
@@ -28,7 +28,7 @@ export class PreferenceCliContribution implements CliContribution, CliPreference
         conf.option('set-preference', {
             nargs: 1,
             desc: 'sets the specified preference'
-        })
+        });
     }
 
     setArguments(args: Record<string, unknown>): void {
@@ -36,7 +36,7 @@ export class PreferenceCliContribution implements CliContribution, CliPreference
             const preferences: string[] = args.setPreference instanceof Array ? args.setPreference : [args.setPreference];
             for (const preference of preferences) {
                 const firstEqualIndex = preference.indexOf('=');
-                this.preferences.push([preference.substring(0, firstEqualIndex), JSON.parse(preference.substring(firstEqualIndex + 1))])
+                this.preferences.push([preference.substring(0, firstEqualIndex), JSON.parse(preference.substring(firstEqualIndex + 1))]);
             }
         }
     }

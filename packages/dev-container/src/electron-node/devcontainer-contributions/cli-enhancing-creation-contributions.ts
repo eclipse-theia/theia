@@ -21,7 +21,6 @@ import { DevContainerConfiguration, } from '../devcontainer-file';
 import { injectable, interfaces } from '@theia/core/shared/inversify';
 
 export function registerTheiaStartOptionsContributions(bind: interfaces.Bind): void {
-
     bind(ContainerCreationContribution).toService(ExtensionsContribution);
     bind(ContainerCreationContribution).toService(SettingsContribution);
 }
@@ -39,7 +38,7 @@ export class ExtensionsContribution implements RemoteCliContribution, ContainerC
             ...(this.currentConfig.customizations?.vscode?.extensions ?? [])
         ];
         this.currentConfig = undefined;
-        return extensions?.map(extension => `--install-plugin=${extension}`)
+        return extensions?.map(extension => `--install-plugin=${extension}`);
     }
 
     async handleContainerCreation(createOptions: Docker.ContainerCreateOptions, containerConfig: DevContainerConfiguration): Promise<void> {
