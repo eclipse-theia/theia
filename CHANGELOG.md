@@ -8,6 +8,12 @@
 
 <a name="breaking_changes_not_yet_released">[Breaking Changes:](#breaking_changes_not_yet_released)</a> -->
 
+## 1.50.0
+
+<a name="breaking_changes_1.50.0">[Breaking Changes:](#breaking_changes_1.50.0)</a>
+
+- [core] Classes implementing the `Saveable` interface no longer need to implement the `autoSave` field. However, a new `onContentChanged` event has been added instead.
+
 ## v1.49.0 - 04/29/2024
 
 - [application-manager] added logic to generate Extension Info in server application to avoid empty About Dialog [#13590](https://github.com/eclipse-theia/theia/pull/13590) - contributed on behalf of STMicroelectronics

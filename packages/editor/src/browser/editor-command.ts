@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
-import { CommonCommands, PreferenceService, LabelProvider, ApplicationShell, QuickInputService, QuickPickValue, SaveResourceService } from '@theia/core/lib/browser';
+import { CommonCommands, PreferenceService, LabelProvider, ApplicationShell, QuickInputService, QuickPickValue, SaveableService } from '@theia/core/lib/browser';
 import { EditorManager } from './editor-manager';
 import { CommandContribution, CommandRegistry, Command, ResourceProvider, MessageService, nls } from '@theia/core';
 import { LanguageService } from '@theia/core/lib/browser/language-service';
@@ -215,8 +215,8 @@ export class EditorCommandContribution implements CommandContribution {
     @inject(PreferenceService)
     protected readonly preferencesService: PreferenceService;
 
-    @inject(SaveResourceService)
-    protected readonly saveResourceService: SaveResourceService;
+    @inject(SaveableService)
+    protected readonly saveResourceService: SaveableService;
 
     @inject(QuickInputService) @optional()
     protected readonly quickInputService: QuickInputService;

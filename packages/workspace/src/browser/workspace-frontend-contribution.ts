@@ -37,7 +37,7 @@ import { nls } from '@theia/core/lib/common/nls';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { UntitledWorkspaceExitDialog } from './untitled-workspace-exit-dialog';
-import { FilesystemSaveResourceService } from '@theia/filesystem/lib/browser/filesystem-save-resource-service';
+import { FilesystemSaveableService } from '@theia/filesystem/lib/browser/filesystem-saveable-service';
 import { StopReason } from '@theia/core/lib/common/frontend-application-state';
 
 export enum WorkspaceStates {
@@ -72,7 +72,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
     @inject(ContextKeyService) protected readonly contextKeyService: ContextKeyService;
     @inject(EncodingRegistry) protected readonly encodingRegistry: EncodingRegistry;
     @inject(PreferenceConfigurations) protected readonly preferenceConfigurations: PreferenceConfigurations;
-    @inject(FilesystemSaveResourceService) protected readonly saveService: FilesystemSaveResourceService;
+    @inject(FilesystemSaveableService) protected readonly saveService: FilesystemSaveableService;
     @inject(WorkspaceFileService) protected readonly workspaceFileService: WorkspaceFileService;
 
     configure(): void {

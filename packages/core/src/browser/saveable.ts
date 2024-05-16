@@ -20,7 +20,6 @@ import { Emitter, Event } from '../common/event';
 import { MaybePromise } from '../common/types';
 import { Key } from './keyboard/keys';
 import { AbstractDialog } from './dialogs';
-import { waitForClosed } from './widgets';
 import { nls } from '../common/nls';
 import { DisposableCollection, isObject } from '../common';
 
@@ -148,56 +147,6 @@ export namespace Saveable {
         }
     }
 
-    async function closeWithoutSaving(this: PostCreationSaveableWidget, doRevert: boolean = true): Promise<void> {
-        const saveable = get(this);
-        if (saveable && doRevert && saveable.dirty && saveable.revert) {
-            await saveable.revert();
-        }
-        this[close]();
-        return waitForClosed(this);
-    }
-
-    function createCloseWithSaving(
-        getOtherSaveables?: () => Array<Widget | SaveableWidget>,
-        isAutoSaveEnabled?: () => boolean,
-        doSave?: (widget: Widget, options?: SaveOptions) => Promise<void>
-    ): (this: SaveableWidget, options?: SaveableWidget.CloseOptions) => Promise<void> {
-        let closing = false;
-        return async function (this: SaveableWidget, options: SaveableWidget.CloseOptions): Promise<void> {
-            if (closing) { return; }
-            const saveable = get(this);
-            if (!saveable) { return; }
-            closing = true;
-            try {
-                const result = await shouldSave(saveable, () => {
-                    if (isAutoSaveEnabled?.()) {
-                        return true;
-                    }
-                    const notLastWithDocument = !closingWidgetWouldLoseSaveable(this, getOtherSaveables?.() ?? []);
-                    if (notLastWithDocument) {
-                        return this.closeWithoutSaving(false).then(() => undefined);
-                    }
-                    if (options && options.shouldSave) {
-                        return options.shouldSave();
-                    }
-                    return new ShouldSaveDialog(this).open();
-                });
-                if (typeof result === 'boolean') {
-                    if (result) {
-                        await (doSave?.(this) ?? Saveable.save(this));
-                        if (!isDirty(this)) {
-                            await this.closeWithoutSaving();
-                        }
-                    } else {
-                        await this.closeWithoutSaving();
-                    }
-                }
-            } finally {
-                closing = false;
-            }
-        };
-    }
-
     export async function confirmSaveBeforeClose(toClose: Iterable<Widget>, others: Widget[]): Promise<boolean | undefined> {
         for (const widget of toClose) {
             const saveable = Saveable.get(widget);
@@ -218,46 +167,9 @@ export namespace Saveable {
         return true;
     }
 
-    /**
-     * @param widget the widget that may be closed
-     * @param others widgets that will not be closed.
-     * @returns `true` if widget is saveable and no widget among the `others` refers to the same saveable. `false` otherwise.
-     */
-    function closingWidgetWouldLoseSaveable(widget: Widget, others: Widget[]): boolean {
-        const saveable = get(widget);
-        return !!saveable && !others.some(otherWidget => otherWidget !== widget && get(otherWidget) === saveable);
-    }
-
-    export function apply(
-        widget: Widget,
-        isAutoSaveEnabled?: () => boolean,
-        getOtherSaveables?: () => Array<Widget | SaveableWidget>,
-        doSave?: (widget: Widget, options?: SaveOptions) => Promise<void>,
-    ): SaveableWidget | undefined {
-        if (SaveableWidget.is(widget)) {
-            return widget;
-        }
+    export function closingWidgetWouldLoseSaveable(widget: Widget, others: Widget[]): boolean {
         const saveable = Saveable.get(widget);
-        if (!saveable) {
-            return undefined;
-        }
-        const saveableWidget = widget as SaveableWidget;
-        setDirty(saveableWidget, saveable.dirty);
-        saveable.onDirtyChanged(() => setDirty(saveableWidget, saveable.dirty));
-        const closeWithSaving = createCloseWithSaving(getOtherSaveables, isAutoSaveEnabled, doSave);
-        return Object.assign(saveableWidget, {
-            closeWithoutSaving,
-            closeWithSaving,
-            close: closeWithSaving,
-            [close]: saveableWidget.close,
-        });
-    }
-    export async function shouldSave(saveable: Saveable, cb: () => MaybePromise<boolean | undefined>): Promise<boolean | undefined> {
-        if (!saveable.dirty) {
-            return false;
-        }
-
-        return cb();
+        return !!saveable && !others.some(otherWidget => otherWidget !== widget && Saveable.get(otherWidget) === saveable);
     }
 }
 
@@ -320,18 +232,17 @@ export const enum FormatType {
     DIRTY
 };
 
-export namespace SaveReason {
-
-    export const Manual = 1;
-    export const AfterDelay = 2;
-    export const FocusChange = 3;
-
-    export function isManual(reason?: number): reason is typeof Manual {
-        return reason === Manual;
-    }
+export enum SaveReason {
+    Manual = 1,
+    AfterDelay = 2,
+    FocusChange = 3
 }
 
-export type SaveReason = 1 | 2 | 3;
+export namespace SaveReason {
+    export function isManual(reason?: number): reason is typeof SaveReason.Manual {
+        return reason === SaveReason.Manual;
+    }
+}
 
 export interface SaveOptions {
     /**

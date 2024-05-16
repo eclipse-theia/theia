@@ -17,13 +17,13 @@
 import { environment, MessageService, nls } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { Navigatable, Saveable, SaveableSource, SaveOptions, Widget, open, OpenerService, ConfirmDialog, FormatType, CommonCommands } from '@theia/core/lib/browser';
-import { SaveResourceService } from '@theia/core/lib/browser/save-resource-service';
+import { SaveableService } from '@theia/core/lib/browser/saveable-service';
 import URI from '@theia/core/lib/common/uri';
 import { FileService } from './file-service';
 import { FileDialogService } from './file-dialog';
 
 @injectable()
-export class FilesystemSaveResourceService extends SaveResourceService {
+export class FilesystemSaveableService extends SaveableService {
 
     @inject(MessageService)
     protected readonly messageService: MessageService;

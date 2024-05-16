@@ -42,7 +42,7 @@ import { SnippetParser } from '@theia/monaco-editor-core/esm/vs/editor/contrib/s
 import { TextEdit } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
 import { SnippetController2 } from '@theia/monaco-editor-core/esm/vs/editor/contrib/snippet/browser/snippetController2';
 import { isObject, MaybePromise, nls } from '@theia/core/lib/common';
-import { SaveResourceService } from '@theia/core/lib/browser';
+import { SaveableService } from '@theia/core/lib/browser';
 
 export namespace WorkspaceFileEdit {
     export function is(arg: Edit): arg is monaco.languages.IWorkspaceFileEdit {
@@ -125,8 +125,8 @@ export class MonacoWorkspace {
     @inject(ProblemManager)
     protected readonly problems: ProblemManager;
 
-    @inject(SaveResourceService)
-    protected readonly saveService: SaveResourceService;
+    @inject(SaveableService)
+    protected readonly saveService: SaveableService;
 
     @postConstruct()
     protected init(): void {

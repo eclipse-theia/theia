@@ -21,7 +21,7 @@ import { ApplicationShell } from '../shell';
 import { Saveable } from '../saveable';
 import { PreferenceService } from '../preferences';
 import { environment } from '../../common';
-import { SaveResourceService } from '../save-resource-service';
+import { SaveableService } from '../saveable-service';
 
 @injectable()
 export class DefaultSecondaryWindowService implements SecondaryWindowService {
@@ -44,8 +44,8 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
-    @inject(SaveResourceService)
-    protected readonly saveResourceService: SaveResourceService;
+    @inject(SaveableService)
+    protected readonly saveResourceService: SaveableService;
 
     @postConstruct()
     init(): void {

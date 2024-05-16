@@ -38,7 +38,7 @@ import { waitForRevealed, waitForClosed, PINNED_CLASS } from '../widgets';
 import { CorePreferences } from '../core-preferences';
 import { BreadcrumbsRendererFactory } from '../breadcrumbs/breadcrumbs-renderer';
 import { Deferred } from '../../common/promise-util';
-import { SaveResourceService } from '../save-resource-service';
+import { SaveableService } from '../saveable-service';
 import { nls } from '../../common/nls';
 import { SecondaryWindowHandler } from '../secondary-window-handler';
 import URI from '../../common/uri';
@@ -272,7 +272,7 @@ export class ApplicationShell extends Widget {
         @inject(FrontendApplicationStateService) protected readonly applicationStateService: FrontendApplicationStateService,
         @inject(ApplicationShellOptions) @optional() options: RecursivePartial<ApplicationShell.Options> = {},
         @inject(CorePreferences) protected readonly corePreferences: CorePreferences,
-        @inject(SaveResourceService) protected readonly saveResourceService: SaveResourceService,
+        @inject(SaveableService) protected readonly saveableService: SaveableService,
         @inject(SecondaryWindowHandler) protected readonly secondaryWindowHandler: SecondaryWindowHandler,
         @inject(WindowService) protected readonly windowService: WindowService
     ) {
@@ -1231,14 +1231,6 @@ export class ApplicationShell extends Widget {
         }
         this.tracker.add(widget);
         this.checkActivation(widget);
-        Saveable.apply(
-            widget,
-            () => this.saveResourceService.autoSave !== 'off',
-            () => this.widgets.filter(maybeSaveable => !!Saveable.get(maybeSaveable)),
-            async (toSave, options) => {
-                await this.saveResourceService.save(toSave, options);
-            },
-        );
         if (ApplicationShell.TrackableWidgetProvider.is(widget)) {
             for (const toTrack of widget.getTrackableWidgets()) {
                 this.track(toTrack);
@@ -2044,21 +2036,21 @@ export class ApplicationShell extends Widget {
      * Test whether the current widget is dirty.
      */
     canSave(): boolean {
-        return this.saveResourceService.canSave(this.currentWidget);
+        return this.saveableService.canSave(this.currentWidget);
     }
 
     /**
      * Save the current widget if it is dirty.
      */
     async save(options?: SaveOptions): Promise<void> {
-        await this.saveResourceService.save(this.currentWidget, options);
+        await this.saveableService.save(this.currentWidget, options);
     }
 
     /**
      * Test whether there is a dirty widget.
      */
     canSaveAll(): boolean {
-        return this.tracker.widgets.some(widget => this.saveResourceService.canSave(widget));
+        return this.tracker.widgets.some(widget => this.saveableService.canSave(widget));
     }
 
     /**
@@ -2066,8 +2058,8 @@ export class ApplicationShell extends Widget {
      */
     async saveAll(options?: SaveOptions): Promise<void> {
         for (const widget of this.widgets) {
-            if (this.saveResourceService.canSaveNotSaveAs(widget)) {
-                await this.saveResourceService.save(widget, options);
+            if (this.saveableService.canSaveNotSaveAs(widget)) {
+                await this.saveableService.save(widget, options);
             }
         }
     }

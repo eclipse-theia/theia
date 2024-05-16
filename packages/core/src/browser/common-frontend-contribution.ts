@@ -62,7 +62,7 @@ import { WindowService } from './window/window-service';
 import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
 import { DecorationStyle } from './decoration-style';
 import { isPinned, Title, togglePinned, Widget } from './widgets';
-import { SaveResourceService } from './save-resource-service';
+import { SaveableService } from './saveable-service';
 import { UserWorkingDirectoryProvider } from './user-working-directory-provider';
 import { UNTITLED_SCHEME, UntitledResourceResolver } from '../common';
 import { LanguageQuickPickService } from './i18n/language-quick-pick-service';
@@ -385,7 +385,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         @inject(OpenerService) protected readonly openerService: OpenerService,
         @inject(AboutDialog) protected readonly aboutDialog: AboutDialog,
         @inject(AsyncLocalizationProvider) protected readonly localizationProvider: AsyncLocalizationProvider,
-        @inject(SaveResourceService) protected readonly saveResourceService: SaveResourceService,
+        @inject(SaveableService) protected readonly saveResourceService: SaveableService,
     ) { }
 
     @inject(ContextKeyService)

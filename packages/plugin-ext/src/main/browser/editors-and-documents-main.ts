@@ -32,7 +32,7 @@ import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { TextEditorMain } from './text-editor-main';
 import { DisposableCollection, Emitter, URI } from '@theia/core';
 import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
-import { SaveResourceService } from '@theia/core/lib/browser/save-resource-service';
+import { SaveableService } from '@theia/core/lib/browser/saveable-service';
 
 export class EditorsAndDocumentsMain implements Disposable {
 
@@ -43,7 +43,7 @@ export class EditorsAndDocumentsMain implements Disposable {
 
     private readonly modelService: EditorModelService;
     private readonly editorManager: EditorManager;
-    private readonly saveResourceService: SaveResourceService;
+    private readonly saveResourceService: SaveableService;
 
     private readonly onTextEditorAddEmitter = new Emitter<TextEditorMain[]>();
     private readonly onTextEditorRemoveEmitter = new Emitter<string[]>();
@@ -64,7 +64,7 @@ export class EditorsAndDocumentsMain implements Disposable {
 
         this.editorManager = container.get(EditorManager);
         this.modelService = container.get(EditorModelService);
-        this.saveResourceService = container.get(SaveResourceService);
+        this.saveResourceService = container.get(SaveableService);
 
         this.stateComputer = new EditorAndDocumentStateComputer(d => this.onDelta(d), this.editorManager, this.modelService);
         this.toDispose.push(this.stateComputer);

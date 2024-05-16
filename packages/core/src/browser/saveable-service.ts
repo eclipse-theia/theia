@@ -16,21 +16,32 @@
 
 import type { ApplicationShell } from './shell';
 import { injectable } from 'inversify';
-import { UNTITLED_SCHEME, URI, Disposable, DisposableCollection } from '../common';
+import { UNTITLED_SCHEME, URI, Disposable, DisposableCollection, Emitter, Event } from '../common';
 import { Navigatable, NavigatableWidget } from './navigatable-types';
-import { AutoSaveMode, Saveable, SaveableSource, SaveOptions, SaveReason } from './saveable';
-import { Widget } from './widgets';
+import { AutoSaveMode, Saveable, SaveableSource, SaveableWidget, SaveOptions, SaveReason, setDirty, close, PostCreationSaveableWidget, ShouldSaveDialog } from './saveable';
+import { waitForClosed, Widget } from './widgets';
 import { FrontendApplicationContribution } from './frontend-application-contribution';
 import { FrontendApplication } from './frontend-application';
 import throttle = require('lodash.throttle');
 
 @injectable()
-export class SaveResourceService implements FrontendApplicationContribution {
+export class SaveableService implements FrontendApplicationContribution {
 
-    protected saveThrottles = new Map<Saveable, AutoSaveThrottle>();
+    protected saveThrottles = new Map<Widget, AutoSaveThrottle>();
     protected saveMode: AutoSaveMode = 'off';
     protected saveDelay = 1000;
     protected shell: ApplicationShell;
+
+    protected readonly onDidAutoSaveChangeEmitter = new Emitter<AutoSaveMode>();
+    protected readonly onDidAutoSaveDelayChangeEmitter = new Emitter<number>();
+
+    get onDidAutoSaveChange(): Event<AutoSaveMode> {
+        return this.onDidAutoSaveChangeEmitter.event;
+    }
+
+    get onDidAutoSaveDelayChange(): Event<number> {
+        return this.onDidAutoSaveDelayChangeEmitter.event;
+    }
 
     get autoSave(): AutoSaveMode {
         return this.saveMode;
@@ -75,19 +86,14 @@ export class SaveResourceService implements FrontendApplicationContribution {
             }
         });
         this.shell.onDidRemoveWidget(e => {
-            const saveable = Saveable.get(e);
-            if (saveable) {
-                this.saveThrottles.get(saveable)?.dispose();
-                this.saveThrottles.delete(saveable);
-            }
+            this.saveThrottles.get(e)?.dispose();
+            this.saveThrottles.delete(e);
         });
     }
 
     protected updateAutoSaveMode(mode: AutoSaveMode): void {
         this.saveMode = mode;
-        for (const saveThrottle of this.saveThrottles.values()) {
-            saveThrottle.autoSave = mode;
-        }
+        this.onDidAutoSaveChangeEmitter.fire(mode);
         if (mode === 'onFocusChange') {
             // If the new mode is onFocusChange, we need to save all dirty documents that are not focused
             const widgets = this.shell.widgets;
@@ -104,14 +110,13 @@ export class SaveResourceService implements FrontendApplicationContribution {
 
     protected updateAutoSaveDelay(delay: number): void {
         this.saveDelay = delay;
-        for (const saveThrottle of this.saveThrottles.values()) {
-            saveThrottle.autoSaveDelay = delay;
-        }
+        this.onDidAutoSaveDelayChangeEmitter.fire(delay);
     }
 
     registerSaveable(widget: Widget, saveable: Saveable): Disposable {
         const saveThrottle = new AutoSaveThrottle(
             saveable,
+            this,
             () => {
                 if (this.saveMode === 'afterDelay' && this.shouldAutoSave(widget, saveable)) {
                     saveable.save({
@@ -121,9 +126,8 @@ export class SaveResourceService implements FrontendApplicationContribution {
             },
             this.addBlurListener(widget, saveable)
         );
-        saveThrottle.autoSave = this.saveMode;
-        saveThrottle.autoSaveDelay = this.saveDelay;
-        this.saveThrottles.set(saveable, saveThrottle);
+        this.saveThrottles.set(widget, saveThrottle);
+        this.applySaveableWidget(widget, saveable);
         return saveThrottle;
     }
 
@@ -160,6 +164,81 @@ export class SaveResourceService implements FrontendApplicationContribution {
         } else {
             return saveable.dirty;
         }
+    }
+
+    protected applySaveableWidget(widget: Widget, saveable: Saveable): void {
+        if (SaveableWidget.is(widget)) {
+            return;
+        }
+        const saveableWidget = widget as PostCreationSaveableWidget;
+        setDirty(saveableWidget, saveable.dirty);
+        saveable.onDirtyChanged(() => setDirty(saveableWidget, saveable.dirty));
+        const closeWithSaving = this.createCloseWithSaving();
+        const closeWithoutSaving = () => this.closeWithoutSaving(saveableWidget, false);
+        Object.assign(saveableWidget, {
+            closeWithoutSaving,
+            closeWithSaving,
+            close: closeWithSaving,
+            [close]: saveableWidget.close,
+        });
+    }
+
+    protected createCloseWithSaving(): (this: SaveableWidget, options?: SaveableWidget.CloseOptions) => Promise<void> {
+        let closing = false;
+        const doSave = this.closeWithSaving.bind(this);
+        return async function (this: SaveableWidget, options?: SaveableWidget.CloseOptions): Promise<void> {
+            if (closing) {
+                return;
+            }
+            closing = true;
+            try {
+                await doSave(this, options);
+            } finally {
+                closing = false;
+            }
+        };
+    }
+
+    protected async closeWithSaving(widget: PostCreationSaveableWidget, options?: SaveableWidget.CloseOptions): Promise<void> {
+        const result = await this.shouldSaveWidget(widget, options);
+        if (typeof result === 'boolean') {
+            if (result) {
+                await this.save(widget, {
+                    saveReason: SaveReason.AfterDelay
+                });
+                if (!Saveable.isDirty(widget)) {
+                    await widget.closeWithoutSaving();
+                }
+            } else {
+                await widget.closeWithoutSaving();
+            }
+        }
+    }
+
+    protected async shouldSaveWidget(widget: PostCreationSaveableWidget, options?: SaveableWidget.CloseOptions): Promise<boolean | undefined> {
+        if (!Saveable.isDirty(widget)) {
+            return false;
+        }
+        if (this.autoSave !== 'off') {
+            return true;
+        }
+        const notLastWithDocument = !Saveable.closingWidgetWouldLoseSaveable(widget, Array.from(this.saveThrottles.keys()));
+        if (notLastWithDocument) {
+            return widget.closeWithoutSaving(false).then(() => undefined);
+        }
+        if (options && options.shouldSave) {
+            return options.shouldSave();
+        }
+        return new ShouldSaveDialog(widget).open();
+    }
+
+    protected async closeWithoutSaving(widget: PostCreationSaveableWidget, doRevert: boolean = true): Promise<void> {
+        const saveable = Saveable.get(widget);
+        if (saveable && doRevert && saveable.dirty && saveable.revert) {
+            await saveable.revert();
+        }
+        widget[close]();
+        return waitForClosed(widget);
     }
 
     /**
@@ -200,36 +279,15 @@ export class SaveResourceService implements FrontendApplicationContribution {
 export class AutoSaveThrottle implements Disposable {
 
     private _saveable: Saveable;
-    private _cb: () => void;
+    private _callback: () => void;
+    private _saveService: SaveableService;
     private _disposable: DisposableCollection;
     private _throttle?: ReturnType<typeof throttle>;
-    private _mode: AutoSaveMode = 'off';
-    private _autoSaveDelay = 1000;
 
-    get autoSave(): AutoSaveMode {
-        return this._mode;
-    }
-
-    set autoSave(value: AutoSaveMode) {
-        this._mode = value;
-        this.throttledSave();
-    }
-
-    get autoSaveDelay(): number {
-        return this._autoSaveDelay;
-    }
-
-    set autoSaveDelay(value: number) {
-        this._autoSaveDelay = value;
-        // Explicitly delete the throttle to recreate it with the new delay
-        this._throttle?.cancel();
-        this._throttle = undefined;
-        this.throttledSave();
-    }
-
-    constructor(saveable: Saveable, cb: () => void, ...disposables: Disposable[]) {
-        this._cb = cb;
+    constructor(saveable: Saveable, saveService: SaveableService, callback: () => void, ...disposables: Disposable[]) {
+        this._callback = callback;
         this._saveable = saveable;
+        this._saveService = saveService;
         this._disposable = new DisposableCollection(
             ...disposables,
             saveable.onContentChanged(() => {
@@ -237,15 +295,24 @@ export class AutoSaveThrottle implements Disposable {
             }),
             saveable.onDirtyChanged(() => {
                 this.throttledSave();
+            }),
+            saveService.onDidAutoSaveChange(() => {
+                this.throttledSave();
+            }),
+            saveService.onDidAutoSaveDelayChange(() => {
+                this.throttledSave(true);
             })
         );
     }
 
-    protected throttledSave(): void {
+    protected throttledSave(reset = false): void {
         this._throttle?.cancel();
-        if (this._mode === 'afterDelay' && this._saveable.dirty) {
+        if (reset) {
+            this._throttle = undefined;
+        }
+        if (this._saveService.autoSave === 'afterDelay' && this._saveable.dirty) {
             if (!this._throttle) {
-                this._throttle = throttle(() => this._cb(), this._autoSaveDelay, {
+                this._throttle = throttle(() => this._callback(), this._saveService.autoSaveDelay, {
                     leading: false,
                     trailing: true
                 });
