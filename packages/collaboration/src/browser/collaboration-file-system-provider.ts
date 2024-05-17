@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import * as Y from 'yjs';
 import { Disposable, Emitter, Event, URI } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
 import {
@@ -54,8 +55,7 @@ export class CollaborationFileSystemProvider implements FileSystemProviderWithFi
         }
     }
 
-    constructor(readonly connection: ProtocolBroadcastConnection) {
-
+    constructor(readonly connection: ProtocolBroadcastConnection, readonly yjs: Y.Doc) {
     }
 
     protected encoder = new TextEncoder();
@@ -74,12 +74,22 @@ export class CollaborationFileSystemProvider implements FileSystemProviderWithFi
         return this.onFileWatchErrorEmitter.event;
     }
     async readFile(resource: URI): Promise<Uint8Array> {
-        const stringValue = await this.connection.fs.readFile('', this.getHostPath(resource));
-        return this.encoder.encode(stringValue);
+        const path = this.getHostPath(resource);
+        if (this.yjs.share.has(path)) {
+            const stringValue = this.yjs.getText(path);
+            return this.encoder.encode(stringValue.toString());
+        } else {
+            // Attempt to stat the file to see if it exists on the host system
+            await this.stat(resource);
+            // Return an empty if the file exists
+            // The respective yjs content will be created when the host opens the file
+            return new Uint8Array();
+        }
     }
     async writeFile(resource: URI, content: Uint8Array, opts: FileWriteOptions): Promise<void> {
-        const stringValue = this.decoder.decode(content);
-        await this.connection.fs.writeFile('', this.getHostPath(resource), stringValue);
+        // For now, we don't support writing to the host file system
+        // const stringValue = this.decoder.decode(content);
+        // await this.connection.fs.writeFile('', this.getHostPath(resource), stringValue);
     }
     watch(resource: URI, opts: WatchOptions): Disposable {
         return Disposable.NULL;

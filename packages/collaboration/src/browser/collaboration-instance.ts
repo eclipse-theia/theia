@@ -128,7 +128,6 @@ export class CollaborationInstance implements Disposable {
     protected identity = new Deferred<types.Peer>();
     protected peers = new Map<string, CollaborationPeer>();
     protected ownSelections = new Map<EditorWidget, RelativeSelection>();
-    protected openedFiles = new Set<string>();
     protected isUpdating = false;
     protected yjs = new Y.Doc();
     protected yjsAwareness = new awarenessProtocol.Awareness(this.yjs);
@@ -246,20 +245,24 @@ export class CollaborationInstance implements Disposable {
 
     protected registerEditorEvents(connection: types.ProtocolBroadcastConnection): void {
         for (const model of this.monacoModelService.models) {
-            if ((this.isHost && model.uri.startsWith('file:')) || (!this.isHost && model.uri.startsWith(CollaborationURI.scheme + ':'))) {
+            if (this.isSharedResource(new URI(model.uri))) {
                 this.registerModelUpdate(model);
             }
         }
         this.toDispose.push(this.monacoModelService.onDidCreate(newModel => {
-            if ((this.isHost && newModel.uri.startsWith('file:')) || (!this.isHost && newModel.uri.startsWith(CollaborationURI.scheme + ':'))) {
+            if (this.isSharedResource(new URI(newModel.uri))) {
                 this.registerModelUpdate(newModel);
             }
         }));
         this.toDispose.push(this.editorManager.onCreated(widget => {
-            this.registerPresenceUpdate(widget);
+            if (this.isSharedResource(widget.getResourceUri())) {
+                this.registerPresenceUpdate(widget);
+            }
         }));
         this.getOpenEditors().forEach(widget => {
-            this.registerPresenceUpdate(widget);
+            if (this.isSharedResource(widget.getResourceUri())) {
+                this.registerPresenceUpdate(widget);
+            }
         });
         this.shell.onDidChangeActiveWidget(e => {
             if (e.newValue instanceof EditorWidget) {
@@ -296,6 +299,13 @@ export class CollaborationInstance implements Disposable {
             }
             return undefined;
         });
+    }
+
+    protected isSharedResource(resource?: URI): boolean {
+        if (!resource) {
+            return false;
+        }
+        return this.isHost ? resource.scheme === 'file' : resource.scheme === CollaborationURI.scheme;
     }
 
     protected registerFileSystemEvents(connection: types.ProtocolBroadcastConnection): void {
@@ -585,7 +595,7 @@ export class CollaborationInstance implements Disposable {
         for (const peer of [...response.guests, response.host]) {
             this.addPeer(peer);
         }
-        this.fileSystem = new CollaborationFileSystemProvider(this.options.connection);
+        this.fileSystem = new CollaborationFileSystemProvider(this.options.connection, this.yjs);
         this.fileSystem.readonly = this.readonly;
         this.toDispose.push(this.fileService.registerProvider(CollaborationURI.scheme, this.fileSystem));
         const workspaceDisposable = await this.workspaceService.setHostWorkspace(response.workspace, this.options.connection);
@@ -666,10 +676,11 @@ export class CollaborationInstance implements Disposable {
 
     protected readonly yjsMutex = createMutex();
 
-    protected registerModelUpdate(model: MonacoEditorModel): Disposable {
+    protected registerModelUpdate(model: MonacoEditorModel): void {
         const modelPath = this.utils.getProtocolPath(new URI(model.uri))!;
+        const unknownModel = !this.yjs.share.has(modelPath);
         const ytext = this.yjs.getText(modelPath);
-        if (this.isHost && !this.openedFiles.has(modelPath)) {
+        if (this.isHost && unknownModel) {
             this.isUpdating = true;
             this.yjs.transact(() => {
                 // If we are hosting the room, set the initial content
@@ -681,7 +692,6 @@ export class CollaborationInstance implements Disposable {
                 ytext.insert(0, model.textEditorModel.getValue());
             });
             this.isUpdating = false;
-            this.openedFiles.add(modelPath);
         }
         // Always update the model content to match the shared content
         model.textEditorModel.setValue(ytext.toString());
@@ -723,9 +733,9 @@ export class CollaborationInstance implements Disposable {
                             operations.push({ range, text: '' });
                         }
                     });
-                    // Push as edit operation so that it is added to the undo/redo stack
-                    // eslint-disable-next-line no-null/no-null
-                    model.textEditorModel.pushEditOperations(null, operations, () => null);
+                    // Apply the changes to the model, but don't push to the undo/redo stack
+                    // @todo msujew: Pushing to the undo/redo stack would be preferable but currently leads to editor desync.
+                    model.textEditorModel.applyEdits(operations);
                 } catch (err) {
                     console.error(err);
                 }
@@ -747,7 +757,7 @@ export class CollaborationInstance implements Disposable {
 
         ytext.observe(observer);
         disposable.push(Disposable.create(() => ytext.unobserve(observer)));
-        return disposable;
+        model.onDispose(() => disposable.dispose());
     }
 
     protected getModel(uri: URI): MonacoEditorModel | undefined {
