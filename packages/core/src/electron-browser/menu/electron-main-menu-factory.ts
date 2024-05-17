@@ -101,6 +101,9 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
         this.keybindingRegistry.onKeybindingsChanged(() => {
             this.setMenuBar();
         });
+        this.menuProvider.onDidChange(() => {
+            this.setMenuBar();
+        });
     }
 
     async setMenuBar(): Promise<void> {

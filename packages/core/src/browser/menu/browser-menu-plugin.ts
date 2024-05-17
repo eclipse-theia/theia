@@ -71,25 +71,30 @@ export class BrowserMainMenuFactory implements MenuWidgetFactory {
         const menuBar = new DynamicMenuBarWidget();
         menuBar.id = 'theia:menubar';
         this.corePreferences.ready.then(() => {
-            this.showMenuBar(menuBar, this.corePreferences.get('window.menuBarVisibility', 'classic'));
+            this.showMenuBar(menuBar);
         });
-        const preferenceListener = this.corePreferences.onPreferenceChanged(preference => {
-            if (preference.preferenceName === 'window.menuBarVisibility') {
-                this.showMenuBar(menuBar, preference.newValue);
-            }
-        });
-        const keybindingListener = this.keybindingRegistry.onKeybindingsChanged(() => {
-            const preference = this.corePreferences['window.menuBarVisibility'];
-            this.showMenuBar(menuBar, preference);
-        });
-        menuBar.disposed.connect(() => {
-            preferenceListener.dispose();
-            keybindingListener.dispose();
-        });
+        const disposable = new DisposableCollection(
+            this.corePreferences.onPreferenceChanged(change => {
+                if (change.preferenceName === 'window.menuBarVisibility') {
+                    this.showMenuBar(menuBar, change.newValue);
+                }
+            }),
+            this.keybindingRegistry.onKeybindingsChanged(() => {
+                this.showMenuBar(menuBar);
+            }),
+            this.menuProvider.onDidChange(() => {
+                this.showMenuBar(menuBar);
+            })
+        );
+        menuBar.disposed.connect(() => disposable.dispose());
         return menuBar;
     }
 
-    protected showMenuBar(menuBar: DynamicMenuBarWidget, preference: string | undefined): void {
+    protected getMenuBarVisibility(): string {
+        return this.corePreferences.get('window.menuBarVisibility', 'classic');
+    }
+
+    protected showMenuBar(menuBar: DynamicMenuBarWidget, preference = this.getMenuBarVisibility()): void {
         if (preference && ['classic', 'visible'].includes(preference)) {
             menuBar.clearMenus();
             this.fillMenuBar(menuBar);
