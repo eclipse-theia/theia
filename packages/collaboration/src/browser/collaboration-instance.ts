@@ -27,6 +27,7 @@ import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-mo
 import { CollaborationWorkspaceService } from './collaboration-workspace-service';
 import { Range as MonacoRange } from '@theia/monaco-editor-core';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
+import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { EditorDecoration, EditorWidget, Selection, TextEditorDocument } from '@theia/editor/lib/browser';
 import { DecorationStyle, OpenerService } from '@theia/core/lib/browser';
@@ -38,6 +39,7 @@ import { FileChange, FileChangeType, FileOperation } from '@theia/filesystem/lib
 import { OpenCollabYjsProvider } from './yjs-provider';
 import { createMutex } from 'lib0/mutex';
 import { CollaborationUtils } from './collaboration-utils';
+import throttle = require('@theia/core/shared/lodash.throttle');
 
 export const CollaborationInstanceFactory = Symbol('CollaborationInstanceFactory');
 export type CollaborationInstanceFactory = (connection: CollaborationInstanceOptions) => CollaborationInstance;
@@ -128,7 +130,6 @@ export class CollaborationInstance implements Disposable {
     protected identity = new Deferred<types.Peer>();
     protected peers = new Map<string, CollaborationPeer>();
     protected ownSelections = new Map<EditorWidget, RelativeSelection>();
-    protected isUpdating = false;
     protected yjs = new Y.Doc();
     protected yjsAwareness = new awarenessProtocol.Awareness(this.yjs);
     protected yjsProvider: OpenCollabYjsProvider;
@@ -677,11 +678,12 @@ export class CollaborationInstance implements Disposable {
     protected readonly yjsMutex = createMutex();
 
     protected registerModelUpdate(model: MonacoEditorModel): void {
+        let updating = false;
         const modelPath = this.utils.getProtocolPath(new URI(model.uri))!;
         const unknownModel = !this.yjs.share.has(modelPath);
         const ytext = this.yjs.getText(modelPath);
+        const modelText = model.textEditorModel.getValue();
         if (this.isHost && unknownModel) {
-            this.isUpdating = true;
             this.yjs.transact(() => {
                 // If we are hosting the room, set the initial content
                 // First off, reset the shared content to be empty
@@ -689,15 +691,30 @@ export class CollaborationInstance implements Disposable {
                 // This is important because the shared content accumulates changes/memory usage over time
                 ytext.delete(0, ytext.length);
                 // Then, insert the content of the text model
-                ytext.insert(0, model.textEditorModel.getValue());
+                ytext.insert(0, modelText);
             });
-            this.isUpdating = false;
         }
         // Always update the model content to match the shared content
-        model.textEditorModel.setValue(ytext.toString());
+        const ytextContent = ytext.toString();
+        if (modelText !== ytextContent) {
+            model.textEditorModel.setValue(ytextContent);
+        }
+        // The Ytext instance is our source of truth for the model content
+        // Sometimes (especially after a lot of sequential undo/redo operations) our model content can get out of sync
+        // This resyncs the model content with the Ytext content after a delay
+        const resyncThrottle = throttle(() => {
+            this.yjsMutex(() => {
+                const newContent = ytext.toString();
+                if (model.textEditorModel.getValue() !== newContent) {
+                    updating = true;
+                    this.softReplaceModel(model, newContent);
+                    updating = false;
+                }
+            });
+        }, 500);
         const disposable = new DisposableCollection();
         disposable.push(model.onDidChangeContent(e => {
-            if (this.isUpdating) {
+            if (updating) {
                 return;
             }
             this.yjsMutex(() => {
@@ -707,13 +724,13 @@ export class CollaborationInstance implements Disposable {
                         ytext.insert(change.rangeOffset, change.text);
                     }
                 });
+                resyncThrottle();
             });
         }));
 
         const observer = (textEvent: Y.YTextEvent) => {
             this.yjsMutex(() => {
-                // Disable updating as the edit operation should not be sent to other peers
-                this.isUpdating = true;
+                updating = true;
                 try {
                     let index = 0;
                     const operations: { range: MonacoRange, text: string }[] = [];
@@ -733,9 +750,7 @@ export class CollaborationInstance implements Disposable {
                             operations.push({ range, text: '' });
                         }
                     });
-                    // Apply the changes to the model, but don't push to the undo/redo stack
-                    // @todo msujew: Pushing to the undo/redo stack would be preferable but currently leads to editor desync.
-                    model.textEditorModel.applyEdits(operations);
+                    this.pushChangesToModel(model, operations);
                 } catch (err) {
                     console.error(err);
                 }
@@ -751,7 +766,8 @@ export class CollaborationInstance implements Disposable {
                         }
                     }
                 });
-                this.isUpdating = false;
+                resyncThrottle();
+                updating = false;
             });
         };
 
@@ -767,6 +783,22 @@ export class CollaborationInstance implements Disposable {
         } else {
             return undefined;
         }
+    }
+
+    protected pushChangesToModel(model: MonacoEditorModel, changes: { range: MonacoRange, text: string, forceMoveMarkers?: boolean }[]): void {
+        const editor = MonacoEditor.findByDocument(this.editorManager, model)[0];
+        const cursorState = editor?.getControl().getSelections() ?? [];
+        model.textEditorModel.pushStackElement();
+        model.textEditorModel.pushEditOperations(cursorState, changes, () => cursorState);
+        model.textEditorModel.pushStackElement();
+    }
+
+    protected softReplaceModel(model: MonacoEditorModel, text: string): void {
+        this.pushChangesToModel(model, [{
+            range: model.textEditorModel.getFullModelRange(),
+            text,
+            forceMoveMarkers: false
+        }]);
     }
 
     protected async openUri(uri: URI): Promise<void> {
