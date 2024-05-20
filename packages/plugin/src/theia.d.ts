@@ -26,7 +26,6 @@ import './theia.proposed.canonicalUriProvider';
 import './theia.proposed.customEditorMove';
 import './theia.proposed.diffCommand';
 import './theia.proposed.documentPaste';
-import './theia.proposed.dropMetadata';
 import './theia.proposed.editSessionIdentityProvider';
 import './theia.proposed.extensionsAny';
 import './theia.proposed.externalUriOpener';
