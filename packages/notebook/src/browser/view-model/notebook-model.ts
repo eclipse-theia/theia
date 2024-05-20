@@ -180,9 +180,7 @@ export class NotebookModel implements Saveable, Disposable {
 
     createSnapshot(): Saveable.Snapshot {
         return {
-            read: () => {
-                return JSON.stringify(this.getData());
-            }
+            read: () => JSON.stringify(this.getData())
         };
     }
 
