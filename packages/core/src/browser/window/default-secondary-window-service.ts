@@ -21,6 +21,7 @@ import { ApplicationShell } from '../shell';
 import { Saveable } from '../saveable';
 import { PreferenceService } from '../preferences';
 import { environment } from '../../common';
+import { SaveableService } from '../saveable-service';
 
 @injectable()
 export class DefaultSecondaryWindowService implements SecondaryWindowService {
@@ -42,6 +43,9 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
 
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
+
+    @inject(SaveableService)
+    protected readonly saveResourceService: SaveableService;
 
     @postConstruct()
     init(): void {
@@ -93,7 +97,7 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
             newWindow.addEventListener('DOMContentLoaded', () => {
                 newWindow.addEventListener('beforeunload', evt => {
                     const saveable = Saveable.get(widget);
-                    const wouldLoseState = !!saveable && saveable.dirty && saveable.autoSave === 'off';
+                    const wouldLoseState = !!saveable && saveable.dirty && this.saveResourceService.autoSave === 'off';
                     if (wouldLoseState) {
                         evt.returnValue = '';
                         evt.preventDefault();
@@ -104,7 +108,7 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
                 newWindow.addEventListener('unload', () => {
                     const saveable = Saveable.get(widget);
                     shell.closeWidget(widget.id, {
-                        save: !!saveable && saveable.dirty && saveable.autoSave !== 'off'
+                        save: !!saveable && saveable.dirty && this.saveResourceService.autoSave !== 'off'
                     });
 
                     const extIndex = this.secondaryWindows.indexOf(newWindow);

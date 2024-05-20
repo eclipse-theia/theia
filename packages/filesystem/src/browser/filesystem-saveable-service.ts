@@ -14,20 +14,25 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { environment, nls } from '@theia/core';
+import { environment, MessageService, nls } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { Navigatable, Saveable, SaveableSource, SaveOptions, Widget, open, OpenerService, ConfirmDialog, FormatType, CommonCommands } from '@theia/core/lib/browser';
-import { SaveResourceService } from '@theia/core/lib/browser/save-resource-service';
+import { SaveableService } from '@theia/core/lib/browser/saveable-service';
 import URI from '@theia/core/lib/common/uri';
 import { FileService } from './file-service';
 import { FileDialogService } from './file-dialog';
 
 @injectable()
-export class FilesystemSaveResourceService extends SaveResourceService {
+export class FilesystemSaveableService extends SaveableService {
 
-    @inject(FileService) protected readonly fileService: FileService;
-    @inject(FileDialogService) protected readonly fileDialogService: FileDialogService;
-    @inject(OpenerService) protected readonly openerService: OpenerService;
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
+    @inject(FileService)
+    protected readonly fileService: FileService;
+    @inject(FileDialogService)
+    protected readonly fileDialogService: FileDialogService;
+    @inject(OpenerService)
+    protected readonly openerService: OpenerService;
 
     /**
      * This method ensures a few things about `widget`:

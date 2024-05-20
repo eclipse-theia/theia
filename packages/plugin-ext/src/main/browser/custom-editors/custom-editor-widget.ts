@@ -18,7 +18,7 @@ import { injectable, inject, postConstruct } from '@theia/core/shared/inversify'
 import URI from '@theia/core/lib/common/uri';
 import { FileOperation } from '@theia/filesystem/lib/common/files';
 import { ApplicationShell, NavigatableWidget, Saveable, SaveableSource, SaveOptions } from '@theia/core/lib/browser';
-import { SaveResourceService } from '@theia/core/lib/browser/save-resource-service';
+import { SaveableService } from '@theia/core/lib/browser/saveable-service';
 import { Reference } from '@theia/core/lib/common/reference';
 import { WebviewWidget } from '../webview/webview';
 import { UndoRedoService } from '@theia/editor/lib/browser/undo-redo-service';
@@ -38,13 +38,6 @@ export class CustomEditorWidget extends WebviewWidget implements SaveableSource,
     set modelRef(modelRef: Reference<CustomEditorModel>) {
         this._modelRef = modelRef;
         this.doUpdateContent();
-        Saveable.apply(
-            this,
-            () => this.shell.widgets.filter(widget => !!Saveable.get(widget)),
-            async (widget, options) => {
-                await this.saveService.save(widget, options);
-            },
-        );
     }
     get saveable(): Saveable {
         return this._modelRef.object;
@@ -56,8 +49,8 @@ export class CustomEditorWidget extends WebviewWidget implements SaveableSource,
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
 
-    @inject(SaveResourceService)
-    protected readonly saveService: SaveResourceService;
+    @inject(SaveableService)
+    protected readonly saveService: SaveableService;
 
     @postConstruct()
     protected override init(): void {

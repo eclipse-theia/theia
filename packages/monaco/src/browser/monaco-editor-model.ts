@@ -52,8 +52,6 @@ export interface MonacoModelContentChangedEvent {
 
 export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDocument {
 
-    autoSave: EditorPreferences['files.autoSave'] = 'afterDelay';
-    autoSaveDelay = 500;
     suppressOpenEditorWhenDirty = false;
     lineNumbersMinChars = 3;
 
@@ -69,6 +67,10 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
 
     protected readonly onDidChangeContentEmitter = new Emitter<MonacoModelContentChangedEvent>();
     readonly onDidChangeContent = this.onDidChangeContentEmitter.event;
+
+    get onContentChanged(): Event<void> {
+        return (listener, thisArgs, disposables) => this.onDidChangeContent(() => listener(), thisArgs, disposables);
+    }
 
     protected readonly onDidSaveModelEmitter = new Emitter<ITextModel>();
     readonly onDidSaveModel = this.onDidSaveModelEmitter.event;
@@ -364,7 +366,7 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
     }
 
     save(options?: SaveOptions): Promise<void> {
-        return this.scheduleSave(TextDocumentSaveReason.Manual, undefined, undefined, options);
+        return this.scheduleSave(options?.saveReason ?? TextDocumentSaveReason.Manual, undefined, undefined, options);
     }
 
     protected pendingOperation = Promise.resolve();
@@ -452,21 +454,7 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
         }
         this.cancelSync();
         this.setDirty(true);
-        this.doAutoSave();
         this.trace(log => log('MonacoEditorModel.markAsDirty - exit'));
-    }
-
-    protected doAutoSave(): void {
-        if (this.autoSave !== 'off' && this.resource.uri.scheme !== UNTITLED_SCHEME) {
-            const token = this.cancelSave();
-            this.toDisposeOnAutoSave.dispose();
-            const handle = window.setTimeout(() => {
-                this.scheduleSave(TextDocumentSaveReason.AfterDelay, token);
-            }, this.autoSaveDelay);
-            this.toDisposeOnAutoSave.push(Disposable.create(() =>
-                window.clearTimeout(handle))
-            );
-        }
     }
 
     protected saveCancellationTokenSource = new CancellationTokenSource();
