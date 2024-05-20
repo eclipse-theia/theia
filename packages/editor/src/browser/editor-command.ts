@@ -242,14 +242,14 @@ export class EditorCommandContribution implements CommandContribution {
     @postConstruct()
     protected init(): void {
         this.preferencesService.ready.then(() => {
-            this.saveResourceService.autoSave = this.preferencesService.get(EditorCommandContribution.AUTOSAVE_PREFERENCE) || 'off';
-            this.saveResourceService.autoSaveDelay = this.preferencesService.get(EditorCommandContribution.AUTOSAVE_DELAY_PREFERENCE) || 1000;
+            this.saveResourceService.autoSave = this.preferencesService.get(EditorCommandContribution.AUTOSAVE_PREFERENCE) ?? 'off';
+            this.saveResourceService.autoSaveDelay = this.preferencesService.get(EditorCommandContribution.AUTOSAVE_DELAY_PREFERENCE) ?? 1000;
         });
         this.preferencesService.onPreferenceChanged(e => {
             if (e.preferenceName === EditorCommandContribution.AUTOSAVE_PREFERENCE) {
-                this.saveResourceService.autoSave = e.newValue;
+                this.saveResourceService.autoSave = this.preferencesService.get(EditorCommandContribution.AUTOSAVE_PREFERENCE) ?? 'off';
             } else if (e.preferenceName === EditorCommandContribution.AUTOSAVE_DELAY_PREFERENCE) {
-                this.saveResourceService.autoSaveDelay = e.newValue;
+                this.saveResourceService.autoSaveDelay = this.preferencesService.get(EditorCommandContribution.AUTOSAVE_DELAY_PREFERENCE) ?? 1000;
             }
         });
     }
