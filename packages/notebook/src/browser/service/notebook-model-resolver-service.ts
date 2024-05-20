@@ -108,7 +108,7 @@ export class NotebookModelResolverService {
         return this.resolve(resource, viewType);
     }
 
-    protected async resolveExistingNotebookData(resource: Resource, viewType: string): Promise<NotebookData> {
+    async resolveExistingNotebookData(resource: Resource, viewType: string): Promise<NotebookData> {
         if (resource.uri.scheme === 'untitled') {
             return {
                 cells: [],

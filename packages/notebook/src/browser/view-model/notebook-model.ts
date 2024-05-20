@@ -33,6 +33,7 @@ import { NotebookCellModel, NotebookCellModelFactory } from './notebook-cell-mod
 import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
 import { UndoRedoService } from '@theia/editor/lib/browser/undo-redo-service';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
+import type { NotebookModelResolverService } from '../service/notebook-model-resolver-service';
 
 export const NotebookModelFactory = Symbol('NotebookModelFactory');
 
@@ -44,6 +45,8 @@ export function createNotebookModelContainer(parent: interfaces.Container, props
 
     return child;
 }
+
+export const NotebookModelResolverServiceProxy = Symbol('NotebookModelResolverServiceProxy');
 
 const NotebookModelProps = Symbol('NotebookModelProps');
 export interface NotebookModelProps {
@@ -93,10 +96,12 @@ export class NotebookModel implements Saveable, Disposable {
     @inject(NotebookCellModelFactory)
     protected cellModelFactory: NotebookCellModelFactory;
 
+    @inject(NotebookModelResolverServiceProxy)
+    protected modelResolverService: NotebookModelResolverService;
+
     protected nextHandle: number = 0;
 
     protected _dirty = false;
-    protected _lastData?: NotebookData;
 
     set dirty(dirty: boolean) {
         const oldState = this._dirty;
@@ -133,8 +138,6 @@ export class NotebookModel implements Saveable, Disposable {
     initialize(): void {
         this.dirty = false;
 
-        this._lastData = this.props.data;
-
         this.cells = this.props.data.cells.map((cell, index) => this.cellModelFactory({
             uri: CellUri.generate(this.props.resource.uri, index),
             handle: index,
@@ -169,7 +172,6 @@ export class NotebookModel implements Saveable, Disposable {
         this.dirty = false;
 
         const data = this.getData();
-        this._lastData = data;
         const serializedNotebook = await this.props.serializer.fromNotebook(data);
         this.fileService.writeFile(this.uri, serializedNotebook);
 
@@ -177,10 +179,9 @@ export class NotebookModel implements Saveable, Disposable {
     }
 
     createSnapshot(): Saveable.Snapshot {
-        const model = this;
         return {
-            read(): string {
-                return JSON.stringify(model.getData());
+            read: () => {
+                return JSON.stringify(this.getData());
             }
         };
     }
@@ -191,13 +192,18 @@ export class NotebookModel implements Saveable, Disposable {
             throw new Error('could not read notebook snapshot');
         }
         const data = JSON.parse(rawData) as NotebookData;
-        this._lastData = data;
         this.setData(data);
     }
 
     async revert(options?: Saveable.RevertOptions): Promise<void> {
-        if (this._lastData && !options?.soft) {
-            this.setData(this._lastData);
+        if (!options?.soft) {
+            // Load the data from the file again
+            try {
+                const data = await this.modelResolverService.resolveExistingNotebookData(this.props.resource, this.props.viewType);
+                this.setData(data, false);
+            } catch (err) {
+                console.error('Failed to revert notebook', err);
+            }
         }
         this.dirty = false;
     }
@@ -216,11 +222,12 @@ export class NotebookModel implements Saveable, Disposable {
         this.dirty = this.dirtyCells.length > 0;
     }
 
-    setData(data: NotebookData): void {
+    setData(data: NotebookData, markDirty = true): void {
         // Replace all cells in the model
+        this.dirtyCells = [];
         this.replaceCells(0, this.cells.length, data.cells, false);
         this.metadata = data.metadata;
-        this.dirty = true;
+        this.dirty = markDirty;
         this.onDidChangeContentEmitter.fire();
     }
 
