@@ -89,8 +89,9 @@ export async function extract(options: ExtractionOptions): Promise<void> {
     const errors: string[] = [];
     for (const file of files) {
         const filePath = path.resolve(cwd, file);
+        const fileName = path.relative(cwd, file).split(path.sep).join('/');
         const content = await fs.readFile(filePath, 'utf8');
-        const fileLocalization = await extractFromFile(file, content, errors, options);
+        const fileLocalization = await extractFromFile(fileName, content, errors, options);
         localization = deepmerge(localization, fileLocalization);
     }
     if (errors.length > 0 && options.logs) {
