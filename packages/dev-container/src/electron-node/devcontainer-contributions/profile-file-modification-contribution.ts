@@ -17,15 +17,15 @@
 import { DevContainerConfiguration } from '../devcontainer-file';
 import { ContainerCreationContribution } from '../docker-container-service';
 import * as Docker from 'dockerode';
-import { ContainerOutputProvider } from '../../electron-browser/container-output-provider';
 import { injectable } from '@theia/core/shared/inversify';
+import { ContainerOutputProvider } from '../../electron-common/container-output-provider';
 
 /**
  * this contribution changes the /etc/profile file so that it won't overwrite the PATH variable set by docker 
  */
 @injectable()
 export class ProfileFileModificationContribution implements ContainerCreationContribution {
-    async handlePostCreate(containerConfig: DevContainerConfiguration, container: Docker.Container, api: Docker, outputprovider: ContainerOutputProvider) {
+    async handlePostCreate(containerConfig: DevContainerConfiguration, container: Docker.Container, api: Docker, outputprovider: ContainerOutputProvider): Promise<void> {
         const stream = await (await container.exec({
             Cmd: ['sh', '-c', 'sed -i \'s|PATH="\\([^"]*\\)"|PATH=${PATH:-"\\1"}|g\' /etc/profile'], User: 'root',
             AttachStderr: true, AttachStdout: true

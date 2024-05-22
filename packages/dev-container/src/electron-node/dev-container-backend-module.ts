@@ -32,7 +32,7 @@ export const remoteConnectionModule = ConnectionContainerModule.create(({ bind, 
     registerContainerCreationContributions(bind);
     registerTheiaStartOptionsContributions(bind);
     bind(ProfileFileModificationContribution).toSelf().inSingletonScope();
-    bind(ContainerCreationContribution).toService(ProfileFileModificationContribution)
+    bind(ContainerCreationContribution).toService(ProfileFileModificationContribution);
 
     bind(DevContainerConnectionProvider).toSelf().inSingletonScope();
     bind(RemoteContainerConnectionProvider).toService(DevContainerConnectionProvider);
