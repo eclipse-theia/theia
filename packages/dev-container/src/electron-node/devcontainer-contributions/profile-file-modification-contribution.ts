@@ -21,7 +21,7 @@ import { injectable } from '@theia/core/shared/inversify';
 import { ContainerOutputProvider } from '../../electron-common/container-output-provider';
 
 /**
- * this contribution changes the /etc/profile file so that it won't overwrite the PATH variable set by docker 
+ * this contribution changes the /etc/profile file so that it won't overwrite the PATH variable set by docker
  */
 @injectable()
 export class ProfileFileModificationContribution implements ContainerCreationContribution {
