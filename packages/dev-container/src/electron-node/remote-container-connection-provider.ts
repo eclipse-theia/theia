@@ -56,6 +56,9 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
     @inject(DevContainerFileService)
     protected readonly devContainerFileService: DevContainerFileService;
 
+    @inject(RemoteConnectionService)
+    protected readonly remoteService: RemoteConnectionService;
+
     protected outputProvider: ContainerOutputProvider | undefined;
 
     setClient(client: ContainerOutputProvider): void {
@@ -128,6 +131,14 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
         }));
     }
 
+    async getCurrentContainerInfo(port: number): Promise<Docker.ContainerInspectInfo | undefined> {
+        const connection = this.remoteConnectionService.getConnectionFromPort(port);
+        if (!connection || !(connection instanceof RemoteDockerContainerConnection)) {
+            return undefined;
+        }
+        return await connection.container.inspect();
+    }
+
     dispose(): void {
 
     }
@@ -166,8 +177,6 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
 
     docker: Docker;
     container: Docker.Container;
-
-    containerInfo: Docker.ContainerInspectInfo | undefined;
 
     remoteSetupResult: RemoteSetupResult;
 
