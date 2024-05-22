@@ -18,7 +18,7 @@
 import { CommandHandler } from './command';
 import { SelectionService } from '../common/selection-service';
 
-export class SelectionCommandHandler<S> implements CommandHandler {
+export class SelectionCommandHandler<S extends Object> implements CommandHandler {
 
     constructor(
         protected readonly selectionService: SelectionService,

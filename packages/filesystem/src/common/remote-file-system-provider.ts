@@ -151,7 +151,7 @@ export class RemoteFileSystemProvider implements Required<FileSystemProvider>, D
         options: WatchOptions
     }>();
 
-    private _capabilities: FileSystemProviderCapabilities = 0;
+    private _capabilities: FileSystemProviderCapabilities = FileSystemProviderCapabilities.None;
     get capabilities(): FileSystemProviderCapabilities { return this._capabilities; }
 
     private _readOnlyMessage: MarkdownString | undefined = undefined;

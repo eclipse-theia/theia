@@ -525,6 +525,7 @@ export interface WatchOptions {
 }
 
 export const enum FileSystemProviderCapabilities {
+    None = 0,
     FileReadWrite = 1 << 1,
     FileOpenReadWriteClose = 1 << 2,
     FileReadStream = 1 << 4,
@@ -774,7 +775,7 @@ export interface ReadOnlyMessageFileSystemProvider {
 export namespace ReadOnlyMessageFileSystemProvider {
     export function is(arg: unknown): arg is ReadOnlyMessageFileSystemProvider {
         return isObject<ReadOnlyMessageFileSystemProvider>(arg)
-        && 'readOnlyMessage' in arg;
+            && 'readOnlyMessage' in arg;
     }
 }
 

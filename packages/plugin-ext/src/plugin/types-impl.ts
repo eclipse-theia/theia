@@ -79,7 +79,7 @@ export class URI extends CodeURI implements theia.Uri {
      */
     static override revive(data: UriComponents | CodeURI): URI;
     static override revive(data: UriComponents | CodeURI | null): URI | null;
-    static override revive(data: UriComponents | CodeURI | undefined): URI | undefined
+    static override revive(data: UriComponents | CodeURI | undefined): URI | undefined;
     static override revive(data: UriComponents | CodeURI | undefined | null): URI | undefined | null {
         const uri = CodeURI.revive(data);
         return uri ? new URI(uri) : undefined;
@@ -882,7 +882,7 @@ export class TextEdit {
 
     protected _range: Range;
     protected _newText: string;
-    protected _newEol: EndOfLine;
+    protected _newEol: EndOfLine | undefined;
 
     get range(): Range {
         return this._range;
@@ -906,7 +906,7 @@ export class TextEdit {
         this._newText = value;
     }
 
-    get newEol(): EndOfLine {
+    get newEol(): EndOfLine | undefined {
         return this._newEol;
     }
 
@@ -2060,8 +2060,8 @@ export class TreeItem {
         readonly accessibilityInformation?: AccessibilityInformation
     };
 
-    constructor(label: string | theia.TreeItemLabel, collapsibleState?: theia.TreeItemCollapsibleState)
-    constructor(resourceUri: URI, collapsibleState?: theia.TreeItemCollapsibleState)
+    constructor(label: string | theia.TreeItemLabel, collapsibleState?: theia.TreeItemCollapsibleState);
+    constructor(resourceUri: URI, collapsibleState?: theia.TreeItemCollapsibleState);
     constructor(arg1: string | theia.TreeItemLabel | URI, public collapsibleState: theia.TreeItemCollapsibleState = TreeItemCollapsibleState.None) {
         if (arg1 instanceof URI) {
             this.resourceUri = arg1;

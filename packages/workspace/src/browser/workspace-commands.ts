@@ -519,19 +519,6 @@ export class WorkspaceCommandContribution implements CommandContribution {
             return registry.executeCommand(saveCommand.id);
         }
     }
-
-    protected areMultipleOpenHandlersPresent(openers: OpenHandler[], uri: URI): boolean {
-        let count = 0;
-        for (const opener of openers) {
-            if (opener.canHandle(uri) > 0) {
-                count++;
-            }
-            if (count > 1) {
-                return true;
-            }
-        }
-        return false;
-    }
 }
 
 export class WorkspaceRootUriAwareCommandHandler extends UriAwareCommandHandler<URI> {

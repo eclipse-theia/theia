@@ -6,6 +6,8 @@
 
 <!-- ## not yet released
 
+- [cli] Updated our build to use Typescript 5.4.5 [#13628](https://github.com/eclipse-theia/theia/pull/13628) - contributed on behalf of STMicroelectronics
+
 <a name="breaking_changes_not_yet_released">[Breaking Changes:](#breaking_changes_not_yet_released)</a> -->
 
 ## 1.50.0

@@ -127,7 +127,7 @@ export class QuickOpenMainImpl implements QuickOpenMain, Disposable {
     }
 
     private toQuickPickItem(item: undefined): undefined;
-    private toQuickPickItem(item: TransferQuickPickItem): QuickPickItem
+    private toQuickPickItem(item: TransferQuickPickItem): QuickPickItem;
     private toQuickPickItem(item: TransferQuickPickItem | undefined): QuickPickItem | undefined {
         if (!item) {
             return undefined;

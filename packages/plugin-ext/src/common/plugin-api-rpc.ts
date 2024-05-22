@@ -499,7 +499,7 @@ export interface StatusBarMessageRegistryMain {
 
 export interface QuickOpenExt {
     $onItemSelected(handle: number): void;
-    $validateInput(input: string): Promise<string | { content: string; severity: Severity; } | null | undefined> | undefined;
+    $validateInput(input: string): Promise<string | { content: string; severity: Severity; } | null | undefined>;
 
     $acceptOnDidAccept(sessionId: number): Promise<void>;
     $acceptDidChangeValue(sessionId: number, changedValue: string): Promise<void>;
@@ -1208,7 +1208,7 @@ export interface UndoStopOptions {
 }
 
 export interface ApplyEditsOptions extends UndoStopOptions {
-    setEndOfLine: EndOfLine;
+    setEndOfLine: EndOfLine | undefined;
 }
 
 export interface ThemeColor {
@@ -1859,12 +1859,12 @@ export interface WebviewViewsMain extends Disposable {
 }
 
 export interface CustomEditorsExt {
-    $resolveWebviewEditor<T>(
+    $resolveWebviewEditor(
         resource: UriComponents,
         newWebviewHandle: string,
         viewType: string,
         title: string,
-        widgetOpenerOptions: T | undefined,
+        widgetOpenerOptions: object | undefined,
         options: theia.WebviewPanelOptions,
         cancellation: CancellationToken): Promise<void>;
     $createCustomDocument(resource: UriComponents, viewType: string, openContext: theia.CustomDocumentOpenContext, cancellation: CancellationToken): Promise<{ editable: boolean }>;
@@ -1887,7 +1887,7 @@ export interface CustomEditorsMain {
     $registerTextEditorProvider(viewType: string, options: theia.WebviewPanelOptions, capabilities: CustomTextEditorCapabilities): void;
     $registerCustomEditorProvider(viewType: string, options: theia.WebviewPanelOptions, supportsMultipleEditorsPerDocument: boolean): void;
     $unregisterEditorProvider(viewType: string): void;
-    $createCustomEditorPanel<T>(handle: string, title: string, widgetOpenerOptions: T | undefined, options: theia.WebviewPanelOptions & theia.WebviewOptions): Promise<void>;
+    $createCustomEditorPanel(handle: string, title: string, widgetOpenerOptions: object | undefined, options: theia.WebviewPanelOptions & theia.WebviewOptions): Promise<void>;
     $onDidEdit(resource: UriComponents, viewType: string, editId: number, label: string | undefined): void;
     $onContentChange(resource: UriComponents, viewType: string): void;
 }

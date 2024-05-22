@@ -39,7 +39,7 @@
     "allure-commandline": "^2.23.1",
     "allure-playwright": "^2.5.0",
     "rimraf": "^2.6.1",
-    "typescript": "~4.5.5"
+    "typescript": "~5.4.5"
   },
   "publishConfig": {
     "access": "public"
