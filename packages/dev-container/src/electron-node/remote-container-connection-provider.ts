@@ -287,8 +287,9 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
         return deferred.promise;
     }
 
-    dispose(): void {
-        this.container.stop();
+    async dispose(): Promise<void> {
+        // cant use dockerrode here since this needs to happen on one tick
+        exec(`docker stop ${this.container.id}`);
     }
 
 }
