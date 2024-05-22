@@ -25,11 +25,14 @@ import { DevContainerFileService } from './dev-container-file-service';
 import { ContainerOutputProvider } from '../electron-common/container-output-provider';
 import { ExtensionsContribution, registerTheiaStartOptionsContributions, SettingsContribution } from './devcontainer-contributions/cli-enhancing-creation-contributions';
 import { RemoteCliContribution } from '@theia/core/lib/node/remote/remote-cli-contribution';
+import { ProfileFileModificationContribution } from './devcontainer-contributions/profile-file-modification-contribution';
 
 export const remoteConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {
     bindContributionProvider(bind, ContainerCreationContribution);
     registerContainerCreationContributions(bind);
     registerTheiaStartOptionsContributions(bind);
+    bind(ProfileFileModificationContribution).toSelf().inSingletonScope();
+    bind(ContainerCreationContribution).toService(ProfileFileModificationContribution)
 
     bind(DevContainerConnectionProvider).toSelf().inSingletonScope();
     bind(RemoteContainerConnectionProvider).toService(DevContainerConnectionProvider);
