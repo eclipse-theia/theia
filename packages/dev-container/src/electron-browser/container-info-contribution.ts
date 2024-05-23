@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { FrontendApplicationContribution } from '@theia/core/src/browser';
+import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import type { ContainerInspectInfo } from 'dockerode';
 import { RemoteContainerConnectionProvider } from '../electron-common/remote-container-connection-provider';
 import { PortForwardingService } from '@theia/remote/lib/electron-browser/port-forwarding/port-forwarding-service';
@@ -29,7 +29,7 @@ export class ContainerInfoContribution implements FrontendApplicationContributio
     @inject(PortForwardingService)
     protected readonly portForwardingService: PortForwardingService;
 
-    containerInfo: ContainerInspectInfo | undefined
+    containerInfo: ContainerInspectInfo | undefined;
 
     async onStart(): Promise<void> {
         this.containerInfo = await this.connectionProvider.getCurrentContainerInfo(parseInt(new URLSearchParams(location.search).get('port') ?? '0'));
