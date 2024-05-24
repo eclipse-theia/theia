@@ -209,6 +209,7 @@ export class ElectronMainApplication {
     async start(config: FrontendApplicationConfig): Promise<void> {
         const argv = this.processArgv.getProcessArgvWithoutBin(process.argv);
         createYargs(argv, process.cwd())
+            .help(false)
             .command('$0 [file]', false,
                 cmd => cmd
                     .option('electronUserData', {
