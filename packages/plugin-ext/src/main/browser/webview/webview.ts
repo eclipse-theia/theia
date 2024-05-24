@@ -48,7 +48,6 @@ import { isFirefox } from '@theia/core/lib/browser/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileOperationError, FileOperationResult } from '@theia/filesystem/lib/common/files';
 import { BinaryBufferReadableStream } from '@theia/core/lib/common/buffer';
-import { ViewColumn } from '../../../plugin/types-impl';
 import { ExtractableWidget } from '@theia/core/lib/browser/widgets/extractable-widget';
 import { BadgeWidget } from '@theia/core/lib/browser/view-container';
 import { MenuPath } from '@theia/core';
@@ -185,7 +184,6 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
     }
 
     viewType: string;
-    viewColumn: ViewColumn;
     options: WebviewPanelOptions = {};
 
     protected ready = new Deferred<void>();

@@ -14,11 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { ApplicationShell, OpenHandler, Widget, WidgetManager, WidgetOpenerOptions } from '@theia/core/lib/browser';
+import { ApplicationShell, OpenHandler, WidgetManager, WidgetOpenerOptions } from '@theia/core/lib/browser';
 import { CustomEditor, CustomEditorPriority, CustomEditorSelector } from '../../../common';
 import { CustomEditorWidget } from './custom-editor-widget';
+import { PluginCustomEditorRegistry } from './plugin-custom-editor-registry';
 import { generateUuid } from '@theia/core/lib/common/uuid';
 import { Emitter } from '@theia/core';
 import { match } from '@theia/core/lib/common/glob';
@@ -33,8 +33,9 @@ export class CustomEditorOpener implements OpenHandler {
 
     constructor(
         private readonly editor: CustomEditor,
-        @inject(ApplicationShell) protected readonly shell: ApplicationShell,
-        @inject(WidgetManager) protected readonly widgetManager: WidgetManager
+        protected readonly shell: ApplicationShell,
+        protected readonly widgetManager: WidgetManager,
+        protected readonly editorRegistry: PluginCustomEditorRegistry
     ) {
         this.id = CustomEditorOpener.toCustomEditorId(this.editor.viewType);
         this.label = this.editor.displayName;
@@ -62,30 +63,43 @@ export class CustomEditorOpener implements OpenHandler {
     }
 
     protected readonly pendingWidgetPromises = new Map<string, Promise<CustomEditorWidget>>();
-    async open(uri: URI, options?: WidgetOpenerOptions): Promise<Widget | undefined> {
+    async open(uri: URI, options?: WidgetOpenerOptions): Promise<CustomEditorWidget> {
         let widget: CustomEditorWidget | undefined;
-        const widgets = this.widgetManager.getWidgets(CustomEditorWidget.FACTORY_ID) as CustomEditorWidget[];
-        widget = widgets.find(w => w.viewType === this.editor.viewType && w.resource.toString() === uri.toString());
-
-        if (widget?.isVisible) {
-            return this.shell.revealWidget(widget.id);
-        }
-        if (widget?.isAttached) {
-            return this.shell.activateWidget(widget.id);
-        }
-        if (!widget) {
-            const uriString = uri.toString();
-            let widgetPromise = this.pendingWidgetPromises.get(uriString);
-            if (!widgetPromise) {
+        let shouldNotify = false;
+        const uriString = uri.toString();
+        let widgetPromise = this.pendingWidgetPromises.get(uriString);
+        if (widgetPromise) {
+            widget = await widgetPromise;
+        } else {
+            const widgets = this.widgetManager.getWidgets(CustomEditorWidget.FACTORY_ID) as CustomEditorWidget[];
+            widget = widgets.find(w => w.viewType === this.editor.viewType && w.resource.toString() === uriString);
+            if (!widget) {
+                shouldNotify = true;
                 const id = generateUuid();
-                widgetPromise = this.widgetManager.getOrCreateWidget<CustomEditorWidget>(CustomEditorWidget.FACTORY_ID, { id });
+                widgetPromise = this.widgetManager.getOrCreateWidget<CustomEditorWidget>(CustomEditorWidget.FACTORY_ID, { id }).then(async w => {
+                    try {
+                        w.viewType = this.editor.viewType;
+                        w.resource = uri;
+                        await this.editorRegistry.resolveWidget(w);
+                        await this.shell.addWidget(w, options?.widgetOptions);
+                        return w;
+                    } catch (e) {
+                        w.dispose();
+                        throw e;
+                    }
+                }).finally(() => this.pendingWidgetPromises.delete(uriString));
                 this.pendingWidgetPromises.set(uriString, widgetPromise);
                 widget = await widgetPromise;
-                this.pendingWidgetPromises.delete(uriString);
-                widget.viewType = this.editor.viewType;
-                widget.resource = uri;
-                this.onDidOpenCustomEditorEmitter.fire([widget, options]);
             }
+        }
+        const mode = options?.mode ?? 'activate';
+        if (mode === 'activate') {
+            await this.shell.activateWidget(widget.id);
+        } else if (mode === 'reveal') {
+            await this.shell.revealWidget(widget.id);
+        }
+        if (shouldNotify) {
+            this.onDidOpenCustomEditorEmitter.fire([widget, options]);
         }
         return widget;
     }
