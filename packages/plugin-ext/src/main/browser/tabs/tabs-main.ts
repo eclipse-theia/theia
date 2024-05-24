@@ -62,7 +62,7 @@ export class TabsMainImpl implements TabsMain, Disposable {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.TABS_EXT);
 
         this.applicationShell = container.get(ApplicationShell);
-        this.applicationShell.getLayoutData()
+        this.applicationShell.getLayoutData();
         this.createTabsModel();
 
         const tabBars = this.applicationShell.mainPanel.tabBars();
@@ -203,7 +203,7 @@ export class TabsMainImpl implements TabsMain, Disposable {
                 kind: TabInputKind.NotebookInput,
                 notebookType: widget.notebookType,
                 uri: toUriComponents(widget.model?.uri.toString() ?? '')
-            }
+            };
         }
 
         return { kind: TabInputKind.UnknownInput };
