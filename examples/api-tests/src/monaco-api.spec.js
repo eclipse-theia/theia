@@ -87,7 +87,6 @@ describe('Monaco API', async function () {
                     electronAccelerator: 'Ctrl+Shift+Alt+Cmd+K',
                     userSettingsLabel: 'ctrl+shift+alt+cmd+K',
                     WYSIWYG: true,
-                    chord: false,
                     parts: [new ResolvedChord(
                         true,
                         true,
