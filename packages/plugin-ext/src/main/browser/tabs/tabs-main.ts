@@ -62,7 +62,6 @@ export class TabsMainImpl implements TabsMain, Disposable {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.TABS_EXT);
 
         this.applicationShell = container.get(ApplicationShell);
-        this.applicationShell.getLayoutData();
         this.createTabsModel();
 
         const tabBars = this.applicationShell.mainPanel.tabBars();
@@ -73,7 +72,6 @@ export class TabsMainImpl implements TabsMain, Disposable {
         this.toDisposeOnDestroy.push(
             this.applicationShell.mainPanelRenderer.onDidCreateTabBar(tabBar => {
                 this.attachListenersToTabBar(tabBar);
-                this.createTabsModel(tabBar);
                 this.onTabGroupCreated(tabBar);
             })
         );
@@ -109,7 +107,7 @@ export class TabsMainImpl implements TabsMain, Disposable {
         });
     }
 
-    protected createTabsModel(newTabbar?: TabBar<Widget>): void {
+    protected createTabsModel(): void {
         if (this.applicationShell.mainAreaTabBars.length === 0) {
             this.proxy.$acceptEditorTabModel([this.defaultTabGroup]);
             return;
@@ -118,7 +116,6 @@ export class TabsMainImpl implements TabsMain, Disposable {
         this.tabInfoLookup.clear();
         this.disposableTabBarListeners.dispose();
         this.applicationShell.mainAreaTabBars
-            .concat(newTabbar ? [newTabbar] : [])
             .forEach((tabBar, i) => {
                 this.attachListenersToTabBar(tabBar);
                 const groupDto = this.createTabGroupDto(tabBar, i);
@@ -255,7 +252,7 @@ export class TabsMainImpl implements TabsMain, Disposable {
         const oldTabDto = tabInfo.tab;
         const newTabDto = this.createTabDto(title, tabInfo.group.groupId);
         if (!oldTabDto.isActive && newTabDto.isActive) {
-            this.currentActiveGroup.tabs.filter(tab => tab.isActive).map(tab => tab.isActive = false);
+            this.currentActiveGroup.tabs.filter(tab => tab.isActive).forEach(tab => tab.isActive = false);
         }
         if (newTabDto.isActive && !tabInfo.group.isActive) {
             tabInfo.group.isActive = true;
