@@ -47,7 +47,6 @@ import { PluginDebugService } from './debug/plugin-debug-service';
 import { DebugService } from '@theia/debug/lib/common/debug-service';
 import { PluginSharedStyle } from './plugin-shared-style';
 import { SelectionProviderCommandContribution } from './selection-provider-command';
-import { ViewColumnService } from './view-column-service';
 import { ViewContextKeyService } from './view/view-context-key-service';
 import { PluginViewWidget, PluginViewWidgetIdentifier } from './view/plugin-view-widget';
 import { TreeViewWidgetOptions, VIEW_ITEM_CONTEXT_MENU, PluginTree, TreeViewWidget, PluginTreeModel } from './view/tree-view-widget';
@@ -243,8 +242,6 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     rebind(DebugService).toService(PluginDebugService);
     bind(PluginDebugSessionContributionRegistry).toSelf().inSingletonScope();
     rebind(DebugSessionContributionRegistry).toService(PluginDebugSessionContributionRegistry);
-
-    bind(ViewColumnService).toSelf().inSingletonScope();
 
     bind(CommentsService).to(PluginCommentService).inSingletonScope();
     bind(CommentingRangeDecorator).toSelf().inSingletonScope();

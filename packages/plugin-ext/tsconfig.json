@@ -11,7 +11,8 @@
     ]
   },
   "include": [
-    "src"
+    "src",
+    "../core/src/browser/shell/view-column-service.ts"
   ],
   "references": [
     {

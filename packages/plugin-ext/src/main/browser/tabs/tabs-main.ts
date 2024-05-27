@@ -23,8 +23,9 @@ import { Disposable } from '@theia/core/shared/vscode-languageserver-protocol';
 import { MonacoDiffEditor } from '@theia/monaco/lib/browser/monaco-diff-editor';
 import { toUriComponents } from '../hierarchy/hierarchy-types-converters';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
-import { DisposableCollection } from '@theia/core';
+import { DisposableCollection, ViewColumn } from '@theia/core';
 import { NotebookEditorWidget } from '@theia/notebook/lib/browser';
+import { ViewColumnService } from '@theia/core/src/browser/shell/view-column-service';
 
 interface TabInfo {
     tab: TabDto;
@@ -47,12 +48,13 @@ export class TabsMainImpl implements TabsMain, Disposable {
     private currentActiveGroup: TabGroupDto;
 
     private tabGroupChanged: boolean = false;
+    private viewColumnService: ViewColumnService;
 
     private readonly defaultTabGroup: TabGroupDto = {
         groupId: 0,
         tabs: [],
         isActive: true,
-        viewColumn: 0
+        viewColumn: ViewColumn.Active
     };
 
     constructor(
@@ -62,6 +64,7 @@ export class TabsMainImpl implements TabsMain, Disposable {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.TABS_EXT);
 
         this.applicationShell = container.get(ApplicationShell);
+        this.viewColumnService = container.get(ViewColumnService);
         this.createTabsModel();
 
         const tabBars = this.applicationShell.mainPanel.tabBars();
@@ -155,7 +158,7 @@ export class TabsMainImpl implements TabsMain, Disposable {
             groupId,
             tabs,
             isActive: false,
-            viewColumn: this.applicationShell.allTabBars.indexOf(tabBar)
+            viewColumn: this.viewColumnService.getViewColumn(tabBar.id) ?? this.applicationShell.allTabBars.indexOf(tabBar);
         };
     }
 

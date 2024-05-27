@@ -103,7 +103,6 @@ describe('TypeScript', function () {
         const editorWidget = widget instanceof EditorWidget ? widget : undefined;
         const editor = MonacoEditor.get(editorWidget);
         assert.isDefined(editor);
-        await timeout(1000); // workaround for https://github.com/eclipse-theia/theia/issues/13679
         // wait till tsserver is running, see:
         // https://github.com/microsoft/vscode/blob/93cbbc5cae50e9f5f5046343c751b6d010468200/extensions/typescript-language-features/src/extension.ts#L98-L103
         // await waitForAnimation(() => contextKeyService.match('typescript.isManagedFile'));
