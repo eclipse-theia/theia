@@ -25,7 +25,7 @@ import { toUriComponents } from '../hierarchy/hierarchy-types-converters';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { DisposableCollection, ViewColumn } from '@theia/core';
 import { NotebookEditorWidget } from '@theia/notebook/lib/browser';
-import { ViewColumnService } from '@theia/core/src/browser/shell/view-column-service';
+import { ViewColumnService } from '@theia/core/lib/browser/shell/view-column-service';
 
 interface TabInfo {
     tab: TabDto;
@@ -154,11 +154,13 @@ export class TabsMainImpl implements TabsMain, Disposable {
         const oldDto = index === 0 ? this.defaultTabGroup : this.tabGroupModel.get(tabBar);
         const groupId = oldDto?.groupId ?? this.groupIdCounter++;
         const tabs = tabBar.titles.map(title => this.createTabDto(title, groupId));
+        const viewColumn = this.viewColumnService.getViewColumn(tabBar.id)
+            ?? this.applicationShell.allTabBars.indexOf(tabBar);
         return {
             groupId,
             tabs,
             isActive: false,
-            viewColumn: this.viewColumnService.getViewColumn(tabBar.id) ?? this.applicationShell.allTabBars.indexOf(tabBar);
+            viewColumn
         };
     }
 
