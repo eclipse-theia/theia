@@ -192,13 +192,13 @@ export class DynamicMenuBarWidget extends MenuBarWidget {
         this.openActiveMenu();
         await waitForRevealed(menu);
 
-        const menuPath = [label];
+        const menuPath = [label, ...labels];
 
         let current = menu;
         for (const itemLabel of labels) {
             const item = current.items.find(i => i.label === itemLabel);
             if (!item || !item.submenu) {
-                throw new Error(`could not find '${label}' submenu in ${menuPath.map(l => "'" + l + "'").join(' -> ')} menu`);
+                throw new Error(`could not find '${itemLabel}' submenu in ${menuPath.map(l => "'" + l + "'").join(' -> ')} menu`);
             }
             current.activeItem = item;
             current.triggerActiveItem();
@@ -216,7 +216,7 @@ export class DynamicMenuBarWidget extends MenuBarWidget {
         const menu = await this.activateMenu(menuPath[0], ...menuPath.slice(1));
         const item = menu.items.find(i => i.label === labels[labels.length - 1]);
         if (!item) {
-            throw new Error(`could not find '${label}' item in ${menuPath.map(l => "'" + l + "'").join(' -> ')} menu`);
+            throw new Error(`could not find '${labels[labels.length - 1]}' item in ${menuPath.map(l => "'" + l + "'").join(' -> ')} menu`);
         }
         menu.activeItem = item;
         menu.triggerActiveItem();

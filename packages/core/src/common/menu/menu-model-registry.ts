@@ -223,6 +223,7 @@ export class MenuModelRegistry {
         if (menuPath) {
             const parent = this.findGroup(menuPath);
             parent.removeNode(id);
+            this.fireChangeEvent();
             return;
         }
 
