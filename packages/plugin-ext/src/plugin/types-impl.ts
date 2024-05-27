@@ -744,6 +744,9 @@ export namespace ThemeIcon {
     export function is(item: unknown): item is ThemeIcon {
         return isObject(item) && 'id' in item;
     }
+    export function get(item: unknown): ThemeIcon | undefined {
+        return is(item) ? item : undefined;
+    }
 }
 
 export enum TextEditorRevealType {

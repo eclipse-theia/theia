@@ -469,7 +469,7 @@ export function createAPIFactory(
             },
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             showQuickPick(items: any, options?: theia.QuickPickOptions, token?: theia.CancellationToken): any {
-                return quickOpenExt.showQuickPick(items, options, token);
+                return quickOpenExt.showQuickPick(plugin, items, options, token);
             },
             createQuickPick<T extends theia.QuickPickItem>(): theia.QuickPick<T> {
                 return quickOpenExt.createQuickPick(plugin);

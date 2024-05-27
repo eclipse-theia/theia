@@ -13,56 +13,20 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+
 import { UUID } from '@theia/core/shared/@phosphor/coreutils';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { Terminal, TerminalOptions, PseudoTerminalOptions, ExtensionTerminalOptions, TerminalState } from '@theia/plugin';
-import { TerminalServiceExt, TerminalServiceMain, PLUGIN_RPC_CONTEXT, Plugin } from '../common/plugin-api-rpc';
+import { TerminalServiceExt, TerminalServiceMain, PLUGIN_RPC_CONTEXT, Plugin, TerminalOptions } from '../common/plugin-api-rpc';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { Event, Emitter } from '@theia/core/lib/common/event';
 import { MultiKeyMap } from '@theia/core/lib/common/collections';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import * as theia from '@theia/plugin';
 import * as Converter from './type-converters';
-import { Disposable, EnvironmentVariableMutatorType, TerminalExitReason, ThemeIcon, URI } from './types-impl';
+import { Disposable, EnvironmentVariableMutatorType, TerminalExitReason, ThemeIcon } from './types-impl';
 import { NO_ROOT_URI, SerializableEnvironmentVariableCollection } from '@theia/terminal/lib/common/shell-terminal-protocol';
 import { ProvidedTerminalLink } from '../common/plugin-api-rpc-model';
-import { ThemeIcon as MonacoThemeIcon, ThemeColor as MonacoThemeColor } from '@theia/monaco-editor-core/esm/vs/base/common/themables';
-import { PluginSharedStyle } from '../main/browser/plugin-shared-style';
 import { PluginIconPath } from './plugin-icon-path';
-import { IconUrl } from '../common';
-import { DisposableCollection } from '@theia/core';
-
-export function getIconUris(iconPath: theia.TerminalOptions['iconPath']): MonacoThemeIcon | IconUrl | undefined {
-    if (ThemeIcon.is(iconPath)) {
-        return { id: iconPath.id };
-    } else if (typeof iconPath === 'object' && 'light' in iconPath) {
-        return { light: iconPath.light.toString(), dark: iconPath.dark.toString() };
-    } else if (typeof iconPath === 'string') {
-        return iconPath;
-    }
-    return undefined;
-}
-
-export function getIconClass(
-    options: theia.TerminalOptions | theia.ExtensionTerminalOptions,
-    sharedStyle: PluginSharedStyle, disposables: DisposableCollection
-): string | ThemeIcon | undefined {
-    const iconUriOrCodicon = getIconUris(options.iconPath);
-    const iconColor = MonacoThemeColor.isThemeColor(options.color) ? options.color : undefined;
-    let iconClass;
-    if (iconUriOrCodicon) {
-        if (MonacoThemeIcon.isThemeIcon(iconUriOrCodicon)) {
-            iconClass = MonacoThemeIcon.asClassName(iconUriOrCodicon);
-        } else {
-            const iconReference = sharedStyle.toIconClass(iconUriOrCodicon);
-            disposables.push(iconReference);
-            iconClass = iconReference.object.iconClass;
-        }
-    } else {
-        iconClass = (MonacoThemeIcon.asClassName({ id: 'terminal' }));
-    }
-    return iconColor ? { id: iconClass, color: { id: iconColor.id } } : iconClass;
-}
 
 /**
  * Provides high level terminal plugin api to use in the Theia plugins.
@@ -80,17 +44,17 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
     private readonly terminalLinkProviders = new Map<string, theia.TerminalLinkProvider>();
     private readonly terminalObservers = new Map<string, theia.TerminalObserver>();
     private readonly terminalProfileProviders = new Map<string, theia.TerminalProfileProvider>();
-    private readonly onDidCloseTerminalEmitter = new Emitter<Terminal>();
-    readonly onDidCloseTerminal: theia.Event<Terminal> = this.onDidCloseTerminalEmitter.event;
+    private readonly onDidCloseTerminalEmitter = new Emitter<theia.Terminal>();
+    readonly onDidCloseTerminal: theia.Event<theia.Terminal> = this.onDidCloseTerminalEmitter.event;
 
-    private readonly onDidOpenTerminalEmitter = new Emitter<Terminal>();
-    readonly onDidOpenTerminal: theia.Event<Terminal> = this.onDidOpenTerminalEmitter.event;
+    private readonly onDidOpenTerminalEmitter = new Emitter<theia.Terminal>();
+    readonly onDidOpenTerminal: theia.Event<theia.Terminal> = this.onDidOpenTerminalEmitter.event;
 
-    private readonly onDidChangeActiveTerminalEmitter = new Emitter<Terminal | undefined>();
-    readonly onDidChangeActiveTerminal: theia.Event<Terminal | undefined> = this.onDidChangeActiveTerminalEmitter.event;
+    private readonly onDidChangeActiveTerminalEmitter = new Emitter<theia.Terminal | undefined>();
+    readonly onDidChangeActiveTerminal: theia.Event<theia.Terminal | undefined> = this.onDidChangeActiveTerminalEmitter.event;
 
-    private readonly onDidChangeTerminalStateEmitter = new Emitter<Terminal>();
-    readonly onDidChangeTerminalState: theia.Event<Terminal> = this.onDidChangeTerminalStateEmitter.event;
+    private readonly onDidChangeTerminalStateEmitter = new Emitter<theia.Terminal>();
+    readonly onDidChangeTerminalState: theia.Event<theia.Terminal> = this.onDidChangeTerminalStateEmitter.event;
 
     protected environmentVariableCollections: MultiKeyMap<string, EnvironmentVariableCollectionImpl> = new MultiKeyMap(2);
 
@@ -118,10 +82,10 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
     }
 
     createTerminal(
-        extension: Plugin,
-        nameOrOptions: TerminalOptions | PseudoTerminalOptions | ExtensionTerminalOptions | (string | undefined),
+        plugin: Plugin,
+        nameOrOptions: theia.TerminalOptions | theia.PseudoTerminalOptions | theia.ExtensionTerminalOptions | string | undefined,
         shellPath?: string, shellArgs?: string[] | string
-    ): Terminal {
+    ): theia.Terminal {
         const id = `plugin-terminal-${UUID.uuid4()}`;
         let options: TerminalOptions;
         let pseudoTerminal: theia.Pseudoterminal | undefined = undefined;
@@ -144,7 +108,6 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
         }
 
         let parentId;
-
         if (options.location && typeof options.location === 'object' && 'parentTerminal' in options.location) {
             const parentTerminal = options.location.parentTerminal;
             if (parentTerminal instanceof TerminalExtImpl) {
@@ -159,19 +122,7 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
 
         if (typeof nameOrOptions === 'object' && 'iconPath' in nameOrOptions) {
             const iconPath = nameOrOptions.iconPath;
-            if (ThemeIcon.is(iconPath)) {
-                options.iconPath = iconPath;
-            } else if (typeof iconPath === 'string' || (typeof iconPath === 'object' && ('light' in iconPath || 'path' in iconPath))) {
-                const converted = PluginIconPath.toUrl(iconPath, extension);
-                if (typeof converted === 'string') {
-                    options.iconPath = URI.parse(converted);
-                } else if (typeof converted === 'object' && ('light' in converted)) {
-                    options.iconPath = {
-                        light: URI.parse(converted.light),
-                        dark: URI.parse(converted.dark)
-                    };
-                }
-            }
+            options.iconUrl = PluginIconPath.toUrl(iconPath, plugin) ?? ThemeIcon.get(iconPath);
         }
 
         if (typeof nameOrOptions === 'object' && 'color' in nameOrOptions) {
@@ -505,7 +456,7 @@ export class EnvironmentVariableCollectionImpl implements theia.GlobalEnvironmen
     }
 }
 
-export class TerminalExtImpl implements Terminal {
+export class TerminalExtImpl implements theia.Terminal {
 
     name: string;
 
@@ -519,9 +470,9 @@ export class TerminalExtImpl implements Terminal {
         return this.deferredProcessId.promise;
     }
 
-    readonly creationOptions: Readonly<TerminalOptions | ExtensionTerminalOptions>;
+    readonly creationOptions: Readonly<theia.TerminalOptions | theia.ExtensionTerminalOptions>;
 
-    state: TerminalState = { isInteractedWith: false };
+    state: theia.TerminalState = { isInteractedWith: false };
 
     constructor(private readonly proxy: TerminalServiceMain, private readonly options: theia.TerminalOptions | theia.ExtensionTerminalOptions) {
         this.creationOptions = this.options;
