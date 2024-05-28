@@ -12,6 +12,8 @@
 
 ## 1.50.0
 
+- [plugin] Support WindowState active API [#13718](https://github.com/eclipse-theia/theia/pull/13718) - contributed on behalf of STMicroelectronics
+
 <a name="breaking_changes_1.50.0">[Breaking Changes:](#breaking_changes_1.50.0)</a>
 
 - [core] Classes implementing the `Saveable` interface no longer need to implement the `autoSave` field. However, a new `onContentChanged` event has been added instead.

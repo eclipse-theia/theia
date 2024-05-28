@@ -23,6 +23,7 @@ import { UriComponents } from '../../common/uri-components';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { open, OpenerService } from '@theia/core/lib/browser/opener-service';
 import { ExternalUriService } from '@theia/core/lib/browser/external-uri-service';
+import { WindowActivityTracker } from './window-activity-tracker';
 
 export class WindowStateMain implements WindowMain, Disposable {
 
@@ -46,6 +47,10 @@ export class WindowStateMain implements WindowMain, Disposable {
         const fireDidBlur = () => this.onFocusChanged(false);
         window.addEventListener('blur', fireDidBlur);
         this.toDispose.push(Disposable.create(() => window.removeEventListener('blur', fireDidBlur)));
+
+       const tracker = new WindowActivityTracker(window);
+       this.toDispose.push(tracker.onDidChangeActiveState(isActive => this.onActiveStateChanged(isActive)));
+       this.toDispose.push(tracker);
     }
 
     dispose(): void {
@@ -53,7 +58,11 @@ export class WindowStateMain implements WindowMain, Disposable {
     }
 
     private onFocusChanged(focused: boolean): void {
-        this.proxy.$onWindowStateChanged(focused);
+        this.proxy.$onDidChangeWindowFocus(focused);
+    }
+
+    private onActiveStateChanged(isActive: boolean): void {
+        this.proxy.$onDidChangeWindowActive(isActive);
     }
 
     async $openUri(uriComponent: UriComponents): Promise<boolean> {
