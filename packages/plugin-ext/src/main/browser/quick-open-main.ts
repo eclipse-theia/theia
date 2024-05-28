@@ -44,7 +44,6 @@ import { MonacoQuickInputService } from '@theia/monaco/lib/browser/monaco-quick-
 import { QuickInputButtons } from '../../plugin/types-impl';
 import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/base/common/themables';
 import { PluginSharedStyle } from './plugin-shared-style';
-import { isUriComponents } from '@theia/monaco-editor-core/esm/vs/base/common/uri';
 import { QuickPickSeparator } from '@theia/core';
 
 export interface QuickInputSession {

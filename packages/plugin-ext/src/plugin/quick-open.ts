@@ -377,8 +377,7 @@ export class QuickInputExt implements theia.QuickInput {
         });
         this.update({
             buttons: buttons.map<TransferQuickInputButton>((button, i) => ({
-                iconUrl: PluginIconPath.toUrl(button.iconPath, this.plugin),
-                themIcon: ThemeIcon.get(button.iconPath),
+                iconUrl: PluginIconPath.toUrl(button.iconPath, this.plugin) ?? ThemeIcon.get(button.iconPath),
                 tooltip: button.tooltip,
                 handle: button === QuickInputButtons.Back ? -1 : i,
             }))

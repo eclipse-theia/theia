@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { interfaces } from '@theia/core/shared/inversify';
-import { ApplicationShell, WidgetOpenerOptions } from '@theia/core/lib/browser';
+import { ApplicationShell, WidgetOpenerOptions, codicon } from '@theia/core/lib/browser';
 import { TerminalEditorLocationOptions } from '@theia/plugin';
 import { TerminalLocation, TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { TerminalProfileService } from '@theia/terminal/lib/browser/terminal-profile-service';
@@ -25,10 +25,9 @@ import { RPCProtocol } from '../../common/rpc-protocol';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { SerializableEnvironmentVariableCollection, ShellTerminalServerProxy } from '@theia/terminal/lib/common/shell-terminal-protocol';
 import { TerminalLink, TerminalLinkProvider } from '@theia/terminal/lib/browser/terminal-link-provider';
-import { ThemeIcon as MonacoThemeIcon, ThemeColor as MonacoThemeColor } from '@theia/monaco-editor-core/esm/vs/base/common/themables';
 import { URI } from '@theia/core/lib/common/uri';
 import { PluginTerminalRegistry } from './plugin-terminal-registry';
-import { CancellationToken } from '@theia/core';
+import { CancellationToken, isObject } from '@theia/core';
 import { HostedPluginSupport } from '../../hosted/browser/hosted-plugin';
 import { PluginSharedStyle } from './plugin-shared-style';
 import { ThemeIcon } from '@theia/core/lib/common/theme';
@@ -334,20 +333,20 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, TerminalLin
     }
 
     protected toIconClass(options: TerminalOptions): string | ThemeIcon | undefined {
-        const iconColor = MonacoThemeColor.isThemeColor(options.color) ? options.color : undefined;
+        const iconColor = isObject<{ id: string }>(options.color) && typeof options.color.id === 'string' ? options.color.id : undefined;
         let iconClass: string;
         if (options.iconUrl) {
-            if (MonacoThemeIcon.isThemeIcon(options.iconUrl)) {
-                iconClass = MonacoThemeIcon.asClassName(options.iconUrl);
+            if (typeof options.iconUrl === 'object' && 'id' in options.iconUrl) {
+                iconClass = codicon(options.iconUrl.id);
             } else {
                 const iconReference = this.sharedStyle.toIconClass(options.iconUrl);
                 this.toDispose.push(iconReference);
                 iconClass = iconReference.object.iconClass;
             }
         } else {
-            iconClass = MonacoThemeIcon.asClassName({ id: 'terminal' });
+            iconClass = codicon('terminal');
         }
-        return iconColor ? { id: iconClass, color: { id: iconColor.id } } : iconClass;
+        return iconColor ? { id: iconClass, color: { id: iconColor } } : iconClass;
     }
 
     $unregisterTerminalObserver(id: string): void {
