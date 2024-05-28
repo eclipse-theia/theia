@@ -38,7 +38,7 @@ export class CliManager {
     async initializeCli<T>(argv: string[], postSetArguments: () => Promise<void>, defaultCommand: () => Promise<void>): Promise<void> {
         const pack = require('../../package.json');
         const version = pack.version;
-        const command = yargs.version(version);
+        const command = yargs(argv, process.cwd()).version(version);
         command.exitProcess(this.isExit());
         for (const contrib of this.contributionsProvider.getContributions()) {
             contrib.configure(command);
@@ -54,7 +54,7 @@ export class CliManager {
                 await postSetArguments();
             })
             .command('$0', false, () => { }, defaultCommand)
-            .parse(argv);
+            .parse();
     }
 
     protected isExit(): boolean {
