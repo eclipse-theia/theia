@@ -1643,7 +1643,7 @@ export class DocumentLink {
 
 @es5ClassCompat
 export class DocumentDropOrPasteEditKind {
-    static Empty: DocumentDropOrPasteEditKind;
+    static readonly Empty: DocumentDropOrPasteEditKind = new DocumentDropOrPasteEditKind('');
 
     private static sep = '.';
 
@@ -1663,7 +1663,6 @@ export class DocumentDropOrPasteEditKind {
         return this.value === other.value || other.value.startsWith(this.value + DocumentDropOrPasteEditKind.sep);
     }
 }
-DocumentDropOrPasteEditKind.Empty = new DocumentDropOrPasteEditKind('');
 
 @es5ClassCompat
 export class DocumentDropEdit {
