@@ -55,7 +55,7 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
                 this.setState({
                     ...this.state,
                     selectedCell: this.props.notebookModel.cells.find(model => model.handle === e.newCellIds![e.newCellIds!.length - 1]),
-                    scrollIntoView: false
+                    scrollIntoView: true
                 });
             } else {
                 this.setState({
