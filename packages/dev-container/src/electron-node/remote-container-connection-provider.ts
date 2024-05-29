@@ -103,6 +103,9 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
             });
             const localPort = (server.address() as net.AddressInfo).port;
             remote.localPort = localPort;
+
+            await this.containerService.postConnect(options.devcontainerFile, remote, this.outputProvider);
+
             return {
                 containerId: container.id,
                 workspacePath: (await container.inspect()).Mounts[0].Destination,
@@ -189,10 +192,13 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
         this.id = options.id;
         this.type = options.type;
         this.name = options.name;
-        this.onDidDisconnect(() => this.dispose());
 
         this.docker = options.docker;
         this.container = options.container;
+
+        this.docker.getEvents({ filters: { container: [this.container.id], event: ['stop'] } }).then(stream => {
+            stream.on('data', () => this.onDidDisconnectEmitter.fire());
+        });
     }
 
     async forwardOut(socket: Socket, port?: number): Promise<void> {

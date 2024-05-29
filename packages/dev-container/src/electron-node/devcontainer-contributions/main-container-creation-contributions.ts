@@ -14,12 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import * as Docker from 'dockerode';
-import { injectable, interfaces } from '@theia/core/shared/inversify';
+import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
 import { ContainerCreationContribution } from '../docker-container-service';
 import { DevContainerConfiguration, DockerfileContainer, ImageContainer, NonComposeContainerBase } from '../devcontainer-file';
 import { Path } from '@theia/core';
 import { ContainerOutputProvider } from '../../electron-common/container-output-provider';
 import * as fs from '@theia/core/shared/fs-extra';
+import { RemotePortForwardingProvider } from '@theia/remote/lib/electron-common/remote-port-forwarding-provider';
+import { RemoteDockerContainerConnection } from '../remote-container-connection-provider';
 
 export function registerContainerCreationContributions(bind: interfaces.Bind): void {
     bind(ContainerCreationContribution).to(ImageFileContribution).inSingletonScope();
@@ -91,24 +93,27 @@ export class DockerFileContribution implements ContainerCreationContribution {
 
 @injectable()
 export class ForwardPortsContribution implements ContainerCreationContribution {
-    async handleContainerCreation(createOptions: Docker.ContainerCreateOptions, containerConfig: DevContainerConfiguration, api: Docker): Promise<void> {
+
+    @inject(RemotePortForwardingProvider)
+    protected readonly portForwardingProvider: RemotePortForwardingProvider;
+
+    async handlePostConnect(containerConfig: DevContainerConfiguration, connection: RemoteDockerContainerConnection): Promise<void> {
         if (!containerConfig.forwardPorts) {
             return;
         }
 
-        for (const port of containerConfig.forwardPorts) {
-            let portKey: string;
-            let hostPort: string;
-            if (typeof port === 'string') {
-                const parts = port.split(':');
-                portKey = isNaN(+parts[0]) ? parts[0] : `${parts[0]}/tcp`;
-                hostPort = parts[1] ?? parts[0];
+        for (const forward of containerConfig.forwardPorts) {
+            let port: number;
+            let address: string | undefined;
+            if (typeof forward === 'string') {
+                const parts = forward.split(':');
+                address = parts[0];
+                port = parseInt(parts[1]);
             } else {
-                portKey = `${port}/tcp`;
-                hostPort = port.toString();
+                port = forward;
             }
-            createOptions.ExposedPorts![portKey] = {};
-            createOptions.HostConfig!.PortBindings[portKey] = [{ HostPort: hostPort }];
+
+            this.portForwardingProvider.forwardPort(connection.localPort, { port, address });
         }
 
     }
