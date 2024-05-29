@@ -80,12 +80,13 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
         });
         try {
             const container = await this.containerService.getOrCreateContainer(dockerConnection, options.devcontainerFile, options.lastContainerInfo, this.outputProvider);
+            const devContainerConfig = await this.devContainerFileService.getConfiguration(options.devcontainerFile);
 
             // create actual connection
             const report: RemoteStatusReport = message => progress.report({ message });
             report('Connecting to remote system...');
 
-            const remote = await this.createContainerConnection(container, dockerConnection);
+            const remote = await this.createContainerConnection(container, dockerConnection, devContainerConfig.name);
             const result = await this.remoteSetup.setup({
                 connection: remote,
                 report,
@@ -124,11 +125,11 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
         return this.devContainerFileService.getAvailableFiles();
     }
 
-    async createContainerConnection(container: Docker.Container, docker: Docker): Promise<RemoteDockerContainerConnection> {
+    async createContainerConnection(container: Docker.Container, docker: Docker, name?: string): Promise<RemoteDockerContainerConnection> {
         return Promise.resolve(new RemoteDockerContainerConnection({
             id: generateUuid(),
-            name: 'dev-container',
-            type: 'container',
+            name: name ?? 'dev-container',
+            type: 'Dev Container',
             docker,
             container,
         }));
@@ -139,7 +140,7 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
         if (!connection || !(connection instanceof RemoteDockerContainerConnection)) {
             return undefined;
         }
-        return await connection.container.inspect();
+        return connection.container.inspect();
     }
 
     dispose(): void {
