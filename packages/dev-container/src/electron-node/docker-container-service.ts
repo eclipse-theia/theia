@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContributionProvider, URI } from '@theia/core';
+import { ContributionProvider, MaybePromise, URI } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { WorkspaceServer } from '@theia/workspace/lib/common';
 import * as fs from '@theia/core/shared/fs-extra';
@@ -23,14 +23,29 @@ import { LastContainerInfo } from '../electron-common/remote-container-connectio
 import { DevContainerConfiguration } from './devcontainer-file';
 import { DevContainerFileService } from './dev-container-file-service';
 import { ContainerOutputProvider } from '../electron-common/container-output-provider';
+import { RemoteDockerContainerConnection } from './remote-container-connection-provider';
 
 export const ContainerCreationContribution = Symbol('ContainerCreationContributions');
 
 export interface ContainerCreationContribution {
-    handleContainerCreation(createOptions: Docker.ContainerCreateOptions,
+    handleContainerCreation?(createOptions: Docker.ContainerCreateOptions,
         containerConfig: DevContainerConfiguration,
         api: Docker,
-        outputProvider?: ContainerOutputProvider): Promise<void>;
+        outputProvider?: ContainerOutputProvider): MaybePromise<void>;
+
+    /**
+     * executed after creating and starting the container
+     */
+    handlePostCreate?(containerConfig: DevContainerConfiguration,
+        container: Docker.Container,
+        api: Docker,
+        outputProvider?: ContainerOutputProvider): MaybePromise<void>;
+
+    /**
+     * executed after a connection has been established with the container and theia has been setup
+     */
+    handlePostConnect?(containerConfig: DevContainerConfiguration, connection: RemoteDockerContainerConnection,
+        outputProvider?: ContainerOutputProvider): MaybePromise<void>;
 }
 
 @injectable()
@@ -70,6 +85,15 @@ export class DockerContainerService {
         return container;
     }
 
+    async postConnect(devcontainerFile: string, connection: RemoteDockerContainerConnection, outputProvider?: ContainerOutputProvider): Promise<void> {
+        const devcontainerConfig = await this.devContainerFileService.getConfiguration(devcontainerFile);
+
+        for (const containerCreateContrib of this.containerCreationContributions.getContributions()) {
+            await containerCreateContrib.handlePostConnect?.(devcontainerConfig, connection, outputProvider);
+        }
+
+    }
+
     protected async buildContainer(docker: Docker, devcontainerFile: string, workspace: URI, outputProvider?: ContainerOutputProvider): Promise<Docker.Container> {
         const devcontainerConfig = await this.devContainerFileService.getConfiguration(devcontainerFile);
 
@@ -92,33 +116,17 @@ export class DockerContainerService {
         };
 
         for (const containerCreateContrib of this.containerCreationContributions.getContributions()) {
-            await containerCreateContrib.handleContainerCreation(containerCreateOptions, devcontainerConfig, docker, outputProvider);
+            await containerCreateContrib.handleContainerCreation?.(containerCreateOptions, devcontainerConfig, docker, outputProvider);
         }
 
         // TODO add more config
         const container = await docker.createContainer(containerCreateOptions);
         await container.start();
 
-        return container;
-    }
-
-    protected getPortBindings(forwardPorts: (string | number)[]): { exposedPorts: {}, portBindings: {} } {
-        const res: { exposedPorts: { [key: string]: {} }, portBindings: { [key: string]: {} } } = { exposedPorts: {}, portBindings: {} };
-        for (const port of forwardPorts) {
-            let portKey: string;
-            let hostPort: string;
-            if (typeof port === 'string') {
-                const parts = port.split(':');
-                portKey = isNaN(+parts[0]) ? parts[0] : `${parts[0]}/tcp`;
-                hostPort = parts[1] ?? parts[0];
-            } else {
-                portKey = `${port}/tcp`;
-                hostPort = port.toString();
-            }
-            res.exposedPorts[portKey] = {};
-            res.portBindings[portKey] = [{ HostPort: hostPort }];
+        for (const containerCreateContrib of this.containerCreationContributions.getContributions()) {
+            await containerCreateContrib.handlePostCreate?.(devcontainerConfig, container, docker, outputProvider);
         }
 
-        return res;
+        return container;
     }
 }

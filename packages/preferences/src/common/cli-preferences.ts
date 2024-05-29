@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2024 TypeFox and others.
+// Copyright (C) 2024 Typefox and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,17 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export const RemoteRemotePortForwardingProviderPath = '/remote/port-forwarding';
+export const CliPreferences = Symbol('CliPreferences');
+export const CliPreferencesPath = '/services/cli-preferences';
 
-export const RemotePortForwardingProvider = Symbol('RemoteSSHConnectionProvider');
-
-export interface ForwardedPort {
-    port: number;
-    address?: string;
-}
-
-export interface RemotePortForwardingProvider {
-    forwardPort(connectionPort: number, portToForward: ForwardedPort): Promise<void>;
-    portRemoved(port: ForwardedPort): Promise<void>;
-    getForwardedPorts(): Promise<ForwardedPort[]>
+export interface CliPreferences {
+    getPreferences(): Promise<[string, unknown][]>;
 }

@@ -56,6 +56,9 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
     @inject(DevContainerFileService)
     protected readonly devContainerFileService: DevContainerFileService;
 
+    @inject(RemoteConnectionService)
+    protected readonly remoteService: RemoteConnectionService;
+
     protected outputProvider: ContainerOutputProvider | undefined;
 
     setClient(client: ContainerOutputProvider): void {
@@ -100,6 +103,9 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
             });
             const localPort = (server.address() as net.AddressInfo).port;
             remote.localPort = localPort;
+
+            await this.containerService.postConnect(options.devcontainerFile, remote, this.outputProvider);
+
             return {
                 containerId: container.id,
                 workspacePath: (await container.inspect()).Mounts[0].Destination,
@@ -126,6 +132,14 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
             docker,
             container,
         }));
+    }
+
+    async getCurrentContainerInfo(port: number): Promise<Docker.ContainerInspectInfo | undefined> {
+        const connection = this.remoteConnectionService.getConnectionFromPort(port);
+        if (!connection || !(connection instanceof RemoteDockerContainerConnection)) {
+            return undefined;
+        }
+        return await connection.container.inspect();
     }
 
     dispose(): void {
@@ -167,8 +181,6 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
     docker: Docker;
     container: Docker.Container;
 
-    containerInfo: Docker.ContainerInspectInfo | undefined;
-
     remoteSetupResult: RemoteSetupResult;
 
     protected activeTerminalSession: ContainerTerminalSession | undefined;
@@ -180,10 +192,13 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
         this.id = options.id;
         this.type = options.type;
         this.name = options.name;
-        this.onDidDisconnect(() => this.dispose());
 
         this.docker = options.docker;
         this.container = options.container;
+
+        this.docker.getEvents({ filters: { container: [this.container.id], event: ['stop'] } }).then(stream => {
+            stream.on('data', () => this.onDidDisconnectEmitter.fire());
+        });
     }
 
     async forwardOut(socket: Socket, port?: number): Promise<void> {
@@ -287,8 +302,9 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
         return deferred.promise;
     }
 
-    dispose(): void {
-        this.container.stop();
+    async dispose(): Promise<void> {
+        // cant use dockerrode here since this needs to happen on one tick
+        exec(`docker stop ${this.container.id}`);
     }
 
 }
