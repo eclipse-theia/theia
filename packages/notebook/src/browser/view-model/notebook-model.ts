@@ -290,9 +290,12 @@ export class NotebookModel implements Saveable, Disposable {
             if (cell) {
                 this.cellDirtyChanged(cell, true);
             }
+
+            let scrollIntoView = true;
             switch (edit.editType) {
                 case CellEditType.Replace:
                     this.replaceCells(edit.index, edit.count, edit.cells, computeUndoRedo);
+                    scrollIntoView = edit.cells.length > 0;
                     break;
                 case CellEditType.Output: {
                     if (edit.append) {
@@ -335,7 +338,7 @@ export class NotebookModel implements Saveable, Disposable {
 
             // if selected cell is affected update it because it can potentially have been replaced
             if (cell === this.selectedCell) {
-                this.setSelectedCell(this.cells[Math.min(cellIndex, this.cells.length - 1)]);
+                this.setSelectedCell(this.cells[Math.min(cellIndex, this.cells.length - 1)], scrollIntoView);
             }
         }
 
