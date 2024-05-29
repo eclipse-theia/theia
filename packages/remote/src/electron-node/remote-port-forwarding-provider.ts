@@ -52,7 +52,7 @@ export class RemotePortForwardingProviderImpl implements RemotePortForwardingPro
     }
 
     async portRemoved(forwardedPort: ForwardedPort): Promise<void> {
-        const forwardInfo = RemotePortForwardingProviderImpl.forwardedPorts.find(forwardInfo => forwardInfo.port.port === forwardedPort.port);
+        const forwardInfo = RemotePortForwardingProviderImpl.forwardedPorts.find(info => info.port.port === forwardedPort.port);
         if (forwardInfo) {
             forwardInfo.server.close();
             RemotePortForwardingProviderImpl.forwardedPorts.splice(RemotePortForwardingProviderImpl.forwardedPorts.indexOf(forwardInfo), 1);
