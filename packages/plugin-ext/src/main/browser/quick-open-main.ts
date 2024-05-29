@@ -35,6 +35,7 @@ import {
     QuickInputButtonHandle,
     QuickInputService,
     QuickPickItem,
+    QuickPickItemOrSeparator,
     codiconArray
 } from '@theia/core/lib/browser';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
@@ -46,10 +47,11 @@ import { UriComponents } from '../../common/uri-components';
 import { URI } from '@theia/core/shared/vscode-uri';
 import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/base/common/themables';
 import { isUriComponents } from '@theia/monaco-editor-core/esm/vs/base/common/uri';
+import { QuickPickSeparator } from '@theia/core';
 
 export interface QuickInputSession {
     input: QuickInput;
-    handlesToItems: Map<number, QuickPickItem>;
+    handlesToItems: Map<number, QuickPickItemOrSeparator>;
 }
 
 interface IconPath {
@@ -63,7 +65,7 @@ export class QuickOpenMainImpl implements QuickOpenMain, Disposable {
     private proxy: QuickOpenExt;
     private delegate: MonacoQuickInputService;
     private readonly items: Record<number, {
-        resolve(items: QuickPickItem[]): void;
+        resolve(items: QuickPickItemOrSeparator[]): void;
         reject(error: Error): void;
     }> = {};
 
@@ -80,7 +82,7 @@ export class QuickOpenMainImpl implements QuickOpenMain, Disposable {
     }
 
     async $show(instance: number, options: TransferQuickPickOptions<TransferQuickPickItem>, token: CancellationToken): Promise<number | number[] | undefined> {
-        const contents = new Promise<QuickPickItem[]>((resolve, reject) => {
+        const contents = new Promise<QuickPickItemOrSeparator[]>((resolve, reject) => {
             this.items[instance] = { resolve, reject };
         });
 
@@ -92,7 +94,7 @@ export class QuickOpenMainImpl implements QuickOpenMain, Disposable {
                     this.proxy.$onItemSelected(Number.parseInt((<QuickPickItem>el).id!));
                 }
             },
-            activeItem: activeItem ? this.toQuickPickItem(activeItem) : undefined
+            activeItem: this.isItem(activeItem) ? this.toQuickPickItem(activeItem) : undefined
         };
 
         const result = await this.delegate.pick(contents, transformedOptions, token);
@@ -103,6 +105,10 @@ export class QuickOpenMainImpl implements QuickOpenMain, Disposable {
             return Number.parseInt(result.id!);
         }
         return undefined;
+    }
+
+    private isItem(item?: TransferQuickPickItem): item is TransferQuickPickItem & { kind: 'item' } {
+        return item?.kind === 'item';
     }
 
     private normalizeIconPath(path: UriComponents | { light: UriComponents; dark: UriComponents } | ThemeIcon | undefined): {
@@ -127,10 +133,17 @@ export class QuickOpenMainImpl implements QuickOpenMain, Disposable {
     }
 
     private toQuickPickItem(item: undefined): undefined;
-    private toQuickPickItem(item: TransferQuickPickItem): QuickPickItem;
-    private toQuickPickItem(item: TransferQuickPickItem | undefined): QuickPickItem | undefined {
+    private toQuickPickItem(item: TransferQuickPickItem & { kind: 'item' }): QuickPickItem;
+    private toQuickPickItem(item: TransferQuickPickItem & { kind: 'separator' }): QuickPickSeparator;
+    private toQuickPickItem(item: TransferQuickPickItem): QuickPickItemOrSeparator;
+    private toQuickPickItem(item: TransferQuickPickItem | undefined): QuickPickItemOrSeparator | undefined {
         if (!item) {
             return undefined;
+        } else if (item.kind === 'separator') {
+            return {
+                type: 'separator',
+                label: item.label
+            };
         }
         return {
             ...this.normalizeIconPath(item.iconPath),
@@ -309,7 +322,7 @@ export class QuickOpenMainImpl implements QuickOpenMain, Disposable {
                     }
                 } else if (param === 'items') {
                     handlesToItems.clear();
-                    const items: QuickPickItem[] = [];
+                    const items: QuickPickItemOrSeparator[] = [];
                     params[param].forEach((transferItem: TransferQuickPickItem) => {
                         const item = this.toQuickPickItem(transferItem);
                         items.push(item);
