@@ -23,7 +23,7 @@ import { Disposable } from '@theia/core/shared/vscode-languageserver-protocol';
 import { MonacoDiffEditor } from '@theia/monaco/lib/browser/monaco-diff-editor';
 import { toUriComponents } from '../hierarchy/hierarchy-types-converters';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
-import { DisposableCollection, ViewColumn } from '@theia/core';
+import { DisposableCollection } from '@theia/core';
 import { NotebookEditorWidget } from '@theia/notebook/lib/browser';
 import { ViewColumnService } from '@theia/core/lib/browser/shell/view-column-service';
 
@@ -54,7 +54,7 @@ export class TabsMainImpl implements TabsMain, Disposable {
         groupId: 0,
         tabs: [],
         isActive: true,
-        viewColumn: ViewColumn.Active
+        viewColumn: 0
     };
 
     constructor(
