@@ -85,7 +85,7 @@ export class DockerContainerService {
         return container;
     }
 
-    async postConnect(devcontainerFile: string, connection: RemoteDockerContainerConnection, outputProvider?: ContainerOutputProvider) {
+    async postConnect(devcontainerFile: string, connection: RemoteDockerContainerConnection, outputProvider?: ContainerOutputProvider): Promise<void> {
         const devcontainerConfig = await this.devContainerFileService.getConfiguration(devcontainerFile);
 
         for (const containerCreateContrib of this.containerCreationContributions.getContributions()) {
