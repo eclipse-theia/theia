@@ -37,6 +37,7 @@ interface CellListProps {
 
 interface NotebookCellListState {
     selectedCell?: NotebookCellModel;
+    scrollIntoView: boolean;
     dragOverIndicator: { cell: NotebookCellModel, position: 'top' | 'bottom' } | undefined;
 }
 
@@ -48,17 +49,29 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
 
     constructor(props: CellListProps) {
         super(props);
-        this.state = { selectedCell: props.notebookModel.selectedCell, dragOverIndicator: undefined };
+        this.state = { selectedCell: props.notebookModel.selectedCell, dragOverIndicator: undefined, scrollIntoView: true };
         this.toDispose.push(props.notebookModel.onDidAddOrRemoveCell(e => {
             if (e.newCellIds && e.newCellIds.length > 0) {
-                this.setState({ ...this.state, selectedCell: this.props.notebookModel.cells.find(model => model.handle === e.newCellIds![e.newCellIds!.length - 1]) });
+                this.setState({
+                    ...this.state,
+                    selectedCell: this.props.notebookModel.cells.find(model => model.handle === e.newCellIds![e.newCellIds!.length - 1]),
+                    scrollIntoView: false
+                });
             } else {
-                this.setState({ ...this.state, selectedCell: this.props.notebookModel.cells.find(cell => cell === this.state.selectedCell) });
+                this.setState({
+                    ...this.state,
+                    selectedCell: this.props.notebookModel.cells.find(cell => cell === this.state.selectedCell),
+                    scrollIntoView: false
+                });
             }
         }));
 
-        this.toDispose.push(props.notebookModel.onDidChangeSelectedCell(cell => {
-            this.setState({ ...this.state, selectedCell: cell });
+        this.toDispose.push(props.notebookModel.onDidChangeSelectedCell(e => {
+            this.setState({
+                ...this.state,
+                selectedCell: e.cell,
+                scrollIntoView: e.scrollIntoView
+            });
         }));
     }
 
@@ -80,13 +93,13 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
                         <li className={'theia-notebook-cell' + (this.state.selectedCell === cell ? ' focused' : '') + (this.isEnabled() ? ' draggable' : '')}
                             onClick={e => {
                                 this.setState({ ...this.state, selectedCell: cell });
-                                this.props.notebookModel.setSelectedCell(cell);
+                                this.props.notebookModel.setSelectedCell(cell, false);
                             }}
                             onDragStart={e => this.onDragStart(e, index, cell)}
                             onDragOver={e => this.onDragOver(e, cell)}
                             onDrop={e => this.onDrop(e, index)}
                             draggable={true}
-                            ref={ref => cell === this.state.selectedCell && ref?.scrollIntoView({ block: 'nearest' })}>
+                            ref={ref => cell === this.state.selectedCell && this.state.scrollIntoView && ref?.scrollIntoView({ block: 'nearest' })}>
                             <div className={'theia-notebook-cell-marker' + (this.state.selectedCell === cell ? ' theia-notebook-cell-marker-selected' : '')}></div>
                             <div className='theia-notebook-cell-content'>
                                 {this.renderCellContent(cell, index)}

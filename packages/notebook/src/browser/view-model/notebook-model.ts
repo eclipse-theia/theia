@@ -56,6 +56,11 @@ export interface NotebookModelProps {
     serializer: NotebookSerializer;
 }
 
+export interface SelectedCellChangeEvent {
+    cell: NotebookCellModel | undefined;
+    scrollIntoView: boolean;
+}
+
 @injectable()
 export class NotebookModel implements Saveable, Disposable {
 
@@ -74,7 +79,7 @@ export class NotebookModel implements Saveable, Disposable {
     protected readonly onContentChangedEmitter = new Emitter<void>();
     readonly onContentChanged = this.onContentChangedEmitter.event;
 
-    protected readonly onDidChangeSelectedCellEmitter = new Emitter<NotebookCellModel | undefined>();
+    protected readonly onDidChangeSelectedCellEmitter = new Emitter<SelectedCellChangeEvent>();
     readonly onDidChangeSelectedCell = this.onDidChangeSelectedCellEmitter.event;
 
     protected readonly onDidDisposeEmitter = new Emitter<void>();
@@ -246,10 +251,10 @@ export class NotebookModel implements Saveable, Disposable {
         this.undoRedoService.redo(this.uri);
     }
 
-    setSelectedCell(cell: NotebookCellModel): void {
+    setSelectedCell(cell: NotebookCellModel, scrollIntoView?: boolean): void {
         if (this.selectedCell !== cell) {
             this.selectedCell = cell;
-            this.onDidChangeSelectedCellEmitter.fire(cell);
+            this.onDidChangeSelectedCellEmitter.fire({ cell, scrollIntoView: scrollIntoView ?? true });
         }
     }
 
