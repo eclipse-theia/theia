@@ -12,12 +12,14 @@
 
 ## 1.50.0
 
+- [application-package] bumped the default supported API from `1.88.1` to `1.89.1` [#13738](https://github.com/eclipse-theia/theia/pull/13738) - contributed on behalf of STMicroelectronics
 - [plugin] Support WindowState active API [#13718](https://github.com/eclipse-theia/theia/pull/13718) - contributed on behalf of STMicroelectronics
+- [plugin] updated `DropMetada` and `documentPaste` proposed API for 1.89 compatibility [#13733](https://github.com/eclipse-theia/theia/pull/13733) - contributed on behalf of STMicroelectronics
 
 <a name="breaking_changes_1.50.0">[Breaking Changes:](#breaking_changes_1.50.0)</a>
 
 - [core] Classes implementing the `Saveable` interface no longer need to implement the `autoSave` field. However, a new `onContentChanged` event has been added instead.
-- [plugin] updated `DropMetada` and `documentPaste` proposed API for 1.89 compatibility [#13733](https://github.com/eclipse-theia/theia/pull/13733) - contributed on behalf of STMicroelectronics
+
 
 ## v1.49.0 - 04/29/2024
 
