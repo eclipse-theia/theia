@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { Emitter } from '@theia/core';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { RemotePortForwardingProvider } from '../../electron-common/remote-port-forwarding-provider';
 
 export interface ForwardedPort {
@@ -35,6 +35,14 @@ export class PortForwardingService {
     readonly onDidChangePorts = this.onDidChangePortsEmitter.event;
 
     forwardedPorts: ForwardedPort[] = [];
+
+    @postConstruct()
+    init(): void {
+        this.provider.getForwardedPorts().then(ports => {
+            this.forwardedPorts = ports.map(p => ({ address: p.address, localPort: p.port, editing: false }));
+            this.onDidChangePortsEmitter.fire();
+        });
+    }
 
     forwardNewPort(origin?: string): ForwardedPort {
         const index = this.forwardedPorts.push({ editing: true, origin });

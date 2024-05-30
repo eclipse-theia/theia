@@ -18,6 +18,13 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { ForwardedPort, RemotePortForwardingProvider } from '../electron-common/remote-port-forwarding-provider';
 import { createServer, Server } from 'net';
 import { RemoteConnectionService } from './remote-connection-service';
+import { RemoteConnection } from './remote-types';
+
+interface ForwardInfo {
+    connection: RemoteConnection
+    port: ForwardedPort
+    server: Server
+}
 
 @injectable()
 export class RemotePortForwardingProviderImpl implements RemotePortForwardingProvider {
@@ -25,7 +32,7 @@ export class RemotePortForwardingProviderImpl implements RemotePortForwardingPro
     @inject(RemoteConnectionService)
     protected readonly connectionService: RemoteConnectionService;
 
-    protected forwardedPorts: Map<number, Server> = new Map();
+    protected static forwardedPorts: ForwardInfo[] = [];
 
     async forwardPort(connectionPort: number, portToForward: ForwardedPort): Promise<void> {
         const currentConnection = this.connectionService.getConnectionFromPort(connectionPort);
@@ -36,15 +43,24 @@ export class RemotePortForwardingProviderImpl implements RemotePortForwardingPro
         const server = createServer(socket => {
             currentConnection?.forwardOut(socket, portToForward.port);
         }).listen(portToForward.port, portToForward.address);
-        this.forwardedPorts.set(portToForward.port, server);
+
+        currentConnection.onDidDisconnect(() => {
+            this.portRemoved(portToForward);
+        });
+
+        RemotePortForwardingProviderImpl.forwardedPorts.push({ connection: currentConnection, port: portToForward, server });
     }
 
     async portRemoved(forwardedPort: ForwardedPort): Promise<void> {
-        const proxy = this.forwardedPorts.get(forwardedPort.port);
-        if (proxy) {
-            proxy.close();
-            this.forwardedPorts.delete(forwardedPort.port);
+        const forwardInfo = RemotePortForwardingProviderImpl.forwardedPorts.find(info => info.port.port === forwardedPort.port);
+        if (forwardInfo) {
+            forwardInfo.server.close();
+            RemotePortForwardingProviderImpl.forwardedPorts.splice(RemotePortForwardingProviderImpl.forwardedPorts.indexOf(forwardInfo), 1);
         }
     }
 
+    async getForwardedPorts(): Promise<ForwardedPort[]> {
+        return Array.from(RemotePortForwardingProviderImpl.forwardedPorts)
+            .map(forwardInfo => ({ ...forwardInfo.port, editing: false }));
+    }
 }

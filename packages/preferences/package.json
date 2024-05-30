@@ -21,7 +21,8 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/preference-frontend-module"
+      "frontend": "lib/browser/preference-frontend-module",
+      "backend": "lib/node/preference-backend-module"
     }
   ],
   "keywords": [

@@ -258,6 +258,21 @@ export interface DevContainerCommon {
      * The default is the same user as the container.
      */
     remoteUser?: string
+
+    /**
+     * extensions to install in the container at launch. The expeceted format is publisher.name[@version].
+     * The default is no extensions being installed.
+     */
+    extensions?: string[]
+
+    /**
+     * settings to set in the container at launch in the settings.json. The expected format is key=value.
+     * The default is no preferences being set.
+     */
+    settings?: {
+        [k: string]: unknown
+    }
+
     /**
      * A command to run locally before anything else. This command is run before 'onCreateCommand'.
      * If this is a single string, it will be run in a shell. If this is an array of strings, it will be run as a single command without shell.
@@ -365,7 +380,23 @@ export interface DevContainerCommon {
      * Tool-specific configuration. Each tool should use a JSON object subproperty with a unique name to group its customizations.
      */
     customizations?: {
-        [k: string]: unknown
+        [k: string]: unknown,
+        vscode?: {
+            /**
+             * extensions to install in the container at launch. The expeceted format is publisher.name[@version].
+             * The default is no extensions being installed.
+             */
+            extensions?: string[],
+
+            /**
+             * settings to set in the container at launch in the settings.json. The expected format is key=value.
+             * The default is no preferences being set.
+             */
+            settings?: {
+                [k: string]: unknown
+            }
+            [k: string]: unknown
+        }
     }
     additionalProperties?: {
         [k: string]: unknown

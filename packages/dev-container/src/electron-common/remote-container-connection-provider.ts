@@ -15,6 +15,7 @@
 
 import { RpcServer } from '@theia/core';
 import { ContainerOutputProvider } from './container-output-provider';
+import type { ContainerInspectInfo } from 'dockerode';
 
 // *****************************************************************************
 export const RemoteContainerConnectionProviderPath = '/remote/container';
@@ -46,4 +47,5 @@ export interface DevContainerFile {
 export interface RemoteContainerConnectionProvider extends RpcServer<ContainerOutputProvider> {
     connectToContainer(options: ContainerConnectionOptions): Promise<ContainerConnectionResult>;
     getDevContainerFiles(): Promise<DevContainerFile[]>;
+    getCurrentContainerInfo(port: number): Promise<ContainerInspectInfo | undefined>;
 }
