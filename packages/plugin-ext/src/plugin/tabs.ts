@@ -325,8 +325,13 @@ export class TabsExtImpl implements TabsExt {
                 this.activeGroupId = activeTabGroupId;
             }
         }
-        this.onDidChangeTabGroups.fire(Object.freeze({ opened, closed, changed }));
-        this.onDidChangeTabs.fire({ opened: tabsOpened, changed: [], closed: [] });
+
+        if (closed.length > 0 || opened.length > 0 || changed.length > 0) {
+            this.onDidChangeTabGroups.fire(Object.freeze({ opened, closed, changed }));
+        }
+        if (tabsOpened.length > 0) {
+            this.onDidChangeTabs.fire({ opened: tabsOpened, changed: [], closed: [] });
+        }
     }
 
     $acceptTabGroupUpdate(groupDto: TabGroupDto): void {

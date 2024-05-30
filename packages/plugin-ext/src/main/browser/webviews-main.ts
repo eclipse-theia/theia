@@ -23,7 +23,7 @@ import { ViewBadge, WebviewOptions, WebviewPanelOptions, WebviewPanelShowOptions
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
 import { WebviewWidget, WebviewWidgetIdentifier } from './webview/webview';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { ViewColumnService } from './view-column-service';
+import { ViewColumnService } from '@theia/core/lib/browser/shell/view-column-service';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { JSONExt } from '@theia/core/shared/@phosphor/coreutils';
 import { Mutable } from '@theia/core/lib/common/types';

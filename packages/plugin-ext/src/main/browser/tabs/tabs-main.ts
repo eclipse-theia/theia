@@ -24,6 +24,8 @@ import { MonacoDiffEditor } from '@theia/monaco/lib/browser/monaco-diff-editor';
 import { toUriComponents } from '../hierarchy/hierarchy-types-converters';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { DisposableCollection } from '@theia/core';
+import { NotebookEditorWidget } from '@theia/notebook/lib/browser';
+import { ViewColumnService } from '@theia/core/lib/browser/shell/view-column-service';
 
 interface TabInfo {
     tab: TabDto;
@@ -46,6 +48,14 @@ export class TabsMainImpl implements TabsMain, Disposable {
     private currentActiveGroup: TabGroupDto;
 
     private tabGroupChanged: boolean = false;
+    private viewColumnService: ViewColumnService;
+
+    private readonly defaultTabGroup: TabGroupDto = {
+        groupId: 0,
+        tabs: [],
+        isActive: true,
+        viewColumn: 0
+    };
 
     constructor(
         rpc: RPCProtocol,
@@ -54,6 +64,7 @@ export class TabsMainImpl implements TabsMain, Disposable {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.TABS_EXT);
 
         this.applicationShell = container.get(ApplicationShell);
+        this.viewColumnService = container.get(ViewColumnService);
         this.createTabsModel();
 
         const tabBars = this.applicationShell.mainPanel.tabBars();
@@ -100,15 +111,20 @@ export class TabsMainImpl implements TabsMain, Disposable {
     }
 
     protected createTabsModel(): void {
+        if (this.applicationShell.mainAreaTabBars.length === 0) {
+            this.proxy.$acceptEditorTabModel([this.defaultTabGroup]);
+            return;
+        }
         const newTabGroupModel = new Map<TabBar<Widget>, TabGroupDto>();
         this.tabInfoLookup.clear();
         this.disposableTabBarListeners.dispose();
-        this.applicationShell.mainAreaTabBars.forEach(tabBar => {
-            this.attachListenersToTabBar(tabBar);
-            const groupDto = this.createTabGroupDto(tabBar);
-            tabBar.titles.forEach((title, index) => this.tabInfoLookup.set(title, { group: groupDto, tab: groupDto.tabs[index], tabIndex: index }));
-            newTabGroupModel.set(tabBar, groupDto);
-        });
+        this.applicationShell.mainAreaTabBars
+            .forEach((tabBar, i) => {
+                this.attachListenersToTabBar(tabBar);
+                const groupDto = this.createTabGroupDto(tabBar, i);
+                tabBar.titles.forEach((title, index) => this.tabInfoLookup.set(title, { group: groupDto, tab: groupDto.tabs[index], tabIndex: index }));
+                newTabGroupModel.set(tabBar, groupDto);
+            });
         if (newTabGroupModel.size > 0 && Array.from(newTabGroupModel.values()).indexOf(this.currentActiveGroup) < 0) {
             this.currentActiveGroup = this.tabInfoLookup.get(this.applicationShell.mainPanel.currentTitle!)?.group ?? newTabGroupModel.values().next().value;
             this.currentActiveGroup.isActive = true;
@@ -134,15 +150,17 @@ export class TabsMainImpl implements TabsMain, Disposable {
         return `${groupId}~${tabTitle.owner.id}`;
     }
 
-    protected createTabGroupDto(tabBar: TabBar<Widget>): TabGroupDto {
-        const oldDto = this.tabGroupModel.get(tabBar);
+    protected createTabGroupDto(tabBar: TabBar<Widget>, index: number): TabGroupDto {
+        const oldDto = index === 0 ? this.defaultTabGroup : this.tabGroupModel.get(tabBar);
         const groupId = oldDto?.groupId ?? this.groupIdCounter++;
         const tabs = tabBar.titles.map(title => this.createTabDto(title, groupId));
+        const viewColumn = this.viewColumnService.getViewColumn(tabBar.id)
+            ?? this.applicationShell.allTabBars.indexOf(tabBar);
         return {
             groupId,
             tabs,
             isActive: false,
-            viewColumn: 1
+            viewColumn
         };
     }
 
@@ -181,6 +199,12 @@ export class TabsMainImpl implements TabsMain, Disposable {
         } else if (widget instanceof TerminalWidget) {
             return {
                 kind: TabInputKind.TerminalEditorInput
+            };
+        } else if (widget instanceof NotebookEditorWidget) {
+            return {
+                kind: TabInputKind.NotebookInput,
+                notebookType: widget.notebookType,
+                uri: toUriComponents(widget.model?.uri.toString() ?? '')
             };
         }
 
@@ -232,6 +256,9 @@ export class TabsMainImpl implements TabsMain, Disposable {
         }
         const oldTabDto = tabInfo.tab;
         const newTabDto = this.createTabDto(title, tabInfo.group.groupId);
+        if (!oldTabDto.isActive && newTabDto.isActive) {
+            this.currentActiveGroup.tabs.filter(tab => tab.isActive).forEach(tab => tab.isActive = false);
+        }
         if (newTabDto.isActive && !tabInfo.group.isActive) {
             tabInfo.group.isActive = true;
             this.currentActiveGroup.isActive = false;
