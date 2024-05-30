@@ -56,6 +56,11 @@ export interface NotebookModelProps {
     serializer: NotebookSerializer;
 }
 
+export interface SelectedCellChangeEvent {
+    cell: NotebookCellModel | undefined;
+    scrollIntoView: boolean;
+}
+
 @injectable()
 export class NotebookModel implements Saveable, Disposable {
 
@@ -74,7 +79,7 @@ export class NotebookModel implements Saveable, Disposable {
     protected readonly onContentChangedEmitter = new Emitter<void>();
     readonly onContentChanged = this.onContentChangedEmitter.event;
 
-    protected readonly onDidChangeSelectedCellEmitter = new Emitter<NotebookCellModel | undefined>();
+    protected readonly onDidChangeSelectedCellEmitter = new Emitter<SelectedCellChangeEvent>();
     readonly onDidChangeSelectedCell = this.onDidChangeSelectedCellEmitter.event;
 
     protected readonly onDidDisposeEmitter = new Emitter<void>();
@@ -246,10 +251,10 @@ export class NotebookModel implements Saveable, Disposable {
         this.undoRedoService.redo(this.uri);
     }
 
-    setSelectedCell(cell: NotebookCellModel): void {
+    setSelectedCell(cell: NotebookCellModel, scrollIntoView?: boolean): void {
         if (this.selectedCell !== cell) {
             this.selectedCell = cell;
-            this.onDidChangeSelectedCellEmitter.fire(cell);
+            this.onDidChangeSelectedCellEmitter.fire({ cell, scrollIntoView: scrollIntoView ?? true });
         }
     }
 
@@ -285,9 +290,12 @@ export class NotebookModel implements Saveable, Disposable {
             if (cell) {
                 this.cellDirtyChanged(cell, true);
             }
+
+            let scrollIntoView = true;
             switch (edit.editType) {
                 case CellEditType.Replace:
                     this.replaceCells(edit.index, edit.count, edit.cells, computeUndoRedo);
+                    scrollIntoView = edit.cells.length > 0;
                     break;
                 case CellEditType.Output: {
                     if (edit.append) {
@@ -330,7 +338,7 @@ export class NotebookModel implements Saveable, Disposable {
 
             // if selected cell is affected update it because it can potentially have been replaced
             if (cell === this.selectedCell) {
-                this.setSelectedCell(this.cells[Math.min(cellIndex, this.cells.length - 1)]);
+                this.setSelectedCell(this.cells[Math.min(cellIndex, this.cells.length - 1)], scrollIntoView);
             }
         }
 

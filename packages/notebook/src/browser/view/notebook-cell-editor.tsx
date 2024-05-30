@@ -78,8 +78,8 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
             this.editor?.setLanguage(language);
         }));
 
-        this.toDispose.push(this.props.notebookModel.onDidChangeSelectedCell(cell => {
-            if (cell !== this.props.cell && this.editor?.getControl().hasTextFocus()) {
+        this.toDispose.push(this.props.notebookModel.onDidChangeSelectedCell(e => {
+            if (e.cell !== this.props.cell && this.editor?.getControl().hasTextFocus()) {
                 this.props.notebookContextManager.context?.focus();
             }
         }));
@@ -129,7 +129,7 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
             }));
             this.toDispose.push(this.editor.getControl().onDidFocusEditorText(() => {
                 this.props.notebookContextManager.onDidEditorTextFocus(true);
-                this.props.notebookModel.setSelectedCell(cell);
+                this.props.notebookModel.setSelectedCell(cell, false);
             }));
             this.toDispose.push(this.editor.getControl().onDidBlurEditorText(() => {
                 this.props.notebookContextManager.onDidEditorTextFocus(false);
