@@ -452,7 +452,7 @@ export abstract class AbstractVSXExtensionComponent<Props extends AbstractVSXExt
             return <div>
                 {
                     outOfSynch
-                        ? <button className="theia-button action" onClick={this.reloadWindow}>{nls.localizeByDefault('Reload Required')}</button>
+                        ? <button className="theia-button action" onClick={this.reloadWindow}>{nls.localizeByDefault('Reload Window')}</button>
                         : <button className="theia-button action" onClick={this.uninstall}>{nls.localizeByDefault('Uninstall')}</button>
                 }
 
