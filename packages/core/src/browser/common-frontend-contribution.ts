@@ -1408,7 +1408,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         const items = [...itemsByTheme.light, ...itemsByTheme.dark, ...itemsByTheme.hc, ...itemsByTheme.hcLight];
         this.quickInputService?.showQuickPick(items,
             {
-                placeholder: nls.localizeByDefault('Select Color Theme (Up/Down Keys to Preview)'),
+                placeholder: nls.localizeByDefault('Select Color Theme'),
                 activeItem: items.find(item => item.id === resetTo),
                 onDidChangeSelection: (_, selectedItems) => {
                     resetTo = undefined;
