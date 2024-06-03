@@ -35,7 +35,8 @@ import {
     MenuCommandAdapterRegistry,
     MenuCommandExecutor,
     MenuCommandAdapterRegistryImpl,
-    MenuCommandExecutorImpl
+    MenuCommandExecutorImpl,
+    MenuPath
 } from '../common';
 import { KeybindingRegistry, KeybindingContext, KeybindingContribution } from './keybinding';
 import { FrontendApplication } from './frontend-application';
@@ -137,7 +138,7 @@ import { MarkdownRenderer, MarkdownRendererFactory, MarkdownRendererImpl } from 
 import { StylingParticipant, StylingService } from './styling-service';
 import { bindCommonStylingParticipants } from './common-styling-participants';
 import { HoverService } from './hover-service';
-import { AdditionalViewsMenuWidget, AdditionalViewsMenuWidgetFactory } from './shell/additional-views-menu-widget';
+import { AdditionalViewsMenuPath, AdditionalViewsMenuWidget, AdditionalViewsMenuWidgetFactory } from './shell/additional-views-menu-widget';
 import { LanguageIconLabelProvider } from './language-icon-provider';
 import { bindTreePreferences } from './tree';
 import { OpenWithService } from './open-with-service';
@@ -177,9 +178,9 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bind(SidebarBottomMenuWidgetFactory).toAutoFactory(SidebarBottomMenuWidget);
     bind(AdditionalViewsMenuWidget).toSelf();
     bind(AdditionalViewsMenuWidgetFactory).toFactory(ctx => (side: 'left' | 'right') => {
-        const widget = ctx.container.resolve(AdditionalViewsMenuWidget);
-        widget.setSide(side);
-        return widget;
+        const childContainer = ctx.container.createChild();
+        childContainer.bind<MenuPath>(AdditionalViewsMenuPath).toConstantValue(['additional_views_menu', side]);
+        return childContainer.resolve(AdditionalViewsMenuWidget);
     });
     bind(SplitPositionHandler).toSelf().inSingletonScope();
 

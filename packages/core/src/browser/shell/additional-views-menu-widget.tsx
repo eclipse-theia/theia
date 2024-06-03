@@ -23,14 +23,12 @@ import { SideTabBar } from './tab-bars';
 export const AdditionalViewsMenuWidgetFactory = Symbol('AdditionalViewsMenuWidgetFactory');
 export type AdditionalViewsMenuWidgetFactory = (side: 'left' | 'right') => AdditionalViewsMenuWidget;
 
-export function getAdditionalViewsMenuPath(side: 'left' | 'right'): MenuPath {
-    return ['additional_views_menu', side];
-}
+export const AdditionalViewsMenuPath = Symbol('AdditionalViewsMenuPath');
 @injectable()
 export class AdditionalViewsMenuWidget extends SidebarMenuWidget {
     static readonly ID = 'sidebar.additional.views';
 
-    protected side: 'left' | 'right';
+    @inject(AdditionalViewsMenuPath)
     protected menuPath: MenuPath;
 
     @inject(CommandRegistry)
@@ -40,11 +38,6 @@ export class AdditionalViewsMenuWidget extends SidebarMenuWidget {
     protected readonly menuModelRegistry: MenuModelRegistry;
 
     protected menuDisposables: Disposable[] = [];
-
-    setSide(side: 'left' | 'right'): void {
-        this.side = side;
-        this.menuPath = getAdditionalViewsMenuPath(side);
-    }
 
     updateAdditionalViews(sender: SideTabBar, event: { titles: Title<Widget>[], startIndex: number }): void {
         if (event.startIndex === -1) {
