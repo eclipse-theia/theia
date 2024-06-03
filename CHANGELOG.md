@@ -6,15 +6,49 @@
 
 <!-- ## not yet released
 
-- [cli] Updated our build to use Typescript 5.4.5 [#13628](https://github.com/eclipse-theia/theia/pull/13628) - contributed on behalf of STMicroelectronics
-
 <a name="breaking_changes_not_yet_released">[Breaking Changes:](#breaking_changes_not_yet_released)</a> -->
 
-## 1.50.0
+## 1.50.0 - 06/03/2024
 
 - [application-package] bumped the default supported API from `1.88.1` to `1.89.1` [#13738](https://github.com/eclipse-theia/theia/pull/13738) - contributed on behalf of STMicroelectronics
-- [plugin] Support WindowState active API [#13718](https://github.com/eclipse-theia/theia/pull/13718) - contributed on behalf of STMicroelectronics
+- [cli] upgrade the Theia build to use Typescript 5.4.5 [#13628](https://github.com/eclipse-theia/theia/pull/13628) - Contributed on behalf of STMicroelectronics
+- [core] added logic to delegate showing help to the back end process. [#13729](https://github.com/eclipse-theia/theia/pull/13729) - Contributed on behalf of STMicroelectronics
+- [core] added logic to don't reveal the focused element when updating the tree rows [#13703](https://github.com/eclipse-theia/theia/pull/13703) - Contributed on behalf of STMicroelectronics
+- [core] added logic to ensure globalSelection is correctly set when opening context menu on a tree widget [#13710](https://github.com/eclipse-theia/theia/pull/13710)
+- [core] added to logic to ensure usage of user-defined `THEIA_CONFIG_DIR` [#13708](https://github.com/eclipse-theia/theia/pull/13708) - Contributed on behalf of STMicroelectronics
+- [core] fixed hex editor by updating `msgpckr` to 1.10.2 [#13722](https://github.com/eclipse-theia/theia/pull/13722)
+- [core] improved `WebSocketConnectionProvider` deprecation message [#13713](https://github.com/eclipse-theia/theia/pull/13713) - Contributed on behalf of STMicroelectronics
+- [core] refactored auto save mechanism via a central service [#13683](https://github.com/eclipse-theia/theia/pull/13683)
+- [core] updated logic to make browserWindow of splashScreen transparent [#13699](https://github.com/eclipse-theia/theia/pull/13699)
+- [dev-container] added support for four previously unsupported dev container properties [#13714](https://github.com/eclipse-theia/theia/pull/13714)
+- [dev-container] improved logic to show dev-container label in status bar [#13744](https://github.com/eclipse-theia/theia/pull/13744)
+- [electron] updated electron to ^28.2.8 [#13580](https://github.com/eclipse-theia/theia/pull/13580)
+- [navigator] added logic to handle `isFileSystemResource` context key [#13664](https://github.com/eclipse-theia/theia/pull/13664)
+- [navigator] added logic to not show the new "Open With..." command on folders [#13678](https://github.com/eclipse-theia/theia/pull/13678)
+- [notebook] added additional css to notebook output webviews [#13666](https://github.com/eclipse-theia/theia/pull/13666)
+- [notebook] added basics for notebook cell drag image renderers [#13698](https://github.com/eclipse-theia/theia/pull/13698)
+- [notebook] added logic to select next notebook cell on first or last line of editor [#13656](https://github.com/eclipse-theia/theia/pull/13656)
+- [notebook] added logic to select the last cell when deleting selected last cell [#13715](https://github.com/eclipse-theia/theia/pull/13715)
+- [notebook] added logic to stop execution when deleting cell [#13701](https://github.com/eclipse-theia/theia/pull/13701)
+- [notebook] added responsive design for the main notebook toolbar [#13663](https://github.com/eclipse-theia/theia/pull/13663)
+- [notebook] aligned commands with vscode notebook commands [#13645](https://github.com/eclipse-theia/theia/pull/13645)
+- [notebook] aligned notebook scroll into view behaviour with vscode [#13742](https://github.com/eclipse-theia/theia/pull/13742)
+- [notebook] fixed focus loss of the notebook editor widget when bluring a cell editor [#13741](https://github.com/eclipse-theia/theia/pull/13741)
+- [notebook] fixed notebook cell divider size [#13745](https://github.com/eclipse-theia/theia/pull/13745)
+- [notebook] fixed storing of the notebook-outlineview state data [#13648](https://github.com/eclipse-theia/theia/pull/13648)
+- [notebook] improved notebook cell model lifecycle [#13675](https://github.com/eclipse-theia/theia/pull/13675)
+- [notebook] improved support for creating new notebooks [#13696](https://github.com/eclipse-theia/theia/pull/13696)
+- [plugin] added stub for `registerMappedEditProvider` [#13681](https://github.com/eclipse-theia/theia/pull/13681) - Contributed on behalf of STMicroelectronics
+- [plugin] added support `WindowState` active API [#13718](https://github.com/eclipse-theia/theia/pull/13718) - contributed on behalf of STMicroelectronics
+- [plugin] fixed github authentication built-in for electron case [#13611](https://github.com/eclipse-theia/theia/pull/13611) - Contributed on behalof of STMicroelectronics
+- [plugin] fixed incorrect URI conversions in custom-editors-main [#13653](https://github.com/eclipse-theia/theia/pull/13653)
+- [plugin] fixed quick pick separators from plugins [#13740](https://github.com/eclipse-theia/theia/pull/13740)
+- [plugin] improved vscode tab API [#13730](https://github.com/eclipse-theia/theia/pull/13730)
 - [plugin] updated `DropMetada` and `documentPaste` proposed API for 1.89 compatibility [#13733](https://github.com/eclipse-theia/theia/pull/13733) - contributed on behalf of STMicroelectronics
+- [plugin] updated nls metadata for VSCode API 1.89.0 [#13743](https://github.com/eclipse-theia/theia/pull/13743)
+- [remote] added logic to support plugin copying for remote feature [#13369](https://github.com/eclipse-theia/theia/pull/13369)
+- [terminal] fixed performance issues in terminal [#13735](https://github.com/eclipse-theia/theia/pull/13735) - Contributed on behalf of STMicroelectronics
+- [terminal] updated logic to allow transitive binding for TerminalFrontendContribution [#13667](https://github.com/eclipse-theia/theia/pull/13667)
 
 <a name="breaking_changes_1.50.0">[Breaking Changes:](#breaking_changes_1.50.0)</a>
 
