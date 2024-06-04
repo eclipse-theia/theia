@@ -29,7 +29,8 @@ import {
     PluginManagerInitializeParams,
     PluginManagerStartParams,
     TerminalServiceExt,
-    LocalizationExt
+    LocalizationExt,
+    ExtensionKind
 } from '../common/plugin-api-rpc';
 import { PluginMetadata, PluginJsonValidationContribution } from '../common/plugin-protocol';
 import * as theia from '@theia/plugin';
@@ -121,6 +122,7 @@ export abstract class AbstractPluginManagerExtImpl<P extends Record<string, any>
     private notificationMain: NotificationMain;
 
     protected jsonValidation: PluginJsonValidationContribution[] = [];
+    protected pluginKind = ExtensionKind.UI;
     protected ready = new Deferred();
 
     @postConstruct()
@@ -410,6 +412,10 @@ export abstract class AbstractPluginManagerExtImpl<P extends Record<string, any>
         }
     }
 
+    getPluginKind(): theia.ExtensionKind {
+        return this.pluginKind;
+    }
+
     getAllPlugins(): Plugin[] {
         return Array.from(this.registry.values());
     }
@@ -477,6 +483,7 @@ export class PluginManagerExtImpl extends AbstractPluginManagerExtImpl<PluginMan
 
         this.webview.init(params.webview);
         this.jsonValidation = params.jsonValidation;
+        this.pluginKind = params.pluginKind;
 
         this.supportedActivationEvents = new Set(params.supportedActivationEvents ?? []);
     }
