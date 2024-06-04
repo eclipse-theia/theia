@@ -28,6 +28,11 @@ export class WorkerEnvExtImpl extends EnvExtImpl {
         super();
     }
 
+    override get appRoot(): string {
+        // The documentation indicates that this should be an empty string
+        return '';
+    }
+
     get isNewAppInstall(): boolean {
         return false;
     }
