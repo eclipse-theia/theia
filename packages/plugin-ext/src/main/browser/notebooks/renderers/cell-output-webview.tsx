@@ -187,6 +187,7 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
         }
 
         this.webviewWidget = await this.widgetManager.getOrCreateWidget(WebviewWidget.FACTORY_ID, { id: this.id });
+        this.webviewWidget.parent = this.editor ?? null;
         this.webviewWidget.setContentOptions({
             allowScripts: true,
             // eslint-disable-next-line max-len
