@@ -23,13 +23,13 @@ import { SideTabBar } from './tab-bars';
 export const AdditionalViewsMenuWidgetFactory = Symbol('AdditionalViewsMenuWidgetFactory');
 export type AdditionalViewsMenuWidgetFactory = (side: 'left' | 'right') => AdditionalViewsMenuWidget;
 
-export const ADDITIONAL_VIEWS_MENU_PATH: MenuPath = ['additional_views_menu'];
-
+export const AdditionalViewsMenuPath = Symbol('AdditionalViewsMenuPath');
 @injectable()
 export class AdditionalViewsMenuWidget extends SidebarMenuWidget {
     static readonly ID = 'sidebar.additional.views';
 
-    side: 'left' | 'right';
+    @inject(AdditionalViewsMenuPath)
+    protected menuPath: MenuPath;
 
     @inject(CommandRegistry)
     protected readonly commandRegistry: CommandRegistry;
@@ -47,7 +47,7 @@ export class AdditionalViewsMenuWidget extends SidebarMenuWidget {
                 title: nls.localizeByDefault('Additional Views'),
                 iconClass: codicon('ellipsis'),
                 id: AdditionalViewsMenuWidget.ID,
-                menuPath: ADDITIONAL_VIEWS_MENU_PATH,
+                menuPath: this.menuPath,
                 order: 0
             });
         }
@@ -66,6 +66,6 @@ export class AdditionalViewsMenuWidget extends SidebarMenuWidget {
                 });
             }
         }));
-        this.menuDisposables.push(this.menuModelRegistry.registerMenuAction(ADDITIONAL_VIEWS_MENU_PATH, { commandId: command.id, order: index.toString() }));
+        this.menuDisposables.push(this.menuModelRegistry.registerMenuAction(this.menuPath, { commandId: command.id, order: index.toString() }));
     }
 }
