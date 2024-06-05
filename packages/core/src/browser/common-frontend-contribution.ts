@@ -532,7 +532,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 if (newValue === 'compact') {
                     this.shell.leftPanelHandler.addTopMenu({
                         id: mainMenuId,
-                        iconClass: codicon('menu'),
+                        iconClass: `theia-compact-menu ${codicon('menu')}`,
                         title: nls.localizeByDefault('Application Menu'),
                         menuPath: MAIN_MENU_BAR,
                         order: 0,

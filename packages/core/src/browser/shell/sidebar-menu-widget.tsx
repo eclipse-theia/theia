@@ -169,15 +169,13 @@ export class SidebarMenuWidget extends ReactWidget {
     }
 
     protected renderItem(item: SidebarMenuItem): React.ReactNode {
-        return <div className='theia-sidebar-menu-item'>
-            <i
-                key={item.menu.id}
-                className={item.menu.iconClass}
-                onClick={e => this.onClick(e, item.menu.menuPath)}
-                onMouseDown={this.onMouseDown}
-                onMouseEnter={e => this.onMouseEnter(e, item.menu.title)}
-                onMouseLeave={this.onMouseOut}
-            />
+        return <div
+            className='theia-sidebar-menu-item'
+            onClick={e => this.onClick(e, item.menu.menuPath)}
+            onMouseDown={this.onMouseDown}
+            onMouseEnter={e => this.onMouseEnter(e, item.menu.title)}
+            onMouseLeave={this.onMouseOut}>
+            <i key={item.menu.id} className={item.menu.iconClass} />
             {item.badge && <div className='theia-badge-decorator-sidebar'>{item.badge}</div>}
         </div>;
     }
