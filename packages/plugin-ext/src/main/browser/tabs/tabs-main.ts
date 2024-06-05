@@ -26,6 +26,7 @@ import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget
 import { DisposableCollection } from '@theia/core';
 import { NotebookEditorWidget } from '@theia/notebook/lib/browser';
 import { ViewColumnService } from '@theia/core/lib/browser/shell/view-column-service';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 
 interface TabInfo {
     tab: TabDto;
@@ -38,6 +39,7 @@ export class TabsMainImpl implements TabsMain, Disposable {
     private readonly proxy: TabsExt;
     private tabGroupModel = new Map<TabBar<Widget>, TabGroupDto>();
     private tabInfoLookup = new Map<Title<Widget>, TabInfo>();
+    private waitQueue = new Map<Widget, Deferred>();
 
     private applicationShell: ApplicationShell;
 
@@ -110,6 +112,22 @@ export class TabsMainImpl implements TabsMain, Disposable {
         });
     }
 
+    waitForWidget(widget: Widget): Promise<void> {
+        const deferred = new Deferred<void>();
+        this.waitQueue.set(widget, deferred);
+
+        const timeout = setTimeout(() => {
+            deferred.resolve(); // resolve to unblock the event
+        }, 1000);
+
+        deferred.promise.then(() => {
+            clearTimeout(timeout);
+            this.waitQueue.delete(widget);
+        });
+
+        return deferred.promise;
+    }
+
     protected createTabsModel(): void {
         if (this.applicationShell.mainAreaTabBars.length === 0) {
             this.proxy.$acceptEditorTabModel([this.defaultTabGroup]);
@@ -131,6 +149,10 @@ export class TabsMainImpl implements TabsMain, Disposable {
         }
         this.tabGroupModel = newTabGroupModel;
         this.proxy.$acceptEditorTabModel(Array.from(this.tabGroupModel.values()));
+        // Resolve all waiting widget promises
+        this.waitQueue.forEach(deferred => deferred.resolve());
+        this.waitQueue.clear();
+        console.log('Sent tab model to frontend');
     }
 
     protected createTabDto(tabTitle: Title<Widget>, groupId: number): TabDto {
@@ -247,6 +269,8 @@ export class TabsMainImpl implements TabsMain, Disposable {
             tabDto,
             groupId: group.groupId
         });
+        this.waitQueue.get(args.title.owner)?.resolve();
+        console.log('Sent tab open event to frontend');
     }
 
     private onTabTitleChanged(title: Title<Widget>): void {
