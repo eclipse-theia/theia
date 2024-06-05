@@ -66,6 +66,7 @@ import { SaveableService } from './saveable-service';
 import { UserWorkingDirectoryProvider } from './user-working-directory-provider';
 import { UNTITLED_SCHEME, UntitledResourceResolver } from '../common';
 import { LanguageQuickPickService } from './i18n/language-quick-pick-service';
+import { SidebarMenu } from './shell/sidebar-menu-widget';
 
 export namespace CommonMenus {
 
@@ -477,12 +478,13 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             menuPath: MANAGE_MENU,
             order: 0,
         });
-        const accountsMenu = {
+        const accountsMenu: SidebarMenu = {
             id: 'accounts-menu',
             iconClass: codicon('account'),
             title: nls.localizeByDefault('Accounts'),
             menuPath: ACCOUNTS_MENU,
             order: 1,
+            onDidBadgeChange: this.authenticationService.onDidUpdateSignInCount
         };
         this.authenticationService.onDidRegisterAuthenticationProvider(() => {
             app.shell.leftPanelHandler.addBottomMenu(accountsMenu);
