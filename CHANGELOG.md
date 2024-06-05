@@ -4,7 +4,9 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
-<!-- ## not yet released
+<!-- ## not yet released 
+
+- [plugin] Avoid pollution of all toolbars by actions contributed by tree views in extensions [#13768](https://github.com/eclipse-theia/theia/pull/13768) - contributed on behalf of STMicroelectronics
 
 <a name="breaking_changes_not_yet_released">[Breaking Changes:](#breaking_changes_not_yet_released)</a> 
 
