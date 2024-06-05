@@ -61,7 +61,7 @@ import { ConfirmDialog, confirmExit, ConfirmSaveDialog, Dialog } from './dialogs
 import { WindowService } from './window/window-service';
 import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
 import { DecorationStyle } from './decoration-style';
-import { isPinned, Title, togglePinned, Widget } from './widgets';
+import { codicon, isPinned, Title, togglePinned, Widget } from './widgets';
 import { SaveableService } from './saveable-service';
 import { UserWorkingDirectoryProvider } from './user-working-directory-provider';
 import { UNTITLED_SCHEME, UntitledResourceResolver } from '../common';
@@ -472,17 +472,17 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
 
         app.shell.leftPanelHandler.addBottomMenu({
             id: 'settings-menu',
-            iconClass: 'codicon codicon-settings-gear',
+            iconClass: codicon('settings-gear'),
             title: nls.localizeByDefault(CommonCommands.MANAGE_CATEGORY),
             menuPath: MANAGE_MENU,
-            order: 1,
+            order: 0,
         });
         const accountsMenu = {
             id: 'accounts-menu',
-            iconClass: 'codicon codicon-person',
+            iconClass: codicon('account'),
             title: nls.localizeByDefault('Accounts'),
             menuPath: ACCOUNTS_MENU,
-            order: 0,
+            order: 1,
         };
         this.authenticationService.onDidRegisterAuthenticationProvider(() => {
             app.shell.leftPanelHandler.addBottomMenu(accountsMenu);
@@ -530,7 +530,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 if (newValue === 'compact') {
                     this.shell.leftPanelHandler.addTopMenu({
                         id: mainMenuId,
-                        iconClass: 'codicon codicon-menu',
+                        iconClass: codicon('menu'),
                         title: nls.localizeByDefault('Application Menu'),
                         menuPath: MAIN_MENU_BAR,
                         order: 0,
