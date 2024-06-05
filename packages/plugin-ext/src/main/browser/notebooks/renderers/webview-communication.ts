@@ -59,7 +59,20 @@ export interface PreloadMessage {
     readonly resources: string[];
 }
 
-export type ToWebviewMessage = UpdateRenderersMessage | OutputChangedMessage | ChangePreferredMimetypeMessage | CustomRendererMessage | KernelMessage | PreloadMessage;
+export interface notebookStylesMessage {
+    readonly type: 'notebookStyles';
+    styles: {
+        [key: string]: string;
+    }
+}
+
+export type ToWebviewMessage = UpdateRenderersMessage
+    | OutputChangedMessage
+    | ChangePreferredMimetypeMessage
+    | CustomRendererMessage
+    | KernelMessage
+    | PreloadMessage
+    | notebookStylesMessage;
 
 export interface WebviewInitialized {
     readonly type: 'initialized';

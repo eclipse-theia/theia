@@ -67,6 +67,7 @@ export class PreferenceTreeModel extends TreeModelImpl {
 
     protected lastSearchedFuzzy: string = '';
     protected lastSearchedLiteral: string = '';
+    protected lastSearchedTag: string = '';
     protected _currentScope: number = Number(Preference.DEFAULT_SCOPE.scope);
     protected _isFiltered: boolean = false;
     protected _currentRows: Map<string, PreferenceTreeNodeRow> = new Map();
@@ -111,7 +112,9 @@ export class PreferenceTreeModel extends TreeModelImpl {
             }),
             this.filterInput.onFilterChanged(newSearchTerm => {
                 this.lastSearchedLiteral = newSearchTerm;
-                this.lastSearchedFuzzy = newSearchTerm.replace(/\s/g, '');
+                const isTagSearch = newSearchTerm.startsWith('@tag:');
+                this.lastSearchedFuzzy = isTagSearch ? '' : newSearchTerm.replace(/\s/g, '');
+                this.lastSearchedTag = isTagSearch ? newSearchTerm.slice(5) : '';
                 this._isFiltered = newSearchTerm.length > 2;
                 if (this.isFiltered) {
                     this.expandAll();
@@ -182,6 +185,9 @@ export class PreferenceTreeModel extends TreeModelImpl {
         // That seems counterintuitive and introduces a number of special cases, so I prefer to remove the commonly used section entirely when the user searches.
         if (node.id.startsWith(COMMONLY_USED_SECTION_PREFIX)) {
             return false;
+        }
+        if (this.lastSearchedTag) {
+            return node.preference.data.tags?.includes(this.lastSearchedTag) ?? false;
         }
         return fuzzy.test(this.lastSearchedFuzzy, prefID) // search matches preference name.
             // search matches description. Fuzzy isn't ideal here because the score depends on the order of discovery.

@@ -45,6 +45,7 @@ import { NotebookLabelProviderContribution } from './contributions/notebook-labe
 import { NotebookOutputActionContribution } from './contributions/notebook-output-action-contribution';
 import { NotebookClipboardService } from './service/notebook-clipboard-service';
 import { notebookPreferenceSchema } from './contributions/notebook-preferences';
+import { NotebookOptionsService } from './service/notebook-options';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(NotebookColorContribution).toSelf().inSingletonScope();
@@ -106,4 +107,5 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(LabelProviderContribution).toService(NotebookLabelProviderContribution);
 
     bind(PreferenceContribution).toConstantValue({ schema: notebookPreferenceSchema });
+    bind(NotebookOptionsService).toSelf().inSingletonScope();
 });

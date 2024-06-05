@@ -30,7 +30,7 @@ import { NotebookCellOutputsSplice } from '../notebook-types';
 import { NotebookMonacoTextModelService } from '../service/notebook-monaco-text-model-service';
 import { NotebookCellOutputModel } from './notebook-cell-output-model';
 import { PreferenceService } from '@theia/core/lib/browser';
-import { NOTEBOOK_LINE_NUMBERS } from '../contributions/notebook-preferences';
+import { NotebookPreferences } from '../contributions/notebook-preferences';
 import { LanguageService } from '@theia/core/lib/browser/language-service';
 
 export const NotebookCellModelFactory = Symbol('NotebookModelFactory');
@@ -245,13 +245,13 @@ export class NotebookCellModel implements NotebookCell, Disposable {
         this._internalMetadata = this.props.internalMetadata ?? {};
 
         this.editorOptions = {
-            lineNumbers: this.preferenceService.get(NOTEBOOK_LINE_NUMBERS)
+            lineNumbers: this.preferenceService.get(NotebookPreferences.NOTEBOOK_LINE_NUMBERS)
         };
         this.toDispose.push(this.preferenceService.onPreferenceChanged(e => {
-            if (e.preferenceName === NOTEBOOK_LINE_NUMBERS) {
+            if (e.preferenceName === NotebookPreferences.NOTEBOOK_LINE_NUMBERS) {
                 this.editorOptions = {
                     ...this.editorOptions,
-                    lineNumbers: this.preferenceService.get(NOTEBOOK_LINE_NUMBERS)
+                    lineNumbers: this.preferenceService.get(NotebookPreferences.NOTEBOOK_LINE_NUMBERS)
                 };
             }
         }));
