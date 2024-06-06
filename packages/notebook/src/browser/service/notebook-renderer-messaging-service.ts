@@ -54,8 +54,8 @@ export class NotebookRendererMessagingService implements Disposable {
     @inject(NotebookEditorWidgetService)
     private readonly editorWidgetService: NotebookEditorWidgetService;
 
-    private readonly activations = new Map<string /* rendererId */, undefined | RendererMessage[]>();
-    private readonly scopedMessaging = new Map<string /* editorId */, RendererMessaging>();
+    protected readonly activations = new Map<string /* rendererId */, undefined | RendererMessage[]>();
+    protected readonly scopedMessaging = new Map<string /* editorId */, RendererMessaging>();
 
     receiveMessage(editorId: string | undefined, rendererId: string, message: unknown): Promise<boolean> {
         if (editorId === undefined) {
@@ -101,7 +101,7 @@ export class NotebookRendererMessagingService implements Disposable {
         return messaging;
     }
 
-    private postMessage(editorId: string, rendererId: string, message: unknown): void {
+    protected postMessage(editorId: string, rendererId: string, message: unknown): void {
         if (!this.activations.has(rendererId)) {
             this.prepare(rendererId);
         }

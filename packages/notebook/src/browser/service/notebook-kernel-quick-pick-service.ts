@@ -277,7 +277,7 @@ export class NotebookKernelQuickPickService {
         return true;
     }
 
-    private async displaySelectAnotherQuickPick(editor: NotebookModel, kernelListEmpty: boolean): Promise<boolean> {
+    protected async displaySelectAnotherQuickPick(editor: NotebookModel, kernelListEmpty: boolean): Promise<boolean> {
         const notebook: NotebookModel = editor;
         const disposables = new DisposableCollection();
         const quickPick = this.quickInputService.createQuickPick<KernelQuickPickItem>();
@@ -399,11 +399,11 @@ export class NotebookKernelQuickPickService {
         return false;
     }
 
-    private isUri(value: string): boolean {
+    protected isUri(value: string): boolean {
         return /^(?<scheme>\w[\w\d+.-]*):/.test(value);
     }
 
-    private async calculateKernelSources(editor: NotebookModel): Promise<QuickPickInput<KernelQuickPickItem>[]> {
+    protected async calculateKernelSources(editor: NotebookModel): Promise<QuickPickInput<KernelQuickPickItem>[]> {
         const notebook: NotebookModel = editor;
 
         const actions = await this.notebookKernelService.getKernelSourceActionsFromProviders(notebook);
@@ -448,7 +448,7 @@ export class NotebookKernelQuickPickService {
         return quickPickItems;
     }
 
-    private async selectOneKernel(notebook: NotebookModel, source: string, kernels: NotebookKernel[]): Promise<void> {
+    protected async selectOneKernel(notebook: NotebookModel, source: string, kernels: NotebookKernel[]): Promise<void> {
         const quickPickItems: QuickPickInput<KernelPick>[] = kernels.map(kernel => toKernelQuickPick(kernel, undefined));
         const quickPick = this.quickInputService.createQuickPick<KernelQuickPickItem>();
         quickPick.items = quickPickItems;
@@ -472,7 +472,7 @@ export class NotebookKernelQuickPickService {
         quickPick.show();
     }
 
-    private async executeCommand<T>(notebook: NotebookModel, command: NotebookCommand): Promise<T | undefined | void> {
+    protected async executeCommand<T>(notebook: NotebookModel, command: NotebookCommand): Promise<T | undefined | void> {
         const args = (command.arguments || []).concat([NotebookModelResource.create(notebook.uri)]);
         return this.commandService.executeCommand(command.id, ...args);
     }

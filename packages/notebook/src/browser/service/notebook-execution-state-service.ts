@@ -98,7 +98,7 @@ export class NotebookExecutionStateService implements Disposable {
 
     }
 
-    private createNotebookCellExecution(notebook: NotebookModel, cellHandle: number): CellExecution {
+    protected createNotebookCellExecution(notebook: NotebookModel, cellHandle: number): CellExecution {
         const notebookUri = notebook.uri;
         const execution = new CellExecution(cellHandle, notebook);
         execution.toDispose.push(execution.onDidUpdate(() => this.onDidChangeExecutionEmitter.fire(new CellExecutionStateChangedEvent(notebookUri, cellHandle, execution))));
@@ -107,7 +107,7 @@ export class NotebookExecutionStateService implements Disposable {
         return execution;
     }
 
-    private onCellExecutionDidComplete(notebookUri: URI, cellHandle: number, exe: CellExecution, lastRunSuccess?: boolean): void {
+    protected onCellExecutionDidComplete(notebookUri: URI, cellHandle: number, exe: CellExecution, lastRunSuccess?: boolean): void {
         const notebookExecutions = this.executions.get(notebookUri.toString())?.get(cellHandle);
         if (!notebookExecutions) {
             throw new Error('Notebook Cell Execution not found while trying to complete it');
@@ -188,7 +188,7 @@ export class CellExecution implements Disposable {
         this.applyCellExecutionEditsToNotebook([startExecuteEdit]);
     }
 
-    private getCellLog(): string {
+    protected getCellLog(): string {
         return `${this.notebookURI.toString()}, ${this.cellHandle}`;
     }
 

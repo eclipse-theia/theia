@@ -35,7 +35,7 @@ export class NotebookEditorWidgetService {
     @inject(ContextKeyService)
     protected contextKeyService: ContextKeyService;
 
-    private readonly notebookEditors = new Map<string, NotebookEditorWidget>();
+    protected readonly notebookEditors = new Map<string, NotebookEditorWidget>();
 
     private readonly onNotebookEditorAddEmitter = new Emitter<NotebookEditorWidget>();
     private readonly onNotebookEditorRemoveEmitter = new Emitter<NotebookEditorWidget>();
