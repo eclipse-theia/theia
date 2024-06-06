@@ -79,22 +79,25 @@ export class NotebookOptionsService {
     }
 
     computeOutputOptions(): NotebookOutputOptions {
-        const outputLineHeight = this.preferenceService.get<number>(NotebookPreferences.OUTPUT_LINE_HEIGHT)!;
+        const outputLineHeight = this.getNotebookPreferenceWithDefault<number>(NotebookPreferences.OUTPUT_LINE_HEIGHT);
 
         const fontSize = this.preferenceService.get<number>('editor.fontSize')!;
-        const outputFontSize = this.preferenceService.get<number>(NotebookPreferences.OUTPUT_FONT_SIZE)!;
+        const outputFontSize = this.getNotebookPreferenceWithDefault<number>(NotebookPreferences.OUTPUT_FONT_SIZE);
 
         return {
             fontSize,
-            outputFontSize: this.preferenceService.get<number>(NotebookPreferences.OUTPUT_FONT_SIZE),
+            outputFontSize: outputFontSize,
             fontFamily: this.preferenceService.get<string>('editor.fontFamily')!,
-            outputFontFamily: this.preferenceService.get<string>(NotebookPreferences.OUTPUT_FONT_FAMILY,
-                notebookPreferenceSchema.properties[NotebookPreferences.OUTPUT_FONT_FAMILY].default as string),
+            outputFontFamily: this.getNotebookPreferenceWithDefault<string>(NotebookPreferences.OUTPUT_FONT_FAMILY),
             outputLineHeight: this.computeOutputLineHeight(outputLineHeight, outputFontSize ?? fontSize),
-            outputScrolling: this.preferenceService.get<boolean>(NotebookPreferences.OUTPUT_SCROLLING)!,
-            outputWordWrap: this.preferenceService.get<boolean>(NotebookPreferences.OUTPUT_WORD_WRAP)!,
-            outputLineLimit: this.preferenceService.get<number>(NotebookPreferences.OUTPUT_LINE_LIMIT)!
+            outputScrolling: this.getNotebookPreferenceWithDefault<boolean>(NotebookPreferences.OUTPUT_SCROLLING)!,
+            outputWordWrap: this.getNotebookPreferenceWithDefault<boolean>(NotebookPreferences.OUTPUT_WORD_WRAP)!,
+            outputLineLimit: this.getNotebookPreferenceWithDefault<number>(NotebookPreferences.OUTPUT_LINE_LIMIT)!
         };
+    }
+
+    protected getNotebookPreferenceWithDefault<T>(key: string): T {
+        return this.preferenceService.get<T>(key, notebookPreferenceSchema.properties?.[key]?.default as T);
     }
 
     protected computeOutputLineHeight(lineHeight: number, outputFontSize: number): number {
