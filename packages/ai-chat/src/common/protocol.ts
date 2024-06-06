@@ -20,24 +20,26 @@ export interface LanguageModelChatMessage {
     actor: LanguageModelChatActor;
     message: string;
 }
-export interface LanguageModelChatResponse {
+export interface LanguageModelChatResponsePart {
     /**
      * for await (const value of stream) {
      *   console.log(value);
      * }
      */
-    stream: AsyncIterable<string>;
+    stream: AsyncIterable<string>; // move to specific part
+    // type: 'string'
 }
+// TODO add specific parts
 
 export const lmServicePath = '/services/lmService';
 
-export const LanguageModelBackendService = Symbol('LanguageModelBackendService');
-export interface LanguageModelBackendService {
+export const AgentDispatcher = Symbol('AgentDispatcher');
+export interface AgentDispatcher {
     sendRequest(messages: LanguageModelChatMessage[]): Promise<void>;
-    setClient(client: LanguageModelClient): void;
+    setClient(client: AgentDispatcherClient): void;
 }
-export const LanguageModelClient = Symbol('LanguageModelClient');
-export interface LanguageModelClient {
+export const AgentDispatcherClient = Symbol('AgentDispatcherClient');
+export interface AgentDispatcherClient {
     onNextQueryResultToken: Event<string>;
     onQueryResultFinished: Event<void>;
     nextQueryResultToken(value: string): void;
@@ -45,5 +47,5 @@ export interface LanguageModelClient {
 }
 export const LanguageModelProvider = Symbol('LanguageModelProvider');
 export interface LanguageModelProvider {
-    sendRequest(messages: LanguageModelChatMessage[]): Thenable<LanguageModelChatResponse>;
+    sendRequest(messages: LanguageModelChatMessage[]): Thenable<LanguageModelChatResponsePart>; // TODO make result an array
 }

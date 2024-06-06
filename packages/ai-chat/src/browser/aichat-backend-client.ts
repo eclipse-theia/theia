@@ -14,11 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { injectable } from '@theia/core/shared/inversify';
-import { LanguageModelClient } from '../common';
+import { AgentDispatcherClient } from '../common';
 import { Emitter } from '@theia/core/lib/common';
 
 @injectable()
-export class AIChatBackendClient implements LanguageModelClient {
+export class AIChatBackendClient implements AgentDispatcherClient {
 
     protected readonly onNextQueryResultTokenEmitter = new Emitter<string>();
     readonly onNextQueryResultToken = this.onNextQueryResultTokenEmitter.event;

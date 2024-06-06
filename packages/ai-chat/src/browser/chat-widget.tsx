@@ -18,18 +18,18 @@ import * as React from '@theia/core/shared/react';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { nls } from '@theia/core/lib/common/nls';
 import { AIChat } from './ai-chat';
-import { LanguageModelBackendService, LanguageModelChatMessage, LanguageModelClient } from '../common';
+import { AgentDispatcher, LanguageModelChatMessage, AgentDispatcherClient } from '../common';
 
 @injectable()
 export class ChatWidget extends ReactWidget {
     public static ID = 'ai-chat-main';
     static LABEL = nls.localizeByDefault('Chat');
 
-    @inject(LanguageModelBackendService)
-    private languageModelBackendService: LanguageModelBackendService;
+    @inject(AgentDispatcher)
+    private AgentDispatcher: AgentDispatcher;
 
-    @inject(LanguageModelClient)
-    private languageModelClient: LanguageModelClient;
+    @inject(AgentDispatcherClient)
+    private AgentDispatcherClient: AgentDispatcherClient;
 
     private chatMessages: LanguageModelChatMessage[] = [];
     private queryResult: LanguageModelChatMessage|undefined;
@@ -42,14 +42,14 @@ export class ChatWidget extends ReactWidget {
         this.title.closable = false;
         this.title.iconClass = codicon('comment-discussion'); // example widget icon.
         this.update();
-        this.languageModelClient.onNextQueryResultToken(token => {
+        this.AgentDispatcherClient.onNextQueryResultToken(token => {
             if (this.queryResult === undefined) {
                 this.queryResult = {actor: 'ai', message: ''};
             }
             this.queryResult.message += token;
             this.update();
         });
-        this.languageModelClient.onQueryResultFinished(() => {
+        this.AgentDispatcherClient.onQueryResultFinished(() => {
             if (this.queryResult) {
                 this.chatMessages.push(this.queryResult);
             }
@@ -68,7 +68,7 @@ export class ChatWidget extends ReactWidget {
     private async onQuery(query: string): Promise<void> {
         if (query.length === 0) { return; }
         this.chatMessages.push({ actor: 'user', message: query });
-        this.languageModelBackendService.sendRequest(this.chatMessages);
+        this.AgentDispatcher.sendRequest(this.chatMessages);
     }
 
 }

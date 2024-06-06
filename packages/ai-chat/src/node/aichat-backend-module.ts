@@ -15,15 +15,15 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { LanguageModelServiceImpl } from './LanguageModelServiceImpl';
-import { LanguageModelBackendService, LanguageModelClient, lmServicePath } from '../common';
+import { AgentDispatcherImpl } from './AgentDispatcherImpl';
+import { AgentDispatcher, AgentDispatcherClient, lmServicePath } from '../common';
 import { ConnectionHandler, RpcConnectionHandler } from '@theia/core';
 
 export default new ContainerModule(bind => {
-    bind(LanguageModelBackendService).to(LanguageModelServiceImpl).inSingletonScope();
+    bind(AgentDispatcher).to(AgentDispatcherImpl).inSingletonScope();
     bind(ConnectionHandler).toDynamicValue(({ container }) =>
-        new RpcConnectionHandler<LanguageModelClient>(lmServicePath, client => {
-            const service = container.get<LanguageModelBackendService>(LanguageModelBackendService);
+        new RpcConnectionHandler<AgentDispatcherClient>(lmServicePath, client => {
+            const service = container.get<AgentDispatcher>(AgentDispatcher);
             service.setClient(client);
             return service;
         })

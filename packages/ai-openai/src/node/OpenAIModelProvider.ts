@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable } from '@theia/core/shared/inversify';
-import {LanguageModelProvider, LanguageModelChatMessage, LanguageModelChatResponse} from '@theia/ai-chat/lib/common';
+import {LanguageModelProvider, LanguageModelChatMessage, LanguageModelChatResponsePart} from '@theia/ai-chat/lib/common';
 import OpenAI from 'openai';
 import { ChatCompletionMessageParam } from 'openai/resources';
 
@@ -23,7 +23,7 @@ import { ChatCompletionMessageParam } from 'openai/resources';
 export class OpenAIModelProvider implements LanguageModelProvider {
     private openai = new OpenAI();
 
-    async sendRequest(messages: LanguageModelChatMessage[]): Promise<LanguageModelChatResponse> {
+    async sendRequest(messages: LanguageModelChatMessage[]): Promise<LanguageModelChatResponsePart> {
         const stream = await this.openai.chat.completions.create({
             model: 'gpt-3.5-turbo',
             messages: messages.map(this.toOpenAIMessage),
