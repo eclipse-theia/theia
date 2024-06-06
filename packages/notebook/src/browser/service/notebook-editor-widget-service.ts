@@ -35,14 +35,14 @@ export class NotebookEditorWidgetService {
     @inject(ContextKeyService)
     protected contextKeyService: ContextKeyService;
 
-    private readonly notebookEditors = new Map<string, NotebookEditorWidget>();
+    protected readonly notebookEditors = new Map<string, NotebookEditorWidget>();
 
-    private readonly onNotebookEditorAddEmitter = new Emitter<NotebookEditorWidget>();
-    private readonly onNotebookEditorRemoveEmitter = new Emitter<NotebookEditorWidget>();
+    protected readonly onNotebookEditorAddEmitter = new Emitter<NotebookEditorWidget>();
+    protected readonly onNotebookEditorRemoveEmitter = new Emitter<NotebookEditorWidget>();
     readonly onDidAddNotebookEditor = this.onNotebookEditorAddEmitter.event;
     readonly onDidRemoveNotebookEditor = this.onNotebookEditorRemoveEmitter.event;
 
-    private readonly onDidChangeFocusedEditorEmitter = new Emitter<NotebookEditorWidget | undefined>();
+    protected readonly onDidChangeFocusedEditorEmitter = new Emitter<NotebookEditorWidget | undefined>();
     readonly onDidChangeFocusedEditor = this.onDidChangeFocusedEditorEmitter.event;
 
     focusedEditor?: NotebookEditorWidget = undefined;
