@@ -67,7 +67,7 @@ export class PreferenceTreeModel extends TreeModelImpl {
 
     protected lastSearchedFuzzy: string = '';
     protected lastSearchedLiteral: string = '';
-    protected lastSearchedTag: string = '';
+    protected lastSearchedTags: string[] = [];
     protected _currentScope: number = Number(Preference.DEFAULT_SCOPE.scope);
     protected _isFiltered: boolean = false;
     protected _currentRows: Map<string, PreferenceTreeNodeRow> = new Map();
@@ -111,10 +111,10 @@ export class PreferenceTreeModel extends TreeModelImpl {
                 this.updateFilteredRows(PreferenceFilterChangeSource.Scope);
             }),
             this.filterInput.onFilterChanged(newSearchTerm => {
-                this.lastSearchedLiteral = newSearchTerm;
-                const isTagSearch = newSearchTerm.startsWith('@tag:');
-                this.lastSearchedFuzzy = isTagSearch ? '' : newSearchTerm.replace(/\s/g, '');
-                this.lastSearchedTag = isTagSearch ? newSearchTerm.slice(5) : '';
+                this.lastSearchedTags = Array.from(newSearchTerm.matchAll(/@tag:([^\s]+)/g)).map(match => match[0].slice(5));
+                const newSearchTermWithoutTags = newSearchTerm.replace(/@tag:[^\s]+/g, '');
+                this.lastSearchedLiteral = newSearchTermWithoutTags;
+                this.lastSearchedFuzzy = newSearchTermWithoutTags.replace(/\s/g, '');
                 this._isFiltered = newSearchTerm.length > 2;
                 if (this.isFiltered) {
                     this.expandAll();
@@ -186,8 +186,8 @@ export class PreferenceTreeModel extends TreeModelImpl {
         if (node.id.startsWith(COMMONLY_USED_SECTION_PREFIX)) {
             return false;
         }
-        if (this.lastSearchedTag) {
-            return node.preference.data.tags?.includes(this.lastSearchedTag) ?? false;
+        if (!this.lastSearchedTags.every(tag => node.preference.data.tags?.includes(tag))) {
+            return false;
         }
         return fuzzy.test(this.lastSearchedFuzzy, prefID) // search matches preference name.
             // search matches description. Fuzzy isn't ideal here because the score depends on the order of discovery.
