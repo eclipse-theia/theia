@@ -61,9 +61,7 @@ export interface PreloadMessage {
 
 export interface notebookStylesMessage {
     readonly type: 'notebookStyles';
-    styles: {
-        [key: string]: string;
-    }
+    styles: Record<string, string>;
 }
 
 export type ToWebviewMessage = UpdateRenderersMessage

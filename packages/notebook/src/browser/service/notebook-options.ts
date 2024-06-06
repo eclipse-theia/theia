@@ -18,7 +18,7 @@
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { PreferenceService } from '@theia/core/lib/browser';
 import { Emitter } from '@theia/core';
-import { NotebookPreferences } from '../contributions/notebook-preferences';
+import { NotebookPreferences, notebookPreferenceSchema } from '../contributions/notebook-preferences';
 import { EditorPreferences } from '@theia/editor/lib/browser';
 
 const notebookOutputOptionsRelevantPreferences = [
@@ -70,7 +70,7 @@ export class NotebookOptionsService {
     onDidChangeOutputOptions = this.outputOptionsChangedEmitter.event;
 
     @postConstruct()
-    init(): void {
+    protected init(): void {
         this.preferenceService.onPreferencesChanged(async preferenceChanges => {
             if (notebookOutputOptionsRelevantPreferences.some(p => p in preferenceChanges)) {
                 this.outputOptionsChangedEmitter.fire(this.computeOutputOptions());
@@ -88,7 +88,8 @@ export class NotebookOptionsService {
             fontSize,
             outputFontSize: this.preferenceService.get<number>(NotebookPreferences.OUTPUT_FONT_SIZE),
             fontFamily: this.preferenceService.get<string>('editor.fontFamily')!,
-            outputFontFamily: this.preferenceService.get<string>(NotebookPreferences.OUTPUT_FONT_FAMILY),
+            outputFontFamily: this.preferenceService.get<string>(NotebookPreferences.OUTPUT_FONT_FAMILY,
+                notebookPreferenceSchema.properties[NotebookPreferences.OUTPUT_FONT_FAMILY].default as string),
             outputLineHeight: this.computeOutputLineHeight(outputLineHeight, outputFontSize ?? fontSize),
             outputScrolling: this.preferenceService.get<boolean>(NotebookPreferences.OUTPUT_SCROLLING)!,
             outputWordWrap: this.preferenceService.get<boolean>(NotebookPreferences.OUTPUT_WORD_WRAP)!,
@@ -96,7 +97,7 @@ export class NotebookOptionsService {
         };
     }
 
-    private computeOutputLineHeight(lineHeight: number, outputFontSize: number): number {
+    protected computeOutputLineHeight(lineHeight: number, outputFontSize: number): number {
         const minimumLineHeight = 9;
 
         if (lineHeight === 0) {
