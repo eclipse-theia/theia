@@ -45,14 +45,14 @@ export interface RendererMessaging extends Disposable {
 @injectable()
 export class NotebookRendererMessagingService implements Disposable {
 
-    private readonly postMessageEmitter = new Emitter<RendererMessage>();
+    protected readonly postMessageEmitter = new Emitter<RendererMessage>();
     readonly onPostMessage = this.postMessageEmitter.event;
 
-    private readonly willActivateRendererEmitter = new Emitter<string>();
+    protected readonly willActivateRendererEmitter = new Emitter<string>();
     readonly onWillActivateRenderer = this.willActivateRendererEmitter.event;
 
     @inject(NotebookEditorWidgetService)
-    private readonly editorWidgetService: NotebookEditorWidgetService;
+    protected readonly editorWidgetService: NotebookEditorWidgetService;
 
     protected readonly activations = new Map<string /* rendererId */, undefined | RendererMessage[]>();
     protected readonly scopedMessaging = new Map<string /* editorId */, RendererMessaging>();

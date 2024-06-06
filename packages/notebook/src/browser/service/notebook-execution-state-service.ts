@@ -69,10 +69,10 @@ export class NotebookExecutionStateService implements Disposable {
 
     protected readonly executions = new Map<string, Map<number, CellExecution>>();
 
-    private readonly onDidChangeExecutionEmitter = new Emitter<CellExecutionStateChangedEvent>();
+    protected readonly onDidChangeExecutionEmitter = new Emitter<CellExecutionStateChangedEvent>();
     onDidChangeExecution = this.onDidChangeExecutionEmitter.event;
 
-    private readonly onDidChangeLastRunFailStateEmitter = new Emitter<NotebookFailStateChangedEvent>();
+    protected readonly onDidChangeLastRunFailStateEmitter = new Emitter<NotebookFailStateChangedEvent>();
     onDidChangeLastRunFailState = this.onDidChangeLastRunFailStateEmitter.event;
 
     getOrCreateCellExecution(notebookUri: URI, cellHandle: number): CellExecution {
@@ -138,15 +138,15 @@ export class NotebookExecutionStateService implements Disposable {
 }
 
 export class CellExecution implements Disposable {
-    private readonly onDidUpdateEmitter = new Emitter<void>();
+    protected readonly onDidUpdateEmitter = new Emitter<void>();
     readonly onDidUpdate = this.onDidUpdateEmitter.event;
 
-    private readonly onDidCompleteEmitter = new Emitter<boolean | undefined>();
+    protected readonly onDidCompleteEmitter = new Emitter<boolean | undefined>();
     readonly onDidComplete = this.onDidCompleteEmitter.event;
 
     toDispose = new DisposableCollection();
 
-    private _state: NotebookCellExecutionState = NotebookCellExecutionState.Unconfirmed;
+    protected _state: NotebookCellExecutionState = NotebookCellExecutionState.Unconfirmed;
     get state(): NotebookCellExecutionState {
         return this._state;
     }
@@ -155,19 +155,19 @@ export class CellExecution implements Disposable {
         return this.notebook.uri;
     }
 
-    private _didPause = false;
+    protected _didPause = false;
     get didPause(): boolean {
         return this._didPause;
     }
 
-    private _isPaused = false;
+    protected _isPaused = false;
     get isPaused(): boolean {
         return this._isPaused;
     }
 
     constructor(
         readonly cellHandle: number,
-        private readonly notebook: NotebookModel,
+        protected readonly notebook: NotebookModel,
     ) {
         console.debug(`CellExecution#ctor ${this.getCellLog()}`);
     }
@@ -254,7 +254,7 @@ export class CellExecution implements Disposable {
         this.toDispose.dispose();
     }
 
-    private applyCellExecutionEditsToNotebook(edits: CellEditOperation[]): void {
+    protected applyCellExecutionEditsToNotebook(edits: CellEditOperation[]): void {
         this.notebook.applyEdits(edits, false);
     }
 }

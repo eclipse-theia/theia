@@ -84,7 +84,7 @@ export interface NotebookTextModelLike { uri: URI; viewType: string }
 
 class KernelInfo {
 
-    private static instanceCounter = 0;
+    protected static instanceCounter = 0;
 
     score: number;
     readonly kernel: NotebookKernel;
