@@ -20,6 +20,8 @@ import { PreferenceService } from '@theia/core/lib/browser';
 import { Emitter } from '@theia/core';
 import { NotebookPreferences, notebookPreferenceSchema } from '../contributions/notebook-preferences';
 import { EditorPreferences } from '@theia/editor/lib/browser';
+import { BareFontInfo } from '@theia/monaco-editor-core/esm/vs/editor/common/config/fontInfo';
+import { PixelRatio } from '@theia/monaco-editor-core/esm/vs/base/browser/browser';
 
 const notebookOutputOptionsRelevantPreferences = [
     'editor.fontSize',
@@ -69,6 +71,11 @@ export class NotebookOptionsService {
     protected outputOptionsChangedEmitter = new Emitter<NotebookOutputOptions>();
     onDidChangeOutputOptions = this.outputOptionsChangedEmitter.event;
 
+    protected fontInfo?: BareFontInfo;
+    get editorFontInfo(): BareFontInfo {
+        return this.getOrCreateMonacoFontInfo();
+    }
+
     @postConstruct()
     protected init(): void {
         this.preferenceService.onPreferencesChanged(async preferenceChanges => {
@@ -105,7 +112,7 @@ export class NotebookOptionsService {
 
         if (lineHeight === 0) {
             // use editor line height
-            lineHeight = this.editorPreferences['editor.lineHeight'];
+            lineHeight = this.editorFontInfo.lineHeight;
         } else if (lineHeight < minimumLineHeight) {
             // Values too small to be line heights in pixels are in ems.
             let fontSize = outputFontSize;
@@ -124,4 +131,24 @@ export class NotebookOptionsService {
 
         return lineHeight;
     }
+
+    protected getOrCreateMonacoFontInfo(): BareFontInfo {
+        if (!this.fontInfo) {
+            this.fontInfo = this.createFontInfo();
+            this.editorPreferences.onPreferenceChanged(e => this.fontInfo = this.createFontInfo());
+        }
+        return this.fontInfo;
+    }
+
+    protected createFontInfo(): BareFontInfo {
+        return BareFontInfo.createFromRawSettings({
+            fontFamily: this.editorPreferences['editor.fontFamily'],
+            fontWeight: String(this.editorPreferences['editor.fontWeight']),
+            fontSize: this.editorPreferences['editor.fontSize'],
+            fontLigatures: this.editorPreferences['editor.fontLigatures'],
+            lineHeight: this.editorPreferences['editor.lineHeight'],
+            letterSpacing: this.editorPreferences['editor.letterSpacing'],
+        }, PixelRatio.value);
+    }
+
 }
