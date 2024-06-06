@@ -145,7 +145,7 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
         commands.registerCommand(FileSystemCommands.UPLOAD, {
             isEnabled: (...args: unknown[]) => {
                 const selection = this.getSelection(...args);
-                return !!selection && this.canUpload(selection);
+                return !!selection && !environment.electron.is();
             },
             isVisible: () => !environment.electron.is(),
             execute: (...args: unknown[]) => {
@@ -162,14 +162,10 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
         });
     }
 
-    protected canUpload({ fileStat }: FileSelection): boolean {
-        return !environment.electron.is() && fileStat.isDirectory;
-    }
-
     protected async upload(selection: FileSelection): Promise<FileUploadResult | undefined> {
         try {
             const source = TreeWidgetSelection.getSource(this.selectionService.selection);
-            const fileUploadResult = await this.uploadService.upload(selection.fileStat.resource);
+            const fileUploadResult = await this.uploadService.upload(selection.fileStat.isDirectory ? selection.fileStat.resource : selection.fileStat.resource.parent);
             if (ExpandableTreeNode.is(selection) && source) {
                 await source.model.expandNode(selection);
             }
