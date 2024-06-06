@@ -3846,3 +3846,99 @@ export class TerminalQuickFixOpener {
     constructor(uri: theia.Uri) { }
 }
 
+// #region Chat
+export class ChatRequestTurn {
+    readonly prompt: string;
+    readonly participant: string;
+    readonly command?: string;
+    readonly references: theia.ChatPromptReference[];
+    private constructor(prompt: string, command: string | undefined, references: theia.ChatPromptReference[], participant: string) {
+        this.prompt = prompt;
+        this.command = command;
+        this.participant = participant;
+        this.references = references;
+    };
+}
+
+export class ChatResponseTurn {
+    readonly command?: string;
+
+    private constructor(public readonly response: ReadonlyArray<theia.ChatResponseMarkdownPart | theia.ChatResponseFileTreePart | theia.ChatResponseAnchorPart
+        | theia.ChatResponseCommandButtonPart>, public readonly result: theia.ChatResult, public readonly participant: string) { }
+}
+
+export class ChatResponseAnchorPart {
+    constructor(public value: URI | Location, public title?: string) { }
+}
+
+export class ChatResponseProgressPart {
+    constructor(public value: string) { }
+}
+
+export class ChatResponseReferencePart {
+    constructor(public value: URI | theia.Location, public iconPath?: URI | ThemeIcon | {
+        light: URI;
+        dark: URI;
+    }) { }
+}
+export class ChatResponseCommandButtonPart {
+    constructor(public value: theia.Command) { }
+}
+
+export class ChatResponseMarkdownPart {
+    constructor(public value: string | theia.MarkdownString) { }
+}
+
+export class ChatResponseFileTreePart {
+    constructor(public value: theia.ChatResponseFileTree[], public baseUri: URI) { }
+}
+
+export type ChatResponsePart = ChatResponseMarkdownPart | ChatResponseFileTreePart | ChatResponseAnchorPart
+| ChatResponseProgressPart | ChatResponseReferencePart | ChatResponseCommandButtonPart;
+
+export enum ChatResultFeedbackKind {
+    Unhelpful = 0,
+    Helpful = 1,
+}
+
+export enum LanguageModelChatMessageRole {
+    User = 1,
+    Assistant = 2
+}
+
+export class LanguageModelChatMessage {
+
+    static User(content: string, name?: string): LanguageModelChatMessage {
+        return new LanguageModelChatMessage(LanguageModelChatMessageRole.User, content, name);
+    }
+
+    static Assistant(content: string, name?: string): LanguageModelChatMessage {
+        return new LanguageModelChatMessage(LanguageModelChatMessageRole.Assistant, content, name);
+    }
+
+    constructor(public role: LanguageModelChatMessageRole, public content: string, public name?: string) { }
+}
+
+export class LanguageModelError extends Error {
+
+    static NoPermissions(message?: string): LanguageModelError {
+        return new LanguageModelError(message, LanguageModelError.NotFound.name);
+    }
+
+    static Blocked(message?: string): LanguageModelError {
+        return new LanguageModelError(message);
+    }
+
+    static NotFound(message?: string): LanguageModelError {
+        return new LanguageModelError(message);
+    }
+
+    readonly code: string;
+
+    constructor(message?: string, code?: string) {
+        super(message);
+        this.name = 'LanguageModelError';
+        this.code = code ?? '';
+    }
+}
+// #endregion

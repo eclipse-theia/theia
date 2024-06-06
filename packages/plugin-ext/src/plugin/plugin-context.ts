@@ -19,7 +19,7 @@
 
 import type * as theia from '@theia/plugin';
 import { CommandRegistryImpl } from './command-registry';
-import { Emitter } from '@theia/core/lib/common/event';
+import { Emitter, Event } from '@theia/core/lib/common/event';
 import { CancellationError, CancellationToken, CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { QuickOpenExtImpl } from './quick-open';
 import {
@@ -211,7 +211,19 @@ import {
     DeclarationCoverage,
     FileCoverage,
     StatementCoverage,
-    TestCoverageCount
+    TestCoverageCount,
+    ChatRequestTurn,
+    ChatResponseTurn,
+    ChatResponseAnchorPart,
+    ChatResponseCommandButtonPart,
+    ChatResponseFileTreePart,
+    ChatResponseMarkdownPart,
+    ChatResponseProgressPart,
+    ChatResponseReferencePart,
+    ChatResultFeedbackKind,
+    LanguageModelChatMessage,
+    LanguageModelChatMessageRole,
+    LanguageModelError
 } from './types-impl';
 import { AuthenticationExtImpl } from './authentication-ext';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
@@ -1223,7 +1235,25 @@ export function createAPIFactory(
             /** @stubbed MappedEditsProvider */
             registerMappedEditsProvider(documentSelector: theia.DocumentSelector, provider: theia.MappedEditsProvider): Disposable {
                 return Disposable.NULL;
+            },
+            /** @stubbed ChatRequestHandler */
+            createChatParticipant(id: string, handler: theia.ChatRequestHandler): theia.ChatParticipant {
+                return {
+                    id,
+                    requestHandler: (request: theia.ChatRequest, context: theia.ChatContext, response: theia.ChatResponseStream, token: CancellationToken) => { },
+                    dispose() {},
+                    onDidReceiveFeedback: (listener, thisArgs?, disposables?) => Event.None(listener, thisArgs, disposables)
+                };
             }
+        };
+
+        const lm: typeof theia.lm = {
+            /** @stubbed LanguageModelChat */
+            selectChatModels(selector?: theia.LanguageModelChatSelector): Thenable<theia.LanguageModelChat[]> {
+                return Promise.resolve([]);
+            },
+            /** @stubbed LanguageModelChat */
+            onDidChangeChatModels: (listener, thisArgs?, disposables?) => Event.None(listener, thisArgs, disposables)
         };
 
         return <typeof theia>{
@@ -1244,6 +1274,7 @@ export function createAPIFactory(
             notebooks,
             l10n,
             tests,
+            lm,
             // Types
             StatusBarAlignment: StatusBarAlignment,
             Disposable: Disposable,
@@ -1426,7 +1457,19 @@ export function createAPIFactory(
             DeclarationCoverage,
             FileCoverage,
             StatementCoverage,
-            TestCoverageCount
+            TestCoverageCount,
+            ChatRequestTurn,
+            ChatResponseTurn,
+            ChatResponseAnchorPart,
+            ChatResponseCommandButtonPart,
+            ChatResponseFileTreePart,
+            ChatResponseMarkdownPart,
+            ChatResponseProgressPart,
+            ChatResponseReferencePart,
+            ChatResultFeedbackKind,
+            LanguageModelChatMessage,
+            LanguageModelChatMessageRole,
+            LanguageModelError
         };
     };
 }

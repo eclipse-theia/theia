@@ -40,7 +40,7 @@ import { PreferenceRegistryExtImpl } from './preference-registry';
 import { InternalStorageExt, Memento, GlobalState } from './plugin-storage';
 import { ExtPluginApi } from '../common/plugin-ext-api-contribution';
 import { RPCProtocol } from '../common/rpc-protocol';
-import { Emitter } from '@theia/core/lib/common/event';
+import { Emitter, Event } from '@theia/core/lib/common/event';
 import { WebviewsExtImpl } from './webviews';
 import { URI as Uri } from './types-impl';
 import { InternalSecretsExt, SecretStorageExt } from '../plugin/secrets-ext';
@@ -389,7 +389,14 @@ export abstract class AbstractPluginManagerExtImpl<P extends Record<string, any>
             environmentVariableCollection: this.terminalService.getEnvironmentVariableCollection(plugin.model.id),
             extensionMode: extensionModeValue,
             extension,
-            logUri: Uri.file(logPath)
+            logUri: Uri.file(logPath),
+            languageModelAccessInformation: {
+                /** @stubbed LanguageModelChat */
+                onDidChange: (listener, thisArgs?, disposables?) => Event.None(listener, thisArgs, disposables),
+                canSendRequest(chat: theia.LanguageModelChat): boolean | undefined {
+                    return undefined;
+                }
+            }
         };
         this.pluginContextsMap.set(plugin.model.id, pluginContext);
 
