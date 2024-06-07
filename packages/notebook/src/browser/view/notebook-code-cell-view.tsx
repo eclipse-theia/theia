@@ -32,8 +32,7 @@ import { CommandRegistry, DisposableCollection, nls } from '@theia/core';
 import { NotebookContextManager } from '../service/notebook-context-manager';
 import { NotebookViewportService } from './notebook-viewport-service';
 import { EditorPreferences } from '@theia/editor/lib/browser';
-import { BareFontInfo } from '@theia/monaco-editor-core/esm/vs/editor/common/config/fontInfo';
-import { PixelRatio } from '@theia/monaco-editor-core/esm/vs/base/browser/browser';
+import { NotebookOptionsService } from '../service/notebook-options';
 
 @injectable()
 export class NotebookCodeCellRenderer implements CellRenderer {
@@ -64,7 +63,8 @@ export class NotebookCodeCellRenderer implements CellRenderer {
     @inject(CommandRegistry)
     protected readonly commandRegistry: CommandRegistry;
 
-    protected fontInfo: BareFontInfo | undefined;
+    @inject(NotebookOptionsService)
+    protected readonly notebookOptionsService: NotebookOptionsService;
 
     render(notebookModel: NotebookModel, cell: NotebookCellModel, handle: number): React.ReactNode {
         return <div>
@@ -81,7 +81,7 @@ export class NotebookCodeCellRenderer implements CellRenderer {
                         monacoServices={this.monacoServices}
                         notebookContextManager={this.notebookContextManager}
                         notebookViewportService={this.notebookViewportService}
-                        fontInfo={this.getOrCreateMonacoFontInfo()} />
+                        fontInfo={this.notebookOptionsService.editorFontInfo} />
                     <NotebookCodeCellStatus cell={cell} notebook={notebookModel}
                         commandRegistry={this.commandRegistry}
                         executionStateService={this.executionStateService}
@@ -106,24 +106,6 @@ export class NotebookCodeCellRenderer implements CellRenderer {
         return dragImage;
     }
 
-    protected getOrCreateMonacoFontInfo(): BareFontInfo {
-        if (!this.fontInfo) {
-            this.fontInfo = this.createFontInfo();
-            this.editorPreferences.onPreferenceChanged(e => this.fontInfo = this.createFontInfo());
-        }
-        return this.fontInfo;
-    }
-
-    protected createFontInfo(): BareFontInfo {
-        return BareFontInfo.createFromRawSettings({
-            fontFamily: this.editorPreferences['editor.fontFamily'],
-            fontWeight: String(this.editorPreferences['editor.fontWeight']),
-            fontSize: this.editorPreferences['editor.fontSize'],
-            fontLigatures: this.editorPreferences['editor.fontLigatures'],
-            lineHeight: this.editorPreferences['editor.lineHeight'],
-            letterSpacing: this.editorPreferences['editor.letterSpacing'],
-        }, PixelRatio.value);
-    }
 }
 
 export interface NotebookCodeCellStatusProps {

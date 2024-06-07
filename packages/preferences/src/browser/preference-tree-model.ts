@@ -67,6 +67,7 @@ export class PreferenceTreeModel extends TreeModelImpl {
 
     protected lastSearchedFuzzy: string = '';
     protected lastSearchedLiteral: string = '';
+    protected lastSearchedTags: string[] = [];
     protected _currentScope: number = Number(Preference.DEFAULT_SCOPE.scope);
     protected _isFiltered: boolean = false;
     protected _currentRows: Map<string, PreferenceTreeNodeRow> = new Map();
@@ -110,8 +111,10 @@ export class PreferenceTreeModel extends TreeModelImpl {
                 this.updateFilteredRows(PreferenceFilterChangeSource.Scope);
             }),
             this.filterInput.onFilterChanged(newSearchTerm => {
-                this.lastSearchedLiteral = newSearchTerm;
-                this.lastSearchedFuzzy = newSearchTerm.replace(/\s/g, '');
+                this.lastSearchedTags = Array.from(newSearchTerm.matchAll(/@tag:([^\s]+)/g)).map(match => match[0].slice(5));
+                const newSearchTermWithoutTags = newSearchTerm.replace(/@tag:[^\s]+/g, '');
+                this.lastSearchedLiteral = newSearchTermWithoutTags;
+                this.lastSearchedFuzzy = newSearchTermWithoutTags.replace(/\s/g, '');
                 this._isFiltered = newSearchTerm.length > 2;
                 if (this.isFiltered) {
                     this.expandAll();
@@ -181,6 +184,9 @@ export class PreferenceTreeModel extends TreeModelImpl {
         // E.g. searching for editor.renderWhitespace will show one item in the main panel, but both 'Commonly Used' and 'Text Editor' in the left tree.
         // That seems counterintuitive and introduces a number of special cases, so I prefer to remove the commonly used section entirely when the user searches.
         if (node.id.startsWith(COMMONLY_USED_SECTION_PREFIX)) {
+            return false;
+        }
+        if (!this.lastSearchedTags.every(tag => node.preference.data.tags?.includes(tag))) {
             return false;
         }
         return fuzzy.test(this.lastSearchedFuzzy, prefID) // search matches preference name.
