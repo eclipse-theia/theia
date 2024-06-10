@@ -33,6 +33,8 @@ import { NotebookContextManager } from '../service/notebook-context-manager';
 import { NotebookViewportService } from './notebook-viewport-service';
 import { EditorPreferences } from '@theia/editor/lib/browser';
 import { NotebookOptionsService } from '../service/notebook-options';
+import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
+import { MarkdownString } from '@theia/monaco-editor-core/esm/vs/base/common/htmlContent';
 
 @injectable()
 export class NotebookCodeCellRenderer implements CellRenderer {
@@ -65,6 +67,9 @@ export class NotebookCodeCellRenderer implements CellRenderer {
 
     @inject(NotebookOptionsService)
     protected readonly notebookOptionsService: NotebookOptionsService;
+
+    @inject(MarkdownRenderer)
+    protected readonly markdownRenderer: MarkdownRenderer;
 
     render(notebookModel: NotebookModel, cell: NotebookCellModel, handle: number): React.ReactNode {
         return <div>
@@ -102,7 +107,20 @@ export class NotebookCodeCellRenderer implements CellRenderer {
     renderDragImage(cell: NotebookCellModel): HTMLElement {
         const dragImage = document.createElement('div');
         dragImage.className = 'theia-notebook-drag-image';
-        dragImage.textContent = nls.localize('theia/notebook/dragGhostImage/codeText', 'Code cell selected');
+        dragImage.style.width = this.notebookContextManager.context?.clientWidth + 'px';
+        dragImage.style.height = '100px';
+        dragImage.style.display = 'flex';
+
+        const fakeRunButton = document.createElement('span');
+        fakeRunButton.className = `${codicon('play')} theia-notebook-cell-status-item`;
+        dragImage.appendChild(fakeRunButton);
+
+        const fakeEditor = document.createElement('div');
+        dragImage.appendChild(fakeEditor);
+        const firstLine = new MarkdownString(`\`\`\`${cell.language}\n${cell.source.split('\n')[0]}\n\`\`\``, { supportHtml: true, isTrusted: false });
+        fakeEditor.appendChild(this.markdownRenderer.render(firstLine).element);
+        fakeEditor.classList.add('theia-notebook-cell-editor-container');
+        fakeEditor.style.padding = '10px';
         return dragImage;
     }
 

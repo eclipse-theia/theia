@@ -286,6 +286,7 @@
   position: absolute;
   top: -99999px;
   left: -99999px;
-  height: 500px;
-  width: 500px;
+  max-height: 500px;
+  min-height: 100px;
+  background-color: var(--theia-editor-background);
 }

@@ -45,7 +45,7 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
 
     protected toDispose = new DisposableCollection();
 
-    protected dragGhost: HTMLElement | undefined;
+    protected static dragGhost: HTMLElement | undefined;
 
     constructor(props: CellListProps) {
         super(props);
@@ -137,14 +137,14 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
             return;
         }
 
-        if (this.dragGhost) {
-            this.dragGhost.remove();
+        if (NotebookCellListView.dragGhost) {
+            NotebookCellListView.dragGhost.remove();
         }
-        this.dragGhost = document.createElement('div');
-        this.dragGhost.classList.add('theia-notebook-drag-ghost-image');
-        this.dragGhost.appendChild(this.props.renderers.get(cell.cellKind)?.renderDragImage(cell) ?? document.createElement('div'));
-        document.body.appendChild(this.dragGhost);
-        event.dataTransfer.setDragImage(this.dragGhost, -10, 0);
+        NotebookCellListView.dragGhost = document.createElement('div');
+        NotebookCellListView.dragGhost.classList.add('theia-notebook-drag-ghost-image');
+        NotebookCellListView.dragGhost.appendChild(this.props.renderers.get(cell.cellKind)?.renderDragImage(cell) ?? document.createElement('div'));
+        document.body.appendChild(NotebookCellListView.dragGhost);
+        event.dataTransfer.setDragImage(NotebookCellListView.dragGhost, -10, 0);
 
         event.dataTransfer.setData('text/theia-notebook-cell-index', index.toString());
         event.dataTransfer.setData('text/plain', this.props.notebookModel.cells[index].source);
