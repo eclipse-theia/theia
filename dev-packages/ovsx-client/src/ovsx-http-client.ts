@@ -48,10 +48,12 @@ export class OVSXHttpClient implements OVSXClient {
 
     async query(queryOptions?: VSXQueryOptions): Promise<VSXQueryResult> {
         try {
-            return await this.requestJson(this.buildUrl('api/-/query', queryOptions));
+            return await this.requestJson(this.buildUrl('api/v2/-/query', queryOptions));
         } catch (error) {
             console.warn(error);
             return {
+                offset: 0,
+                totalSize: 0,
                 extensions: []
             };
         }

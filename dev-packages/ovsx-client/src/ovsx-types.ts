@@ -49,7 +49,7 @@ export interface OVSXClient {
      */
     search(searchOptions?: VSXSearchOptions): Promise<VSXSearchResult>;
     /**
-     * GET https://openvsx.org/api/-/query
+     * GET https://openvsx.org/api/v2/-/query
      *
      * Fetch one or all versions of an extension.
      */
@@ -110,8 +110,6 @@ export interface VSXSearchResult {
     extensions: VSXSearchEntry[];
 }
 
-/** @deprecated since 1.31.0 use {@link VSXQueryOptions} instead */
-export type VSXQueryParam = VSXQueryOptions;
 /**
  * The possible options when performing a search.
  *
@@ -126,10 +124,25 @@ export interface VSXQueryOptions {
     extensionId?: string;
     extensionUuid?: string;
     namespaceUuid?: string;
-    includeAllVersions?: boolean;
+    includeAllVersions?: boolean | 'links';
+    targetPlatform?: VSXTargetPlatform;
+    size?: number;
+    offset?: number;
 }
 
+export type VSXTargetPlatform =
+    'universal' | 'web' |
+    'win32-x64' | 'win32-ia32' | 'win32-arm64' |
+    'darwin-x64' | 'darwin-arm64' |
+    'linux-x64' | 'linux-arm64' | 'linux-armhf' |
+    'alpine-x64' | 'alpine-arm64' | (string & {});
+
 export interface VSXQueryResult {
+    success?: string;
+    warning?: string;
+    error?: string;
+    offset: number;
+    totalSize: number;
     extensions: VSXExtensionRaw[];
 }
 
@@ -199,12 +212,15 @@ export interface VSXExtensionRaw {
     reviewsUrl: string;
     name: string;
     namespace: string;
-    publishedBy: VSXUser
+    targetPlatform?: VSXTargetPlatform;
+    publishedBy: VSXUser;
+    preRelease: boolean;
     namespaceAccess: VSXExtensionNamespaceAccess;
     files: VSXExtensionRawFiles;
     allVersions: {
         [version: string]: string;
     };
+    allVersionsUrl?: string;
     averageRating?: number;
     downloadCount: number;
     reviewCount: number;
@@ -213,20 +229,46 @@ export interface VSXExtensionRaw {
     preview?: boolean;
     verified?: boolean;
     displayName?: string;
+    namespaceDisplayName: string;
     description?: string;
     categories?: string[];
+    extensionKind?: string[];
     tags?: string[];
     license?: string;
     homepage?: string;
     repository?: string;
+    sponsorLink?: string;
     bugs?: string;
     markdown?: string;
     galleryColor?: string;
     galleryTheme?: string;
+    localizedLanguages?: string[];
     qna?: string;
+    badges?: VSXBadge[];
+    dependencies?: VSXExtensionReference[];
+    bundledExtensions?: VSXExtensionReference[];
+    allTargetPlatformVersions?: VSXTargetPlatforms[];
+    url?: string;
     engines?: {
         [engine: string]: string;
     };
+}
+
+export interface VSXBadge {
+    url?: string;
+    href?: string;
+    description?: string;
+}
+
+export interface VSXExtensionReference {
+    url: string;
+    namespace: string;
+    extension: string;
+}
+
+export interface VSXTargetPlatforms {
+    version: string;
+    targetPlatforms: VSXTargetPlatform[];
 }
 
 export interface VSXResponseError extends Error {

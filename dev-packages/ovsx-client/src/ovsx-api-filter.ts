@@ -15,7 +15,11 @@
 // *****************************************************************************
 
 import * as semver from 'semver';
-import { VSXAllVersions, VSXBuiltinNamespaces, VSXExtensionRaw, VSXSearchEntry } from './ovsx-types';
+import { OVSXClient, VSXAllVersions, VSXBuiltinNamespaces, VSXExtensionRaw, VSXQueryOptions, VSXSearchEntry, VSXTargetPlatform } from './ovsx-types';
+
+export const OVSXApiFilterProvider = Symbol('OVSXApiFilterProvider');
+
+export type OVSXApiFilterProvider = () => Promise<OVSXApiFilter>;
 
 export const OVSXApiFilter = Symbol('OVSXApiFilter');
 /**
@@ -23,6 +27,7 @@ export const OVSXApiFilter = Symbol('OVSXApiFilter');
  */
 export interface OVSXApiFilter {
     supportedApiVersion: string;
+    findLatestCompatibleExtension(query: VSXQueryOptions): Promise<VSXExtensionRaw | undefined>;
     /**
      * Get the latest compatible extension version:
      * - A builtin extension is fetched based on the extension version which matches the API.
@@ -31,15 +36,54 @@ export interface OVSXApiFilter {
      * @param extensionId the extension id.
      * @returns the data for the latest compatible extension version if available, else `undefined`.
      */
-    getLatestCompatibleExtension(extensions: VSXExtensionRaw[]): VSXExtensionRaw | undefined;
+    getLatestCompatibleExtension(extensions: VSXExtensionRaw[], targetPlatform?: VSXTargetPlatform): VSXExtensionRaw | undefined;
     getLatestCompatibleVersion(searchEntry: VSXSearchEntry): VSXAllVersions | undefined;
 }
 
 export class OVSXApiFilterImpl implements OVSXApiFilter {
 
     constructor(
+        public client: OVSXClient,
         public supportedApiVersion: string
     ) { }
+
+    async findLatestCompatibleExtension(query: VSXQueryOptions): Promise<VSXExtensionRaw | undefined> {
+        const targetPlatform = query.targetPlatform;
+        if (!targetPlatform) {
+            return this.queryLatestCompatibleExtension(query);
+        }
+        const latestWithTargetPlatform = await this.queryLatestCompatibleExtension(query);
+        let latestUniversal: VSXExtensionRaw | undefined;
+        if (targetPlatform !== 'universal' && targetPlatform !== 'web') {
+            // Additionally query the universal version, as there might be a newer one available
+            latestUniversal = await this.queryLatestCompatibleExtension({ ...query, targetPlatform: 'universal' });
+        }
+        if (latestWithTargetPlatform && latestUniversal) {
+            // Prefer the version with the target platform if it's greater or equal to the universal version
+            return this.versionGreaterThanOrEqualTo(latestWithTargetPlatform.version, latestUniversal.version) ? latestWithTargetPlatform : latestUniversal;
+        }
+        return latestWithTargetPlatform ?? latestUniversal;
+    }
+
+    protected async queryLatestCompatibleExtension(query: VSXQueryOptions): Promise<VSXExtensionRaw | undefined> {
+        let offset = 0;
+        const size = 100;
+        let flag = true;
+        while (flag) {
+            const queryOptions = {
+                ...query,
+                offset
+            };
+            offset += size;
+            const results = await this.client.query(queryOptions);
+            flag = results.totalSize < offset;
+            const compatibleExtension = this.getLatestCompatibleExtension(results.extensions);
+            if (compatibleExtension) {
+                return compatibleExtension;
+            }
+        }
+        return undefined;
+    }
 
     getLatestCompatibleExtension(extensions: VSXExtensionRaw[]): VSXExtensionRaw | undefined {
         if (extensions.length === 0) {

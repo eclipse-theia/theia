@@ -28,10 +28,11 @@ import { PreferenceInspectionScope, PreferenceService } from '@theia/core/lib/br
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { RecommendedExtensions } from './recommended-extensions/recommended-extensions-preference-contribution';
 import URI from '@theia/core/lib/common/uri';
-import { OVSXClient, VSXAllVersions, VSXExtensionRaw, VSXResponseError, VSXSearchEntry, VSXSearchOptions } from '@theia/ovsx-client/lib/ovsx-types';
+import { OVSXClient, VSXAllVersions, VSXExtensionRaw, VSXResponseError, VSXSearchEntry, VSXSearchOptions, VSXTargetPlatform } from '@theia/ovsx-client/lib/ovsx-types';
 import { OVSXClientProvider } from '../common/ovsx-client-provider';
 import { RequestContext, RequestService } from '@theia/core/shared/@theia/request';
-import { OVSXApiFilter } from '@theia/ovsx-client';
+import { OVSXApiFilterProvider } from '@theia/ovsx-client';
+import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
 
 @injectable()
 export class VSXExtensionsModel {
@@ -77,8 +78,11 @@ export class VSXExtensionsModel {
     @inject(RequestService)
     protected request: RequestService;
 
-    @inject(OVSXApiFilter)
-    protected vsxApiFilter: OVSXApiFilter;
+    @inject(OVSXApiFilterProvider)
+    protected vsxApiFilter: OVSXApiFilterProvider;
+
+    @inject(ApplicationServer)
+    protected readonly applicationServer: ApplicationServer;
 
     @postConstruct()
     protected init(): void {
@@ -220,6 +224,7 @@ export class VSXExtensionsModel {
                 return;
             }
             const client = await this.clientProvider();
+            const filter = await this.vsxApiFilter();
             const result = await client.search(param);
             this._searchError = result.error;
             if (token.isCancellationRequested) {
@@ -227,7 +232,7 @@ export class VSXExtensionsModel {
             }
             for (const data of result.extensions) {
                 const id = data.namespace.toLowerCase() + '.' + data.name.toLowerCase();
-                const allVersions = this.vsxApiFilter.getLatestCompatibleVersion(data);
+                const allVersions = filter.getLatestCompatibleVersion(data);
                 if (!allVersions) {
                     continue;
                 }
@@ -353,18 +358,22 @@ export class VSXExtensionsModel {
             if (!this.shouldRefresh(extension)) {
                 return extension;
             }
-            const client = await this.clientProvider();
+            const filter = await this.vsxApiFilter();
+            const targetPlatform = await this.applicationServer.getApplicationPlatform() as VSXTargetPlatform;
             let data: VSXExtensionRaw | undefined;
             if (version === undefined) {
-                const { extensions } = await client.query({ extensionId: id, includeAllVersions: true });
-                if (extensions?.length) {
-                    data = this.vsxApiFilter.getLatestCompatibleExtension(extensions);
-                }
+                data = await filter.findLatestCompatibleExtension({
+                    extensionId: id,
+                    includeAllVersions: true,
+                    targetPlatform
+                });
             } else {
-                const { extensions } = await client.query({ extensionId: id, extensionVersion: version, includeAllVersions: true });
-                if (extensions?.length) {
-                    data = extensions?.[0];
-                }
+                data = await filter.findLatestCompatibleExtension({
+                    extensionId: id,
+                    extensionVersion: version,
+                    includeAllVersions: true,
+                    targetPlatform
+                });
             }
             if (!data) {
                 return;

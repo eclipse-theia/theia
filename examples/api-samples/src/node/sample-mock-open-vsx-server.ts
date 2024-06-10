@@ -170,6 +170,8 @@ export class SampleMockOpenVsxServer implements BackendApplicationContribution {
                         reviewsUrl: url.extensionReviewsUrl(namespace, name),
                         timestamp: new Date().toISOString(),
                         version,
+                        namespaceDisplayName: name,
+                        preRelease: false
                     }
                 });
             }));

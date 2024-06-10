@@ -24,6 +24,7 @@ export interface ApplicationServer {
     getExtensionsInfos(): Promise<ExtensionInfo[]>;
     getApplicationInfo(): Promise<ApplicationInfo | undefined>;
     getApplicationRoot(): Promise<string>;
+    getApplicationPlatform(): Promise<string>;
     /**
      * @deprecated since 1.25.0. Use `OS.backend.type()` instead.
      */

@@ -23,7 +23,7 @@ import { PluginDeployerHandler, PluginDeployerResolver, PluginDeployerResolverCo
 import { FileUri } from '@theia/core/lib/node';
 import { VSCodeExtensionUri } from '@theia/plugin-ext-vscode/lib/common/plugin-vscode-uri';
 import { OVSXClientProvider } from '../common/ovsx-client-provider';
-import { OVSXApiFilter, VSXExtensionRaw } from '@theia/ovsx-client';
+import { OVSXApiFilterProvider, VSXExtensionRaw, VSXTargetPlatform } from '@theia/ovsx-client';
 import { RequestService } from '@theia/core/shared/@theia/request';
 import { PluginVSCodeEnvironment } from '@theia/plugin-ext-vscode/lib/common/plugin-vscode-environment';
 import { PluginUninstallationManager } from '@theia/plugin-ext/lib/main/node/plugin-uninstallation-manager';
@@ -36,13 +36,14 @@ export class VSXExtensionResolver implements PluginDeployerResolver {
     @inject(RequestService) protected requestService: RequestService;
     @inject(PluginVSCodeEnvironment) protected readonly environment: PluginVSCodeEnvironment;
     @inject(PluginUninstallationManager) protected readonly uninstallationManager: PluginUninstallationManager;
-    @inject(OVSXApiFilter) protected vsxApiFilter: OVSXApiFilter;
+    @inject(OVSXApiFilterProvider) protected vsxApiFilter: OVSXApiFilterProvider;
 
     accept(pluginId: string): boolean {
         return !!VSCodeExtensionUri.toId(new URI(pluginId));
     }
 
     static readonly TEMP_DIR_PREFIX = 'vscode-download';
+    static readonly TARGET_PLATFORM = `${process.platform}-${process.arch}` as VSXTargetPlatform;
 
     async resolve(context: PluginDeployerResolverContext, options?: PluginDeployOptions): Promise<void> {
         const id = VSCodeExtensionUri.toId(new URI(context.getOriginId()));
@@ -50,16 +51,23 @@ export class VSXExtensionResolver implements PluginDeployerResolver {
             return;
         }
         let extension: VSXExtensionRaw | undefined;
-        const client = await this.clientProvider();
+        const filter = await this.vsxApiFilter();
         const version = options?.version || id.version;
         if (version) {
             console.log(`[${id}]: trying to resolve version ${version}...`);
-            const { extensions } = await client.query({ extensionId: id.id, extensionVersion: version, includeAllVersions: true });
-            extension = extensions[0];
+            extension = await filter.findLatestCompatibleExtension({
+                extensionId: id.id,
+                extensionVersion: version,
+                includeAllVersions: true,
+                targetPlatform: VSXExtensionResolver.TARGET_PLATFORM
+            });
         } else {
             console.log(`[${id}]: trying to resolve latest version...`);
-            const { extensions } = await client.query({ extensionId: id.id, includeAllVersions: true });
-            extension = this.vsxApiFilter.getLatestCompatibleExtension(extensions);
+            extension = await filter.findLatestCompatibleExtension({
+                extensionId: id.id,
+                includeAllVersions: true,
+                targetPlatform: VSXExtensionResolver.TARGET_PLATFORM
+            });
         }
         if (!extension) {
             return;
