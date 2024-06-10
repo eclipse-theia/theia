@@ -18,7 +18,8 @@ import * as React from '@theia/core/shared/react';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { nls } from '@theia/core/lib/common/nls';
 import { AIChat } from './ai-chat';
-import { AgentDispatcher, LanguageModelChatMessage, AgentDispatcherClient } from '../common';
+import { ChatMessage, isTextStreamChatResponsePart } from '@theia/ai-model-provider';
+import { AgentDispatcher } from '@theia/ai-agent';
 
 @injectable()
 export class ChatWidget extends ReactWidget {
@@ -28,11 +29,8 @@ export class ChatWidget extends ReactWidget {
     @inject(AgentDispatcher)
     private AgentDispatcher: AgentDispatcher;
 
-    @inject(AgentDispatcherClient)
-    private AgentDispatcherClient: AgentDispatcherClient;
-
-    private chatMessages: LanguageModelChatMessage[] = [];
-    private queryResult: LanguageModelChatMessage|undefined;
+    private chatMessages: ChatMessage[] = [];
+    private chatResponse: ChatMessage | undefined = undefined;
 
     @postConstruct()
     protected init(): void {
@@ -42,33 +40,31 @@ export class ChatWidget extends ReactWidget {
         this.title.closable = false;
         this.title.iconClass = codicon('comment-discussion'); // example widget icon.
         this.update();
-        this.AgentDispatcherClient.onNextQueryResultToken(token => {
-            if (this.queryResult === undefined) {
-                this.queryResult = {actor: 'ai', message: ''};
-            }
-            this.queryResult.message += token;
-            this.update();
-        });
-        this.AgentDispatcherClient.onQueryResultFinished(() => {
-            if (this.queryResult) {
-                this.chatMessages.push(this.queryResult);
-            }
-            this.queryResult = undefined;
-            this.update();
-        });
     }
     protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         this.node.focus({ preventScroll: true });
     }
     protected render(): React.ReactNode {
-        return <AIChat chatMessages={this.chatMessages} queryResult={this.queryResult} onQuery={this.onQuery.bind(this)}></AIChat>;
+        return <AIChat chatMessages={this.chatMessages} queryResult={this.chatResponse} onQuery={this.onQuery.bind(this)}></AIChat>;
     }
 
     private async onQuery(query: string): Promise<void> {
         if (query.length === 0) { return; }
         this.chatMessages.push({ actor: 'user', message: query });
-        this.AgentDispatcher.sendRequest(this.chatMessages);
+        const chatResponse = await this.AgentDispatcher.sendRequest(this.chatMessages);
+        // TODO: handle all kinds of messages
+        if (chatResponse?.length > 0 && isTextStreamChatResponsePart(chatResponse[0])) {
+            this.chatResponse = {
+                actor: 'ai',
+                message: ''
+            };
+            for await (const token of chatResponse[0].stream) {
+                this.chatResponse.message = this.chatResponse.message + token;
+                this.update();
+            }
+            this.chatMessages.push(this.chatResponse);
+            this.chatResponse = undefined;
+        }
     }
-
 }

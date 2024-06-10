@@ -15,12 +15,12 @@
 // *****************************************************************************
 import * as React from '@theia/core/shared/react';
 import { codicon } from '@theia/core/lib/browser';
-import { LanguageModelChatActor, LanguageModelChatMessage } from '../common';
+import { ChatActor, ChatMessage } from '@theia/ai-model-provider';
 
 interface AIChatProperties {
-    chatMessages: LanguageModelChatMessage[];
+    chatMessages: ChatMessage[];
     onQuery: (query: string) => void;
-    queryResult: LanguageModelChatMessage | undefined;
+    queryResult: ChatMessage | undefined;
 }
 
 export const AIChat: React.FunctionComponent<AIChatProperties> = (properties: AIChatProperties) => {
@@ -59,14 +59,14 @@ export const AIChat: React.FunctionComponent<AIChatProperties> = (properties: AI
     </React.Fragment >;
 };
 
-const getActorIcon = (actor: LanguageModelChatActor): string | undefined => {
+const getActorIcon = (actor: ChatActor): string | undefined => {
     switch (actor) {
         case 'user': { return codicon('account'); }
         case 'ai': { return codicon('copilot'); }
     }
     return undefined;
 };
-const getActorName = (actor: LanguageModelChatActor): string => {
+const getActorName = (actor: ChatActor): string => {
     switch (actor) {
         case 'user': { return 'This is me Mario'; }
         case 'ai': { return 'Theia AI'; }

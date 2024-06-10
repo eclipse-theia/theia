@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { ChatMessage, ChatResponse, LanguageModelProvider } from '@theia/ai-model-provider';
 import { injectable } from '@theia/core/shared/inversify';
-import {LanguageModelProvider, LanguageModelChatMessage, LanguageModelChatResponsePart} from '@theia/ai-chat/lib/common';
 import OpenAI from 'openai';
 import { ChatCompletionMessageParam } from 'openai/resources';
 
@@ -23,7 +23,7 @@ import { ChatCompletionMessageParam } from 'openai/resources';
 export class OpenAIModelProvider implements LanguageModelProvider {
     private openai = new OpenAI();
 
-    async sendRequest(messages: LanguageModelChatMessage[]): Promise<LanguageModelChatResponsePart> {
+    async sendRequest(messages: ChatMessage[]): Promise<ChatResponse> {
         const stream = await this.openai.chat.completions.create({
             model: 'gpt-3.5-turbo',
             messages: messages.map(this.toOpenAIMessage),
@@ -31,28 +31,28 @@ export class OpenAIModelProvider implements LanguageModelProvider {
         });
 
         const [stream1] = stream.tee();
-        return {
+        return [{
+            type: 'text-stream',
             stream: {
                 [Symbol.asyncIterator](): AsyncIterator<string> {
-                return {
-                    next(): Promise<IteratorResult<string>> {
-                        return stream1[Symbol.asyncIterator]().next().then(chunk => chunk.done ? chunk : {value: chunk.value.choices[0]?.delta?.content ?? '', done: false});
-                    }
-                };
+                    return {
+                        next(): Promise<IteratorResult<string>> {
+                            return stream1[Symbol.asyncIterator]().next().then(chunk => chunk.done ? chunk : { value: chunk.value.choices[0]?.delta?.content ?? '', done: false });
+                        }
+                    };
+                }
             }
-        }
-        };
-
+        }];
     }
 
-    private toOpenAIMessage(message: LanguageModelChatMessage): ChatCompletionMessageParam {
+    private toOpenAIMessage(message: ChatMessage): ChatCompletionMessageParam {
         if (message.actor === 'ai') {
-            return {role: 'assistant', content: message.message};
+            return { role: 'assistant', content: message.message };
         }
         if (message.actor === 'user') {
-            return {role: 'user', content: message.message};
+            return { role: 'user', content: message.message };
         }
-        return {role: 'system', content: ''};
+        return { role: 'system', content: '' };
     }
 
 }

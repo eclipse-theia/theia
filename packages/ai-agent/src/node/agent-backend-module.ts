@@ -13,4 +13,11 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-export * from './protocol';
+
+import { ContainerModule } from '@theia/core/shared/inversify';
+import { AgentDispatcher, AgentDispatcherImpl } from '../common';
+
+export default new ContainerModule(bind => {
+    bind(AgentDispatcherImpl).toSelf().inSingletonScope();
+    bind(AgentDispatcher).toService(AgentDispatcherImpl);
+});

@@ -13,11 +13,9 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+export type ChatActor = 'user' | 'ai';
 
-import { ContainerModule } from '@theia/core/shared/inversify';
-import { OpenAIModelProvider } from './open-ai-model-provider';
-import { LanguageModelProvider } from '@theia/ai-model-provider';
-
-export default new ContainerModule(bind => {
-    bind(LanguageModelProvider).to(OpenAIModelProvider).inSingletonScope();
-});
+export interface ChatMessage {
+    actor: ChatActor;
+    message: string;
+}

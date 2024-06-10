@@ -13,22 +13,11 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { injectable } from '@theia/core/shared/inversify';
-import { AgentDispatcherClient } from '../common';
-import { Emitter } from '@theia/core/lib/common';
 
-@injectable()
-export class AIChatBackendClient implements AgentDispatcherClient {
+import { ContainerModule } from '@theia/core/shared/inversify';
+import { AgentDispatcher, AgentDispatcherImpl } from '../common';
 
-    protected readonly onNextQueryResultTokenEmitter = new Emitter<string>();
-    readonly onNextQueryResultToken = this.onNextQueryResultTokenEmitter.event;
-    protected readonly onQueryResultFinishedEmitter = new Emitter<void>();
-    readonly onQueryResultFinished = this.onQueryResultFinishedEmitter.event;
-
-    nextQueryResultToken(value: string): void {
-        this.onNextQueryResultTokenEmitter.fire(value);
-    }
-    queryResultFinished(): void {
-        this.onQueryResultFinishedEmitter.fire();
-    }
-}
+export default new ContainerModule(bind => {
+    bind(AgentDispatcherImpl).toSelf().inSingletonScope();
+    bind(AgentDispatcher).toService(AgentDispatcherImpl);
+});

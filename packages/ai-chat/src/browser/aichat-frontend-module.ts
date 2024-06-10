@@ -16,24 +16,14 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { WidgetFactory, bindViewContribution } from '@theia/core/lib/browser';
-import { RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser/messaging/service-connection-provider';
 import { ChatWidget } from './chat-widget';
 import { AIChatContribution } from './aichat-contribution';
-import { AgentDispatcher, lmServicePath, AgentDispatcherClient } from '../common';
-import { AIChatBackendClient } from './aichat-backend-client';
 
 export default new ContainerModule(bind => {
-
     bindViewContribution(bind, AIChatContribution);
     bind(ChatWidget).toSelf().inSingletonScope();
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
         id: ChatWidget.ID,
         createWidget: () => container.get(ChatWidget)
     })).inSingletonScope();
-    bind(AgentDispatcherClient).to(AIChatBackendClient).inSingletonScope();
-    bind(AgentDispatcher).toDynamicValue(ctx => {
-        const connection = ctx.container.get<ServiceConnectionProvider>(RemoteConnectionProvider);
-        const client = ctx.container.get<AgentDispatcherClient>(AgentDispatcherClient);
-        return connection.createProxy<AgentDispatcher>(lmServicePath, client);
-    }).inSingletonScope();
 });

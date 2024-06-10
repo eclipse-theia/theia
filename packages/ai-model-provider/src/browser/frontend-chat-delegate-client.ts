@@ -13,11 +13,20 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+import { injectable } from '@theia/core/shared/inversify';
+import { FrontendChatDelegateClient } from '../common';
+import { FrontendLanguageModelProvider } from './frontend-language-model-provider';
 
-import { ContainerModule } from '@theia/core/shared/inversify';
-import { OpenAIModelProvider } from './open-ai-model-provider';
-import { LanguageModelProvider } from '@theia/ai-model-provider';
+@injectable()
+export class FrontendChatDelegateClientImpl implements FrontendChatDelegateClient {
 
-export default new ContainerModule(bind => {
-    bind(LanguageModelProvider).to(OpenAIModelProvider).inSingletonScope();
-});
+    protected provider: FrontendLanguageModelProvider;
+
+    setProvider(provider: FrontendLanguageModelProvider): void {
+        this.provider = provider;
+    }
+
+    send(id: string, token: string | undefined): void {
+        this.provider.send(id, token);
+    }
+}

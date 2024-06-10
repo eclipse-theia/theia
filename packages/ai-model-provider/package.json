@@ -1,5 +1,5 @@
 {
-  "name": "@theia/ai-openai",
+  "name": "@theia/ai-model-provider",
   "version": "1.49.0",
   "description": "Theia - OpenAI LLM Integration",
   "dependencies": {
@@ -8,15 +8,16 @@
     "@theia/workspace": "1.49.0",
     "minimatch": "^5.1.0",
     "tslib": "^2.6.2",
-    "openai": "^4.45.0",
-    "@theia/ai-model-provider": "1.49.0"
+    "openai": "^4.45.0"
   },
+  "main": "lib/common",
   "publishConfig": {
     "access": "public"
   },
   "theiaExtensions": [
     {
-      "backend": "lib/node/openai-backend-module"
+      "frontend": "lib/browser/model-provider-frontend-module",
+      "backend": "lib/node/model-provider-backend-module"
     }
   ],
   "keywords": [

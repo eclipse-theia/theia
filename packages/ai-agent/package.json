@@ -1,22 +1,25 @@
 {
-  "name": "@theia/ai-openai",
+  "name": "@theia/ai-agent",
   "version": "1.49.0",
-  "description": "Theia - OpenAI LLM Integration",
+  "description": "Theia - AI Chat Extension",
   "dependencies": {
+    "@theia/ai-model-provider": "1.49.0",
     "@theia/core": "1.49.0",
     "@theia/filesystem": "1.49.0",
     "@theia/workspace": "1.49.0",
     "minimatch": "^5.1.0",
-    "tslib": "^2.6.2",
-    "openai": "^4.45.0",
-    "@theia/ai-model-provider": "1.49.0"
+    "tslib": "^2.6.2"
   },
   "publishConfig": {
     "access": "public"
   },
+  "main": "lib/common",
   "theiaExtensions": [
     {
-      "backend": "lib/node/openai-backend-module"
+      "frontend": "lib/browser/agent-frontend-module"
+    },
+    {
+      "backend": "lib/node/agent-backend-module"
     }
   ],
   "keywords": [

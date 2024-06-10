@@ -10,6 +10,12 @@
   ],
   "references": [
     {
+      "path": "../ai-agent"
+    },
+    {
+      "path": "../ai-model-provider"
+    },
+    {
       "path": "../core"
     },
     {

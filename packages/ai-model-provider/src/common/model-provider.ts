@@ -14,10 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContainerModule } from '@theia/core/shared/inversify';
-import { OpenAIModelProvider } from './open-ai-model-provider';
-import { LanguageModelProvider } from '@theia/ai-model-provider';
+import { ChatMessage } from './chat-message';
+import { ChatResponse } from './chat-response-parts';
 
-export default new ContainerModule(bind => {
-    bind(LanguageModelProvider).to(OpenAIModelProvider).inSingletonScope();
-});
+export const LanguageModelProvider = Symbol('LanguageModelProvider');
+export interface LanguageModelProvider {
+    sendRequest(messages: ChatMessage[]): Promise<ChatResponse>;
+}

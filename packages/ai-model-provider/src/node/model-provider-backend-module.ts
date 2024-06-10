@@ -15,15 +15,16 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { AgentDispatcherImpl } from './AgentDispatcherImpl';
-import { AgentDispatcher, AgentDispatcherClient, lmServicePath } from '../common';
+import { ModelProviderFrontendDelegateImpl } from './model-provider-frontend-delegate';
 import { ConnectionHandler, RpcConnectionHandler } from '@theia/core';
+import { FrontendChatDelegateClient, ModelProviderFrontendDelegate, frontendChatDelegatePath } from '../common';
 
 export default new ContainerModule(bind => {
-    bind(AgentDispatcher).to(AgentDispatcherImpl).inSingletonScope();
+    bind(ModelProviderFrontendDelegateImpl).toSelf().inSingletonScope();
+    bind(ModelProviderFrontendDelegate).toService(ModelProviderFrontendDelegateImpl);
     bind(ConnectionHandler).toDynamicValue(({ container }) =>
-        new RpcConnectionHandler<AgentDispatcherClient>(lmServicePath, client => {
-            const service = container.get<AgentDispatcher>(AgentDispatcher);
+        new RpcConnectionHandler<FrontendChatDelegateClient>(frontendChatDelegatePath, client => {
+            const service = container.get<ModelProviderFrontendDelegate>(ModelProviderFrontendDelegate);
             service.setClient(client);
             return service;
         })
