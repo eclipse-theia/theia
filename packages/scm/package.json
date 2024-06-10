@@ -45,6 +45,7 @@
     "compile": "theiaext compile",
     "docs": "theiaext docs",
     "lint": "theiaext lint",
+    "test": "theiaext test",
     "watch": "theiaext watch"
   },
   "devDependencies": {
