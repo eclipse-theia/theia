@@ -315,7 +315,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
     /**
      * on unload, we set our workspace root as the last recently used on the backend.
      */
-    onStop(): void {
+    onWillStop(): void {
         this.server.setMostRecentlyUsedWorkspace(this._workspace ? this._workspace.resource.toString() : '');
     }
 
