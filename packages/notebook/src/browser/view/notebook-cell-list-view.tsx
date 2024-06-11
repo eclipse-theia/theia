@@ -96,6 +96,7 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
                                 this.props.notebookModel.setSelectedCell(cell, false);
                             }}
                             onDragStart={e => this.onDragStart(e, index, cell)}
+                            onDragEnd={e => NotebookCellListView.dragGhost?.remove()}
                             onDragOver={e => this.onDragOver(e, cell)}
                             onDrop={e => this.onDrop(e, index)}
                             draggable={true}
@@ -137,9 +138,6 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
             return;
         }
 
-        if (NotebookCellListView.dragGhost) {
-            NotebookCellListView.dragGhost.remove();
-        }
         NotebookCellListView.dragGhost = document.createElement('div');
         NotebookCellListView.dragGhost.classList.add('theia-notebook-drag-ghost-image');
         NotebookCellListView.dragGhost.appendChild(this.props.renderers.get(cell.cellKind)?.renderDragImage(cell) ?? document.createElement('div'));
