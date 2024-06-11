@@ -96,7 +96,10 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
                                 this.props.notebookModel.setSelectedCell(cell, false);
                             }}
                             onDragStart={e => this.onDragStart(e, index, cell)}
-                            onDragEnd={e => NotebookCellListView.dragGhost?.remove()}
+                            onDragEnd={e => {
+                                NotebookCellListView.dragGhost?.remove();
+                                this.setState({ ...this.state, dragOverIndicator: undefined });
+                            }}
                             onDragOver={e => this.onDragOver(e, cell)}
                             onDrop={e => this.onDrop(e, index)}
                             draggable={true}
