@@ -16,14 +16,41 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { WidgetFactory, bindViewContribution } from '@theia/core/lib/browser';
-import { ChatWidget } from './chat-widget';
+// import { ChatWidget } from './chat-widget';
 import { AIChatContribution } from './aichat-contribution';
+import { ChatViewWidget } from './chat-view-widget';
+import { createChatViewTreeWidget } from './chat-tree-view';
+import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
+import { ChatInputWidget } from './chat-input-widget';
+
+import '../../src/browser/style/index.css';
 
 export default new ContainerModule(bind => {
     bindViewContribution(bind, AIChatContribution);
-    bind(ChatWidget).toSelf().inSingletonScope();
+
+    // bind(ChatWidget).toSelf().inSingletonScope();
+    bind(ChatViewWidget).toSelf().inSingletonScope();
+    bind(WidgetFactory).toDynamicValue(context => ({
+        id: ChatViewWidget.ID,
+        createWidget: () => context.container.get<ChatViewWidget>(ChatViewWidget)
+    })).inSingletonScope();
+
+    bind(ChatInputWidget).toSelf().inSingletonScope();
+    bind(WidgetFactory).toDynamicValue(context => ({
+        id: ChatInputWidget.ID,
+        createWidget: () => context.container.get<ChatInputWidget>(ChatInputWidget)
+    })).inSingletonScope();
+
+    bind(ChatViewTreeWidget).toDynamicValue(ctx =>
+        createChatViewTreeWidget(ctx.container)
+    );
+    // bind(WidgetFactory).toDynamicValue(({ container }) => ({
+    //     id: ChatWidget.ID,
+    //     createWidget: () => ChatWidget
+    // })).inSingletonScope();
+
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
-        id: ChatWidget.ID,
-        createWidget: () => container.get(ChatWidget)
+        id: ChatViewTreeWidget.ID,
+        createWidget: () => container.get(ChatViewTreeWidget)
     })).inSingletonScope();
 });

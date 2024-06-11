@@ -14,24 +14,4 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from '@theia/core/shared/inversify';
-import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
-// import { ChatWidget } from './chat-widget';
-import { ChatViewWidget } from './chat-view-widget';
-export const AI_CHAT_TOGGLE_COMMAND_ID = 'aiChat:toggle';
-@injectable()
-export class AIChatContribution extends AbstractViewContribution<ChatViewWidget> {
-
-    constructor() {
-        super({
-            widgetId: ChatViewWidget.ID,
-            widgetName: ChatViewWidget.LABEL,
-            defaultWidgetOptions: {
-                area: 'left',
-                rank: 100
-            },
-            toggleCommandId: AI_CHAT_TOGGLE_COMMAND_ID,
-            toggleKeybinding: 'ctrlcmd+shift+e'
-        });
-    }
-}
+export * from './chat-view-tree-container';

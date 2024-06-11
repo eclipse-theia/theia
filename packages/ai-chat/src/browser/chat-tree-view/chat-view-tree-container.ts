@@ -14,24 +14,20 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from '@theia/core/shared/inversify';
-import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
-// import { ChatWidget } from './chat-widget';
-import { ChatViewWidget } from './chat-view-widget';
-export const AI_CHAT_TOGGLE_COMMAND_ID = 'aiChat:toggle';
-@injectable()
-export class AIChatContribution extends AbstractViewContribution<ChatViewWidget> {
+import { createTreeContainer, TreeProps } from '@theia/core/lib/browser';
+import { interfaces } from '@theia/core/shared/inversify';
+import { ChatViewTreeWidget } from './chat-view-tree-widget';
 
-    constructor() {
-        super({
-            widgetId: ChatViewWidget.ID,
-            widgetName: ChatViewWidget.LABEL,
-            defaultWidgetOptions: {
-                area: 'left',
-                rank: 100
-            },
-            toggleCommandId: AI_CHAT_TOGGLE_COMMAND_ID,
-            toggleKeybinding: 'ctrlcmd+shift+e'
-        });
-    }
+const CHAT_VIEW_TREE_PROPS = {
+    multiSelect: false,
+    search: false,
+} as TreeProps;
+
+export function createChatViewTreeWidget(parent: interfaces.Container): ChatViewTreeWidget {
+    const child = createTreeContainer(parent, {
+        props: CHAT_VIEW_TREE_PROPS,
+        widget: ChatViewTreeWidget,
+    });
+    return child.get(ChatViewTreeWidget);
 }
+

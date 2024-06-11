@@ -1,0 +1,10 @@
+.chat-view-widget {
+    display: flex;
+    flex-direction: column;
+}
+.chat-tree-view-widget {
+    flex: 1;
+}
+.chat-input-widget {
+
+}
