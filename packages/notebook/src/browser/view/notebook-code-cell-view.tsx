@@ -117,12 +117,23 @@ export class NotebookCodeCellRenderer implements CellRenderer {
 
         const fakeEditor = document.createElement('div');
         dragImage.appendChild(fakeEditor);
-        const lines = cell.source.split('\n').slice(0, 5).join('\n').replace(/```/g, '');
-        const firstLine = new MarkdownString(`\`\`\`${cell.language}\n${lines}\n\`\`\``, { supportHtml: true, isTrusted: false });
+        const lines = cell.source.split('\n').slice(0, 5).join('\n');
+        const codeSequence = this.getMarkdownCodeSequence(lines);
+        const firstLine = new MarkdownString(`${codeSequence}${cell.language}\n${lines}\n${codeSequence}`, { supportHtml: true, isTrusted: false });
         fakeEditor.appendChild(this.markdownRenderer.render(firstLine).element);
         fakeEditor.classList.add('theia-notebook-cell-editor-container');
         fakeEditor.style.padding = '10px';
         return dragImage;
+    }
+
+    protected getMarkdownCodeSequence(input: string): string {
+        for (let i = 3; i < 100; i++) {
+            const sequence = Array(i).fill('`').join('');
+            if (!input.includes(sequence)) {
+                return sequence;
+            }
+        }
+        return '```';
     }
 
 }
