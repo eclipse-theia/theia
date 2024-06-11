@@ -117,7 +117,7 @@ export class NotebookCodeCellRenderer implements CellRenderer {
 
         const fakeEditor = document.createElement('div');
         dragImage.appendChild(fakeEditor);
-        const lines = cell.source.split('\n').slice(0, 5).join('\n');
+        const lines = cell.source.split('\n').slice(0, 5).join('\n').replace(/```/g, '');
         const firstLine = new MarkdownString(`\`\`\`${cell.language}\n${lines}\n\`\`\``, { supportHtml: true, isTrusted: false });
         fakeEditor.appendChild(this.markdownRenderer.render(firstLine).element);
         fakeEditor.classList.add('theia-notebook-cell-editor-container');
