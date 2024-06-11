@@ -73,7 +73,7 @@ describe('dirty-diff-computer', () => {
         const numberOfLines = 10;
         const dirtyDiff = computeDirtyDiff(
             sequenceOfN(numberOfLines, () => 'TO-BE-REMOVED'),
-            []
+            ['']
         );
         expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
             changes: [
@@ -140,7 +140,7 @@ describe('dirty-diff-computer', () => {
     it('add lines to empty file', () => {
         const numberOfLines = 3;
         const dirtyDiff = computeDirtyDiff(
-            [],
+            [''],
             sequenceOfN(numberOfLines, () => 'ADDED LINE')
         );
         expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
@@ -408,7 +408,7 @@ describe('dirty-diff-computer', () => {
                 },
                 {
                     previousRange: { start: 9, end: 10 },
-                    currentRange: { start: 11, end: 12 },
+                    currentRange: { start: 12, end: 12 },
                 },
             ],
         });

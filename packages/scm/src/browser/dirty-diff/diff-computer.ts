@@ -28,37 +28,47 @@ export class DiffComputer {
     computeDirtyDiff(previous: ContentLinesArrayLike, current: ContentLinesArrayLike): DirtyDiff {
         const changes: Change[] = [];
         const diffResult = this.computeDiff(previous, current);
-        let currentRevisionLine = 0;
-        let previousRevisionLine = 0;
+        let currentRevisionLine = -1;
+        let previousRevisionLine = -1;
         for (let i = 0; i < diffResult.length; i++) {
-            const diff = diffResult[i];
-            const delta = diff.count || 0;
-            if (diff.added) {
+            const change = diffResult[i];
+            const next = diffResult[i + 1];
+            if (change.added) {
                 // case: addition
-                if (diffResult[i - 1]?.removed) { // merge with previous removal
-                    changes[changes.length - 1].currentRange.end += delta;
+                changes.push({ previousRange: LineRange.createEmptyLineRange(previousRevisionLine + 1), currentRange: toLineRange(change) });
+                currentRevisionLine += change.count!;
+            } else if (change.removed && next && next.added) {
+                const isFirstChange = i === 0;
+                const isLastChange = i === diffResult.length - 2;
+                const isNextEmptyLine = next.value.length > 0 && current[next.value[0]].length === 0;
+                const isPrevEmptyLine = change.value.length > 0 && previous[change.value[0]].length === 0;
+
+                if (isFirstChange && isNextEmptyLine) {
+                    // special case: removing at the beginning
+                    changes.push({ previousRange: toLineRange(change), currentRange: LineRange.createEmptyLineRange(0) });
+                    previousRevisionLine += change.count!;
+                } else if (isFirstChange && isPrevEmptyLine) {
+                    // special case: adding at the beginning
+                    changes.push({ previousRange: LineRange.createEmptyLineRange(0), currentRange: toLineRange(next) });
+                    currentRevisionLine += next.count!;
+                } else if (isLastChange && isNextEmptyLine) {
+                    changes.push({ previousRange: toLineRange(change), currentRange: LineRange.createEmptyLineRange(currentRevisionLine + 2) });
+                    previousRevisionLine += change.count!;
                 } else {
-                    changes.push({
-                        previousRange: { start: previousRevisionLine, end: previousRevisionLine },
-                        currentRange: { start: currentRevisionLine, end: currentRevisionLine + delta }
-                    });
+                    // default case is a modification
+                    changes.push({ previousRange: toLineRange(change), currentRange: toLineRange(next) });
+                    currentRevisionLine += next.count!;
+                    previousRevisionLine += change.count!;
                 }
-                currentRevisionLine += delta;
-            } else if (diff.removed) {
+                i++; // consume next eagerly
+            } else if (change.removed && !(next && next.added)) {
                 // case: removal
-                if (diffResult[i - 1]?.added) { // merge with previous addition
-                    changes[changes.length - 1].previousRange.end += delta;
-                } else {
-                    changes.push({
-                        previousRange: { start: previousRevisionLine, end: previousRevisionLine + delta },
-                        currentRange: { start: currentRevisionLine, end: currentRevisionLine }
-                    });
-                }
-                previousRevisionLine += delta;
+                changes.push({ previousRange: toLineRange(change), currentRange: LineRange.createEmptyLineRange(currentRevisionLine + 1) });
+                previousRevisionLine += change.count!;
             } else {
                 // case: unchanged region
-                currentRevisionLine += delta;
-                previousRevisionLine += delta;
+                currentRevisionLine += change.count!;
+                previousRevisionLine += change.count!;
             }
         }
         return { changes };
@@ -92,6 +102,11 @@ function diffArrays(oldArr: ContentLinesArrayLike, newArr: ContentLinesArrayLike
     return arrayDiff.diff(oldArr as any, newArr as any) as any;
 }
 
+function toLineRange({ value }: DiffResult): LineRange {
+    const [start, end] = value;
+    return LineRange.create(start, end + 1);
+}
+
 export interface DiffResult {
     value: [number, number];
     count?: number;
@@ -121,8 +136,8 @@ export namespace Change {
 }
 
 export interface LineRange {
-    start: number;
-    end: number;
+    readonly start: number;
+    readonly end: number;
 }
 
 export namespace LineRange {
