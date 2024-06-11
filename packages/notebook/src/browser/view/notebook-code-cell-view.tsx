@@ -127,13 +127,21 @@ export class NotebookCodeCellRenderer implements CellRenderer {
     }
 
     protected getMarkdownCodeSequence(input: string): string {
-        for (let i = 3; i < 100; i++) {
-            const sequence = Array(i).fill('`').join('');
-            if (!input.includes(sequence)) {
-                return sequence;
+        // We need a minimum of 3 backticks to start a code block.
+        let longest = 2;
+        let current = 0;
+        for (let i = 0; i < input.length; i++) {
+            const char = input.charAt(i);
+            if (char === '`') {
+                current++;
+                if (current > longest) {
+                    longest = current;
+                }
+            } else {
+                current = 0;
             }
         }
-        return '```';
+        return Array(longest + 1).fill('`').join('');
     }
 
 }
