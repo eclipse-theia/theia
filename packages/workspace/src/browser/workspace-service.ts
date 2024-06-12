@@ -20,7 +20,7 @@ import { WorkspaceServer, UntitledWorkspaceService, WorkspaceFileService } from 
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { DEFAULT_WINDOW_HASH } from '@theia/core/lib/common/window';
 import {
-    FrontendApplicationContribution, PreferenceServiceImpl, PreferenceScope, PreferenceSchemaProvider, LabelProvider
+    FrontendApplicationContribution, PreferenceServiceImpl, PreferenceScope, PreferenceSchemaProvider, LabelProvider, OnWillStopAction
 } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
@@ -315,8 +315,16 @@ export class WorkspaceService implements FrontendApplicationContribution {
     /**
      * on unload, we set our workspace root as the last recently used on the backend.
      */
-    onWillStop(): void {
-        this.server.setMostRecentlyUsedWorkspace(this._workspace ? this._workspace.resource.toString() : '');
+    onWillStop(): OnWillStopAction {
+        return {
+            action: async () => {
+                await this.server.setMostRecentlyUsedWorkspace(this._workspace ? this._workspace.resource.toString() : '');
+                return false;
+            },
+            reason: 'Saving most recently used workspace',
+            // Attempt to run this last
+            priority: 1000
+        }
     }
 
     async recentWorkspaces(): Promise<string[]> {
