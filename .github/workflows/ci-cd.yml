@@ -105,7 +105,7 @@ jobs:
           yarn test:theia
 
       - name: Test (browser)
-        if: matrix.tests != 'skip' && runner.os == 'Linux'
+        if: matrix.tests != 'skip'
         run: |
           xvfb-run -a yarn browser test
 
