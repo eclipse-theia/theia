@@ -17,10 +17,18 @@
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { LabelProviderContribution, TreeNode } from '@theia/core/lib/browser';
 import { Preference } from './preference-types';
-import { PreferenceTreeGenerator } from './preference-tree-generator';
+import { COMMONLY_USED_SECTION_PREFIX, PreferenceTreeGenerator } from './preference-tree-generator';
+import { nls } from '@theia/core';
 @injectable()
 export class PreferenceTreeLabelProvider implements LabelProviderContribution {
     @inject(PreferenceTreeGenerator) protected readonly treeGenerator: PreferenceTreeGenerator;
+
+    protected localizations: Record<string, string> = {
+        [COMMONLY_USED_SECTION_PREFIX]: nls.localizeByDefault('Commonly Used'),
+        editor: nls.localizeByDefault('Text Editor'),
+        workbench: nls.localizeByDefault('Workbench'),
+        window: nls.localizeByDefault('Window'),
+    };
 
     canHandle(element: object): number {
         return TreeNode.is(element) && Preference.TreeNode.is(element) ? 150 : 0;
