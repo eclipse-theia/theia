@@ -83,7 +83,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9
 
       - name: Download Plugins
-        if: runner.os == 'Linux'
         shell: bash
         run: |
           yarn -s download:plugins --rate-limit 3
