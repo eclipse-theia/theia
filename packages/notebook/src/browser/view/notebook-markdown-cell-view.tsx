@@ -44,8 +44,10 @@ export class NotebookMarkdownCellRenderer implements CellRenderer {
 
     renderDragImage(cell: NotebookCellModel): HTMLElement {
         const dragImage = document.createElement('div');
-        dragImage.className = 'theia-notebook-drag-image';
-        dragImage.textContent = nls.localize('theia/notebook/dragGhostImage/markdownText', 'Mardown cell selected');
+        dragImage.style.width = this.notebookContextManager.context?.clientWidth + 'px';
+        const markdownString = new MarkdownStringImpl(cell.source, { supportHtml: true, isTrusted: true });
+        const markdownElement = this.markdownRenderer.render(markdownString).element;
+        dragImage.appendChild(markdownElement);
         return dragImage;
     }
 }
