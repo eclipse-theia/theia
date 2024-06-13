@@ -469,13 +469,7 @@ export class TestRunProfile implements theia.TestRunProfile {
         isDefault = false,
         tag: theia.TestTag | undefined = undefined,
     ) {
-        this.proxy = proxy;
-        this.label = label;
-        this.tag = tag;
-        this.label = label;
-        this.isDefault = isDefault;
-
-        this.proxy.$notifyTestRunProfileCreated(controllerId, {
+        proxy.$notifyTestRunProfileCreated(controllerId, {
             id: profileId,
             kind: kind,
             tag: tag ? tag.toString() : '',
@@ -483,6 +477,11 @@ export class TestRunProfile implements theia.TestRunProfile {
             isDefault: isDefault,
             canConfigure: false,
         });
+        this.proxy = proxy;
+        this.label = label;
+        this.tag = tag;
+        this.label = label;
+        this.isDefault = isDefault;
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
