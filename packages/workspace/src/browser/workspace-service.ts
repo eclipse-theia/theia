@@ -324,7 +324,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
             reason: 'Saving most recently used workspace',
             // Attempt to run this last
             priority: 1000
-        }
+        };
     }
 
     async recentWorkspaces(): Promise<string[]> {
