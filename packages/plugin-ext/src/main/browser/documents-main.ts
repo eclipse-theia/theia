@@ -20,10 +20,10 @@ import { DisposableCollection, Disposable, UntitledResourceResolver } from '@the
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { EditorModelService } from './text-editor-model-service';
-import { EditorManager, EditorOpenerOptions } from '@theia/editor/lib/browser';
+import { EditorOpenerOptions } from '@theia/editor/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { URI as CodeURI } from '@theia/core/shared/vscode-uri';
-import { ApplicationShell, Saveable } from '@theia/core/lib/browser';
+import { ApplicationShell } from '@theia/core/lib/browser';
 import { TextDocumentShowOptions } from '../../common/plugin-api-rpc-model';
 import { Range } from '@theia/core/shared/vscode-languageserver-protocol';
 import { OpenerService } from '@theia/core/lib/browser/opener-service';
@@ -94,7 +94,6 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
         notebookDocuments: NotebookDocumentsMainImpl,
         private readonly modelService: EditorModelService,
         rpc: RPCProtocol,
-        private editorManager: EditorManager,
         private openerService: OpenerService,
         private shell: ApplicationShell,
         private untitledResourceResolver: UntitledResourceResolver,
@@ -206,13 +205,7 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
     }
 
     async $trySaveDocument(uri: UriComponents): Promise<boolean> {
-        const widget = await this.editorManager.getByUri(new URI(CodeURI.revive(uri)));
-        if (widget) {
-            await Saveable.save(widget);
-            return true;
-        }
-
-        return false;
+        return this.modelService.save(new URI(CodeURI.revive(uri)));
     }
 
     async $tryOpenDocument(uri: UriComponents): Promise<boolean> {
@@ -224,17 +217,6 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
             ref.dispose();
             return false;
         }
-    }
-
-    async $tryCloseDocument(uri: UriComponents): Promise<boolean> {
-        const widget = await this.editorManager.getByUri(new URI(CodeURI.revive(uri)));
-        if (widget) {
-            await Saveable.save(widget);
-            widget.close();
-            return true;
-        }
-
-        return false;
     }
 
     static toEditorOpenerOptions(shell: ApplicationShell, options?: TextDocumentShowOptions): EditorOpenerOptions | undefined {

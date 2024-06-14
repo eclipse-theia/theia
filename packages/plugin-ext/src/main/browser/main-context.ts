@@ -40,7 +40,6 @@ import { DecorationsMainImpl } from './decorations/decorations-main';
 import { ClipboardMainImpl } from './clipboard-main';
 import { DocumentsMainImpl } from './documents-main';
 import { TextEditorsMainImpl } from './text-editors-main';
-import { EditorManager } from '@theia/editor/lib/browser';
 import { EditorModelService } from './text-editor-model-service';
 import { OpenerService } from '@theia/core/lib/browser/opener-service';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
@@ -94,13 +93,12 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
     rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_MAIN, notebookDocumentsMain);
 
     const modelService = container.get(EditorModelService);
-    const editorManager = container.get(EditorManager);
     const openerService = container.get<OpenerService>(OpenerService);
     const shell = container.get(ApplicationShell);
     const untitledResourceResolver = container.get(UntitledResourceResolver);
     const languageService = container.get(MonacoLanguages);
     const documentsMain = new DocumentsMainImpl(editorsAndDocuments, notebookDocumentsMain, modelService, rpc,
-        editorManager, openerService, shell, untitledResourceResolver, languageService);
+        openerService, shell, untitledResourceResolver, languageService);
     rpc.set(PLUGIN_RPC_CONTEXT.DOCUMENTS_MAIN, documentsMain);
 
     rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOKS_MAIN, new NotebooksMainImpl(rpc, container, commandRegistryMain));
