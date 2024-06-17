@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ChatMessage } from './chat-message';
+import { ChatRequestPart } from './chat-request-part';
 import { BaseChatResponsePart, TextChatResponsePart } from './chat-response-parts';
 
 export interface TextStreamChatResponsePartDelegate {
@@ -36,7 +36,7 @@ export interface FrontendChatDelegateClient {
 export const ModelProviderFrontendDelegate = Symbol('ModelProviderFrontendDelegate');
 export interface ModelProviderFrontendDelegate {
     setClient(client: FrontendChatDelegateClient): void
-    sendRequest(messages: ChatMessage[]): Promise<ChatResponseDelegate>;
+    sendRequest(messages: ChatRequestPart[]): Promise<ChatResponseDelegate>;
 }
 
 export const frontendChatDelegatePath = '/services/frontendChatDelegate';

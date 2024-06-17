@@ -15,7 +15,16 @@
 // *****************************************************************************
 export type ChatActor = 'user' | 'ai';
 
-export interface ChatMessage {
+export interface ChatRequestPart {
     actor: ChatActor;
-    message: string;
+    type: 'text';
+    query: string;
 }
+export const isChatRequestPart = (obj: unknown): obj is ChatRequestPart =>
+    !!(obj && typeof obj === 'object' &&
+    'type' in obj &&
+    typeof (obj as { type: unknown }).type === 'string' &&
+    (obj as { type: unknown }).type === 'text' &&
+    'query' in obj &&
+    typeof (obj as { query: unknown }).query === 'string'
+);

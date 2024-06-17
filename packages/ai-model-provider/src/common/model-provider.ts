@@ -14,10 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ChatMessage } from './chat-message';
+import { ChatRequestPart } from './chat-request-part';
 import { ChatResponse } from './chat-response-parts';
 
 export const LanguageModelProvider = Symbol('LanguageModelProvider');
 export interface LanguageModelProvider {
-    sendRequest(messages: ChatMessage[]): Promise<ChatResponse>;
+    sendRequest(messages: ChatRequestPart[]): Promise<ChatResponse>;
 }

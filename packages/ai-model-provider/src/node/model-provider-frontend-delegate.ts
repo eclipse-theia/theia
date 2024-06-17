@@ -17,7 +17,7 @@
 import { ChatResponseDelegate, ChatResponsePartDelegate, FrontendChatDelegateClient, ModelProviderFrontendDelegate } from '../common/chat-response-parts-delegate';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { generateUuid } from '@theia/core';
-import { ChatMessage, LanguageModelProvider, isTextStreamChatResponsePart } from '../common';
+import { ChatRequestPart, LanguageModelProvider, isTextStreamChatResponsePart } from '../common';
 
 @injectable()
 export class ModelProviderFrontendDelegateImpl implements ModelProviderFrontendDelegate {
@@ -31,7 +31,7 @@ export class ModelProviderFrontendDelegateImpl implements ModelProviderFrontendD
         this.frontendDelegateClient = client;
     }
 
-    async sendRequest(messages: ChatMessage[]): Promise<ChatResponseDelegate> {
+    async sendRequest(messages: ChatRequestPart[]): Promise<ChatResponseDelegate> {
         const response = await this.modelProvider.sendRequest(messages);
         return response.map<ChatResponsePartDelegate>(responsePart => {
             if (isTextStreamChatResponsePart(responsePart)) {

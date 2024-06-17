@@ -14,18 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { ChatMessage, ChatResponse, LanguageModelProvider } from '@theia/ai-model-provider';
+import { ChatRequestPart, ChatResponse, LanguageModelProvider } from '@theia/ai-model-provider';
 
 export const AgentDispatcher = Symbol('AgentDispatcher');
 export interface AgentDispatcher {
-    sendRequest(messages: ChatMessage[]): Promise<ChatResponse>;
+    sendRequest(messages: ChatRequestPart[]): Promise<ChatResponse>;
 }
 
 @injectable()
 export class AgentDispatcherImpl implements AgentDispatcher {
     @inject(LanguageModelProvider) modelProvider: LanguageModelProvider;
 
-    async sendRequest(messages: ChatMessage[]): Promise<ChatResponse> {
+    async sendRequest(messages: ChatRequestPart[]): Promise<ChatResponse> {
         return this.modelProvider.sendRequest(messages);
     }
 }

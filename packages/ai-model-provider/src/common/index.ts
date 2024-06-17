@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './chat-message';
+export * from './chat-request-part';
 export * from './chat-response-parts-delegate';
 export * from './model-provider';
 export * from './chat-response-parts';

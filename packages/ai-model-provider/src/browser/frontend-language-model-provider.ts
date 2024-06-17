@@ -15,7 +15,7 @@
 // *****************************************************************************
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import {
-    ChatMessage,
+    ChatRequestPart,
     ChatResponse,
     ChatResponsePart,
     LanguageModelProvider,
@@ -70,7 +70,7 @@ export class FrontendLanguageModelProvider implements LanguageModelProvider {
         this.streams.delete(state.id);
     }
 
-    async sendRequest(messages: ChatMessage[]): Promise<ChatResponse> {
+    async sendRequest(messages: ChatRequestPart[]): Promise<ChatResponse> {
         const response = await this.delegate.sendRequest(messages);
         return response.map<ChatResponsePart>(responsePart => {
             if (isTextStreamChatResponsePartDelegate(responsePart)) {

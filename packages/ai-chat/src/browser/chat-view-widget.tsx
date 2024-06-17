@@ -19,7 +19,7 @@ import { nls } from '@theia/core/lib/common/nls';
 import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
 import { ChatInputWidget } from './chat-input-widget';
 import { AgentDispatcher } from '@theia/ai-agent';
-import { ChatMessage, TextChatResponsePart } from '@theia/ai-model-provider/src/common';
+import { ChatRequestPart, TextChatResponsePart } from '@theia/ai-model-provider/src/common';
 
 @injectable()
 export class ChatViewWidget extends BaseWidget {
@@ -65,7 +65,7 @@ export class ChatViewWidget extends BaseWidget {
     private async onQuery(query: string): Promise<void> {
         if (query.length === 0) { return; }
         // send query
-        const queryMessages: ChatMessage[] = [{ actor: 'user', message: query }];
+        const queryMessages: ChatRequestPart[] = [{ actor: 'user', type: 'text', query: query }];
         const queryPart: TextChatResponsePart = { type: 'text', message: query };
         const response = await this.agentDispatcher.sendRequest(queryMessages);
         this.treeWidget.response = [queryPart, ...response];

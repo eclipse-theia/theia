@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ChatMessage, ChatResponse, LanguageModelProvider } from '@theia/ai-model-provider';
+import { ChatRequestPart, ChatResponse, LanguageModelProvider } from '@theia/ai-model-provider';
 import { injectable } from '@theia/core/shared/inversify';
 import OpenAI from 'openai';
 import { ChatCompletionMessageParam } from 'openai/resources';
@@ -23,7 +23,7 @@ import { ChatCompletionMessageParam } from 'openai/resources';
 export class OpenAIModelProvider implements LanguageModelProvider {
     private openai = new OpenAI();
 
-    async sendRequest(messages: ChatMessage[]): Promise<ChatResponse> {
+    async sendRequest(messages: ChatRequestPart[]): Promise<ChatResponse> {
         const stream = await this.openai.chat.completions.create({
             model: 'gpt-3.5-turbo',
             messages: messages.map(this.toOpenAIMessage),
@@ -45,12 +45,12 @@ export class OpenAIModelProvider implements LanguageModelProvider {
         }];
     }
 
-    private toOpenAIMessage(message: ChatMessage): ChatCompletionMessageParam {
+    private toOpenAIMessage(message: ChatRequestPart): ChatCompletionMessageParam {
         if (message.actor === 'ai') {
-            return { role: 'assistant', content: message.message };
+            return { role: 'assistant', content: message.query };
         }
         if (message.actor === 'user') {
-            return { role: 'user', content: message.message };
+            return { role: 'user', content: message.query };
         }
         return { role: 'system', content: '' };
     }
