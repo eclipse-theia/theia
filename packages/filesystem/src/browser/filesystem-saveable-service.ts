@@ -16,7 +16,7 @@
 
 import { environment, MessageService, nls } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { Navigatable, Saveable, SaveableSource, SaveOptions, Widget, open, OpenerService, ConfirmDialog, CommonCommands } from '@theia/core/lib/browser';
+import { Navigatable, Saveable, SaveableSource, SaveOptions, Widget, open, OpenerService, ConfirmDialog, CommonCommands, LabelProvider } from '@theia/core/lib/browser';
 import { SaveableService } from '@theia/core/lib/browser/saveable-service';
 import URI from '@theia/core/lib/common/uri';
 import { FileService } from './file-service';
@@ -33,6 +33,8 @@ export class FilesystemSaveableService extends SaveableService {
     protected readonly fileDialogService: FileDialogService;
     @inject(OpenerService)
     protected readonly openerService: OpenerService;
+    @inject(LabelProvider)
+    protected readonly labelProvider: LabelProvider;
 
     /**
      * This method ensures a few things about `widget`:
@@ -76,7 +78,7 @@ export class FilesystemSaveableService extends SaveableService {
             return this.save(sourceWidget, options);
         } else if (selected) {
             try {
-                await this.copyAndSave(sourceWidget, selected, overwrite);
+                await this.saveSnapshot(sourceWidget, selected, overwrite);
                 return selected;
             } catch (e) {
                 console.warn(e);
@@ -85,11 +87,14 @@ export class FilesystemSaveableService extends SaveableService {
     }
 
     /**
+     * Saves the current snapshot of the {@link sourceWidget} to the target file
+     * and replaces the widget with a new one that contains the snapshot content
+     *
      * @param sourceWidget widget to save as `target`.
      * @param target The new URI for the widget.
      * @param overwrite
      */
-    protected async copyAndSave(sourceWidget: Widget & SaveableSource & Navigatable, target: URI, overwrite: boolean): Promise<void> {
+    protected async saveSnapshot(sourceWidget: Widget & SaveableSource & Navigatable, target: URI, overwrite: boolean): Promise<void> {
         const saveable = sourceWidget.saveable;
         const snapshot = saveable.createSnapshot!();
         const content = Saveable.Snapshot.read(snapshot) ?? '';
@@ -101,8 +106,7 @@ export class FilesystemSaveableService extends SaveableService {
             await this.fileService.create(target, content, { overwrite });
         }
         await saveable.revert!();
-        sourceWidget.close();
-        await open(this.openerService, target, { widgetOptions: { ref: sourceWidget } });
+        await open(this.openerService, target, { widgetOptions: { ref: sourceWidget, mode: 'tab-replace' } });
     }
 
     async confirmOverwrite(uri: URI): Promise<boolean> {
@@ -113,7 +117,7 @@ export class FilesystemSaveableService extends SaveableService {
         // Prompt users for confirmation before overwriting.
         const confirmed = await new ConfirmDialog({
             title: nls.localizeByDefault('Overwrite'),
-            msg: nls.localizeByDefault('{0} already exists. Are you sure you want to overwrite it?', uri.path.fsPath())
+            msg: nls.localizeByDefault('{0} already exists. Are you sure you want to overwrite it?', this.labelProvider.getName(uri))
         }).open();
         return !!confirmed;
     }
