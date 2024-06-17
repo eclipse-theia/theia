@@ -651,7 +651,7 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
     }
 
     applySnapshot(snapshot: Saveable.Snapshot): void {
-        const value = 'value' in snapshot ? snapshot.value : snapshot.read() ?? '';
+        const value = Saveable.Snapshot.read(snapshot) ?? '';
         this.model.setValue(value);
     }
 
