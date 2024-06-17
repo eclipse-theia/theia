@@ -32,12 +32,14 @@ import { PreferenceOpenHandler } from './preference-open-handler';
 import { CliPreferences, CliPreferencesPath } from '../common/cli-preferences';
 import { ServiceConnectionProvider } from '@theia/core/lib/browser/messaging/service-connection-provider';
 import { PreferenceFrontendContribution } from './preference-frontend-contribution';
+import { PreferenceLayoutProvider } from './util/preference-layout';
 
 export function bindPreferences(bind: interfaces.Bind, unbind: interfaces.Unbind): void {
     bindPreferenceProviders(bind, unbind);
     bindPreferencesWidgets(bind);
 
     bind(PreferenceTreeGenerator).toSelf().inSingletonScope();
+    bind(PreferenceLayoutProvider).toSelf().inSingletonScope();
 
     bindViewContribution(bind, PreferencesContribution);
 
