@@ -235,6 +235,11 @@ export const DEFAULT_LAYOUT: PreferenceLayout[] = [
                 settings: ['timeline.*']
             },
             {
+                id: 'features.toolbar',
+                label: nls.localize('theia/preferences/toolbar', 'Toolbar'),
+                settings: ['toolbar.*']
+            },
+            {
                 id: 'features.notebook',
                 label: nls.localizeByDefault('Notebook'),
                 settings: ['notebook.*', 'interactiveWindow.*']
