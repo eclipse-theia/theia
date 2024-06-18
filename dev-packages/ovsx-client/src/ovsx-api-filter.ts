@@ -68,15 +68,15 @@ export class OVSXApiFilterImpl implements OVSXApiFilter {
     protected async queryLatestCompatibleExtension(query: VSXQueryOptions): Promise<VSXExtensionRaw | undefined> {
         let offset = 0;
         const size = 100;
-        let flag = true;
-        while (flag) {
+        let loop = true;
+        while (loop) {
             const queryOptions = {
                 ...query,
                 offset
             };
             offset += size;
             const results = await this.client.query(queryOptions);
-            flag = results.totalSize < offset;
+            loop = results.totalSize > offset;
             const compatibleExtension = this.getLatestCompatibleExtension(results.extensions);
             if (compatibleExtension) {
                 return compatibleExtension;

@@ -262,8 +262,9 @@ export class VSXExtensionsModel {
 
     protected async fetchVerifiedStatus(id: string, client: OVSXClient, allVersions: VSXAllVersions): Promise<boolean | undefined> {
         const res = await client.query({ extensionId: id, extensionVersion: allVersions.version, includeAllVersions: true });
-        let verified = res.extensions?.[0].verified;
-        if (!verified && res.extensions?.[0].publishedBy.loginName === 'open-vsx') {
+        const extension = res.extensions?.[0];
+        let verified = extension?.verified;
+        if (!verified && extension?.publishedBy.loginName === 'open-vsx') {
             verified = true;
         }
         return verified;
