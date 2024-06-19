@@ -37,4 +37,6 @@ export const isTextStreamChatResponsePart = (obj: unknown): obj is TextStreamCha
     !!(isChatResponsePart(obj) && obj.type === 'text-stream' && 'stream' in obj && (obj as { stream: unknown }).stream !== undefined);
 
 export type ChatResponsePart = BaseChatResponsePart | TextChatResponsePart | TextStreamChatResponsePart;
-export type ChatResponse = ChatResponsePart[];
+export interface ChatResponse {
+    parts: ChatResponsePart[];
+}

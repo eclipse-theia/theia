@@ -18,8 +18,7 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { nls } from '@theia/core/lib/common/nls';
 import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
 import { ChatInputWidget } from './chat-input-widget';
-import { AgentDispatcher } from '@theia/ai-agent';
-import { ChatRequestPart, TextChatResponsePart } from '@theia/ai-model-provider/src/common';
+import { AgentDispatcher, ChatRequestPart, TextChatResponsePart } from '@theia/ai-agent';
 
 @injectable()
 export class ChatViewWidget extends BaseWidget {
@@ -67,8 +66,9 @@ export class ChatViewWidget extends BaseWidget {
         // send query
         const queryMessages: ChatRequestPart[] = [{ actor: 'user', type: 'text', query: query }];
         const queryPart: TextChatResponsePart = { type: 'text', message: query };
-        const response = await this.agentDispatcher.sendRequest(queryMessages);
-        this.treeWidget.response = [queryPart, ...response];
+        const response = await this.agentDispatcher.sendRequest({ messages: queryMessages });
+        this.treeWidget.response = { parts: [queryPart, ...response.parts] };
+        this.treeWidget.update();
     }
 
 }

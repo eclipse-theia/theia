@@ -18,8 +18,7 @@ import * as React from '@theia/core/shared/react';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { nls } from '@theia/core/lib/common/nls';
 import { AIChat } from './ai-chat';
-import { ChatRequestPart, isTextStreamChatResponsePart } from '@theia/ai-model-provider';
-import { AgentDispatcher } from '@theia/ai-agent';
+import { AgentDispatcher, ChatRequestPart, isTextStreamChatResponsePart } from '@theia/ai-agent';
 
 @injectable()
 export class ChatWidget extends ReactWidget {
@@ -52,15 +51,15 @@ export class ChatWidget extends ReactWidget {
     private async onQuery(query: string): Promise<void> {
         if (query.length === 0) { return; }
         this.chatMessages.push({ actor: 'user', type: 'text', query: query });
-        const chatResponse = await this.AgentDispatcher.sendRequest(this.chatMessages);
+        const chatResponse = await this.AgentDispatcher.sendRequest({ messages: this.chatMessages });
         // TODO: handle all kinds of messages
-        if (chatResponse?.length > 0 && isTextStreamChatResponsePart(chatResponse[0])) {
+        if (chatResponse?.parts?.length > 0 && isTextStreamChatResponsePart(chatResponse?.parts?.[0])) {
             this.chatResponse = {
                 actor: 'ai',
                 type: 'text',
                 query: ''
             };
-            for await (const token of chatResponse[0].stream) {
+            for await (const token of chatResponse?.parts?.[0].stream) {
                 this.chatResponse.query = this.chatResponse.query + token;
                 this.update();
             }

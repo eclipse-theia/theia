@@ -19,5 +19,6 @@ import { OpenAIModelProvider } from './open-ai-model-provider';
 import { LanguageModelProvider } from '@theia/ai-model-provider';
 
 export default new ContainerModule(bind => {
-    bind(LanguageModelProvider).to(OpenAIModelProvider).inSingletonScope();
+    bind(OpenAIModelProvider).toSelf().inSingletonScope();
+    bind(LanguageModelProvider).toService(OpenAIModelProvider);
 });

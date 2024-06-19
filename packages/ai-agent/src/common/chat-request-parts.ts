@@ -13,18 +13,9 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-export type ChatActor = 'user' | 'ai';
 
-export interface ChatRequestPart {
-    actor: ChatActor;
-    type: 'text';
-    query: string;
-}
-export const isChatRequestPart = (obj: unknown): obj is ChatRequestPart =>
-    !!(obj && typeof obj === 'object' &&
-    'type' in obj &&
-    typeof (obj as { type: unknown }).type === 'string' &&
-    (obj as { type: unknown }).type === 'text' &&
-    'query' in obj &&
-    typeof (obj as { query: unknown }).query === 'string'
-);
+import { LanguageModelRequest, LanguageModelRequestMessage } from '@theia/ai-model-provider';
+
+export type ChatRequest = LanguageModelRequest;
+export type ChatRequestPart = LanguageModelRequestMessage;
+export { ChatActor } from '@theia/ai-model-provider';

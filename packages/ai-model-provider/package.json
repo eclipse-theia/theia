@@ -16,8 +16,8 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/model-provider-frontend-module",
-      "backend": "lib/node/model-provider-backend-module"
+      "frontend": "lib/browser/language-model-provider-frontend-module",
+      "backend": "lib/node/language-model-provider-backend-module"
     }
   ],
   "keywords": [

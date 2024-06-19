@@ -15,6 +15,16 @@
 // *****************************************************************************
 
 import {
+    ChatRequestPart,
+    ChatResponse,
+    ChatResponsePart,
+    TextChatResponsePart,
+    TextStreamChatResponsePart,
+    isTextChatResponsePart,
+    isTextStreamChatResponsePart,
+} from '@theia/ai-agent';
+import { isChatRequestPart } from '@theia/ai-model-provider';
+import {
     codicon,
     CompositeTreeNode,
     ContextMenuRenderer,
@@ -23,26 +33,19 @@ import {
     TreeModel,
     TreeNode,
     TreeProps,
-    TreeWidget
+    TreeWidget,
 } from '@theia/core/lib/browser';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import {
+    inject,
+    injectable,
+    postConstruct,
+} from '@theia/core/shared/inversify';
 import { useEffect, useState } from '@theia/core/shared/react';
 import * as React from '@theia/core/shared/react';
 import { v4 as uuid } from 'uuid';
-import {
-    ChatRequestPart,
-    ChatResponse,
-    ChatResponsePart,
-    isChatRequestPart,
-    isTextChatResponsePart,
-    isTextStreamChatResponsePart,
-    TextChatResponsePart,
-    TextStreamChatResponsePart
-} from '@theia/ai-model-provider';
 
 @injectable()
 export class ChatViewTreeWidget extends TreeWidget {
-
     static readonly ID = 'chat-tree-widget';
 
     constructor(
@@ -60,7 +63,7 @@ export class ChatViewTreeWidget extends TreeWidget {
             name: 'ChatRootNode',
             parent: undefined,
             visible: false,
-            children: []
+            children: [],
         } as CompositeTreeNode;
     }
 
@@ -72,18 +75,23 @@ export class ChatViewTreeWidget extends TreeWidget {
         this.addClass('treeContainer');
     }
 
-    private fillPropertiesTree(items: (ChatRequestPart | ChatResponsePart)[]): void {
-        const treeNodes = items.map(p => ({
-            id: uuid(),
-            parent: this.model.root as CompositeTreeNode,
-            selected: false,
-            part: p
-        } as ChatPartNode));
+    private fillPropertiesTree(
+        items: (ChatRequestPart | ChatResponsePart)[]
+    ): void {
+        const treeNodes = items.map(
+            p =>
+            ({
+                id: uuid(),
+                parent: this.model.root as CompositeTreeNode,
+                selected: false,
+                part: p,
+            } as ChatPartNode)
+        );
         this.refreshModelChildren(treeNodes);
     }
 
     public set response(response: ChatResponse) {
-        this.fillPropertiesTree(response);
+        this.fillPropertiesTree(response.parts);
     }
 
     /**
@@ -96,7 +104,10 @@ export class ChatViewTreeWidget extends TreeWidget {
         }
     }
 
-    protected override renderNode(node: TreeNode, props: NodeProps): React.ReactNode {
+    protected override renderNode(
+        node: TreeNode,
+        props: NodeProps
+    ): React.ReactNode {
         if (!TreeNode.isVisible(node)) {
             return undefined;
         }
@@ -110,24 +121,33 @@ export class ChatViewTreeWidget extends TreeWidget {
             if (isTextStreamChatResponsePart(node.part)) {
                 return this.renderTextStreamChatPart(node.part);
             }
-
         }
         return super.renderNode(node, props);
     }
 
     private renderChatRequestPart(part: ChatRequestPart): React.ReactNode {
-        return <React.Fragment>
-            <div><label className={codicon('account')}></label></div>
-            <div className={'theia-TextChatPartNode'}>{part.query}</div>
-        </React.Fragment>;
+        return (
+            <React.Fragment>
+                <div>
+                    <label className={codicon('account')}></label>
+                </div>
+                <div className={'theia-TextChatPartNode'}>{part.query}</div>
+            </React.Fragment>
+        );
     }
     private renderTextChatPart(part: TextChatResponsePart): React.ReactNode {
-        return <React.Fragment>
-            <div><label className={codicon('copilot')}></label></div>
-            <div className={'theia-TextChatPartNode'}>{part.message}</div>
-        </React.Fragment>;
+        return (
+            <React.Fragment>
+                <div>
+                    <label className={codicon('copilot')}></label>
+                </div>
+                <div className={'theia-TextChatPartNode'}>{part.message}</div>
+            </React.Fragment>
+        );
     }
-    private renderTextStreamChatPart(part: TextStreamChatResponsePart): React.ReactNode {
+    private renderTextStreamChatPart(
+        part: TextStreamChatResponsePart
+    ): React.ReactNode {
         return <TextStreamChatPart stream={part.stream} />;
     }
 }
@@ -143,15 +163,18 @@ const TextStreamChatPart = (props: { stream: AsyncIterable<string> }) => {
     useEffect(() => {
         const parseTokens = async () => {
             for await (const token of props.stream) {
-                const newMessage = message + token;
-                setMessage(newMessage);
+                setMessage(oldMessage => oldMessage + token);
             }
         };
         parseTokens();
-    }, []);
+    }, [props.stream]);
 
-    return <React.Fragment>
-        <div><label className={codicon('copilot')}></label></div>
-        <div className={'theia-TextStreamChatPartNode'}>{message}</div>
-    </React.Fragment>;
+    return (
+        <React.Fragment>
+            <div>
+                <label className={codicon('copilot')}></label>
+            </div>
+            <div className={'theia-TextStreamChatPartNode'}>{message}</div>
+        </React.Fragment>
+    );
 };

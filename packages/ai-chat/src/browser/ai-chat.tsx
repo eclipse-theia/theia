@@ -15,7 +15,7 @@
 // *****************************************************************************
 import * as React from '@theia/core/shared/react';
 import { codicon } from '@theia/core/lib/browser';
-import { ChatActor, ChatRequestPart } from '@theia/ai-model-provider';
+import { ChatActor, ChatRequestPart } from '@theia/ai-agent';
 
 interface AIChatProperties {
     chatMessages: ChatRequestPart[];
