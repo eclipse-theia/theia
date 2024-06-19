@@ -62,6 +62,9 @@ export class NotebookEditorWidgetService {
         }
         this.notebookEditors.set(editor.id, editor);
         this.onNotebookEditorAddEmitter.fire(editor);
+        if (editor.isVisible) {
+            this.notebookEditorFocusChanged(editor, true);
+        }
     }
 
     removeNotebookEditor(editor: NotebookEditorWidget): void {
