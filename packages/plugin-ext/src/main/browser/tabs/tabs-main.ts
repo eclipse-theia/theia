@@ -25,7 +25,6 @@ import { toUriComponents } from '../hierarchy/hierarchy-types-converters';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { DisposableCollection } from '@theia/core';
 import { NotebookEditorWidget } from '@theia/notebook/lib/browser';
-import { ViewColumnService } from '@theia/core/lib/browser/shell/view-column-service';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 
 interface TabInfo {
@@ -50,7 +49,6 @@ export class TabsMainImpl implements TabsMain, Disposable {
     private currentActiveGroup: TabGroupDto;
 
     private tabGroupChanged: boolean = false;
-    private viewColumnService: ViewColumnService;
 
     private readonly defaultTabGroup: TabGroupDto = {
         groupId: 0,
@@ -66,7 +64,6 @@ export class TabsMainImpl implements TabsMain, Disposable {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.TABS_EXT);
 
         this.applicationShell = container.get(ApplicationShell);
-        this.viewColumnService = container.get(ViewColumnService);
         this.createTabsModel();
 
         const tabBars = this.applicationShell.mainPanel.tabBars();
@@ -82,7 +79,6 @@ export class TabsMainImpl implements TabsMain, Disposable {
         );
 
         this.connectToSignal(this.toDisposeOnDestroy, this.applicationShell.mainPanel.widgetAdded, (mainPanel, widget) => {
-            this.viewColumnService.updateViewColumns();
             if (this.tabGroupChanged || this.tabGroupModel.size === 0) {
                 this.tabGroupChanged = false;
                 this.createTabsModel();
@@ -276,7 +272,6 @@ export class TabsMainImpl implements TabsMain, Disposable {
     }
 
     private onTabTitleChanged(title: Title<Widget>): void {
-        this.viewColumnService.updateViewColumns();
         const tabInfo = this.getOrRebuildModel(this.tabInfoLookup, title);
         if (!tabInfo) {
             return;
