@@ -190,7 +190,7 @@ export class NotebookModel implements Saveable, Disposable {
     }
 
     async applySnapshot(snapshot: Saveable.Snapshot): Promise<void> {
-        const rawData = 'read' in snapshot ? snapshot.read() : snapshot.value;
+        const rawData = Saveable.Snapshot.read(snapshot);
         if (!rawData) {
             throw new Error('could not read notebook snapshot');
         }

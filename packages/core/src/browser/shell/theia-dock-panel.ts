@@ -133,11 +133,14 @@ export class TheiaDockPanel extends DockPanel {
         }
     }
 
-    override addWidget(widget: Widget, options?: DockPanel.IAddOptions): void {
+    override addWidget(widget: Widget, options?: TheiaDockPanel.AddOptions): void {
         if (this.mode === 'single-document' && widget.parent === this) {
             return;
         }
         super.addWidget(widget, options);
+        if (options?.closeRef) {
+            options.ref?.close();
+        }
         this.widgetAdded.emit(widget);
         this.markActiveTabBar(widget.title);
     }
@@ -251,5 +254,12 @@ export namespace TheiaDockPanel {
     export const Factory = Symbol('TheiaDockPanel#Factory');
     export interface Factory {
         (options?: DockPanel.IOptions): TheiaDockPanel;
+    }
+
+    export interface AddOptions extends DockPanel.IAddOptions {
+        /**
+         * Whether to also close the widget referenced by `ref`.
+         */
+        closeRef?: boolean
     }
 }

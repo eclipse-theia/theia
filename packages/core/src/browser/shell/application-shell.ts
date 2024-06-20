@@ -960,7 +960,7 @@ export class ApplicationShell extends Widget {
         }
     }
 
-    getInsertionOptions(options?: Readonly<ApplicationShell.WidgetOptions>): { area: string; addOptions: DockLayout.IAddOptions; } {
+    getInsertionOptions(options?: Readonly<ApplicationShell.WidgetOptions>): { area: string; addOptions: TheiaDockPanel.AddOptions; } {
         let ref: Widget | undefined = options?.ref;
         let area: ApplicationShell.Area = options?.area || 'main';
         if (!ref && (area === 'main' || area === 'bottom')) {
@@ -969,7 +969,7 @@ export class ApplicationShell extends Widget {
         }
         // make sure that ref belongs to area
         area = ref && this.getAreaFor(ref) || area;
-        const addOptions: DockPanel.IAddOptions = {};
+        const addOptions: TheiaDockPanel.AddOptions = {};
         if (ApplicationShell.isOpenToSideMode(options?.mode)) {
             const areaPanel = area === 'main' ? this.mainPanel : area === 'bottom' ? this.bottomPanel : undefined;
             const sideRef = areaPanel && ref && (options?.mode === 'open-to-left' ?
@@ -981,6 +981,10 @@ export class ApplicationShell extends Widget {
                 addOptions.ref = ref;
                 addOptions.mode = options?.mode === 'open-to-left' ? 'split-left' : 'split-right';
             }
+        } else if (ApplicationShell.isReplaceMode(options?.mode)) {
+            addOptions.ref = options?.ref;
+            addOptions.closeRef = true;
+            addOptions.mode = 'tab-after';
         } else {
             addOptions.ref = ref;
             addOptions.mode = options?.mode;
@@ -2173,6 +2177,15 @@ export namespace ApplicationShell {
     }
 
     /**
+     * Whether the `ref` of the options widget should be replaced.
+     */
+    export type ReplaceMode = 'tab-replace';
+
+    export function isReplaceMode(mode: unknown): mode is ReplaceMode {
+        return mode === 'tab-replace';
+    }
+
+    /**
      * Options for adding a widget to the application shell.
      */
     export interface WidgetOptions extends SidePanel.WidgetOptions {
@@ -2185,7 +2198,7 @@ export namespace ApplicationShell {
          *
          * The default is `'tab-after'`.
          */
-        mode?: DockLayout.InsertMode | OpenToSideMode
+        mode?: DockLayout.InsertMode | OpenToSideMode | ReplaceMode
         /**
          * The reference widget for the insert location.
          *

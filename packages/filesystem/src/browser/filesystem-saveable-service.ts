@@ -16,7 +16,7 @@
 
 import { environment, MessageService, nls } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { Navigatable, Saveable, SaveableSource, SaveOptions, Widget, open, OpenerService, ConfirmDialog, FormatType, CommonCommands } from '@theia/core/lib/browser';
+import { Navigatable, Saveable, SaveableSource, SaveOptions, Widget, open, OpenerService, ConfirmDialog, CommonCommands, LabelProvider } from '@theia/core/lib/browser';
 import { SaveableService } from '@theia/core/lib/browser/saveable-service';
 import URI from '@theia/core/lib/common/uri';
 import { FileService } from './file-service';
@@ -33,6 +33,8 @@ export class FilesystemSaveableService extends SaveableService {
     protected readonly fileDialogService: FileDialogService;
     @inject(OpenerService)
     protected readonly openerService: OpenerService;
+    @inject(LabelProvider)
+    protected readonly labelProvider: LabelProvider;
 
     /**
      * This method ensures a few things about `widget`:
@@ -76,7 +78,7 @@ export class FilesystemSaveableService extends SaveableService {
             return this.save(sourceWidget, options);
         } else if (selected) {
             try {
-                await this.copyAndSave(sourceWidget, selected, overwrite);
+                await this.saveSnapshot(sourceWidget, selected, overwrite);
                 return selected;
             } catch (e) {
                 console.warn(e);
@@ -85,30 +87,26 @@ export class FilesystemSaveableService extends SaveableService {
     }
 
     /**
+     * Saves the current snapshot of the {@link sourceWidget} to the target file
+     * and replaces the widget with a new one that contains the snapshot content
+     *
      * @param sourceWidget widget to save as `target`.
      * @param target The new URI for the widget.
      * @param overwrite
      */
-    private async copyAndSave(sourceWidget: Widget & SaveableSource & Navigatable, target: URI, overwrite: boolean): Promise<void> {
-        const snapshot = sourceWidget.saveable.createSnapshot!();
-        if (!await this.fileService.exists(target)) {
-            const sourceUri = sourceWidget.getResourceUri()!;
-            if (this.fileService.canHandleResource(sourceUri)) {
-                await this.fileService.copy(sourceUri, target, { overwrite });
-            } else {
-                await this.fileService.createFile(target);
-            }
-        }
-        const targetWidget = await open(this.openerService, target, { widgetOptions: { ref: sourceWidget } });
-        const targetSaveable = Saveable.get(targetWidget);
-        if (targetWidget && targetSaveable && targetSaveable.applySnapshot) {
-            targetSaveable.applySnapshot(snapshot);
-            await sourceWidget.saveable.revert!();
-            sourceWidget.close();
-            Saveable.save(targetWidget, { formatType: FormatType.ON });
+    protected async saveSnapshot(sourceWidget: Widget & SaveableSource & Navigatable, target: URI, overwrite: boolean): Promise<void> {
+        const saveable = sourceWidget.saveable;
+        const snapshot = saveable.createSnapshot!();
+        const content = Saveable.Snapshot.read(snapshot) ?? '';
+        if (await this.fileService.exists(target)) {
+            // Do not fire the `onDidCreate` event as the file already exists.
+            await this.fileService.write(target, content);
         } else {
-            this.messageService.error(nls.localize('theia/workspace/failApply', 'Could not apply changes to new file'));
+            // Ensure to actually call `create` as that fires the `onDidCreate` event.
+            await this.fileService.create(target, content, { overwrite });
         }
+        await saveable.revert!();
+        await open(this.openerService, target, { widgetOptions: { ref: sourceWidget, mode: 'tab-replace' } });
     }
 
     async confirmOverwrite(uri: URI): Promise<boolean> {
@@ -119,7 +117,7 @@ export class FilesystemSaveableService extends SaveableService {
         // Prompt users for confirmation before overwriting.
         const confirmed = await new ConfirmDialog({
             title: nls.localizeByDefault('Overwrite'),
-            msg: nls.localizeByDefault('{0} already exists. Are you sure you want to overwrite it?', uri.toString())
+            msg: nls.localizeByDefault('{0} already exists. Are you sure you want to overwrite it?', this.labelProvider.getName(uri))
         }).open();
         return !!confirmed;
     }

@@ -46,7 +46,7 @@ export interface Saveable {
      */
     revert?(options?: Saveable.RevertOptions): Promise<void>;
     /**
-     * Creates a snapshot of the dirty state.
+     * Creates a snapshot of the dirty state. See also {@link Saveable.Snapshot}.
      */
     createSnapshot?(): Saveable.Snapshot;
     /**
@@ -114,7 +114,15 @@ export namespace Saveable {
         soft?: boolean
     }
 
+    /**
+     * A snapshot of a saveable item. Contains the full content of the saveable file in a string serializable format.
+     */
     export type Snapshot = { value: string } | { read(): string | null };
+    export namespace Snapshot {
+        export function read(snapshot: Snapshot): string | undefined {
+            return 'value' in snapshot ? snapshot.value : (snapshot.read() ?? undefined);
+        }
+    }
     export function isSource(arg: unknown): arg is SaveableSource {
         return isObject<SaveableSource>(arg) && is(arg.saveable);
     }

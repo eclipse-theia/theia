@@ -6,7 +6,11 @@
 
 <!-- ## not yet released
 
-<a name="breaking_changes_not_yet_released">[Breaking Changes:](#breaking_changes_not_yet_released)</a> -->
+<a name="breaking_changes_not_yet_released">[Breaking Changes:](#breaking_changes_not_yet_released)</a> 
+
+- [filesystem] Adjusted the "Save As" mechanism. It now assumes that `Saveable.getSnapshot()` returns a full snapshot of the editor model [#13689](https://github.com/eclipse-theia/theia/pull/13689). 
+
+-->
 
 ## 1.50.0 - 06/03/2024
 
