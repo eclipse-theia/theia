@@ -135,7 +135,9 @@ export class RpcInvocationHandler {
     }
 
     protected onNotification(method: string, args: any[]): void {
-        this.target[method](...args);
+        this.rpcDeferred.promise.then(() => {
+            this.target[method](...args);
+        });
     }
 }
 
