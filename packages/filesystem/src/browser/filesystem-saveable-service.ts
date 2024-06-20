@@ -21,6 +21,7 @@ import { SaveableService } from '@theia/core/lib/browser/saveable-service';
 import URI from '@theia/core/lib/common/uri';
 import { FileService } from './file-service';
 import { FileDialogService } from './file-dialog';
+import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 
 @injectable()
 export class FilesystemSaveableService extends SaveableService {
@@ -39,13 +40,13 @@ export class FilesystemSaveableService extends SaveableService {
     /**
      * This method ensures a few things about `widget`:
      * - `widget.getResourceUri()` actually returns a URI.
-     * - `widget.saveable.createSnapshot` is defined.
+     * - `widget.saveable.createSnapshot` or `widget.saveable.serialize` is defined.
      * - `widget.saveable.revert` is defined.
      */
     override canSaveAs(widget: Widget | undefined): widget is Widget & SaveableSource & Navigatable {
         return widget !== undefined
             && Saveable.isSource(widget)
-            && typeof widget.saveable.createSnapshot === 'function'
+            && (typeof widget.saveable.createSnapshot === 'function' || typeof widget.saveable.serialize === 'function')
             && typeof widget.saveable.revert === 'function'
             && Navigatable.is(widget)
             && widget.getResourceUri() !== undefined;
@@ -96,14 +97,23 @@ export class FilesystemSaveableService extends SaveableService {
      */
     protected async saveSnapshot(sourceWidget: Widget & SaveableSource & Navigatable, target: URI, overwrite: boolean): Promise<void> {
         const saveable = sourceWidget.saveable;
-        const snapshot = saveable.createSnapshot!();
-        const content = Saveable.Snapshot.read(snapshot) ?? '';
+        let buffer: BinaryBuffer;
+        if (saveable.serialize) {
+            buffer = await saveable.serialize();
+        } else if (saveable.createSnapshot) {
+            const snapshot = saveable.createSnapshot();
+            const content = Saveable.Snapshot.read(snapshot) ?? '';
+            buffer = BinaryBuffer.fromString(content);
+        } else {
+            throw new Error('Cannot save the widget as the saveable does not provide a snapshot or a serialize method.');
+        }
+
         if (await this.fileService.exists(target)) {
             // Do not fire the `onDidCreate` event as the file already exists.
-            await this.fileService.write(target, content);
+            await this.fileService.writeFile(target, buffer);
         } else {
             // Ensure to actually call `create` as that fires the `onDidCreate` event.
-            await this.fileService.create(target, content, { overwrite });
+            await this.fileService.createFile(target, buffer, { overwrite });
         }
         await saveable.revert!();
         await open(this.openerService, target, { widgetOptions: { ref: sourceWidget, mode: 'tab-replace' } });

@@ -22,6 +22,7 @@ import { Key } from './keyboard/keys';
 import { AbstractDialog } from './dialogs';
 import { nls } from '../common/nls';
 import { DisposableCollection, isObject } from '../common';
+import { BinaryBuffer } from '../common/buffer';
 
 export type AutoSaveMode = 'off' | 'afterDelay' | 'onFocusChange' | 'onWindowChange';
 
@@ -53,6 +54,10 @@ export interface Saveable {
      * Applies the given snapshot to the dirty state.
      */
     applySnapshot?(snapshot: object): void;
+    /**
+     * Serializes the full state of the saveable item to a binary buffer.
+     */
+    serialize?(): Promise<BinaryBuffer>;
 }
 
 export interface SaveableSource {
@@ -79,6 +84,7 @@ export class DelegatingSaveable implements Saveable {
     revert?(options?: Saveable.RevertOptions): Promise<void>;
     createSnapshot?(): Saveable.Snapshot;
     applySnapshot?(snapshot: object): void;
+    serialize?(): Promise<BinaryBuffer>;
 
     protected _delegate?: Saveable;
     protected toDispose = new DisposableCollection();
@@ -101,6 +107,7 @@ export class DelegatingSaveable implements Saveable {
         this.revert = delegate.revert?.bind(delegate);
         this.createSnapshot = delegate.createSnapshot?.bind(delegate);
         this.applySnapshot = delegate.applySnapshot?.bind(delegate);
+        this.serialize = delegate.serialize?.bind(delegate);
     }
 
 }
@@ -115,7 +122,8 @@ export namespace Saveable {
     }
 
     /**
-     * A snapshot of a saveable item. Contains the full content of the saveable file in a string serializable format.
+     * A snapshot of a saveable item.
+     * Applying a snapshot of a saveable on another (of the same type) using the `applySnapshot` should yield the state of the original saveable.
      */
     export type Snapshot = { value: string } | { read(): string | null };
     export namespace Snapshot {
