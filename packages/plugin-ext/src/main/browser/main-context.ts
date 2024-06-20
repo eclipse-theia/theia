@@ -87,7 +87,10 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
     const preferenceRegistryMain = new PreferenceRegistryMainImpl(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.PREFERENCE_REGISTRY_MAIN, preferenceRegistryMain);
 
-    const editorsAndDocuments = new EditorsAndDocumentsMain(rpc, container);
+    const tabsMain = new TabsMainImpl(rpc, container);
+    rpc.set(PLUGIN_RPC_CONTEXT.TABS_MAIN, tabsMain);
+
+    const editorsAndDocuments = new EditorsAndDocumentsMain(rpc, container, tabsMain);
 
     const notebookDocumentsMain = new NotebookDocumentsMainImpl(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_MAIN, notebookDocumentsMain);
@@ -197,9 +200,6 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
 
     const commentsMain = new CommentsMainImp(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.COMMENTS_MAIN, commentsMain);
-
-    const tabsMain = new TabsMainImpl(rpc, container);
-    rpc.set(PLUGIN_RPC_CONTEXT.TABS_MAIN, tabsMain);
 
     const localizationMain = new LocalizationMainImpl(container);
     rpc.set(PLUGIN_RPC_CONTEXT.LOCALIZATION_MAIN, localizationMain);

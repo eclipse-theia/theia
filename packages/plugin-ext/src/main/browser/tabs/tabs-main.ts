@@ -25,7 +25,7 @@ import { toUriComponents } from '../hierarchy/hierarchy-types-converters';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { DisposableCollection } from '@theia/core';
 import { NotebookEditorWidget } from '@theia/notebook/lib/browser';
-import { ViewColumnService } from '@theia/core/lib/browser/shell/view-column-service';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 
 interface TabInfo {
     tab: TabDto;
@@ -38,17 +38,17 @@ export class TabsMainImpl implements TabsMain, Disposable {
     private readonly proxy: TabsExt;
     private tabGroupModel = new Map<TabBar<Widget>, TabGroupDto>();
     private tabInfoLookup = new Map<Title<Widget>, TabInfo>();
+    private waitQueue = new Map<Widget, Deferred>();
 
     private applicationShell: ApplicationShell;
 
     private disposableTabBarListeners: DisposableCollection = new DisposableCollection();
     private toDisposeOnDestroy: DisposableCollection = new DisposableCollection();
 
-    private groupIdCounter = 0;
+    private groupIdCounter = 1;
     private currentActiveGroup: TabGroupDto;
 
     private tabGroupChanged: boolean = false;
-    private viewColumnService: ViewColumnService;
 
     private readonly defaultTabGroup: TabGroupDto = {
         groupId: 0,
@@ -64,11 +64,10 @@ export class TabsMainImpl implements TabsMain, Disposable {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.TABS_EXT);
 
         this.applicationShell = container.get(ApplicationShell);
-        this.viewColumnService = container.get(ViewColumnService);
         this.createTabsModel();
 
         const tabBars = this.applicationShell.mainPanel.tabBars();
-        for (let tabBar; tabBar = tabBars.next();) {
+        for (let tabBar: TabBar<Widget> | undefined; tabBar = tabBars.next();) {
             this.attachListenersToTabBar(tabBar);
         }
 
@@ -110,6 +109,21 @@ export class TabsMainImpl implements TabsMain, Disposable {
         });
     }
 
+    waitForWidget(widget: Widget): Promise<void> {
+        const deferred = new Deferred<void>();
+        this.waitQueue.set(widget, deferred);
+
+        const timeout = setTimeout(() => {
+            deferred.resolve(); // resolve to unblock the event
+        }, 1000);
+
+        deferred.promise.then(() => {
+            clearTimeout(timeout);
+        });
+
+        return deferred.promise;
+    }
+
     protected createTabsModel(): void {
         if (this.applicationShell.mainAreaTabBars.length === 0) {
             this.proxy.$acceptEditorTabModel([this.defaultTabGroup]);
@@ -119,9 +133,9 @@ export class TabsMainImpl implements TabsMain, Disposable {
         this.tabInfoLookup.clear();
         this.disposableTabBarListeners.dispose();
         this.applicationShell.mainAreaTabBars
-            .forEach((tabBar, i) => {
+            .forEach(tabBar => {
                 this.attachListenersToTabBar(tabBar);
-                const groupDto = this.createTabGroupDto(tabBar, i);
+                const groupDto = this.createTabGroupDto(tabBar);
                 tabBar.titles.forEach((title, index) => this.tabInfoLookup.set(title, { group: groupDto, tab: groupDto.tabs[index], tabIndex: index }));
                 newTabGroupModel.set(tabBar, groupDto);
             });
@@ -131,31 +145,38 @@ export class TabsMainImpl implements TabsMain, Disposable {
         }
         this.tabGroupModel = newTabGroupModel;
         this.proxy.$acceptEditorTabModel(Array.from(this.tabGroupModel.values()));
+        // Resolve all waiting widget promises
+        this.waitQueue.forEach(deferred => deferred.resolve());
+        this.waitQueue.clear();
     }
 
-    protected createTabDto(tabTitle: Title<Widget>, groupId: number): TabDto {
+    protected createTabDto(tabTitle: Title<Widget>, groupId: number, newTab = false): TabDto {
         const widget = tabTitle.owner;
+        const active = newTab || this.getTabBar(tabTitle)?.currentTitle === tabTitle;
         return {
             id: this.createTabId(tabTitle, groupId),
             label: tabTitle.label,
             input: this.evaluateTabDtoInput(widget),
-            isActive: tabTitle.owner.isVisible,
+            isActive: active,
             isPinned: tabTitle.className.includes(PINNED_CLASS),
             isDirty: Saveable.isDirty(widget),
             isPreview: widget instanceof EditorPreviewWidget && widget.isPreview
         };
     }
 
+    protected getTabBar(tabTitle: Title<Widget>): TabBar<Widget> | undefined {
+        return this.applicationShell.mainPanel.findTabBar(tabTitle);
+    }
+
     protected createTabId(tabTitle: Title<Widget>, groupId: number): string {
         return `${groupId}~${tabTitle.owner.id}`;
     }
 
-    protected createTabGroupDto(tabBar: TabBar<Widget>, index: number): TabGroupDto {
-        const oldDto = index === 0 ? this.defaultTabGroup : this.tabGroupModel.get(tabBar);
+    protected createTabGroupDto(tabBar: TabBar<Widget>): TabGroupDto {
+        const oldDto = this.tabGroupModel.get(tabBar);
         const groupId = oldDto?.groupId ?? this.groupIdCounter++;
         const tabs = tabBar.titles.map(title => this.createTabDto(title, groupId));
-        const viewColumn = this.viewColumnService.getViewColumn(tabBar.id)
-            ?? this.applicationShell.allTabBars.indexOf(tabBar);
+        const viewColumn = 0; // TODO: Implement correct viewColumn handling
         return {
             groupId,
             tabs,
@@ -190,7 +211,6 @@ export class TabsMainImpl implements TabsMain, Disposable {
                     uri: toUriComponents(widget.editor.uri.toString())
                 };
             }
-            // TODO notebook support when implemented
         } else if (widget instanceof ViewContainer) {
             return {
                 kind: TabInputKind.WebviewEditorInput,
@@ -238,7 +258,7 @@ export class TabsMainImpl implements TabsMain, Disposable {
     private onTabCreated(tabBar: TabBar<Widget>, args: TabBar.ITabActivateRequestedArgs<Widget>): void {
         const group = this.getOrRebuildModel(this.tabGroupModel, tabBar);
         this.connectToSignal(this.disposableTabBarListeners, args.title.changed, this.onTabTitleChanged);
-        const tabDto = this.createTabDto(args.title, group.groupId);
+        const tabDto = this.createTabDto(args.title, group.groupId, true);
         this.tabInfoLookup.set(args.title, { group, tab: tabDto, tabIndex: args.index });
         group.tabs.splice(args.index, 0, tabDto);
         this.proxy.$acceptTabOperation({
@@ -247,6 +267,8 @@ export class TabsMainImpl implements TabsMain, Disposable {
             tabDto,
             groupId: group.groupId
         });
+        this.waitQueue.get(args.title.owner)?.resolve();
+        this.waitQueue.delete(args.title.owner);
     }
 
     private onTabTitleChanged(title: Title<Widget>): void {
@@ -275,6 +297,8 @@ export class TabsMainImpl implements TabsMain, Disposable {
                 groupId: tabInfo.group.groupId
             });
         }
+        this.waitQueue.get(title.owner)?.resolve();
+        this.waitQueue.delete(title.owner);
     }
 
     private onTabClosed(tabInfo: TabInfo, title: Title<Widget>): void {

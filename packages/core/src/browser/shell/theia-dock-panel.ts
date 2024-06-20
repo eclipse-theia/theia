@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { find, toArray, ArrayExt } from '@phosphor/algorithm';
+import { find, toArray } from '@phosphor/algorithm';
 import { TabBar, Widget, DockPanel, Title, DockLayout } from '@phosphor/widgets';
 import { Signal } from '@phosphor/signaling';
 import { Disposable, DisposableCollection } from '../../common/disposable';
@@ -103,7 +103,7 @@ export class TheiaDockPanel extends DockPanel {
     }
 
     findTabBar(title: Title<Widget>): TabBar<Widget> | undefined {
-        return find(this.tabBars(), bar => ArrayExt.firstIndexOf(bar.titles, title) > -1);
+        return find(this.tabBars(), bar => bar.titles.includes(title));
     }
 
     protected readonly toDisposeOnMarkAsCurrent = new DisposableCollection();
