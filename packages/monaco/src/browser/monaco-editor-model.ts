@@ -33,6 +33,7 @@ import { IModelService } from '@theia/monaco-editor-core/esm/vs/editor/common/se
 import { createTextBufferFactoryFromStream } from '@theia/monaco-editor-core/esm/vs/editor/common/model/textModel';
 import { editorGeneratedPreferenceProperties } from '@theia/editor/lib/browser/editor-generated-preference-schema';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
+import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 
 export {
     TextDocumentSaveReason
@@ -653,6 +654,10 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
     applySnapshot(snapshot: Saveable.Snapshot): void {
         const value = Saveable.Snapshot.read(snapshot) ?? '';
         this.model.setValue(value);
+    }
+
+    async serialize(): Promise<BinaryBuffer> {
+        return BinaryBuffer.fromString(this.model.getValue());
     }
 
     protected trace(loggable: Loggable): void {

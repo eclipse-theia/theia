@@ -34,6 +34,7 @@ import { inject, injectable, interfaces, postConstruct } from '@theia/core/share
 import { UndoRedoService } from '@theia/editor/lib/browser/undo-redo-service';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import type { NotebookModelResolverService } from '../service/notebook-model-resolver-service';
+import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 
 export const NotebookModelFactory = Symbol('NotebookModelFactory');
 
@@ -176,8 +177,7 @@ export class NotebookModel implements Saveable, Disposable {
         this.dirtyCells = [];
         this.dirty = false;
 
-        const data = this.getData();
-        const serializedNotebook = await this.props.serializer.fromNotebook(data);
+        const serializedNotebook = await this.serialize();
         this.fileService.writeFile(this.uri, serializedNotebook);
 
         this.onDidSaveNotebookEmitter.fire();
@@ -187,6 +187,10 @@ export class NotebookModel implements Saveable, Disposable {
         return {
             read: () => JSON.stringify(this.getData())
         };
+    }
+
+    serialize(): Promise<BinaryBuffer> {
+        return this.props.serializer.fromNotebook(this.getData());
     }
 
     async applySnapshot(snapshot: Saveable.Snapshot): Promise<void> {
