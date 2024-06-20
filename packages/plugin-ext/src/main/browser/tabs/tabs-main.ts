@@ -119,7 +119,6 @@ export class TabsMainImpl implements TabsMain, Disposable {
 
         deferred.promise.then(() => {
             clearTimeout(timeout);
-            this.waitQueue.delete(widget);
         });
 
         return deferred.promise;
@@ -269,6 +268,7 @@ export class TabsMainImpl implements TabsMain, Disposable {
             groupId: group.groupId
         });
         this.waitQueue.get(args.title.owner)?.resolve();
+        this.waitQueue.delete(args.title.owner);
     }
 
     private onTabTitleChanged(title: Title<Widget>): void {
@@ -298,6 +298,7 @@ export class TabsMainImpl implements TabsMain, Disposable {
             });
         }
         this.waitQueue.get(title.owner)?.resolve();
+        this.waitQueue.delete(title.owner);
     }
 
     private onTabClosed(tabInfo: TabInfo, title: Title<Widget>): void {
