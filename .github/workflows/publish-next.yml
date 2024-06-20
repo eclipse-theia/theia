@@ -39,9 +39,16 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9
 
       - name: Publish NPM
-        shell: bash
-        run: |
-          yarn publish:next
+        # We need to retry the publish command in case of network errors.
+        # Those errors are usually due to rate limiting on the NPM registry.
+        uses: nick-invision/retry@7152eba30c6575329ac0576536151aca5a72780e # v3.0.0
+        with:
+          timeout_minutes: 5
+          retry_wait_seconds: 30
+          max_attempts: 3
+          retry_on: error
+          command: yarn publish:next
+          on_retry_command: git reset --hard
         env:
           NPM_CONFIG_PROVENANCE: "true"
           NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
