@@ -345,7 +345,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                 const iconClasses: string[] = [];
                 iconClasses.push(iconClass.id);
                 if (iconClass.color) {
-                    this.styleElement = DecorationStyle.createStyleElement('');
+                    this.styleElement = DecorationStyle.createStyleElement(`${this.terminalId}-terminal-style`);
                     const classId = 'terminal-icon-' + generateUuid().replace(/-/g, '');
                     const color = this.colorRegistry.getCurrentColor(iconClass.color.id);
                     this.styleElement.textContent = `
