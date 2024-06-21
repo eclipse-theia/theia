@@ -26,6 +26,7 @@ import { DisposableCollection, OS } from '@theia/core';
 import { NotebookViewportService } from './notebook-viewport-service';
 import { BareFontInfo } from '@theia/monaco-editor-core/esm/vs/editor/common/config/fontInfo';
 import { NOTEBOOK_CELL_CURSOR_FIRST_LINE, NOTEBOOK_CELL_CURSOR_LAST_LINE } from '../contributions/notebook-context-keys';
+import { EditorExtensionsRegistry } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorExtensions';
 
 interface CellEditorProps {
     notebookModel: NotebookModel,
@@ -117,7 +118,8 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
                 editorNode,
                 monacoServices,
                 { ...DEFAULT_EDITOR_OPTIONS, ...cell.editorOptions },
-                [[IContextKeyService, this.props.notebookContextManager.scopedStore]]);
+                [[IContextKeyService, this.props.notebookContextManager.scopedStore]],
+                { contributions: EditorExtensionsRegistry.getEditorContributions().filter(c => c.id !== 'editor.contrib.findController') });
             this.toDispose.push(this.editor);
             this.editor.setLanguage(cell.language);
             this.toDispose.push(this.editor.getControl().onDidContentSizeChange(() => {
