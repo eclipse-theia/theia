@@ -133,6 +133,7 @@ export interface AuthenticationService {
     readonly onDidUnregisterAuthenticationProvider: Event<AuthenticationProviderInformation>;
 
     readonly onDidChangeSessions: Event<{ providerId: string, label: string, event: AuthenticationProviderAuthenticationSessionsChangeEvent }>;
+    readonly onDidUpdateSignInCount: Event<number>;
     getSessions(providerId: string, scopes?: string[]): Promise<ReadonlyArray<AuthenticationSession>>;
     getLabel(providerId: string): string;
     supportsMultipleAccounts(providerId: string): boolean;
@@ -157,14 +158,17 @@ export class AuthenticationServiceImpl implements AuthenticationService {
 
     protected authenticationProviders: Map<string, AuthenticationProvider> = new Map<string, AuthenticationProvider>();
 
-    private onDidRegisterAuthenticationProviderEmitter: Emitter<AuthenticationProviderInformation> = new Emitter<AuthenticationProviderInformation>();
+    private readonly onDidRegisterAuthenticationProviderEmitter: Emitter<AuthenticationProviderInformation> = new Emitter<AuthenticationProviderInformation>();
     readonly onDidRegisterAuthenticationProvider: Event<AuthenticationProviderInformation> = this.onDidRegisterAuthenticationProviderEmitter.event;
 
-    private onDidUnregisterAuthenticationProviderEmitter: Emitter<AuthenticationProviderInformation> = new Emitter<AuthenticationProviderInformation>();
+    private readonly onDidUnregisterAuthenticationProviderEmitter: Emitter<AuthenticationProviderInformation> = new Emitter<AuthenticationProviderInformation>();
     readonly onDidUnregisterAuthenticationProvider: Event<AuthenticationProviderInformation> = this.onDidUnregisterAuthenticationProviderEmitter.event;
 
-    private onDidChangeSessionsEmitter: Emitter<SessionChangeEvent> = new Emitter<SessionChangeEvent>();
+    private readonly onDidChangeSessionsEmitter: Emitter<SessionChangeEvent> = new Emitter<SessionChangeEvent>();
     readonly onDidChangeSessions: Event<SessionChangeEvent> = this.onDidChangeSessionsEmitter.event;
+
+    private readonly onDidChangeSignInCountEmitter: Emitter<number> = new Emitter<number>();
+    readonly onDidUpdateSignInCount: Event<number> = this.onDidChangeSignInCountEmitter.event;
 
     @inject(MenuModelRegistry) protected readonly menus: MenuModelRegistry;
     @inject(CommandRegistry) protected readonly commands: CommandRegistry;
@@ -295,6 +299,7 @@ export class AuthenticationServiceImpl implements AuthenticationService {
             return;
         }
 
+        const previousSize = this.signInRequestItems.size;
         const sessions = await provider.getSessions();
         Object.keys(existingRequestsForProvider).forEach(requestedScopes => {
             if (sessions.some(session => session.scopes.slice().sort().join('') === requestedScopes)) {
@@ -311,6 +316,9 @@ export class AuthenticationServiceImpl implements AuthenticationService {
                 }
             }
         });
+        if (previousSize !== this.signInRequestItems.size) {
+            this.onDidChangeSignInCountEmitter.fire(this.signInRequestItems.size);
+        }
     }
 
     async requestNewSession(providerId: string, scopes: string[], extensionId: string, extensionName: string): Promise<void> {
@@ -341,7 +349,7 @@ export class AuthenticationServiceImpl implements AuthenticationService {
             }
 
             const menuItem = this.menus.registerMenuAction(ACCOUNTS_SUBMENU, {
-                label: `Sign in to use ${extensionName} (1)`,
+                label: nls.localizeByDefault('Sign in with {0} to use {1} (1)', provider.label, extensionName),
                 order: '1',
                 commandId: `${extensionId}signIn`,
             });
@@ -362,6 +370,7 @@ export class AuthenticationServiceImpl implements AuthenticationService {
                 }
             });
 
+            const previousSize = this.signInRequestItems.size;
             if (providerRequests) {
                 const existingRequest = providerRequests[scopesList] || { disposables: [], requestingExtensionIds: [] };
 
@@ -377,6 +386,9 @@ export class AuthenticationServiceImpl implements AuthenticationService {
                         requestingExtensionIds: [extensionId]
                     }
                 });
+            }
+            if (previousSize !== this.signInRequestItems.size) {
+                this.onDidChangeSignInCountEmitter.fire(this.signInRequestItems.size);
             }
         }
     }

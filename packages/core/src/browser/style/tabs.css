@@ -305,7 +305,7 @@
   display: none !important;
 }
 
-.p-TabBar .theia-badge-decorator-sidebar {
+.theia-badge-decorator-sidebar {
   background-color: var(--theia-activityBarBadge-background);
   border-radius: 20px;
   color: var(--theia-activityBarBadge-foreground);
