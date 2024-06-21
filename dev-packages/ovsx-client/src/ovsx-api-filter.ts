@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as semver from 'semver';
-import { OVSXClient, VSXAllVersions, VSXBuiltinNamespaces, VSXExtensionRaw, VSXQueryOptions, VSXSearchEntry, VSXTargetPlatform } from './ovsx-types';
+import { OVSXClient, VSXAllVersions, VSXBuiltinNamespaces, VSXExtensionRaw, VSXQueryOptions, VSXSearchEntry } from './ovsx-types';
 
 export const OVSXApiFilterProvider = Symbol('OVSXApiFilterProvider');
 
@@ -36,7 +36,7 @@ export interface OVSXApiFilter {
      * @param extensionId the extension id.
      * @returns the data for the latest compatible extension version if available, else `undefined`.
      */
-    getLatestCompatibleExtension(extensions: VSXExtensionRaw[], targetPlatform?: VSXTargetPlatform): VSXExtensionRaw | undefined;
+    getLatestCompatibleExtension(extensions: VSXExtensionRaw[]): VSXExtensionRaw | undefined;
     getLatestCompatibleVersion(searchEntry: VSXSearchEntry): VSXAllVersions | undefined;
 }
 
@@ -67,20 +67,21 @@ export class OVSXApiFilterImpl implements OVSXApiFilter {
 
     protected async queryLatestCompatibleExtension(query: VSXQueryOptions): Promise<VSXExtensionRaw | undefined> {
         let offset = 0;
-        const size = 100;
         let loop = true;
         while (loop) {
             const queryOptions = {
                 ...query,
                 offset
             };
-            offset += size;
             const results = await this.client.query(queryOptions);
-            loop = results.totalSize > offset;
             const compatibleExtension = this.getLatestCompatibleExtension(results.extensions);
             if (compatibleExtension) {
                 return compatibleExtension;
             }
+            // Adjust offset by the amount of returned extensions
+            offset += results.extensions.length;
+            // Abort once we have reached the last page
+            loop = results.totalSize >= offset;
         }
         return undefined;
     }
