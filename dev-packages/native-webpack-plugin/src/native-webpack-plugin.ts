@@ -126,11 +126,7 @@ export class NativeWebpackPlugin {
             const dllFile = require.resolve('node-pty/build/Release/winpty.dll');
             const targetDllFile = path.join(targetDirectory, 'winpty.dll');
             await this.copyExecutable(dllFile, targetDllFile);
-        } else {
-            const sourceFile = require.resolve('node-pty/build/Release/spawn-helper');
-            const targetFile = path.join(targetDirectory, 'spawn-helper');
-            await this.copyExecutable(sourceFile, targetFile);
-        }
+        } 
     }
 
     protected async copyTrashHelper(compiler: Compiler): Promise<void> {
