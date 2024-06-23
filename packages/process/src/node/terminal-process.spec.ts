@@ -18,8 +18,7 @@ import * as process from 'process';
 import * as stream from 'stream';
 import { createProcessTestContainer } from './test/process-test-container';
 import { TerminalProcessFactory } from './terminal-process';
-import { IProcessExitEvent, ProcessErrorEvent } from './process';
-import { isWindows } from '@theia/core/lib/common/os';
+import { IProcessExitEvent } from './process';
 
 /**
  * Globals
