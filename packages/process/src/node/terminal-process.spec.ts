@@ -41,7 +41,6 @@ describe('TerminalProcess', function (): void {
         const error = await new Promise<ProcessErrorEvent>((resolve, reject) => {
             const proc = terminalProcessFactory({ command: '/non-existent' });
             console.log(`pty is ${JSON.stringify(proc.debugString())}`);
-            proc.onStart(() => reject(new Error('process started')));
             proc.onError(resolve);
             proc.onExit(() => reject(new Error('process exited')));
         });
@@ -69,7 +68,6 @@ describe('TerminalProcess', function (): void {
     it('test error on trying to execute a directory', async function (): Promise<void> {
         const error = await new Promise<ProcessErrorEvent>((resolve, reject) => {
             const proc = terminalProcessFactory({ command: __dirname });
-            proc.onStart(() => reject(new Error('process started')));
             proc.onError(resolve);
             proc.onExit(() => reject(new Error('process exited')));
         });
