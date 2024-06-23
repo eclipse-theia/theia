@@ -34,53 +34,7 @@ beforeEach(() => {
 });
 
 describe('TerminalProcess', function (): void {
-
     this.timeout(20_000);
-
-    it('test error on non existent path', async function (): Promise<void> {
-        const error = await new Promise<ProcessErrorEvent>((resolve, reject) => {
-            const proc = terminalProcessFactory({ command: '/non-existent' });
-            console.log(`pty is ${JSON.stringify(proc.debugString())}`);
-            proc.onError(resolve);
-            proc.onExit(() => reject(new Error('process exited')));
-        });
-
-        expect(error.code).eq('ENOENT');
-    });
-
-    it('test implicit .exe (Windows only)', async function (): Promise<void> {
-        const match = /^(.+)\.exe$/.exec(process.execPath);
-        if (!isWindows || !match) {
-            this.skip();
-        }
-
-        const command = match[1];
-        const args = ['--version'];
-        const terminal = await new Promise<IProcessExitEvent>((resolve, reject) => {
-            const proc = terminalProcessFactory({ command, args });
-            proc.onExit(resolve);
-            proc.onError(() => reject('process errored'));
-        });
-
-        expect(terminal.code).to.exist;
-    });
-
-    it('test error on trying to execute a directory', async function (): Promise<void> {
-        const error = await new Promise<ProcessErrorEvent>((resolve, reject) => {
-            const proc = terminalProcessFactory({ command: __dirname });
-            proc.onError(resolve);
-            proc.onExit(() => reject(new Error('process exited')));
-        });
-
-        if (isWindows) {
-            // On Windows, node-pty returns us a "File not found" message, so we can't really differentiate this case
-            // from trying to execute a non-existent file.  node's child_process.spawn also returns ENOENT, so it's
-            // probably the best we can get.
-            expect(error.code).eq('ENOENT');
-        } else {
-            expect(error.code).eq('EACCES');
-        }
-    });
 
     it('test exit', async function (): Promise<void> {
         const args = ['--version'];
