@@ -40,9 +40,9 @@ describe('TerminalProcess', function (): void {
     it('test error on non existent path', async function (): Promise<void> {
         const error = await new Promise<ProcessErrorEvent>((resolve, reject) => {
             const proc = terminalProcessFactory({ command: '/non-existent' });
-            proc.onStart(reject);
+            proc.onStart(() => reject('process started'));
             proc.onError(resolve);
-            proc.onExit(reject);
+            proc.onExit(() => reject('process exited'));
         });
 
         expect(error.code).eq('ENOENT');
@@ -59,7 +59,7 @@ describe('TerminalProcess', function (): void {
         const terminal = await new Promise<IProcessExitEvent>((resolve, reject) => {
             const proc = terminalProcessFactory({ command, args });
             proc.onExit(resolve);
-            proc.onError(reject);
+            proc.onError(() => reject('process errored'));
         });
 
         expect(terminal.code).to.exist;
@@ -68,9 +68,9 @@ describe('TerminalProcess', function (): void {
     it('test error on trying to execute a directory', async function (): Promise<void> {
         const error = await new Promise<ProcessErrorEvent>((resolve, reject) => {
             const proc = terminalProcessFactory({ command: __dirname });
-            proc.onStart(reject);
+            proc.onStart(() => reject('process started'));
             proc.onError(resolve);
-            proc.onExit(reject);
+            proc.onExit(() => reject('process exited'));
         });
 
         if (isWindows) {
