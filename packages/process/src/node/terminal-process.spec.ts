@@ -40,6 +40,7 @@ describe('TerminalProcess', function (): void {
     it('test error on non existent path', async function (): Promise<void> {
         const error = await new Promise<ProcessErrorEvent>((resolve, reject) => {
             const proc = terminalProcessFactory({ command: '/non-existent' });
+            console.log(`pty is ${JSON.stringify(proc.debugString())}`);
             proc.onStart(() => reject(new Error('process started')));
             proc.onError(resolve);
             proc.onExit(() => reject(new Error('process exited')));
