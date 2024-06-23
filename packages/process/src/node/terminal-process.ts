@@ -135,6 +135,10 @@ export class TerminalProcess extends Process {
         this.inputStream = inputStream;
     }
 
+    debugString(): string {
+        return JSON.stringify(this.terminal);
+    }
+
     /**
      * Helper for the constructor to attempt to create the pseudo-terminal encapsulating the shell process.
      *
