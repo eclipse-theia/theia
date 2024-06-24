@@ -80,8 +80,8 @@ export class OVSXApiFilterImpl implements OVSXApiFilter {
             }
             // Adjust offset by the amount of returned extensions
             offset += results.extensions.length;
-            // Abort once we have reached the last page
-            loop = results.totalSize >= offset;
+            // Continue querying if there are more extensions available
+            loop = results.totalSize > offset;
         }
         return undefined;
     }
