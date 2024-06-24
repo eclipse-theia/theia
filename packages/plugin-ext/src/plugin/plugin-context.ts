@@ -1508,7 +1508,7 @@ export class PluginExt<T> extends Plugin<T> implements ExtensionPlugin<T> {
 
         this.extensionPath = this.pluginPath;
         this.extensionUri = this.pluginUri;
-        this.extensionKind = ExtensionKind.UI; // stub as a local extension (not running on a remote workspace)
+        this.extensionKind = pluginManager.getPluginKind();
         this.isFromDifferentExtensionHost = isFromDifferentExtensionHost;
     }
 
