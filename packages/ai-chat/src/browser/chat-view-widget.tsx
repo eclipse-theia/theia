@@ -18,7 +18,8 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { nls } from '@theia/core/lib/common/nls';
 import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
 import { ChatInputWidget } from './chat-input-widget';
-import { AgentDispatcher, ChatRequestPart, TextChatResponsePart } from '@theia/ai-agent';
+import { ChatModel, ChatRequest, ChatService } from '@theia/ai-agent';
+import { ILogger } from '@theia/core';
 
 @injectable()
 export class ChatViewWidget extends BaseWidget {
@@ -26,7 +27,14 @@ export class ChatViewWidget extends BaseWidget {
     public static ID = 'chat-view-widget';
     static LABEL = nls.localizeByDefault('Chat');
 
-    @inject(AgentDispatcher) private agentDispatcher: AgentDispatcher;
+    @inject(ChatService)
+    private chatService: ChatService;
+
+    @inject(ILogger)
+    private logger: ILogger;
+
+    // TODO: handle multiple sessions
+    private chatModel: ChatModel;
 
     constructor(
         @inject(ChatViewTreeWidget)
@@ -55,6 +63,9 @@ export class ChatViewWidget extends BaseWidget {
         this.inputWidget.node.classList.add('chat-input-widget');
         layout.addWidget(this.inputWidget);
         this.inputWidget.onQuery = this.onQuery.bind(this);
+        // TODO restore sessions if needed
+        this.chatModel = this.chatService.createSession();
+        this.treeWidget.trackChatModel(this.chatModel);
     }
 
     protected override onAfterAttach(msg: Message): void {
@@ -64,11 +75,16 @@ export class ChatViewWidget extends BaseWidget {
     private async onQuery(query: string): Promise<void> {
         if (query.length === 0) { return; }
         // send query
-        const queryMessages: ChatRequestPart[] = [{ actor: 'user', type: 'text', query: query }];
-        const queryPart: TextChatResponsePart = { type: 'text', message: query };
-        const response = await this.agentDispatcher.sendRequest({ messages: queryMessages });
-        this.treeWidget.response = { parts: [queryPart, ...response.parts] };
-        this.treeWidget.update();
+
+        const chatRequest: ChatRequest = {
+            text: query
+        };
+        const requestProgress = await this.chatService.sendRequest(this.chatModel.id, chatRequest);
+        if (!requestProgress) {
+            this.logger.error(`Was not able to send request "${chatRequest.text}" to session ${this.chatModel.id}`);
+            return;
+        }
+        // Tree Widget currently tracks the ChatModel itself. Therefore no notification necessary.
     }
 
 }

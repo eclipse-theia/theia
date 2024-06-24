@@ -18,18 +18,22 @@ import * as React from '@theia/core/shared/react';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { nls } from '@theia/core/lib/common/nls';
 import { AIChat } from './ai-chat';
-import { AgentDispatcher, ChatRequestPart, isTextStreamChatResponsePart } from '@theia/ai-agent';
+import { ChatModel, ChatRequest, ChatService, getMessages } from '@theia/ai-agent';
+import { ILogger } from '@theia/core';
 
 @injectable()
 export class ChatWidget extends ReactWidget {
     public static ID = 'ai-chat-main';
     static LABEL = nls.localizeByDefault('Chat');
 
-    @inject(AgentDispatcher)
-    private AgentDispatcher: AgentDispatcher;
+    @inject(ChatService)
+    private chatService: ChatService;
 
-    private chatMessages: ChatRequestPart[] = [];
-    private chatResponse: ChatRequestPart | undefined = undefined;
+    @inject(ILogger)
+    private logger: ILogger;
+
+    // TODO: handle multiple sessions
+    private chatModel: ChatModel;
 
     @postConstruct()
     protected init(): void {
@@ -39,32 +43,31 @@ export class ChatWidget extends ReactWidget {
         this.title.closable = false;
         this.title.iconClass = codicon('comment-discussion'); // example widget icon.
         this.update();
+        // TODO restore sessions if needed
+        this.chatModel = this.chatService.createSession();
     }
     protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         this.node.focus({ preventScroll: true });
     }
     protected render(): React.ReactNode {
-        return <AIChat chatMessages={this.chatMessages} queryResult={this.chatResponse} onQuery={this.onQuery.bind(this)}></AIChat>;
+        return <AIChat chatMessages={getMessages(this.chatModel)} onQuery={this.onQuery.bind(this)}></AIChat>;
     }
 
     private async onQuery(query: string): Promise<void> {
         if (query.length === 0) { return; }
-        this.chatMessages.push({ actor: 'user', type: 'text', query: query });
-        const chatResponse = await this.AgentDispatcher.sendRequest({ messages: this.chatMessages });
-        // TODO: handle all kinds of messages
-        if (chatResponse?.parts?.length > 0 && isTextStreamChatResponsePart(chatResponse?.parts?.[0])) {
-            this.chatResponse = {
-                actor: 'ai',
-                type: 'text',
-                query: ''
-            };
-            for await (const token of chatResponse?.parts?.[0].stream) {
-                this.chatResponse.query = this.chatResponse.query + token;
-                this.update();
-            }
-            this.chatMessages.push(this.chatResponse);
-            this.chatResponse = undefined;
+
+        const chatRequest: ChatRequest = {
+            text: query
+        };
+        const requestProgress = await this.chatService.sendRequest(this.chatModel.id, chatRequest);
+        if (!requestProgress) {
+            this.logger.error(`Was not able to send request "${chatRequest.text}" to session ${this.chatModel.id}`);
+            return;
         }
+        // TODO instead of directly handling the responseModel we could go trough an intermediate view model which
+        // manages all UI logic
+        const responseModel = await requestProgress.responseCreated;
+        responseModel.onDidChange(() => this.update());
     }
 }

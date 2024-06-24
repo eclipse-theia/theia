@@ -15,16 +15,15 @@
 // *****************************************************************************
 import * as React from '@theia/core/shared/react';
 import { codicon } from '@theia/core/lib/browser';
-import { ChatActor, ChatRequestPart } from '@theia/ai-agent';
+import { ChatActor, ChatMessage } from '@theia/ai-agent';
 
 interface AIChatProperties {
-    chatMessages: ChatRequestPart[];
+    chatMessages: ChatMessage[];
     onQuery: (query: string) => void;
-    queryResult: ChatRequestPart | undefined;
 }
 
 export const AIChat: React.FunctionComponent<AIChatProperties> = (properties: AIChatProperties) => {
-    const { chatMessages, onQuery, queryResult } = properties;
+    const { chatMessages, onQuery } = properties;
     const [query, setQuery] = React.useState('');
     return <React.Fragment>
         <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>{chatMessages.map(message =>
@@ -34,11 +33,6 @@ export const AIChat: React.FunctionComponent<AIChatProperties> = (properties: AI
                 <hr />
             </div>
         )}
-            {queryResult && <div>
-                <div><label className={getActorIcon(queryResult.actor)}>{getActorName(queryResult.actor)}</label></div>
-                <div>{queryResult.query}</div>
-            </div>
-            }
         </div>
         <div>
             <input

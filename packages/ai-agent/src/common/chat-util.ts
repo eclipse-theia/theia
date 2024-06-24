@@ -13,9 +13,30 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+import { ChatModel } from './chat-model';
 
-import { LanguageModelRequest, LanguageModelRequestMessage } from '@theia/ai-model-provider';
+export type ChatActor = 'user' | 'ai';
 
-export type ChatRequest = LanguageModelRequest;
-export type ChatRequestPart = LanguageModelRequestMessage;
-export { ChatActor } from '@theia/ai-model-provider';
+export interface ChatMessage {
+    actor: ChatActor;
+    type: 'text';
+    query: string;
+}
+
+export const getMessages = (model: ChatModel, includeResponseInProgress = false): ChatMessage[] =>
+    model.getRequests().flatMap(request => {
+        const messages: ChatMessage[] = [];
+        messages.push({
+            actor: 'user',
+            type: 'text',
+            query: request.request.text,
+        });
+        if (request.response.isComplete || includeResponseInProgress) {
+            messages.push({
+                actor: 'ai',
+                type: 'text',
+                query: request.response.response.asString(),
+            });
+        }
+        return messages;
+    });
