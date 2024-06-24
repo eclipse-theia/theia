@@ -28,11 +28,9 @@ export class WorkerEnvExtImpl extends EnvExtImpl {
         super();
     }
 
-    /**
-     * Throw error for app-root as there is no filesystem in worker context
-     */
     override get appRoot(): string {
-        throw new Error('There is no app root in worker context');
+        // The documentation indicates that this should be an empty string
+        return '';
     }
 
     get isNewAppInstall(): boolean {
