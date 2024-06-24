@@ -28,13 +28,19 @@ import debounce = require('@theia/core/shared/lodash.debounce');
 
 @injectable()
 export class ProblemTree extends MarkerTree<Diagnostic> {
-    protected markers: { node: MarkerInfoNode, markers: Marker<Diagnostic>[] }[] = [];
+
+    protected queuedMarkers = new Map<string, ProblemCompositeTreeNode.Child>();
 
     constructor(
         @inject(ProblemManager) markerManager: ProblemManager,
         @inject(MarkerOptions) markerOptions: MarkerOptions
     ) {
         super(markerManager, markerOptions);
+    }
+
+    override get root(): MarkerRootNode | undefined {
+        const superRoot = super.root;
+        return MarkerRootNode.is(superRoot) ? superRoot : undefined;
     }
 
     protected override getMarkerNodes(parent: MarkerInfoNode, markers: Marker<Diagnostic>[]): MarkerNode[] {
@@ -79,20 +85,26 @@ export class ProblemTree extends MarkerTree<Diagnostic> {
     }
 
     protected override insertNodeWithMarkers(node: MarkerInfoNode, markers: Marker<Diagnostic>[]): void {
-        this.markers.push({ node, markers });
+        // Add the element to the queue.
+        // In case a diagnostics collection for the same file already exists, it will be replaced.
+        this.queuedMarkers.set(node.id, { node, markers });
         this.doInsertNodesWithMarkers();
     }
 
     protected doInsertNodesWithMarkers = debounce(() => {
-        ProblemCompositeTreeNode.addChildren(this.root as MarkerRootNode, this.markers);
+        if (!this.root) {
+            return;
+        }
+        const queuedItems = Array.from(this.queuedMarkers.values());
+        ProblemCompositeTreeNode.addChildren(this.root, queuedItems);
 
-        for (const { node, markers } of this.markers) {
+        for (const { node, markers } of queuedItems) {
             const children = this.getMarkerNodes(node, markers);
             node.numberOfMarkers = markers.length;
             this.setChildren(node, children);
         }
 
-        this.markers.length = 0;
+        this.queuedMarkers.clear();
     }, 50);
 }
 

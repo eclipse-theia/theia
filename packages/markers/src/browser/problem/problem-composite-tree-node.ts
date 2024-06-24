@@ -23,6 +23,11 @@ import { ProblemUtils } from './problem-utils';
 
 export namespace ProblemCompositeTreeNode {
 
+    export interface Child {
+        node: MarkerInfoNode;
+        markers: Marker<Diagnostic>[];
+    }
+
     export function setSeverity(parent: MarkerInfoNode, markers: Marker<Diagnostic>[]): void {
         let maxSeverity: DiagnosticSeverity | undefined;
         markers.forEach(marker => {
@@ -33,7 +38,7 @@ export namespace ProblemCompositeTreeNode {
         parent.severity = maxSeverity;
     };
 
-    export function addChildren(parent: CompositeTreeNode, insertChildren: { node: MarkerInfoNode, markers: Marker<Diagnostic>[] }[]): void {
+    export function addChildren(parent: CompositeTreeNode, insertChildren: ProblemCompositeTreeNode.Child[]): void {
         for (const { node, markers } of insertChildren) {
             ProblemCompositeTreeNode.setSeverity(node, markers);
         }
