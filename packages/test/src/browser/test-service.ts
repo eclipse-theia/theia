@@ -35,7 +35,7 @@ export interface TestRunProfile {
     isDefault: boolean;
     readonly canConfigure: boolean;
     readonly tag: string;
-    run(name: string, included: readonly TestItem[], excluded: readonly TestItem[]): void;
+    run(name: string, included: readonly TestItem[], excluded: readonly TestItem[], preserveFocus: boolean): void;
     configure(): void;
 }
 
@@ -287,7 +287,7 @@ export class DefaultTestService implements TestService {
             }
         }
         if (activeProfile) {
-            activeProfile.run(`Test run #${this.testRunCounter++}`, items, []);
+            activeProfile.run(`Test run #${this.testRunCounter++}`, items, [], true);
         }
     }
 
@@ -343,7 +343,7 @@ export class DefaultTestService implements TestService {
             if (controller) {
                 this.pickProfile(controller.testRunProfiles, nls.localizeByDefault('Pick a test profile to use')).then(activeProfile => {
                     if (activeProfile) {
-                        activeProfile.run(`Test run #${this.testRunCounter++}`, items, []);
+                        activeProfile.run(`Test run #${this.testRunCounter++}`, items, [], true);
                     }
                 });
             }
