@@ -29,17 +29,17 @@ import { Range as MonacoRange } from '@theia/monaco-editor-core';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { EditorDecoration, EditorWidget, Selection, TextEditorDocument } from '@theia/editor/lib/browser';
+import { EditorDecoration, EditorWidget, Selection, TextEditorDocument, TrackedRangeStickiness } from '@theia/editor/lib/browser';
 import { DecorationStyle, OpenerService } from '@theia/core/lib/browser';
 import { CollaborationFileSystemProvider, CollaborationURI } from './collaboration-file-system-provider';
 import { Range } from '@theia/core/shared/vscode-languageserver-protocol';
 import { CollaborationColorService } from './collaboration-color-service';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { FileChange, FileChangeType, FileOperation } from '@theia/filesystem/lib/common/files';
-import { OpenCollabYjsProvider } from './yjs-provider';
+import { OpenCollaborationYjsProvider } from 'open-collaboration-yjs';
 import { createMutex } from 'lib0/mutex';
 import { CollaborationUtils } from './collaboration-utils';
-import throttle = require('@theia/core/shared/lodash.throttle');
+import debounce = require('@theia/core/shared/lodash.debounce');
 
 export const CollaborationInstanceFactory = Symbol('CollaborationInstanceFactory');
 export type CollaborationInstanceFactory = (connection: CollaborationInstanceOptions) => CollaborationInstance;
@@ -73,20 +73,6 @@ export class CollaborationPeer implements types.Peer, Disposable {
 
     dispose(): void {
         this.disposable.dispose();
-    }
-}
-
-export interface RelativeSelection {
-    start: Y.RelativePosition;
-    end: Y.RelativePosition;
-    direction: 'ltr' | 'rtl';
-}
-
-export interface AwarenessState {
-    peer: string;
-    currentSelection?: {
-        path: string;
-        selection: RelativeSelection;
     }
 }
 
@@ -129,10 +115,9 @@ export class CollaborationInstance implements Disposable {
 
     protected identity = new Deferred<types.Peer>();
     protected peers = new Map<string, CollaborationPeer>();
-    protected ownSelections = new Map<EditorWidget, RelativeSelection>();
     protected yjs = new Y.Doc();
     protected yjsAwareness = new awarenessProtocol.Awareness(this.yjs);
-    protected yjsProvider: OpenCollabYjsProvider;
+    protected yjsProvider: OpenCollaborationYjsProvider;
     protected colorIndex = 0;
     protected editorDecorations = new Map<EditorWidget, string[]>();
     protected fileSystem?: CollaborationFileSystemProvider;
@@ -182,7 +167,11 @@ export class CollaborationInstance implements Disposable {
     protected init(): void {
         const connection = this.options.connection;
         connection.onDisconnect(() => this.dispose());
-        this.yjsProvider = new OpenCollabYjsProvider(connection, this.yjs, this.yjsAwareness);
+        connection.onConnectionError(message => {
+            this.messageService.error(message);
+            this.dispose();
+        });
+        this.yjsProvider = new OpenCollaborationYjsProvider(connection, this.yjs, this.yjsAwareness);
         this.yjsProvider.connect();
         this.toDispose.push(Disposable.create(() => this.yjs.destroy()));
         this.toDispose.push(this.yjsProvider);
@@ -207,7 +196,17 @@ export class CollaborationInstance implements Disposable {
                 allow,
                 deny
             );
-            return result === allow;
+            if (result === allow) {
+                const roots = await this.workspaceService.roots;
+                return {
+                    workspace: {
+                        name: this.workspaceService.workspace?.name ?? nls.localize('theia/collaboration/collaboration', 'Collaboration'),
+                        folders: roots.map(e => e.name)
+                    }
+                };
+            } else {
+                return undefined;
+            }
         });
         connection.room.onJoin((_, peer) => {
             this.addPeer(peer);
@@ -275,22 +274,6 @@ export class CollaborationInstance implements Disposable {
             this.rerenderPresence();
         });
 
-        this.yjs.on('beforeAllTransactions', () => {
-            this.yjsMutex(() => {
-                this.ownSelections.clear();
-                for (const widget of this.getOpenEditors()) {
-                    const uri = widget.getResourceUri();
-                    if (uri) {
-                        const path = this.utils.getProtocolPath(uri);
-                        if (path) {
-                            const selection = widget.editor.selection;
-                            this.ownSelections.set(widget, this.createRelativeSelection(selection, widget.editor.document, this.yjs.getText(path)));
-                        }
-                    }
-                }
-            });
-        });
-
         connection.editor.onOpen(async (_, path) => {
             const uri = this.utils.getResourceUri(path);
             if (uri) {
@@ -314,7 +297,9 @@ export class CollaborationInstance implements Disposable {
             const uri = this.utils.getResourceUri(path);
             if (uri) {
                 const content = await this.fileService.readFile(uri);
-                return content.value.toString();
+                return {
+                    content: Buffer.from(content.value.buffer).toString('base64')
+                };
             } else {
                 throw new Error('Could find file: ' + path);
             }
@@ -410,17 +395,24 @@ export class CollaborationInstance implements Disposable {
 
     protected rerenderPresence(...widgets: EditorWidget[]): void {
         const decorations = new Map<string, EditorDecoration[]>();
-        const states = this.yjsAwareness.getStates() as Map<number, AwarenessState>;
+        const states = this.yjsAwareness.getStates() as Map<number, types.ClientAwareness>;
         for (const [clientID, state] of states.entries()) {
             if (clientID === this.yjs.clientID) {
                 // Ignore own awareness state
                 continue;
             }
             const peer = state.peer;
-            if (!state.currentSelection || !this.peers.has(peer)) {
+            if (!state.selection || !this.peers.has(peer)) {
                 continue;
             }
-            const { path, selection } = state.currentSelection;
+            if (!types.ClientTextSelection.is(state.selection)) {
+                continue;
+            }
+            const { path, textSelections } = state.selection;
+            const selection = textSelections[0];
+            if (!selection) {
+                continue;
+            }
             const uri = this.utils.getResourceUri(path);
             if (uri) {
                 const model = this.getModel(uri);
@@ -430,7 +422,7 @@ export class CollaborationInstance implements Disposable {
                         existing = [];
                         decorations.set(path, existing);
                     }
-                    const forward = selection.direction === 'ltr';
+                    const forward = selection.direction === types.SelectionDirection.LeftToRight;
                     const startIndex = Y.createAbsolutePositionFromRelativePosition(selection.start, this.yjs);
                     const endIndex = Y.createAbsolutePositionFromRelativePosition(selection.end, this.yjs);
                     if (startIndex && endIndex) {
@@ -450,7 +442,8 @@ export class CollaborationInstance implements Disposable {
                             options: {
                                 className: `${COLLABORATION_SELECTION} ${COLLABORATION_SELECTION}-${peer}`,
                                 beforeContentClassName: !forward ? contentClassNames.join(' ') : undefined,
-                                afterContentClassName: forward ? contentClassNames.join(' ') : undefined
+                                afterContentClassName: forward ? contentClassNames.join(' ') : undefined,
+                                stickiness: TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges
                             }
                         };
                         existing.push(item);
@@ -561,23 +554,24 @@ export class CollaborationInstance implements Disposable {
             const selection = widget.editor.selection;
             const start = widget.editor.document.offsetAt(selection.start);
             const end = widget.editor.document.offsetAt(selection.end);
-            const direction = selection.direction;
-            const editorSelection = {
-                // Force update the selection
-                date: Date.now(),
+            const direction = selection.direction === 'ltr'
+                ? types.SelectionDirection.LeftToRight
+                : types.SelectionDirection.RightToLeft;
+            const editorSelection: types.RelativeTextSelection = {
                 start: Y.createRelativePositionFromTypeIndex(ytext, start),
                 end: Y.createRelativePositionFromTypeIndex(ytext, end),
                 direction
             };
-            this.setSharedSelection(path, editorSelection);
+            const textSelection: types.ClientTextSelection = {
+                path,
+                textSelections: [editorSelection]
+            };
+            this.setSharedSelection(textSelection);
         }
     }
 
-    protected setSharedSelection(path: string, selection: RelativeSelection): void {
-        this.yjsAwareness.setLocalStateField('currentSelection', {
-            path,
-            selection
-        });
+    protected setSharedSelection(selection?: types.ClientSelection): void {
+        this.yjsAwareness.setLocalStateField('selection', selection);
     }
 
     protected rangeEqual(a: Range, b: Range): boolean {
@@ -612,7 +606,7 @@ export class CollaborationInstance implements Disposable {
     }
 
     protected createPeerStyleSheet(peer: types.Peer): Disposable {
-        const style = DecorationStyle.createStyleElement(peer.id);
+        const style = DecorationStyle.createStyleElement(`${peer.id}-collaboration-selection`);
         const colors = this.collaborationColorService.getColors();
         const sheet = style.sheet!;
         const color = colors[this.colorIndex++ % colors.length];
@@ -652,26 +646,28 @@ export class CollaborationInstance implements Disposable {
         return editors;
     }
 
-    protected createSelectionFromRelative(selection: RelativeSelection, model: MonacoEditorModel): Selection | undefined {
+    protected createSelectionFromRelative(selection: types.RelativeTextSelection, model: MonacoEditorModel): Selection | undefined {
         const start = Y.createAbsolutePositionFromRelativePosition(selection.start, this.yjs);
         const end = Y.createAbsolutePositionFromRelativePosition(selection.end, this.yjs);
         if (start && end) {
             return {
                 start: model.positionAt(start.index),
                 end: model.positionAt(end.index),
-                direction: selection.direction
+                direction: selection.direction === types.SelectionDirection.LeftToRight ? 'ltr' : 'rtl'
             };
         }
         return undefined;
     }
 
-    protected createRelativeSelection(selection: Selection, model: TextEditorDocument, ytext: Y.Text): RelativeSelection {
+    protected createRelativeSelection(selection: Selection, model: TextEditorDocument, ytext: Y.Text): types.RelativeTextSelection {
         const start = Y.createRelativePositionFromTypeIndex(ytext, model.offsetAt(selection.start));
         const end = Y.createRelativePositionFromTypeIndex(ytext, model.offsetAt(selection.end));
         return {
             start,
             end,
-            direction: selection.direction
+            direction: selection.direction === 'ltr'
+                ? types.SelectionDirection.LeftToRight
+                : types.SelectionDirection.RightToLeft
         };
     }
 
@@ -702,7 +698,7 @@ export class CollaborationInstance implements Disposable {
         // The Ytext instance is our source of truth for the model content
         // Sometimes (especially after a lot of sequential undo/redo operations) our model content can get out of sync
         // This resyncs the model content with the Ytext content after a delay
-        const resyncThrottle = throttle(() => {
+        const resyncDebounce = debounce(() => {
             this.yjsMutex(() => {
                 const newContent = ytext.toString();
                 if (model.textEditorModel.getValue() !== newContent) {
@@ -711,7 +707,7 @@ export class CollaborationInstance implements Disposable {
                     updating = false;
                 }
             });
-        }, 500);
+        }, 200);
         const disposable = new DisposableCollection();
         disposable.push(model.onDidChangeContent(e => {
             if (updating) {
@@ -724,7 +720,7 @@ export class CollaborationInstance implements Disposable {
                         ytext.insert(change.rangeOffset, change.text);
                     }
                 });
-                resyncThrottle();
+                resyncDebounce();
             });
         }));
 
@@ -754,19 +750,7 @@ export class CollaborationInstance implements Disposable {
                 } catch (err) {
                     console.error(err);
                 }
-                this.ownSelections.forEach((selection, widget) => {
-                    const uri = widget.getResourceUri();
-                    if (uri) {
-                        const path = this.utils.getProtocolPath(uri);
-                        if (path === modelPath) {
-                            const relativeSelection = this.createSelectionFromRelative(selection, model);
-                            if (relativeSelection) {
-                                widget.editor.selection = relativeSelection;
-                            }
-                        }
-                    }
-                });
-                resyncThrottle();
+                resyncDebounce();
                 updating = false;
             });
         };
@@ -789,8 +773,12 @@ export class CollaborationInstance implements Disposable {
         const editor = MonacoEditor.findByDocument(this.editorManager, model)[0];
         const cursorState = editor?.getControl().getSelections() ?? [];
         model.textEditorModel.pushStackElement();
-        model.textEditorModel.pushEditOperations(cursorState, changes, () => cursorState);
-        model.textEditorModel.pushStackElement();
+        try {
+            model.textEditorModel.pushEditOperations(cursorState, changes, () => cursorState);
+            model.textEditorModel.pushStackElement();
+        } catch (err) {
+            console.error(err);
+        }
     }
 
     protected softReplaceModel(model: MonacoEditorModel, text: string): void {

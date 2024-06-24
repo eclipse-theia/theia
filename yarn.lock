@@ -7590,10 +7590,17 @@ levn@^0.4.1:
     prelude-ls "^1.2.1"
     type-check "~0.4.0"
 
-lib0@^0.2.52, lib0@^0.2.85, lib0@^0.2.86:
+lib0@^0.2.85, lib0@^0.2.86:
   version "0.2.93"
   resolved "https://registry.yarnpkg.com/lib0/-/lib0-0.2.93.tgz#95487c2a97657313cb1d91fbcf9f6d64b7fcd062"
   integrity sha512-M5IKsiFJYulS+8Eal8f+zAqf5ckm1vffW0fFDxfgxJ+uiVopvDdd3PxJmz0GsVi3YNO7QCFSq0nAsiDmNhLj9Q==
+  dependencies:
+    isomorphic.js "^0.2.4"
+
+lib0@^0.2.94:
+  version "0.2.94"
+  resolved "https://registry.yarnpkg.com/lib0/-/lib0-0.2.94.tgz#fc28b4b65f816599f1e2f59d3401e231709535b3"
+  integrity sha512-hZ3p54jL4Wpu7IOg26uC7dnEWiMyNlUrb9KoG7+xYs45WkQwpVvKFndVq2+pqLYKe1u8Fp3+zAfZHVvTK34PvQ==
   dependencies:
     isomorphic.js "^0.2.4"
 
@@ -9028,17 +9035,27 @@ onetime@^5.1.0, onetime@^5.1.2:
   dependencies:
     mimic-fn "^2.1.0"
 
-open-collaboration-protocol@0.0.7:
-  version "0.0.7"
-  resolved "https://registry.yarnpkg.com/open-collaboration-protocol/-/open-collaboration-protocol-0.0.7.tgz#3d51a77e9f1072bc3baac4e8d437f0808a72d94a"
-  integrity sha512-ce93638cYjBM70IrrzzM5qZNh4TqrBmN6+J4v3XIf8xBbC+Wo+pvaC5CT12Q4nYReELl/aTPFDViHYjIR87qYw==
+open-collaboration-protocol@0.0.8:
+  version "0.0.8"
+  resolved "https://registry.yarnpkg.com/open-collaboration-protocol/-/open-collaboration-protocol-0.0.8.tgz#77222f0ef13f46f4ea0feadc1390df25a8901649"
+  integrity sha512-74c6C5VuumlVLXXXqeS/LTDE1wkTYp9IH1MnOfs+Y5GeROBTnniW+csVKB3BF0WFJvObwfzSRpI404HhWXJ1Hg==
   dependencies:
-    open-collaboration-rpc "0.0.6"
+    open-collaboration-rpc "0.0.7"
 
-open-collaboration-rpc@0.0.6:
-  version "0.0.6"
-  resolved "https://registry.yarnpkg.com/open-collaboration-rpc/-/open-collaboration-rpc-0.0.6.tgz#37b21d872e6ba8a91e1b4d31916138867541b71e"
-  integrity sha512-NnzjRzEpvSJcvu3TLBysuUf44KghrTt14Sk474LngBWuDjGyirKgkwtavnnt7YWI3t/7TGkxtnPX/oWZ3lpmJg==
+open-collaboration-rpc@0.0.7:
+  version "0.0.7"
+  resolved "https://registry.yarnpkg.com/open-collaboration-rpc/-/open-collaboration-rpc-0.0.7.tgz#39201d501ed0210a8dbb19410f684c733ae0309f"
+  integrity sha512-mSCEk1k8rRhN7hGUMKxheAJcoIbIBzuGQ+nZaSXkjnl3nyh4CkUA9d02wIe/jvVHNKpIfZGMmcdXmYQW7+y3Xg==
+
+open-collaboration-yjs@0.0.1:
+  version "0.0.1"
+  resolved "https://registry.yarnpkg.com/open-collaboration-yjs/-/open-collaboration-yjs-0.0.1.tgz#68f302dceed747712942da815408c19c5797ec04"
+  integrity sha512-auKIMVXAcbPjTBPq67ApM4O1lNT+5DH7TALonbQ1lT7UmyKcvVAgYTz9XSIjpN96QF0iicurltFstDfByNMwbQ==
+  dependencies:
+    lib0 "^0.2.94"
+    open-collaboration-protocol "0.0.8"
+    open-collaboration-rpc "0.0.7"
+    y-protocols "^1.0.6"
 
 open@^7.4.2:
   version "7.4.2"

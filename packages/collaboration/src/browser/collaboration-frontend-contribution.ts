@@ -20,7 +20,6 @@ import { Command, CommandContribution, CommandRegistry, MessageService, nls, Pro
 import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
 import { ConnectionProvider } from 'open-collaboration-protocol';
 import { JsonMessageEncoding, WebSocketTransportProvider } from 'open-collaboration-rpc';
-import { SocketIoTransportProvider } from './socket-io-transport';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { CollaborationInstance, CollaborationInstanceFactory } from './collaboration-instance';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
@@ -53,7 +52,7 @@ export const COLLABORATION_STATUS_BAR_ID = 'statusBar.collaboration';
 
 export const COLLABORATION_AUTH_TOKEN = 'THEIA_COLLAB_AUTH_TOKEN';
 export const COLLABORATION_SERVER_URL = 'COLLABORATION_SERVER_URL';
-export const DEFAULT_COLLABORATION_SERVER_URL = 'http://localhost:8100';
+export const DEFAULT_COLLABORATION_SERVER_URL = 'https://open-collaboration-tools-ymijt5gjsa-ey.a.run.app/';
 
 @injectable()
 export class CollaborationFrontendContribution implements CommandContribution {
@@ -95,7 +94,7 @@ export class CollaborationFrontendContribution implements CommandContribution {
                 fetch: window.fetch.bind(window),
                 opener: url => this.windowService.openNewWindow(url),
                 encodings: [JsonMessageEncoding],
-                transports: [SocketIoTransportProvider, WebSocketTransportProvider],
+                transports: [WebSocketTransportProvider],
                 userToken: localStorage.getItem(COLLABORATION_AUTH_TOKEN) ?? undefined
             });
             this.authHandlerDeferred.resolve(authHandler);
@@ -129,29 +128,30 @@ export class CollaborationFrontendContribution implements CommandContribution {
             execute: () => this.displayCopyNotification(code)
         }];
         if (this.currentInstance) {
-            if (this.currentInstance.readonly) {
-                items.push({
-                    label: nls.localize('theia/collaboration/enableEditing', 'Enable Workspace Editing'),
-                    detail: nls.localize('theia/collaboration/enableEditingDetail', 'Allow collaborators to modify content in your workspace.'),
-                    iconClasses: codiconArray('unlock'),
-                    execute: () => {
-                        if (this.currentInstance) {
-                            this.currentInstance.readonly = false;
-                        }
-                    }
-                });
-            } else {
-                items.push({
-                    label: nls.localize('theia/collaboration/disableEditing', 'Disable Workspace Editing'),
-                    detail: nls.localize('theia/collaboration/disableEditingDetail', 'Restrict others from making changes to your workspace.'),
-                    iconClasses: codiconArray('lock'),
-                    execute: () => {
-                        if (this.currentInstance) {
-                            this.currentInstance.readonly = true;
-                        }
-                    }
-                });
-            }
+            // TODO: Implement readonly mode
+            // if (this.currentInstance.readonly) {
+            //     items.push({
+            //         label: nls.localize('theia/collaboration/enableEditing', 'Enable Workspace Editing'),
+            //         detail: nls.localize('theia/collaboration/enableEditingDetail', 'Allow collaborators to modify content in your workspace.'),
+            //         iconClasses: codiconArray('unlock'),
+            //         execute: () => {
+            //             if (this.currentInstance) {
+            //                 this.currentInstance.readonly = false;
+            //             }
+            //         }
+            //     });
+            // } else {
+            //     items.push({
+            //         label: nls.localize('theia/collaboration/disableEditing', 'Disable Workspace Editing'),
+            //         detail: nls.localize('theia/collaboration/disableEditingDetail', 'Restrict others from making changes to your workspace.'),
+            //         iconClasses: codiconArray('lock'),
+            //         execute: () => {
+            //             if (this.currentInstance) {
+            //                 this.currentInstance.readonly = true;
+            //             }
+            //         }
+            //     });
+            // }
         }
         items.push({
             label: nls.localize('theia/collaboration/end', 'End Collaboration Session'),
@@ -231,7 +231,7 @@ export class CollaborationFrontendContribution implements CommandContribution {
                         localStorage.setItem(COLLABORATION_AUTH_TOKEN, roomClaim.loginToken);
                     }
                     this.currentInstance?.dispose();
-                    const connection = await authHandler.connect();
+                    const connection = await authHandler.connect(roomClaim.roomToken);
                     this.currentInstance = this.collaborationInstanceFactory({
                         role: 'host',
                         connection
@@ -239,7 +239,7 @@ export class CollaborationFrontendContribution implements CommandContribution {
                     this.currentInstance.onDidClose(() => {
                         this.setStatusBarEntryDefault();
                     });
-                    const roomCode = roomClaim.roomToken;
+                    const roomCode = roomClaim.roomId;
                     this.setStatusBarEntryShared(roomCode);
                     this.displayCopyNotification(roomCode, true);
                 } catch (err) {
@@ -267,7 +267,7 @@ export class CollaborationFrontendContribution implements CommandContribution {
                         localStorage.setItem(COLLABORATION_AUTH_TOKEN, roomClaim.loginToken);
                     }
                     this.currentInstance?.dispose();
-                    const connection = await authHandler.connect();
+                    const connection = await authHandler.connect(roomClaim.roomToken);
                     this.currentInstance = this.collaborationInstanceFactory({
                         role: 'guest',
                         connection
@@ -275,7 +275,7 @@ export class CollaborationFrontendContribution implements CommandContribution {
                     this.currentInstance.onDidClose(() => {
                         this.setStatusBarEntryDefault();
                     });
-                    this.setStatusBarEntryConnected(roomClaim.roomToken);
+                    this.setStatusBarEntryConnected(roomClaim.roomId);
                     await this.currentInstance.initialize();
                 } catch (err) {
                     joinRoomProgress?.cancel();
