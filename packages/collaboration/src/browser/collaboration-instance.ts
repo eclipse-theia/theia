@@ -423,9 +423,12 @@ export class CollaborationInstance implements Disposable {
                         decorations.set(path, existing);
                     }
                     const forward = selection.direction === types.SelectionDirection.LeftToRight;
-                    const startIndex = Y.createAbsolutePositionFromRelativePosition(selection.start, this.yjs);
-                    const endIndex = Y.createAbsolutePositionFromRelativePosition(selection.end, this.yjs);
+                    let startIndex = Y.createAbsolutePositionFromRelativePosition(selection.start, this.yjs);
+                    let endIndex = Y.createAbsolutePositionFromRelativePosition(selection.end, this.yjs);
                     if (startIndex && endIndex) {
+                        if (startIndex.index > endIndex.index) {
+                            [startIndex, endIndex] = [endIndex, startIndex];
+                        }
                         const start = model.positionAt(startIndex.index);
                         const end = model.positionAt(endIndex.index);
                         const inverted = (forward && end.line === 0) || (!forward && start.line === 0);
@@ -552,8 +555,11 @@ export class CollaborationInstance implements Disposable {
         if (path) {
             const ytext = this.yjs.getText(path);
             const selection = widget.editor.selection;
-            const start = widget.editor.document.offsetAt(selection.start);
-            const end = widget.editor.document.offsetAt(selection.end);
+            let start = widget.editor.document.offsetAt(selection.start);
+            let end = widget.editor.document.offsetAt(selection.end);
+            if (start > end) {
+                [start, end] = [end, start];
+            }
             const direction = selection.direction === 'ltr'
                 ? types.SelectionDirection.LeftToRight
                 : types.SelectionDirection.RightToLeft;

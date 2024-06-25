@@ -31,20 +31,11 @@ import { codiconArray } from '@theia/core/lib/browser/widgets/widget';
 export const COLLABORATION_CATEGORY = 'Collaboration';
 
 export namespace CollaborationCommands {
-    export const LOGIN: Command = {
-        id: 'collaboration.login',
-        label: 'Login',
-        category: COLLABORATION_CATEGORY
-    };
     export const CREATE_ROOM: Command = {
-        id: 'collaboration.create-room',
-        label: 'Create Room',
-        category: COLLABORATION_CATEGORY
+        id: 'collaboration.create-room'
     };
     export const JOIN_ROOM: Command = {
-        id: 'collaboration.join-room',
-        label: 'Join Room',
-        category: COLLABORATION_CATEGORY
+        id: 'collaboration.join-room'
     };
 }
 
@@ -52,7 +43,7 @@ export const COLLABORATION_STATUS_BAR_ID = 'statusBar.collaboration';
 
 export const COLLABORATION_AUTH_TOKEN = 'THEIA_COLLAB_AUTH_TOKEN';
 export const COLLABORATION_SERVER_URL = 'COLLABORATION_SERVER_URL';
-export const DEFAULT_COLLABORATION_SERVER_URL = 'https://open-collaboration-tools-ymijt5gjsa-ey.a.run.app/';
+export const DEFAULT_COLLABORATION_SERVER_URL = 'https://api.open-collab.tools/';
 
 @injectable()
 export class CollaborationFrontendContribution implements CommandContribution {
@@ -221,8 +212,6 @@ export class CollaborationFrontendContribution implements CommandContribution {
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(CollaborationCommands.CREATE_ROOM, {
-            isVisible: () => this.workspaceService.opened,
-            isEnabled: () => this.workspaceService.opened,
             execute: async () => {
                 try {
                     const authHandler = await this.authHandlerDeferred.promise;
