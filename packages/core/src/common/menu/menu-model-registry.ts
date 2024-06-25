@@ -18,6 +18,7 @@ import { inject, injectable, named } from 'inversify';
 import { Command, CommandRegistry } from '../command';
 import { ContributionProvider } from '../contribution-provider';
 import { Disposable } from '../disposable';
+import { Emitter, Event } from '../event';
 import { ActionMenuNode } from './action-menu-node';
 import { CompositeMenuNode, CompositeMenuNodeWrapper } from './composite-menu-node';
 import { CompoundMenuNode, MenuAction, MenuNode, MenuNodeMetadata, MenuPath, MutableCompoundMenuNode, SubMenuOptions } from './menu-types';
@@ -68,6 +69,14 @@ export class MenuModelRegistry {
     protected readonly root = new CompositeMenuNode('');
     protected readonly independentSubmenus = new Map<string, MutableCompoundMenuNode>();
 
+    protected readonly onDidChangeEmitter = new Emitter<void>();
+
+    get onDidChange(): Event<void> {
+        return this.onDidChangeEmitter.event;
+    }
+
+    protected isReady = false;
+
     constructor(
         @inject(ContributionProvider) @named(MenuContribution)
         protected readonly contributions: ContributionProvider<MenuContribution>,
@@ -78,6 +87,7 @@ export class MenuModelRegistry {
         for (const contrib of this.contributions.getContributions()) {
             contrib.registerMenus(this);
         }
+        this.isReady = true;
     }
 
     /**
@@ -97,7 +107,9 @@ export class MenuModelRegistry {
      */
     registerMenuNode(menuPath: MenuPath | string, menuNode: MenuNode, group?: string): Disposable {
         const parent = this.getMenuNode(menuPath, group);
-        return parent.addNode(menuNode);
+        const disposable = parent.addNode(menuNode);
+        this.fireChangeEvent();
+        return this.changeEventOnDispose(disposable);
     }
 
     getMenuNode(menuPath: MenuPath | string, group?: string): MutableCompoundMenuNode {
@@ -137,13 +149,15 @@ export class MenuModelRegistry {
         const groupPath = index === 0 ? [] : menuPath.slice(0, index);
         const parent = this.findGroup(groupPath, options);
         let groupNode = this.findSubMenu(parent, menuId, options);
+        let disposable = Disposable.NULL;
         if (!groupNode) {
             groupNode = new CompositeMenuNode(menuId, label, options, parent);
-            return parent.addNode(groupNode);
+            disposable = this.changeEventOnDispose(parent.addNode(groupNode));
         } else {
             groupNode.updateOptions({ ...options, label });
-            return Disposable.NULL;
         }
+        this.fireChangeEvent();
+        return disposable;
     }
 
     registerIndependentSubmenu(id: string, label: string, options?: SubMenuOptions): Disposable {
@@ -151,7 +165,7 @@ export class MenuModelRegistry {
             console.debug(`Independent submenu with path ${id} registered, but given ID already exists.`);
         }
         this.independentSubmenus.set(id, new CompositeMenuNode(id, label, options));
-        return { dispose: () => this.independentSubmenus.delete(id) };
+        return this.changeEventOnDispose(Disposable.create(() => this.independentSubmenus.delete(id)));
     }
 
     linkSubmenu(parentPath: MenuPath | string, childId: string | MenuPath, options?: SubMenuOptions, group?: string): Disposable {
@@ -175,7 +189,9 @@ export class MenuModelRegistry {
         }
 
         const wrapper = new CompositeMenuNodeWrapper(child, parent, options);
-        return parent.addNode(wrapper);
+        const disposable = parent.addNode(wrapper);
+        this.fireChangeEvent();
+        return this.changeEventOnDispose(disposable);
     }
 
     /**
@@ -207,6 +223,7 @@ export class MenuModelRegistry {
         if (menuPath) {
             const parent = this.findGroup(menuPath);
             parent.removeNode(id);
+            this.fireChangeEvent();
             return;
         }
 
@@ -228,6 +245,7 @@ export class MenuModelRegistry {
             });
         };
         recurse(this.root);
+        this.fireChangeEvent();
     }
 
     /**
@@ -319,6 +337,19 @@ export class MenuModelRegistry {
             }
         }
         return true;
+    }
+
+    protected changeEventOnDispose(disposable: Disposable): Disposable {
+        return Disposable.create(() => {
+            disposable.dispose();
+            this.fireChangeEvent();
+        });
+    }
+
+    protected fireChangeEvent(): void {
+        if (this.isReady) {
+            this.onDidChangeEmitter.fire();
+        }
     }
 
     /**
