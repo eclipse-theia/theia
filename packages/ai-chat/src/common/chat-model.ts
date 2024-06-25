@@ -220,8 +220,8 @@ export class TextChatResponseContentImpl implements TextChatResponseContent {
 }
 
 class ChatResponseImpl implements ChatResponse {
-    protected readonly onDidChangeEmitter = new Emitter<void>();
-    onDidChange: Event<void> = this.onDidChangeEmitter.event;
+    protected readonly _onDidChangeEmitter = new Emitter<void>();
+    onDidChange: Event<void> = this._onDidChangeEmitter.event;
     protected _content: ChatResponseContent[];
     protected _responseRepresentation: string;
 
@@ -251,6 +251,7 @@ class ChatResponseImpl implements ChatResponse {
             this._content.push(nextContent);
         }
         this._updateResponseRepresentation();
+        this._onDidChangeEmitter.fire();
     }
 
     protected _updateResponseRepresentation(): void {
