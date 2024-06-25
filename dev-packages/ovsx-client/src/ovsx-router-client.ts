@@ -152,6 +152,8 @@ export class OVSXRouterClient implements OVSXClient {
 
     protected emptyQueryResult(queryOptions?: VSXQueryOptions): VSXQueryResult {
         return {
+            offset: 0,
+            totalSize: 0,
             extensions: []
         };
     }
@@ -183,8 +185,11 @@ export class OVSXRouterClient implements OVSXClient {
         results.forEach((result, sourceUri) => {
             result.extensions.forEach(extension => filtering.push(this.filterExtension(sourceUri, extension)));
         });
+        const extensions = removeNullValues(await Promise.all(filtering));
         return {
-            extensions: removeNullValues(await Promise.all(filtering))
+            offset: 0,
+            totalSize: extensions.length,
+            extensions
         };
     }
 
