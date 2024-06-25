@@ -69,7 +69,7 @@ export class WindowStateMain implements WindowMain, Disposable {
         const uri = URI.revive(uriComponent);
         const url = new CoreURI(encodeURI(uri.toString(true)));
         try {
-            await open(this.openerService, url);
+            await open(this.openerService, url, { openExternalApp: true });
             return true;
         } catch (e) {
             return false;

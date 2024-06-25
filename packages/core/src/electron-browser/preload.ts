@@ -79,8 +79,8 @@ const api: TheiaCoreAPI = {
     showItemInFolder: fsPath => {
         ipcRenderer.send(CHANNEL_SHOW_ITEM_IN_FOLDER, fsPath);
     },
-    openWithSystemApp: fsPath => {
-        ipcRenderer.send(CHANNEL_OPEN_WITH_SYSTEM_APP, fsPath);
+    openWithSystemApp: location => {
+        ipcRenderer.send(CHANNEL_OPEN_WITH_SYSTEM_APP, location);
     },
     attachSecurityToken: (endpoint: string) => ipcRenderer.invoke(CHANNEL_ATTACH_SECURITY_TOKEN, endpoint),
 
