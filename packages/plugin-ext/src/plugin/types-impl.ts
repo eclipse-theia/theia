@@ -3863,34 +3863,50 @@ export class ChatRequestTurn {
 export class ChatResponseTurn {
     readonly command?: string;
 
-    private constructor(public readonly response: ReadonlyArray<theia.ChatResponseMarkdownPart | theia.ChatResponseFileTreePart | theia.ChatResponseAnchorPart
-        | theia.ChatResponseCommandButtonPart>, public readonly result: theia.ChatResult, public readonly participant: string) { }
+    private constructor(readonly response: ReadonlyArray<theia.ChatResponseMarkdownPart | theia.ChatResponseFileTreePart | theia.ChatResponseAnchorPart
+        | theia.ChatResponseCommandButtonPart>, readonly result: theia.ChatResult, readonly participant: string) { }
 }
 
 export class ChatResponseAnchorPart {
-    constructor(public value: URI | Location, public title?: string) { }
+    value: URI | Location;
+    title?: string;
+
+    constructor(value: URI | Location, title?: string) { }
 }
 
 export class ChatResponseProgressPart {
-    constructor(public value: string) { }
+    value: string;
+
+    constructor(value: string) { }
 }
 
 export class ChatResponseReferencePart {
-    constructor(public value: URI | theia.Location, public iconPath?: URI | ThemeIcon | {
+    value: URI | Location;
+    iconPath?: URI | ThemeIcon | { light: URI; dark: URI; };
+
+    constructor(value: URI | theia.Location, iconPath?: URI | ThemeIcon | {
         light: URI;
         dark: URI;
     }) { }
 }
 export class ChatResponseCommandButtonPart {
-    constructor(public value: theia.Command) { }
+    value: theia.Command;
+
+    constructor(value: theia.Command) { }
 }
 
 export class ChatResponseMarkdownPart {
-    constructor(public value: string | theia.MarkdownString) { }
+    value: theia.MarkdownString;
+
+    constructor(value: string | theia.MarkdownString) {
+    }
 }
 
 export class ChatResponseFileTreePart {
-    constructor(public value: theia.ChatResponseFileTree[], public baseUri: URI) { }
+    value: theia.ChatResponseFileTree[];
+    baseUri: URI;
+
+    constructor(value: theia.ChatResponseFileTree[], baseUri: URI) { }
 }
 
 export type ChatResponsePart = ChatResponseMarkdownPart | ChatResponseFileTreePart | ChatResponseAnchorPart
@@ -3922,15 +3938,15 @@ export class LanguageModelChatMessage {
 export class LanguageModelError extends Error {
 
     static NoPermissions(message?: string): LanguageModelError {
-        return new LanguageModelError(message, LanguageModelError.NotFound.name);
+        return new LanguageModelError(message, LanguageModelError.NoPermissions.name);
     }
 
     static Blocked(message?: string): LanguageModelError {
-        return new LanguageModelError(message);
+        return new LanguageModelError(message, LanguageModelError.Blocked.name);
     }
 
     static NotFound(message?: string): LanguageModelError {
-        return new LanguageModelError(message);
+        return new LanguageModelError(message, LanguageModelError.NotFound.name);
     }
 
     readonly code: string;

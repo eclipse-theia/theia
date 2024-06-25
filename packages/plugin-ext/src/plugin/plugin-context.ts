@@ -1240,7 +1240,7 @@ export function createAPIFactory(
             createChatParticipant(id: string, handler: theia.ChatRequestHandler): theia.ChatParticipant {
                 return {
                     id,
-                    requestHandler: (request: theia.ChatRequest, context: theia.ChatContext, response: theia.ChatResponseStream, token: CancellationToken) => { },
+                    requestHandler: handler,
                     dispose() {},
                     onDidReceiveFeedback: (listener, thisArgs?, disposables?) => Event.None(listener, thisArgs, disposables)
                 };
