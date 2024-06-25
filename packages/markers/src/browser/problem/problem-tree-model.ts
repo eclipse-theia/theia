@@ -38,11 +38,6 @@ export class ProblemTree extends MarkerTree<Diagnostic> {
         super(markerManager, markerOptions);
     }
 
-    override get root(): MarkerRootNode | undefined {
-        const superRoot = super.root;
-        return MarkerRootNode.is(superRoot) ? superRoot : undefined;
-    }
-
     protected override getMarkerNodes(parent: MarkerInfoNode, markers: Marker<Diagnostic>[]): MarkerNode[] {
         const nodes = super.getMarkerNodes(parent, markers);
         return nodes.sort((a, b) => this.sortMarkers(a, b));
@@ -92,11 +87,13 @@ export class ProblemTree extends MarkerTree<Diagnostic> {
     }
 
     protected doInsertNodesWithMarkers = debounce(() => {
-        if (!this.root) {
+        const root = this.root;
+        // Sanity check; This should always be of type `MarkerRootNode`
+        if (!MarkerRootNode.is(root)) {
             return;
         }
         const queuedItems = Array.from(this.queuedMarkers.values());
-        ProblemCompositeTreeNode.addChildren(this.root, queuedItems);
+        ProblemCompositeTreeNode.addChildren(root, queuedItems);
 
         for (const { node, markers } of queuedItems) {
             const children = this.getMarkerNodes(node, markers);
