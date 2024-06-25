@@ -3846,3 +3846,115 @@ export class TerminalQuickFixOpener {
     constructor(uri: theia.Uri) { }
 }
 
+// #region Chat
+export class ChatRequestTurn {
+    readonly prompt: string;
+    readonly participant: string;
+    readonly command?: string;
+    readonly references: theia.ChatPromptReference[];
+    private constructor(prompt: string, command: string | undefined, references: theia.ChatPromptReference[], participant: string) {
+        this.prompt = prompt;
+        this.command = command;
+        this.participant = participant;
+        this.references = references;
+    };
+}
+
+export class ChatResponseTurn {
+    readonly command?: string;
+
+    private constructor(readonly response: ReadonlyArray<theia.ChatResponseMarkdownPart | theia.ChatResponseFileTreePart | theia.ChatResponseAnchorPart
+        | theia.ChatResponseCommandButtonPart>, readonly result: theia.ChatResult, readonly participant: string) { }
+}
+
+export class ChatResponseAnchorPart {
+    value: URI | Location;
+    title?: string;
+
+    constructor(value: URI | Location, title?: string) { }
+}
+
+export class ChatResponseProgressPart {
+    value: string;
+
+    constructor(value: string) { }
+}
+
+export class ChatResponseReferencePart {
+    value: URI | Location;
+    iconPath?: URI | ThemeIcon | { light: URI; dark: URI; };
+
+    constructor(value: URI | theia.Location, iconPath?: URI | ThemeIcon | {
+        light: URI;
+        dark: URI;
+    }) { }
+}
+export class ChatResponseCommandButtonPart {
+    value: theia.Command;
+
+    constructor(value: theia.Command) { }
+}
+
+export class ChatResponseMarkdownPart {
+    value: theia.MarkdownString;
+
+    constructor(value: string | theia.MarkdownString) {
+    }
+}
+
+export class ChatResponseFileTreePart {
+    value: theia.ChatResponseFileTree[];
+    baseUri: URI;
+
+    constructor(value: theia.ChatResponseFileTree[], baseUri: URI) { }
+}
+
+export type ChatResponsePart = ChatResponseMarkdownPart | ChatResponseFileTreePart | ChatResponseAnchorPart
+| ChatResponseProgressPart | ChatResponseReferencePart | ChatResponseCommandButtonPart;
+
+export enum ChatResultFeedbackKind {
+    Unhelpful = 0,
+    Helpful = 1,
+}
+
+export enum LanguageModelChatMessageRole {
+    User = 1,
+    Assistant = 2
+}
+
+export class LanguageModelChatMessage {
+
+    static User(content: string, name?: string): LanguageModelChatMessage {
+        return new LanguageModelChatMessage(LanguageModelChatMessageRole.User, content, name);
+    }
+
+    static Assistant(content: string, name?: string): LanguageModelChatMessage {
+        return new LanguageModelChatMessage(LanguageModelChatMessageRole.Assistant, content, name);
+    }
+
+    constructor(public role: LanguageModelChatMessageRole, public content: string, public name?: string) { }
+}
+
+export class LanguageModelError extends Error {
+
+    static NoPermissions(message?: string): LanguageModelError {
+        return new LanguageModelError(message, LanguageModelError.NoPermissions.name);
+    }
+
+    static Blocked(message?: string): LanguageModelError {
+        return new LanguageModelError(message, LanguageModelError.Blocked.name);
+    }
+
+    static NotFound(message?: string): LanguageModelError {
+        return new LanguageModelError(message, LanguageModelError.NotFound.name);
+    }
+
+    readonly code: string;
+
+    constructor(message?: string, code?: string) {
+        super(message);
+        this.name = 'LanguageModelError';
+        this.code = code ?? '';
+    }
+}
+// #endregion
