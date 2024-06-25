@@ -1,5 +1,5 @@
 {
-  "name": "@theia/ai-chat",
+  "name": "@theia/ai-chat-ui",
   "version": "1.49.0",
   "description": "Theia - AI Chat Extension",
   "dependencies": {
@@ -17,7 +17,7 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/aichat-frontend-module"
+      "frontend": "lib/browser/aichat-ui-frontend-module"
     }
   ],
   "keywords": [

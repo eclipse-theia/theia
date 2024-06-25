@@ -17,7 +17,7 @@
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { WidgetFactory, bindViewContribution } from '@theia/core/lib/browser';
 // import { ChatWidget } from './chat-widget';
-import { AIChatContribution } from './aichat-contribution';
+import { AIChatContribution } from './aichat-ui-contribution';
 import { ChatViewWidget } from './chat-view-widget';
 import { createChatViewTreeWidget } from './chat-tree-view';
 import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';

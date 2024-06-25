@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@theia/ai-agent": "1.49.0",
-    "@theia/ai-chat": "1.49.0",
+    "@theia/ai-chat-ui": "1.49.0",
     "@theia/ai-model-provider": "1.49.0",
     "@theia/ai-openai": "1.49.0",
     "@theia/api-provider-sample": "1.49.0",
