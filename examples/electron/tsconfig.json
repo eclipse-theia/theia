@@ -12,6 +12,18 @@
       "path": "../../dev-packages/cli"
     },
     {
+      "path": "../../packages/ai-chat"
+    },
+    {
+      "path": "../../packages/ai-chat-ui"
+    },
+    {
+      "path": "../../packages/ai-model-provider"
+    },
+    {
+      "path": "../../packages/ai-openai"
+    },
+    {
       "path": "../../packages/bulk-edit"
     },
     {

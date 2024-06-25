@@ -1,5 +1,5 @@
 {
-  "name": "@theia/ai-agent",
+  "name": "@theia/ai-chat",
   "version": "1.49.0",
   "description": "Theia - AI Chat Extension",
   "dependencies": {

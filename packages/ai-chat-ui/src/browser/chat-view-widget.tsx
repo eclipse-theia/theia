@@ -18,7 +18,7 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { nls } from '@theia/core/lib/common/nls';
 import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
 import { ChatInputWidget } from './chat-input-widget';
-import { ChatModel, ChatRequest, ChatService } from '@theia/ai-agent';
+import { ChatModel, ChatRequest, ChatService } from '@theia/ai-chat';
 import { ILogger } from '@theia/core';
 
 @injectable()

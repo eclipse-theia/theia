@@ -10,10 +10,7 @@
   ],
   "references": [
     {
-      "path": "../ai-agent"
-    },
-    {
-      "path": "../ai-model-provider"
+      "path": "../ai-chat"
     },
     {
       "path": "../core"

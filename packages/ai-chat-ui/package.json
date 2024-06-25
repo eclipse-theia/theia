@@ -1,10 +1,9 @@
 {
   "name": "@theia/ai-chat-ui",
   "version": "1.49.0",
-  "description": "Theia - AI Chat Extension",
+  "description": "Theia - AI Chat UI Extension",
   "dependencies": {
-    "@theia/ai-agent": "1.49.0",
-    "@theia/ai-model-provider": "1.49.0",
+    "@theia/ai-chat": "1.49.0",
     "@theia/core": "1.49.0",
     "@theia/filesystem": "1.49.0",
     "@theia/workspace": "1.49.0",

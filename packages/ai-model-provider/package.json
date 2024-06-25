@@ -1,7 +1,7 @@
 {
   "name": "@theia/ai-model-provider",
   "version": "1.49.0",
-  "description": "Theia - OpenAI LLM Integration",
+  "description": "Theia - LLM Integration",
   "dependencies": {
     "@theia/core": "1.49.0",
     "@theia/filesystem": "1.49.0",

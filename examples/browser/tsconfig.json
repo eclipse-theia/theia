@@ -9,7 +9,7 @@
       "path": "../../dev-packages/cli"
     },
     {
-      "path": "../../packages/ai-agent"
+      "path": "../../packages/ai-chat"
     },
     {
       "path": "../../packages/ai-chat-ui"

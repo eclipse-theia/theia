@@ -18,7 +18,7 @@ import {
     ChatModel,
     ChatRequestModel,
     ChatResponseModel,
-} from '@theia/ai-agent';
+} from '@theia/ai-chat';
 import {
     codicon,
     CompositeTreeNode,

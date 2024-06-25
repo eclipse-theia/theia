@@ -18,7 +18,7 @@ import * as React from '@theia/core/shared/react';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { nls } from '@theia/core/lib/common/nls';
 import { AIChat } from './ai-chat';
-import { ChatModel, ChatRequest, ChatService, getMessages } from '@theia/ai-agent';
+import { ChatModel, ChatRequest, ChatService, getMessages } from '@theia/ai-chat';
 import { ILogger } from '@theia/core';
 
 @injectable()
