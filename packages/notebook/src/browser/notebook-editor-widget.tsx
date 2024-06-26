@@ -233,7 +233,9 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
                 </div>
             </div >;
         } else {
-            return <div></div>;
+            return <div className='theia-notebook-main-container'>
+                <div className='theia-notebook-main-loading-indicator'></div>
+            </div>;
         }
     }
 
