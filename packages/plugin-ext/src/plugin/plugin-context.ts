@@ -124,6 +124,8 @@ import {
     Breakpoint,
     SourceBreakpoint,
     FunctionBreakpoint,
+    DebugStackFrame,
+    DebugThread,
     FoldingRange,
     FoldingRangeKind,
     SelectionRange,
@@ -1090,6 +1092,14 @@ export function createAPIFactory(
             get onDidChangeBreakpoints(): theia.Event<theia.BreakpointsChangeEvent> {
                 return debugExt.onDidChangeBreakpoints;
             },
+            /** @stubbed */
+            get activeStackItem(): DebugThread | DebugStackFrame | undefined {
+                return undefined;
+            },
+            /** @stubbed */
+            get onDidChangeActiveStackItem(): theia.Event<DebugThread | DebugStackFrame | undefined> {
+                return Event.None;
+            },
             registerDebugAdapterDescriptorFactory(debugType: string, factory: theia.DebugAdapterDescriptorFactory): Disposable {
                 return debugExt.registerDebugAdapterDescriptorFactory(debugType, factory);
             },
@@ -1372,6 +1382,8 @@ export function createAPIFactory(
             Breakpoint,
             SourceBreakpoint,
             FunctionBreakpoint,
+            DebugStackFrame,
+            DebugThread,
             Color,
             ColorInformation,
             ColorPresentation,

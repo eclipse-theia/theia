@@ -6,6 +6,8 @@
 
 <!-- ## not yet released
 
+- [debug] stub activeStackItem and related change event in debug namespace [#13847](https://github.com/eclipse-theia/theia/pull/13847) - contributed on behalf of STMicroelectronics
+
 <a name="breaking_changes_not_yet_released">[Breaking Changes:](#breaking_changes_not_yet_released)</a> 
 
 - [filesystem] Adjusted the "Save As" mechanism. It now assumes that `Saveable.getSnapshot()` returns a full snapshot of the editor model [#13689](https://github.com/eclipse-theia/theia/pull/13689). 
