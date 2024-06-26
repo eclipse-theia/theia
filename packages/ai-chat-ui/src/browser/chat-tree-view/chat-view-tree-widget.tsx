@@ -13,10 +13,11 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-
+import { ContributionProvider } from '@theia/core';
 import {
     ChatModel,
     ChatRequestModel,
+    ChatResponseContent,
     ChatResponseModel,
 } from '@theia/ai-chat';
 import {
@@ -32,9 +33,11 @@ import {
 import {
     inject,
     injectable,
+    named,
     postConstruct,
 } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
+import { ChatResponsePartRenderer } from '../types';
 
 // TODO Instead of directly operating on the ChatRequestModel we could use an intermediate view model
 interface RequestNode extends TreeNode {
@@ -51,6 +54,9 @@ const isResponseNode = (node: TreeNode): node is ResponseNode => 'response' in n
 @injectable()
 export class ChatViewTreeWidget extends TreeWidget {
     static readonly ID = 'chat-tree-widget';
+
+    @inject(ContributionProvider) @named(ChatResponsePartRenderer)
+    protected readonly chatResponsePartRenderers: ContributionProvider<ChatResponsePartRenderer>;
 
     constructor(
         @inject(TreeProps) props: TreeProps,
@@ -135,36 +141,62 @@ export class ChatViewTreeWidget extends TreeWidget {
         if (!TreeNode.isVisible(node)) {
             return undefined;
         }
-
+        if (!(isRequestNode(node) || isResponseNode(node))) {
+            return super.renderNode(node, props);
+        }
+        return <React.Fragment key={node.id}>
+            {this.renderAgent(node)}
+            {this.renderDetail(node)}
+        </React.Fragment>;
+    }
+    private renderAgent(node: RequestNode | ResponseNode): React.ReactNode {
+        return <React.Fragment>
+            <label className={this.getAgentIconClassName(node)}><span className='theia-AgentLabel'>{this.getAgentLabel(node)}</span></label>
+        </React.Fragment>;
+    }
+    private getAgentLabel(node: RequestNode | ResponseNode): string {
         if (isRequestNode(node)) {
-            return this.renderChatRequestPart(node);
+            // TODO find user name
+            return 'User';
+        }
+        // TODO check agent name
+        return 'AI';
+    }
+    private getAgentIconClassName(node: RequestNode | ResponseNode): string | undefined {
+        if (isRequestNode(node)) {
+            return codicon('account');
+        }
+        // TODO check agent for icons
+        return codicon('copilot');
+    }
+    private renderDetail(node: RequestNode | ResponseNode): React.ReactNode {
+        if (isRequestNode(node)) {
+            return this.renderChatRequest(node);
         }
         if (isResponseNode(node)) {
-            return this.renderTextChatPart(node);
-        }
-
-        return super.renderNode(node, props);
+            return this.renderChatResponse(node);
+        };
     }
 
-    private renderChatRequestPart(node: RequestNode): React.ReactNode {
+    private renderChatRequest(node: RequestNode): React.ReactNode {
         return (
-            <React.Fragment key={node.id}>
-                <div>
-                    <label className={codicon('account')}></label>
-                </div>
-                <div className={'theia-TextChatPartNode'}>{node.request.request.text}</div>
-            </React.Fragment>
+            <div className={'theia-RequestNode'}>{node.request.request.text}</div>
         );
     }
-    // TODO Delegate to a registry of ChatResponseCOntent renderers
-    private renderTextChatPart(node: ResponseNode): React.ReactNode {
+
+    private renderChatResponse(node: ResponseNode): React.ReactNode {
         return (
-            <React.Fragment key={node.id}>
-                <div>
-                    <label className={codicon('copilot')}></label>
-                </div>
-                <div className={'theia-TextChatPartNode'}>{node.response.response.asString()}</div>
-            </React.Fragment>
+            <div className={'theia-ResponseNode'}>
+                {node.response.response.content.map((c, i) =>
+                    <div className='theia-ResponseNode-Content' key={`${node.id}-content-${i}`}>{this.getChatReponsePartRenderer(c)}</div>
+                )}
+            </div>
         );
+    }
+
+    private getChatReponsePartRenderer(content: ChatResponseContent): React.ReactNode {
+        const contributions = this.chatResponsePartRenderers.getContributions();
+        const renderer = contributions.map(c => ({ prio: c.canHandle(content), renderer: c })).sort((a, b) => b.prio - a.prio)[0].renderer;
+        return renderer.render(content);
     }
 }

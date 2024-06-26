@@ -15,20 +15,22 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { WidgetFactory, bindViewContribution } from '@theia/core/lib/browser';
-// import { ChatWidget } from './chat-widget';
+import { WidgetFactory, bindViewContribution,  } from '@theia/core/lib/browser';
+import { bindContributionProvider } from '@theia/core';
 import { AIChatContribution } from './aichat-ui-contribution';
 import { ChatViewWidget } from './chat-view-widget';
 import { createChatViewTreeWidget } from './chat-tree-view';
 import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
 import { ChatInputWidget } from './chat-input-widget';
+import { ChatResponsePartRenderer } from './types';
 
 import '../../src/browser/style/index.css';
+import { TextPartRenderer } from './chat-response-renderer';
 
 export default new ContainerModule(bind => {
     bindViewContribution(bind, AIChatContribution);
+    bindContributionProvider(bind, ChatResponsePartRenderer);
 
-    // bind(ChatWidget).toSelf().inSingletonScope();
     bind(ChatViewWidget).toSelf().inSingletonScope();
     bind(WidgetFactory).toDynamicValue(context => ({
         id: ChatViewWidget.ID,
@@ -44,13 +46,10 @@ export default new ContainerModule(bind => {
     bind(ChatViewTreeWidget).toDynamicValue(ctx =>
         createChatViewTreeWidget(ctx.container)
     );
-    // bind(WidgetFactory).toDynamicValue(({ container }) => ({
-    //     id: ChatWidget.ID,
-    //     createWidget: () => ChatWidget
-    // })).inSingletonScope();
 
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
         id: ChatViewTreeWidget.ID,
         createWidget: () => container.get(ChatViewTreeWidget)
     })).inSingletonScope();
+    bind(ChatResponsePartRenderer).to(TextPartRenderer).inSingletonScope();
 });
