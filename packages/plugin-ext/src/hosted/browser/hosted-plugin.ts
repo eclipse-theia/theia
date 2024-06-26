@@ -209,7 +209,8 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
         this.notebookRendererMessagingService.onWillActivateRenderer(rendererId => this.activateByNotebookRenderer(rendererId));
 
         this.widgets.onDidCreateWidget(({ factoryId, widget }) => {
-            if ((factoryId === WebviewWidget.FACTORY_ID || factoryId === CustomEditorWidget.FACTORY_ID) && widget instanceof WebviewWidget) {
+            // note: state restoration of custom editors is handled in `PluginCustomEditorRegistry.init`
+            if (factoryId === WebviewWidget.FACTORY_ID && widget instanceof WebviewWidget) {
                 const storeState = widget.storeState.bind(widget);
                 const restoreState = widget.restoreState.bind(widget);
 
