@@ -32,7 +32,7 @@ import { ContributionProvider } from '../common/contribution-provider';
 import { ElectronSecurityTokenService } from './electron-security-token-service';
 import { ElectronSecurityToken } from '../electron-common/electron-token';
 import Storage = require('electron-store');
-import { CancellationTokenSource, Disposable, DisposableCollection, Path, isOSX, isWindows, nls } from '../common';
+import { CancellationTokenSource, Disposable, DisposableCollection, Path, isOSX, isWindows } from '../common';
 import { DEFAULT_WINDOW_HASH, WindowSearchParams } from '../common/window';
 import { TheiaBrowserWindowOptions, TheiaElectronWindow, TheiaElectronWindowFactory } from './theia-electron-window';
 import { ElectronMainApplicationGlobals } from './electron-main-constants';
@@ -145,9 +145,6 @@ export namespace ElectronMainProcessArgv {
         };
     }
 }
-
-const secondaryWindowHTML = FileUri.create(path.resolve('./lib/frontend/secondary-window.html')).toString();
-console.error(`secondary url: ${secondaryWindowHTML}`);
 
 @injectable()
 export class ElectronMainApplication {
@@ -746,10 +743,10 @@ export class ElectronMainApplication {
                 let okToOpen = uri.scheme === 'https' || uri.scheme === 'http';
                 if (!okToOpen) {
                     const button = dialog.showMessageBoxSync(BrowserWindow.fromWebContents(webContents)!, {
-                        message: nls.localize('theia/core/openLink.message', 'Open link\n\n{0}\n\nin the system handler?', details.url),
+                        message: `Open link\n\n${details.url}\n\nin the system handler?`,
                         type: 'question',
-                        title: nls.localizeByDefault('Open Link'),
-                        buttons: [nls.localizeByDefault('OK'), nls.localizeByDefault('Cancel')],
+                        title: 'Open Link',
+                        buttons: ['OK', 'Cancel'],
                         defaultId: 1,
                         cancelId: 1
                     });
