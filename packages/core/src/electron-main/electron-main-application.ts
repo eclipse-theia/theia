@@ -722,10 +722,10 @@ export class ElectronMainApplication {
 
     protected async onSecondInstance(event: ElectronEvent, argv: string[], cwd: string): Promise<void> {
         createYargs(this.processArgv.getProcessArgvWithoutBin(argv), process.cwd())
-        .help(false)
-        .command('$0 [file]', false,
-            cmd => cmd
-                .positional('file', { type: 'string' }),
+            .help(false)
+            .command('$0 [file]', false,
+                cmd => cmd
+                    .positional('file', { type: 'string' }),
                 async args => {
                     this.handleMainCommand({
                         file: args.file,
