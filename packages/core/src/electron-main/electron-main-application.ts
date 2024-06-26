@@ -721,14 +721,19 @@ export class ElectronMainApplication {
     }
 
     protected async onSecondInstance(event: ElectronEvent, argv: string[], cwd: string): Promise<void> {
-        const electronWindows = BrowserWindow.getAllWindows();
-        if (electronWindows.length > 0) {
-            const electronWindow = electronWindows[0];
-            if (electronWindow.isMinimized()) {
-                electronWindow.restore();
-            }
-            electronWindow.focus();
-        }
+        createYargs(this.processArgv.getProcessArgvWithoutBin(argv), process.cwd())
+            .help(false)
+            .command('$0 [file]', false,
+                cmd => cmd
+                    .positional('file', { type: 'string' }),
+                async args => {
+                    this.handleMainCommand({
+                        file: args.file,
+                        cwd: process.cwd(),
+                        secondInstance: true
+                    });
+                },
+            ).parse();
     }
 
     protected onWindowAllClosed(event: ElectronEvent): void {

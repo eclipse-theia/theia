@@ -9,9 +9,8 @@
 <a name="breaking_changes_not_yet_released">[Breaking Changes:](#breaking_changes_not_yet_released)</a> 
 
 - [filesystem] Adjusted the "Save As" mechanism. It now assumes that `Saveable.getSnapshot()` returns a full snapshot of the editor model [#13689](https://github.com/eclipse-theia/theia/pull/13689). 
-
--->
-
+- [electron] Switch single instance on per default [#13831](https://github.com/eclipse-theia/theia/pull/13831) - contributed on behalf of STMicroelectronics
+ -->
 ## 1.50.0 - 06/03/2024
 
 - [application-package] bumped the default supported API from `1.88.1` to `1.89.1` [#13738](https://github.com/eclipse-theia/theia/pull/13738) - contributed on behalf of STMicroelectronics
