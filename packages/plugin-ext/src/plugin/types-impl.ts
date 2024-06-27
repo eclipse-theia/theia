@@ -3028,6 +3028,14 @@ export class FunctionBreakpoint extends Breakpoint {
     }
 }
 
+export class DebugThread {
+    private constructor(readonly session: theia.DebugSession, readonly threadId: number) { }
+}
+
+export class DebugStackFrame {
+      private constructor(readonly session: theia.DebugSession, readonly threadId: number, readonly frameId: number) { }
+}
+
 @es5ClassCompat
 export class Color {
     readonly red: number;
