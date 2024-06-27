@@ -135,7 +135,7 @@ export class TestControllerImpl implements theia.TestController {
     }
 
     createTestRun(request: theia.TestRunRequest, name?: string, persist: boolean = true): theia.TestRun {
-        return this.testRunStarted(request, name || '', persist, true);
+       return this.testRunStarted(request, name || '', persist, true);
     }
 
     dispose() {
@@ -149,7 +149,7 @@ export class TestControllerImpl implements theia.TestController {
             return existing;
         }
 
-        const run = new TestRun(this, this.proxy, name, persist, isRunning);
+        const run = new TestRun(this, this.proxy, name, persist, isRunning, request.preserveFocus);
         const endListener = run.onWillFlush(() => {
             // make sure we notify the front end of test item changes before test run state is sent
             this.deltaBuilder.flush();
@@ -162,7 +162,7 @@ export class TestControllerImpl implements theia.TestController {
         return run;
     }
 
-    runTestsForUI(profileId: string, name: string, includedTests: string[][], excludedTests: string[][]): void {
+    runTestsForUI(profileId: string, name: string, includedTests: string[][], excludedTests: string[][], preserveFocus: boolean): void {
         const profile = this.getProfile(profileId);
         if (!profile) {
             console.error(`No test run profile found for controller ${this.id} with id ${profileId} `);
@@ -197,7 +197,7 @@ export class TestControllerImpl implements theia.TestController {
             .filter(isDefined);
 
         const request = new TestRunRequest(
-            includeTests, excludeTests, profile, false // don't support continuous run yet
+            includeTests, excludeTests, profile, false /* don't support continuous run yet */, preserveFocus
         );
 
         const run = this.testRunStarted(request, name, false, false);
@@ -258,13 +258,14 @@ class TestRun implements theia.TestRun {
         private readonly proxy: TestingMain,
         readonly name: string,
         readonly isPersisted: boolean,
-        isRunning: boolean) {
+        isRunning: boolean,
+        preserveFocus: boolean) {
         this.id = generateUuid();
 
         this.tokenSource = new CancellationTokenSource();
         this.token = this.tokenSource.token;
 
-        this.proxy.$notifyTestRunCreated(this.controller.id, { id: this.id, name: this.name, isRunning });
+        this.proxy.$notifyTestRunCreated(this.controller.id, { id: this.id, name: this.name, isRunning }, preserveFocus);
     }
     enqueued(test: theia.TestItem): void {
         this.updateTestState(test, { itemPath: checkTestInstance(test).path, state: TestExecutionState.Queued });
@@ -444,7 +445,7 @@ export class TestingExtImpl implements TestingExt {
     }
 
     runTestsForUI(req: TestRunRequestDTO): void {
-        this.withController(req.controllerId).runTestsForUI(req.profileId, req.name, req.includedTests, req.excludedTests);
+        this.withController(req.controllerId).runTestsForUI(req.profileId, req.name, req.includedTests, req.excludedTests, req.preserveFocus);
     }
 
     /**

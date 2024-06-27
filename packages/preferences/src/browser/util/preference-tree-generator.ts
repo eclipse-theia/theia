@@ -67,6 +67,7 @@ export class PreferenceTreeGenerator {
         ['search', 'features'],
         ['task', 'features'],
         ['terminal', 'features'],
+        ['testing', 'features'],
         ['toolbar', 'features'],
         ['webview', 'features'],
         ['workspace', 'application'],

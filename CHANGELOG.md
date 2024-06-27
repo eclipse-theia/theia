@@ -7,6 +7,7 @@
 <!-- ## not yet released 
 
 - [plugin] Avoid pollution of all toolbars by actions contributed by tree views in extensions [#13768](https://github.com/eclipse-theia/theia/pull/13768) - contributed on behalf of STMicroelectronics
+- [plugin] support TestRunRequest preserveFocus API [#13839](https://github.com/eclipse-theia/theia/pull/13839) - contributed on behalf of STMicroelectronics 
 
 - [debug] stub activeStackItem and related change event in debug namespace [#13847](https://github.com/eclipse-theia/theia/pull/13847) - contributed on behalf of STMicroelectronics
 

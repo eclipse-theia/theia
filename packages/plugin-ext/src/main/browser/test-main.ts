@@ -18,6 +18,7 @@ import { SimpleObservableCollection, TreeCollection, observableProperty } from '
 import {
     TestController, TestItem, TestOutputItem, TestRun, TestRunProfile, TestService, TestState, TestStateChangedEvent
 } from '@theia/test/lib/browser/test-service';
+import { TestExecutionProgressService } from '@theia/test/lib/browser/test-execution-progress-service';
 import { AccumulatingTreeDeltaEmitter, CollectionDelta, DeltaKind, TreeDelta, TreeDeltaBuilder } from '@theia/test/lib/common/tree-delta';
 import { Emitter, Location, Range } from '@theia/core/shared/vscode-languageserver-protocol';
 import { Range as PluginRange, Location as PluginLocation } from '../../common/plugin-api-rpc-model';
@@ -245,13 +246,14 @@ class TestRunProfileImpl implements TestRunProfile {
         this.proxy.$onConfigureRunProfile(this.controllerId, this.id);
     }
 
-    run(name: string, included: TestItem[], excluded: TestItem[]): void {
+    run(name: string, included: TestItem[], excluded: TestItem[], preserveFocus: boolean): void {
         this.proxy.$onRunControllerTests([{
             controllerId: this.controllerId,
             name,
             profileId: this.id,
             includedTests: included.map(item => itemToPath(item)),
-            excludedTests: excluded.map(item => itemToPath(item))
+            excludedTests: excluded.map(item => itemToPath(item)),
+            preserveFocus
         }]);
     }
 }
@@ -551,12 +553,14 @@ class TestControllerImpl implements TestController {
 
 export class TestingMainImpl implements TestingMain {
     private testService: TestService;
+    private testExecutionProgressService: TestExecutionProgressService;
     private controllerRegistrations = new Map<string, [TestControllerImpl, Disposable]>();
     private proxy: TestingExt;
     canRefresh: boolean;
 
     constructor(rpc: RPCProtocol, container: interfaces.Container, commandRegistry: CommandRegistryMainImpl) {
         this.testService = container.get(TestService);
+        this.testExecutionProgressService = container.get(TestExecutionProgressService);
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.TESTING_EXT);
         commandRegistry.registerArgumentProcessor({
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -614,7 +618,8 @@ export class TestingMainImpl implements TestingMain {
     $removeTestRunProfile(controllerId: string, profileId: string): void {
         this.withController(controllerId).removeProfile(profileId);
     }
-    $notifyTestRunCreated(controllerId: string, run: TestRunDTO): void {
+    $notifyTestRunCreated(controllerId: string, run: TestRunDTO, preserveFocus: boolean): void {
+        this.testExecutionProgressService.onTestRunRequested(preserveFocus);
         this.withController(controllerId).addRun(run.id, run.name, run.isRunning);
     }
     $notifyTestStateChanged(controllerId: string, runId: string, stateChanges: TestStateChangeDTO[], outputChanges: TestOutputDTO[]): void {

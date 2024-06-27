@@ -36,9 +36,11 @@ import { TestRunTree, TestRunTreeWidget } from './test-run-widget';
 import { TestResultViewContribution } from './test-result-view-contribution';
 import { TEST_RUNS_CONTEXT_MENU, TestRunViewContribution } from './test-run-view-contribution';
 import { TestContextKeyService } from './test-context-key-service';
+import { DefaultTestExecutionProgressService, TestExecutionProgressService } from '../test-execution-progress-service';
+import { bindTestPreferences } from '../test-preferences';
 
 export default new ContainerModule(bind => {
-
+    bindTestPreferences(bind);
     bindContributionProvider(bind, TestContribution);
     bind(TestContextKeyService).toSelf().inSingletonScope();
     bind(TestService).to(DefaultTestService).inSingletonScope();
@@ -105,7 +107,7 @@ export default new ContainerModule(bind => {
     bind(TabBarToolbarContribution).toService(TestRunViewContribution);
     bind(TestExecutionStateManager).toSelf().inSingletonScope();
     bind(TestOutputUIModel).toSelf().inSingletonScope();
-
+    bind(TestExecutionProgressService).to(DefaultTestExecutionProgressService).inSingletonScope();
 });
 
 export function createTestTreeContainer(parent: interfaces.Container): Container {

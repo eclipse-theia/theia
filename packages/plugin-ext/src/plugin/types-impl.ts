@@ -3337,6 +3337,7 @@ export class TestRunRequest implements theia.TestRunRequest {
         public readonly exclude: theia.TestItem[] | undefined = undefined,
         public readonly profile: theia.TestRunProfile | undefined = undefined,
         public readonly continuous: boolean | undefined = undefined,
+        public readonly preserveFocus: boolean = true
     ) { }
 }
 

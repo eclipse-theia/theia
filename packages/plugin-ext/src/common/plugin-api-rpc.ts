@@ -2265,7 +2265,7 @@ export interface TestingMain {
 
     // Test runs
 
-    $notifyTestRunCreated(controllerId: string, run: TestRunDTO): void;
+    $notifyTestRunCreated(controllerId: string, run: TestRunDTO, preserveFocus: boolean): void;
     $notifyTestStateChanged(controllerId: string, runId: string, stateChanges: TestStateChangeDTO[], outputChanges: TestOutputDTO[]): void;
     $notifyTestRunEnded(controllerId: string, runId: string): void;
 }
