@@ -76,6 +76,7 @@ const isSingleInstance = ${this.pck.props.backend.config.singleInstance === true
         THEIA_APP_PROJECT_PATH: theiaAppProjectPath,
         THEIA_BACKEND_MAIN_PATH: resolve(__dirname, 'main.js'),
         THEIA_FRONTEND_HTML_PATH: resolve(__dirname, '..', '..', 'lib', 'frontend', 'index.html'),
+        THEIA_SECONDARY_WINDOW_HTML_PATH: resolve(__dirname, '..', '..', 'lib', 'frontend', 'secondary-window.html')
     });
     
     function load(raw) {

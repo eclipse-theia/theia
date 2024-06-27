@@ -15,7 +15,8 @@
 // *****************************************************************************
 
 import { inject, injectable, named } from 'inversify';
-import { screen, app, BrowserWindow, WebContents, Event as ElectronEvent, BrowserWindowConstructorOptions, nativeImage, nativeTheme } from '../../electron-shared/electron';
+import { screen, app, BrowserWindow, WebContents, Event as ElectronEvent, BrowserWindowConstructorOptions, nativeImage,
+    nativeTheme, shell, dialog } from '../../electron-shared/electron';
 import * as path from 'path';
 import { Argv } from 'yargs';
 import { AddressInfo } from 'net';
@@ -31,7 +32,7 @@ import { ContributionProvider } from '../common/contribution-provider';
 import { ElectronSecurityTokenService } from './electron-security-token-service';
 import { ElectronSecurityToken } from '../electron-common/electron-token';
 import Storage = require('electron-store');
-import { CancellationTokenSource, Disposable, DisposableCollection, isOSX, isWindows } from '../common';
+import { CancellationTokenSource, Disposable, DisposableCollection, Path, isOSX, isWindows } from '../common';
 import { DEFAULT_WINDOW_HASH, WindowSearchParams } from '../common/window';
 import { TheiaBrowserWindowOptions, TheiaElectronWindow, TheiaElectronWindowFactory } from './theia-electron-window';
 import { ElectronMainApplicationGlobals } from './electron-main-constants';
@@ -410,7 +411,6 @@ export class ElectronMainApplication {
         electronWindow.window.on('unmaximize', () => TheiaRendererAPI.sendWindowEvent(electronWindow.window.webContents, 'unmaximize'));
         electronWindow.window.on('focus', () => TheiaRendererAPI.sendWindowEvent(electronWindow.window.webContents, 'focus'));
         this.attachSaveWindowState(electronWindow.window);
-        this.configureNativeSecondaryWindowCreation(electronWindow.window);
 
         return electronWindow.window;
     }
@@ -486,31 +486,6 @@ export class ElectronMainApplication {
         const window = this.initialWindow;
         this.initialWindow = undefined;
         return window;
-    }
-
-    /** Configures native window creation, i.e. using window.open or links with target "_blank" in the frontend. */
-    protected configureNativeSecondaryWindowCreation(electronWindow: BrowserWindow): void {
-        electronWindow.webContents.setWindowOpenHandler(() => {
-            const { minWidth, minHeight } = this.getDefaultOptions();
-            const options: BrowserWindowConstructorOptions = {
-                ...this.getDefaultTheiaSecondaryWindowBounds(),
-                // We always need the native window frame for now because the secondary window does not have Theia's title bar by default.
-                // In 'custom' title bar mode this would leave the window without any window controls (close, min, max)
-                // TODO set to this.useNativeWindowFrame when secondary windows support a custom title bar.
-                frame: true,
-                minWidth,
-                minHeight
-            };
-            if (!this.useNativeWindowFrame) {
-                // If the main window does not have a native window frame, do not show  an icon in the secondary window's native title bar.
-                // The data url is a 1x1 transparent png
-                options.icon = nativeImage.createFromDataURL('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQI12P4DwQACfsD/WMmxY8AAAAASUVORK5CYII=');
-            }
-            return {
-                action: 'allow',
-                overrideBrowserWindowOptions: options,
-            };
-        });
     }
 
     /**
@@ -714,6 +689,7 @@ export class ElectronMainApplication {
         app.on('will-quit', this.onWillQuit.bind(this));
         app.on('second-instance', this.onSecondInstance.bind(this));
         app.on('window-all-closed', this.onWindowAllClosed.bind(this));
+        app.on('web-contents-created', this.onWebContentsCreated.bind(this));
     }
 
     protected onWillQuit(event: ElectronEvent): void {
@@ -734,6 +710,60 @@ export class ElectronMainApplication {
                     });
                 },
             ).parse();
+    }
+
+    protected onWebContentsCreated(event: ElectronEvent, webContents: WebContents): void {
+        // Block any in-page navigation except loading the secondary window contents
+        webContents.on('will-navigate', evt => {
+            if (new URI(evt.url).path.fsPath() !== new Path(this.globals.THEIA_SECONDARY_WINDOW_HTML_PATH).fsPath()) {
+                evt.preventDefault();
+            }
+        });
+
+        webContents.setWindowOpenHandler(details => {
+            // if it's a secondary window, allow it to open
+            if (new URI(details.url).path.fsPath() === new Path(this.globals.THEIA_SECONDARY_WINDOW_HTML_PATH).fsPath()) {
+                const { minWidth, minHeight } = this.getDefaultOptions();
+                const options: BrowserWindowConstructorOptions = {
+                    ...this.getDefaultTheiaSecondaryWindowBounds(),
+                    // We always need the native window frame for now because the secondary window does not have Theia's title bar by default.
+                    // In 'custom' title bar mode this would leave the window without any window controls (close, min, max)
+                    // TODO set to this.useNativeWindowFrame when secondary windows support a custom title bar.
+                    frame: true,
+                    minWidth,
+                    minHeight
+                };
+                if (!this.useNativeWindowFrame) {
+                    // If the main window does not have a native window frame, do not show  an icon in the secondary window's native title bar.
+                    // The data url is a 1x1 transparent png
+                    options.icon = nativeImage.createFromDataURL(
+                        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQI12P4DwQACfsD/WMmxY8AAAAASUVORK5CYII=');
+                }
+                return {
+                    action: 'allow',
+                    overrideBrowserWindowOptions: options,
+                };
+            } else {
+                const uri: URI = new URI(details.url);
+                let okToOpen = uri.scheme === 'https' || uri.scheme === 'http';
+                if (!okToOpen) {
+                    const button = dialog.showMessageBoxSync(BrowserWindow.fromWebContents(webContents)!, {
+                        message: `Open link\n\n${details.url}\n\nin the system handler?`,
+                        type: 'question',
+                        title: 'Open Link',
+                        buttons: ['OK', 'Cancel'],
+                        defaultId: 1,
+                        cancelId: 1
+                    });
+                    okToOpen = button === 0;
+                }
+                if (okToOpen) {
+                    shell.openExternal(details.url, {});
+                }
+
+                return { action: 'deny' };
+            }
+        });
     }
 
     protected onWindowAllClosed(event: ElectronEvent): void {
