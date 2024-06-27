@@ -346,12 +346,6 @@
       "reveal": "Revelar en el Explorador",
       "toggleHiddenFiles": "Activar los archivos ocultos"
     },
-    "notebook": {
-      "dragGhostImage": {
-        "codeText": "Celda de código seleccionada",
-        "markdownText": "Celda de Mardown seleccionada"
-      }
-    },
     "output": {
       "clearOutputChannel": "Canal de salida claro...",
       "closeOutputChannel": "Cerrar canal de salida...",
@@ -533,7 +527,6 @@
       "confirmMessage.uriMultiple": "¿Realmente quieres borrar todos los {0} archivos seleccionados?",
       "confirmMessage.uriSingle": "¿Realmente quieres borrar {0}?",
       "duplicate": "Duplicado",
-      "failApply": "No se han podido aplicar los cambios al nuevo archivo",
       "failSaveAs": "No se puede ejecutar \"{0}\" para el widget actual.",
       "newFilePlaceholder": "Nombre del archivo",
       "newFolderPlaceholder": "Nombre de la carpeta",

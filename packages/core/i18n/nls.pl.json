@@ -346,12 +346,6 @@
       "reveal": "Ujawnij w Eksploratorze",
       "toggleHiddenFiles": "Przełącz ukryte pliki"
     },
-    "notebook": {
-      "dragGhostImage": {
-        "codeText": "Wybrana komórka kodu",
-        "markdownText": "Wybrano komórkę Mardown"
-      }
-    },
     "output": {
       "clearOutputChannel": "Wyczyść kanał wyjściowy...",
       "closeOutputChannel": "Zamknij kanał wyjściowy...",
@@ -533,7 +527,6 @@
       "confirmMessage.uriMultiple": "Czy naprawdę chcesz usunąć wszystkie {0} zaznaczone pliki?",
       "confirmMessage.uriSingle": "Czy naprawdę chcesz usunąć {0}?",
       "duplicate": "Duplikat",
-      "failApply": "Nie można zastosować zmian do nowego pliku",
       "failSaveAs": "Nie można uruchomić \"{0}\" dla bieżącego widżetu.",
       "newFilePlaceholder": "Nazwa pliku",
       "newFolderPlaceholder": "Nazwa folderu",

@@ -346,12 +346,6 @@
       "reveal": "Reveal in Explorer",
       "toggleHiddenFiles": "Toggle Hidden Files"
     },
-    "notebook": {
-      "dragGhostImage": {
-        "codeText": "Code cell selected",
-        "markdownText": "Mardown cell selected"
-      }
-    },
     "output": {
       "clearOutputChannel": "Clear Output Channel...",
       "closeOutputChannel": "Close Output Channel...",
@@ -533,7 +527,6 @@
       "confirmMessage.uriMultiple": "Do you really want to delete all the {0} selected files?",
       "confirmMessage.uriSingle": "Do you really want to delete {0}?",
       "duplicate": "Duplicate",
-      "failApply": "Could not apply changes to new file",
       "failSaveAs": "Cannot run \"{0}\" for the current widget.",
       "newFilePlaceholder": "File Name",
       "newFolderPlaceholder": "Folder Name",

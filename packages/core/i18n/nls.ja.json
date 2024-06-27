@@ -346,12 +346,6 @@
       "reveal": "エクスプローラーでの表示",
       "toggleHiddenFiles": "隠しファイルのトグル"
     },
-    "notebook": {
-      "dragGhostImage": {
-        "codeText": "選択されたコードセル",
-        "markdownText": "マーダウンのセルを選択"
-      }
-    },
     "output": {
       "clearOutputChannel": "クリア出力チャンネル...",
       "closeOutputChannel": "出力チャンネルを閉じる...",
@@ -533,7 +527,6 @@
       "confirmMessage.uriMultiple": "本当に{0}個の選択されたファイルをすべて削除しますか?",
       "confirmMessage.uriSingle": "本当に{0}を削除するのですか?",
       "duplicate": "デュプリケート",
-      "failApply": "新しいファイルに変更を適用できなかった",
       "failSaveAs": "現在のウィジェットでは\"{0}\"を実行できません。",
       "newFilePlaceholder": "ファイル名",
       "newFolderPlaceholder": "フォルダー名",

@@ -346,12 +346,6 @@
       "reveal": "Odhalení v Průzkumníkovi",
       "toggleHiddenFiles": "Přepínání skrytých souborů"
     },
-    "notebook": {
-      "dragGhostImage": {
-        "codeText": "Vybraná buňka kódu",
-        "markdownText": "Vybraná buňka Mardown"
-      }
-    },
     "output": {
       "clearOutputChannel": "Jasný výstupní kanál...",
       "closeOutputChannel": "Zavřít výstupní kanál...",
@@ -533,7 +527,6 @@
       "confirmMessage.uriMultiple": "Opravdu chcete odstranit všechny {0} vybrané soubory?",
       "confirmMessage.uriSingle": "Opravdu chcete odstranit {0}?",
       "duplicate": "Duplikát",
-      "failApply": "Nelze použít změny v novém souboru",
       "failSaveAs": "Nelze spustit \"{0}\" pro aktuální widget.",
       "newFilePlaceholder": "Název souboru",
       "newFolderPlaceholder": "Název složky",
