@@ -346,12 +346,6 @@
       "reveal": "Раскрытие в Проводнике",
       "toggleHiddenFiles": "Переключение скрытых файлов"
     },
-    "notebook": {
-      "dragGhostImage": {
-        "codeText": "Выбранная ячейка кода",
-        "markdownText": "Выбранная клетка Мардауна"
-      }
-    },
     "output": {
       "clearOutputChannel": "Очистить выходной канал...",
       "closeOutputChannel": "Закрыть выходной канал...",
@@ -533,7 +527,6 @@
       "confirmMessage.uriMultiple": "Вы действительно хотите удалить все {0} выбранных файлов?",
       "confirmMessage.uriSingle": "Вы действительно хотите удалить {0}?",
       "duplicate": "Дубликат",
-      "failApply": "Не удалось применить изменения к новому файлу",
       "failSaveAs": "Невозможно выполнить \"{0}\" для текущего виджета.",
       "newFilePlaceholder": "Имя файла",
       "newFolderPlaceholder": "Имя папки",

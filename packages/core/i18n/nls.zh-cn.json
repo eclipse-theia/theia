@@ -346,12 +346,6 @@
       "reveal": "在资源管理器中显示",
       "toggleHiddenFiles": "切换隐藏文件"
     },
-    "notebook": {
-      "dragGhostImage": {
-        "codeText": "已选择代码单元",
-        "markdownText": "已选定 Mardown 牢房"
-      }
-    },
     "output": {
       "clearOutputChannel": "清除输出通道...",
       "closeOutputChannel": "关闭输出通道...",
@@ -533,7 +527,6 @@
       "confirmMessage.uriMultiple": "你真的想删除所有{0}选中的文件吗?",
       "confirmMessage.uriSingle": "你真的想删除{0}吗?",
       "duplicate": "复制",
-      "failApply": "无法将更改应用于新文件",
       "failSaveAs": "无法为当前的小组件运行\"{0}\"。",
       "newFilePlaceholder": "文件名称",
       "newFolderPlaceholder": "文件夹名称",

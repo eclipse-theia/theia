@@ -346,12 +346,6 @@
       "reveal": "Revelar no Explorer",
       "toggleHiddenFiles": "Alternar ficheiros escondidos"
     },
-    "notebook": {
-      "dragGhostImage": {
-        "codeText": "Célula de código selecionada",
-        "markdownText": "Célula Mardown selecionada"
-      }
-    },
     "output": {
       "clearOutputChannel": "Canal de saída transparente...",
       "closeOutputChannel": "Fechar canal de saída...",
@@ -533,7 +527,6 @@
       "confirmMessage.uriMultiple": "Quer realmente apagar todos os ficheiros {0} seleccionados?",
       "confirmMessage.uriSingle": "Quer mesmo apagar {0}?",
       "duplicate": "Duplicado",
-      "failApply": "Não foi possível aplicar alterações ao novo ficheiro",
       "failSaveAs": "Não é possível executar \"{0}\" para o widget actual.",
       "newFilePlaceholder": "Nome do ficheiro",
       "newFolderPlaceholder": "Nome da pasta",

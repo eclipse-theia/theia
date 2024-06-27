@@ -346,12 +346,6 @@
       "reveal": "Feltárása az Explorerben",
       "toggleHiddenFiles": "Rejtett fájlok kapcsolása"
     },
-    "notebook": {
-      "dragGhostImage": {
-        "codeText": "Kijelölt kódcella",
-        "markdownText": "Mardown cella kiválasztva"
-      }
-    },
     "output": {
       "clearOutputChannel": "Tiszta kimeneti csatorna...",
       "closeOutputChannel": "Kimeneti csatorna bezárása...",
@@ -533,7 +527,6 @@
       "confirmMessage.uriMultiple": "Tényleg törölni szeretné az összes {0} kiválasztott fájlt?",
       "confirmMessage.uriSingle": "Tényleg törölni akarja a {0}-t?",
       "duplicate": "Duplikátum",
-      "failApply": "Nem tudta alkalmazni a változtatásokat az új fájlra",
       "failSaveAs": "Nem lehet futtatni a \"{0}\"-t az aktuális widgethez.",
       "newFilePlaceholder": "Fájlnév",
       "newFolderPlaceholder": "Mappa neve",
