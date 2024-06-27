@@ -6,18 +6,55 @@
 
 <!-- ## not yet released 
 
-- [plugin] Avoid pollution of all toolbars by actions contributed by tree views in extensions [#13768](https://github.com/eclipse-theia/theia/pull/13768) - contributed on behalf of STMicroelectronics
-- [plugin] support TestRunRequest preserveFocus API [#13839](https://github.com/eclipse-theia/theia/pull/13839) - contributed on behalf of STMicroelectronics 
-
-- [debug] stub activeStackItem and related change event in debug namespace [#13847](https://github.com/eclipse-theia/theia/pull/13847) - contributed on behalf of STMicroelectronics
-
-- [application-package] bumped the default supported API from `1.89.1` to `1.90.2` [#13849](https://github.com/eclipse-theia/theia/pull/13849) - contributed on behalf of STMicroelectronics
-
 <a name="breaking_changes_not_yet_released">[Breaking Changes:](#breaking_changes_not_yet_released)</a> 
 
-- [filesystem] Adjusted the "Save As" mechanism. It now assumes that `Saveable.getSnapshot()` returns a full snapshot of the editor model [#13689](https://github.com/eclipse-theia/theia/pull/13689). 
-- [electron] Switch single instance on per default [#13831](https://github.com/eclipse-theia/theia/pull/13831) - contributed on behalf of STMicroelectronics
  -->
+
+## 1.50.0 - 06/27/2024
+
+- [application-manager] updated logic to load correct messaging module in browser-only mode [#13827](https://github.com/eclipse-theia/theia/pull/13827)
+- [application-package] bumped the default supported API from `1.89.1` to `1.90.2` [#13849](https://github.com/eclipse-theia/theia/pull/13849) - Contributed on behalf of STMicroelectronics
+- [core] added support for dynamic menu contributions [#13720](https://github.com/eclipse-theia/theia/pull/13720)
+- [core] fixed account menu order, icon and badge [#13771](https://github.com/eclipse-theia/theia/pull/13771)
+- [core] fixed overflow behavior of sidebars [#13483](https://github.com/eclipse-theia/theia/pull/13483) - Contributed on behalf of STMicroelectronics
+- [core] improved shown keybindings in context menu [#13830](https://github.com/eclipse-theia/theia/pull/13830)
+- [core] introduced optional serialize method in Saveable [#13833](https://github.com/eclipse-theia/theia/pull/13833)
+- [core] updated doc comments on service-connection-provider.ts [#13805](https://github.com/eclipse-theia/theia/pull/13805) - Contributed on behalf of STMicroelectronics
+- [core] updated logic of links to block local navigation and open new windows externally in electron [#13782](https://github.com/eclipse-theia/theia/pull/13782) - Contributed on behalf of STMicroelectronics
+- [core] updated logic to propagate "Save As" operation to plugin host [#13689](https://github.com/eclipse-theia/theia/pull/13689)
+- [core] updated logic to use 'openWithSystemApp' to open uri when 'env.openExternal' requested [#13676](https://github.com/eclipse-theia/theia/pull/13676)
+- [electron] switched single instance on per default. [#13831](https://github.com/eclipse-theia/theia/pull/13831) - Contributed on behalf of STMicroelectronics
+- [filesystem] improved Upload Command [#13775](https://github.com/eclipse-theia/theia/pull/13775)
+- [markers] fixed data race in problem view tree [#13841](https://github.com/eclipse-theia/theia/pull/13841)
+- [messages] updated logic to always resolve existing before showing new notification [#13668](https://github.com/eclipse-theia/theia/pull/13668)
+- [monaco] fixed editors theme change and widget not attached error [#13757](https://github.com/eclipse-theia/theia/pull/13757)
+- [notebook] added an indicator for loading notebooks [#13843](https://github.com/eclipse-theia/theia/pull/13843)
+- [notebook] added notebook output options and tag preference search [#13773](https://github.com/eclipse-theia/theia/pull/13773)
+- [notebook] disabled cell editor search widget [#13836](https://github.com/eclipse-theia/theia/pull/13836)
+- [notebook] improved ability to overwrite notebook services [#13776](https://github.com/eclipse-theia/theia/pull/13776)
+- [notebook] improved notebook cell drag images [#13791](https://github.com/eclipse-theia/theia/pull/13791)
+- [notebook] improved support for creating new notebooks [#13696](https://github.com/eclipse-theia/theia/pull/13696)
+- [notebook] updated logic to set notebook editor as active when opening in foreground [#13828](https://github.com/eclipse-theia/theia/pull/13828)
+- [notebook] updated logic to stop moving to next cell when suggestion widget is visible [#13774](https://github.com/eclipse-theia/theia/pull/13774)
+- [playwright] fixed type definition of TheiaAppFactory [#13799](https://github.com/eclipse-theia/theia/pull/13799) - Contributed on behalf of STMicroelectronics
+- [plugin] added stub for `registerMappedEditProvider` [#13681](https://github.com/eclipse-theia/theia/pull/13681) - Contributed on behalf of STMicroelectronics
+- [plugin] added support for PluginExt#extensionKind [#13763](https://github.com/eclipse-theia/theia/pull/13763)
+- [plugin] added support for TestRunRequest preserveFocus API [#13839](https://github.com/eclipse-theia/theia/pull/13839) - Contributed on behalf of STMicroelectronics
+- [plugin] fixed RPC proxy handler notifications and requests order [#13810](https://github.com/eclipse-theia/theia/pull/13810)
+- [plugin] fixed programmatic save for custom text editors [#13684](https://github.com/eclipse-theia/theia/pull/13684)
+- [plugin] fixed tab group API event order [#13812](https://github.com/eclipse-theia/theia/pull/13812)
+- [plugin] stubbed Chat and Language Model API [#13778](https://github.com/eclipse-theia/theia/pull/13778)
+- [plugin] stubbed activeStackItem and related change event in debug namespace [#13847](https://github.com/eclipse-theia/theia/pull/13847) - Contributed on behalf of STMicroelectronics
+- [plugin] updated logic to avoid pollution of all toolbars by actions contributed by tree views in extensions [#13768](https://github.com/eclipse-theia/theia/pull/13768) - Contributed on behalf of STMicroelectronics
+- [plugin] updated logic to return empty appRoot in web plugin host [#13762](https://github.com/eclipse-theia/theia/pull/13762)
+- [scm] updated jsdiff and simplify diff computation [#13787](https://github.com/eclipse-theia/theia/pull/13787) - Contributed on behalf of STMicroelectronics
+- [vsx-registry] updated logic to use targetPlatform when installing plugin from open-vsx [#13825](https://github.com/eclipse-theia/theia/pull/13825)
+
+<a name="breaking_changes_1.51.0">[Breaking Changes:](#breaking_changes_1.51.0)</a>
+
+- [electron] switched single instance on per default. [#13831](https://github.com/eclipse-theia/theia/pull/13831) - Contributed on behalf of STMicroelectronics
+- [filesystem] adjusted the "Save As" mechanism to assume that `Saveable.getSnapshot()` returns a full snapshot of the editor model [#13689](https://github.com/eclipse-theia/theia/pull/13689).
+
 ## 1.50.0 - 06/03/2024
 
 - [application-package] bumped the default supported API from `1.88.1` to `1.89.1` [#13738](https://github.com/eclipse-theia/theia/pull/13738) - contributed on behalf of STMicroelectronics
