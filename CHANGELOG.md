@@ -10,7 +10,7 @@
 
  -->
 
-## 1.50.0 - 06/27/2024
+## 1.51.0 - 06/27/2024
 
 - [application-manager] updated logic to load correct messaging module in browser-only mode [#13827](https://github.com/eclipse-theia/theia/pull/13827)
 - [application-package] bumped the default supported API from `1.89.1` to `1.90.2` [#13849](https://github.com/eclipse-theia/theia/pull/13849) - Contributed on behalf of STMicroelectronics
