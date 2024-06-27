@@ -660,7 +660,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
         const rootUris: URI[] = [];
         for (const root of this.tryGetRoots()) {
             const rootUri = root.resource;
-            if (rootUri && rootUri.isEqualOrParent(uri)) {
+            if (rootUri && rootUri.scheme === uri.scheme && rootUri.isEqualOrParent(uri)) {
                 rootUris.push(rootUri);
             }
         }

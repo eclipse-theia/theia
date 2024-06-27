@@ -62,6 +62,7 @@ import { IAccessibilityService } from '@theia/monaco-editor-core/esm/vs/platform
 import { ILanguageConfigurationService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/languageConfigurationRegistry';
 import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures';
 import * as objects from '@theia/monaco-editor-core/esm/vs/base/common/objects';
+import { Selection } from '@theia/editor/lib/browser/editor';
 
 export type ServicePair<T> = [ServiceIdentifier<T>, T];
 
@@ -94,7 +95,7 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
     protected editor: monaco.editor.IStandaloneCodeEditor;
 
     protected readonly onCursorPositionChangedEmitter = new Emitter<Position>();
-    protected readonly onSelectionChangedEmitter = new Emitter<Range>();
+    protected readonly onSelectionChangedEmitter = new Emitter<Selection>();
     protected readonly onFocusChangedEmitter = new Emitter<boolean>();
     protected readonly onDocumentContentChangedEmitter = new Emitter<TextDocumentChangeEvent>();
     protected readonly onMouseDownEmitter = new Emitter<EditorMouseEvent>();
@@ -192,8 +193,11 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
         this.toDispose.push(codeEditor.onDidChangeCursorPosition(() =>
             this.onCursorPositionChangedEmitter.fire(this.cursor)
         ));
-        this.toDispose.push(codeEditor.onDidChangeCursorSelection(() =>
-            this.onSelectionChangedEmitter.fire(this.selection)
+        this.toDispose.push(codeEditor.onDidChangeCursorSelection(event =>
+            this.onSelectionChangedEmitter.fire({
+                ...this.m2p.asRange(event.selection),
+                direction: event.selection.getDirection() === monaco.SelectionDirection.LTR ? 'ltr' : 'rtl'
+            })
         ));
         this.toDispose.push(codeEditor.onDidFocusEditorText(() =>
             this.onFocusChangedEmitter.fire(this.isFocused())
@@ -261,16 +265,16 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
         return this.onCursorPositionChangedEmitter.event;
     }
 
-    get selection(): Range {
-        return this.m2p.asRange(this.editor.getSelection()!);
+    get selection(): Selection {
+        return this.m2p.asSelection(this.editor.getSelection()!);
     }
 
-    set selection(selection: Range) {
+    set selection(selection: Selection) {
         const range = this.p2m.asRange(selection);
         this.editor.setSelection(range);
     }
 
-    get onSelectionChanged(): Event<Range> {
+    get onSelectionChanged(): Event<Selection> {
         return this.onSelectionChangedEmitter.event;
     }
 
