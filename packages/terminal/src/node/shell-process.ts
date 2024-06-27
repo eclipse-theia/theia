@@ -61,15 +61,16 @@ export class ShellProcess extends TerminalProcess {
         @inject(ILogger) @named('terminal') logger: ILogger,
         @inject(EnvironmentUtils) environmentUtils: EnvironmentUtils,
     ) {
+        const env = { 'COLORTERM': 'truecolor' };
         super(<TerminalProcessOptions>{
             command: options.shell || ShellProcess.getShellExecutablePath(),
             args: options.args || ShellProcess.getShellExecutableArgs(),
             options: {
-                name: 'xterm-color',
+                name: 'xterm-256color',
                 cols: options.cols || ShellProcess.defaultCols,
                 rows: options.rows || ShellProcess.defaultRows,
                 cwd: getRootPath(options.rootURI),
-                env: options.strictEnv !== true ? environmentUtils.mergeProcessEnv(options.env) : options.env,
+                env: options.strictEnv !== true ? Object.assign(env, environmentUtils.mergeProcessEnv(options.env)) : Object.assign(env, options.env),
             },
             isPseudo: options.isPseudo,
         }, processManager, ringBuffer, logger);
