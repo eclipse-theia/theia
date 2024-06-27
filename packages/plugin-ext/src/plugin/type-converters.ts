@@ -16,7 +16,7 @@
 
 import * as theia from '@theia/plugin';
 import * as lstypes from '@theia/core/shared/vscode-languageserver-protocol';
-import { InlineValueEvaluatableExpression, InlineValueText, InlineValueVariableLookup, QuickPickItemKind, URI } from './types-impl';
+import { InlineValueEvaluatableExpression, InlineValueText, InlineValueVariableLookup, QuickPickItemKind, ThemeIcon, URI } from './types-impl';
 import * as rpc from '../common/plugin-api-rpc';
 import {
     DecorationOptions, EditorPosition, Plugin, Position, WorkspaceTextEditDto, WorkspaceFileEditDto, Selection, TaskDto, WorkspaceEditDto
@@ -35,7 +35,7 @@ import { CellRange, isTextStreamMime } from '@theia/notebook/lib/common';
 import { MarkdownString as MarkdownStringDTO } from '@theia/core/lib/common/markdown-rendering';
 
 import { TestItemDTO, TestMessageDTO } from '../common/test-types';
-import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/base/common/themables';
+import { PluginIconPath } from './plugin-icon-path';
 
 const SIDE_GROUP = -2;
 const ACTIVE_GROUP = -1;
@@ -1226,7 +1226,7 @@ export function convertIconPath(iconPath: types.URI | { light: types.URI; dark: 
             dark: iconPath.dark.toJSON(),
             light: iconPath.light?.toJSON()
         };
-    } else if (ThemeIcon.isThemeIcon(iconPath)) {
+    } else if (ThemeIcon.is(iconPath)) {
         return {
             id: iconPath.id,
             color: iconPath.color ? { id: iconPath.color.id } : undefined
@@ -1236,19 +1236,19 @@ export function convertIconPath(iconPath: types.URI | { light: types.URI; dark: 
     }
 }
 
-export function convertQuickInputButton(button: theia.QuickInputButton, index: number): rpc.TransferQuickInputButton {
+export function convertQuickInputButton(plugin: Plugin, button: theia.QuickInputButton, index: number): rpc.TransferQuickInputButton {
     const iconPath = convertIconPath(button.iconPath);
     if (!iconPath) {
         throw new Error(`Could not convert icon path: '${button.iconPath}'`);
     }
     return {
         handle: index,
-        iconPath: iconPath,
+        iconUrl: PluginIconPath.toUrl(iconPath, plugin) ?? ThemeIcon.get(iconPath),
         tooltip: button.tooltip
     };
 }
 
-export function convertToTransferQuickPickItems(items: (theia.QuickPickItem | string)[]): rpc.TransferQuickPickItem[] {
+export function convertToTransferQuickPickItems(plugin: Plugin, items: (theia.QuickPickItem | string)[]): rpc.TransferQuickPickItem[] {
     return items.map((item, index) => {
         if (typeof item === 'string') {
             return { kind: 'item', label: item, handle: index };
@@ -1260,11 +1260,11 @@ export function convertToTransferQuickPickItems(items: (theia.QuickPickItem | st
                 kind: 'item',
                 label,
                 description,
-                iconPath: convertIconPath(iconPath),
+                iconUrl: PluginIconPath.toUrl(iconPath, plugin) ?? ThemeIcon.get(iconPath),
                 detail,
                 picked,
                 alwaysShow,
-                buttons: buttons ? buttons.map(convertQuickInputButton) : undefined,
+                buttons: buttons ? buttons.map((button, i) => convertQuickInputButton(plugin, button, i)) : undefined,
                 handle: index,
             };
         }

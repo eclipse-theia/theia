@@ -24,8 +24,8 @@ export type PluginIconPath = string | URI | {
     dark: string | URI
 };
 export namespace PluginIconPath {
-    export function toUrl(iconPath: PluginIconPath | undefined, plugin: Plugin): IconUrl | undefined {
-        if (!iconPath) {
+    export function toUrl(iconPath: unknown, plugin: Plugin): IconUrl | undefined {
+        if (!is(iconPath)) {
             return undefined;
         }
         if (typeof iconPath === 'object' && 'light' in iconPath) {
@@ -35,6 +35,9 @@ export namespace PluginIconPath {
             };
         }
         return asString(iconPath, plugin);
+    }
+    export function is(item: unknown): item is PluginIconPath {
+        return typeof item === 'string' || item instanceof URI || typeof item === 'object' && !!item && 'light' in item && 'dark' in item;
     }
     export function asString(arg: string | URI, plugin: Plugin): string {
         arg = arg instanceof URI && arg.scheme === 'file' ? arg.fsPath : arg;

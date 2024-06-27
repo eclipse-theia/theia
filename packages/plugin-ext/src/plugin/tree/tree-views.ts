@@ -446,7 +446,7 @@ class TreeViewExtImpl<T> implements Disposable {
                 } else if (ThemeIcon.is(iconPath)) {
                     themeIcon = iconPath;
                 } else {
-                    iconUrl = PluginIconPath.toUrl(<PluginIconPath | undefined>iconPath, this.plugin);
+                    iconUrl = PluginIconPath.toUrl(iconPath, this.plugin);
                 }
 
                 let checkboxInfo;
