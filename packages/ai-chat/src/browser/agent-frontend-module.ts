@@ -16,6 +16,7 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { AgentDispatcher, AgentDispatcherImpl, ChatService, ChatServiceImpl } from '../common';
+import { PromptService, PromptServiceImpl } from '../common/prompt-service';
 
 export default new ContainerModule(bind => {
     bind(AgentDispatcherImpl).toSelf().inSingletonScope();
@@ -23,4 +24,7 @@ export default new ContainerModule(bind => {
 
     bind(ChatServiceImpl).toSelf().inSingletonScope();
     bind(ChatService).toService(ChatServiceImpl);
+
+    bind(PromptServiceImpl).toSelf().inSingletonScope();
+    bind(PromptService).toService(PromptServiceImpl);
 });
