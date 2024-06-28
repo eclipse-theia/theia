@@ -14,21 +14,19 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContainerModule } from '@theia/core/shared/inversify';
-import { AgentDispatcher, AgentDispatcherImpl, ChatService, ChatServiceImpl } from '../common';
-import { PromptService } from '../common/prompt-service';
-import { FrontendPromptServiceImpl } from './frontend-prompt-service';
-import { bindPromptPreferences } from './prompt-preferences';
+import { inject, postConstruct } from '@theia/core/shared/inversify';
+import { PromptServiceImpl } from '../common/prompt-service';
+import { PromptPreferences } from './prompt-preferences';
 
-export default new ContainerModule(bind => {
-    bindPromptPreferences(bind);
+export class FrontendPromptServiceImpl extends PromptServiceImpl {
+    @inject(PromptPreferences) protected readonly preferences: PromptPreferences;
 
-    bind(AgentDispatcherImpl).toSelf().inSingletonScope();
-    bind(AgentDispatcher).toService(AgentDispatcherImpl);
-
-    bind(ChatServiceImpl).toSelf().inSingletonScope();
-    bind(ChatService).toService(ChatServiceImpl);
-
-    bind(FrontendPromptServiceImpl).toSelf().inSingletonScope();
-    bind(PromptService).toService(FrontendPromptServiceImpl);
-});
+    @postConstruct()
+    init(): void {
+        this.preferences.onPreferenceChanged(e => {
+            if (e.preferenceName === 'prompts') {
+                this._prompts = e.newValue;
+            }
+        });
+    }
+}
