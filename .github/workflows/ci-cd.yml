@@ -52,7 +52,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [windows-2019, ubuntu-latest, macos-11]
-        node: [16.x, 18.x, 20.x]
+        node: [18.x, 20.x]
 
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
