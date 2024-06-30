@@ -19,8 +19,9 @@ import { CustomEditor, DeployedPlugin } from '../../../common';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { CustomEditorOpener } from './custom-editor-opener';
 import { Emitter } from '@theia/core';
-import { ApplicationShell, DefaultOpenerService, OpenWithService, WidgetManager, WidgetOpenerOptions } from '@theia/core/lib/browser';
+import { ApplicationShell, DefaultOpenerService, WidgetManager, WidgetOpenerOptions } from '@theia/core/lib/browser';
 import { CustomEditorWidget } from './custom-editor-widget';
+import { OpenWithService } from '@theia/filesystem/lib/browser';
 
 @injectable()
 export class PluginCustomEditorRegistry {
@@ -82,8 +83,8 @@ export class PluginCustomEditorRegistry {
                 id: editor.viewType,
                 label: editorOpenHandler.label,
                 providerName: plugin.metadata.model.displayName,
-                canHandle: uri => editorOpenHandler.canHandle(uri),
-                open: uri => editorOpenHandler.open(uri)
+                canHandle: fileStat => fileStat.isFile ? editorOpenHandler.canHandle(fileStat.resource) : 0,
+                open: fileStat => editorOpenHandler.open(fileStat.resource)
             })
         );
         toDispose.push(

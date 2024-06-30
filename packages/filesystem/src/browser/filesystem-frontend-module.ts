@@ -32,6 +32,7 @@ import { FileSystemWatcherErrorHandler } from './filesystem-watcher-error-handle
 import { FilepathBreadcrumbsContribution } from './breadcrumbs/filepath-breadcrumbs-contribution';
 import { BreadcrumbsFileTreeWidget, createFileTreeBreadcrumbsWidget } from './breadcrumbs/filepath-breadcrumbs-container';
 import { FilesystemSaveableService } from './filesystem-saveable-service';
+import { OpenWithService } from './open-with-service';
 import { SaveableService } from '@theia/core/lib/browser/saveable-service';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
@@ -39,6 +40,8 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bindContributionProvider(bind, FileServiceContribution);
     bind(FileService).toSelf().inSingletonScope();
+
+    bind(OpenWithService).toSelf().inSingletonScope();
 
     bind(RemoteFileSystemServer).toDynamicValue(ctx =>
         WebSocketConnectionProvider.createProxy(ctx.container, remoteFileSystemPath, new RemoteFileSystemProxyFactory())

@@ -45,6 +45,11 @@ export class NavigatorContextKeyService {
         return this._explorerResourceIsFolder;
     }
 
+    protected _explorerResourceCanOpenWith: ContextKey<boolean>;
+    get explorerResourceCanOpenWith(): ContextKey<boolean> {
+        return this._explorerResourceCanOpenWith;
+    }
+
     protected _isFileSystemResource: ContextKey<boolean>;
 
     /**
@@ -60,6 +65,7 @@ export class NavigatorContextKeyService {
         this._explorerViewletFocus = this.contextKeyService.createKey<boolean>('explorerViewletFocus', false);
         this._filesExplorerFocus = this.contextKeyService.createKey<boolean>('filesExplorerFocus', false);
         this._explorerResourceIsFolder = this.contextKeyService.createKey<boolean>('explorerResourceIsFolder', false);
+        this._explorerResourceCanOpenWith = this.contextKeyService.createKey<boolean>('explorerResourceCanOpenWith', false);
         this._isFileSystemResource = this.contextKeyService.createKey<boolean>('isFileSystemResource', false);
     }
 

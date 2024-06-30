@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { Command, CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry, SelectionService, URI } from '@theia/core';
-import { CommonCommands, KeybindingContribution, KeybindingRegistry, OpenWithService } from '@theia/core/lib/browser';
+import { CommonCommands, KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { nls } from '@theia/core/lib/common';
 import { FileUri } from '@theia/core/lib/common/file-uri';
@@ -23,7 +23,7 @@ import { isOSX, isWindows } from '@theia/core/lib/common/os';
 import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import '@theia/core/lib/electron-common/electron-api';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { FileStatNode } from '@theia/filesystem/lib/browser';
+import { FileStatNode, OpenWithService } from '@theia/filesystem/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FILE_NAVIGATOR_ID, FileNavigatorWidget } from '../browser';
 import { NavigatorContextMenu, SHELL_TABBAR_CONTEXT_REVEAL } from '../browser/navigator-contribution';
@@ -75,9 +75,9 @@ export class ElectronNavigatorMenuContribution implements MenuContribution, Comm
             label: nls.localize('theia/navigator/systemEditor', 'System Editor'),
             providerName: nls.localizeByDefault('Built-in'),
             // Low priority to avoid conflicts with other open handlers.
-            canHandle: uri => (uri.scheme === 'file') ? 10 : 0,
-            open: uri => {
-                this.openWithSystemApplication(uri);
+            canHandle: fileStat => (fileStat.isFile && fileStat.resource.scheme === 'file') ? 10 : 0,
+            open: fileStat => {
+                this.openWithSystemApplication(fileStat.resource);
                 return {};
             }
         });

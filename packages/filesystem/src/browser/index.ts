@@ -19,3 +19,4 @@ export * from './file-tree';
 export * from './file-dialog';
 export * from './filesystem-preferences';
 export * from './file-resource';
+export * from './open-with-service';

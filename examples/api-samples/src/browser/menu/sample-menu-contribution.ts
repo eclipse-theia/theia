@@ -16,6 +16,7 @@
 
 import { ConfirmDialog, Dialog, QuickInputService } from '@theia/core/lib/browser';
 import { ReactDialog } from '@theia/core/lib/browser/dialogs/react-dialog';
+import { OpenWithService } from '@theia/filesystem/lib/browser';
 import { SelectComponent } from '@theia/core/lib/browser/widgets/select-component';
 import {
     Command, CommandContribution, CommandRegistry, MAIN_MENU_BAR,
@@ -67,6 +68,9 @@ export class SampleCommandContribution implements CommandContribution {
 
     @inject(MessageService)
     protected readonly messageService: MessageService;
+
+    @inject(OpenWithService)
+    protected readonly openWithService: OpenWithService;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand({ id: 'create-quick-pick-sample', label: 'Internal QuickPick' }, {
@@ -217,6 +221,12 @@ export class SampleCommandContribution implements CommandContribution {
                         window.setTimeout(() => progress.cancel(), 7000);
                     });
             }
+        });
+        this.openWithService.registerHandler({
+            canHandle: () => 50,
+            id: 'any-handler',
+            open: () => ({}),
+            label: 'Any Handler'
         });
     }
 

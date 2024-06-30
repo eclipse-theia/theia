@@ -16,7 +16,7 @@
 
 import { Disposable, DisposableCollection } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { OpenWithService } from '@theia/core/lib/browser';
+import { OpenWithService } from '@theia/filesystem/lib/browser';
 import { NotebookTypeDescriptor } from '../common/notebook-protocol';
 import { NotebookOpenHandler } from './notebook-open-handler';
 
@@ -46,8 +46,8 @@ export class NotebookTypeRegistry {
             id: type.type,
             label: type.displayName,
             providerName,
-            canHandle: uri => this.notebookOpenHandler.canHandleType(uri, type),
-            open: uri => this.notebookOpenHandler.open(uri, { notebookType: type.type })
+            canHandle: fileStat => fileStat.isFile ? this.notebookOpenHandler.canHandleType(fileStat.resource, type) : 0,
+            open: fileStat => this.notebookOpenHandler.open(fileStat.resource, { notebookType: type.type })
         }));
         return toDispose;
     }

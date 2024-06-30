@@ -24,11 +24,12 @@ import { MonacoTextModelService } from './monaco-text-model-service';
 import { MonacoThemingService } from './monaco-theming-service';
 import { isHighContrast } from '@theia/core/lib/common/theme';
 import { editorOptionsRegistry, IEditorOption } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
-import { MAX_SAFE_INTEGER } from '@theia/core';
+import { MAX_SAFE_INTEGER, nls } from '@theia/core';
 import { editorGeneratedPreferenceProperties } from '@theia/editor/lib/browser/editor-generated-preference-schema';
 import { WorkspaceFileService } from '@theia/workspace/lib/common/workspace-file-service';
 import { SecondaryWindowHandler } from '@theia/core/lib/browser/secondary-window-handler';
-import { EditorWidget } from '@theia/editor/lib/browser';
+import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
+import { OpenWithService } from '@theia/filesystem/lib/browser';
 import { MonacoEditor } from './monaco-editor';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { StandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneThemeService';
@@ -45,6 +46,12 @@ export class MonacoFrontendApplicationContribution implements FrontendApplicatio
 
     @inject(PreferenceSchemaProvider)
     protected readonly preferenceSchema: PreferenceSchemaProvider;
+
+    @inject(EditorManager)
+    protected readonly editorManager: EditorManager;
+
+    @inject(OpenWithService)
+    protected readonly openWithService: OpenWithService;
 
     @inject(QuickAccessRegistry)
     protected readonly quickAccessRegistry: QuickAccessRegistry;
@@ -77,6 +84,16 @@ export class MonacoFrontendApplicationContribution implements FrontendApplicatio
             this.preferenceSchema.registerOverrideIdentifier(language.id);
             registerLanguage(language);
         };
+
+        this.openWithService.registerHandler({
+            id: this.editorManager.id,
+            label: this.editorManager.label,
+            providerName: nls.localizeByDefault('Built-in'),
+            // Higher priority than any other handler
+            // so that the text editor always appears first in the quick pick
+            canHandle: fileStat => fileStat.isFile ? this.editorManager.canHandle(fileStat.resource) * 100 : 0,
+            open: fileStat => this.editorManager.open(fileStat.resource)
+        });
 
         this.monacoThemingService.initialize();
     }

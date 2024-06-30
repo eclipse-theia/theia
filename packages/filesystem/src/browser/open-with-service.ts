@@ -14,12 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from 'inversify';
-import { Disposable } from '../common/disposable';
-import { nls } from '../common/nls';
-import { MaybePromise } from '../common/types';
-import { URI } from '../common/uri';
-import { QuickInputService } from './quick-input';
+import { inject, injectable } from '@theia/core/shared/inversify';
+import { Disposable } from '@theia/core/lib/common/disposable';
+import { nls } from '@theia/core/lib/common/nls';
+import { MaybePromise } from '@theia/core/lib/common/types';
+import { QuickInputService } from '@theia/core/lib/browser/quick-input';
+import { FileStat } from '../common/files';
 
 export interface OpenWithHandler {
     /**
@@ -39,19 +39,19 @@ export interface OpenWithHandler {
      */
     readonly iconClass?: string;
     /**
-     * Test whether this handler can open the given URI for given options.
+     * Test whether this handler can open the given FileStat for given options.
      * Return a nonzero number if this handler can open; otherwise it cannot.
      * Never reject.
      *
      * A returned value indicating a priority of this handler.
      */
-    canHandle(uri: URI): number;
+    canHandle(uri: FileStat): number;
     /**
-     * Open a widget for the given URI and options.
+     * Open a widget for the given FileStat.
      * Resolve to an opened widget or undefined, e.g. if a page is opened.
      * Never reject if `canHandle` return a positive number; otherwise should reject.
      */
-    open(uri: URI): MaybePromise<object | undefined>;
+    open(uri: FileStat): MaybePromise<object | undefined>;
 }
 
 @injectable()
@@ -72,8 +72,9 @@ export class OpenWithService {
         });
     }
 
-    async openWith(uri: URI): Promise<object | undefined> {
-        const handlers = this.getHandlers(uri);
+    async openWith(fileStat: FileStat): Promise<object | undefined> {
+        const uri = fileStat.resource;
+        const handlers = this.getHandlers(fileStat);
         const result = await this.quickInputService.pick(handlers.map(handler => ({
             handler: handler,
             label: handler.label ?? handler.id,
@@ -82,12 +83,12 @@ export class OpenWithService {
             placeHolder: nls.localizeByDefault("Select editor for '{0}'", uri.path.base)
         });
         if (result) {
-            return result.handler.open(uri);
+            return result.handler.open(fileStat);
         }
     }
 
-    getHandlers(uri: URI): OpenWithHandler[] {
-        const map = new Map<OpenWithHandler, number>(this.handlers.map(handler => [handler, handler.canHandle(uri)]));
+    getHandlers(fileStat: FileStat): OpenWithHandler[] {
+        const map = new Map<OpenWithHandler, number>(this.handlers.map(handler => [handler, handler.canHandle(fileStat)]));
         return this.handlers.filter(handler => map.get(handler)! > 0).sort((a, b) => map.get(b)! - map.get(a)!);
     }
 }

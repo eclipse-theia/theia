@@ -31,8 +31,7 @@ import {
     ApplicationShell,
     TabBar,
     Title,
-    SHELL_TABBAR_CONTEXT_MENU,
-    OpenWithService
+    SHELL_TABBAR_CONTEXT_MENU
 } from '@theia/core/lib/browser';
 import { FileDownloadCommands } from '@theia/filesystem/lib/browser/download/file-download-command-contribution';
 import {
@@ -63,7 +62,7 @@ import {
 } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { FileSystemCommands } from '@theia/filesystem/lib/browser/filesystem-frontend-contribution';
 import { NavigatorDiff, NavigatorDiffCommands } from './navigator-diff';
-import { DirNode, FileNode } from '@theia/filesystem/lib/browser';
+import { DirNode, FileNode, OpenWithService } from '@theia/filesystem/lib/browser';
 import { FileNavigatorModel } from './navigator-model';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { SelectionService } from '@theia/core/lib/common/selection-service';
@@ -302,11 +301,22 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
                 });
             }
         });
-        registry.registerCommand(FileNavigatorCommands.OPEN_WITH, UriAwareCommandHandler.MonoSelect(this.selectionService, {
-            isEnabled: uri => this.openWithService.getHandlers(uri).length > 0,
-            isVisible: uri => this.openWithService.getHandlers(uri).length > 0,
-            execute: uri => this.openWithService.openWith(uri)
-        }));
+        registry.registerCommand(FileNavigatorCommands.OPEN_WITH, {
+            isEnabled: () => {
+                const selectedNode = this.getSelectedFileNode();
+                return !!selectedNode && this.openWithService.getHandlers(selectedNode.fileStat).length > 0;
+            },
+            isVisible: () => {
+                const selectedNode = this.getSelectedFileNode();
+                return !!selectedNode && this.openWithService.getHandlers(selectedNode.fileStat).length > 0;
+            },
+            execute: () => {
+                const selectedNode = this.getSelectedFileNode();
+                if (selectedNode) {
+                    this.openWithService.openWith(selectedNode.fileStat);
+                }
+            }
+        });
         registry.registerCommand(OpenEditorsCommands.CLOSE_ALL_TABS_FROM_TOOLBAR, {
             execute: widget => this.withOpenEditorsWidget(widget, () => this.shell.closeMany(this.editorWidgets)),
             isEnabled: widget => this.withOpenEditorsWidget(widget, () => true),
@@ -352,6 +362,10 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         return openEditorsWidget?.editorWidgets ?? [];
     }
 
+    protected getSelectedFileNode(): FileNode | undefined {
+        return this.getSelectedFileNodes()[0];
+    }
+
     protected getSelectedFileNodes(): FileNode[] {
         return this.tryGetWidget()?.model.selectedNodes.filter(FileNode.is) || [];
     }
@@ -384,7 +398,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         });
         registry.registerMenuAction(NavigatorContextMenu.NAVIGATION, {
             commandId: FileNavigatorCommands.OPEN_WITH.id,
-            when: '!explorerResourceIsFolder',
+            when: 'explorerResourceCanOpenWith',
             label: nls.localizeByDefault('Open With...')
         });
 

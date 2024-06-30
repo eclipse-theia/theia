@@ -17,7 +17,7 @@
 import { injectable, postConstruct, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { RecursivePartial, Emitter, Event, MaybePromise, CommandService, nls } from '@theia/core/lib/common';
-import { WidgetOpenerOptions, NavigatableWidgetOpenHandler, NavigatableWidgetOptions, Widget, PreferenceService, CommonCommands, OpenWithService } from '@theia/core/lib/browser';
+import { WidgetOpenerOptions, NavigatableWidgetOpenHandler, NavigatableWidgetOptions, Widget, PreferenceService, CommonCommands } from '@theia/core/lib/browser';
 import { EditorWidget } from './editor-widget';
 import { Range, Position, Location, TextEditor } from './editor';
 import { EditorWidgetFactory } from './editor-widget-factory';
@@ -56,7 +56,6 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
 
     @inject(CommandService) protected readonly commands: CommandService;
     @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
-    @inject(OpenWithService) protected readonly openWithService: OpenWithService;
 
     @postConstruct()
     protected override init(): void {
@@ -85,15 +84,6 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
                 this.addRecentlyVisible(widget);
             }
         }
-        this.openWithService.registerHandler({
-            id: this.id,
-            label: this.label,
-            providerName: nls.localizeByDefault('Built-in'),
-            // Higher priority than any other handler
-            // so that the text editor always appears first in the quick pick
-            canHandle: uri => this.canHandle(uri) * 100,
-            open: uri => this.open(uri)
-        });
         this.updateCurrentEditor();
     }
 
