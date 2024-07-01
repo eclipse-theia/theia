@@ -119,5 +119,4 @@ Read below how to engage with Theia community:
 
 ## Trademark
 
-"Theia" is a trademark of the Eclipse Foundation
-<https://www.eclipse.org/theia>
+"Theia" is a **trademark of the Eclipse Foundation**. [Learn More](https://www.eclipse.org/theia)
