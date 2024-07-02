@@ -28,6 +28,7 @@ import { PreferenceTreeGenerator } from './preference-tree-generator';
 import { PreferenceTreeLabelProvider } from './preference-tree-label-provider';
 import { Preference } from './preference-types';
 import { SelectableTreeNode } from '@theia/core/lib/browser';
+import { PreferenceLayoutProvider } from './preference-layout';
 
 disableJSDOM();
 
@@ -37,6 +38,7 @@ describe('preference-tree-label-provider', () => {
 
     beforeEach(() => {
         const container = new Container();
+        container.bind(PreferenceLayoutProvider).toSelf().inSingletonScope();
         container.bind<any>(PreferenceTreeGenerator).toConstantValue({ getCustomLabelFor: () => { } });
         preferenceTreeLabelProvider = container.resolve(PreferenceTreeLabelProvider);
     });

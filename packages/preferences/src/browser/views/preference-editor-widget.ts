@@ -33,9 +33,9 @@ import { BaseWidget, DEFAULT_SCROLL_OPTIONS } from '@theia/core/lib/browser/widg
 import { PreferenceTreeModel, PreferenceFilterChangeEvent, PreferenceFilterChangeSource } from '../preference-tree-model';
 import { PreferenceNodeRendererFactory, GeneralPreferenceNodeRenderer } from './components/preference-node-renderer';
 import { Preference } from '../util/preference-types';
-import { COMMONLY_USED_SECTION_PREFIX } from '../util/preference-tree-generator';
 import { PreferencesScopeTabBar } from './preference-scope-tabbar-widget';
 import { PreferenceNodeRendererCreatorRegistry } from './components/preference-node-renderer-creator';
+import { COMMONLY_USED_SECTION_PREFIX } from '../util/preference-layout';
 
 export interface PreferencesEditorState {
     firstVisibleChildID: string,

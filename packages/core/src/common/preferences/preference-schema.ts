@@ -25,6 +25,11 @@ export interface PreferenceSchema {
     [name: string]: any,
     scope?: 'application' | 'window' | 'resource' | PreferenceScope,
     overridable?: boolean;
+    /**
+     * The title of the preference schema.
+     * It is used in the preference UI to associate a localized group of preferences.
+     */
+    title?: string;
     properties: PreferenceSchemaProperties
 }
 export namespace PreferenceSchema {
