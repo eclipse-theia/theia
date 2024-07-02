@@ -20,13 +20,7 @@ import { injectable } from '@theia/core/shared/inversify';
 export interface PreferenceLayout {
     id: string;
     label: string;
-    children?: PreferenceLayoutItem[];
-    settings?: string[];
-}
-
-export interface PreferenceLayoutItem {
-    id: string;
-    label: string;
+    children?: PreferenceLayout[];
     settings?: string[];
 }
 
@@ -337,7 +331,7 @@ export class PreferenceLayoutProvider {
         return [...this.getLayout(), this.getCommonlyUsedLayout()].some(e => e.id === id);
     }
 
-    getLayoutItem(preferenceId: string): PreferenceLayoutItem | undefined {
+    getLayoutForPreference(preferenceId: string): PreferenceLayout | undefined {
         const layout = this.getLayout();
         for (const section of layout) {
             const item = this.findItemInSection(section, preferenceId);
@@ -345,9 +339,10 @@ export class PreferenceLayoutProvider {
                 return item;
             }
         }
+        return undefined;
     }
 
-    protected findItemInSection(section: PreferenceLayout, preferenceId: string): PreferenceLayoutItem | undefined {
+    protected findItemInSection(section: PreferenceLayout, preferenceId: string): PreferenceLayout | undefined {
         // First check whether any of its children match the preferenceId.
         if (section.children) {
             for (const child of section.children) {

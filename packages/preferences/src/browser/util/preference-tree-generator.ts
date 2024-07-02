@@ -70,7 +70,7 @@ export class PreferenceTreeGenerator {
         for (const propertyName of propertyNames) {
             const property = preferencesSchema.properties[propertyName];
             if (!this.preferenceConfigs.isSectionName(propertyName) && !OVERRIDE_PROPERTY_PATTERN.test(propertyName) && !property.deprecationMessage) {
-                const layoutItem = this.layoutProvider.getLayoutItem(propertyName);
+                const layoutItem = this.layoutProvider.getLayoutForPreference(propertyName);
                 const labels = layoutItem ? layoutItem.id.split('.') : propertyName.split('.');
                 // If a title is set, this property belongs to the 'extensions' category
                 const groupID = property.title ? this.defaultTopLevelCategory : this.getGroupName(labels);
