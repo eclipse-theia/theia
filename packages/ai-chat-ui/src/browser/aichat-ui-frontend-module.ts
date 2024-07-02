@@ -25,7 +25,7 @@ import { ChatInputWidget } from './chat-input-widget';
 import { ChatResponsePartRenderer } from './types';
 
 import '../../src/browser/style/index.css';
-import { TextPartRenderer } from './chat-response-renderer';
+import { MarkdownPartRenderer, TextPartRenderer } from './chat-response-renderer';
 
 export default new ContainerModule(bind => {
     bindViewContribution(bind, AIChatContribution);
@@ -52,4 +52,5 @@ export default new ContainerModule(bind => {
         createWidget: () => container.get(ChatViewTreeWidget)
     })).inSingletonScope();
     bind(ChatResponsePartRenderer).to(TextPartRenderer).inSingletonScope();
+    bind(ChatResponsePartRenderer).to(MarkdownPartRenderer).inSingletonScope();
 });

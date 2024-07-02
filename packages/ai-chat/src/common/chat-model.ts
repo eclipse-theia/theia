@@ -20,6 +20,7 @@
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatModel.ts
 
 import { Emitter, Event, generateUuid } from '@theia/core';
+import { MarkdownString, MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 
 /**********************
  * INTERFACES AND TYPE GUARDS
@@ -103,6 +104,12 @@ export interface TextChatResponseContent
     content: string;
 }
 
+export interface MarkdownChatResponseContent
+    extends Required<BaseChatResponseContent> {
+    kind: 'markdown';
+    content: MarkdownString;
+}
+
 export const isTextChatResponseContent = (
     obj: unknown
 ): obj is TextChatResponseContent =>
@@ -111,9 +118,18 @@ export const isTextChatResponseContent = (
     'content' in obj &&
     typeof (obj as { content: unknown }).content === 'string';
 
+export const isMarkdownChatResponseContent = (
+    obj: unknown
+): obj is MarkdownChatResponseContent =>
+    isBaseChatResponseContent(obj) &&
+    obj.kind === 'markdown' &&
+    'content' in obj &&
+    MarkdownString.is((obj as { content: unknown }).content);
+
 export type ChatResponseContent =
     | BaseChatResponseContent
-    | TextChatResponseContent;
+    | TextChatResponseContent
+    | MarkdownChatResponseContent;
 
 export interface ChatResponse {
     readonly content: ChatResponseContent[];
@@ -217,6 +233,28 @@ export class TextChatResponseContentImpl implements TextChatResponseContent {
         this._content += nextChatResponseContent.content;
         return true;
     }
+}
+export class MarkdownChatResponseContentImpl implements MarkdownChatResponseContent {
+    kind: 'markdown' = 'markdown';
+    protected _content: MarkdownStringImpl = new MarkdownStringImpl();
+
+    constructor(content: string) {
+        this._content.appendMarkdown(content);
+    }
+
+    get content(): MarkdownString {
+        return this._content;
+    }
+
+    asString(): string {
+        return this._content.value;
+    }
+
+    merge(nextChatResponseContent: MarkdownChatResponseContent): boolean {
+        this._content.appendMarkdown(nextChatResponseContent.content.value);
+        return true;
+    }
+    // TODO add codeblock? add link?
 }
 
 class ChatResponseImpl implements ChatResponse {
