@@ -45,7 +45,7 @@ const pluginsModulesNames = new Map<string, Plugin>();
 const scripts = new Set<string>();
 
 function initialize(contextPath: string, pluginMetadata: PluginMetadata): void {
-    const path = '/context/' + contextPath;
+    const path = './context/' + contextPath;
 
     if (!scripts.has(path)) {
         ctx.importScripts(path);
@@ -70,7 +70,7 @@ pluginManager.setPluginHost({
                         ctx.frontendModuleName = plugin.lifecycle.frontendModuleName;
                     }
 
-                    ctx.importScripts('/hostedPlugin/' + getPluginId(plugin.model) + '/' + plugin.pluginPath);
+                    ctx.importScripts('./hostedPlugin/' + getPluginId(plugin.model) + '/' + plugin.pluginPath);
                 }
             }
 
