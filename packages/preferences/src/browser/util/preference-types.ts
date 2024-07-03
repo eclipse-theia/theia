@@ -18,7 +18,8 @@ import {
     PreferenceDataProperty,
     PreferenceScope,
     TreeNode as BaseTreeNode,
-    CompositeTreeNode as BaseCompositeTreeNode,
+    ExpandableTreeNode,
+    SelectableTreeNode,
     PreferenceInspection,
     CommonCommands,
 } from '@theia/core/lib/browser';
@@ -58,8 +59,13 @@ export namespace Preference {
         };
     }
 
-    export interface CompositeTreeNode extends BaseCompositeTreeNode {
+    export interface CompositeTreeNode extends ExpandableTreeNode, SelectableTreeNode {
         depth: number;
+        label?: string;
+    }
+
+    export namespace CompositeTreeNode {
+        export const is = (node: TreeNode): node is CompositeTreeNode => !LeafNode.is(node);
     }
 
     export interface LeafNode extends BaseTreeNode {

@@ -30,11 +30,12 @@ import {
 } from '@theia/core/lib/browser';
 import { Emitter } from '@theia/core';
 import { PreferencesSearchbarWidget } from './views/preference-searchbar-widget';
-import { PreferenceTreeGenerator, COMMONLY_USED_SECTION_PREFIX } from './util/preference-tree-generator';
+import { PreferenceTreeGenerator } from './util/preference-tree-generator';
 import * as fuzzy from '@theia/core/shared/fuzzy';
 import { PreferencesScopeTabBar } from './views/preference-scope-tabbar-widget';
 import { Preference } from './util/preference-types';
 import { Event } from '@theia/core/lib/common';
+import { COMMONLY_USED_SECTION_PREFIX } from './util/preference-layout';
 
 export interface PreferenceTreeNodeProps extends NodeProps {
     visibleChildren: number;

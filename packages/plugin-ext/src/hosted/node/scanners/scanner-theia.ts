@@ -196,6 +196,7 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
                 for (const c of configurations) {
                     const config = this.readConfiguration(c, rawPlugin.packagePath);
                     if (config) {
+                        Object.values(config.properties).forEach(property => property.title = config.title);
                         contributions.configuration.push(config);
                     }
                 }
