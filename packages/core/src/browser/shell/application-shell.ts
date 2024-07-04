@@ -1896,6 +1896,10 @@ export class ApplicationShell extends Widget {
         if (index < current.titles.length - 1) {
             return index + 1;
         }
+        // last item in tab bar. select the previous one.
+        if (index === current.titles.length - 1) {
+            return index - 1;
+        }
         return 0;
     }
 
