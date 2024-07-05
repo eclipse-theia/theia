@@ -199,7 +199,7 @@ const api: TheiaCoreAPI = {
         ipcRenderer.send(CHANNEL_TOGGLE_FULL_SCREEN);
     },
 
-    requestReload: () => ipcRenderer.send(CHANNEL_REQUEST_RELOAD),
+    requestReload: (newUrl?: string) => ipcRenderer.send(CHANNEL_REQUEST_RELOAD, newUrl),
     restart: () => ipcRenderer.send(CHANNEL_RESTART),
 
     applicationStateChanged: state => {

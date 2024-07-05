@@ -84,7 +84,7 @@ export interface TheiaCoreAPI {
     isFullScreen(): boolean; // TODO: this should really be async, since it blocks the renderer process
     toggleFullScreen(): void;
 
-    requestReload(): void;
+    requestReload(newUrl?: string): void;
     restart(): void;
 
     applicationStateChanged(state: FrontendApplicationState): void;
