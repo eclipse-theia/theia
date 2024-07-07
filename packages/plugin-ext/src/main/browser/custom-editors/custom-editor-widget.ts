@@ -27,6 +27,7 @@ import { CustomEditorWidget as CustomEditorWidgetShape } from '@theia/editor/lib
 @injectable()
 export class CustomEditorWidget extends WebviewWidget implements CustomEditorWidgetShape, SaveableSource, NavigatableWidget {
     static override FACTORY_ID = 'plugin-custom-editor';
+    static readonly SIDE_BY_SIDE_FACTORY_ID = CustomEditorWidget.FACTORY_ID + '.side-by-side';
 
     override id: string;
     resource: URI;
@@ -66,17 +67,15 @@ export class CustomEditorWidget extends WebviewWidget implements CustomEditorWid
     }
 
     undo(): void {
-        this._modelRef.object.undo();
+        this._modelRef.object?.undo();
     }
 
     redo(): void {
-        this._modelRef.object.redo();
+        this._modelRef.object?.redo();
     }
 
     async save(options?: SaveOptions): Promise<void> {
-        if (this._modelRef.object) {
-            await this._modelRef.object.saveCustomEditor(options);
-        }
+        await this._modelRef.object?.saveCustomEditor(options);
     }
 
     async saveAs(source: URI, target: URI, options?: SaveOptions): Promise<void> {
