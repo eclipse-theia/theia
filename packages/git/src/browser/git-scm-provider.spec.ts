@@ -21,7 +21,7 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 FrontendApplicationConfigProvider.set({});
 
 import { CommandService, Disposable, ILogger, MessageService } from '@theia/core';
-import { LabelProvider } from '@theia/core/lib/browser';
+import { LabelProvider, OpenerService } from '@theia/core/lib/browser';
 import { FileUri } from '@theia/core/lib/node';
 import { Container } from '@theia/core/shared/inversify';
 import { EditorManager } from '@theia/editor/lib/browser';
@@ -46,6 +46,7 @@ disableJSDOM();
 
 describe('GitScmProvider', () => {
     let testContainer: Container;
+    let mockOpenerService: OpenerService;
     let mockEditorManager: EditorManager;
     let mockGitErrorHandler: GitErrorHandler;
     let mockFileService: FileService;
@@ -65,6 +66,7 @@ describe('GitScmProvider', () => {
     });
 
     beforeEach(async () => {
+        mockOpenerService = {} as OpenerService;
         mockEditorManager = sinon.createStubInstance(EditorManager);
         mockGitErrorHandler = sinon.createStubInstance(GitErrorHandler);
         mockFileService = sinon.createStubInstance(FileService);
@@ -73,6 +75,7 @@ describe('GitScmProvider', () => {
         mockLabelProvider = sinon.createStubInstance(LabelProvider);
 
         testContainer = new Container();
+        testContainer.bind(OpenerService).toConstantValue(mockOpenerService);
         testContainer.bind(EditorManager).toConstantValue(mockEditorManager);
         testContainer.bind(GitErrorHandler).toConstantValue(mockGitErrorHandler);
         testContainer.bind(FileService).toConstantValue(mockFileService);

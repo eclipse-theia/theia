@@ -26,7 +26,7 @@ import { DugiteGit } from '../node/dugite-git';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { FileStat, FileChangesEvent } from '@theia/filesystem/lib/common/files';
 import { Emitter, CommandService, Disposable } from '@theia/core';
-import { LocalStorageService, StorageService, LabelProvider } from '@theia/core/lib/browser';
+import { LocalStorageService, StorageService, LabelProvider, OpenerService } from '@theia/core/lib/browser';
 import { GitRepositoryProvider } from './git-repository-provider';
 import * as sinon from 'sinon';
 import * as chai from 'chai';
@@ -97,6 +97,7 @@ describe('GitRepositoryProvider', () => {
         testContainer.bind(ScmContextKeyService).toSelf().inSingletonScope();
         testContainer.bind(ContextKeyService).to(ContextKeyServiceDummyImpl).inSingletonScope();
         testContainer.bind(GitCommitMessageValidator).toSelf().inSingletonScope();
+        testContainer.bind(OpenerService).toConstantValue(<OpenerService>{});
         testContainer.bind(EditorManager).toConstantValue(<EditorManager>{});
         testContainer.bind(GitErrorHandler).toConstantValue(<GitErrorHandler>{});
         testContainer.bind(CommandService).toConstantValue(<CommandService>{});
