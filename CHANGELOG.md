@@ -100,7 +100,8 @@
 <a name="breaking_changes_1.50.0">[Breaking Changes:](#breaking_changes_1.50.0)</a>
 
 - [core] Classes implementing the `Saveable` interface no longer need to implement the `autoSave` field. However, a new `onContentChanged` event has been added instead.
-
+- [navigator] The `Open With...` command now uses a dedicated `OpenWithHandler` to populate the quick pick. 
+  Adopters contributing an open handler need to explicitly add the handler to the `OpenWithHandler` ([#13573](https://github.com/eclipse-theia/theia/pull/13573)).
 
 ## v1.49.0 - 04/29/2024
 
