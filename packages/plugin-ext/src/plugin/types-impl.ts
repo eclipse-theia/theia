@@ -3036,7 +3036,7 @@ export class DebugThread {
 }
 
 export class DebugStackFrame {
-      private constructor(readonly session: theia.DebugSession, readonly threadId: number, readonly frameId: number) { }
+    private constructor(readonly session: theia.DebugSession, readonly threadId: number, readonly frameId: number) { }
 }
 
 @es5ClassCompat
@@ -3363,7 +3363,7 @@ export class TestMessage implements theia.TestMessage {
 
 @es5ClassCompat
 export class TestCoverageCount {
-    constructor( public covered: number,  public total: number) { }
+    constructor(public covered: number, public total: number) { }
 }
 
 @es5ClassCompat
@@ -3922,7 +3922,7 @@ export class ChatResponseFileTreePart {
 }
 
 export type ChatResponsePart = ChatResponseMarkdownPart | ChatResponseFileTreePart | ChatResponseAnchorPart
-| ChatResponseProgressPart | ChatResponseReferencePart | ChatResponseCommandButtonPart;
+    | ChatResponseProgressPart | ChatResponseReferencePart | ChatResponseCommandButtonPart;
 
 export enum ChatResultFeedbackKind {
     Unhelpful = 0,
@@ -3969,4 +3969,33 @@ export class LanguageModelError extends Error {
         this.code = code ?? '';
     }
 }
+// #endregion
+
+// #region Port Attributes
+
+export enum PortAutoForwardAction {
+    Notify = 1,
+    OpenBrowser = 2,
+    OpenPreview = 3,
+    Silent = 4,
+    Ignore = 5
+}
+
+export class PortAttributes {
+    constructor(public autoForwardAction: PortAutoForwardAction) {
+    }
+}
+
+// #endregion
+
+// #region Debug Visualization
+
+export class DebugVisualization {
+    iconPath?: URI | { light: URI; dark: URI } | ThemeIcon;
+    visualization?: theia.Command | { treeId: string };
+
+    constructor(public name: string) {
+    }
+}
+
 // #endregion

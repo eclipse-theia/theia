@@ -225,7 +225,10 @@ import {
     ChatResultFeedbackKind,
     LanguageModelChatMessage,
     LanguageModelChatMessageRole,
-    LanguageModelError
+    LanguageModelError,
+    PortAutoForwardAction,
+    PortAttributes,
+    DebugVisualization
 } from './types-impl';
 import { AuthenticationExtImpl } from './authentication-ext';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
@@ -814,7 +817,13 @@ export function createAPIFactory(
             },
             getCanonicalUri(uri: theia.Uri, options: theia.CanonicalUriRequestOptions, token: CancellationToken): theia.ProviderResult<theia.Uri> {
                 return workspaceExt.getCanonicalUri(uri, options, token);
-            }
+            },
+            /**
+             * @stubbed
+             * This is a stub implementation, that should minimally satisfy vscode extensions
+             * that currently use this proposed API.
+             */
+            registerPortAttributesProvider: () => Disposable.NULL
         };
 
         const onDidChangeLogLevel = new Emitter<theia.LogLevel>();
@@ -1134,7 +1143,11 @@ export function createAPIFactory(
             },
             asDebugSourceUri(source: theia.DebugProtocolSource, session?: theia.DebugSession): theia.Uri {
                 return debugExt.asDebugSourceUri(source, session);
-            }
+            },
+            /** @stubbed Due to proposed API */
+            registerDebugVisualizationProvider: () => Disposable.NULL,
+            /** @stubbed Due to proposed API */
+            registerDebugVisualizationTreeProvider: () => Disposable.NULL
         };
 
         const tasks: typeof theia.tasks = {
@@ -1241,7 +1254,7 @@ export function createAPIFactory(
             }
         };
 
-        const chat: typeof theia.chat    = {
+        const chat: typeof theia.chat = {
             /** @stubbed MappedEditsProvider */
             registerMappedEditsProvider(documentSelector: theia.DocumentSelector, provider: theia.MappedEditsProvider): Disposable {
                 return Disposable.NULL;
@@ -1251,7 +1264,7 @@ export function createAPIFactory(
                 return {
                     id,
                     requestHandler: handler,
-                    dispose() {},
+                    dispose() { },
                     onDidReceiveFeedback: (listener, thisArgs?, disposables?) => Event.None(listener, thisArgs, disposables)
                 };
             }
@@ -1481,7 +1494,10 @@ export function createAPIFactory(
             ChatResultFeedbackKind,
             LanguageModelChatMessage,
             LanguageModelChatMessageRole,
-            LanguageModelError
+            LanguageModelError,
+            PortAutoForwardAction,
+            PortAttributes,
+            DebugVisualization
         };
     };
 }
