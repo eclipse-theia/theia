@@ -3362,7 +3362,7 @@ balanced-match@^1.0.0:
   resolved "https://registry.yarnpkg.com/balanced-match/-/balanced-match-1.0.2.tgz#e83e3a7e3f300b34cb9d87f615fa0cbf357690ee"
   integrity sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==
 
-base64-js@^1.3.1:
+base64-js@^1.3.1, base64-js@^1.5.1:
   version "1.5.1"
   resolved "https://registry.yarnpkg.com/base64-js/-/base64-js-1.5.1.tgz#1b1b440160a5bf7ad40b650f095963481903930a"
   integrity sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==
@@ -5665,6 +5665,11 @@ fd-slicer@~1.1.0:
   integrity sha512-cE1qsB/VwyQozZ+q1dGxR8LBYNZeofhEdUNGSMbQD3Gw2lAzX9Zb3uIU6Ebc/Fmyjo9AWWfnn0AUCHqtevs/8g==
   dependencies:
     pend "~1.2.0"
+
+fflate@^0.8.2:
+  version "0.8.2"
+  resolved "https://registry.yarnpkg.com/fflate/-/fflate-0.8.2.tgz#fc8631f5347812ad6028bbe4a2308b2792aa1dea"
+  integrity sha512-cPJU47OaAoCbg0pBvzsgpTPhmhqI5eJjh/JIu8tPj5q+T7iLvW/JAYUqmE7KOB4R1ZyEhzBaIQpQpardBF5z8A==
 
 figures@3.2.0, figures@^3.0.0:
   version "3.2.0"
@@ -9035,26 +9040,23 @@ onetime@^5.1.0, onetime@^5.1.2:
   dependencies:
     mimic-fn "^2.1.0"
 
-open-collaboration-protocol@0.0.8:
-  version "0.0.8"
-  resolved "https://registry.yarnpkg.com/open-collaboration-protocol/-/open-collaboration-protocol-0.0.8.tgz#77222f0ef13f46f4ea0feadc1390df25a8901649"
-  integrity sha512-74c6C5VuumlVLXXXqeS/LTDE1wkTYp9IH1MnOfs+Y5GeROBTnniW+csVKB3BF0WFJvObwfzSRpI404HhWXJ1Hg==
+open-collaboration-protocol@0.0.11:
+  version "0.0.11"
+  resolved "https://registry.yarnpkg.com/open-collaboration-protocol/-/open-collaboration-protocol-0.0.11.tgz#a1becd5a4d7d92887235a566b5888ae2eecfcc69"
+  integrity sha512-yHFa6224+O1+r6qbg4r2DC31ltEXCm5MutoCA+JmsMKTQQXgvh/y29nmTkWrQiWES0SVSZNMRJtv8SSzXqpZng==
   dependencies:
-    open-collaboration-rpc "0.0.7"
+    base64-js "^1.5.1"
+    fflate "^0.8.2"
+    msgpackr "^1.10.2"
+    semver "^7.6.2"
 
-open-collaboration-rpc@0.0.7:
-  version "0.0.7"
-  resolved "https://registry.yarnpkg.com/open-collaboration-rpc/-/open-collaboration-rpc-0.0.7.tgz#39201d501ed0210a8dbb19410f684c733ae0309f"
-  integrity sha512-mSCEk1k8rRhN7hGUMKxheAJcoIbIBzuGQ+nZaSXkjnl3nyh4CkUA9d02wIe/jvVHNKpIfZGMmcdXmYQW7+y3Xg==
-
-open-collaboration-yjs@0.0.1:
-  version "0.0.1"
-  resolved "https://registry.yarnpkg.com/open-collaboration-yjs/-/open-collaboration-yjs-0.0.1.tgz#68f302dceed747712942da815408c19c5797ec04"
-  integrity sha512-auKIMVXAcbPjTBPq67ApM4O1lNT+5DH7TALonbQ1lT7UmyKcvVAgYTz9XSIjpN96QF0iicurltFstDfByNMwbQ==
+open-collaboration-yjs@0.0.4:
+  version "0.0.4"
+  resolved "https://registry.yarnpkg.com/open-collaboration-yjs/-/open-collaboration-yjs-0.0.4.tgz#2f88c958320d2460597b4bbd1230a7167e384d71"
+  integrity sha512-KO6NfaYOp7ilPtMOfxCsVsz3tSTiOam73VaY1U6vb3Z9p81HBRwJPP08m2vwb0oCOagRcTDWmOf5w1dyaq+lhA==
   dependencies:
     lib0 "^0.2.94"
-    open-collaboration-protocol "0.0.8"
-    open-collaboration-rpc "0.0.7"
+    open-collaboration-protocol "0.0.11"
     y-protocols "^1.0.6"
 
 open@^7.4.2:
@@ -10514,6 +10516,11 @@ semver@^7.0.0, semver@^7.1.1, semver@^7.2.1, semver@^7.3.2, semver@^7.3.4, semve
   integrity sha512-EnwXhrlwXMk9gKu5/flx5sv/an57AkRplG3hTK68W7FRDN+k+OWBj65M7719OkA82XLBxrcX0KSHj+X5COhOVg==
   dependencies:
     lru-cache "^6.0.0"
+
+semver@^7.6.2:
+  version "7.6.2"
+  resolved "https://registry.yarnpkg.com/semver/-/semver-7.6.2.tgz#1e3b34759f896e8f14d6134732ce798aeb0c6e13"
+  integrity sha512-FNAIBWCx9qcRhoHcgcJ0gvU7SN1lYU2ZXuSfl04bSC5OpvDHFyJCjdNHomPXxjQlCBU67YW64PzY7/VIEH7F2w==
 
 send@0.18.0:
   version "0.18.0"

@@ -58,17 +58,11 @@ export function createCollaborationInstanceContainer(parent: interfaces.Containe
     return child;
 }
 
-export class CollaborationPeer implements types.Peer, Disposable {
-    id: string;
-    host: boolean;
-    name: string;
-    email?: string | undefined;
+export class CollaborationPeer implements Disposable {
+    peer: types.Peer;
 
     constructor(peer: types.Peer, protected disposable: Disposable) {
-        this.id = peer.id;
-        this.host = peer.host;
-        this.name = peer.name;
-        this.email = peer.email;
+        this.peer = peer;
     }
 
     dispose(): void {
@@ -160,7 +154,7 @@ export class CollaborationInstance implements Disposable {
     }
 
     get host(): types.Peer {
-        return Array.from(this.peers.values()).find(e => e.host)!;
+        return Array.from(this.peers.values()).find(e => e.peer.host)!.peer;
     }
 
     @postConstruct()
@@ -208,8 +202,23 @@ export class CollaborationInstance implements Disposable {
                 return undefined;
             }
         });
-        connection.room.onJoin((_, peer) => {
+        connection.room.onJoin(async (_, peer) => {
             this.addPeer(peer);
+            if (this.isHost) {
+                const roots = await this.workspaceService.roots;
+                const data: types.InitData = {
+                    protocol: types.VERSION,
+                    host: await this.identity.promise,
+                    guests: Array.from(this.peers.values()).map(e => e.peer),
+                    capabilities: {},
+                    permissions: this.permissions,
+                    workspace: {
+                        name: this.workspaceService.workspace?.name ?? nls.localize('theia/collaboration/collaboration', 'Collaboration'),
+                        folders: roots.map(e => e.name)
+                    }
+                };
+                connection.peer.init(peer.id, data);
+            }
         });
         connection.room.onLeave((_, peer) => {
             this.peers.get(peer.id)?.dispose();
@@ -226,20 +235,8 @@ export class CollaborationInstance implements Disposable {
             this.yjsAwareness.setLocalStateField('peer', peer.id);
             this.identity.resolve(peer);
         });
-        connection.peer.onInit(async () => {
-            const roots = await this.workspaceService.roots;
-            const response: types.InitResponse = {
-                protocol: '0.0.1',
-                host: await this.identity.promise,
-                guests: Array.from(this.peers.values()),
-                capabilities: {},
-                permissions: this.permissions,
-                workspace: {
-                    name: this.workspaceService.workspace?.name ?? nls.localize('theia/collaboration/collaboration', 'Collaboration'),
-                    folders: roots.map(e => e.name)
-                }
-            };
-            return response;
+        connection.peer.onInit(async (_, data) => {
+            await this.initialize(data);
         });
     }
 
@@ -298,7 +295,7 @@ export class CollaborationInstance implements Disposable {
             if (uri) {
                 const content = await this.fileService.readFile(uri);
                 return {
-                    content: Buffer.from(content.value.buffer).toString('base64')
+                    content: content.value.buffer
                 };
             } else {
                 throw new Error('Could find file: ' + path);
@@ -523,7 +520,7 @@ export class CollaborationInstance implements Disposable {
         const path = this.utils.getProtocolPath(uri);
         if (path) {
             if (!this.isHost) {
-                this.options.connection.editor.open('', path);
+                this.options.connection.editor.open(this.host.id, path);
             }
             let currentSelection = widget.editor.selection;
             // // Update presence information when the selection changes
@@ -587,19 +584,16 @@ export class CollaborationInstance implements Disposable {
             && a.end.character === b.end.character;
     }
 
-    async initialize(): Promise<void> {
-        const response = await this.options.connection.peer.init('', {
-            protocol: '0.0.1'
-        });
-        this.permissions = response.permissions;
-        this.readonly = response.permissions.readonly;
-        for (const peer of [...response.guests, response.host]) {
+    async initialize(data: types.InitData): Promise<void> {
+        this.permissions = data.permissions;
+        this.readonly = data.permissions.readonly;
+        for (const peer of [...data.guests, data.host]) {
             this.addPeer(peer);
         }
-        this.fileSystem = new CollaborationFileSystemProvider(this.options.connection, this.yjs);
+        this.fileSystem = new CollaborationFileSystemProvider(this.options.connection, data.host, this.yjs);
         this.fileSystem.readonly = this.readonly;
         this.toDispose.push(this.fileService.registerProvider(CollaborationURI.scheme, this.fileSystem));
-        const workspaceDisposable = await this.workspaceService.setHostWorkspace(response.workspace, this.options.connection);
+        const workspaceDisposable = await this.workspaceService.setHostWorkspace(data.workspace, this.options.connection);
         this.toDispose.push(workspaceDisposable);
     }
 

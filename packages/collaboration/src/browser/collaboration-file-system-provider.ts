@@ -21,7 +21,7 @@ import {
     FileChange, FileDeleteOptions,
     FileOverwriteOptions, FileSystemProviderCapabilities, FileType, Stat, WatchOptions, FileSystemProviderWithFileReadWriteCapability, FileWriteOptions
 } from '@theia/filesystem/lib/common/files';
-import { ProtocolBroadcastConnection, Workspace } from 'open-collaboration-protocol';
+import { ProtocolBroadcastConnection, Workspace, Peer } from 'open-collaboration-protocol';
 
 export namespace CollaborationURI {
 
@@ -55,7 +55,7 @@ export class CollaborationFileSystemProvider implements FileSystemProviderWithFi
         }
     }
 
-    constructor(readonly connection: ProtocolBroadcastConnection, readonly yjs: Y.Doc) {
+    constructor(readonly connection: ProtocolBroadcastConnection, readonly host: Peer, readonly yjs: Y.Doc) {
     }
 
     protected encoder = new TextEncoder();
@@ -95,20 +95,20 @@ export class CollaborationFileSystemProvider implements FileSystemProviderWithFi
         return Disposable.NULL;
     }
     stat(resource: URI): Promise<Stat> {
-        return this.connection.fs.stat('', this.getHostPath(resource));
+        return this.connection.fs.stat(this.host.id, this.getHostPath(resource));
     }
     mkdir(resource: URI): Promise<void> {
-        return this.connection.fs.mkdir('', this.getHostPath(resource));
+        return this.connection.fs.mkdir(this.host.id, this.getHostPath(resource));
     }
     async readdir(resource: URI): Promise<[string, FileType][]> {
-        const record = await this.connection.fs.readdir('', this.getHostPath(resource));
+        const record = await this.connection.fs.readdir(this.host.id, this.getHostPath(resource));
         return Object.entries(record);
     }
     delete(resource: URI, opts: FileDeleteOptions): Promise<void> {
-        return this.connection.fs.delete('', this.getHostPath(resource));
+        return this.connection.fs.delete(this.host.id, this.getHostPath(resource));
     }
     rename(from: URI, to: URI, opts: FileOverwriteOptions): Promise<void> {
-        return this.connection.fs.rename('', this.getHostPath(from), this.getHostPath(to));
+        return this.connection.fs.rename(this.host.id, this.getHostPath(from), this.getHostPath(to));
     }
 
     protected getHostPath(uri: URI): string {

@@ -18,8 +18,7 @@ import '../../src/browser/style/index.css';
 
 import { Command, CommandContribution, CommandRegistry, MessageService, nls, Progress, QuickInputService, QuickPickItem } from '@theia/core';
 import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
-import { ConnectionProvider } from 'open-collaboration-protocol';
-import { JsonMessageEncoding, WebSocketTransportProvider } from 'open-collaboration-rpc';
+import { ConnectionProvider, WebSocketTransportProvider } from 'open-collaboration-protocol';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { CollaborationInstance, CollaborationInstanceFactory } from './collaboration-instance';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
@@ -27,6 +26,7 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 import { CollaborationWorkspaceService } from './collaboration-workspace-service';
 import { StatusBar, StatusBarAlignment, StatusBarEntry } from '@theia/core/lib/browser/status-bar';
 import { codiconArray } from '@theia/core/lib/browser/widgets/widget';
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 
 export const COLLABORATION_CATEGORY = 'Collaboration';
 
@@ -43,7 +43,7 @@ export const COLLABORATION_STATUS_BAR_ID = 'statusBar.collaboration';
 
 export const COLLABORATION_AUTH_TOKEN = 'THEIA_COLLAB_AUTH_TOKEN';
 export const COLLABORATION_SERVER_URL = 'COLLABORATION_SERVER_URL';
-export const DEFAULT_COLLABORATION_SERVER_URL = 'https://api.open-collab.tools/';
+export const DEFAULT_COLLABORATION_SERVER_URL = 'http://localhost:8100';
 
 @injectable()
 export class CollaborationFrontendContribution implements CommandContribution {
@@ -82,9 +82,9 @@ export class CollaborationFrontendContribution implements CommandContribution {
         this.getCollaborationServerUrl().then(serverUrl => {
             const authHandler = new ConnectionProvider({
                 url: serverUrl,
+                client: FrontendApplicationConfigProvider.get().applicationName,
                 fetch: window.fetch.bind(window),
                 opener: url => this.windowService.openNewWindow(url),
-                encodings: [JsonMessageEncoding],
                 transports: [WebSocketTransportProvider],
                 userToken: localStorage.getItem(COLLABORATION_AUTH_TOKEN) ?? undefined
             });
@@ -256,7 +256,7 @@ export class CollaborationFrontendContribution implements CommandContribution {
                         localStorage.setItem(COLLABORATION_AUTH_TOKEN, roomClaim.loginToken);
                     }
                     this.currentInstance?.dispose();
-                    const connection = await authHandler.connect(roomClaim.roomToken);
+                    const connection = await authHandler.connect(roomClaim.roomToken, roomClaim.host);
                     this.currentInstance = this.collaborationInstanceFactory({
                         role: 'guest',
                         connection
@@ -265,7 +265,6 @@ export class CollaborationFrontendContribution implements CommandContribution {
                         this.setStatusBarEntryDefault();
                     });
                     this.setStatusBarEntryConnected(roomClaim.roomId);
-                    await this.currentInstance.initialize();
                 } catch (err) {
                     joinRoomProgress?.cancel();
                     await this.messageService.error(nls.localize('theia/collaboration/failedJoin', 'Failed to join room: {0}', err.message));
