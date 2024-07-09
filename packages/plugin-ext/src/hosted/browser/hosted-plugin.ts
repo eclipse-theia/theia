@@ -40,10 +40,10 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { PluginContributionHandler } from '../../main/browser/plugin-contribution-handler';
 import { getQueryParameters } from '../../main/browser/env-main';
 import { getPreferences } from '../../main/browser/preference-registry-main';
-import { Deferred } from '@theia/core/lib/common/promise-util';
+import { Deferred, waitForEvent } from '@theia/core/lib/common/promise-util';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
 import { DebugConfigurationManager } from '@theia/debug/lib/browser/debug-configuration-manager';
-import { WaitUntilEvent } from '@theia/core/lib/common/event';
+import { Event, WaitUntilEvent } from '@theia/core/lib/common/event';
 import { FileSearchService } from '@theia/file-search/lib/common/file-search-service';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { PluginViewRegistry } from '../../main/browser/view/plugin-view-registry';
@@ -449,7 +449,12 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
     }
 
     protected ensureFileSystemActivation(event: FileSystemProviderActivationEvent): void {
-        event.waitUntil(this.activateByFileSystem(event));
+        event.waitUntil(this.activateByFileSystem(event).then(() => {
+            if (!this.fileService.hasProvider(event.scheme)) {
+                return waitForEvent(Event.filter(this.fileService.onDidChangeFileSystemProviderRegistrations,
+                    ({ added, scheme }) => added && scheme === event.scheme), 3000);
+            }
+        }));
     }
 
     protected ensureCommandHandlerRegistration(event: WillExecuteCommandEvent): void {
