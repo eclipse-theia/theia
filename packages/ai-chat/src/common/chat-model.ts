@@ -19,7 +19,7 @@
  *--------------------------------------------------------------------------------------------*/
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatModel.ts
 
-import { Emitter, Event, generateUuid } from '@theia/core';
+import { Command, Emitter, Event, generateUuid } from '@theia/core';
 import { MarkdownString, MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 
 /**********************
@@ -106,8 +106,15 @@ export interface TextChatResponseContent
 
 export interface MarkdownChatResponseContent
     extends Required<BaseChatResponseContent> {
-    kind: 'markdown';
+    kind: 'markdownContent';
     content: MarkdownString;
+}
+
+export interface CommandChatResponseContent
+    extends BaseChatResponseContent {
+    kind: 'command';
+    command: Command;
+    args?: unknown[];
 }
 
 export const isTextChatResponseContent = (
@@ -122,14 +129,23 @@ export const isMarkdownChatResponseContent = (
     obj: unknown
 ): obj is MarkdownChatResponseContent =>
     isBaseChatResponseContent(obj) &&
-    obj.kind === 'markdown' &&
+    obj.kind === 'markdownContent' &&
     'content' in obj &&
     MarkdownString.is((obj as { content: unknown }).content);
+
+export const isCommandChatResponseContent = (
+    obj: unknown
+): obj is CommandChatResponseContent =>
+    isBaseChatResponseContent(obj) &&
+    obj.kind === 'command' &&
+    'command' in obj &&
+    Command.is((obj as { command: unknown }).command);
 
 export type ChatResponseContent =
     | BaseChatResponseContent
     | TextChatResponseContent
-    | MarkdownChatResponseContent;
+    | MarkdownChatResponseContent
+    | CommandChatResponseContent;
 
 export interface ChatResponse {
     readonly content: ChatResponseContent[];
@@ -234,8 +250,9 @@ export class TextChatResponseContentImpl implements TextChatResponseContent {
         return true;
     }
 }
+
 export class MarkdownChatResponseContentImpl implements MarkdownChatResponseContent {
-    kind: 'markdown' = 'markdown';
+    kind: 'markdownContent' = 'markdownContent';
     protected _content: MarkdownStringImpl = new MarkdownStringImpl();
 
     constructor(content: string) {
@@ -255,6 +272,29 @@ export class MarkdownChatResponseContentImpl implements MarkdownChatResponseCont
         return true;
     }
     // TODO add codeblock? add link?
+}
+
+export class CommandChatResponseContentImpl implements CommandChatResponseContent {
+    kind: 'command' = 'command';
+    protected _command: Command;
+    protected _args?: { [key: string]: unknown };
+
+    constructor(command: Command, args?: { [key: string]: unknown }) {
+        this._command = command;
+        this._args = args;
+    }
+
+    get command(): Command {
+        return this._command;
+    }
+
+    get args(): unknown[] | undefined {
+        return this._args ? Object.values(this._args) : undefined;
+    }
+
+    asString(): string {
+        return this._command.id;
+    }
 }
 
 class ChatResponseImpl implements ChatResponse {

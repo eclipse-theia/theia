@@ -18,11 +18,16 @@ import {
     LanguageModelProviderRegistry,
     isLanguageModelStreamResponse,
     isLanguageModelTextResponse,
+    LanguageModelStreamResponsePart,
 } from '@theia/ai-model-provider';
-import { ILogger } from '@theia/core';
+import { ILogger, isArray } from '@theia/core';
 import {
     ChatRequestModelImpl,
-    TextChatResponseContentImpl,
+    ChatResponseContent,
+    CommandChatResponseContentImpl,
+    isCommandChatResponseContent,
+    // TextChatResponseContentImpl,
+    MarkdownChatResponseContentImpl
 } from './chat-model';
 import { getMessages } from './chat-util';
 
@@ -46,16 +51,19 @@ export class AgentDispatcherImpl implements AgentDispatcher {
         )[0].request({ messages: getMessages(request.session) });
         if (isLanguageModelTextResponse(languageModelResponse)) {
             request.response.response.addContent(
-                new TextChatResponseContentImpl(languageModelResponse.text)
+                new MarkdownChatResponseContentImpl(languageModelResponse.text)
             );
             request.response.complete();
             return;
         }
         if (isLanguageModelStreamResponse(languageModelResponse)) {
             for await (const token of languageModelResponse.stream) {
-                request.response.response.addContent(
-                    new TextChatResponseContentImpl(token)
-                );
+                const newContents = this.parse(token, request.response.response.content);
+                if (isArray(newContents)) {
+                    newContents.forEach(request.response.response.addContent);
+                } else {
+                    request.response.response.addContent(newContents);
+                }
             }
             request.response.complete();
             return;
@@ -64,10 +72,19 @@ export class AgentDispatcherImpl implements AgentDispatcher {
             'Received unknown response in agent. Return response as text'
         );
         request.response.response.addContent(
-            new TextChatResponseContentImpl(
+            new MarkdownChatResponseContentImpl(
                 JSON.stringify(languageModelResponse)
             )
         );
         request.response.complete();
+    }
+
+    private parse(token: LanguageModelStreamResponsePart, previousContent: ChatResponseContent[]): ChatResponseContent | ChatResponseContent[] {
+        if (token.tool_calls) {
+            const previousCommands = previousContent.filter(isCommandChatResponseContent);
+            const newTools = token.tool_calls.filter(tc => tc.function && tc.function.name && previousCommands.find(c => c.command.id === tc.function?.name) === undefined);
+            return newTools.map(t => new CommandChatResponseContentImpl({ id: t.function!.name! }, t.function!.arguments ? JSON.parse(t.function!.arguments) : undefined));
+        }
+        return new MarkdownChatResponseContentImpl(token.content ?? '');
     }
 }

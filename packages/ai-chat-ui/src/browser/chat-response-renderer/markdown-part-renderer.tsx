@@ -23,10 +23,9 @@ import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 
 @injectable()
-export class MarkdownPartRenderer implements ChatResponsePartRenderer {
+export class MarkdownPartRenderer implements ChatResponsePartRenderer<MarkdownChatResponseContent> {
     @inject(MarkdownRenderer) private renderer: MarkdownRenderer;
     canHandle(response: ChatResponseContent): number {
-        // this is the fallback renderer
         if (isMarkdownChatResponseContent(response)) {
             return 10;
         }
@@ -35,8 +34,8 @@ export class MarkdownPartRenderer implements ChatResponsePartRenderer {
     private renderMarkdown(md: MarkdownString): HTMLElement {
         return this.renderer.render(md).element;
     }
-    render(response: ChatResponseContent): ReactNode {
-        return <MarkdownWrapper data={(response as MarkdownChatResponseContent).content} renderCallback={this.renderMarkdown.bind(this)}></MarkdownWrapper>;
+    render(response: MarkdownChatResponseContent): ReactNode {
+        return <MarkdownWrapper data={response.content} renderCallback={this.renderMarkdown.bind(this)}></MarkdownWrapper>;
     }
 
 }

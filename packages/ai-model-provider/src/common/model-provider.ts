@@ -43,8 +43,27 @@ export interface LanguageModelTextResponse {
 export const isLanguageModelTextResponse = (obj: unknown): obj is LanguageModelTextResponse =>
     !!(obj && typeof obj === 'object' && 'text' in obj && typeof (obj as { text: unknown }).text === 'string');
 
+export interface LanguageModelStreamResponsePart {
+    content?: string | null;
+    tool_calls?: ToolCall[];
+}
+
+export interface ToolCall {
+    index: number;
+
+    /**
+     * The ID of the tool call.
+     */
+    id?: string;
+
+    function?: {
+        arguments?: string;
+        name?: string;
+    };
+}
+
 export interface LanguageModelStreamResponse {
-    stream: AsyncIterable<string>;
+    stream: AsyncIterable<LanguageModelStreamResponsePart>;
 }
 export const isLanguageModelStreamResponse = (obj: unknown): obj is LanguageModelStreamResponse =>
     !!(obj && typeof obj === 'object' && 'stream' in obj);

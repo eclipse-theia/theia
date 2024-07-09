@@ -22,6 +22,7 @@ import {
     LanguageModelRequest,
     isLanguageModelStreamResponse,
     isLanguageModelTextResponse,
+    LanguageModelStreamResponsePart,
 } from '../common';
 import {
     LanguageModelProviderDelegateClient,
@@ -88,7 +89,7 @@ export class LanguageModelProviderFrontendDelegateImpl
         return response;
     }
 
-    protected sendTokens(id: string, stream: AsyncIterable<string>): void {
+    protected sendTokens(id: string, stream: AsyncIterable<LanguageModelStreamResponsePart>): void {
         (async () => {
             for await (const token of stream) {
                 this.frontendDelegateClient.send(id, token);

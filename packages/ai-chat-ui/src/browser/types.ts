@@ -14,11 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ChatResponseContent } from '@theia/ai-chat/lib/common';
+import { BaseChatResponseContent, ChatResponseContent } from '@theia/ai-chat/lib/common';
 import { ReactNode } from '@theia/core/shared/react';
 
 export const ChatResponsePartRenderer = Symbol('ChatResponsePartRenderer');
-export interface ChatResponsePartRenderer {
+export interface ChatResponsePartRenderer<T extends BaseChatResponseContent> {
     canHandle(reponse: ChatResponseContent): number;
-    render(reponse: ChatResponseContent): ReactNode;
+    render(reponse: T): ReactNode;
 }

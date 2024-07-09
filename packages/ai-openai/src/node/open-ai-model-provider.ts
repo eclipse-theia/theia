@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelProvider, LanguageModelRequest, LanguageModelRequestMessage, LanguageModelResponse } from '@theia/ai-model-provider';
+import { LanguageModelProvider, LanguageModelRequest, LanguageModelRequestMessage, LanguageModelResponse, LanguageModelStreamResponsePart } from '@theia/ai-model-provider';
 import { injectable } from '@theia/core/shared/inversify';
 import OpenAI from 'openai';
 import { ChatCompletionMessageParam } from 'openai/resources';
@@ -35,10 +35,10 @@ export class OpenAIModelProvider implements LanguageModelProvider {
         const [stream1] = stream.tee();
         return {
             stream: {
-                [Symbol.asyncIterator](): AsyncIterator<string> {
+                [Symbol.asyncIterator](): AsyncIterator<LanguageModelStreamResponsePart> {
                     return {
-                        next(): Promise<IteratorResult<string>> {
-                            return stream1[Symbol.asyncIterator]().next().then(chunk => chunk.done ? chunk : { value: chunk.value.choices[0]?.delta?.content ?? '', done: false });
+                        next(): Promise<IteratorResult<LanguageModelStreamResponsePart>> {
+                            return stream1[Symbol.asyncIterator]().next().then(chunk => chunk.done ? chunk : { value: chunk.value.choices[0]?.delta, done: false });
                         }
                     };
                 }

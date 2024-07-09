@@ -15,22 +15,26 @@
 // *****************************************************************************
 
 import { ChatResponsePartRenderer } from '../types';
-import { injectable } from '@theia/core/shared/inversify';
-import { ChatResponseContent, hasAsString } from '@theia/ai-chat/lib/common';
+import { inject, injectable } from '@theia/core/shared/inversify';
+import { ChatResponseContent, isCommandChatResponseContent, CommandChatResponseContent } from '@theia/ai-chat/lib/common';
 import { ReactNode } from '@theia/core/shared/react';
 import * as React from '@theia/core/shared/react';
+import { Command, CommandService } from '@theia/core';
 
 @injectable()
-export class TextPartRenderer implements ChatResponsePartRenderer<ChatResponseContent> {
-    canHandle(_reponse: ChatResponseContent): number {
-        // this is the fallback renderer
-        return 1;
-    }
-    render(response: ChatResponseContent): ReactNode {
-        if (hasAsString(response)) {
-            return <span>{response.asString()}</span>;
+export class CommandPartRenderer implements ChatResponsePartRenderer<CommandChatResponseContent> {
+    @inject(CommandService) private commandService: CommandService;
+    canHandle(response: ChatResponseContent): number {
+        if (isCommandChatResponseContent(response)) {
+            return 10;
         }
-        return <span>Can't display response, please check your ChatResponsePartRenderers! {JSON.stringify(response)}</span>;
+        return -1;
+    }
+    render(response: CommandChatResponseContent): ReactNode {
+        return <div><button onClick={this.onCommand.bind(this, response.command, response.args)}>Press Me!</button></div>;
+    }
+    private onCommand(command: Command, args: unknown[]): void {
+        this.commandService.executeCommand(command.id, ...args).catch(e => { console.error(e); });
     }
 
 }

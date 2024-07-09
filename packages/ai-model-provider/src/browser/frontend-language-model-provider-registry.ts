@@ -28,11 +28,12 @@ import {
     LanguageModelRequest,
     isLanguageModelStreamResponseDelegate,
     isLanguageModelTextResponse,
+    LanguageModelStreamResponsePart,
 } from '../common';
 import { ILogger } from '@theia/core';
 
 export interface TokenReceiver {
-    send(id: string, token: string | undefined): void;
+    send(id: string, token: LanguageModelStreamResponsePart | undefined): void;
 }
 
 @injectable()
@@ -44,14 +45,14 @@ export class LanguageModelProviderDelegateClientImpl
         this.receiver = receiver;
     }
 
-    send(id: string, token: string | undefined): void {
+    send(id: string, token: LanguageModelStreamResponsePart | undefined): void {
         this.receiver.send(id, token);
     }
 }
 
 interface StreamState {
     id: string;
-    tokens: (string | undefined)[];
+    tokens: (LanguageModelStreamResponsePart | undefined)[];
     resolve?: (_: unknown) => void;
 }
 
@@ -126,7 +127,7 @@ export class FrontendLanguageModelProviderRegistryImpl
 
     private streams = new Map<string, StreamState>();
 
-    async *getIterable(state: StreamState): AsyncIterable<string> {
+    async *getIterable(state: StreamState): AsyncIterable<LanguageModelStreamResponsePart> {
         let current = -1;
         while (true) {
             if (current < state.tokens.length - 1) {
@@ -149,7 +150,7 @@ export class FrontendLanguageModelProviderRegistryImpl
     }
 
     // called by backend via the "delegate client" with new tokens
-    send(id: string, token: string | undefined): void {
+    send(id: string, token: LanguageModelStreamResponsePart | undefined): void {
         if (!this.streams.has(id)) {
             const newStreamState = {
                 id,

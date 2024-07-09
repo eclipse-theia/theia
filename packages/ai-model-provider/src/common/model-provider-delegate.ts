@@ -14,11 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelProviderDescription, LanguageModelRequest, LanguageModelTextResponse } from './model-provider';
+import { LanguageModelProviderDescription, LanguageModelRequest, LanguageModelStreamResponsePart, LanguageModelTextResponse } from './model-provider';
 
 export const LanguageModelProviderDelegateClient = Symbol('LanguageModelProviderDelegateClient');
 export interface LanguageModelProviderDelegateClient {
-    send(id: string, token: string | undefined): void;
+    send(id: string, token: LanguageModelStreamResponsePart | undefined): void;
 }
 export const LanguageModelProviderRegistryFrontendDelegate = Symbol('LanguageModelProviderRegistryFrontendDelegate');
 export interface LanguageModelProviderRegistryFrontendDelegate {

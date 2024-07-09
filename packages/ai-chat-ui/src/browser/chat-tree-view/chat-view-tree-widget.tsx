@@ -15,6 +15,7 @@
 // *****************************************************************************
 import { ContributionProvider } from '@theia/core';
 import {
+    BaseChatResponseContent,
     ChatModel,
     ChatRequestModel,
     ChatResponseContent,
@@ -56,7 +57,7 @@ export class ChatViewTreeWidget extends TreeWidget {
     static readonly ID = 'chat-tree-widget';
 
     @inject(ContributionProvider) @named(ChatResponsePartRenderer)
-    protected readonly chatResponsePartRenderers: ContributionProvider<ChatResponsePartRenderer>;
+    protected readonly chatResponsePartRenderers: ContributionProvider<ChatResponsePartRenderer<BaseChatResponseContent>>;
 
     constructor(
         @inject(TreeProps) props: TreeProps,
