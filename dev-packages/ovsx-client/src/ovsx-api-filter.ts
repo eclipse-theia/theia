@@ -127,7 +127,7 @@ export class OVSXApiFilterImpl implements OVSXApiFilter {
         if (!versionA || !versionB) {
             return false;
         }
-        return semver.lte(versionA, versionB);
+        return semver.gte(versionA, versionB);
     }
 
     protected supportedVscodeApiSatisfies(vscodeApiRange: string): boolean {
