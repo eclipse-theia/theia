@@ -97,11 +97,11 @@ export class FileResource implements Resource {
                 this.updateReadOnly();
             }
         }));
-        this.fileService.onDidChangeFileSystemProviderReadOnlyMessage(async e => {
+        this.toDispose.push(this.fileService.onDidChangeFileSystemProviderReadOnlyMessage(async e => {
             if (e.scheme === this.uri.scheme) {
                 this.updateReadOnly();
             }
-        });
+        }));
     }
 
     protected async updateReadOnly(): Promise<void> {
