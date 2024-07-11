@@ -259,7 +259,7 @@ export class VSXExtensionsModel {
                     }
                 }
             } catch (error) {
-                this._searchError = err?.message || String(err);
+                this._searchError = error?.message || String(error);
             }
 
         }, token);
