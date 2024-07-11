@@ -69,9 +69,10 @@ export class OVSXApiFilterImpl implements OVSXApiFilter {
         let offset = 0;
         let loop = true;
         while (loop) {
-            const queryOptions = {
+            const queryOptions: VSXQueryOptions = {
                 ...query,
-                offset
+                offset,
+                size: 5 // there is a great chance that the newest version will work
             };
             const results = await this.client.query(queryOptions);
             const compatibleExtension = this.getLatestCompatibleExtension(results.extensions);

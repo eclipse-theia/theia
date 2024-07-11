@@ -105,7 +105,6 @@ export interface VSXSearchOptions {
  * Should be aligned with https://github.com/eclipse/openvsx/blob/e8f64fe145fc05d2de1469735d50a7a90e400bc4/server/src/main/java/org/eclipse/openvsx/json/SearchResultJson.java
  */
 export interface VSXSearchResult {
-    error?: string;
     offset: number;
     extensions: VSXSearchEntry[];
 }
