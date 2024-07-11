@@ -266,7 +266,20 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
         }
 
         if (debugConfig) {
-            command.push(`--hosted-plugin-${debugConfig.debugMode || 'inspect'}=0.0.0.0${debugConfig.debugPort ? ':' + debugConfig.debugPort : ''}`);
+            if (debugConfig.debugPort === undefined) {
+                command.push(`--hosted-plugin-${debugConfig.debugMode || 'inspect'}=0.0.0.0`);
+            } else if (typeof debugConfig.debugPort === 'string') {
+                command.push(`--hosted-plugin-${debugConfig.debugMode || 'inspect'}=0.0.0.0:${debugConfig.debugPort}`);
+            } else if (Array.isArray(debugConfig.debugPort)) {
+                if (debugConfig.debugPort.length === 0) {
+                    // treat empty array just like undefined
+                    command.push(`--hosted-plugin-${debugConfig.debugMode || 'inspect'}=0.0.0.0`);
+                } else {
+                    for (const serverToPort of debugConfig.debugPort) {
+                        command.push(`--${serverToPort.serverName}-${debugConfig.debugMode || 'inspect'}=0.0.0.0:${serverToPort.debugPort}`);
+                    }
+                }
+            }
         }
         return command;
     }

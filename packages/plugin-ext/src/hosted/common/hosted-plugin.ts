@@ -107,7 +107,12 @@ export abstract class AbstractHostedPluginSupport<PM extends AbstractPluginManag
 
     @postConstruct()
     protected init(): void {
+        this.server.setServerName(this.getServerName());
         this.theiaReadyPromise = this.createTheiaReadyPromise();
+    }
+
+    protected getServerName(): string {
+        return 'hosted-plugin';
     }
 
     protected abstract createTheiaReadyPromise(): Promise<unknown>;

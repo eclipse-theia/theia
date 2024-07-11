@@ -59,6 +59,8 @@ export class HostedPluginServerImpl implements HostedPluginServer {
     protected toDispose = new DisposableCollection();
 
     protected _ignoredPlugins?: Set<PluginIdentifiers.VersionedId>;
+    protected serverName?: string;
+
     // We ignore any plugins that are marked as uninstalled the first time the frontend requests information about deployed plugins.
     protected get ignoredPlugins(): Set<PluginIdentifiers.VersionedId> {
         if (!this._ignoredPlugins) {
@@ -109,7 +111,7 @@ export class HostedPluginServerImpl implements HostedPluginServer {
         const backendPlugins = (await this.deployerHandler.getDeployedBackendPlugins())
             .filter(this.backendPluginHostableFilter);
         if (backendPlugins.length > 0) {
-            this.hostedPlugin.runPluginServer();
+            this.hostedPlugin.runPluginServer(this.serverName);
         }
         const plugins = new Set<PluginIdentifiers.VersionedId>();
         const addIds = async (identifiers: PluginIdentifiers.VersionedId[]): Promise<void> => {
@@ -188,5 +190,10 @@ export class HostedPluginServerImpl implements HostedPluginServer {
 
     getExtPluginAPI(): Promise<ExtPluginApi[]> {
         return Promise.resolve(this.extPluginAPIContributions.getContributions().map(p => p.provideApi()));
+    }
+
+    setServerName(name: string): Promise<void> {
+        this.serverName = name;
+        return Promise.resolve();
     }
 }
