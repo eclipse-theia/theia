@@ -136,11 +136,19 @@ export class NodeRequestService implements RequestService {
                         });
                     });
 
-                    stream.on('error', reject);
+                    stream.on('error', err => {
+                        reject(err);
+                    });
                 }
             });
 
-            req.on('error', reject);
+            req.on('error', err => {
+                reject(err);
+            });
+
+            req.on('timeout', () => {
+                reject('timeout');
+            });
 
             if (options.timeout) {
                 req.setTimeout(options.timeout);
@@ -153,7 +161,7 @@ export class NodeRequestService implements RequestService {
             req.end();
 
             token?.onCancellationRequested(() => {
-                req.abort();
+                req.destroy();
                 reject();
             });
         });

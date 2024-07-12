@@ -225,49 +225,59 @@ export class VSXExtensionsModel {
             }
             const client = await this.clientProvider();
             const filter = await this.vsxApiFilter();
-            const result = await client.search(param);
-            this._searchError = result.error;
-            if (token.isCancellationRequested) {
-                return;
-            }
-            for (const data of result.extensions) {
-                const id = data.namespace.toLowerCase() + '.' + data.name.toLowerCase();
-                const allVersions = filter.getLatestCompatibleVersion(data);
-                if (!allVersions) {
-                    continue;
+            try {
+                const result = await client.search(param);
+
+                if (token.isCancellationRequested) {
+                    return;
                 }
-                if (this.preferences.get('extensions.onlyShowVerifiedExtensions')) {
-                    this.fetchVerifiedStatus(id, client, allVersions).then(verified => {
-                        this.doChange(() => {
-                            this.addExtensions(data, id, allVersions, !!verified);
-                            return Promise.resolve();
+                for (const data of result.extensions) {
+                    const id = data.namespace.toLowerCase() + '.' + data.name.toLowerCase();
+                    const allVersions = filter.getLatestCompatibleVersion(data);
+                    if (!allVersions) {
+                        continue;
+                    }
+                    if (this.preferences.get('extensions.onlyShowVerifiedExtensions')) {
+                        this.fetchVerifiedStatus(id, client, allVersions).then(verified => {
+                            this.doChange(() => {
+                                this.addExtensions(data, id, allVersions, !!verified);
+                                return Promise.resolve();
+                            });
                         });
-                    });
-                } else {
-                    this.addExtensions(data, id, allVersions);
-                    this.fetchVerifiedStatus(id, client, allVersions).then(verified => {
-                        this.doChange(() => {
-                            let extension = this.getExtension(id);
-                            extension = this.setExtension(id);
-                            extension.update(Object.assign({
-                                verified: verified
-                            }));
-                            return Promise.resolve();
+                    } else {
+                        this.addExtensions(data, id, allVersions);
+                        this.fetchVerifiedStatus(id, client, allVersions).then(verified => {
+                            this.doChange(() => {
+                                let extension = this.getExtension(id);
+                                extension = this.setExtension(id);
+                                extension.update(Object.assign({
+                                    verified: verified
+                                }));
+                                return Promise.resolve();
+                            });
                         });
-                    });
+                    }
                 }
+            } catch (error) {
+                this._searchError = error?.message || String(error);
             }
+
         }, token);
     }
 
     protected async fetchVerifiedStatus(id: string, client: OVSXClient, allVersions: VSXAllVersions): Promise<boolean | undefined> {
-        const res = await client.query({ extensionId: id, extensionVersion: allVersions.version, includeAllVersions: true });
-        const extension = res.extensions?.[0];
-        let verified = extension?.verified;
-        if (!verified && extension?.publishedBy.loginName === 'open-vsx') {
-            verified = true;
+        try {
+            const res = await client.query({ extensionId: id, extensionVersion: allVersions.version, includeAllVersions: true });
+            const extension = res.extensions?.[0];
+            let verified = extension?.verified;
+            if (!verified && extension?.publishedBy.loginName === 'open-vsx') {
+                verified = true;
+            }
+            return verified;
+        } catch (error) {
+            console.error(error);
+            return false;
         }
-        return verified;
     }
 
     protected addExtensions(data: VSXSearchEntry, id: string, allVersions: VSXAllVersions, verified?: boolean): void {

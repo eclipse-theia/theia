@@ -34,28 +34,12 @@ export class OVSXHttpClient implements OVSXClient {
         protected requestService: RequestService
     ) { }
 
-    async search(searchOptions?: VSXSearchOptions): Promise<VSXSearchResult> {
-        try {
-            return await this.requestJson(this.buildUrl('api/-/search', searchOptions));
-        } catch (err) {
-            return {
-                error: err?.message || String(err),
-                offset: -1,
-                extensions: []
-            };
-        }
+    search(searchOptions?: VSXSearchOptions): Promise<VSXSearchResult> {
+        return this.requestJson(this.buildUrl('api/-/search', searchOptions));
     }
 
-    async query(queryOptions?: VSXQueryOptions): Promise<VSXQueryResult> {
-        try {
-            return await this.requestJson(this.buildUrl('api/v2/-/query', queryOptions));
-        } catch (error) {
-            return {
-                offset: 0,
-                totalSize: 0,
-                extensions: []
-            };
-        }
+    query(queryOptions?: VSXQueryOptions): Promise<VSXQueryResult> {
+        return this.requestJson(this.buildUrl('api/v2/-/query', queryOptions));
     }
 
     protected async requestJson<R>(url: string): Promise<R> {
