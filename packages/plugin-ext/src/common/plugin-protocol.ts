@@ -1028,8 +1028,6 @@ export interface HostedPluginServer extends RpcServer<HostedPluginClient> {
 
     onMessage(targetHost: string, message: Uint8Array): Promise<void>;
 
-    setServerName(name: string): Promise<void>;
-
 }
 
 export const PLUGIN_HOST_BACKEND = 'main';

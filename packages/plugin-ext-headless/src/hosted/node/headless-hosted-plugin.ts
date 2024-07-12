@@ -73,10 +73,6 @@ export class HeadlessHostedPluginSupport extends AbstractHostedPluginSupport<Hea
         this.pluginProcess.terminatePluginServer();
     }
 
-    protected override getServerName(): string {
-        return 'headless-hosted-plugin';
-    }
-
     protected createTheiaReadyPromise(): Promise<unknown> {
         return Promise.all([this.envServer.getVariables()]);
     }
