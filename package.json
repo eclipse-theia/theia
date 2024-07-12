@@ -7,7 +7,8 @@
     "node": ">=16"
   },
   "resolutions": {
-    "**/@types/node": "18"
+    "**/@types/node": "18",
+    "node-gyp": "^10.2.0"
   },
   "devDependencies": {
     "@types/chai": "4.3.0",
