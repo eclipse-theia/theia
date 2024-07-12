@@ -26,10 +26,10 @@ jobs:
           node-version: 18.x
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Use Python 3.11
+      - name: Use Python 3.x
         uses: actions/setup-python@b64ffcaf5b410884ad320a9cfac8866006a109aa # v4.8.0
         with:
-          python-version: '3.11'
+          python-version: '3.x'
 
       - name: Install and Build
         shell: bash
@@ -67,10 +67,10 @@ jobs:
           node-version: ${{ matrix.node }}
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Use Python 3.11
+      - name: Use Python 3.x
         uses: actions/setup-python@b64ffcaf5b410884ad320a9cfac8866006a109aa # v4.8.0
         with:
-          python-version: '3.11'
+          python-version: '3.x'
 
       - name: Install
         shell: bash
