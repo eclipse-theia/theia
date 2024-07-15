@@ -52,24 +52,24 @@ describe('Views', function () {
             if (view) {
                 assert.notEqual(shell.getAreaFor(view), contribution.defaultViewOptions.area);
                 assert.isFalse(view.isVisible);
-                assert.notEqual(view, shell.activeWidget);
+                assert.isTrue(view !== shell.activeWidget);
             }
 
             view = await contribution.toggleView();
-            assert.notEqual(view, undefined);
+            assert.isTrue(view !== undefined);
             assert.equal(shell.getAreaFor(view), contribution.defaultViewOptions.area);
             assert.isDefined(shell.getTabBarFor(view));
             // @ts-ignore
             assert.equal(shell.getAreaFor(shell.getTabBarFor(view)), contribution.defaultViewOptions.area);
             assert.isTrue(view.isVisible);
-            assert.equal(view, shell.activeWidget);
+            assert.isTrue(view === shell.activeWidget);
 
             view = await contribution.toggleView();
             assert.notEqual(view, undefined);
             assert.equal(shell.getAreaFor(view), contribution.defaultViewOptions.area);
             assert.isDefined(shell.getTabBarFor(view));
             assert.isFalse(view.isVisible);
-            assert.notEqual(view, shell.activeWidget);
+            assert.isTrue(view !== shell.activeWidget);
         });
     }
 
