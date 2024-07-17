@@ -31,8 +31,14 @@ export class DebugCompoundRoot {
     }
 }
 
+export interface TestRunReference {
+    controllerId: string,
+    runId: string
+}
+
 export interface DebugSessionOptionsBase {
     workspaceFolderUri?: string,
+    testRun?: TestRunReference
 }
 
 export interface DebugConfigurationSessionOptions extends DebugSessionOptionsBase {

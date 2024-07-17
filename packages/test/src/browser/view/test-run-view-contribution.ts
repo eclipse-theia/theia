@@ -62,7 +62,10 @@ export class TestRunViewContribution extends AbstractViewContribution<TestRunTre
     override registerCommands(commands: CommandRegistry): void {
         super.registerCommands(commands);
         commands.registerCommand(TestViewCommands.CANCEL_RUN, {
-            isEnabled: t => TestRun.is(t) && t.isRunning,
+            isEnabled: t => {
+                console.log('is enabled');
+                return TestRun.is(t) && t.isRunning
+            },
             isVisible: t => TestRun.is(t),
             execute: t => {
                 if (TestRun.is(t)) {

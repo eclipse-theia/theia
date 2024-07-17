@@ -58,6 +58,7 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { DebugSessionOptions as TheiaDebugSessionOptions } from '@theia/debug/lib/browser/debug-session-options';
 import { DebugStackFrame } from '@theia/debug/lib/browser/model/debug-stack-frame';
 import { DebugThread } from '@theia/debug/lib/browser/model/debug-thread';
+import { TestService } from '@theia/test/lib/browser/test-service';
 
 export class DebugMainImpl implements DebugMain, Disposable {
     private readonly debugExt: DebugExt;
@@ -77,6 +78,7 @@ export class DebugMainImpl implements DebugMain, Disposable {
     private readonly fileService: FileService;
     private readonly pluginService: HostedPluginSupport;
     private readonly debugContributionProvider: ContributionProvider<DebugContribution>;
+    private readonly testService: TestService;
     private readonly workspaceService: WorkspaceService;
 
     private readonly debuggerContributions = new Map<string, DisposableCollection>();
@@ -100,6 +102,7 @@ export class DebugMainImpl implements DebugMain, Disposable {
         this.debugContributionProvider = container.getNamed(ContributionProvider, DebugContribution);
         this.fileService = container.get(FileService);
         this.pluginService = container.get(HostedPluginSupport);
+        this.testService = container.get(TestService);
         this.workspaceService = container.get(WorkspaceService);
 
         const fireDidChangeBreakpoints = ({ added, removed, changed }: BreakpointsChangeEvent<SourceBreakpoint | FunctionBreakpoint>) => {
@@ -165,6 +168,7 @@ export class DebugMainImpl implements DebugMain, Disposable {
             this.fileService,
             terminalOptionsExt,
             this.debugContributionProvider,
+            this.testService,
             this.workspaceService,
         );
 
@@ -327,6 +331,7 @@ export class DebugMainImpl implements DebugMain, Disposable {
         } else {
             sessionOptions = { ...sessionOptions, ...options, workspaceFolderUri };
         }
+        sessionOptions.testRun = options.testRun;
 
         // start options
         const session = await this.sessionManager.start(sessionOptions);
@@ -345,7 +350,7 @@ export class DebugMainImpl implements DebugMain, Disposable {
     }
 
     private toDebugStackFrameDTO(stackFrame: DebugStackFrame | undefined): DebugStackFrameDTO | undefined {
-        return stackFrame ?  {
+        return stackFrame ? {
             sessionId: stackFrame.session.id,
             frameId: stackFrame.frameId,
             threadId: stackFrame.thread.threadId
