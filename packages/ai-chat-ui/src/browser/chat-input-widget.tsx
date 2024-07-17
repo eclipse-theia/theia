@@ -48,21 +48,53 @@ interface ChatInputProperties {
     onQuery: (query: string) => void;
 }
 const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInputProperties) => {
+
     const [query, setQuery] = React.useState('');
+    // eslint-disable-next-line no-null/no-null
+    const inputRef = React.useRef<HTMLTextAreaElement>(null);
+
+    function submit(value: string): void {
+        props.onQuery(value);
+        setQuery('');
+        if (inputRef.current) {
+            inputRef.current.value = '';
+            adjustHeight(inputRef.current);
+        }
+    }
+
+    function adjustHeight(textarea: EventTarget & HTMLTextAreaElement): void {
+        textarea.style.height = '';
+        if (textarea.scrollHeight > 36) {
+            textarea.style.height = textarea.scrollHeight + 'px';
+        }
+    }
+
     return <div>
-        <input
-            style={{ width: '100%' }}
-            type='text'
-            placeholder='Enter your Query'
-            onChange={e => setQuery(e.target.value)}
+        <textarea
+            ref={inputRef}
+            className='theia-input theia-ChatInput'
+            placeholder='Ask the AI...'
+            onChange={e => {
+                adjustHeight(e.target);
+                setQuery(e.target.value);
+            }}
             onKeyDown={e => {
-                if (e.key === 'Enter') {
-                    props.onQuery(e.currentTarget.value);
-                    setQuery('');
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    submit(e.currentTarget.value);
+                    e.preventDefault();
+                } else if (e.key === 'Enter' && e.shiftKey) {
+                    adjustHeight(e.currentTarget);
                 }
             }}
             value={query}
         >
-        </input>
+        </textarea>
+        <div className="theia-ChatInputOptions">
+            <span
+                className="codicon codicon-send option"
+                title="Send (Enter)"
+                onClick={() => submit(inputRef.current?.value || '')}
+            />
+        </div>
     </div>;
 };

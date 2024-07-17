@@ -40,7 +40,7 @@ export class MarkdownPartRenderer implements ChatResponsePartRenderer<MarkdownCh
 
 }
 
-const MarkdownWrapper = (props: { data: MarkdownString, renderCallback: (md: MarkdownString) => HTMLElement }) => {
+export const MarkdownWrapper = (props: { data: MarkdownString, renderCallback: (md: MarkdownString) => HTMLElement }) => {
     // eslint-disable-next-line no-null/no-null
     const ref: React.MutableRefObject<HTMLDivElement | null> = useRef(null);
 

@@ -13,7 +13,6 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { ContributionProvider } from '@theia/core';
 import {
     BaseChatResponseContent,
     ChatModel,
@@ -21,6 +20,7 @@ import {
     ChatResponseContent,
     ChatResponseModel,
 } from '@theia/ai-chat';
+import { ContributionProvider } from '@theia/core';
 import {
     codicon,
     CompositeTreeNode,
@@ -31,6 +31,7 @@ import {
     TreeProps,
     TreeWidget,
 } from '@theia/core/lib/browser';
+import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering/markdown-string';
 import {
     inject,
     injectable,
@@ -38,7 +39,10 @@ import {
     postConstruct,
 } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
+
+import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { ChatResponsePartRenderer } from '../types';
+import { MarkdownWrapper } from '../chat-response-renderer/markdown-part-renderer';
 
 // TODO Instead of directly operating on the ChatRequestModel we could use an intermediate view model
 interface RequestNode extends TreeNode {
@@ -58,6 +62,9 @@ export class ChatViewTreeWidget extends TreeWidget {
 
     @inject(ContributionProvider) @named(ChatResponsePartRenderer)
     protected readonly chatResponsePartRenderers: ContributionProvider<ChatResponsePartRenderer<BaseChatResponseContent>>;
+
+    @inject(MarkdownRenderer)
+    private renderer: MarkdownRenderer;
 
     constructor(
         @inject(TreeProps) props: TreeProps,
@@ -146,19 +153,26 @@ export class ChatViewTreeWidget extends TreeWidget {
             return super.renderNode(node, props);
         }
         return <React.Fragment key={node.id}>
-            {this.renderAgent(node)}
-            {this.renderDetail(node)}
+            <div className='theia-ChatNode'>
+                {this.renderAgent(node)}
+                {this.renderDetail(node)}
+            </div>
         </React.Fragment>;
     }
     private renderAgent(node: RequestNode | ResponseNode): React.ReactNode {
+        const inProgress = isResponseNode(node) && !node.response.isComplete && !node.response.isCanceled;
         return <React.Fragment>
-            <label className={this.getAgentIconClassName(node)}><span className='theia-AgentLabel'>{this.getAgentLabel(node)}</span></label>
+            <div className='theia-ChatNodeHeader'>
+                <div className={`theia-AgentAvatar ${this.getAgentIconClassName(node)}`}></div>
+                <h3 className='theia-AgentLabel'>{this.getAgentLabel(node)}</h3>
+                {(inProgress && <span className='theia-ChatContentInProgress'>Generating</span>)}
+            </div>
         </React.Fragment>;
     }
     private getAgentLabel(node: RequestNode | ResponseNode): string {
         if (isRequestNode(node)) {
             // TODO find user name
-            return 'User';
+            return 'Me';
         }
         // TODO check agent name
         return 'AI';
@@ -180,8 +194,14 @@ export class ChatViewTreeWidget extends TreeWidget {
     }
 
     private renderChatRequest(node: RequestNode): React.ReactNode {
+        const markdownString = new MarkdownStringImpl(node.request.request.text, { supportHtml: true, isTrusted: true });
         return (
-            <div className={'theia-RequestNode'}>{node.request.request.text}</div>
+            <div className={'theia-RequestNode'}>
+                {<MarkdownWrapper
+                    data={markdownString}
+                    renderCallback={() => this.renderer.render(markdownString).element}
+                ></MarkdownWrapper>}
+            </div>
         );
     }
 
