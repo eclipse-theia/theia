@@ -132,8 +132,7 @@ export class WebsocketFrontendConnectionService implements FrontendConnectionSer
             return envValue;
         }
 
-        const configValue = BackendApplicationConfigProvider.get().frontendConnectionTimeout;
-        return configValue;
+        return BackendApplicationConfigProvider.get().frontendConnectionTimeout;
     }
 }
 
