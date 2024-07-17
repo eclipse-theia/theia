@@ -365,15 +365,22 @@ export class NotebookCellActionContribution implements MenuContribution, Command
             execute: async (notebook?: NotebookModel, cell?: NotebookCellModel) => {
                 const selectedCell = cell ?? this.notebookEditorWidgetService.focusedEditor?.model?.selectedCell;
                 const activeNotebook = notebook ?? this.notebookEditorWidgetService.focusedEditor?.model;
-                if (selectedCell && activeNotebook) {
-                    const language = await this.languageQuickPickService.pickEditorLanguage(selectedCell.language);
-                    if (language?.value && language.value !== 'autoDetect') {
-                        this.notebookEditorWidgetService.focusedEditor?.model?.applyEdits([{
-                            editType: CellEditType.CellLanguage,
-                            index: activeNotebook.cells.indexOf(selectedCell),
-                            language: language.value.id
-                        }], true);
-                    }
+                if (!selectedCell || !activeNotebook) {
+                    return;
+                }
+                const language = await this.languageQuickPickService.pickEditorLanguage(selectedCell.language);
+                if (!language?.value || language.value === 'autoDetect') {
+                    return;
+                }
+                if (language.value.id === 'markdown') {
+                    selectedCell.language = 'markdown';
+                    changeCellType(activeNotebook, selectedCell, CellKind.Markup);
+                } else {
+                    this.notebookEditorWidgetService.focusedEditor?.model?.applyEdits([{
+                        editType: CellEditType.CellLanguage,
+                        index: activeNotebook.cells.indexOf(selectedCell),
+                        language: language.value.id
+                    }], true);
                 }
             }
         });
