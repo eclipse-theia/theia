@@ -4,7 +4,8 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
-<!-- ## not yet released 
+## not yet released 
+- [test] Added `DebugSessionOptions.testRun` [#13939](https://github.com/eclipse-theia/theia/pull/13939) - Contributed on behalf of STMicroelectronics
 
 - [core] introduce `FRONTEND_CONNECTION_TIMEOUT` environment variable to override application connexion settings. [#13936](https://github.com/eclipse-theia/theia/pull/13936) - Contributed on behalf of STMicroelectronics
 - [core] tab selected should be adjacent when closing last one [#13912](https://github.com/eclipse-theia/theia/pull/13912) - contributed on behalf of STMicroelectronics
@@ -12,8 +13,6 @@
 - [debug] implement activeStackItem and related change event in debug namespace [#13900](https://github.com/eclipse-theia/theia/pull/13900) - contributed on behalf of STMicroelectronics
 
 <a name="breaking_changes_not_yet_released">[Breaking Changes:](#breaking_changes_not_yet_released)</a> 
-
- -->
 
 ## 1.50.0 - 06/27/2024
 
