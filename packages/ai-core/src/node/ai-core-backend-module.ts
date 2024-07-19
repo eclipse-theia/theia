@@ -15,62 +15,56 @@
 // *****************************************************************************
 import { ContainerModule } from '@theia/core/shared/inversify';
 import {
-    LanguageModelProviderFrontendDelegateImpl,
-    LanguageModelProviderRegistryFrontendDelegateImpl,
-} from './language-model-provider-frontend-delegate';
+    LanguageModelFrontendDelegateImpl,
+    LanguageModelRegistryFrontendDelegateImpl,
+} from './language-model-frontend-delegate';
 import {
     ConnectionHandler,
     RpcConnectionHandler,
     bindContributionProvider,
 } from '@theia/core';
 import {
-    LanguageModelProviderRegistry,
-    DefaultLanguageModelProviderRegistryImpl,
+    LanguageModelRegistry,
+    DefaultLanguageModelRegistryImpl,
     LanguageModelProvider,
 } from '../common';
 import {
-    LanguageModelProviderDelegateClient,
-    LanguageModelProviderFrontendDelegate,
-    LanguageModelProviderRegistryFrontendDelegate,
-    languageModelProviderDelegatePath,
-    languageModelProviderRegistryDelegatePath,
-} from '../common/language-model-provider-delegate';
+    LanguageModelDelegateClient,
+    LanguageModelFrontendDelegate,
+    LanguageModelRegistryFrontendDelegate,
+    languageModelDelegatePath,
+    languageModelRegistryDelegatePath,
+} from '../common/language-model-delegate';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, LanguageModelProvider);
-    bind(LanguageModelProviderRegistry)
-        .to(DefaultLanguageModelProviderRegistryImpl)
-        .inSingletonScope();
+    bind(LanguageModelRegistry).to(DefaultLanguageModelRegistryImpl).inSingletonScope();
 
-    bind(LanguageModelProviderRegistryFrontendDelegate)
-        .to(LanguageModelProviderRegistryFrontendDelegateImpl)
-        .inSingletonScope();
+    bind(LanguageModelRegistryFrontendDelegate).to(LanguageModelRegistryFrontendDelegateImpl).inSingletonScope();
     bind(ConnectionHandler)
         .toDynamicValue(
             ctx =>
                 new RpcConnectionHandler(
-                    languageModelProviderRegistryDelegatePath,
+                    languageModelRegistryDelegatePath,
                     () =>
                         ctx.container.get(
-                            LanguageModelProviderRegistryFrontendDelegate
+                            LanguageModelRegistryFrontendDelegate
                         )
                 )
         )
         .inSingletonScope();
 
-    bind(LanguageModelProviderFrontendDelegateImpl).toSelf().inSingletonScope();
-    bind(LanguageModelProviderFrontendDelegate).toService(
-        LanguageModelProviderFrontendDelegateImpl
-    );
+    bind(LanguageModelFrontendDelegateImpl).toSelf().inSingletonScope();
+    bind(LanguageModelFrontendDelegate).toService(LanguageModelFrontendDelegateImpl);
     bind(ConnectionHandler)
         .toDynamicValue(
             ({ container }) =>
-                new RpcConnectionHandler<LanguageModelProviderDelegateClient>(
-                    languageModelProviderDelegatePath,
+                new RpcConnectionHandler<LanguageModelDelegateClient>(
+                    languageModelDelegatePath,
                     client => {
                         const service =
-                            container.get<LanguageModelProviderFrontendDelegateImpl>(
-                                LanguageModelProviderFrontendDelegateImpl
+                            container.get<LanguageModelFrontendDelegateImpl>(
+                                LanguageModelFrontendDelegateImpl
                             );
                         service.setClient(client);
                         return service;

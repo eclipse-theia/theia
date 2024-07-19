@@ -13,32 +13,32 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+import { ILogger } from '@theia/core';
 import {
     inject,
     injectable,
     postConstruct,
 } from '@theia/core/shared/inversify';
 import {
-    DefaultLanguageModelProviderRegistryImpl,
-    LanguageModelProvider,
-    LanguageModelProviderDelegateClient,
-    LanguageModelProviderDescription,
-    LanguageModelProviderFrontendDelegate,
-    LanguageModelProviderRegistryFrontendDelegate,
-    LanguageModelRequest,
+    DefaultLanguageModelRegistryImpl,
     isLanguageModelStreamResponseDelegate,
     isLanguageModelTextResponse,
-    LanguageModelStreamResponsePart,
+    LanguageModel,
+    LanguageModelDelegateClient,
+    LanguageModelFrontendDelegate,
+    LanguageModelMetaData,
+    LanguageModelRegistryFrontendDelegate,
+    LanguageModelRequest,
+    LanguageModelStreamResponsePart
 } from '../common';
-import { ILogger } from '@theia/core';
 
 export interface TokenReceiver {
     send(id: string, token: LanguageModelStreamResponsePart | undefined): void;
 }
 
 @injectable()
-export class LanguageModelProviderDelegateClientImpl
-    implements LanguageModelProviderDelegateClient {
+export class LanguageModelDelegateClientImpl
+    implements LanguageModelDelegateClient {
     protected receiver: TokenReceiver;
 
     setReceiver(receiver: TokenReceiver): void {
@@ -57,42 +57,42 @@ interface StreamState {
 }
 
 @injectable()
-export class FrontendLanguageModelProviderRegistryImpl
-    extends DefaultLanguageModelProviderRegistryImpl
+export class FrontendLanguageModelRegistryImpl
+    extends DefaultLanguageModelRegistryImpl
     implements TokenReceiver {
-    @inject(LanguageModelProviderRegistryFrontendDelegate)
-    protected registryDelegate: LanguageModelProviderRegistryFrontendDelegate;
+    @inject(LanguageModelRegistryFrontendDelegate)
+    protected registryDelegate: LanguageModelRegistryFrontendDelegate;
 
-    @inject(LanguageModelProviderFrontendDelegate)
-    protected providerDelegate: LanguageModelProviderFrontendDelegate;
+    @inject(LanguageModelFrontendDelegate)
+    protected providerDelegate: LanguageModelFrontendDelegate;
 
-    @inject(LanguageModelProviderDelegateClientImpl)
-    protected client: LanguageModelProviderDelegateClientImpl;
+    @inject(LanguageModelDelegateClientImpl)
+    protected client: LanguageModelDelegateClientImpl;
 
     @inject(ILogger)
-    protected logger: ILogger;
+    protected override logger: ILogger;
 
     @postConstruct()
-    protected init(): void {
+    protected override init(): void {
         this.client.setReceiver(this);
     }
 
-    override async getLanguageModelProviders(): Promise<LanguageModelProvider[]> {
+    override async getLanguageModels(): Promise<LanguageModel[]> {
         // all providers coming in via the frontend
-        const frontendProviders = await super.getLanguageModelProviders();
+        const frontendProviders = await super.getLanguageModels();
         // also delegate to backend providers
-        const backendProviderDescriptions = await this.registryDelegate.getLanguageModelProviderDescriptions();
+        const backendDescriptions = await this.registryDelegate.getLanguageModelDescriptions();
         return [
             ...frontendProviders,
-            ...backendProviderDescriptions.map(description =>
-                this.createFrontendLanguageModelProvider(description)
+            ...backendDescriptions.map(description =>
+                this.createFrontendLanguageModel(description)
             ),
         ];
     }
 
-    createFrontendLanguageModelProvider(
-        description: LanguageModelProviderDescription
-    ): LanguageModelProvider {
+    createFrontendLanguageModel(
+        description: LanguageModelMetaData
+    ): LanguageModel {
         return {
             ...description,
             request: async (request: LanguageModelRequest) => {

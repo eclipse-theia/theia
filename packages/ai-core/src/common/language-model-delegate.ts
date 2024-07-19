@@ -14,15 +14,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelProviderDescription, LanguageModelRequest, LanguageModelStreamResponsePart, LanguageModelTextResponse } from './language-model-provider';
+import { LanguageModelMetaData, LanguageModelRequest, LanguageModelStreamResponsePart, LanguageModelTextResponse } from './language-model';
 
-export const LanguageModelProviderDelegateClient = Symbol('LanguageModelProviderDelegateClient');
-export interface LanguageModelProviderDelegateClient {
+export const LanguageModelDelegateClient = Symbol('LanguageModelDelegateClient');
+export interface LanguageModelDelegateClient {
     send(id: string, token: LanguageModelStreamResponsePart | undefined): void;
 }
-export const LanguageModelProviderRegistryFrontendDelegate = Symbol('LanguageModelProviderRegistryFrontendDelegate');
-export interface LanguageModelProviderRegistryFrontendDelegate {
-    getLanguageModelProviderDescriptions(): Promise<LanguageModelProviderDescription[]>;
+export const LanguageModelRegistryFrontendDelegate = Symbol('LanguageModelRegistryFrontendDelegate');
+export interface LanguageModelRegistryFrontendDelegate {
+    getLanguageModelDescriptions(): Promise<LanguageModelMetaData[]>;
 }
 
 export interface LanguageModelStreamResponseDelegate {
@@ -33,10 +33,10 @@ export const isLanguageModelStreamResponseDelegate = (obj: unknown): obj is Lang
 
 export type LanguageModelResponseDelegate = LanguageModelTextResponse | LanguageModelStreamResponseDelegate;
 
-export const LanguageModelProviderFrontendDelegate = Symbol('LanguageModelProviderFrontendDelegate');
-export interface LanguageModelProviderFrontendDelegate {
+export const LanguageModelFrontendDelegate = Symbol('LanguageModelFrontendDelegate');
+export interface LanguageModelFrontendDelegate {
     request(modelId: string, request: LanguageModelRequest): Promise<LanguageModelResponseDelegate>;
 }
 
-export const languageModelProviderRegistryDelegatePath = '/services/languageModelProviderRegistryDelegate';
-export const languageModelProviderDelegatePath = '/services/languageModelProviderDelegate';
+export const languageModelRegistryDelegatePath = '/services/languageModelRegistryDelegatePath';
+export const languageModelDelegatePath = '/services/languageModelDelegatePath';

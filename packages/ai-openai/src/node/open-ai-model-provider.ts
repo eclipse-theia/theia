@@ -14,20 +14,35 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelProvider, LanguageModelRequest, LanguageModelRequestMessage, LanguageModelResponse, LanguageModelStreamResponsePart } from '@theia/ai-core';
+import { LanguageModel, LanguageModelRequest, LanguageModelRequestMessage, LanguageModelResponse, LanguageModelStreamResponsePart } from '@theia/ai-core';
 import { injectable } from '@theia/core/shared/inversify';
 import OpenAI from 'openai';
 import { ChatCompletionMessageParam } from 'openai/resources';
 
 @injectable()
-export class OpenAIModelProvider implements LanguageModelProvider {
+export class OpenAIModel implements LanguageModel {
+
+    readonly id: string;
+    readonly providerId = 'openai';
+    readonly name: string;
+    readonly vendor: string;
+    readonly version: string;
+    readonly family: string;
+    // TODO make these configurable
+    readonly maxInputTokens: number = 16000;
+    readonly maxOutputTokens: number = 16000;
+
+    // TODO check if we have a preference
     private openai = new OpenAI();
 
-    id = 'open-ai';
+    constructor(protected model: string) {
+        this.id = this.providerId + ':' + model;
+        this.name = this.providerId + ':' + model;
+    }
 
     async request(request: LanguageModelRequest): Promise<LanguageModelResponse> {
         const stream = await this.openai.chat.completions.create({
-            model: 'gpt-3.5-turbo',
+            model: this.model,
             messages: request.messages.map(this.toOpenAIMessage),
             stream: true,
         });

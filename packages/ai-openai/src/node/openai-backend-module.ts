@@ -15,10 +15,16 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { OpenAIModelProvider } from './open-ai-model-provider';
+import { OpenAIModel } from './open-ai-model-provider';
 import { LanguageModelProvider } from '@theia/ai-core';
 
 export default new ContainerModule(bind => {
-    bind(OpenAIModelProvider).toSelf().inSingletonScope();
-    bind(LanguageModelProvider).toService(OpenAIModelProvider);
+    bind(LanguageModelProvider).toDynamicValue(ctx =>
+        () => [
+            'gpt-4o',
+            'gpt-4o-mini',
+            'gpt-4-turbo',
+            'gpt-4',
+            'gpt-3.5-turbo'
+        ].map(model => new OpenAIModel(model)));
 });

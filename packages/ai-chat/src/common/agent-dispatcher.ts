@@ -15,7 +15,7 @@
 // *****************************************************************************
 import { inject, injectable } from '@theia/core/shared/inversify';
 import {
-    LanguageModelProviderRegistry,
+    LanguageModelRegistry,
     isLanguageModelStreamResponse,
     isLanguageModelTextResponse,
     LanguageModelStreamResponsePart,
@@ -38,8 +38,8 @@ export interface AgentDispatcher {
 
 @injectable()
 export class AgentDispatcherImpl implements AgentDispatcher {
-    @inject(LanguageModelProviderRegistry)
-    modelProviderRegistry: LanguageModelProviderRegistry;
+    @inject(LanguageModelRegistry)
+    modelProviderRegistry: LanguageModelRegistry;
 
     @inject(ILogger)
     protected logger: ILogger;
@@ -47,7 +47,7 @@ export class AgentDispatcherImpl implements AgentDispatcher {
     async performRequest(request: ChatRequestModelImpl): Promise<void> {
         // TODO implement agent delegation
         const languageModelResponse = await (
-            await this.modelProviderRegistry.getLanguageModelProviders()
+            await this.modelProviderRegistry.getLanguageModels()
         )[0].request({ messages: getMessages(request.session) });
         if (isLanguageModelTextResponse(languageModelResponse)) {
             request.response.response.addContent(

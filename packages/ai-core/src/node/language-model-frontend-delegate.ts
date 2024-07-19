@@ -17,47 +17,52 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ILogger, generateUuid } from '@theia/core';
 import {
-    LanguageModelProviderDescription,
-    LanguageModelProviderRegistry,
+    LanguageModelMetaData,
+    LanguageModelRegistry,
     LanguageModelRequest,
     isLanguageModelStreamResponse,
     isLanguageModelTextResponse,
     LanguageModelStreamResponsePart,
 } from '../common';
 import {
-    LanguageModelProviderDelegateClient,
-    LanguageModelProviderFrontendDelegate,
-    LanguageModelProviderRegistryFrontendDelegate,
+    LanguageModelDelegateClient,
+    LanguageModelFrontendDelegate,
+    LanguageModelRegistryFrontendDelegate,
     LanguageModelResponseDelegate,
-} from '../common/language-model-provider-delegate';
+} from '../common/language-model-delegate';
 
 @injectable()
-export class LanguageModelProviderRegistryFrontendDelegateImpl
-    implements LanguageModelProviderRegistryFrontendDelegate {
-    @inject(LanguageModelProviderRegistry)
-    private registry: LanguageModelProviderRegistry;
+export class LanguageModelRegistryFrontendDelegateImpl implements LanguageModelRegistryFrontendDelegate {
 
-    async getLanguageModelProviderDescriptions(): Promise<LanguageModelProviderDescription[]> {
-        return (await this.registry.getLanguageModelProviders()).map(provider => ({
-            id: provider.id,
-            label: provider.label,
-            description: provider.description,
+    @inject(LanguageModelRegistry)
+    private registry: LanguageModelRegistry;
+
+    async getLanguageModelDescriptions(): Promise<LanguageModelMetaData[]> {
+        return (await this.registry.getLanguageModels()).map(model => ({
+            id: model.id,
+            providerId: model.providerId,
+            name: model.name,
+            vendor: model.vendor,
+            version: model.version,
+            family: model.family,
+            maxInputTokens: model.maxInputTokens,
+            maxOutputTokens: model.maxOutputTokens,
         }));
     }
 }
 
 @injectable()
-export class LanguageModelProviderFrontendDelegateImpl
-    implements LanguageModelProviderFrontendDelegate {
-    @inject(LanguageModelProviderRegistry)
-    private registry: LanguageModelProviderRegistry;
+export class LanguageModelFrontendDelegateImpl implements LanguageModelFrontendDelegate {
+
+    @inject(LanguageModelRegistry)
+    private registry: LanguageModelRegistry;
 
     @inject(ILogger)
     private logger: ILogger;
 
-    private frontendDelegateClient: LanguageModelProviderDelegateClient;
+    private frontendDelegateClient: LanguageModelDelegateClient;
 
-    setClient(client: LanguageModelProviderDelegateClient): void {
+    setClient(client: LanguageModelDelegateClient): void {
         this.frontendDelegateClient = client;
     }
 
@@ -65,7 +70,7 @@ export class LanguageModelProviderFrontendDelegateImpl
         modelId: string,
         request: LanguageModelRequest
     ): Promise<LanguageModelResponseDelegate> {
-        const provider = await this.registry.getLanguageModelProvider(modelId);
+        const provider = await this.registry.getLanguageModel(modelId);
         if (!provider) {
             throw new Error(
                 `Request was sent to non-existent language model ${modelId}`

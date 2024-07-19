@@ -14,5 +14,5 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './language-model-provider';
-export * from './language-model-provider-delegate';
+export * from './language-model';
+export * from './language-model-delegate';

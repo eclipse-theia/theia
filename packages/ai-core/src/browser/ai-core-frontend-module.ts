@@ -13,62 +13,47 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { ContainerModule } from '@theia/core/shared/inversify';
-import {
-    LanguageModelProvider,
-    LanguageModelProviderDelegateClient,
-    LanguageModelProviderFrontendDelegate,
-    LanguageModelProviderRegistry,
-    LanguageModelProviderRegistryFrontendDelegate,
-    languageModelProviderDelegatePath,
-    languageModelProviderRegistryDelegatePath,
-} from '../common';
+import { bindContributionProvider } from '@theia/core';
 import {
     RemoteConnectionProvider,
     ServiceConnectionProvider,
 } from '@theia/core/lib/browser/messaging/service-connection-provider';
+import { ContainerModule } from '@theia/core/shared/inversify';
 import {
-    FrontendLanguageModelProviderRegistryImpl,
-    LanguageModelProviderDelegateClientImpl,
-} from './frontend-language-model-provider-registry';
-import { bindContributionProvider } from '@theia/core';
+    LanguageModelDelegateClient,
+    LanguageModelFrontendDelegate,
+    LanguageModelProvider,
+    LanguageModelRegistry,
+    LanguageModelRegistryFrontendDelegate,
+    languageModelDelegatePath,
+    languageModelRegistryDelegatePath,
+} from '../common';
+import {
+    FrontendLanguageModelRegistryImpl,
+    LanguageModelDelegateClientImpl,
+} from './frontend-language-model-registry';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, LanguageModelProvider);
 
-    bind(FrontendLanguageModelProviderRegistryImpl).toSelf().inSingletonScope();
-    bind(LanguageModelProviderRegistry).toService(
-        FrontendLanguageModelProviderRegistryImpl
-    );
+    bind(FrontendLanguageModelRegistryImpl).toSelf().inSingletonScope();
+    bind(LanguageModelRegistry).toService(FrontendLanguageModelRegistryImpl);
 
-    bind(LanguageModelProviderDelegateClientImpl).toSelf().inSingletonScope();
-    bind(LanguageModelProviderDelegateClient)
-        .toService(LanguageModelProviderDelegateClientImpl);
+    bind(LanguageModelDelegateClientImpl).toSelf().inSingletonScope();
+    bind(LanguageModelDelegateClient).toService(LanguageModelDelegateClientImpl);
 
-    bind(LanguageModelProviderRegistryFrontendDelegate).toDynamicValue(
+    bind(LanguageModelRegistryFrontendDelegate).toDynamicValue(
         ctx => {
-            const connection = ctx.container.get<ServiceConnectionProvider>(
-                RemoteConnectionProvider
-            );
-            return connection.createProxy<LanguageModelProviderRegistryFrontendDelegate>(
-                languageModelProviderRegistryDelegatePath
-            );
+            const connection = ctx.container.get<ServiceConnectionProvider>(RemoteConnectionProvider);
+            return connection.createProxy<LanguageModelRegistryFrontendDelegate>(languageModelRegistryDelegatePath);
         }
     );
 
-    bind(LanguageModelProviderFrontendDelegate)
+    bind(LanguageModelFrontendDelegate)
         .toDynamicValue(ctx => {
-            const connection = ctx.container.get<ServiceConnectionProvider>(
-                RemoteConnectionProvider
-            );
-            const client =
-                ctx.container.get<LanguageModelProviderDelegateClient>(
-                    LanguageModelProviderDelegateClient
-                );
-            return connection.createProxy<LanguageModelProviderFrontendDelegate>(
-                languageModelProviderDelegatePath,
-                client
-            );
+            const connection = ctx.container.get<ServiceConnectionProvider>(RemoteConnectionProvider);
+            const client = ctx.container.get<LanguageModelDelegateClient>(LanguageModelDelegateClient);
+            return connection.createProxy<LanguageModelFrontendDelegate>(languageModelDelegatePath, client);
         })
         .inSingletonScope();
 });
