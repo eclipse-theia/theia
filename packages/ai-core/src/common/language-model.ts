@@ -149,13 +149,16 @@ export class DefaultLanguageModelRegistryImpl implements LanguageModelRegistry {
 
     async selectLanguageModels(request: LanguageModelSelector): Promise<LanguageModel[]> {
         // TODO check for actor and purpose against settings
-        return this.languageModels.filter(model =>
-            (!request.identifier || model.id === request.identifier) &&
-            (!request.name || model.name === request.name) &&
-            (!request.vendor || model.vendor === request.vendor) &&
-            (!request.version || model.version === request.version) &&
-            (!request.family || model.family === request.family) &&
-            (!request.tokens || model.maxInputTokens >= request.tokens)
-        );
+        return this.languageModels.filter(model => isModelMatching(request, model));
     }
 }
+
+export function isModelMatching(request: LanguageModelSelector, model: LanguageModel): boolean {
+    return (!request.identifier || model.id === request.identifier) &&
+        (!request.name || model.name === request.name) &&
+        (!request.vendor || model.vendor === request.vendor) &&
+        (!request.version || model.version === request.version) &&
+        (!request.family || model.family === request.family) &&
+        (!request.tokens || model.maxInputTokens >= request.tokens);
+}
+
