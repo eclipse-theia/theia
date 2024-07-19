@@ -34,7 +34,7 @@ import {
     LanguageModelProviderRegistryFrontendDelegate,
     languageModelProviderDelegatePath,
     languageModelProviderRegistryDelegatePath,
-} from '../common/model-provider-delegate';
+} from '../common/language-model-provider-delegate';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, LanguageModelProvider);

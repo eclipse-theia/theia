@@ -3,7 +3,7 @@
   "version": "1.49.0",
   "description": "Theia - AI Chat Extension",
   "dependencies": {
-    "@theia/ai-model-provider": "1.49.0",
+    "@theia/ai-core": "1.49.0",
     "@theia/core": "1.49.0",
     "@theia/filesystem": "1.49.0",
     "@theia/workspace": "1.49.0",

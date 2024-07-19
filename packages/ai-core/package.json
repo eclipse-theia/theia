@@ -1,14 +1,13 @@
 {
-  "name": "@theia/ai-model-provider",
+  "name": "@theia/ai-core",
   "version": "1.49.0",
-  "description": "Theia - LLM Integration",
+  "description": "Theia - AI Core",
   "dependencies": {
     "@theia/core": "1.49.0",
     "@theia/filesystem": "1.49.0",
     "@theia/workspace": "1.49.0",
     "minimatch": "^5.1.0",
-    "tslib": "^2.6.2",
-    "openai": "^4.45.0"
+    "tslib": "^2.6.2"
   },
   "main": "lib/common",
   "publishConfig": {
@@ -16,8 +15,8 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/language-model-provider-frontend-module",
-      "backend": "lib/node/language-model-provider-backend-module"
+      "frontend": "lib/browser/ai-core-frontend-module",
+      "backend": "lib/node/ai-core-backend-module"
     }
   ],
   "keywords": [

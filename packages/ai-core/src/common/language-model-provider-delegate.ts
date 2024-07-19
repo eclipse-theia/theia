@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelProviderDescription, LanguageModelRequest, LanguageModelStreamResponsePart, LanguageModelTextResponse } from './model-provider';
+import { LanguageModelProviderDescription, LanguageModelRequest, LanguageModelStreamResponsePart, LanguageModelTextResponse } from './language-model-provider';
 
 export const LanguageModelProviderDelegateClient = Symbol('LanguageModelProviderDelegateClient');
 export interface LanguageModelProviderDelegateClient {

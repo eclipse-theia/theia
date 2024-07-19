@@ -29,7 +29,7 @@ import {
     LanguageModelProviderFrontendDelegate,
     LanguageModelProviderRegistryFrontendDelegate,
     LanguageModelResponseDelegate,
-} from '../common/model-provider-delegate';
+} from '../common/language-model-provider-delegate';
 
 @injectable()
 export class LanguageModelProviderRegistryFrontendDelegateImpl

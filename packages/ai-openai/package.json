@@ -9,7 +9,7 @@
     "minimatch": "^5.1.0",
     "tslib": "^2.6.2",
     "openai": "^4.45.0",
-    "@theia/ai-model-provider": "1.49.0"
+    "@theia/ai-core": "1.49.0"
   },
   "publishConfig": {
     "access": "public"

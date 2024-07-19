@@ -10,7 +10,7 @@
   ],
   "references": [
     {
-      "path": "../ai-model-provider"
+      "path": "../ai-core"
     },
     {
       "path": "../core"

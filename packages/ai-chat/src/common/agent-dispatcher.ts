@@ -19,7 +19,7 @@ import {
     isLanguageModelStreamResponse,
     isLanguageModelTextResponse,
     LanguageModelStreamResponsePart,
-} from '@theia/ai-model-provider';
+} from '@theia/ai-core';
 import { ILogger, isArray } from '@theia/core';
 import {
     ChatRequestModelImpl,

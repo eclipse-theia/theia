@@ -61,7 +61,7 @@
       "path": "packages/ai-chat-ui"
     },
     {
-      "path": "packages/ai-model-provider"
+      "path": "packages/ai-core"
     },
     {
       "path": "packages/ai-openai"

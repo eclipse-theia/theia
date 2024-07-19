@@ -16,7 +16,7 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { OpenAIModelProvider } from './open-ai-model-provider';
-import { LanguageModelProvider } from '@theia/ai-model-provider';
+import { LanguageModelProvider } from '@theia/ai-core';
 
 export default new ContainerModule(bind => {
     bind(OpenAIModelProvider).toSelf().inSingletonScope();
