@@ -70,13 +70,13 @@ export class LanguageModelFrontendDelegateImpl implements LanguageModelFrontendD
         modelId: string,
         request: LanguageModelRequest
     ): Promise<LanguageModelResponseDelegate> {
-        const provider = await this.registry.getLanguageModel(modelId);
-        if (!provider) {
+        const model = await this.registry.getLanguageModel(modelId);
+        if (!model) {
             throw new Error(
                 `Request was sent to non-existent language model ${modelId}`
             );
         }
-        const response = await provider.request(request);
+        const response = await model.request(request);
         if (isLanguageModelTextResponse(response)) {
             return response;
         }
