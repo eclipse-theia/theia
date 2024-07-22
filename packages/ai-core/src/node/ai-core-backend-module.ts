@@ -36,6 +36,8 @@ import {
     languageModelRegistryDelegatePath,
 } from '../common/language-model-delegate';
 
+import { PromptService, PromptServiceImpl } from '../common/prompt-service';
+
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, LanguageModelProvider);
     bind(LanguageModelRegistry).to(DefaultLanguageModelRegistryImpl).inSingletonScope();
@@ -72,4 +74,7 @@ export default new ContainerModule(bind => {
                 )
         )
         .inSingletonScope();
+
+    bind(PromptServiceImpl).toSelf().inSingletonScope();
+    bind(PromptService).toService(PromptServiceImpl);
 });

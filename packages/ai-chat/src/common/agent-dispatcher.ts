@@ -13,23 +13,10 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { inject, injectable } from '@theia/core/shared/inversify';
-import {
-    LanguageModelRegistry,
-    isLanguageModelStreamResponse,
-    isLanguageModelTextResponse,
-    LanguageModelStreamResponsePart,
-} from '@theia/ai-core';
-import { ILogger, isArray } from '@theia/core';
-import {
-    ChatRequestModelImpl,
-    ChatResponseContent,
-    CommandChatResponseContentImpl,
-    isCommandChatResponseContent,
-    // TextChatResponseContentImpl,
-    MarkdownChatResponseContentImpl
-} from './chat-model';
-import { getMessages } from './chat-util';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
+import { ContributionProvider, ILogger } from '@theia/core';
+import { ChatRequestModelImpl } from './chat-model';
+import { ChatAgent } from './chat-agents';
 
 export const AgentDispatcher = Symbol('AgentDispatcher');
 export interface AgentDispatcher {
@@ -38,53 +25,15 @@ export interface AgentDispatcher {
 
 @injectable()
 export class AgentDispatcherImpl implements AgentDispatcher {
-    @inject(LanguageModelRegistry)
-    modelProviderRegistry: LanguageModelRegistry;
+
+    @inject(ContributionProvider) @named(ChatAgent)
+    protected readonly agents: ContributionProvider<ChatAgent>;
 
     @inject(ILogger)
     protected logger: ILogger;
 
     async performRequest(request: ChatRequestModelImpl): Promise<void> {
-        // TODO implement agent delegation
-        const languageModelResponse = await (
-            await this.modelProviderRegistry.getLanguageModels()
-        )[0].request({ messages: getMessages(request.session) });
-        if (isLanguageModelTextResponse(languageModelResponse)) {
-            request.response.response.addContent(
-                new MarkdownChatResponseContentImpl(languageModelResponse.text)
-            );
-            request.response.complete();
-            return;
-        }
-        if (isLanguageModelStreamResponse(languageModelResponse)) {
-            for await (const token of languageModelResponse.stream) {
-                const newContents = this.parse(token, request.response.response.content);
-                if (isArray(newContents)) {
-                    newContents.forEach(request.response.response.addContent);
-                } else {
-                    request.response.response.addContent(newContents);
-                }
-            }
-            request.response.complete();
-            return;
-        }
-        this.logger.error(
-            'Received unknown response in agent. Return response as text'
-        );
-        request.response.response.addContent(
-            new MarkdownChatResponseContentImpl(
-                JSON.stringify(languageModelResponse)
-            )
-        );
-        request.response.complete();
-    }
-
-    private parse(token: LanguageModelStreamResponsePart, previousContent: ChatResponseContent[]): ChatResponseContent | ChatResponseContent[] {
-        if (token.tool_calls) {
-            const previousCommands = previousContent.filter(isCommandChatResponseContent);
-            const newTools = token.tool_calls.filter(tc => tc.function && tc.function.name && previousCommands.find(c => c.command.id === tc.function?.name) === undefined);
-            return newTools.map(t => new CommandChatResponseContentImpl({ id: t.function!.name! }, t.function!.arguments ? JSON.parse(t.function!.arguments) : undefined));
-        }
-        return new MarkdownChatResponseContentImpl(token.content ?? '');
+        // TODO retrieve differently how to find the right agent to use
+        return this.agents.getContributions()[0].invoke(request);
     }
 }

@@ -27,11 +27,15 @@ import {
     LanguageModelRegistryFrontendDelegate,
     languageModelDelegatePath,
     languageModelRegistryDelegatePath,
+    PromptService
 } from '../common';
 import {
     FrontendLanguageModelRegistryImpl,
     LanguageModelDelegateClientImpl,
 } from './frontend-language-model-registry';
+
+import { FrontendPromptServiceImpl } from './frontend-prompt-service';
+import { bindPromptPreferences } from './prompt-preferences';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, LanguageModelProvider);
@@ -56,4 +60,8 @@ export default new ContainerModule(bind => {
             return connection.createProxy<LanguageModelFrontendDelegate>(languageModelDelegatePath, client);
         })
         .inSingletonScope();
+
+    bindPromptPreferences(bind);
+    bind(FrontendPromptServiceImpl).toSelf().inSingletonScope();
+    bind(PromptService).toService(FrontendPromptServiceImpl);
 });

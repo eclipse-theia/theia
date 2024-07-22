@@ -23,13 +23,11 @@ import {
     isLanguageModelStreamResponse,
     isLanguageModelTextResponse,
     LanguageModelStreamResponsePart,
-} from '../common';
-import {
     LanguageModelDelegateClient,
     LanguageModelFrontendDelegate,
     LanguageModelRegistryFrontendDelegate,
     LanguageModelResponseDelegate,
-} from '../common/language-model-delegate';
+} from '../common';
 
 @injectable()
 export class LanguageModelRegistryFrontendDelegateImpl implements LanguageModelRegistryFrontendDelegate {

@@ -14,19 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, postConstruct } from '@theia/core/shared/inversify';
-import { PromptServiceImpl } from '../common/prompt-service';
-import { PromptPreferences } from './prompt-preferences';
-
-export class FrontendPromptServiceImpl extends PromptServiceImpl {
-    @inject(PromptPreferences) protected readonly preferences: PromptPreferences;
-
-    @postConstruct()
-    init(): void {
-        this.preferences.onPreferenceChanged(e => {
-            if (e.preferenceName === 'prompts') {
-                this._prompts = e.newValue;
-            }
-        });
-    }
+export interface PromptTemplate {
+    id: string;
+    template: string;
 }

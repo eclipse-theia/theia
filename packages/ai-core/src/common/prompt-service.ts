@@ -14,11 +14,20 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from '@theia/core/shared/inversify';
+import { ContributionProvider } from '@theia/core';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
+import { Agent } from './agent';
+import { PromptTemplate } from './types';
+
+export interface PromptMap { [id: string]: PromptTemplate }
 
 export const PromptService = Symbol('PromptService');
 export interface PromptService {
-    getRawPrompt(id: string): string | undefined;
+    /**
+     * Retrieve the raw {@link PromptTemplate} object.
+     * @param id the id of the {@link PromptTemplate}
+     */
+    getRawPrompt(id: string): PromptTemplate | undefined;
     /**
      * Allows to directly replace placeholders in the prompt. The supported format is 'Hi ${name}!'.
      * The placeholder is then searched inside the args object and replaced.
@@ -26,32 +35,52 @@ export interface PromptService {
      * @param args the object with placeholders, mapping the placeholder key to the value
      */
     getPrompt(id: string, args?: { [key: string]: unknown }): string | undefined;
+    /**
+     * Manually add a prompt to the list of prompts.
+     * @param id the id of the prompt
+     * @param prompt the prompt template to store
+     */
     storePrompt(id: string, prompt: string): void;
-    getAllPrompts(): { [id: string]: string };
+    /**
+     * Return all known prompts as a {@link PromptMap map}.
+     */
+    getAllPrompts(): PromptMap;
 }
 @injectable()
 export class PromptServiceImpl implements PromptService {
-    protected _prompts: { [id: string]: string } = {};
 
-    getRawPrompt(id: string): string | undefined {
+    @inject(ContributionProvider) @named(Agent)
+    protected readonly agents: ContributionProvider<Agent>;
+
+    protected _prompts: PromptMap = {};
+
+    @postConstruct()
+    public init(): void {
+        this.agents.getContributions().forEach(a => {
+            a.promptTemplates.forEach(template => {
+                this._prompts[template.id] = template;
+            });
+        });
+    }
+
+    getRawPrompt(id: string): PromptTemplate | undefined {
         return this._prompts[id];
     }
-    getPrompt(id: string, args?: {[key: string]: unknown}): string | undefined {
+    getPrompt(id: string, args?: { [key: string]: unknown }): string | undefined {
         const prompt = this.getRawPrompt(id);
         if (prompt === undefined) {
-            return prompt;
+            return undefined;
         }
         if (args === undefined) {
-            return prompt;
+            return prompt.template;
         }
-        const formattedPrompt = Object.keys(args).reduce((acc, key) => acc.replace(`/\${${key}}/g`, JSON.stringify(args[key])), prompt);
+        const formattedPrompt = Object.keys(args).reduce((acc, key) => acc.replace(`/\${${key}}/g`, JSON.stringify(args[key])), prompt.template);
         return formattedPrompt;
     }
-
-    storePrompt(id: string, prompt: string): void {
-        this._prompts[id] = prompt;
+    getAllPrompts(): PromptMap {
+        return { ...this._prompts };
     }
-    getAllPrompts(): { [id: string]: string; } {
-        return {...this._prompts};
+    storePrompt(id: string, prompt: string): void {
+        this._prompts[id] = {id, template: prompt};
     }
 }
