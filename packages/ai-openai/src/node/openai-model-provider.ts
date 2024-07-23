@@ -15,29 +15,34 @@
 // *****************************************************************************
 
 import { LanguageModel, LanguageModelRequest, LanguageModelRequestMessage, LanguageModelResponse, LanguageModelStreamResponsePart } from '@theia/ai-core';
-import { injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import OpenAI from 'openai';
 import { ChatCompletionMessageParam } from 'openai/resources';
 
+export const OpenAiModelIdentifier = Symbol('OpenAiModelIdentifier');
+
 @injectable()
-export class OpenAIModel implements LanguageModel {
+export class OpenAiModel implements LanguageModel {
 
-    readonly id: string;
     readonly providerId = 'openai';
-    readonly name: string;
-    readonly vendor: string;
-    readonly version: string;
-    readonly family: string;
-    // TODO make these configurable
-    readonly maxInputTokens: number = 16000;
-    readonly maxOutputTokens: number = 16000;
+    readonly vendor: string = 'OpenAI';
 
-    // TODO check if we have a preference
-    private openai = new OpenAI();
+    @inject(OpenAiModelIdentifier)
+    protected readonly model: string;
 
-    constructor(protected model: string) {
-        this.id = this.providerId + ':' + model;
-        this.name = this.providerId + ':' + model;
+    private openai: OpenAI;
+
+    @postConstruct()
+    init(): void {
+        this.openai = new OpenAI();
+    }
+
+    get id(): string {
+        return this.providerId + '/' + this.model;
+    }
+
+    get name(): string {
+        return this.model;
     }
 
     async request(request: LanguageModelRequest): Promise<LanguageModelResponse> {

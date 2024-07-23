@@ -81,12 +81,12 @@ export type LanguageModelProvider = () => Promise<LanguageModel[]>;
 export interface LanguageModelMetaData {
     readonly id: string;
     readonly providerId: string;
-    readonly name: string;
-    readonly vendor: string;
-    readonly version: string;
-    readonly family: string;
-    readonly maxInputTokens: number;
-    readonly maxOutputTokens: number;
+    readonly name?: string;
+    readonly vendor?: string;
+    readonly version?: string;
+    readonly family?: string;
+    readonly maxInputTokens?: number;
+    readonly maxOutputTokens?: number;
 }
 
 export interface LanguageModel extends LanguageModelMetaData {
@@ -158,7 +158,6 @@ export function isModelMatching(request: LanguageModelSelector, model: LanguageM
         (!request.name || model.name === request.name) &&
         (!request.vendor || model.vendor === request.vendor) &&
         (!request.version || model.version === request.version) &&
-        (!request.family || model.family === request.family) &&
-        (!request.tokens || model.maxInputTokens >= request.tokens);
+        (!request.family || model.family === request.family);
 }
 

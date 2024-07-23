@@ -14,17 +14,25 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContainerModule } from '@theia/core/shared/inversify';
-import { OpenAIModel } from './open-ai-model-provider';
+import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
+import { OpenAiModel, OpenAiModelIdentifier } from './openai-model-provider';
 import { LanguageModelProvider } from '@theia/ai-core';
 
+export const OpenAiModelFactory = Symbol('OpenAiModelFactory');
+
 export default new ContainerModule(bind => {
-    bind(LanguageModelProvider).toDynamicValue(ctx =>
-        () => [
-            'gpt-4o',
-            'gpt-4o-mini',
-            'gpt-4-turbo',
-            'gpt-4',
-            'gpt-3.5-turbo'
-        ].map(model => new OpenAIModel(model)));
+    bind(OpenAiModel).toSelf();
+    bind(LanguageModelProvider).toDynamicValue(context => () => ([
+        createOpenAiModel(context, 'gpt-4o'),
+        createOpenAiModel(context, 'gpt-4o-mini'),
+        createOpenAiModel(context, 'gpt-4-turbo'),
+        createOpenAiModel(context, 'gpt-4'),
+        createOpenAiModel(context, 'gpt-3.5-turbo')
+    ]));
 });
+
+function createOpenAiModel(context: interfaces.Context, model: string): OpenAiModel {
+    const child = context.container.createChild();
+    child.bind(OpenAiModelIdentifier).toConstantValue(model);
+    return child.get<OpenAiModel>(OpenAiModel);
+}
