@@ -12548,13 +12548,11 @@ export module '@theia/plugin' {
          * thread or stack is focused. A thread can be focused any time there is
          * an active debug session, while a stack frame can only be focused when
          * a session is paused and the call stack has been retrieved.
-         * @stubbed
          */
         export const activeStackItem: DebugThread | DebugStackFrame | undefined;
 
         /**
          * An event which fires when the {@link debug.activeStackItem} has changed.
-         * @stubbed
          */
         export const onDidChangeActiveStackItem: Event<DebugThread | DebugStackFrame | undefined>;
 
