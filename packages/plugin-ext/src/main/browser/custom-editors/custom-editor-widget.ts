@@ -64,11 +64,11 @@ export class CustomEditorWidget extends WebviewWidget implements SaveableSource,
     }
 
     undo(): void {
-        this.undoRedoService.undo(this.resource);
+        this._modelRef.object.undo();
     }
 
     redo(): void {
-        this.undoRedoService.redo(this.resource);
+        this._modelRef.object.redo();
     }
 
     async save(options?: SaveOptions): Promise<void> {

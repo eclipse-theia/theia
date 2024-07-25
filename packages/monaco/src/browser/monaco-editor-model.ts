@@ -113,6 +113,14 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
         );
     }
 
+    undo(): void {
+        this.model.undo();
+    }
+
+    redo(): void {
+        this.model.redo();
+    }
+
     dispose(): void {
         this.toDispose.dispose();
     }

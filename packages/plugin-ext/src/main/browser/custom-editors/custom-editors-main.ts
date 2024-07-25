@@ -284,6 +284,9 @@ export interface CustomEditorModel extends Saveable, Disposable {
     revert(options?: Saveable.RevertOptions): Promise<void>;
     saveCustomEditor(options?: SaveOptions): Promise<void>;
     saveCustomEditorAs(resource: TheiaURI, targetResource: TheiaURI, options?: SaveOptions): Promise<void>;
+
+    undo(): void;
+    redo(): void;
 }
 
 export class MainCustomEditorModel implements CustomEditorModel {
@@ -436,7 +439,7 @@ export class MainCustomEditorModel implements CustomEditorModel {
         }
     }
 
-    private async undo(): Promise<void> {
+    async undo(): Promise<void> {
         if (!this.editable) {
             return;
         }
@@ -453,7 +456,7 @@ export class MainCustomEditorModel implements CustomEditorModel {
         await this.proxy.$undo(this.resource, this.viewType, undoneEdit, this.dirty);
     }
 
-    private async redo(): Promise<void> {
+    async redo(): Promise<void> {
         if (!this.editable) {
             return;
         }
@@ -570,5 +573,13 @@ export class CustomTextEditorModel implements CustomEditorModel {
     async saveCustomEditorAs(resource: TheiaURI, targetResource: TheiaURI, options?: SaveOptions): Promise<void> {
         await this.saveCustomEditor(options);
         await this.fileService.copy(resource, targetResource, { overwrite: false });
+    }
+
+    undo(): void {
+        this.editorTextModel.undo();
+    }
+
+    redo(): void {
+        this.editorTextModel.redo();
     }
 }
