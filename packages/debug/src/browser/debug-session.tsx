@@ -78,6 +78,11 @@ export class DebugSession implements CompositeTreeElement {
         return this.onDidFocusStackFrameEmitter.event;
     }
 
+    protected readonly onDidFocusThreadEmitter = new Emitter<DebugThread | undefined>();
+    get onDidFocusThread(): Event<DebugThread | undefined> {
+        return this.onDidFocusThreadEmitter.event;
+    }
+
     protected readonly onDidChangeBreakpointsEmitter = new Emitter<URI>();
     readonly onDidChangeBreakpoints: Event<URI> = this.onDidChangeBreakpointsEmitter.event;
     protected fireDidChangeBreakpoints(uri: URI): void {
@@ -254,8 +259,12 @@ export class DebugSession implements CompositeTreeElement {
         return this._currentThread;
     }
     set currentThread(thread: DebugThread | undefined) {
+        if (this._currentThread?.id === thread?.id) {
+            return;
+        }
         this.toDisposeOnCurrentThread.dispose();
         this._currentThread = thread;
+        this.onDidFocusThreadEmitter.fire(thread);
         this.fireDidChange();
         if (thread) {
             this.toDisposeOnCurrentThread.push(thread.onDidChanged(() => this.fireDidChange()));
