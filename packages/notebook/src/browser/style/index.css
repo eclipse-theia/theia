@@ -62,9 +62,15 @@
   width: calc(100% - 15px);
 }
 
+/* Rendered Markdown Content */
+
 .theia-notebook-markdown-content {
   padding: 8px 16px 8px 36px;
   font-size: var(--theia-notebook-markdown-size);
+}
+
+.theia-notebook-markdown-content>* {
+  font-weight: 400;
 }
 
 .theia-notebook-markdown-content>*:first-child {
@@ -72,7 +78,6 @@
   padding-top: 0;
 }
 
-.theia-notebook-markdown-content>*:only-child,
 .theia-notebook-markdown-content>*:last-child {
   margin-bottom: 0;
   padding-bottom: 0;

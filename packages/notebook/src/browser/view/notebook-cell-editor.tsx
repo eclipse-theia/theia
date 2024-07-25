@@ -90,7 +90,7 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
         this.toDispose.push(this.props.cell.onWillFocusCellEditor(focusRequest => {
             this.editor?.getControl().focus();
             const lineCount = this.editor?.getControl().getModel()?.getLineCount();
-            if (focusRequest && lineCount) {
+            if (focusRequest && lineCount !== undefined) {
                 this.editor?.getControl().setPosition(focusRequest === 'lastLine' ?
                     { lineNumber: lineCount, column: 1 } :
                     { lineNumber: focusRequest, column: 1 },

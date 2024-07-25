@@ -116,15 +116,22 @@ function MarkdownCell({
 
     let markdownContent: HTMLElement = React.useMemo(() => {
         const markdownString = new MarkdownStringImpl(cell.source, { supportHtml: true, isTrusted: true });
-        return markdownRenderer.render(markdownString).element;
+        const rendered = markdownRenderer.render(markdownString).element;
+        const children: HTMLElement[] = [];
+        rendered.childNodes.forEach(child => {
+            if (child instanceof HTMLElement) {
+                children.push(child);
+            }
+        });
+        return children;
     }, [cell.source]);
 
-    if (!markdownContent.hasChildNodes()) {
+    if (markdownContent.length === 0) {
         const italic = document.createElement('i');
         italic.className = 'theia-notebook-empty-markdown';
         italic.innerText = nls.localizeByDefault('Empty markdown cell, double-click or press enter to edit.');
         italic.style.pointerEvents = 'none';
-        markdownContent = italic;
+        markdownContent = [italic];
         empty = true;
     }
 
@@ -140,7 +147,7 @@ function MarkdownCell({
         </div >) :
         (<div className='theia-notebook-markdown-content' key="markdown"
             onDoubleClick={() => cell.requestEdit()}
-            ref={node => node?.replaceChildren(markdownContent)}
+            ref={node => node?.replaceChildren(...markdownContent)}
         />);
 }
 
