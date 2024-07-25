@@ -181,6 +181,7 @@ export interface EnvInit {
     appName: string;
     appHost: string;
     appRoot: string;
+    appUriScheme: string;
 }
 
 export interface PluginAPI {
@@ -2245,12 +2246,12 @@ export interface TestingExt {
 // based from https://github.com/microsoft/vscode/blob/1.85.1/src/vs/workbench/api/common/extHostUrls.ts
 export interface UriExt {
     registerUriHandler(handler: theia.UriHandler, plugin: PluginInfo): theia.Disposable;
-    $handleExternalUri(handle: number, uri: UriComponents): Promise<void>;
+    $handleExternalUri(uri: UriComponents): Promise<void>;
 }
 
 export interface UriMain {
-    $registerUriHandler(handle: number, extensionId: string, extensionName: string): void;
-    $unregisterUriHandler(handle: number): void;
+    $registerUriHandler(extensionId: string, extensionName: string): void;
+    $unregisterUriHandler(extensionId: string): void;
 }
 
 export interface TestControllerUpdate {

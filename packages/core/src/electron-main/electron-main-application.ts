@@ -117,13 +117,13 @@ export class ElectronMainProcessArgv {
         return 1;
     }
 
-    protected get isBundledElectronApp(): boolean {
+    get isBundledElectronApp(): boolean {
         // process.defaultApp is either set by electron in an electron unbundled app, or undefined
         // see https://github.com/electron/electron/blob/master/docs/api/process.md#processdefaultapp-readonly
         return this.isElectronApp && !(process as ElectronMainProcessArgv.ElectronMainProcess).defaultApp;
     }
 
-    protected get isElectronApp(): boolean {
+    get isElectronApp(): boolean {
         // process.versions.electron is either set by electron, or undefined
         // see https://github.com/electron/electron/blob/master/docs/api/process.md#processversionselectron-readonly
         return !!(process as ElectronMainProcessArgv.ElectronMainProcess).versions.electron;
@@ -183,6 +183,7 @@ export class ElectronMainApplication {
     protected customBackgroundColor?: string;
     protected didUseNativeWindowFrameOnStart = new Map<number, boolean>();
     protected windows = new Map<number, TheiaElectronWindow>();
+    protected activeWindowStack: number[] = [];
     protected restarting = false;
 
     /** Used to temporarily store the reference to an early created main window */
@@ -241,6 +242,9 @@ export class ElectronMainApplication {
                         cwd: process.cwd(),
                         secondInstance: false
                     });
+                    if (argv.includes('--open-url')) {
+                        this.openUrl(argv[argv.length - 1]);
+                    }
                 },
             ).parse();
     }
@@ -411,10 +415,23 @@ export class ElectronMainApplication {
         const electronWindow = this.windowFactory(options, this.config);
         const id = electronWindow.window.webContents.id;
         this.windows.set(id, electronWindow);
-        electronWindow.onDidClose(() => this.windows.delete(id));
+        electronWindow.onDidClose(() => {
+            const stackIndex = this.activeWindowStack.indexOf(id);
+            if (stackIndex >= 0) {
+                this.activeWindowStack.splice(stackIndex, 1);
+            }
+            this.windows.delete(id);
+        });
         electronWindow.window.on('maximize', () => TheiaRendererAPI.sendWindowEvent(electronWindow.window.webContents, 'maximize'));
         electronWindow.window.on('unmaximize', () => TheiaRendererAPI.sendWindowEvent(electronWindow.window.webContents, 'unmaximize'));
-        electronWindow.window.on('focus', () => TheiaRendererAPI.sendWindowEvent(electronWindow.window.webContents, 'focus'));
+        electronWindow.window.on('focus', () => {
+            const stackIndex = this.activeWindowStack.indexOf(id);
+            if (stackIndex >= 0) {
+                this.activeWindowStack.splice(stackIndex, 1);
+            }
+            this.activeWindowStack.push(id);
+            TheiaRendererAPI.sendWindowEvent(electronWindow.window.webContents, 'focus');
+        });
         this.attachSaveWindowState(electronWindow.window);
 
         return electronWindow.window;
@@ -517,6 +534,15 @@ export class ElectronMainApplication {
                 await this.openDefaultWindow();
             } else {
                 await this.openWindowWithWorkspace(workspacePath);
+            }
+        }
+    }
+
+    async openUrl(url: string): Promise<void> {
+        for (const id of this.activeWindowStack) {
+            const window = this.windows.get(id);
+            if (window && await window.openUrl(url)) {
+                break;
             }
         }
     }
@@ -696,6 +722,16 @@ export class ElectronMainApplication {
         app.on('second-instance', this.onSecondInstance.bind(this));
         app.on('window-all-closed', this.onWindowAllClosed.bind(this));
         app.on('web-contents-created', this.onWebContentsCreated.bind(this));
+
+        if (isWindows) {
+            const args = this.processArgv.isBundledElectronApp ? [] : [app.getAppPath()];
+            args.push('--open-url');
+            app.setAsDefaultProtocolClient(this.config.electron.uriScheme, process.execPath, args);
+        } else {
+            app.on('open-url', (evt, url) => {
+                this.openUrl(url);
+            });
+        }
     }
 
     protected onWillQuit(event: ElectronEvent): void {
@@ -703,19 +739,23 @@ export class ElectronMainApplication {
     }
 
     protected async onSecondInstance(event: ElectronEvent, argv: string[], cwd: string): Promise<void> {
-        createYargs(this.processArgv.getProcessArgvWithoutBin(argv), process.cwd())
-            .help(false)
-            .command('$0 [file]', false,
-                cmd => cmd
-                    .positional('file', { type: 'string' }),
-                async args => {
-                    this.handleMainCommand({
-                        file: args.file,
-                        cwd: process.cwd(),
-                        secondInstance: true
-                    });
-                },
-            ).parse();
+        if (argv.includes('--open-url')) {
+            this.openUrl(argv[argv.length - 1]);
+        } else {
+            createYargs(this.processArgv.getProcessArgvWithoutBin(argv), process.cwd())
+                .help(false)
+                .command('$0 [file]', false,
+                    cmd => cmd
+                        .positional('file', { type: 'string' }),
+                    async args => {
+                        await this.handleMainCommand({
+                            file: args.file,
+                            cwd: process.cwd(),
+                            secondInstance: true
+                        });
+                    },
+                ).parse();
+        }
     }
 
     protected onWebContentsCreated(event: ElectronEvent, webContents: WebContents): void {

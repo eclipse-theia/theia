@@ -35,6 +35,7 @@ export abstract class EnvExtImpl {
     private envSessionId: string;
     private host: string;
     private applicationRoot: string;
+    private appUriScheme: string;
     private _remoteName: string | undefined;
 
     constructor() {
@@ -89,6 +90,10 @@ export abstract class EnvExtImpl {
         this.applicationRoot = appRoot;
     }
 
+    setAppUriScheme(uriScheme: string): void {
+        this.appUriScheme = uriScheme;
+    }
+
     getClientOperatingSystem(): Promise<theia.OperatingSystem> {
         return this.proxy.$getClientOperatingSystem();
     }
@@ -121,7 +126,7 @@ export abstract class EnvExtImpl {
         return this.envSessionId;
     }
     get uriScheme(): string {
-        return 'theia';
+        return this.appUriScheme;
     }
     get uiKind(): theia.UIKind {
         return this.ui;

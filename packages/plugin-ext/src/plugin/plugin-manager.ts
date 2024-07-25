@@ -252,7 +252,7 @@ export abstract class AbstractPluginManagerExtImpl<P extends Record<string, any>
             }
             for (let activationEvent of activationEvents) {
                 if (activationEvent === 'onUri') {
-                    activationEvent = `onUri:theia://${plugin.model.id}`;
+                    activationEvent = `onUri:${this.envExt.uriScheme}://${plugin.model.id}`;
                 }
                 this.setActivation(activationEvent, activation);
             }
@@ -481,6 +481,7 @@ export class PluginManagerExtImpl extends AbstractPluginManagerExtImpl<PluginMan
         this.envExt.setApplicationName(params.env.appName);
         this.envExt.setAppHost(params.env.appHost);
         this.envExt.setAppRoot(params.env.appRoot);
+        this.envExt.setAppUriScheme(params.env.appUriScheme);
 
         this.preferencesManager.init(params.preferences);
 

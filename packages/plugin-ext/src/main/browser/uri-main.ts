@@ -14,69 +14,59 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Disposable, MaybePromise, URI } from '@theia/core';
+import { Disposable, URI } from '@theia/core';
 import { MAIN_RPC_CONTEXT, UriExt, UriMain } from '../../common';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { interfaces } from '@theia/core/shared/inversify';
 import { OpenHandler, OpenerOptions, OpenerService } from '@theia/core/lib/browser';
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
+import { HostedPluginSupport } from '../../hosted/browser/hosted-plugin';
 
 export class UriMainImpl implements UriMain, Disposable {
-
     private readonly proxy: UriExt;
-    private handlers = new Map<number, OpenHandler>();
+    private handlers = new Set<string>();
     private readonly openerService: OpenerService;
+    private readonly pluginSupport: HostedPluginSupport;
+    private readonly openHandler: OpenHandler;
 
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.URI_EXT);
         this.openerService = container.get(OpenerService);
+        this.pluginSupport = container.get(HostedPluginSupport);
+
+        this.openHandler = {
+            id: 'theia-plugin-open-handler',
+            canHandle: async (uri: URI, options?: OpenerOptions | undefined): Promise<number>  => {
+                if (uri.scheme !== FrontendApplicationConfigProvider.get().electron.uriScheme) {
+                    return 0;
+                }
+                await this.pluginSupport.activateByUri(uri.scheme, uri.authority);
+                if (this.handlers.has(uri.authority)) {
+                    return 500;
+                }
+                return 0;
+            },
+            open: async (uri: URI, options?: OpenerOptions | undefined): Promise<undefined> => {
+                if (!this.handlers.has(uri.authority)) {
+
+                }
+                this.proxy.$handleExternalUri(uri.toComponents());
+            }
+        };
+
+        this.openerService.addHandler?.(this.openHandler);
     }
 
     dispose(): void {
-        this.handlers.forEach(handler => this.openerService.removeHandler?.(handler));
+        this.openerService.removeHandler?.(this.openHandler);
         this.handlers.clear();
     }
 
-    async $registerUriHandler(handle: number, extensionId: string, extensionDisplayName: string): Promise<void> {
-        const extensionUriHandler = new PluginOpenHandler(this.proxy, handle, extensionId, extensionDisplayName);
-        if (this.openerService.addHandler?.(extensionUriHandler)) {
-            this.handlers.set(handle, extensionUriHandler);
-        }
-        return Promise.resolve();
+    async $registerUriHandler(pluginId: string, extensionDisplayName: string): Promise<void> {
+        this.handlers.add(pluginId);
     }
 
-    async $unregisterUriHandler(handle: number):  Promise<void> {
-        const handler = this.handlers.get(handle);
-        if (handler) {
-            this.handlers.delete(handle);
-            this.openerService.removeHandler?.(handler);
-        }
-    }
-}
-
-export class PluginOpenHandler implements OpenHandler {
-
-    readonly id: string;
-
-    constructor(private proxy: UriExt, private handle: number, private pluginId: string, private pluginName: string) {
-        this.id = `plugin-${pluginId}`;
-    }
-
-    canHandle(uri: URI, options?: OpenerOptions | undefined): MaybePromise<number> {
-        if (!uri.scheme.startsWith('theia')) {
-            return 0;
-        }
-
-        if (uri.authority === this.pluginId) {
-            return 500;
-        }
-        return 0;
-    }
-
-    async open(uri: URI, options?: OpenerOptions | undefined): Promise<undefined> {
-        if (this.canHandle(uri) === 0) {
-            throw new Error(`Extension ${this.pluginName} is not supposed to handle this URI: ${uri}`);
-        }
-        await Promise.resolve(this.proxy.$handleExternalUri(this.handle, uri.toComponents()));
-        return undefined;
+    async $unregisterUriHandler(pluginId: string):  Promise<void> {
+        this.handlers.delete(pluginId);
     }
 }

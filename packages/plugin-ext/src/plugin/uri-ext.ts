@@ -25,9 +25,7 @@ import { UriComponents } from '../common/uri-components';
 
 export class UriExtImpl implements UriExt {
 
-    private static handle = 0;
-    private handles = new Set<string>();
-    private handlers = new Map<number, theia.UriHandler>();
+    private handlers = new Map<string, theia.UriHandler>();
 
     private readonly proxy: UriMain;
 
@@ -37,25 +35,22 @@ export class UriExtImpl implements UriExt {
     }
 
     registerUriHandler(handler: theia.UriHandler, plugin: PluginInfo): theia.Disposable {
-        const extensionId = plugin.id;
-        if (this.handles.has(extensionId)) {
-            throw new Error(`URI handler already registered for extension ${extensionId}`);
+        const pluginId = plugin.id;
+        if (this.handlers.has(pluginId)) {
+            throw new Error(`URI handler already registered for plugin ${pluginId}`);
         }
 
-        const handle = UriExtImpl.handle++;
-        this.handles.add(extensionId);
-        this.handlers.set(handle, handler);
-        this.proxy.$registerUriHandler(handle, extensionId, plugin.displayName || plugin.name);
+        this.handlers.set(pluginId, handler);
+        this.proxy.$registerUriHandler(pluginId, plugin.displayName || plugin.name);
 
         return new Disposable(() => {
-            this.proxy.$unregisterUriHandler(handle);
-            this.handles.delete(extensionId);
-            this.handlers.delete(handle);
+            this.proxy.$unregisterUriHandler(pluginId);
+            this.handlers.delete(pluginId);
         });
     }
 
-    $handleExternalUri(handle: number, uri: UriComponents): Promise<void> {
-        const handler = this.handlers.get(handle);
+    $handleExternalUri(uri: UriComponents): Promise<void> {
+        const handler = this.handlers.get(uri.authority);
         if (!handler) {
             return Promise.resolve();
         }
