@@ -393,6 +393,10 @@
       "webviewTrace": "Controls communication tracing with webviews.",
       "webviewWarnIfUnsecure": "Warns users that webviews are currently deployed unsecurely."
     },
+    "preferences": {
+      "hostedPlugin": "Hosted Plugin",
+      "toolbar": "Toolbar"
+    },
     "preview": {
       "openByDefault": "Open the preview instead of the editor by default."
     },

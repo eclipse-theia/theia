@@ -393,6 +393,10 @@
       "webviewTrace": "Kontroluje śledzenie komunikacji z webviews.",
       "webviewWarnIfUnsecure": "Ostrzega użytkowników, że widoki internetowe są obecnie wdrażane w sposób niezabezpieczony."
     },
+    "preferences": {
+      "hostedPlugin": "Hostowana wtyczka",
+      "toolbar": "Pasek narzędzi"
+    },
     "preview": {
       "openByDefault": "Domyślnie otwiera podgląd zamiast edytora."
     },

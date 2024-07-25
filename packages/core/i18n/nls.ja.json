@@ -393,6 +393,10 @@
       "webviewTrace": "ウェブビューによる通信のトレースを制御します。",
       "webviewWarnIfUnsecure": "現在、ウェブビューが安全でない状態で展開されていることをユーザーに警告します。"
     },
+    "preferences": {
+      "hostedPlugin": "ホスト型プラグイン",
+      "toolbar": "ツールバー"
+    },
     "preview": {
       "openByDefault": "デフォルトではエディタではなくプレビューを開くようになっています。"
     },
