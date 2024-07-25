@@ -4,18 +4,32 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
-## not yet released 
-- [test] Added `DebugSessionOptions.testRun` [#13939](https://github.com/eclipse-theia/theia/pull/13939) - Contributed on behalf of STMicroelectronics
+## 1.52.0 - 07/25/2024
 
-- [application-package] bumped the default supported API from `1.90.2` to `1.91.1` [#]() - Contributed on behalf of STMicroelectronics
-- [core] introduce `FRONTEND_CONNECTION_TIMEOUT` environment variable to override application connexion settings. [#13936](https://github.com/eclipse-theia/theia/pull/13936) - Contributed on behalf of STMicroelectronics
-- [core] tab selected should be adjacent when closing last one [#13912](https://github.com/eclipse-theia/theia/pull/13912) - contributed on behalf of STMicroelectronics
-- [core] upgraded ws to 8.18.0 [#13903](https://github.com/eclipse-theia/theia/pull/13903) - contributed on behalf of STMicroelectronics
-- [debug] implement activeStackItem and related change event in debug namespace [#13900](https://github.com/eclipse-theia/theia/pull/13900) - contributed on behalf of STMicroelectronics
+- [application-package] bumped the default supported API from `1.90.2` to `1.91.1` [#13955](https://github.com/eclipse-theia/theia/pull/13955) - Contributed on behalf of STMicroelectronics
+- [cli] added logging to download:plugins script [#13905](https://github.com/eclipse-theia/theia/pull/13905) - Contributed on behalf of STMicroelectronics
+- [core] bug fix: "core.saveAll" command only saved dirty widgets [#13942](https://github.com/eclipse-theia/theia/pull/13942)
+- [core] downgrade jsdom to 22.1.0 [#13944](https://github.com/eclipse-theia/theia/pull/13944)
+- [core] fixed reload for remote feature and added option to the electron window to change URL on reload [#13891](https://github.com/eclipse-theia/theia/pull/13891)
+- [core] improved implementation around widget management [#13818](https://github.com/eclipse-theia/theia/pull/13818)
+- [core] introduced `FRONTEND_CONNECTION_TIMEOUT` environment variable to override application connection settings [#13936](https://github.com/eclipse-theia/theia/pull/13936) - Contributed on behalf of STMicroelectronics
+- [core] made sure UI loaded when minimized [#13887](https://github.com/eclipse-theia/theia/pull/13887) - Contributed on behalf of STMicroelectronics
+- [core] prevented the rendering of the tab bar tooltip if no caption was provided [#13945](https://github.com/eclipse-theia/theia/pull/13945)
+- [core] tab selected should be adjacent when closing the last one [#13912](https://github.com/eclipse-theia/theia/pull/13912) - Contributed on behalf of STMicroelectronics
+- [core] upgraded ws to 8.18.0 [#13903](https://github.com/eclipse-theia/theia/pull/13903)
+- [debug] added DebugSessionOptions.testRun [#13939](https://github.com/eclipse-theia/theia/pull/13939) - Contributed on behalf of STMicroelectronics
+- [debug] implemented activeStackItem and related change event in debug namespace [#13900](https://github.com/eclipse-theia/theia/pull/13900) - Contributed on behalf of STMicroelectronics
+- [filesystem] fixed FileResource not adding event listener to the disposable collection [#13880](https://github.com/eclipse-theia/theia/pull/13880)
+- [notebook] changed cell type when selecting markdown as a code cell's language [#13933](https://github.com/eclipse-theia/theia/pull/13933)
+- [notebook] made Notebook preferences registration substitutable [#13926](https://github.com/eclipse-theia/theia/pull/13926)
+- [ovsx-client] fixed plugin version comparison [#13907](https://github.com/eclipse-theia/theia/pull/13907)
+- [plugin-ext] codicon color and URI support to TerminalOptions [#13413](https://github.com/eclipse-theia/theia/pull/13413)
+- [plugin-ext] used relative paths for ctx.importScripts() [#13854](https://github.com/eclipse-theia/theia/pull/13854)
+- [preferences] refactored preference tree layouting [#13819](https://github.com/eclipse-theia/theia/pull/13819)
+- [terminal] added support for 256 truecolor [#13853](https://github.com/eclipse-theia/theia/pull/13853)
+- [workflows] updated Mac OS version to 14 in CI [#13908](https://github.com/eclipse-theia/theia/pull/13908)
 
-<a name="breaking_changes_not_yet_released">[Breaking Changes:](#breaking_changes_not_yet_released)</a> 
-
-## 1.50.0 - 06/27/2024
+## 1.51.0 - 06/27/2024
 
 - [application-manager] updated logic to load correct messaging module in browser-only mode [#13827](https://github.com/eclipse-theia/theia/pull/13827)
 - [application-package] bumped the default supported API from `1.89.1` to `1.90.2` [#13849](https://github.com/eclipse-theia/theia/pull/13849) - Contributed on behalf of STMicroelectronics
