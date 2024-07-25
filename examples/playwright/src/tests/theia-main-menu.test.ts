@@ -97,7 +97,7 @@ test.describe('Theia Main Menu', () => {
         await (await menuBar.openMenu('Help')).clickMenuItem('About');
         const aboutDialog = new TheiaAboutDialog(app);
         expect(await aboutDialog.isVisible()).toBe(true);
-        await aboutDialog.page.getByRole('button', { name: 'OK' }).click();
+        await aboutDialog.page.locator('#theia-dialog-shell').getByRole('button', { name: 'OK' }).click();
         expect(await aboutDialog.isVisible()).toBe(false);
     });
 
