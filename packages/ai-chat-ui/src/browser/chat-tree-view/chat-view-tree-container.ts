@@ -30,4 +30,3 @@ export function createChatViewTreeWidget(parent: interfaces.Container): ChatView
     });
     return child.get(ChatViewTreeWidget);
 }
-

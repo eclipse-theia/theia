@@ -19,7 +19,8 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatResponseContent, isCommandChatResponseContent, CommandChatResponseContent } from '@theia/ai-chat/lib/common';
 import { ReactNode } from '@theia/core/shared/react';
 import * as React from '@theia/core/shared/react';
-import { Command, CommandService } from '@theia/core';
+import { CommandService } from '@theia/core';
+import { AIChatCommandArguments } from '../ai-chat-command-contribution';
 
 @injectable()
 export class CommandPartRenderer implements ChatResponsePartRenderer<CommandChatResponseContent> {
@@ -31,10 +32,24 @@ export class CommandPartRenderer implements ChatResponsePartRenderer<CommandChat
         return -1;
     }
     render(response: CommandChatResponseContent): ReactNode {
-        return <div><button onClick={this.onCommand.bind(this, response.command, response.args)}>Press Me!</button></div>;
+        const label =
+            response.command.label ??
+            response.command.id
+                .split('-')
+                .map(s => s[0].toUpperCase() + s.substring(1))
+                .join(' ');
+        const arg: AIChatCommandArguments = {
+            command: response.command,
+            handler: response.commandHandler
+        };
+        return (
+            <div>
+                <button onClick={this.onCommand.bind(this, arg)}>{label}</button>
+            </div>
+        );
     }
-    private onCommand(command: Command, args: unknown[]): void {
-        this.commandService.executeCommand(command.id, ...args).catch(e => { console.error(e); });
+    private onCommand(arg: AIChatCommandArguments): void {
+        this.commandService.executeCommand(arg.command.id, arg).catch(e => { console.error(e); });
     }
 
 }

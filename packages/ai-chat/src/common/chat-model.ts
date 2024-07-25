@@ -114,7 +114,7 @@ export interface CommandChatResponseContent
     extends BaseChatResponseContent {
     kind: 'command';
     command: Command;
-    args?: unknown[];
+    commandHandler?: () => Promise<void>;
 }
 
 export const isTextChatResponseContent = (
@@ -273,23 +273,25 @@ export class MarkdownChatResponseContentImpl implements MarkdownChatResponseCont
     }
     // TODO add codeblock? add link?
 }
-
+export const COMMAND_CHAT_RESPONSE_COMMAND: Command = {
+    id: 'ai-chat.command-chat-response.generic'
+};
 export class CommandChatResponseContentImpl implements CommandChatResponseContent {
     kind: 'command' = 'command';
     protected _command: Command;
-    protected _args?: { [key: string]: unknown };
+    protected _commandHandler?: () => Promise<void>;
 
-    constructor(command: Command, args?: { [key: string]: unknown }) {
+    constructor(command: Command = COMMAND_CHAT_RESPONSE_COMMAND, commandHandler?: () => Promise<void>) {
         this._command = command;
-        this._args = args;
+        this._commandHandler = commandHandler;
     }
 
     get command(): Command {
         return this._command;
     }
 
-    get args(): unknown[] | undefined {
-        return this._args ? Object.values(this._args) : undefined;
+    get commandHandler(): (() => Promise<void>)|undefined {
+        return this._commandHandler;
     }
 
     asString(): string {
