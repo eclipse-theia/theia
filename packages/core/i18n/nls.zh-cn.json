@@ -393,6 +393,10 @@
       "webviewTrace": "控制与webviews的通信跟踪。",
       "webviewWarnIfUnsecure": "警告用户,目前网络视图的部署是不安全的。"
     },
+    "preferences": {
+      "hostedPlugin": "托管插件",
+      "toolbar": "工具栏"
+    },
     "preview": {
       "openByDefault": "默认情况下,打开预览而不是编辑器。"
     },
