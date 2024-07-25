@@ -124,6 +124,9 @@ export class DefaultLanguageModelRegistryImpl implements LanguageModelRegistry {
 
     protected languageModels: LanguageModel[] = [];
 
+    protected markInitialized: () => void;
+    protected initialized: Promise<void> = new Promise(resolve => { this.markInitialized = resolve });
+
     @postConstruct()
     protected init(): void {
         const contributions = this.languageModelContributions.getContributions();
@@ -136,18 +139,22 @@ export class DefaultLanguageModelRegistryImpl implements LanguageModelRegistry {
                     this.logger.error('Failed to add some language models:', result.reason);
                 }
             }
+            this.markInitialized();
         });
     }
 
     async getLanguageModels(): Promise<LanguageModel[]> {
+        await this.initialized;
         return this.languageModels;
     }
 
     async getLanguageModel(id: string): Promise<LanguageModel | undefined> {
+        await this.initialized;
         return this.languageModels.find(model => model.id === id);
     }
 
     async selectLanguageModels(request: LanguageModelSelector): Promise<LanguageModel[]> {
+        await this.initialized;
         // TODO check for actor and purpose against settings
         return this.languageModels.filter(model => isModelMatching(request, model));
     }

@@ -16,6 +16,9 @@
       "path": "../filesystem"
     },
     {
+      "path": "../output"
+    },
+    {
       "path": "../workspace"
     }
   ]

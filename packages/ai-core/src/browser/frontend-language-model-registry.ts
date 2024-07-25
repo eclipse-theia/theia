@@ -20,7 +20,13 @@ import {
     postConstruct,
 } from '@theia/core/shared/inversify';
 import {
+    OutputChannel,
+    OutputChannelManager,
+    OutputChannelSeverity,
+} from '@theia/output/lib/browser/output-channel';
+import {
     DefaultLanguageModelRegistryImpl,
+    isLanguageModelStreamResponse,
     isLanguageModelStreamResponseDelegate,
     isLanguageModelTextResponse,
     LanguageModel,
@@ -29,7 +35,8 @@ import {
     LanguageModelMetaData,
     LanguageModelRegistryFrontendDelegate,
     LanguageModelRequest,
-    LanguageModelStreamResponsePart
+    LanguageModelResponse,
+    LanguageModelStreamResponsePart,
 } from '../common';
 
 export interface TokenReceiver {
@@ -72,22 +79,72 @@ export class FrontendLanguageModelRegistryImpl
     @inject(ILogger)
     protected override logger: ILogger;
 
+    @inject(OutputChannelManager)
+    protected outputChannelManager: OutputChannelManager;
+
     @postConstruct()
     protected override init(): void {
         this.client.setReceiver(this);
-    }
 
-    override async getLanguageModels(): Promise<LanguageModel[]> {
-        // all providers coming in via the frontend
-        const frontendProviders = await super.getLanguageModels();
-        // also delegate to backend providers
-        const backendDescriptions = await this.registryDelegate.getLanguageModelDescriptions();
-        return [
-            ...frontendProviders,
-            ...backendDescriptions.map(description =>
-                this.createFrontendLanguageModel(description)
-            ),
-        ];
+        const contributions =
+            this.languageModelContributions.getContributions();
+        const promises = contributions.map(provider => provider());
+        const backendDescriptions =
+            this.registryDelegate.getLanguageModelDescriptions();
+        Promise.allSettled([backendDescriptions, ...promises]).then(
+            results => {
+                const backendDescriptionsResult = results[0];
+                if (backendDescriptionsResult.status === 'fulfilled') {
+                    this.languageModels.push(
+                        ...backendDescriptionsResult.value.map(
+                            description =>
+                                new Proxy(
+                                    this.createFrontendLanguageModel(
+                                        description
+                                    ),
+                                    languageModelOutputHandler(
+                                        this.outputChannelManager.getChannel(
+                                            description.id
+                                        )
+                                    )
+                                )
+                        )
+                    );
+                } else {
+                    this.logger.error(
+                        'Failed to add language models contributed from the backend',
+                        backendDescriptionsResult.reason
+                    );
+                }
+                for (let i = 1; i < results.length; i++) {
+                    // assert that index > 0 contains only language models
+                    const languageModelResult = results[i] as
+                        | PromiseRejectedResult
+                        | PromiseFulfilledResult<LanguageModel[]>;
+                    if (languageModelResult.status === 'fulfilled') {
+                        this.languageModels.push(
+                            ...languageModelResult.value.map(
+                                languageModel =>
+                                    new Proxy(
+                                        languageModel,
+                                        languageModelOutputHandler(
+                                            this.outputChannelManager.getChannel(
+                                                languageModel.id
+                                            )
+                                        )
+                                    )
+                            )
+                        );
+                    } else {
+                        this.logger.error(
+                            'Failed to add some language models:',
+                            languageModelResult.reason
+                        );
+                    }
+                }
+                this.markInitialized();
+            }
+        );
     }
 
     createFrontendLanguageModel(
@@ -127,7 +184,9 @@ export class FrontendLanguageModelRegistryImpl
 
     private streams = new Map<string, StreamState>();
 
-    async *getIterable(state: StreamState): AsyncIterable<LanguageModelStreamResponsePart> {
+    async *getIterable(
+        state: StreamState
+    ): AsyncIterable<LanguageModelStreamResponsePart> {
         let current = -1;
         while (true) {
             if (current < state.tokens.length - 1) {
@@ -165,3 +224,58 @@ export class FrontendLanguageModelRegistryImpl
         }
     }
 }
+
+const languageModelOutputHandler = (
+    outputChannel: OutputChannel
+): ProxyHandler<LanguageModel> => ({
+    get<K extends keyof LanguageModel>(
+        target: LanguageModel,
+        prop: K
+    ): LanguageModel[K] | LanguageModel['request'] {
+        const original = target[prop];
+        if (prop === 'request' && typeof original === 'function') {
+            return async function (
+                ...args: Parameters<LanguageModel['request']>
+            ): Promise<LanguageModelResponse> {
+                outputChannel.appendLine(
+                    `Sending request: ${JSON.stringify(args)}`
+                );
+                try {
+                    const result = await original.apply(target, args);
+                    if (isLanguageModelStreamResponse(result)) {
+                        outputChannel.appendLine('Received a response stream');
+                        const stream = result.stream;
+                        const loggedStream = {
+                            async *[Symbol.asyncIterator](): AsyncIterator<LanguageModelStreamResponsePart> {
+                                for await (const part of stream) {
+                                    outputChannel.append(part.content || '');
+                                    yield part;
+                                }
+                                outputChannel.append('\n');
+                                outputChannel.appendLine('End of stream');
+                            },
+                        };
+                        return {
+                            ...result,
+                            stream: loggedStream,
+                        };
+                    } else {
+                        outputChannel.appendLine('Received a response');
+                        outputChannel.appendLine(JSON.stringify(result));
+                        return result;
+                    }
+                } catch (err) {
+                    outputChannel.appendLine('An error occurred');
+                    if (err instanceof Error) {
+                        outputChannel.appendLine(
+                            err.message,
+                            OutputChannelSeverity.Error
+                        );
+                    }
+                    throw err;
+                }
+            };
+        }
+        return original;
+    },
+});
