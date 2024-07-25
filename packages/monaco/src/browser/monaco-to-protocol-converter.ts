@@ -18,6 +18,7 @@ import { injectable } from '@theia/core/shared/inversify';
 import { Position, Range } from '@theia/core/shared/vscode-languageserver-protocol';
 import { RecursivePartial } from '@theia/core/lib/common/types';
 import * as monaco from '@theia/monaco-editor-core';
+import { Selection } from '@theia/editor/lib/browser';
 
 export interface MonacoRangeReplace {
     insert: monaco.IRange;
@@ -66,6 +67,16 @@ export class MonacoToProtocolConverter {
                 start, end
             };
         }
+    }
+
+    asSelection(selection: monaco.Selection): Selection {
+        const start = this.asPosition(selection.selectionStartLineNumber, selection.selectionStartColumn);
+        const end = this.asPosition(selection.positionLineNumber, selection.positionColumn);
+        return {
+            start,
+            end,
+            direction: selection.getDirection() === monaco.SelectionDirection.LTR ? 'ltr' : 'rtl'
+        };
     }
 
 }

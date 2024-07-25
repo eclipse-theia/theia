@@ -61,6 +61,9 @@
       "path": "packages/callhierarchy"
     },
     {
+      "path": "packages/collaboration"
+    },
+    {
       "path": "packages/console"
     },
     {
