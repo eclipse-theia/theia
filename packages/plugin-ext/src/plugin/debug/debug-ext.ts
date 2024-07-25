@@ -33,7 +33,8 @@ import { DebugAdapter } from '@theia/debug/lib/common/debug-model';
 import { PluginDebugAdapterCreator } from './plugin-debug-adapter-creator';
 import { NodeDebugAdapterCreator } from '../node/debug/plugin-node-debug-adapter-creator';
 import { DebugProtocol } from '@vscode/debugprotocol';
-import { DebugConfiguration } from '@theia/debug/lib/common/debug-configuration';
+import { DebugConfiguration, DebugSessionOptions } from '@theia/debug/lib/common/debug-configuration';
+import { checkTestRunInstance } from '../tests';
 
 interface ConfigurationProviderRecord {
     handle: number;
@@ -193,7 +194,7 @@ export class DebugExtImpl implements DebugExt {
     }
 
     startDebugging(folder: theia.WorkspaceFolder | undefined, nameOrConfiguration: string | theia.DebugConfiguration, options: theia.DebugSessionOptions): PromiseLike<boolean> {
-        return this.proxy.$startDebugging(folder, nameOrConfiguration, {
+        const optionsDto: DebugSessionOptions = {
             parentSessionId: options.parentSession?.id,
             compact: options.compact,
             consoleMode: options.consoleMode,
@@ -201,8 +202,16 @@ export class DebugExtImpl implements DebugExt {
             suppressDebugStatusbar: options.suppressDebugStatusbar,
             suppressDebugView: options.suppressDebugView,
             lifecycleManagedByParent: options.lifecycleManagedByParent,
-            noDebug: options.noDebug
-        });
+            noDebug: options.noDebug,
+        };
+        if (options.testRun) {
+            const run = checkTestRunInstance(options.testRun);
+            optionsDto.testRun = {
+                controllerId: run.controller.id,
+                runId: run.id
+            };
+        }
+        return this.proxy.$startDebugging(folder, nameOrConfiguration, optionsDto);
     }
 
     stopDebugging(session?: theia.DebugSession): PromiseLike<void> {
