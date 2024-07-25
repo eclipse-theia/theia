@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { named, injectable, inject, postConstruct } from 'inversify';
+import { named, injectable, inject } from 'inversify';
 import URI from '../common/uri';
 import { ContributionProvider, Prioritizeable, MaybePromise, Emitter, Event, Disposable } from '../common';
 
@@ -108,23 +108,6 @@ export class DefaultOpenerService implements OpenerService {
         @inject(ContributionProvider) @named(OpenHandler)
         protected readonly handlersProvider: ContributionProvider<OpenHandler>
     ) { }
-
-    @postConstruct()
-    init(): void {
-        window.electronTheiaCore.setOpenUrlHandler(async url => {
-            const uri = new URI(url);
-            try {
-                const handler = await this.getOpener(uri);
-                if (handler) {
-                    await handler.open(uri);
-                    return true;
-                }
-            } catch (e) {
-                // no handler
-            }
-            return false;
-        });
-    }
 
     addHandler(openHandler: OpenHandler): Disposable {
         this.customEditorOpenHandlers.push(openHandler);
