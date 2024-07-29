@@ -17,7 +17,7 @@
 import { ContributionProvider, nls } from '@theia/core';
 import { codicon, Panel, ReactWidget, StatefulWidget } from '@theia/core/lib/browser';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
-import { Agent } from '../common/';
+import { Agent, PromptTemplate } from '../common/';
 import * as React from '@theia/core/shared/react';
 
 @injectable()
@@ -52,7 +52,9 @@ export class AISettingsWidget extends ReactWidget implements StatefulWidget {
     }
 
     protected renderAgentSettings(): React.ReactNode {
-        return null;
+        return this.agents.getContributions().map(agent => (
+            <AgentSettings agent={agent} key={agent.id} />
+        ));
     }
 
     storeState(): object | undefined {
@@ -65,3 +67,20 @@ export class AISettingsWidget extends ReactWidget implements StatefulWidget {
     }
 }
 
+interface AgentProps {
+    agent: Agent;
+}
+
+const AgentSettings: React.FC<AgentProps> = ({ agent }) => <div>
+    <h2>{agent.name}</h2>
+    {agent.promptTemplates.map(template => <TemplateSetting agentId={agent.id} template={template} key={agent.id + '.' + template.id} />)}
+</div>;
+
+interface TemplateSettingProps {
+    agentId: string;
+    template: PromptTemplate;
+}
+
+const TemplateSetting: React.FC<TemplateSettingProps> = ({ agentId, template }) => <div>
+    {agentId}.{template.id}
+</div>;

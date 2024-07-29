@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ContributionProvider } from '@theia/core';
-import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, named, optional, postConstruct } from '@theia/core/shared/inversify';
 import { Agent } from './agent';
 import { PromptTemplate } from './types';
 
@@ -46,11 +46,30 @@ export interface PromptService {
      */
     getAllPrompts(): PromptMap;
 }
+
+export const PromptCustomizationService = Symbol('PromptCustomizationService');
+export interface PromptCustomizationService {
+    /**
+     * Whether there is a customization for a {@link PromptTemplate} object
+     * @param id the id of the {@link PromptTemplate} to check
+     */
+    isPromptTemplateCustomized(id: string): boolean;
+
+    /**
+     * Returns the customization of {@link PromptTemplate} object or undefined if there is none
+     * @param id the id of the {@link PromptTemplate} to check
+     */
+    getCustomizedPromptTemplate(id: string): string | undefined
+}
+
 @injectable()
 export class PromptServiceImpl implements PromptService {
 
     @inject(ContributionProvider) @named(Agent)
     protected readonly agents: ContributionProvider<Agent>;
+
+    @inject(PromptCustomizationService) @optional()
+    protected readonly customizationService: PromptCustomizationService | undefined;
 
     protected _prompts: PromptMap = {};
 
@@ -64,6 +83,12 @@ export class PromptServiceImpl implements PromptService {
     }
 
     getRawPrompt(id: string): PromptTemplate | undefined {
+        if (this.customizationService !== undefined && this.customizationService.isPromptTemplateCustomized(id)) {
+            const template = this.customizationService.getCustomizedPromptTemplate(id);
+            if (template !== undefined) {
+                return { id, template };
+            }
+        }
         return this._prompts[id];
     }
     getPrompt(id: string, args?: { [key: string]: unknown }): string | undefined {
@@ -78,9 +103,27 @@ export class PromptServiceImpl implements PromptService {
         return formattedPrompt;
     }
     getAllPrompts(): PromptMap {
-        return { ...this._prompts };
+        if (this.customizationService !== undefined) {
+            const myCustomization = this.customizationService;
+            const result: PromptMap = {};
+            Object.keys(this._prompts).forEach(id => {
+                if (myCustomization.isPromptTemplateCustomized(id)) {
+                    const template = myCustomization.getCustomizedPromptTemplate(id);
+                    if (template !== undefined) {
+                        result[id] = { id, template };
+                    } else {
+                        result[id] = { ...this._prompts[id] };
+                    }
+                } else {
+                    result[id] = { ...this._prompts[id] };
+                }
+            });
+            return result;
+        } else {
+            return { ...this._prompts };
+        }
     }
     storePrompt(id: string, prompt: string): void {
-        this._prompts[id] = {id, template: prompt};
+        this._prompts[id] = { id, template: prompt };
     }
 }

@@ -14,24 +14,33 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { PreferenceSchema, PreferenceProxy, PreferenceContribution } from '@theia/core/lib/browser';
-import { interfaces } from '@theia/core/shared/inversify';
+import { PreferenceSchema, PreferenceProxy, PreferenceContribution, FrontendApplicationContribution, PreferenceService, PreferenceScope } from '@theia/core/lib/browser';
+import { interfaces, inject, injectable } from '@theia/core/shared/inversify';
 import { PreferenceProxyFactory } from '@theia/core/lib/browser/preferences/injectable-preference-proxy';
+import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
+import { URI } from '@theia/core';
 
 export const promptServicePreferenceSchema: PreferenceSchema = {
     type: 'object',
     properties: {
-        prompts: {
-            description: 'List of paths to exclude from the filesystem watcher',
-            type: 'object',
-            patternProperties: {
-                '*': { type: 'string' }
+        'ai-chat.templates-folder': {
+            description: 'Path of the folder containing custom prompt templates',
+            type: 'string',
+            default: '',
+            typeDetails: {
+                isFilepath: true,
+                selectionProps: {
+                    openLabel: 'Select Folder',
+                    canSelectFiles: false,
+                    canSelectFolders: true,
+                    canSelectMany: false
+                }
             }
         }
     }
 };
 export interface PromptConfiguration {
-    'prompts': { [key: string]: string }
+    'ai-chat.templates-folder': string | undefined;
 }
 
 export const PromptPreferences = Symbol('PromptsPreferences');
@@ -43,4 +52,26 @@ export function bindPromptPreferences(bind: interfaces.Bind): void {
         return factory(promptServicePreferenceSchema);
     }).inSingletonScope();
     bind(PreferenceContribution).toConstantValue({ schema: promptServicePreferenceSchema });
+    bind(FrontendApplicationContribution).to(TheiaDirFrontendContribution).inSingletonScope();
+}
+
+@injectable()
+export class TheiaDirFrontendContribution implements FrontendApplicationContribution {
+
+    @inject(EnvVariablesServer)
+    protected readonly envVariablesServer: EnvVariablesServer;
+
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
+
+    async onDidInitializeLayout(): Promise<void> {
+        if (!this.preferenceService.get('ai-chat.templates-folder')) {
+            // Initialize the templates-folder. By default, create a 'templates-folder'
+            // directory inside of the Theia Config dir.
+            const theiaConfigDir = await this.envVariablesServer.getConfigDirUri();
+            const templatesDirUri = new URI(theiaConfigDir).resolve('prompt-templates');
+            // FIXME: Supports Windows paths (trim leading / on windows)
+            this.preferenceService.set('ai-chat.templates-folder', templatesDirUri.path.toString(), PreferenceScope.User);
+        }
+    }
 }
