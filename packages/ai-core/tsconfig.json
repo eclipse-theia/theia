@@ -22,6 +22,9 @@
       "path": "../monaco"
     },
     {
+      "path": "../output"
+    },
+    {
       "path": "../workspace"
     }
   ]

@@ -16,16 +16,17 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { WidgetFactory, bindViewContribution,  } from '@theia/core/lib/browser';
-import { bindContributionProvider } from '@theia/core';
+import { bindContributionProvider, CommandContribution } from '@theia/core';
 import { AIChatContribution } from './aichat-ui-contribution';
 import { ChatViewWidget } from './chat-view-widget';
 import { createChatViewTreeWidget } from './chat-tree-view';
 import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
 import { ChatInputWidget } from './chat-input-widget';
 import { ChatResponsePartRenderer } from './types';
+import { MarkdownPartRenderer, TextPartRenderer } from './chat-response-renderer';
+import { AIChatCommandContribution } from './ai-chat-command-contribution';
 
 import '../../src/browser/style/index.css';
-import { MarkdownPartRenderer, TextPartRenderer } from './chat-response-renderer';
 
 export default new ContainerModule(bind => {
     bindViewContribution(bind, AIChatContribution);
@@ -53,4 +54,6 @@ export default new ContainerModule(bind => {
     })).inSingletonScope();
     bind(ChatResponsePartRenderer).to(TextPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(MarkdownPartRenderer).inSingletonScope();
+
+    bind(CommandContribution).to(AIChatCommandContribution);
 });

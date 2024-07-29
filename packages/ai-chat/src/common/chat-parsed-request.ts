@@ -18,6 +18,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatParserTypes.ts
+// Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/editor/common/core/offsetRange.ts
 
 import { ChatAgentData } from './chat-agents';
 
@@ -28,6 +29,18 @@ export const chatSubcommandLeader = '/';
 /**********************
  * INTERFACES AND TYPE GUARDS
  **********************/
+
+export interface OffsetRange {
+    readonly start: number;
+    readonly endExclusive: number;
+}
+export class OffsetRangeImpl implements OffsetRange {
+    constructor(public readonly start: number, public readonly endExclusive: number) {
+        if (start > endExclusive) {
+            throw new Error(`Invalid range: ${this.toString()}`);
+        }
+    }
+}
 
 export interface ParsedChatRequest {
     readonly text: string;
@@ -44,22 +57,46 @@ export interface ChatRequestBasePart {
      * The text as will be sent to the LLM
      */
     readonly promptText: string;
+
+    readonly range: OffsetRange;
 }
 
-export interface ChatRequestTextPart extends ChatRequestBasePart {
+export class ChatRequestTextPart implements ChatRequestBasePart {
     readonly kind: 'text';
+
+    constructor(readonly range: OffsetRange, readonly text: string) { }
+
+    get promptText(): string {
+        return this.text;
+    }
 }
 
-export interface ChatRequestVariablePart extends ChatRequestBasePart {
+export class ChatRequestVariablePart implements ChatRequestBasePart {
     readonly kind: 'var';
-    readonly variableName: string;
-    readonly variableArg: string;
-    readonly variableId: string;
+
+    constructor(readonly range: OffsetRange, readonly variableName: string, readonly variableArg: string, readonly variableId: string) { }
+
+    get text(): string {
+        const argPart = this.variableArg ? `:${this.variableArg}` : '';
+        return `${chatVariableLeader}${this.variableName}${argPart}`;
+    }
+
+    get promptText(): string {
+        return this.text;
+    }
 }
 
-export interface ChatRequestAgentPart extends ChatRequestBasePart {
+export class ChatRequestAgentPart implements ChatRequestBasePart {
     readonly kind: 'agent';
-    readonly agent: ChatAgentData;
+    constructor(readonly range: OffsetRange, readonly agent: ChatAgentData) { }
+
+    get text(): string {
+        return `${chatAgentLeader}${this.agent.name}`;
+    }
+
+    get promptText(): string {
+        return '';
+    }
 }
 
 export type ParsedChatRequestPart = ChatRequestBasePart | ChatRequestTextPart | ChatRequestVariablePart | ChatRequestAgentPart;

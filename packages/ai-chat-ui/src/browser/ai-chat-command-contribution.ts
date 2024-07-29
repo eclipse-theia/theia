@@ -13,27 +13,27 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { ContributionProvider, ILogger } from '@theia/core';
-import { ChatRequestModelImpl } from './chat-model';
-import { ChatAgent } from './chat-agents';
 
-export const AgentDispatcher = Symbol('AgentDispatcher');
-export interface AgentDispatcher {
-    performRequest(request: ChatRequestModelImpl): Promise<void>;
+import { COMMAND_CHAT_RESPONSE_COMMAND } from '@theia/ai-chat/lib/common';
+import { Command, CommandContribution, CommandRegistry } from '@theia/core';
+import { injectable } from '@theia/core/shared/inversify';
+
+export interface AIChatCommandArguments {
+    command: Command;
+    handler?: () => Promise<void>;
 }
 
 @injectable()
-export class AgentDispatcherImpl implements AgentDispatcher {
-
-    @inject(ContributionProvider) @named(ChatAgent)
-    protected readonly agents: ContributionProvider<ChatAgent>;
-
-    @inject(ILogger)
-    protected logger: ILogger;
-
-    async performRequest(request: ChatRequestModelImpl): Promise<void> {
-        // TODO retrieve differently how to find the right agent to use
-        return this.agents.getContributions()[0].invoke(request);
+export class AIChatCommandContribution implements CommandContribution {
+    registerCommands(commands: CommandRegistry): void {
+        commands.registerCommand(COMMAND_CHAT_RESPONSE_COMMAND, {
+            execute: async (arg: AIChatCommandArguments) => {
+                if (arg.handler) {
+                    arg.handler();
+                } else {
+                    console.error(`No handle available which is necessary when using the default command '${COMMAND_CHAT_RESPONSE_COMMAND.id}'.`);
+                }
+            }
+        });
     }
 }
