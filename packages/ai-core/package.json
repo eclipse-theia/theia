@@ -4,7 +4,10 @@
   "description": "Theia - AI Core",
   "dependencies": {
     "@theia/core": "1.49.0",
+    "@theia/editor": "1.49.0",
     "@theia/filesystem": "1.49.0",
+    "@theia/monaco": "1.49.0",
+    "@theia/monaco-editor-core": "1.83.101",
     "@theia/workspace": "1.49.0",
     "minimatch": "^5.1.0",
     "tslib": "^2.6.2"
@@ -32,6 +35,7 @@
   },
   "homepage": "https://github.com/eclipse-theia/theia",
   "files": [
+    "data",
     "lib",
     "src"
   ],

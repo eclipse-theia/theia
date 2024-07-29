@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { bindContributionProvider } from '@theia/core';
+import { bindContributionProvider, CommandContribution } from '@theia/core';
 import {
     RemoteConnectionProvider,
     ServiceConnectionProvider,
@@ -36,6 +36,9 @@ import {
 
 import { FrontendPromptServiceImpl } from './frontend-prompt-service';
 import { bindPromptPreferences } from './prompt-preferences';
+import { PromptTemplateContribution as PromptTemplateContribution } from './prompttemplate-contribution';
+import { LanguageGrammarDefinitionContribution } from '@theia/monaco/lib/browser/textmate';
+import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, LanguageModelProvider);
@@ -64,4 +67,9 @@ export default new ContainerModule(bind => {
     bindPromptPreferences(bind);
     bind(FrontendPromptServiceImpl).toSelf().inSingletonScope();
     bind(PromptService).toService(FrontendPromptServiceImpl);
+
+    bind(PromptTemplateContribution).toSelf().inSingletonScope();
+    bind(LanguageGrammarDefinitionContribution).toService(PromptTemplateContribution);
+    bind(CommandContribution).toService(PromptTemplateContribution);
+    bind(TabBarToolbarContribution).toService(PromptTemplateContribution);
 });
