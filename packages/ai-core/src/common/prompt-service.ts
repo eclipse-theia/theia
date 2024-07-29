@@ -59,7 +59,7 @@ export interface PromptCustomizationService {
      * Returns the customization of {@link PromptTemplate} object or undefined if there is none
      * @param id the id of the {@link PromptTemplate} to check
      */
-    getCustomizedPromptTemplate(id: string): string | undefined;
+    getCustomizedPromptTemplate(id: string): string | undefined
 }
 
 @injectable()

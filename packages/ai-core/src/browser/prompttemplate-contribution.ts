@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from '@theia/core/shared/inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { GrammarDefinition, GrammarDefinitionProvider, LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/monaco/lib/browser/textmate';
 import * as monaco from '@theia/monaco-editor-core';
 import { Command, CommandContribution, CommandRegistry } from '@theia/core';
@@ -22,6 +22,7 @@ import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/li
 
 import { codicon, Widget } from '@theia/core/lib/browser';
 import { EditorWidget } from '@theia/editor/lib/browser';
+import { PromptCustomizationService, PromptService } from '../common';
 
 const PROMPT_TEMPLATE_LANGUAGE_ID = 'theia-ai-prompt-template';
 const PROMPT_TEMPLATE_TEXTMATE_SCOPE = 'source.prompttemplate';
@@ -32,8 +33,23 @@ export const DISCARD_PROMPT_TEMPLATE_CUSTOMIZATIONS: Command = {
     category: 'Theia AI Prompt Templates'
 };
 
+// TODO JF remove test class
+export const TEST_COMMAND: Command = {
+    id: 'theia-ai-prompt-template:test-command',
+    label: 'Test Prompt Service',
+    iconClass: codicon('beaker'),
+    category: 'Theia AI Prompt Templates',
+};
+
 @injectable()
 export class PromptTemplateContribution implements LanguageGrammarDefinitionContribution, CommandContribution, TabBarToolbarContribution {
+
+    @inject(PromptService)
+    private readonly promptService: PromptService;
+
+    @inject(PromptCustomizationService)
+    private readonly promptCustomizationService: PromptCustomizationService;
+
 
     readonly config: monaco.languages.LanguageConfiguration =
         {
@@ -82,6 +98,10 @@ export class PromptTemplateContribution implements LanguageGrammarDefinitionCont
             isEnabled: (widget: EditorWidget) => this.canDiscard(widget),
             execute: (widget: EditorWidget) => this.discard(widget)
         });
+
+        commands.registerCommand(TEST_COMMAND, {
+            execute: () => this.testPromptService()
+        });
     }
 
     protected isPromptTemplateWidget(widget: Widget): boolean {
@@ -98,6 +118,11 @@ export class PromptTemplateContribution implements LanguageGrammarDefinitionCont
 
     protected discard(widget: EditorWidget): void {
         // TODO JF
+    }
+
+    private testPromptService(): void {
+        console.log(`Test customizationservice: ${this.promptCustomizationService.isPromptTemplateCustomized('foo')}`);
+        console.log(`Prompts:\n${JSON.stringify(this.promptService.getAllPrompts())}`);
     }
 
     registerToolbarItems(registry: TabBarToolbarRegistry): void {
