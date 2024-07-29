@@ -71,7 +71,13 @@ export class DefaultChatAgent implements ChatAgent {
     name: string = 'Default Chat Agent';
     description: string = 'The default chat agent provided by Theia.';
     variables: string[] = [];
-    promptTemplates: PromptTemplate[] = [];
+    promptTemplates: PromptTemplate[] = [{
+        id: 'test-template',
+        template: 'Hello, ${name}! This is just a mock template. Nothing useful here.',
+    }, {
+        id: 'mock-template',
+        template: 'Hello, ${name}! This is just another mock template. Nothing useful here either.',
+    }];
     languageModelRequirements: Omit<LanguageModelSelector, 'agentId'>[] = [];
     locations: ChatAgentLocation[] = [];
 
