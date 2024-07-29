@@ -42,7 +42,7 @@ import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar
 import { bindViewContribution, WidgetFactory } from '@theia/core/lib/browser';
 
 import { AISettingsWidget } from './ai-settings-widget';
-import { AISettingsViewContribution } from './ai-settings-view-contribution'
+import { AISettingsViewContribution } from './ai-settings-view-contribution';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, LanguageModelProvider);
