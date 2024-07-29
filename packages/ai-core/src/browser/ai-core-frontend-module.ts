@@ -36,6 +36,10 @@ import {
 
 import { FrontendPromptServiceImpl } from './frontend-prompt-service';
 import { bindPromptPreferences } from './prompt-preferences';
+import { bindViewContribution, WidgetFactory } from '@theia/core/lib/browser';
+
+import { AISettingsWidget } from './ai-settings-widget';
+import { AISettingsViewContribution } from './ai-settings-view-contribution'
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, LanguageModelProvider);
@@ -64,4 +68,15 @@ export default new ContainerModule(bind => {
     bindPromptPreferences(bind);
     bind(FrontendPromptServiceImpl).toSelf().inSingletonScope();
     bind(PromptService).toService(FrontendPromptServiceImpl);
+
+    bind(AISettingsWidget).toSelf().inSingletonScope();
+    bind(WidgetFactory)
+        .toDynamicValue(ctx => ({
+            id: AISettingsWidget.ID,
+            createWidget: () => ctx.container.get(AISettingsWidget)
+        }))
+        .inSingletonScope();
+
+    bindViewContribution(bind, AISettingsViewContribution);
+
 });
