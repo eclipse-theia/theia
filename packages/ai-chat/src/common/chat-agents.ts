@@ -33,8 +33,26 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatRequestModelImpl, ChatResponseContent, MarkdownChatResponseContentImpl } from './chat-model';
 import { getMessages } from './chat-util';
 
+export namespace ChatAgentLocation {
+    export function fromRaw(value: string): ChatAgentLocation {
+        switch (value) {
+            case 'panel': return ChatAgentLocation.Panel;
+            case 'terminal': return ChatAgentLocation.Terminal;
+            case 'notebook': return ChatAgentLocation.Notebook;
+            case 'editor': return ChatAgentLocation.Editor;
+        }
+        return ChatAgentLocation.Panel;
+    }
+}
+export enum ChatAgentLocation {
+    Panel = 'panel',
+    Terminal = 'terminal',
+    Notebook = 'notebook',
+    Editor = 'editor'
+}
+
 export interface ChatAgentData extends Agent {
-    defaultImplicitVariables?: string[];
+    locations: ChatAgentLocation[];
 }
 
 export const ChatAgent = Symbol('ChatAgent');
@@ -49,13 +67,13 @@ export class DefaultChatAgent implements ChatAgent {
     @inject(ILogger)
     protected logger: ILogger;
 
-    defaultImplicitVariables?: string[] | undefined;
     id: string = 'DefaultChatAgent';
     name: string = 'Default Chat Agent';
     description: string = 'The default chat agent provided by Theia.';
     variables: string[] = [];
     promptTemplates: PromptTemplate[] = [];
     languageModelRequirements: Omit<LanguageModelSelector, 'agentId'>[] = [];
+    locations: ChatAgentLocation[] = [];
 
     async invoke(request: ChatRequestModelImpl): Promise<void> {
         const languageModels = await this.languageModelRegistry.getLanguageModels();

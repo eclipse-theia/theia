@@ -35,7 +35,7 @@ export const getMessages = (model: ChatModel, includeResponseInProgress = false)
             messages.push({
                 actor: 'ai',
                 type: 'text',
-                query: request.response.response.asString(),
+                query: request.message.text,
             });
         }
         return messages;

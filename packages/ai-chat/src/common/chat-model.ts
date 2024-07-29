@@ -21,6 +21,7 @@
 
 import { Command, Emitter, Event, generateUuid } from '@theia/core';
 import { MarkdownString, MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
+import { ParsedChatRequest } from './chat-parsed-request';
 
 /**********************
  * INTERFACES AND TYPE GUARDS
@@ -65,6 +66,7 @@ export interface ChatRequestModel {
     readonly session: ChatModel;
     readonly request: ChatRequest;
     readonly response: ChatResponseModel;
+    readonly message: ParsedChatRequest;
 }
 
 export interface ChatProgressMessage {
@@ -187,8 +189,8 @@ export class ChatModelImpl implements ChatModel {
         return this._id;
     }
 
-    addRequest(request: ChatRequest): ChatRequestModelImpl {
-        const requestModel = new ChatRequestModelImpl(this, request);
+    addRequest(request: ChatRequest, parseChatRequest: ParsedChatRequest): ChatRequestModelImpl {
+        const requestModel = new ChatRequestModelImpl(this, request, parseChatRequest);
         this._requests.push(requestModel);
         this._onDidChangeEmitter.fire({
             kind: 'addRequest',
@@ -204,7 +206,7 @@ export class ChatRequestModelImpl implements ChatRequestModel {
     protected _request: ChatRequest;
     protected _response: ChatResponseModelImpl;
 
-    constructor(session: ChatModel, request: ChatRequest) {
+    constructor(session: ChatModel, request: ChatRequest, public readonly message: ParsedChatRequest) {
         // TODO accept serialized data as a parameter to restore a previously saved ChatRequestModel
         this._request = request;
         this._id = generateUuid();
