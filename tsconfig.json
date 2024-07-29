@@ -64,6 +64,12 @@
       "path": "packages/ai-core"
     },
     {
+      "path": "packages/ai-history"
+    },
+    {
+      "path": "packages/ai-history-ui"
+    },
+    {
       "path": "packages/ai-openai"
     },
     {

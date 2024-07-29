@@ -13,10 +13,11 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-export * from './agent';
-export * from './communication-recording-service';
-export * from './language-model';
-export * from './language-model-delegate';
-export * from './prompt-service';
-export * from './types';
+import { CommunicationRecordingService } from '@theia/ai-core';
+import { ContainerModule } from '@theia/core/shared/inversify';
+import { DefaultCommunicationRecordingService } from '../common/communication-recording-service';
 
+export default new ContainerModule(bind => {
+    bind(DefaultCommunicationRecordingService).toSelf().inSingletonScope();
+    bind(CommunicationRecordingService).toService(DefaultCommunicationRecordingService);
+});

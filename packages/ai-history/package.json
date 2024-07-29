@@ -1,26 +1,23 @@
 {
-  "name": "@theia/ai-chat",
+  "name": "@theia/ai-history",
   "version": "1.49.0",
-  "description": "Theia - AI Chat Extension",
+  "description": "Theia - AI communication history",
   "dependencies": {
     "@theia/ai-core": "1.49.0",
-    "@theia/ai-history": "1.49.0",
     "@theia/core": "1.49.0",
     "@theia/filesystem": "1.49.0",
+    "@theia/output": "1.49.0",
     "@theia/workspace": "1.49.0",
     "minimatch": "^5.1.0",
     "tslib": "^2.6.2"
   },
+  "main": "lib/common",
   "publishConfig": {
     "access": "public"
   },
-  "main": "lib/common",
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/agent-frontend-module"
-    },
-    {
-      "backend": "lib/node/agent-backend-module"
+      "frontend": "lib/browser/ai-history-frontend-module"
     }
   ],
   "keywords": [

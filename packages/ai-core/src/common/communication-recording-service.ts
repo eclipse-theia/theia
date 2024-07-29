@@ -13,10 +13,22 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-export * from './agent';
-export * from './communication-recording-service';
-export * from './language-model';
-export * from './language-model-delegate';
-export * from './prompt-service';
-export * from './types';
 
+export type CommunicationHistory = CommunicationHistoryEntry[];
+
+export interface CommunicationHistoryEntry {
+    agentId: string;
+    sessionId: string;
+    timestamp: number;
+    requestId: string;
+    request?: string;
+    response?: string;
+    responseTime?: number;
+}
+
+export const CommunicationRecordingService = Symbol('CommunicationRecordingService');
+export interface CommunicationRecordingService {
+    recordRequest(requestEntry: CommunicationHistoryEntry): void;
+    recordResponse(responseEntry: CommunicationHistoryEntry): void;
+    getHistory(agentId: string): CommunicationHistory;
+}

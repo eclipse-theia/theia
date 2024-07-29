@@ -19,6 +19,7 @@
  *--------------------------------------------------------------------------------------------*/
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatAgents.ts
 
+import { CommunicationRecordingService } from '@theia/ai-core';
 import {
     Agent,
     isLanguageModelStreamResponse,
@@ -28,7 +29,7 @@ import {
     LanguageModelStreamResponsePart,
     PromptTemplate
 } from '@theia/ai-core/lib/common';
-import { ILogger, isArray } from '@theia/core';
+import { generateUuid, ILogger, isArray } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatRequestModelImpl, ChatResponseContent, MarkdownChatResponseContentImpl } from './chat-model';
 import { getMessages } from './chat-util';
@@ -67,6 +68,9 @@ export class DefaultChatAgent implements ChatAgent {
     @inject(ILogger)
     protected logger: ILogger;
 
+    @inject(CommunicationRecordingService)
+    protected recordingService: CommunicationRecordingService;
+
     id: string = 'DefaultChatAgent';
     name: string = 'Default Chat Agent';
     description: string = 'The default chat agent provided by Theia.';
@@ -95,6 +99,13 @@ export class DefaultChatAgent implements ChatAgent {
     locations: ChatAgentLocation[] = [];
 
     async invoke(request: ChatRequestModelImpl): Promise<void> {
+        this.recordingService.recordRequest({
+            agentId: this.id,
+            sessionId: request.session.id,
+            timestamp: Date.now(),
+            requestId: request.id,
+            request: request.request.text
+        });
         const selector = this.languageModelRequirements.find(req => req.purpose === 'chat')!;
         const languageModels = await this.languageModelRegistry.selectLanguageModels({ agent: this.id, ...selector });
         if (languageModels.length === 0) {
@@ -106,6 +117,13 @@ export class DefaultChatAgent implements ChatAgent {
                 new MarkdownChatResponseContentImpl(languageModelResponse.text)
             );
             request.response.complete();
+            this.recordingService.recordResponse({
+                agentId: this.id,
+                sessionId: request.session.id,
+                timestamp: Date.now(),
+                requestId: request.response.requestId,
+                response: request.response.response.asString()
+            });
             return;
         }
         if (isLanguageModelStreamResponse(languageModelResponse)) {
@@ -118,6 +136,13 @@ export class DefaultChatAgent implements ChatAgent {
                 }
             }
             request.response.complete();
+            this.recordingService.recordResponse({
+                agentId: this.id,
+                sessionId: request.session.id,
+                timestamp: Date.now(),
+                requestId: request.response.requestId,
+                response: request.response.response.asString()
+            });
             return;
         }
         this.logger.error(
@@ -129,6 +154,13 @@ export class DefaultChatAgent implements ChatAgent {
             )
         );
         request.response.complete();
+        this.recordingService.recordResponse({
+            agentId: this.id,
+            sessionId: request.session.id,
+            timestamp: Date.now(),
+            requestId: request.response.requestId,
+            response: request.response.response.asString()
+        });
     }
 
     private parse(token: LanguageModelStreamResponsePart, previousContent: ChatResponseContent[]): ChatResponseContent | ChatResponseContent[] {
@@ -139,5 +171,39 @@ export class DefaultChatAgent implements ChatAgent {
         //     return newTools.map(t => new CommandChatResponseContentImpl({ id: t.function!.name! }, t.function!.arguments ? JSON.parse(t.function!.arguments) : undefined));
         // }
         return new MarkdownChatResponseContentImpl(token.content ?? '');
+    }
+}
+
+@injectable()
+export class DummyChatAgent implements ChatAgent {
+
+    @inject(CommunicationRecordingService)
+    protected recordingService: CommunicationRecordingService;
+
+    id: string = 'DummyChatAgent';
+    name: string = 'Dummy Chat Agent';
+    description: string = 'The dummy chat agent provided by ES.';
+    variables: string[] = [];
+    promptTemplates: PromptTemplate[] = [];
+    languageModelRequirements: Omit<LanguageModelSelector, 'agentId'>[] = [];
+    locations: ChatAgentLocation[] = [];
+
+    async invoke(request?: ChatRequestModelImpl): Promise<void> {
+        const requestUuid = generateUuid();
+        const sessionId = 'dummy-session';
+        this.recordingService.recordRequest({
+            agentId: this.id,
+            sessionId: sessionId,
+            timestamp: Date.now(),
+            requestId: requestUuid,
+            request: 'Dummy request'
+        });
+        this.recordingService.recordResponse({
+            agentId: this.id,
+            sessionId: sessionId,
+            timestamp: Date.now(),
+            requestId: requestUuid,
+            response: 'Dummy response'
+        });
     }
 }
