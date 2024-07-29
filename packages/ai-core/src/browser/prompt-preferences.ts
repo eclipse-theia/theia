@@ -30,7 +30,7 @@ export const promptServicePreferenceSchema: PreferenceSchema = {
             typeDetails: {
                 isFilepath: true,
                 selectionProps: {
-                    openLabel: 'Prompt Templates Folder',
+                    openLabel: 'Select Folder',
                     canSelectFiles: false,
                     canSelectFolders: true,
                     canSelectMany: false
@@ -69,7 +69,7 @@ export class TheiaDirFrontendContribution implements FrontendApplicationContribu
             // Initialize the templates-folder. By default, create a 'templates-folder'
             // directory inside of the Theia Config dir.
             const theiaConfigDir = await this.envVariablesServer.getConfigDirUri();
-            const templatesDirUri = new URI(theiaConfigDir).resolve('templates-folder');
+            const templatesDirUri = new URI(theiaConfigDir).resolve('prompt-templates');
             // FIXME: Supports Windows paths (trim leading / on windows)
             this.preferenceService.set('ai-chat.templates-folder', templatesDirUri.path.toString(), PreferenceScope.User);
         }
