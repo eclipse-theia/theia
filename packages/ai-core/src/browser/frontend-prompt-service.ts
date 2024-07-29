@@ -23,12 +23,15 @@ export class FrontendPromptServiceImpl extends PromptServiceImpl {
 
     @postConstruct()
     override init(): void {
-        this.preferences.onPreferenceChanged(e => {
-            if (e.preferenceName === 'prompts') {
-                Object.entries(e.newValue).forEach(entry => {
-                    this._prompts[entry[0]] = { id: entry[0], template: entry[1] };
-                });
-            }
-        });
+        // FIXME #38: prompts are stored in a templates folder; not directly
+        // in the preferences. We need the template editor to publish changes
+        // on save, and/or to have a file watcher.
+        // this.preferences.onPreferenceChanged(e => {
+        //     if (e.preferenceName === 'prompts') {
+        //         Object.entries(e.newValue).forEach(entry => {
+        //             this._prompts[entry[0]] = { id: entry[0], template: entry[1] };
+        //         });
+        //     }
+        // });
     }
 }
