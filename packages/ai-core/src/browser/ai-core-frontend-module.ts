@@ -28,24 +28,23 @@ import {
     languageModelDelegatePath,
     languageModelRegistryDelegatePath,
     PromptService,
-    PromptCustomizationService,
-    PromptCollectionService,
-    PromptCollectionServiceImpl
+    PromptServiceImpl,
+    PromptCustomizationService
 } from '../common';
 import {
     FrontendLanguageModelRegistryImpl,
     LanguageModelDelegateClientImpl,
 } from './frontend-language-model-registry';
 
-import { FrontendPromptServiceImpl } from './frontend-prompt-service';
 import { bindPromptPreferences } from './prompt-preferences';
 import { PromptTemplateContribution as PromptTemplateContribution } from './prompttemplate-contribution';
 import { LanguageGrammarDefinitionContribution } from '@theia/monaco/lib/browser/textmate';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { bindViewContribution, WidgetFactory } from '@theia/core/lib/browser';
+import { bindViewContribution, FrontendApplicationContribution, WidgetFactory } from '@theia/core/lib/browser';
 import { FrontendPromptCustomizationServiceImpl } from './frontend-prompt-customization-service';
 import { AISettingsWidget } from './ai-settings-widget';
 import { AISettingsViewContribution } from './ai-settings-view-contribution';
+import { AICoreFrontendApplicationContribution } from './ai-core-frontend-application-contribution';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, LanguageModelProvider);
@@ -75,11 +74,9 @@ export default new ContainerModule(bind => {
 
     bind(FrontendPromptCustomizationServiceImpl).toSelf().inSingletonScope();
     bind(PromptCustomizationService).toService(FrontendPromptCustomizationServiceImpl);
-    bind(FrontendPromptServiceImpl).toSelf().inSingletonScope();
-    bind(PromptService).toService(FrontendPromptServiceImpl);
+    bind(PromptServiceImpl).toSelf().inSingletonScope();
+    bind(PromptService).toService(PromptServiceImpl);
 
-    bind(PromptCollectionServiceImpl).toSelf().inSingletonScope();
-    bind(PromptCollectionService).toService(PromptCollectionServiceImpl);
     bind(PromptTemplateContribution).toSelf().inSingletonScope();
     bind(LanguageGrammarDefinitionContribution).toService(PromptTemplateContribution);
     bind(CommandContribution).toService(PromptTemplateContribution);
@@ -95,4 +92,5 @@ export default new ContainerModule(bind => {
 
     bindViewContribution(bind, AISettingsViewContribution);
 
+    bind(FrontendApplicationContribution).to(AICoreFrontendApplicationContribution).inSingletonScope();
 });
