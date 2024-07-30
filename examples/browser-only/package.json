@@ -22,6 +22,7 @@
     "@theia/ai-history": "1.52.0",
     "@theia/ai-history-ui": "1.52.0",
     "@theia/ai-openai": "1.52.0",
+    "@theia/ai-rag-provider": "1.52.0",
     "@theia/api-samples": "1.52.0",
     "@theia/bulk-edit": "1.52.0",
     "@theia/callhierarchy": "1.52.0",
