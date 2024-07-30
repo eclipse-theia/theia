@@ -91,7 +91,7 @@ recent-terminal-contents:
     ];
     languageModelRequirements = [
         {
-            actor: this.id,
+            agent: this.id,
             purpose: 'suggest-terminal-commands',
         }
     ];
