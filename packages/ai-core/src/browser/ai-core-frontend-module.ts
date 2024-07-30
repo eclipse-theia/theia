@@ -28,7 +28,9 @@ import {
     languageModelDelegatePath,
     languageModelRegistryDelegatePath,
     PromptService,
-    PromptCustomizationService
+    PromptCustomizationService,
+    PromptCollectionService,
+    PromptCollectionServiceImpl
 } from '../common';
 import {
     FrontendLanguageModelRegistryImpl,
@@ -76,6 +78,8 @@ export default new ContainerModule(bind => {
     bind(FrontendPromptServiceImpl).toSelf().inSingletonScope();
     bind(PromptService).toService(FrontendPromptServiceImpl);
 
+    bind(PromptCollectionServiceImpl).toSelf().inSingletonScope();
+    bind(PromptCollectionService).toService(PromptCollectionServiceImpl);
     bind(PromptTemplateContribution).toSelf().inSingletonScope();
     bind(LanguageGrammarDefinitionContribution).toService(PromptTemplateContribution);
     bind(CommandContribution).toService(PromptTemplateContribution);

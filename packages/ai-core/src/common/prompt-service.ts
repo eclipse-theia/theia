@@ -21,6 +21,30 @@ import { PromptTemplate } from './types';
 
 export interface PromptMap { [id: string]: PromptTemplate }
 
+export const PromptCollectionService = Symbol('PromptCollectionService');
+export interface PromptCollectionService {
+    getAllPrompts(): PromptTemplate[];
+}
+@injectable()
+export class PromptCollectionServiceImpl implements PromptCollectionService {
+
+    @inject(ContributionProvider) @named(Agent)
+    protected readonly agents: ContributionProvider<Agent>;
+
+    protected _prompts: PromptTemplate[] = [];
+
+    @postConstruct()
+    public init(): void {
+        this.agents.getContributions().forEach(a => {
+            this._prompts.push(...a.promptTemplates);
+        });
+    }
+
+    getAllPrompts(): PromptTemplate[] {
+        return this._prompts;
+    }
+}
+
 export const PromptService = Symbol('PromptService');
 export interface PromptService {
     /**
@@ -65,8 +89,8 @@ export interface PromptCustomizationService {
 @injectable()
 export class PromptServiceImpl implements PromptService {
 
-    @inject(ContributionProvider) @named(Agent)
-    protected readonly agents: ContributionProvider<Agent>;
+    @inject(PromptCollectionService)
+    protected readonly promptCollectionService: PromptCollectionService;
 
     @inject(PromptCustomizationService) @optional()
     protected readonly customizationService: PromptCustomizationService | undefined;
@@ -75,10 +99,8 @@ export class PromptServiceImpl implements PromptService {
 
     @postConstruct()
     public init(): void {
-        this.agents.getContributions().forEach(a => {
-            a.promptTemplates.forEach(template => {
-                this._prompts[template.id] = template;
-            });
+        this.promptCollectionService.getAllPrompts().forEach(template => {
+            this._prompts[template.id] = template;
         });
     }
 
@@ -99,7 +121,7 @@ export class PromptServiceImpl implements PromptService {
         if (args === undefined) {
             return prompt.template;
         }
-        const formattedPrompt = Object.keys(args).reduce((acc, key) => acc.replace(`/\${${key}}/g`, JSON.stringify(args[key])), prompt.template);
+        const formattedPrompt = Object.keys(args).reduce((acc, key) => acc.replace(`\${${key}}`, args[key] as string), prompt.template);
         return formattedPrompt;
     }
     getAllPrompts(): PromptMap {
