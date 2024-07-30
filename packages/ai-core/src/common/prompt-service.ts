@@ -17,6 +17,7 @@
 import { URI } from '@theia/core';
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import { PromptTemplate } from './types';
+import { AIVariableService } from './variable-service';
 
 export interface PromptMap { [id: string]: PromptTemplate }
 
@@ -38,7 +39,7 @@ export interface PromptService {
      * @param id the id of the prompt
      * @param args the object with placeholders, mapping the placeholder key to the value
      */
-    getPrompt(id: string, args?: { [key: string]: unknown }): string | undefined;
+    getPrompt(id: string, args?: { [key: string]: unknown }): Promise<string | undefined>;
     /**
      * Manually add a prompt to the list of prompts.
      * @param id the id of the prompt
@@ -88,11 +89,15 @@ export interface PromptCustomizationService {
     getTemplateIDFromURI(uri: URI): string | undefined;
 }
 
+const PROMPT_VARIABLE_REGEX = /\$\{([\w_\-]+)\}/g;
+
 @injectable()
 export class PromptServiceImpl implements PromptService {
-
     @inject(PromptCustomizationService) @optional()
     protected readonly customizationService: PromptCustomizationService | undefined;
+
+    @inject(AIVariableService) @optional()
+    protected readonly variableService: AIVariableService | undefined;
 
     protected _prompts: PromptMap = {};
 
@@ -108,16 +113,23 @@ export class PromptServiceImpl implements PromptService {
     getDefaultRawPrompt(id: string): PromptTemplate | undefined {
         return this._prompts[id];
     }
-    getPrompt(id: string, args?: { [key: string]: unknown }): string | undefined {
+    async getPrompt(id: string, args?: { [key: string]: unknown }): Promise<string | undefined> {
         const prompt = this.getRawPrompt(id);
         if (prompt === undefined) {
             return undefined;
         }
-        if (args === undefined) {
-            return prompt.template;
-        }
-        const formattedPrompt = Object.keys(args).reduce((acc, key) => acc.replace(`\${${key}}`, args[key] as string), prompt.template);
-        return formattedPrompt;
+
+        const matches = [...prompt.template.matchAll(PROMPT_VARIABLE_REGEX)];
+        const replacements = await Promise.all(matches.map(async match => {
+            const key = match[1];
+            return {
+                placeholder: match[0],
+                value: String(args?.[key] ?? (await this.variableService?.resolveVariable(key, {}))?.value ?? match[0])
+            };
+        }));
+        let result = prompt.template;
+        replacements.forEach(replacement => result = result.replace(replacement.placeholder, replacement.value));
+        return result;
     }
     getAllPrompts(): PromptMap {
         if (this.customizationService !== undefined) {

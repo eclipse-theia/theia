@@ -69,7 +69,7 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
         const file = model.uri.toString(false);
         const language = model.getLanguageId();
 
-        const prompt = this.promptService.getPrompt('code-completion-prompt', { snippet, file, language });
+        const prompt = await this.promptService.getPrompt('code-completion-prompt', { snippet, file, language });
         if (!prompt) {
             console.error('No prompt found for code-completion-agent');
             return undefined;

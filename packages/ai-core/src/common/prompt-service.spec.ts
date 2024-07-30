@@ -15,9 +15,11 @@
 // *****************************************************************************
 
 import 'reflect-metadata';
-import { Container } from 'inversify';
-import { PromptService, PromptServiceImpl } from '../prompt-service';
+
 import { expect } from 'chai';
+import { Container } from 'inversify';
+import { PromptService, PromptServiceImpl } from './prompt-service';
+import { DefaultAIVariableService, AIVariableService } from './variable-service';
 
 describe('PromptService', () => {
     let promptService: PromptService;
@@ -26,15 +28,25 @@ describe('PromptService', () => {
         const container = new Container();
         container.bind<PromptService>(PromptService).to(PromptServiceImpl).inSingletonScope();
 
+        const variableService = new DefaultAIVariableService({ getContributions: () => [] });
+        const nameVariable = { id: 'test', name: 'name', description: 'Test name ' };
+        variableService.registerResolver(nameVariable, {
+            canResolve: () => 100,
+            resolve: async () => ({ variable: nameVariable, value: 'Jane' })
+        });
+        container.bind<AIVariableService>(AIVariableService).toConstantValue(variableService);
+
         promptService = container.get<PromptService>(PromptService);
         promptService.storePrompt('1', 'Hello, ${name}!');
         promptService.storePrompt('2', 'Goodbye, ${name}!');
+        promptService.storePrompt('3', 'Ciao, ${invalid}!');
     });
 
     it('should initialize prompts from PromptCollectionService', () => {
         const allPrompts = promptService.getAllPrompts();
         expect(allPrompts['1'].template).to.equal('Hello, ${name}!');
         expect(allPrompts['2'].template).to.equal('Goodbye, ${name}!');
+        expect(allPrompts['3'].template).to.equal('Ciao, ${invalid}!');
     });
 
     it('should retrieve raw prompt by id', () => {
@@ -42,8 +54,8 @@ describe('PromptService', () => {
         expect(rawPrompt?.template).to.equal('Hello, ${name}!');
     });
 
-    it('should format prompt with provided arguments', () => {
-        const formattedPrompt = promptService.getPrompt('1', { name: 'John' });
+    it('should format prompt with provided arguments', async () => {
+        const formattedPrompt = await promptService.getPrompt('1', { name: 'John' });
         expect(formattedPrompt).to.equal('Hello, John!');
     });
 
@@ -51,5 +63,25 @@ describe('PromptService', () => {
         promptService.storePrompt('3', 'Welcome, ${name}!');
         const newPrompt = promptService.getRawPrompt('3');
         expect(newPrompt?.template).to.equal('Welcome, ${name}!');
+    });
+
+    it('should replace placeholders with provided arguments', async () => {
+        const prompt = await promptService.getPrompt('1', { name: 'John' });
+        expect(prompt).to.equal('Hello, John!');
+    });
+
+    it('should use variable service to resolve placeholders if argument value is not provided', async () => {
+        const prompt = await promptService.getPrompt('1');
+        expect(prompt).to.equal('Hello, Jane!');
+    });
+
+    it('should return the prompt even if there are no replacements', async () => {
+        const prompt = await promptService.getPrompt('3');
+        expect(prompt).to.equal('Ciao, ${invalid}!');
+    });
+
+    it('should return undefined if the prompt id is not found', async () => {
+        const prompt = await promptService.getPrompt('4');
+        expect(prompt).to.be.undefined;
     });
 });
