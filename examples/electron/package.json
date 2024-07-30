@@ -34,6 +34,7 @@
     "@theia/ai-history-ui": "1.49.0",
     "@theia/ai-openai": "1.49.0",
     "@theia/ai-terminal": "1.49.0",
+    "@theia/ai-llamafile": "1.49.0",
     "@theia/api-provider-sample": "1.49.0",
     "@theia/api-samples": "1.49.0",
     "@theia/bulk-edit": "1.49.0",

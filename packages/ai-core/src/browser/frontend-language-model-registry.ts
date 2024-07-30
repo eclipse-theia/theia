@@ -88,6 +88,36 @@ export class FrontendLanguageModelRegistryImpl
     @inject(AISettingsService)
     protected settingsService: AISettingsService;
 
+    override addLanguageModels(models: LanguageModelMetaData[] | LanguageModel[]): void {
+        models.map(model => {
+            if (LanguageModel.is(model)) {
+                this.languageModels.push(
+                    new Proxy(
+                        model,
+                        languageModelOutputHandler(
+                            this.outputChannelManager.getChannel(
+                                model.id
+                            )
+                        )
+                    )
+                );
+            } else {
+                this.languageModels.push(
+                    new Proxy(
+                        this.createFrontendLanguageModel(
+                            model
+                        ),
+                        languageModelOutputHandler(
+                            this.outputChannelManager.getChannel(
+                                model.id
+                            )
+                        )
+                    )
+                );
+            }
+        });
+    }
+
     @postConstruct()
     protected override init(): void {
         this.client.setReceiver(this);
@@ -97,25 +127,12 @@ export class FrontendLanguageModelRegistryImpl
         const promises = contributions.map(provider => provider());
         const backendDescriptions =
             this.registryDelegate.getLanguageModelDescriptions();
+
         Promise.allSettled([backendDescriptions, ...promises]).then(
             results => {
                 const backendDescriptionsResult = results[0];
                 if (backendDescriptionsResult.status === 'fulfilled') {
-                    this.languageModels.push(
-                        ...backendDescriptionsResult.value.map(
-                            description =>
-                                new Proxy(
-                                    this.createFrontendLanguageModel(
-                                        description
-                                    ),
-                                    languageModelOutputHandler(
-                                        this.outputChannelManager.getChannel(
-                                            description.id
-                                        )
-                                    )
-                                )
-                        )
-                    );
+                    this.addLanguageModels(backendDescriptionsResult.value);
                 } else {
                     this.logger.error(
                         'Failed to add language models contributed from the backend',
@@ -128,19 +145,7 @@ export class FrontendLanguageModelRegistryImpl
                         | PromiseRejectedResult
                         | PromiseFulfilledResult<LanguageModel[]>;
                     if (languageModelResult.status === 'fulfilled') {
-                        this.languageModels.push(
-                            ...languageModelResult.value.map(
-                                languageModel =>
-                                    new Proxy(
-                                        languageModel,
-                                        languageModelOutputHandler(
-                                            this.outputChannelManager.getChannel(
-                                                languageModel.id
-                                            )
-                                        )
-                                    )
-                            )
-                        );
+                        this.addLanguageModels(languageModelResult.value);
                     } else {
                         this.logger.error(
                             'Failed to add some language models:',

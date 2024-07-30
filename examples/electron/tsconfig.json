@@ -30,6 +30,9 @@
       "path": "../../packages/ai-history-ui"
     },
     {
+      "path": "../../packages/ai-llamafile"
+    },
+    {
       "path": "../../packages/ai-openai"
     },
     {

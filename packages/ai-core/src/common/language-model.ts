@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContributionProvider, ILogger } from '@theia/core';
+import { ContributionProvider, ILogger, isFunction, isObject } from '@theia/core';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 
 export type ChatActor = 'user' | 'ai';
@@ -89,8 +89,20 @@ export interface LanguageModelMetaData {
     readonly maxOutputTokens?: number;
 }
 
+export namespace LanguageModelMetaData {
+    export function is(arg: unknown): arg is LanguageModelMetaData {
+        return isObject(arg) && 'id' in arg && 'providerId' in arg;
+    }
+}
+
 export interface LanguageModel extends LanguageModelMetaData {
     request(request: LanguageModelRequest): Promise<LanguageModelResponse>;
+}
+
+export namespace LanguageModel {
+    export function is(arg: unknown): arg is LanguageModel {
+        return isObject(arg) && 'id' in arg && 'providerId' in arg && isFunction(arg.request);
+    }
 }
 
 // See also VS Code `ILanguageModelChatSelector`
@@ -110,6 +122,7 @@ export interface LanguageModelSelector extends VsCodeLanguageModelSelector {
 
 export const LanguageModelRegistry = Symbol('LanguageModelRegistry');
 export interface LanguageModelRegistry {
+    addLanguageModels(models: LanguageModel[]): void;
     getLanguageModels(): Promise<LanguageModel[]>;
     getLanguageModel(id: string): Promise<LanguageModel | undefined>;
     selectLanguageModels(request: LanguageModelSelector): Promise<LanguageModel[]>;
@@ -141,6 +154,11 @@ export class DefaultLanguageModelRegistryImpl implements LanguageModelRegistry {
             }
             this.markInitialized();
         });
+    }
+
+    addLanguageModels(models: LanguageModel[]): void {
+        models.map(model => this.languageModels.push(model));
+        // TODO: notify frontend about new models
     }
 
     async getLanguageModels(): Promise<LanguageModel[]> {
