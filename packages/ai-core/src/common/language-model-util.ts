@@ -13,11 +13,18 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-export * from './agent';
-export * from './communication-recording-service';
-export * from './language-model';
-export * from './language-model-delegate';
-export * from './language-model-util';
-export * from './prompt-service';
-export * from './types';
 
+import { isLanguageModelStreamResponse, isLanguageModelTextResponse, LanguageModelResponse } from './language-model';
+
+export const getTextOfResponse = async (response: LanguageModelResponse): Promise<string> => {
+    if (isLanguageModelTextResponse(response)) {
+        return response.text;
+    } else if (isLanguageModelStreamResponse(response)) {
+        let result = '';
+        for await (const chunk of response.stream) {
+            result += chunk.content ?? '';
+        }
+        return result;
+    }
+    throw new Error(`Invalid response type ${response}`);
+};

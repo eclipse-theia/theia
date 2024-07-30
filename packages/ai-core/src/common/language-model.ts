@@ -125,7 +125,7 @@ export class DefaultLanguageModelRegistryImpl implements LanguageModelRegistry {
     protected languageModels: LanguageModel[] = [];
 
     protected markInitialized: () => void;
-    protected initialized: Promise<void> = new Promise(resolve => { this.markInitialized = resolve });
+    protected initialized: Promise<void> = new Promise(resolve => { this.markInitialized = resolve; });
 
     @postConstruct()
     protected init(): void {

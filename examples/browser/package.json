@@ -22,6 +22,7 @@
   "dependencies": {
     "@theia/ai-chat": "1.49.0",
     "@theia/ai-chat-ui": "1.49.0",
+    "@theia/ai-code-completion": "1.49.0",
     "@theia/ai-core": "1.49.0",
     "@theia/ai-history": "1.49.0",
     "@theia/ai-history-ui": "1.49.0",

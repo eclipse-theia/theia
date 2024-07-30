@@ -13,11 +13,21 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-export * from './agent';
-export * from './communication-recording-service';
-export * from './language-model';
-export * from './language-model-delegate';
-export * from './language-model-util';
-export * from './prompt-service';
-export * from './types';
 
+import { PreferenceSchema } from '@theia/core/lib/browser/preferences/preference-contribution';
+
+export const AICodeCompletionPreferencesSchema: PreferenceSchema = {
+    type: 'object',
+    properties: {
+        'ai-code-completion.enable': {
+            type: 'boolean',
+            description: 'Enable AI code completion',
+            default: false
+        },
+        'ai-code-completion.precompute': {
+            type: 'boolean',
+            description: 'Precompute completion before it is triggered',
+            default: false
+        }
+    }
+};

@@ -15,6 +15,9 @@
       "path": "../../packages/ai-chat-ui"
     },
     {
+      "path": "../../packages/ai-code-completion"
+    },
+    {
       "path": "../../packages/ai-core"
     },
     {

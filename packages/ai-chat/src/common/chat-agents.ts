@@ -86,15 +86,6 @@ export class DefaultChatAgent implements ChatAgent {
     languageModelRequirements: Omit<LanguageModelSelector, 'agent'>[] = [{
         purpose: 'chat',
         identifier: 'openai/gpt-4o',
-    },
-    {
-        purpose: 'autocomplete',
-        name: 'default-autocomplete-model',
-        version: '0.0.1',
-        family: 'default-family',
-        tokens: 256,
-        identifier: 'default-identifier',
-        vendor: 'default-vendor'
     }];
     locations: ChatAgentLocation[] = [];
 
