@@ -30,6 +30,9 @@ import {
 import { ChatAgentService } from './chat-agent-service';
 import { ILogger } from '@theia/core';
 import { ChatRequestParser } from './chat-request-parser';
+import { ChatAgentLocation } from './chat-agents';
+import { ChatRequestVariablePart } from './chat-parsed-request';
+import { AIVariableService } from '@theia/ai-core';
 
 export interface ChatSendRequestData {
     /**
@@ -50,7 +53,7 @@ export const ChatService = Symbol('ChatService');
 export interface ChatService {
     getSession(id: string): ChatModel | undefined;
     getOrRestoreSession(id: string): ChatModel | undefined;
-    createSession(): ChatModel;
+    createSession(location?: ChatAgentLocation): ChatModel;
 
     sendRequest(
         sessionId: string,
@@ -66,6 +69,9 @@ export class ChatServiceImpl implements ChatService {
     @inject(ChatRequestParser)
     protected chatRequestParser: ChatRequestParser;
 
+    @inject(AIVariableService)
+    protected variableService: AIVariableService;
+
     @inject(ILogger)
     protected logger: ILogger;
 
@@ -80,8 +86,8 @@ export class ChatServiceImpl implements ChatService {
         return this._sessions.find(session => session.id === id);
     }
 
-    createSession(): ChatModel {
-        const model = new ChatModelImpl();
+    createSession(location = ChatAgentLocation.Panel): ChatModel {
+        const model = new ChatModelImpl(location);
         this._sessions.push(model);
         return model;
     }
@@ -108,10 +114,23 @@ export class ChatServiceImpl implements ChatService {
                 resolveResponseCompleted = resolve;
             }),
         };
-        const parsedRequest = this.chatRequestParser.parseChatRequest(request.text);
-        const requestModel = session.addRequest(request, parsedRequest);
-        // TODO perform requestPreprocessing like variable resolving and agent determination
-        // should this also be done by an agent?
+        const parsedRequest = this.chatRequestParser.parseChatRequest(request, session.location);
+        const requestModel = session.addRequest(parsedRequest);
+        for (const part of parsedRequest.parts) {
+            if (part instanceof ChatRequestVariablePart) {
+                // resolve variable
+                const resolvedVariable = await this.variableService.resolveVariable(
+                    { variable: part.variableName, arg: part.variableArg },
+                    { request, model: session }
+                );
+                if (resolvedVariable) {
+                    part.resolve(resolvedVariable);
+                } else {
+                    this.logger.warn(`Failed to resolve variable ${part.variableName} for ${session.location}`);
+                }
+            }
+        }
+        // TODO perform agent determination
         resolveRequestCompleted!(requestModel);
 
         resolveResponseCreated!(requestModel.response);
@@ -120,7 +139,6 @@ export class ChatServiceImpl implements ChatService {
                 resolveResponseCompleted!(requestModel.response);
             }
         });
-
 
         const chatAgents = this.chatAgentService.getAgents();
         if (chatAgents.length > 0) {

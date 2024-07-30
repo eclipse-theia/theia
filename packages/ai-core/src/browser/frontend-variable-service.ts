@@ -13,11 +13,14 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-export * from './chat-agent-service';
-export * from './chat-agents';
-export * from './chat-model';
-export * from './chat-parsed-request';
-export * from './chat-request-parser';
-export * from './chat-service';
-export * from './chat-util';
-export * from './chat-variables';
+
+import { injectable } from '@theia/core/shared/inversify';
+import { DefaultAIVariableService } from '../common';
+import { FrontendApplicationContribution } from '@theia/core/lib/browser';
+
+@injectable()
+export class FrontendVariableService extends DefaultAIVariableService implements FrontendApplicationContribution {
+    onStart(): void {
+        this.initContributions();
+    }
+}

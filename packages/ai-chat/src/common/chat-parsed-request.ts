@@ -20,7 +20,9 @@
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatParserTypes.ts
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/editor/common/core/offsetRange.ts
 
+import { AIVariable, ResolvedAIVariable } from '@theia/ai-core';
 import { ChatAgentData } from './chat-agents';
+import { ChatRequest } from './chat-model';
 
 export const chatVariableLeader = '#';
 export const chatAgentLeader = '@';
@@ -43,8 +45,9 @@ export class OffsetRangeImpl implements OffsetRange {
 }
 
 export interface ParsedChatRequest {
-    readonly text: string;
+    readonly request: ChatRequest;
     readonly parts: ParsedChatRequestPart[];
+    readonly variables: Map<string, AIVariable>;
 }
 
 export interface ChatRequestBasePart {
@@ -74,7 +77,9 @@ export class ChatRequestTextPart implements ChatRequestBasePart {
 export class ChatRequestVariablePart implements ChatRequestBasePart {
     readonly kind: 'var';
 
-    constructor(readonly range: OffsetRange, readonly variableName: string, readonly variableArg: string, readonly variableId: string) { }
+    protected _resolution: ResolvedAIVariable;
+
+    constructor(readonly range: OffsetRange, readonly variableName: string, readonly variableArg: string | undefined) { }
 
     get text(): string {
         const argPart = this.variableArg ? `:${this.variableArg}` : '';
@@ -82,7 +87,15 @@ export class ChatRequestVariablePart implements ChatRequestBasePart {
     }
 
     get promptText(): string {
-        return this.text;
+        return this._resolution?.value ?? this.text;
+    }
+
+    resolve(resolution: ResolvedAIVariable): void {
+        this._resolution = resolution;
+    }
+
+    get resolution(): ResolvedAIVariable | undefined {
+        return this._resolution;
     }
 }
 

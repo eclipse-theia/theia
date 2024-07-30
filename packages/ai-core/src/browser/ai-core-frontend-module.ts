@@ -28,8 +28,10 @@ import {
     languageModelDelegatePath,
     languageModelRegistryDelegatePath,
     PromptService,
+    PromptServiceImpl,
     PromptCustomizationService,
-    PromptServiceImpl
+    AIVariableContribution,
+    AIVariableService
 } from '../common';
 import {
     FrontendLanguageModelRegistryImpl,
@@ -44,8 +46,10 @@ import { bindViewContribution, FrontendApplicationContribution, WidgetFactory } 
 import { FrontendPromptCustomizationServiceImpl } from './frontend-prompt-customization-service';
 import { AISettingsWidget } from './ai-settings-widget';
 import { AISettingsViewContribution } from './ai-settings-view-contribution';
+import { FrontendVariableService } from './frontend-variable-service';
 import { AICoreFrontendApplicationContribution } from './ai-core-frontend-application-contribution';
 import { AISettingsService } from './ai-settings-service';
+import { TodayVariableContribution } from '../today-variable-contribution';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, LanguageModelProvider);
@@ -92,6 +96,12 @@ export default new ContainerModule(bind => {
         .inSingletonScope();
 
     bindViewContribution(bind, AISettingsViewContribution);
- 	bind(AISettingsService).toSelf().inRequestScope();
+    bind(AISettingsService).toSelf().inRequestScope();
+    bindContributionProvider(bind, AIVariableContribution);
+    bind(FrontendVariableService).toSelf().inSingletonScope();
+    bind(AIVariableService).toService(FrontendVariableService);
+    bind(FrontendApplicationContribution).toService(FrontendVariableService);
+    bind(AIVariableContribution).to(TodayVariableContribution).inSingletonScope();
+
     bind(FrontendApplicationContribution).to(AICoreFrontendApplicationContribution).inSingletonScope();
 });

@@ -23,6 +23,7 @@ import { Command, Emitter, Event, generateUuid, URI } from '@theia/core';
 import { Position } from '@theia/core/shared/vscode-languageserver-protocol';
 import { MarkdownString, MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { ParsedChatRequest } from './chat-parsed-request';
+import { ChatAgentLocation } from './chat-agents';
 
 /**********************
  * INTERFACES AND TYPE GUARDS
@@ -55,6 +56,7 @@ export interface ChatRemoveRequestEvent {
 export interface ChatModel {
     readonly onDidChange: Event<ChatChangeEvent>;
     readonly id: string;
+    readonly location: ChatAgentLocation;
     getRequests(): ChatRequestModel[];
 }
 
@@ -203,7 +205,7 @@ export class ChatModelImpl implements ChatModel {
     protected _requests: ChatRequestModelImpl[];
     protected _id: string;
 
-    constructor() {
+    constructor(public readonly location = ChatAgentLocation.Panel) {
         // TODO accept serialized data as a parameter to restore a previously saved ChatModel
         this._requests = [];
         this._id = generateUuid();
@@ -217,8 +219,8 @@ export class ChatModelImpl implements ChatModel {
         return this._id;
     }
 
-    addRequest(request: ChatRequest, parseChatRequest: ParsedChatRequest): ChatRequestModelImpl {
-        const requestModel = new ChatRequestModelImpl(this, request, parseChatRequest);
+    addRequest(parsedChatRequest: ParsedChatRequest): ChatRequestModelImpl {
+        const requestModel = new ChatRequestModelImpl(this, parsedChatRequest);
         this._requests.push(requestModel);
         this._onDidChangeEmitter.fire({
             kind: 'addRequest',
@@ -234,9 +236,9 @@ export class ChatRequestModelImpl implements ChatRequestModel {
     protected _request: ChatRequest;
     protected _response: ChatResponseModelImpl;
 
-    constructor(session: ChatModel, request: ChatRequest, public readonly message: ParsedChatRequest) {
+    constructor(session: ChatModel, public readonly message: ParsedChatRequest) {
         // TODO accept serialized data as a parameter to restore a previously saved ChatRequestModel
-        this._request = request;
+        this._request = message.request;
         this._id = generateUuid();
         this._session = session;
         this._response = new ChatResponseModelImpl(this._id);

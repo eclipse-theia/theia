@@ -34,7 +34,16 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatRequestModelImpl, ChatResponseContent, CodeChatResponseContentImpl, MarkdownChatResponseContentImpl } from './chat-model';
 import { getMessages } from './chat-util';
 
+export enum ChatAgentLocation {
+    Panel = 'panel',
+    Terminal = 'terminal',
+    Notebook = 'notebook',
+    Editor = 'editor'
+}
+
 export namespace ChatAgentLocation {
+    export const ALL: ChatAgentLocation[] = [ChatAgentLocation.Panel, ChatAgentLocation.Terminal, ChatAgentLocation.Notebook, ChatAgentLocation.Editor];
+
     export function fromRaw(value: string): ChatAgentLocation {
         switch (value) {
             case 'panel': return ChatAgentLocation.Panel;
@@ -44,12 +53,6 @@ export namespace ChatAgentLocation {
         }
         return ChatAgentLocation.Panel;
     }
-}
-export enum ChatAgentLocation {
-    Panel = 'panel',
-    Terminal = 'terminal',
-    Notebook = 'notebook',
-    Editor = 'editor'
 }
 
 export interface ChatAgentData extends Agent {
@@ -111,6 +114,7 @@ export class DefaultChatAgent implements ChatAgent {
             });
             return;
         }
+
         if (isLanguageModelStreamResponse(languageModelResponse)) {
             for await (const token of languageModelResponse.stream) {
                 const newContents = this.parse(token, request.response.response.content);

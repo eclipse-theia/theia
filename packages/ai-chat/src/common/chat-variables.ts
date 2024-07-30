@@ -19,27 +19,16 @@
  *--------------------------------------------------------------------------------------------*/
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatVariables.ts
 
-import { injectable } from '@theia/core/shared/inversify';
+import { AIVariableContext } from '@theia/ai-core';
+import { ChatModel, ChatRequest } from './chat-model';
 
-export interface IChatVariableData {
-    id: string;
-    name: string;
+export interface ChatVariableContext extends AIVariableContext {
+    request: ChatRequest;
+    model: ChatModel;
 }
-export const ChatVariablesService = Symbol('ChatVariablesService');
-export interface ChatVariablesService {
-    hasVariable(name: string): boolean;
-    getVariable(name: string): IChatVariableData | undefined;
-    getVariables(): Iterable<Readonly<IChatVariableData>>;
-}
-@injectable()
-export class DummyChatVariablesService implements ChatVariablesService {
-    hasVariable(name: string): boolean {
-        return false;
-    }
-    getVariable(name: string): IChatVariableData | undefined {
-        return undefined
-    }
-    getVariables(): Iterable<Readonly<IChatVariableData>> {
-        return [];
+
+export namespace ChatVariableContext {
+    export function is(obj: unknown): obj is ChatVariableContext {
+        return !!obj && typeof obj === 'object' && 'request' in obj && 'model' in obj;
     }
 }

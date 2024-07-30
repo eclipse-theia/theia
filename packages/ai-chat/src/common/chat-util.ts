@@ -26,16 +26,17 @@ export interface ChatMessage {
 export const getMessages = (model: ChatModel, includeResponseInProgress = false): ChatMessage[] =>
     model.getRequests().flatMap(request => {
         const messages: ChatMessage[] = [];
+        const query = request.message.parts.map(part => part.promptText).join('');
         messages.push({
             actor: 'user',
             type: 'text',
-            query: request.request.text,
+            query,
         });
         if (request.response.isComplete || includeResponseInProgress) {
             messages.push({
                 actor: 'ai',
                 type: 'text',
-                query: request.message.text,
+                query: request.response.response.asString(),
             });
         }
         return messages;
