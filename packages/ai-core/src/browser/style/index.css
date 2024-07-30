@@ -9,3 +9,11 @@
 .language-model-container .theia-select {
   margin-left: var(--theia-ui-padding);
 }
+
+.ai-templates {
+  display: grid;
+  /** Display content in 3 columns */
+  grid-template-columns: 1fr auto auto;
+  /** add a 3px gap between rows */
+  row-gap: 3px;
+}

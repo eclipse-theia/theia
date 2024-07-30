@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { URI } from '@theia/core';
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import { PromptTemplate } from './types';
 
@@ -26,6 +27,11 @@ export interface PromptService {
      * @param id the id of the {@link PromptTemplate}
      */
     getRawPrompt(id: string): PromptTemplate | undefined;
+    /**
+     * Retrieve the default raw {@link PromptTemplate} object.
+     * @param id the id of the {@link PromptTemplate}
+     */
+    getDefaultRawPrompt(id: string): PromptTemplate | undefined;
     /**
      * Allows to directly replace placeholders in the prompt. The supported format is 'Hi ${name}!'.
      * The placeholder is then searched inside the args object and replaced.
@@ -58,6 +64,28 @@ export interface PromptCustomizationService {
      * @param id the id of the {@link PromptTemplate} to check
      */
     getCustomizedPromptTemplate(id: string): string | undefined
+
+    /**
+     * Edit the template. If the content is specified, is will be
+     * used to customize the template. Otherwise, the behavior depends
+     * on the implementation. Implementation may for example decide to
+     * open an editor, or request more information from the user, ...
+     * @param id the template id.
+     * @param content optional content to customize the template.
+     */
+    editTemplate(id: string, content?: string): void;
+
+    /**
+     * Reset the template to its default value.
+     * @param id the template id.
+     */
+    resetTemplate(id: string): void;
+
+    /**
+     * Return the template id for a given template file.
+     * @param uri the uri of the template file
+     */
+    getTemplateIDFromURI(uri: URI): string | undefined;
 }
 
 @injectable()
@@ -75,6 +103,9 @@ export class PromptServiceImpl implements PromptService {
                 return { id, template };
             }
         }
+        return this.getDefaultRawPrompt(id);
+    }
+    getDefaultRawPrompt(id: string): PromptTemplate | undefined {
         return this._prompts[id];
     }
     getPrompt(id: string, args?: { [key: string]: unknown }): string | undefined {

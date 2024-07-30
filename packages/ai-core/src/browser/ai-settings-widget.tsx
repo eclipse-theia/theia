@@ -14,10 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContributionProvider, ILogger, nls } from '@theia/core';
+import { ContributionProvider, ILogger } from '@theia/core';
 import { codicon, Panel, ReactWidget } from '@theia/core/lib/browser';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
-import { Agent, LanguageModel, LanguageModelRegistry, PromptTemplate } from '../common/';
+import { Agent, LanguageModel, LanguageModelRegistry, PromptCustomizationService, PromptTemplate } from '../common/';
 import * as React from '@theia/core/shared/react';
 import { AISettingsService } from './ai-settings-service';
 import '../../src/browser/style/index.css';
@@ -26,7 +26,7 @@ import '../../src/browser/style/index.css';
 export class AISettingsWidget extends ReactWidget {
 
     static readonly ID = 'ai_settings_widget';
-    static readonly LABEL = nls.localizeByDefault('AI Settings');
+    static readonly LABEL = 'AI Settings';
 
     protected readonly settingsWidget: Panel;
 
@@ -38,6 +38,9 @@ export class AISettingsWidget extends ReactWidget {
 
     @inject(AISettingsService)
     protected readonly aiSettingsService: AISettingsService;
+
+    @inject(PromptCustomizationService)
+    protected readonly promptCustomizationService: PromptCustomizationService;
 
     @inject(ILogger)
     protected logger: ILogger;
@@ -94,7 +97,7 @@ export class AISettingsWidget extends ReactWidget {
                 {this.agents.getContributions().map(agent =>
                     <div key={agent.id}>
                         <h2>{agent.name}</h2>
-                        <AgentTemplates agent={agent} key={agent.id} />
+                        <AgentTemplates agent={agent} key={agent.id} promptCustomizationService={this.promptCustomizationService} />
                         <div className='language-model-container'>
                             <label className="theia-header no-select" htmlFor={`purpose-select-${agent.id}`}>Purpose:</label>
                             <select
@@ -145,17 +148,38 @@ export class AISettingsWidget extends ReactWidget {
 
 interface AgentProps {
     agent: Agent;
+    promptCustomizationService: PromptCustomizationService;
 }
 
-const AgentTemplates: React.FC<AgentProps> = ({ agent }) => <div>
-    {agent.promptTemplates.map(template => <TemplateSetting agentId={agent.id} template={template} key={agent.id + '.' + template.id} />)}
+const AgentTemplates: React.FC<AgentProps> = ({ agent, promptCustomizationService }) => <div>
+    <div className='ai-templates'>
+        {agent.promptTemplates.map(template =>
+            <TemplateSetting
+                key={agent.id + '.' + template.id}
+                agentId={agent.id}
+                template={template}
+                promptCustomizationService={promptCustomizationService}
+            />)}
+    </div>
 </div>;
 
 interface TemplateSettingProps {
     agentId: string;
     template: PromptTemplate;
+    promptCustomizationService: PromptCustomizationService;
 }
 
-const TemplateSetting: React.FC<TemplateSettingProps> = ({ agentId, template }) => <div>
-    {agentId}.{template.id}
-</div>;
+const TemplateSetting: React.FC<TemplateSettingProps> = ({ agentId, template, promptCustomizationService }) => {
+    const openTemplate = React.useCallback(async () => {
+        promptCustomizationService.editTemplate(template.id);
+    }, [template, promptCustomizationService]);
+    const resetTemplate = React.useCallback(async () => {
+        promptCustomizationService.resetTemplate(template.id);
+    }, [promptCustomizationService, template]);
+
+    return <>
+        {template.id}
+        <button className='theia-button main' onClick={openTemplate}>Edit</button>
+        <button className='theia-button secondary' onClick={resetTemplate}>Reset</button>
+    </>;
+};

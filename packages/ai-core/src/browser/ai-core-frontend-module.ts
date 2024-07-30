@@ -28,8 +28,8 @@ import {
     languageModelDelegatePath,
     languageModelRegistryDelegatePath,
     PromptService,
-    PromptServiceImpl,
-    PromptCustomizationService
+    PromptCustomizationService,
+    PromptServiceImpl
 } from '../common';
 import {
     FrontendLanguageModelRegistryImpl,

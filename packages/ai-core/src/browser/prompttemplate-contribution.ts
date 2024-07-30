@@ -17,11 +17,11 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { GrammarDefinition, GrammarDefinitionProvider, LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/monaco/lib/browser/textmate';
 import * as monaco from '@theia/monaco-editor-core';
-import { Command, CommandContribution, CommandRegistry } from '@theia/core';
+import { Command, CommandContribution, CommandRegistry, MessageService } from '@theia/core';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 
 import { codicon, Widget } from '@theia/core/lib/browser';
-import { EditorWidget } from '@theia/editor/lib/browser';
+import { EditorWidget, ReplaceOperation } from '@theia/editor/lib/browser';
 import { PromptCustomizationService, PromptService } from '../common';
 
 const PROMPT_TEMPLATE_LANGUAGE_ID = 'theia-ai-prompt-template';
@@ -33,10 +33,10 @@ export const DISCARD_PROMPT_TEMPLATE_CUSTOMIZATIONS: Command = {
     category: 'Theia AI Prompt Templates'
 };
 
-// TODO JF remove test class
-export const TEST_COMMAND: Command = {
-    id: 'theia-ai-prompt-template:test-command',
-    label: 'Test Prompt Service',
+// TODO this command is mainly for testing purposes
+export const SHOW_ALL_PROMPTS_COMMAND: Command = {
+    id: 'theia-ai-prompt-template:show-prompts-command',
+    label: 'Show all prompts',
     iconClass: codicon('beaker'),
     category: 'Theia AI Prompt Templates',
 };
@@ -47,9 +47,11 @@ export class PromptTemplateContribution implements LanguageGrammarDefinitionCont
     @inject(PromptService)
     private readonly promptService: PromptService;
 
-    @inject(PromptCustomizationService)
-    private readonly promptCustomizationService: PromptCustomizationService;
+    @inject(MessageService)
+    private readonly messageService: MessageService;
 
+    @inject(PromptCustomizationService)
+    protected readonly customizationService: PromptCustomizationService;
 
     readonly config: monaco.languages.LanguageConfiguration =
         {
@@ -99,8 +101,8 @@ export class PromptTemplateContribution implements LanguageGrammarDefinitionCont
             execute: (widget: EditorWidget) => this.discard(widget)
         });
 
-        commands.registerCommand(TEST_COMMAND, {
-            execute: () => this.testPromptService()
+        commands.registerCommand(SHOW_ALL_PROMPTS_COMMAND, {
+            execute: () => this.showAllPrompts()
         });
     }
 
@@ -112,17 +114,55 @@ export class PromptTemplateContribution implements LanguageGrammarDefinitionCont
     }
 
     protected canDiscard(widget: EditorWidget): boolean {
-        // TODO JF
-        return false;
+        const resourceUri = widget.editor.uri;
+        const id = this.customizationService.getTemplateIDFromURI(resourceUri);
+        if (id === undefined) {
+            return false;
+        }
+        const rawPrompt = this.promptService.getRawPrompt(id);
+        const defaultPrompt = this.promptService.getDefaultRawPrompt(id);
+        return rawPrompt?.template !== defaultPrompt?.template;
     }
 
-    protected discard(widget: EditorWidget): void {
-        // TODO JF
+    protected async discard(widget: EditorWidget): Promise<void> {
+        const resourceUri = widget.editor.uri;
+        const id = this.customizationService.getTemplateIDFromURI(resourceUri);
+        if (id === undefined) {
+            return;
+        }
+        const defaultPrompt = this.promptService.getDefaultRawPrompt(id);
+        if (defaultPrompt === undefined) {
+            return;
+        }
+
+        const source: string = widget.editor.document.getText();
+        const lastLine = widget.editor.document.getLineContent(widget.editor.document.lineCount);
+
+        const replaceOperation: ReplaceOperation = {
+            range: {
+                start: {
+                    line: 0,
+                    character: 0
+                },
+                end: {
+                    line: widget.editor.document.lineCount,
+                    character: lastLine.length
+                }
+            },
+            text: defaultPrompt.template
+        };
+
+        await widget.editor.replaceText({
+            source,
+            replaceOperations: [replaceOperation]
+        });
     }
 
-    private testPromptService(): void {
-        console.log(`Test customizationservice: ${this.promptCustomizationService.isPromptTemplateCustomized('foo')}`);
-        console.log(`Prompts:\n${JSON.stringify(this.promptService.getAllPrompts())}`);
+    private showAllPrompts(): void {
+        const allPrompts = this.promptService.getAllPrompts();
+        Object.keys(allPrompts).forEach(id => {
+            this.messageService.info(`Prompt Template ID: ${id}\n${allPrompts[id].template}`, 'Got it');
+        });
     }
 
     registerToolbarItems(registry: TabBarToolbarRegistry): void {
