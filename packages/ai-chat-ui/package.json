@@ -5,7 +5,9 @@
   "dependencies": {
     "@theia/ai-chat": "1.49.0",
     "@theia/core": "1.49.0",
+    "@theia/editor": "1.49.0",
     "@theia/filesystem": "1.49.0",
+    "@theia/monaco": "1.49.0",
     "@theia/workspace": "1.49.0",
     "minimatch": "^5.1.0",
     "tslib": "^2.6.2",

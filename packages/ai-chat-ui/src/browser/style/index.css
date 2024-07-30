@@ -134,3 +134,32 @@ div:last-child>.theia-ChatNode {
 .theia-ChatInputOptions .option:hover {
     opacity: 1;
 }
+
+.theia-CodePartRenderer-root {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.theia-CodePartRenderer-left {
+    flex-grow: 1;
+}
+
+.theia-CodePartRenderer-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 4px;
+}
+
+.theia-CodePartRenderer-right button {
+    margin-left: 4px;
+}
+
+.theia-CodePartRenderer-separator {
+    width: 100%;
+    height: 1px;
+    background-color: #ccc;
+}

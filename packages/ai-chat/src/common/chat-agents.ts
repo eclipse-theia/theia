@@ -31,7 +31,7 @@ import {
 } from '@theia/ai-core/lib/common';
 import { generateUuid, ILogger, isArray } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { ChatRequestModelImpl, ChatResponseContent, MarkdownChatResponseContentImpl } from './chat-model';
+import { ChatRequestModelImpl, ChatResponseContent, CodeChatResponseContentImpl, MarkdownChatResponseContentImpl } from './chat-model';
 import { getMessages } from './chat-util';
 
 export namespace ChatAgentLocation {
@@ -119,6 +119,46 @@ export class DefaultChatAgent implements ChatAgent {
                 } else {
                     request.response.response.addContent(newContents);
                 }
+
+                const lastContent = request.response.response.content.pop();
+                if (lastContent === undefined) {
+                    return;
+                }
+                const text = lastContent.asString?.();
+                if (text === undefined) {
+                    return;
+                }
+                let curSearchIndex = 0;
+                const result: ChatResponseContent[] = [];
+                while (curSearchIndex < text.length) {
+                    const codeStartIndex = text.indexOf('```', curSearchIndex);
+                    if (codeStartIndex === -1) {
+                        break;
+                    }
+                    const newLineIndex = text.indexOf('\n', codeStartIndex + 3);
+                    let language = '';
+                    if (codeStartIndex + 3 === newLineIndex) {
+                        // no language
+                    } else {
+                        language = text.substring(codeStartIndex + 3, newLineIndex);
+                    }
+                    const codeEndIndex = text.indexOf('```', codeStartIndex + 3);
+                    if (codeEndIndex === -1) {
+                        break;
+                    }
+                    result.push(new MarkdownChatResponseContentImpl(text.substring(curSearchIndex, codeStartIndex)));
+                    const codeText = text.substring(codeStartIndex + 3, codeEndIndex);
+                    // FIXME remove ! after language is optional
+                    result.push(new CodeChatResponseContentImpl(codeText, language!));
+                    curSearchIndex = codeEndIndex + 3;
+                }
+                if (result.length > 0) {
+                    result.forEach(r => {
+                        request.response.response.addContent(r);
+                    });
+                } else {
+                    request.response.response.addContent(lastContent);
+                }
             }
             request.response.complete();
             this.recordingService.recordResponse({
@@ -149,12 +189,6 @@ export class DefaultChatAgent implements ChatAgent {
     }
 
     private parse(token: LanguageModelStreamResponsePart, previousContent: ChatResponseContent[]): ChatResponseContent | ChatResponseContent[] {
-        // TODO does it make sense to add it here? This code breaks the parsing
-        // if (token.tool_calls) {
-        //     const previousCommands = previousContent.filter(isCommandChatResponseContent);
-        //     const newTools = token.tool_calls.filter(tc => tc.function && tc.function.name && previousCommands.find(c => c.command.id === tc.function?.name) === undefined);
-        //     return newTools.map(t => new CommandChatResponseContentImpl({ id: t.function!.name! }, t.function!.arguments ? JSON.parse(t.function!.arguments) : undefined));
-        // }
         return new MarkdownChatResponseContentImpl(token.content ?? '');
     }
 }

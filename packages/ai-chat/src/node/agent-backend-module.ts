@@ -18,17 +18,12 @@ import { Agent } from '@theia/ai-core/lib/common';
 import { bindContributionProvider } from '@theia/core';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import {
-    ChatAgent,
-    ChatAgentService,
+    ChatAgent, ChatAgentService,
     ChatAgentServiceImpl,
     ChatRequestParser,
-    ChatRequestParserImpl,
-    ChatService,
-    ChatServiceImpl,
-    ChatVariablesService,
-    DefaultChatAgent,
-    DummyChatVariablesService
+    ChatRequestParserImpl, ChatService, ChatServiceImpl, ChatVariablesService, DefaultChatAgent, DummyChatVariablesService
 } from '../common';
+import { MockCodeChatAgent } from '../common/mock-code-chat-agent';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, Agent);
@@ -49,4 +44,7 @@ export default new ContainerModule(bind => {
     bind(DefaultChatAgent).toSelf().inSingletonScope();
     bind(Agent).toService(DefaultChatAgent);
     bind(ChatAgent).toService(DefaultChatAgent);
+
+    bind(MockCodeChatAgent).toSelf().inSingletonScope();
+    bind(ChatAgent).toService(MockCodeChatAgent);
 });

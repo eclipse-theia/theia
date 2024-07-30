@@ -19,7 +19,8 @@
  *--------------------------------------------------------------------------------------------*/
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatModel.ts
 
-import { Command, Emitter, Event, generateUuid } from '@theia/core';
+import { Command, Emitter, Event, generateUuid, URI } from '@theia/core';
+import { Position } from '@theia/core/shared/vscode-languageserver-protocol';
 import { MarkdownString, MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { ParsedChatRequest } from './chat-parsed-request';
 
@@ -112,6 +113,24 @@ export interface MarkdownChatResponseContent
     content: MarkdownString;
 }
 
+export interface CodeChatResponseContent
+    extends BaseChatResponseContent {
+    kind: 'code';
+    code: string;
+    language?: string;
+    location?: Location;
+}
+
+export interface Location {
+    uri: URI;
+    position: Position;
+}
+export function isLocation(obj: unknown): obj is Location {
+    return !!obj && typeof obj === 'object' &&
+        'uri' in obj && (obj as { uri: unknown }).uri instanceof URI &&
+        'position' in obj && Position.is((obj as { position: unknown }).position);
+}
+
 export interface CommandChatResponseContent
     extends BaseChatResponseContent {
     kind: 'command';
@@ -143,11 +162,20 @@ export const isCommandChatResponseContent = (
     'command' in obj &&
     Command.is((obj as { command: unknown }).command);
 
+export const isCodeChatResponseContent = (
+    obj: unknown
+): obj is CodeChatResponseContent =>
+    isBaseChatResponseContent(obj) &&
+    obj.kind === 'code' &&
+    'code' in obj &&
+    typeof (obj as { code: unknown }).code === 'string';
+
 export type ChatResponseContent =
     | BaseChatResponseContent
     | TextChatResponseContent
     | MarkdownChatResponseContent
-    | CommandChatResponseContent;
+    | CommandChatResponseContent
+    | CodeChatResponseContent;
 
 export interface ChatResponse {
     readonly content: ChatResponseContent[];
@@ -275,6 +303,41 @@ export class MarkdownChatResponseContentImpl implements MarkdownChatResponseCont
     }
     // TODO add codeblock? add link?
 }
+
+export class CodeChatResponseContentImpl implements CodeChatResponseContent {
+    kind: 'code' = 'code';
+    protected _code: string;
+    protected _language: string;
+    protected _location?: Location;
+
+    constructor(code: string, language: string, location?: Location) {
+        this._code = code;
+        this._language = language;
+        this._location = location;
+    }
+
+    get code(): string {
+        return this._code;
+    }
+
+    get language(): string {
+        return this._language;
+    }
+
+    get location(): Location | undefined {
+        return this._location;
+    }
+
+    asString(): string {
+        return `\`\`\`${this._language ?? ''}\n${this._code}\n\`\`\``;
+    }
+
+    merge(nextChatResponseContent: CodeChatResponseContent): boolean {
+        this._code += `${nextChatResponseContent.code}`;
+        return true;
+    }
+}
+
 export const COMMAND_CHAT_RESPONSE_COMMAND: Command = {
     id: 'ai-chat.command-chat-response.generic'
 };
@@ -292,7 +355,7 @@ export class CommandChatResponseContentImpl implements CommandChatResponseConten
         return this._command;
     }
 
-    get commandHandler(): (() => Promise<void>)|undefined {
+    get commandHandler(): (() => Promise<void>) | undefined {
         return this._commandHandler;
     }
 

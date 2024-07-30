@@ -14,17 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContainerModule } from '@theia/core/shared/inversify';
-import { WidgetFactory, bindViewContribution,  } from '@theia/core/lib/browser';
 import { bindContributionProvider, CommandContribution } from '@theia/core';
+import { bindViewContribution, WidgetFactory, } from '@theia/core/lib/browser';
+import { ContainerModule } from '@theia/core/shared/inversify';
+import { AIChatCommandContribution } from './ai-chat-command-contribution';
 import { AIChatContribution } from './aichat-ui-contribution';
-import { ChatViewWidget } from './chat-view-widget';
+import { ChatInputWidget } from './chat-input-widget';
+import { CodePartRenderer, MarkdownPartRenderer, TextPartRenderer } from './chat-response-renderer';
 import { createChatViewTreeWidget } from './chat-tree-view';
 import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
-import { ChatInputWidget } from './chat-input-widget';
+import { ChatViewWidget } from './chat-view-widget';
 import { ChatResponsePartRenderer } from './types';
-import { MarkdownPartRenderer, TextPartRenderer } from './chat-response-renderer';
-import { AIChatCommandContribution } from './ai-chat-command-contribution';
 
 import '../../src/browser/style/index.css';
 
@@ -54,6 +54,7 @@ export default new ContainerModule(bind => {
     })).inSingletonScope();
     bind(ChatResponsePartRenderer).to(TextPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(MarkdownPartRenderer).inSingletonScope();
+    bind(ChatResponsePartRenderer).to(CodePartRenderer).inSingletonScope();
 
     bind(CommandContribution).to(AIChatCommandContribution);
 });
