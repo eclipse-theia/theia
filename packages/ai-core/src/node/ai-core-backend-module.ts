@@ -29,8 +29,6 @@ import {
     LanguageModelProvider,
     PromptService,
     PromptServiceImpl,
-    PromptCollectionService,
-    PromptCollectionServiceImpl,
     LanguageModelDelegateClient,
     LanguageModelFrontendDelegate,
     LanguageModelRegistryFrontendDelegate,
@@ -78,6 +76,4 @@ export default new ContainerModule(bind => {
     bind(PromptServiceImpl).toSelf().inSingletonScope();
     bind(PromptService).toService(PromptServiceImpl);
 
-    bind(PromptCollectionServiceImpl).toSelf().inSingletonScope();
-    bind(PromptCollectionService).toService(PromptCollectionServiceImpl);
 });

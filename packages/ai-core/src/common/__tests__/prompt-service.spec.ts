@@ -16,8 +16,7 @@
 
 import 'reflect-metadata';
 import { Container } from 'inversify';
-import { PromptService, PromptServiceImpl, PromptCollectionService, PromptCollectionServiceImpl } from '../prompt-service';
-import { stub } from 'sinon';
+import { PromptService, PromptServiceImpl } from '../prompt-service';
 import { expect } from 'chai';
 
 describe('PromptService', () => {
@@ -27,16 +26,9 @@ describe('PromptService', () => {
         const container = new Container();
         container.bind<PromptService>(PromptService).to(PromptServiceImpl).inSingletonScope();
 
-        const promptCollectionService = new PromptCollectionServiceImpl();
-
-        // Mock the getAllPrompts method
-        stub(promptCollectionService, 'getAllPrompts').returns([
-            { id: '1', template: 'Hello, ${name}!' },
-            { id: '2', template: 'Goodbye, ${name}!' }
-        ]);
-
-        container.bind<PromptCollectionService>(PromptCollectionService).toConstantValue(promptCollectionService);
         promptService = container.get<PromptService>(PromptService);
+        promptService.storePrompt('1', 'Hello, ${name}!');
+        promptService.storePrompt('2', 'Goodbye, ${name}!');
     });
 
     it('should initialize prompts from PromptCollectionService', () => {

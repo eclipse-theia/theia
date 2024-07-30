@@ -14,36 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContributionProvider } from '@theia/core';
-import { inject, injectable, named, optional, postConstruct } from '@theia/core/shared/inversify';
-import { Agent } from './agent';
+import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import { PromptTemplate } from './types';
 
 export interface PromptMap { [id: string]: PromptTemplate }
-
-export const PromptCollectionService = Symbol('PromptCollectionService');
-export interface PromptCollectionService {
-    getAllPrompts(): PromptTemplate[];
-}
-@injectable()
-export class PromptCollectionServiceImpl implements PromptCollectionService {
-
-    @inject(ContributionProvider) @named(Agent)
-    protected readonly agents: ContributionProvider<Agent>;
-
-    protected _prompts: PromptTemplate[] = [];
-
-    @postConstruct()
-    public init(): void {
-        this.agents.getContributions().forEach(a => {
-            this._prompts.push(...a.promptTemplates);
-        });
-    }
-
-    getAllPrompts(): PromptTemplate[] {
-        return this._prompts;
-    }
-}
 
 export const PromptService = Symbol('PromptService');
 export interface PromptService {
@@ -89,20 +63,10 @@ export interface PromptCustomizationService {
 @injectable()
 export class PromptServiceImpl implements PromptService {
 
-    @inject(PromptCollectionService)
-    protected readonly promptCollectionService: PromptCollectionService;
-
     @inject(PromptCustomizationService) @optional()
     protected readonly customizationService: PromptCustomizationService | undefined;
 
     protected _prompts: PromptMap = {};
-
-    @postConstruct()
-    public init(): void {
-        this.promptCollectionService.getAllPrompts().forEach(template => {
-            this._prompts[template.id] = template;
-        });
-    }
 
     getRawPrompt(id: string): PromptTemplate | undefined {
         if (this.customizationService !== undefined && this.customizationService.isPromptTemplateCustomized(id)) {
