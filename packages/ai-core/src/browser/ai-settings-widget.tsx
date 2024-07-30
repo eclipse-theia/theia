@@ -50,7 +50,7 @@ export class AISettingsWidget extends ReactWidget {
     // map from agent id to selected purpose
     protected selectedPurposes: Map<string, string> = new Map();
     // map from agent id to selected purpose and model
-    protected selectedModels: Map<string, Map<string, LanguageModel>> = new Map();
+    protected selectedModels: Map<string, Map<string, string>> = new Map();
 
     @postConstruct()
     protected init(): void {
@@ -63,6 +63,18 @@ export class AISettingsWidget extends ReactWidget {
         this.languageModelRegistry.getLanguageModels().then(models => {
             this.languageModels = models ?? [];
             this.update();
+        });
+
+        this.agents.getContributions().forEach(agent => {
+            const settings = this.aiSettingsService.getAgentSettings(agent.id);
+            settings?.languageModelRequirements.forEach(req => {
+                if (this.selectedModels.get(agent.id) === undefined) {
+                    this.selectedModels.set(agent.id, new Map());
+                }
+                if (req.identifier) {
+                    this.selectedModels.get(agent.id)?.set(req.purpose, req.identifier)
+                }
+            })
         });
 
         this.update();
@@ -78,16 +90,11 @@ export class AISettingsWidget extends ReactWidget {
             console.error('No purpose selected');
             return;
         }
-        const selectedModel = this.languageModels?.find(model => model.id === event.target.value);
-        if (!selectedModel) {
-            console.error('Could not find language model with id', event.target.value);
-            return;
-        }
         if (this.selectedModels.get(agentId) === undefined) {
             this.selectedModels.set(agentId, new Map());
         }
-        this.selectedModels.get(agentId)!.set(selectedPurpose, selectedModel);
-        this.aiSettingsService.updateAgentSettings(agentId, { languageModelRequirements: [{ purpose: selectedPurpose, identifier: selectedModel.id }] });
+        this.selectedModels.get(agentId)!.set(selectedPurpose, event.target.value);
+        this.aiSettingsService.updateAgentSettings(agentId, { languageModelRequirements: [{ purpose: selectedPurpose, identifier: event.target.value }] });
         this.update();
     };
 
@@ -128,7 +135,7 @@ export class AISettingsWidget extends ReactWidget {
                                     <select
                                         className="theia-select"
                                         id={`model-select-${agent.id}`}
-                                        value={this.selectedModels?.get(agent.id)?.get(this.selectedPurposes.get(agent.id)!)?.id}
+                                        value={this.selectedModels?.get(agent.id)?.get(this.selectedPurposes.get(agent.id)!)}
                                         onChange={event => this.onSelectedModelChange(agent.id, event)}
                                     >
                                         <option value=""></option>
