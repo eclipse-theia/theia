@@ -29,6 +29,7 @@ import {
     isLanguageModelStreamResponse,
     isLanguageModelStreamResponseDelegate,
     isLanguageModelTextResponse,
+    isModelMatching,
     LanguageModel,
     LanguageModelDelegateClient,
     LanguageModelFrontendDelegate,
@@ -36,8 +37,10 @@ import {
     LanguageModelRegistryFrontendDelegate,
     LanguageModelRequest,
     LanguageModelResponse,
+    LanguageModelSelector,
     LanguageModelStreamResponsePart,
 } from '../common';
+import { AISettingsService } from './ai-settings-service';
 
 export interface TokenReceiver {
     send(id: string, token: LanguageModelStreamResponsePart | undefined): void;
@@ -81,6 +84,9 @@ export class FrontendLanguageModelRegistryImpl
 
     @inject(OutputChannelManager)
     protected outputChannelManager: OutputChannelManager;
+
+    @inject(AISettingsService)
+    protected settingsService: AISettingsService;
 
     @postConstruct()
     protected override init(): void {
@@ -222,6 +228,19 @@ export class FrontendLanguageModelRegistryImpl
         if (streamState.resolve) {
             streamState.resolve(token);
         }
+    }
+
+    override async selectLanguageModels(request: LanguageModelSelector): Promise<LanguageModel[]> {
+        await this.initialized;
+        const userSettings = this.settingsService.getAgentSettings(request.agent)?.languageModelRequirements.find(req => req.purpose === request.purpose);
+        if (userSettings?.identifier) {
+            const model = await this.getLanguageModel(userSettings.identifier);
+            if (model) {
+                return [model];
+            }
+        }
+
+        return this.languageModels.filter(model => isModelMatching(request, model));
     }
 }
 

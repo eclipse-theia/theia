@@ -78,11 +78,25 @@ export class DefaultChatAgent implements ChatAgent {
         id: 'mock-template',
         template: 'Hello, ${name}! This is just another mock template. Nothing useful here either.',
     }];
-    languageModelRequirements: Omit<LanguageModelSelector, 'agentId'>[] = [];
+    // FIXME: placeholder values
+    languageModelRequirements: Omit<LanguageModelSelector, 'agent'>[] = [{
+        purpose: 'chat',
+        identifier: 'openai/gpt-4o',
+    },
+    {
+        purpose: 'autocomplete',
+        name: 'default-autocomplete-model',
+        version: '0.0.1',
+        family: 'default-family',
+        tokens: 256,
+        identifier: 'default-identifier',
+        vendor: 'default-vendor'
+    }];
     locations: ChatAgentLocation[] = [];
 
     async invoke(request: ChatRequestModelImpl): Promise<void> {
-        const languageModels = await this.languageModelRegistry.getLanguageModels();
+        const selector = this.languageModelRequirements.find(req => req.purpose === 'chat')!;
+        const languageModels = await this.languageModelRegistry.selectLanguageModels({ agent: this.id, ...selector });
         if (languageModels.length === 0) {
             throw new Error('Couldn\'t find a language model. Please check your setup!');
         }

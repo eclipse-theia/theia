@@ -45,6 +45,7 @@ import { FrontendPromptCustomizationServiceImpl } from './frontend-prompt-custom
 import { AISettingsWidget } from './ai-settings-widget';
 import { AISettingsViewContribution } from './ai-settings-view-contribution';
 import { AICoreFrontendApplicationContribution } from './ai-core-frontend-application-contribution';
+import { AISettingsService } from './ai-settings-service';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, LanguageModelProvider);
@@ -82,7 +83,7 @@ export default new ContainerModule(bind => {
     bind(CommandContribution).toService(PromptTemplateContribution);
     bind(TabBarToolbarContribution).toService(PromptTemplateContribution);
 
-    bind(AISettingsWidget).toSelf().inSingletonScope();
+    bind(AISettingsWidget).toSelf();
     bind(WidgetFactory)
         .toDynamicValue(ctx => ({
             id: AISettingsWidget.ID,
@@ -91,6 +92,6 @@ export default new ContainerModule(bind => {
         .inSingletonScope();
 
     bindViewContribution(bind, AISettingsViewContribution);
-
+ 	bind(AISettingsService).toSelf().inRequestScope();
     bind(FrontendApplicationContribution).to(AICoreFrontendApplicationContribution).inSingletonScope();
 });

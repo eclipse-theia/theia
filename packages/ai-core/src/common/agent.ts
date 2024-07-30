@@ -35,5 +35,5 @@ export interface Agent {
     readonly promptTemplates: PromptTemplate[];
 
     /** Required language models. This includes the purpose and optional language model selector arguments. See #47. */
-    readonly languageModelRequirements: Omit<LanguageModelSelector, 'agentId'>[];
+    readonly languageModelRequirements: Omit<LanguageModelSelector, 'agent'>[];
 }

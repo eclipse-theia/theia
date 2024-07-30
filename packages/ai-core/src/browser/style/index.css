@@ -1,0 +1,11 @@
+.theia-ai-settings-container {
+  padding: var(--theia-ui-padding);
+}
+
+.language-model-container {
+  padding-top: calc(2 * var(--theia-ui-padding));
+}
+
+.language-model-container .theia-select {
+  margin-left: var(--theia-ui-padding);
+}

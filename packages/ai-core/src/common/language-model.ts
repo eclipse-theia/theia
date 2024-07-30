@@ -104,7 +104,7 @@ interface VsCodeLanguageModelSelector {
 }
 
 export interface LanguageModelSelector extends VsCodeLanguageModelSelector {
-    readonly actor: string;
+    readonly agent: string;
     readonly purpose: string;
 }
 
