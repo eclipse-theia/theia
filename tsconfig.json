@@ -76,6 +76,9 @@
       "path": "packages/ai-openai"
     },
     {
+      "path": "packages/ai-terminal"
+    },
+    {
       "path": "packages/bulk-edit"
     },
     {
