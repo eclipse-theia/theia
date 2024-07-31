@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { OpenAIEmbeddings } from '@langchain/openai'
+import { OpenAIEmbeddings } from '@langchain/openai';
 import { MemoryVectorStore } from 'langchain/vectorstores/memory';
 import { TextLoader } from 'langchain/document_loaders/fs/text';
 import { injectable } from '@theia/core/shared/inversify';
@@ -26,6 +26,7 @@ export class RagServiceImpl implements RagService {
     protected markInitialized: () => void;
     protected initialized: Promise<void> = new Promise(resolve => { this.markInitialized = resolve; });
 
+    // TODO instead of using the OpenAIEmbeddings we should wrap our LanguageModelProvider
     protected vectorStore = new MemoryVectorStore(new OpenAIEmbeddings({ model: 'text-embedding-3-large', }));
     protected loaded = new Set<string>();
 

@@ -12,7 +12,7 @@
     "@theia/scm-extra": "1.52.0",
     "@theia/workspace": "1.52.0",
     "@types/diff": "^5.2.1",
-    "@types/p-queue": "^2.3.1",
+    "@types/p-queue": "^3.2.1",
     "diff": "^5.2.0",
     "dugite-extra": "0.1.17",
     "find-git-exec": "^0.0.4",
@@ -20,7 +20,7 @@
     "luxon": "^2.4.0",
     "node-ssh": "^12.0.1",
     "octicons": "^7.1.0",
-    "p-queue": "^2.4.2",
+    "p-queue": "^6.6.2",
     "ts-md5": "^1.2.2",
     "tslib": "^2.6.2"
   },
