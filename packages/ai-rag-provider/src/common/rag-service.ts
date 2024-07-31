@@ -19,4 +19,6 @@ export const RagService = Symbol('RagService');
 export interface RagService {
     loadFile(filePath: string): Promise<void>;
     queryPageContent(query: string, numberOfDocuments?: number): Promise<string[]>;
+    // FIXME Remove! JUST FOR TESTING
+    test(): void;
 }

@@ -19,6 +19,27 @@ import { MemoryVectorStore } from 'langchain/vectorstores/memory';
 import { TextLoader } from 'langchain/document_loaders/fs/text';
 import { injectable } from '@theia/core/shared/inversify';
 import { RagService } from '../common/rag-service';
+import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
+
+import * as fs from 'fs';
+import * as path from 'path';
+
+export function getAllFiles(dirPath: string, arrayOfFiles: string[] = []): string[] {
+    const files = fs.readdirSync(dirPath);
+
+    arrayOfFiles = arrayOfFiles || [];
+
+    files.forEach(function (file: string): void {
+        const filePath = path.join(dirPath, file);
+        if (fs.statSync(filePath).isDirectory()) {
+            arrayOfFiles = getAllFiles(filePath, arrayOfFiles);
+        } else {
+            arrayOfFiles.push(filePath);
+        }
+    });
+
+    return arrayOfFiles;
+}
 
 @injectable()
 export class RagServiceImpl implements RagService {
@@ -29,19 +50,51 @@ export class RagServiceImpl implements RagService {
     // TODO instead of using the OpenAIEmbeddings we should wrap our LanguageModelProvider
     protected vectorStore = new MemoryVectorStore(new OpenAIEmbeddings({ model: 'text-embedding-3-large', }));
     protected loaded = new Set<string>();
+    protected init = false;
 
     async loadFile(filePath: string): Promise<void> {
         // TODO we could use a langchain cache here
         if (!this.loaded.has(filePath)) {
+            this.loaded.add(filePath);
             const loader = new TextLoader(filePath);
             const docs = await loader.load();
-            // TODO we could split the documents into smaller chunks using something like RecursiveTextSplitter
-            this.vectorStore.addDocuments(docs);
+            const splitter = new RecursiveCharacterTextSplitter({
+                chunkSize: 5000,
+                chunkOverlap: 1
+            });
+
+            const docOutput = await splitter.splitDocuments(docs);
+
+            docOutput.forEach((doc, index) => {
+                const segmentAfterDocumentation = filePath.split('documentation/')[1].split('/')[0];
+                const metadata =
+                    `# METADATA
+url: https://eclipse.dev/glsp/documentation/${segmentAfterDocumentation}/
+part: ${index + 1}
+
+ # CONTENT
+`;
+                doc.pageContent = metadata + doc.pageContent;
+            });
+            this.vectorStore.addDocuments(docOutput);
+            console.log(`Loaded ${filePath} into vector database as ${docOutput.length} documents`);
         }
     }
 
     async queryPageContent(query: string, numberOfDocuments: number = 1): Promise<string[]> {
+        console.log(`Querying for: ${query}`);
         const documents = await this.vectorStore.similaritySearch(query, numberOfDocuments);
+        console.log('Similarity search finished');
         return documents.map(doc => doc.pageContent);
+    }
+
+    async test(): Promise<void> {
+        const allGLSPWebsiteFiles = getAllFiles('/home/stefan/Git/glsp-website-source');
+        for (const file of allGLSPWebsiteFiles) {
+            if (file.includes('documentation') && file.endsWith('.md') && !file.endsWith('index.md')) {
+                await this.loadFile(file);
+            }
+        }
+        console.log(await this.queryPageContent('How to add a custom shape'), 1);
     }
 }
