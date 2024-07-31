@@ -30,7 +30,6 @@ export const GLSP_VARIABLE: AIVariable = {
 };
 
 export interface ResolvedWebRagVariable extends ResolvedAIVariable {
-    documentation: string;
 }
 
 @injectable()
@@ -45,6 +44,11 @@ export class GLSPVariableContribution implements AIVariableContribution, AIVaria
 
     canResolve(request: AIVariableResolutionRequest, context: AIVariableContext): MaybePromise<number> {
         if (request.variable.name !== GLSP_VARIABLE.name) {
+            return 0;
+        }
+
+        if (!request.arg) {
+            console.error('Please provide the absolute path to a clone of the GLSP documentation repository');
             return 0;
         }
 
@@ -63,19 +67,43 @@ export class GLSPVariableContribution implements AIVariableContribution, AIVaria
 
         const chatRequestText = (context as ChatVariableContext).request.text;
 
-        const allGLSPWebsiteFiles = await this.ragService.getAllFiles(request.arg || '/home/stefan/Git/glsp-website-source', []);
+        // arg is checked in canResolve
+        const allGLSPWebsiteFiles = await this.ragService.getAllFiles(request.arg!, []);
         for (const file of allGLSPWebsiteFiles) {
             if (file.includes('documentation') && file.endsWith('.md') && !file.endsWith('index.md')) {
                 await this.ragService.loadFile(file);
             }
         }
 
-        const results = await this.ragService.queryPageContent(chatRequestText, 1);
-        console.log(`variable has been resolved to: ${results}`);
-        return {
+
+        const modifiedRequest = chatRequestText.replace('#glsp', '').trim();
+
+        const results = await this.ragService.queryPageContent(modifiedRequest, 3);
+        console.log('variable has been resolved to:', results);
+
+        const urls = [];
+        for (const result of results) {
+            if (result.metadata.filePath.endsWith('CHANGELOG.md')) {
+                urls.push('https://github.com/eclipse-glsp/glsp-client/blob/master/CHANGELOG.md');
+                continue;
+            }
+            const segmentAfterDocumentation = result.metadata.filePath.split('documentation/')[1].split('/')[0];
+            const url = `https://eclipse.dev/glsp/documentation/${segmentAfterDocumentation}/`;
+            urls.push(url);
+        }
+
+        const combinedResult = `
+These urls are of interest for you:
+
+-${urls.join('\n-')}
+
+This is relevant content from the documentation:
+
+-${results.map(r => r.content).join('\n')}
+`;
+        return ({
             variable: request.variable,
-            documentation: results.join(' '),
-            value: results.join(' ')
-        };
+            value: combinedResult
+        });
     }
 }

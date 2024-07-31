@@ -16,11 +16,11 @@
 
 export const RAG_SERVICE_PATH = '/services/ai/rag';
 export const RagService = Symbol('RagService');
+// TODO metadata could be generalized to a Record<string, unknown>
+export interface QueryResult { content: string, metadata: Record<string, string> };
 export interface RagService {
+    // FIXME only here for convenience, should be removed
     getAllFiles(dirPath: string, arrayOfFiles: string[]): Promise<string[]>;
     loadFile(filePath: string): Promise<void>;
-    loadWeb(url: string): Promise<void>;
-    queryPageContent(query: string, numberOfDocuments?: number): Promise<string[]>;
-    // FIXME Remove! JUST FOR TESTING
-    test(): void;
+    queryPageContent(query: string, numberOfDocuments?: number): Promise<QueryResult[]>;
 }

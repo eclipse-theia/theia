@@ -30,7 +30,7 @@ export class TriggerRagCommandContribution implements CommandContribution {
     registerCommands(registry: CommandRegistry): void {
         registry.registerCommand(TriggerRagServiceCommand, {
             execute: () => {
-                this.ragService.test();
+                console.log('nothing');
             }
         });
     }
