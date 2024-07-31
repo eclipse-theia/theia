@@ -230,7 +230,7 @@ export class ElectronMainApplication {
                     this.useNativeWindowFrame = this.getTitleBarStyle(config) === 'native';
                     this._config = config;
                     this.hookApplicationEvents();
-                    this.showInitialWindow();
+                    this.showInitialWindow(argv.includes('--open-url') ? argv[argv.length - 1] : undefined);
                     const port = await this.startBackend();
                     this._backendPort.resolve(port);
                     await app.whenReady();
@@ -242,9 +242,6 @@ export class ElectronMainApplication {
                         cwd: process.cwd(),
                         secondInstance: false
                     });
-                    if (argv.includes('--open-url')) {
-                        this.openUrl(argv[argv.length - 1]);
-                    }
                 },
             ).parse();
     }
@@ -321,7 +318,7 @@ export class ElectronMainApplication {
             !('THEIA_ELECTRON_NO_EARLY_WINDOW' in process.env && process.env.THEIA_ELECTRON_NO_EARLY_WINDOW === '1');
     }
 
-    protected showInitialWindow(): void {
+    protected showInitialWindow(urlToOpen: string | undefined): void {
         if (this.isShowWindowEarly() || this.isShowSplashScreen()) {
             app.whenReady().then(async () => {
                 const options = await this.getLastWindowOptions();
@@ -330,7 +327,11 @@ export class ElectronMainApplication {
                     options.preventAutomaticShow = true;
                 }
                 this.initialWindow = await this.createWindow({ ...options });
-
+                TheiaRendererAPI.onApplicationStateChanged(this.initialWindow.webContents, state => {
+                    if (state === 'ready' && urlToOpen) {
+                        this.openUrl(urlToOpen);
+                    }
+                });
                 if (this.isShowSplashScreen()) {
                     console.log('Showing splash screen');
                     this.configureAndShowSplashScreen(this.initialWindow);
@@ -414,6 +415,7 @@ export class ElectronMainApplication {
         options = this.avoidOverlap(options);
         const electronWindow = this.windowFactory(options, this.config);
         const id = electronWindow.window.webContents.id;
+        this.activeWindowStack.push(id);
         this.windows.set(id, electronWindow);
         electronWindow.onDidClose(() => {
             const stackIndex = this.activeWindowStack.indexOf(id);
@@ -429,7 +431,7 @@ export class ElectronMainApplication {
             if (stackIndex >= 0) {
                 this.activeWindowStack.splice(stackIndex, 1);
             }
-            this.activeWindowStack.push(id);
+            this.activeWindowStack.unshift(id);
             TheiaRendererAPI.sendWindowEvent(electronWindow.window.webContents, 'focus');
         });
         this.attachSaveWindowState(electronWindow.window);
