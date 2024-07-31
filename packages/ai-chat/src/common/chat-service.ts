@@ -30,8 +30,8 @@ import {
 import { ChatAgentService } from './chat-agent-service';
 import { ILogger } from '@theia/core';
 import { ChatRequestParser } from './chat-request-parser';
-import { ChatAgentLocation } from './chat-agents';
-import { ChatRequestVariablePart } from './chat-parsed-request';
+import { ChatAgent, ChatAgentLocation } from './chat-agents';
+import { ChatRequestAgentPart, ChatRequestVariablePart, ParsedChatRequest } from './chat-parsed-request';
 import { AIVariableService } from '@theia/ai-core';
 
 export interface ChatSendRequestData {
@@ -115,7 +115,10 @@ export class ChatServiceImpl implements ChatService {
             }),
         };
         const parsedRequest = this.chatRequestParser.parseChatRequest(request, session.location);
-        const requestModel = session.addRequest(parsedRequest);
+
+        const agent = this.getAgent(parsedRequest);
+        const requestModel = session.addRequest(parsedRequest, agent?.id);
+
         for (const part of parsedRequest.parts) {
             if (part instanceof ChatRequestVariablePart) {
                 // resolve variable
@@ -130,7 +133,6 @@ export class ChatServiceImpl implements ChatService {
                 }
             }
         }
-        // TODO perform agent determination
         resolveRequestCompleted!(requestModel);
 
         resolveResponseCreated!(requestModel.response);
@@ -140,13 +142,19 @@ export class ChatServiceImpl implements ChatService {
             }
         });
 
-        const chatAgents = this.chatAgentService.getAgents();
-        if (chatAgents.length > 0) {
-            // TODO collect the correct agent
-            this.chatAgentService.invokeAgent(chatAgents[0].id, requestModel);
+        if (agent) {
+            this.chatAgentService.invokeAgent(agent.id, requestModel);
         } else {
             this.logger.error('No ChatAgents available to handle request!');
         }
         return requestReturnData;
+    }
+
+    protected getAgent(parsedRequest: ParsedChatRequest): ChatAgent | undefined {
+        const agentPart = parsedRequest.parts.find(p => p instanceof ChatRequestAgentPart) as ChatRequestAgentPart | undefined;
+        if (agentPart) {
+            return this.chatAgentService.getAgent(agentPart.agent.id);
+        }
+        return this.chatAgentService.getAgents()[0] ?? undefined;
     }
 }

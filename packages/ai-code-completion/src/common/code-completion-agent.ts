@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as monaco from '@theia/monaco-editor-core';
-import { Agent, getTextOfResponse, LanguageModelRegistry, LanguageModelSelector, PromptService, PromptTemplate } from '@theia/ai-core/lib/common';
+import { Agent, getTextOfResponse, LanguageModelRegistry, LanguageModelRequirement, PromptService, PromptTemplate } from '@theia/ai-core/lib/common';
 import { inject, injectable } from '@theia/core/shared/inversify';
+import * as monaco from '@theia/monaco-editor-core';
 
 export const CodeCompletionAgent = Symbol('CodeCompletionAgent');
 export interface CodeCompletionAgent extends Agent {
@@ -111,7 +111,7 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
             `,
         }
     ];
-    languageModelRequirements: Omit<LanguageModelSelector, 'agent'>[] = [{
+    languageModelRequirements: LanguageModelRequirement[] = [{
         purpose: 'code-completion',
         identifier: 'openai/gpt-4o'
     }];

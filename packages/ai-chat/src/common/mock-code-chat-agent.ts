@@ -13,10 +13,10 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+import { LanguageModelRequirement, PromptTemplate } from '@theia/ai-core';
+import { ILogger, URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatAgent, ChatAgentLocation } from './chat-agents';
-import { ILogger, URI } from '@theia/core';
-import { LanguageModelSelector, PromptTemplate } from '@theia/ai-core';
 import { ChatRequestModelImpl, CodeChatResponseContentImpl, Location } from './chat-model';
 
 const CODE_SNIPPET: string = `
@@ -46,12 +46,13 @@ export class MockCodeChatAgent implements ChatAgent {
 
     defaultImplicitVariables?: string[] | undefined;
     id: string = 'MockCodeChatAgent';
-    name: string = 'Mock Code Chat Agent';
+    name: string = 'MockCodeChatAgent';
+    iconClass = 'codicon codicon-file-code';
     description: string = 'Mock agent to test code response parts Theia.';
     variables: string[] = [];
     promptTemplates: PromptTemplate[] = [];
-    languageModelRequirements: Omit<LanguageModelSelector, 'agentId'>[] = [];
-    locations: ChatAgentLocation[] = [];
+    languageModelRequirements: LanguageModelRequirement[] = [];
+    locations: ChatAgentLocation[] = ChatAgentLocation.ALL;
 
     async invoke(request: ChatRequestModelImpl): Promise<void> {
         const dummyLocation: Location = {

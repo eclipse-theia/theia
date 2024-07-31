@@ -30,7 +30,7 @@ export class DummyCommandContribution implements CommandContribution {
     registerCommands(registry: CommandRegistry): void {
         registry.registerCommand(TRIGGER_DUMMY_AGENT, {
             execute: () => {
-                (this.agentService.getAgentsByName('Dummy Chat Agent')[0] as DummyChatAgent).invoke();
+                (this.agentService.getAgentsByName('DummyChatAgent')[0] as DummyChatAgent).invoke();
             }
         });
     }

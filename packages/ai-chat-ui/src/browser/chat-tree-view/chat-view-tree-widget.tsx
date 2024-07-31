@@ -15,6 +15,7 @@
 // *****************************************************************************
 import {
     BaseChatResponseContent,
+    ChatAgentService,
     ChatModel,
     ChatRequestModel,
     ChatResponseContent,
@@ -65,6 +66,9 @@ export class ChatViewTreeWidget extends TreeWidget {
 
     @inject(MarkdownRenderer)
     private renderer: MarkdownRenderer;
+
+    @inject(ChatAgentService)
+    protected chatAgentService: ChatAgentService;
 
     constructor(
         @inject(TreeProps) props: TreeProps,
@@ -174,16 +178,19 @@ export class ChatViewTreeWidget extends TreeWidget {
             // TODO find user name
             return 'Me';
         }
-        // TODO check agent name
-        return 'AI';
+
+        const agent = node.response.agentId ? this.chatAgentService.getAgent(node.response.agentId) : undefined;
+        return agent?.name ?? 'AI';
     }
     private getAgentIconClassName(node: RequestNode | ResponseNode): string | undefined {
         if (isRequestNode(node)) {
             return codicon('account');
         }
-        // TODO check agent for icons
-        return codicon('copilot');
+
+        const agent = node.response.agentId ? this.chatAgentService.getAgent(node.response.agentId) : undefined;
+        return agent?.iconClass ?? codicon('copilot');
     }
+
     private renderDetail(node: RequestNode | ResponseNode): React.ReactNode {
         if (isRequestNode(node)) {
             return this.renderChatRequest(node);
