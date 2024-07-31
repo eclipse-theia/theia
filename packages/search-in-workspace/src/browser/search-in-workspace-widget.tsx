@@ -502,7 +502,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         </div>;
     }
     protected handleFocusSearchInputBox = (event: React.FocusEvent<HTMLTextAreaElement>) => {
-        event.target.placeholder = `${SearchInWorkspaceWidget.LABEL} (⇅ ${nls.localizeByDefault('for history')})`;
+        event.target.placeholder = SearchInWorkspaceWidget.LABEL + nls.localizeByDefault(' ({0} for history)', '⇅');
         this.contextKeyService.setSearchInputBoxFocus(true);
     };
     protected handleBlurSearchInputBox = (event: React.FocusEvent<HTMLTextAreaElement>) => {
@@ -541,7 +541,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     }
 
     protected handleFocusReplaceInputBox = (event: React.FocusEvent<HTMLTextAreaElement>) => {
-        event.target.placeholder = `${nls.localizeByDefault('Replace')} (⇅ ${nls.localizeByDefault('for history')})`;
+        event.target.placeholder = nls.localizeByDefault('Replace') + nls.localizeByDefault(' ({0} for history)', '⇅');
         this.contextKeyService.setReplaceInputBoxFocus(true);
     };
     protected handleBlurReplaceInputBox = (event: React.FocusEvent<HTMLTextAreaElement>) => {

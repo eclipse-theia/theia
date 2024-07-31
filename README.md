@@ -38,7 +38,7 @@ Eclipse Theia is an extensible framework to develop full-fledged multi-language 
 
 ## Website
 
-[Visit the Eclipse Theia website](http://www.theia-ide.org) for more information and [the Theia documentation](http://www.theia-ide.org/doc).
+[Visit the Eclipse Theia website](http://www.theia-ide.org) for more information and [the Theia documentation](http://www.theia-ide.org/docs).
 
 ## Repositories
 This is the main repository for the Eclipse Theia project, containing the sources of the Theia Platform. Please open generic discussions, bug reports and feature requests about Theia on this repository. The Theia project also includes additional repositories, e.g. for the [artifacts building the Theia IDE](https://github.com/eclipse-theia/theia-blueprint) and the [Theia website](https://github.com/eclipse-theia/theia-website). Please also see the [overview of all Theia project repositories](https://github.com/eclipse-theia).
@@ -68,10 +68,10 @@ See [our roadmap](https://github.com/eclipse-theia/theia/wiki/Eclipse-Theia-Road
 Here you can find guides and examples for common scenarios to adopt Theia:
 
 - [Get an overview of how to get started](https://theia-ide.org/#gettingstarted) on the Theia website
-- [Develop a Theia application - your own IDE/Tool](https://www.theia-ide.org/doc/Composing_Applications.html)
+- [Develop a Theia application - your own IDE/Tool](https://theia-ide.org/docs/composing_applications/)
 - [Learn about Theia's extension mechanisms](https://theia-ide.org/docs/extensions/)
 - [Develop a VS Code like extension](https://theia-ide.org/docs/authoring_vscode_extensions/)
-- [Develop a Theia extension](http://www.theia-ide.org/doc/Authoring_Extensions.html)
+- [Develop a Theia extension](https://theia-ide.org/docs/authoring_extensions/)
 - [Test a VS Code extension in Theia](https://github.com/eclipse-theia/theia/wiki/Testing-VS-Code-extensions)
 - [Package a desktop Theia application with Electron](https://theia-ide.org/docs/blueprint_documentation/)
 
@@ -84,7 +84,7 @@ Read below to learn how to take part in improving Theia:
 - Find an issue to work on and submit a pull request
   - First time contributing to open source? Pick a [good first issue](https://github.com/eclipse-theia/theia/labels/good%20first%20issue) to get you familiar with GitHub contributing process.
   - First time contributing to Theia? Pick a [beginner friendly issue](https://github.com/eclipse-theia/theia/labels/beginners) to get you familiar with codebase and our contributing process.
-  - Want to become a Committer? Solve an issue showing that you understand Theia objectives and architecture. [Here](https://github.com/eclipse-theia/theia/labels/help%20wanted) is a good list to start. Further, have a look at our [roadmap](https://github.com/eclipse-theia/theia/wiki/Roadmap) to align your contributions with the current project goals.
+  - Want to become a Committer? Solve an issue showing that you understand Theia objectives and architecture. [Here](https://github.com/eclipse-theia/theia/labels/help%20wanted) is a good list to start. Further, have a look at our [roadmap](https://github.com/eclipse-theia/theia/wiki/Eclipse-Theia-Roadmap) to align your contributions with the current project goals.
 - Could not find an issue? Look for bugs, typos, and missing features.
 
 ## Feedback
@@ -115,9 +115,8 @@ Read below how to engage with Theia community:
 ## License
 
 - [Eclipse Public License 2.0](LICENSE-EPL)
-- [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](LICENSE-GPL-W-CLASSPATH-EXCEPTION)
+- [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](LICENSE-GPL-2.0-ONLY-CLASSPATH-EXCEPTION)
 
 ## Trademark
 
-"Theia" is a trademark of the Eclipse Foundation
-<https://www.eclipse.org/theia>
+"Theia" is a **trademark of the Eclipse Foundation**. [Learn More](https://www.eclipse.org/theia)

@@ -61,21 +61,26 @@ export class OVSXMockClient implements OVSXClient {
                 reviewsUrl: url.extensionReviewsUrl(namespace, name),
                 timestamp: new Date(now - ids.length + i + 1).toISOString(),
                 version,
-                description: `Mock VS Code Extension for ${id}`
+                description: `Mock VS Code Extension for ${id}`,
+                namespaceDisplayName: name,
+                preRelease: false
             };
         });
         return this;
     }
 
     async query(queryOptions?: VSXQueryOptions): Promise<VSXQueryResult> {
+        const extensions = this.extensions
+            .filter(extension => typeof queryOptions === 'object' && (
+                this.compare(queryOptions.extensionId, this.id(extension)) &&
+                this.compare(queryOptions.extensionName, extension.name) &&
+                this.compare(queryOptions.extensionVersion, extension.version) &&
+                this.compare(queryOptions.namespaceName, extension.namespace)
+            ));
         return {
-            extensions: this.extensions
-                .filter(extension => typeof queryOptions === 'object' && (
-                    this.compare(queryOptions.extensionId, this.id(extension)) &&
-                    this.compare(queryOptions.extensionName, extension.name) &&
-                    this.compare(queryOptions.extensionVersion, extension.version) &&
-                    this.compare(queryOptions.namespaceName, extension.namespace)
-                ))
+            offset: 0,
+            totalSize: extensions.length,
+            extensions
         };
     }
 

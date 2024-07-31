@@ -29,7 +29,8 @@ import {
     PluginManagerInitializeParams,
     PluginManagerStartParams,
     TerminalServiceExt,
-    LocalizationExt
+    LocalizationExt,
+    ExtensionKind
 } from '../common/plugin-api-rpc';
 import { PluginMetadata, PluginJsonValidationContribution } from '../common/plugin-protocol';
 import * as theia from '@theia/plugin';
@@ -40,7 +41,7 @@ import { PreferenceRegistryExtImpl } from './preference-registry';
 import { InternalStorageExt, Memento, GlobalState } from './plugin-storage';
 import { ExtPluginApi } from '../common/plugin-ext-api-contribution';
 import { RPCProtocol } from '../common/rpc-protocol';
-import { Emitter } from '@theia/core/lib/common/event';
+import { Emitter, Event } from '@theia/core/lib/common/event';
 import { WebviewsExtImpl } from './webviews';
 import { URI as Uri } from './types-impl';
 import { InternalSecretsExt, SecretStorageExt } from '../plugin/secrets-ext';
@@ -121,6 +122,7 @@ export abstract class AbstractPluginManagerExtImpl<P extends Record<string, any>
     private notificationMain: NotificationMain;
 
     protected jsonValidation: PluginJsonValidationContribution[] = [];
+    protected pluginKind = ExtensionKind.UI;
     protected ready = new Deferred();
 
     @postConstruct()
@@ -389,7 +391,14 @@ export abstract class AbstractPluginManagerExtImpl<P extends Record<string, any>
             environmentVariableCollection: this.terminalService.getEnvironmentVariableCollection(plugin.model.id),
             extensionMode: extensionModeValue,
             extension,
-            logUri: Uri.file(logPath)
+            logUri: Uri.file(logPath),
+            languageModelAccessInformation: {
+                /** @stubbed LanguageModelChat */
+                onDidChange: (listener, thisArgs?, disposables?) => Event.None(listener, thisArgs, disposables),
+                canSendRequest(chat: theia.LanguageModelChat): boolean | undefined {
+                    return undefined;
+                }
+            }
         };
         this.pluginContextsMap.set(plugin.model.id, pluginContext);
 
@@ -408,6 +417,10 @@ export abstract class AbstractPluginManagerExtImpl<P extends Record<string, any>
             console.log(`plugin ${id}, ${plugin.lifecycle.startMethod} method is undefined so the module is the extension's exports`);
             this.activatedPlugins.set(plugin.model.id, new ActivatedPlugin(pluginContext, pluginMain));
         }
+    }
+
+    getPluginKind(): theia.ExtensionKind {
+        return this.pluginKind;
     }
 
     getAllPlugins(): Plugin[] {
@@ -477,6 +490,7 @@ export class PluginManagerExtImpl extends AbstractPluginManagerExtImpl<PluginMan
 
         this.webview.init(params.webview);
         this.jsonValidation = params.jsonValidation;
+        this.pluginKind = params.pluginKind;
 
         this.supportedActivationEvents = new Set(params.supportedActivationEvents ?? []);
     }

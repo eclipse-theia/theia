@@ -15,15 +15,12 @@
 // *****************************************************************************
 
 import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
-import { CommandContribution, CommandRegistry, Command } from '@theia/core/lib/common';
-import { CommonCommands, PreferenceService, LabelProvider, ApplicationShell, QuickInputService, QuickPickValue } from '@theia/core/lib/browser';
+import { CommonCommands, PreferenceService, LabelProvider, ApplicationShell, QuickInputService, QuickPickValue, SaveableService } from '@theia/core/lib/browser';
 import { EditorManager } from './editor-manager';
-import { EditorPreferences } from './editor-preferences';
-import { ResourceProvider, MessageService } from '@theia/core';
+import { CommandContribution, CommandRegistry, Command, ResourceProvider, MessageService, nls } from '@theia/core';
 import { LanguageService } from '@theia/core/lib/browser/language-service';
 import { SUPPORTED_ENCODINGS } from '@theia/core/lib/browser/supported-encodings';
 import { EncodingMode } from './editor';
-import { nls } from '@theia/core/lib/common/nls';
 import { EditorLanguageQuickPickService } from './editor-language-quick-pick-service';
 
 export namespace EditorCommands {
@@ -209,7 +206,8 @@ export namespace EditorCommands {
 @injectable()
 export class EditorCommandContribution implements CommandContribution {
 
-    public static readonly AUTOSAVE_PREFERENCE: string = 'files.autoSave';
+    static readonly AUTOSAVE_PREFERENCE: string = 'files.autoSave';
+    static readonly AUTOSAVE_DELAY_PREFERENCE: string = 'files.autoSaveDelay';
 
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
@@ -217,13 +215,14 @@ export class EditorCommandContribution implements CommandContribution {
     @inject(PreferenceService)
     protected readonly preferencesService: PreferenceService;
 
-    @inject(EditorPreferences)
-    protected readonly editorPreferences: EditorPreferences;
+    @inject(SaveableService)
+    protected readonly saveResourceService: SaveableService;
 
     @inject(QuickInputService) @optional()
     protected readonly quickInputService: QuickInputService;
 
-    @inject(MessageService) protected readonly messageService: MessageService;
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
 
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
@@ -242,9 +241,15 @@ export class EditorCommandContribution implements CommandContribution {
 
     @postConstruct()
     protected init(): void {
-        this.editorPreferences.onPreferenceChanged(e => {
-            if (e.preferenceName === 'files.autoSave' && e.newValue !== 'off') {
-                this.shell.saveAll();
+        this.preferencesService.ready.then(() => {
+            this.saveResourceService.autoSave = this.preferencesService.get(EditorCommandContribution.AUTOSAVE_PREFERENCE) ?? 'off';
+            this.saveResourceService.autoSaveDelay = this.preferencesService.get(EditorCommandContribution.AUTOSAVE_DELAY_PREFERENCE) ?? 1000;
+        });
+        this.preferencesService.onPreferenceChanged(e => {
+            if (e.preferenceName === EditorCommandContribution.AUTOSAVE_PREFERENCE) {
+                this.saveResourceService.autoSave = this.preferencesService.get(EditorCommandContribution.AUTOSAVE_PREFERENCE) ?? 'off';
+            } else if (e.preferenceName === EditorCommandContribution.AUTOSAVE_DELAY_PREFERENCE) {
+                this.saveResourceService.autoSaveDelay = this.preferencesService.get(EditorCommandContribution.AUTOSAVE_DELAY_PREFERENCE) ?? 1000;
             }
         });
     }

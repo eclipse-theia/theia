@@ -84,7 +84,7 @@ export interface NotebookTextModelLike { uri: URI; viewType: string }
 
 class KernelInfo {
 
-    private static instanceCounter = 0;
+    protected static instanceCounter = 0;
 
     score: number;
     readonly kernel: NotebookKernel;
@@ -130,7 +130,7 @@ export class SourceCommand implements Disposable {
         this.onDidChangeStateEmitter.fire();
     }
 
-    private async runCommand(commandService: CommandService): Promise<void> {
+    protected async runCommand(commandService: CommandService): Promise<void> {
         try {
             await commandService.executeCommand(this.command.id, {
                 uri: this.model.uri,
@@ -278,7 +278,7 @@ export class NotebookKernelService {
         return this.kernels.get(id)?.kernel;
     }
 
-    private static score(kernel: NotebookKernel, notebook: NotebookTextModelLike): number {
+    protected static score(kernel: NotebookKernel, notebook: NotebookTextModelLike): number {
         if (kernel.viewType === notebook.viewType) {
             return 10;
         } else if (kernel.viewType === '*') {
@@ -288,7 +288,7 @@ export class NotebookKernelService {
         }
     }
 
-    private tryAutoBindNotebook(notebook: NotebookModel, onlyThisKernel?: NotebookKernel): void {
+    protected tryAutoBindNotebook(notebook: NotebookModel, onlyThisKernel?: NotebookKernel): void {
 
         const id = this.notebookBindings[`${notebook.viewType}/${notebook.uri}`];
         if (!id) {

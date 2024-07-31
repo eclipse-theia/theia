@@ -79,8 +79,8 @@ const api: TheiaCoreAPI = {
     showItemInFolder: fsPath => {
         ipcRenderer.send(CHANNEL_SHOW_ITEM_IN_FOLDER, fsPath);
     },
-    openWithSystemApp: fsPath => {
-        ipcRenderer.send(CHANNEL_OPEN_WITH_SYSTEM_APP, fsPath);
+    openWithSystemApp: location => {
+        ipcRenderer.send(CHANNEL_OPEN_WITH_SYSTEM_APP, location);
     },
     attachSecurityToken: (endpoint: string) => ipcRenderer.invoke(CHANNEL_ATTACH_SECURITY_TOKEN, endpoint),
 
@@ -199,7 +199,7 @@ const api: TheiaCoreAPI = {
         ipcRenderer.send(CHANNEL_TOGGLE_FULL_SCREEN);
     },
 
-    requestReload: () => ipcRenderer.send(CHANNEL_REQUEST_RELOAD),
+    requestReload: (newUrl?: string) => ipcRenderer.send(CHANNEL_REQUEST_RELOAD, newUrl),
     restart: () => ipcRenderer.send(CHANNEL_RESTART),
 
     applicationStateChanged: state => {

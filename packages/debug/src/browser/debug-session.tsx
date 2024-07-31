@@ -33,7 +33,7 @@ import { DebugSourceBreakpoint } from './model/debug-source-breakpoint';
 import debounce = require('p-debounce');
 import URI from '@theia/core/lib/common/uri';
 import { BreakpointManager } from './breakpoint/breakpoint-manager';
-import { DebugConfigurationSessionOptions, InternalDebugSessionOptions } from './debug-session-options';
+import { DebugConfigurationSessionOptions, InternalDebugSessionOptions, TestRunReference } from './debug-session-options';
 import { DebugConfiguration, DebugConsoleMode } from '../common/debug-common';
 import { SourceBreakpoint, ExceptionBreakpoint } from './breakpoint/breakpoint-marker';
 import { TerminalWidgetOptions, TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
@@ -44,6 +44,8 @@ import { Deferred, waitForEvent } from '@theia/core/lib/common/promise-util';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { DebugInstructionBreakpoint } from './model/debug-instruction-breakpoint';
 import { nls } from '@theia/core';
+import { TestService, TestServices } from '@theia/test/lib/browser/test-service';
+import { DebugSessionManager } from './debug-session-manager';
 
 export enum DebugState {
     Inactive,
@@ -78,6 +80,11 @@ export class DebugSession implements CompositeTreeElement {
         return this.onDidFocusStackFrameEmitter.event;
     }
 
+    protected readonly onDidFocusThreadEmitter = new Emitter<DebugThread | undefined>();
+    get onDidFocusThread(): Event<DebugThread | undefined> {
+        return this.onDidFocusThreadEmitter.event;
+    }
+
     protected readonly onDidChangeBreakpointsEmitter = new Emitter<URI>();
     readonly onDidChangeBreakpoints: Event<URI> = this.onDidChangeBreakpointsEmitter.event;
     protected fireDidChangeBreakpoints(uri: URI): void {
@@ -93,6 +100,9 @@ export class DebugSession implements CompositeTreeElement {
         readonly id: string,
         readonly options: DebugConfigurationSessionOptions,
         readonly parentSession: DebugSession | undefined,
+        testService: TestService,
+        testRun: TestRunReference | undefined,
+        sessionManager: DebugSessionManager,
         protected readonly connection: DebugSessionConnection,
         protected readonly terminalServer: TerminalService,
         protected readonly editorManager: EditorManager,
@@ -119,6 +129,19 @@ export class DebugSession implements CompositeTreeElement {
                 this.parentSession?.childSessions?.delete(id);
             }));
         }
+        if (testRun) {
+            try {
+                const run = TestServices.withTestRun(testService, testRun.controllerId, testRun.runId);
+                run.onDidChangeProperty(evt => {
+                    if (evt.isRunning === false) {
+                        sessionManager.terminateSession(this);
+                    }
+                });
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
         this.connection.onDidClose(() => this.toDispose.dispose());
         this.toDispose.pushAll([
             this.onDidChangeEmitter,
@@ -254,8 +277,12 @@ export class DebugSession implements CompositeTreeElement {
         return this._currentThread;
     }
     set currentThread(thread: DebugThread | undefined) {
+        if (this._currentThread?.id === thread?.id) {
+            return;
+        }
         this.toDisposeOnCurrentThread.dispose();
         this._currentThread = thread;
+        this.onDidFocusThreadEmitter.fire(thread);
         this.fireDidChange();
         if (thread) {
             this.toDisposeOnCurrentThread.push(thread.onDidChanged(() => this.fireDidChange()));

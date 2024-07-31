@@ -30,7 +30,7 @@ import { nls } from '@theia/core/lib/common/nls';
 import { AbstractNavigatorTreeWidget } from './abstract-navigator-tree-widget';
 
 export const FILE_NAVIGATOR_ID = 'files';
-export const LABEL = nls.localize('theia/navigator/noFolderOpened', 'No Folder Opened');
+export const LABEL = nls.localizeByDefault('No Folder Opened');
 export const CLASS = 'theia-Files';
 
 @injectable()

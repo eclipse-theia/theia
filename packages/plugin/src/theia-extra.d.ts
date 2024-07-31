@@ -291,6 +291,13 @@ export module '@theia/plugin' {
          * see - workspace.fs for how to read and write files and folders from an uri.
          */
         readonly logUri: Uri;
+
+        /**
+         * An object that keeps information about how this extension can use language models.
+         *
+         * @see {@link LanguageModelChat.sendRequest}
+         */
+        readonly languageModelAccessInformation: LanguageModelAccessInformation;
     }
 
     export namespace commands {

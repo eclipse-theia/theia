@@ -84,12 +84,12 @@ export class SomeClass {
     - `@phosphor/signaling` (from [`@phosphor/signaling@1`](https://www.npmjs.com/package/@phosphor/signaling))
     - `@phosphor/virtualdom` (from [`@phosphor/virtualdom@1`](https://www.npmjs.com/package/@phosphor/virtualdom))
     - `@phosphor/widgets` (from [`@phosphor/widgets@1`](https://www.npmjs.com/package/@phosphor/widgets))
-    - `@theia/application-package` (from [`@theia/application-package@1.49.0`](https://www.npmjs.com/package/@theia/application-package/v/1.49.0))
-    - `@theia/application-package/lib/api` (from [`@theia/application-package@1.49.0`](https://www.npmjs.com/package/@theia/application-package/v/1.49.0))
-    - `@theia/application-package/lib/environment` (from [`@theia/application-package@1.49.0`](https://www.npmjs.com/package/@theia/application-package/v/1.49.0))
-    - `@theia/request` (from [`@theia/request@1.49.0`](https://www.npmjs.com/package/@theia/request/v/1.49.0))
-    - `@theia/request/lib/proxy` (from [`@theia/request@1.49.0`](https://www.npmjs.com/package/@theia/request/v/1.49.0))
-    - `@theia/request/lib/node-request-service` (from [`@theia/request@1.49.0`](https://www.npmjs.com/package/@theia/request/v/1.49.0))
+    - `@theia/application-package` (from [`@theia/application-package@1.52.0`](https://www.npmjs.com/package/@theia/application-package/v/1.52.0))
+    - `@theia/application-package/lib/api` (from [`@theia/application-package@1.52.0`](https://www.npmjs.com/package/@theia/application-package/v/1.52.0))
+    - `@theia/application-package/lib/environment` (from [`@theia/application-package@1.52.0`](https://www.npmjs.com/package/@theia/application-package/v/1.52.0))
+    - `@theia/request` (from [`@theia/request@1.52.0`](https://www.npmjs.com/package/@theia/request/v/1.52.0))
+    - `@theia/request/lib/proxy` (from [`@theia/request@1.52.0`](https://www.npmjs.com/package/@theia/request/v/1.52.0))
+    - `@theia/request/lib/node-request-service` (from [`@theia/request@1.52.0`](https://www.npmjs.com/package/@theia/request/v/1.52.0))
     - `fs-extra` (from [`fs-extra@^4.0.2`](https://www.npmjs.com/package/fs-extra))
     - `fuzzy` (from [`fuzzy@^0.1.3`](https://www.npmjs.com/package/fuzzy))
     - `inversify` (from [`inversify@^6.0.1`](https://www.npmjs.com/package/inversify))
@@ -105,7 +105,7 @@ export class SomeClass {
     - `nsfw` (from [`nsfw@^2.2.4`](https://www.npmjs.com/package/nsfw))
     - `markdown-it` (from [`markdown-it@^12.3.2`](https://www.npmjs.com/package/markdown-it))
     - `react` (from [`react@^18.2.0`](https://www.npmjs.com/package/react))
-    - `ws` (from [`ws@^8.14.1`](https://www.npmjs.com/package/ws))
+    - `ws` (from [`ws@^8.17.1`](https://www.npmjs.com/package/ws))
     - `yargs` (from [`yargs@^15.3.1`](https://www.npmjs.com/package/yargs))
 
 ## Logging Configuration
@@ -152,6 +152,10 @@ Where `root` is the name of the logger and `INFO` is the log level. These are op
   - If possible, you should set this environment variable:
     - When not set, Theia will allow any origin to access the WebSocket services.
     - When set, Theia will only allow the origins defined in this environment variable.
+- `FRONTEND_CONNECTION_TIMEOUT`
+  - The duration in milliseconds during which the backend keeps the connection contexts for the frontend to reconnect.
+  - This duration defaults to '0' if not set.
+  - If set to negative number, the backend will never close the connection.    
 
 ## Additional Information
 

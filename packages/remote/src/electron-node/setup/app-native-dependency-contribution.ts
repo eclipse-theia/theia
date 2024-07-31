@@ -16,7 +16,7 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { RemoteNativeDependencyContribution, DownloadOptions, DependencyDownload } from './remote-native-dependency-contribution';
-import { RemotePlatform } from '../remote-types';
+import { RemotePlatform } from '@theia/core/lib/node/remote/remote-cli-contribution';
 import { OS } from '@theia/core';
 
 @injectable()

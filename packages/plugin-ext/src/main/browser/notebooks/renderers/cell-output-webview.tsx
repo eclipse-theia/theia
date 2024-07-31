@@ -35,6 +35,7 @@ import { CellUri } from '@theia/notebook/lib/common';
 import { Disposable, DisposableCollection, nls, QuickPickService } from '@theia/core';
 import { NotebookCellOutputModel } from '@theia/notebook/lib/browser/view-model/notebook-cell-output-model';
 import { NotebookModel } from '@theia/notebook/lib/browser/view-model/notebook-model';
+import { NotebookOptionsService, NotebookOutputOptions } from '@theia/notebook/lib/browser/service/notebook-options';
 
 const CellModel = Symbol('CellModel');
 const Notebook = Symbol('NotebookModel');
@@ -147,6 +148,11 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
     @inject(AdditionalNotebookCellOutputCss)
     protected readonly additionalOutputCss: string;
 
+    @inject(NotebookOptionsService)
+    protected readonly notebookOptionsService: NotebookOptionsService;
+
+    protected options: NotebookOutputOptions;
+
     readonly id = generateUuid();
 
     protected editor: NotebookEditorWidget | undefined;
@@ -161,6 +167,11 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
     @postConstruct()
     protected async init(): Promise<void> {
         this.editor = this.notebookEditorWidgetService.getNotebookEditor(NOTEBOOK_EDITOR_ID_PREFIX + CellUri.parse(this.cell.uri)?.notebook);
+        this.options = this.notebookOptionsService.computeOutputOptions();
+        this.toDispose.push(this.notebookOptionsService.onDidChangeOutputOptions(options => {
+            this.options = options;
+            this.updateStyles();
+        }));
 
         this.toDispose.push(this.cell.onDidChangeOutputs(outputChange => this.updateOutput(outputChange)));
         this.toDispose.push(this.cell.onDidChangeOutputItems(output => {
@@ -187,6 +198,7 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
         }
 
         this.webviewWidget = await this.widgetManager.getOrCreateWidget(WebviewWidget.FACTORY_ID, { id: this.id });
+        this.webviewWidget.parent = this.editor ?? null;
         this.webviewWidget.setContentOptions({
             allowScripts: true,
             // eslint-disable-next-line max-len
@@ -271,6 +283,7 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
         switch (message.type) {
             case 'initialized':
                 this.updateOutput({ newOutputs: this.cell.outputs, start: 0, deleteCount: 0 });
+                this.updateStyles();
                 break;
             case 'customRendererMessage':
                 // console.log('from webview customRendererMessage ', message.rendererId, '', JSON.stringify(message.message));
@@ -301,6 +314,22 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
         return kernelPreloads.concat(staticPreloads);
     }
 
+    protected updateStyles(): void {
+        this.webviewWidget.sendMessage({
+            type: 'notebookStyles',
+            styles: this.generateStyles()
+        });
+    }
+
+    protected generateStyles(): { [key: string]: string } {
+        return {
+            'notebook-cell-output-font-size': `${this.options.outputFontSize || this.options.fontSize}px`,
+            'notebook-cell-output-line-height': `${this.options.outputLineHeight}px`,
+            'notebook-cell-output-max-height': `${this.options.outputLineHeight * this.options.outputLineLimit}px`,
+            'notebook-cell-output-font-family': this.options.outputFontFamily || this.options.fontFamily,
+        };
+    }
+
     private async createWebviewContent(): Promise<string> {
         const isWorkspaceTrusted = await this.workspaceTrustService.getWorkspaceTrust();
         const preloads = this.preloadsScriptString(isWorkspaceTrusted);
@@ -324,10 +353,10 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
         const ctx: PreloadContext = {
             isWorkspaceTrusted,
             rendererData: this.notebookRendererRegistry.notebookRenderers,
-            renderOptions: { // TODO these should be changeable in the settings
-                lineLimit: 30,
-                outputScrolling: false,
-                outputWordWrap: false,
+            renderOptions: {
+                lineLimit: this.options.outputLineLimit,
+                outputScrolling: this.options.outputScrolling,
+                outputWordWrap: this.options.outputWordWrap,
             },
             staticPreloadsData: this.getPreloads()
         };

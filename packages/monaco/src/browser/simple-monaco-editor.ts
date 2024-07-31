@@ -16,7 +16,7 @@
 
 import { EditorServiceOverrides, MonacoEditor, MonacoEditorServices } from './monaco-editor';
 
-import { CodeEditorWidget } from '@theia/monaco-editor-core/esm/vs/editor/browser/widget/codeEditorWidget';
+import { CodeEditorWidget, ICodeEditorWidgetOptions } from '@theia/monaco-editor-core/esm/vs/editor/browser/widget/codeEditorWidget';
 import { IInstantiationService } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { ServiceCollection } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/serviceCollection';
@@ -51,7 +51,8 @@ export class SimpleMonacoEditor extends MonacoEditorServices implements Disposab
         readonly node: HTMLElement,
         services: MonacoEditorServices,
         options?: MonacoEditor.IOptions,
-        override?: EditorServiceOverrides
+        override?: EditorServiceOverrides,
+        widgetOptions?: ICodeEditorWidgetOptions
     ) {
         super(services);
         this.toDispose.pushAll([
@@ -66,7 +67,7 @@ export class SimpleMonacoEditor extends MonacoEditorServices implements Disposab
         this.toDispose.push(this.create({
             ...MonacoEditor.createReadOnlyOptions(document.readOnly),
             ...options
-        }, override));
+        }, override, widgetOptions));
         this.addHandlers(this.editor);
         this.editor.setModel(document.textEditorModel);
     }
@@ -75,7 +76,7 @@ export class SimpleMonacoEditor extends MonacoEditorServices implements Disposab
         return this.editor;
     }
 
-    protected create(options?: MonacoEditor.IOptions, override?: EditorServiceOverrides): Disposable {
+    protected create(options?: MonacoEditor.IOptions, override?: EditorServiceOverrides, widgetOptions?: ICodeEditorWidgetOptions): Disposable {
         const combinedOptions = {
             ...options,
             lightbulb: { enabled: true },
@@ -97,9 +98,7 @@ export class SimpleMonacoEditor extends MonacoEditorServices implements Disposab
                 width: 0,
                 height: 0
             },
-        }, {
-
-        });
+        }, widgetOptions ?? {});
     }
 
     protected addHandlers(codeEditor: CodeEditorWidget): void {

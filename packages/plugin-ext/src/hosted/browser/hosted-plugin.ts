@@ -26,7 +26,7 @@ import { injectable, inject, postConstruct } from '@theia/core/shared/inversify'
 import { PluginWorker } from './plugin-worker';
 import { getPluginId, DeployedPlugin, HostedPluginServer } from '../../common/plugin-protocol';
 import { HostedPluginWatcher } from './hosted-plugin-watcher';
-import { MAIN_RPC_CONTEXT, PluginManagerExt, UIKind } from '../../common/plugin-api-rpc';
+import { ExtensionKind, MAIN_RPC_CONTEXT, PluginManagerExt, UIKind } from '../../common/plugin-api-rpc';
 import { setUpPluginApi } from '../../main/browser/main-context';
 import { RPCProtocol, RPCProtocolImpl } from '../../common/rpc-protocol';
 import {
@@ -71,6 +71,7 @@ import {
     AbstractHostedPluginSupport, PluginContributions, PluginHost,
     ALL_ACTIVATION_EVENT, isConnectionScopedBackendPlugin
 } from '../common/hosted-plugin';
+import { isRemote } from '@theia/core/lib/browser/browser';
 
 export type DebugActivationEvent = 'onDebugResolve' | 'onDebugInitialConfigurations' | 'onDebugAdapterProtocolTracker' | 'onDebugDynamicConfigurations';
 
@@ -334,6 +335,7 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
                     webviewCspSource
                 },
                 jsonValidation,
+                pluginKind: isRemote ? ExtensionKind.Workspace : ExtensionKind.UI,
                 supportedActivationEvents
             });
             if (toDisconnect.disposed) {

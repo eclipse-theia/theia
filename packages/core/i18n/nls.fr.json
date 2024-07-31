@@ -112,7 +112,9 @@
       "editor.accessibilitySupport2": "Supposons qu'il n'y ait pas de lecteur d'écran",
       "editor.bracketPairColorization.enabled": "Contrôle si la colorisation des paires de crochets est activée ou non. Utilisez `#workbench.colorCustomizations#` pour surcharger les couleurs de mise en évidence des crochets.",
       "editor.codeActionWidget.includeNearbyQuickfixes": "Activer/désactiver l'affichage de la réparation rapide la plus proche dans une ligne lorsqu'il n'y a pas de diagnostic en cours.",
+      "editor.cursorSurroundingLinesStyle": "Contrôle quand `#cursorSurroundingLines#` doit être appliqué.",
       "editor.detectIndentation": "Contrôle si `#editor.tabSize#` et `#editor.insertSpaces#` seront automatiquement détectés lors de l'ouverture d'un fichier en fonction de son contenu.",
+      "editor.dropIntoEditor.enabled": "Contrôle si vous pouvez glisser-déposer un fichier dans un éditeur de texte en maintenant la touche \"Maj\" enfoncée (au lieu d'ouvrir le fichier dans un éditeur).",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Tentera de formater uniquement les modifications (nécessite le contrôle de la source). Si le contrôle de la source ne peut pas être utilisé, alors le fichier entier sera formaté.",
       "editor.hover.hidingDelay": "Contrôle le délai en millisecondes après lequel le survol est caché. Nécessite que `editor.hover.sticky` soit activé.",
       "editor.inlayHints.enabled1": "Les conseils d'incrustation sont affichés par défaut et sont masqués lorsque vous maintenez les touches `Ctrl+Alt`.",
@@ -120,11 +122,15 @@
       "editor.inlayHints.fontFamily": "Contrôle la famille de police des indices d'incrustation dans l'éditeur. Si la valeur est vide, c'est la police `#editor.fontFamily#` qui est utilisée.",
       "editor.inlayHints.fontSize": "Contrôle la taille de la police des indices d'incrustation dans l'éditeur. Par défaut, `#editor.fontSize#` est utilisé lorsque la valeur configurée est inférieure à `5` ou supérieure à la taille de la police de l'éditeur.",
       "editor.insertSpaces": "Insérer des espaces lorsque l'on appuie sur `Tab`. Ce paramètre est modifié en fonction du contenu du fichier lorsque `#editor.detectIndentation#` est activé.",
+      "editor.occurrencesHighlight": "Contrôle si l'éditeur doit mettre en évidence les occurrences de symboles sémantiques.",
       "editor.quickSuggestions": "Contrôle si les suggestions doivent s'afficher automatiquement pendant la saisie. Cela peut être contrôlé pour la saisie de commentaires, de chaînes de caractères et d'autres codes. La suggestion rapide peut être configurée pour s'afficher sous forme de texte fantôme ou avec le widget de suggestion. Tenez également compte du paramètre '#editor.suggestOnTriggerCharacters#' qui contrôle si les suggestions sont déclenchées par des caractères spéciaux.",
       "editor.stickyScroll.scrollWithEditor": "Active le défilement du widget de défilement collant avec la barre de défilement horizontale de l'éditeur.",
       "editor.suggestFontSize": "Taille de la police pour le widget de suggestion. Si elle vaut `0`, la valeur de `#editor.fontSize#` est utilisée.",
       "editor.suggestLineHeight": "Hauteur de ligne pour le widget de suggestion. Lorsqu'il vaut `0`, la valeur de `#editor.lineHeight#` est utilisée. La valeur minimale est de 8.",
       "editor.tabSize": "Le nombre d'espaces que représente une tabulation. Ce paramètre est modifié en fonction du contenu du fichier lorsque `#editor.detectIndentation#` est activé.",
+      "editor.useTabStops": "L'insertion et la suppression d'espaces blancs suivent les taquets de tabulation.",
+      "editor.wordBasedSuggestions": "Contrôle si les compléments doivent être calculés sur la base des mots du document.",
+      "editor.wordBasedSuggestionsMode": "Contrôle les documents à partir desquels les complétions basées sur les mots sont calculées.",
       "files.autoSave": "Contrôle la [sauvegarde automatique](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save) des éditeurs dont les modifications n'ont pas été sauvegardées.",
       "files.autoSave.afterDelay": "Un éditeur avec des modifications est automatiquement enregistré après le `#files.autoSaveDelay#` configuré.",
       "files.autoSave.off": "Un éditeur avec des modifications n'est jamais automatiquement sauvegardé.",
@@ -336,7 +342,6 @@
       "autoReveal": "Révélation automobile",
       "clipboardWarn": "L'accès au presse-papiers est refusé. Vérifiez les autorisations de votre navigateur.",
       "clipboardWarnFirefox": "L'API Presse-papiers n'est pas disponible. Elle peut être activée par la préférence '{0}' sur la page '{1}'. Rechargez ensuite Theia. Notez que cela permettra à FireFox d'avoir un accès complet au presse-papiers du système.",
-      "noFolderOpened": "Aucun dossier ouvert",
       "refresh": "Rafraîchir dans l'Explorateur",
       "reveal": "Révéler dans Explorer",
       "toggleHiddenFiles": "Basculer les fichiers cachés"
@@ -387,6 +392,10 @@
       "plugins": "Plugins",
       "webviewTrace": "Contrôle le traçage de la communication avec les webviews.",
       "webviewWarnIfUnsecure": "Avertit les utilisateurs que les webviews sont actuellement déployés de manière non sécurisée."
+    },
+    "preferences": {
+      "hostedPlugin": "Plugin hébergé",
+      "toolbar": "Barre d'outils"
     },
     "preview": {
       "openByDefault": "Ouvrir l'aperçu au lieu de l'éditeur par défaut."
@@ -522,7 +531,6 @@
       "confirmMessage.uriMultiple": "Voulez-vous vraiment supprimer tous les {0} fichiers sélectionnés?",
       "confirmMessage.uriSingle": "Voulez-vous vraiment supprimer {0}?",
       "duplicate": "Duplicate",
-      "failApply": "Impossible d'appliquer les changements au nouveau fichier",
       "failSaveAs": "Impossible d'exécuter \"{0}\" pour le widget actuel.",
       "newFilePlaceholder": "Nom du fichier",
       "newFolderPlaceholder": "Nom du dossier",

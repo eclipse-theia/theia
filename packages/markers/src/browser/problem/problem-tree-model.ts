@@ -28,7 +28,8 @@ import debounce = require('@theia/core/shared/lodash.debounce');
 
 @injectable()
 export class ProblemTree extends MarkerTree<Diagnostic> {
-    protected markers: { node: MarkerInfoNode, markers: Marker<Diagnostic>[] }[] = [];
+
+    protected queuedMarkers = new Map<string, ProblemCompositeTreeNode.Child>();
 
     constructor(
         @inject(ProblemManager) markerManager: ProblemManager,
@@ -79,20 +80,28 @@ export class ProblemTree extends MarkerTree<Diagnostic> {
     }
 
     protected override insertNodeWithMarkers(node: MarkerInfoNode, markers: Marker<Diagnostic>[]): void {
-        this.markers.push({ node, markers });
+        // Add the element to the queue.
+        // In case a diagnostics collection for the same file already exists, it will be replaced.
+        this.queuedMarkers.set(node.id, { node, markers });
         this.doInsertNodesWithMarkers();
     }
 
     protected doInsertNodesWithMarkers = debounce(() => {
-        ProblemCompositeTreeNode.addChildren(this.root as MarkerRootNode, this.markers);
+        const root = this.root;
+        // Sanity check; This should always be of type `MarkerRootNode`
+        if (!MarkerRootNode.is(root)) {
+            return;
+        }
+        const queuedItems = Array.from(this.queuedMarkers.values());
+        ProblemCompositeTreeNode.addChildren(root, queuedItems);
 
-        for (const { node, markers } of this.markers) {
+        for (const { node, markers } of queuedItems) {
             const children = this.getMarkerNodes(node, markers);
             node.numberOfMarkers = markers.length;
             this.setChildren(node, children);
         }
 
-        this.markers.length = 0;
+        this.queuedMarkers.clear();
     }, 50);
 }
 

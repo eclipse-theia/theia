@@ -42,6 +42,7 @@ import { SnippetParser } from '@theia/monaco-editor-core/esm/vs/editor/contrib/s
 import { TextEdit } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
 import { SnippetController2 } from '@theia/monaco-editor-core/esm/vs/editor/contrib/snippet/browser/snippetController2';
 import { isObject, MaybePromise, nls } from '@theia/core/lib/common';
+import { SaveableService } from '@theia/core/lib/browser';
 
 export namespace WorkspaceFileEdit {
     export function is(arg: Edit): arg is monaco.languages.IWorkspaceFileEdit {
@@ -124,6 +125,9 @@ export class MonacoWorkspace {
     @inject(ProblemManager)
     protected readonly problems: ProblemManager;
 
+    @inject(SaveableService)
+    protected readonly saveService: SaveableService;
+
     @postConstruct()
     protected init(): void {
         this.resolveReady();
@@ -192,7 +196,7 @@ export class MonacoWorkspace {
             // acquired by the editor, thus losing the changes that made it dirty.
             this.textModelService.createModelReference(model.textEditorModel.uri).then(ref => {
                 (
-                    model.autoSave !== 'off' ? new Promise(resolve => model.onDidSaveModel(resolve)) :
+                    this.saveService.autoSave !== 'off' ? new Promise(resolve => model.onDidSaveModel(resolve)) :
                         this.editorManager.open(new URI(model.uri), { mode: 'open' })
                 ).then(
                     () => ref.dispose()

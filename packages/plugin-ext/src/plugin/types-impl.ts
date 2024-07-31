@@ -79,7 +79,7 @@ export class URI extends CodeURI implements theia.Uri {
      */
     static override revive(data: UriComponents | CodeURI): URI;
     static override revive(data: UriComponents | CodeURI | null): URI | null;
-    static override revive(data: UriComponents | CodeURI | undefined): URI | undefined
+    static override revive(data: UriComponents | CodeURI | undefined): URI | undefined;
     static override revive(data: UriComponents | CodeURI | undefined | null): URI | undefined | null {
         const uri = CodeURI.revive(data);
         return uri ? new URI(uri) : undefined;
@@ -744,6 +744,9 @@ export namespace ThemeIcon {
     export function is(item: unknown): item is ThemeIcon {
         return isObject(item) && 'id' in item;
     }
+    export function get(item: unknown): ThemeIcon | undefined {
+        return is(item) ? item : undefined;
+    }
 }
 
 export enum TextEditorRevealType {
@@ -882,7 +885,7 @@ export class TextEdit {
 
     protected _range: Range;
     protected _newText: string;
-    protected _newEol: EndOfLine;
+    protected _newEol: EndOfLine | undefined;
 
     get range(): Range {
         return this._range;
@@ -906,7 +909,7 @@ export class TextEdit {
         this._newText = value;
     }
 
-    get newEol(): EndOfLine {
+    get newEol(): EndOfLine | undefined {
         return this._newEol;
     }
 
@@ -1642,11 +1645,34 @@ export class DocumentLink {
 }
 
 @es5ClassCompat
+export class DocumentDropOrPasteEditKind {
+    static readonly Empty: DocumentDropOrPasteEditKind = new DocumentDropOrPasteEditKind('');
+
+    private static sep = '.';
+
+    constructor(
+        public readonly value: string
+    ) { }
+
+    public append(...parts: string[]): DocumentDropOrPasteEditKind {
+        return new DocumentDropOrPasteEditKind((this.value ? [this.value, ...parts] : parts).join(DocumentDropOrPasteEditKind.sep));
+    }
+
+    public intersects(other: DocumentDropOrPasteEditKind): boolean {
+        return this.contains(other) || other.contains(this);
+    }
+
+    public contains(other: DocumentDropOrPasteEditKind): boolean {
+        return this.value === other.value || other.value.startsWith(this.value + DocumentDropOrPasteEditKind.sep);
+    }
+}
+
+@es5ClassCompat
 export class DocumentDropEdit {
     title?: string;
-    kind: DocumentPasteEditKind;
+    kind: DocumentDropOrPasteEditKind;
     handledMimeType?: string;
-    yieldTo?: ReadonlyArray<DocumentPasteEditKind>;
+    yieldTo?: ReadonlyArray<DocumentDropOrPasteEditKind>;
     insertText: string | SnippetString;
     additionalEdit?: WorkspaceEdit;
 
@@ -2060,8 +2086,8 @@ export class TreeItem {
         readonly accessibilityInformation?: AccessibilityInformation
     };
 
-    constructor(label: string | theia.TreeItemLabel, collapsibleState?: theia.TreeItemCollapsibleState)
-    constructor(resourceUri: URI, collapsibleState?: theia.TreeItemCollapsibleState)
+    constructor(label: string | theia.TreeItemLabel, collapsibleState?: theia.TreeItemCollapsibleState);
+    constructor(resourceUri: URI, collapsibleState?: theia.TreeItemCollapsibleState);
     constructor(arg1: string | theia.TreeItemLabel | URI, public collapsibleState: theia.TreeItemCollapsibleState = TreeItemCollapsibleState.None) {
         if (arg1 instanceof URI) {
             this.resourceUri = arg1;
@@ -3005,6 +3031,14 @@ export class FunctionBreakpoint extends Breakpoint {
     }
 }
 
+export class DebugThread implements theia.DebugThread {
+    constructor(readonly session: theia.DebugSession, readonly threadId: number) { }
+}
+
+export class DebugStackFrame implements theia.DebugStackFrame {
+      constructor(readonly session: theia.DebugSession, readonly threadId: number, readonly frameId: number) { }
+}
+
 @es5ClassCompat
 export class Color {
     readonly red: number;
@@ -3306,6 +3340,7 @@ export class TestRunRequest implements theia.TestRunRequest {
         public readonly exclude: theia.TestItem[] | undefined = undefined,
         public readonly profile: theia.TestRunProfile | undefined = undefined,
         public readonly continuous: boolean | undefined = undefined,
+        public readonly preserveFocus: boolean = true
     ) { }
 }
 
@@ -3328,7 +3363,7 @@ export class TestMessage implements theia.TestMessage {
 
 @es5ClassCompat
 export class TestCoverageCount {
-    constructor( public covered: number,  public total: number) { }
+    constructor(public covered: number, public total: number) { }
 }
 
 @es5ClassCompat
@@ -3760,16 +3795,16 @@ DocumentPasteEditKind.Empty = new DocumentPasteEditKind('');
 
 @es5ClassCompat
 export class DocumentPasteEdit {
-    constructor(insertText: string | SnippetString, title: string, kind: DocumentPasteEditKind) {
+    constructor(insertText: string | SnippetString, title: string, kind: DocumentDropOrPasteEditKind) {
         this.insertText = insertText;
         this.title = title;
         this.kind = kind;
     }
     title: string;
-    kind: DocumentPasteEditKind;
+    kind: DocumentDropOrPasteEditKind;
     insertText: string | SnippetString;
     additionalEdit?: WorkspaceEdit;
-    yieldTo?: readonly DocumentPasteEditKind[];
+    yieldTo?: ReadonlyArray<DocumentDropOrPasteEditKind>;
 }
 
 /**
@@ -3823,3 +3858,144 @@ export class TerminalQuickFixOpener {
     constructor(uri: theia.Uri) { }
 }
 
+// #region Chat
+export class ChatRequestTurn {
+    readonly prompt: string;
+    readonly participant: string;
+    readonly command?: string;
+    readonly references: theia.ChatPromptReference[];
+    private constructor(prompt: string, command: string | undefined, references: theia.ChatPromptReference[], participant: string) {
+        this.prompt = prompt;
+        this.command = command;
+        this.participant = participant;
+        this.references = references;
+    };
+}
+
+export class ChatResponseTurn {
+    readonly command?: string;
+
+    private constructor(readonly response: ReadonlyArray<theia.ChatResponseMarkdownPart | theia.ChatResponseFileTreePart | theia.ChatResponseAnchorPart
+        | theia.ChatResponseCommandButtonPart>, readonly result: theia.ChatResult, readonly participant: string) { }
+}
+
+export class ChatResponseAnchorPart {
+    value: URI | Location;
+    title?: string;
+
+    constructor(value: URI | Location, title?: string) { }
+}
+
+export class ChatResponseProgressPart {
+    value: string;
+
+    constructor(value: string) { }
+}
+
+export class ChatResponseReferencePart {
+    value: URI | Location;
+    iconPath?: URI | ThemeIcon | { light: URI; dark: URI; };
+
+    constructor(value: URI | theia.Location, iconPath?: URI | ThemeIcon | {
+        light: URI;
+        dark: URI;
+    }) { }
+}
+export class ChatResponseCommandButtonPart {
+    value: theia.Command;
+
+    constructor(value: theia.Command) { }
+}
+
+export class ChatResponseMarkdownPart {
+    value: theia.MarkdownString;
+
+    constructor(value: string | theia.MarkdownString) {
+    }
+}
+
+export class ChatResponseFileTreePart {
+    value: theia.ChatResponseFileTree[];
+    baseUri: URI;
+
+    constructor(value: theia.ChatResponseFileTree[], baseUri: URI) { }
+}
+
+export type ChatResponsePart = ChatResponseMarkdownPart | ChatResponseFileTreePart | ChatResponseAnchorPart
+    | ChatResponseProgressPart | ChatResponseReferencePart | ChatResponseCommandButtonPart;
+
+export enum ChatResultFeedbackKind {
+    Unhelpful = 0,
+    Helpful = 1,
+}
+
+export enum LanguageModelChatMessageRole {
+    User = 1,
+    Assistant = 2
+}
+
+export class LanguageModelChatMessage {
+
+    static User(content: string, name?: string): LanguageModelChatMessage {
+        return new LanguageModelChatMessage(LanguageModelChatMessageRole.User, content, name);
+    }
+
+    static Assistant(content: string, name?: string): LanguageModelChatMessage {
+        return new LanguageModelChatMessage(LanguageModelChatMessageRole.Assistant, content, name);
+    }
+
+    constructor(public role: LanguageModelChatMessageRole, public content: string, public name?: string) { }
+}
+
+export class LanguageModelError extends Error {
+
+    static NoPermissions(message?: string): LanguageModelError {
+        return new LanguageModelError(message, LanguageModelError.NoPermissions.name);
+    }
+
+    static Blocked(message?: string): LanguageModelError {
+        return new LanguageModelError(message, LanguageModelError.Blocked.name);
+    }
+
+    static NotFound(message?: string): LanguageModelError {
+        return new LanguageModelError(message, LanguageModelError.NotFound.name);
+    }
+
+    readonly code: string;
+
+    constructor(message?: string, code?: string) {
+        super(message);
+        this.name = 'LanguageModelError';
+        this.code = code ?? '';
+    }
+}
+// #endregion
+
+// #region Port Attributes
+
+export enum PortAutoForwardAction {
+    Notify = 1,
+    OpenBrowser = 2,
+    OpenPreview = 3,
+    Silent = 4,
+    Ignore = 5
+}
+
+export class PortAttributes {
+    constructor(public autoForwardAction: PortAutoForwardAction) {
+    }
+}
+
+// #endregion
+
+// #region Debug Visualization
+
+export class DebugVisualization {
+    iconPath?: URI | { light: URI; dark: URI } | ThemeIcon;
+    visualization?: theia.Command | { treeId: string };
+
+    constructor(public name: string) {
+    }
+}
+
+// #endregion

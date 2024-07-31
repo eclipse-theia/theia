@@ -49,6 +49,10 @@ export class ApplicationServerImpl implements ApplicationServer {
         return Promise.resolve(this.applicationPackage.projectPath);
     }
 
+    getApplicationPlatform(): Promise<string> {
+        return Promise.resolve(`${process.platform}-${process.arch}`);
+    }
+
     async getBackendOS(): Promise<OS.Type> {
         return OS.type();
     }

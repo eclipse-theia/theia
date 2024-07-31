@@ -51,7 +51,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-2019, ubuntu-latest, macos-11]
+        os: [windows-2019, ubuntu-latest, macos-14]
         node: [16.x, 18.x, 20.x]
 
     runs-on: ${{ matrix.os }}
@@ -86,7 +86,7 @@ jobs:
         if: runner.os == 'Linux'
         shell: bash
         run: |
-          yarn -s download:plugins
+          yarn -s download:plugins --rate-limit 3
 
       - name: Build
         shell: bash

@@ -112,7 +112,9 @@
       "editor.accessibilitySupport2": "Assume a screen reader is not attached",
       "editor.bracketPairColorization.enabled": "Controls whether bracket pair colorization is enabled or not. Use `#workbench.colorCustomizations#` to override the bracket highlight colors.",
       "editor.codeActionWidget.includeNearbyQuickfixes": "Enable/disable showing nearest quickfix within a line when not currently on a diagnostic.",
+      "editor.cursorSurroundingLinesStyle": "Controls when `#cursorSurroundingLines#` should be enforced.",
       "editor.detectIndentation": "Controls whether `#editor.tabSize#` and `#editor.insertSpaces#` will be automatically detected when a file is opened based on the file contents.",
+      "editor.dropIntoEditor.enabled": "Controls whether you can drag and drop a file into a text editor by holding down `shift` (instead of opening the file in an editor).",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Will attempt to format modifications only (requires source control). If source control can't be used, then the whole file will be formatted.",
       "editor.hover.hidingDelay": "Controls the delay in milliseconds after thich the hover is hidden. Requires `editor.hover.sticky` to be enabled.",
       "editor.inlayHints.enabled1": "Inlay hints are showing by default and hide when holding Ctrl+Alt",
@@ -120,11 +122,15 @@
       "editor.inlayHints.fontFamily": "Controls font family of inlay hints in the editor. When set to empty, the `#editor.fontFamily#` is used.",
       "editor.inlayHints.fontSize": "Controls font size of inlay hints in the editor. As default the `#editor.fontSize#` is used when the configured value is less than `5` or greater than the editor font size.",
       "editor.insertSpaces": "Insert spaces when pressing `Tab`. This setting is overridden based on the file contents when `#editor.detectIndentation#` is on.",
+      "editor.occurrencesHighlight": "Controls whether the editor should highlight semantic symbol occurrences.",
       "editor.quickSuggestions": "Controls whether suggestions should automatically show up while typing. This can be controlled for typing in comments, strings, and other code. Quick suggestion can be configured to show as ghost text or with the suggest widget. Also be aware of the '#editor.suggestOnTriggerCharacters#'-setting which controls if suggestions are triggered by special characters.",
       "editor.stickyScroll.scrollWithEditor": "Enable scrolling of the sticky scroll widget with the editor's horizontal scrollbar.",
       "editor.suggestFontSize": "Font size for the suggest widget. When set to `0`, the value of `#editor.fontSize#` is used.",
       "editor.suggestLineHeight": "Line height for the suggest widget. When set to `0`, the value of `#editor.lineHeight#` is used. The minimum value is 8.",
       "editor.tabSize": "The number of spaces a tab is equal to. This setting is overridden based on the file contents when `#editor.detectIndentation#` is on.",
+      "editor.useTabStops": "Inserting and deleting whitespace follows tab stops.",
+      "editor.wordBasedSuggestions": "Controls whether completions should be computed based on words in the document.",
+      "editor.wordBasedSuggestionsMode": "Controls from which documents word based completions are computed.",
       "files.autoSave": "Controls [auto save](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save) of editors that have unsaved changes.",
       "files.autoSave.afterDelay": "An editor with changes is automatically saved after the configured `#files.autoSaveDelay#`.",
       "files.autoSave.off": "An editor with changes is never automatically saved.",
@@ -336,7 +342,6 @@
       "autoReveal": "Auto Reveal",
       "clipboardWarn": "Access to the clipboard is denied. Check your browser's permission.",
       "clipboardWarnFirefox": "Clipboard API is not available. It can be enabled by '{0}' preference on '{1}' page. Then reload Theia. Note, it will allow FireFox getting full access to the system clipboard.",
-      "noFolderOpened": "No Folder Opened",
       "refresh": "Refresh in Explorer",
       "reveal": "Reveal in Explorer",
       "toggleHiddenFiles": "Toggle Hidden Files"
@@ -387,6 +392,10 @@
       "plugins": "Plugins",
       "webviewTrace": "Controls communication tracing with webviews.",
       "webviewWarnIfUnsecure": "Warns users that webviews are currently deployed unsecurely."
+    },
+    "preferences": {
+      "hostedPlugin": "Hosted Plugin",
+      "toolbar": "Toolbar"
     },
     "preview": {
       "openByDefault": "Open the preview instead of the editor by default."
@@ -522,7 +531,6 @@
       "confirmMessage.uriMultiple": "Do you really want to delete all the {0} selected files?",
       "confirmMessage.uriSingle": "Do you really want to delete {0}?",
       "duplicate": "Duplicate",
-      "failApply": "Could not apply changes to new file",
       "failSaveAs": "Cannot run \"{0}\" for the current widget.",
       "newFilePlaceholder": "File Name",
       "newFolderPlaceholder": "Folder Name",

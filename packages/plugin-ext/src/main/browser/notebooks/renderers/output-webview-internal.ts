@@ -569,6 +569,24 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
                 }
                 break;
             }
+            case 'notebookStyles': {
+                const documentStyle = window.document.documentElement.style;
+
+                for (let i = documentStyle.length - 1; i >= 0; i--) {
+                    const property = documentStyle[i];
+
+                    // Don't remove properties that the webview might have added separately
+                    if (property && property.startsWith('--notebook-')) {
+                        documentStyle.removeProperty(property);
+                    }
+                }
+
+                // Re-add new properties
+                for (const [name, value] of Object.entries(event.data.styles)) {
+                    documentStyle.setProperty(`--${name}`, value);
+                }
+                break;
+            }
         }
     });
     window.addEventListener('wheel', handleWheel);

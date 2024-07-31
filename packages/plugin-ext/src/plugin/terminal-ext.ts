@@ -13,10 +13,10 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+
 import { UUID } from '@theia/core/shared/@phosphor/coreutils';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { Terminal, TerminalOptions, PseudoTerminalOptions, ExtensionTerminalOptions, TerminalState } from '@theia/plugin';
-import { TerminalServiceExt, TerminalServiceMain, PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc';
+import { TerminalServiceExt, TerminalServiceMain, PLUGIN_RPC_CONTEXT, Plugin, TerminalOptions } from '../common/plugin-api-rpc';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { Event, Emitter } from '@theia/core/lib/common/event';
 import { MultiKeyMap } from '@theia/core/lib/common/collections';
@@ -26,28 +26,13 @@ import * as Converter from './type-converters';
 import { Disposable, EnvironmentVariableMutatorType, TerminalExitReason, ThemeIcon } from './types-impl';
 import { NO_ROOT_URI, SerializableEnvironmentVariableCollection } from '@theia/terminal/lib/common/shell-terminal-protocol';
 import { ProvidedTerminalLink } from '../common/plugin-api-rpc-model';
-import { ThemeIcon as MonacoThemeIcon } from '@theia/monaco-editor-core/esm/vs/base/common/themables';
-
-export function getIconUris(iconPath: theia.TerminalOptions['iconPath']): { id: string } | undefined {
-    if (ThemeIcon.is(iconPath)) {
-        return { id: iconPath.id };
-    }
-    return undefined;
-}
-
-export function getIconClass(options: theia.TerminalOptions | theia.ExtensionTerminalOptions): string | undefined {
-    const iconClass = getIconUris(options.iconPath);
-    if (iconClass) {
-        return MonacoThemeIcon.asClassName(iconClass);
-    }
-    return undefined;
-}
+import { PluginIconPath } from './plugin-icon-path';
 
 /**
  * Provides high level terminal plugin api to use in the Theia plugins.
  * This service allow(with help proxy) create and use terminal emulator.
  */
- @injectable()
+@injectable()
 export class TerminalServiceExtImpl implements TerminalServiceExt {
     private readonly proxy: TerminalServiceMain;
 
@@ -59,17 +44,17 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
     private readonly terminalLinkProviders = new Map<string, theia.TerminalLinkProvider>();
     private readonly terminalObservers = new Map<string, theia.TerminalObserver>();
     private readonly terminalProfileProviders = new Map<string, theia.TerminalProfileProvider>();
-    private readonly onDidCloseTerminalEmitter = new Emitter<Terminal>();
-    readonly onDidCloseTerminal: theia.Event<Terminal> = this.onDidCloseTerminalEmitter.event;
+    private readonly onDidCloseTerminalEmitter = new Emitter<theia.Terminal>();
+    readonly onDidCloseTerminal: theia.Event<theia.Terminal> = this.onDidCloseTerminalEmitter.event;
 
-    private readonly onDidOpenTerminalEmitter = new Emitter<Terminal>();
-    readonly onDidOpenTerminal: theia.Event<Terminal> = this.onDidOpenTerminalEmitter.event;
+    private readonly onDidOpenTerminalEmitter = new Emitter<theia.Terminal>();
+    readonly onDidOpenTerminal: theia.Event<theia.Terminal> = this.onDidOpenTerminalEmitter.event;
 
-    private readonly onDidChangeActiveTerminalEmitter = new Emitter<Terminal | undefined>();
-    readonly onDidChangeActiveTerminal: theia.Event<Terminal | undefined> = this.onDidChangeActiveTerminalEmitter.event;
+    private readonly onDidChangeActiveTerminalEmitter = new Emitter<theia.Terminal | undefined>();
+    readonly onDidChangeActiveTerminal: theia.Event<theia.Terminal | undefined> = this.onDidChangeActiveTerminalEmitter.event;
 
-    private readonly onDidChangeTerminalStateEmitter = new Emitter<Terminal>();
-    readonly onDidChangeTerminalState: theia.Event<Terminal> = this.onDidChangeTerminalStateEmitter.event;
+    private readonly onDidChangeTerminalStateEmitter = new Emitter<theia.Terminal>();
+    readonly onDidChangeTerminalState: theia.Event<theia.Terminal> = this.onDidChangeTerminalStateEmitter.event;
 
     protected environmentVariableCollections: MultiKeyMap<string, EnvironmentVariableCollectionImpl> = new MultiKeyMap(2);
 
@@ -97,9 +82,10 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
     }
 
     createTerminal(
-        nameOrOptions: TerminalOptions | PseudoTerminalOptions | ExtensionTerminalOptions | (string | undefined),
+        plugin: Plugin,
+        nameOrOptions: theia.TerminalOptions | theia.PseudoTerminalOptions | theia.ExtensionTerminalOptions | string | undefined,
         shellPath?: string, shellArgs?: string[] | string
-    ): Terminal {
+    ): theia.Terminal {
         const id = `plugin-terminal-${UUID.uuid4()}`;
         let options: TerminalOptions;
         let pseudoTerminal: theia.Pseudoterminal | undefined = undefined;
@@ -122,7 +108,6 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
         }
 
         let parentId;
-
         if (options.location && typeof options.location === 'object' && 'parentTerminal' in options.location) {
             const parentTerminal = options.location.parentTerminal;
             if (parentTerminal instanceof TerminalExtImpl) {
@@ -133,6 +118,15 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
                     }
                 }
             }
+        }
+
+        if (typeof nameOrOptions === 'object' && 'iconPath' in nameOrOptions) {
+            const iconPath = nameOrOptions.iconPath;
+            options.iconUrl = PluginIconPath.toUrl(iconPath, plugin) ?? ThemeIcon.get(iconPath);
+        }
+
+        if (typeof nameOrOptions === 'object' && 'color' in nameOrOptions) {
+            options.color = nameOrOptions.color;
         }
 
         this.proxy.$createTerminal(id, options, parentId, !!pseudoTerminal);
@@ -462,7 +456,7 @@ export class EnvironmentVariableCollectionImpl implements theia.GlobalEnvironmen
     }
 }
 
-export class TerminalExtImpl implements Terminal {
+export class TerminalExtImpl implements theia.Terminal {
 
     name: string;
 
@@ -476,9 +470,9 @@ export class TerminalExtImpl implements Terminal {
         return this.deferredProcessId.promise;
     }
 
-    readonly creationOptions: Readonly<TerminalOptions | ExtensionTerminalOptions>;
+    readonly creationOptions: Readonly<theia.TerminalOptions | theia.ExtensionTerminalOptions>;
 
-    state: TerminalState = { isInteractedWith: false };
+    state: theia.TerminalState = { isInteractedWith: false };
 
     constructor(private readonly proxy: TerminalServiceMain, private readonly options: theia.TerminalOptions | theia.ExtensionTerminalOptions) {
         this.creationOptions = this.options;

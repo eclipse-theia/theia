@@ -46,6 +46,11 @@ export class EnvVariablesServerImpl implements EnvVariablesServer {
     }
 
     protected async createConfigDirUri(): Promise<string> {
+        if (process.env.THEIA_CONFIG_DIR) {
+            // this has been explicitly set by the user, so we do not override its value
+            return FileUri.create(process.env.THEIA_CONFIG_DIR).toString();
+        }
+
         const dataFolderPath = join(BackendApplicationPath, 'data');
         const userDataPath = join(dataFolderPath, 'user-data');
         const dataFolderExists = this.pathExistenceCache[dataFolderPath] ??= await pathExists(dataFolderPath);

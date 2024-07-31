@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable } from '@theia/core/shared/inversify';
-import { RemoteCopyContribution, RemoteCopyRegistry } from './remote-copy-contribution';
+import { RemoteCopyContribution, RemoteCopyRegistry } from '@theia/core/lib/node/remote/remote-copy-contribution';
 
 @injectable()
 export class MainCopyContribution implements RemoteCopyContribution {

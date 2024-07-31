@@ -122,7 +122,9 @@ export class LocationListRenderer extends ReactRenderer {
     }
 
     override render(): void {
-        this.hostRoot.render(this.doRender());
+        if (!this.toDispose.disposed) {
+            this.hostRoot.render(this.doRender());
+        }
     }
 
     protected initResolveDirectoryCache(): void {

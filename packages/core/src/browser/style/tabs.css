@@ -177,6 +177,17 @@
   padding-right: 8px;
 }
 
+.p-TabBar.theia-app-centers .p-TabBar-tabIcon[class*="plugin-icon-"],
+.p-TabBar-tab.p-mod-drag-image .p-TabBar-tabIcon[class*="plugin-icon-"] {
+  background: none;
+  height: var(--theia-icon-size);
+}
+
+.p-TabBar.theia-app-centers .p-TabBar-tabIcon[class*="plugin-icon-"]::before,
+.p-TabBar-tab.p-mod-drag-image .p-TabBar-tabIcon[class*="plugin-icon-"]::before {
+  display: inline-block;
+}
+
 /* codicons */
 .p-TabBar.theia-app-centers .p-TabBar-tabIcon.codicon,
 .p-TabBar-tab.p-mod-drag-image .p-TabBar-tabIcon.codicon {
@@ -305,7 +316,7 @@
   display: none !important;
 }
 
-.p-TabBar .theia-badge-decorator-sidebar {
+.theia-badge-decorator-sidebar {
   background-color: var(--theia-activityBarBadge-background);
   border-radius: 20px;
   color: var(--theia-activityBarBadge-foreground);

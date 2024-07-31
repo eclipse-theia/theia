@@ -211,6 +211,7 @@ export class SidePanelHandler {
     protected createAdditionalViewsWidget(): AdditionalViewsMenuWidget {
         const widget = this.additionalViewsMenuFactory(this.side);
         widget.addClass('theia-sidebar-menu');
+        widget.addClass('theia-additional-views-menu');
         return widget;
     }
 
@@ -653,7 +654,7 @@ export class SidePanelHandler {
     }
 
     protected onTabsOverflowChanged(sender: SideTabBar, event: { titles: Title<Widget>[], startIndex: number }): void {
-        if (event.startIndex >= 0 && event.startIndex <= sender.currentIndex) {
+        if (event.startIndex > 0 && event.startIndex <= sender.currentIndex) {
             sender.revealTab(sender.currentIndex);
         } else {
             this.additionalViewsMenu.updateAdditionalViews(sender, event);

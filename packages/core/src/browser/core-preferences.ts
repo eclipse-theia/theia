@@ -216,7 +216,7 @@ export const corePreferenceSchema: PreferenceSchema = {
             enum: ['dark', 'light', 'hc-theia'],
             enumItemLabels: ['Dark (Theia)', 'Light (Theia)', 'High Contrast (Theia)'],
             default: DefaultTheme.defaultForOSTheme(FrontendApplicationConfigProvider.get().defaultTheme),
-            description: nls.localizeByDefault('Specifies the color theme used in the workbench.')
+            description: nls.localizeByDefault('Specifies the color theme used in the workbench when {0} is not enabled.', '`#window.autoDetectColorScheme#`')
         },
         'workbench.iconTheme': {
             type: ['string'],

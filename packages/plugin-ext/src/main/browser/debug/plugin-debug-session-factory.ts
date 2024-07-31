@@ -22,7 +22,7 @@ import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { MessageClient } from '@theia/core/lib/common/message-service-protocol';
 import { OutputChannelManager } from '@theia/output/lib/browser/output-channel';
 import { DebugPreferences } from '@theia/debug/lib/browser/debug-preferences';
-import { DebugConfigurationSessionOptions } from '@theia/debug/lib/browser/debug-session-options';
+import { DebugConfigurationSessionOptions, TestRunReference } from '@theia/debug/lib/browser/debug-session-options';
 import { DebugSession } from '@theia/debug/lib/browser/debug-session';
 import { DebugSessionConnection } from '@theia/debug/lib/browser/debug-session-connection';
 import { TerminalWidgetOptions, TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
@@ -32,12 +32,17 @@ import { DebugContribution } from '@theia/debug/lib/browser/debug-contribution';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { PluginChannel } from '../../../common/connection';
+import { TestService } from '@theia/test/lib/browser/test-service';
+import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
 
 export class PluginDebugSession extends DebugSession {
     constructor(
         override readonly id: string,
         override readonly options: DebugConfigurationSessionOptions,
         override readonly parentSession: DebugSession | undefined,
+        testService: TestService,
+        testRun: TestRunReference | undefined,
+        sessionManager: DebugSessionManager,
         protected override readonly connection: DebugSessionConnection,
         protected override readonly terminalServer: TerminalService,
         protected override readonly editorManager: EditorManager,
@@ -48,7 +53,8 @@ export class PluginDebugSession extends DebugSession {
         protected readonly terminalOptionsExt: TerminalOptionsExt | undefined,
         protected override readonly debugContributionProvider: ContributionProvider<DebugContribution>,
         protected override readonly workspaceService: WorkspaceService) {
-        super(id, options, parentSession, connection, terminalServer, editorManager, breakpoints, labelProvider, messages, fileService, debugContributionProvider,
+        super(id, options, parentSession, testService, testRun, sessionManager, connection, terminalServer, editorManager, breakpoints,
+            labelProvider, messages, fileService, debugContributionProvider,
             workspaceService);
     }
 
@@ -75,12 +81,13 @@ export class PluginDebugSessionFactory extends DefaultDebugSessionFactory {
         protected override readonly fileService: FileService,
         protected readonly terminalOptionsExt: TerminalOptionsExt | undefined,
         protected override readonly debugContributionProvider: ContributionProvider<DebugContribution>,
+        protected override readonly testService: TestService,
         protected override readonly workspaceService: WorkspaceService,
     ) {
         super();
     }
 
-    override get(sessionId: string, options: DebugConfigurationSessionOptions, parentSession?: DebugSession): DebugSession {
+    override get(manager: DebugSessionManager, sessionId: string, options: DebugConfigurationSessionOptions, parentSession?: DebugSession): DebugSession {
         const connection = new DebugSessionConnection(
             sessionId,
             this.connectionFactory,
@@ -90,6 +97,9 @@ export class PluginDebugSessionFactory extends DefaultDebugSessionFactory {
             sessionId,
             options,
             parentSession,
+            this.testService,
+            options.testRun,
+            manager,
             connection,
             this.terminalService,
             this.editorManager,

@@ -41,6 +41,7 @@ export class MonacoStandaloneThemeService extends StandaloneThemeService {
                 for (let i = 0; i < this.styleElements.length; i++) {
                     if (this.styleElements[i] === style) {
                         this.styleElements.splice(i, 1);
+                        style.remove();
                         return;
                     }
                 }

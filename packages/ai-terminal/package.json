@@ -1,12 +1,12 @@
 {
   "name": "@theia/ai-terminal",
-  "version": "1.49.0",
+  "version": "1.52.0",
   "description": "Theia - AI Terminal Extension",
   "dependencies": {
-    "@theia/core": "1.49.0",
-    "@theia/ai-core": "1.49.0",
-    "@theia/ai-chat": "1.49.0",
-    "@theia/terminal": "1.49.0"
+    "@theia/core": "1.52.0",
+    "@theia/ai-core": "1.52.0",
+    "@theia/ai-chat": "1.52.0",
+    "@theia/terminal": "1.52.0"
   },
   "publishConfig": {
     "access": "public"
@@ -41,7 +41,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.49.0"
+    "@theia/ext-scripts": "1.52.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

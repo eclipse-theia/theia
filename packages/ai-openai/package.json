@@ -1,15 +1,15 @@
 {
   "name": "@theia/ai-openai",
-  "version": "1.49.0",
+  "version": "1.52.0",
   "description": "Theia - OpenAI LLM Integration",
   "dependencies": {
-    "@theia/core": "1.49.0",
-    "@theia/filesystem": "1.49.0",
-    "@theia/workspace": "1.49.0",
+    "@theia/core": "1.52.0",
+    "@theia/filesystem": "1.52.0",
+    "@theia/workspace": "1.52.0",
     "minimatch": "^5.1.0",
     "tslib": "^2.6.2",
     "openai": "^4.45.0",
-    "@theia/ai-core": "1.49.0"
+    "@theia/ai-core": "1.52.0"
   },
   "publishConfig": {
     "access": "public"
@@ -44,7 +44,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.49.0"
+    "@theia/ext-scripts": "1.52.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

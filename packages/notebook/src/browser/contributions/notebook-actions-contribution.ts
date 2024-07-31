@@ -315,13 +315,13 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
                 command: NotebookCommands.CHANGE_SELECTED_CELL.id,
                 keybinding: 'up',
                 args: CellChangeDirection.Up,
-                when: `(!editorTextFocus || ${NOTEBOOK_CELL_CURSOR_FIRST_LINE}) && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`
+                when: `(!editorTextFocus || ${NOTEBOOK_CELL_CURSOR_FIRST_LINE}) && !suggestWidgetVisible && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`
             },
             {
                 command: NotebookCommands.CHANGE_SELECTED_CELL.id,
                 keybinding: 'down',
                 args: CellChangeDirection.Down,
-                when: `(!editorTextFocus || ${NOTEBOOK_CELL_CURSOR_LAST_LINE})  && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`
+                when: `(!editorTextFocus || ${NOTEBOOK_CELL_CURSOR_LAST_LINE}) && !suggestWidgetVisible && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`
             },
             {
                 command: NotebookCommands.CUT_SELECTED_CELL.id,

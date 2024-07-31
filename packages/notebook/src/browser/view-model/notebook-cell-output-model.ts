@@ -38,7 +38,7 @@ export class NotebookCellOutputModel implements Disposable {
         return this.rawOutput.metadata;
     }
 
-    constructor(private rawOutput: CellOutput) { }
+    constructor(protected rawOutput: CellOutput) { }
 
     replaceData(rawData: CellOutput): void {
         this.rawOutput = rawData;

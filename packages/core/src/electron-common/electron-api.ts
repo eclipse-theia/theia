@@ -56,7 +56,11 @@ export interface TheiaCoreAPI {
     focusWindow(name?: string): void;
 
     showItemInFolder(fsPath: string): void;
-    openWithSystemApp(fsPath: string): void;
+
+    /**
+     * @param location The location to open with the system app. This can be a file path or a URL.
+     */
+    openWithSystemApp(location: string): void;
 
     getTitleBarStyleAtStartup(): Promise<string>;
     setTitleBarStyle(style: string): void;
@@ -80,7 +84,7 @@ export interface TheiaCoreAPI {
     isFullScreen(): boolean; // TODO: this should really be async, since it blocks the renderer process
     toggleFullScreen(): void;
 
-    requestReload(): void;
+    requestReload(newUrl?: string): void;
     restart(): void;
 
     applicationStateChanged(state: FrontendApplicationState): void;

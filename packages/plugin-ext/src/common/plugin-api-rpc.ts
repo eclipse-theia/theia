@@ -89,7 +89,9 @@ import {
     InlineCompletionContext,
     DocumentDropEdit,
     DataTransferDTO,
-    DocumentDropEditProviderMetadata
+    DocumentDropEditProviderMetadata,
+    DebugStackFrameDTO,
+    DebugThreadDTO
 } from './plugin-api-rpc-model';
 import { ExtPluginApi } from './plugin-ext-api-contribution';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from './types';
@@ -159,6 +161,18 @@ export enum UIKind {
     Web = 2
 }
 
+export enum ExtensionKind {
+    /**
+     * Extension runs where the UI runs.
+     */
+    UI = 1,
+
+    /**
+     * Extension runs where the remote extension host runs.
+     */
+    Workspace = 2
+}
+
 export interface EnvInit {
     queryParams: QueryParameters;
     language: string;
@@ -178,6 +192,7 @@ export interface PluginManager {
     getAllPlugins(): Plugin[];
     getPluginById(pluginId: string): Plugin | undefined;
     getPluginExport(pluginId: string): PluginAPI | undefined;
+    getPluginKind(): theia.ExtensionKind;
     isRunning(pluginId: string): boolean;
     isActive(pluginId: string): boolean;
     activatePlugin(pluginId: string): PromiseLike<void>;
@@ -233,6 +248,7 @@ export interface PluginManagerInitializeParams {
     globalState: KeysToKeysToAnyValue
     workspaceState: KeysToKeysToAnyValue
     env: EnvInit
+    pluginKind: ExtensionKind
     extApi?: ExtPluginApi[]
     webview: WebviewInitData
     jsonValidation: PluginJsonValidationContribution[]
@@ -325,7 +341,7 @@ export interface TerminalServiceMain {
      * Create new Terminal with Terminal options.
      * @param options - object with parameters to create new terminal.
      */
-    $createTerminal(id: string, options: theia.TerminalOptions, parentId?: string, isPseudoTerminal?: boolean): Promise<string>;
+    $createTerminal(id: string, options: TerminalOptions, parentId?: string, isPseudoTerminal?: boolean): Promise<string>;
 
     /**
      * Send text to the terminal by id.
@@ -455,6 +471,10 @@ export interface TerminalServiceMain {
     $unregisterTerminalObserver(id: string): unknown;
 }
 
+export interface TerminalOptions extends theia.TerminalOptions {
+    iconUrl?: string | { light: string; dark: string } | ThemeIcon;
+}
+
 export interface AutoFocus {
     autoFocusFirstEntry?: boolean;
     // TODO
@@ -499,7 +519,7 @@ export interface StatusBarMessageRegistryMain {
 
 export interface QuickOpenExt {
     $onItemSelected(handle: number): void;
-    $validateInput(input: string): Promise<string | { content: string; severity: Severity; } | null | undefined> | undefined;
+    $validateInput(input: string): Promise<string | { content: string; severity: Severity; } | null | undefined>;
 
     $acceptOnDidAccept(sessionId: number): Promise<void>;
     $acceptDidChangeValue(sessionId: number, changedValue: string): Promise<void>;
@@ -510,10 +530,10 @@ export interface QuickOpenExt {
     $onDidChangeSelection(sessionId: number, handles: number[]): void;
 
     /* eslint-disable max-len */
-    showQuickPick(itemsOrItemsPromise: Array<theia.QuickPickItem> | Promise<Array<theia.QuickPickItem>>, options: theia.QuickPickOptions & { canPickMany: true; },
+    showQuickPick(plugin: Plugin, itemsOrItemsPromise: Array<theia.QuickPickItem> | Promise<Array<theia.QuickPickItem>>, options: theia.QuickPickOptions & { canPickMany: true; },
         token?: theia.CancellationToken): Promise<Array<theia.QuickPickItem> | undefined>;
-    showQuickPick(itemsOrItemsPromise: string[] | Promise<string[]>, options?: theia.QuickPickOptions, token?: theia.CancellationToken): Promise<string | undefined>;
-    showQuickPick(itemsOrItemsPromise: Array<theia.QuickPickItem> | Promise<Array<theia.QuickPickItem>>, options?: theia.QuickPickOptions, token?: theia.CancellationToken): Promise<theia.QuickPickItem | undefined>;
+    showQuickPick(plugin: Plugin, itemsOrItemsPromise: string[] | Promise<string[]>, options?: theia.QuickPickOptions, token?: theia.CancellationToken): Promise<string | undefined>;
+    showQuickPick(plugin: Plugin, itemsOrItemsPromise: Array<theia.QuickPickItem> | Promise<Array<theia.QuickPickItem>>, options?: theia.QuickPickOptions, token?: theia.CancellationToken): Promise<theia.QuickPickItem | undefined>;
 
     showInput(options?: theia.InputBoxOptions, token?: theia.CancellationToken): PromiseLike<string | undefined>;
     // showWorkspaceFolderPick(options?: theia.WorkspaceFolderPickOptions, token?: theia.CancellationToken): Promise<theia.WorkspaceFolder | undefined>
@@ -637,7 +657,7 @@ export interface TransferQuickPickItem {
     handle: number;
     kind: 'item' | 'separator',
     label: string;
-    iconPath?: UriComponents | { light: UriComponents; dark: UriComponents } | ThemeIcon;
+    iconUrl?: string | { light: string; dark: string } | ThemeIcon;
     description?: string;
     detail?: string;
     picked?: boolean;
@@ -661,7 +681,7 @@ export interface TransferQuickPickOptions<T extends TransferQuickPickItem> {
 
 export interface TransferQuickInputButton {
     handle?: number;
-    readonly iconPath: UriComponents | { light: UriComponents; dark: UriComponents } | ThemeIcon;
+    readonly iconUrl?: string | { light: string; dark: string } | ThemeIcon;
     readonly tooltip?: string | undefined;
 }
 
@@ -893,7 +913,8 @@ export interface WindowMain {
 }
 
 export interface WindowStateExt {
-    $onWindowStateChanged(focus: boolean): void;
+    $onDidChangeWindowFocus(focused: boolean): void;
+    $onDidChangeWindowActive(active: boolean): void;
 }
 
 export interface NotificationExt {
@@ -1208,7 +1229,7 @@ export interface UndoStopOptions {
 }
 
 export interface ApplyEditsOptions extends UndoStopOptions {
-    setEndOfLine: EndOfLine;
+    setEndOfLine: EndOfLine | undefined;
 }
 
 export interface ThemeColor {
@@ -1387,7 +1408,6 @@ export interface DocumentsMain {
     $tryShowDocument(uri: UriComponents, options?: TextDocumentShowOptions): Promise<void>;
     $tryOpenDocument(uri: UriComponents): Promise<boolean>;
     $trySaveDocument(uri: UriComponents): Promise<boolean>;
-    $tryCloseDocument(uri: UriComponents): Promise<boolean>;
 }
 
 export interface EnvMain {
@@ -1500,12 +1520,10 @@ export interface WorkspaceEditEntryMetadataDto {
     needsConfirmation: boolean;
     label: string;
     description?: string;
-    iconPath?: {
-        id: string;
-    } | {
+    iconPath?: ThemeIcon | {
         light: UriComponents;
         dark: UriComponents;
-    } | ThemeIcon;
+    };
 }
 
 export interface WorkspaceFileEditDto {
@@ -1859,12 +1877,12 @@ export interface WebviewViewsMain extends Disposable {
 }
 
 export interface CustomEditorsExt {
-    $resolveWebviewEditor<T>(
+    $resolveWebviewEditor(
         resource: UriComponents,
         newWebviewHandle: string,
         viewType: string,
         title: string,
-        widgetOpenerOptions: T | undefined,
+        widgetOpenerOptions: object | undefined,
         options: theia.WebviewPanelOptions,
         cancellation: CancellationToken): Promise<void>;
     $createCustomDocument(resource: UriComponents, viewType: string, openContext: theia.CustomDocumentOpenContext, cancellation: CancellationToken): Promise<{ editable: boolean }>;
@@ -1887,7 +1905,7 @@ export interface CustomEditorsMain {
     $registerTextEditorProvider(viewType: string, options: theia.WebviewPanelOptions, capabilities: CustomTextEditorCapabilities): void;
     $registerCustomEditorProvider(viewType: string, options: theia.WebviewPanelOptions, supportsMultipleEditorsPerDocument: boolean): void;
     $unregisterEditorProvider(viewType: string): void;
-    $createCustomEditorPanel<T>(handle: string, title: string, widgetOpenerOptions: T | undefined, options: theia.WebviewPanelOptions & theia.WebviewOptions): Promise<void>;
+    $createCustomEditorPanel(handle: string, title: string, widgetOpenerOptions: object | undefined, options: theia.WebviewPanelOptions & theia.WebviewOptions): Promise<void>;
     $onDidEdit(resource: UriComponents, viewType: string, editId: number, label: string | undefined): void;
     $onContentChange(resource: UriComponents, viewType: string): void;
 }
@@ -1965,6 +1983,8 @@ export interface DebugExt {
         debugConfiguration: DebugConfiguration
     ): Promise<theia.DebugConfiguration | undefined | null>;
 
+    $onDidChangeActiveFrame(frame: DebugStackFrameDTO | undefined): void;
+    $onDidChangeActiveThread(thread: DebugThreadDTO | undefined): void;
     $createDebugSession(debugConfiguration: DebugConfiguration, workspaceFolder: string | undefined): Promise<string>;
     $terminateDebugSession(sessionId: string): Promise<void>;
     $getTerminalCreationOptions(debugType: string): Promise<TerminalOptionsExt | undefined>;
@@ -2251,7 +2271,7 @@ export interface TestingMain {
 
     // Test runs
 
-    $notifyTestRunCreated(controllerId: string, run: TestRunDTO): void;
+    $notifyTestRunCreated(controllerId: string, run: TestRunDTO, preserveFocus: boolean): void;
     $notifyTestStateChanged(controllerId: string, runId: string, stateChanges: TestStateChangeDTO[], outputChanges: TestOutputDTO[]): void;
     $notifyTestRunEnded(controllerId: string, runId: string): void;
 }

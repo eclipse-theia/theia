@@ -88,6 +88,7 @@ export class NotebookContextManager {
         // Cell Selection realted keys
         this.scopedStore.setContext(NOTEBOOK_CELL_FOCUSED, !!widget.model?.selectedCell);
         widget.model?.onDidChangeSelectedCell(e => {
+            this.selectedCellChanged(e.cell);
             this.scopedStore.setContext(NOTEBOOK_CELL_FOCUSED, !!e);
             this.onDidChangeContextEmitter.fire(this.createContextKeyChangedEvent([NOTEBOOK_CELL_FOCUSED]));
         });
@@ -99,8 +100,6 @@ export class NotebookContextManager {
                 this.onDidChangeContextEmitter.fire(this.createContextKeyChangedEvent([NOTEBOOK_CELL_EXECUTING, NOTEBOOK_CELL_EXECUTION_STATE]));
             }
         }));
-
-        widget.model?.onDidChangeSelectedCell(e => this.selectedCellChanged(e));
 
         widget.onDidChangeOutputInputFocus(focus => {
             this.scopedStore.setContext(NOTEBOOK_OUTPUT_INPUT_FOCUSED, focus);

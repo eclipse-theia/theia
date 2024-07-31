@@ -20,7 +20,13 @@ import { ChannelMultiplexer } from '../../common/message-rpc/channel';
 import { Deferred } from '../../common/promise-util';
 import { ConnectionSource } from './connection-source';
 
+/**
+ * Service id for the local connection provider
+ */
 export const LocalConnectionProvider = Symbol('LocalConnectionProvider');
+/**
+ * Service id for the remote connection provider
+ */
 export const RemoteConnectionProvider = Symbol('RemoteConnectionProvider');
 
 export namespace ServiceConnectionProvider {
@@ -28,7 +34,15 @@ export namespace ServiceConnectionProvider {
 }
 
 /**
- * This class manages the channels for remote services in the back end
+ * This class manages the channels for remote services in the back end.
+ *
+ * Since we have the ability to use a remote back end via SSH, we need to distinguish
+ * between two types of services: those that will be redirected to the remote back end
+ * and those which must remain in the local back end. For example the service that manages
+ * the remote ssh connections and port forwarding to the remote instance must remain local
+ * while e.g. the file system service will run in the remote back end. For each set
+ * of services, we will bind an instance of this class to {@linkcode LocalConnectionProvider}
+ * and {@linkcode RemoteConnectionProvider} respectively.
  */
 @injectable()
 export class ServiceConnectionProvider {

@@ -619,7 +619,7 @@ export class TabBarRenderer extends TabBar.Renderer {
                         cssClasses: ['extended-tab-preview'],
                         visualPreview: this.corePreferences?.['window.tabbar.enhancedPreview'] === 'visual' ? width => this.renderVisualPreview(width, title) : undefined
                     });
-                } else {
+                } else if (title.caption) {
                     this.hoverService.requestHover({
                         content: title.caption,
                         target: event.currentTarget,
@@ -1084,8 +1084,6 @@ export class SideTabBar extends ScrollableTabBar {
         startIndex: number
     };
 
-    protected _rowGap: number;
-
     constructor(options?: TabBar.IOptions<Widget> & PerfectScrollbar.Options) {
         super(options);
 
@@ -1142,31 +1140,6 @@ export class SideTabBar extends ScrollableTabBar {
         }
     }
 
-    // Queries the tabRowGap value of the content node. Needed to properly compute overflowing
-    // tabs that should be hidden
-    protected get tabRowGap(): number {
-        // We assume that the tab row gap is static i.e. we compute it once an then cache it
-        if (!this._rowGap) {
-            this._rowGap = this.computeTabRowGap();
-        }
-        return this._rowGap;
-
-    }
-
-    protected computeTabRowGap(): number {
-        const style = window.getComputedStyle(this.contentNode);
-        const rowGapStyle = style.getPropertyValue('row-gap');
-        const numericValue = parseFloat(rowGapStyle);
-        const unit = rowGapStyle.match(/[a-zA-Z]+/)?.[0];
-
-        const tempDiv = document.createElement('div');
-        tempDiv.style.height = '1' + unit;
-        document.body.appendChild(tempDiv);
-        const rowGapValue = numericValue * tempDiv.offsetHeight;
-        document.body.removeChild(tempDiv);
-        return rowGapValue;
-    }
-
     /**
      * Reveal the tab with the given index by moving it into the non-overflowing tabBar section
      * if necessary.
@@ -1207,18 +1180,13 @@ export class SideTabBar extends ScrollableTabBar {
                 const hiddenContent = this.hiddenContentNode;
                 const n = hiddenContent.children.length;
                 const renderData = new Array<Partial<SideBarRenderData>>(n);
-                const availableWidth = this.node.clientHeight - this.tabRowGap;
-                let actualWidth = 0;
-                let overflowStartIndex = -1;
                 for (let i = 0; i < n; i++) {
                     const hiddenTab = hiddenContent.children[i];
-                    // Extract tab padding from the computed style
+                    // Extract tab padding, and margin from the computed style
                     const tabStyle = window.getComputedStyle(hiddenTab);
-                    const paddingTop = parseFloat(tabStyle.paddingTop!);
-                    const paddingBottom = parseFloat(tabStyle.paddingBottom!);
                     const rd: Partial<SideBarRenderData> = {
-                        paddingTop,
-                        paddingBottom
+                        paddingTop: parseFloat(tabStyle.paddingTop!),
+                        paddingBottom: parseFloat(tabStyle.paddingBottom!)
                     };
                     // Extract label size from the DOM
                     const labelElements = hiddenTab.getElementsByClassName('p-TabBar-tabLabel');
@@ -1231,38 +1199,21 @@ export class SideTabBar extends ScrollableTabBar {
                     if (iconElements.length === 1) {
                         const icon = iconElements[0];
                         rd.iconSize = { width: icon.clientWidth, height: icon.clientHeight };
-                        actualWidth += icon.clientHeight + paddingTop + paddingBottom + this.tabRowGap;
-
-                        if (actualWidth > availableWidth && i !== 0) {
-                            rd.visible = false;
-                            if (overflowStartIndex === -1) {
-                                overflowStartIndex = i;
-                            }
-                        }
-                        renderData[i] = rd;
                     }
-                }
 
-                // Special handling if only one element is overflowing.
-                if (overflowStartIndex === n - 1 && renderData[overflowStartIndex]) {
-                    if (!this.tabsOverflowData) {
-                        overflowStartIndex--;
-                        renderData[overflowStartIndex].visible = false;
-                    } else {
-                        renderData[overflowStartIndex].visible = true;
-                        overflowStartIndex = -1;
-                    }
+                    renderData[i] = rd;
                 }
                 // Render into the visible node
                 this.renderTabs(this.contentNode, renderData);
-                this.computeOverflowingTabsData(overflowStartIndex);
+                this.computeOverflowingTabsData();
             });
         }
     }
 
-    protected computeOverflowingTabsData(startIndex: number): void {
+    protected computeOverflowingTabsData(): void {
         // ensure that render tabs has completed
         window.requestAnimationFrame(() => {
+            const startIndex = this.hideOverflowingTabs();
             if (startIndex === -1) {
                 if (this.tabsOverflowData) {
                     this.tabsOverflowData = undefined;
@@ -1284,6 +1235,38 @@ export class SideTabBar extends ScrollableTabBar {
                 this.tabsOverflowChanged.emit(this.tabsOverflowData);
             }
         });
+    }
+
+    /**
+     * Hide overflowing tabs and return the index of the first hidden tab.
+     */
+    protected hideOverflowingTabs(): number {
+        const availableHeight = this.node.clientHeight;
+        const invisibleClass = 'p-mod-invisible';
+        let startIndex = -1;
+        const n = this.contentNode.children.length;
+        for (let i = 0; i < n; i++) {
+            const tab = this.contentNode.children[i] as HTMLLIElement;
+            if (tab.offsetTop + tab.offsetHeight >= availableHeight) {
+                tab.classList.add(invisibleClass);
+                if (startIndex === -1) {
+                    startIndex = i;
+                    /* If only one element is overflowing and the additional menu widget is visible (i.e. this.tabsOverflowData is set)
+                     * there might already be enough space to show the last tab. In this case, we need to include the size of the
+                     * additional menu widget and recheck if the last tab is visible */
+                    if (startIndex === n - 1 && this.tabsOverflowData) {
+                        const additionalViewsMenu = this.node.parentElement?.querySelector('.theia-additional-views-menu') as HTMLDivElement;
+                        if (tab.offsetTop + tab.offsetHeight < availableHeight + additionalViewsMenu.offsetHeight) {
+                            tab.classList.remove(invisibleClass);
+                            startIndex = -1;
+                        }
+                    }
+                }
+            } else {
+                tab.classList.remove(invisibleClass);
+            }
+        }
+        return startIndex;
     }
 
     /**

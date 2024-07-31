@@ -112,7 +112,9 @@
       "editor.accessibilitySupport2": "Supponiamo che un lettore di schermo non sia collegato",
       "editor.bracketPairColorization.enabled": "Controlla se la colorazione delle coppie di parentesi è abilitata o meno. Usare `#workbench.colorCustomizations#` per sovrascrivere i colori di evidenziazione delle parentesi.",
       "editor.codeActionWidget.includeNearbyQuickfixes": "Abilita/disabilita la visualizzazione della soluzione rapida più vicina all'interno di una linea quando non è in corso una diagnostica.",
+      "editor.cursorSurroundingLinesStyle": "Controlla quando `#cursorSurroundingLines#` deve essere applicato.",
       "editor.detectIndentation": "Controlla se `#editor.tabSize#` e `#editor.insertSpaces#` saranno rilevati automaticamente all'apertura di un file, in base al suo contenuto.",
+      "editor.dropIntoEditor.enabled": "Controlla se è possibile trascinare e rilasciare un file in un editor di testo tenendo premuto `shift` (invece di aprire il file in un editor).",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Tenterà di formattare solo le modifiche (richiede il controllo della fonte). Se il controllo della fonte non può essere usato, allora l'intero file sarà formattato.",
       "editor.hover.hidingDelay": "Controlla il ritardo, in millisecondi, dopo il quale il passaggio del mouse viene nascosto. Richiede che `editor.hover.sticky` sia abilitato.",
       "editor.inlayHints.enabled1": "I suggerimenti per l'intarsio sono visualizzati per impostazione predefinita e si nascondono quando si tiene premuto `Ctrl+Alt`.",
@@ -120,11 +122,15 @@
       "editor.inlayHints.fontFamily": "Controlla la famiglia di caratteri dei suggerimenti di inlay nell'editor. Se impostato a vuoto, viene utilizzata la `#editor.fontFamily#`.",
       "editor.inlayHints.fontSize": "Controlla la dimensione dei caratteri dei suggerimenti inlay nell'editor. Come impostazione predefinita, viene utilizzato `#editor.fontSize#` quando il valore configurato è inferiore a `5` o superiore alla dimensione dei caratteri dell'editor.",
       "editor.insertSpaces": "Inserisce spazi quando si preme `Tab`. Questa impostazione viene sovrascritta in base al contenuto del file quando `#editor.detectIndentation#` è attivo.",
+      "editor.occurrencesHighlight": "Controlla se l'editor deve evidenziare le occorrenze di simboli semantici.",
       "editor.quickSuggestions": "Controlla se i suggerimenti devono essere visualizzati automaticamente durante la digitazione. Questo può essere controllato per la digitazione di commenti, stringhe e altro codice. Il suggerimento rapido può essere configurato per essere visualizzato come testo fantasma o con il widget Suggerimento. Si tenga presente anche l'impostazione '#editor.suggestOnTriggerCharacters#', che controlla se i suggerimenti vengono attivati da caratteri speciali.",
       "editor.stickyScroll.scrollWithEditor": "Abilita lo scorrimento del widget di scorrimento appiccicoso con la barra di scorrimento orizzontale dell'editor.",
       "editor.suggestFontSize": "Dimensione del carattere per il widget Suggerimento. Se impostato a `0`, viene utilizzato il valore di `#editor.fontSize#`.",
       "editor.suggestLineHeight": "Altezza della riga per il widget di suggerimento. Se impostato a `0`, viene utilizzato il valore di `#editor.lineHeight#`. Il valore minimo è 8.",
       "editor.tabSize": "Il numero di spazi a cui corrisponde una tabulazione. Questa impostazione viene sovrascritta in base al contenuto del file quando `#editor.detectIndentation#` è attivo.",
+      "editor.useTabStops": "L'inserimento e l'eliminazione di spazi bianchi segue gli stop di tabulazione.",
+      "editor.wordBasedSuggestions": "Controlla se i completamenti devono essere calcolati in base alle parole del documento.",
+      "editor.wordBasedSuggestionsMode": "Controlla da quali documenti vengono calcolati i completamenti basati sulle parole.",
       "files.autoSave": "Controlla il [salvataggio automatico](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save) degli editor che hanno modifiche non salvate.",
       "files.autoSave.afterDelay": "Un editor con modifiche viene salvato automaticamente dopo il `#files.autoSaveDelay#` configurato.",
       "files.autoSave.off": "Un editor con modifiche non viene mai salvato automaticamente.",
@@ -336,7 +342,6 @@
       "autoReveal": "Rivelazione auto",
       "clipboardWarn": "L'accesso agli appunti è negato. Controllare i permessi del browser.",
       "clipboardWarnFirefox": "L'API Appunti non è disponibile. È possibile abilitarla tramite la preferenza '{0}' nella pagina '{1}'. Quindi ricaricare Theia. Ciò consentirà a FireFox di avere pieno accesso agli appunti di sistema.",
-      "noFolderOpened": "Nessuna cartella aperta",
       "refresh": "Aggiorna in Explorer",
       "reveal": "Rivelare in Explorer",
       "toggleHiddenFiles": "Toggle Hidden Files"
@@ -387,6 +392,10 @@
       "plugins": "Plugin",
       "webviewTrace": "Controlla la tracciabilità della comunicazione con le webview.",
       "webviewWarnIfUnsecure": "Avverte gli utenti che le webview sono attualmente distribuite in modo non sicuro."
+    },
+    "preferences": {
+      "hostedPlugin": "Plugin in hosting",
+      "toolbar": "Barra degli strumenti"
     },
     "preview": {
       "openByDefault": "Aprire l'anteprima invece dell'editor per default."
@@ -522,7 +531,6 @@
       "confirmMessage.uriMultiple": "Volete davvero eliminare tutti i {0} file selezionati?",
       "confirmMessage.uriSingle": "Si vuole davvero cancellare {0}?",
       "duplicate": "Duplicato",
-      "failApply": "Impossibile applicare le modifiche al nuovo file",
       "failSaveAs": "Impossibile eseguire \"{0}\" per il widget corrente.",
       "newFilePlaceholder": "Nome del file",
       "newFolderPlaceholder": "Nome della cartella",

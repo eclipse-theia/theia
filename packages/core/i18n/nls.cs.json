@@ -112,7 +112,9 @@
       "editor.accessibilitySupport2": "Předpokládejme, že není připojena čtečka obrazovky",
       "editor.bracketPairColorization.enabled": "Ovládá, zda je obarvení dvojice závorek povoleno, nebo ne. Pro přepsání barev zvýraznění závorek použijte `#workbench.colorCustomizations#`.",
       "editor.codeActionWidget.includeNearbyQuickfixes": "Povolení/zakázání zobrazení nejbližší opravy v rámci řádku, pokud se zrovna neprovádí diagnostika.",
+      "editor.cursorSurroundingLinesStyle": "Řídí, kdy se má vynutit `#cursorSurroundingLines#`.",
       "editor.detectIndentation": "Řídí, zda se při otevření souboru automaticky zjistí `#editor.tabSize#` a `#editor.insertSpaces#` na základě obsahu souboru.",
+      "editor.dropIntoEditor.enabled": "Ovládá, zda můžete soubor přetáhnout do textového editoru podržením klávesy `shift` (namísto otevření souboru v editoru).",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Pokusí se formátovat pouze změny (vyžaduje kontrolu zdrojů). Pokud nelze použít kontrolu zdrojů, bude formátován celý soubor.",
       "editor.hover.hidingDelay": "Řídí prodlevu v milisekundách, po které se hover skryje. Vyžaduje, aby bylo povoleno `editor.hover.sticky`.",
       "editor.inlayHints.enabled1": "Vložené nápovědy se zobrazují ve výchozím nastavení a skrývají se při podržení `Ctrl+Alt`",
@@ -120,11 +122,15 @@
       "editor.inlayHints.fontFamily": "Řídí rodinu písma vložených nápověd v editoru. Je-li nastaveno na prázdnou hodnotu, použije se `#editor.fontFamily#`.",
       "editor.inlayHints.fontSize": "Ovládá velikost písma vložených nápověd v editoru. Ve výchozím nastavení se použije `#editor.fontSize#`, pokud je nastavená hodnota menší než `5` nebo větší než velikost písma editoru.",
       "editor.insertSpaces": "Vkládání mezer při stisknutí `Tab`. Toto nastavení je přepsáno na základě obsahu souboru, pokud je zapnuta funkce `#editor.detectIndentation#`.",
+      "editor.occurrencesHighlight": "Řídí, zda má editor zvýrazňovat výskyty sémantických symbolů.",
       "editor.quickSuggestions": "Ovládá, zda se mají při psaní automaticky zobrazovat návrhy. To lze ovládat při psaní komentářů, řetězců a dalšího kódu. Rychlé návrhy lze nakonfigurovat tak, aby se zobrazovaly jako text ducha nebo s widgetem návrhu. Mějte také na paměti nastavení '#editor.suggestOnTriggerCharacters#', které řídí, zda se návrhy spouštějí pomocí speciálních znaků.",
       "editor.stickyScroll.scrollWithEditor": "Povolení posouvání widgetu sticky scroll pomocí horizontálního posuvníku editoru.",
       "editor.suggestFontSize": "Velikost písma widgetu pro návrh. Je-li nastavena hodnota `0`, použije se hodnota `#editor.fontSize#`.",
       "editor.suggestLineHeight": "Výška řádku pro widget návrhu. Je-li nastavena hodnota `0`, použije se hodnota `#editor.lineHeight#`. Minimální hodnota je 8.",
       "editor.tabSize": "Počet mezer, kterým se rovná tabulátor. Toto nastavení je přepsáno na základě obsahu souboru, pokud je zapnuta funkce `#editor.detectIndentation#`.",
+      "editor.useTabStops": "Vkládání a odstraňování bílých znaků následuje po zarážkách tabulátoru.",
+      "editor.wordBasedSuggestions": "Řídí, zda se doplnění mají vypočítávat na základě slov v dokumentu.",
+      "editor.wordBasedSuggestionsMode": "Řídí, z jakých dokumentů se vypočítávají doplnění na základě slov.",
       "files.autoSave": "Ovládá [automatické ukládání](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save) editorů, které mají neuložené změny.",
       "files.autoSave.afterDelay": "Editor se změnami se automaticky uloží po uplynutí nastavené doby `#files.autoSaveDelay#`.",
       "files.autoSave.off": "Editor se změnami se nikdy automaticky neuloží.",
@@ -336,7 +342,6 @@
       "autoReveal": "Automatické odhalení",
       "clipboardWarn": "Přístup do schránky je odepřen. Zkontrolujte oprávnění prohlížeče.",
       "clipboardWarnFirefox": "Rozhraní API schránky není k dispozici. Lze ji povolit pomocí předvolby '{0}' na stránce '{1}'. Poté znovu načtěte aplikaci Theia. Všimněte si, že to umožní FireFoxu získat plný přístup k systémové schránce.",
-      "noFolderOpened": "Žádná otevřená složka",
       "refresh": "Obnovení v Průzkumníku",
       "reveal": "Odhalení v Průzkumníkovi",
       "toggleHiddenFiles": "Přepínání skrytých souborů"
@@ -387,6 +392,10 @@
       "plugins": "Zásuvné moduly",
       "webviewTrace": "Řídí sledování komunikace s webovými pohledy.",
       "webviewWarnIfUnsecure": "Upozorňuje uživatele, že webové náhledy jsou v současné době nasazeny nezabezpečeně."
+    },
+    "preferences": {
+      "hostedPlugin": "Hostovaný plugin",
+      "toolbar": "Panel nástrojů"
     },
     "preview": {
       "openByDefault": "Ve výchozím nastavení otevřete místo editoru náhled."
@@ -522,7 +531,6 @@
       "confirmMessage.uriMultiple": "Opravdu chcete odstranit všechny {0} vybrané soubory?",
       "confirmMessage.uriSingle": "Opravdu chcete odstranit {0}?",
       "duplicate": "Duplikát",
-      "failApply": "Nelze použít změny v novém souboru",
       "failSaveAs": "Nelze spustit \"{0}\" pro aktuální widget.",
       "newFilePlaceholder": "Název souboru",
       "newFolderPlaceholder": "Název složky",

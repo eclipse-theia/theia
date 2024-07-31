@@ -318,7 +318,7 @@ export class EncodingService {
         });
     }
 
-    encodeStream(value: string | Readable<string>, options?: ResourceEncoding): Promise<BinaryBuffer | BinaryBufferReadable>
+    encodeStream(value: string | Readable<string>, options?: ResourceEncoding): Promise<BinaryBuffer | BinaryBufferReadable>;
     encodeStream(value?: string | Readable<string>, options?: ResourceEncoding): Promise<BinaryBuffer | BinaryBufferReadable | undefined>;
     async encodeStream(value: string | Readable<string> | undefined, options?: ResourceEncoding): Promise<BinaryBuffer | BinaryBufferReadable | undefined> {
         let encoding = options?.encoding;

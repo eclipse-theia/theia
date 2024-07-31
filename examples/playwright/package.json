@@ -1,6 +1,6 @@
 {
   "name": "@theia/playwright",
-  "version": "1.49.0",
+  "version": "1.52.0",
   "description": "System tests for Theia",
   "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
   "repository": {
@@ -15,12 +15,12 @@
     "clean": "rimraf lib *.tsbuildinfo .eslintcache",
     "build": "yarn && yarn clean && tsc --incremental && yarn lint && yarn playwright:install",
     "watch": "tsc -w --incremental",
-    "theia:start": "rimraf .tmp.cfg && THEIA_CONFIG_DIR=$PWD/.tmp.cfg yarn --cwd ../browser start",
+    "theia:start": "rimraf .tmp.cfg && cross-env THEIA_CONFIG_DIR=$PWD/.tmp.cfg yarn --cwd ../browser start",
     "lint": "eslint -c ./.eslintrc.js --ext .ts ./src",
     "lint:fix": "eslint -c ./.eslintrc.js --ext .ts ./src --fix",
     "playwright:install": "playwright install chromium",
     "ui-tests": "yarn build && playwright test --config=./configs/playwright.config.ts",
-    "ui-tests-electron": "yarn build && USE_ELECTRON=true playwright test --config=./configs/playwright.config.ts",
+    "ui-tests-electron": "yarn build && cross-env USE_ELECTRON=true playwright test --config=./configs/playwright.config.ts",
     "ui-tests-ci": "yarn build && playwright test --config=./configs/playwright.ci.config.ts",
     "ui-tests-headful": "yarn build && playwright test --config=./configs/playwright.headful.config.ts",
     "ui-tests-report-generate": "allure generate ./allure-results --clean -o allure-results/allure-report",
@@ -38,8 +38,9 @@
     "@types/fs-extra": "^9.0.8",
     "allure-commandline": "^2.23.1",
     "allure-playwright": "^2.5.0",
+    "cross-env": "^7.0.3",
     "rimraf": "^2.6.1",
-    "typescript": "~4.5.5"
+    "typescript": "~5.4.5"
   },
   "publishConfig": {
     "access": "public"

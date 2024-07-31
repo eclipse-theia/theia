@@ -25,6 +25,11 @@ export interface PreferenceSchema {
     [name: string]: any,
     scope?: 'application' | 'window' | 'resource' | PreferenceScope,
     overridable?: boolean;
+    /**
+     * The title of the preference schema.
+     * It is used in the preference UI to associate a localized group of preferences.
+     */
+    title?: string;
     properties: PreferenceSchemaProperties
 }
 export namespace PreferenceSchema {
@@ -75,6 +80,7 @@ export interface PreferenceSchemaProperty extends PreferenceItem {
     description?: string;
     markdownDescription?: string;
     scope?: 'application' | 'machine' | 'window' | 'resource' | 'language-overridable' | 'machine-overridable' | PreferenceScope;
+    tags?: string[];
 }
 
 export interface PreferenceDataProperty extends PreferenceItem {

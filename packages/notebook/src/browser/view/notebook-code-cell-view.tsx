@@ -32,8 +32,9 @@ import { CommandRegistry, DisposableCollection, nls } from '@theia/core';
 import { NotebookContextManager } from '../service/notebook-context-manager';
 import { NotebookViewportService } from './notebook-viewport-service';
 import { EditorPreferences } from '@theia/editor/lib/browser';
-import { BareFontInfo } from '@theia/monaco-editor-core/esm/vs/editor/common/config/fontInfo';
-import { PixelRatio } from '@theia/monaco-editor-core/esm/vs/base/browser/browser';
+import { NotebookOptionsService } from '../service/notebook-options';
+import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
+import { MarkdownString } from '@theia/monaco-editor-core/esm/vs/base/common/htmlContent';
 
 @injectable()
 export class NotebookCodeCellRenderer implements CellRenderer {
@@ -64,7 +65,11 @@ export class NotebookCodeCellRenderer implements CellRenderer {
     @inject(CommandRegistry)
     protected readonly commandRegistry: CommandRegistry;
 
-    protected fontInfo: BareFontInfo | undefined;
+    @inject(NotebookOptionsService)
+    protected readonly notebookOptionsService: NotebookOptionsService;
+
+    @inject(MarkdownRenderer)
+    protected readonly markdownRenderer: MarkdownRenderer;
 
     render(notebookModel: NotebookModel, cell: NotebookCellModel, handle: number): React.ReactNode {
         return <div>
@@ -81,7 +86,7 @@ export class NotebookCodeCellRenderer implements CellRenderer {
                         monacoServices={this.monacoServices}
                         notebookContextManager={this.notebookContextManager}
                         notebookViewportService={this.notebookViewportService}
-                        fontInfo={this.getOrCreateMonacoFontInfo()} />
+                        fontInfo={this.notebookOptionsService.editorFontInfo} />
                     <NotebookCodeCellStatus cell={cell} notebook={notebookModel}
                         commandRegistry={this.commandRegistry}
                         executionStateService={this.executionStateService}
@@ -102,28 +107,43 @@ export class NotebookCodeCellRenderer implements CellRenderer {
     renderDragImage(cell: NotebookCellModel): HTMLElement {
         const dragImage = document.createElement('div');
         dragImage.className = 'theia-notebook-drag-image';
-        dragImage.textContent = nls.localize('theia/notebook/dragGhostImage/codeText', 'Code cell selected');
+        dragImage.style.width = this.notebookContextManager.context?.clientWidth + 'px';
+        dragImage.style.height = '100px';
+        dragImage.style.display = 'flex';
+
+        const fakeRunButton = document.createElement('span');
+        fakeRunButton.className = `${codicon('play')} theia-notebook-cell-status-item`;
+        dragImage.appendChild(fakeRunButton);
+
+        const fakeEditor = document.createElement('div');
+        dragImage.appendChild(fakeEditor);
+        const lines = cell.source.split('\n').slice(0, 5).join('\n');
+        const codeSequence = this.getMarkdownCodeSequence(lines);
+        const firstLine = new MarkdownString(`${codeSequence}${cell.language}\n${lines}\n${codeSequence}`, { supportHtml: true, isTrusted: false });
+        fakeEditor.appendChild(this.markdownRenderer.render(firstLine).element);
+        fakeEditor.classList.add('theia-notebook-cell-editor-container');
+        fakeEditor.style.padding = '10px';
         return dragImage;
     }
 
-    protected getOrCreateMonacoFontInfo(): BareFontInfo {
-        if (!this.fontInfo) {
-            this.fontInfo = this.createFontInfo();
-            this.editorPreferences.onPreferenceChanged(e => this.fontInfo = this.createFontInfo());
+    protected getMarkdownCodeSequence(input: string): string {
+        // We need a minimum of 3 backticks to start a code block.
+        let longest = 2;
+        let current = 0;
+        for (let i = 0; i < input.length; i++) {
+            const char = input.charAt(i);
+            if (char === '`') {
+                current++;
+                if (current > longest) {
+                    longest = current;
+                }
+            } else {
+                current = 0;
+            }
         }
-        return this.fontInfo;
+        return Array(longest + 1).fill('`').join('');
     }
 
-    protected createFontInfo(): BareFontInfo {
-        return BareFontInfo.createFromRawSettings({
-            fontFamily: this.editorPreferences['editor.fontFamily'],
-            fontWeight: String(this.editorPreferences['editor.fontWeight']),
-            fontSize: this.editorPreferences['editor.fontSize'],
-            fontLigatures: this.editorPreferences['editor.fontLigatures'],
-            lineHeight: this.editorPreferences['editor.lineHeight'],
-            letterSpacing: this.editorPreferences['editor.letterSpacing'],
-        }, PixelRatio.value);
-    }
 }
 
 export interface NotebookCodeCellStatusProps {

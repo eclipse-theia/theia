@@ -17,7 +17,9 @@
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { OVSXClientProvider, OVSXUrlResolver } from '../common';
 import { RequestService } from '@theia/core/shared/@theia/request';
-import { ExtensionIdMatchesFilterFactory, OVSXApiFilter, OVSXApiFilterImpl, OVSXClient, OVSXHttpClient, OVSXRouterClient, RequestContainsFilterFactory } from '@theia/ovsx-client';
+import {
+    ExtensionIdMatchesFilterFactory, OVSXApiFilter, OVSXApiFilterImpl, OVSXApiFilterProvider, OVSXClient, OVSXHttpClient, OVSXRouterClient, RequestContainsFilterFactory
+} from '@theia/ovsx-client';
 import { VSXEnvironment } from './vsx-environment';
 
 export default new ContainerModule(bind => {
@@ -54,10 +56,23 @@ export default new ContainerModule(bind => {
     bind(OVSXApiFilter)
         .toDynamicValue(ctx => {
             const vsxEnvironment = ctx.container.get<VSXEnvironment>(VSXEnvironment);
-            const apiFilter = new OVSXApiFilterImpl('-- temporary invalid version value --');
+            const apiFilter = new OVSXApiFilterImpl(undefined!, '-- temporary invalid version value --');
             vsxEnvironment.getVscodeApiVersion()
                 .then(apiVersion => apiFilter.supportedApiVersion = apiVersion);
+            const clientProvider = ctx.container.get<OVSXClientProvider>(OVSXClientProvider);
+            Promise.resolve(clientProvider()).then(client => {
+                apiFilter.client = client;
+            });
             return apiFilter;
         })
         .inSingletonScope();
+    bind(OVSXApiFilterProvider)
+        .toProvider(ctx => async () => {
+            const vsxEnvironment = ctx.container.get<VSXEnvironment>(VSXEnvironment);
+            const clientProvider = ctx.container.get<OVSXClientProvider>(OVSXClientProvider);
+            const client = await clientProvider();
+            const apiVersion = await vsxEnvironment.getVscodeApiVersion();
+            const apiFilter = new OVSXApiFilterImpl(client, apiVersion);
+            return apiFilter;
+        });
 });

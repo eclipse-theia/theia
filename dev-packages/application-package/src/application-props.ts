@@ -183,7 +183,7 @@ export namespace FrontendApplicationConfig {
 export type BackendApplicationConfig = RequiredRecursive<BackendApplicationConfig.Partial>;
 export namespace BackendApplicationConfig {
     export const DEFAULT: BackendApplicationConfig = {
-        singleInstance: false,
+        singleInstance: true,
         frontendConnectionTimeout: 0
     };
     export interface Partial extends ApplicationConfig {

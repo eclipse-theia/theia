@@ -107,6 +107,7 @@ export interface TestRunRequestDTO {
     name: string;
     includedTests: string[][]; // array of paths
     excludedTests: string[][]; // array of paths
+    preserveFocus: boolean;
 }
 
 export interface TestItemReference {

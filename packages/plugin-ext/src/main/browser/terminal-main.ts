@@ -15,21 +15,22 @@
 // *****************************************************************************
 
 import { interfaces } from '@theia/core/shared/inversify';
-import { ApplicationShell, WidgetOpenerOptions } from '@theia/core/lib/browser';
-import { TerminalEditorLocationOptions, TerminalOptions } from '@theia/plugin';
+import { ApplicationShell, WidgetOpenerOptions, codicon } from '@theia/core/lib/browser';
+import { TerminalEditorLocationOptions } from '@theia/plugin';
 import { TerminalLocation, TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { TerminalProfileService } from '@theia/terminal/lib/browser/terminal-profile-service';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
-import { TerminalServiceMain, TerminalServiceExt, MAIN_RPC_CONTEXT } from '../../common/plugin-api-rpc';
+import { TerminalServiceMain, TerminalServiceExt, MAIN_RPC_CONTEXT, TerminalOptions } from '../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { SerializableEnvironmentVariableCollection, ShellTerminalServerProxy } from '@theia/terminal/lib/common/shell-terminal-protocol';
 import { TerminalLink, TerminalLinkProvider } from '@theia/terminal/lib/browser/terminal-link-provider';
 import { URI } from '@theia/core/lib/common/uri';
-import { getIconClass } from '../../plugin/terminal-ext';
 import { PluginTerminalRegistry } from './plugin-terminal-registry';
-import { CancellationToken } from '@theia/core';
+import { CancellationToken, isObject } from '@theia/core';
 import { HostedPluginSupport } from '../../hosted/browser/hosted-plugin';
+import { PluginSharedStyle } from './plugin-shared-style';
+import { ThemeIcon } from '@theia/core/lib/common/theme';
 import debounce = require('@theia/core/shared/lodash.debounce');
 
 interface TerminalObserverData {
@@ -49,6 +50,7 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, TerminalLin
     private readonly hostedPluginSupport: HostedPluginSupport;
     private readonly shell: ApplicationShell;
     private readonly extProxy: TerminalServiceExt;
+    private readonly sharedStyle: PluginSharedStyle;
     private readonly shellTerminalServer: ShellTerminalServerProxy;
     private readonly terminalLinkProviders: string[] = [];
 
@@ -60,6 +62,7 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, TerminalLin
         this.terminalProfileService = container.get(TerminalProfileService);
         this.pluginTerminalRegistry = container.get(PluginTerminalRegistry);
         this.hostedPluginSupport = container.get(HostedPluginSupport);
+        this.sharedStyle = container.get(PluginSharedStyle);
         this.shell = container.get(ApplicationShell);
         this.shellTerminalServer = container.get(ShellTerminalServerProxy);
         this.extProxy = rpc.getProxy(MAIN_RPC_CONTEXT.TERMINAL_EXT);
@@ -153,7 +156,7 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, TerminalLin
         const terminal = await this.terminals.newTerminal({
             id,
             title: options.name,
-            iconClass: getIconClass(options),
+            iconClass: this.toIconClass(options),
             shellPath: options.shellPath,
             shellArgs: options.shellArgs,
             cwd: options.cwd ? new URI(options.cwd) : undefined,
@@ -327,6 +330,23 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, TerminalLin
         observerData.disposables.push(terminal.onOutput(output => {
             doMatch();
         }));
+    }
+
+    protected toIconClass(options: TerminalOptions): string | ThemeIcon | undefined {
+        const iconColor = isObject<{ id: string }>(options.color) && typeof options.color.id === 'string' ? options.color.id : undefined;
+        let iconClass: string;
+        if (options.iconUrl) {
+            if (typeof options.iconUrl === 'object' && 'id' in options.iconUrl) {
+                iconClass = codicon(options.iconUrl.id);
+            } else {
+                const iconReference = this.sharedStyle.toIconClass(options.iconUrl);
+                this.toDispose.push(iconReference);
+                iconClass = iconReference.object.iconClass;
+            }
+        } else {
+            iconClass = codicon('terminal');
+        }
+        return iconColor ? { id: iconClass, color: { id: iconColor } } : iconClass;
     }
 
     $unregisterTerminalObserver(id: string): void {

@@ -35,7 +35,7 @@ export interface TestRunProfile {
     isDefault: boolean;
     readonly canConfigure: boolean;
     readonly tag: string;
-    run(name: string, included: readonly TestItem[], excluded: readonly TestItem[]): void;
+    run(name: string, included: readonly TestItem[], excluded: readonly TestItem[], preserveFocus: boolean): void;
     configure(): void;
 }
 
@@ -96,6 +96,7 @@ export interface TestStateChangedEvent {
 
 export interface TestRun {
     cancel(): void;
+    readonly id: string;
     readonly name: string;
     readonly isRunning: boolean;
     readonly controller: TestController;
@@ -189,6 +190,20 @@ export interface TestService {
     cancelRefresh(): void;
     isRefreshing: boolean;
     onDidChangeIsRefreshing: Event<void>;
+}
+
+export namespace TestServices {
+    export function withTestRun(service: TestService, controllerId: string, runId: string): TestRun {
+        const controller = service.getControllers().find(c => c.id === controllerId);
+        if (!controller) {
+            throw new Error(`No test controller with id '${controllerId}' found`);
+        }
+        const run = controller.testRuns.find(r => r.id === runId);
+        if (!run) {
+            throw new Error(`No test run with id '${runId}' found`);
+        }
+        return run;
+    }
 }
 
 export const TestContribution = Symbol('TestContribution');
@@ -287,7 +302,7 @@ export class DefaultTestService implements TestService {
             }
         }
         if (activeProfile) {
-            activeProfile.run(`Test run #${this.testRunCounter++}`, items, []);
+            activeProfile.run(`Test run #${this.testRunCounter++}`, items, [], true);
         }
     }
 
@@ -343,7 +358,7 @@ export class DefaultTestService implements TestService {
             if (controller) {
                 this.pickProfile(controller.testRunProfiles, nls.localizeByDefault('Pick a test profile to use')).then(activeProfile => {
                     if (activeProfile) {
-                        activeProfile.run(`Test run #${this.testRunCounter++}`, items, []);
+                        activeProfile.run(`Test run #${this.testRunCounter++}`, items, [], true);
                     }
                 });
             }

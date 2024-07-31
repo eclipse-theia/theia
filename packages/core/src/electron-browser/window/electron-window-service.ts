@@ -100,7 +100,7 @@ export class ElectronWindowService extends DefaultWindowService {
             if (params.hash) {
                 newLocation.hash = '#' + params.hash;
             }
-            location.assign(newLocation);
+            window.electronTheiaCore.requestReload(newLocation.toString());
         } else {
             window.electronTheiaCore.requestReload();
         }

@@ -156,16 +156,8 @@ export class MonacoTextModelService implements ITextModelService {
 
     protected updateModel(model: MonacoEditorModel, change?: EditorPreferenceChange): void {
         if (!change) {
-            model.autoSave = this.editorPreferences.get('files.autoSave', undefined, model.uri);
-            model.autoSaveDelay = this.editorPreferences.get('files.autoSaveDelay', undefined, model.uri);
             model.textEditorModel.updateOptions(this.getModelOptions(model));
         } else if (change.affects(model.uri, model.languageId)) {
-            if (change.preferenceName === 'files.autoSave') {
-                model.autoSave = this.editorPreferences.get('files.autoSave', undefined, model.uri);
-            }
-            if (change.preferenceName === 'files.autoSaveDelay') {
-                model.autoSaveDelay = this.editorPreferences.get('files.autoSaveDelay', undefined, model.uri);
-            }
             const modelOption = this.toModelOption(change.preferenceName);
             if (modelOption) {
                 model.textEditorModel.updateOptions(this.getModelOptions(model));

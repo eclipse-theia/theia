@@ -50,7 +50,7 @@ export class NotebookExecutionService {
     @inject(NotebookKernelQuickPickService)
     protected notebookKernelQuickPickService: NotebookKernelQuickPickService;
 
-    private readonly cellExecutionParticipants = new Set<CellExecutionParticipant>();
+    protected readonly cellExecutionParticipants = new Set<CellExecutionParticipant>();
 
     async executeNotebookCells(notebook: NotebookModel, cells: Iterable<NotebookCellModel>): Promise<void> {
         const cellsArr = Array.from(cells)
@@ -117,7 +117,7 @@ export class NotebookExecutionService {
         return Disposable.create(() => this.cellExecutionParticipants.delete(participant));
     }
 
-    private async runExecutionParticipants(executions: CellExecution[]): Promise<void> {
+    protected async runExecutionParticipants(executions: CellExecution[]): Promise<void> {
         for (const participant of this.cellExecutionParticipants) {
             await participant.onWillExecuteCell(executions);
         }

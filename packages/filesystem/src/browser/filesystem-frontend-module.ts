@@ -31,8 +31,8 @@ import { RemoteFileServiceContribution } from './remote-file-service-contributio
 import { FileSystemWatcherErrorHandler } from './filesystem-watcher-error-handler';
 import { FilepathBreadcrumbsContribution } from './breadcrumbs/filepath-breadcrumbs-contribution';
 import { BreadcrumbsFileTreeWidget, createFileTreeBreadcrumbsWidget } from './breadcrumbs/filepath-breadcrumbs-container';
-import { FilesystemSaveResourceService } from './filesystem-save-resource-service';
-import { SaveResourceService } from '@theia/core/lib/browser/save-resource-service';
+import { FilesystemSaveableService } from './filesystem-saveable-service';
+import { SaveableService } from '@theia/core/lib/browser/saveable-service';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bindFileSystemPreferences(bind);
@@ -65,8 +65,8 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(FilepathBreadcrumbsContribution).toSelf().inSingletonScope();
     bind(BreadcrumbsContribution).toService(FilepathBreadcrumbsContribution);
 
-    bind(FilesystemSaveResourceService).toSelf().inSingletonScope();
-    rebind(SaveResourceService).toService(FilesystemSaveResourceService);
+    bind(FilesystemSaveableService).toSelf().inSingletonScope();
+    rebind(SaveableService).toService(FilesystemSaveableService);
 
     bind(FileTreeDecoratorAdapter).toSelf().inSingletonScope();
 });

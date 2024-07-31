@@ -121,7 +121,7 @@ export class CustomEditorsExtImpl implements CustomEditorsExt {
         handler: string,
         viewType: string,
         title: string,
-        widgetOpenerOptions: T | undefined,
+        widgetOpenerOptions: object | undefined,
         options: theia.WebviewPanelOptions & theia.WebviewOptions,
         cancellation: CancellationToken
     ): Promise<void> {

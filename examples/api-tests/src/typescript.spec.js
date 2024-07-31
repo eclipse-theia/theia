@@ -64,7 +64,7 @@ describe('TypeScript', function () {
     const rootUri = workspaceService.tryGetRoots()[0].resource;
     const demoFileUri = rootUri.resolveToAbsolute('../api-tests/test-ts-workspace/demo-file.ts');
     const definitionFileUri = rootUri.resolveToAbsolute('../api-tests/test-ts-workspace/demo-definitions-file.ts');
-    let originalAutoSaveValue = preferences.inspect('files.autoSave').globalValue;
+    let originalAutoSaveValue = preferences.get('files.autoSave');
 
     before(async function () {
         await pluginService.didStart;
@@ -73,8 +73,9 @@ describe('TypeScript', function () {
                 throw new Error(pluginId + ' should be started');
             }
             await pluginService.activatePlugin(pluginId);
-        }).concat(preferences.set('files.autoSave', 'off', PreferenceScope.User)));
-        await preferences.set('files.refactoring.autoSave', 'off', PreferenceScope.User);
+        }));
+        await preferences.set('files.autoSave', 'off');
+        await preferences.set('files.refactoring.autoSave', 'off');
     });
 
     beforeEach(async function () {
@@ -90,7 +91,7 @@ describe('TypeScript', function () {
     });
 
     after(async () => {
-        await preferences.set('files.autoSave', originalAutoSaveValue, PreferenceScope.User);
+        await preferences.set('files.autoSave', originalAutoSaveValue);
     })
 
     /**
@@ -102,10 +103,9 @@ describe('TypeScript', function () {
         const editorWidget = widget instanceof EditorWidget ? widget : undefined;
         const editor = MonacoEditor.get(editorWidget);
         assert.isDefined(editor);
-        await timeout(1000); // workaround for https://github.com/eclipse-theia/theia/issues/13679
         // wait till tsserver is running, see:
         // https://github.com/microsoft/vscode/blob/93cbbc5cae50e9f5f5046343c751b6d010468200/extensions/typescript-language-features/src/extension.ts#L98-L103
-        // await waitForAnimation(() => contextKeyService.match('typescript.isManagedFile'));
+        await waitForAnimation(() => contextKeyService.match('typescript.isManagedFile'));
         // https://github.com/microsoft/vscode/blob/4aac84268c6226d23828cc6a1fe45ee3982927f0/extensions/typescript-language-features/src/typescriptServiceClient.ts#L911
         await waitForAnimation(() => !progressStatusBarItem.currentProgress);
         return /** @type {MonacoEditor} */ (editor);

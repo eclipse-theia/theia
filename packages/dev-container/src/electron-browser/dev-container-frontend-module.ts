@@ -19,6 +19,8 @@ import { RemoteContainerConnectionProvider, RemoteContainerConnectionProviderPat
 import { ContainerConnectionContribution } from './container-connection-contribution';
 import { ServiceConnectionProvider } from '@theia/core/lib/browser/messaging/service-connection-provider';
 import { ContainerOutputProvider } from './container-output-provider';
+import { ContainerInfoContribution } from './container-info-contribution';
+import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 
 export default new ContainerModule(bind => {
     bind(ContainerConnectionContribution).toSelf().inSingletonScope();
@@ -30,4 +32,7 @@ export default new ContainerModule(bind => {
         const outputProvider = ctx.container.get(ContainerOutputProvider);
         return ServiceConnectionProvider.createLocalProxy<RemoteContainerConnectionProvider>(ctx.container, RemoteContainerConnectionProviderPath, outputProvider);
     }).inSingletonScope();
+
+    bind(ContainerInfoContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(ContainerInfoContribution);
 });

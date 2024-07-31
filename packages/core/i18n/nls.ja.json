@@ -112,7 +112,9 @@
       "editor.accessibilitySupport2": "スクリーンリーダーが添付されていないと仮定する",
       "editor.bracketPairColorization.enabled": "ブラケットペアのカラー化を有効にするかどうかを制御する。ブラケットのハイライト色を上書きするには `#workbench.colorCustomizations#` を使用してください。",
       "editor.codeActionWidget.includeNearbyQuickfixes": "現在診断中でない場合に、行内に最も近いクイックフィックスを表示するかどうかを設定します。",
+      "editor.cursorSurroundingLinesStyle": "cursorSurroundingLines#`を実行するタイミングを制御する。",
       "editor.detectIndentation": "ファイルを開いたときに、ファイルの内容に基づいて `#editor.tabSize#` と `#editor.insertSpaces#` を自動的に検出するかどうかを制御する。",
+      "editor.dropIntoEditor.enabled": "shift`を押しながらファイルをテキストエディタにドラッグ＆ドロップできるかどうかをコントロールします(エディタでファイルを開く代わりに)。",
       "editor.formatOnSaveMode.modificationsIfAvailable": "変更点のみをフォーマットしようとします(ソースコントロールが必要です)。ソースコントロールが使用できない場合は、ファイル全体がフォーマットされます。",
       "editor.hover.hidingDelay": "ホバーが非表示になるまでの遅延をミリ秒単位で制御する。editor.hover.sticky`が有効になっている必要があります。",
       "editor.inlayHints.enabled1": "インレイのヒントはデフォルトで表示され、`Ctrl+Alt`を押すと隠れます。",
@@ -120,11 +122,15 @@
       "editor.inlayHints.fontFamily": "エディタのインレイヒントのフォントファミリーを制御する。空に設定すると、`#editor.fontFamily#`が使用されます。",
       "editor.inlayHints.fontSize": "エディタのインレイヒントのフォントサイズを制御する。デフォルトでは`#editor.fontSize#`が使用され、設定値が`5`未満またはエディタのフォントサイズより大きい場合に使用されます。",
       "editor.insertSpaces": "Tab`を押したときにスペースを挿入する。この設定は、`#editor.detectIndentation#`がオンの場合、ファイルの内容によって上書きされる。",
+      "editor.occurrencesHighlight": "エディターが意味記号の出現をハイライトするかどうかを制御する。",
       "editor.quickSuggestions": "入力中に自動的にサジェストを表示するかどうかを制御します。コメント、文字列、その他のコードを入力する際に制御できます。クイックサジェストは、ゴーストテキストとして表示するか、サジェストウィジェットで表示するかを設定できます。また、'#editor.suggestOnTriggerCharacters#'設定は、特殊な文字でサジェストが発生するかどうかを制御します。",
       "editor.stickyScroll.scrollWithEditor": "エディターの水平スクロールバーでスティッキースクロールウィジェットのスクロールを有効にする。",
       "editor.suggestFontSize": "サジェストウィジェットのフォントサイズ。0`に設定すると、`#editor.fontSize#`の値が使用される。",
       "editor.suggestLineHeight": "提案ウィジェットの行の高さ。0`に設定すると、`#editor.lineHeight#`の値が使用される。最小値は8。",
       "editor.tabSize": "タブのスペース数。この設定は、`#editor.detectIndentation#`がオンの場合、ファイルの内容によって上書きされる。",
+      "editor.useTabStops": "空白の挿入と削除はタブストップに従う。",
+      "editor.wordBasedSuggestions": "文書内の単語に基づいて補完を計算するかどうかを制御する。",
+      "editor.wordBasedSuggestionsMode": "どの文書から単語ベースの補完を計算するかを制御する。",
       "files.autoSave": "未保存の変更があるエディターの[自動保存](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save)を制御します。",
       "files.autoSave.afterDelay": "変更されたエディターは、設定された `#files.autoSaveDelay#` の後に自動的に保存されます。",
       "files.autoSave.off": "変更されたエディタは、自動的に保存されることはありません。",
@@ -336,7 +342,6 @@
       "autoReveal": "オートリヴェール",
       "clipboardWarn": "クリップボードへのアクセスが拒否されました。ブラウザのアクセス許可を確認してください。",
       "clipboardWarnFirefox": "クリップボードAPIは使用できません。これは、'{1}' ページの '{0}' 環境設定によって有効にすることができます。その後Theiaをリロードしてください。これにより、FireFoxがシステムクリップボードにフルアクセスできるようになります。",
-      "noFolderOpened": "フォルダが開かない",
       "refresh": "エクスプローラーでの更新",
       "reveal": "エクスプローラーでの表示",
       "toggleHiddenFiles": "隠しファイルのトグル"
@@ -387,6 +392,10 @@
       "plugins": "プラグイン",
       "webviewTrace": "ウェブビューによる通信のトレースを制御します。",
       "webviewWarnIfUnsecure": "現在、ウェブビューが安全でない状態で展開されていることをユーザーに警告します。"
+    },
+    "preferences": {
+      "hostedPlugin": "ホスト型プラグイン",
+      "toolbar": "ツールバー"
     },
     "preview": {
       "openByDefault": "デフォルトではエディタではなくプレビューを開くようになっています。"
@@ -522,7 +531,6 @@
       "confirmMessage.uriMultiple": "本当に{0}個の選択されたファイルをすべて削除しますか?",
       "confirmMessage.uriSingle": "本当に{0}を削除するのですか?",
       "duplicate": "デュプリケート",
-      "failApply": "新しいファイルに変更を適用できなかった",
       "failSaveAs": "現在のウィジェットでは\"{0}\"を実行できません。",
       "newFilePlaceholder": "ファイル名",
       "newFolderPlaceholder": "フォルダー名",

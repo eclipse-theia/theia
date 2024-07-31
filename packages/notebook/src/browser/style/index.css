@@ -16,6 +16,7 @@
 
 :root {
   --theia-notebook-markdown-size: 17px;
+  --theia-notebook-cell-editor-margin-right: 10px;
 }
 
 .theia-notebook-cell-list {
@@ -66,15 +67,27 @@
   font-size: var(--theia-notebook-markdown-size);
 }
 
-.theia-notebook-markdown-content > *:first-child {
+.theia-notebook-markdown-content>*:first-child {
   margin-top: 0;
   padding-top: 0;
 }
 
-.theia-notebook-markdown-content > *:only-child,
-.theia-notebook-markdown-content > *:last-child {
+.theia-notebook-markdown-content>*:only-child,
+.theia-notebook-markdown-content>*:last-child {
   margin-bottom: 0;
   padding-bottom: 0;
+}
+
+/* Markdown cell edit mode */
+.theia-notebook-cell-content:has(> .theia-notebook-cell-editor) {
+  margin-left: 37px;
+  margin-right: var(--theia-notebook-cell-editor-margin-right);
+  outline: 1px solid var(--theia-notebook-cellBorderColor);
+}
+
+/* Markdown cell edit mode focused */
+.theia-notebook-cell.focused .theia-notebook-cell-content:has(> .theia-notebook-cell-editor) {
+  outline-color: var(--theia-notebook-focusedEditorBorder);
 }
 
 .theia-notebook-empty-markdown {
@@ -171,7 +184,7 @@
 }
 
 .theia-notebook-cell-divider {
-  height: 20px;
+  height: 25px;
   width: 100%;
 }
 
@@ -185,6 +198,13 @@
   flex-direction: column;
   height: 100%;
   overflow: hidden;
+}
+
+.theia-notebook-main-container .theia-notebook-main-loading-indicator {
+  /* `progress-animation` is defined in `packages/core/src/browser/style/progress-bar.css` */
+  animation: progress-animation 1.8s 0s infinite cubic-bezier(0.645, 0.045, 0.355, 1);
+  background-color: var(--theia-progressBar-background);
+  height: 2px;
 }
 
 .theia-notebook-viewport {
@@ -286,6 +306,7 @@
   position: absolute;
   top: -99999px;
   left: -99999px;
-  height: 500px;
-  width: 500px;
+  max-height: 500px;
+  min-height: 100px;
+  background-color: var(--theia-editor-background);
 }

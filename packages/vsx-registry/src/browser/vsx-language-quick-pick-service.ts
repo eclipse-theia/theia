@@ -42,47 +42,49 @@ export class VSXLanguageQuickPickService extends LanguageQuickPickService {
 
     protected override async getAvailableLanguages(): Promise<LanguageQuickPickItem[]> {
         const client = await this.clientProvider();
-        const searchResult = await client.search({
-            category: 'Language Packs',
-            sortBy: 'downloadCount',
-            sortOrder: 'desc',
-            size: 20
-        });
-        if (searchResult.error) {
-            throw new Error('Error while loading available languages: ' + searchResult.error);
-        }
+        try {
+            const searchResult = await client.search({
+                category: 'Language Packs',
+                sortBy: 'downloadCount',
+                sortOrder: 'desc',
+                size: 20
+            });
 
-        const extensionLanguages = await Promise.all(
-            searchResult.extensions.map(async extension => ({
-                extension,
-                languages: await this.loadExtensionLanguages(extension)
-            }))
-        );
+            const extensionLanguages = await Promise.all(
+                searchResult.extensions.map(async extension => ({
+                    extension,
+                    languages: await this.loadExtensionLanguages(extension)
+                }))
+            );
 
-        const languages = new Map<string, LanguageQuickPickItem>();
+            const languages = new Map<string, LanguageQuickPickItem>();
 
-        for (const extension of extensionLanguages) {
-            for (const localizationContribution of extension.languages) {
-                if (!languages.has(localizationContribution.languageId)) {
-                    languages.set(localizationContribution.languageId, {
-                        ...this.createLanguageQuickPickItem(localizationContribution),
-                        execute: async () => {
-                            const progress = await this.messageService.showProgress({
-                                text: nls.localizeByDefault('Installing {0} language support...',
-                                    localizationContribution.localizedLanguageName ?? localizationContribution.languageName ?? localizationContribution.languageId),
-                            });
-                            try {
-                                const extensionUri = VSCodeExtensionUri.fromId(`${extension.extension.namespace}.${extension.extension.name}`).toString();
-                                await this.pluginServer.deploy(extensionUri);
-                            } finally {
-                                progress.cancel();
+            for (const extension of extensionLanguages) {
+                for (const localizationContribution of extension.languages) {
+                    if (!languages.has(localizationContribution.languageId)) {
+                        languages.set(localizationContribution.languageId, {
+                            ...this.createLanguageQuickPickItem(localizationContribution),
+                            execute: async () => {
+                                const progress = await this.messageService.showProgress({
+                                    text: nls.localizeByDefault('Installing {0} language support...',
+                                        localizationContribution.localizedLanguageName ?? localizationContribution.languageName ?? localizationContribution.languageId),
+                                });
+                                try {
+                                    const extensionUri = VSCodeExtensionUri.fromId(`${extension.extension.namespace}.${extension.extension.name}`).toString();
+                                    await this.pluginServer.deploy(extensionUri);
+                                } finally {
+                                    progress.cancel();
+                                }
                             }
-                        }
-                    });
+                        });
+                    }
                 }
             }
+            return Array.from(languages.values());
+        } catch (error) {
+            console.error(error);
+            return [];
         }
-        return Array.from(languages.values());
     }
 
     protected async loadExtensionLanguages(extension: VSXSearchEntry): Promise<LanguageInfo[]> {

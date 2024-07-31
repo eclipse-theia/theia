@@ -22,7 +22,7 @@ import { TheiaWorkspace } from './theia-workspace';
 import { OSUtil } from './util';
 
 export interface TheiaAppFactory<T extends TheiaApp> {
-    new(page: Page, initialWorkspace?: TheiaWorkspace, isElectron?: boolean): T;
+    new(page: Page, initialWorkspace: TheiaWorkspace, isElectron?: boolean): T;
 }
 
 // TODO this is just a sketch, we need a proper way to configure tests and pass this configuration to the `TheiaAppLoader`:

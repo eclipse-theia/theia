@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { find, toArray, ArrayExt } from '@phosphor/algorithm';
+import { find, toArray } from '@phosphor/algorithm';
 import { TabBar, Widget, DockPanel, Title, DockLayout } from '@phosphor/widgets';
 import { Signal } from '@phosphor/signaling';
 import { Disposable, DisposableCollection } from '../../common/disposable';
@@ -103,7 +103,7 @@ export class TheiaDockPanel extends DockPanel {
     }
 
     findTabBar(title: Title<Widget>): TabBar<Widget> | undefined {
-        return find(this.tabBars(), bar => ArrayExt.firstIndexOf(bar.titles, title) > -1);
+        return find(this.tabBars(), bar => bar.titles.includes(title));
     }
 
     protected readonly toDisposeOnMarkAsCurrent = new DisposableCollection();
@@ -133,11 +133,14 @@ export class TheiaDockPanel extends DockPanel {
         }
     }
 
-    override addWidget(widget: Widget, options?: DockPanel.IAddOptions): void {
+    override addWidget(widget: Widget, options?: TheiaDockPanel.AddOptions): void {
         if (this.mode === 'single-document' && widget.parent === this) {
             return;
         }
         super.addWidget(widget, options);
+        if (options?.closeRef) {
+            options.ref?.close();
+        }
         this.widgetAdded.emit(widget);
         this.markActiveTabBar(widget.title);
     }
@@ -251,5 +254,12 @@ export namespace TheiaDockPanel {
     export const Factory = Symbol('TheiaDockPanel#Factory');
     export interface Factory {
         (options?: DockPanel.IOptions): TheiaDockPanel;
+    }
+
+    export interface AddOptions extends DockPanel.IAddOptions {
+        /**
+         * Whether to also close the widget referenced by `ref`.
+         */
+        closeRef?: boolean
     }
 }

@@ -41,7 +41,10 @@ export class ReactRenderer implements Disposable {
     }
 
     render(): void {
-        this.hostRoot.render(<React.Fragment>{this.doRender()}</React.Fragment>);
+        // Ignore all render calls after the host element has unmounted
+        if (!this.toDispose.disposed) {
+            this.hostRoot.render(<React.Fragment>{this.doRender()}</React.Fragment>);
+        }
     }
 
     protected doRender(): React.ReactNode {
