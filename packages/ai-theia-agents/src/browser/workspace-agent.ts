@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { ChatAgent, ChatMessage, ChatRequestParser, DefaultChatAgent } from '@theia/ai-chat/lib/common';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { template } from '../common/template';
-import { LanguageModel, LanguageModelResponse, PromptService, LanguageModelToolServiceFrontend, LanguageModelToolServer } from '@theia/ai-core';
+import { LanguageModel, LanguageModelResponse, PromptService, ToolRequest } from '@theia/ai-core';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { URI } from '@theia/core';
@@ -35,15 +35,9 @@ export class TheiaWorkspaceAgent extends DefaultChatAgent implements ChatAgent {
     @inject(ChatRequestParser)
     protected chatRequestParser: ChatRequestParser;
 
-    @inject(LanguageModelToolServiceFrontend)
-    protected toolService: LanguageModelToolServiceFrontend;
-
     protected override getSystemMessage(): Promise<string | undefined> {
         return this.promptService.getPrompt(template.id);
     }
-
-    @inject(LanguageModelToolServer)
-    protected toolServer: LanguageModelToolServer;
 
     @inject(WorkspaceService)
     protected workspaceService: WorkspaceService;
@@ -51,26 +45,13 @@ export class TheiaWorkspaceAgent extends DefaultChatAgent implements ChatAgent {
     @inject(FileService)
     protected readonly fileService: FileService;
 
-    @postConstruct()
-    init(): void {
-        this.toolService.registerToolCallback(this.id, async (toolId: string, arg_string: string) => {
-            switch (toolId) {
-                case 'getProjectFileList':
-                    return this.getProjectFileList();
-                case 'getFileContent':
-                    const file = this.parseFileContentArg(arg_string);
-                    return this.getFileContent(file);
-            }
-        });
-    }
-
     protected override callLlm(languageModel: LanguageModel, messages: ChatMessage[]): Promise<LanguageModelResponse> {
-        const tools = [
+        const tools: ToolRequest<object>[] = [
             {
                 id: 'getProjectFileList',
                 name: 'getProjectFileList',
                 description: 'Get the list of files in the current project',
-
+                handler: () => this.getProjectFileList()
             },
             {
                 id: 'getFileContent',
@@ -84,11 +65,15 @@ export class TheiaWorkspaceAgent extends DefaultChatAgent implements ChatAgent {
                             description: 'The path of the file to retrieve content for',
                         }
                     }
+                },
+                handler: arg_string => {
+                    const file = this.parseFileContentArg(arg_string);
+                    return this.getFileContent(file);
                 }
             }
         ];
 
-        const languageModelResponse = languageModel.request({ messages, tools, agentId: this.id });
+        const languageModelResponse = languageModel.request({ messages, tools });
         return languageModelResponse;
     }
 

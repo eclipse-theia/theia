@@ -32,9 +32,6 @@ import {
     PromptCustomizationService,
     PromptService,
     PromptServiceImpl,
-    LanguageModelToolServer,
-    LanguageModelToolServiceFrontend,
-    languageModelToolServicePath
 } from '../common';
 import {
     FrontendLanguageModelRegistryImpl,
@@ -56,7 +53,6 @@ import { bindPromptPreferences } from './prompt-preferences';
 import { PromptTemplateContribution } from './prompttemplate-contribution';
 import { TomorrowVariableContribution } from '../tomorrow-variable-contribution';
 import { AIConfigurationSelectionService } from './ai-configuration/ai-configuration-service';
-import { LanguageModelToolServiceFrontendImpl } from './language-model-tool-service-frontend';
 import { TheiaVariableContribution } from './theia-variable-contribution';
 import { TodayVariableContribution } from '../common/today-variable-contribution';
 
@@ -131,14 +127,5 @@ export default new ContainerModule(bind => {
             id: AIAgentConfigurationWidget.ID,
             createWidget: () => ctx.container.get(AIAgentConfigurationWidget)
         }))
-        .inSingletonScope();
-
-    bind(LanguageModelToolServiceFrontend).to(LanguageModelToolServiceFrontendImpl).inSingletonScope();
-    bind(LanguageModelToolServer)
-        .toDynamicValue(ctx => {
-            const connection = ctx.container.get<ServiceConnectionProvider>(RemoteConnectionProvider);
-            const client = ctx.container.get<LanguageModelToolServiceFrontend>(LanguageModelToolServiceFrontend);
-            return connection.createProxy<LanguageModelToolServer>(languageModelToolServicePath, client);
-        })
         .inSingletonScope();
 });

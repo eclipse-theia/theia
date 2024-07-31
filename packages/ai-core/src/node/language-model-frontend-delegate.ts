@@ -66,7 +66,8 @@ export class LanguageModelFrontendDelegateImpl implements LanguageModelFrontendD
 
     async request(
         modelId: string,
-        request: LanguageModelRequest
+        request: LanguageModelRequest,
+        requestId: string
     ): Promise<LanguageModelResponseDelegate> {
         const model = await this.registry.getLanguageModel(modelId);
         if (!model) {
@@ -74,6 +75,9 @@ export class LanguageModelFrontendDelegateImpl implements LanguageModelFrontendD
                 `Request was sent to non-existent language model ${modelId}`
             );
         }
+        request.tools?.forEach(tool => {
+            tool.handler = async args_string => this.frontendDelegateClient.toolCall(requestId, tool.id, args_string);
+        });
         const response = await model.request(request);
         if (isLanguageModelTextResponse(response)) {
             return response;

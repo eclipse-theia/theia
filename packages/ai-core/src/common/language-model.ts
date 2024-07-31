@@ -37,10 +37,10 @@ export interface ToolRequest<T extends object> {
     name: string;
     parameters?: { [key: string]: unknown };
     description?: string;
+    handler: (arg_string: string) => Promise<unknown>;
 }
 export interface LanguageModelRequest {
     messages: LanguageModelRequestMessage[],
-    agentId?: string;
     tools?: ToolRequest<object>[];
 }
 
@@ -56,17 +56,13 @@ export interface LanguageModelStreamResponsePart {
 }
 
 export interface ToolCall {
-    index: number;
-
-    /**
-     * The ID of the tool call.
-     */
     id?: string;
-
     function?: {
         arguments?: string;
         name?: string;
-    };
+    },
+    finished?: boolean;
+    result?: string;
 }
 
 export interface LanguageModelStreamResponse {

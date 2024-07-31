@@ -39,25 +39,30 @@ import {
     LanguageModelResponse,
     LanguageModelSelector,
     LanguageModelStreamResponsePart,
-    LanguageModelToolServer,
 } from '../common';
 import { AISettingsService } from './ai-settings-service';
 
 export interface TokenReceiver {
     send(id: string, token: LanguageModelStreamResponsePart | undefined): void;
 }
+export interface ToolReceiver {
+    toolCall(id: string, toolId: string, arg_string: string): Promise<unknown>;
+}
 
 @injectable()
 export class LanguageModelDelegateClientImpl
     implements LanguageModelDelegateClient {
-    protected receiver: TokenReceiver;
+    protected receiver: TokenReceiver & ToolReceiver;
 
-    setReceiver(receiver: TokenReceiver): void {
+    setReceiver(receiver: TokenReceiver & ToolReceiver): void {
         this.receiver = receiver;
     }
 
     send(id: string, token: LanguageModelStreamResponsePart | undefined): void {
         this.receiver.send(id, token);
+    }
+    toolCall(requestId: string, toolId: string, args_string: string): Promise<unknown> {
+        return this.receiver.toolCall(requestId, toolId, args_string);
     }
 }
 
@@ -70,7 +75,7 @@ interface StreamState {
 @injectable()
 export class FrontendLanguageModelRegistryImpl
     extends DefaultLanguageModelRegistryImpl
-    implements TokenReceiver {
+    implements TokenReceiver, ToolReceiver {
     @inject(LanguageModelRegistryFrontendDelegate)
     protected registryDelegate: LanguageModelRegistryFrontendDelegate;
 
@@ -89,11 +94,7 @@ export class FrontendLanguageModelRegistryImpl
     @inject(AISettingsService)
     protected settingsService: AISettingsService;
 
-    // We don't use the tool server in the frontend, but we still need to initialize
-    // the binding, to let the tool service client register itself to the server.
-    // This injection is used to eagerly initialize the server binding.
-    @inject(LanguageModelToolServer)
-    protected toolServer: LanguageModelToolServer;
+    private static requestCounter: number = 0;
 
     override addLanguageModels(models: LanguageModelMetaData[] | LanguageModel[]): void {
         models.map(model => {
@@ -171,9 +172,12 @@ export class FrontendLanguageModelRegistryImpl
         return {
             ...description,
             request: async (request: LanguageModelRequest) => {
+                const requestId = `${FrontendLanguageModelRegistryImpl.requestCounter++}`;
+                this.requests.set(requestId, request);
                 const response = await this.providerDelegate.request(
                     description.id,
-                    request
+                    request,
+                    requestId
                 );
                 if (isLanguageModelTextResponse(response)) {
                     return response;
@@ -201,6 +205,7 @@ export class FrontendLanguageModelRegistryImpl
     }
 
     private streams = new Map<string, StreamState>();
+    private requests = new Map<string, LanguageModelRequest>();
 
     async *getIterable(
         state: StreamState
@@ -240,6 +245,18 @@ export class FrontendLanguageModelRegistryImpl
         if (streamState.resolve) {
             streamState.resolve(token);
         }
+    }
+
+    toolCall(id: string, toolId: string, arg_string: string): Promise<unknown> {
+        if (!this.requests.has(id)) {
+            throw new Error('Somehow we got a callback for a non existing request!');
+        }
+        const request = this.requests.get(id)!;
+        const tool = request.tools?.find(t => t.id === toolId);
+        if (tool) {
+            return tool.handler(arg_string);
+        }
+        throw new Error(`Could not find a tool for ${toolId}!`);
     }
 
     override async selectLanguageModels(request: LanguageModelSelector): Promise<LanguageModel[]> {

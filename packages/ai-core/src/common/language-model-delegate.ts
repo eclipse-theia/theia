@@ -18,6 +18,7 @@ import { LanguageModelMetaData, LanguageModelRequest, LanguageModelStreamRespons
 
 export const LanguageModelDelegateClient = Symbol('LanguageModelDelegateClient');
 export interface LanguageModelDelegateClient {
+    toolCall(requestId: string, toolId: string, args_string: string): Promise<unknown>;
     send(id: string, token: LanguageModelStreamResponsePart | undefined): void;
 }
 export const LanguageModelRegistryFrontendDelegate = Symbol('LanguageModelRegistryFrontendDelegate');
@@ -35,7 +36,7 @@ export type LanguageModelResponseDelegate = LanguageModelTextResponse | Language
 
 export const LanguageModelFrontendDelegate = Symbol('LanguageModelFrontendDelegate');
 export interface LanguageModelFrontendDelegate {
-    request(modelId: string, request: LanguageModelRequest): Promise<LanguageModelResponseDelegate>;
+    request(modelId: string, request: LanguageModelRequest, requestId: string): Promise<LanguageModelResponseDelegate>;
 }
 
 export const languageModelRegistryDelegatePath = '/services/languageModelRegistryDelegatePath';

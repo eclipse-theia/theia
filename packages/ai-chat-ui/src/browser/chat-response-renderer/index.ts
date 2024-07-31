@@ -17,4 +17,5 @@ export * from './code-part-renderer';
 export * from './text-part-renderer';
 export * from './markdown-part-renderer';
 export * from './command-part-renderer';
+export * from './toolcall-part-renderer';
 export * from './horizontal-layout-part-renderer';

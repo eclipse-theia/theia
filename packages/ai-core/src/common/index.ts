@@ -21,4 +21,3 @@ export * from './language-model-util';
 export * from './prompt-service';
 export * from './types';
 export * from './variable-service';
-export * from './language-model-tool-service';
