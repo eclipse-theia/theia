@@ -24,7 +24,7 @@ import { AiTerminalAgent } from './ai-terminal-agent';
 
 const AI_TERMINAL_COMMAND = {
     id: 'ai-terminal:open',
-    label: 'Start AI Chat'
+    label: 'Ask the AI'
 };
 
 @injectable()
@@ -177,7 +177,6 @@ class AiTerminalChatWidget {
     protected updateChatResult(index: number): void {
         this.chatResultParagraph.innerText = this.commands[index];
     }
-
 
     protected dispose(): void {
         this.chatInput.value = '';
