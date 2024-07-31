@@ -135,27 +135,30 @@ export class DefaultChatAgent implements ChatAgent {
                 let curSearchIndex = 0;
                 const result: ChatResponseContent[] = [];
                 while (curSearchIndex < text.length) {
+                    // find start of code block: ```[language]\n<code>[\n]```
                     const codeStartIndex = text.indexOf('```', curSearchIndex);
                     if (codeStartIndex === -1) {
                         break;
                     }
+
+                    // find language specifier if present
                     const newLineIndex = text.indexOf('\n', codeStartIndex + 3);
-                    let language = '';
-                    if (codeStartIndex + 3 === newLineIndex) {
-                        // no language
-                    } else {
-                        language = text.substring(codeStartIndex + 3, newLineIndex);
-                    }
+                    const language = codeStartIndex + 3 < newLineIndex ? text.substring(codeStartIndex + 3, newLineIndex) : undefined;
+
+                    // find end of code block
                     const codeEndIndex = text.indexOf('```', codeStartIndex + 3);
                     if (codeEndIndex === -1) {
                         break;
                     }
+
+                    // add text before code block as markdown content
                     result.push(new MarkdownChatResponseContentImpl(text.substring(curSearchIndex, codeStartIndex)));
-                    const codeText = text.substring(codeStartIndex + 3, codeEndIndex);
-                    // FIXME remove ! after language is optional
-                    result.push(new CodeChatResponseContentImpl(codeText, language!));
+                    // add code block as code content
+                    const codeText = text.substring(newLineIndex + 1, codeEndIndex).trimEnd();
+                    result.push(new CodeChatResponseContentImpl(codeText, language));
                     curSearchIndex = codeEndIndex + 3;
                 }
+
                 if (result.length > 0) {
                     result.forEach(r => {
                         request.response.response.addContent(r);

@@ -81,13 +81,15 @@ export class CodePartRenderer
         const uri = response.location?.uri;
         const position = response.location?.position;
         if (uri && position) {
-            return <a onClick={this.openFileAtPosition.bind(this, uri, position)}>{this.getTitle(response.location?.uri)}</a>;
+            return <a onClick={this.openFileAtPosition.bind(this, uri, position)}>{this.getTitle(response.location?.uri, response.language)}</a>;
         }
-        return this.getTitle(response.location?.uri);
+        return this.getTitle(response.location?.uri, response.language);
     }
 
-    private getTitle(uri: URI | undefined): string {
-        return uri?.path?.toString().split('/').pop() ?? 'Generated Code';
+    private getTitle(uri: URI | undefined, language: string | undefined): string {
+        // If there is a URI, use the file name as the title. Otherwise, use the language as the title.
+        // If there is no language, use a generic fallback title.
+        return uri?.path?.toString().split('/').pop() ?? language ?? 'Generated Code';
     }
 
     /**

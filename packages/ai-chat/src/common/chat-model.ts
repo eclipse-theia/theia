@@ -318,10 +318,10 @@ export class MarkdownChatResponseContentImpl implements MarkdownChatResponseCont
 export class CodeChatResponseContentImpl implements CodeChatResponseContent {
     kind: 'code' = 'code';
     protected _code: string;
-    protected _language: string;
+    protected _language?: string;
     protected _location?: Location;
 
-    constructor(code: string, language: string, location?: Location) {
+    constructor(code: string, language?: string, location?: Location) {
         this._code = code;
         this._language = language;
         this._location = location;
@@ -331,7 +331,7 @@ export class CodeChatResponseContentImpl implements CodeChatResponseContent {
         return this._code;
     }
 
-    get language(): string {
+    get language(): string | undefined {
         return this._language;
     }
 
