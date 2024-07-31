@@ -19,14 +19,12 @@
  *--------------------------------------------------------------------------------------------*/
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatAgents.ts
 
-import { CommunicationRecordingService } from '@theia/ai-core';
+import { CommunicationRecordingService, LanguageModelRequirement } from '@theia/ai-core';
 import {
     Agent,
     isLanguageModelStreamResponse,
     isLanguageModelTextResponse,
-    LanguageModelRegistry,
-    LanguageModelSelector,
-    LanguageModelStreamResponsePart,
+    LanguageModelRegistry, LanguageModelStreamResponsePart,
     PromptTemplate
 } from '@theia/ai-core/lib/common';
 import { generateUuid, ILogger, isArray } from '@theia/core';
@@ -57,6 +55,7 @@ export namespace ChatAgentLocation {
 
 export interface ChatAgentData extends Agent {
     locations: ChatAgentLocation[];
+    iconClass?: string;
 }
 
 export const ChatAgent = Symbol('ChatAgent');
@@ -75,16 +74,17 @@ export class DefaultChatAgent implements ChatAgent {
     protected recordingService: CommunicationRecordingService;
 
     id: string = 'DefaultChatAgent';
-    name: string = 'Default Chat Agent';
+    name: string = 'DefaultChatAgent';
+    iconClass = 'codicon codicon-copilot';
     description: string = 'The default chat agent provided by Theia.';
     variables: string[] = [];
     promptTemplates: PromptTemplate[] = [];
     // FIXME: placeholder values
-    languageModelRequirements: Omit<LanguageModelSelector, 'agent'>[] = [{
+    languageModelRequirements: LanguageModelRequirement[] = [{
         purpose: 'chat',
         identifier: 'openai/gpt-4o',
     }];
-    locations: ChatAgentLocation[] = [];
+    locations: ChatAgentLocation[] = ChatAgentLocation.ALL;
 
     async invoke(request: ChatRequestModelImpl): Promise<void> {
         this.recordingService.recordRequest({
@@ -204,12 +204,13 @@ export class DummyChatAgent implements ChatAgent {
     protected recordingService: CommunicationRecordingService;
 
     id: string = 'DummyChatAgent';
-    name: string = 'Dummy Chat Agent';
+    name: string = 'DummyChatAgent';
+    iconClass = 'codicon codicon-bug';
     description: string = 'The dummy chat agent provided by ES.';
     variables: string[] = [];
     promptTemplates: PromptTemplate[] = [];
-    languageModelRequirements: Omit<LanguageModelSelector, 'agentId'>[] = [];
-    locations: ChatAgentLocation[] = [];
+    languageModelRequirements: LanguageModelRequirement[] = [];
+    locations: ChatAgentLocation[] = ChatAgentLocation.ALL;
 
     async invoke(request?: ChatRequestModelImpl): Promise<void> {
         const requestUuid = generateUuid();
