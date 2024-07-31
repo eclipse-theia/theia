@@ -5,6 +5,7 @@
   "dependencies": {
     "@langchain/openai": "^0.2.5",
     "@theia/ai-core": "1.52.0",
+    "@theia/ai-chat": "1.52.0",
     "@theia/core": "1.52.0",
     "@theia/filesystem": "1.52.0",
     "@theia/output": "1.52.0",

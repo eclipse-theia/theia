@@ -29,4 +29,5 @@ export default new ContainerModule(bind => {
     }).inSingletonScope();
     bind(AIVariableContribution).to(GLSPVariableContribution).inSingletonScope();
     bind(CommandContribution).to(TriggerRagCommandContribution);
+
 });

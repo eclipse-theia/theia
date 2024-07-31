@@ -10,6 +10,9 @@
   ],
   "references": [
     {
+      "path": "../ai-chat"
+    },
+    {
       "path": "../ai-core"
     },
     {

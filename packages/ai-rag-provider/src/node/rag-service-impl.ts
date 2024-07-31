@@ -24,22 +24,6 @@ import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
 import * as fs from 'fs';
 import * as path from 'path';
 
-export function getAllFiles(dirPath: string, arrayOfFiles: string[] = []): string[] {
-    const files = fs.readdirSync(dirPath);
-
-    arrayOfFiles = arrayOfFiles || [];
-
-    files.forEach(function (file: string): void {
-        const filePath = path.join(dirPath, file);
-        if (fs.statSync(filePath).isDirectory()) {
-            arrayOfFiles = getAllFiles(filePath, arrayOfFiles);
-        } else {
-            arrayOfFiles.push(filePath);
-        }
-    });
-
-    return arrayOfFiles;
-}
 
 @injectable()
 export class RagServiceImpl implements RagService {
@@ -81,6 +65,10 @@ part: ${index + 1}
         }
     }
 
+    async loadWeb(url: String): Promise<void> {
+        console.log(`website with url ${url} loaded`);
+    }
+
     async queryPageContent(query: string, numberOfDocuments: number = 1): Promise<string[]> {
         console.log(`Querying for: ${query}`);
         const documents = await this.vectorStore.similaritySearch(query, numberOfDocuments);
@@ -89,12 +77,30 @@ part: ${index + 1}
     }
 
     async test(): Promise<void> {
-        const allGLSPWebsiteFiles = getAllFiles('/home/stefan/Git/glsp-website-source');
+        const allGLSPWebsiteFiles = await this.getAllFiles('/home/stefan/Git/glsp-website-source');
         for (const file of allGLSPWebsiteFiles) {
             if (file.includes('documentation') && file.endsWith('.md') && !file.endsWith('index.md')) {
                 await this.loadFile(file);
             }
         }
         console.log(await this.queryPageContent('How to add a custom shape'), 1);
+    }
+
+    async getAllFiles(dirPath: string, arrayOfFiles: string[] = []): Promise<string[]> {
+        const files = fs.readdirSync(dirPath);
+
+        arrayOfFiles = arrayOfFiles || [];
+
+        for (const file of files) {
+            const filePath = path.join(dirPath, file);
+            if (fs.statSync(filePath).isDirectory()) {
+                arrayOfFiles = await this.getAllFiles(filePath, arrayOfFiles);
+            } else {
+                arrayOfFiles.push(filePath);
+            }
+
+        }
+
+        return arrayOfFiles;
     }
 }

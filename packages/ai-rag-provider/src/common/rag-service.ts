@@ -17,7 +17,9 @@
 export const RAG_SERVICE_PATH = '/services/ai/rag';
 export const RagService = Symbol('RagService');
 export interface RagService {
+    getAllFiles(dirPath: string, arrayOfFiles: string[]): Promise<string[]>;
     loadFile(filePath: string): Promise<void>;
+    loadWeb(url: string): Promise<void>;
     queryPageContent(query: string, numberOfDocuments?: number): Promise<string[]>;
     // FIXME Remove! JUST FOR TESTING
     test(): void;
