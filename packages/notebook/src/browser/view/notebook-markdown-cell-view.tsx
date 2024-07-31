@@ -25,6 +25,8 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { MonacoEditorServices } from '@theia/monaco/lib/browser/monaco-editor';
 import { nls } from '@theia/core';
 import { NotebookContextManager } from '../service/notebook-context-manager';
+import { NotebookEditorFindMatch, NotebookEditorFindMatchOptions } from './notebook-find-widget';
+import * as mark from 'advanced-mark.js';
 
 @injectable()
 export class NotebookMarkdownCellRenderer implements CellRenderer {
@@ -53,26 +55,51 @@ export class NotebookMarkdownCellRenderer implements CellRenderer {
 }
 
 interface MarkdownCellProps {
-    markdownRenderer: MarkdownRenderer,
+    markdownRenderer: MarkdownRenderer
     monacoServices: MonacoEditorServices
 
-    cell: NotebookCellModel,
+    cell: NotebookCellModel
     notebookModel: NotebookModel
-    notebookContextManager: NotebookContextManager;
+    notebookContextManager: NotebookContextManager
 }
 
 function MarkdownCell({ markdownRenderer, monacoServices, cell, notebookModel, notebookContextManager }: MarkdownCellProps): React.JSX.Element {
     const [editMode, setEditMode] = React.useState(cell.editing);
+    let empty = false;
 
     React.useEffect(() => {
         const listener = cell.onDidRequestCellEditChange(cellEdit => setEditMode(cellEdit));
         return () => listener.dispose();
     }, [editMode]);
 
+    React.useEffect(() => {
+        if (!editMode) {
+            const instance = new mark(markdownContent);
+            cell.onMarkdownFind = options => {
+                instance.unmark();
+                if (empty) {
+                    return [];
+                }
+                return searchInMarkdown(instance, options);
+            };
+            const selectListener = cell.onDidSelectFindMatch(match => {
+                markdownContent.scrollIntoView({
+                    behavior: 'instant',
+                    block: 'center',
+                });
+            });
+            return () => {
+                selectListener.dispose();
+                cell.onMarkdownFind = undefined;
+                instance.unmark();
+            };
+        }
+    }, [editMode, cell.source]);
+
     let markdownContent: HTMLElement = React.useMemo(() => {
         const markdownString = new MarkdownStringImpl(cell.source, { supportHtml: true, isTrusted: true });
         return markdownRenderer.render(markdownString).element;
-    }, [cell, editMode]);
+    }, [cell.source]);
 
     if (!markdownContent.hasChildNodes()) {
         const italic = document.createElement('i');
@@ -80,6 +107,7 @@ function MarkdownCell({ markdownRenderer, monacoServices, cell, notebookModel, n
         italic.innerText = nls.localizeByDefault('Empty markdown cell, double-click or press enter to edit.');
         italic.style.pointerEvents = 'none';
         markdownContent = italic;
+        empty = true;
     }
 
     return editMode ?
@@ -88,4 +116,67 @@ function MarkdownCell({ markdownRenderer, monacoServices, cell, notebookModel, n
             onDoubleClick={() => cell.requestEdit()}
             ref={node => node?.replaceChildren(markdownContent)}
         />;
+}
+
+function searchInMarkdown(instance: mark, options: NotebookEditorFindMatchOptions): NotebookEditorFindMatch[] {
+    const matches: NotebookEditorFindMatch[] = [];
+    const markOptions: mark.MarkOptions & mark.RegExpOptions = {
+        className: 'theia-find-match',
+        diacritics: false,
+        caseSensitive: options.matchCase,
+        acrossElements: true,
+        separateWordSearch: false,
+        each: node => {
+            matches.push(new MarkdownEditorFindMatch(node));
+        }
+    };
+    if (options.regex || options.wholeWord) {
+        let search = options.search;
+        if (options.wholeWord) {
+            if (!options.regex) {
+                search = escapeRegExp(search);
+            }
+            search = '\\b' + search + '\\b';
+        }
+        instance.markRegExp(new RegExp(search), markOptions);
+    } else {
+        instance.mark(options.search, markOptions);
+    }
+    return matches;
+}
+
+function escapeRegExp(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+class MarkdownEditorFindMatch implements NotebookEditorFindMatch {
+
+    constructor(readonly node: Node) { }
+
+    private _selected = false;
+
+    get selected(): boolean {
+        return this._selected;
+    }
+
+    set selected(selected: boolean) {
+        this._selected = selected;
+        const className = 'theia-find-match-selected';
+        if (this.node instanceof HTMLElement) {
+            if (selected) {
+                this.node.classList.add(className);
+            } else {
+                this.node.classList.remove(className);
+            }
+        }
+    }
+
+    show(): void {
+        if (this.node instanceof HTMLElement) {
+            this.node.scrollIntoView({
+                behavior: 'instant',
+                block: 'center'
+            });
+        }
+    }
 }

@@ -83,6 +83,11 @@ export namespace NotebookCommands {
         id: 'notebook.cell.paste',
         category: 'Notebook',
     });
+
+    export const NOTEBOOK_FIND = Command.toDefaultLocalizedCommand({
+        id: 'notebook.find',
+        category: 'Notebook',
+    });
 }
 
 export enum CellChangeDirection {
@@ -251,6 +256,12 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
             }
         });
 
+        commands.registerCommand(NotebookCommands.NOTEBOOK_FIND, {
+            execute: () => {
+                this.notebookEditorWidgetService.focusedEditor?.showFindWidget();
+            }
+        });
+
     }
 
     protected editableCommandHandler(execute: (notebookModel: NotebookModel) => void): CommandHandler {
@@ -337,6 +348,11 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
                 command: NotebookCommands.PASTE_CELL.id,
                 keybinding: 'ctrlcmd+v',
                 when: `!editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED}`
+            },
+            {
+                command: NotebookCommands.NOTEBOOK_FIND.id,
+                keybinding: 'ctrlcmd+f',
+                when: `${NOTEBOOK_EDITOR_FOCUSED}`
             },
         );
     }

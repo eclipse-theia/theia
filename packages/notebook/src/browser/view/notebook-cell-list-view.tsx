@@ -18,10 +18,11 @@ import { CellEditType, CellKind } from '../../common';
 import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookCellToolbarFactory } from './notebook-cell-toolbar-factory';
-import { codicon } from '@theia/core/lib/browser';
+import { animationFrame, codicon, onDomEvent } from '@theia/core/lib/browser';
 import { CommandRegistry, DisposableCollection, nls } from '@theia/core';
 import { NotebookCommands } from '../contributions/notebook-actions-contribution';
 import { NotebookCellActionContribution } from '../contributions/notebook-cell-actions-contribution';
+import { NotebookContextManager } from '../service/notebook-context-manager';
 
 export interface CellRenderer {
     render(notebookData: NotebookModel, cell: NotebookCellModel, index: number): React.ReactNode
@@ -31,6 +32,7 @@ export interface CellRenderer {
 interface CellListProps {
     renderers: Map<CellKind, CellRenderer>;
     notebookModel: NotebookModel;
+    notebookContext: NotebookContextManager;
     toolbarRenderer: NotebookCellToolbarFactory;
     commandRegistry: CommandRegistry
 }
@@ -80,7 +82,24 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
     }
 
     override render(): React.ReactNode {
-        return <ul className='theia-notebook-cell-list'>
+        return <ul className='theia-notebook-cell-list' ref={
+            ref => {
+                this.toDispose.push(onDomEvent(document, 'focusin', () => {
+                    animationFrame().then(() => {
+                        let hasCellFocus = false;
+                        let hasFocus = false;
+                        if (ref?.contains(document.activeElement)) {
+                            if (this.props.notebookModel.selectedCell) {
+                                hasCellFocus = true;
+                            }
+                            hasFocus = true;
+                        }
+                        this.props.notebookContext.changeCellFocus(hasCellFocus);
+                        this.props.notebookContext.changeCellListFocus(hasFocus);
+                    });
+                }));
+            }
+        }>
             {this.props.notebookModel.cells
                 .map((cell, index) =>
                     <React.Fragment key={'cell-' + cell.handle}>

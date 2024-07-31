@@ -18,7 +18,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { environment } from '../common';
+import { Disposable, environment } from '../common';
 
 const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : '';
 
@@ -227,4 +227,13 @@ function getMeasurementElement(style?: PartialCSSStyle): HTMLElement {
         }
     }
     return measureElement;
+}
+
+export function onDomEvent<K extends keyof HTMLElementEventMap>(
+    element: Node,
+    type: K,
+    listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => unknown,
+    options?: boolean | AddEventListenerOptions): Disposable {
+    element.addEventListener(type, listener, options);
+    return { dispose: () => element.removeEventListener(type, listener, options) };
 }

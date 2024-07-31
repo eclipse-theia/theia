@@ -16,7 +16,7 @@
 
 import * as React from '@theia/core/shared/react';
 import { NotebookModel } from '../view-model/notebook-model';
-import { NotebookCellModel } from '../view-model/notebook-cell-model';
+import { NotebookCellModel, NotebookCodeEditorFindMatch } from '../view-model/notebook-cell-model';
 import { SimpleMonacoEditor } from '@theia/monaco/lib/browser/simple-monaco-editor';
 import { MonacoEditor, MonacoEditorServices } from '@theia/monaco/lib/browser/monaco-editor';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
@@ -27,6 +27,9 @@ import { NotebookViewportService } from './notebook-viewport-service';
 import { BareFontInfo } from '@theia/monaco-editor-core/esm/vs/editor/common/config/fontInfo';
 import { NOTEBOOK_CELL_CURSOR_FIRST_LINE, NOTEBOOK_CELL_CURSOR_LAST_LINE } from '../contributions/notebook-context-keys';
 import { EditorExtensionsRegistry } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorExtensions';
+import { ModelDecorationOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/model/textModel';
+import { IModelDeltaDecoration, OverviewRulerLane, TrackedRangeStickiness } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
+import { animationFrame } from '@theia/core/lib/browser';
 
 interface CellEditorProps {
     notebookModel: NotebookModel,
@@ -48,11 +51,39 @@ const DEFAULT_EDITOR_OPTIONS: MonacoEditor.IOptions = {
     lineDecorationsWidth: 10,
 };
 
+export const CURRENT_FIND_MATCH_DECORATION = ModelDecorationOptions.register({
+    description: 'current-find-match',
+    stickiness: TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges,
+    zIndex: 13,
+    className: 'currentFindMatch',
+    inlineClassName: 'currentFindMatchInline',
+    showIfCollapsed: true,
+    overviewRuler: {
+        color: 'editorOverviewRuler.findMatchForeground',
+        position: OverviewRulerLane.Center
+    }
+});
+
+export const FIND_MATCH_DECORATION = ModelDecorationOptions.register({
+    description: 'find-match',
+    stickiness: TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges,
+    zIndex: 10,
+    className: 'findMatch',
+    inlineClassName: 'findMatchInline',
+    showIfCollapsed: true,
+    overviewRuler: {
+        color: 'editorOverviewRuler.findMatchForeground',
+        position: OverviewRulerLane.Center
+    }
+});
+
 export class CellEditor extends React.Component<CellEditorProps, {}> {
 
     protected editor?: SimpleMonacoEditor;
     protected toDispose = new DisposableCollection();
     protected container?: HTMLDivElement;
+    protected matches: NotebookCodeEditorFindMatch[] = [];
+    protected oldMatchDecorations: string[] = [];
 
     override componentDidMount(): void {
         this.disposeEditor();
@@ -68,7 +99,6 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
             const currentLine = this.editor?.getControl().getPosition()?.lineNumber;
             this.props.notebookContextManager.scopedStore.setContext(NOTEBOOK_CELL_CURSOR_FIRST_LINE, currentLine === 1);
             this.props.notebookContextManager.scopedStore.setContext(NOTEBOOK_CELL_CURSOR_LAST_LINE, currentLine === lineCount);
-
         }));
 
         this.toDispose.push(this.props.cell.onDidChangeEditorOptions(options => {
@@ -77,6 +107,26 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
 
         this.toDispose.push(this.props.cell.onDidChangeLanguage(language => {
             this.editor?.setLanguage(language);
+        }));
+
+        this.toDispose.push(this.props.cell.onDidFindMatches(matches => {
+            this.matches = matches;
+            animationFrame().then(() => this.setMatches());
+        }));
+
+        this.toDispose.push(this.props.cell.onDidSelectFindMatch(match => {
+            const editorDomNode = this.editor?.getControl().getDomNode();
+            if (editorDomNode) {
+                editorDomNode.scrollIntoView({
+                    behavior: 'instant',
+                    block: 'center'
+                });
+            } else {
+                this.container?.scrollIntoView({
+                    behavior: 'instant',
+                    block: 'center'
+                });
+            }
         }));
 
         this.toDispose.push(this.props.notebookModel.onDidChangeSelectedCell(e => {
@@ -130,11 +180,11 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
                 notebookModel.cellDirtyChanged(cell, true);
             }));
             this.toDispose.push(this.editor.getControl().onDidFocusEditorText(() => {
-                this.props.notebookContextManager.onDidEditorTextFocus(true);
                 this.props.notebookModel.setSelectedCell(cell, false);
             }));
-            this.toDispose.push(this.editor.getControl().onDidBlurEditorText(() => {
-                this.props.notebookContextManager.onDidEditorTextFocus(false);
+            this.toDispose.push(this.editor.getControl().onDidChangeCursorSelection(e => {
+                const selectedText = this.editor!.getControl().getModel()!.getValueInRange(e.selection);
+                this.props.notebookModel.selectedText = selectedText;
             }));
             this.toDispose.push(this.editor.getControl().onDidChangeCursorPosition(e => {
                 if (e.secondaryPositions.length === 0) {
@@ -149,7 +199,30 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
             if (cell.editing && notebookModel.selectedCell === cell) {
                 this.editor.getControl().focus();
             }
+            this.setMatches();
         }
+    }
+
+    protected setMatches(): void {
+        if (!this.editor) {
+            return;
+        }
+        const decorations: IModelDeltaDecoration[] = [];
+        for (const match of this.matches) {
+            const decoration = match.selected ? CURRENT_FIND_MATCH_DECORATION : FIND_MATCH_DECORATION;
+            decorations.push({
+                range: {
+                    startLineNumber: match.range.start.line,
+                    startColumn: match.range.start.character,
+                    endLineNumber: match.range.end.line,
+                    endColumn: match.range.end.character
+                },
+                options: decoration
+            });
+        }
+
+        this.oldMatchDecorations = this.editor.getControl()
+            .changeDecorations(accessor => accessor.deltaDecorations(this.oldMatchDecorations, decorations));
     }
 
     protected setContainer(component: HTMLDivElement | null): void {
