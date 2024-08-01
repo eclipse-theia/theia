@@ -22,6 +22,8 @@ import { ContainerModule } from '@theia/core/shared/inversify';
 import {
     AIVariableContribution,
     AIVariableService,
+    FunctionCallRegistry,
+    FunctionCallRegistryImpl,
     LanguageModelDelegateClient,
     languageModelDelegatePath,
     LanguageModelFrontendDelegate,
@@ -32,6 +34,7 @@ import {
     PromptCustomizationService,
     PromptService,
     PromptServiceImpl,
+    ToolProvider
 } from '../common';
 import {
     FrontendLanguageModelRegistryImpl,
@@ -130,4 +133,7 @@ export default new ContainerModule(bind => {
             createWidget: () => ctx.container.get(AIAgentConfigurationWidget)
         }))
         .inSingletonScope();
+
+    bind(FunctionCallRegistry).to(FunctionCallRegistryImpl).inSingletonScope();
+    bindContributionProvider(bind, ToolProvider);
 });

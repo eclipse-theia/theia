@@ -13,27 +13,39 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { ChatAgent, ChatMessage, ChatRequestParser, DefaultChatAgent } from '@theia/ai-chat/lib/common';
-import { inject, injectable } from '@theia/core/shared/inversify';
-import { template } from '../common/template';
-import { LanguageModel, LanguageModelResponse, ToolRequest } from '@theia/ai-core';
-import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { ToolProvider, ToolRequest } from '@theia/ai-core';
 import { URI } from '@theia/core';
+import { inject, injectable } from '@theia/core/shared/inversify';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 
+/**
+ * A Function that can read the contents of a File from the Workspace.
+ */
 @injectable()
-export class TheiaWorkspaceAgent extends DefaultChatAgent implements ChatAgent {
-    override id = 'TheiaWorkspaceAgent';
-    override name = 'Workspace Agent';
-    override description = 'An AI Agent that can access the current Theia Workspace contents';
-    override promptTemplates = [template];
+export class FileContentFunction implements ToolProvider {
+    static ID = 'getFileContent';
 
-    @inject(ChatRequestParser)
-    protected chatRequestParser: ChatRequestParser;
-
-    protected override getSystemMessage(): Promise<string | undefined> {
-        return this.promptService.getPrompt(template.id);
+    getTool(): ToolRequest<object> {
+        return {
+            id: FileContentFunction.ID,
+            name: FileContentFunction.ID,
+            description: 'Get the content of the file',
+            parameters: {
+                type: 'object',
+                properties: {
+                    file: {
+                        type: 'string',
+                        description: 'The path of the file to retrieve content for',
+                    }
+                }
+            },
+            handler: (arg_string: string) => {
+                const file = this.parseArg(arg_string);
+                return this.getFileContent(file);
+            }
+        };
     }
 
     @inject(WorkspaceService)
@@ -42,42 +54,40 @@ export class TheiaWorkspaceAgent extends DefaultChatAgent implements ChatAgent {
     @inject(FileService)
     protected readonly fileService: FileService;
 
-    protected override callLlm(languageModel: LanguageModel, messages: ChatMessage[]): Promise<LanguageModelResponse> {
-        const tools: ToolRequest<object>[] = [
-            {
-                id: 'getProjectFileList',
-                name: 'getProjectFileList',
-                description: 'Get the list of files in the current project',
-                handler: () => this.getProjectFileList()
-            },
-            {
-                id: 'getFileContent',
-                name: 'getFileContent',
-                description: 'Get the content of the file',
-                parameters: {
-                    type: 'object',
-                    properties: {
-                        file: {
-                            type: 'string',
-                            description: 'The path of the file to retrieve content for',
-                        }
-                    }
-                },
-                handler: arg_string => {
-                    const file = this.parseFileContentArg(arg_string);
-                    return this.getFileContent(file);
-                }
-            }
-        ];
-
-        const languageModelResponse = languageModel.request({ messages, tools });
-        return languageModelResponse;
-    }
-
-    parseFileContentArg(arg_string: string): string {
+    private parseArg(arg_string: string): string {
         const result = JSON.parse(arg_string);
         return result.file;
     }
+
+    private async getFileContent(file: string): Promise<string> {
+        const uri = new URI(file);
+        const fileContent = await this.fileService.read(uri);
+        return fileContent.value;
+    }
+}
+
+/**
+ * A Function that lists all files in the workspace.
+ */
+@injectable()
+export class GetWorkspaceFileList implements ToolProvider {
+    static ID = 'getWorkspaceFileList';
+
+    getTool(): ToolRequest<object> {
+        return {
+            id: GetWorkspaceFileList.ID,
+            name: GetWorkspaceFileList.ID,
+            description: 'List all files in the workspace',
+
+            handler: () => this.getProjectFileList()
+        };
+    }
+
+    @inject(WorkspaceService)
+    protected workspaceService: WorkspaceService;
+
+    @inject(FileService)
+    protected readonly fileService: FileService;
 
     async getProjectFileList(): Promise<string[]> {
         // Get all files from the workspace service as a flat list of qualified file names
@@ -120,11 +130,4 @@ export class TheiaWorkspaceAgent extends DefaultChatAgent implements ChatAgent {
         }
         return false;
     }
-
-    async getFileContent(file: string): Promise<string> {
-        const uri = new URI(file);
-        const fileContent = await this.fileService.read(uri);
-        return fileContent.value;
-    }
-
 }

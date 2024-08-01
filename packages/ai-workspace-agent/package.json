@@ -1,7 +1,7 @@
 {
-  "name": "@theia/ai-theia-agents",
+  "name": "@theia/ai-workspace-agent",
   "version": "1.52.0",
-  "description": "AI Theia Agents Extension",
+  "description": "AI Workspace Agent Extension",
   "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
   "repository": {
     "type": "git",

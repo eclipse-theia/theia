@@ -19,7 +19,7 @@
  *--------------------------------------------------------------------------------------------*/
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatAgents.ts
 
-import { CommunicationRecordingService, LanguageModel, LanguageModelResponse, LanguageModelRequirement, PromptService } from '@theia/ai-core';
+import { CommunicationRecordingService, LanguageModel, LanguageModelResponse, LanguageModelRequirement, PromptService, ToolRequest } from '@theia/ai-core';
 import {
     Agent,
     isLanguageModelStreamResponse,
@@ -207,8 +207,16 @@ export class DefaultChatAgent implements ChatAgent {
     }
 
     protected async callLlm(languageModel: LanguageModel, messages: ChatMessage[]): Promise<LanguageModelResponse> {
-        const languageModelResponse = languageModel.request({ messages });
+        const tools = this.getTools();
+        const languageModelResponse = languageModel.request({ messages, tools });
         return languageModelResponse;
+    }
+
+    /**
+     * @returns the list of tools used by this agent, or undefined if none is needed.
+     */
+    protected getTools(): ToolRequest<object>[] | undefined {
+        return undefined;
     }
 
     protected async getMessages(model: ChatModel, includeResponseInProgress = false): Promise<ChatMessage[]> {

@@ -48,7 +48,7 @@
       "path": "../../packages/ai-terminal"
     },
     {
-      "path": "../../packages/ai-theia-agents"
+      "path": "../../packages/ai-workspace-agent"
     },
     {
       "path": "../../packages/bulk-edit"
