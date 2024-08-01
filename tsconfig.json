@@ -82,6 +82,9 @@
       "path": "packages/ai-openai"
     },
     {
+      "path": "packages/ai-pr-finalization"
+    },
+    {
       "path": "packages/ai-rag-provider"
     },
     {

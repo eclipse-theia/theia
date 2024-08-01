@@ -34,6 +34,7 @@
     "@theia/ai-history": "1.52.0",
     "@theia/ai-history-ui": "1.52.0",
     "@theia/ai-openai": "1.52.0",
+    "@theia/ai-pr-finalization": "1.52.0",
     "@theia/ai-terminal": "1.52.0",
     "@theia/ai-rag-provider": "1.52.0",
     "@theia/ai-llamafile": "1.52.0",

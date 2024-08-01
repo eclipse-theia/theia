@@ -51,6 +51,7 @@ export interface ChatSendRequestData {
 
 export const ChatService = Symbol('ChatService');
 export interface ChatService {
+    getSessions(): ChatModel[];
     getSession(id: string): ChatModel | undefined;
     getOrRestoreSession(id: string): ChatModel | undefined;
     createSession(location?: ChatAgentLocation): ChatModel;
@@ -76,6 +77,11 @@ export class ChatServiceImpl implements ChatService {
     protected logger: ILogger;
 
     protected _sessions: ChatModelImpl[] = [];
+
+    // TODO we might not want to expose this.
+    getSessions(): ChatModel[] {
+        return [...this._sessions];
+    }
 
     getSession(id: string): ChatModelImpl | undefined {
         return this._sessions.find(session => session.id === id);

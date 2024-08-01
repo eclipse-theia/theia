@@ -27,8 +27,8 @@ import {
     LanguageModelRegistry, LanguageModelStreamResponsePart,
     PromptTemplate
 } from '@theia/ai-core/lib/common';
-import { TODAY_VARIABLE } from '@theia/ai-core/lib/common/today-variable-contribution';
-import { generateUuid, ILogger, isArray, MaybePromise } from '@theia/core';
+import { TODAY_VARIABLE } from '@theia/ai-core/lib/today-variable-contribution';
+import { generateUuid, ILogger, isArray } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatModel, ChatRequestModelImpl, ChatResponseContent, CodeChatResponseContentImpl, MarkdownChatResponseContentImpl } from './chat-model';
 import { ChatMessage } from './chat-util';
@@ -207,7 +207,7 @@ export class DefaultChatAgent implements ChatAgent {
         return languageModelResponse;
     }
 
-    protected getMessages(model: ChatModel, includeResponseInProgress = false, systemMessage?: string): MaybePromise<ChatMessage[]> {
+    protected async getMessages(model: ChatModel, includeResponseInProgress = false): Promise<ChatMessage[]> {
         const requestMessages = model.getRequests().flatMap(request => {
             const messages: ChatMessage[] = [];
             const query = request.message.parts.map(part => part.promptText).join('');
@@ -225,6 +225,7 @@ export class DefaultChatAgent implements ChatAgent {
             }
             return messages;
         });
+        const systemMessage = await this.getSystemMessage();
         if (systemMessage) {
             const systemMsg: ChatMessage = {
                 actor: 'system',
@@ -235,6 +236,10 @@ export class DefaultChatAgent implements ChatAgent {
             requestMessages.unshift(systemMsg);
         }
         return requestMessages;
+    }
+
+    protected async getSystemMessage(): Promise<string | undefined> {
+        return undefined;
     }
 
     private parse(token: LanguageModelStreamResponsePart, previousContent: ChatResponseContent[]): ChatResponseContent | ChatResponseContent[] {

@@ -13,10 +13,10 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { ChatAgent, ChatMessage, ChatModel, ChatRequestParser, DefaultChatAgent } from '@theia/ai-chat/lib/common';
+import { ChatAgent, ChatMessage, ChatRequestParser, DefaultChatAgent } from '@theia/ai-chat/lib/common';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { template } from '../common/template';
-import { LanguageModel, LanguageModelResponse, PromptService, LanguageModelToolServiceFrontend } from '@theia/ai-core';
+import { LanguageModel, LanguageModelResponse, PromptService, LanguageModelToolServiceFrontend, LanguageModelToolServer } from '@theia/ai-core';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { URI } from '@theia/core';
@@ -37,6 +37,13 @@ export class TheiaWorkspaceAgent extends DefaultChatAgent implements ChatAgent {
 
     @inject(LanguageModelToolServiceFrontend)
     protected toolService: LanguageModelToolServiceFrontend;
+
+    protected override getSystemMessage(): Promise<string | undefined> {
+        return this.promptService.getPrompt(template.id);
+    }
+
+    @inject(LanguageModelToolServer)
+    protected toolServer: LanguageModelToolServer;
 
     @inject(WorkspaceService)
     protected workspaceService: WorkspaceService;
@@ -83,11 +90,6 @@ export class TheiaWorkspaceAgent extends DefaultChatAgent implements ChatAgent {
 
         const languageModelResponse = languageModel.request({ messages, tools, agentId: this.id });
         return languageModelResponse;
-    }
-
-    protected override async getMessages(model: ChatModel, includeResponseInProgress = false, systemMessage?: string): Promise<ChatMessage[]> {
-        const system = systemMessage ?? await this.promptService.getPrompt(template.id);
-        return super.getMessages(model, includeResponseInProgress, system);
     }
 
     parseFileContentArg(arg_string: string): string {
