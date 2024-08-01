@@ -55,6 +55,7 @@ import { TomorrowVariableContribution } from '../tomorrow-variable-contribution'
 import { AIConfigurationSelectionService } from './ai-configuration/ai-configuration-service';
 import { TheiaVariableContribution } from './theia-variable-contribution';
 import { TodayVariableContribution } from '../common/today-variable-contribution';
+import { AgentsVariableContribution } from '../common/agents-variable-contribution';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, LanguageModelProvider);
@@ -110,6 +111,7 @@ export default new ContainerModule(bind => {
     bind(AIVariableContribution).to(TheiaVariableContribution).inSingletonScope();
     bind(AIVariableContribution).to(TodayVariableContribution).inSingletonScope();
     bind(AIVariableContribution).to(TomorrowVariableContribution).inSingletonScope();
+    bind(AIVariableContribution).to(AgentsVariableContribution).inSingletonScope();
 
     bind(FrontendApplicationContribution).to(AICoreFrontendApplicationContribution).inSingletonScope();
 
