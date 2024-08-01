@@ -23,8 +23,10 @@ import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import { CellEditor } from './notebook-cell-editor';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { MonacoEditorServices } from '@theia/monaco/lib/browser/monaco-editor';
-import { nls } from '@theia/core';
+import { CommandRegistry, nls } from '@theia/core';
 import { NotebookContextManager } from '../service/notebook-context-manager';
+import { NotebookOptionsService } from '../service/notebook-options';
+import { NotebookCodeCellStatus } from './notebook-code-cell-view';
 import { NotebookEditorFindMatch, NotebookEditorFindMatchOptions } from './notebook-find-widget';
 import * as mark from 'advanced-mark.js';
 
@@ -39,9 +41,21 @@ export class NotebookMarkdownCellRenderer implements CellRenderer {
     @inject(NotebookContextManager)
     protected readonly notebookContextManager: NotebookContextManager;
 
+    @inject(CommandRegistry)
+    protected readonly commandRegistry: CommandRegistry;
+
+    @inject(NotebookOptionsService)
+    protected readonly notebookOptionsService: NotebookOptionsService;
+
     render(notebookModel: NotebookModel, cell: NotebookCellModel): React.ReactNode {
-        return <MarkdownCell markdownRenderer={this.markdownRenderer} monacoServices={this.monacoServices}
-            cell={cell} notebookModel={notebookModel} notebookContextManager={this.notebookContextManager} />;
+        return <MarkdownCell
+            markdownRenderer={this.markdownRenderer}
+            commandRegistry={this.commandRegistry}
+            monacoServices={this.monacoServices}
+            notebookOptionsService={this.notebookOptionsService}
+            cell={cell}
+            notebookModel={notebookModel}
+            notebookContextManager={this.notebookContextManager} />;
     }
 
     renderDragImage(cell: NotebookCellModel): HTMLElement {
@@ -55,15 +69,19 @@ export class NotebookMarkdownCellRenderer implements CellRenderer {
 }
 
 interface MarkdownCellProps {
-    markdownRenderer: MarkdownRenderer
-    monacoServices: MonacoEditorServices
+    markdownRenderer: MarkdownRenderer;
+    monacoServices: MonacoEditorServices;
 
-    cell: NotebookCellModel
-    notebookModel: NotebookModel
-    notebookContextManager: NotebookContextManager
+    commandRegistry: CommandRegistry;
+    cell: NotebookCellModel;
+    notebookModel: NotebookModel;
+    notebookContextManager: NotebookContextManager;
+    notebookOptionsService: NotebookOptionsService;
 }
 
-function MarkdownCell({ markdownRenderer, monacoServices, cell, notebookModel, notebookContextManager }: MarkdownCellProps): React.JSX.Element {
+function MarkdownCell({
+    markdownRenderer, monacoServices, cell, notebookModel, notebookContextManager, notebookOptionsService, commandRegistry
+}: MarkdownCellProps): React.JSX.Element {
     const [editMode, setEditMode] = React.useState(cell.editing);
     let empty = false;
 
@@ -111,11 +129,19 @@ function MarkdownCell({ markdownRenderer, monacoServices, cell, notebookModel, n
     }
 
     return editMode ?
-        <CellEditor cell={cell} notebookModel={notebookModel} monacoServices={monacoServices} notebookContextManager={notebookContextManager} /> :
-        <div className='theia-notebook-markdown-content'
+        (<div className='theia-notebook-markdown-editor-container' key="code">
+            <CellEditor notebookModel={notebookModel} cell={cell}
+                monacoServices={monacoServices}
+                notebookContextManager={notebookContextManager}
+                fontInfo={notebookOptionsService.editorFontInfo} />
+            <NotebookCodeCellStatus cell={cell} notebook={notebookModel}
+                commandRegistry={commandRegistry}
+                onClick={() => cell.requestFocusEditor()} />
+        </div >) :
+        (<div className='theia-notebook-markdown-content' key="markdown"
             onDoubleClick={() => cell.requestEdit()}
             ref={node => node?.replaceChildren(markdownContent)}
-        />;
+        />);
 }
 
 function searchInMarkdown(instance: mark, options: NotebookEditorFindMatchOptions): NotebookEditorFindMatch[] {
