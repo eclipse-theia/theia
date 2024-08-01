@@ -18,6 +18,9 @@
       "path": "../../packages/ai-code-completion"
     },
     {
+      "path": "../../packages/ai-code-fix"
+    },
+    {
       "path": "../../packages/ai-core"
     },
     {

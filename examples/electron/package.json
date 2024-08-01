@@ -29,6 +29,7 @@
     "@theia/ai-chat": "1.52.0",
     "@theia/ai-chat-ui": "1.52.0",
     "@theia/ai-code-completion": "1.52.0",
+    "@theia/ai-code-fix": "1.52.0",
     "@theia/ai-core": "1.52.0",
     "@theia/ai-history": "1.52.0",
     "@theia/ai-history-ui": "1.52.0",
