@@ -27,6 +27,7 @@
     "@theia/ai-history": "1.52.0",
     "@theia/ai-history-ui": "1.52.0",
     "@theia/ai-openai": "1.52.0",
+    "@theia/ai-rag-provider": "1.52.0",
     "@theia/ai-terminal": "1.52.0",
     "@theia/ai-llamafile": "1.52.0",
     "@theia/api-provider-sample": "1.52.0",

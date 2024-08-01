@@ -30,6 +30,9 @@
       "path": "../../packages/ai-openai"
     },
     {
+      "path": "../../packages/ai-rag-provider"
+    },
+    {
       "path": "../../packages/bulk-edit"
     },
     {
