@@ -36,6 +36,7 @@ export type LanguageModelResponseDelegate = LanguageModelTextResponse | Language
 
 export const LanguageModelFrontendDelegate = Symbol('LanguageModelFrontendDelegate');
 export interface LanguageModelFrontendDelegate {
+    cancel(requestId: string): void;
     request(modelId: string, request: LanguageModelRequest, requestId: string): Promise<LanguageModelResponseDelegate>;
 }
 

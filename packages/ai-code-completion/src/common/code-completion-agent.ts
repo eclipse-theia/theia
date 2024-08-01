@@ -18,7 +18,7 @@ import {
     Agent, CommunicationHistoryEntry, CommunicationRecordingService, getTextOfResponse,
     LanguageModelRegistry, LanguageModelRequest, LanguageModelRequirement, PromptService, PromptTemplate
 } from '@theia/ai-core/lib/common';
-import { generateUuid } from '@theia/core';
+import { CancellationToken, generateUuid } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
 
@@ -42,7 +42,7 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
     protected recordingService: CommunicationRecordingService;
 
     async provideCompletionItems(model: monaco.editor.ITextModel, position: monaco.Position,
-        context: monaco.languages.CompletionContext, token: monaco.CancellationToken): Promise<monaco.languages.CompletionList | undefined> {
+        context: monaco.languages.CompletionContext, token: CancellationToken): Promise<monaco.languages.CompletionList | undefined> {
 
         const languageModel = await this.languageModelRegistry.selectLanguageModel({
             agent: this.id,
@@ -84,7 +84,7 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
         // since we do not actually hold complete conversions, the request/response pair is considered a session
         const sessionId = generateUuid();
         const requestId = generateUuid();
-        const request: LanguageModelRequest = { messages: [{ type: 'text', actor: 'user', query: prompt }] };
+        const request: LanguageModelRequest = { messages: [{ type: 'text', actor: 'user', query: prompt }], cancellationToken: token };
         const requestEntry: CommunicationHistoryEntry = {
             agentId: this.id,
             sessionId,
@@ -94,7 +94,13 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
         };
         this.recordingService.recordRequest(requestEntry);
         const response = await languageModel.request(request);
+        if (token.isCancellationRequested) {
+            return undefined;
+        }
         const completionText = await getTextOfResponse(response);
+        if (token.isCancellationRequested) {
+            return undefined;
+        }
         console.log('Code completion suggests', completionText);
         this.recordingService.recordResponse({
             agentId: this.id,

@@ -183,11 +183,21 @@ export class ChatViewTreeWidget extends TreeWidget {
     }
     private renderAgent(node: RequestNode | ResponseNode): React.ReactNode {
         const inProgress = isResponseNode(node) && !node.response.isComplete && !node.response.isCanceled;
+        const cancel = () => {
+            if (isResponseNode(node)) {
+                node.response.cancel();
+            }
+        };
         return <React.Fragment>
             <div className='theia-ChatNodeHeader'>
                 <div className={`theia-AgentAvatar ${this.getAgentIconClassName(node)}`}></div>
                 <h3 className='theia-AgentLabel'>{this.getAgentLabel(node)}</h3>
-                {(inProgress && <span className='theia-ChatContentInProgress'>Generating</span>)}
+                {inProgress &&
+                    (<>
+                        <span className='theia-ChatContentInProgress'>Generating</span>
+                        <span className='theia-ChatContentInProgress-Cancel codicon codicon-close' onClick={() => cancel()} />
+                    </>)
+                }
             </div>
         </React.Fragment>;
     }

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { ILogger, generateUuid } from '@theia/core';
+import { CancellationTokenSource, ILogger, generateUuid } from '@theia/core';
 import {
     LanguageModelMetaData,
     LanguageModelRegistry,
@@ -56,9 +56,14 @@ export class LanguageModelFrontendDelegateImpl implements LanguageModelFrontendD
     private logger: ILogger;
 
     private frontendDelegateClient: LanguageModelDelegateClient;
+    private requestCancellationTokenMap: Map<string, CancellationTokenSource> = new Map();
 
     setClient(client: LanguageModelDelegateClient): void {
         this.frontendDelegateClient = client;
+    }
+
+    cancel(requestId: string): void {
+        this.requestCancellationTokenMap.get(requestId)?.cancel();
     }
 
     async request(
@@ -75,6 +80,11 @@ export class LanguageModelFrontendDelegateImpl implements LanguageModelFrontendD
         request.tools?.forEach(tool => {
             tool.handler = async args_string => this.frontendDelegateClient.toolCall(requestId, tool.id, args_string);
         });
+        if (request.cancellationToken) {
+            const tokenSource = new CancellationTokenSource();
+            request.cancellationToken = tokenSource.token;
+            this.requestCancellationTokenMap.set(requestId, tokenSource);
+        }
         const response = await model.request(request);
         if (isLanguageModelTextResponse(response)) {
             return response;

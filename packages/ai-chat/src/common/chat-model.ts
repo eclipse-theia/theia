@@ -201,7 +201,6 @@ export const isToolCallChatResponseContent = (
     isBaseChatResponseContent(obj) &&
     obj.kind === 'toolCall';
 
-
 export type ChatResponseContent =
     | BaseChatResponseContent
     | TextChatResponseContent
@@ -224,7 +223,8 @@ export interface ChatResponseModel {
     readonly response: ChatResponse;
     readonly isComplete: boolean;
     readonly isCanceled: boolean;
-    readonly agentId?: string
+    readonly agentId?: string;
+    cancel(): void;
 }
 
 /**********************

@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { ILogger } from '@theia/core';
+import { CancellationToken, ILogger } from '@theia/core';
 import {
     inject,
     injectable,
@@ -207,6 +207,9 @@ export class FrontendLanguageModelRegistryImpl
             request: async (request: LanguageModelRequest) => {
                 const requestId = `${FrontendLanguageModelRegistryImpl.requestCounter++}`;
                 this.requests.set(requestId, request);
+                request.cancellationToken?.onCancellationRequested(() => {
+                    this.providerDelegate.cancel(requestId);
+                });
                 const response = await this.providerDelegate.request(
                     description.id,
                     request,
@@ -309,12 +312,39 @@ export class FrontendLanguageModelRegistryImpl
     }
 }
 
+const formatJsonWithIndentation = (obj: unknown): string[] => {
+    // eslint-disable-next-line no-null/no-null
+    const jsonString = JSON.stringify(obj, null, 2);
+    const lines = jsonString.split('\n');
+    const formattedLines: string[] = [];
+
+    lines.forEach(line => {
+        const subLines = line.split('\\n');
+        const index = indexOfValue(subLines[0]) + 1;
+        formattedLines.push(subLines[0]);
+        const prefix = index > 0 ? ' '.repeat(index) : '';
+        if (index !== -1) {
+            for (let i = 1; i < subLines.length; i++) {
+                formattedLines.push(prefix + subLines[i]);
+            }
+        }
+    });
+
+    return formattedLines;
+};
+
+const indexOfValue = (jsonLine: string): number => {
+    const pattern = /"([^"]+)"\s*:\s*/g;
+    const match = pattern.exec(jsonLine);
+    return match ? match.index + match[0].length : -1;
+};
+
 const languageModelOutputHandler = (
     outputChannel: OutputChannel
 ): ProxyHandler<LanguageModel> => ({
     get<K extends keyof LanguageModel>(
         target: LanguageModel,
-        prop: K
+        prop: K,
     ): LanguageModel[K] | LanguageModel['request'] {
         const original = target[prop];
         if (prop === 'request' && typeof original === 'function') {
@@ -322,8 +352,26 @@ const languageModelOutputHandler = (
                 ...args: Parameters<LanguageModel['request']>
             ): Promise<LanguageModelResponse> {
                 outputChannel.appendLine(
-                    `Sending request: ${JSON.stringify(args)}`
+                    'Sending request:'
                 );
+                const formattedRequest = formatJsonWithIndentation(args[0]);
+                formattedRequest.forEach(line => outputChannel.appendLine(line));
+                if (args[0].cancellationToken) {
+                    args[0].cancellationToken = new Proxy(args[0].cancellationToken, {
+                        get<CK extends keyof CancellationToken>(
+                            cTarget: CancellationToken,
+                            cProp: CK
+                        ): CancellationToken[CK] | CancellationToken['onCancellationRequested'] {
+                            if (cProp === 'onCancellationRequested') {
+                                return (...cargs: Parameters<CancellationToken['onCancellationRequested']>) => cTarget.onCancellationRequested(() => {
+                                    outputChannel.appendLine('\nCancel requested', OutputChannelSeverity.Warning);
+                                    cargs[0]();
+                                }, cargs[1], cargs[2]);
+                            }
+                            return cTarget[cProp];
+                        }
+                    });
+                }
                 try {
                     const result = await original.apply(target, args);
                     if (isLanguageModelStreamResponse(result)) {
