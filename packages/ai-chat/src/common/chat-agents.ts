@@ -107,6 +107,7 @@ export class DefaultChatAgent implements ChatAgent {
         if (bestChatAgentId !== this.id) {
             const delegateAgent = chatAgentService?.getAgent(bestChatAgentId);
             if (delegateAgent !== undefined) {
+                request.addDelegate(delegateAgent.id);
                 delegateAgent.invoke(request);
                 return;
             } else {

@@ -71,6 +71,8 @@ export interface ChatRequestModel {
     readonly response: ChatResponseModel;
     readonly message: ParsedChatRequest;
     readonly agentId?: string;
+    readonly delegateAgentIds: string[];
+    addDelegate(delegateAgentid: string): void;
 }
 
 export interface ChatProgressMessage {
@@ -200,7 +202,6 @@ export const isToolCallChatResponseContent = (
     isBaseChatResponseContent(obj) &&
     obj.kind === 'toolCall';
 
-
 export type ChatResponseContent =
     | BaseChatResponseContent
     | TextChatResponseContent
@@ -224,6 +225,8 @@ export interface ChatResponseModel {
     readonly isComplete: boolean;
     readonly isCanceled: boolean;
     readonly agentId?: string
+    readonly delegateAgentIds: string[];
+    addDelegate(delegateAgentid: string): void;
 }
 
 /**********************
@@ -268,6 +271,7 @@ export class ChatRequestModelImpl implements ChatRequestModel {
     protected _request: ChatRequest;
     protected _response: ChatResponseModelImpl;
     protected _agentId?: string;
+    protected _delegateAgentIds: string[];
 
     constructor(session: ChatModel, public readonly message: ParsedChatRequest, agentId?: string) {
         // TODO accept serialized data as a parameter to restore a previously saved ChatRequestModel
@@ -276,6 +280,7 @@ export class ChatRequestModelImpl implements ChatRequestModel {
         this._session = session;
         this._response = new ChatResponseModelImpl(this._id, agentId);
         this._agentId = agentId;
+        this._delegateAgentIds = [];
     }
 
     get id(): string {
@@ -296,6 +301,15 @@ export class ChatRequestModelImpl implements ChatRequestModel {
 
     get agentId(): string | undefined {
         return this._agentId;
+    }
+
+    get delegateAgentIds(): string[] {
+        return this._delegateAgentIds;
+    }
+
+    addDelegate(delegateAgentid: string): void {
+        this._delegateAgentIds.push(delegateAgentid);
+        this._response.addDelegate(delegateAgentid);
     }
 
 }
@@ -569,6 +583,7 @@ class ChatResponseModelImpl implements ChatResponseModel {
     protected _isComplete: boolean;
     protected _isCanceled: boolean;
     protected _agentId?: string;
+    protected _delegateAgentIds: string[];
 
     constructor(requestId: string, agentId?: string) {
         // TODO accept serialized data as a parameter to restore a previously saved ChatResponseModel
@@ -581,6 +596,7 @@ class ChatResponseModelImpl implements ChatResponseModel {
         this._isComplete = false;
         this._isCanceled = false;
         this._agentId = agentId;
+        this._delegateAgentIds = [];
     }
 
     get id(): string {
@@ -609,6 +625,14 @@ class ChatResponseModelImpl implements ChatResponseModel {
 
     get agentId(): string | undefined {
         return this._agentId;
+    }
+
+    get delegateAgentIds(): string[] {
+        return this._delegateAgentIds;
+    }
+
+    addDelegate(delegateAgentid: string): void {
+        this._delegateAgentIds.push(delegateAgentid);
     }
 
     complete(): void {
