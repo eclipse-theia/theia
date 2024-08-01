@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import * as React from '@theia/core/shared/react';
-import { Agent } from '../../common';
+import { Agent, LanguageModelRequirement } from '../../common';
 import { LanguageModel } from '../../common/language-model';
-import { AISettingsService, LanguageModelRequirement } from '../ai-settings-service';
+import { AISettingsService } from '../ai-settings-service';
 
 export interface LanguageModelSettingsProps {
     agent: Agent;

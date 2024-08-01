@@ -13,12 +13,13 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-export * from './agent';
-export * from './communication-recording-service';
-export * from './language-model';
-export * from './language-model-delegate';
-export * from './language-model-util';
-export * from './prompt-service';
-export * from './types';
-export * from './variable-service';
-export * from './language-model-tool-service';
+import { ContainerModule } from '@theia/core/shared/inversify';
+import { ChatAgent } from '@theia/ai-chat/lib/common';
+import { Agent } from '@theia/ai-core/lib/common';
+import { TheiaWorkspaceAgent } from './workspace-agent';
+
+export default new ContainerModule(bind => {
+    bind(TheiaWorkspaceAgent).toSelf().inSingletonScope();
+    bind(Agent).toService(TheiaWorkspaceAgent);
+    bind(ChatAgent).toService(TheiaWorkspaceAgent);
+});

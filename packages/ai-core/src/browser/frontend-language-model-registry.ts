@@ -39,6 +39,7 @@ import {
     LanguageModelResponse,
     LanguageModelSelector,
     LanguageModelStreamResponsePart,
+    LanguageModelToolServer,
 } from '../common';
 import { AISettingsService } from './ai-settings-service';
 
@@ -87,6 +88,12 @@ export class FrontendLanguageModelRegistryImpl
 
     @inject(AISettingsService)
     protected settingsService: AISettingsService;
+
+    // We don't use the tool server in the frontend, but we still need to initialize
+    // the binding, to let the tool service client register itself to the server.
+    // This injection is used to eagerly initialize the server binding.
+    @inject(LanguageModelToolServer)
+    protected toolServer: LanguageModelToolServer;
 
     override addLanguageModels(models: LanguageModelMetaData[] | LanguageModel[]): void {
         models.map(model => {

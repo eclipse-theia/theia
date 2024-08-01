@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelSelector } from './language-model';
+import { LanguageModelRequirement } from './language-model';
 import { PromptTemplate } from './types';
 
 export const Agent = Symbol('Agent');
@@ -37,5 +37,3 @@ export interface Agent {
     /** Required language models. This includes the purpose and optional language model selector arguments. See #47. */
     readonly languageModelRequirements: LanguageModelRequirement[];
 }
-
-export type LanguageModelRequirement = Omit<LanguageModelSelector, 'agent'>;

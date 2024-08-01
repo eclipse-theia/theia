@@ -19,7 +19,7 @@
  *--------------------------------------------------------------------------------------------*/
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatAgents.ts
 
-import { CommunicationRecordingService, LanguageModelRequirement } from '@theia/ai-core';
+import { CommunicationRecordingService, LanguageModel, LanguageModelResponse, LanguageModelRequirement } from '@theia/ai-core';
 import {
     Agent,
     isLanguageModelStreamResponse,
@@ -28,10 +28,10 @@ import {
     PromptTemplate
 } from '@theia/ai-core/lib/common';
 import { TODAY_VARIABLE } from '@theia/ai-core/lib/today-variable-contribution';
-import { generateUuid, ILogger, isArray } from '@theia/core';
+import { generateUuid, ILogger, isArray, MaybePromise } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { ChatRequestModelImpl, ChatResponseContent, CodeChatResponseContentImpl, MarkdownChatResponseContentImpl } from './chat-model';
-import { getMessages } from './chat-util';
+import { ChatModel, ChatRequestModelImpl, ChatResponseContent, CodeChatResponseContentImpl, MarkdownChatResponseContentImpl } from './chat-model';
+import { ChatMessage } from './chat-util';
 
 export enum ChatAgentLocation {
     Panel = 'panel',
@@ -91,19 +91,22 @@ export class DefaultChatAgent implements ChatAgent {
     locations: ChatAgentLocation[] = ChatAgentLocation.ALL;
 
     async invoke(request: ChatRequestModelImpl): Promise<void> {
-        this.recordingService.recordRequest({
-            agentId: this.id,
-            sessionId: request.session.id,
-            timestamp: Date.now(),
-            requestId: request.id,
-            request: request.request.text
-        });
         const selector = this.languageModelRequirements.find(req => req.purpose === 'chat')!;
         const languageModels = await this.languageModelRegistry.selectLanguageModels({ agent: this.id, ...selector });
         if (languageModels.length === 0) {
             throw new Error('Couldn\'t find a language model. Please check your setup!');
         }
-        const languageModelResponse = await languageModels[0].request({ messages: getMessages(request.session) });
+        const messages = await this.getMessages(request.session);
+        this.recordingService.recordRequest({
+            agentId: this.id,
+            sessionId: request.session.id,
+            timestamp: Date.now(),
+            requestId: request.id,
+            request: request.request.text,
+            messages
+        });
+
+        const languageModelResponse = await this.callLlm(languageModels[0], messages);
         if (isLanguageModelTextResponse(languageModelResponse)) {
             request.response.response.addContent(
                 new MarkdownChatResponseContentImpl(languageModelResponse.text)
@@ -197,6 +200,41 @@ export class DefaultChatAgent implements ChatAgent {
             requestId: request.response.requestId,
             response: request.response.response.asString()
         });
+    }
+
+    protected async callLlm(languageModel: LanguageModel, messages: ChatMessage[]): Promise<LanguageModelResponse> {
+        const languageModelResponse = languageModel.request({ messages });
+        return languageModelResponse;
+    }
+
+    protected getMessages(model: ChatModel, includeResponseInProgress = false, systemMessage?: string): MaybePromise<ChatMessage[]> {
+        const requestMessages = model.getRequests().flatMap(request => {
+            const messages: ChatMessage[] = [];
+            const query = request.message.parts.map(part => part.promptText).join('');
+            messages.push({
+                actor: 'user',
+                type: 'text',
+                query,
+            });
+            if (request.response.isComplete || includeResponseInProgress) {
+                messages.push({
+                    actor: 'ai',
+                    type: 'text',
+                    query: request.response.response.asString(),
+                });
+            }
+            return messages;
+        });
+        if (systemMessage) {
+            const systemMsg: ChatMessage = {
+                actor: 'system',
+                type: 'text',
+                query: systemMessage
+            };
+            // insert systemMsg at the beginning of requestMessages
+            requestMessages.unshift(systemMsg);
+        }
+        return requestMessages;
     }
 
     private parse(token: LanguageModelStreamResponsePart, previousContent: ChatResponseContent[]): ChatResponseContent | ChatResponseContent[] {

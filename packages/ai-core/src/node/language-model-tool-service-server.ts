@@ -13,12 +13,19 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-export * from './agent';
-export * from './communication-recording-service';
-export * from './language-model';
-export * from './language-model-delegate';
-export * from './language-model-util';
-export * from './prompt-service';
-export * from './types';
-export * from './variable-service';
-export * from './language-model-tool-service';
+import { injectable } from '@theia/core/shared/inversify';
+import { LanguageModelToolServer, LanguageModelToolServiceFrontend } from '../common';
+
+@injectable()
+export class LanguageModelToolServerImpl implements LanguageModelToolServer {
+
+    protected client: LanguageModelToolServiceFrontend;
+
+    async callTool(agentId: string, toolId: string, arg_string: string): Promise<unknown> {
+        return this.client.callTool(agentId, toolId, arg_string);
+    }
+
+    setClient(client: LanguageModelToolServiceFrontend): void {
+        this.client = client;
+    }
+}

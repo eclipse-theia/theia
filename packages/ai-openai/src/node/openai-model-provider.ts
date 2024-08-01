@@ -14,9 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModel, LanguageModelRequest, LanguageModelRequestMessage, LanguageModelResponse, LanguageModelStreamResponsePart } from '@theia/ai-core';
+import { LanguageModel, LanguageModelRequest, LanguageModelRequestMessage, LanguageModelResponse, LanguageModelStreamResponsePart, LanguageModelToolServer } from '@theia/ai-core';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import OpenAI from 'openai';
+import { ChatCompletionStream } from 'openai/lib/ChatCompletionStream';
+import { BaseFunctionsArgs, RunnableToolFunctionWithoutParse, RunnableTools } from 'openai/lib/RunnableFunction';
 import { ChatCompletionMessageParam } from 'openai/resources';
 
 export const OpenAiModelIdentifier = Symbol('OpenAiModelIdentifier');
@@ -29,6 +31,9 @@ export class OpenAiModel implements LanguageModel {
 
     @inject(OpenAiModelIdentifier)
     protected readonly model: string;
+
+    @inject(LanguageModelToolServer)
+    protected readonly toolService: LanguageModelToolServer;
 
     private openai: OpenAI;
 
@@ -46,24 +51,62 @@ export class OpenAiModel implements LanguageModel {
     }
 
     async request(request: LanguageModelRequest): Promise<LanguageModelResponse> {
-        const stream = await this.openai.chat.completions.create({
-            model: this.model,
-            messages: request.messages.map(this.toOpenAIMessage),
-            stream: true,
-        });
-
-        const [stream1] = stream.tee();
-        return {
-            stream: {
-                [Symbol.asyncIterator](): AsyncIterator<LanguageModelStreamResponsePart> {
-                    return {
-                        next(): Promise<IteratorResult<LanguageModelStreamResponsePart>> {
-                            return stream1[Symbol.asyncIterator]().next().then(chunk => chunk.done ? chunk : { value: chunk.value.choices[0]?.delta, done: false });
-                        }
-                    };
-                }
+        const agentId = request.agentId ?? '';
+        const tools: RunnableTools<BaseFunctionsArgs> | undefined = request.tools?.map(tool => ({
+            type: 'function',
+            function: {
+                name: tool.name,
+                description: tool.description,
+                parameters: tool.parameters,
+                function: (args_string: string) => this.toolService.callTool(agentId, tool.id, args_string)
             }
-        };
+        } as RunnableToolFunctionWithoutParse
+        ));
+        let runner: ChatCompletionStream;
+        if (tools) {
+            runner = this.openai.beta.chat.completions.runTools({
+                model: this.model,
+                messages: request.messages.map(this.toOpenAIMessage),
+                stream: true,
+                tools: tools,
+                tool_choice: 'auto'
+            });
+        } else {
+            runner = this.openai.beta.chat.completions.stream({
+                model: this.model,
+                messages: request.messages.map(this.toOpenAIMessage),
+                stream: true
+            });
+        }
+
+        let runnerEnd = false;
+
+        let resolve: (part: LanguageModelStreamResponsePart) => void;
+        runner.on('error', error => {
+            console.error('Error in OpenAI chat completion stream:', error);
+            runnerEnd = true;
+            resolve({ content: error.message });
+        });
+        runner.once('end', () => {
+            runnerEnd = true;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            resolve(runner.finalChatCompletion as any);
+        });
+        // eslint-disable-next-line @typescript-eslint/tslint/config
+        const asyncIterator = (async function* () {
+            runner.on('chunk', chunk => {
+                if (chunk.choices[0]?.delta.content) {
+                    resolve({ ...chunk.choices[0]?.delta });
+                }
+            });
+            while (!runnerEnd) {
+                const promise = new Promise<LanguageModelStreamResponsePart>((res, rej) => {
+                    resolve = res;
+                });
+                yield promise;
+            }
+        })();
+        return { stream: asyncIterator };
     }
 
     private toOpenAIMessage(message: LanguageModelRequestMessage): ChatCompletionMessageParam {
@@ -72,6 +115,9 @@ export class OpenAiModel implements LanguageModel {
         }
         if (message.actor === 'user') {
             return { role: 'user', content: message.query };
+        }
+        if (message.actor === 'system') {
+            return { role: 'system', content: message.query };
         }
         return { role: 'system', content: '' };
     }

@@ -26,6 +26,7 @@ export interface CommunicationHistoryEntry {
     request?: string;
     response?: string;
     responseTime?: number;
+    messages?: unknown[];
 }
 
 export type CommunicationRequestEntry = Omit<CommunicationHistoryEntry, 'response' | 'responseTime'>;

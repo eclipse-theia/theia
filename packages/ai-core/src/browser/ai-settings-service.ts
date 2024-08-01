@@ -54,5 +54,3 @@ export interface AISettings extends JSONObject {
 interface AgentSettings extends JSONObject {
     languageModelRequirements: LanguageModelRequirement[];
 }
-
-export type LanguageModelRequirement = Omit<LanguageModelSelector, 'agent'>;

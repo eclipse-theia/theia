@@ -34,7 +34,11 @@ import {
     LanguageModelRegistryFrontendDelegate,
     languageModelDelegatePath,
     languageModelRegistryDelegatePath,
+    LanguageModelToolServer,
+    LanguageModelToolServiceFrontend,
+    languageModelToolServicePath,
 } from '../common';
+import { LanguageModelToolServerImpl } from './language-model-tool-service-server';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, LanguageModelProvider);
@@ -76,4 +80,21 @@ export default new ContainerModule(bind => {
     bind(PromptServiceImpl).toSelf().inSingletonScope();
     bind(PromptService).toService(PromptServiceImpl);
 
+    bind(LanguageModelToolServer).to(LanguageModelToolServerImpl).inSingletonScope();
+    bind(ConnectionHandler)
+        .toDynamicValue(
+            ({ container }) =>
+                new RpcConnectionHandler<LanguageModelToolServiceFrontend>(
+                    languageModelToolServicePath,
+                    client => {
+                        const service =
+                            container.get<LanguageModelToolServer>(
+                                LanguageModelToolServer
+                            );
+                        service.setClient(client);
+                        return service;
+                    }
+                )
+        )
+        .inSingletonScope();
 });

@@ -17,7 +17,7 @@
 import { ContributionProvider, ILogger, isFunction, isObject } from '@theia/core';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 
-export type MessageActor = 'user' | 'ai';
+export type MessageActor = 'user' | 'ai' | 'system';
 
 export interface LanguageModelRequestMessage {
     actor: MessageActor;
@@ -32,9 +32,16 @@ export const isLanguageModelRequestMessage = (obj: unknown): obj is LanguageMode
         'query' in obj &&
         typeof (obj as { query: unknown }).query === 'string'
     );
-
+export interface ToolRequest<T extends object> {
+    id: string;
+    name: string;
+    parameters?: { [key: string]: unknown };
+    description?: string;
+}
 export interface LanguageModelRequest {
-    messages: LanguageModelRequestMessage[]
+    messages: LanguageModelRequestMessage[],
+    agentId?: string;
+    tools?: ToolRequest<object>[];
 }
 
 export interface LanguageModelTextResponse {
@@ -120,6 +127,8 @@ export interface LanguageModelSelector extends VsCodeLanguageModelSelector {
     readonly purpose: string;
 }
 
+export type LanguageModelRequirement = Omit<LanguageModelSelector, 'agent'>;
+
 export const LanguageModelRegistry = Symbol('LanguageModelRegistry');
 export interface LanguageModelRegistry {
     addLanguageModels(models: LanguageModel[]): void;
@@ -185,4 +194,3 @@ export function isModelMatching(request: LanguageModelSelector, model: LanguageM
         (!request.version || model.version === request.version) &&
         (!request.family || model.family === request.family);
 }
-

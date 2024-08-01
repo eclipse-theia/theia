@@ -13,12 +13,16 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-export * from './agent';
-export * from './communication-recording-service';
-export * from './language-model';
-export * from './language-model-delegate';
-export * from './language-model-util';
-export * from './prompt-service';
-export * from './types';
-export * from './variable-service';
-export * from './language-model-tool-service';
+import { PromptTemplate } from '@theia/ai-core/lib/common';
+
+export const template = <PromptTemplate>{
+    id: 'theia-workspace-prompt',
+    template: `You are an AI Agent to help developers with coding inside of the Theia IDE.
+    The user has the workspace open.
+    If needed, you can ask for more information.
+    The following functions are available to you:
+    - getProjectFileList(): return the list of files available in the project
+    - getFileContent(filePath: string): return the content of the file
+
+Never shorten the file paths when using getFileContent.`
+};
