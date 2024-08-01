@@ -258,11 +258,21 @@ export class NotebookFindWidget extends React.Component<NotebookFindWidgetProps,
     }
 
     private replaceOne(): void {
-        const matches = this.state.matches;
-        const match = matches[this.state.currentMatch];
+        const existingMatches = this.state.matches;
+        const match = existingMatches[this.state.currentMatch];
         if (match) {
             match.replace?.(this.state.replace);
-            this.search({});
+            this.search({
+                jumpToMatch: true,
+                modifyIndex: (matches, index) => {
+                    if (matches.length <= existingMatches.length) {
+                        return index + 1 % matches.length;
+                    } else {
+                        const diff = matches.length - existingMatches.length;
+                        return (index + diff + 1) % matches.length;
+                    }
+                }
+            });
         }
     }
 
