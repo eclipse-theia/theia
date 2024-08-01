@@ -19,5 +19,4 @@ export * from './chat-model';
 export * from './chat-parsed-request';
 export * from './chat-request-parser';
 export * from './chat-service';
-export * from './chat-util';
 export * from './chat-variables';

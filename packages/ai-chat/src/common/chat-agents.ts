@@ -19,19 +19,39 @@
  *--------------------------------------------------------------------------------------------*/
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatAgents.ts
 
-import { CommunicationRecordingService, LanguageModel, LanguageModelResponse, LanguageModelRequirement, PromptService, ToolRequest, getTextOfResponse, isLanguageModelTextResponse } from '@theia/ai-core';
 import {
     Agent,
+    CommunicationRecordingService,
+    getTextOfResponse,
     isLanguageModelStreamResponse,
-    LanguageModelRegistry, LanguageModelStreamResponsePart,
-    PromptTemplate
+    isLanguageModelTextResponse,
+    LanguageModel,
+    LanguageModelRegistry,
+    LanguageModelRequirement,
+    LanguageModelResponse,
+    LanguageModelStreamResponsePart,
+    MessageActor,
+    PromptService,
+    PromptTemplate,
+    ToolRequest
 } from '@theia/ai-core/lib/common';
 import { TODAY_VARIABLE } from '@theia/ai-core/lib/common/today-variable-contribution';
-import { CancellationToken, CancellationTokenSource, generateUuid, ILogger, isArray } from '@theia/core';
+import { CancellationToken, CancellationTokenSource, ILogger, isArray } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { ChatModel, ChatRequestModelImpl, ChatResponseContent, CodeChatResponseContentImpl, MarkdownChatResponseContentImpl, ToolCallResponseContentImpl } from './chat-model';
-import { ChatMessage } from './chat-util';
-import { defaultTemplate } from './default-template';
+import {
+    ChatModel,
+    ChatRequestModelImpl,
+    ChatResponseContent,
+    CodeChatResponseContentImpl,
+    MarkdownChatResponseContentImpl,
+    ToolCallResponseContentImpl
+} from './chat-model';
+
+export interface ChatMessage {
+    actor: MessageActor;
+    type: 'text';
+    query: string;
+}
 
 export enum ChatAgentLocation {
     Panel = 'panel',
@@ -64,6 +84,10 @@ export interface ChatAgent extends ChatAgentData {
     invoke(request: ChatRequestModelImpl): Promise<void>;
 }
 
+const defaultTemplate: PromptTemplate = {
+    id: 'default-template',
+    template: 'You are an AI Assistant for software developers, running inside of Eclipse Theia'
+};
 @injectable()
 export abstract class AbstractChatAgent implements ChatAgent {
 
@@ -194,7 +218,6 @@ export class DefaultChatAgent extends AbstractChatAgent {
     description: string = 'The default chat agent provided by Theia.';
     variables: string[] = [TODAY_VARIABLE.id];
     promptTemplates: PromptTemplate[] = [defaultTemplate];
-    // FIXME: placeholder values
     languageModelRequirements: LanguageModelRequirement[] = [{
         purpose: 'chat',
         identifier: 'openai/gpt-4o',
@@ -308,40 +331,5 @@ export class DefaultChatAgent extends AbstractChatAgent {
             return toolCallContents;
         }
         return new MarkdownChatResponseContentImpl('');
-    }
-}
-
-@injectable()
-export class DummyChatAgent implements ChatAgent {
-
-    @inject(CommunicationRecordingService)
-    protected recordingService: CommunicationRecordingService;
-
-    id: string = 'DummyChatAgent';
-    name: string = 'DummyChatAgent';
-    iconClass = 'codicon codicon-bug';
-    description: string = 'The dummy chat agent provided by ES.';
-    variables: string[] = [TODAY_VARIABLE.id];
-    promptTemplates: PromptTemplate[] = [];
-    languageModelRequirements: LanguageModelRequirement[] = [];
-    locations: ChatAgentLocation[] = ChatAgentLocation.ALL;
-
-    async invoke(request?: ChatRequestModelImpl): Promise<void> {
-        const requestUuid = generateUuid();
-        const sessionId = 'dummy-session';
-        this.recordingService.recordRequest({
-            agentId: this.id,
-            sessionId: sessionId,
-            timestamp: Date.now(),
-            requestId: requestUuid,
-            request: 'Dummy request'
-        });
-        this.recordingService.recordResponse({
-            agentId: this.id,
-            sessionId: sessionId,
-            timestamp: Date.now(),
-            requestId: requestUuid,
-            response: 'Dummy response'
-        });
     }
 }

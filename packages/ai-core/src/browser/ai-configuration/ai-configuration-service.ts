@@ -40,4 +40,4 @@ export class AIConfigurationSelectionService {
     public selectConfigurationTab(widgetId: string): void {
         this.onDidSelectConfigurationEmitter.fire(widgetId);
     }
-} 
+}

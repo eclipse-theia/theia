@@ -15,7 +15,6 @@
 // *****************************************************************************
 import { CommunicationHistoryEntry } from '@theia/ai-core';
 import * as React from '@theia/core/shared/react';
-import '../../style/ai-history.css';
 
 export interface CommunicationCardProps {
     entry: CommunicationHistoryEntry;

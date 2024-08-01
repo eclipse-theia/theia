@@ -15,7 +15,7 @@
 // *****************************************************************************
 import * as React from '@theia/core/shared/react';
 import { PromptCustomizationService } from '../../common/prompt-service';
-import { PromptTemplate } from '../../common/types';
+import { PromptTemplate } from '../../common';
 
 export interface TemplateSettingProps {
     agentId: string;

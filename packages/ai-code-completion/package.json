@@ -18,8 +18,7 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/ai-code-completion-frontend-module",
-      "backend": "lib/node/ai-code-completion-backend-module"
+      "frontend": "lib/browser/ai-code-completion-frontend-module"
     }
   ],
   "keywords": [

@@ -25,6 +25,9 @@ import { ChatAgent } from './chat-agents';
 import { ChatRequestModel, ChatRequestModelImpl } from './chat-model';
 
 export const ChatAgentService = Symbol('ChatAgentService');
+/**
+ * The ChatAgentService provides access to the available chat agents.
+ */
 export interface ChatAgentService {
     getAgents(): ChatAgent[];
     getAgent(id: string): ChatAgent | undefined;
@@ -41,23 +44,13 @@ export class ChatAgentServiceImpl implements ChatAgentService {
     protected logger: ILogger;
 
     getAgent(id: string): ChatAgent | undefined {
-        if (!this._agentIsEnabled(id)) {
-            return;
-        }
-
         return this.agents.getContributions().find(agent => agent.id === id);
     }
     getAgents(): ChatAgent[] {
-        return this.agents.getContributions()
-            .filter(a => this._agentIsEnabled(a.id));
+        return this.agents.getContributions();
     }
     getAgentsByName(name: string): ChatAgent[] {
         return this.getAgents().filter(a => a.name === name);
-    }
-    private _agentIsEnabled(id: string): boolean {
-        // const entry = this.agents.getContributions().find(agent => agent.id === id);
-        // return !entry?.when || this.contextKeyService.contextMatchesRules(ContextKeyExpr.deserialize(entry.when));
-        return true;
     }
     invokeAgent(agentId: string, request: ChatRequestModelImpl): Promise<void> {
         const agent = this.getAgent(agentId);

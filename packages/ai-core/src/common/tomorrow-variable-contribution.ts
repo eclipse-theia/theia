@@ -15,7 +15,7 @@
 // *****************************************************************************
 import { MaybePromise } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
-import { AIVariable, AIVariableContext, AIVariableContribution, AIVariableResolutionRequest, AIVariableResolver, AIVariableService, ResolvedAIVariable } from './common';
+import { AIVariable, AIVariableContext, AIVariableContribution, AIVariableResolutionRequest, AIVariableResolver, AIVariableService, ResolvedAIVariable } from '.';
 
 export namespace TomorrowVariableArgs {
     export const IN_UNIX_SECONDS = 'inUnixSeconds';
@@ -64,4 +64,3 @@ export class TomorrowVariableContribution implements AIVariableContribution, AIV
         return { variable: request.variable, value: date.toDateString(), date };
     }
 }
-

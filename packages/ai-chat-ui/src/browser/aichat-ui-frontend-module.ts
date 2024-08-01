@@ -26,6 +26,7 @@ import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
 import { ChatViewWidget } from './chat-view-widget';
 import { ChatResponsePartRenderer } from './types';
 
+import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { EditorManager } from '@theia/editor/lib/browser';
 import '../../src/browser/style/index.css';
 import {
@@ -33,7 +34,6 @@ import {
     GitHubSelectionResolver, TextFragmentSelectionResolver, TypeDocSymbolSelectionResolver
 } from './chat-response-renderer/ai-editor-manager';
 import { ChatViewWidgetToolbarContribution } from './chat-view-widget-toolbar-contribution';
-import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { AIMonacoEditorProvider } from './chat-response-renderer/ai-monaco-editor-provider';
 

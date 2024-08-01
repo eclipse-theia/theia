@@ -55,7 +55,7 @@ import { FrontendPromptCustomizationServiceImpl } from './frontend-prompt-custom
 import { FrontendVariableService } from './frontend-variable-service';
 import { bindPromptPreferences } from './prompt-preferences';
 import { PromptTemplateContribution } from './prompttemplate-contribution';
-import { TomorrowVariableContribution } from '../tomorrow-variable-contribution';
+import { TomorrowVariableContribution } from '../common/tomorrow-variable-contribution';
 import { AIConfigurationSelectionService } from './ai-configuration/ai-configuration-service';
 import { TheiaVariableContribution } from './theia-variable-contribution';
 import { TodayVariableContribution } from '../common/today-variable-contribution';

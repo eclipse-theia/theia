@@ -21,8 +21,7 @@ import { Agent } from './agent';
 export const AGENTS_VARIABLE: AIVariable = {
     id: 'agents',
     name: 'agents',
-    description: 'Returns the list of agents available in the system',
-    args: []
+    description: 'Returns the list of agents available in the system'
 };
 
 export interface ResolvedAgentsVariable extends ResolvedAIVariable {

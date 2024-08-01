@@ -127,7 +127,7 @@ export interface CodeChatResponseContent
     location?: Location;
 }
 
-export interface HorizontalLayoutChatResponseContent extends BaseChatResponseContent {
+export interface HorizontalLayoutChatResponseContent extends Required<BaseChatResponseContent> {
     kind: 'horizontal';
     content: BaseChatResponseContent[];
 }
@@ -349,7 +349,6 @@ export class MarkdownChatResponseContentImpl implements MarkdownChatResponseCont
         this._content.appendMarkdown(nextChatResponseContent.content.value);
         return true;
     }
-    // TODO add codeblock? add link?
 }
 
 export class CodeChatResponseContentImpl implements CodeChatResponseContent {

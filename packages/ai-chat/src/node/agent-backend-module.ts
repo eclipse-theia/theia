@@ -27,7 +27,6 @@ import {
     ChatServiceImpl,
     DefaultChatAgent
 } from '../common';
-import { MockCodeChatAgent } from '../common/mock-code-chat-agent';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, Agent);
@@ -45,7 +44,4 @@ export default new ContainerModule(bind => {
     bind(DefaultChatAgent).toSelf().inSingletonScope();
     bind(Agent).toService(DefaultChatAgent);
     bind(ChatAgent).toService(DefaultChatAgent);
-
-    bind(MockCodeChatAgent).toSelf().inSingletonScope();
-    bind(ChatAgent).toService(MockCodeChatAgent);
 });

@@ -16,8 +16,12 @@
 
 import { URI } from '@theia/core';
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
-import { PromptTemplate } from './types';
 import { AIVariableService } from './variable-service';
+
+export interface PromptTemplate {
+    id: string;
+    template: string;
+}
 
 export interface PromptMap { [id: string]: PromptTemplate }
 

@@ -19,6 +19,7 @@ import { injectable } from '@theia/core/shared/inversify';
 
 @injectable()
 export class DefaultCommunicationRecordingService implements CommunicationRecordingService {
+
     protected onDidRecordRequestEmitter = new Emitter<CommunicationRequestEntry>();
     readonly onDidRecordRequest: Event<CommunicationRequestEntry> = this.onDidRecordRequestEmitter.event;
 

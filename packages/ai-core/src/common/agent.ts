@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { LanguageModelRequirement } from './language-model';
-import { PromptTemplate } from './types';
+import { PromptTemplate } from './prompt-service';
 
 export const Agent = Symbol('Agent');
 export interface Agent {

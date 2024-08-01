@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { COMMAND_CHAT_RESPONSE_COMMAND } from '@theia/ai-chat/lib/common';
-import { Command, CommandContribution, CommandRegistry, MessageService } from '@theia/core';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { Command, CommandContribution, CommandRegistry } from '@theia/core';
+import { injectable } from '@theia/core/shared/inversify';
 
 export interface AIChatCommandArguments {
     command: Command;
@@ -24,15 +24,8 @@ export interface AIChatCommandArguments {
     arguments?: unknown[];
 }
 
-const COMMAND_DEMO_SAY_HELLO: Command = {
-    id: 'theia-ai:greet-command',
-    label: 'Say Hello'
-};
 @injectable()
 export class AIChatCommandContribution implements CommandContribution {
-
-    @inject(MessageService)
-    private readonly messageService: MessageService;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(COMMAND_CHAT_RESPONSE_COMMAND, {
@@ -42,11 +35,6 @@ export class AIChatCommandContribution implements CommandContribution {
                 } else {
                     console.error(`No handle available which is necessary when using the default command '${COMMAND_CHAT_RESPONSE_COMMAND.id}'.`);
                 }
-            }
-        });
-        commands.registerCommand(COMMAND_DEMO_SAY_HELLO, {
-            execute: async (arg: string) => {
-                this.messageService.info(`Hello ${arg}!`)
             }
         });
     }

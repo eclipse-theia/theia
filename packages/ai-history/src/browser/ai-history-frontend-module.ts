@@ -16,8 +16,20 @@
 import { CommunicationRecordingService } from '@theia/ai-core';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { DefaultCommunicationRecordingService } from '../common/communication-recording-service';
+import { bindViewContribution, WidgetFactory } from '@theia/core/lib/browser';
+import { AIHistoryViewContribution } from './ai-history-contribution';
+import { AIHistoryView } from './ai-history-widget';
+import '../../src/browser/style/ai-history.css';
 
 export default new ContainerModule(bind => {
     bind(DefaultCommunicationRecordingService).toSelf().inSingletonScope();
     bind(CommunicationRecordingService).toService(DefaultCommunicationRecordingService);
+
+    bindViewContribution(bind, AIHistoryViewContribution);
+
+    bind(AIHistoryView).toSelf().inSingletonScope();
+    bind(WidgetFactory).toDynamicValue(context => ({
+        id: AIHistoryView.ID,
+        createWidget: () => context.container.get<AIHistoryView>(AIHistoryView)
+    })).inSingletonScope();
 });
