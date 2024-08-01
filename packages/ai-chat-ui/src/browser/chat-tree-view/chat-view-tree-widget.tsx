@@ -219,7 +219,8 @@ export class ChatViewTreeWidget extends TreeWidget {
     }
 
     private renderChatRequest(node: RequestNode): React.ReactNode {
-        const markdownString = new MarkdownStringImpl(node.request.request.text, { supportHtml: true, isTrusted: true });
+        const text = node.request.request.displayText ?? node.request.request.text;
+        const markdownString = new MarkdownStringImpl(text, { supportHtml: true, isTrusted: true });
         return (
             <div className={'theia-RequestNode'}>
                 {<MarkdownWrapper

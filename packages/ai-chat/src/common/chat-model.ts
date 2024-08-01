@@ -62,6 +62,7 @@ export interface ChatModel {
 
 export interface ChatRequest {
     readonly text: string;
+    readonly displayText?: string;
 }
 
 export interface ChatRequestModel {
