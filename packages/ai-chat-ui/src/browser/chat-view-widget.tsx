@@ -13,16 +13,22 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { BaseWidget, codicon, Message, PanelLayout } from '@theia/core/lib/browser';
+import { BaseWidget, codicon, Message, PanelLayout, StatefulWidget } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { nls } from '@theia/core/lib/common/nls';
 import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
 import { ChatInputWidget } from './chat-input-widget';
 import { ChatModel, ChatRequest, ChatService } from '@theia/ai-chat';
-import { ILogger } from '@theia/core';
+import { deepClone, Event, Emitter, ILogger } from '@theia/core';
+
+export namespace ChatViewWidget {
+    export interface State {
+        locked?: boolean;
+    }
+}
 
 @injectable()
-export class ChatViewWidget extends BaseWidget {
+export class ChatViewWidget extends BaseWidget implements StatefulWidget {
 
     public static ID = 'chat-view-widget';
     static LABEL = nls.localizeByDefault('Chat');
@@ -35,6 +41,9 @@ export class ChatViewWidget extends BaseWidget {
 
     // TODO: handle multiple sessions
     private chatModel: ChatModel;
+
+    protected _state: ChatViewWidget.State = { locked: false };
+    protected readonly onStateChangedEmitter = new Emitter<ChatViewWidget.State>();
 
     constructor(
         @inject(ChatViewTreeWidget)
@@ -56,6 +65,10 @@ export class ChatViewWidget extends BaseWidget {
         this.toDispose.pushAll([
             this.treeWidget,
             this.inputWidget,
+            this.onStateChanged(newState => {
+                this.treeWidget.shouldScrollToEnd = !newState.locked;
+                this.update();
+            })
         ]);
         const layout = this.layout = new PanelLayout();
         this.treeWidget.node.classList.add('chat-tree-view-widget');
@@ -66,6 +79,31 @@ export class ChatViewWidget extends BaseWidget {
         // TODO restore sessions if needed
         this.chatModel = this.chatService.createSession();
         this.treeWidget.trackChatModel(this.chatModel);
+    }
+
+    storeState(): object {
+        return this.state;
+    }
+
+    restoreState(oldState: object & Partial<ChatViewWidget.State>): void {
+        const copy = deepClone(this.state);
+        if (oldState.locked) {
+            copy.locked = oldState.locked;
+        }
+        this.state = copy;
+    }
+
+    protected get state(): ChatViewWidget.State {
+        return this._state;
+    }
+
+    protected set state(state: ChatViewWidget.State) {
+        this._state = state;
+        this.onStateChangedEmitter.fire(this._state);
+    }
+
+    get onStateChanged(): Event<ChatViewWidget.State> {
+        return this.onStateChangedEmitter.event;
     }
 
     protected override onAfterAttach(msg: Message): void {
@@ -87,4 +125,15 @@ export class ChatViewWidget extends BaseWidget {
         // Tree Widget currently tracks the ChatModel itself. Therefore no notification necessary.
     }
 
+    lock(): void {
+        this.state = { ...deepClone(this.state), locked: true };
+    }
+
+    unlock(): void {
+        this.state = { ...deepClone(this.state), locked: false };
+    }
+
+    get isLocked(): boolean {
+        return !!this.state.locked;
+    }
 }

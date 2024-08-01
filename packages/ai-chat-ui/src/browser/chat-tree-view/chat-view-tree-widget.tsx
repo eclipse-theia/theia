@@ -70,6 +70,17 @@ export class ChatViewTreeWidget extends TreeWidget {
     @inject(ChatAgentService)
     protected chatAgentService: ChatAgentService;
 
+    protected _shouldScrollToEnd = true;
+
+    set shouldScrollToEnd(shouldScrollToEnd: boolean) {
+        this._shouldScrollToEnd = shouldScrollToEnd;
+        this.shouldScrollToRow = this._shouldScrollToEnd;
+    }
+
+    get shouldScrollToEnd(): boolean {
+        return this._shouldScrollToEnd;
+    }
+
     constructor(
         @inject(TreeProps) props: TreeProps,
         @inject(TreeModel) model: TreeModel,
@@ -121,17 +132,24 @@ export class ChatViewTreeWidget extends TreeWidget {
         this.recreateModelTree(chatModel);
         chatModel.getRequests().forEach(request => {
             if (!request.response.isComplete) {
-                request.response.onDidChange(() => this.update());
+                request.response.onDidChange(() => this.scheduleUpdateScrollToRow());
             }
         });
         chatModel.onDidChange(event => {
             if (event.kind === 'addRequest') {
                 this.recreateModelTree(chatModel);
                 if (!event.request.response.isComplete) {
-                    event.request.response.onDidChange(() => this.update());
+                    event.request.response.onDidChange(() => this.scheduleUpdateScrollToRow());
                 }
             }
         });
+    }
+
+    protected override getScrollToRow(): number | undefined {
+        if (this.shouldScrollToEnd) {
+            return this.rows.size;
+        }
+        return super.getScrollToRow();
     }
 
     private async recreateModelTree(chatModel: ChatModel): Promise<void> {

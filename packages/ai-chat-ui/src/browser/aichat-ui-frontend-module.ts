@@ -32,6 +32,8 @@ import {
     AIEditorManager, AIEditorSelectionResolver,
     GitHubSelectionResolver, TextFragmentSelectionResolver, TypeDocSymbolSelectionResolver
 } from './chat-response-renderer/ai-editor-manager';
+import { ChatViewWidgetToolbarContribution } from './chat-view-widget-toolbar-contribution';
+import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 
 export default new ContainerModule((bind, _ubind, _isBound, rebind) => {
     bindViewContribution(bind, AIChatContribution);
@@ -72,4 +74,7 @@ export default new ContainerModule((bind, _ubind, _isBound, rebind) => {
     bind(AIEditorSelectionResolver).to(GitHubSelectionResolver).inSingletonScope();
     bind(AIEditorSelectionResolver).to(TypeDocSymbolSelectionResolver).inSingletonScope();
     bind(AIEditorSelectionResolver).to(TextFragmentSelectionResolver).inSingletonScope();
+
+    bind(ChatViewWidgetToolbarContribution).toSelf().inSingletonScope();
+    bind(TabBarToolbarContribution).toService(ChatViewWidgetToolbarContribution);
 });
