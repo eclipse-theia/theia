@@ -40,6 +40,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
     }
 
     override registerCommands(registry: CommandRegistry): void {
+        super.registerCommands(registry);
         registry.registerCommand(ChatCommands.LOCK__WIDGET, {
             isEnabled: widget => this.withWidget(widget, chatWidget => !chatWidget.isLocked),
             isVisible: widget => this.withWidget(widget, chatWidget => !chatWidget.isLocked),
