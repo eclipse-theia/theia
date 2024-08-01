@@ -27,7 +27,7 @@ import {
     LanguageModelRegistry, LanguageModelStreamResponsePart,
     PromptTemplate
 } from '@theia/ai-core/lib/common';
-import { TODAY_VARIABLE } from '@theia/ai-core/lib/today-variable-contribution';
+import { TODAY_VARIABLE } from '@theia/ai-core/lib/common/today-variable-contribution';
 import { generateUuid, ILogger, isArray, MaybePromise } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatModel, ChatRequestModelImpl, ChatResponseContent, CodeChatResponseContentImpl, MarkdownChatResponseContentImpl } from './chat-model';

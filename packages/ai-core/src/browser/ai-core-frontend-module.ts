@@ -44,7 +44,6 @@ import {
 import { bindViewContribution, FrontendApplicationContribution, WidgetFactory } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { LanguageGrammarDefinitionContribution } from '@theia/monaco/lib/browser/textmate';
-import { TodayVariableContribution } from '../today-variable-contribution';
 import { AIAgentConfigurationWidget } from './ai-configuration/agent-configuration-widget';
 import { AIAgentConfigurationViewContribution } from './ai-configuration/ai-configuration-view-contribution';
 import { AIConfigurationContainerWidget } from './ai-configuration/ai-configuration-widget';
@@ -58,6 +57,8 @@ import { PromptTemplateContribution } from './prompttemplate-contribution';
 import { TomorrowVariableContribution } from '../tomorrow-variable-contribution';
 import { AIConfigurationSelectionService } from './ai-configuration/ai-configuration-service';
 import { LanguageModelToolServiceFrontendImpl } from './language-model-tool-service-frontend';
+import { TheiaVariableContribution } from './theia-variable-contribution';
+import { TodayVariableContribution } from '../common/today-variable-contribution';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, LanguageModelProvider);
@@ -110,6 +111,7 @@ export default new ContainerModule(bind => {
     bind(FrontendVariableService).toSelf().inSingletonScope();
     bind(AIVariableService).toService(FrontendVariableService);
     bind(FrontendApplicationContribution).toService(FrontendVariableService);
+    bind(AIVariableContribution).to(TheiaVariableContribution).inSingletonScope();
     bind(AIVariableContribution).to(TodayVariableContribution).inSingletonScope();
     bind(AIVariableContribution).to(TomorrowVariableContribution).inSingletonScope();
 
