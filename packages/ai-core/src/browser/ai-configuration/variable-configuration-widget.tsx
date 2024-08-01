@@ -43,6 +43,7 @@ export class AIVariableConfigurationWidget extends ReactWidget {
         this.title.label = AIVariableConfigurationWidget.LABEL;
         this.title.closable = false;
         this.update();
+        this.toDispose.push(this.variableService.onDidChangeVariables(() => this.update()));
     }
 
     protected render(): React.ReactNode {
@@ -71,7 +72,7 @@ export class AIVariableConfigurationWidget extends ReactWidget {
             <h3>Agents</h3>
             <ul className='variable-references'>
                 {agents.map(agent => <li className='theia-TreeNode theia-CompositeTreeNode theia-ExpandableTreeNode theia-mod-selected'>
-                    <div onClick={() => { this.showAgentConfiguration(agent) }} className='variable-reference'>
+                    <div onClick={() => { this.showAgentConfiguration(agent); }} className='variable-reference'>
                         <span>{agent.name}</span>
                         <i className={codicon('chevron-right')}></i>
                     </div></li>)}

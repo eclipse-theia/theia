@@ -19,7 +19,7 @@
  *--------------------------------------------------------------------------------------------*/
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatVariables.ts
 
-import { ContributionProvider, Disposable, ILogger, MaybePromise, Prioritizeable } from '@theia/core';
+import { ContributionProvider, Disposable, Emitter, ILogger, MaybePromise, Prioritizeable, Event } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 
 export interface AIVariable {
@@ -63,8 +63,10 @@ export interface AIVariableService {
     getVariable(name: string): Readonly<AIVariable> | undefined;
     getVariables(): Readonly<AIVariable>[];
     unregisterVariable(name: string): void;
+    readonly onDidChangeVariables: Event<void>;
 
     registerResolver(variable: AIVariable, resolver: AIVariableResolver): Disposable;
+    unregisterResolver(variable: AIVariable, resolver: AIVariableResolver): void;
     getResolver(name: string, arg: string | undefined, context: AIVariableContext): Promise<AIVariableResolver | undefined>;
 
     resolveVariable(variable: AIVariableArg, context: AIVariableContext): Promise<ResolvedAIVariable | undefined>;
@@ -79,6 +81,9 @@ export interface AIVariableContribution {
 export class DefaultAIVariableService implements AIVariableService {
     protected variables = new Map<string, AIVariable>();
     protected resolvers = new Map<string, AIVariableResolver[]>();
+
+    protected readonly onDidChangeVariablesEmitter = new Emitter<void>();
+    readonly onDidChangeVariables: Event<void> = this.onDidChangeVariablesEmitter.event;
 
     @inject(ILogger) protected logger: ILogger;
 
@@ -134,19 +139,29 @@ export class DefaultAIVariableService implements AIVariableService {
 
     registerResolver(variable: AIVariable, resolver: AIVariableResolver): Disposable {
         const key = this.getKey(variable.name);
-        this.variables.set(key, variable);
+        if (!this.variables.get(key)) {
+            this.variables.set(key, variable);
+            this.onDidChangeVariablesEmitter.fire();
+        }
         const resolvers = this.resolvers.get(key) ?? [];
         resolvers.push(resolver);
         this.resolvers.set(key, resolvers);
-        return Disposable.create(() => {
-            const registeredResolvers = this.resolvers.get(key);
-            registeredResolvers?.splice(registeredResolvers.indexOf(resolver), 1);
-        });
+        return Disposable.create(() => this.unregisterResolver(variable, resolver));
+    }
+
+    unregisterResolver(variable: AIVariable, resolver: AIVariableResolver): void {
+        const key = this.getKey(variable.name);
+        const registeredResolvers = this.resolvers.get(key);
+        registeredResolvers?.splice(registeredResolvers.indexOf(resolver), 1);
+        if (registeredResolvers?.length === 0) {
+            this.unregisterVariable(variable.name);
+        }
     }
 
     unregisterVariable(name: string): void {
         this.variables.delete(this.getKey(name));
         this.resolvers.delete(this.getKey(name));
+        this.onDidChangeVariablesEmitter.fire();
     }
 
     async resolveVariable(request: AIVariableArg, context: AIVariableContext): Promise<ResolvedAIVariable | undefined> {
