@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { DisposableCollection } from '@theia/core';
+import { DisposableCollection, Emitter, Event } from '@theia/core';
 import { PreferenceScope, PreferenceService } from '@theia/core/lib/browser';
 import { JSONObject } from '@theia/core/shared/@phosphor/coreutils';
 import { inject, injectable } from '@theia/core/shared/inversify';
@@ -26,10 +26,14 @@ export class AISettingsService {
 
     protected toDispose = new DisposableCollection();
 
+    protected readonly onDidChangeEmitter = new Emitter<void>();
+    onDidChange: Event<void> = this.onDidChangeEmitter.event;
+
     updateAgentSettings(agent: string, agentSettings: AgentSettings): void {
         const settings = this.getSettings();
         settings.agents[agent] = agentSettings;
         this.preferenceService.set(AISettingsService.PREFERENCE_NAME, settings, PreferenceScope.User);
+        this.onDidChangeEmitter.fire();
     }
 
     getAgentSettings(agent: string): AgentSettings | undefined {
@@ -50,3 +54,5 @@ export interface AISettings extends JSONObject {
 interface AgentSettings extends JSONObject {
     languageModelRequirements: LanguageModelRequirement[];
 }
+
+export type LanguageModelRequirement = Omit<LanguageModelSelector, 'agent'>;

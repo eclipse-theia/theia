@@ -29,6 +29,12 @@ export interface AIVariable {
     name: string;
     /** variable description */
     description: string;
+    args?: AIVariableDescription[];
+}
+
+export interface AIVariableDescription {
+    name: string;
+    description: string;
 }
 
 export interface ResolvedAIVariable {

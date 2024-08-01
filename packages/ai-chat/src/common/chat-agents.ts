@@ -27,6 +27,7 @@ import {
     LanguageModelRegistry, LanguageModelStreamResponsePart,
     PromptTemplate
 } from '@theia/ai-core/lib/common';
+import { TODAY_VARIABLE } from '@theia/ai-core/lib/today-variable-contribution';
 import { generateUuid, ILogger, isArray } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatRequestModelImpl, ChatResponseContent, CodeChatResponseContentImpl, MarkdownChatResponseContentImpl } from './chat-model';
@@ -77,12 +78,15 @@ export class DefaultChatAgent implements ChatAgent {
     name: string = 'DefaultChatAgent';
     iconClass = 'codicon codicon-copilot';
     description: string = 'The default chat agent provided by Theia.';
-    variables: string[] = [];
+    variables: string[] = [TODAY_VARIABLE.id];
     promptTemplates: PromptTemplate[] = [];
     // FIXME: placeholder values
     languageModelRequirements: LanguageModelRequirement[] = [{
         purpose: 'chat',
         identifier: 'openai/gpt-4o',
+    }, {
+        purpose: 'general',
+        identifier: 'openai/gpt-4',
     }];
     locations: ChatAgentLocation[] = ChatAgentLocation.ALL;
 
@@ -210,7 +214,7 @@ export class DummyChatAgent implements ChatAgent {
     name: string = 'DummyChatAgent';
     iconClass = 'codicon codicon-bug';
     description: string = 'The dummy chat agent provided by ES.';
-    variables: string[] = [];
+    variables: string[] = [TODAY_VARIABLE.id];
     promptTemplates: PromptTemplate[] = [];
     languageModelRequirements: LanguageModelRequirement[] = [];
     locations: ChatAgentLocation[] = ChatAgentLocation.ALL;

@@ -30,7 +30,7 @@ export interface CodeCompletionAgent extends Agent {
 
 @injectable()
 export class CodeCompletionAgentImpl implements CodeCompletionAgent {
-    variables: string[];
+    variables: string[] = [];
 
     @inject(LanguageModelRegistry)
     protected languageModelRegistry: LanguageModelRegistry;

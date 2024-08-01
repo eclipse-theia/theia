@@ -17,3 +17,55 @@
   /** add a 3px gap between rows */
   row-gap: 3px;
 }
+
+/* Variable Settings */
+#ai-variable-configuration-container-widget ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#ai-variable-configuration-container-widget .variable-item {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+}
+
+#ai-variable-configuration-container-widget .variable-args {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+}
+
+/* Agent Settings */
+#ai-agent-configuration-container-widget ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.ai-agent-configuration-main {
+  display: flex;
+  flex-direction: row;
+}
+
+.configuration-agents-list {
+  width: 128px;
+}
+
+.configuration-agent-panel {
+  flex: 1;
+}
+
+#ai-variable-configuration-container-widget .variable-references,
+#ai-agent-configuration-container-widget .variable-references {
+  margin-left: 0.5rem;
+  padding: 0.5rem;
+  border-left: solid 1px var(--theia-tree-indentGuidesStroke);
+}
+
+#ai-variable-configuration-container-widget .variable-reference,
+#ai-agent-configuration-container-widget .variable-reference {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
