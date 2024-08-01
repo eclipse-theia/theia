@@ -32,7 +32,8 @@ import { generateUuid, ILogger, isArray } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatModel, ChatRequestModelImpl, ChatResponseContent, CodeChatResponseContentImpl, MarkdownChatResponseContentImpl, ToolCallResponseContentImpl } from './chat-model';
 import { ChatMessage } from './chat-util';
-import { defaultTemplate } from './default-template';
+import { defaultTemplate, delegateTemplate } from './default-template';
+import { ChatAgentService } from './chat-agent-service';
 
 export enum ChatAgentLocation {
     Panel = 'panel',
@@ -78,12 +79,15 @@ export class DefaultChatAgent implements ChatAgent {
     @inject(PromptService)
     protected promptService: PromptService;
 
+    @inject(ChatAgentService)
+    protected agentService: ChatAgentService;
+
     id: string = 'DefaultChatAgent';
     name: string = 'DefaultChatAgent';
     iconClass = 'codicon codicon-copilot';
     description: string = 'The default chat agent provided by Theia.';
     variables: string[] = [TODAY_VARIABLE.id];
-    promptTemplates: PromptTemplate[] = [defaultTemplate];
+    promptTemplates: PromptTemplate[] = [defaultTemplate, delegateTemplate];
     // FIXME: placeholder values
     languageModelRequirements: LanguageModelRequirement[] = [{
         purpose: 'chat',
@@ -100,6 +104,20 @@ export class DefaultChatAgent implements ChatAgent {
         if (languageModels.length === 0) {
             throw new Error('Couldn\'t find a language model. Please check your setup!');
         }
+
+        // check if we should better delegate to a different chat agent
+        const bestChatAgentId = this.selectChatAgent(request, languageModels);
+        if (bestChatAgentId !== this.id) {
+            const delegateAgent = this.agentService.getAgent(bestChatAgentId);
+            if (delegateAgent !== undefined) {
+                delegateAgent.invoke(request);
+                return;
+            } else {
+                console.warn(`Chat Agent with id ${bestChatAgentId} is not registered`);
+            }
+        }
+
+        // no, user just wants to chat
         const messages = await this.getMessages(request.session);
         this.recordingService.recordRequest({
             agentId: this.id,
@@ -259,6 +277,10 @@ export class DefaultChatAgent implements ChatAgent {
             return toolCallContents;
         }
         return new MarkdownChatResponseContentImpl('');
+    }
+
+    protected selectChatAgent(request: ChatRequestModelImpl, languageModels: LanguageModel[]): string {
+        throw new Error('Method not implemented.');
     }
 }
 
