@@ -124,6 +124,11 @@ export interface CodeChatResponseContent
     location?: Location;
 }
 
+export interface HorizontalLayoutChatResponseContent extends BaseChatResponseContent {
+    kind: 'horizontal';
+    content: BaseChatResponseContent[];
+}
+
 export interface Location {
     uri: URI;
     position: Position;
@@ -134,11 +139,11 @@ export function isLocation(obj: unknown): obj is Location {
         'position' in obj && Position.is((obj as { position: unknown }).position);
 }
 
-export interface CommandChatResponseContent
-    extends BaseChatResponseContent {
+export interface CommandChatResponseContent extends BaseChatResponseContent {
     kind: 'command';
     command: Command;
-    commandHandler?: () => Promise<void>;
+    commandHandler?: (...commandArgs: unknown[]) => Promise<void>;
+    arguments?: unknown[];
 }
 
 export const isTextChatResponseContent = (
@@ -173,12 +178,20 @@ export const isCodeChatResponseContent = (
     'code' in obj &&
     typeof (obj as { code: unknown }).code === 'string';
 
+export const isHorizontalLayoutChatResponseContent = (obj: unknown): obj is HorizontalLayoutChatResponseContent =>
+    isBaseChatResponseContent(obj) &&
+    obj.kind === 'horizontal' &&
+    'content' in obj &&
+    Array.isArray((obj as { content: unknown }).content) &&
+    (obj as { content: unknown[] }).content.every(isBaseChatResponseContent);
+
 export type ChatResponseContent =
     | BaseChatResponseContent
     | TextChatResponseContent
     | MarkdownChatResponseContent
     | CommandChatResponseContent
-    | CodeChatResponseContent;
+    | CodeChatResponseContent
+    | HorizontalLayoutChatResponseContent;
 
 export interface ChatResponse {
     readonly content: ChatResponseContent[];
@@ -354,11 +367,15 @@ export const COMMAND_CHAT_RESPONSE_COMMAND: Command = {
 };
 export class CommandChatResponseContentImpl implements CommandChatResponseContent {
     kind: 'command' = 'command';
-    protected _command: Command;
-    protected _commandHandler?: () => Promise<void>;
 
-    constructor(command: Command = COMMAND_CHAT_RESPONSE_COMMAND, commandHandler?: () => Promise<void>) {
+    arguments: unknown[] | undefined;
+
+    protected _command: Command;
+    protected _commandHandler?: (...commandArgs: unknown[]) => Promise<void>;
+
+    constructor(command: Command = COMMAND_CHAT_RESPONSE_COMMAND, args?: unknown[], commandHandler?: (...commandArgs: unknown[]) => Promise<void>) {
         this._command = command;
+        this.arguments = args;
         this._commandHandler = commandHandler;
     }
 
@@ -366,12 +383,38 @@ export class CommandChatResponseContentImpl implements CommandChatResponseConten
         return this._command;
     }
 
-    get commandHandler(): (() => Promise<void>) | undefined {
+    get commandHandler(): ((...commandArgs: unknown[]) => Promise<void>) | undefined {
         return this._commandHandler;
     }
 
     asString(): string {
         return this._command.id;
+    }
+}
+
+export class HorizontalLayoutChatResponseContentImpl implements HorizontalLayoutChatResponseContent {
+    kind: 'horizontal' = 'horizontal';
+    protected _content: BaseChatResponseContent[];
+
+    constructor(content: BaseChatResponseContent[] = []) {
+        this._content = content;
+    }
+
+    get content(): BaseChatResponseContent[] {
+        return this._content;
+    }
+
+    asString(): string {
+        return this._content.map(child => child.asString && child.asString()).join(' ');
+    }
+
+    merge(nextChatResponseContent: BaseChatResponseContent): boolean {
+        if (isHorizontalLayoutChatResponseContent(nextChatResponseContent)) {
+            this._content.push(...nextChatResponseContent.content);
+        } else {
+            this._content.push(nextChatResponseContent);
+        }
+        return true;
     }
 }
 

@@ -20,7 +20,7 @@ import { ContainerModule } from '@theia/core/shared/inversify';
 import { AIChatCommandContribution } from './ai-chat-command-contribution';
 import { AIChatContribution } from './aichat-ui-contribution';
 import { ChatInputWidget } from './chat-input-widget';
-import { CodePartRenderer, MarkdownPartRenderer, TextPartRenderer } from './chat-response-renderer';
+import { CodePartRenderer, CommandPartRenderer, HorizontalLayoutPartRenderer, MarkdownPartRenderer, TextPartRenderer } from './chat-response-renderer';
 import { createChatViewTreeWidget } from './chat-tree-view';
 import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
 import { ChatViewWidget } from './chat-view-widget';
@@ -57,10 +57,11 @@ export default new ContainerModule((bind, _ubind, _isBound, rebind) => {
         id: ChatViewTreeWidget.ID,
         createWidget: () => container.get(ChatViewTreeWidget)
     })).inSingletonScope();
+    bind(ChatResponsePartRenderer).to(HorizontalLayoutPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(TextPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(MarkdownPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(CodePartRenderer).inSingletonScope();
-
+    bind(ChatResponsePartRenderer).to(CommandPartRenderer).inSingletonScope();
     bind(CommandContribution).to(AIChatCommandContribution);
 
     bind(AIEditorManager).toSelf().inSingletonScope();
