@@ -19,7 +19,7 @@
  *--------------------------------------------------------------------------------------------*/
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatAgents.ts
 
-import { CommunicationRecordingService, LanguageModel, LanguageModelResponse, LanguageModelRequirement, PromptService, ToolRequest } from '@theia/ai-core';
+import { CommunicationRecordingService, LanguageModel, LanguageModelResponse, LanguageModelRequirement, PromptService, ToolRequest, getTextOfResponse } from '@theia/ai-core';
 import {
     Agent,
     isLanguageModelStreamResponse,
@@ -64,8 +64,19 @@ export const ChatAgent = Symbol('ChatAgent');
 export interface ChatAgent extends ChatAgentData {
     invoke(request: ChatRequestModelImpl): Promise<void>;
 }
+
 @injectable()
-export class DefaultChatAgent implements ChatAgent {
+export abstract class AbstractChatAgent implements ChatAgent {
+
+    abstract locations: ChatAgentLocation[];
+    abstract iconClass?: string | undefined;
+    abstract id: string;
+    abstract name: string;
+    abstract description: string;
+    abstract variables: string[];
+    abstract promptTemplates: PromptTemplate[];
+    abstract languageModelRequirements: LanguageModelRequirement[];
+
     @inject(LanguageModelRegistry)
     protected languageModelRegistry: LanguageModelRegistry;
 
@@ -77,6 +88,100 @@ export class DefaultChatAgent implements ChatAgent {
 
     @inject(PromptService)
     protected promptService: PromptService;
+
+    async invoke(request: ChatRequestModelImpl): Promise<void> {
+        const selector = this.languageModelRequirements.find(req => req.purpose === 'chat')!;
+        const languageModel = await this.languageModelRegistry.selectLanguageModel({ agent: this.id, ...selector });
+        if (!languageModel) {
+            throw new Error('Couldn\'t find a matching language model. Please check your setup!');
+        }
+        const messages = await this.getMessages(request.session);
+        this.recordingService.recordRequest({
+            agentId: this.id,
+            sessionId: request.session.id,
+            timestamp: Date.now(),
+            requestId: request.id,
+            request: request.request.text,
+            messages
+        });
+        const languageModelResponse = await this.callLlm(languageModel, messages);
+        await this.addContentsToResponse(languageModelResponse, request);
+        request.response.complete();
+        this.recordingService.recordResponse({
+            agentId: this.id,
+            sessionId: request.session.id,
+            timestamp: Date.now(),
+            requestId: request.response.requestId,
+            response: request.response.response.asString()
+        });
+    }
+
+    protected abstract getSystemMessage(): Promise<string | undefined>;
+
+    protected async getMessages(model: ChatModel, includeResponseInProgress = false): Promise<ChatMessage[]> {
+        const requestMessages = model.getRequests().flatMap(request => {
+            const messages: ChatMessage[] = [];
+            const query = request.message.parts.map(part => part.promptText).join('');
+            messages.push({
+                actor: 'user',
+                type: 'text',
+                query,
+            });
+            if (request.response.isComplete || includeResponseInProgress) {
+                messages.push({
+                    actor: 'ai',
+                    type: 'text',
+                    query: request.response.response.asString(),
+                });
+            }
+            return messages;
+        });
+        const systemMessage = await this.getSystemMessage();
+        if (systemMessage) {
+            const systemMsg: ChatMessage = {
+                actor: 'system',
+                type: 'text',
+                query: systemMessage
+            };
+            // insert systemMsg at the beginning of requestMessages
+            requestMessages.unshift(systemMsg);
+        }
+        return requestMessages;
+    }
+
+    /**
+     * @returns the list of tools used by this agent, or undefined if none is needed.
+     */
+    protected getTools(): ToolRequest<object>[] | undefined {
+        return undefined;
+    }
+
+    protected async callLlm(languageModel: LanguageModel, messages: ChatMessage[]): Promise<LanguageModelResponse> {
+        const tools = this.getTools();
+        const languageModelResponse = languageModel.request({ messages, tools });
+        return languageModelResponse;
+    }
+
+    protected abstract addContentsToResponse(languageModelResponse: LanguageModelResponse, request: ChatRequestModelImpl): Promise<void>;
+}
+
+@injectable()
+export abstract class AbstractTextToModelParsingChatAgent<T> extends AbstractChatAgent {
+
+    protected async addContentsToResponse(languageModelResponse: LanguageModelResponse, request: ChatRequestModelImpl): Promise<void> {
+        const responseAsText = await getTextOfResponse(languageModelResponse);
+        const parsedCommand = await this.parseTextResponse(responseAsText);
+        const content = this.createResponseContent(parsedCommand, request);
+        request.response.response.addContent(content);
+    }
+
+    protected abstract parseTextResponse(text: string): Promise<T>;
+
+    protected abstract createResponseContent(parsedModel: T, request: ChatRequestModelImpl): ChatResponseContent;
+}
+
+@injectable()
+export class DefaultChatAgent extends AbstractChatAgent {
 
     id: string = 'DefaultChatAgent';
     name: string = 'DefaultChatAgent';
@@ -94,23 +199,7 @@ export class DefaultChatAgent implements ChatAgent {
     }];
     locations: ChatAgentLocation[] = ChatAgentLocation.ALL;
 
-    async invoke(request: ChatRequestModelImpl): Promise<void> {
-        const selector = this.languageModelRequirements.find(req => req.purpose === 'chat')!;
-        const languageModel = await this.languageModelRegistry.selectLanguageModel({ agent: this.id, ...selector });
-        if (!languageModel) {
-            throw new Error('Couldn\'t find a matching language model. Please check your setup!');
-        }
-        const messages = await this.getMessages(request.session);
-        this.recordingService.recordRequest({
-            agentId: this.id,
-            sessionId: request.session.id,
-            timestamp: Date.now(),
-            requestId: request.id,
-            request: request.request.text,
-            messages
-        });
-
-        const languageModelResponse = await this.callLlm(languageModel, messages);
+    protected override async addContentsToResponse(languageModelResponse: LanguageModelResponse, request: ChatRequestModelImpl): Promise<void> {
         if (isLanguageModelTextResponse(languageModelResponse)) {
             request.response.response.addContent(
                 new MarkdownChatResponseContentImpl(languageModelResponse.text)
@@ -196,58 +285,6 @@ export class DefaultChatAgent implements ChatAgent {
                 JSON.stringify(languageModelResponse)
             )
         );
-        request.response.complete();
-        this.recordingService.recordResponse({
-            agentId: this.id,
-            sessionId: request.session.id,
-            timestamp: Date.now(),
-            requestId: request.response.requestId,
-            response: request.response.response.asString()
-        });
-    }
-
-    protected async callLlm(languageModel: LanguageModel, messages: ChatMessage[]): Promise<LanguageModelResponse> {
-        const tools = this.getTools();
-        const languageModelResponse = languageModel.request({ messages, tools });
-        return languageModelResponse;
-    }
-
-    /**
-     * @returns the list of tools used by this agent, or undefined if none is needed.
-     */
-    protected getTools(): ToolRequest<object>[] | undefined {
-        return undefined;
-    }
-
-    protected async getMessages(model: ChatModel, includeResponseInProgress = false): Promise<ChatMessage[]> {
-        const requestMessages = model.getRequests().flatMap(request => {
-            const messages: ChatMessage[] = [];
-            const query = request.message.parts.map(part => part.promptText).join('');
-            messages.push({
-                actor: 'user',
-                type: 'text',
-                query,
-            });
-            if (request.response.isComplete || includeResponseInProgress) {
-                messages.push({
-                    actor: 'ai',
-                    type: 'text',
-                    query: request.response.response.asString(),
-                });
-            }
-            return messages;
-        });
-        const systemMessage = await this.getSystemMessage();
-        if (systemMessage) {
-            const systemMsg: ChatMessage = {
-                actor: 'system',
-                type: 'text',
-                query: systemMessage
-            };
-            // insert systemMsg at the beginning of requestMessages
-            requestMessages.unshift(systemMsg);
-        }
-        return requestMessages;
     }
 
     protected async getSystemMessage(): Promise<string | undefined> {
