@@ -89,7 +89,8 @@ export interface PromptCustomizationService {
     getTemplateIDFromURI(uri: URI): string | undefined;
 }
 
-const PROMPT_VARIABLE_REGEX = /\$\{([\w_\-]+)\}/g;
+// should match the one from VariableResolverService
+const PROMPT_VARIABLE_REGEX = /\$\{(.*?)\}/g;
 
 @injectable()
 export class PromptServiceImpl implements PromptService {
@@ -121,10 +122,21 @@ export class PromptServiceImpl implements PromptService {
 
         const matches = [...prompt.template.matchAll(PROMPT_VARIABLE_REGEX)];
         const replacements = await Promise.all(matches.map(async match => {
-            const key = match[1];
+            const completeText = match[0];
+            const variableAndArg = match[1];
+            let variableName = variableAndArg;
+            let argument: string | undefined;
+            const parts = variableAndArg.split(':', 2);
+            if (parts.length > 1) {
+                variableName = parts[0];
+                argument = parts[1];
+            }
             return {
-                placeholder: match[0],
-                value: String(args?.[key] ?? (await this.variableService?.resolveVariable(key, {}))?.value ?? match[0])
+                placeholder: completeText,
+                value: String(args?.[variableAndArg] ?? (await this.variableService?.resolveVariable({
+                    variable: variableName,
+                    arg: argument
+                }, {}))?.value ?? completeText)
             };
         }));
         let result = prompt.template;
