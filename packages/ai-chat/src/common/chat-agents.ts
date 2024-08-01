@@ -19,7 +19,7 @@
  *--------------------------------------------------------------------------------------------*/
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatAgents.ts
 
-import { CommunicationRecordingService, LanguageModel, LanguageModelResponse, LanguageModelRequirement } from '@theia/ai-core';
+import { CommunicationRecordingService, LanguageModel, LanguageModelResponse, LanguageModelRequirement, PromptService } from '@theia/ai-core';
 import {
     Agent,
     isLanguageModelStreamResponse,
@@ -32,6 +32,7 @@ import { generateUuid, ILogger, isArray } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatModel, ChatRequestModelImpl, ChatResponseContent, CodeChatResponseContentImpl, MarkdownChatResponseContentImpl, ToolCallResponseContentImpl } from './chat-model';
 import { ChatMessage } from './chat-util';
+import { defaultTemplate } from './default-template';
 
 export enum ChatAgentLocation {
     Panel = 'panel',
@@ -74,12 +75,15 @@ export class DefaultChatAgent implements ChatAgent {
     @inject(CommunicationRecordingService)
     protected recordingService: CommunicationRecordingService;
 
+    @inject(PromptService)
+    protected promptService: PromptService;
+
     id: string = 'DefaultChatAgent';
     name: string = 'DefaultChatAgent';
     iconClass = 'codicon codicon-copilot';
     description: string = 'The default chat agent provided by Theia.';
     variables: string[] = [TODAY_VARIABLE.id];
-    promptTemplates: PromptTemplate[] = [];
+    promptTemplates: PromptTemplate[] = [defaultTemplate];
     // FIXME: placeholder values
     languageModelRequirements: LanguageModelRequirement[] = [{
         purpose: 'chat',
@@ -239,7 +243,7 @@ export class DefaultChatAgent implements ChatAgent {
     }
 
     protected async getSystemMessage(): Promise<string | undefined> {
-        return undefined;
+        return this.promptService.getPrompt(defaultTemplate.id);
     }
 
     private parse(token: LanguageModelStreamResponsePart, previousContent: ChatResponseContent[]): ChatResponseContent | ChatResponseContent[] {

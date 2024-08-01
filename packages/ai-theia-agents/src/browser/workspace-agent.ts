@@ -16,7 +16,7 @@
 import { ChatAgent, ChatMessage, ChatRequestParser, DefaultChatAgent } from '@theia/ai-chat/lib/common';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { template } from '../common/template';
-import { LanguageModel, LanguageModelResponse, PromptService, ToolRequest } from '@theia/ai-core';
+import { LanguageModel, LanguageModelResponse, ToolRequest } from '@theia/ai-core';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { URI } from '@theia/core';
@@ -28,9 +28,6 @@ export class TheiaWorkspaceAgent extends DefaultChatAgent implements ChatAgent {
     override name = 'Workspace Agent';
     override description = 'An AI Agent that can access the current Theia Workspace contents';
     override promptTemplates = [template];
-
-    @inject(PromptService)
-    protected promptService: PromptService;
 
     @inject(ChatRequestParser)
     protected chatRequestParser: ChatRequestParser;
