@@ -64,6 +64,6 @@ export class ChatAgentServiceImpl implements ChatAgentService {
         if (!agent) {
             throw new Error(`Agent ${agentId} not found`);
         }
-        return agent.invoke(request);
+        return agent.invoke(request, this);
     }
 }

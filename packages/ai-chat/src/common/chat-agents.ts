@@ -63,7 +63,7 @@ export interface ChatAgentData extends Agent {
 
 export const ChatAgent = Symbol('ChatAgent');
 export interface ChatAgent extends ChatAgentData {
-    invoke(request: ChatRequestModelImpl): Promise<void>;
+    invoke(request: ChatRequestModelImpl, chatAgentService?: ChatAgentService): Promise<void>;
 }
 @injectable()
 export class DefaultChatAgent implements ChatAgent {
@@ -78,9 +78,6 @@ export class DefaultChatAgent implements ChatAgent {
 
     @inject(PromptService)
     protected promptService: PromptService;
-
-    @inject(ChatAgentService)
-    protected agentService: ChatAgentService;
 
     id: string = 'DefaultChatAgent';
     name: string = 'DefaultChatAgent';
@@ -98,7 +95,7 @@ export class DefaultChatAgent implements ChatAgent {
     }];
     locations: ChatAgentLocation[] = ChatAgentLocation.ALL;
 
-    async invoke(request: ChatRequestModelImpl): Promise<void> {
+    async invoke(request: ChatRequestModelImpl, chatAgentService?: ChatAgentService): Promise<void> {
         const selector = this.languageModelRequirements.find(req => req.purpose === 'chat')!;
         const languageModels = await this.languageModelRegistry.selectLanguageModels({ agent: this.id, ...selector });
         if (languageModels.length === 0) {
@@ -106,9 +103,9 @@ export class DefaultChatAgent implements ChatAgent {
         }
 
         // check if we should better delegate to a different chat agent
-        const bestChatAgentId = this.selectChatAgent(request, languageModels);
+        const bestChatAgentId = await this.selectChatAgent(request, languageModels);
         if (bestChatAgentId !== this.id) {
-            const delegateAgent = this.agentService.getAgent(bestChatAgentId);
+            const delegateAgent = chatAgentService?.getAgent(bestChatAgentId);
             if (delegateAgent !== undefined) {
                 delegateAgent.invoke(request);
                 return;
@@ -229,7 +226,11 @@ export class DefaultChatAgent implements ChatAgent {
         return languageModelResponse;
     }
 
-    protected async getMessages(model: ChatModel, includeResponseInProgress = false): Promise<ChatMessage[]> {
+    protected async getMessages(
+        model: ChatModel,
+        includeResponseInProgress = false,
+        getSystemMessage: (() => Promise<string | undefined>) = this.getSystemMessage.bind(this)
+    ): Promise<ChatMessage[]> {
         const requestMessages = model.getRequests().flatMap(request => {
             const messages: ChatMessage[] = [];
             const query = request.message.parts.map(part => part.promptText).join('');
@@ -247,7 +248,7 @@ export class DefaultChatAgent implements ChatAgent {
             }
             return messages;
         });
-        const systemMessage = await this.getSystemMessage();
+        const systemMessage = await getSystemMessage();
         if (systemMessage) {
             const systemMsg: ChatMessage = {
                 actor: 'system',
@@ -279,8 +280,45 @@ export class DefaultChatAgent implements ChatAgent {
         return new MarkdownChatResponseContentImpl('');
     }
 
-    protected selectChatAgent(request: ChatRequestModelImpl, languageModels: LanguageModel[]): string {
-        throw new Error('Method not implemented.');
+    protected async selectChatAgent(request: ChatRequestModelImpl, languageModels: LanguageModel[]): Promise<string> {
+        const systemPrompt = await this.promptService.getPrompt(delegateTemplate.id);
+        if (systemPrompt === undefined) {
+            console.warn('No prompt found for delegateTemplate');
+            return this.id;
+        }
+
+        const messages = await this.getMessages(request.session, false, () => Promise.resolve(systemPrompt));
+
+        this.recordingService.recordRequest({
+            agentId: this.id,
+            sessionId: request.session.id,
+            timestamp: Date.now(),
+            requestId: request.id,
+            request: request.request.text
+        });
+        const languageModelResponse = await languageModels[0].request({ messages });
+
+        let agentId = this.id;
+        if (isLanguageModelStreamResponse(languageModelResponse)) {
+            const tokens: string[] = [];
+            for await (const token of languageModelResponse.stream) {
+                const tokenContent = token.content ?? '';
+                tokens.push(tokenContent);
+
+            }
+            agentId = tokens.join('');
+        } else {
+            console.error('Unknown response type');
+        }
+
+        this.recordingService.recordResponse({
+            agentId: this.id,
+            sessionId: request.session.id,
+            timestamp: Date.now(),
+            requestId: request.response.requestId,
+            response: agentId
+        });
+        return agentId;
     }
 }
 
