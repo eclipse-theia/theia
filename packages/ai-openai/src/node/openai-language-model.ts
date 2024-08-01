@@ -15,7 +15,6 @@
 // *****************************************************************************
 
 import { LanguageModel, LanguageModelRequest, LanguageModelRequestMessage, LanguageModelResponse, LanguageModelStreamResponsePart } from '@theia/ai-core';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import OpenAI from 'openai';
 import { ChatCompletionStream } from 'openai/lib/ChatCompletionStream';
 import { BaseFunctionsArgs, RunnableToolFunctionWithoutParse, RunnableTools } from 'openai/lib/RunnableFunction';
@@ -23,20 +22,12 @@ import { ChatCompletionMessageParam } from 'openai/resources';
 
 export const OpenAiModelIdentifier = Symbol('OpenAiModelIdentifier');
 
-@injectable()
 export class OpenAiModel implements LanguageModel {
 
     readonly providerId = 'openai';
     readonly vendor: string = 'OpenAI';
 
-    @inject(OpenAiModelIdentifier)
-    protected readonly model: string;
-
-    private openai: OpenAI;
-
-    @postConstruct()
-    init(): void {
-        this.openai = new OpenAI();
+    constructor(protected readonly model: string, protected apiKey: () => string | undefined) {
     }
 
     get id(): string {
@@ -48,6 +39,12 @@ export class OpenAiModel implements LanguageModel {
     }
 
     async request(request: LanguageModelRequest): Promise<LanguageModelResponse> {
+        const key = this.apiKey();
+        if (!key) {
+            throw new Error('Please provide OPENAI_API_KEY in preferences or via environment variable');
+        }
+        const openai = new OpenAI({ apiKey: key });
+
         const tools: RunnableTools<BaseFunctionsArgs> | undefined = request.tools?.map(tool => ({
             type: 'function',
             function: {
@@ -60,7 +57,7 @@ export class OpenAiModel implements LanguageModel {
         ));
         let runner: ChatCompletionStream;
         if (tools) {
-            runner = this.openai.beta.chat.completions.runTools({
+            runner = openai.beta.chat.completions.runTools({
                 model: this.model,
                 messages: request.messages.map(this.toOpenAIMessage),
                 stream: true,
@@ -68,7 +65,7 @@ export class OpenAiModel implements LanguageModel {
                 tool_choice: 'auto'
             });
         } else {
-            runner = this.openai.beta.chat.completions.stream({
+            runner = openai.beta.chat.completions.stream({
                 model: this.model,
                 messages: request.messages.map(this.toOpenAIMessage),
                 stream: true

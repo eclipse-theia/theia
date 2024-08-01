@@ -29,6 +29,7 @@ import {
     LanguageModelFrontendDelegate,
     LanguageModelProvider,
     LanguageModelRegistry,
+    LanguageModelRegistryClient,
     languageModelRegistryDelegatePath,
     LanguageModelRegistryFrontendDelegate,
     PromptCustomizationService,
@@ -68,11 +69,13 @@ export default new ContainerModule(bind => {
 
     bind(LanguageModelDelegateClientImpl).toSelf().inSingletonScope();
     bind(LanguageModelDelegateClient).toService(LanguageModelDelegateClientImpl);
+    bind(LanguageModelRegistryClient).toService(LanguageModelDelegateClient);
 
     bind(LanguageModelRegistryFrontendDelegate).toDynamicValue(
         ctx => {
             const connection = ctx.container.get<ServiceConnectionProvider>(RemoteConnectionProvider);
-            return connection.createProxy<LanguageModelRegistryFrontendDelegate>(languageModelRegistryDelegatePath);
+            const client = ctx.container.get<LanguageModelRegistryClient>(LanguageModelRegistryClient);
+            return connection.createProxy<LanguageModelRegistryFrontendDelegate>(languageModelRegistryDelegatePath, client);
         }
     );
 

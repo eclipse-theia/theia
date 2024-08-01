@@ -58,7 +58,8 @@ export interface ChatService {
 
     sendRequest(
         sessionId: string,
-        request: ChatRequest
+        request: ChatRequest,
+        errorHandler?: (e: unknown) => void
     ): Promise<ChatSendRequestData | undefined>;
 }
 
@@ -100,7 +101,8 @@ export class ChatServiceImpl implements ChatService {
 
     async sendRequest(
         sessionId: string,
-        request: ChatRequest
+        request: ChatRequest,
+        errorHandler?: (e: unknown) => void
     ): Promise<ChatSendRequestData | undefined> {
         const session = this.getSession(sessionId);
         if (!session) {
@@ -149,7 +151,13 @@ export class ChatServiceImpl implements ChatService {
         });
 
         if (agent) {
-            this.chatAgentService.invokeAgent(agent.id, requestModel);
+            this.chatAgentService.invokeAgent(agent.id, requestModel).catch(e => {
+                if (errorHandler) {
+                    errorHandler(e);
+                } else {
+                    throw e;
+                }
+            });
         } else {
             this.logger.error('No ChatAgents available to handle request!');
         }

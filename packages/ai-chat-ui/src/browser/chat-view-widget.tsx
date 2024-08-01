@@ -19,7 +19,7 @@ import { nls } from '@theia/core/lib/common/nls';
 import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
 import { ChatInputWidget } from './chat-input-widget';
 import { ChatModel, ChatRequest, ChatService } from '@theia/ai-chat';
-import { deepClone, Event, Emitter, ILogger } from '@theia/core';
+import { deepClone, Event, Emitter, MessageService } from '@theia/core';
 
 export namespace ChatViewWidget {
     export interface State {
@@ -36,8 +36,8 @@ export class ChatViewWidget extends BaseWidget implements StatefulWidget {
     @inject(ChatService)
     private chatService: ChatService;
 
-    @inject(ILogger)
-    private logger: ILogger;
+    @inject(MessageService)
+    private messageService: MessageService;
 
     // TODO: handle multiple sessions
     private chatModel: ChatModel;
@@ -117,10 +117,12 @@ export class ChatViewWidget extends BaseWidget implements StatefulWidget {
         const chatRequest: ChatRequest = {
             text: query
         };
-        const requestProgress = await this.chatService.sendRequest(this.chatModel.id, chatRequest);
+
+        const requestProgress = await this.chatService.sendRequest(this.chatModel.id,
+            chatRequest,
+            e => { if (e instanceof Error) { this.messageService.error(e.message); } else { throw e; } });
         if (!requestProgress) {
-            this.logger.error(`Was not able to send request "${chatRequest.text}" to session ${this.chatModel.id}`);
-            return;
+            this.messageService.error(`Was not able to send request "${chatRequest.text}" to session ${this.chatModel.id}`);
         }
         // Tree Widget currently tracks the ChatModel itself. Therefore no notification necessary.
     }

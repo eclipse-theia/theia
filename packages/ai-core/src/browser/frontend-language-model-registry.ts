@@ -34,6 +34,7 @@ import {
     LanguageModelDelegateClient,
     LanguageModelFrontendDelegate,
     LanguageModelMetaData,
+    LanguageModelRegistryClient,
     LanguageModelRegistryFrontendDelegate,
     LanguageModelRequest,
     LanguageModelResponse,
@@ -48,21 +49,34 @@ export interface TokenReceiver {
 export interface ToolReceiver {
     toolCall(id: string, toolId: string, arg_string: string): Promise<unknown>;
 }
+export interface ModelReceiver {
+    languageModelAdded(metadata: LanguageModelMetaData): void;
+    languageModelRemoved(id: string): void;
+}
 
 @injectable()
 export class LanguageModelDelegateClientImpl
-    implements LanguageModelDelegateClient {
-    protected receiver: TokenReceiver & ToolReceiver;
+    implements LanguageModelDelegateClient, LanguageModelRegistryClient {
+    protected receiver: TokenReceiver & ToolReceiver & ModelReceiver;
 
-    setReceiver(receiver: TokenReceiver & ToolReceiver): void {
+    setReceiver(receiver: TokenReceiver & ToolReceiver & ModelReceiver): void {
         this.receiver = receiver;
     }
 
     send(id: string, token: LanguageModelStreamResponsePart | undefined): void {
         this.receiver.send(id, token);
     }
+
     toolCall(requestId: string, toolId: string, args_string: string): Promise<unknown> {
         return this.receiver.toolCall(requestId, toolId, args_string);
+    }
+
+    languageModelAdded(metadata: LanguageModelMetaData): void {
+        this.receiver.languageModelAdded(metadata);
+    }
+
+    languageModelRemoved(id: string): void {
+        this.receiver.languageModelRemoved(id);
     }
 }
 
@@ -75,7 +89,16 @@ interface StreamState {
 @injectable()
 export class FrontendLanguageModelRegistryImpl
     extends DefaultLanguageModelRegistryImpl
-    implements TokenReceiver, ToolReceiver {
+    implements TokenReceiver, ToolReceiver, ModelReceiver {
+
+    // called by backend
+    languageModelAdded(metadata: LanguageModelMetaData): void {
+        this.addLanguageModels([metadata]);
+    }
+    // called by backend
+    languageModelRemoved(id: string): void {
+        this.removeLanguageModels([id]);
+    }
     @inject(LanguageModelRegistryFrontendDelegate)
     protected registryDelegate: LanguageModelRegistryFrontendDelegate;
 
@@ -97,7 +120,12 @@ export class FrontendLanguageModelRegistryImpl
     private static requestCounter: number = 0;
 
     override addLanguageModels(models: LanguageModelMetaData[] | LanguageModel[]): void {
-        models.map(model => {
+        let modelAdded = false;
+        for (const model of models) {
+            if (this.languageModels.find(m => m.id === model.id)) {
+                console.warn(`Tried to add an existing model ${model.id}`);
+                continue;
+            }
             if (LanguageModel.is(model)) {
                 this.languageModels.push(
                     new Proxy(
@@ -109,6 +137,7 @@ export class FrontendLanguageModelRegistryImpl
                         )
                     )
                 );
+                modelAdded = true;
             } else {
                 this.languageModels.push(
                     new Proxy(
@@ -122,8 +151,12 @@ export class FrontendLanguageModelRegistryImpl
                         )
                     )
                 );
+                modelAdded = true;
             }
-        });
+        }
+        if (modelAdded) {
+            this.changeEmitter.fire({ models: this.languageModels });
+        }
     }
 
     @postConstruct()

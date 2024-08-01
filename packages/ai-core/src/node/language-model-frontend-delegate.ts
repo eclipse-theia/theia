@@ -27,25 +27,22 @@ import {
     LanguageModelFrontendDelegate,
     LanguageModelRegistryFrontendDelegate,
     LanguageModelResponseDelegate,
+    LanguageModelRegistryClient,
 } from '../common';
+import { BackendLanguageModelRegistry } from './backend-language-model-registry';
 
 @injectable()
 export class LanguageModelRegistryFrontendDelegateImpl implements LanguageModelRegistryFrontendDelegate {
 
     @inject(LanguageModelRegistry)
-    private registry: LanguageModelRegistry;
+    private registry: BackendLanguageModelRegistry;
+
+    setClient(client: LanguageModelRegistryClient): void {
+        this.registry.setClient(client);
+    }
 
     async getLanguageModelDescriptions(): Promise<LanguageModelMetaData[]> {
-        return (await this.registry.getLanguageModels()).map(model => ({
-            id: model.id,
-            providerId: model.providerId,
-            name: model.name,
-            vendor: model.vendor,
-            version: model.version,
-            family: model.family,
-            maxInputTokens: model.maxInputTokens,
-            maxOutputTokens: model.maxOutputTokens,
-        }));
+        return (await this.registry.getLanguageModels()).map(model => this.registry.mapToMetaData(model));
     }
 }
 

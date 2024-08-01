@@ -22,3 +22,4 @@ export * from './prompt-service';
 export * from './types';
 export * from './variable-service';
 export * from './function-call-registry';
+export * from './protocol';

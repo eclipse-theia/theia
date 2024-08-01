@@ -58,6 +58,10 @@ export class AIAgentConfigurationWidget extends ReactWidget {
             this.languageModels = models ?? [];
             this.update();
         });
+        this.toDispose.push(this.languageModelRegistry.onChange(({ models }) => {
+            this.languageModels = models;
+            this.update();
+        }));
 
         this.aiSettingsService.onDidChange(() => this.update());
         this.aiConfigurationSelectionService.onDidAgentChange(() => this.update());
@@ -69,7 +73,7 @@ export class AIAgentConfigurationWidget extends ReactWidget {
             <div className='configuration-agents-list preferences-tree-widget theia-TreeContainer' style={{ width: '25%' }}>
                 <ul>
                     {this.agents.getContributions().map(agent =>
-                        <li className='theia-TreeNode theia-CompositeTreeNode theia-ExpandableTreeNode' onClick={() => this.setActiveAgent(agent)}>{agent.name}</li>
+                        <li key={agent.id} className='theia-TreeNode theia-CompositeTreeNode theia-ExpandableTreeNode' onClick={() => this.setActiveAgent(agent)}>{agent.name}</li>
                     )}
                 </ul>
             </div>
@@ -91,7 +95,7 @@ export class AIAgentConfigurationWidget extends ReactWidget {
                 <span style={{ marginRight: '0.5rem' }}>Variables:</span>
                 <ul className='variable-references'>
                     {agent.variables.map(variableId => <li className='theia-TreeNode theia-CompositeTreeNode theia-ExpandableTreeNode theia-mod-selected'>
-                        <div onClick={() => { this.showVariableConfigurationTab() }} className='variable-reference'>
+                        <div onClick={() => { this.showVariableConfigurationTab(); }} className='variable-reference'>
                             <span>{variableId}</span>
                             <i className={codicon('chevron-right')}></i>
                         </div></li>)}
@@ -113,7 +117,6 @@ export class AIAgentConfigurationWidget extends ReactWidget {
             </div>
         </div>;
     }
-
 
     protected showVariableConfigurationTab(): void {
         this.aiConfigurationSelectionService.selectConfigurationTab(AIVariableConfigurationWidget.ID);

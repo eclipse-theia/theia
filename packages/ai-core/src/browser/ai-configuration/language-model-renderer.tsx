@@ -67,7 +67,7 @@ export const LanguageModelRenderer: React.FC<LanguageModelSettingsProps> = (
 
     return <div className='language-model-container'>
         {Object.values(lmRequirementMap).map((requirements, index) => (
-            <>
+            <React.Fragment key={index}>
                 <div><strong>Purpose:</strong></div>
                 <div>
                     {/* language model metadata */}
@@ -82,14 +82,14 @@ export const LanguageModelRenderer: React.FC<LanguageModelSettingsProps> = (
                             onChange={event => onSelectedModelChange(requirements.purpose, event)}
                         >
                             <option value=""></option>
-                            {languageModels?.map((model, lmIndex) => (
-                                <option key={lmIndex} value={model.id}>{model.name ?? model.id}</option>
+                            {languageModels?.map(model => (
+                                <option key={model.id} value={model.id}>{model.name ?? model.id}</option>
                             ))}
                         </select>
                     </>
                     <hr />
                 </div>
-            </>
+            </React.Fragment>
         ))}
 
     </div>;

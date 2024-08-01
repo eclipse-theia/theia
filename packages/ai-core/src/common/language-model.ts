@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContributionProvider, ILogger, isFunction, isObject } from '@theia/core';
+import { ContributionProvider, ILogger, isFunction, isObject, Event, Emitter } from '@theia/core';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 
 export type MessageActor = 'user' | 'ai' | 'system';
@@ -42,6 +42,7 @@ export interface ToolRequest<T extends object> {
 export interface LanguageModelRequest {
     messages: LanguageModelRequestMessage[],
     tools?: ToolRequest<object>[];
+    settings?: { [key: string]: unknown };
 }
 
 export interface LanguageModelTextResponse {
@@ -127,9 +128,11 @@ export type LanguageModelRequirement = Omit<LanguageModelSelector, 'agent'>;
 
 export const LanguageModelRegistry = Symbol('LanguageModelRegistry');
 export interface LanguageModelRegistry {
+    onChange: Event<{ models: LanguageModel[] }>;
     addLanguageModels(models: LanguageModel[]): void;
     getLanguageModels(): Promise<LanguageModel[]>;
     getLanguageModel(id: string): Promise<LanguageModel | undefined>;
+    removeLanguageModels(id: string[]): void;
     selectLanguageModels(request: LanguageModelSelector): Promise<LanguageModel[]>;
 }
 
@@ -144,6 +147,9 @@ export class DefaultLanguageModelRegistryImpl implements LanguageModelRegistry {
 
     protected markInitialized: () => void;
     protected initialized: Promise<void> = new Promise(resolve => { this.markInitialized = resolve; });
+
+    protected changeEmitter = new Emitter<{ models: LanguageModel[] }>();
+    onChange = this.changeEmitter.event;
 
     @postConstruct()
     protected init(): void {
@@ -162,8 +168,14 @@ export class DefaultLanguageModelRegistryImpl implements LanguageModelRegistry {
     }
 
     addLanguageModels(models: LanguageModel[]): void {
-        models.map(model => this.languageModels.push(model));
-        // TODO: notify frontend about new models
+        models.forEach(model => {
+            if (this.languageModels.find(lm => lm.id === model.id)) {
+                console.warn(`Tried to add already existing language model with id ${model.id}. The new model will be ignored.`);
+                return;
+            }
+            this.languageModels.push(model);
+            this.changeEmitter.fire({ models: this.languageModels });
+        });
     }
 
     async getLanguageModels(): Promise<LanguageModel[]> {
@@ -174,6 +186,18 @@ export class DefaultLanguageModelRegistryImpl implements LanguageModelRegistry {
     async getLanguageModel(id: string): Promise<LanguageModel | undefined> {
         await this.initialized;
         return this.languageModels.find(model => model.id === id);
+    }
+
+    removeLanguageModels(ids: string[]): void {
+        ids.forEach(id => {
+            const index = this.languageModels.findIndex(model => model.id === id);
+            if (index !== -1) {
+                this.languageModels.splice(index, 1);
+                this.changeEmitter.fire({ models: this.languageModels });
+            } else {
+                console.warn(`Language model with id ${id} was requested to be removed, however it does not exist`);
+            }
+        });
     }
 
     async selectLanguageModels(request: LanguageModelSelector): Promise<LanguageModel[]> {

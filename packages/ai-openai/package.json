@@ -16,6 +16,7 @@
   },
   "theiaExtensions": [
     {
+      "frontend": "lib/browser/openai-frontend-module",
       "backend": "lib/node/openai-backend-module"
     }
   ],

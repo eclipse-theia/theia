@@ -14,17 +14,24 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContainerModule } from '@theia/core/shared/inversify';
-import { OPENAI_LANGUAGE_MODELS_MANAGER_PATH, OpenAiLanguageModelsManager } from '../common/openai-language-models-manager';
-import { ConnectionHandler, RpcConnectionHandler } from '@theia/core';
-import { OpenAiLanguageModelsManagerImpl } from './openai-language-models-manager-impl';
+import { PreferenceSchema } from '@theia/core/lib/browser/preferences/preference-contribution';
 
-export const OpenAiModelFactory = Symbol('OpenAiModelFactory');
+export const API_KEY_PREF = 'AI - Open AI.api-key';
+export const MODELS_PREF = 'AI - Open AI.models';
 
-export default new ContainerModule(bind => {
-    bind(OpenAiLanguageModelsManagerImpl).toSelf().inSingletonScope();
-    bind(OpenAiLanguageModelsManager).toService(OpenAiLanguageModelsManagerImpl);
-    bind(ConnectionHandler).toDynamicValue(ctx =>
-        new RpcConnectionHandler(OPENAI_LANGUAGE_MODELS_MANAGER_PATH, () => ctx.container.get(OpenAiLanguageModelsManager))
-    ).inSingletonScope();
-});
+export const OpenAiPreferencesSchema: PreferenceSchema = {
+    type: 'object',
+    properties: {
+        [API_KEY_PREF]: {
+            type: 'string',
+            description: 'OpenAI API Key',
+        },
+        [MODELS_PREF]: {
+            type: 'array',
+            default: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-4', 'gpt-3.5-turbo'],
+            items: {
+                type: 'string'
+            }
+        }
+    }
+};

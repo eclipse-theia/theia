@@ -25,7 +25,6 @@ import {
 } from '@theia/core';
 import {
     LanguageModelRegistry,
-    DefaultLanguageModelRegistryImpl,
     LanguageModelProvider,
     PromptService,
     PromptServiceImpl,
@@ -33,23 +32,29 @@ import {
     LanguageModelFrontendDelegate,
     LanguageModelRegistryFrontendDelegate,
     languageModelDelegatePath,
-    languageModelRegistryDelegatePath
+    languageModelRegistryDelegatePath,
+    LanguageModelRegistryClient
 } from '../common';
+import { BackendLanguageModelRegistry } from './backend-language-model-registry';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, LanguageModelProvider);
-    bind(LanguageModelRegistry).to(DefaultLanguageModelRegistryImpl).inSingletonScope();
+    bind(BackendLanguageModelRegistry).toSelf().inSingletonScope();
+    bind(LanguageModelRegistry).toService(BackendLanguageModelRegistry);
 
     bind(LanguageModelRegistryFrontendDelegate).to(LanguageModelRegistryFrontendDelegateImpl).inSingletonScope();
     bind(ConnectionHandler)
         .toDynamicValue(
             ctx =>
-                new RpcConnectionHandler(
+                new RpcConnectionHandler<LanguageModelRegistryClient>(
                     languageModelRegistryDelegatePath,
-                    () =>
-                        ctx.container.get(
+                    client => {
+                        const registryDelegate = ctx.container.get<LanguageModelRegistryFrontendDelegateImpl>(
                             LanguageModelRegistryFrontendDelegate
-                        )
+                        );
+                        registryDelegate.setClient(client);
+                        return registryDelegate;
+                    }
                 )
         )
         .inSingletonScope();
