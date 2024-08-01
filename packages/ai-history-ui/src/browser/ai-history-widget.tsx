@@ -13,23 +13,25 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { ChatAgentService } from '@theia/ai-chat';
-import { CommunicationRecordingService } from '@theia/ai-core';
+import { Agent, CommunicationRecordingService, CommunicationRequestEntry, CommunicationResponseEntry } from '@theia/ai-core';
+import { ContributionProvider } from '@theia/core';
 import { codicon, ReactWidget } from '@theia/core/lib/browser';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
+import { CommunicationCard } from './ai-history-communication-card';
+import { SelectComponent } from '@theia/core/lib/browser/widgets/select-component';
 
 @injectable()
 export class AIHistoryView extends ReactWidget {
-    @inject(ChatAgentService)
-    protected agentService: ChatAgentService;
     @inject(CommunicationRecordingService)
     protected recordingService: CommunicationRecordingService;
+    @inject(ContributionProvider) @named(Agent)
+    protected readonly agents: ContributionProvider<Agent>;
 
     public static ID = 'ai-history-widget';
     static LABEL = 'AI Agent History';
 
-    protected historyContent: string = '';
+    protected selectedAgent?: Agent;
 
     constructor() {
         super();
@@ -38,43 +40,54 @@ export class AIHistoryView extends ReactWidget {
         this.title.caption = AIHistoryView.LABEL;
         this.title.closable = true;
         this.title.iconClass = codicon('history');
+    }
 
+    @postConstruct()
+    protected init(): void {
         this.update();
+        this.toDispose.push(this.recordingService.onDidRecordRequest(entry => this.historyContentUpdated(entry)));
+        this.toDispose.push(this.recordingService.onDidRecordResponse(entry => this.historyContentUpdated(entry)));
+        this.selectAgent(this.agents.getContributions()[0]);
+    }
+
+    protected selectAgent(agent: Agent | undefined): void {
+        this.selectedAgent = agent;
+        this.update();
+    }
+
+    protected historyContentUpdated(entry: CommunicationRequestEntry | CommunicationResponseEntry): void {
+        if (entry.agentId === this.selectedAgent?.id) {
+            this.update();
+        }
     }
 
     render(): React.ReactNode {
         return (
-            <div>
-                <div id="agent-list" style={{ whiteSpace: 'pre-wrap', backgroundColor: '#f6f8fa', border: '1px solid #ddd', padding: '10px', fontFamily: 'monospace' }}>
-                    <ul>{this.agentService.getAgents().map(agent => <li
-                        style={{
-                            display: 'inline-block',
-                            marginRight: '10px',
-                            padding: '10px 20px',
-                            backgroundColor: '#007bff',
-                            color: 'white',
-                            borderRadius: '5px',
-                            cursor: 'pointer',
-                            transition: 'background-color 0.3s ease',
-                            textDecoration: 'none'
-                        }}
-
-                    ><div id={agent.id} onClick={this.onClick.bind(this)}>{agent.name}</div></li>)
-                    }</ul>
-                </div>
-                <div id="history-content" style={{ whiteSpace: 'pre-wrap', backgroundColor: '#f6f8fa', border: '1px solid #ddd', padding: '10px', fontFamily: 'monospace' }}>
-                    {this.historyContent}
+            <div className='agent-history-widget'>
+                <SelectComponent
+                    options={this.agents.getContributions().map(agent => ({ value: agent.id, label: agent.name, description: agent.description }))}
+                    onChange={value => this.selectAgent(this.agents.getContributions().find(agent => agent.id === value.value))}
+                    defaultValue={this.selectedAgent?.id} />
+                <div className='agent-history'>
+                    {this.renderHistory()}
                 </div>
             </div >
         );
     }
 
-    protected onClick(e: React.MouseEvent<HTMLDivElement>): void {
-        e.stopPropagation();
-        const agent = this.agentService.getAgent(e.currentTarget.id);
-        if (agent) {
-            this.historyContent = JSON.stringify(this.recordingService.getHistory(agent.id), undefined, 2);
+    protected renderHistory(): React.ReactNode {
+        if (!this.selectedAgent) {
+            return <div className='theia-card no-content'>No agent selected.</div>;
         }
-        this.update();
+        const history = this.recordingService.getHistory(this.selectedAgent.id);
+        if (history.length === 0) {
+            return <div className='theia-card no-content'>No history available for the selected agent '{this.selectedAgent.name}'.</div>;
+        }
+        return history.map(entry => <CommunicationCard entry={entry} />);
+    }
+
+    protected onClick(e: React.MouseEvent<HTMLDivElement>, agent: Agent): void {
+        e.stopPropagation();
+        this.selectAgent(agent);
     }
 }

@@ -14,6 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { Event } from '@theia/core';
+
 export type CommunicationHistory = CommunicationHistoryEntry[];
 
 export interface CommunicationHistoryEntry {
@@ -26,9 +28,16 @@ export interface CommunicationHistoryEntry {
     responseTime?: number;
 }
 
+export type CommunicationRequestEntry = Omit<CommunicationHistoryEntry, 'response' | 'responseTime'>;
+export type CommunicationResponseEntry = Omit<CommunicationHistoryEntry, 'request'>;
+
 export const CommunicationRecordingService = Symbol('CommunicationRecordingService');
 export interface CommunicationRecordingService {
-    recordRequest(requestEntry: CommunicationHistoryEntry): void;
-    recordResponse(responseEntry: CommunicationHistoryEntry): void;
+    recordRequest(requestEntry: CommunicationRequestEntry): void;
+    readonly onDidRecordRequest: Event<CommunicationRequestEntry>;
+
+    recordResponse(responseEntry: CommunicationResponseEntry): void;
+    readonly onDidRecordResponse: Event<CommunicationResponseEntry>;
+
     getHistory(agentId: string): CommunicationHistory;
 }

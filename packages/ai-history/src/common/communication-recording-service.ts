@@ -13,11 +13,17 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { CommunicationHistory, CommunicationHistoryEntry, CommunicationRecordingService } from '@theia/ai-core';
+import { CommunicationHistory, CommunicationHistoryEntry, CommunicationRecordingService, CommunicationRequestEntry, CommunicationResponseEntry } from '@theia/ai-core';
+import { Emitter, Event } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
 
 @injectable()
 export class DefaultCommunicationRecordingService implements CommunicationRecordingService {
+    protected onDidRecordRequestEmitter = new Emitter<CommunicationRequestEntry>();
+    readonly onDidRecordRequest: Event<CommunicationRequestEntry> = this.onDidRecordRequestEmitter.event;
+
+    protected onDidRecordResponseEmitter = new Emitter<CommunicationResponseEntry>();
+    readonly onDidRecordResponse: Event<CommunicationResponseEntry> = this.onDidRecordResponseEmitter.event;
 
     protected history: Map<string, CommunicationHistory> = new Map();
 
@@ -32,6 +38,7 @@ export class DefaultCommunicationRecordingService implements CommunicationRecord
         } else {
             this.history.set(requestEntry.agentId, [requestEntry]);
         }
+        this.onDidRecordRequestEmitter.fire(requestEntry);
     }
 
     recordResponse(responseEntry: CommunicationHistoryEntry): void {
@@ -39,12 +46,13 @@ export class DefaultCommunicationRecordingService implements CommunicationRecord
         if (this.history.has(responseEntry.agentId)) {
             const entry = this.history.get(responseEntry.agentId);
             if (entry) {
-                const matchingEntry = entry.find(e => e.requestId === responseEntry.requestId);
-                if (!matchingEntry) {
+                const matchingRequest = entry.find(e => e.requestId === responseEntry.requestId);
+                if (!matchingRequest) {
                     throw Error('No matching request found for response');
                 }
-                matchingEntry.response = responseEntry.response;
-                matchingEntry.responseTime = responseEntry.timestamp - matchingEntry.timestamp;
+                matchingRequest.response = responseEntry.response;
+                matchingRequest.responseTime = responseEntry.timestamp - matchingRequest.timestamp;
+                this.onDidRecordResponseEmitter.fire(responseEntry);
             }
         }
     }

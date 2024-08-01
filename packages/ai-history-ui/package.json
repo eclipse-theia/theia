@@ -36,7 +36,8 @@
   "homepage": "https://github.com/eclipse-theia/theia",
   "files": [
     "lib",
-    "src"
+    "src",
+    "style"
   ],
   "scripts": {
     "build": "theiaext build",

@@ -17,14 +17,14 @@
 import { ContributionProvider, ILogger, isFunction, isObject } from '@theia/core';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 
-export type ChatActor = 'user' | 'ai';
+export type MessageActor = 'user' | 'ai';
 
 export interface LanguageModelRequestMessage {
-    actor: ChatActor;
+    actor: MessageActor;
     type: 'text';
     query: string;
 }
-export const isChatRequestPart = (obj: unknown): obj is LanguageModelRequestMessage =>
+export const isLanguageModelRequestMessage = (obj: unknown): obj is LanguageModelRequestMessage =>
     !!(obj && typeof obj === 'object' &&
         'type' in obj &&
         typeof (obj as { type: unknown }).type === 'string' &&
