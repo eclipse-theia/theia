@@ -34,6 +34,8 @@ import {
 } from './chat-response-renderer/ai-editor-manager';
 import { ChatViewWidgetToolbarContribution } from './chat-view-widget-toolbar-contribution';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
+import { AIMonacoEditorProvider } from './chat-response-renderer/ai-monaco-editor-provider';
 
 export default new ContainerModule((bind, _ubind, _isBound, rebind) => {
     bindViewContribution(bind, AIChatContribution);
@@ -77,4 +79,7 @@ export default new ContainerModule((bind, _ubind, _isBound, rebind) => {
 
     bind(ChatViewWidgetToolbarContribution).toSelf().inSingletonScope();
     bind(TabBarToolbarContribution).toService(ChatViewWidgetToolbarContribution);
+
+    bind(AIMonacoEditorProvider).toSelf().inSingletonScope();
+    rebind(MonacoEditorProvider).toService(AIMonacoEditorProvider);
 });

@@ -87,6 +87,9 @@ export class MonacoEditorProvider {
         @inject(EditorPreferences) protected readonly editorPreferences: EditorPreferences,
         @inject(MonacoDiffNavigatorFactory) protected readonly diffNavigatorFactory: MonacoDiffNavigatorFactory,
     ) {
+        StandaloneServices.get(IOpenerService).registerOpener({
+            open: (u, options) => this.interceptOpen(u, options)
+        });
     }
 
     protected async getModel(uri: URI, toDispose: DisposableCollection): Promise<MonacoEditorModel> {
@@ -113,9 +116,6 @@ export class MonacoEditorProvider {
     ): Promise<MonacoEditor> {
         const domNode = document.createElement('div');
         const contextKeyService = StandaloneServices.get(IContextKeyService).createScoped(domNode);
-        StandaloneServices.get(IOpenerService).registerOpener({
-            open: (u, options) => this.interceptOpen(u, options)
-        });
         const overrides: EditorServiceOverrides = [
             [IContextKeyService, contextKeyService],
         ];
