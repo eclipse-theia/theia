@@ -14,7 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Agent, isLanguageModelStreamResponse, isLanguageModelTextResponse, LanguageModelRegistry, LanguageModelResponse, PromptService } from '@theia/ai-core/lib/common';
+import {
+    Agent, isLanguageModelStreamResponse, isLanguageModelTextResponse,
+    LanguageModelRegistry, LanguageModelRequirement, LanguageModelResponse, PromptService
+} from '@theia/ai-core/lib/common';
 import { ILogger } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 
@@ -89,10 +92,9 @@ recent-terminal-contents:
 `
         }
     ];
-    languageModelRequirements = [
+    languageModelRequirements: LanguageModelRequirement[] = [
         {
-            agent: this.id,
-            purpose: 'suggest-terminal-commands',
+            purpose: 'suggest-terminal-commands'
         }
     ];
 
@@ -111,13 +113,14 @@ recent-terminal-contents:
         shell: string,
         recentTerminalContents: string[],
     }): Promise<string[]> {
-
-        const lms = await this.languageModelRegistry.selectLanguageModels(this.languageModelRequirements[0]);
-        if (lms.length === 0) {
+        const lm = await this.languageModelRegistry.selectLanguageModel({
+            agent: this.id,
+            ...this.languageModelRequirements[0]
+        });
+        if (!lm) {
             this.logger.error('No language model available for the AI Terminal Agent.');
             return [];
         }
-        const lm = lms[0];
 
         const systemPrompt = await this.promptService.getPrompt('ai-terminal:system-prompt', input);
         const userPrompt = await this.promptService.getPrompt('ai-terminal:user-prompt', input);

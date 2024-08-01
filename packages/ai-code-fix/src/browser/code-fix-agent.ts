@@ -14,16 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as monaco from '@theia/monaco-editor-core';
 import {
     Agent, CommunicationHistoryEntry, CommunicationRecordingService,
     getTextOfResponse, LanguageModelRegistry, LanguageModelRequest,
-    LanguageModelSelector, PromptService, PromptTemplate
+    LanguageModelRequirement,
+    PromptService, PromptTemplate
 } from '@theia/ai-core/lib/common';
+import { generateUuid } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
+import * as monaco from '@theia/monaco-editor-core';
 import { ITextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
 import { CodeActionContext } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneLanguages';
-import { generateUuid } from '@theia/core';
 
 export const CodeFixAgent = Symbol('CodeFixAgent');
 export interface CodeFixAgent extends Agent {
@@ -47,16 +48,14 @@ export class CodeFixAgentImpl implements CodeFixAgent {
     async provideQuickFix(model: monaco.editor.ITextModel & ITextModel, marker: monaco.editor.IMarkerData,
         context: monaco.languages.CodeActionContext & CodeActionContext, token: monaco.CancellationToken): Promise<monaco.languages.CodeAction[]> {
 
-        const languageModels = await this.languageModelRegistry.selectLanguageModels({
-            agent: 'code-fix-agent',
-            purpose: 'code-fix',
-            identifier: 'openai/gpt-4o'
+        const languageModel = await this.languageModelRegistry.selectLanguageModel({
+            agent: this.id,
+            ...this.languageModelRequirements[0]
         });
-        if (languageModels.length === 0) {
+        if (!languageModel) {
             console.error('No language model found for code-fix-agent');
             return [];
         }
-        const languageModel = languageModels[0];
         console.log('Code fix agent is using language model:', languageModel.id);
 
         const fileName = model.uri.toString(false);
@@ -138,7 +137,7 @@ export class CodeFixAgentImpl implements CodeFixAgent {
             `,
         }
     ];
-    languageModelRequirements: Omit<LanguageModelSelector, 'agent'>[] = [{
+    languageModelRequirements: LanguageModelRequirement[] = [{
         purpose: 'code-fix',
         identifier: 'openai/gpt-4o'
     }];

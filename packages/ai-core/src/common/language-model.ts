@@ -133,6 +133,7 @@ export interface LanguageModelRegistry {
     getLanguageModels(): Promise<LanguageModel[]>;
     getLanguageModel(id: string): Promise<LanguageModel | undefined>;
     removeLanguageModels(id: string[]): void;
+    selectLanguageModel(request: LanguageModelSelector): Promise<LanguageModel | undefined>;
     selectLanguageModels(request: LanguageModelSelector): Promise<LanguageModel[]>;
 }
 
@@ -204,6 +205,10 @@ export class DefaultLanguageModelRegistryImpl implements LanguageModelRegistry {
         await this.initialized;
         // TODO check for actor and purpose against settings
         return this.languageModels.filter(model => isModelMatching(request, model));
+    }
+
+    async selectLanguageModel(request: LanguageModelSelector): Promise<LanguageModel | undefined> {
+        return (await this.selectLanguageModels(request))[0];
     }
 }
 

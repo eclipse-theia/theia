@@ -96,9 +96,9 @@ export class DefaultChatAgent implements ChatAgent {
 
     async invoke(request: ChatRequestModelImpl): Promise<void> {
         const selector = this.languageModelRequirements.find(req => req.purpose === 'chat')!;
-        const languageModels = await this.languageModelRegistry.selectLanguageModels({ agent: this.id, ...selector });
-        if (languageModels.length === 0) {
-            throw new Error('Couldn\'t find a language model. Please check your setup!');
+        const languageModel = await this.languageModelRegistry.selectLanguageModel({ agent: this.id, ...selector });
+        if (!languageModel) {
+            throw new Error('Couldn\'t find a matching language model. Please check your setup!');
         }
         const messages = await this.getMessages(request.session);
         this.recordingService.recordRequest({
@@ -110,7 +110,7 @@ export class DefaultChatAgent implements ChatAgent {
             messages
         });
 
-        const languageModelResponse = await this.callLlm(languageModels[0], messages);
+        const languageModelResponse = await this.callLlm(languageModel, messages);
         if (isLanguageModelTextResponse(languageModelResponse)) {
             request.response.response.addContent(
                 new MarkdownChatResponseContentImpl(languageModelResponse.text)

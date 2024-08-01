@@ -95,14 +95,14 @@ export class AIAgentConfigurationWidget extends ReactWidget {
                 <span style={{ marginRight: '0.5rem' }}>Variables:</span>
                 <ul className='variable-references'>
                     {agent.variables.map(variableId => <li className='theia-TreeNode theia-CompositeTreeNode theia-ExpandableTreeNode theia-mod-selected'>
-                        <div onClick={() => { this.showVariableConfigurationTab(); }} className='variable-reference'>
+                        <div key={variableId} onClick={() => { this.showVariableConfigurationTab(); }} className='variable-reference'>
                             <span>{variableId}</span>
                             <i className={codicon('chevron-right')}></i>
                         </div></li>)}
                 </ul>
             </div>
             <div className='ai-templates'>
-                {agent.promptTemplates.map(template =>
+                {agent.promptTemplates?.map(template =>
                     <TemplateRenderer
                         key={agent?.id + '.' + template.id}
                         agentId={agent.id}
@@ -113,7 +113,8 @@ export class AIAgentConfigurationWidget extends ReactWidget {
                 <LanguageModelRenderer
                     agent={agent}
                     languageModels={this.languageModels}
-                    aiSettingsService={this.aiSettingsService} />
+                    aiSettingsService={this.aiSettingsService}
+                    languageModelRegistry={this.languageModelRegistry} />
             </div>
         </div>;
     }

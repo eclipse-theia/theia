@@ -301,8 +301,11 @@ export class FrontendLanguageModelRegistryImpl
                 return [model];
             }
         }
-
         return this.languageModels.filter(model => isModelMatching(request, model));
+    }
+
+    override async selectLanguageModel(request: LanguageModelSelector): Promise<LanguageModel | undefined> {
+        return (await this.selectLanguageModels(request))[0];
     }
 }
 

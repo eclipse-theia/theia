@@ -14,17 +14,23 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
-import { ChatAgent, ChatAgentLocation } from './chat-agents';
 import {
-    PromptTemplate,
-    LanguageModelSelector,
     CommunicationRecordingService,
     LanguageModelRegistry,
-    PromptService,
     LanguageModelRequestMessage,
-    isLanguageModelStreamResponse,
+    LanguageModelRequirement,
+    PromptService,
+    PromptTemplate,
+    isLanguageModelStreamResponse
 } from '@theia/ai-core';
+import {
+    Command,
+    CommandRegistry,
+    MessageService,
+    generateUuid,
+} from '@theia/core';
+import { inject, injectable } from '@theia/core/shared/inversify';
+import { ChatAgent, ChatAgentLocation } from './chat-agents';
 import {
     ChatModel,
     ChatRequestModelImpl,
@@ -33,12 +39,6 @@ import {
     HorizontalLayoutChatResponseContentImpl,
     MarkdownChatResponseContentImpl,
 } from './chat-model';
-import {
-    Command,
-    CommandRegistry,
-    MessageService,
-    generateUuid,
-} from '@theia/core';
 import { ChatMessage } from './chat-util';
 
 export class CommandChatAgentSystemPromptTemplate implements PromptTemplate {
@@ -278,7 +278,7 @@ export class CommandChatAgent implements ChatAgent {
     description: string = 'The default chat agent provided by Theia responsible for providing commands.';
     variables: string[] = [];
     promptTemplates: PromptTemplate[] = [new CommandChatAgentSystemPromptTemplate()];
-    languageModelRequirements: Omit<LanguageModelSelector, 'agent'>[] = [{
+    languageModelRequirements: LanguageModelRequirement[] = [{
         purpose: 'command',
         identifier: 'openai/gpt-4o',
     }];
@@ -293,8 +293,8 @@ export class CommandChatAgent implements ChatAgent {
             request: request.request.text
         });
         const selector = this.languageModelRequirements.find(req => req.purpose === 'chat')!;
-        const languageModels = await this.languageModelRegistry.selectLanguageModels({ agent: this.id, ...selector });
-        if (languageModels.length === 0) {
+        const languageModel = await this.languageModelRegistry.selectLanguageModel({ agent: this.id, ...selector });
+        if (!languageModel) {
             throw new Error('Couldn\'t find a language model. Please check your setup!');
         }
 
@@ -319,7 +319,7 @@ export class CommandChatAgent implements ChatAgent {
             query: systemPrompt
         });
 
-        const languageModelResponse = await languageModels[0].request({ messages });
+        const languageModelResponse = await languageModel.request({ messages });
 
         let parsedCommand: ParsedCommand | undefined = undefined;
 

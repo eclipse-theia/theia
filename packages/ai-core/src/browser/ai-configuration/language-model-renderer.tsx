@@ -15,28 +15,45 @@
 // *****************************************************************************
 import * as React from '@theia/core/shared/react';
 import { Agent, LanguageModelRequirement } from '../../common';
-import { LanguageModel } from '../../common/language-model';
+import { LanguageModel, LanguageModelRegistry } from '../../common/language-model';
 import { AISettingsService } from '../ai-settings-service';
+import { Mutable } from '@theia/core';
 
 export interface LanguageModelSettingsProps {
     agent: Agent;
     languageModels?: LanguageModel[];
     aiSettingsService: AISettingsService;
+    languageModelRegistry: LanguageModelRegistry;
 }
 
 export const LanguageModelRenderer: React.FC<LanguageModelSettingsProps> = (
-    { agent, languageModels, aiSettingsService }) => {
+    { agent, languageModels, aiSettingsService, languageModelRegistry }) => {
 
     const findLanguageModelRequirement = (purpose: string): LanguageModelRequirement | undefined => {
         const requirementSetting = aiSettingsService.getAgentSettings(agent.id);
         return requirementSetting?.languageModelRequirements.find(e => e.purpose === purpose);
     };
 
-    const [lmRequirementMap, setLmRequirementMap] = React.useState<Record<string, LanguageModelRequirement>>(agent.languageModelRequirements.reduce((acc, curr) => {
-        const lmRequirement = findLanguageModelRequirement(curr.purpose) ?? curr;
-        acc[curr.purpose] = lmRequirement;
-        return acc;
-    }, {} as Record<string, LanguageModelRequirement>));
+    const [lmRequirementMap, setLmRequirementMap] = React.useState<Record<string, LanguageModelRequirement>>({});
+
+    React.useEffect(() => {
+        const computeLmRequirementMap = async () => {
+            const map = await agent.languageModelRequirements.reduce(async (accPromise, curr) => {
+                const acc = await accPromise;
+                // take the agents requirements and override them with the user settings if present
+                const lmRequirement = findLanguageModelRequirement(curr.purpose) ?? curr;
+                // if no llm is selected through the identifier, see what would be the default
+                if (!lmRequirement.identifier) {
+                    const llm = await languageModelRegistry.selectLanguageModel({ agent: agent.id, ...lmRequirement });
+                    (lmRequirement as Mutable<LanguageModelRequirement>).identifier = llm?.id;
+                }
+                acc[curr.purpose] = lmRequirement;
+                return acc;
+            }, Promise.resolve({} as Record<string, LanguageModelRequirement>));
+            setLmRequirementMap(map);
+        };
+        computeLmRequirementMap();
+    }, []);
 
     const renderLanguageModelMetadata = (requirement: LanguageModelRequirement, index: number) => {
         const languageModel = languageModels?.find(model => model.id === requirement.identifier);

@@ -44,16 +44,14 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
     async provideCompletionItems(model: monaco.editor.ITextModel, position: monaco.Position,
         context: monaco.languages.CompletionContext, token: monaco.CancellationToken): Promise<monaco.languages.CompletionList | undefined> {
 
-        const languageModels = await this.languageModelRegistry.selectLanguageModels({
-            agent: 'code-completion-agent',
-            purpose: 'code-completion',
-            identifier: 'openai/gpt-4o'
+        const languageModel = await this.languageModelRegistry.selectLanguageModel({
+            agent: this.id,
+            ...this.languageModelRequirements[0]
         });
-        if (languageModels.length === 0) {
+        if (!languageModel) {
             console.error('No language model found for code-completion-agent');
             return undefined;
         }
-        const languageModel = languageModels[0];
         console.log('Code completion agent is using language model:', languageModel.id);
 
         // Get text until the given position
