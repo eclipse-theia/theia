@@ -26,9 +26,14 @@ import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
 import { ChatViewWidget } from './chat-view-widget';
 import { ChatResponsePartRenderer } from './types';
 
+import { EditorManager } from '@theia/editor/lib/browser';
 import '../../src/browser/style/index.css';
+import {
+    AIEditorManager, AIEditorSelectionResolver,
+    GitHubSelectionResolver, TextFragmentSelectionResolver, TypeDocSymbolSelectionResolver
+} from './chat-response-renderer/ai-editor-manager';
 
-export default new ContainerModule(bind => {
+export default new ContainerModule((bind, _ubind, _isBound, rebind) => {
     bindViewContribution(bind, AIChatContribution);
     bindContributionProvider(bind, ChatResponsePartRenderer);
 
@@ -57,4 +62,12 @@ export default new ContainerModule(bind => {
     bind(ChatResponsePartRenderer).to(CodePartRenderer).inSingletonScope();
 
     bind(CommandContribution).to(AIChatCommandContribution);
+
+    bind(AIEditorManager).toSelf().inSingletonScope();
+    rebind(EditorManager).toService(AIEditorManager);
+
+    bindContributionProvider(bind, AIEditorSelectionResolver);
+    bind(AIEditorSelectionResolver).to(GitHubSelectionResolver).inSingletonScope();
+    bind(AIEditorSelectionResolver).to(TypeDocSymbolSelectionResolver).inSingletonScope();
+    bind(AIEditorSelectionResolver).to(TextFragmentSelectionResolver).inSingletonScope();
 });

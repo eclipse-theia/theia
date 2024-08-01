@@ -19,6 +19,9 @@
       "path": "../editor"
     },
     {
+      "path": "../editor-preview"
+    },
+    {
       "path": "../filesystem"
     },
     {
