@@ -28,11 +28,12 @@ import {
     ChatResponseModel,
 } from './chat-model';
 import { ChatAgentService } from './chat-agent-service';
-import { ILogger } from '@theia/core';
+import { Emitter, ILogger } from '@theia/core';
 import { ChatRequestParser } from './chat-request-parser';
 import { ChatAgent, ChatAgentLocation } from './chat-agents';
 import { ChatRequestAgentPart, ChatRequestVariablePart, ParsedChatRequest } from './chat-parsed-request';
 import { AIVariableService } from '@theia/ai-core';
+import { Event } from '@theia/core/shared/vscode-languageserver-protocol';
 
 export interface ChatSendRequestData {
     /**
@@ -49,12 +50,32 @@ export interface ChatSendRequestData {
     responseCompleted: Promise<ChatResponseModel>;
 }
 
+export interface ChatSession {
+    id: string;
+    title?: string;
+    model: ChatModel;
+    isActive: boolean;
+}
+
+export interface ActiveSessionChangedEvent {
+    sessionId: string;
+    focus?: boolean;
+}
+
+export interface SessionOptions {
+    focus?: boolean;
+}
+
 export const ChatService = Symbol('ChatService');
 export interface ChatService {
-    getSessions(): ChatModel[];
-    getSession(id: string): ChatModel | undefined;
-    getOrRestoreSession(id: string): ChatModel | undefined;
-    createSession(location?: ChatAgentLocation): ChatModel;
+    onActiveSessionChanged: Event<ActiveSessionChangedEvent>
+
+    getSession(id: string): ChatSession | undefined;
+    getSessions(): ChatSession[];
+    getOrRestoreSession(id: string): ChatSession | undefined;
+    createSession(location?: ChatAgentLocation, options?: SessionOptions): ChatSession;
+    removeSession(sessionId: string): void;
+    setActiveSession(sessionId: string, options?: SessionOptions): void;
 
     sendRequest(
         sessionId: string,
@@ -65,6 +86,9 @@ export interface ChatService {
 
 @injectable()
 export class ChatServiceImpl implements ChatService {
+    protected readonly onActiveSessionChangedEmitter = new Emitter<ActiveSessionChangedEvent>();
+    onActiveSessionChanged = this.onActiveSessionChangedEmitter.event;
+
     @inject(ChatAgentService)
     protected chatAgentService: ChatAgentService;
 
@@ -77,26 +101,59 @@ export class ChatServiceImpl implements ChatService {
     @inject(ILogger)
     protected logger: ILogger;
 
-    protected _sessions: ChatModelImpl[] = [];
+    protected _sessions: ChatSession[] = [];
 
     // TODO we might not want to expose this.
-    getSessions(): ChatModel[] {
+    getSessions(): ChatSession[] {
         return [...this._sessions];
     }
 
-    getSession(id: string): ChatModelImpl | undefined {
+    getSession(id: string): ChatSession | undefined {
         return this._sessions.find(session => session.id === id);
     }
 
-    getOrRestoreSession(id: string): ChatModel | undefined {
+    getOrRestoreSession(id: string): ChatSession | undefined {
         // TODO: Implement storing and restoring sessions.
         return this._sessions.find(session => session.id === id);
     }
 
-    createSession(location = ChatAgentLocation.Panel): ChatModel {
+    createSession(location = ChatAgentLocation.Panel, options?: SessionOptions): ChatSession {
         const model = new ChatModelImpl(location);
-        this._sessions.push(model);
-        return model;
+        const session: ChatSession = {
+            id: model.id,
+            model,
+            isActive: true
+        };
+        this._sessions.push(session);
+        this.setActiveSession(session.id, options);
+        return session;
+    }
+
+    removeSession(sessionId: string): void {
+        this._sessions = this._sessions.filter(item => item.id !== sessionId);
+        if (this._sessions.length === 0) {
+            this.createSession();
+        } else {
+            this.setActiveSession(this._sessions[this._sessions.length - 1].id);
+        }
+    }
+
+    getNextId(): string {
+        let maxId = 0;
+        this._sessions.forEach(session => {
+            const id = parseInt(session.id);
+            if (id > maxId) {
+                maxId = id;
+            }
+        });
+        return maxId.toString();
+    }
+
+    setActiveSession(sessionId: string, options?: SessionOptions): void {
+        this._sessions.forEach(session => {
+            session.isActive = session.id === sessionId;
+        });
+        this.onActiveSessionChangedEmitter.fire({ sessionId: sessionId, ...options });
     }
 
     async sendRequest(
@@ -108,6 +165,7 @@ export class ChatServiceImpl implements ChatService {
         if (!session) {
             return undefined;
         }
+        session.title = request.text;
         let resolveRequestCompleted: (requestModel: ChatRequestModel) => void;
         let resolveResponseCreated: (responseModel: ChatResponseModel) => void;
         let resolveResponseCompleted: (responseModel: ChatResponseModel) => void;
@@ -122,10 +180,10 @@ export class ChatServiceImpl implements ChatService {
                 resolveResponseCompleted = resolve;
             }),
         };
-        const parsedRequest = this.chatRequestParser.parseChatRequest(request, session.location);
+        const parsedRequest = this.chatRequestParser.parseChatRequest(request, session.model.location);
 
         const agent = this.getAgent(parsedRequest);
-        const requestModel = session.addRequest(parsedRequest, agent?.id);
+        const requestModel = session.model.addRequest(parsedRequest, agent?.id);
 
         for (const part of parsedRequest.parts) {
             if (part instanceof ChatRequestVariablePart) {
@@ -137,7 +195,7 @@ export class ChatServiceImpl implements ChatService {
                 if (resolvedVariable) {
                     part.resolve(resolvedVariable);
                 } else {
-                    this.logger.warn(`Failed to resolve variable ${part.variableName} for ${session.location}`);
+                    this.logger.warn(`Failed to resolve variable ${part.variableName} for ${session.model.location}`);
                 }
             }
         }

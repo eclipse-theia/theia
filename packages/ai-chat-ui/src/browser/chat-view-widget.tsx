@@ -18,7 +18,7 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { nls } from '@theia/core/lib/common/nls';
 import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
 import { ChatInputWidget } from './chat-input-widget';
-import { ChatModel, ChatRequest, ChatService } from '@theia/ai-chat';
+import { ChatRequest, ChatService, ChatSession } from '@theia/ai-chat';
 import { deepClone, Event, Emitter, MessageService } from '@theia/core';
 
 export namespace ChatViewWidget {
@@ -39,8 +39,7 @@ export class ChatViewWidget extends BaseWidget implements StatefulWidget {
     @inject(MessageService)
     private messageService: MessageService;
 
-    // TODO: handle multiple sessions
-    private chatModel: ChatModel;
+    private chatSession: ChatSession;
 
     protected _state: ChatViewWidget.State = { locked: false };
     protected readonly onStateChangedEmitter = new Emitter<ChatViewWidget.State>();
@@ -76,9 +75,27 @@ export class ChatViewWidget extends BaseWidget implements StatefulWidget {
         this.inputWidget.node.classList.add('chat-input-widget');
         layout.addWidget(this.inputWidget);
         this.inputWidget.onQuery = this.onQuery.bind(this);
-        // TODO restore sessions if needed
-        this.chatModel = this.chatService.createSession();
-        this.treeWidget.trackChatModel(this.chatModel);
+
+        this.chatSession = this.chatService.createSession();
+        this.treeWidget.trackChatModel(this.chatSession.model);
+
+        this.initListeners();
+    }
+
+    protected initListeners(): void {
+        this.chatService.onActiveSessionChanged(event => {
+            const session = this.chatService.getSession(event.sessionId);
+            if (session) {
+                this.chatSession = session;
+                this.treeWidget.trackChatModel(this.chatSession.model);
+                if (event.focus) {
+                    this.show();
+                }
+            } else {
+                console.warn(`Session with ${event.sessionId} not found.`);
+            }
+        });
+
     }
 
     storeState(): object {
@@ -118,11 +135,11 @@ export class ChatViewWidget extends BaseWidget implements StatefulWidget {
             text: query
         };
 
-        const requestProgress = await this.chatService.sendRequest(this.chatModel.id,
-            chatRequest,
+        const requestProgress = await this.chatService.sendRequest(this.chatSession.id, chatRequest,
             e => { if (e instanceof Error) { this.messageService.error(e.message); } else { throw e; } });
         if (!requestProgress) {
-            this.messageService.error(`Was not able to send request "${chatRequest.text}" to session ${this.chatModel.id}`);
+            this.messageService.error(`Was not able to send request "${chatRequest.text}" to session ${this.chatSession.id}`);
+            return;
         }
         // Tree Widget currently tracks the ChatModel itself. Therefore no notification necessary.
     }

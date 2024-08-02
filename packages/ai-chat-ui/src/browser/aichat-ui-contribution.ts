@@ -15,16 +15,28 @@
 // *****************************************************************************
 
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
-import { injectable } from '@theia/core/shared/inversify';
-import { CommandRegistry } from '@theia/core';
+import { inject, injectable } from '@theia/core/shared/inversify';
+import { CommandRegistry, QuickInputButton, QuickInputService, QuickPickItem } from '@theia/core';
 import { Widget } from '@theia/core/lib/browser';
-import { ChatCommands } from './chat-view-commands';
+import { AI_CHAT_NEW_CHAT_WINDOW_COMMAND, AI_CHAT_SHOW_CHATS_COMMAND, ChatCommands } from './chat-view-commands';
+import { ChatAgentLocation, ChatService } from '@theia/ai-chat';
+import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { ChatViewWidget } from './chat-view-widget';
 
 export const AI_CHAT_TOGGLE_COMMAND_ID = 'aiChat:toggle';
 
 @injectable()
-export class AIChatContribution extends AbstractViewContribution<ChatViewWidget> {
+export class AIChatContribution extends AbstractViewContribution<ChatViewWidget> implements TabBarToolbarContribution {
+
+    @inject(ChatService)
+    protected readonly chatService: ChatService;
+    @inject(QuickInputService)
+    protected readonly quickInputService: QuickInputService;
+
+    protected readonly removeChatButton: QuickInputButton = {
+        iconClass: 'codicon-remove-close',
+        tooltip: 'Remove Chat',
+    };
 
     constructor() {
         super({
@@ -57,6 +69,74 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
                 return true;
             })
         });
+        registry.registerCommand(AI_CHAT_NEW_CHAT_WINDOW_COMMAND, {
+            execute: () => this.chatService.createSession(ChatAgentLocation.Panel, { focus: true }),
+            isEnabled: widget => this.withWidget(widget, () => true),
+            isVisible: widget => this.withWidget(widget, () => true),
+        });
+        registry.registerCommand(AI_CHAT_SHOW_CHATS_COMMAND, {
+            execute: () => this.selectChat(),
+            isEnabled: widget => this.withWidget(widget, () => true) && this.chatService.getSessions().length > 1,
+            isVisible: widget => this.withWidget(widget, () => true)
+        });
+    }
+
+    registerToolbarItems(registry: TabBarToolbarRegistry): void {
+        registry.registerItem({
+            id: AI_CHAT_NEW_CHAT_WINDOW_COMMAND.id,
+            command: AI_CHAT_NEW_CHAT_WINDOW_COMMAND.id,
+            tooltip: 'New Chat',
+            isVisible: widget => this.isChatViewWidget(widget)
+        });
+        registry.registerItem({
+            id: AI_CHAT_SHOW_CHATS_COMMAND.id,
+            command: AI_CHAT_SHOW_CHATS_COMMAND.id,
+            tooltip: 'Show Chats...',
+            isVisible: widget => this.isChatViewWidget(widget),
+        });
+    }
+
+    protected isChatViewWidget(widget?: Widget): boolean {
+        return !!widget && ChatViewWidget.ID === widget.id;
+    }
+
+    protected async selectChat(sessionId?: string): Promise<void> {
+        let activeSessionId = sessionId;
+
+        if (!activeSessionId) {
+            const item = await this.askForChatSession();
+            if (item === undefined) {
+                return;
+            }
+            activeSessionId = item.id;
+        }
+
+        this.chatService.setActiveSession(activeSessionId!, { focus: true });
+    }
+
+    protected askForChatSession(): Promise<QuickPickItem | undefined> {
+        const updateQuickPick = async () => {
+            const items: QuickPickItem[] = this.chatService.getSessions().filter(session => !session.isActive).map(session => <QuickPickItem>({
+                label: session.title ?? 'New Chat',
+                id: session.id,
+                buttons: [this.removeChatButton]
+            })).reverse();
+
+            return this.quickInputService.showQuickPick(items, {
+                placeholder: 'Switch to chat',
+                canSelectMany: false,
+                onDidTriggerItemButton: async context => {
+                    this.chatService.removeSession(context.item.id!);
+                    if (this.chatService.getSessions().length <= 1) {
+                        this.quickInputService.hide();
+                    } else {
+                        updateQuickPick();
+                    }
+                }
+            });
+        };
+
+        return updateQuickPick();
     }
 
     protected withWidget(

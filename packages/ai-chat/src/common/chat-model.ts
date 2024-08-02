@@ -58,6 +58,8 @@ export interface ChatModel {
     readonly id: string;
     readonly location: ChatAgentLocation;
     getRequests(): ChatRequestModel[];
+    addRequest(parsedChatRequest: ParsedChatRequest, agentId?: string): ChatRequestModel;
+    isEmpty(): boolean;
 }
 
 export interface ChatRequest {
@@ -260,6 +262,10 @@ export class ChatModelImpl implements ChatModel {
             request: requestModel,
         });
         return requestModel;
+    }
+
+    isEmpty(): boolean {
+        return this._requests.length === 0;
     }
 }
 

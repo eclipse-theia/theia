@@ -41,13 +41,7 @@ export class AiPrFinalizationContribution implements CommandContribution {
     }
 
     private invokePrFinalization(): void {
-        const sessions = this.chatService.getSessions();
-        let sessionId: string;
-        if (sessions.length === 0) {
-            sessionId = this.chatService.createSession().id;
-        } else {
-            sessionId = sessions[0].id;
-        }
+        const sessionId = this.chatService.createSession().id;
         const userMessage = this.aiPrFinalizationAgent.promptTemplates.find(template => template.id === 'ai-pr-finalization:user-prompt');
         this.chatService.sendRequest(sessionId, {
             text: userMessage?.template ?? 'No user prompt found',

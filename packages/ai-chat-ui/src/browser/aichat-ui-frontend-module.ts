@@ -39,6 +39,8 @@ import { AIMonacoEditorProvider } from './chat-response-renderer/ai-monaco-edito
 
 export default new ContainerModule((bind, _ubind, _isBound, rebind) => {
     bindViewContribution(bind, AIChatContribution);
+    bind(TabBarToolbarContribution).toService(AIChatContribution);
+
     bindContributionProvider(bind, ChatResponsePartRenderer);
 
     bind(ChatViewWidget).toSelf().inSingletonScope();

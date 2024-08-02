@@ -22,14 +22,14 @@
 import { ContributionProvider, ILogger } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ChatAgent } from './chat-agents';
-import { ChatRequestModelImpl } from './chat-model';
+import { ChatRequestModel, ChatRequestModelImpl } from './chat-model';
 
 export const ChatAgentService = Symbol('ChatAgentService');
 export interface ChatAgentService {
     getAgents(): ChatAgent[];
     getAgent(id: string): ChatAgent | undefined;
     getAgentsByName(name: string): ChatAgent[];
-    invokeAgent(agentId: string, request: ChatRequestModelImpl): Promise<void>;
+    invokeAgent(agentId: string, request: ChatRequestModel): Promise<void>;
 }
 @injectable()
 export class ChatAgentServiceImpl implements ChatAgentService {
