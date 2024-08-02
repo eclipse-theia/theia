@@ -113,13 +113,13 @@ export class OpenAiModel implements LanguageModel {
 
     private toOpenAIMessage(message: LanguageModelRequestMessage): ChatCompletionMessageParam {
         if (message.actor === 'ai') {
-            return { role: 'assistant', content: message.query };
+            return { role: 'assistant', content: message.query || '' };
         }
         if (message.actor === 'user') {
-            return { role: 'user', content: message.query };
+            return { role: 'user', content: message.query || '' };
         }
         if (message.actor === 'system') {
-            return { role: 'system', content: message.query };
+            return { role: 'system', content: message.query || '' };
         }
         return { role: 'system', content: '' };
     }
