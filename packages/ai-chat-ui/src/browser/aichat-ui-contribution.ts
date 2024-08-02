@@ -22,6 +22,7 @@ import { AI_CHAT_NEW_CHAT_WINDOW_COMMAND, AI_CHAT_SHOW_CHATS_COMMAND, ChatComman
 import { ChatAgentLocation, ChatService } from '@theia/ai-chat';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { ChatViewWidget } from './chat-view-widget';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 
 export const AI_CHAT_TOGGLE_COMMAND_ID = 'aiChat:toggle';
 
@@ -115,28 +116,38 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
     }
 
     protected askForChatSession(): Promise<QuickPickItem | undefined> {
-        const updateQuickPick = async () => {
-            const items: QuickPickItem[] = this.chatService.getSessions().filter(session => !session.isActive).map(session => <QuickPickItem>({
+        const getItems = () =>
+            this.chatService.getSessions().filter(session => !session.isActive).map(session => <QuickPickItem>({
                 label: session.title ?? 'New Chat',
                 id: session.id,
                 buttons: [this.removeChatButton]
             })).reverse();
 
-            return this.quickInputService.showQuickPick(items, {
-                placeholder: 'Switch to chat',
-                canSelectMany: false,
-                onDidTriggerItemButton: async context => {
-                    this.chatService.removeSession(context.item.id!);
-                    if (this.chatService.getSessions().length <= 1) {
-                        this.quickInputService.hide();
-                    } else {
-                        updateQuickPick();
-                    }
-                }
-            });
-        };
+        const defer = new Deferred<QuickPickItem | undefined>();
+        const quickPick = this.quickInputService.createQuickPick();
+        quickPick.placeholder = 'Select chat';
+        quickPick.canSelectMany = false;
+        quickPick.items = getItems();
 
-        return updateQuickPick();
+        quickPick.onDidTriggerItemButton(async context => {
+            this.chatService.removeSession(context.item.id!);
+            quickPick.items = getItems();
+            if (this.chatService.getSessions().length <= 1) {
+                quickPick.hide();
+            }
+        });
+
+        quickPick.onDidAccept(() => {
+            const selectedItem = quickPick.selectedItems[0];
+            defer.resolve(selectedItem);
+            quickPick.hide();
+        });
+
+        quickPick.onDidHide(() => defer.resolve(undefined));
+
+        quickPick.show();
+
+        return defer.promise;
     }
 
     protected withWidget(
