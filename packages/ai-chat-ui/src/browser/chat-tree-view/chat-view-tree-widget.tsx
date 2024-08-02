@@ -198,7 +198,16 @@ export class ChatViewTreeWidget extends TreeWidget {
         }
 
         const agent = node.response.agentId ? this.chatAgentService.getAgent(node.response.agentId) : undefined;
-        return agent?.name ?? 'AI';
+        const initialAgentlabel = agent?.name ?? 'AI';
+        const labelParts = [initialAgentlabel];
+
+        for (const delegateAgentId of node.response.delegateAgentIds) {
+            const delegateAgent = this.chatAgentService.getAgent(delegateAgentId);
+            const delegateAgentlabel = delegateAgent?.name ?? 'AI';
+            labelParts.push(delegateAgentlabel);
+        }
+
+        return labelParts.join(' > ');
     }
     private getAgentIconClassName(node: RequestNode | ResponseNode): string | undefined {
         if (isRequestNode(node)) {

@@ -28,3 +28,24 @@ export const getTextOfResponse = async (response: LanguageModelResponse): Promis
     }
     throw new Error(`Invalid response type ${response}`);
 };
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const getJsonOfResponse = async (response: LanguageModelResponse): Promise<any> => {
+    const text = await getTextOfResponse(response);
+    if (text.startsWith('```json')) {
+        const regex = /```json\s*([\s\S]*?)\s*```/g;
+        let match;
+        // eslint-disable-next-line no-null/no-null
+        while ((match = regex.exec(text)) !== null) {
+            try {
+                return JSON.parse(match[1]);
+            } catch (error) {
+                console.error('Failed to parse JSON:', error);
+            }
+        }
+    } else if (text.startsWith('{') || text.startsWith('[')) {
+        return JSON.parse(text);
+    }
+    throw new Error('Invalid response format');
+};
+

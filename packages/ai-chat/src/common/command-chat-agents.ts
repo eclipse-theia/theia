@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { AbstractTextToModelParsingChatAgent, ChatAgentLocation } from './chat-agents';
+import { AbstractTextToModelParsingChatAgent } from './chat-agents';
 import {
     PromptTemplate,
     LanguageModelRequirement
@@ -258,15 +258,16 @@ export class CommandChatAgent extends AbstractTextToModelParsingChatAgent<Parsed
 
     id: string = 'CommandChatAgent';
     name: string = 'CommandChatAgent';
-    description: string = 'The default chat agent provided by Theia responsible for providing commands.';
+    description: string = 'This agent knows everything about Theia commands you can run within the IDE.';
     variables: string[] = [];
     promptTemplates: PromptTemplate[] = [new CommandChatAgentSystemPromptTemplate()];
+
     languageModelRequirements: LanguageModelRequirement[] = [{
         purpose: 'command',
         identifier: 'openai/gpt-4o',
     }];
-    locations: ChatAgentLocation[] = ChatAgentLocation.ALL;
-    override iconClass?: string | undefined;
+
+    protected override languageModelPurpose = 'command';
 
     protected async getSystemMessage(): Promise<string | undefined> {
         const knownCommands: string[] = [];

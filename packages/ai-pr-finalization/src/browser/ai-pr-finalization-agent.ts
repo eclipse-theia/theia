@@ -14,18 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { DefaultChatAgent } from '@theia/ai-chat';
+import { AbstractStreamParsingChatAgent } from '@theia/ai-chat';
+import { LanguageModelRequirement } from '@theia/ai-core';
 import { injectable } from '@theia/core/shared/inversify';
 
 @injectable()
-export class AiPRFinalizationAgent extends DefaultChatAgent {
+export class AiPRFinalizationAgent extends AbstractStreamParsingChatAgent {
 
-    override id = 'PrFinalization';
-    override name = 'PRFinalization';
-    override description = `
-        This agent helps users to finish up commits for PRs.`;
-    override variables = [];
-    override promptTemplates = [
+    id = 'PrFinalization';
+    name = 'PRFinalization';
+    description = 'This agent helps users to finish up commits for Pull Requests (PRs).';
+    variables = [];
+    promptTemplates = [
         {
             id: 'ai-pr-finalization:system-prompt',
             name: 'AI PR Finalization System Prompt',
@@ -69,6 +69,13 @@ And here is my git-diff: #git-diff.
 `
         },
     ];
+
+    languageModelRequirements: LanguageModelRequirement[] = [{
+        purpose: 'chat',
+        identifier: 'openai/gpt-4o',
+    }];
+
+    protected override languageModelPurpose = 'chat';
 
     protected override async getSystemMessage(): Promise<string | undefined> {
         return this.promptTemplates.find(template => template.id === 'ai-pr-finalization:system-prompt')?.template;

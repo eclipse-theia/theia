@@ -24,10 +24,10 @@ import {
     ChatRequestParser,
     ChatRequestParserImpl,
     ChatService,
-    ChatServiceImpl,
-    DefaultChatAgent
+    ChatServiceImpl
 } from '../common';
 import { CommandChatAgent } from '../common/command-chat-agents';
+import { DelegatingDefaultChatAgent } from '../common/delegating-default-agent';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, Agent);
@@ -42,9 +42,9 @@ export default new ContainerModule(bind => {
     bind(ChatServiceImpl).toSelf().inSingletonScope();
     bind(ChatService).toService(ChatServiceImpl);
 
-    bind(DefaultChatAgent).toSelf().inSingletonScope();
-    bind(Agent).toService(DefaultChatAgent);
-    bind(ChatAgent).toService(DefaultChatAgent);
+    bind(DelegatingDefaultChatAgent).toSelf().inSingletonScope();
+    bind(Agent).toService(DelegatingDefaultChatAgent);
+    bind(ChatAgent).toService(DelegatingDefaultChatAgent);
 
     bind(CommandChatAgent).toSelf().inSingletonScope();
     bind(Agent).toService(CommandChatAgent);

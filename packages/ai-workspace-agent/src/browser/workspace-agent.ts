@@ -13,18 +13,29 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { ChatAgent, DefaultChatAgent } from '@theia/ai-chat/lib/common';
+import { AbstractStreamParsingChatAgent } from '@theia/ai-chat/lib/common';
+import { FunctionCallRegistry, LanguageModelRequirement, ToolRequest } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { template } from '../common/template';
-import { FunctionCallRegistry, ToolRequest } from '@theia/ai-core';
 import { FileContentFunction, GetWorkspaceFileList } from './functions';
 
 @injectable()
-export class WorkspaceAgent extends DefaultChatAgent implements ChatAgent {
-    override id = 'Workspace';
-    override name = 'Workspace Agent';
-    override description = 'An AI Agent that can access the current Workspace contents';
-    override promptTemplates = [template];
+export class WorkspaceAgent extends AbstractStreamParsingChatAgent {
+    id = 'Workspace';
+    name = 'Workspace Agent';
+    description = `This agent can access the workspace and thus can answer
+questions about projects, project files, and source code in the workspace, such as building the project,
+finding out what this project is about, or how to implement certain aspects of based on the project code.
+`;
+    promptTemplates = [template];
+    override variables = [];
+
+    languageModelRequirements: LanguageModelRequirement[] = [{
+        purpose: 'chat',
+        identifier: 'openai/gpt-4o',
+    }];
+
+    protected override languageModelPurpose = 'chat';
 
     @inject(FunctionCallRegistry)
     protected functionCallRegistry: FunctionCallRegistry;

@@ -19,33 +19,20 @@
  *--------------------------------------------------------------------------------------------*/
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatAgents.ts
 
+import { CommunicationRecordingService, getTextOfResponse, LanguageModel, LanguageModelRequirement, LanguageModelResponse, PromptService, ToolRequest } from '@theia/ai-core';
 import {
     Agent,
-    CommunicationRecordingService,
-    getTextOfResponse,
     isLanguageModelStreamResponse,
     isLanguageModelTextResponse,
-    LanguageModel,
     LanguageModelRegistry,
-    LanguageModelRequirement,
-    LanguageModelResponse,
     LanguageModelStreamResponsePart,
     MessageActor,
-    PromptService,
-    PromptTemplate,
-    ToolRequest
+    PromptTemplate
 } from '@theia/ai-core/lib/common';
-import { TODAY_VARIABLE } from '@theia/ai-core/lib/common/today-variable-contribution';
 import { CancellationToken, CancellationTokenSource, ILogger, isArray } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import {
-    ChatModel,
-    ChatRequestModelImpl,
-    ChatResponseContent,
-    CodeChatResponseContentImpl,
-    MarkdownChatResponseContentImpl,
-    ToolCallResponseContentImpl
-} from './chat-model';
+import { ChatAgentService } from './chat-agent-service';
+import { ChatModel, ChatRequestModelImpl, ChatResponseContent, CodeChatResponseContentImpl, MarkdownChatResponseContentImpl, ToolCallResponseContentImpl } from './chat-model';
 
 export interface ChatMessage {
     actor: MessageActor;
@@ -81,24 +68,20 @@ export interface ChatAgentData extends Agent {
 
 export const ChatAgent = Symbol('ChatAgent');
 export interface ChatAgent extends ChatAgentData {
-    invoke(request: ChatRequestModelImpl): Promise<void>;
+    invoke(request: ChatRequestModelImpl, chatAgentService?: ChatAgentService): Promise<void>;
 }
 
-const defaultTemplate: PromptTemplate = {
-    id: 'default-template',
-    template: 'You are an AI Assistant for software developers, running inside of Eclipse Theia'
-};
 @injectable()
 export abstract class AbstractChatAgent implements ChatAgent {
 
-    abstract locations: ChatAgentLocation[];
-    abstract iconClass?: string | undefined;
     abstract id: string;
     abstract name: string;
     abstract description: string;
     abstract variables: string[];
     abstract promptTemplates: PromptTemplate[];
     abstract languageModelRequirements: LanguageModelRequirement[];
+    iconClass?: string | undefined = 'codicon codicon-copilot';
+    locations: ChatAgentLocation[] = ChatAgentLocation.ALL;
 
     @inject(LanguageModelRegistry)
     protected languageModelRegistry: LanguageModelRegistry;
@@ -112,9 +95,10 @@ export abstract class AbstractChatAgent implements ChatAgent {
     @inject(PromptService)
     protected promptService: PromptService;
 
+    protected abstract languageModelPurpose: string;
+
     async invoke(request: ChatRequestModelImpl): Promise<void> {
-        const selector = this.languageModelRequirements.find(req => req.purpose === 'chat')!;
-        const languageModel = await this.languageModelRegistry.selectLanguageModel({ agent: this.id, ...selector });
+        const languageModel = await this.getLanguageModel();
         if (!languageModel) {
             throw new Error('Couldn\'t find a matching language model. Please check your setup!');
         }
@@ -145,9 +129,28 @@ export abstract class AbstractChatAgent implements ChatAgent {
         });
     }
 
+    protected getLanguageModelSelector(): LanguageModelRequirement {
+        return this.languageModelRequirements.find(req => req.purpose === this.languageModelPurpose)!;
+    }
+
+    protected async getLanguageModel(): Promise<LanguageModel> {
+        return this.selectLanguageModel(this.getLanguageModelSelector());
+    }
+
+    protected async selectLanguageModel(selector: LanguageModelRequirement): Promise<LanguageModel> {
+        const languageModel = await this.languageModelRegistry.selectLanguageModel({ agent: this.id, ...selector });
+        if (!languageModel) {
+            throw new Error('Couldn\'t find a language model. Please check your setup!');
+        }
+        return languageModel;
+    }
+
     protected abstract getSystemMessage(): Promise<string | undefined>;
 
-    protected async getMessages(model: ChatModel, includeResponseInProgress = false): Promise<ChatMessage[]> {
+    protected async getMessages(
+        model: ChatModel, includeResponseInProgress = false,
+        getSystemMessage: (() => Promise<string | undefined>) = this.getSystemMessage.bind(this)
+    ): Promise<ChatMessage[]> {
         const requestMessages = model.getRequests().flatMap(request => {
             const messages: ChatMessage[] = [];
             const query = request.message.parts.map(part => part.promptText).join('');
@@ -165,7 +168,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
             }
             return messages;
         });
-        const systemMessage = await this.getSystemMessage();
+        const systemMessage = await getSystemMessage();
         if (systemMessage) {
             const systemMsg: ChatMessage = {
                 actor: 'system',
@@ -210,22 +213,7 @@ export abstract class AbstractTextToModelParsingChatAgent<T> extends AbstractCha
 }
 
 @injectable()
-export class DefaultChatAgent extends AbstractChatAgent {
-
-    id: string = 'DefaultChatAgent';
-    name: string = 'DefaultChatAgent';
-    iconClass = 'codicon codicon-copilot';
-    description: string = 'The default chat agent provided by Theia.';
-    variables: string[] = [TODAY_VARIABLE.id];
-    promptTemplates: PromptTemplate[] = [defaultTemplate];
-    languageModelRequirements: LanguageModelRequirement[] = [{
-        purpose: 'chat',
-        identifier: 'openai/gpt-4o',
-    }, {
-        purpose: 'general',
-        identifier: 'openai/gpt-4',
-    }];
-    locations: ChatAgentLocation[] = ChatAgentLocation.ALL;
+export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
 
     protected override async addContentsToResponse(languageModelResponse: LanguageModelResponse, request: ChatRequestModelImpl): Promise<void> {
         if (isLanguageModelTextResponse(languageModelResponse)) {
@@ -314,10 +302,6 @@ export class DefaultChatAgent extends AbstractChatAgent {
         );
     }
 
-    protected async getSystemMessage(): Promise<string | undefined> {
-        return this.promptService.getPrompt(defaultTemplate.id);
-    }
-
     private parse(token: LanguageModelStreamResponsePart, previousContent: ChatResponseContent[]): ChatResponseContent | ChatResponseContent[] {
         const content = token.content;
         // eslint-disable-next-line no-null/no-null
@@ -332,4 +316,5 @@ export class DefaultChatAgent extends AbstractChatAgent {
         }
         return new MarkdownChatResponseContentImpl('');
     }
+
 }
