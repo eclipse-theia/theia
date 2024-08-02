@@ -23,6 +23,7 @@ import { ChatAgentLocation, ChatService } from '@theia/ai-chat';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { ChatViewWidget } from './chat-view-widget';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { SecondaryWindowHandler } from '@theia/core/lib/browser/secondary-window-handler';
 
 export const AI_CHAT_TOGGLE_COMMAND_ID = 'aiChat:toggle';
 
@@ -38,6 +39,9 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         iconClass: 'codicon-remove-close',
         tooltip: 'Remove Chat',
     };
+
+    @inject(SecondaryWindowHandler)
+    protected readonly secondaryWindowHandler: SecondaryWindowHandler;
 
     constructor() {
         super({
@@ -79,6 +83,14 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
             execute: () => this.selectChat(),
             isEnabled: widget => this.withWidget(widget, () => true) && this.chatService.getSessions().length > 1,
             isVisible: widget => this.withWidget(widget, () => true)
+        });
+        registry.registerCommand(ChatCommands.EXTRACT_CHAT_VIEW, {
+            isEnabled: widget => this.withWidget(widget, this.canExtractChatView.bind(this)),
+            isVisible: widget => this.withWidget(widget, this.canExtractChatView.bind(this)),
+            execute: widget => this.withWidget(widget, chatWidget => {
+                this.extractChatView(chatWidget);
+                return true;
+            })
         });
     }
 
@@ -155,5 +167,13 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         predicate: (output: ChatViewWidget) => boolean = () => true
     ): boolean | false {
         return widget instanceof ChatViewWidget ? predicate(widget) : false;
+    }
+
+    protected extractChatView(chatView: ChatViewWidget): void {
+        this.secondaryWindowHandler.moveWidgetToSecondaryWindow(chatView);
+    }
+
+    canExtractChatView(chatView: ChatViewWidget): boolean {
+        return !chatView.secondaryWindow;
     }
 }

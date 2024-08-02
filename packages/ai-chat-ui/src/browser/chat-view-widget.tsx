@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { BaseWidget, codicon, Message, PanelLayout, StatefulWidget } from '@theia/core/lib/browser';
+import { BaseWidget, codicon, ExtractableWidget, Message, PanelLayout, StatefulWidget } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { nls } from '@theia/core/lib/common/nls';
 import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
@@ -28,7 +28,7 @@ export namespace ChatViewWidget {
 }
 
 @injectable()
-export class ChatViewWidget extends BaseWidget implements StatefulWidget {
+export class ChatViewWidget extends BaseWidget implements ExtractableWidget, StatefulWidget {
 
     public static ID = 'chat-view-widget';
     static LABEL = nls.localizeByDefault('Chat');
@@ -43,6 +43,8 @@ export class ChatViewWidget extends BaseWidget implements StatefulWidget {
 
     protected _state: ChatViewWidget.State = { locked: false };
     protected readonly onStateChangedEmitter = new Emitter<ChatViewWidget.State>();
+
+    secondaryWindow: Window | undefined;
 
     constructor(
         @inject(ChatViewTreeWidget)
@@ -155,5 +157,9 @@ export class ChatViewWidget extends BaseWidget implements StatefulWidget {
 
     get isLocked(): boolean {
         return !!this.state.locked;
+    }
+
+    get isExtractable(): boolean {
+        return true;
     }
 }

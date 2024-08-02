@@ -50,5 +50,11 @@ export class ChatViewWidgetToolbarContribution implements TabBarToolbarContribut
             onDidChange: this.onChatWidgetStateChanged,
             priority: 2
         });
+        registry.registerItem({
+            id: ChatCommands.EXTRACT_CHAT_VIEW.id,
+            command: ChatCommands.EXTRACT_CHAT_VIEW.id,
+            tooltip: ChatCommands.EXTRACT_CHAT_VIEW.label,
+            priority: 2
+        });
     }
 }

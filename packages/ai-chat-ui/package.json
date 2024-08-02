@@ -20,7 +20,8 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/aichat-ui-frontend-module"
+      "frontend": "lib/browser/aichat-ui-frontend-module",
+      "secondaryWindow": "lib/browser/aichat-ui-frontend-module"
     }
   ],
   "keywords": [

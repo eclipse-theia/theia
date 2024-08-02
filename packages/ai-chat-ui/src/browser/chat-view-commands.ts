@@ -32,6 +32,13 @@ export namespace ChatCommands {
         category: CHAT_CATEGORY,
         iconClass: codicon('lock')
     }, '', CHAT_CATEGORY_KEY);
+
+    export const EXTRACT_CHAT_VIEW: Command = {
+        id: 'theia-ai:extract-chat-view',
+        label: 'Move Chat view into a separate window',
+        iconClass: codicon('window')
+    };
+
 }
 
 export const AI_CHAT_NEW_CHAT_WINDOW_COMMAND: Command = {

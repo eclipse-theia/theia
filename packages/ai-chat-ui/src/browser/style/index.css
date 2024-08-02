@@ -7,6 +7,11 @@
     flex: 1;
 }
 
+.chat-input-widget>.ps__rail-x,
+.chat-input-widget>.ps__rail-y {
+    display: none !important;
+}
+
 .theia-ChatNode {
     cursor: default;
     display: flex;
@@ -53,7 +58,9 @@ div:last-child>.theia-ChatNode {
 }
 
 @keyframes dots {
-    0%, 20% {
+
+    0%,
+    20% {
         content: '';
     }
 
@@ -65,7 +72,8 @@ div:last-child>.theia-ChatNode {
         content: '..';
     }
 
-    80%, 100% {
+    80%,
+    100% {
         content: '...';
     }
 }
