@@ -130,11 +130,13 @@ export class ChatServiceImpl implements ChatService {
     }
 
     removeSession(sessionId: string): void {
+        // If the removed session is the active one, set the newest one as active
+        if (this.getSession(sessionId)?.isActive) {
+            this.setActiveSession(this._sessions[this._sessions.length - 1].id);
+        }
         this._sessions = this._sessions.filter(item => item.id !== sessionId);
         if (this._sessions.length === 0) {
             this.createSession();
-        } else {
-            this.setActiveSession(this._sessions[this._sessions.length - 1].id);
         }
     }
 
