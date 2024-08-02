@@ -14,13 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContributionProvider } from '@theia/core';
 import { codicon, ReactWidget } from '@theia/core/lib/browser';
-import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { Agent, AIVariable, AIVariableService } from '../../common';
 import { AIAgentConfigurationWidget } from './agent-configuration-widget';
 import { AIConfigurationSelectionService } from './ai-configuration-service';
+import { AgentService } from '../../common/agent-service';
 
 @injectable()
 export class AIVariableConfigurationWidget extends ReactWidget {
@@ -31,8 +31,8 @@ export class AIVariableConfigurationWidget extends ReactWidget {
     @inject(AIVariableService)
     protected readonly variableService: AIVariableService;
 
-    @inject(ContributionProvider) @named(Agent)
-    protected readonly agents: ContributionProvider<Agent>;
+    @inject(AgentService)
+    protected readonly agentService: AgentService;
 
     @inject(AIConfigurationSelectionService)
     protected readonly aiConfigurationSelectionService: AIConfigurationSelectionService;
@@ -104,7 +104,7 @@ export class AIVariableConfigurationWidget extends ReactWidget {
     }
 
     protected getAgentsForVariable(variable: AIVariable): Agent[] {
-        return this.agents.getContributions().filter(a => a.variables?.includes(variable.id));
+        return this.agentService.getAgents().filter(a => a.variables?.includes(variable.id));
     }
 }
 

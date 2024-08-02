@@ -13,10 +13,9 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { Agent, CommunicationRecordingService, CommunicationRequestEntry, CommunicationResponseEntry } from '@theia/ai-core';
-import { ContributionProvider } from '@theia/core';
+import { Agent, AgentService, CommunicationRecordingService, CommunicationRequestEntry, CommunicationResponseEntry } from '@theia/ai-core';
 import { codicon, ReactWidget } from '@theia/core/lib/browser';
-import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { CommunicationCard } from './ai-history-communication-card';
 import { SelectComponent } from '@theia/core/lib/browser/widgets/select-component';
@@ -25,8 +24,8 @@ import { SelectComponent } from '@theia/core/lib/browser/widgets/select-componen
 export class AIHistoryView extends ReactWidget {
     @inject(CommunicationRecordingService)
     protected recordingService: CommunicationRecordingService;
-    @inject(ContributionProvider) @named(Agent)
-    protected readonly agents: ContributionProvider<Agent>;
+    @inject(AgentService)
+    protected readonly agentService: AgentService;
 
     public static ID = 'ai-history-widget';
     static LABEL = 'AI Agent History';
@@ -47,7 +46,7 @@ export class AIHistoryView extends ReactWidget {
         this.update();
         this.toDispose.push(this.recordingService.onDidRecordRequest(entry => this.historyContentUpdated(entry)));
         this.toDispose.push(this.recordingService.onDidRecordResponse(entry => this.historyContentUpdated(entry)));
-        this.selectAgent(this.agents.getContributions()[0]);
+        this.selectAgent(this.agentService.getAgents(true)[0]);
     }
 
     protected selectAgent(agent: Agent | undefined): void {
@@ -65,8 +64,8 @@ export class AIHistoryView extends ReactWidget {
         return (
             <div className='agent-history-widget'>
                 <SelectComponent
-                    options={this.agents.getContributions().map(agent => ({ value: agent.id, label: agent.name, description: agent.description }))}
-                    onChange={value => this.selectAgent(this.agents.getContributions().find(agent => agent.id === value.value))}
+                    options={this.agentService.getAgents(true).map(agent => ({ value: agent.id, label: agent.name, description: agent.description }))}
+                    onChange={value => this.agentService.getAgents(true).find(agent => agent.id === value.value)}
                     defaultValue={this.selectedAgent?.id} />
                 <div className='agent-history'>
                     {this.renderHistory()}

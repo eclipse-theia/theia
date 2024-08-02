@@ -60,6 +60,7 @@ import { AIConfigurationSelectionService } from './ai-configuration/ai-configura
 import { TheiaVariableContribution } from './theia-variable-contribution';
 import { TodayVariableContribution } from '../common/today-variable-contribution';
 import { AgentsVariableContribution } from '../common/agents-variable-contribution';
+import { AgentService, AgentServiceImpl } from '../common/agent-service';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, LanguageModelProvider);
@@ -139,4 +140,7 @@ export default new ContainerModule(bind => {
 
     bind(FunctionCallRegistry).to(FunctionCallRegistryImpl).inSingletonScope();
     bindContributionProvider(bind, ToolProvider);
+
+    bind(AgentServiceImpl).toSelf().inSingletonScope();
+    bind(AgentService).toService(AgentServiceImpl);
 });

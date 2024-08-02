@@ -13,10 +13,10 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { inject, injectable, named } from '@theia/core/shared/inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { AIVariable, AIVariableContext, AIVariableContribution, AIVariableResolutionRequest, AIVariableResolver, AIVariableService, ResolvedAIVariable } from './variable-service';
-import { ContributionProvider, MaybePromise } from '@theia/core';
-import { Agent } from './agent';
+import { MaybePromise } from '@theia/core';
+import { AgentService } from './agent-service';
 
 export const AGENTS_VARIABLE: AIVariable = {
     id: 'agents',
@@ -37,9 +37,8 @@ export interface AgentDescriptor {
 @injectable()
 export class AgentsVariableContribution implements AIVariableContribution, AIVariableResolver {
 
-    @inject(ContributionProvider)
-    @named(Agent)
-    protected readonly agents: ContributionProvider<Agent>;
+    @inject(AgentService)
+    protected readonly agentService: AgentService;
 
     registerVariables(service: AIVariableService): void {
         service.registerResolver(AGENTS_VARIABLE, this);
@@ -59,7 +58,7 @@ export class AgentsVariableContribution implements AIVariableContribution, AIVar
     }
 
     resolveAgentsVariable(_request: AIVariableResolutionRequest): ResolvedAgentsVariable {
-        const agents = this.agents.getContributions().map(agent => ({
+        const agents = this.agentService.getAgents().map(agent => ({
             id: agent.id,
             name: agent.name,
             description: agent.description

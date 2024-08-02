@@ -15,20 +15,20 @@
 // *****************************************************************************
 
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { ContributionProvider } from '@theia/core';
-import { Agent, PromptService } from '../common';
+import { inject, injectable } from '@theia/core/shared/inversify';
+import { PromptService } from '../common';
+import { AgentService } from '../common/agent-service';
 
 @injectable()
 export class AICoreFrontendApplicationContribution implements FrontendApplicationContribution {
-    @inject(ContributionProvider) @named(Agent)
-    protected readonly agents: ContributionProvider<Agent>;
+    @inject(AgentService)
+    private readonly agentService: AgentService;
 
     @inject(PromptService)
     private readonly promptService: PromptService;
 
     onStart(): void {
-        this.agents.getContributions().forEach(a => {
+        this.agentService.getAgents(true).forEach(a => {
             a.promptTemplates.forEach(t => {
                 this.promptService.storePrompt(t.id, t.template);
             });

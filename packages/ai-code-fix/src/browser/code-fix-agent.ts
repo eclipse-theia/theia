@@ -34,7 +34,7 @@ export interface CodeFixAgent extends Agent {
 
 @injectable()
 export class CodeFixAgentImpl implements CodeFixAgent {
-    variables: string[];
+    variables: string[] = [];
 
     @inject(LanguageModelRegistry)
     protected languageModelRegistry: LanguageModelRegistry;

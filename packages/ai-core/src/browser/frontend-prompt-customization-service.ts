@@ -14,14 +14,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
-import { Agent, PromptCustomizationService, PromptTemplate } from '../common';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { PromptCustomizationService, PromptTemplate } from '../common';
 import { PromptPreferences } from './prompt-preferences';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { ContributionProvider, DisposableCollection, URI } from '@theia/core';
+import { DisposableCollection, URI } from '@theia/core';
 import { FileChangesEvent } from '@theia/filesystem/lib/common/files';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { OpenerService } from '@theia/core/lib/browser';
+import { AgentService } from '../common/agent-service';
 
 @injectable()
 export class FrontendPromptCustomizationServiceImpl implements PromptCustomizationService {
@@ -35,8 +36,8 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
     @inject(OpenerService)
     protected readonly openerService: OpenerService;
 
-    @inject(ContributionProvider) @named(Agent)
-    protected readonly agents: ContributionProvider<Agent>;
+    @inject(AgentService)
+    protected readonly agentService: AgentService;
 
     protected readonly trackedTemplateURIs = new Set<string>();
     protected readonly templates = new Map<string, string>();
@@ -156,7 +157,7 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
     }
 
     getTemplate(id: string): PromptTemplate | undefined {
-        for (const agent of this.agents.getContributions()) {
+        for (const agent of this.agentService.getAgents(true)) {
             for (const template of agent.promptTemplates) {
                 if (template.id === id) {
                     return template;
