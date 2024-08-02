@@ -181,6 +181,19 @@ div:last-child>.theia-ChatNode {
     background-color: #ccc;
 }
 
+.theia-toolCall {
+    font-weight: normal;
+    color: var(--theia-descriptionForeground);
+    line-height: 20px;
+    margin-bottom: 6px;
+    cursor: pointer;
+}
+
+.theia-toolCall .fa,
+.theia-toolCall details summary::marker {
+    color: var(--theia-button-background);
+}
+
 .spinner {
     display: inline-block;
     animation: spin 2s linear infinite;

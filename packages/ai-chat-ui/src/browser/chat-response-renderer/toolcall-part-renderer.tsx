@@ -31,13 +31,12 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallRe
     }
     render(response: ToolCallResponseContent): ReactNode {
         return <h4 className='theia-toolCall'>
-            {response.finished ? <Checkmark /> : <Spinner />}
-            <span>Executing tool call [{response.asString()}]</span>
-            {response.finished &&
+            {response.finished ?
                 <details>
-                    <summary>Tool Response</summary>
+                    <summary>Ran {response.name}</summary>
                     <p>{response.result}</p>
                 </details>
+                : <span><Spinner /> Running [{response.name}]</span>
             }
         </h4>;
 
@@ -47,7 +46,4 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallRe
 
 const Spinner = () => (
     <i className="fa fa-spinner fa-spin"></i>
-);
-const Checkmark = () => (
-    <i className="fa fa-check"></i>
 );
