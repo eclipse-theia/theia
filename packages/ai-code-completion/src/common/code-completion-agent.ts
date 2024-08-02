@@ -26,6 +26,8 @@ export const CodeCompletionAgent = Symbol('CodeCompletionAgent');
 export interface CodeCompletionAgent extends Agent {
     provideCompletionItems(model: monaco.editor.ITextModel, position: monaco.Position,
         context: monaco.languages.CompletionContext, token: monaco.CancellationToken): Promise<monaco.languages.CompletionList | undefined>;
+    provideInlineCompletions?(model: monaco.editor.ITextModel, position: monaco.Position,
+        context: monaco.languages.InlineCompletionContext, token: monaco.CancellationToken): Promise<monaco.languages.InlineCompletions | undefined>
 }
 
 @injectable()
@@ -74,6 +76,9 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
         const file = model.uri.toString(false);
         const language = model.getLanguageId();
 
+        if (token.isCancellationRequested) {
+            return undefined;
+        }
         const prompt = await this.promptService.getPrompt('code-completion-prompt', { snippet, file, language });
         if (!prompt) {
             console.error('No prompt found for code-completion-agent');
@@ -92,6 +97,9 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
             requestId,
             request: prompt
         };
+        if (token.isCancellationRequested) {
+            return undefined;
+        }
         this.recordingService.recordRequest(requestEntry);
         const response = await languageModel.request(request);
         if (token.isCancellationRequested) {

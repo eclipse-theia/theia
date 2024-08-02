@@ -21,12 +21,14 @@ import { AIFrontendApplicationContribution } from './ai-code-frontend-applicatio
 import { FrontendApplicationContribution, PreferenceContribution } from '@theia/core/lib/browser';
 import { Agent } from '@theia/ai-core';
 import { AICodeCompletionPreferencesSchema } from './ai-code-completion-preference';
+import { AICodeInlineCompletionsProvider } from './ai-code-inline-completion-provider';
 
 export default new ContainerModule(bind => {
     bind(CodeCompletionAgentImpl).toSelf().inSingletonScope();
     bind(CodeCompletionAgent).toService(CodeCompletionAgentImpl);
     bind(Agent).toService(CodeCompletionAgentImpl);
     bind(AICodeCompletionProvider).toSelf().inSingletonScope();
+    bind(AICodeInlineCompletionsProvider).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).to(AIFrontendApplicationContribution).inSingletonScope();
     bind(PreferenceContribution).toConstantValue({ schema: AICodeCompletionPreferencesSchema });
 });

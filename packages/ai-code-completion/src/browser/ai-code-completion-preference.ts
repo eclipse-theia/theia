@@ -16,17 +16,26 @@
 
 import { PreferenceSchema } from '@theia/core/lib/browser/preferences/preference-contribution';
 
+export const PREF_AI_CODE_COMPLETION_ENABLE = 'ai-code-completion.enable';
+export const PREF_AI_CODE_COMPLETION_PRECOMPUTE = 'ai-code-completion.precompute';
+export const PREF_AI_INLINE_COMPLETION_ENABLE = 'ai-inline-completion.enable';
+
 export const AICodeCompletionPreferencesSchema: PreferenceSchema = {
     type: 'object',
     properties: {
-        'ai-code-completion.enable': {
+        [PREF_AI_CODE_COMPLETION_ENABLE]: {
             type: 'boolean',
-            description: 'Enable AI code completion',
+            description: 'Enable AI code completions',
             default: false
         },
-        'ai-code-completion.precompute': {
+        [PREF_AI_CODE_COMPLETION_PRECOMPUTE]: {
             type: 'boolean',
-            description: 'Precompute completion before it is triggered',
+            description: 'Precompute completions before it is triggered',
+            default: false
+        },
+        [PREF_AI_INLINE_COMPLETION_ENABLE]: {
+            type: 'boolean',
+            description: 'Enable AI inline completions',
             default: false
         }
     }
