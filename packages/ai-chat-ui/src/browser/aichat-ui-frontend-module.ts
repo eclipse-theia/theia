@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { bindContributionProvider, CommandContribution } from '@theia/core';
-import { bindViewContribution, WidgetFactory, } from '@theia/core/lib/browser';
+import { bindViewContribution, FrontendApplicationContribution, WidgetFactory, } from '@theia/core/lib/browser';
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { AIChatCommandContribution } from './ai-chat-command-contribution';
 import { AIChatContribution } from './aichat-ui-contribution';
@@ -36,6 +36,7 @@ import {
 import { ChatViewWidgetToolbarContribution } from './chat-view-widget-toolbar-contribution';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { AIMonacoEditorProvider } from './chat-response-renderer/ai-monaco-editor-provider';
+import { ChatViewLanguageContribution } from './chat-view-language-contribution';
 
 export default new ContainerModule((bind, _ubind, _isBound, rebind) => {
     bindViewContribution(bind, AIChatContribution);
@@ -80,6 +81,9 @@ export default new ContainerModule((bind, _ubind, _isBound, rebind) => {
 
     bind(AIMonacoEditorProvider).toSelf().inSingletonScope();
     rebind(MonacoEditorProvider).toService(AIMonacoEditorProvider);
+
+    bind(FrontendApplicationContribution).to(ChatViewLanguageContribution).inSingletonScope();
+
 });
 
 function bindChatViewWidget(bind: interfaces.Bind): void {

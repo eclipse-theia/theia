@@ -104,43 +104,34 @@ div:last-child>.theia-ChatNode {
 }
 
 .chat-input-widget {
-    align-items: center;
-    display: flex;
+  align-items: center;
+  display: flex;
 }
 
-.chat-input-widget>div {
-    width: 100%;
-    padding: 12px 16px;
-    align-items: end;
-    display: flex;
-    gap: 4px;
+.theia-ChatInput {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  gap: 4px;
 }
 
-.chat-input-widget>div textarea {
-    width: 100%;
-    height: 36px;
-    align-items: flex-end;
-    background-color: var(--theia-input-background);
-    border-radius: 4px;
-    box-sizing: border-box;
-    cursor: text;
-    display: flex;
-    justify-content: space-between;
-    padding: 8px 30px 6px 8px;
-    position: relative;
-    resize: none;
-    overflow: hidden;
-    line-height: 1.3rem;
+.theia-ChatInput-Editor {
+  padding: 10px;
+  resize: none;
+}
+
+.theia-ChatInput-Editor .monaco-editor .margin,
+.theia-ChatInput-Editor .monaco-editor .monaco-editor-background,
+.theia-ChatInput-Editor .monaco-editor .inputarea.ime-input {
+    padding-left: 8px !important;
 }
 
 .theia-ChatInputOptions {
-    height: 23px;
-    padding-bottom: 6px;
-    align-items: center;
-    position: absolute;
-    z-index: 999;
-    right: 20px;
-    display: flex;
+  position: absolute;
+  bottom: 25px;
+  right: 20px;
+  width: 10px;
+  height: 10px;
 }
 
 .theia-ChatInputOptions .option {

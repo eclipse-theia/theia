@@ -4,6 +4,7 @@
   "description": "Theia - AI Chat UI Extension",
   "dependencies": {
     "@theia/ai-chat": "1.52.0",
+    "@theia/ai-core": "1.52.0",
     "@theia/core": "1.52.0",
     "@theia/editor": "1.52.0",
     "@theia/filesystem": "1.52.0",

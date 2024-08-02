@@ -15,14 +15,28 @@
 // *****************************************************************************
 import { Message, ReactWidget } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
-import { injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { ChatAgent, ChatAgentService } from '@theia/ai-chat';
+import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
+import { UntitledResourceResolver } from '@theia/core';
+import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { ChatModel } from '@theia/ai-chat';
+import { CHAT_VIEW_LANGUAGE_EXTENSION } from './chat-view-language-contribution';
 
 type Query = (query: string) => Promise<void>;
 
 @injectable()
 export class ChatInputWidget extends ReactWidget {
     public static ID = 'chat-input-widget';
+
+    @inject(ChatAgentService)
+    protected readonly agentService: ChatAgentService;
+
+    @inject(MonacoEditorProvider)
+    protected readonly editorProvider: MonacoEditorProvider;
+
+    @inject(UntitledResourceResolver)
+    protected readonly untitledResourceResolver: UntitledResourceResolver;
 
     private _onQuery: Query;
     set onQuery(query: Query) {
@@ -43,8 +57,21 @@ export class ChatInputWidget extends ReactWidget {
         super.onActivateRequest(msg);
         this.node.focus({ preventScroll: true });
     }
+
+    protected getChatAgents(): ChatAgent[] {
+        return this.agentService.getAgents();
+    }
+
     protected render(): React.ReactNode {
-        return <ChatInput onQuery={this._onQuery.bind(this)} chatModel={this._chatModel} />;
+        return (
+            <ChatInput
+                onQuery={this._onQuery.bind(this)}
+                chatModel={this._chatModel}
+                getChatAgents={this.getChatAgents.bind(this)}
+                editorProvider={this.editorProvider}
+                untitledResourceResolver={this.untitledResourceResolver}
+            />
+        );
     }
 
 }
@@ -52,16 +79,53 @@ export class ChatInputWidget extends ReactWidget {
 interface ChatInputProperties {
     onQuery: (query: string) => void;
     chatModel: ChatModel;
+    getChatAgents: () => ChatAgent[];
+    editorProvider: MonacoEditorProvider;
+    untitledResourceResolver: UntitledResourceResolver;
 }
 const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInputProperties) => {
 
-    const [query, setQuery] = React.useState('');
     const [inProgress, setInProgress] = React.useState(false);
     // eslint-disable-next-line no-null/no-null
-    const inputRef = React.useRef<HTMLTextAreaElement>(null);
+    const ref = React.useRef<HTMLDivElement | null>(null);
+    const editorRef = React.useRef<MonacoEditor | undefined>(undefined);
     const allRequests = props.chatModel.getRequests();
     const lastRequest = allRequests.length === 0 ? undefined : allRequests[allRequests.length - 1];
     const lastResponse = lastRequest?.response;
+
+    const createInputElement = async () => {
+        const resource = await props.untitledResourceResolver.createUntitledResource('', CHAT_VIEW_LANGUAGE_EXTENSION);
+        const editor = await props.editorProvider.createInline(resource.uri, ref.current!, {
+            language: CHAT_VIEW_LANGUAGE_EXTENSION,
+            // Disable code lens, inlay hints and hover support to avoid console errors from other contributions
+            codeLens: false,
+            inlayHints: { enabled: 'off' },
+            hover: { enabled: false },
+            autoSizing: true,
+            scrollBeyondLastLine: false,
+            scrollBeyondLastColumn: 0,
+            minHeight: 1,
+            renderFinalNewline: 'on',
+            fontFamily: 'var(--theia-ui-font-family)',
+            fontSize: 13,
+            maxHeight: -1,
+            scrollbar: { vertical: 'hidden', horizontal: 'hidden' },
+            automaticLayout: true,
+            lineNumbers: 'off',
+            lineHeight: 15,
+            padding: { top: 10, bottom: 5 },
+        });
+        editorRef.current = editor;
+    };
+
+    React.useEffect(() => {
+        createInputElement();
+        return () => {
+            if (editorRef.current) {
+                editorRef.current.dispose();
+            }
+        };
+    }, []);
 
     React.useEffect(() => {
         const listener = lastRequest?.response.onDidChange(() => {
@@ -75,40 +139,20 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     function submit(value: string): void {
         setInProgress(true);
         props.onQuery(value);
-        setQuery('');
-        if (inputRef.current) {
-            inputRef.current.value = '';
-            adjustHeight(inputRef.current);
+        if (editorRef.current) {
+            editorRef.current.document.textEditorModel.setValue('');
         }
-    }
+    };
 
-    function adjustHeight(textarea: EventTarget & HTMLTextAreaElement): void {
-        textarea.style.height = '';
-        if (textarea.scrollHeight > 36) {
-            textarea.style.height = textarea.scrollHeight + 'px';
+    const onKeyDown = React.useCallback((event: React.KeyboardEvent) => {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            submit(editorRef.current?.document.textEditorModel.getValue() || '');
         }
-    }
+    }, []);
 
-    return <div>
-        <textarea
-            ref={inputRef}
-            className='theia-input theia-ChatInput'
-            placeholder='Ask the AI...'
-            onChange={e => {
-                adjustHeight(e.target);
-                setQuery(e.target.value);
-            }}
-            onKeyDown={e => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    submit(e.currentTarget.value);
-                    e.preventDefault();
-                } else if (e.key === 'Enter' && e.shiftKey) {
-                    adjustHeight(e.currentTarget);
-                }
-            }}
-            value={query}
-        >
-        </textarea>
+    return <div className='theia-ChatInput'>
+        <div className='theia-ChatInput-Editor' ref={ref} onKeyDown={onKeyDown}></div>
         <div className="theia-ChatInputOptions">
             {
                 inProgress ? <span
@@ -121,7 +165,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                     <span
                         className="codicon codicon-send option"
                         title="Send (Enter)"
-                        onClick={() => submit(inputRef.current?.value || '')}
+                        onClick={() => submit(editorRef.current?.document.textEditorModel.getValue() || '')}
                     />
             }
         </div>
