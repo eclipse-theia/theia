@@ -252,6 +252,7 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
                             this.update();
                         }}
                         onSearch={options => this._model?.findMatches(options) ?? []}
+                        onReplace={(matches, replaceText) => this._model?.replaceAll(matches, replaceText)}
                     />
                 </div>
                 {this.notebookMainToolbarRenderer.render(this._model, this.node)}

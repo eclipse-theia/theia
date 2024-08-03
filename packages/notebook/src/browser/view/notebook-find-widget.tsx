@@ -53,6 +53,7 @@ export interface NotebookFindWidgetProps {
     filters?: NotebookEditorFindFilter[];
     onClose(): void;
     onSearch(options: NotebookEditorFindMatchOptions): NotebookEditorFindMatch[];
+    onReplace(matches: NotebookEditorFindMatch[], value: string): void;
 }
 
 export interface NotebookFindWidgetState {
@@ -252,7 +253,7 @@ export class NotebookFindWidget extends React.Component<NotebookFindWidgetProps,
 
     private gotoPreviousMatch(): void {
         this.search({
-            modifyIndex: (matches, index) => index === 0 ? matches.length - 1 : (index - 1),
+            modifyIndex: (matches, index) => (index === 0 ? matches.length : index) - 1,
             jumpToMatch: true
         });
     }
@@ -266,7 +267,7 @@ export class NotebookFindWidget extends React.Component<NotebookFindWidgetProps,
                 jumpToMatch: true,
                 modifyIndex: (matches, index) => {
                     if (matches.length <= existingMatches.length) {
-                        return index + 1 % matches.length;
+                        return (index + 1) % matches.length;
                     } else {
                         const diff = matches.length - existingMatches.length;
                         return (index + diff + 1) % matches.length;
@@ -277,9 +278,7 @@ export class NotebookFindWidget extends React.Component<NotebookFindWidgetProps,
     }
 
     private replaceAll(): void {
-        for (const match of this.state.matches) {
-            match.replace?.(this.state.replace);
-        }
+        this.props.onReplace(this.state.matches, this.state.replace);
         this.search({});
     }
 
@@ -313,7 +312,7 @@ export class NotebookFindWidget extends React.Component<NotebookFindWidgetProps,
             activeFilters: this.state.activeFilters
         });
         let currentMatch = Math.max(0, Math.min(this.state.currentMatch, matches.length - 1));
-        if (options.modifyIndex) {
+        if (options.modifyIndex && matches.length > 0) {
             currentMatch = options.modifyIndex(matches, currentMatch);
         }
         const selectedMatch = matches[currentMatch];

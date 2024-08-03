@@ -29,7 +29,7 @@ import {
 } from '../notebook-types';
 import { NotebookSerializer } from '../service/notebook-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { NotebookCellModel, NotebookCellModelFactory } from './notebook-cell-model';
+import { NotebookCellModel, NotebookCellModelFactory, NotebookCodeEditorFindMatch } from './notebook-cell-model';
 import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
 import { UndoRedoService } from '@theia/editor/lib/browser/undo-redo-service';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
@@ -513,6 +513,21 @@ export class NotebookModel implements Saveable, Disposable {
             matches.push(...cell.findMatches(options));
         }
         return matches;
+    }
+
+    replaceAll(matches: NotebookEditorFindMatch[], text: string): void {
+        const matchMap = new Map<NotebookCellModel, NotebookCodeEditorFindMatch[]>();
+        for (const match of matches) {
+            if (match instanceof NotebookCodeEditorFindMatch) {
+                if (!matchMap.has(match.cell)) {
+                    matchMap.set(match.cell, []);
+                }
+                matchMap.get(match.cell)?.push(match);
+            }
+        }
+        for (const [cell, cellMatches] of matchMap) {
+            cell.replaceAll(cellMatches, text);
+        }
     }
 
 }

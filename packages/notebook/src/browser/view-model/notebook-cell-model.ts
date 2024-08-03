@@ -400,6 +400,24 @@ export class NotebookCellModel implements NotebookCell, Disposable {
         this.onDidFindMatchesEmitter.fire(editorFindMatches);
         return editorFindMatches;
     }
+
+    replaceAll(matches: NotebookCodeEditorFindMatch[], value: string): void {
+        const editOperations = matches.map(match => ({
+            range: {
+                startColumn: match.range.start.character,
+                startLineNumber: match.range.start.line,
+                endColumn: match.range.end.character,
+                endLineNumber: match.range.end.line
+            },
+            text: value
+        }));
+        this.textModel?.textEditorModel.pushEditOperations(
+            // eslint-disable-next-line no-null/no-null
+            null,
+            editOperations,
+            // eslint-disable-next-line no-null/no-null
+            () => null);
+    }
 }
 
 export interface NotebookCellFindMatches {
@@ -411,11 +429,11 @@ export class NotebookCodeEditorFindMatch implements NotebookEditorFindMatch {
 
     selected = false;
 
-    constructor(readonly cellModel: NotebookCellModel, readonly range: Range, readonly textModel: MonacoEditorModel) {
+    constructor(readonly cell: NotebookCellModel, readonly range: Range, readonly textModel: MonacoEditorModel) {
     }
 
     show(): void {
-        this.cellModel.showMatch(this);
+        this.cell.showMatch(this);
     }
     replace(value: string): void {
         this.textModel.textEditorModel.pushEditOperations(

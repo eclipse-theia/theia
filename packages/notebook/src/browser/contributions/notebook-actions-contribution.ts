@@ -337,17 +337,17 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
             {
                 command: NotebookCommands.CUT_SELECTED_CELL.id,
                 keybinding: 'ctrlcmd+x',
-                when: `!editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`
+                when: `${NOTEBOOK_EDITOR_FOCUSED} && !inputFocus`
             },
             {
                 command: NotebookCommands.COPY_SELECTED_CELL.id,
                 keybinding: 'ctrlcmd+c',
-                when: `!editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`
+                when: `${NOTEBOOK_EDITOR_FOCUSED} && !inputFocus`
             },
             {
                 command: NotebookCommands.PASTE_CELL.id,
                 keybinding: 'ctrlcmd+v',
-                when: `!editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED}`
+                when: `${NOTEBOOK_EDITOR_FOCUSED} && !inputFocus`
             },
             {
                 command: NotebookCommands.NOTEBOOK_FIND.id,

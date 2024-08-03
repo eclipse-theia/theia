@@ -138,7 +138,7 @@ function searchInMarkdown(instance: mark, options: NotebookEditorFindMatchOption
             }
             search = '\\b' + search + '\\b';
         }
-        instance.markRegExp(new RegExp(search), markOptions);
+        instance.markRegExp(new RegExp(search, options.matchCase ? '' : 'i'), markOptions);
     } else {
         instance.mark(options.search, markOptions);
     }
