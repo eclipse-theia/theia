@@ -266,8 +266,8 @@ export class NotebookFindWidget extends React.Component<NotebookFindWidgetProps,
             this.search({
                 jumpToMatch: true,
                 modifyIndex: (matches, index) => {
-                    if (matches.length <= existingMatches.length) {
-                        return (index + 1) % matches.length;
+                    if (matches.length < existingMatches.length) {
+                        return index % matches.length;
                     } else {
                         const diff = matches.length - existingMatches.length;
                         return (index + diff + 1) % matches.length;
