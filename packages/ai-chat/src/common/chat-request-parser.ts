@@ -25,7 +25,9 @@ import { ChatAgentLocation } from './chat-agents';
 import { ChatRequest } from './chat-model';
 import {
     chatAgentLeader,
+    chatFunctionLeader,
     ChatRequestAgentPart,
+    ChatRequestFunctionPart,
     ChatRequestTextPart,
     ChatRequestVariablePart,
     chatVariableLeader,
@@ -33,9 +35,10 @@ import {
     ParsedChatRequest,
     ParsedChatRequestPart,
 } from './chat-parsed-request';
-import { AIVariable, AIVariableService } from '@theia/ai-core';
+import { AIVariable, AIVariableService, FunctionCallRegistry, ToolRequest } from '@theia/ai-core';
 
 const agentReg = /^@([\w_\-\.]+)(?=(\s|$|\b))/i; // An @-agent
+const functionReg = /^~([\w_\-\.]+)(?=(\s|$|\b))/i; // A ~ tool function
 const variableReg = /^#([\w_\-]+)(?::([\w_\-_\/\\.:]+))?(?=(\s|$|\b))/i; // A #-variable with an optional : arg (#file:workspace/path/name.ext)
 // const slashReg = /\/([\w_\-]+)(?=(\s|$|\b))/i; // A / command
 
@@ -48,19 +51,31 @@ export interface ChatRequestParser {
 export class ChatRequestParserImpl {
     constructor(
         @inject(ChatAgentService) private readonly agentService: ChatAgentService,
-        @inject(AIVariableService) private readonly variableService: AIVariableService
+        @inject(AIVariableService) private readonly variableService: AIVariableService,
+        @inject(FunctionCallRegistry) private readonly functionCallRegistry: FunctionCallRegistry
     ) { }
 
     parseChatRequest(request: ChatRequest, location: ChatAgentLocation): ParsedChatRequest {
         const parts: ParsedChatRequestPart[] = [];
         const variables = new Map<string, AIVariable>();
+        const toolRequests = new Map<string, ToolRequest<object>>();
         const message = request.text;
         for (let i = 0; i < message.length; i++) {
             const previousChar = message.charAt(i - 1);
             const char = message.charAt(i);
             let newPart: ParsedChatRequestPart | undefined;
+
             if (previousChar.match(/\s/) || i === 0) {
-                if (char === chatVariableLeader) {
+                if (char === chatFunctionLeader) {
+                    const functionPart = this.tryParseFunction(
+                        message.slice(i),
+                        i
+                    );
+                    newPart = functionPart;
+                    if (functionPart) {
+                        toolRequests.set(functionPart.toolRequest.id, functionPart.toolRequest);
+                    }
+                } else if (char === chatVariableLeader) {
                     const variablePart = this.tryToParseVariable(
                         message.slice(i),
                         i,
@@ -112,7 +127,7 @@ export class ChatRequestParserImpl {
             );
         }
 
-        return { request, parts, variables };
+        return { request, parts, toolRequests, variables };
     }
 
     private tryToParseAgent(
@@ -180,5 +195,22 @@ export class ChatRequestParserImpl {
         const varRange = new OffsetRangeImpl(offset, offset + full.length);
 
         return new ChatRequestVariablePart(varRange, name, variableArg);
+    }
+
+    private tryParseFunction(message: string, offset: number): ChatRequestFunctionPart | undefined {
+        const nextFunctionMatch = message.match(functionReg);
+        if (!nextFunctionMatch) {
+            return;
+        }
+
+        const [full, id] = nextFunctionMatch;
+
+        const maybeToolRequest = this.functionCallRegistry.getFunction(id);
+        if (!maybeToolRequest) {
+            return;
+        }
+
+        const functionRange = new OffsetRangeImpl(offset, offset + full.length);
+        return new ChatRequestFunctionPart(functionRange, maybeToolRequest);
     }
 }

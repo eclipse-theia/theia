@@ -20,12 +20,13 @@ import { ChatRequestParserImpl } from './chat-request-parser';
 import { ChatAgentLocation } from './chat-agents';
 import { ChatRequest } from './chat-model';
 import { expect } from 'chai';
-import { DefaultAIVariableService } from '@theia/ai-core';
+import { DefaultAIVariableService, FunctionCallRegistry, FunctionCallRegistryImpl } from '@theia/ai-core';
 
 describe('ChatRequestParserImpl', () => {
     const chatAgentService = sinon.createStubInstance(ChatAgentServiceImpl);
     const variableService = sinon.createStubInstance(DefaultAIVariableService);
-    const parser = new ChatRequestParserImpl(chatAgentService, variableService);
+    const functionCallRegistry: FunctionCallRegistry = sinon.createStubInstance(FunctionCallRegistryImpl);
+    const parser = new ChatRequestParserImpl(chatAgentService, variableService, functionCallRegistry);
 
     it('parses simple text', () => {
         const req: ChatRequest = {

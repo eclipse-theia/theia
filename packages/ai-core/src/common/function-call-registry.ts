@@ -26,6 +26,8 @@ export const FunctionCallRegistry = Symbol('FunctionCallRegistry');
 export interface FunctionCallRegistry {
     registerFunction(tool: ToolRequest<object>): void;
 
+    getFunction(toolId: string): ToolRequest<object> | undefined;
+
     getFunctions(...toolIds: string[]): ToolRequest<object>[];
 }
 
@@ -56,6 +58,10 @@ export class FunctionCallRegistryImpl implements FunctionCallRegistry {
         } else {
             this.functions.set(tool.id, tool);
         }
+    }
+
+    getFunction(toolId: string): ToolRequest<object> | undefined {
+        return this.functions.get(toolId);
     }
 
     getFunctions(...toolIds: string[]): ToolRequest<object>[] {

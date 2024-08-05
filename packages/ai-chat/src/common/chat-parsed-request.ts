@@ -20,12 +20,13 @@
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatParserTypes.ts
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/editor/common/core/offsetRange.ts
 
-import { AIVariable, ResolvedAIVariable } from '@theia/ai-core';
+import { AIVariable, ResolvedAIVariable, ToolRequest } from '@theia/ai-core';
 import { ChatAgentData } from './chat-agents';
 import { ChatRequest } from './chat-model';
 
 export const chatVariableLeader = '#';
 export const chatAgentLeader = '@';
+export const chatFunctionLeader = '~';
 export const chatSubcommandLeader = '/';
 
 /**********************
@@ -47,6 +48,7 @@ export class OffsetRangeImpl implements OffsetRange {
 export interface ParsedChatRequest {
     readonly request: ChatRequest;
     readonly parts: ParsedChatRequestPart[];
+    readonly toolRequests: Map<string, ToolRequest<object>>;
     readonly variables: Map<string, AIVariable>;
 }
 
@@ -96,6 +98,34 @@ export class ChatRequestVariablePart implements ChatRequestBasePart {
 
     get resolution(): ResolvedAIVariable | undefined {
         return this._resolution;
+    }
+}
+
+export class ChatRequestFunctionPart implements ChatRequestBasePart {
+    readonly kind: 'function';
+    constructor(readonly range: OffsetRange, readonly toolRequest: ToolRequest<object>) { }
+
+    get text(): string {
+        return `${chatFunctionLeader}${this.toolRequest.id}`;
+    }
+
+    get promptText(): string {
+        const parameters = this.toolRequest.parameters;
+        let paramsText = '';
+        // parameters are supposed to be as a JSON schema. Thus, derive the parameters from its properties definition
+        if (parameters) {
+            const properties = parameters.properties;
+            paramsText = Object.keys(properties)
+                .map(key => {
+                    const param = properties[key];
+                    return `${key}: ${param.type}`;
+                })
+                .join(', ');
+        }
+        const descriptionText = this.toolRequest.description
+            ? `: ${this.toolRequest.description}`
+            : '';
+        return `You can call function: ${this.toolRequest.id}(${paramsText})${descriptionText}`;
     }
 }
 

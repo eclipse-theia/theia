@@ -13,13 +13,14 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { FrontendApplication, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import * as monaco from '@theia/monaco-editor-core';
-import { MaybePromise } from '@theia/core';
+import { ContributionProvider, MaybePromise } from '@theia/core';
 import { ProviderResult } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
 import { ChatAgentService } from '@theia/ai-chat';
 import { AIVariableService } from '@theia/ai-core/lib/common';
+import { ToolProvider } from '@theia/ai-core/lib/common/function-call-registry';
 
 export const CHAT_VIEW_LANGUAGE_ID = 'ai-chat-view-language';
 export const CHAT_VIEW_LANGUAGE_EXTENSION = 'aichatviewlanguage';
@@ -33,17 +34,25 @@ export class ChatViewLanguageContribution implements FrontendApplicationContribu
     @inject(AIVariableService)
     protected readonly variableService: AIVariableService;
 
+    @inject(ContributionProvider)
+    @named(ToolProvider)
+    private providers: ContributionProvider<ToolProvider>;
+
     onStart(_app: FrontendApplication): MaybePromise<void> {
         console.log('ChatViewLanguageContribution started');
         monaco.languages.register({ id: CHAT_VIEW_LANGUAGE_ID, extensions: [CHAT_VIEW_LANGUAGE_EXTENSION] });
 
         monaco.languages.registerCompletionItemProvider(CHAT_VIEW_LANGUAGE_ID, {
             triggerCharacters: ['@'],
-            provideCompletionItems: (model, position, context, token): ProviderResult<monaco.languages.CompletionList> => this.provideAgentCompletions(model, position),
+            provideCompletionItems: (model, position, _context, _token): ProviderResult<monaco.languages.CompletionList> => this.provideAgentCompletions(model, position),
         });
         monaco.languages.registerCompletionItemProvider(CHAT_VIEW_LANGUAGE_ID, {
             triggerCharacters: ['#'],
-            provideCompletionItems: (model, position, context, token): ProviderResult<monaco.languages.CompletionList> => this.provideVariableCompletions(model, position),
+            provideCompletionItems: (model, position, _context, _token): ProviderResult<monaco.languages.CompletionList> => this.provideVariableCompletions(model, position),
+        });
+        monaco.languages.registerCompletionItemProvider(CHAT_VIEW_LANGUAGE_ID, {
+            triggerCharacters: ['~'],
+            provideCompletionItems: (model, position, _context, _token): ProviderResult<monaco.languages.CompletionList> => this.provideToolCompletions(model, position),
         });
     }
 
@@ -114,6 +123,19 @@ export class ChatViewLanguageContribution implements FrontendApplicationContribu
             variable => variable.name,
             variable => variable.name,
             variable => variable.description
+        );
+    }
+
+    provideToolCompletions(model: monaco.editor.ITextModel, position: monaco.Position): ProviderResult<monaco.languages.CompletionList> {
+        return this.getSuggestions(
+            model,
+            position,
+            '~',
+            this.providers.getContributions().map(provider => provider.getTool()),
+            monaco.languages.CompletionItemKind.Function,
+            tool => tool.id,
+            tool => tool.name,
+            tool => tool.description ?? ''
         );
     }
 }

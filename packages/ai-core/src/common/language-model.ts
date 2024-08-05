@@ -35,7 +35,7 @@ export const isLanguageModelRequestMessage = (obj: unknown): obj is LanguageMode
 export interface ToolRequest<T extends object> {
     id: string;
     name: string;
-    parameters?: { [key: string]: unknown };
+    parameters?: { type?: 'object', properties: Record<string, { type: string, [key: string]: unknown }> };
     description?: string;
     handler: (arg_string: string) => Promise<unknown>;
 }
