@@ -100,21 +100,14 @@ function MarkdownCell({
                 }
                 return searchInMarkdown(instance, options);
             };
-            const selectListener = cell.onDidSelectFindMatch(match => {
-                markdownContent.scrollIntoView({
-                    behavior: 'instant',
-                    block: 'center',
-                });
-            });
             return () => {
-                selectListener.dispose();
                 cell.onMarkdownFind = undefined;
                 instance.unmark();
             };
         }
     }, [editMode, cell.source]);
 
-    let markdownContent: HTMLElement = React.useMemo(() => {
+    let markdownContent: HTMLElement[] = React.useMemo(() => {
         const markdownString = new MarkdownStringImpl(cell.source, { supportHtml: true, isTrusted: true });
         const rendered = markdownRenderer.render(markdownString).element;
         const children: HTMLElement[] = [];
