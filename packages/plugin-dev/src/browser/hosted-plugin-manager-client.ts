@@ -249,7 +249,7 @@ export class HostedPluginManagerClient {
                     if (this.isDebug) {
                         this.pluginInstanceURL = await this.hostedPluginServer.runDebugHostedPluginInstance(this.pluginLocation!.toString(), {
                             debugMode: this.hostedPluginPreferences['hosted-plugin.debugMode'],
-                            debugPort: [... this.hostedPluginPreferences['hosted-plugin.debugPorts']]
+                            debugPort: [...this.hostedPluginPreferences['hosted-plugin.debugPorts']]
                         });
                         await this.startDebugSessionManager();
                     } else {
@@ -374,7 +374,7 @@ export class HostedPluginManagerClient {
             this.pluginLocation = new URI((!config.pluginLocation.startsWith('/') ? '/' : '') + config.pluginLocation.replace(/\\/g, '/')).withScheme('file');
         }
         if (config.debugPort === undefined) {
-            config.debugPort = [... this.hostedPluginPreferences['hosted-plugin.debugPorts']];
+            config.debugPort = [...this.hostedPluginPreferences['hosted-plugin.debugPorts']];
         }
         return config;
     }

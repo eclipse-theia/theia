@@ -155,7 +155,7 @@ export class HostedPluginProcess implements ServerPluginRunner {
         }
         this.terminatingPluginServer = false;
         this.childProcess = this.fork({
-            serverName: serverName !== undefined ? serverName : 'hosted-plugin',
+            serverName: serverName ?? 'hosted-plugin',
             logger: this.logger,
             args: []
         });
