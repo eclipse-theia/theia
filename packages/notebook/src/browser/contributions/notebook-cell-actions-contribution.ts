@@ -370,18 +370,25 @@ export class NotebookCellActionContribution implements MenuContribution, Command
                     return;
                 }
                 const language = await this.languageQuickPickService.pickEditorLanguage(selectedCell.language);
-                if (!language?.value || language.value === 'autoDetect') {
+                if (!language?.value || language.value === 'autoDetect' || language.value.id === selectedCell.language) {
                     return;
                 }
-                if (language.value.id === 'markdown') {
-                    selectedCell.language = 'markdown';
-                    changeCellType(activeNotebook, selectedCell, CellKind.Markup);
+                const isMarkdownCell = selectedCell.cellKind === CellKind.Markup;
+                const isMarkdownLanguage = language.value.id === 'markdown';
+                if (isMarkdownLanguage) {
+                    if (!isMarkdownCell) {
+                        changeCellType(activeNotebook, selectedCell, CellKind.Markup, language.value.id);
+                    }
                 } else {
-                    this.notebookEditorWidgetService.focusedEditor?.model?.applyEdits([{
-                        editType: CellEditType.CellLanguage,
-                        index: activeNotebook.cells.indexOf(selectedCell),
-                        language: language.value.id
-                    }], true);
+                    if (isMarkdownCell) {
+                        changeCellType(activeNotebook, selectedCell, CellKind.Code, language.value.id);
+                    } else {
+                        this.notebookEditorWidgetService.focusedEditor?.model?.applyEdits([{
+                            editType: CellEditType.CellLanguage,
+                            index: activeNotebook.cells.indexOf(selectedCell),
+                            language: language.value.id
+                        }], true);
+                    }
                 }
             }
         });

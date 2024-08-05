@@ -79,14 +79,14 @@
 }
 
 /* Markdown cell edit mode */
-.theia-notebook-cell-content:has(> .theia-notebook-cell-editor) {
+.theia-notebook-cell-content:has(.theia-notebook-markdown-editor-container>.theia-notebook-cell-editor) {
   margin-left: 37px;
   margin-right: var(--theia-notebook-cell-editor-margin-right);
   outline: 1px solid var(--theia-notebook-cellBorderColor);
 }
 
 /* Markdown cell edit mode focused */
-.theia-notebook-cell.focused .theia-notebook-cell-content:has(> .theia-notebook-cell-editor) {
+.theia-notebook-cell.focused .theia-notebook-cell-content:has(.theia-notebook-markdown-editor-container>.theia-notebook-cell-editor) {
   outline-color: var(--theia-notebook-focusedEditorBorder);
 }
 

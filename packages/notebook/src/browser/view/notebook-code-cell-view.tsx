@@ -150,7 +150,7 @@ export interface NotebookCodeCellStatusProps {
     notebook: NotebookModel;
     cell: NotebookCellModel;
     commandRegistry: CommandRegistry;
-    executionStateService: NotebookExecutionStateService;
+    executionStateService?: NotebookExecutionStateService;
     onClick: () => void;
 }
 
@@ -171,22 +171,24 @@ export class NotebookCodeCellStatus extends React.Component<NotebookCodeCellStat
         };
 
         let currentInterval: NodeJS.Timeout | undefined;
-        this.toDispose.push(props.executionStateService.onDidChangeExecution(event => {
-            if (event.affectsCell(this.props.cell.uri)) {
-                this.setState({ currentExecution: event.changed, executionTime: 0 });
-                clearInterval(currentInterval);
-                if (event.changed?.state === NotebookCellExecutionState.Executing) {
-                    const startTime = Date.now();
-                    // The resolution of the time display is only a single digit after the decimal point.
-                    // Therefore, we only need to update the display every 100ms.
-                    currentInterval = setInterval(() => {
-                        this.setState({
-                            executionTime: Date.now() - startTime
-                        });
-                    }, 100);
+        if (props.executionStateService) {
+            this.toDispose.push(props.executionStateService.onDidChangeExecution(event => {
+                if (event.affectsCell(this.props.cell.uri)) {
+                    this.setState({ currentExecution: event.changed, executionTime: 0 });
+                    clearInterval(currentInterval);
+                    if (event.changed?.state === NotebookCellExecutionState.Executing) {
+                        const startTime = Date.now();
+                        // The resolution of the time display is only a single digit after the decimal point.
+                        // Therefore, we only need to update the display every 100ms.
+                        currentInterval = setInterval(() => {
+                            this.setState({
+                                executionTime: Date.now() - startTime
+                            });
+                        }, 100);
+                    }
                 }
-            }
-        }));
+            }));
+        }
 
         this.toDispose.push(props.cell.onDidChangeLanguage(() => {
             this.forceUpdate();
@@ -200,7 +202,7 @@ export class NotebookCodeCellStatus extends React.Component<NotebookCodeCellStat
     override render(): React.ReactNode {
         return <div className='notebook-cell-status' onClick={() => this.props.onClick()}>
             <div className='notebook-cell-status-left'>
-                {this.renderExecutionState()}
+                {this.props.executionStateService && this.renderExecutionState()}
             </div>
             <div className='notebook-cell-status-right'>
                 <span className='notebook-cell-language-label' onClick={() => {
