@@ -85,9 +85,9 @@ export class HostedPluginSupport {
         }
     }
 
-    runPluginServer(): void {
+    runPluginServer(serverName?: string): void {
         if (!this.isPluginProcessRunning) {
-            this.hostedPluginProcess.runPluginServer();
+            this.hostedPluginProcess.runPluginServer(serverName);
             this.isPluginProcessRunning = true;
         }
     }

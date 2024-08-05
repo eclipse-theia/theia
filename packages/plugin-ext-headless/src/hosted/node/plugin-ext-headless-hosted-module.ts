@@ -21,12 +21,13 @@ import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { ExtPluginApiProvider, HostedPluginServer, PluginHostEnvironmentVariable, PluginScanner } from '@theia/plugin-ext';
 import { HostedPluginSupport } from '@theia/plugin-ext/lib/hosted/node/hosted-plugin';
 import { HostedPluginProcess, HostedPluginProcessConfiguration } from '@theia/plugin-ext/lib/hosted/node/hosted-plugin-process';
-import { BackendPluginHostableFilter, HostedPluginServerImpl } from '@theia/plugin-ext/lib/hosted/node/plugin-service';
+import { BackendPluginHostableFilter } from '@theia/plugin-ext/lib/hosted/node/plugin-service';
 import { MaybePromise } from '@theia/core';
 import { HeadlessPluginContainerModule } from '../../common/headless-plugin-container';
 import { HeadlessHostedPluginSupport, isHeadlessPlugin } from './headless-hosted-plugin';
 import { TheiaHeadlessPluginScanner } from './scanners/scanner-theia-headless';
 import { SupportedHeadlessActivationEvents } from '../../common/headless-plugin-protocol';
+import { HeadlessHostedPluginServerImpl } from './headless-plugin-service';
 
 export function bindCommonHostedBackend(bind: interfaces.Bind): void {
     bind(HostedPluginProcess).toSelf().inSingletonScope();
@@ -36,8 +37,8 @@ export function bindCommonHostedBackend(bind: interfaces.Bind): void {
     bindContributionProvider(bind, PluginHostEnvironmentVariable);
     bindContributionProvider(bind, SupportedHeadlessActivationEvents);
 
-    bind(HostedPluginServerImpl).toSelf().inSingletonScope();
-    bind(HostedPluginServer).toService(HostedPluginServerImpl);
+    bind(HeadlessHostedPluginServerImpl).toSelf().inSingletonScope();
+    bind(HostedPluginServer).toService(HeadlessHostedPluginServerImpl);
     bind(HeadlessHostedPluginSupport).toSelf().inSingletonScope();
     bind(BackendPluginHostableFilter).toConstantValue(isHeadlessPlugin);
 

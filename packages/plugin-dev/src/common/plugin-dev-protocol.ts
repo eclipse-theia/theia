@@ -38,8 +38,13 @@ export interface PluginDevServer extends RpcServer<PluginDevClient> {
 export interface PluginDevClient {
 }
 
+export interface PluginDebugPort {
+    serverName: string,
+    debugPort: number,
+}
+
 export interface PluginDebugConfiguration {
     debugMode?: string;
     pluginLocation?: string;
-    debugPort?: string;
+    debugPort?: string | PluginDebugPort[]
 }
