@@ -55,11 +55,6 @@ export interface DidChangeBreakpointsEvent {
     uri: URI
 }
 
-export interface DidFocusStackFrameEvent {
-    session: DebugSession;
-    frame: DebugStackFrame | undefined;
-}
-
 export interface DebugSessionCustomEvent {
     readonly body?: any // eslint-disable-line @typescript-eslint/no-explicit-any
     readonly event: string
@@ -94,8 +89,11 @@ export class DebugSessionManager {
     protected readonly onDidReceiveDebugSessionCustomEventEmitter = new Emitter<DebugSessionCustomEvent>();
     readonly onDidReceiveDebugSessionCustomEvent: Event<DebugSessionCustomEvent> = this.onDidReceiveDebugSessionCustomEventEmitter.event;
 
-    protected readonly onDidFocusStackFrameEmitter = new Emitter<DidFocusStackFrameEvent>();
+    protected readonly onDidFocusStackFrameEmitter = new Emitter<DebugStackFrame | undefined>();
     readonly onDidFocusStackFrame = this.onDidFocusStackFrameEmitter.event;
+
+    protected readonly onDidFocusThreadEmitter = new Emitter<DebugThread | undefined>();
+    readonly onDidFocusThread = this.onDidFocusThreadEmitter.event;
 
     protected readonly onDidChangeBreakpointsEmitter = new Emitter<DidChangeBreakpointsEvent>();
     readonly onDidChangeBreakpoints = this.onDidChangeBreakpointsEmitter.event;
@@ -388,7 +386,7 @@ export class DebugSessionManager {
         const parentSession = options.configuration.parentSessionId ? this._sessions.get(options.configuration.parentSessionId) : undefined;
         const contrib = this.sessionContributionRegistry.get(options.configuration.type);
         const sessionFactory = contrib ? contrib.debugSessionFactory() : this.debugSessionFactory;
-        const session = sessionFactory.get(sessionId, options, parentSession);
+        const session = sessionFactory.get(this, sessionId, options, parentSession);
         this._sessions.set(sessionId, session);
 
         this.debugTypeKey.set(session.configuration.type);
@@ -518,7 +516,10 @@ export class DebugSessionManager {
                 }
                 this.fireDidChange(current);
             }));
-            this.disposeOnCurrentSessionChanged.push(current.onDidFocusStackFrame(frame => this.onDidFocusStackFrameEmitter.fire({ session: current, frame })));
+            this.disposeOnCurrentSessionChanged.push(current.onDidFocusStackFrame(frame => this.onDidFocusStackFrameEmitter.fire(frame)));
+            this.disposeOnCurrentSessionChanged.push(current.onDidFocusThread(thread => this.onDidFocusThreadEmitter.fire(thread)));
+            const { currentThread } = current;
+            this.onDidFocusThreadEmitter.fire(currentThread);
         }
         this.updateBreakpoints(previous, current);
         this.open();

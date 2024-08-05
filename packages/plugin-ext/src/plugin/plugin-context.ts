@@ -1101,13 +1101,11 @@ export function createAPIFactory(
             get onDidChangeBreakpoints(): theia.Event<theia.BreakpointsChangeEvent> {
                 return debugExt.onDidChangeBreakpoints;
             },
-            /** @stubbed */
             get activeStackItem(): DebugThread | DebugStackFrame | undefined {
-                return undefined;
+                return debugExt.activeStackItem;
             },
-            /** @stubbed */
             get onDidChangeActiveStackItem(): theia.Event<DebugThread | DebugStackFrame | undefined> {
-                return Event.None;
+                return debugExt.onDidChangeActiveStackItem;
             },
             registerDebugAdapterDescriptorFactory(debugType: string, factory: theia.DebugAdapterDescriptorFactory): Disposable {
                 return debugExt.registerDebugAdapterDescriptorFactory(debugType, factory);

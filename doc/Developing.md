@@ -512,11 +512,10 @@ etc.) by opening `packages/<package name>/coverage/index.html`.
  - Install `yarn`: `scoop install yarn`.
  - If you need to install `windows-build-tools`, see [`Installing Windows Build Tools`](#installing-windows-build-tools).
  - If you run into problems with installing the required build tools, the `node-gyp` documentation offers a useful [guide](https://github.com/nodejs/node-gyp#on-windows) how to install the dependencies manually. The versions required for building Theia are:
-   - Python 3.6 or higher
+   - Python 3.6 to 3.11
    - Visual Studio [build tools](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022) 17
- - If you have multiple versions of either python or Visual Studio installed or if the tool is not found, you may adjust the used version via the npm config:
-   - `npm config set python /path/to/executable/python --global`
-   - `npm config set msvs_version 2017 --global`
+ - If you have multiple versions of either python or Visual Studio installed, or if the tool is not found, you may adjust the version used as described 
+ [here](https://github.com/nodejs/node-gyp?tab=readme-ov-file#configuring-python-dependency)
 
 Clone, build and run Theia.
 Using Git Bash as administrator:

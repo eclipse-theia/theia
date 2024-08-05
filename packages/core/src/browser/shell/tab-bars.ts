@@ -619,7 +619,7 @@ export class TabBarRenderer extends TabBar.Renderer {
                         cssClasses: ['extended-tab-preview'],
                         visualPreview: this.corePreferences?.['window.tabbar.enhancedPreview'] === 'visual' ? width => this.renderVisualPreview(width, title) : undefined
                     });
-                } else {
+                } else if (title.caption) {
                     this.hoverService.requestHover({
                         content: title.caption,
                         target: event.currentTarget,

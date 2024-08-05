@@ -22,7 +22,8 @@ import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import {
     NOTEBOOK_CELL_MARKDOWN_EDIT_MODE, NOTEBOOK_CELL_TYPE,
     NotebookContextKeys, NOTEBOOK_CELL_EXECUTING, NOTEBOOK_EDITOR_FOCUSED,
-    NOTEBOOK_CELL_FOCUSED
+    NOTEBOOK_CELL_FOCUSED,
+    NOTEBOOK_CELL_LIST_FOCUSED
 } from './notebook-context-keys';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { NotebookExecutionService } from '../service/notebook-execution-service';
@@ -365,15 +366,22 @@ export class NotebookCellActionContribution implements MenuContribution, Command
             execute: async (notebook?: NotebookModel, cell?: NotebookCellModel) => {
                 const selectedCell = cell ?? this.notebookEditorWidgetService.focusedEditor?.model?.selectedCell;
                 const activeNotebook = notebook ?? this.notebookEditorWidgetService.focusedEditor?.model;
-                if (selectedCell && activeNotebook) {
-                    const language = await this.languageQuickPickService.pickEditorLanguage(selectedCell.language);
-                    if (language?.value && language.value !== 'autoDetect') {
-                        this.notebookEditorWidgetService.focusedEditor?.model?.applyEdits([{
-                            editType: CellEditType.CellLanguage,
-                            index: activeNotebook.cells.indexOf(selectedCell),
-                            language: language.value.id
-                        }], true);
-                    }
+                if (!selectedCell || !activeNotebook) {
+                    return;
+                }
+                const language = await this.languageQuickPickService.pickEditorLanguage(selectedCell.language);
+                if (!language?.value || language.value === 'autoDetect') {
+                    return;
+                }
+                if (language.value.id === 'markdown') {
+                    selectedCell.language = 'markdown';
+                    changeCellType(activeNotebook, selectedCell, CellKind.Markup);
+                } else {
+                    this.notebookEditorWidgetService.focusedEditor?.model?.applyEdits([{
+                        editType: CellEditType.CellLanguage,
+                        index: activeNotebook.cells.indexOf(selectedCell),
+                        language: language.value.id
+                    }], true);
                 }
             }
         });
@@ -411,12 +419,12 @@ export class NotebookCellActionContribution implements MenuContribution, Command
             {
                 command: NotebookCellCommands.EDIT_COMMAND.id,
                 keybinding: 'Enter',
-                when: `!editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`,
+                when: `!editorTextFocus && !inputFocus && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`,
             },
             {
                 command: NotebookCellCommands.STOP_EDIT_COMMAND.id,
                 keybinding: KeyCode.createKeyCode({ first: Key.ENTER, modifiers: [KeyModifier.Alt] }).toString(),
-                when: `editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED}`,
+                when: `editorTextFocus && !inputFocus && ${NOTEBOOK_EDITOR_FOCUSED}`,
             },
             {
                 command: NotebookCellCommands.STOP_EDIT_COMMAND.id,
@@ -426,12 +434,12 @@ export class NotebookCellActionContribution implements MenuContribution, Command
             {
                 command: NotebookCellCommands.EXECUTE_SINGLE_CELL_COMMAND.id,
                 keybinding: KeyCode.createKeyCode({ first: Key.ENTER, modifiers: [KeyModifier.CtrlCmd] }).toString(),
-                when: `${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED} && ${NOTEBOOK_CELL_TYPE} == 'code'`,
+                when: `${NOTEBOOK_CELL_LIST_FOCUSED} && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED} && ${NOTEBOOK_CELL_TYPE} == 'code'`,
             },
             {
                 command: NotebookCellCommands.EXECUTE_SINGLE_CELL_AND_FOCUS_NEXT_COMMAND.id,
                 keybinding: KeyCode.createKeyCode({ first: Key.ENTER, modifiers: [KeyModifier.Shift] }).toString(),
-                when: `${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`,
+                when: `${NOTEBOOK_CELL_LIST_FOCUSED} && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`,
             },
             {
                 command: NotebookCellCommands.CLEAR_OUTPUTS_COMMAND.id,

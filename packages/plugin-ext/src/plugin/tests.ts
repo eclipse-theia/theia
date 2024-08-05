@@ -135,21 +135,7 @@ export class TestControllerImpl implements theia.TestController {
     }
 
     createTestRun(request: theia.TestRunRequest, name?: string, persist: boolean = true): theia.TestRun {
-       return this.testRunStarted(request, name || '', persist, true);
-    }
-
-    dispose() {
-        this.proxy.$unregisterTestController(this.id);
-        this.onDispose();
-    }
-
-    protected testRunStarted(request: theia.TestRunRequest, name: string, persist: boolean, isRunning: boolean): TestRun {
-        const existing = this.activeRuns.get(request);
-        if (existing) {
-            return existing;
-        }
-
-        const run = new TestRun(this, this.proxy, name, persist, isRunning, request.preserveFocus);
+        const run = new TestRun(this, this.proxy, name || '', persist, true, request.preserveFocus);
         const endListener = run.onWillFlush(() => {
             // make sure we notify the front end of test item changes before test run state is sent
             this.deltaBuilder.flush();
@@ -160,6 +146,11 @@ export class TestControllerImpl implements theia.TestController {
         });
         this.activeRuns.set(request, run);
         return run;
+    }
+
+    dispose() {
+        this.proxy.$unregisterTestController(this.id);
+        this.onDispose();
     }
 
     runTestsForUI(profileId: string, name: string, includedTests: string[][], excludedTests: string[][], preserveFocus: boolean): void {
@@ -200,8 +191,8 @@ export class TestControllerImpl implements theia.TestController {
             includeTests, excludeTests, profile, false /* don't support continuous run yet */, preserveFocus
         );
 
-        const run = this.testRunStarted(request, name, false, false);
-        profile.runHandler(request, run.token);
+        // we do not cancel test runs via a cancellation token, but instead invoke "cancel" on the test runs
+        profile.runHandler(request, CancellationToken.None);
     }
 
     cancelRun(runId?: string): void {
@@ -235,7 +226,18 @@ function checkTestInstance(item?: theia.TestItem): TestItemImpl | undefined {
     return undefined;
 }
 
-class TestRun implements theia.TestRun {
+export function checkTestRunInstance(item: theia.TestRun): TestRun;
+export function checkTestRunInstance(item?: theia.TestRun): TestRun | undefined;
+export function checkTestRunInstance(item?: theia.TestRun): TestRun | undefined {
+    if (item instanceof TestRun) {
+        return <TestRun>item;
+    } else if (item) {
+        throw new Error('Not a TestRun instance');
+    }
+    return undefined;
+}
+
+export class TestRun implements theia.TestRun {
     private onDidEndEmitter = new Emitter<void>();
     onDidEnd: Event<void> = this.onDidEndEmitter.event;
     private onWillFlushEmitter = new Emitter<void>();
@@ -251,10 +253,9 @@ class TestRun implements theia.TestRun {
     }, 200);
     private ended: boolean;
     private tokenSource: CancellationTokenSource;
-    readonly token: CancellationToken;
 
     constructor(
-        private readonly controller: TestControllerImpl,
+        readonly controller: TestControllerImpl,
         private readonly proxy: TestingMain,
         readonly name: string,
         readonly isPersisted: boolean,
@@ -263,10 +264,14 @@ class TestRun implements theia.TestRun {
         this.id = generateUuid();
 
         this.tokenSource = new CancellationTokenSource();
-        this.token = this.tokenSource.token;
 
         this.proxy.$notifyTestRunCreated(this.controller.id, { id: this.id, name: this.name, isRunning }, preserveFocus);
     }
+
+    get token(): CancellationToken {
+        return this.tokenSource.token;
+    }
+
     enqueued(test: theia.TestItem): void {
         this.updateTestState(test, { itemPath: checkTestInstance(test).path, state: TestExecutionState.Queued });
     }
@@ -509,7 +514,7 @@ export class TestRunProfile implements theia.TestRunProfile {
     }
 
     doSetDefault(isDefault: boolean): boolean {
-       if (this._isDefault !== isDefault) {
+        if (this._isDefault !== isDefault) {
             this._isDefault = isDefault;
             this.onDidChangeDefaultEmitter.fire(isDefault);
             return true;

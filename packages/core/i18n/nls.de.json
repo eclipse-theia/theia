@@ -393,6 +393,10 @@
       "webviewTrace": "Steuert die Kommunikationsverfolgung mit Webviews.",
       "webviewWarnIfUnsecure": "Warnt Benutzer, dass Webviews derzeit unsicher eingesetzt werden."
     },
+    "preferences": {
+      "hostedPlugin": "Gehostetes Plugin",
+      "toolbar": "Symbolleiste"
+    },
     "preview": {
       "openByDefault": "Öffnen Sie standardmäßig die Vorschau anstelle des Editors."
     },

@@ -3031,12 +3031,12 @@ export class FunctionBreakpoint extends Breakpoint {
     }
 }
 
-export class DebugThread {
-    private constructor(readonly session: theia.DebugSession, readonly threadId: number) { }
+export class DebugThread implements theia.DebugThread {
+    constructor(readonly session: theia.DebugSession, readonly threadId: number) { }
 }
 
-export class DebugStackFrame {
-    private constructor(readonly session: theia.DebugSession, readonly threadId: number, readonly frameId: number) { }
+export class DebugStackFrame implements theia.DebugStackFrame {
+      constructor(readonly session: theia.DebugSession, readonly threadId: number, readonly frameId: number) { }
 }
 
 @es5ClassCompat

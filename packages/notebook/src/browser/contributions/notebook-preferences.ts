@@ -19,7 +19,8 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { nls } from '@theia/core';
-import { PreferenceSchema } from '@theia/core/lib/browser';
+import { interfaces } from '@theia/core/shared/inversify';
+import { PreferenceContribution, PreferenceSchema } from '@theia/core/lib/browser';
 
 export namespace NotebookPreferences {
     export const NOTEBOOK_LINE_NUMBERS = 'notebook.lineNumbers';
@@ -81,3 +82,11 @@ export const notebookPreferenceSchema: PreferenceSchema = {
 
     }
 };
+
+export const NotebookPreferenceContribution = Symbol('NotebookPreferenceContribution');
+
+export function bindNotebookPreferences(bind: interfaces.Bind): void {
+    // We don't need a NotebookPreferenceConfiguration class, so there's no preference proxy to bind
+    bind(NotebookPreferenceContribution).toConstantValue({ schema: notebookPreferenceSchema });
+    bind(PreferenceContribution).toService(NotebookPreferenceContribution);
+}

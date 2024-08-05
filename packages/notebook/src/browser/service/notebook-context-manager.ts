@@ -21,7 +21,7 @@ import { NotebookKernelService } from './notebook-kernel-service';
 import {
     NOTEBOOK_CELL_EDITABLE,
     NOTEBOOK_CELL_EXECUTING, NOTEBOOK_CELL_EXECUTION_STATE,
-    NOTEBOOK_CELL_FOCUSED, NOTEBOOK_CELL_MARKDOWN_EDIT_MODE,
+    NOTEBOOK_CELL_FOCUSED, NOTEBOOK_CELL_LIST_FOCUSED, NOTEBOOK_CELL_MARKDOWN_EDIT_MODE,
     NOTEBOOK_CELL_TYPE, NOTEBOOK_HAS_OUTPUTS, NOTEBOOK_KERNEL, NOTEBOOK_KERNEL_SELECTED,
     NOTEBOOK_OUTPUT_INPUT_FOCUSED,
     NOTEBOOK_VIEW_TYPE
@@ -85,7 +85,7 @@ export class NotebookContextManager {
 
         this.scopedStore.setContext(NOTEBOOK_HAS_OUTPUTS, !!widget.model?.cells.find(cell => cell.outputs.length > 0));
 
-        // Cell Selection realted keys
+        // Cell Selection related keys
         this.scopedStore.setContext(NOTEBOOK_CELL_FOCUSED, !!widget.model?.selectedCell);
         widget.model?.onDidChangeSelectedCell(e => {
             this.selectedCellChanged(e.cell);
@@ -144,8 +144,12 @@ export class NotebookContextManager {
         return this.contextKeyService.createOverlay(Object.entries(this.cellContexts.get(cellHandle) ?? {}));
     }
 
-    onDidEditorTextFocus(focus: boolean): void {
-        this.scopedStore.setContext('inputFocus', focus);
+    changeCellFocus(focus: boolean): void {
+        this.scopedStore.setContext(NOTEBOOK_CELL_FOCUSED, focus);
+    }
+
+    changeCellListFocus(focus: boolean): void {
+        this.scopedStore.setContext(NOTEBOOK_CELL_LIST_FOCUSED, focus);
     }
 
     createContextKeyChangedEvent(affectedKeys: string[]): ContextKeyChangeEvent {

@@ -12087,6 +12087,12 @@ export module '@theia/plugin' {
          * When true, the debug viewlet will not be automatically revealed for this session.
          */
         suppressDebugView?: boolean;
+        /**
+         * Signals to the editor that the debug session was started from a test run
+         * request. This is used to link the lifecycle of the debug session and
+         * test run in UI actions.
+         */
+        testRun?: TestRun;
     }
 
     /**
@@ -12548,13 +12554,11 @@ export module '@theia/plugin' {
          * thread or stack is focused. A thread can be focused any time there is
          * an active debug session, while a stack frame can only be focused when
          * a session is paused and the call stack has been retrieved.
-         * @stubbed
          */
         export const activeStackItem: DebugThread | DebugStackFrame | undefined;
 
         /**
          * An event which fires when the {@link debug.activeStackItem} has changed.
-         * @stubbed
          */
         export const onDidChangeActiveStackItem: Event<DebugThread | DebugStackFrame | undefined>;
 

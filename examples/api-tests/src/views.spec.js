@@ -14,6 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+const { timeout } = require('@theia/core/lib/common/promise-util');
+
 // @ts-check
 describe('Views', function () {
     this.timeout(7500);
@@ -52,24 +54,26 @@ describe('Views', function () {
             if (view) {
                 assert.notEqual(shell.getAreaFor(view), contribution.defaultViewOptions.area);
                 assert.isFalse(view.isVisible);
-                assert.notEqual(view, shell.activeWidget);
+                assert.isTrue(view !== shell.activeWidget, `${contribution.viewLabel} !== shell.activeWidget`);
             }
 
             view = await contribution.toggleView();
-            assert.notEqual(view, undefined);
+            // we can't use "equals" here because Mocha chokes on the diff for certain widgets
+            assert.isTrue(view !== undefined, `${contribution.viewLabel}  !== undefined`);
             assert.equal(shell.getAreaFor(view), contribution.defaultViewOptions.area);
             assert.isDefined(shell.getTabBarFor(view));
             // @ts-ignore
             assert.equal(shell.getAreaFor(shell.getTabBarFor(view)), contribution.defaultViewOptions.area);
             assert.isTrue(view.isVisible);
-            assert.equal(view, shell.activeWidget);
+            assert.isTrue(view === shell.activeWidget, `${contribution.viewLabel}  === shell.activeWidget`);
 
             view = await contribution.toggleView();
+            await timeout(0); // seems that the "await" is not enought to guarantee that the panel is hidden
             assert.notEqual(view, undefined);
             assert.equal(shell.getAreaFor(view), contribution.defaultViewOptions.area);
             assert.isDefined(shell.getTabBarFor(view));
             assert.isFalse(view.isVisible);
-            assert.notEqual(view, shell.activeWidget);
+            assert.isTrue(view !== shell.activeWidget, `${contribution.viewLabel}  !== shell.activeWidget`);
         });
     }
 

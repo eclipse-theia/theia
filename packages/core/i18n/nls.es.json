@@ -393,6 +393,10 @@
       "webviewTrace": "Controla el rastreo de la comunicación con los webviews.",
       "webviewWarnIfUnsecure": "Advierte a los usuarios de que las vistas web se despliegan actualmente de forma insegura."
     },
+    "preferences": {
+      "hostedPlugin": "Plugin alojado",
+      "toolbar": "Barra de herramientas"
+    },
     "preview": {
       "openByDefault": "Abrir la vista previa en lugar del editor por defecto."
     },

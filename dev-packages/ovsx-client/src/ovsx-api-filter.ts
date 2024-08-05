@@ -69,9 +69,10 @@ export class OVSXApiFilterImpl implements OVSXApiFilter {
         let offset = 0;
         let loop = true;
         while (loop) {
-            const queryOptions = {
+            const queryOptions: VSXQueryOptions = {
                 ...query,
-                offset
+                offset,
+                size: 5 // there is a great chance that the newest version will work
             };
             const results = await this.client.query(queryOptions);
             const compatibleExtension = this.getLatestCompatibleExtension(results.extensions);
@@ -90,7 +91,7 @@ export class OVSXApiFilterImpl implements OVSXApiFilter {
         if (extensions.length === 0) {
             return;
         } else if (this.isBuiltinNamespace(extensions[0].namespace.toLowerCase())) {
-            return extensions.find(extension => this.versionGreaterThanOrEqualTo(extension.version, this.supportedApiVersion));
+            return extensions.find(extension => this.versionGreaterThanOrEqualTo(this.supportedApiVersion, extension.version));
         } else {
             return extensions.find(extension => this.supportedVscodeApiSatisfies(extension.engines?.vscode ?? '*'));
         }
@@ -108,7 +109,7 @@ export class OVSXApiFilterImpl implements OVSXApiFilter {
             }
         }
         if (this.isBuiltinNamespace(searchEntry.namespace)) {
-            return getLatestCompatibleVersion(allVersions => this.versionGreaterThanOrEqualTo(allVersions.version, this.supportedApiVersion));
+            return getLatestCompatibleVersion(allVersions => this.versionGreaterThanOrEqualTo(this.supportedApiVersion, allVersions.version));
         } else {
             return getLatestCompatibleVersion(allVersions => this.supportedVscodeApiSatisfies(allVersions.engines?.vscode ?? '*'));
         }
@@ -127,7 +128,7 @@ export class OVSXApiFilterImpl implements OVSXApiFilter {
         if (!versionA || !versionB) {
             return false;
         }
-        return semver.lte(versionA, versionB);
+        return semver.gte(versionA, versionB);
     }
 
     protected supportedVscodeApiSatisfies(vscodeApiRange: string): boolean {

@@ -29,12 +29,13 @@ import {
 } from '../notebook-types';
 import { NotebookSerializer } from '../service/notebook-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { NotebookCellModel, NotebookCellModelFactory } from './notebook-cell-model';
+import { NotebookCellModel, NotebookCellModelFactory, NotebookCodeEditorFindMatch } from './notebook-cell-model';
 import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
 import { UndoRedoService } from '@theia/editor/lib/browser/undo-redo-service';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import type { NotebookModelResolverService } from '../service/notebook-model-resolver-service';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
+import { NotebookEditorFindMatch, NotebookEditorFindMatchOptions } from '../view/notebook-find-widget';
 
 export const NotebookModelFactory = Symbol('NotebookModelFactory');
 
@@ -123,6 +124,16 @@ export class NotebookModel implements Saveable, Disposable {
 
     get readOnly(): boolean | MarkdownString {
         return this.props.resource.readOnly ?? false;
+    }
+
+    protected _selectedText = '';
+
+    set selectedText(value: string) {
+        this._selectedText = value;
+    }
+
+    get selectedText(): string {
+        return this._selectedText;
     }
 
     selectedCell?: NotebookCellModel;
@@ -227,6 +238,9 @@ export class NotebookModel implements Saveable, Disposable {
         }
 
         this.dirty = this.dirtyCells.length > 0;
+        // Only fire `onContentChangedEmitter` here, because `onDidChangeContentEmitter` is used for model level changes only
+        // However, this event indicates that the content of a cell has changed
+        this.onContentChangedEmitter.fire();
     }
 
     setData(data: NotebookData, markDirty = true): void {
@@ -266,6 +280,9 @@ export class NotebookModel implements Saveable, Disposable {
         for (const cell of cells) {
             cell.onDidChangeOutputs(() => {
                 this.dirty = true;
+            });
+            cell.onDidRequestCellEditChange(() => {
+                this.onContentChangedEmitter.fire();
             });
         }
     }
@@ -488,6 +505,29 @@ export class NotebookModel implements Saveable, Disposable {
         }
 
         return false;
+    }
+
+    findMatches(options: NotebookEditorFindMatchOptions): NotebookEditorFindMatch[] {
+        const matches: NotebookEditorFindMatch[] = [];
+        for (const cell of this.cells) {
+            matches.push(...cell.findMatches(options));
+        }
+        return matches;
+    }
+
+    replaceAll(matches: NotebookEditorFindMatch[], text: string): void {
+        const matchMap = new Map<NotebookCellModel, NotebookCodeEditorFindMatch[]>();
+        for (const match of matches) {
+            if (match instanceof NotebookCodeEditorFindMatch) {
+                if (!matchMap.has(match.cell)) {
+                    matchMap.set(match.cell, []);
+                }
+                matchMap.get(match.cell)?.push(match);
+            }
+        }
+        for (const [cell, cellMatches] of matchMap) {
+            cell.replaceAll(cellMatches, text);
+        }
     }
 
 }

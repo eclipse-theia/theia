@@ -895,3 +895,13 @@ export interface InlineCompletionsProvider<T extends InlineCompletions = InlineC
     freeInlineCompletions(completions: T): void;
 }
 
+export interface DebugStackFrameDTO {
+    readonly sessionId: string,
+    readonly frameId: number,
+    readonly threadId: number
+}
+
+export interface DebugThreadDTO {
+    readonly sessionId: string,
+    readonly threadId: number
+}

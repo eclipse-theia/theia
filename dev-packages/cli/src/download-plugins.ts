@@ -143,6 +143,7 @@ export default async function downloadPlugins(ovsxClient: OVSXClient, requestSer
                         failures.push(`No download url for extension pack ${id} (${version})`);
                     }
                 } catch (err) {
+                    console.error(err);
                     failures.push(err.message);
                 }
             }));

@@ -393,6 +393,10 @@
       "webviewTrace": "Controlla la tracciabilità della comunicazione con le webview.",
       "webviewWarnIfUnsecure": "Avverte gli utenti che le webview sono attualmente distribuite in modo non sicuro."
     },
+    "preferences": {
+      "hostedPlugin": "Plugin in hosting",
+      "toolbar": "Barra degli strumenti"
+    },
     "preview": {
       "openByDefault": "Aprire l'anteprima invece dell'editor per default."
     },

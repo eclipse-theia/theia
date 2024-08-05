@@ -1896,6 +1896,10 @@ export class ApplicationShell extends Widget {
         if (index < current.titles.length - 1) {
             return index + 1;
         }
+        // last item in tab bar. select the previous one.
+        if (index === current.titles.length - 1) {
+            return index - 1;
+        }
         return 0;
     }
 
@@ -2062,7 +2066,7 @@ export class ApplicationShell extends Widget {
      */
     async saveAll(options?: SaveOptions): Promise<void> {
         for (const widget of this.widgets) {
-            if (this.saveableService.canSaveNotSaveAs(widget)) {
+            if (Saveable.isDirty(widget) && this.saveableService.canSaveNotSaveAs(widget)) {
                 await this.saveableService.save(widget, options);
             }
         }

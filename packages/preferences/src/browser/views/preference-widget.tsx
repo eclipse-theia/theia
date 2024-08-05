@@ -78,6 +78,7 @@ export class PreferencesWidget extends Panel implements StatefulWidget {
     protected init(): void {
         this.id = PreferencesWidget.ID;
         this.title.label = PreferencesWidget.LABEL;
+        this.title.caption = PreferencesWidget.LABEL;
         this.title.closable = true;
         this.addClass('theia-settings-container');
         this.title.iconClass = codicon('settings');

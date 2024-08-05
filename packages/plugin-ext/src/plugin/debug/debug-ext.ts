@@ -18,14 +18,14 @@ import { Emitter } from '@theia/core/lib/common/event';
 import { Path } from '@theia/core/lib/common/path';
 import * as theia from '@theia/plugin';
 import { URI } from '@theia/core/shared/vscode-uri';
-import { Breakpoint } from '../../common/plugin-api-rpc-model';
+import { Breakpoint, DebugStackFrameDTO, DebugThreadDTO } from '../../common/plugin-api-rpc-model';
 import { DebugConfigurationProviderTriggerKind, DebugExt, DebugMain, PLUGIN_RPC_CONTEXT as Ext, TerminalOptionsExt } from '../../common/plugin-api-rpc';
 import { PluginPackageDebuggersContribution } from '../../common/plugin-protocol';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { CommandRegistryImpl } from '../command-registry';
 import { ConnectionImpl } from '../../common/connection';
 import { DEBUG_SCHEME, SCHEME_PATTERN } from '@theia/debug/lib/common/debug-uri-utils';
-import { Disposable, Breakpoint as BreakpointExt, SourceBreakpoint, FunctionBreakpoint, Location, Range, URI as URIImpl } from '../types-impl';
+import { Disposable, Breakpoint as BreakpointExt, SourceBreakpoint, FunctionBreakpoint, Location, Range, URI as URIImpl, DebugStackFrame, DebugThread } from '../types-impl';
 import { PluginDebugAdapterSession } from './plugin-debug-adapter-session';
 import { PluginDebugAdapterTracker } from './plugin-debug-adapter-tracker';
 import { generateUuid } from '@theia/core/lib/common/uuid';
@@ -33,7 +33,8 @@ import { DebugAdapter } from '@theia/debug/lib/common/debug-model';
 import { PluginDebugAdapterCreator } from './plugin-debug-adapter-creator';
 import { NodeDebugAdapterCreator } from '../node/debug/plugin-node-debug-adapter-creator';
 import { DebugProtocol } from '@vscode/debugprotocol';
-import { DebugConfiguration } from '@theia/debug/lib/common/debug-configuration';
+import { DebugConfiguration, DebugSessionOptions } from '@theia/debug/lib/common/debug-configuration';
+import { checkTestRunInstance } from '../tests';
 
 interface ConfigurationProviderRecord {
     handle: number;
@@ -78,6 +79,9 @@ export class DebugExtImpl implements DebugExt {
 
     activeDebugSession: theia.DebugSession | undefined;
     activeDebugConsole: theia.DebugConsole;
+
+    _activeStackItem: theia.DebugStackFrame | theia.DebugThread | undefined;
+    private readonly onDidChangeActiveStackItemEmitter = new Emitter<theia.DebugStackFrame | theia.DebugThread | undefined>();
 
     private readonly _breakpoints = new Map<string, theia.Breakpoint>();
 
@@ -149,6 +153,10 @@ export class DebugExtImpl implements DebugExt {
         return this.onDidStartDebugSessionEmitter.event;
     }
 
+    get onDidChangeActiveStackItem(): theia.Event<theia.DebugStackFrame | theia.DebugThread | undefined> {
+        return this.onDidChangeActiveStackItemEmitter.event;
+    }
+
     get onDidChangeBreakpoints(): theia.Event<theia.BreakpointsChangeEvent> {
         return this.onDidChangeBreakpointsEmitter.event;
     }
@@ -186,7 +194,7 @@ export class DebugExtImpl implements DebugExt {
     }
 
     startDebugging(folder: theia.WorkspaceFolder | undefined, nameOrConfiguration: string | theia.DebugConfiguration, options: theia.DebugSessionOptions): PromiseLike<boolean> {
-        return this.proxy.$startDebugging(folder, nameOrConfiguration, {
+        const optionsDto: DebugSessionOptions = {
             parentSessionId: options.parentSession?.id,
             compact: options.compact,
             consoleMode: options.consoleMode,
@@ -194,8 +202,16 @@ export class DebugExtImpl implements DebugExt {
             suppressDebugStatusbar: options.suppressDebugStatusbar,
             suppressDebugView: options.suppressDebugView,
             lifecycleManagedByParent: options.lifecycleManagedByParent,
-            noDebug: options.noDebug
-        });
+            noDebug: options.noDebug,
+        };
+        if (options.testRun) {
+            const run = checkTestRunInstance(options.testRun);
+            optionsDto.testRun = {
+                controllerId: run.controller.id,
+                runId: run.id
+            };
+        }
+        return this.proxy.$startDebugging(folder, nameOrConfiguration, optionsDto);
     }
 
     stopDebugging(session?: theia.DebugSession): PromiseLike<void> {
@@ -260,6 +276,40 @@ export class DebugExtImpl implements DebugExt {
             this.configurationProviders = this.configurationProviders.filter(p => (p.handle !== handle));
             this.proxy.$unregisterDebugConfigurationProvider(handle);
         });
+    }
+
+    set activeStackItem(stackItem: theia.DebugStackFrame | theia.DebugThread | undefined) {
+        if (this._activeStackItem === stackItem) {
+            return;
+        }
+        this._activeStackItem = stackItem;
+        this.onDidChangeActiveStackItemEmitter.fire(this.activeStackItem);
+    }
+
+    get activeStackItem(): theia.DebugStackFrame | theia.DebugThread | undefined {
+        return this._activeStackItem;
+    }
+
+    async $onDidChangeActiveThread(debugThread: DebugThreadDTO | undefined): Promise<void> {
+        if (!debugThread) {
+            this.activeStackItem = undefined;
+            return;
+        }
+        const session = this.sessions.get(debugThread.sessionId);
+        if (session) {
+            this.activeStackItem = new DebugThread(session, debugThread.threadId);
+        }
+    }
+
+    async $onDidChangeActiveFrame(debugFrame: DebugStackFrameDTO | undefined): Promise<void> {
+        if (!debugFrame) {
+            this.activeStackItem = undefined;
+            return;
+        }
+        const session = this.sessions.get(debugFrame!.sessionId);
+        if (session) {
+            this.activeStackItem = new DebugStackFrame(session, debugFrame.threadId, debugFrame.frameId);
+        }
     }
 
     async $onSessionCustomEvent(sessionId: string, event: string, body?: any): Promise<void> {

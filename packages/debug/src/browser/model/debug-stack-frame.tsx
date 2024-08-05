@@ -49,6 +49,13 @@ export class DebugStackFrame extends DebugStackFrameData implements TreeElement 
         return this.session.id + ':' + this.thread.id + ':' + this.raw.id;
     }
 
+    /**
+     * Returns the frame identifier from the debug protocol.
+     */
+    get frameId(): number {
+        return this.raw.id;
+    }
+
     protected _source: DebugSource | undefined;
     get source(): DebugSource | undefined {
         return this._source;

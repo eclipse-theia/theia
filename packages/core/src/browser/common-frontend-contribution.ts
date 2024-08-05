@@ -444,6 +444,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     protected readonly untitledResourceResolver: UntitledResourceResolver;
 
     protected pinnedKey: ContextKey<boolean>;
+    protected inputFocus: ContextKey<boolean>;
 
     async configure(app: FrontendApplication): Promise<void> {
         // FIXME: This request blocks valuable startup time (~200ms).
@@ -458,6 +459,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         this.contextKeyService.createKey<boolean>('isMac', OS.type() === OS.Type.OSX);
         this.contextKeyService.createKey<boolean>('isWindows', OS.type() === OS.Type.Windows);
         this.contextKeyService.createKey<boolean>('isWeb', !this.isElectron());
+        this.inputFocus = this.contextKeyService.createKey<boolean>('inputFocus', false);
+        this.updateInputFocus();
+        browser.onDomEvent(document, 'focusin', () => this.updateInputFocus());
 
         this.pinnedKey = this.contextKeyService.createKey<boolean>('activeEditorIsPinned', false);
         this.updatePinnedKey();
@@ -510,6 +514,15 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         document.body.classList.remove('theia-editor-highlightModifiedTabs');
         if (this.preferences['workbench.editor.highlightModifiedTabs']) {
             document.body.classList.add('theia-editor-highlightModifiedTabs');
+        }
+    }
+
+    protected updateInputFocus(): void {
+        const activeElement = document.activeElement;
+        if (activeElement) {
+            const isInput = activeElement.tagName?.toLowerCase() === 'input'
+                || activeElement.tagName?.toLowerCase() === 'textarea';
+            this.inputFocus.set(isInput);
         }
     }
 
@@ -1897,6 +1910,94 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     hcDark: Color.white,
                     hcLight: Color.white
                 }, description: 'Status bar warning items foreground color. Warning items stand out from other status bar entries to indicate warning conditions. The status bar is shown in the bottom of the window.'
+            },
+
+            // editor find
+
+            {
+                id: 'editor.findMatchBackground',
+                defaults: {
+                    light: '#A8AC94',
+                    dark: '#515C6A',
+                    hcDark: undefined,
+                    hcLight: undefined
+                },
+                description: 'Color of the current search match.'
+            },
+
+            {
+                id: 'editor.findMatchForeground',
+                defaults: {
+                    light: undefined,
+                    dark: undefined,
+                    hcDark: undefined,
+                    hcLight: undefined
+                },
+                description: 'Text color of the current search match.'
+            },
+            {
+                id: 'editor.findMatchHighlightBackground',
+                defaults: {
+                    light: '#EA5C0055',
+                    dark: '#EA5C0055',
+                    hcDark: undefined,
+                    hcLight: undefined
+                },
+                description: 'Color of the other search matches. The color must not be opaque so as not to hide underlying decorations.'
+            },
+
+            {
+                id: 'editor.findMatchHighlightForeground',
+                defaults: {
+                    light: undefined,
+                    dark: undefined,
+                    hcDark: undefined,
+                    hcLight: undefined
+                },
+                description: 'Foreground color of the other search matches.'
+            },
+
+            {
+                id: 'editor.findRangeHighlightBackground',
+                defaults: {
+                    dark: '#3a3d4166',
+                    light: '#b4b4b44d',
+                    hcDark: undefined,
+                    hcLight: undefined
+                },
+                description: 'Color of the range limiting the search. The color must not be opaque so as not to hide underlying decorations.'
+            },
+
+            {
+                id: 'editor.findMatchBorder',
+                defaults: {
+                    light: undefined,
+                    dark: undefined,
+                    hcDark: 'activeContrastBorder',
+                    hcLight: 'activeContrastBorder'
+                },
+                description: 'Border color of the current search match.'
+            },
+            {
+                id: 'editor.findMatchHighlightBorder',
+                defaults: {
+                    light: undefined,
+                    dark: undefined,
+                    hcDark: 'activeContrastBorder',
+                    hcLight: 'activeContrastBorder'
+                },
+                description: 'Border color of the other search matches.'
+            },
+
+            {
+                id: 'editor.findRangeHighlightBorder',
+                defaults: {
+                    dark: undefined,
+                    light: undefined,
+                    hcDark: Color.transparent('activeContrastBorder', 0.4),
+                    hcLight: Color.transparent('activeContrastBorder', 0.4)
+                },
+                description: 'Border color of the range limiting the search. The color must not be opaque so as not to hide underlying decorations.'
             },
 
             // Quickinput colors should be aligned with https://code.visualstudio.com/api/references/theme-color#quick-picker

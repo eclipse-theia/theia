@@ -393,6 +393,10 @@
       "webviewTrace": "Controla o rastreamento da comunicação com visualizações na web.",
       "webviewWarnIfUnsecure": "Adverte os usuários de que as visualizações na web são atualmente implantadas de forma insegura."
     },
+    "preferences": {
+      "hostedPlugin": "Plug-in hospedado",
+      "toolbar": "Barra de ferramentas"
+    },
     "preview": {
       "openByDefault": "Abrir a visualização em vez do editor por padrão."
     },
