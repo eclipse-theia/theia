@@ -124,30 +124,34 @@ export class DelegatingDefaultChatAgent extends AbstractStreamParsingChatAgent {
     protected override languageModelPurpose = 'chat';
 
     override async invoke(request: ChatRequestModelImpl, chatAgentService?: ChatAgentService): Promise<void> {
-        // check if we should better delegate to a different chat agent
-        let didDelegate = false;
-        const bestChatAgentIds = await this.selectChatAgent(request);
-        for (const agentId of bestChatAgentIds.filter(id => id !== this.id)) {
-            const delegateAgent = chatAgentService?.getAgent(agentId);
-            if (delegateAgent) {
-                request.addDelegate(delegateAgent.id);
-                didDelegate = true;
-                await delegateAgent.invoke(request, chatAgentService);
-            } else {
-                console.warn(`Chat Agent with id ${agentId} is not registered`);
+        try {
+            // check if we should better delegate to a different chat agent
+            let didDelegate = false;
+            const bestChatAgentIds = await this.selectChatAgent(request);
+            for (const agentId of bestChatAgentIds.filter(id => id !== this.id)) {
+                const delegateAgent = chatAgentService?.getAgent(agentId);
+                if (delegateAgent) {
+                    request.addDelegate(delegateAgent.id);
+                    didDelegate = true;
+                    await delegateAgent.invoke(request, chatAgentService);
+                } else {
+                    console.warn(`Chat Agent with id ${agentId} is not registered`);
+                }
             }
-        }
 
-        if (didDelegate) {
-            return new Promise<void>(resolve => {
-                request.response.onDidChange(() => {
-                    if (request.response.isComplete) {
-                        resolve();
-                    }
+            if (didDelegate) {
+                return new Promise<void>(resolve => {
+                    request.response.onDidChange(() => {
+                        if (request.response.isComplete) {
+                            resolve();
+                        }
+                    });
                 });
-            });
+            }
+        } catch (e) {
+            super.handleError(request, e);
+            throw e;
         }
-
         return super.invoke(request);
     }
 

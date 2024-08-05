@@ -13,10 +13,23 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-export * from './code-part-renderer';
-export * from './text-part-renderer';
-export * from './markdown-part-renderer';
-export * from './command-part-renderer';
-export * from './toolcall-part-renderer';
-export * from './horizontal-layout-part-renderer';
-export * from './error-part-renderer';
+
+import { ChatResponsePartRenderer } from '../types';
+import { injectable } from '@theia/core/shared/inversify';
+import { ChatResponseContent, ErrorResponseContent, isErrorChatResponseContent } from '@theia/ai-chat/lib/common';
+import { ReactNode } from '@theia/core/shared/react';
+import * as React from '@theia/core/shared/react';
+
+@injectable()
+export class ErrorPartRenderer implements ChatResponsePartRenderer<ErrorResponseContent> {
+    canHandle(response: ChatResponseContent): number {
+        if (isErrorChatResponseContent(response)) {
+            return 10;
+        }
+        return -1;
+    }
+    render(response: ErrorResponseContent): ReactNode {
+        return <div className='theia-ChatPart-Error'><span className='codicon codicon-error' /><span>{response.error.message}</span></div>;
+    }
+
+}

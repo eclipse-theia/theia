@@ -32,7 +32,15 @@ import {
 import { CancellationToken, CancellationTokenSource, ILogger, isArray } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatAgentService } from './chat-agent-service';
-import { ChatModel, ChatRequestModelImpl, ChatResponseContent, CodeChatResponseContentImpl, MarkdownChatResponseContentImpl, ToolCallResponseContentImpl } from './chat-model';
+import {
+    ChatModel,
+    ChatRequestModelImpl,
+    ChatResponseContent,
+    CodeChatResponseContentImpl,
+    ErrorResponseContentImpl,
+    MarkdownChatResponseContentImpl,
+    ToolCallResponseContentImpl
+} from './chat-model';
 
 export interface ChatMessage {
     actor: MessageActor;
@@ -98,35 +106,44 @@ export abstract class AbstractChatAgent implements ChatAgent {
     protected abstract languageModelPurpose: string;
 
     async invoke(request: ChatRequestModelImpl): Promise<void> {
-        const languageModel = await this.getLanguageModel();
-        if (!languageModel) {
-            throw new Error('Couldn\'t find a matching language model. Please check your setup!');
-        }
-        const messages = await this.getMessages(request.session);
-        this.recordingService.recordRequest({
-            agentId: this.id,
-            sessionId: request.session.id,
-            timestamp: Date.now(),
-            requestId: request.id,
-            request: request.request.text,
-            messages
-        });
-        const cancellationToken = new CancellationTokenSource();
-        request.response.onDidChange(() => {
-            if (request.response.isCanceled) {
-                cancellationToken.cancel();
+        try {
+            const languageModel = await this.getLanguageModel();
+            if (!languageModel) {
+                throw new Error('Couldn\'t find a matching language model. Please check your setup!');
             }
-        });
-        const languageModelResponse = await this.callLlm(languageModel, messages, cancellationToken.token);
-        await this.addContentsToResponse(languageModelResponse, request);
-        request.response.complete();
-        this.recordingService.recordResponse({
-            agentId: this.id,
-            sessionId: request.session.id,
-            timestamp: Date.now(),
-            requestId: request.response.requestId,
-            response: request.response.response.asString()
-        });
+            const messages = await this.getMessages(request.session);
+            this.recordingService.recordRequest({
+                agentId: this.id,
+                sessionId: request.session.id,
+                timestamp: Date.now(),
+                requestId: request.id,
+                request: request.request.text,
+                messages
+            });
+            const cancellationToken = new CancellationTokenSource();
+            request.response.onDidChange(() => {
+                if (request.response.isCanceled) {
+                    cancellationToken.cancel();
+                }
+            });
+            const languageModelResponse = await this.callLlm(languageModel, messages, cancellationToken.token);
+            await this.addContentsToResponse(languageModelResponse, request);
+            request.response.complete();
+            this.recordingService.recordResponse({
+                agentId: this.id,
+                sessionId: request.session.id,
+                timestamp: Date.now(),
+                requestId: request.response.requestId,
+                response: request.response.response.asString()
+            });
+        } catch (e) {
+            this.handleError(request, e);
+        }
+    }
+
+    protected handleError(request: ChatRequestModelImpl, error: Error): void {
+        request.response.response.addContent(new ErrorResponseContentImpl(error));
+        request.response.error(error);
     }
 
     protected getLanguageModelSelector(): LanguageModelRequirement {

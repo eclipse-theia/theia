@@ -138,8 +138,12 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
             text: query
         };
 
-        const requestProgress = await this.chatService.sendRequest(this.chatSession.id, chatRequest,
-            e => { if (e instanceof Error) { this.messageService.error(e.message); } else { throw e; } });
+        const requestProgress = await this.chatService.sendRequest(this.chatSession.id, chatRequest);
+        requestProgress?.responseCompleted.then(responseModel => {
+            if (responseModel.isError) {
+                this.messageService.error(responseModel.errorObject?.message ?? 'An error occurred druring chat service invocation.');
+            }
+        });
         if (!requestProgress) {
             this.messageService.error(`Was not able to send request "${chatRequest.text}" to session ${this.chatSession.id}`);
             return;

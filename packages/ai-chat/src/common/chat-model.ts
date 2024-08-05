@@ -114,6 +114,10 @@ export interface TextChatResponseContent
     kind: 'text';
     content: string;
 }
+export interface ErrorResponseContent extends BaseChatResponseContent {
+    kind: 'error';
+    error: Error;
+}
 
 export interface MarkdownChatResponseContent
     extends Required<BaseChatResponseContent> {
@@ -205,6 +209,12 @@ export const isToolCallChatResponseContent = (
     isBaseChatResponseContent(obj) &&
     obj.kind === 'toolCall';
 
+export const isErrorChatResponseContent = (
+    obj: unknown
+): obj is ErrorResponseContent =>
+    isBaseChatResponseContent(obj) &&
+    obj.kind === 'error' && 'error' in obj && obj.error instanceof Error;
+
 export type ChatResponseContent =
     | BaseChatResponseContent
     | TextChatResponseContent
@@ -212,7 +222,8 @@ export type ChatResponseContent =
     | CommandChatResponseContent
     | CodeChatResponseContent
     | HorizontalLayoutChatResponseContent
-    | ToolCallResponseContent;
+    | ToolCallResponseContent
+    | ErrorResponseContent;
 
 export interface ChatResponse {
     readonly content: ChatResponseContent[];
@@ -227,10 +238,14 @@ export interface ChatResponseModel {
     readonly response: ChatResponse;
     readonly isComplete: boolean;
     readonly isCanceled: boolean;
+    readonly isError: boolean;
     readonly agentId?: string
     readonly delegateAgentIds: string[];
     addDelegate(delegateAgentid: string): void;
     cancel(): void;
+    error(error: Error): void;
+    readonly errorObject?: Error;
+
 }
 
 /**********************
@@ -320,6 +335,16 @@ export class ChatRequestModelImpl implements ChatRequestModel {
         this._response.addDelegate(delegateAgentid);
     }
 
+}
+export class ErrorResponseContentImpl implements ErrorResponseContent {
+    kind: 'error' = 'error';
+    protected _error: Error;
+    constructor(error: Error) {
+        this._error = error;
+    }
+    get error(): Error {
+        return this._error;
+    }
 }
 
 export class TextChatResponseContentImpl implements TextChatResponseContent {
@@ -591,6 +616,8 @@ class ChatResponseModelImpl implements ChatResponseModel {
     protected _isCanceled: boolean;
     protected _agentId?: string;
     protected _delegateAgentIds: string[];
+    protected _isErrror: boolean;
+    protected _errorObject: Error | undefined;
 
     constructor(requestId: string, agentId?: string) {
         // TODO accept serialized data as a parameter to restore a previously saved ChatResponseModel
@@ -651,5 +678,18 @@ class ChatResponseModelImpl implements ChatResponseModel {
         this._isComplete = true;
         this._isCanceled = true;
         this._onDidChangeEmitter.fire();
+    }
+    error(error: Error): void {
+        this._isComplete = true;
+        this._isCanceled = false;
+        this._isErrror = true;
+        this._errorObject = error;
+        this._onDidChangeEmitter.fire();
+    }
+    get errorObject(): Error | undefined {
+        return this._errorObject;
+    }
+    get isError(): boolean {
+        return this._isErrror;
     }
 }

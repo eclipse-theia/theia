@@ -79,8 +79,7 @@ export interface ChatService {
 
     sendRequest(
         sessionId: string,
-        request: ChatRequest,
-        errorHandler?: (e: unknown) => void
+        request: ChatRequest
     ): Promise<ChatSendRequestData | undefined>;
 }
 
@@ -160,8 +159,7 @@ export class ChatServiceImpl implements ChatService {
 
     async sendRequest(
         sessionId: string,
-        request: ChatRequest,
-        errorHandler?: (e: unknown) => void
+        request: ChatRequest
     ): Promise<ChatSendRequestData | undefined> {
         const session = this.getSession(sessionId);
         if (!session) {
@@ -208,15 +206,14 @@ export class ChatServiceImpl implements ChatService {
             if (requestModel.response.isComplete) {
                 resolveResponseCompleted!(requestModel.response);
             }
+            if (requestModel.response.isError) {
+                resolveResponseCompleted!(requestModel.response);
+            }
         });
 
         if (agent) {
             this.chatAgentService.invokeAgent(agent.id, requestModel).catch(e => {
-                if (errorHandler) {
-                    errorHandler(e);
-                } else {
-                    throw e;
-                }
+                requestModel.response.error(e);
             });
         } else {
             this.logger.error('No ChatAgents available to handle request!');
