@@ -48,6 +48,7 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
     protected toDispose = new DisposableCollection();
 
     protected static dragGhost: HTMLElement | undefined;
+    protected cellListRef: React.RefObject<HTMLUListElement> = React.createRef();
 
     constructor(props: CellListProps) {
         super(props);
@@ -82,6 +83,24 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
                 scrollIntoView: e.scrollIntoView
             });
         }));
+
+        this.toDispose.push(onDomEvent(document, 'focusin', () => {
+            animationFrame().then(() => {
+                if (!this.cellListRef.current) {
+                    return;
+                }
+                let hasCellFocus = false;
+                let hasFocus = false;
+                if (this.cellListRef.current.contains(document.activeElement)) {
+                    if (this.props.notebookModel.selectedCell) {
+                        hasCellFocus = true;
+                    }
+                    hasFocus = true;
+                }
+                this.props.notebookContext.changeCellFocus(hasCellFocus);
+                this.props.notebookContext.changeCellListFocus(hasFocus);
+            });
+        }));
     }
 
     override componentWillUnmount(): void {
@@ -89,24 +108,7 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
     }
 
     override render(): React.ReactNode {
-        return <ul className='theia-notebook-cell-list' ref={
-            ref => {
-                this.toDispose.push(onDomEvent(document, 'focusin', () => {
-                    animationFrame().then(() => {
-                        let hasCellFocus = false;
-                        let hasFocus = false;
-                        if (ref?.contains(document.activeElement)) {
-                            if (this.props.notebookModel.selectedCell) {
-                                hasCellFocus = true;
-                            }
-                            hasFocus = true;
-                        }
-                        this.props.notebookContext.changeCellFocus(hasCellFocus);
-                        this.props.notebookContext.changeCellListFocus(hasFocus);
-                    });
-                }));
-            }
-        }>
+        return <ul className='theia-notebook-cell-list' ref={this.cellListRef}>
             {this.props.notebookModel.cells
                 .map((cell, index) =>
                     <React.Fragment key={'cell-' + cell.handle}>
@@ -129,6 +131,7 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
                             onDragOver={e => this.onDragOver(e, cell)}
                             onDrop={e => this.onDrop(e, index)}
                             draggable={true}
+                            tabIndex={-1}
                             ref={ref => cell === this.state.selectedCell && this.state.scrollIntoView && ref?.scrollIntoView({ block: 'nearest' })}>
                             <div className={'theia-notebook-cell-marker' + (this.state.selectedCell === cell ? ' theia-notebook-cell-marker-selected' : '')}></div>
                             <div className='theia-notebook-cell-content'>

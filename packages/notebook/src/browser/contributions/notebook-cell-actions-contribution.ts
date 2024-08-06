@@ -33,6 +33,7 @@ import { NotebookEditorWidgetService } from '../service/notebook-editor-widget-s
 import { NotebookCommands } from './notebook-actions-contribution';
 import { changeCellType } from './cell-operations';
 import { EditorLanguageQuickPickService } from '@theia/editor/lib/browser/editor-language-quick-pick-service';
+import { NotebookService } from '../service/notebook-service';
 
 export namespace NotebookCellCommands {
     /** Parameters: notebookModel: NotebookModel | undefined, cell: NotebookCellModel */
@@ -118,7 +119,7 @@ export namespace NotebookCellCommands {
 
     export const TO_MARKDOWN_CELL_COMMAND = Command.toLocalizedCommand({
         id: 'notebook.cell.changeToMarkdown',
-        label: 'Change Cell to Mardown'
+        label: 'Change Cell to Markdown'
     });
 
     export const TOGGLE_CELL_OUTPUT = Command.toDefaultLocalizedCommand({
@@ -146,6 +147,9 @@ export class NotebookCellActionContribution implements MenuContribution, Command
 
     @inject(ContextKeyService)
     protected contextKeyService: ContextKeyService;
+
+    @inject(NotebookService)
+    protected notebookService: NotebookService;
 
     @inject(NotebookExecutionService)
     protected notebookExecutionService: NotebookExecutionService;
@@ -346,7 +350,7 @@ export class NotebookCellActionContribution implements MenuContribution, Command
         commands.registerCommand(NotebookCellCommands.INSERT_MARKDOWN_CELL_BELOW_COMMAND, insertCommand(CellKind.Markup, 'below'));
 
         commands.registerCommand(NotebookCellCommands.TO_CODE_CELL_COMMAND, this.editableCellCommandHandler((notebookModel, cell) => {
-            changeCellType(notebookModel, cell, CellKind.Code);
+            changeCellType(notebookModel, cell, CellKind.Code, this.notebookService.getCodeCellLanguage(notebookModel));
         }));
         commands.registerCommand(NotebookCellCommands.TO_MARKDOWN_CELL_COMMAND, this.editableCellCommandHandler((notebookModel, cell) => {
             changeCellType(notebookModel, cell, CellKind.Markup);
@@ -376,9 +380,7 @@ export class NotebookCellActionContribution implements MenuContribution, Command
                 const isMarkdownCell = selectedCell.cellKind === CellKind.Markup;
                 const isMarkdownLanguage = language.value.id === 'markdown';
                 if (isMarkdownLanguage) {
-                    if (!isMarkdownCell) {
-                        changeCellType(activeNotebook, selectedCell, CellKind.Markup, language.value.id);
-                    }
+                    changeCellType(activeNotebook, selectedCell, CellKind.Markup, language.value.id);
                 } else {
                     if (isMarkdownCell) {
                         changeCellType(activeNotebook, selectedCell, CellKind.Code, language.value.id);
