@@ -31,6 +31,10 @@
   margin: 10px 0px;
 }
 
+.theia-notebook-cell:focus {
+  outline: none;
+}
+
 .theia-notebook-cell.draggable {
   cursor: grab;
 }
@@ -85,7 +89,7 @@
 
 /* Markdown cell edit mode */
 .theia-notebook-cell-content:has(.theia-notebook-markdown-editor-container>.theia-notebook-cell-editor) {
-  margin-left: 37px;
+  margin-left: 36px;
   margin-right: var(--theia-notebook-cell-editor-margin-right);
   outline: 1px solid var(--theia-notebook-cellBorderColor);
 }

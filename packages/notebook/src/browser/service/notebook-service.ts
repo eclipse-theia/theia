@@ -17,7 +17,7 @@
 import { Disposable, DisposableCollection, Emitter, Resource, URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
-import { NotebookData, TransientOptions } from '../../common';
+import { CellKind, NotebookData, TransientOptions } from '../../common';
 import { NotebookModel, NotebookModelFactory, NotebookModelProps } from '../view-model/notebook-model';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { NotebookCellModel, NotebookCellModelFactory, NotebookCellModelProps } from '../view-model/notebook-cell-model';
@@ -205,5 +205,11 @@ export class NotebookService implements Disposable {
             console.error(e);
             return false;
         }
+    }
+
+    getCodeCellLanguage(model: NotebookModel): string {
+        const firstCodeCell = model.cells.find(cellModel => cellModel.cellKind === CellKind.Code);
+        const cellLanguage = firstCodeCell?.language ?? 'plaintext';
+        return cellLanguage;
     }
 }

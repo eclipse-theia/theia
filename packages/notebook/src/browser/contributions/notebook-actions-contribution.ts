@@ -133,8 +133,7 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
 
                 let cellLanguage: string = 'markdown';
                 if (cellKind === CellKind.Code) {
-                    const firstCodeCell = notebookModel.cells.find(cell => cell.cellKind === CellKind.Code);
-                    cellLanguage = firstCodeCell?.language ?? 'plaintext';
+                    cellLanguage = this.notebookService.getCodeCellLanguage(notebookModel);
                 }
 
                 notebookModel.applyEdits([{

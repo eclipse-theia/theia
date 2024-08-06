@@ -26,6 +26,11 @@ export function changeCellType(notebookModel: NotebookModel, cell: NotebookCellM
     if (cell.cellKind === type) {
         return;
     }
+    if (type === CellKind.Markup) {
+        language = 'markdown';
+    } else {
+        language ??= cell.language;
+    }
     notebookModel.applyEdits([{
         editType: CellEditType.Replace,
         index: notebookModel.cells.indexOf(cell),
@@ -33,7 +38,7 @@ export function changeCellType(notebookModel: NotebookModel, cell: NotebookCellM
         cells: [{
             ...cell.getData(),
             cellKind: type,
-            language: language ?? cell.language
+            language
         }]
     }], true);
 }
