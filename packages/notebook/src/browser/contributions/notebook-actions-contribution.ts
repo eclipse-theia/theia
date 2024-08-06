@@ -16,13 +16,12 @@
 
 import { Command, CommandContribution, CommandHandler, CommandRegistry, CompoundMenuNodeRole, MenuContribution, MenuModelRegistry, nls, URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { ApplicationShell, codicon, CommonCommands, KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
+import { ApplicationShell, codicon, KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
 import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookService } from '../service/notebook-service';
 import { CellEditType, CellKind, NotebookCommand } from '../../common';
 import { NotebookKernelQuickPickService } from '../service/notebook-kernel-quick-pick-service';
 import { NotebookExecutionService } from '../service/notebook-execution-service';
-import { NotebookEditorWidget } from '../notebook-editor-widget';
 import { NotebookEditorWidgetService } from '../service/notebook-editor-widget-service';
 import { NOTEBOOK_CELL_CURSOR_FIRST_LINE, NOTEBOOK_CELL_CURSOR_LAST_LINE, NOTEBOOK_CELL_FOCUSED, NOTEBOOK_EDITOR_FOCUSED, NOTEBOOK_HAS_OUTPUTS } from './notebook-context-keys';
 import { NotebookClipboardService } from '../service/notebook-clipboard-service';
@@ -207,21 +206,6 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
                 }
             }
         );
-
-        commands.registerHandler(CommonCommands.UNDO.id, {
-            isEnabled: () => {
-                const widget = this.shell.activeWidget;
-                return widget instanceof NotebookEditorWidget && !Boolean(widget.model?.readOnly);
-            },
-            execute: () => (this.shell.activeWidget as NotebookEditorWidget).undo()
-        });
-        commands.registerHandler(CommonCommands.REDO.id, {
-            isEnabled: () => {
-                const widget = this.shell.activeWidget;
-                return widget instanceof NotebookEditorWidget && !Boolean(widget.model?.readOnly);
-            },
-            execute: () => (this.shell.activeWidget as NotebookEditorWidget).redo()
-        });
 
         commands.registerCommand(NotebookCommands.CUT_SELECTED_CELL, this.editableCommandHandler(
             () => {

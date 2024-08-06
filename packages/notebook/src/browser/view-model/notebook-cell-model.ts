@@ -88,22 +88,22 @@ export interface NotebookCellModelProps {
 export class NotebookCellModel implements NotebookCell, Disposable {
 
     protected readonly onDidChangeOutputsEmitter = new Emitter<NotebookCellOutputsSplice>();
-    readonly onDidChangeOutputs: Event<NotebookCellOutputsSplice> = this.onDidChangeOutputsEmitter.event;
+    readonly onDidChangeOutputs = this.onDidChangeOutputsEmitter.event;
 
     protected readonly onDidChangeOutputItemsEmitter = new Emitter<CellOutput>();
-    readonly onDidChangeOutputItems: Event<CellOutput> = this.onDidChangeOutputItemsEmitter.event;
+    readonly onDidChangeOutputItems = this.onDidChangeOutputItemsEmitter.event;
 
     protected readonly onDidChangeContentEmitter = new Emitter<'content' | 'language' | 'mime'>();
-    readonly onDidChangeContent: Event<'content' | 'language' | 'mime'> = this.onDidChangeContentEmitter.event;
+    readonly onDidChangeContent = this.onDidChangeContentEmitter.event;
 
     protected readonly onDidChangeMetadataEmitter = new Emitter<void>();
-    readonly onDidChangeMetadata: Event<void> = this.onDidChangeMetadataEmitter.event;
+    readonly onDidChangeMetadata = this.onDidChangeMetadataEmitter.event;
 
     protected readonly onDidChangeInternalMetadataEmitter = new Emitter<CellInternalMetadataChangedEvent>();
-    readonly onDidChangeInternalMetadata: Event<CellInternalMetadataChangedEvent> = this.onDidChangeInternalMetadataEmitter.event;
+    readonly onDidChangeInternalMetadata = this.onDidChangeInternalMetadataEmitter.event;
 
     protected readonly onDidChangeLanguageEmitter = new Emitter<string>();
-    readonly onDidChangeLanguage: Event<string> = this.onDidChangeLanguageEmitter.event;
+    readonly onDidChangeLanguage = this.onDidChangeLanguageEmitter.event;
 
     protected readonly onDidRequestCellEditChangeEmitter = new Emitter<boolean>();
     readonly onDidRequestCellEditChange = this.onDidRequestCellEditChangeEmitter.event;
@@ -115,10 +115,10 @@ export class NotebookCellModel implements NotebookCell, Disposable {
     readonly onWillBlurCellEditor = this.onWillBlurCellEditorEmitter.event;
 
     protected readonly onDidChangeEditorOptionsEmitter = new Emitter<MonacoEditor.IOptions>();
-    readonly onDidChangeEditorOptions: Event<MonacoEditor.IOptions> = this.onDidChangeEditorOptionsEmitter.event;
+    readonly onDidChangeEditorOptions = this.onDidChangeEditorOptionsEmitter.event;
 
     protected readonly outputVisibilityChangeEmitter = new Emitter<boolean>();
-    readonly onDidChangeOutputVisibility: Event<boolean> = this.outputVisibilityChangeEmitter.event;
+    readonly onDidChangeOutputVisibility = this.outputVisibilityChangeEmitter.event;
 
     protected readonly onDidFindMatchesEmitter = new Emitter<NotebookCodeEditorFindMatch[]>();
     readonly onDidFindMatches: Event<NotebookCodeEditorFindMatch[]> = this.onDidFindMatchesEmitter.event;
@@ -183,10 +183,12 @@ export class NotebookCellModel implements NotebookCell, Disposable {
     get source(): string {
         return this.props.source;
     }
+
     set source(source: string) {
         this.props.source = source;
         this.textModel?.textEditorModel.setValue(source);
     }
+
     get language(): string {
         return this.props.language;
     }

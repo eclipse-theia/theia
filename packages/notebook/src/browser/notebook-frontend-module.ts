@@ -16,7 +16,7 @@
 import '../../src/browser/style/index.css';
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { FrontendApplicationContribution, KeybindingContribution, LabelProviderContribution, OpenHandler, WidgetFactory } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, KeybindingContribution, LabelProviderContribution, OpenHandler, UndoRedoHandler, WidgetFactory } from '@theia/core/lib/browser';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { NotebookOpenHandler } from './notebook-open-handler';
 import { CommandContribution, MenuContribution, ResourceResolver, } from '@theia/core';
@@ -46,6 +46,7 @@ import { NotebookOutputActionContribution } from './contributions/notebook-outpu
 import { NotebookClipboardService } from './service/notebook-clipboard-service';
 import { bindNotebookPreferences } from './contributions/notebook-preferences';
 import { NotebookOptionsService } from './service/notebook-options';
+import { NotebookUndoRedoHandler } from './contributions/notebook-undo-redo-handler';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(NotebookColorContribution).toSelf().inSingletonScope();
@@ -108,4 +109,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bindNotebookPreferences(bind);
     bind(NotebookOptionsService).toSelf().inSingletonScope();
+
+    bind(NotebookUndoRedoHandler).toSelf().inSingletonScope();
+    bind(UndoRedoHandler).toService(NotebookUndoRedoHandler);
 });

@@ -67,6 +67,7 @@ import { UserWorkingDirectoryProvider } from './user-working-directory-provider'
 import { UNTITLED_SCHEME, UntitledResourceResolver } from '../common';
 import { LanguageQuickPickService } from './i18n/language-quick-pick-service';
 import { SidebarMenu } from './shell/sidebar-menu-widget';
+import { UndoRedoHandlerService } from './undo-redo-handler';
 
 export namespace CommonMenus {
 
@@ -443,6 +444,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     @inject(UntitledResourceResolver)
     protected readonly untitledResourceResolver: UntitledResourceResolver;
 
+    @inject(UndoRedoHandlerService)
+    protected readonly undoRedoHandlerService: UndoRedoHandlerService;
+
     protected pinnedKey: ContextKey<boolean>;
     protected inputFocus: ContextKey<boolean>;
 
@@ -814,10 +818,14 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         }));
 
         commandRegistry.registerCommand(CommonCommands.UNDO, {
-            execute: () => document.execCommand('undo')
+            execute: () => {
+                this.undoRedoHandlerService.undo();
+            }
         });
         commandRegistry.registerCommand(CommonCommands.REDO, {
-            execute: () => document.execCommand('redo')
+            execute: () => {
+                this.undoRedoHandlerService.redo();
+            }
         });
         commandRegistry.registerCommand(CommonCommands.SELECT_ALL, {
             execute: () => document.execCommand('selectAll')
@@ -1080,7 +1088,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             },
             {
                 command: CommonCommands.REDO.id,
-                keybinding: 'ctrlcmd+shift+z'
+                keybinding: isOSX ? 'ctrlcmd+shift+z' : 'ctrlcmd+y'
             },
             {
                 command: CommonCommands.SELECT_ALL.id,

@@ -47,3 +47,4 @@ export * from './decoration-style';
 export * from './styling-service';
 export * from './hover-service';
 export * from './saveable-service';
+export * from './undo-redo-handler';

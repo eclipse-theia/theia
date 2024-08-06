@@ -246,7 +246,7 @@ export class NotebookModel implements Saveable, Disposable {
     setData(data: NotebookData, markDirty = true): void {
         // Replace all cells in the model
         this.dirtyCells = [];
-        this.replaceCells(0, this.cells.length, data.cells, false);
+        this.replaceCells(0, this.cells.length, data.cells, false, false);
         this.metadata = data.metadata;
         this.dirty = markDirty;
         this.onDidChangeContentEmitter.fire();
@@ -260,13 +260,15 @@ export class NotebookModel implements Saveable, Disposable {
     }
 
     undo(): void {
-        // TODO we probably need to check if a monaco editor is focused and if so, not undo
-        this.undoRedoService.undo(this.uri);
+        if (!this.readOnly) {
+            this.undoRedoService.undo(this.uri);
+        }
     }
 
     redo(): void {
-        // TODO see undo
-        this.undoRedoService.redo(this.uri);
+        if (!this.readOnly) {
+            this.undoRedoService.redo(this.uri);
+        }
     }
 
     setSelectedCell(cell: NotebookCellModel, scrollIntoView?: boolean): void {
@@ -315,7 +317,7 @@ export class NotebookModel implements Saveable, Disposable {
             let scrollIntoView = true;
             switch (edit.editType) {
                 case CellEditType.Replace:
-                    this.replaceCells(edit.index, edit.count, edit.cells, computeUndoRedo);
+                    this.replaceCells(edit.index, edit.count, edit.cells, computeUndoRedo, true);
                     scrollIntoView = edit.cells.length > 0;
                     break;
                 case CellEditType.Output: {
@@ -338,10 +340,10 @@ export class NotebookModel implements Saveable, Disposable {
 
                     break;
                 case CellEditType.Metadata:
-                    this.changeCellMetadata(this.cells[cellIndex], edit.metadata, computeUndoRedo);
+                    this.changeCellMetadata(this.cells[cellIndex], edit.metadata, false);
                     break;
                 case CellEditType.PartialMetadata:
-                    this.changeCellMetadataPartial(this.cells[cellIndex], edit.metadata, computeUndoRedo);
+                    this.changeCellMetadataPartial(this.cells[cellIndex], edit.metadata, false);
                     break;
                 case CellEditType.PartialInternalMetadata:
                     this.changeCellInternalMetadataPartial(this.cells[cellIndex], edit.internalMetadata);
@@ -350,7 +352,7 @@ export class NotebookModel implements Saveable, Disposable {
                     this.changeCellLanguage(this.cells[cellIndex], edit.language, computeUndoRedo);
                     break;
                 case CellEditType.DocumentMetadata:
-                    this.updateNotebookMetadata(edit.metadata, computeUndoRedo);
+                    this.updateNotebookMetadata(edit.metadata, false);
                     break;
                 case CellEditType.Move:
                     this.moveCellToIndex(cellIndex, edit.length, edit.newIdx, computeUndoRedo);
@@ -363,11 +365,15 @@ export class NotebookModel implements Saveable, Disposable {
             }
         }
 
+        this.fireContentChange();
+    }
+
+    protected fireContentChange(): void {
         this.onDidChangeContentEmitter.fire();
         this.onContentChangedEmitter.fire();
     }
 
-    protected replaceCells(start: number, deleteCount: number, newCells: CellData[], computeUndoRedo: boolean): void {
+    protected replaceCells(start: number, deleteCount: number, newCells: CellData[], computeUndoRedo: boolean, requestEdit: boolean): void {
         const cells = newCells.map(cell => {
             const handle = this.nextHandle++;
             return this.cellModelFactory({
@@ -394,13 +400,20 @@ export class NotebookModel implements Saveable, Disposable {
 
         if (computeUndoRedo) {
             this.undoRedoService.pushElement(this.uri,
-                async () => this.replaceCells(start, newCells.length, deletedCells.map(cell => cell.getData()), false),
-                async () => this.replaceCells(start, deleteCount, newCells, false));
+                async () => {
+                    this.replaceCells(start, newCells.length, deletedCells.map(cell => cell.getData()), false, false);
+                    this.fireContentChange();
+                },
+                async () => {
+                    this.replaceCells(start, deleteCount, newCells, false, false);
+                    this.fireContentChange();
+                }
+            );
         }
 
         this.onDidAddOrRemoveCellEmitter.fire({ rawEvent: { kind: NotebookCellsChangeType.ModelChange, changes }, newCellIds: cells.map(cell => cell.handle) });
         this.onDidChangeContentEmitter.queue({ kind: NotebookCellsChangeType.ModelChange, changes });
-        if (cells.length > 0) {
+        if (cells.length > 0 && requestEdit) {
             this.setSelectedCell(cells[cells.length - 1]);
             cells[cells.length - 1].requestEdit();
         }
@@ -478,8 +491,14 @@ export class NotebookModel implements Saveable, Disposable {
     protected moveCellToIndex(fromIndex: number, length: number, toIndex: number, computeUndoRedo: boolean): boolean {
         if (computeUndoRedo) {
             this.undoRedoService.pushElement(this.uri,
-                async () => { this.moveCellToIndex(toIndex, length, fromIndex, false); },
-                async () => { this.moveCellToIndex(fromIndex, length, toIndex, false); }
+                async () => {
+                    this.moveCellToIndex(toIndex, length, fromIndex, false);
+                    this.fireContentChange();
+                },
+                async () => {
+                    this.moveCellToIndex(fromIndex, length, toIndex, false);
+                    this.fireContentChange();
+                }
             );
         }
 
@@ -495,11 +514,9 @@ export class NotebookModel implements Saveable, Disposable {
     }
 
     protected isCellMetadataChanged(a: NotebookCellMetadata, b: NotebookCellMetadata): boolean {
-        const keys = new Set([...Object.keys(a || {}), ...Object.keys(b || {})]);
+        const keys = new Set<keyof NotebookCellMetadata>([...Object.keys(a || {}), ...Object.keys(b || {})]);
         for (const key of keys) {
-            if (
-                (a[key as keyof NotebookCellMetadata] !== b[key as keyof NotebookCellMetadata])
-            ) {
+            if (a[key] !== b[key]) {
                 return true;
             }
         }

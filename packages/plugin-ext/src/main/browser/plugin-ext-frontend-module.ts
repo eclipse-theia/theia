@@ -21,7 +21,8 @@ import '../../../src/main/browser/style/comments.css';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import {
     FrontendApplicationContribution, WidgetFactory, bindViewContribution,
-    ViewContainerIdentifier, ViewContainer, createTreeContainer, TreeWidget, LabelProviderContribution
+    ViewContainerIdentifier, ViewContainer, createTreeContainer, TreeWidget, LabelProviderContribution,
+    UndoRedoHandler
 } from '@theia/core/lib/browser';
 import { MaybePromise, CommandContribution, ResourceResolver, bindContributionProvider } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
@@ -66,7 +67,6 @@ import { CommentsService, PluginCommentService } from './comments/comments-servi
 import { CommentingRangeDecorator } from './comments/comments-decorator';
 import { CommentsContribution } from './comments/comments-contribution';
 import { CommentsContextKeyService } from './comments/comments-context-key-service';
-import { CustomEditorContribution } from './custom-editors/custom-editor-contribution';
 import { PluginCustomEditorRegistry } from './custom-editors/plugin-custom-editor-registry';
 import { CustomEditorWidgetFactory } from '../browser/custom-editors/custom-editor-widget-factory';
 import { CustomEditorWidget } from './custom-editors/custom-editor-widget';
@@ -90,6 +90,7 @@ import { NotebookCellModel } from '@theia/notebook/lib/browser/view-model/notebo
 import { NotebookModel } from '@theia/notebook/lib/browser/view-model/notebook-model';
 import { ArgumentProcessorContribution } from './command-registry-main';
 import { WebviewSecondaryWindowSupport } from './webview/webview-secondary-window-support';
+import { CustomEditorUndoRedoHandler } from './custom-editors/custom-editor-undo-redo-handler';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
@@ -191,14 +192,13 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(FrontendApplicationContribution).toService(WebviewSecondaryWindowSupport);
     bind(FrontendApplicationContribution).toService(WebviewContextKeys);
 
-    bind(CustomEditorContribution).toSelf().inSingletonScope();
-    bind(CommandContribution).toService(CustomEditorContribution);
-
     bind(PluginCustomEditorRegistry).toSelf().inSingletonScope();
     bind(CustomEditorService).toSelf().inSingletonScope();
     bind(CustomEditorWidget).toSelf();
     bind(CustomEditorWidgetFactory).toDynamicValue(ctx => new CustomEditorWidgetFactory(ctx.container)).inSingletonScope();
     bind(WidgetFactory).toService(CustomEditorWidgetFactory);
+    bind(CustomEditorUndoRedoHandler).toSelf().inSingletonScope();
+    bind(UndoRedoHandler).toService(CustomEditorUndoRedoHandler);
 
     bind(PluginViewWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
