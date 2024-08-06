@@ -107,7 +107,7 @@
   width: calc(100% - 46px);
   flex: 1;
   outline: 1px solid var(--theia-notebook-cellBorderColor);
-  margin: 0px 10px;
+  margin: 0px 16px 0px 10px;
 }
 
 .theia-notebook-cell.focused .theia-notebook-cell-editor-container {
@@ -288,7 +288,7 @@
 
 .theia-notebook-cell-output-webview {
   padding: 5px 0px;
-  margin: 0px 10px;
+  margin: 0px 15px 0px 9px;
   width: 100%;
 }
 
@@ -350,7 +350,7 @@
   transform: translateY(calc(-100% - 10px));
 }
 
-.theia-notebook-find-widget.search-mode > * > *:nth-child(2) {
+.theia-notebook-find-widget.search-mode>*>*:nth-child(2) {
   display: none;
 }
 
@@ -379,9 +379,9 @@
   align-items: center;
 }
 
-.theia-notebook-find-widget-buttons-first > div,
-.theia-notebook-find-widget-buttons-second > div {
-    margin-right: 4px;
+.theia-notebook-find-widget-buttons-first>div,
+.theia-notebook-find-widget-buttons-second>div {
+  margin-right: 4px;
 }
 
 .theia-notebook-find-widget-buttons-second {
@@ -457,11 +457,11 @@
 }
 
 mark.theia-find-match {
-    color: var(--theia-editor-findMatchHighlightForeground);
-    background-color: var(--theia-editor-findMatchHighlightBackground);
+  color: var(--theia-editor-findMatchHighlightForeground);
+  background-color: var(--theia-editor-findMatchHighlightBackground);
 }
 
 mark.theia-find-match.theia-find-match-selected {
-    color: var(--theia-editor-findMatchForeground);
-    background-color: var(--theia-editor-findMatchBackground);
+  color: var(--theia-editor-findMatchForeground);
+  background-color: var(--theia-editor-findMatchBackground);
 }
