@@ -17,29 +17,36 @@
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { FileOperation } from '@theia/filesystem/lib/common/files';
-import { ApplicationShell, NavigatableWidget, Saveable, SaveableSource, SaveOptions } from '@theia/core/lib/browser';
+import { ApplicationShell, DelegatingSaveable, NavigatableWidget, Saveable, SaveableSource, SaveOptions } from '@theia/core/lib/browser';
 import { SaveableService } from '@theia/core/lib/browser/saveable-service';
 import { Reference } from '@theia/core/lib/common/reference';
 import { WebviewWidget } from '../webview/webview';
 import { CustomEditorModel } from './custom-editors-main';
+import { CustomEditorWidget as CustomEditorWidgetShape } from '@theia/editor/lib/browser';
 
 @injectable()
-export class CustomEditorWidget extends WebviewWidget implements SaveableSource, NavigatableWidget {
+export class CustomEditorWidget extends WebviewWidget implements CustomEditorWidgetShape, SaveableSource, NavigatableWidget {
     static override FACTORY_ID = 'plugin-custom-editor';
+    static readonly SIDE_BY_SIDE_FACTORY_ID = CustomEditorWidget.FACTORY_ID + '.side-by-side';
 
     override id: string;
     resource: URI;
 
-    protected _modelRef: Reference<CustomEditorModel>;
-    get modelRef(): Reference<CustomEditorModel> {
+    protected _modelRef: Reference<CustomEditorModel | undefined> = { object: undefined, dispose: () => { } };
+    get modelRef(): Reference<CustomEditorModel | undefined> {
         return this._modelRef;
     }
     set modelRef(modelRef: Reference<CustomEditorModel>) {
+        this._modelRef.dispose();
         this._modelRef = modelRef;
+        this.delegatingSaveable.delegate = modelRef.object;
         this.doUpdateContent();
     }
+
+    // ensures that saveable is available even if modelRef.object is undefined
+    protected readonly delegatingSaveable = new DelegatingSaveable();
     get saveable(): Saveable {
-        return this._modelRef.object;
+        return this.delegatingSaveable;
     }
 
     @inject(ApplicationShell)
@@ -60,21 +67,23 @@ export class CustomEditorWidget extends WebviewWidget implements SaveableSource,
     }
 
     undo(): void {
-        this._modelRef.object.undo();
+        this._modelRef.object?.undo();
     }
 
     redo(): void {
-        this._modelRef.object.redo();
+        this._modelRef.object?.redo();
     }
 
     async save(options?: SaveOptions): Promise<void> {
-        await this._modelRef.object.saveCustomEditor(options);
+        await this._modelRef.object?.saveCustomEditor(options);
     }
 
     async saveAs(source: URI, target: URI, options?: SaveOptions): Promise<void> {
-        const result = await this._modelRef.object.saveCustomEditorAs(source, target, options);
-        this.doMove(target);
-        return result;
+        if (this._modelRef.object) {
+            const result = await this._modelRef.object.saveCustomEditorAs(source, target, options);
+            this.doMove(target);
+            return result;
+        }
     }
 
     getResourceUri(): URI | undefined {

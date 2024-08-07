@@ -419,6 +419,10 @@ export class FileService {
         return activation;
     }
 
+    hasProvider(scheme: string): boolean {
+        return this.providers.has(scheme);
+    }
+
     /**
      * Tests if the service (i.e. any of its registered {@link FileSystemProvider}s) can handle the given resource.
      * @param resource `URI` of the resource to test.

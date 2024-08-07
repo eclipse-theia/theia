@@ -21,10 +21,10 @@ import '../../../src/main/browser/style/comments.css';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import {
     FrontendApplicationContribution, WidgetFactory, bindViewContribution,
-    ViewContainerIdentifier, ViewContainer, createTreeContainer, TreeWidget, LabelProviderContribution,
-    UndoRedoHandler
+    ViewContainerIdentifier, ViewContainer, createTreeContainer, TreeWidget, LabelProviderContribution, LabelProvider,
+    UndoRedoHandler, DiffUris, Navigatable, SplitWidget
 } from '@theia/core/lib/browser';
-import { MaybePromise, CommandContribution, ResourceResolver, bindContributionProvider } from '@theia/core/lib/common';
+import { MaybePromise, CommandContribution, ResourceResolver, bindContributionProvider, URI, generateUuid } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
 import { HostedPluginSupport } from '../../hosted/browser/hosted-plugin';
 import { HostedPluginWatcher } from '../../hosted/browser/hosted-plugin-watcher';
@@ -199,6 +199,25 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(WidgetFactory).toService(CustomEditorWidgetFactory);
     bind(CustomEditorUndoRedoHandler).toSelf().inSingletonScope();
     bind(UndoRedoHandler).toService(CustomEditorUndoRedoHandler);
+
+    bind(WidgetFactory).toDynamicValue(ctx => ({
+        id: CustomEditorWidget.SIDE_BY_SIDE_FACTORY_ID,
+        createWidget: (arg: { uri: string, viewType: string }) => {
+            const uri = new URI(arg.uri);
+            const [leftUri, rightUri] = DiffUris.decode(uri);
+            const navigatable: Navigatable = {
+                getResourceUri: () => rightUri,
+                createMoveToUri: resourceUri => DiffUris.encode(leftUri, rightUri.withPath(resourceUri.path))
+            };
+            const widget = new SplitWidget({ navigatable });
+            widget.id = arg.viewType + '.side-by-side:' + generateUuid();
+            const labelProvider = ctx.container.get(LabelProvider);
+            widget.title.label = labelProvider.getName(uri);
+            widget.title.iconClass = labelProvider.getIcon(uri);
+            widget.title.closable = true;
+            return widget;
+        }
+    })).inSingletonScope();
 
     bind(PluginViewWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(({ container }) => ({

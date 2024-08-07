@@ -16,6 +16,7 @@
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
+import { open, OpenerService } from '@theia/core/lib/browser';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import { Emitter } from '@theia/core';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
@@ -63,6 +64,9 @@ export class GitScmProvider implements ScmProvider {
         this.onDidChangeCommitTemplateEmitter,
         this.onDidChangeStatusBarCommandsEmitter
     );
+
+    @inject(OpenerService)
+    protected openerService: OpenerService;
 
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
@@ -223,9 +227,12 @@ export class GitScmProvider implements ScmProvider {
 
     async open(change: GitFileChange, options?: EditorOpenerOptions): Promise<void> {
         const uriToOpen = this.getUriToOpen(change);
-        await this.editorManager.open(uriToOpen, options);
+        await open(this.openerService, uriToOpen, options);
     }
 
+    // note: the implementation has to ensure that `GIT_RESOURCE_SCHEME` URIs it returns either directly or within a diff-URI always have a query;
+    // as an example of an issue that can otherwise arise, the VS Code `media-preview` plugin is known to mangle resource URIs without the query:
+    // https://github.com/microsoft/vscode/blob/6eaf6487a4d8301b981036bfa53976546eb6694f/extensions/media-preview/src/imagePreview/index.ts#L205-L209
     getUriToOpen(change: GitFileChange): URI {
         const changeUri: URI = new URI(change.uri);
         const fromFileUri = change.oldUri ? new URI(change.oldUri) : changeUri; // set oldUri on renamed and copied
@@ -233,14 +240,14 @@ export class GitScmProvider implements ScmProvider {
             if (change.staged) {
                 return changeUri.withScheme(GIT_RESOURCE_SCHEME).withQuery('HEAD');
             } else {
-                return changeUri.withScheme(GIT_RESOURCE_SCHEME);
+                return changeUri.withScheme(GIT_RESOURCE_SCHEME).withQuery('index');
             }
         }
         if (change.status !== GitFileStatus.New) {
             if (change.staged) {
                 return DiffUris.encode(
                     fromFileUri.withScheme(GIT_RESOURCE_SCHEME).withQuery('HEAD'),
-                    changeUri.withScheme(GIT_RESOURCE_SCHEME),
+                    changeUri.withScheme(GIT_RESOURCE_SCHEME).withQuery('index'),
                     nls.localize(
                         'theia/git/tabTitleIndex',
                         '{0} (Index)',
@@ -249,7 +256,7 @@ export class GitScmProvider implements ScmProvider {
             }
             if (this.stagedChanges.find(c => c.uri === change.uri)) {
                 return DiffUris.encode(
-                    fromFileUri.withScheme(GIT_RESOURCE_SCHEME),
+                    fromFileUri.withScheme(GIT_RESOURCE_SCHEME).withQuery('index'),
                     changeUri,
                     nls.localize(
                         'theia/git/tabTitleWorkingTree',
@@ -270,11 +277,11 @@ export class GitScmProvider implements ScmProvider {
                 ));
         }
         if (change.staged) {
-            return changeUri.withScheme(GIT_RESOURCE_SCHEME);
+            return changeUri.withScheme(GIT_RESOURCE_SCHEME).withQuery('index');
         }
         if (this.stagedChanges.find(c => c.uri === change.uri)) {
             return DiffUris.encode(
-                changeUri.withScheme(GIT_RESOURCE_SCHEME),
+                changeUri.withScheme(GIT_RESOURCE_SCHEME).withQuery('index'),
                 changeUri,
                 nls.localize(
                     'theia/git/tabTitleWorkingTree',

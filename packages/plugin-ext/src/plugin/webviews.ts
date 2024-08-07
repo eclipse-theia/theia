@@ -255,7 +255,7 @@ export class WebviewImpl implements theia.Webview {
             .replace('{{authority}}', resource.authority)
             .replace('{{path}}', resource.path.replace(/^\//, ''))
             .replace('{{uuid}}', this.origin ?? this.viewId);
-        return URI.parse(uri);
+        return URI.parse(uri).with({ query: resource.query });
     }
 
     get cspSource(): string {

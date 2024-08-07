@@ -24,7 +24,6 @@ import { MAIN_RPC_CONTEXT, CustomEditorsMain, CustomEditorsExt, CustomTextEditor
 import { RPCProtocol } from '../../../common/rpc-protocol';
 import { HostedPluginSupport } from '../../../hosted/browser/hosted-plugin';
 import { PluginCustomEditorRegistry } from './plugin-custom-editor-registry';
-import { CustomEditorWidget } from './custom-editor-widget';
 import { Emitter } from '@theia/core';
 import { UriComponents } from '../../../common/uri-components';
 import { URI } from '@theia/core/shared/vscode-uri';
@@ -39,11 +38,9 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { UndoRedoService } from '@theia/editor/lib/browser/undo-redo-service';
 import { WebviewsMainImpl } from '../webviews-main';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
-import { ApplicationShell, DefaultUriLabelProviderContribution, Saveable, SaveOptions, WidgetOpenerOptions } from '@theia/core/lib/browser';
-import { WebviewOptions, WebviewPanelOptions, WebviewPanelShowOptions } from '@theia/plugin';
-import { WebviewWidgetIdentifier } from '../webview/webview';
+import { ApplicationShell, LabelProvider, Saveable, SaveOptions } from '@theia/core/lib/browser';
+import { WebviewPanelOptions } from '@theia/plugin';
 import { EditorPreferences } from '@theia/editor/lib/browser';
-import { ViewColumn, WebviewPanelTargetArea } from '../../../plugin/types-impl';
 
 const enum CustomEditorModelType {
     Custom,
@@ -58,7 +55,7 @@ export class CustomEditorsMainImpl implements CustomEditorsMain, Disposable {
     protected readonly customEditorService: CustomEditorService;
     protected readonly undoRedoService: UndoRedoService;
     protected readonly customEditorRegistry: PluginCustomEditorRegistry;
-    protected readonly labelProvider: DefaultUriLabelProviderContribution;
+    protected readonly labelProvider: LabelProvider;
     protected readonly widgetManager: WidgetManager;
     protected readonly editorPreferences: EditorPreferences;
     private readonly proxy: CustomEditorsExt;
@@ -75,7 +72,7 @@ export class CustomEditorsMainImpl implements CustomEditorsMain, Disposable {
         this.customEditorService = container.get(CustomEditorService);
         this.undoRedoService = container.get(UndoRedoService);
         this.customEditorRegistry = container.get(PluginCustomEditorRegistry);
-        this.labelProvider = container.get(DefaultUriLabelProviderContribution);
+        this.labelProvider = container.get(LabelProvider);
         this.editorPreferences = container.get(EditorPreferences);
         this.widgetManager = container.get(WidgetManager);
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.CUSTOM_EDITORS_EXT);
@@ -111,7 +108,8 @@ export class CustomEditorsMainImpl implements CustomEditorsMain, Disposable {
         const disposables = new DisposableCollection();
 
         disposables.push(
-            this.customEditorRegistry.registerResolver(viewType, async (widget, widgetOpenerOptions) => {
+            this.customEditorRegistry.registerResolver(viewType, async widget => {
+
                 const { resource, identifier } = widget;
                 widget.options = options;
 
@@ -144,13 +142,16 @@ export class CustomEditorsMainImpl implements CustomEditorsMain, Disposable {
                     });
                 }
 
+                this.webviewsMain.hookWebview(widget);
+                widget.title.label = this.labelProvider.getName(resource);
+
                 const _cancellationSource = new CancellationTokenSource();
                 await this.proxy.$resolveWebviewEditor(
                     resource.toComponents(),
                     identifier.id,
                     viewType,
-                    this.labelProvider.getName(resource)!,
-                    widgetOpenerOptions,
+                    widget.title.label,
+                    widget.viewState.position,
                     options,
                     _cancellationSource.token
                 );
@@ -212,66 +213,6 @@ export class CustomEditorsMainImpl implements CustomEditorsMain, Disposable {
     async $onContentChange(resourceComponents: UriComponents, viewType: string): Promise<void> {
         const model = await this.getCustomEditorModel(resourceComponents, viewType);
         model.changeContent();
-    }
-
-    async $createCustomEditorPanel(
-        panelId: string,
-        title: string,
-        widgetOpenerOptions: WidgetOpenerOptions | undefined,
-        options: WebviewPanelOptions & WebviewOptions
-    ): Promise<void> {
-        const view = await this.widgetManager.getOrCreateWidget<CustomEditorWidget>(CustomEditorWidget.FACTORY_ID, <WebviewWidgetIdentifier>{ id: panelId });
-        this.webviewsMain.hookWebview(view);
-        view.title.label = title;
-        const { enableFindWidget, retainContextWhenHidden, enableScripts, enableForms, localResourceRoots, ...contentOptions } = options;
-        view.viewColumn = ViewColumn.One; // behaviour might be overridden later using widgetOpenerOptions (if available)
-        view.options = { enableFindWidget, retainContextWhenHidden };
-        view.setContentOptions({
-            allowScripts: enableScripts,
-            allowForms: enableForms,
-            localResourceRoots: localResourceRoots && localResourceRoots.map(root => root.toString()),
-            ...contentOptions,
-            ...view.contentOptions
-        });
-        if (view.isAttached) {
-            if (view.isVisible) {
-                this.shell.revealWidget(view.id);
-            }
-            return;
-        }
-        const showOptions: WebviewPanelShowOptions = {
-            preserveFocus: true
-        };
-
-        if (widgetOpenerOptions) {
-            if (widgetOpenerOptions.mode === 'reveal') {
-                showOptions.preserveFocus = false;
-            }
-
-            if (widgetOpenerOptions.widgetOptions) {
-                let area: WebviewPanelTargetArea;
-                switch (widgetOpenerOptions.widgetOptions.area) {
-                    case 'main':
-                        area = WebviewPanelTargetArea.Main;
-                    case 'left':
-                        area = WebviewPanelTargetArea.Left;
-                    case 'right':
-                        area = WebviewPanelTargetArea.Right;
-                    case 'bottom':
-                        area = WebviewPanelTargetArea.Bottom;
-                    default: // includes 'top' and 'secondaryWindow'
-                        area = WebviewPanelTargetArea.Main;
-                }
-                showOptions.area = area;
-
-                if (widgetOpenerOptions.widgetOptions.mode === 'split-right' ||
-                    widgetOpenerOptions.widgetOptions.mode === 'open-to-right') {
-                    showOptions.viewColumn = ViewColumn.Beside;
-                }
-            }
-        }
-
-        this.webviewsMain.addOrReattachWidget(view, showOptions);
     }
 }
 

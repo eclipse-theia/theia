@@ -24,7 +24,10 @@ import { WidgetManager } from './widget-manager';
 
 export type WidgetOpenMode = 'open' | 'reveal' | 'activate';
 /**
- * `WidgetOpenerOptions` define serializable generic options used by the {@link WidgetOpenHandler}.
+ * `WidgetOpenerOptions` define generic options used by the {@link WidgetOpenHandler}.
+ *
+ * _Note:_ This object may contain references to widgets (e.g. `widgetOptions.ref`);
+ * these need to be transformed before it can be serialized.
  */
 export interface WidgetOpenerOptions extends OpenerOptions {
     /**

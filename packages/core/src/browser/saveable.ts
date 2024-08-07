@@ -21,7 +21,7 @@ import { MaybePromise } from '../common/types';
 import { Key } from './keyboard/keys';
 import { AbstractDialog } from './dialogs';
 import { nls } from '../common/nls';
-import { DisposableCollection, isObject } from '../common';
+import { Disposable, DisposableCollection, isObject } from '../common';
 import { BinaryBuffer } from '../common/buffer';
 
 export type AutoSaveMode = 'off' | 'afterDelay' | 'onFocusChange' | 'onWindowChange';
@@ -110,6 +110,70 @@ export class DelegatingSaveable implements Saveable {
         this.serialize = delegate.serialize?.bind(delegate);
     }
 
+}
+
+export class CompositeSaveable implements Saveable {
+    protected isDirty = false;
+    protected readonly onDirtyChangedEmitter = new Emitter<void>();
+    protected readonly onContentChangedEmitter = new Emitter<void>();
+    protected readonly toDispose = new DisposableCollection(this.onDirtyChangedEmitter, this.onContentChangedEmitter);
+    protected readonly saveablesMap = new Map<Saveable, Disposable>();
+
+    get dirty(): boolean {
+        return this.isDirty;
+    }
+
+    get onDirtyChanged(): Event<void> {
+        return this.onDirtyChangedEmitter.event;
+    }
+
+    get onContentChanged(): Event<void> {
+        return this.onContentChangedEmitter.event;
+    }
+
+    async save(options?: SaveOptions): Promise<void> {
+        await Promise.all(this.saveables.map(saveable => saveable.save(options)));
+    }
+
+    get saveables(): readonly Saveable[] {
+        return Array.from(this.saveablesMap.keys());
+    }
+
+    add(saveable: Saveable): void {
+        if (this.saveablesMap.has(saveable)) {
+            return;
+        }
+        const toDispose = new DisposableCollection();
+        this.toDispose.push(toDispose);
+        this.saveablesMap.set(saveable, toDispose);
+        toDispose.push(Disposable.create(() => {
+            this.saveablesMap.delete(saveable);
+        }));
+        toDispose.push(saveable.onDirtyChanged(() => {
+            const wasDirty = this.isDirty;
+            this.isDirty = this.saveables.some(s => s.dirty);
+            if (this.isDirty !== wasDirty) {
+                this.onDirtyChangedEmitter.fire();
+            }
+        }));
+        toDispose.push(saveable.onContentChanged(() => {
+            this.onContentChangedEmitter.fire();
+        }));
+        if (saveable.dirty && !this.isDirty) {
+            this.isDirty = true;
+            this.onDirtyChangedEmitter.fire();
+        }
+    }
+
+    remove(saveable: Saveable): boolean {
+        const toDispose = this.saveablesMap.get(saveable);
+        toDispose?.dispose();
+        return !!toDispose;
+    }
+
+    dispose(): void {
+        this.toDispose.dispose();
+    }
 }
 
 export namespace Saveable {
