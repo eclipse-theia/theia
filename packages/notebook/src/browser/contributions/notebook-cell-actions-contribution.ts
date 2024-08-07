@@ -39,11 +39,13 @@ export namespace NotebookCellCommands {
     /** Parameters: notebookModel: NotebookModel | undefined, cell: NotebookCellModel */
     export const EDIT_COMMAND = Command.toDefaultLocalizedCommand({
         id: 'notebook.cell.edit',
+        category: 'Notebook',
         iconClass: codicon('edit')
     });
     /** Parameters: notebookModel: NotebookModel | undefined, cell: NotebookCellModel */
     export const STOP_EDIT_COMMAND = Command.toDefaultLocalizedCommand({
         id: 'notebook.cell.stop-edit',
+        category: 'Notebook',
         iconClass: codicon('check')
     });
     /** Parameters: notebookModel: NotebookModel, cell: NotebookCellModel */
@@ -59,11 +61,21 @@ export namespace NotebookCellCommands {
     /** Parameters: notebookModel: NotebookModel, cell: NotebookCellModel */
     export const EXECUTE_SINGLE_CELL_COMMAND = Command.toDefaultLocalizedCommand({
         id: 'notebook.cell.execute-cell',
+        category: 'Notebook',
+        label: nls.localizeByDefault('Execute Cell'),
         iconClass: codicon('play'),
     });
     /** Parameters: notebookModel: NotebookModel, cell: NotebookCellModel */
     export const EXECUTE_SINGLE_CELL_AND_FOCUS_NEXT_COMMAND = Command.toDefaultLocalizedCommand({
         id: 'notebook.cell.execute-cell-and-focus-next',
+        label: nls.localizeByDefault('Execute Notebook Cell and Select Below'),
+        category: 'Notebook',
+    });
+    /** Parameters: notebookModel: NotebookModel, cell: NotebookCellModel */
+    export const EXECUTE_SINGLE_CELL_AND_INSERT_BELOW_COMMAND = Command.toDefaultLocalizedCommand({
+        id: 'notebook.cell.execute-cell-and-insert-below',
+        label: nls.localizeByDefault('Execute Notebook Cell and Insert Below'),
+        category: 'Notebook',
     });
 
     export const EXECUTE_ABOVE_CELLS_COMMAND = Command.toDefaultLocalizedCommand({
@@ -85,11 +97,13 @@ export namespace NotebookCellCommands {
     /** Parameters: notebookModel: NotebookModel | undefined, cell: NotebookCellModel */
     export const CLEAR_OUTPUTS_COMMAND = Command.toDefaultLocalizedCommand({
         id: 'notebook.cell.clear-outputs',
+        category: 'Notebook',
         label: 'Clear Cell Outputs',
     });
     /** Parameters: notebookModel: NotebookModel | undefined, cell: NotebookCellModel | undefined, output: NotebookCellOutputModel */
     export const CHANGE_OUTPUT_PRESENTATION_COMMAND = Command.toDefaultLocalizedCommand({
         id: 'notebook.cell.change-presentation',
+        category: 'Notebook',
         label: 'Change Presentation',
     });
 
@@ -114,11 +128,13 @@ export namespace NotebookCellCommands {
 
     export const TO_CODE_CELL_COMMAND = Command.toLocalizedCommand({
         id: 'notebook.cell.changeToCode',
+        category: 'Notebook',
         label: 'Change Cell to Code'
     });
 
     export const TO_MARKDOWN_CELL_COMMAND = Command.toLocalizedCommand({
         id: 'notebook.cell.changeToMarkdown',
+        category: 'Notebook',
         label: 'Change Cell to Markdown'
     });
 
@@ -302,6 +318,23 @@ export class NotebookCellActionContribution implements MenuContribution, Command
                 }
             })
         );
+        commands.registerCommand(NotebookCellCommands.EXECUTE_SINGLE_CELL_AND_INSERT_BELOW_COMMAND, this.editableCellCommandHandler(
+            async (notebookModel, cell) => {
+                if (cell.cellKind === CellKind.Code) {
+                    await commands.executeCommand(NotebookCellCommands.EXECUTE_SINGLE_CELL_COMMAND.id, notebookModel, cell);
+                }
+                await commands.executeCommand(NotebookCellCommands.STOP_EDIT_COMMAND.id, notebookModel, cell);
+
+                if (cell.cellKind === CellKind.Code) {
+                    await commands.executeCommand(NotebookCellCommands.INSERT_NEW_CELL_BELOW_COMMAND.id);
+                } else {
+                    await commands.executeCommand(NotebookCellCommands.INSERT_MARKDOWN_CELL_BELOW_COMMAND.id);
+                }
+
+                const index = notebookModel.cells.indexOf(cell);
+                notebookModel.setSelectedCell(notebookModel.cells[index + 1]);
+            })
+        );
 
         commands.registerCommand(NotebookCellCommands.EXECUTE_ABOVE_CELLS_COMMAND, this.editableCellCommandHandler(
             (notebookModel, cell) => {
@@ -430,11 +463,11 @@ export class NotebookCellActionContribution implements MenuContribution, Command
                 keybinding: 'Enter',
                 when: `!editorTextFocus && !inputFocus && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`,
             },
-            {
+            /*{
                 command: NotebookCellCommands.STOP_EDIT_COMMAND.id,
                 keybinding: KeyCode.createKeyCode({ first: Key.ENTER, modifiers: [KeyModifier.Alt] }).toString(),
                 when: `editorTextFocus && !inputFocus && ${NOTEBOOK_EDITOR_FOCUSED}`,
-            },
+            },*/
             {
                 command: NotebookCellCommands.STOP_EDIT_COMMAND.id,
                 keybinding: 'esc',
@@ -448,6 +481,11 @@ export class NotebookCellActionContribution implements MenuContribution, Command
             {
                 command: NotebookCellCommands.EXECUTE_SINGLE_CELL_AND_FOCUS_NEXT_COMMAND.id,
                 keybinding: KeyCode.createKeyCode({ first: Key.ENTER, modifiers: [KeyModifier.Shift] }).toString(),
+                when: `${NOTEBOOK_CELL_LIST_FOCUSED} && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`,
+            },
+            {
+                command: NotebookCellCommands.EXECUTE_SINGLE_CELL_AND_INSERT_BELOW_COMMAND.id,
+                keybinding: KeyCode.createKeyCode({ first: Key.ENTER, modifiers: [KeyModifier.Alt] }).toString(),
                 when: `${NOTEBOOK_CELL_LIST_FOCUSED} && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`,
             },
             {
