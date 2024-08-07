@@ -463,11 +463,11 @@ export class NotebookCellActionContribution implements MenuContribution, Command
                 keybinding: 'Enter',
                 when: `!editorTextFocus && !inputFocus && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`,
             },
-            /*{
+            {
                 command: NotebookCellCommands.STOP_EDIT_COMMAND.id,
-                keybinding: KeyCode.createKeyCode({ first: Key.ENTER, modifiers: [KeyModifier.Alt] }).toString(),
-                when: `editorTextFocus && !inputFocus && ${NOTEBOOK_EDITOR_FOCUSED}`,
-            },*/
+                keybinding: KeyCode.createKeyCode({ first: Key.ENTER, modifiers: [KeyModifier.Alt, KeyModifier.CtrlCmd] }).toString(),
+                when: `editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_TYPE} == 'markdown'`,
+            },
             {
                 command: NotebookCellCommands.STOP_EDIT_COMMAND.id,
                 keybinding: 'esc',

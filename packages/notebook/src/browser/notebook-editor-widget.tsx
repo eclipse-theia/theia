@@ -154,7 +154,6 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
     @postConstruct()
     protected init(): void {
         this.id = NOTEBOOK_EDITOR_ID_PREFIX + this.props.uri.toString();
-        this.node.tabIndex = -1;
 
         this.scrollOptions = {
             suppressScrollY: true
@@ -174,8 +173,6 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
                 this.commandRegistry.executeCommand(NotebookCellCommands.EDIT_COMMAND.id, model, model.cells[0]);
                 model.setSelectedCell(model.cells[0]);
             }
-            model.cells.forEach(cell => cell.onWillBlurCellEditor(() => this.node.focus()));
-            model.onDidAddOrRemoveCell(e => e.newCellIds?.forEach(cellId => model.cells.find(cell => cell.handle === cellId)?.onWillBlurCellEditor(() => this.node.focus())));
         });
     }
 
