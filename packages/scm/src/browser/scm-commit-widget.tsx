@@ -142,7 +142,10 @@ export class ScmCommitWidget extends ReactWidget implements StatefulWidget {
                 onChange={this.setInputValue}
                 ref={this.inputRef}
                 rows={1}
-                maxRows={6} /* from VS Code */>
+                maxRows={6} /* from VS Code */
+                onPointerEnterCapture={undefined}
+                onPointerLeaveCapture={undefined}
+            >
             </TextareaAutosize>;
         return <div className={ScmCommitWidget.Styles.INPUT_MESSAGE_CONTAINER}>
             {textArea}

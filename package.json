@@ -7,7 +7,9 @@
     "node": ">=16"
   },
   "resolutions": {
-    "**/@types/node": "18"
+    "**/@types/node": "18",
+    "**/nan": "2.18.0",
+    "**/cpu-features": "0.0.9"
   },
   "devDependencies": {
     "@types/chai": "4.3.0",
