@@ -87,7 +87,9 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
 
     const [inProgress, setInProgress] = React.useState(false);
     // eslint-disable-next-line no-null/no-null
-    const ref = React.useRef<HTMLDivElement | null>(null);
+    const editorContainerRef = React.useRef<HTMLDivElement | null>(null);
+    // eslint-disable-next-line no-null/no-null
+    const placeholderRef = React.useRef<HTMLDivElement | null>(null);
     const editorRef = React.useRef<MonacoEditor | undefined>(undefined);
     const allRequests = props.chatModel.getRequests();
     const lastRequest = allRequests.length === 0 ? undefined : allRequests[allRequests.length - 1];
@@ -95,7 +97,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
 
     const createInputElement = async () => {
         const resource = await props.untitledResourceResolver.createUntitledResource('', CHAT_VIEW_LANGUAGE_EXTENSION);
-        const editor = await props.editorProvider.createInline(resource.uri, ref.current!, {
+        const editor = await props.editorProvider.createInline(resource.uri, editorContainerRef.current!, {
             language: CHAT_VIEW_LANGUAGE_EXTENSION,
             // Disable code lens, inlay hints and hover support to avoid console errors from other contributions
             codeLens: false,
@@ -105,16 +107,31 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             scrollBeyondLastLine: false,
             scrollBeyondLastColumn: 0,
             minHeight: 1,
-            renderFinalNewline: 'on',
             fontFamily: 'var(--theia-ui-font-family)',
             fontSize: 13,
+            cursorWidth: 1,
             maxHeight: -1,
-            scrollbar: { vertical: 'hidden', horizontal: 'hidden' },
+            scrollbar: { horizontal: 'hidden' },
             automaticLayout: true,
             lineNumbers: 'off',
-            lineHeight: 15,
-            padding: { top: 10, bottom: 5 },
+            lineHeight: 20,
+            padding: { top: 8 },
+            suggest: {
+                showIcons: true,
+                showSnippets: false,
+                showWords: false,
+                showStatusBar: false,
+                insertMode: 'replace',
+            },
+            bracketPairColorization: { enabled: false },
+            wrappingStrategy: 'advanced',
+            stickyScroll: { enabled: false },
         });
+
+        editor.getControl().onDidChangeModelContent(() => {
+            layout();
+        });
+
         editorRef.current = editor;
     };
 
@@ -144,6 +161,19 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         }
     };
 
+    function layout(): void {
+        if (editorRef.current === undefined) {
+            return;
+        }
+        const hiddenClass = 'hidden';
+        const editor = editorRef.current;
+        if (editor.document.textEditorModel.getValue().length > 0) {
+            placeholderRef.current?.classList.add(hiddenClass);
+        } else {
+            placeholderRef.current?.classList.remove(hiddenClass);
+        }
+    }
+
     const onKeyDown = React.useCallback((event: React.KeyboardEvent) => {
         if (event.key === 'Enter' && !event.shiftKey) {
             event.preventDefault();
@@ -152,7 +182,11 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     }, []);
 
     return <div className='theia-ChatInput'>
-        <div className='theia-ChatInput-Editor' ref={ref} onKeyDown={onKeyDown}></div>
+        <div className='theia-ChatInput-Editor-Box'>
+            <div className='theia-ChatInput-Editor' ref={editorContainerRef} onKeyDown={onKeyDown}>
+                <div ref={placeholderRef} className='theia-ChatInput-Editor-Placeholder'>Enter your question</div>
+            </div>
+        </div>
         <div className="theia-ChatInputOptions">
             {
                 inProgress ? <span
