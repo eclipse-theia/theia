@@ -40,6 +40,7 @@ export const PLUGIN_EDITOR_TITLE_MENU = ['plugin_editor/title'];
 export const PLUGIN_EDITOR_TITLE_RUN_MENU = ['plugin_editor/title/run'];
 export const PLUGIN_SCM_TITLE_MENU = ['plugin_scm/title'];
 export const PLUGIN_VIEW_TITLE_MENU = ['plugin_view/title'];
+export const PLUGIN_TEST_VIEW_TITLE_MENU = ['plugin_test/title'];
 
 export const implementedVSCodeContributionPoints = [
     'comments/comment/context',
@@ -62,6 +63,7 @@ export const implementedVSCodeContributionPoints = [
     'timeline/item/context',
     'testing/item/context',
     'testing/message/context',
+    'testing/profiles/context',
     'view/item/context',
     'view/title',
     'webview/context',
@@ -93,6 +95,7 @@ export const codeToTheiaMappings = new Map<ContributionPoint, MenuPath[]>([
     ['scm/title', [PLUGIN_SCM_TITLE_MENU]],
     ['testing/item/context', [TEST_VIEW_CONTEXT_MENU]],
     ['testing/message/context', [TEST_RUNS_CONTEXT_MENU]],
+    ['testing/profiles/context', [PLUGIN_TEST_VIEW_TITLE_MENU]],
     ['timeline/item/context', [TIMELINE_ITEM_CONTEXT_MENU]],
     ['view/item/context', [VIEW_ITEM_CONTEXT_MENU]],
     ['view/title', [PLUGIN_VIEW_TITLE_MENU]],

@@ -25,13 +25,14 @@ import { ScmWidget } from '@theia/scm/lib/browser/scm-widget';
 import { QuickCommandService } from '@theia/core/lib/browser';
 import {
     CodeEditorWidgetUtil, codeToTheiaMappings, ContributionPoint,
-    PLUGIN_EDITOR_TITLE_MENU, PLUGIN_EDITOR_TITLE_RUN_MENU, PLUGIN_SCM_TITLE_MENU, PLUGIN_VIEW_TITLE_MENU
+    PLUGIN_EDITOR_TITLE_MENU, PLUGIN_EDITOR_TITLE_RUN_MENU, PLUGIN_SCM_TITLE_MENU, PLUGIN_TEST_VIEW_TITLE_MENU, PLUGIN_VIEW_TITLE_MENU
 } from './vscode-theia-menu-mappings';
 import { PluginMenuCommandAdapter, ReferenceCountingSet } from './plugin-menu-command-adapter';
 import { ContextKeyExpr } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { PluginSharedStyle } from '../plugin-shared-style';
 import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/base/common/themables';
+import { TestTreeWidget } from '@theia/test/lib/browser/view/test-tree-widget';
 
 @injectable()
 export class MenusContributionPointHandler {
@@ -62,6 +63,7 @@ export class MenusContributionPointHandler {
         });
         this.tabBarToolbar.registerMenuDelegate(PLUGIN_SCM_TITLE_MENU, widget => widget instanceof ScmWidget);
         this.tabBarToolbar.registerMenuDelegate(PLUGIN_VIEW_TITLE_MENU, widget => !this.codeEditorWidgetUtil.is(widget));
+        this.tabBarToolbar.registerMenuDelegate(PLUGIN_TEST_VIEW_TITLE_MENU, widget => widget instanceof TestTreeWidget);
         this.tabBarToolbar.registerItem({ id: 'plugin-menu-contribution-title-contribution', command: '_never_', onDidChange: this.onDidChangeTitleContributionEmitter.event });
         this.contextKeyService.onDidChange(event => {
             if (event.affects(this.titleContributionContextKeys)) {
