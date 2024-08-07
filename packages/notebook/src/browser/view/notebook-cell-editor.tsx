@@ -101,6 +101,16 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
             this.props.notebookContextManager.scopedStore.setContext(NOTEBOOK_CELL_CURSOR_LAST_LINE, currentLine === lineCount);
         }));
 
+        this.toDispose.push(this.props.cell.onWillBlurCellEditor(() => {
+            let parent = this.container?.parentElement;
+            while (parent && !parent.classList.contains('theia-notebook-cell')) {
+                parent = parent.parentElement;
+            }
+            if (parent) {
+                parent.focus();
+            }
+        }));
+
         this.toDispose.push(this.props.cell.onDidChangeEditorOptions(options => {
             this.editor?.getControl().updateOptions(options);
         }));

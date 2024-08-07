@@ -132,7 +132,14 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
                             onDrop={e => this.onDrop(e, index)}
                             draggable={true}
                             tabIndex={-1}
-                            ref={ref => cell === this.state.selectedCell && this.state.scrollIntoView && ref?.scrollIntoView({ block: 'nearest' })}>
+                            ref={ref => {
+                                if (ref && cell === this.state.selectedCell && this.state.scrollIntoView) {
+                                    ref.scrollIntoView({ block: 'nearest' });
+                                    if (cell.cellKind === CellKind.Markup && !cell.editing) {
+                                        ref.focus();
+                                    }
+                                }
+                            }}>
                             <div className={'theia-notebook-cell-marker' + (this.state.selectedCell === cell ? ' theia-notebook-cell-marker-selected' : '')}></div>
                             <div className='theia-notebook-cell-content'>
                                 {this.renderCellContent(cell, index)}
