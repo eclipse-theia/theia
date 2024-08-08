@@ -24,7 +24,7 @@ import { DeployedPlugin, IconUrl, Menu } from '../../../common';
 import { ScmWidget } from '@theia/scm/lib/browser/scm-widget';
 import { QuickCommandService } from '@theia/core/lib/browser';
 import {
-    CodeEditorWidgetUtil, codeToTheiaMappings, codeToTheiaGroupProviders, ContributionPoint,
+    CodeEditorWidgetUtil, codeToTheiaMappings, codeToTheiaContextKeyOverlays, codeToTheiaGroupProviders, ContributionPoint,
     PLUGIN_EDITOR_TITLE_MENU, PLUGIN_EDITOR_TITLE_RUN_MENU, PLUGIN_SCM_TITLE_MENU, PLUGIN_TEST_VIEW_TITLE_MENU, PLUGIN_VIEW_TITLE_MENU
 } from './vscode-theia-menu-mappings';
 import { PluginMenuCommandAdapter, ReferenceCountingSet } from './plugin-menu-command-adapter';
@@ -80,6 +80,13 @@ export class MenusContributionPointHandler {
         return codeToTheiaGroupProviders.get(contributionPoint)?.(item) ?? item.group;
     }
 
+    private getContextKeyOverlay(contributionPoint: ContributionPoint): { key: string; values: string[]; } | undefined {
+        if (codeToTheiaContextKeyOverlays.has(contributionPoint)) {
+            return codeToTheiaContextKeyOverlays.get(contributionPoint);
+        }
+        return undefined;
+    }
+
     handle(plugin: DeployedPlugin): Disposable {
         const allMenus = plugin.contributes?.menus;
         if (!allMenus) {
@@ -114,13 +121,27 @@ export class MenusContributionPointHandler {
                         if (command) {
                             toDispose.push(this.commandAdapter.addCommand(command));
                             targets.forEach(target => {
-                                const node = new ActionMenuNode({
-                                    commandId: command,
-                                    when: item.when,
-                                    order,
-                                }, this.commands);
-                                const parent = this.menuRegistry.getMenuNode(target, group);
-                                toDispose.push(parent.addNode(node));
+                                const overlay = this.getContextKeyOverlay(contributionPoint as ContributionPoint);
+                                if (overlay) {
+                                    overlay.values.forEach(value => {
+                                        const node = new ActionMenuNode({
+                                            commandId: command,
+                                            when: item.when,
+                                            order,
+                                            contextKeyOverlays: [{ key: overlay.key, value: value }]
+                                        }, this.commands);
+                                        const parent = this.menuRegistry.getMenuNode(target, group);
+                                        toDispose.push(parent.addNode(node));
+                                    });
+                                } else {
+                                    const node = new ActionMenuNode({
+                                        commandId: command,
+                                        when: item.when,
+                                        order
+                                    }, this.commands);
+                                    const parent = this.menuRegistry.getMenuNode(target, group);
+                                    toDispose.push(parent.addNode(node));
+                                }
                             });
                         } else if (submenu) {
                             targets.forEach(target => toDispose.push(this.menuRegistry.linkSubmenu(target, submenu!, { order, when: item.when }, group)));

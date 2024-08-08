@@ -24,6 +24,7 @@ import { ACTION_ITEM, codicon, ReactWidget, Widget } from '../../widgets';
 import { TabBarToolbarRegistry } from './tab-bar-toolbar-registry';
 import { AnyToolbarItem, ReactTabBarToolbarItem, TabBarDelegator, TabBarToolbarItem, TAB_BAR_TOOLBAR_CONTEXT_MENU, MenuToolbarItem } from './tab-bar-toolbar-types';
 import { KeybindingRegistry } from '../..//keybinding';
+import { ToolbarMenuNodeWrapper } from './tab-bar-toolbar-menu-adapters';
 
 /**
  * Factory for instantiating tab-bar toolbars.
@@ -297,6 +298,7 @@ export class TabBarToolbar extends ReactWidget {
                         commandId: item.command,
                         when: item.when,
                         order: item.order,
+                        contextKeyOverlays: item instanceof ToolbarMenuNodeWrapper ? item.contextKeyOverlays : undefined
                     }));
                 }
             }

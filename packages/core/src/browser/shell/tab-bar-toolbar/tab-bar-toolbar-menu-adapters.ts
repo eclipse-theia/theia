@@ -27,5 +27,6 @@ export class ToolbarMenuNodeWrapper implements TabBarToolbarItem {
     get tooltip(): string | undefined { return this.menuNode.label; }
     get when(): string | undefined { return this.menuNode.when; }
     get text(): string | undefined { return (this.group === NAVIGATION || this.group === undefined) ? undefined : this.menuNode.label; }
+    get contextKeyOverlays(): { key: string, value: string }[] | undefined { return this.menuNode.contextKeyOverlays; }
 }
 

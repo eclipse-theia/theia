@@ -111,6 +111,10 @@ export const codeToTheiaGroupProviders = new Map<string, (menu: Menu) => string>
     ['testing/profiles/context', () => 'configure']
 ]);
 
+export const codeToTheiaContextKeyOverlays = new Map<string, { key: string, values: string[] }>([
+    ['testing/profiles/context', { key: 'testing.profile.context.group', values: ['run', 'debug', 'coverage'] }],
+]);
+
 type CodeEditorWidget = EditorWidget | WebviewWidget;
 @injectable()
 export class CodeEditorWidgetUtil {
