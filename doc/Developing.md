@@ -508,7 +508,7 @@ etc.) by opening `packages/<package name>/coverage/index.html`.
 
  - Install [`scoop`](https://github.com/lukesampson/scoop#installation).
  - Install [`nvm`](https://github.com/coreybutler/nvm-windows) with scoop: `scoop install nvm`.
- - Install Node.js with `nvm`: `nvm install 18.17.0`, then use it: `nvm use 18.17.0`. You can list all available Node.js versions with `nvm list available` if you want to pick another version.
+ - Install Node.js with `nvm`: `nvm install lts`, then use it: `nvm use lts`. You can list all available Node.js versions with `nvm list available` if you want to pick another version.
  - Install `yarn`: `scoop install yarn`.
  - If you need to install `windows-build-tools`, see [`Installing Windows Build Tools`](#installing-windows-build-tools).
  - If you run into problems with installing the required build tools, the `node-gyp` documentation offers a useful [guide](https://github.com/nodejs/node-gyp#on-windows) how to install the dependencies manually. The versions required for building Theia are:
