@@ -19,10 +19,10 @@ jobs:
         with:
           fetch-depth: 0 # To fetch all history for all branches and tags. (Will be required for caching with lerna: https://github.com/markuplint/markuplint/pull/111)
 
-      - name: Use Node.js 18.x
+      - name: Use Node.js 20.x
         uses: actions/setup-node@1a4442cacd436585916779262731d5b162bc6ec7 # v3.8.2
         with:
-          node-version: '18.x'
+          node-version: '20.x'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Use Python 3.x
