@@ -129,7 +129,7 @@ const CopyToClipboardButton = (props: { code: string, clipboardService: Clipboar
     const copyCodeToClipboard = React.useCallback(() => {
         clipboardService.writeText(code);
     }, [code, clipboardService]);
-    return <button onClick={copyCodeToClipboard}>Copy</button>;
+    return <button className='theia-button main' onClick={copyCodeToClipboard}>Copy</button>;
 };
 
 const InsertCodeAtCursorButton = (props: { code: string, editorManager: EditorManager }) => {
@@ -151,7 +151,7 @@ const InsertCodeAtCursorButton = (props: { code: string, editorManager: EditorMa
             }]);
         }
     }, [code, editorManager]);
-    return <button onClick={insertCode}>Insert at Cursor</button>;
+    return <button className='theia-button main' onClick={insertCode}>Insert at Cursor</button>;
 };
 
 /**
@@ -173,7 +173,11 @@ export const CodeWrapper = (props: {
         const editor = await props.editorProvider.createInline(resource.uri, ref.current!, {
             readOnly: true,
             autoSizing: true,
-            maxHeight: undefined,
+            scrollBeyondLastLine: false,
+            scrollBeyondLastColumn: 0,
+            renderFinalNewline: 'on',
+            maxHeight: -1,
+            scrollbar: { vertical: 'hidden', horizontal: 'hidden' },
             codeLens: false,
             inlayHints: { enabled: 'off' },
             hover: { enabled: false }
@@ -197,6 +201,8 @@ export const CodeWrapper = (props: {
             editorRef.current.document.textEditorModel.setValue(props.content);
         }
     }, [props.content]);
+
+    editorRef.current?.resizeToFit();
 
     return <div ref={ref}></div>;
 };
