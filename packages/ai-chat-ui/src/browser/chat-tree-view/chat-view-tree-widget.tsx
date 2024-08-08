@@ -46,20 +46,21 @@ import { ChatResponsePartRenderer } from '../types';
 import { MarkdownWrapper } from '../chat-response-renderer/markdown-part-renderer';
 
 // TODO Instead of directly operating on the ChatRequestModel we could use an intermediate view model
-interface RequestNode extends TreeNode {
+export interface RequestNode extends TreeNode {
     request: ChatRequestModel
 }
-const isRequestNode = (node: TreeNode): node is RequestNode => 'request' in node;
+export const isRequestNode = (node: TreeNode): node is RequestNode => 'request' in node;
 
 // TODO Instead of directly operating on the ChatResponseModel we could use an intermediate view model
-interface ResponseNode extends TreeNode {
+export interface ResponseNode extends TreeNode {
     response: ChatResponseModel
 }
-const isResponseNode = (node: TreeNode): node is ResponseNode => 'response' in node;
+export const isResponseNode = (node: TreeNode): node is ResponseNode => 'response' in node;
 
 @injectable()
 export class ChatViewTreeWidget extends TreeWidget {
     static readonly ID = 'chat-tree-widget';
+    static readonly CONTEXT_MENU = ['chat-tree-context-menu'];
 
     @inject(ContributionProvider) @named(ChatResponsePartRenderer)
     protected readonly chatResponsePartRenderers: ContributionProvider<ChatResponsePartRenderer<BaseChatResponseContent>>;
@@ -135,14 +136,16 @@ export class ChatViewTreeWidget extends TreeWidget {
                 request.response.onDidChange(() => this.scheduleUpdateScrollToRow());
             }
         });
-        chatModel.onDidChange(event => {
-            if (event.kind === 'addRequest') {
-                this.recreateModelTree(chatModel);
-                if (!event.request.response.isComplete) {
-                    event.request.response.onDidChange(() => this.scheduleUpdateScrollToRow());
+        this.toDispose.push(
+            chatModel.onDidChange(event => {
+                if (event.kind === 'addRequest') {
+                    this.recreateModelTree(chatModel);
+                    if (!event.request.response.isComplete) {
+                        event.request.response.onDidChange(() => this.scheduleUpdateScrollToRow());
+                    }
                 }
-            }
-        });
+            })
+        );
     }
 
     protected override getScrollToRow(): number | undefined {
@@ -175,7 +178,7 @@ export class ChatViewTreeWidget extends TreeWidget {
             return super.renderNode(node, props);
         }
         return <React.Fragment key={node.id}>
-            <div className='theia-ChatNode'>
+            <div className='theia-ChatNode' onContextMenu={e => this.handleContextMenu(node, e)}>
                 {this.renderAgent(node)}
                 {this.renderDetail(node)}
             </div>
@@ -244,15 +247,24 @@ export class ChatViewTreeWidget extends TreeWidget {
         return (
             <div className={'theia-ResponseNode'}>
                 {node.response.response.content.map((c, i) =>
-                    <div className='theia-ResponseNode-Content' key={`${node.id}-content-${i}`}>{this.getChatReponsePartRenderer(c)}</div>
+                    <div className='theia-ResponseNode-Content' key={`${node.id}-content-${i}`}>{this.getChatResponsePartRenderer(c, node)}</div>
                 )}
             </div>
         );
     }
 
-    private getChatReponsePartRenderer(content: ChatResponseContent): React.ReactNode {
+    private getChatResponsePartRenderer(content: ChatResponseContent, node: ResponseNode): React.ReactNode {
         const contributions = this.chatResponsePartRenderers.getContributions();
         const renderer = contributions.map(c => ({ prio: c.canHandle(content), renderer: c })).sort((a, b) => b.prio - a.prio)[0].renderer;
-        return renderer.render(content);
+        return renderer.render(content, node);
+    }
+
+    protected handleContextMenu(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
+        this.contextMenuRenderer.render({
+            menuPath: ChatViewTreeWidget.CONTEXT_MENU,
+            anchor: { x: event.clientX, y: event.clientY },
+            args: [node]
+        });
+        event.preventDefault();
     }
 }

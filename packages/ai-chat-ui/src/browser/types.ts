@@ -16,9 +16,10 @@
 
 import { BaseChatResponseContent, ChatResponseContent } from '@theia/ai-chat/lib/common';
 import { ReactNode } from '@theia/core/shared/react';
+import { ResponseNode } from './chat-tree-view/chat-view-tree-widget';
 
 export const ChatResponsePartRenderer = Symbol('ChatResponsePartRenderer');
 export interface ChatResponsePartRenderer<T extends BaseChatResponseContent> {
-    canHandle(reponse: ChatResponseContent): number;
-    render(reponse: T): ReactNode;
+    canHandle(response: ChatResponseContent): number;
+    render(response: T, parentNode: ResponseNode): ReactNode;
 }

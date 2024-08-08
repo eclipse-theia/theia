@@ -616,7 +616,7 @@ class ChatResponseModelImpl implements ChatResponseModel {
     protected _isCanceled: boolean;
     protected _agentId?: string;
     protected _delegateAgentIds: string[];
-    protected _isErrror: boolean;
+    protected _isError: boolean;
     protected _errorObject: Error | undefined;
 
     constructor(requestId: string, agentId?: string) {
@@ -682,7 +682,7 @@ class ChatResponseModelImpl implements ChatResponseModel {
     error(error: Error): void {
         this._isComplete = true;
         this._isCanceled = false;
-        this._isErrror = true;
+        this._isError = true;
         this._errorObject = error;
         this._onDidChangeEmitter.fire();
     }
@@ -690,6 +690,6 @@ class ChatResponseModelImpl implements ChatResponseModel {
         return this._errorObject;
     }
     get isError(): boolean {
-        return this._isErrror;
+        return this._isError;
     }
 }

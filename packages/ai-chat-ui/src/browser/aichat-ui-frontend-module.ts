@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { bindContributionProvider, CommandContribution } from '@theia/core';
+import { bindContributionProvider, CommandContribution, MenuContribution } from '@theia/core';
 import { bindViewContribution, FrontendApplicationContribution, WidgetFactory, } from '@theia/core/lib/browser';
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { AIChatCommandContribution } from './ai-chat-command-contribution';
@@ -37,6 +37,7 @@ import { ChatViewWidgetToolbarContribution } from './chat-view-widget-toolbar-co
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { AIMonacoEditorProvider } from './chat-response-renderer/ai-monaco-editor-provider';
 import { ChatViewLanguageContribution } from './chat-view-language-contribution';
+import { ChatViewMenuContribution } from './chat-view-contribution';
 
 export default new ContainerModule((bind, _ubind, _isBound, rebind) => {
     bindViewContribution(bind, AIChatContribution);
@@ -68,6 +69,9 @@ export default new ContainerModule((bind, _ubind, _isBound, rebind) => {
     bind(ChatResponsePartRenderer).to(ToolCallPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(ErrorPartRenderer).inSingletonScope();
     bind(CommandContribution).to(AIChatCommandContribution);
+    [CommandContribution, MenuContribution].forEach(serviceIdentifier =>
+        bind(serviceIdentifier).to(ChatViewMenuContribution).inSingletonScope()
+    );
 
     bind(AIEditorManager).toSelf().inSingletonScope();
     rebind(EditorManager).toService(AIEditorManager);

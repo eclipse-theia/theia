@@ -13,21 +13,22 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { Message, ReactWidget } from '@theia/core/lib/browser';
-import * as React from '@theia/core/shared/react';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { ChatAgent, ChatAgentService } from '@theia/ai-chat';
-import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
+import { ChatAgent, ChatAgentService, ChatModel } from '@theia/ai-chat';
 import { UntitledResourceResolver } from '@theia/core';
+import { ContextMenuRenderer, Message, ReactWidget } from '@theia/core/lib/browser';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import * as React from '@theia/core/shared/react';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
-import { ChatModel } from '@theia/ai-chat';
+import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { CHAT_VIEW_LANGUAGE_EXTENSION } from './chat-view-language-contribution';
+import { IMouseEvent } from '@theia/monaco-editor-core';
 
 type Query = (query: string) => Promise<void>;
 
 @injectable()
 export class ChatInputWidget extends ReactWidget {
     public static ID = 'chat-input-widget';
+    static readonly CONTEXT_MENU = ['chat-input-context-menu'];
 
     @inject(ChatAgentService)
     protected readonly agentService: ChatAgentService;
@@ -37,6 +38,9 @@ export class ChatInputWidget extends ReactWidget {
 
     @inject(UntitledResourceResolver)
     protected readonly untitledResourceResolver: UntitledResourceResolver;
+
+    @inject(ContextMenuRenderer)
+    protected readonly contextMenuRenderer: ContextMenuRenderer;
 
     private _onQuery: Query;
     set onQuery(query: Query) {
@@ -70,8 +74,17 @@ export class ChatInputWidget extends ReactWidget {
                 getChatAgents={this.getChatAgents.bind(this)}
                 editorProvider={this.editorProvider}
                 untitledResourceResolver={this.untitledResourceResolver}
+                contextMenuCallback={this.handleContextMenu.bind(this)}
             />
         );
+    }
+
+    protected handleContextMenu(event: IMouseEvent): void {
+        this.contextMenuRenderer.render({
+            menuPath: ChatInputWidget.CONTEXT_MENU,
+            anchor: { x: event.posx, y: event.posy },
+        });
+        event.preventDefault();
     }
 
 }
@@ -82,6 +95,7 @@ interface ChatInputProperties {
     getChatAgents: () => ChatAgent[];
     editorProvider: MonacoEditorProvider;
     untitledResourceResolver: UntitledResourceResolver;
+    contextMenuCallback: (event: IMouseEvent) => void;
 }
 const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInputProperties) => {
 
@@ -131,6 +145,10 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         editor.getControl().onDidChangeModelContent(() => {
             layout();
         });
+
+        editor.getControl().onContextMenu(e =>
+            props.contextMenuCallback(e.event)
+        );
 
         editorRef.current = editor;
     };

@@ -20,16 +20,19 @@ import {
     isCodeChatResponseContent,
 } from '@theia/ai-chat/lib/common';
 import { UntitledResourceResolver, URI } from '@theia/core';
+import { ContextMenuRenderer, TreeNode } from '@theia/core/lib/browser';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
 import { Position } from '@theia/core/shared/vscode-languageserver-protocol';
 import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
-import { ChatResponsePartRenderer } from '../types';
+import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { MonacoLanguages } from '@theia/monaco/lib/browser/monaco-languages';
-import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
+import { ChatResponsePartRenderer } from '../types';
+import { ChatViewTreeWidget, ResponseNode } from '../chat-tree-view/chat-view-tree-widget';
+import { IMouseEvent } from '@theia/monaco-editor-core';
 
 @injectable()
 export class CodePartRenderer
@@ -45,6 +48,8 @@ export class CodePartRenderer
     protected readonly editorProvider: MonacoEditorProvider;
     @inject(MonacoLanguages)
     protected readonly languageService: MonacoLanguages;
+    @inject(ContextMenuRenderer)
+    protected readonly contextMenuRenderer: ContextMenuRenderer;
 
     canHandle(response: ChatResponseContent): number {
         if (isCodeChatResponseContent(response)) {
@@ -53,7 +58,7 @@ export class CodePartRenderer
         return -1;
     }
 
-    render(response: CodeChatResponseContent): ReactNode {
+    render(response: CodeChatResponseContent, parentNode: ResponseNode): ReactNode {
         const language = response.language ? this.languageService.getExtension(response.language) : undefined;
 
         return (
@@ -71,7 +76,8 @@ export class CodePartRenderer
                         content={response.code}
                         language={language}
                         editorProvider={this.editorProvider}
-                        untitledResourceResolver={this.untitledResourceResolver}></CodeWrapper>
+                        untitledResourceResolver={this.untitledResourceResolver}
+                        contextMenuCallback={e => this.handleContextMenuEvent(parentNode, e, response.code)}></CodeWrapper>
                 </div>
             </div>
         );
@@ -106,6 +112,15 @@ export class CodePartRenderer
             editor.focus();
             editor.cursor = position;
         }
+    }
+
+    protected handleContextMenuEvent(node: TreeNode | undefined, event: IMouseEvent, code: string): void {
+        this.contextMenuRenderer.render({
+            menuPath: ChatViewTreeWidget.CONTEXT_MENU,
+            anchor: { x: event.posx, y: event.posy },
+            args: [node, { code }]
+        });
+        event.preventDefault();
     }
 }
 
@@ -147,6 +162,7 @@ export const CodeWrapper = (props: {
     language?: string,
     untitledResourceResolver: UntitledResourceResolver,
     editorProvider: MonacoEditorProvider,
+    contextMenuCallback: (e: IMouseEvent) => void
 }) => {
     // eslint-disable-next-line no-null/no-null
     const ref = React.useRef<HTMLDivElement | null>(null);
@@ -163,6 +179,7 @@ export const CodeWrapper = (props: {
             hover: { enabled: false }
         });
         editor.document.textEditorModel.setValue(props.content);
+        editor.getControl().onContextMenu(e => props.contextMenuCallback(e.event));
         editorRef.current = editor;
     };
 

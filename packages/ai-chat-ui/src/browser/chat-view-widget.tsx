@@ -13,13 +13,13 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { BaseWidget, codicon, ExtractableWidget, Message, PanelLayout, StatefulWidget } from '@theia/core/lib/browser';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { nls } from '@theia/core/lib/common/nls';
-import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
-import { ChatInputWidget } from './chat-input-widget';
 import { ChatRequest, ChatService, ChatSession } from '@theia/ai-chat';
-import { deepClone, Event, Emitter, MessageService } from '@theia/core';
+import { deepClone, Emitter, Event, MessageService } from '@theia/core';
+import { BaseWidget, codicon, ExtractableWidget, PanelLayout, StatefulWidget } from '@theia/core/lib/browser';
+import { nls } from '@theia/core/lib/common/nls';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { ChatInputWidget } from './chat-input-widget';
+import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
 
 export namespace ChatViewWidget {
     export interface State {
@@ -34,12 +34,12 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
     static LABEL = nls.localizeByDefault('Chat');
 
     @inject(ChatService)
-    private chatService: ChatService;
+    protected chatService: ChatService;
 
     @inject(MessageService)
-    private messageService: MessageService;
+    protected messageService: MessageService;
 
-    private chatSession: ChatSession;
+    protected chatSession: ChatSession;
 
     protected _state: ChatViewWidget.State = { locked: false };
     protected readonly onStateChangedEmitter = new Emitter<ChatViewWidget.State>();
@@ -86,19 +86,20 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
     }
 
     protected initListeners(): void {
-        this.chatService.onActiveSessionChanged(event => {
-            const session = this.chatService.getSession(event.sessionId);
-            if (session) {
-                this.chatSession = session;
-                this.treeWidget.trackChatModel(this.chatSession.model);
-                if (event.focus) {
-                    this.show();
+        this.toDispose.push(
+            this.chatService.onActiveSessionChanged(event => {
+                const session = this.chatService.getSession(event.sessionId);
+                if (session) {
+                    this.chatSession = session;
+                    this.treeWidget.trackChatModel(this.chatSession.model);
+                    if (event.focus) {
+                        this.show();
+                    }
+                } else {
+                    console.warn(`Session with ${event.sessionId} not found.`);
                 }
-            } else {
-                console.warn(`Session with ${event.sessionId} not found.`);
-            }
-        });
-
+            })
+        );
     }
 
     storeState(): object {
@@ -126,11 +127,7 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         return this.onStateChangedEmitter.event;
     }
 
-    protected override onAfterAttach(msg: Message): void {
-        super.onAfterAttach(msg);
-    }
-
-    private async onQuery(query: string): Promise<void> {
+    protected async onQuery(query: string): Promise<void> {
         if (query.length === 0) { return; }
         // send query
 

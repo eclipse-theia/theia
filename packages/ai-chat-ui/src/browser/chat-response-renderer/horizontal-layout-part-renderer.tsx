@@ -25,6 +25,7 @@ import {
 import { ReactNode } from '@theia/core/shared/react';
 import * as React from '@theia/core/shared/react';
 import { ContributionProvider } from '@theia/core';
+import { ResponseNode } from '../chat-tree-view/chat-view-tree-widget';
 
 @injectable()
 export class HorizontalLayoutPartRenderer
@@ -41,7 +42,7 @@ export class HorizontalLayoutPartRenderer
         }
         return -1;
     }
-    render(response: HorizontalLayoutChatResponseContent): ReactNode {
+    render(response: HorizontalLayoutChatResponseContent, parentNode: ResponseNode): ReactNode {
         const contributions = this.chatResponsePartRenderers.getContributions();
         return (
             <div className="ai-chat-horizontal-layout" style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap' }}>
@@ -52,7 +53,7 @@ export class HorizontalLayoutPartRenderer
                             renderer: c,
                         }))
                         .sort((a, b) => b.prio - a.prio)[0].renderer;
-                    return renderer.render(content);
+                    return renderer.render(content, parentNode);
                 })}
             </div>
         );
