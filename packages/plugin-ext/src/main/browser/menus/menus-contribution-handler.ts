@@ -24,7 +24,7 @@ import { DeployedPlugin, IconUrl, Menu } from '../../../common';
 import { ScmWidget } from '@theia/scm/lib/browser/scm-widget';
 import { QuickCommandService } from '@theia/core/lib/browser';
 import {
-    CodeEditorWidgetUtil, codeToTheiaMappings, ContributionPoint,
+    CodeEditorWidgetUtil, codeToTheiaMappings, codeToTheiaGroupProviders, ContributionPoint,
     PLUGIN_EDITOR_TITLE_MENU, PLUGIN_EDITOR_TITLE_RUN_MENU, PLUGIN_SCM_TITLE_MENU, PLUGIN_TEST_VIEW_TITLE_MENU, PLUGIN_VIEW_TITLE_MENU
 } from './vscode-theia-menu-mappings';
 import { PluginMenuCommandAdapter, ReferenceCountingSet } from './plugin-menu-command-adapter';
@@ -76,6 +76,10 @@ export class MenusContributionPointHandler {
         return codeToTheiaMappings.get(contributionPoint);
     }
 
+    private getMatchingGroup(contributionPoint: ContributionPoint, item: Menu): string | undefined {
+        return codeToTheiaGroupProviders.get(contributionPoint)?.(item) ?? item.group;
+    }
+
     handle(plugin: DeployedPlugin): Disposable {
         const allMenus = plugin.contributes?.menus;
         if (!allMenus) {
@@ -99,7 +103,8 @@ export class MenusContributionPointHandler {
                     } else {
                         this.checkTitleContribution(contributionPoint, item, toDispose);
                         const targets = this.getMatchingMenu(contributionPoint as ContributionPoint) ?? [contributionPoint];
-                        const { group, order } = this.parseGroup(item.group);
+                        const matchingGroup = this.getMatchingGroup(contributionPoint as ContributionPoint, item);
+                        const { group, order } = this.parseGroup(matchingGroup);
                         const { submenu, command } = item;
                         if (submenu && command) {
                             console.warn(

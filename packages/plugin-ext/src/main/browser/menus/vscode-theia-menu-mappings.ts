@@ -35,6 +35,7 @@ import { EDITOR_LINENUMBER_CONTEXT_MENU } from '@theia/editor/lib/browser/editor
 import { TEST_VIEW_CONTEXT_MENU } from '@theia/test/lib/browser/view/test-view-contribution';
 import { TEST_RUNS_CONTEXT_MENU } from '@theia/test/lib/browser/view/test-run-view-contribution';
 import { TerminalMenus } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
+import { Menu } from '../../../common';
 
 export const PLUGIN_EDITOR_TITLE_MENU = ['plugin_editor/title'];
 export const PLUGIN_EDITOR_TITLE_RUN_MENU = ['plugin_editor/title/run'];
@@ -104,6 +105,10 @@ export const codeToTheiaMappings = new Map<ContributionPoint, MenuPath[]>([
     ['terminal/context', [TerminalMenus.TERMINAL_CONTRIBUTIONS]],
     ['terminal/title/context', [TerminalMenus.TERMINAL_TITLE_CONTRIBUTIONS]]
 
+]);
+
+export const codeToTheiaGroupProviders = new Map<string, (menu: Menu) => string>([
+    ['testing/profiles/context', () => 'configure']
 ]);
 
 type CodeEditorWidget = EditorWidget | WebviewWidget;
