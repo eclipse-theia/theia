@@ -169,6 +169,7 @@ export class NotebookDocumentsMainImpl implements NotebookDocumentsMain {
 
     async $tryOpenNotebook(uriComponents: UriComponents): Promise<UriComponents> {
         const uri = URI.fromComponents(uriComponents);
+        await this.notebookModelResolverService.resolve(uri);
         return uri.toComponents();
     }
 
