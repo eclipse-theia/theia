@@ -18,7 +18,7 @@ import debounce = require('lodash.debounce');
 import { inject, injectable, named } from 'inversify';
 // eslint-disable-next-line max-len
 import { CommandMenuNode, CommandRegistry, CompoundMenuNode, ContributionProvider, Disposable, DisposableCollection, Emitter, Event, MenuModelRegistry, MenuNode, MenuPath } from '../../../common';
-import { ContextKeyService } from '../../context-key-service';
+import { ContextKeyService, ContextMatcher } from '../../context-key-service';
 import { FrontendApplicationContribution } from '../../frontend-application-contribution';
 import { Widget } from '../../widgets';
 import { AnyToolbarItem, ConditionalToolbarItem, MenuDelegate, MenuToolbarItem, ReactTabBarToolbarItem, TabBarToolbarItem } from './tab-bar-toolbar-types';
@@ -112,10 +112,18 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
                 const menu = this.menuRegistry.getMenu(delegate.menuPath);
                 const children = CompoundMenuNode.getFlatChildren(menu.children);
                 for (const child of children) {
-                    if (!child.when || this.contextKeyService.match(child.when, widget.node)) {
+                    let contextMatcher: ContextMatcher = this.contextKeyService;
+                    if (child.contextKeyOverlays) {
+                        contextMatcher = this.contextKeyService.createOverlay(child.contextKeyOverlays.map(item => [item.key, item.value]));
+                    }
+                    if (!child.when || contextMatcher.match(child.when, widget.node)) {
                         if (child.children) {
                             for (const grandchild of child.children) {
-                                if (!grandchild.when || this.contextKeyService.match(grandchild.when, widget.node)) {
+                                let grandChildContextMatcher = contextMatcher;
+                                if (grandchild.contextKeyOverlays) {
+                                    grandChildContextMatcher = this.contextKeyService.createOverlay(grandchild.contextKeyOverlays.map(item => [item.key, item.value]));
+                                }
+                                if (!grandchild.when || grandChildContextMatcher.match(grandchild.when, widget.node)) {
                                     if (CommandMenuNode.is(grandchild)) {
                                         result.push(new ToolbarMenuNodeWrapper(grandchild, child.id, delegate.menuPath));
                                     } else if (CompoundMenuNode.is(grandchild)) {

@@ -44,6 +44,11 @@ export interface MenuNodeMetadata {
      * A reference to the parent node - useful for determining the menu path by which the node can be accessed.
      */
     readonly parent?: MenuNode;
+
+    /**
+     * Set of context keys passed to the ContextKeyMatcher when evaluating visibility or enablement
+     */
+    readonly contextKeyOverlays?: { key: string, value: string }[]
 }
 
 /**
@@ -67,7 +72,8 @@ export interface MenuNodeBase extends MenuNodeMetadata, MenuNodeRenderingData { 
 /**
  * A menu entry representing an action, e.g. "New File".
  */
-export interface MenuAction extends MenuNodeRenderingData, Pick<MenuNodeMetadata, 'when'> {
+export interface MenuAction extends MenuNodeRenderingData, Pick<MenuNodeMetadata, 'when'>, Pick<MenuNodeMetadata, 'contextKeyOverlays'> {
+
     /**
      * The command to execute.
      */
