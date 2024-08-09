@@ -275,6 +275,7 @@ import { NotebookKernelsExtImpl } from './notebook/notebook-kernels';
 import { NotebookDocumentsExtImpl } from './notebook/notebook-documents';
 import { NotebookEditorsExtImpl } from './notebook/notebook-editors';
 import { TestingExtImpl } from './tests';
+import { URI as CodeURI } from '@theia/core/shared/vscode-uri';
 
 export function createAPIFactory(
     rpc: RPCProtocol,
@@ -439,7 +440,7 @@ export function createAPIFactory(
                 preserveFocus?: boolean
             ): Promise<theia.TextEditor> {
                 let documentOptions: theia.TextDocumentShowOptions | undefined;
-                const uri: URI = documentArg instanceof URI ? documentArg : documentArg.uri;
+                const uri: URI = documentArg instanceof CodeURI ? documentArg : documentArg.uri;
                 if (typeof columnOrOptions === 'number') {
                     documentOptions = {
                         viewColumn: columnOrOptions
@@ -717,7 +718,7 @@ export function createAPIFactory(
                 if (typeof uriOrFileNameOrOptions === 'string') {
                     uri = URI.file(uriOrFileNameOrOptions);
 
-                } else if (uriOrFileNameOrOptions instanceof URI) {
+                } else if (uriOrFileNameOrOptions instanceof CodeURI) {
                     uri = uriOrFileNameOrOptions;
 
                 } else if (!options || typeof options === 'object') {
