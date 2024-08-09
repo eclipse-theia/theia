@@ -14,14 +14,19 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { FrontendApplication } from '@theia/core/lib/browser';
-import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
+import { AIViewContribution } from '@theia/ai-core/lib/browser';
 import { injectable } from '@theia/core/shared/inversify';
 import { AIHistoryView } from './ai-history-widget';
+import { Command, CommandRegistry } from '@theia/core';
 
 export const AI_HISTORY_TOGGLE_COMMAND_ID = 'aiHistory:toggle';
+export const OPEN_AI_HISTORY_VIEW = Command.toLocalizedCommand({
+    id: 'aiHistory:open',
+    label: 'Open AI History view',
+});
 
 @injectable()
-export class AIHistoryViewContribution extends AbstractViewContribution<AIHistoryView> {
+export class AIHistoryViewContribution extends AIViewContribution<AIHistoryView> {
     constructor() {
         super({
             widgetId: AIHistoryView.ID,
@@ -36,5 +41,12 @@ export class AIHistoryViewContribution extends AbstractViewContribution<AIHistor
 
     async initializeLayout(_app: FrontendApplication): Promise<void> {
         await this.openView();
+    }
+
+    override registerCommands(commands: CommandRegistry): void {
+        super.registerCommands(commands);
+        commands.registerCommand(OPEN_AI_HISTORY_VIEW, {
+            execute: () => this.openView({ activate: true }),
+        });
     }
 }

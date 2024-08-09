@@ -33,6 +33,11 @@ export namespace ChatCommands {
         iconClass: codicon('lock')
     }, '', CHAT_CATEGORY_KEY);
 
+    export const OPEN_AICHAT_VIEW = Command.toLocalizedCommand({
+        id: 'ai-chat:open',
+        category: CHAT_CATEGORY,
+        label: 'Open AI Chat view (UI)',
+    }, '', CHAT_CATEGORY_KEY);
     export const EXTRACT_CHAT_VIEW: Command = {
         id: 'theia-ai:extract-chat-view',
         label: 'Move Chat view into a separate window',

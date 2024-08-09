@@ -19,6 +19,7 @@ import { FrontendApplicationContribution, PreferenceService } from '@theia/core/
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { AICodeFixProvider } from './ai-code-fix-provider';
 import { AICodeFixPrefs } from './ai-code-fix-preference';
+import { AIActivationService } from '@theia/ai-core/lib/browser';
 
 const AI_CODE_FIX_COMMAND_ID = 'ai-code-fix';
 
@@ -30,11 +31,17 @@ export class AIFrontendApplicationContribution implements FrontendApplicationCon
     @inject(PreferenceService)
     private readonly preferenceService: PreferenceService;
 
+    @inject(AIActivationService)
+    protected aiActivationService: AIActivationService;
+
     private disposable: monaco.IDisposable | undefined;
 
+    protected get isCodeFixingEnabled(): boolean {
+        return this.preferenceService.get<boolean>(AICodeFixPrefs.ENABLED, false);
+    }
+
     onDidInitializeLayout(): void {
-        const enableCodeFixing = this.preferenceService.get<boolean>(AICodeFixPrefs.ENABLED, false);
-        if (enableCodeFixing) {
+        if (this.isCodeFixingEnabled && this.aiActivationService.isActive) {
             const disposeCommand = monaco.editor.registerCommand(AI_CODE_FIX_COMMAND_ID, (_accessor, ...args) => {
                 const arg = args[0];
                 const newText: string = arg.newText;
@@ -56,17 +63,24 @@ export class AIFrontendApplicationContribution implements FrontendApplicationCon
                 }
             };
         }
+        this.aiActivationService.onDidChangeActiveStatus(status => {
+            this.handlePreferenceChange(this.isCodeFixingEnabled, status);
+        });
         this.preferenceService.onPreferenceChanged(event => {
             if (event.preferenceName === AICodeFixPrefs.ENABLED) {
-                if (this.disposable) {
-                    this.disposable.dispose();
-                    this.disposable = undefined;
-                }
-                if (event.newValue) {
-                    this.disposable = monaco.languages.registerCodeActionProvider({ scheme: 'file' }, (this.codeFixProvider as monaco.languages.CodeActionProvider));
-                }
+                this.handlePreferenceChange(event.newValue, this.aiActivationService.isActive);
             }
         });
+    }
+
+    protected handlePreferenceChange(isCodeFixingEnabled: boolean, isActive: boolean): void {
+        if (this.disposable) {
+            this.disposable.dispose();
+            this.disposable = undefined;
+        }
+        if (isActive && isCodeFixingEnabled) {
+            this.disposable = monaco.languages.registerCodeActionProvider({ scheme: 'file' }, (this.codeFixProvider as monaco.languages.CodeActionProvider));
+        }
     }
 
     onStop(): void {

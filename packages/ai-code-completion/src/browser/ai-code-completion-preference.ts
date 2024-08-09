@@ -15,27 +15,31 @@
 // *****************************************************************************
 
 import { PreferenceSchema } from '@theia/core/lib/browser/preferences/preference-contribution';
+import { AI_CORE_PREFERENCES_TITLE } from '@theia/ai-core/lib/browser/ai-core-preferences';
 
-export const PREF_AI_CODE_COMPLETION_ENABLE = 'ai-code-completion.enable';
-export const PREF_AI_CODE_COMPLETION_PRECOMPUTE = 'ai-code-completion.precompute';
-export const PREF_AI_INLINE_COMPLETION_ENABLE = 'ai-inline-completion.enable';
+export const PREF_AI_CODE_COMPLETION_ENABLE = 'ai-features.code-completion.enable';
+export const PREF_AI_CODE_COMPLETION_PRECOMPUTE = 'ai-features.code-completion.precompute';
+export const PREF_AI_INLINE_COMPLETION_ENABLE = 'ai-features.code-completion-inline.enable';
 
 export const AICodeCompletionPreferencesSchema: PreferenceSchema = {
     type: 'object',
     properties: {
         [PREF_AI_CODE_COMPLETION_ENABLE]: {
+            title: AI_CORE_PREFERENCES_TITLE,
             type: 'boolean',
-            description: 'Enable AI code completions',
+            description: 'Enable AI completion items within any (Monaco) editor.',
             default: false
         },
         [PREF_AI_CODE_COMPLETION_PRECOMPUTE]: {
+            title: AI_CORE_PREFERENCES_TITLE,
             type: 'boolean',
-            description: 'Precompute completions before it is triggered',
+            description: 'Precompute AI completion items. This will improve completion previews, however it will trigger many more requests and will take longer to complete.',
             default: false
         },
         [PREF_AI_INLINE_COMPLETION_ENABLE]: {
+            title: AI_CORE_PREFERENCES_TITLE,
             type: 'boolean',
-            description: 'Enable AI inline completions',
+            description: 'Enable AI completions inline within any (Monaco) editor.',
             default: false
         }
     }

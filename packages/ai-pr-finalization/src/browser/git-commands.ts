@@ -17,6 +17,7 @@ import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/c
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { GitShellService } from '../common/git-shell-service-protocol';
+import { AICommandHandlerFactory } from '@theia/ai-core/lib/browser';
 
 @injectable()
 export class GitCommandContribution implements CommandContribution {
@@ -25,14 +26,16 @@ export class GitCommandContribution implements CommandContribution {
     protected workspaceService: WorkspaceService;
     @inject(GitShellService)
     protected gitShellService: GitShellService;
+    @inject(AICommandHandlerFactory)
+    protected commandHandlerFactory: AICommandHandlerFactory;
 
     registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand(GitStatusCommand, {
+        commands.registerCommand(GitStatusCommand, this.commandHandlerFactory({
             execute: () => this.getGitStatus()
-        });
-        commands.registerCommand(GitDiffCommand, {
+        }));
+        commands.registerCommand(GitDiffCommand, this.commandHandlerFactory({
             execute: () => this.getGitDiff()
-        });
+        }));
     }
 
     protected getGitStatus(): Promise<string> {

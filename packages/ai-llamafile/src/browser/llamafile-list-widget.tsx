@@ -15,7 +15,7 @@
 // *****************************************************************************
 import * as React from '@theia/core/shared/react';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { ReactWidget } from '@theia/core/lib/browser';
+import { codicon, ReactWidget } from '@theia/core/lib/browser';
 import { LanguageModelRegistry } from '@theia/ai-core';
 import { LlamafileLanguageModel } from '../common/llamafile-language-model';
 import { NewLlamafileEntryInput } from './llamafile-command-contribution';
@@ -42,7 +42,7 @@ export class LlamafileListWidget extends ReactWidget {
     @inject(CommandService) private commandService: CommandService;
 
     static readonly ID = 'llamafile:list-view';
-    static readonly LABEL = 'Llamafile list view';
+    static readonly LABEL = '✨ Llamafile list view [Experimental]';
 
     private items: LlamafileListItem[] = [];
 
@@ -52,6 +52,7 @@ export class LlamafileListWidget extends ReactWidget {
         this.title.label = LlamafileListWidget.LABEL;
         this.title.caption = LlamafileListWidget.LABEL;
         this.title.closable = true;
+        this.title.iconClass = codicon('list-selection');
         this.update();
     }
 

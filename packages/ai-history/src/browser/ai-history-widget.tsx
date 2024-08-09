@@ -28,7 +28,7 @@ export class AIHistoryView extends ReactWidget {
     protected readonly agentService: AgentService;
 
     public static ID = 'ai-history-widget';
-    static LABEL = 'AI Agent History';
+    static LABEL = '✨ AI Agent History [Experimental]';
 
     protected selectedAgent?: Agent;
 

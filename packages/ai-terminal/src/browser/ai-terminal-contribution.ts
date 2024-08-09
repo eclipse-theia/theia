@@ -14,11 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { AICommandHandlerFactory, EXPERIMENTAL_AI_CONTEXT_KEY } from '@theia/ai-core/lib/browser';
 import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from '@theia/core';
 import { KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { TerminalMenus } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
-import { inject, injectable } from '@theia/core/shared/inversify';
 import { TerminalWidgetImpl } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { AiTerminalAgent } from './ai-terminal-agent';
 
@@ -36,20 +37,24 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
     @inject(AiTerminalAgent)
     protected terminalAgent: AiTerminalAgent;
 
+    @inject(AICommandHandlerFactory)
+    protected commandHandlerFactory: AICommandHandlerFactory;
+
     registerKeybindings(keybindings: KeybindingRegistry): void {
         keybindings.registerKeybinding({
             command: AI_TERMINAL_COMMAND.id,
             keybinding: 'ctrlcmd+i',
-            when: 'terminalFocus'
+            when: `terminalFocus && ${EXPERIMENTAL_AI_CONTEXT_KEY}`
         });
     }
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction([...TerminalMenus.TERMINAL_CONTEXT_MENU, '_5'], {
+            when: EXPERIMENTAL_AI_CONTEXT_KEY,
             commandId: AI_TERMINAL_COMMAND.id
         });
     }
     registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand(AI_TERMINAL_COMMAND, {
+        commands.registerCommand(AI_TERMINAL_COMMAND, this.commandHandlerFactory({
             execute: () => {
                 if (this.terminalService.currentTerminal instanceof TerminalWidgetImpl) {
                     new AiTerminalChatWidget(
@@ -58,7 +63,7 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
                     );
                 }
             }
-        });
+        }));
     }
 }
 

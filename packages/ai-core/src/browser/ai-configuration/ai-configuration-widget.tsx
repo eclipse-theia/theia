@@ -26,7 +26,7 @@ import { AIConfigurationSelectionService } from './ai-configuration-service';
 export class AIConfigurationContainerWidget extends BaseWidget {
 
     static readonly ID = 'ai-configuration';
-    static readonly LABEL = 'AI Configuration';
+    static readonly LABEL = '✨ AI Configuration [Experimental]';
     protected dockpanel: DockPanel;
 
     @inject(TheiaDockPanel.Factory)

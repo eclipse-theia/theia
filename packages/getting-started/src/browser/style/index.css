@@ -107,3 +107,23 @@ body {
   display: flex;
   align-items: center;
 }
+
+.gs-float {
+  float: right;
+  width: 50%;
+  margin-top: 100px;
+}
+
+.gs-container.gs-experimental-container {
+  border: 1px solid var(--theia-focusBorder);
+  padding: 15px;
+}
+
+.shadow-pulse {
+  animation: shadowPulse 2s infinite ease-in-out;
+}
+
+@keyframes shadowPulse {
+  0%, 100% { box-shadow: 0 0 0 rgba(0, 0, 0, 0); }
+  50% { box-shadow: 0 0 15px rgba(0, 0, 0, 0.4); }
+}

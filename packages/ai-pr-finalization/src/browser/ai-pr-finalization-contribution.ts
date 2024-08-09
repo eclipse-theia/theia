@@ -17,6 +17,7 @@ import { ChatService } from '@theia/ai-chat';
 import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/common';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { AiPRFinalizationAgent } from './ai-pr-finalization-agent';
+import { AICommandHandlerFactory, } from '@theia/ai-core/lib/browser';
 
 export const AiPrFinalizationCommand: Command = {
     id: 'ai-pr-finalization:invoke',
@@ -28,16 +29,19 @@ export class AiPrFinalizationContribution implements CommandContribution {
     @inject(ChatService)
     protected readonly chatService: ChatService;
 
+    @inject(AICommandHandlerFactory)
+    protected readonly commandHandlerFactory: AICommandHandlerFactory;
+
     @inject(AiPRFinalizationAgent)
     protected readonly aiPrFinalizationAgent: AiPRFinalizationAgent;
 
     registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand(AiPrFinalizationCommand, {
+        commands.registerCommand(AiPrFinalizationCommand, this.commandHandlerFactory({
             execute: () => {
                 this.invokePrFinalization();
-            }
-        });
+            },
 
+        }));
     }
 
     private invokePrFinalization(): void {

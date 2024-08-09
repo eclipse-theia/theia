@@ -13,13 +13,14 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+import { CommandService, deepClone, Emitter, Event, MessageService } from '@theia/core';
 import { ChatRequest, ChatService, ChatSession } from '@theia/ai-chat';
-import { deepClone, Emitter, Event, MessageService } from '@theia/core';
-import { BaseWidget, codicon, ExtractableWidget, PanelLayout, StatefulWidget } from '@theia/core/lib/browser';
+import { BaseWidget, codicon, ExtractableWidget, PanelLayout, PreferenceService, StatefulWidget } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { ChatInputWidget } from './chat-input-widget';
 import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
+import { AIActivationService } from '@theia/ai-core/lib/browser/ai-activation-service';
 
 export namespace ChatViewWidget {
     export interface State {
@@ -31,13 +32,22 @@ export namespace ChatViewWidget {
 export class ChatViewWidget extends BaseWidget implements ExtractableWidget, StatefulWidget {
 
     public static ID = 'chat-view-widget';
-    static LABEL = nls.localizeByDefault('Chat');
+    static LABEL = `✨ ${nls.localizeByDefault('Chat')} [Experimental]`;
 
     @inject(ChatService)
     protected chatService: ChatService;
 
     @inject(MessageService)
     protected messageService: MessageService;
+
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
+
+    @inject(CommandService)
+    protected readonly commandService: CommandService;
+
+    @inject(AIActivationService)
+    protected readonly activationService: AIActivationService;
 
     protected chatSession: ChatSession;
 
@@ -59,6 +69,7 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         this.title.iconClass = codicon('comment-discussion');
         this.title.closable = true;
         this.node.classList.add('chat-view-widget');
+        this.update();
     }
 
     @postConstruct()
@@ -72,6 +83,7 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
             })
         ]);
         const layout = this.layout = new PanelLayout();
+
         this.treeWidget.node.classList.add('chat-tree-view-widget');
         layout.addWidget(this.treeWidget);
         this.inputWidget.node.classList.add('chat-input-widget');
@@ -83,6 +95,13 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         this.treeWidget.trackChatModel(this.chatSession.model);
 
         this.initListeners();
+
+        this.inputWidget.setEnabled(this.activationService.isActive);
+        this.activationService.onDidChangeActiveStatus(change => {
+            this.treeWidget.setEnabled(change);
+            this.inputWidget.setEnabled(change);
+            this.update();
+        });
     }
 
     protected initListeners(): void {
@@ -129,7 +148,6 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
 
     protected async onQuery(query: string): Promise<void> {
         if (query.length === 0) { return; }
-        // send query
 
         const chatRequest: ChatRequest = {
             text: query

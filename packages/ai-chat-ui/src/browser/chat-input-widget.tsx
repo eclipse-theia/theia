@@ -17,8 +17,8 @@ import { ChatAgent, ChatAgentService, ChatModel } from '@theia/ai-chat';
 import { UntitledResourceResolver } from '@theia/core';
 import { ContextMenuRenderer, Message, ReactWidget } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import * as React from '@theia/core/shared/react';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
+import * as React from '@theia/core/shared/react';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { CHAT_VIEW_LANGUAGE_EXTENSION } from './chat-view-language-contribution';
 import { IMouseEvent } from '@theia/monaco-editor-core';
@@ -41,6 +41,8 @@ export class ChatInputWidget extends ReactWidget {
 
     @inject(ContextMenuRenderer)
     protected readonly contextMenuRenderer: ContextMenuRenderer;
+
+    protected isEnabled = false;
 
     private _onQuery: Query;
     set onQuery(query: Query) {
@@ -79,6 +81,11 @@ export class ChatInputWidget extends ReactWidget {
         );
     }
 
+    public setEnabled(enabled: boolean): void {
+        this.isEnabled = enabled;
+        this.update();
+    }
+
     protected handleContextMenu(event: IMouseEvent): void {
         this.contextMenuRenderer.render({
             menuPath: ChatInputWidget.CONTEXT_MENU,
@@ -91,6 +98,7 @@ export class ChatInputWidget extends ReactWidget {
 
 interface ChatInputProperties {
     onQuery: (query: string) => void;
+    isEnabled?: boolean;
     chatModel: ChatModel;
     getChatAgents: () => ChatAgent[];
     editorProvider: MonacoEditorProvider;
@@ -217,7 +225,8 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                     <span
                         className="codicon codicon-send option"
                         title="Send (Enter)"
-                        onClick={() => submit(editorRef.current?.document.textEditorModel.getValue() || '')}
+                        onClick={!props.isEnabled ? () => submit(editorRef.current?.document.textEditorModel.getValue() || '') : undefined}
+                        style={{ cursor: !props.isEnabled ? 'default' : 'pointer', opacity: !props.isEnabled ? 0.5 : 1 }}
                     />
             }
         </div>

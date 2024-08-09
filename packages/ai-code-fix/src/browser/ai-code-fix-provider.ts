@@ -22,6 +22,7 @@ import { PreferenceService } from '@theia/core/lib/browser';
 import { ITextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
 import { CodeActionContext } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneLanguages';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { AIActivationService } from '@theia/ai-core/lib/browser';
 
 @injectable()
 export class AICodeFixProvider implements monaco.languages.CodeActionProvider {
@@ -32,6 +33,9 @@ export class AICodeFixProvider implements monaco.languages.CodeActionProvider {
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
+    @inject(AIActivationService)
+    protected readonly activationService: AIActivationService;
+
     private pendingCodeFixRequest = Promise.resolve<monaco.languages.CodeAction[]>([]);
 
     constructor() {
@@ -41,18 +45,17 @@ export class AICodeFixProvider implements monaco.languages.CodeActionProvider {
         range: monaco.Range,
         context: monaco.languages.CodeActionContext & CodeActionContext,
         token: monaco.CancellationToken):
-        Promise<monaco.languages.CodeActionList | undefined> {
+        Promise<monaco.languages.CodeActionList> {
+
         const codeActions = [];
-        for (const marker of (context as monaco.languages.CodeActionContext).markers) {
-            if (range.startLineNumber === marker.startLineNumber) {
-                codeActions.push(...(await this.postCodeFixRequest(model, marker, context, token)));
+        if (!this.activationService.isActive) {
+            for (const marker of (context as monaco.languages.CodeActionContext).markers) {
+                if (range.startLineNumber === marker.startLineNumber) {
+                    codeActions.push(...(await this.postCodeFixRequest(model, marker, context, token)));
+                }
             }
         }
         return { actions: codeActions, dispose: () => { } };
-    }
-
-    resolveCodeAction?(codeAction: monaco.languages.CodeAction, token: monaco.CancellationToken): monaco.languages.ProviderResult<monaco.languages.CodeAction> {
-        throw new Error('Method not implemented.');
     }
 
     protected async postCodeFixRequest(...args: Parameters<CodeFixAgent['provideQuickFix']>): ReturnType<CodeFixAgent['provideQuickFix']> {

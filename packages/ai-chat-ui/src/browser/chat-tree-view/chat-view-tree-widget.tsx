@@ -21,11 +21,14 @@ import {
     ChatResponseContent,
     ChatResponseModel,
 } from '@theia/ai-chat';
-import { ContributionProvider } from '@theia/core';
+import { CommandRegistry, ContributionProvider } from '@theia/core';
 import {
     codicon,
+    CommonCommands,
     CompositeTreeNode,
     ContextMenuRenderer,
+    Key,
+    KeyCode,
     NodeProps,
     TreeModel,
     TreeNode,
@@ -42,8 +45,8 @@ import {
 import * as React from '@theia/core/shared/react';
 
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
-import { ChatResponsePartRenderer } from '../types';
 import { MarkdownWrapper } from '../chat-response-renderer/markdown-part-renderer';
+import { ChatResponsePartRenderer } from '../types';
 
 // TODO Instead of directly operating on the ChatRequestModel we could use an intermediate view model
 export interface RequestNode extends TreeNode {
@@ -71,7 +74,12 @@ export class ChatViewTreeWidget extends TreeWidget {
     @inject(ChatAgentService)
     protected chatAgentService: ChatAgentService;
 
+    @inject(CommandRegistry)
+    private commandRegistry: CommandRegistry;
+
     protected _shouldScrollToEnd = true;
+
+    protected isEnabled = false;
 
     set shouldScrollToEnd(shouldScrollToEnd: boolean) {
         this._shouldScrollToEnd = shouldScrollToEnd;
@@ -107,6 +115,94 @@ export class ChatViewTreeWidget extends TreeWidget {
 
         this.id = ChatViewTreeWidget.ID + '-treeContainer';
         this.addClass('treeContainer');
+    }
+
+    public setEnabled(enabled: boolean): void {
+        this.isEnabled = enabled;
+        this.update();
+    }
+
+    protected override renderTree(model: TreeModel): React.ReactNode {
+        if (this.isEnabled) {
+            return super.renderTree(model);
+        }
+        return this.renderDisabledMessage();
+    }
+
+    private renderDisabledMessage(): React.ReactNode {
+        return <div className={'theia-ResponseNode'}>
+            <div className='theia-ResponseNode-Content' key={'disabled-message'}>
+                <div className="disable-message">
+                    <span className="section-header"> 🚀 Experimental AI Feature Available!</span>
+                    <div className="section-title">
+                        <p><code>Currently, all AI Features are disabled!</code></p>
+                    </div>
+                    <div className="section-title">
+                        <p>How to Enable Experimental AI Features:</p>
+                    </div>
+                    <div className="section-content">
+                        <p>To enable the experimental AI features, please go to &nbsp;
+                            {this.renderLinkButton('the settings menu', this.doOpenPreferences, this.doOpenPreferencesEnter)}
+                            &nbsp;and locate the <strong>Extensions &gt; ✨ AI Features [Experimental]</strong> section.</p>
+                        <ol>
+                            <li>Toggle the switch for <strong>'Ai-features: Enable'</strong>.</li>
+                            <li>Provide an OpenAI API Key through the <strong>'OpenAI: API Key'</strong> setting or by
+                                setting the <strong>OPENAI_API_KEY</strong> environment variable.</li>
+                        </ol>
+                        <p>This will activate the new AI capabilities in the app. Please remember, these features are still in development, so they may change or be unstable. 🚧</p>
+                    </div>
+
+                    <div className="section-title">
+                        <p>Currently Supported Views and Features:</p>
+                    </div>
+                    <div className="section-content">
+                        <p>Once the experimental AI features are enabled, you can access the following views and features:</p>
+                        <ul>
+                            <li>Code Completion</li>
+                            <li>Quick Fixes</li>
+                            <li>Terminal Assistance</li>
+                            <li>{this.renderLinkButton('AI History View', this.doOpenAIHistory, this.doOpenAIHistoryEnter)}</li>
+                            <li>{this.renderLinkButton('AI Configuration View', this.doOpenAIConfiguration, this.doOpenAIConfigurationEnter)}</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div >;
+    }
+
+    protected doOpenPreferences = () => this.commandRegistry.executeCommand(CommonCommands.OPEN_PREFERENCES.id);
+    protected doOpenPreferencesEnter = (e: React.KeyboardEvent) => {
+        if (this.isEnterKey(e)) {
+            this.doOpenPreferences();
+        }
+    };
+
+    protected doOpenAIHistory = () => this.commandRegistry.executeCommand('aiHistory:open');
+    protected doOpenAIHistoryEnter = (e: React.KeyboardEvent) => {
+        if (this.isEnterKey(e)) {
+            this.doOpenAIHistory();
+        }
+    };
+
+    protected doOpenAIConfiguration = () => this.commandRegistry.executeCommand('aiConfiguration:open');
+    protected doOpenAIConfigurationEnter = (e: React.KeyboardEvent) => {
+        if (this.isEnterKey(e)) {
+            this.doOpenAIConfiguration();
+        }
+    };
+
+    private renderLinkButton(title: string, onClickHandler: () => Promise<unknown>, onKeyDownHandler: (e: React.KeyboardEvent) => void): React.ReactNode {
+        return <a
+            role={'button'}
+            tabIndex={0}
+            onClick={onClickHandler}
+            onKeyDown={e => onKeyDownHandler(e)}>
+            {title}
+        </a>;
+    }
+
+    protected isEnterKey(e: React.KeyboardEvent): boolean {
+        return Key.ENTER.keyCode === KeyCode.createKeyCode(e.nativeEvent).key?.keyCode;
     }
 
     private mapRequestToNode(request: ChatRequestModel): RequestNode {

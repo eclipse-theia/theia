@@ -260,3 +260,35 @@ div:last-child > .theia-ChatNode {
   gap: 0.5em;
   color: var(--theia-errorForeground);
 }
+
+
+.section-header {
+    font-weight: bold;
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+.section-title {
+    font-weight: bold;
+    font-size: 14px;
+    margin: 20px 0px;
+}
+
+.disable-message {
+    font-size: 12px;
+    line-height: 1.6;
+    padding: 15px;
+}
+
+.section-content p {
+    margin: 10px 0;
+}
+
+.section-content a {
+    cursor: pointer;
+}
+
+.section-content strong {
+    font-weight: bold;
+}
+

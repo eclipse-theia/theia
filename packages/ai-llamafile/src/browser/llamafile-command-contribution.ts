@@ -18,6 +18,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { QuickInputService } from '@theia/core/lib/browser';
 import { FileDialogService, OpenFileDialogProps } from '@theia/filesystem/lib/browser';
 import { LlamafileListItem } from './llamafile-list-widget';
+import { AICommandHandlerFactory } from '@theia/ai-core/lib/browser';
 
 export const CREATE_LANGUAGE_MODEL = {
     id: 'core.keyboard.languagemodel',
@@ -93,8 +94,11 @@ export class LlamafileCommandContribution implements CommandContribution {
     @inject(NewLlamafileConfigQuickInputProvider)
     protected readonly quickInputProvider: NewLlamafileConfigQuickInputProvider;
 
+    @inject(AICommandHandlerFactory)
+    protected readonly commandHandlerFactory: AICommandHandlerFactory;
+
     registerCommands(commandRegistry: CommandRegistry): void {
-        commandRegistry.registerCommand(NewLlamafileEntryInput, {
+        commandRegistry.registerCommand(NewLlamafileEntryInput, this.commandHandlerFactory({
             execute: async () => {
                 try {
                     return await this.quickInputProvider.askForNameAndPath();
@@ -102,8 +106,6 @@ export class LlamafileCommandContribution implements CommandContribution {
                     console.error('Input process was canceled or failed.', error);
                 }
             }
-        });
+        }));
     }
-
-
 }
