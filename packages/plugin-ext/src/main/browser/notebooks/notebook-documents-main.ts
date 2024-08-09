@@ -159,11 +159,6 @@ export class NotebookDocumentsMainImpl implements NotebookDocumentsMain {
         // untitled notebooks are dirty by default
         this.proxy.$acceptDirtyStateChanged(ref.uri.toComponents(), true);
 
-        // apply content changes... slightly HACKY -> this triggers a change event
-        if (options.content) {
-            const data = NotebookDto.fromNotebookDataDto(options.content);
-            ref.setData(data);
-        }
         return ref.uri.toComponents();
     }
 
