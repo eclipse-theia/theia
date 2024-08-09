@@ -24,9 +24,10 @@ import { ApplicationProps, DEFAULT_SUPPORTED_API_VERSION } from '@theia/applicat
 import checkDependencies from './check-dependencies';
 import downloadPlugins from './download-plugins';
 import runTest from './run-test';
+import { RateLimiter } from 'limiter';
 import { LocalizationManager, extract } from '@theia/localization-manager';
 import { NodeRequestService } from '@theia/request/lib/node-request-service';
-import { ExtensionIdMatchesFilterFactory, OVSXClient, OVSXHttpClient, OVSXRouterClient, RequestContainsFilterFactory } from '@theia/ovsx-client';
+import { ExtensionIdMatchesFilterFactory, OVSX_RATE_LIMIT, OVSXClient, OVSXHttpClient, OVSXRouterClient, RequestContainsFilterFactory } from '@theia/ovsx-client';
 
 const { executablePath } = require('puppeteer');
 
@@ -389,7 +390,7 @@ async function theiaCli(): Promise<void> {
                 'rate-limit': {
                     describe: 'Amount of maximum open-vsx requests per second',
                     number: true,
-                    default: 15
+                    default: OVSX_RATE_LIMIT
                 },
                 'proxy-url': {
                     describe: 'Proxy URL'
@@ -415,6 +416,7 @@ async function theiaCli(): Promise<void> {
                     strictSSL: strictSsl
                 });
                 let client: OVSXClient | undefined;
+                const rateLimiter = new RateLimiter({ tokensPerInterval: options.rateLimit, interval: 'second' });
                 if (ovsxRouterConfig) {
                     const routerConfig = await fs.promises.readFile(ovsxRouterConfig, 'utf8').then(JSON.parse, error => {
                         console.error(error);
@@ -422,15 +424,15 @@ async function theiaCli(): Promise<void> {
                     if (routerConfig) {
                         client = await OVSXRouterClient.FromConfig(
                             routerConfig,
-                            OVSXHttpClient.createClientFactory(requestService),
+                            OVSXHttpClient.createClientFactory(requestService, rateLimiter),
                             [RequestContainsFilterFactory, ExtensionIdMatchesFilterFactory]
                         );
                     }
                 }
                 if (!client) {
-                    client = new OVSXHttpClient(apiUrl, requestService);
+                    client = new OVSXHttpClient(apiUrl, requestService, rateLimiter);
                 }
-                await downloadPlugins(client, requestService, options);
+                await downloadPlugins(client, rateLimiter, requestService, options);
             },
         })
         .command<{

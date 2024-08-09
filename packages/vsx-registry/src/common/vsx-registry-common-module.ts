@@ -21,6 +21,7 @@ import {
     ExtensionIdMatchesFilterFactory, OVSXApiFilter, OVSXApiFilterImpl, OVSXApiFilterProvider, OVSXClient, OVSXHttpClient, OVSXRouterClient, RequestContainsFilterFactory
 } from '@theia/ovsx-client';
 import { VSXEnvironment } from './vsx-environment';
+import { RateLimiter } from 'limiter';
 
 export default new ContainerModule(bind => {
     bind(OVSXUrlResolver)
@@ -34,10 +35,15 @@ export default new ContainerModule(bind => {
                 .all([
                     vsxEnvironment.getRegistryApiUri(),
                     vsxEnvironment.getOvsxRouterConfig?.(),
+                    vsxEnvironment.getRateLimit()
                 ])
-                .then<OVSXClient>(async ([apiUrl, ovsxRouterConfig]) => {
+                .then<OVSXClient>(async ([apiUrl, ovsxRouterConfig, rateLimit]) => {
+                    const rateLimiter = new RateLimiter({
+                        interval: 'second',
+                        tokensPerInterval: rateLimit
+                    });
                     if (ovsxRouterConfig) {
-                        const clientFactory = OVSXHttpClient.createClientFactory(requestService);
+                        const clientFactory = OVSXHttpClient.createClientFactory(requestService, rateLimiter);
                         return OVSXRouterClient.FromConfig(
                             ovsxRouterConfig,
                             async url => clientFactory(await urlResolver(url)),
@@ -46,7 +52,8 @@ export default new ContainerModule(bind => {
                     }
                     return new OVSXHttpClient(
                         await urlResolver(apiUrl),
-                        requestService
+                        requestService,
+                        rateLimiter
                     );
                 });
             // reuse the promise for subsequent calls to this provider

@@ -16,6 +16,9 @@
 
 import { OVSXClient, VSXQueryOptions, VSXQueryResult, VSXSearchOptions, VSXSearchResult } from './ovsx-types';
 import { RequestContext, RequestService } from '@theia/request';
+import { RateLimiter } from 'limiter';
+
+export const OVSX_RATE_LIMIT = 15;
 
 export class OVSXHttpClient implements OVSXClient {
 
@@ -23,15 +26,16 @@ export class OVSXHttpClient implements OVSXClient {
      * @param requestService
      * @returns factory that will cache clients based on the requested input URL.
      */
-    static createClientFactory(requestService: RequestService): (url: string) => OVSXClient {
+    static createClientFactory(requestService: RequestService, rateLimiter?: RateLimiter): (url: string) => OVSXClient {
         // eslint-disable-next-line no-null/no-null
         const cachedClients: Record<string, OVSXClient> = Object.create(null);
-        return url => cachedClients[url] ??= new this(url, requestService);
+        return url => cachedClients[url] ??= new this(url, requestService, rateLimiter);
     }
 
     constructor(
         protected vsxRegistryUrl: string,
-        protected requestService: RequestService
+        protected requestService: RequestService,
+        protected rateLimiter = new RateLimiter({ tokensPerInterval: OVSX_RATE_LIMIT, interval: 'second' })
     ) { }
 
     search(searchOptions?: VSXSearchOptions): Promise<VSXSearchResult> {
@@ -43,10 +47,20 @@ export class OVSXHttpClient implements OVSXClient {
     }
 
     protected async requestJson<R>(url: string): Promise<R> {
-        return RequestContext.asJson<R>(await this.requestService.request({
-            url,
-            headers: { 'Accept': 'application/json' }
-        }));
+        for (let i = 0; i < 10; i++) {
+            await this.rateLimiter.removeTokens(1);
+            const context = await this.requestService.request({
+                url,
+                headers: { 'Accept': 'application/json' }
+            });
+            if (context.res.statusCode === 429) {
+                // Wait a bit more, since we performed too many requests
+                await this.rateLimiter.removeTokens(1);
+                continue;
+            }
+            return RequestContext.asJson<R>(context);
+        }
+        throw new Error('Request timed out due to too many requests');
     }
 
     protected buildUrl(url: string, query?: object): string {

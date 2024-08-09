@@ -55,8 +55,6 @@ export interface DownloadPluginsOptions {
      * Fetch plugins in parallel
      */
     parallel?: boolean;
-
-    rateLimit?: number;
 }
 
 interface PluginDownload {
@@ -65,16 +63,19 @@ interface PluginDownload {
     version?: string | undefined
 }
 
-export default async function downloadPlugins(ovsxClient: OVSXClient, requestService: RequestService, options: DownloadPluginsOptions = {}): Promise<void> {
+export default async function downloadPlugins(
+    ovsxClient: OVSXClient,
+    rateLimiter: RateLimiter,
+    requestService: RequestService,
+    options: DownloadPluginsOptions = {}
+): Promise<void> {
     const {
         packed = false,
         ignoreErrors = false,
         apiVersion = DEFAULT_SUPPORTED_API_VERSION,
-        rateLimit = 15,
         parallel = true
     } = options;
 
-    const rateLimiter = new RateLimiter({ tokensPerInterval: rateLimit, interval: 'second' });
     const apiFilter = new OVSXApiFilterImpl(ovsxClient, apiVersion);
 
     // Collect the list of failures to be appended at the end of the script.
