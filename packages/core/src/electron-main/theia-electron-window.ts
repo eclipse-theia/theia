@@ -58,6 +58,7 @@ enum ClosingState {
 
 @injectable()
 export class TheiaElectronWindow {
+
     @inject(TheiaBrowserWindowOptions) protected readonly options: TheiaBrowserWindowOptions;
     @inject(WindowApplicationConfig) protected readonly config: WindowApplicationConfig;
     @inject(ElectronMainApplicationGlobals) protected readonly globals: ElectronMainApplicationGlobals;
@@ -200,6 +201,10 @@ export class TheiaElectronWindow {
 
     protected attachReloadListener(): void {
         this.toDispose.push(TheiaRendererAPI.onRequestReload(this.window.webContents, (newUrl?: string) => this.reload(newUrl)));
+    }
+
+    openUrl(url: string): Promise<boolean> {
+        return TheiaRendererAPI.openUrl(this.window.webContents, url);
     }
 
     dispose(): void {

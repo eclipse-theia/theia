@@ -4,6 +4,9 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## not yet released 
+- [plugin] implement stubbed API window registerUriHandler() [#13306](https://github.com/eclipse-theia/theia/pull/13306) - contributed on behalf of STMicroelectronics
+
 ## 1.52.0 - 07/25/2024
 
 - [application-package] bumped the default supported API from `1.90.2` to `1.91.1` [#13955](https://github.com/eclipse-theia/theia/pull/13955) - Contributed on behalf of STMicroelectronics

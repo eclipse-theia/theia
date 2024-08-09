@@ -465,7 +465,6 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bind(FrontendApplicationContribution).toService(StylingService);
 
     bind(SecondaryWindowHandler).toSelf().inSingletonScope();
-
     bind(ViewColumnService).toSelf().inSingletonScope();
 
     bind(UndoRedoHandlerService).toSelf().inSingletonScope();
