@@ -74,8 +74,6 @@ export interface ChatRequestModel {
     readonly response: ChatResponseModel;
     readonly message: ParsedChatRequest;
     readonly agentId?: string;
-    readonly delegateAgentIds: string[];
-    addDelegate(delegateAgentid: string): void;
 }
 
 export interface ChatProgressMessage {
@@ -85,7 +83,12 @@ export interface ChatProgressMessage {
 
 export interface BaseChatResponseContent {
     kind: string;
-    asString?(): string;
+    /**
+     * Represents the content as a string. Returns `undefined` if the content
+     * is purely informational and/or visual and should not be included in the overall
+     * representation of the response.
+     */
+    asString?(): string | undefined;
     merge?(nextChatResponseContent: BaseChatResponseContent): boolean;
 }
 
@@ -164,6 +167,11 @@ export interface CommandChatResponseContent extends BaseChatResponseContent {
     arguments?: unknown[];
 }
 
+export interface InformationalChatResponseContent extends BaseChatResponseContent {
+    kind: 'informational';
+    content: MarkdownString;
+}
+
 export const isTextChatResponseContent = (
     obj: unknown
 ): obj is TextChatResponseContent =>
@@ -177,6 +185,14 @@ export const isMarkdownChatResponseContent = (
 ): obj is MarkdownChatResponseContent =>
     isBaseChatResponseContent(obj) &&
     obj.kind === 'markdownContent' &&
+    'content' in obj &&
+    MarkdownString.is((obj as { content: unknown }).content);
+
+export const isInformationalChatResponseContent = (
+    obj: unknown
+): obj is InformationalChatResponseContent =>
+    isBaseChatResponseContent(obj) &&
+    obj.kind === 'informational' &&
     'content' in obj &&
     MarkdownString.is((obj as { content: unknown }).content);
 
@@ -223,7 +239,8 @@ export type ChatResponseContent =
     | CodeChatResponseContent
     | HorizontalLayoutChatResponseContent
     | ToolCallResponseContent
-    | ErrorResponseContent;
+    | ErrorResponseContent
+    | InformationalChatResponseContent;
 
 export interface ChatResponse {
     readonly content: ChatResponseContent[];
@@ -240,8 +257,6 @@ export interface ChatResponseModel {
     readonly isCanceled: boolean;
     readonly isError: boolean;
     readonly agentId?: string
-    readonly delegateAgentIds: string[];
-    addDelegate(delegateAgentid: string): void;
     cancel(): void;
     error(error: Error): void;
     readonly errorObject?: Error;
@@ -294,7 +309,6 @@ export class ChatRequestModelImpl implements ChatRequestModel {
     protected _request: ChatRequest;
     protected _response: ChatResponseModelImpl;
     protected _agentId?: string;
-    protected _delegateAgentIds: string[];
 
     constructor(session: ChatModel, public readonly message: ParsedChatRequest, agentId?: string) {
         // TODO accept serialized data as a parameter to restore a previously saved ChatRequestModel
@@ -303,7 +317,6 @@ export class ChatRequestModelImpl implements ChatRequestModel {
         this._session = session;
         this._response = new ChatResponseModelImpl(this._id, agentId);
         this._agentId = agentId;
-        this._delegateAgentIds = [];
     }
 
     get id(): string {
@@ -325,17 +338,8 @@ export class ChatRequestModelImpl implements ChatRequestModel {
     get agentId(): string | undefined {
         return this._agentId;
     }
-
-    get delegateAgentIds(): string[] {
-        return this._delegateAgentIds;
-    }
-
-    addDelegate(delegateAgentid: string): void {
-        this._delegateAgentIds.push(delegateAgentid);
-        this._response.addDelegate(delegateAgentid);
-    }
-
 }
+
 export class ErrorResponseContentImpl implements ErrorResponseContent {
     kind: 'error' = 'error';
     protected _error: Error;
@@ -344,6 +348,9 @@ export class ErrorResponseContentImpl implements ErrorResponseContent {
     }
     get error(): Error {
         return this._error;
+    }
+    asString(): string | undefined {
+        return undefined;
     }
 }
 
@@ -386,6 +393,28 @@ export class MarkdownChatResponseContentImpl implements MarkdownChatResponseCont
     }
 
     merge(nextChatResponseContent: MarkdownChatResponseContent): boolean {
+        this._content.appendMarkdown(nextChatResponseContent.content.value);
+        return true;
+    }
+}
+
+export class InformationalChatResponseContentImpl implements InformationalChatResponseContent {
+    kind: 'informational' = 'informational';
+    protected _content: MarkdownStringImpl;
+
+    constructor(content: string) {
+        this._content = new MarkdownStringImpl(content);
+    }
+
+    get content(): MarkdownString {
+        return this._content;
+    }
+
+    asString(): string | undefined {
+        return undefined;
+    }
+
+    merge(nextChatResponseContent: InformationalChatResponseContent): boolean {
         this._content.appendMarkdown(nextChatResponseContent.content.value);
         return true;
     }
@@ -615,7 +644,6 @@ class ChatResponseModelImpl implements ChatResponseModel {
     protected _isComplete: boolean;
     protected _isCanceled: boolean;
     protected _agentId?: string;
-    protected _delegateAgentIds: string[];
     protected _isError: boolean;
     protected _errorObject: Error | undefined;
 
@@ -630,7 +658,6 @@ class ChatResponseModelImpl implements ChatResponseModel {
         this._isComplete = false;
         this._isCanceled = false;
         this._agentId = agentId;
-        this._delegateAgentIds = [];
     }
 
     get id(): string {
@@ -661,12 +688,8 @@ class ChatResponseModelImpl implements ChatResponseModel {
         return this._agentId;
     }
 
-    get delegateAgentIds(): string[] {
-        return this._delegateAgentIds;
-    }
-
-    addDelegate(delegateAgentid: string): void {
-        this._delegateAgentIds.push(delegateAgentid);
+    overrideAgentId(agentId: string): void {
+        this._agentId = agentId;
     }
 
     complete(): void {

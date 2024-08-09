@@ -16,17 +16,26 @@
 
 import { ChatResponsePartRenderer } from '../types';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { ChatResponseContent, isMarkdownChatResponseContent, MarkdownChatResponseContent } from '@theia/ai-chat/lib/common';
+import {
+    ChatResponseContent,
+    InformationalChatResponseContent,
+    isInformationalChatResponseContent,
+    isMarkdownChatResponseContent,
+    MarkdownChatResponseContent
+} from '@theia/ai-chat/lib/common';
 import { ReactNode, useEffect, useRef } from '@theia/core/shared/react';
 import * as React from '@theia/core/shared/react';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 
 @injectable()
-export class MarkdownPartRenderer implements ChatResponsePartRenderer<MarkdownChatResponseContent> {
+export class MarkdownPartRenderer implements ChatResponsePartRenderer<MarkdownChatResponseContent | InformationalChatResponseContent> {
     @inject(MarkdownRenderer) private renderer: MarkdownRenderer;
     canHandle(response: ChatResponseContent): number {
         if (isMarkdownChatResponseContent(response)) {
+            return 10;
+        }
+        if (isInformationalChatResponseContent(response)) {
             return 10;
         }
         return -1;
@@ -34,7 +43,13 @@ export class MarkdownPartRenderer implements ChatResponsePartRenderer<MarkdownCh
     private renderMarkdown(md: MarkdownString): HTMLElement {
         return this.renderer.render(md).element;
     }
-    render(response: MarkdownChatResponseContent): ReactNode {
+    render(response: MarkdownChatResponseContent | InformationalChatResponseContent): ReactNode {
+        // TODO let the user configure whether they want to see informational content
+        if (isInformationalChatResponseContent(response)) {
+            // null is valid in React
+            // eslint-disable-next-line no-null/no-null
+            return null;
+        }
         return <MarkdownWrapper data={response.content} renderCallback={this.renderMarkdown.bind(this)}></MarkdownWrapper>;
     }
 

@@ -26,7 +26,7 @@ import {
     ChatService,
     ChatServiceImpl,
 } from '../common';
-import { DelegatingDefaultChatAgent } from '../common/delegating-default-agent';
+import { DelegatingChatAgent } from '../common/delegating-chat-agent';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, Agent);
@@ -41,7 +41,7 @@ export default new ContainerModule(bind => {
     bind(ChatServiceImpl).toSelf().inSingletonScope();
     bind(ChatService).toService(ChatServiceImpl);
 
-    bind(DelegatingDefaultChatAgent).toSelf().inSingletonScope();
-    bind(Agent).toService(DelegatingDefaultChatAgent);
-    bind(ChatAgent).toService(DelegatingDefaultChatAgent);
+    bind(DelegatingChatAgent).toSelf().inSingletonScope();
+    bind(Agent).toService(DelegatingChatAgent);
+    bind(ChatAgent).toService(DelegatingChatAgent);
 });
