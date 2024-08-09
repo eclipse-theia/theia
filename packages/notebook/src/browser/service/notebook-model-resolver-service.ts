@@ -18,7 +18,7 @@ import { Emitter, Resource, ResourceProvider, UNTITLED_SCHEME, URI } from '@thei
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { UriComponents } from '@theia/core/lib/common/uri';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { NotebookData } from '../../common';
+import { CellKind, NotebookData } from '../../common';
 import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookService } from './notebook-service';
 import { NotebookTypeRegistry } from '../notebook-type-registry';
@@ -111,7 +111,14 @@ export class NotebookModelResolverService {
     async resolveExistingNotebookData(resource: Resource, viewType: string): Promise<NotebookData> {
         if (resource.uri.scheme === 'untitled') {
             return {
-                cells: [],
+                cells: [
+                    {
+                        cellKind: CellKind.Code,
+                        language: 'plaintext',
+                        source: 'Untitled notebook',
+                        outputs: []
+                    }
+                ],
                 metadata: {}
             };
         } else {
