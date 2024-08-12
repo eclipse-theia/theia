@@ -34,7 +34,7 @@ export class TheiaVariableContribution implements AIVariableContribution, AIVari
             // some variable contributions in Theia are done as part of the onStart, same as our AI variable contributions
             // we therefore wait for all of them to be registered before we register we map them to our own
             this.variableRegistry.getVariables().forEach(variable => {
-                service.registerResolver({ id: 'Theia', name: variable.name, description: variable.description ?? 'Theia Built-in Variable' }, this);
+                service.registerResolver({ id: `theia-${variable.name}`, name: variable.name, description: variable.description ?? 'Theia Built-in Variable' }, this);
             });
         });
     }

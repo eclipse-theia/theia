@@ -50,7 +50,7 @@ export class AIVariableConfigurationWidget extends ReactWidget {
         return <div className='configuration-variables-list'>
             <ul>
                 {this.variableService.getVariables().map(variable =>
-                    <li className='variable-item'>
+                    <li key={variable.id} className='variable-item' >
                         <div className='settings-section-title settings-section-category-title' style={{ paddingLeft: 0, paddingBottom: 10 }}>{variable.name}</div>
                         <small>{variable.id}</small>
                         <small>{variable.description}</small>
@@ -59,7 +59,7 @@ export class AIVariableConfigurationWidget extends ReactWidget {
                     </li>
                 )}
             </ul>
-        </div>;
+        </div >;
     }
 
     protected renderReferencedVariables(variable: AIVariable): React.ReactNode | undefined {
@@ -71,7 +71,7 @@ export class AIVariableConfigurationWidget extends ReactWidget {
         return <div>
             <h3>Agents</h3>
             <ul className='variable-references'>
-                {agents.map(agent => <li className='theia-TreeNode theia-CompositeTreeNode theia-ExpandableTreeNode theia-mod-selected'>
+                {agents.map(agent => <li key={agent.id} className='theia-TreeNode theia-CompositeTreeNode theia-ExpandableTreeNode theia-mod-selected'>
                     <div onClick={() => { this.showAgentConfiguration(agent); }} className='variable-reference'>
                         <span>{agent.name}</span>
                         <i className={codicon('chevron-right')}></i>
@@ -89,10 +89,10 @@ export class AIVariableConfigurationWidget extends ReactWidget {
             <h3>Variable Arguments</h3>
             <div className='variable-args'>
                 {variable.args.map(arg =>
-                    <>
+                    <React.Fragment key={arg.name}>
                         <span>{arg.name}</span>
                         <small>{arg.description}</small>
-                    </>
+                    </React.Fragment>
                 )}
             </div>
         </div>;
