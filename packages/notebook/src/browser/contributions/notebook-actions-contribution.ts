@@ -315,7 +315,19 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
             },
             {
                 command: NotebookCommands.CHANGE_SELECTED_CELL.id,
+                keybinding: 'K',
+                args: CellChangeDirection.Up,
+                when: `(!editorTextFocus || ${NOTEBOOK_CELL_CURSOR_FIRST_LINE}) && !suggestWidgetVisible && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`
+            },
+            {
+                command: NotebookCommands.CHANGE_SELECTED_CELL.id,
                 keybinding: 'down',
+                args: CellChangeDirection.Down,
+                when: `(!editorTextFocus || ${NOTEBOOK_CELL_CURSOR_LAST_LINE}) && !suggestWidgetVisible && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`
+            },
+            {
+                command: NotebookCommands.CHANGE_SELECTED_CELL.id,
+                keybinding: 'J',
                 args: CellChangeDirection.Down,
                 when: `(!editorTextFocus || ${NOTEBOOK_CELL_CURSOR_LAST_LINE}) && !suggestWidgetVisible && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`
             },
