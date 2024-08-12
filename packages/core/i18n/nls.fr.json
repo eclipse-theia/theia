@@ -362,6 +362,9 @@
       "alreadyRunning": "L'instance hébergée est déjà en cours d'exécution.",
       "debugInstance": "Instance de débogage",
       "debugMode": "Utilisation de inspect ou inspect-brk pour le débogage de Node.js",
+      "debugPorts": {
+        "debugPort": "Port à utiliser pour le débogage Node.js de ce serveur"
+      },
       "devHost": "Hôte de développement",
       "failed": "Échec de l'exécution de l'instance du plugin hébergé : {0}",
       "hostedPlugin": "Plugin hébergé",

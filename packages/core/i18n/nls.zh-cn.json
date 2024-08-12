@@ -362,6 +362,9 @@
       "alreadyRunning": "托管的实例已经在运行。",
       "debugInstance": "调试实例",
       "debugMode": "使用 inspect 或 inspect-brk 进行 Node.js 调试",
+      "debugPorts": {
+        "debugPort": "用于此服务器 Node.js 调试的端口"
+      },
       "devHost": "发展的主人",
       "failed": "运行托管插件实例失败。{0}",
       "hostedPlugin": "托管的插件",

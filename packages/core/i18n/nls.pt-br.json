@@ -362,6 +362,9 @@
       "alreadyRunning": "A instância anfitriã já está funcionando.",
       "debugInstance": "Instância de depuração",
       "debugMode": "Usando a inspeção ou a inspeção-brk para o Node.js debug",
+      "debugPorts": {
+        "debugPort": "Porta a ser usada para a depuração do Node.js deste servidor"
+      },
       "devHost": "Anfitrião do desenvolvimento",
       "failed": "Falha na execução da instância de plugin hospedado: {0}",
       "hostedPlugin": "Plugin hospedado",

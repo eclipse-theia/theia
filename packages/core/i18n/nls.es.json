@@ -362,6 +362,9 @@
       "alreadyRunning": "La instancia alojada ya está funcionando.",
       "debugInstance": "Instancia de depuración",
       "debugMode": "Uso de inspect o inspect-brk para la depuración de Node.js",
+      "debugPorts": {
+        "debugPort": "Puerto a usar para la depuración Node.js de este servidor"
+      },
       "devHost": "Anfitrión del desarrollo",
       "failed": "Fallo en la ejecución de la instancia del plugin alojado: {0}",
       "hostedPlugin": "Plugin alojado",

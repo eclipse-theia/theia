@@ -362,6 +362,9 @@
       "alreadyRunning": "ホストされているインスタンスはすでに実行されています。",
       "debugInstance": "デバッグインスタンス",
       "debugMode": "Node.js のデバッグに inspect または inspect-brk を使用する",
+      "debugPorts": {
+        "debugPort": "このサーバーのNode.jsデバッグに使用するポート。"
+      },
       "devHost": "開発ホスト",
       "failed": "ホストされたプラグインインスタンスの実行に失敗しました。{0}",
       "hostedPlugin": "ホスト型プラグイン",

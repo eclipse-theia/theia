@@ -18,7 +18,7 @@ import * as chalk from 'chalk';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import { Localization, sortLocalization } from './common';
-import { deepl, DeeplLanguage, DeeplParameters, isSupportedLanguage, supportedLanguages } from './deepl-api';
+import { deepl, DeeplLanguage, DeeplParameters, defaultLanguages, isSupportedLanguage } from './deepl-api';
 
 export interface LocalizationOptions {
     freeApi: Boolean
@@ -52,8 +52,10 @@ export class LocalizationManager {
                 languages.push(targetLanguage);
             }
         }
-        if (languages.length !== options.targetLanguages.length) {
-            console.log('Supported languages: ' + supportedLanguages.join(', '));
+        if (languages.length === 0) {
+            // No supported languages were found, default to all supported languages
+            console.log('No languages were specified, defaulting to all supported languages for VS Code');
+            languages.push(...defaultLanguages);
         }
         const existingTranslations: Map<string, Localization> = new Map();
         for (const targetLanguage of languages) {
