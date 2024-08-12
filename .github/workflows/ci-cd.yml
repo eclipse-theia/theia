@@ -86,7 +86,7 @@ jobs:
         if: runner.os == 'Linux'
         shell: bash
         run: |
-          yarn -s download:plugins --rate-limit 5
+          yarn -s download:plugins --rate-limit 3
 
       - name: Build
         shell: bash
