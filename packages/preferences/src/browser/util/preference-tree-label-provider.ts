@@ -30,19 +30,13 @@ export class PreferenceTreeLabelProvider implements LabelProviderContribution {
     }
 
     getName(node: Preference.TreeNode): string {
-        if (Preference.CompositeTreeNode.is(node) && node.label) {
+        if (Preference.TreeNode.is(node) && node.label) {
             return node.label;
         }
         const { id } = Preference.TreeNode.getGroupAndIdFromNodeId(node.id);
-        const layouts = this.layoutProvider.getLayout();
-        const layout = layouts.find(e => e.id === id);
-        if (layout) {
-            return layout.label;
-        } else {
-            const labels = id.split('.');
-            const groupName = labels[labels.length - 1];
-            return this.formatString(groupName);
-        }
+        const labels = id.split('.');
+        const groupName = labels[labels.length - 1];
+        return this.formatString(groupName);
     }
 
     getPrefix(node: Preference.TreeNode, fullPath = false): string | undefined {

@@ -24,6 +24,7 @@ import {
 } from '@theia/core/lib/browser';
 import React = require('@theia/core/shared/react');
 import { PreferenceTreeModel, PreferenceTreeNodeRow, PreferenceTreeNodeProps } from '../preference-tree-model';
+import { Preference } from '../util/preference-types';
 
 @injectable()
 export class PreferencesTreeWidget extends TreeWidget {
@@ -50,11 +51,26 @@ export class PreferencesTreeWidget extends TreeWidget {
         this.rows = new Map();
         let index = 0;
         for (const [id, nodeRow] of this.model.currentRows.entries()) {
-            if (nodeRow.visibleChildren > 0 && (ExpandableTreeNode.is(nodeRow.node) || ExpandableTreeNode.isExpanded(nodeRow.node.parent))) {
+            if (nodeRow.visibleChildren > 0 && this.isVisibleNode(nodeRow)) {
                 this.rows.set(id, { ...nodeRow, index: index++ });
             }
         }
         this.updateScrollToRow();
+    }
+
+    protected isVisibleNode(row: PreferenceTreeNodeRow): boolean {
+        const node = row.node;
+        if (Preference.TreeNode.isTopLevel(node)) {
+            return true;
+        }
+        let parent = node.parent;
+        while (parent) {
+            if (ExpandableTreeNode.isCollapsed(parent)) {
+                return false;
+            }
+            parent = parent.parent;
+        }
+        return true;
     }
 
     protected override doRenderNodeRow({ depth, visibleChildren, node, isExpansible }: PreferenceTreeNodeRow): React.ReactNode {
