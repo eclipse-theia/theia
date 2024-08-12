@@ -47,20 +47,15 @@ export class OVSXHttpClient implements OVSXClient {
     }
 
     protected async requestJson<R>(url: string): Promise<R> {
-        for (let i = 0; i < 10; i++) {
-            await this.rateLimiter.removeTokens(1);
-            const context = await this.requestService.request({
-                url,
-                headers: { 'Accept': 'application/json' }
-            });
-            if (context.res.statusCode === 429) {
-                // Wait a bit more, since we performed too many requests
-                await this.rateLimiter.removeTokens(1);
-                continue;
-            }
-            return RequestContext.asJson<R>(context);
+        await this.rateLimiter.removeTokens(1);
+        const context = await this.requestService.request({
+            url,
+            headers: { 'Accept': 'application/json' }
+        });
+        if (context.res.statusCode === 429) {
+            console.warn('OVSX rate limit exceeded. Consider reducing the rate limit.');
         }
-        throw new Error('Request timed out due to too many requests');
+        return RequestContext.asJson<R>(context);
     }
 
     protected buildUrl(url: string, query?: object): string {
