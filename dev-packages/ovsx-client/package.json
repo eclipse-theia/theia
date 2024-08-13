@@ -30,6 +30,7 @@
   },
   "dependencies": {
     "@theia/request": "1.52.0",
+    "limiter": "^2.1.0",
     "semver": "^7.5.4",
     "tslib": "^2.6.2"
   }

@@ -32,6 +32,10 @@ export class VSXEnvironmentImpl implements VSXEnvironment {
     @inject(VsxCli)
     protected vsxCli: VsxCli;
 
+    async getRateLimit(): Promise<number> {
+        return this.vsxCli.ovsxRateLimit;
+    }
+
     async getRegistryUri(): Promise<string> {
         return this._registryUri.toString(true);
     }

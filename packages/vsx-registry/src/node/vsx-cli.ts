@@ -17,17 +17,19 @@
 import { CliContribution } from '@theia/core/lib/node';
 import { injectable } from '@theia/core/shared/inversify';
 import { Argv } from '@theia/core/shared/yargs';
-import { OVSXRouterConfig } from '@theia/ovsx-client';
+import { OVSX_RATE_LIMIT, OVSXRouterConfig } from '@theia/ovsx-client';
 import * as fs from 'fs';
 
 @injectable()
 export class VsxCli implements CliContribution {
 
     ovsxRouterConfig: OVSXRouterConfig | undefined;
+    ovsxRateLimit: number;
     pluginsToInstall: string[] = [];
 
     configure(conf: Argv<{}>): void {
         conf.option('ovsx-router-config', { description: 'JSON configuration file for the OVSX router client', type: 'string' });
+        conf.option('ovsx-rate-limit', { description: 'Limits the number of requests to OVSX per second', type: 'number', default: OVSX_RATE_LIMIT });
         conf.option('install-plugin', {
             alias: 'install-extension',
             nargs: 1,
@@ -47,5 +49,7 @@ export class VsxCli implements CliContribution {
         if (Array.isArray(pluginsToInstall)) {
             this.pluginsToInstall = pluginsToInstall;
         }
+        const ovsxRateLimit = args.ovsxRateLimit;
+        this.ovsxRateLimit = typeof ovsxRateLimit === 'number' ? ovsxRateLimit : OVSX_RATE_LIMIT;
     }
 }
