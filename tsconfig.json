@@ -55,6 +55,30 @@
       "path": "examples/playwright"
     },
     {
+      "path": "packages/ai-chat"
+    },
+    {
+      "path": "packages/ai-chat-ui"
+    },
+    {
+      "path": "packages/ai-code-completion"
+    },
+    {
+      "path": "packages/ai-core"
+    },
+    {
+      "path": "packages/ai-history"
+    },
+    {
+      "path": "packages/ai-openai"
+    },
+    {
+      "path": "packages/ai-terminal"
+    },
+    {
+      "path": "packages/ai-workspace-agent"
+    },
+    {
       "path": "packages/bulk-edit"
     },
     {

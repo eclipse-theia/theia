@@ -112,7 +112,7 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
             if (!(editorPromise instanceof Widget)) {
                 editorPromise.then(editor => this.revealSelection(editor, options, uri));
             } else {
-                this.revealSelection(editorPromise, options);
+                this.revealSelection(editorPromise, options, uri);
             }
         }
         return editorPromise;
