@@ -1,0 +1,52 @@
+{
+  "scopeName": "source.prompttemplate",
+  "patterns": [
+    {
+      "name": "variable.other.prompttemplate",
+      "begin": "{{",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.brace.begin"
+        }
+      },
+      "end": "}}",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.brace.end"
+        }
+      },
+      "patterns": [
+        {
+          "name": "keyword.control",
+          "match": "[a-zA-Z_][a-zA-Z0-9_]*"
+        }
+      ]
+    },
+    {
+      "name": "support.function.prompttemplate",
+      "begin": "~{",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.brace.begin"
+        }
+      },
+      "end": "}",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.brace.end"
+        }
+      },
+      "patterns": [
+        {
+          "name": "keyword.control",
+          "match": "[a-zA-Z_][a-zA-Z0-9_\\-]*"
+        }
+      ]
+    }
+  ],
+  "repository": {},
+  "name": "PromptTemplate",
+  "fileTypes": [
+    ".prompttemplate"
+  ]
+}

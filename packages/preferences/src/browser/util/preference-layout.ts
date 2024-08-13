@@ -304,6 +304,10 @@ export const DEFAULT_LAYOUT: PreferenceLayout[] = [
         ]
     },
     {
+        id: 'ai-features',
+        label: 'AI Features', // TODO localize
+    },
+    {
         id: 'extensions',
         label: nls.localizeByDefault('Extensions'),
         children: [

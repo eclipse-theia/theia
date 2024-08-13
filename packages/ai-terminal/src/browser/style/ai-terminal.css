@@ -1,0 +1,94 @@
+.ai-terminal-chat-container {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 500px;
+  padding: 10px;
+  box-sizing: border-box;
+  background: var(--theia-menu-background);
+  color: var(--theia-menu-foreground);
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 1px solid var(--theia-menu-border);
+}
+
+.ai-terminal-chat-container .closeButton {
+  position: absolute;
+  top: 1em;
+  right: 1em;
+  cursor: pointer;
+}
+
+.ai-terminal-chat-container .closeButton:hover {
+  color: var(--theia-menu-foreground);
+}
+
+.ai-terminal-chat-result {
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.ai-terminal-chat-input-container {
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.ai-terminal-chat-input-container textarea {
+  flex-grow: 1;
+  height: 36px;
+  background-color: var(--theia-input-background);
+  border-radius: 4px;
+  box-sizing: border-box;
+  padding: 8px;
+  resize: none;
+  overflow: hidden;
+  line-height: 1.3rem;
+  margin-right: 10px; /* Add some space between textarea and button */
+}
+
+.ai-terminal-chat-input-container .option {
+  width: 21px;
+  height: 21px;
+  display: inline-block;
+  box-sizing: border-box;
+  user-select: none;
+  background-repeat: no-repeat;
+  background-position: center;
+  border: var(--theia-border-width) solid transparent;
+  opacity: 0.7;
+  cursor: pointer;
+}
+
+.ai-terminal-chat-input-container .option:hover {
+  opacity: 1;
+}
+
+@keyframes dots {
+  0%,
+  20% {
+    content: "";
+  }
+  40% {
+    content: ".";
+  }
+  60% {
+    content: "..";
+  }
+  80%,
+  100% {
+    content: "...";
+  }
+}
+.ai-terminal-chat-result p.loading::after {
+  content: "";
+  animation: dots 1s steps(1, end) infinite;
+}
+
+.ai-terminal-chat-result p.command {
+  font-family: "Droid Sans Mono", "monospace", monospace;
+}

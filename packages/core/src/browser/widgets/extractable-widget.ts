@@ -28,6 +28,6 @@ export interface ExtractableWidget extends Widget {
 
 export namespace ExtractableWidget {
     export function is(widget: unknown): widget is ExtractableWidget {
-        return widget instanceof Widget && widget.hasOwnProperty('isExtractable') && (widget as ExtractableWidget).isExtractable === true;
+        return widget instanceof Widget && 'isExtractable' in widget && (widget as ExtractableWidget).isExtractable === true;
     }
 }
