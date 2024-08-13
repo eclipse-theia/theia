@@ -30,7 +30,7 @@ import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { EditorDecoration, EditorWidget, Selection, TextEditorDocument, TrackedRangeStickiness } from '@theia/editor/lib/browser';
-import { DecorationStyle, OpenerService } from '@theia/core/lib/browser';
+import { DecorationStyle, OpenerService, SaveReason } from '@theia/core/lib/browser';
 import { CollaborationFileSystemProvider, CollaborationURI } from './collaboration-file-system-provider';
 import { Range } from '@theia/core/shared/vscode-languageserver-protocol';
 import { CollaborationColorService } from './collaboration-color-service';
@@ -335,10 +335,19 @@ export class CollaborationInstance implements Disposable {
                 throw new Error('Could find file: ' + path);
             }
         });
-        connection.fs.onWriteFile(async (_, path, content) => {
+        connection.fs.onWriteFile(async (_, path, data) => {
             const uri = this.utils.getResourceUri(path);
             if (uri) {
-                await this.fileService.createFile(uri, BinaryBuffer.fromString(content));
+                const model = this.getModel(uri);
+                if (model) {
+                    const content = new TextDecoder().decode(data.content);
+                    if (content !== model.getText()) {
+                        model.textEditorModel.setValue(content);
+                    }
+                    await model.save({ saveReason: SaveReason.Manual });
+                } else {
+                    await this.fileService.createFile(uri, BinaryBuffer.wrap(data.content));
+                }
             } else {
                 throw new Error('Could find file: ' + path);
             }
@@ -675,25 +684,21 @@ export class CollaborationInstance implements Disposable {
 
     protected registerModelUpdate(model: MonacoEditorModel): void {
         let updating = false;
-        const modelPath = this.utils.getProtocolPath(new URI(model.uri))!;
+        const modelPath = this.utils.getProtocolPath(new URI(model.uri));
+        if (!modelPath) {
+            return;
+        }
         const unknownModel = !this.yjs.share.has(modelPath);
         const ytext = this.yjs.getText(modelPath);
         const modelText = model.textEditorModel.getValue();
         if (this.isHost && unknownModel) {
-            this.yjs.transact(() => {
-                // If we are hosting the room, set the initial content
-                // First off, reset the shared content to be empty
-                // This has the benefit of effectively clearing the memory of the shared content across all peers
-                // This is important because the shared content accumulates changes/memory usage over time
-                ytext.delete(0, ytext.length);
-                // Then, insert the content of the text model
-                ytext.insert(0, modelText);
-            });
-        }
-        // Always update the model content to match the shared content
-        const ytextContent = ytext.toString();
-        if (modelText !== ytextContent) {
-            model.textEditorModel.setValue(ytextContent);
+            // If we are hosting the room, set the initial content
+            // First off, reset the shared content to be empty
+            // This has the benefit of effectively clearing the memory of the shared content across all peers
+            // This is important because the shared content accumulates changes/memory usage over time
+            this.resetYjsText(ytext, modelText);
+        } else {
+            this.options.connection.editor.open(this.host.id, modelPath);
         }
         // The Ytext instance is our source of truth for the model content
         // Sometimes (especially after a lot of sequential undo/redo operations) our model content can get out of sync
@@ -725,6 +730,10 @@ export class CollaborationInstance implements Disposable {
         }));
 
         const observer = (textEvent: Y.YTextEvent) => {
+            if (textEvent.transaction.local || model.getText() === ytext.toString()) {
+                // Ignore local changes and changes that are already reflected in the model
+                return;
+            }
             this.yjsMutex(() => {
                 updating = true;
                 try {
@@ -760,6 +769,13 @@ export class CollaborationInstance implements Disposable {
         model.onDispose(() => disposable.dispose());
     }
 
+    protected resetYjsText(yjsText: Y.Text, text: string): void {
+        this.yjs.transact(() => {
+            yjsText.delete(0, yjsText.length);
+            yjsText.insert(0, text);
+        });
+    }
+
     protected getModel(uri: URI): MonacoEditorModel | undefined {
         const existing = this.monacoModelService.models.find(e => e.uri === uri.toString());
         if (existing) {
@@ -790,10 +806,12 @@ export class CollaborationInstance implements Disposable {
     }
 
     protected async openUri(uri: URI): Promise<void> {
-        const opener = await this.openerService.getOpener(uri);
-        await opener.open(uri, {
-            mode: 'none'
-        });
+        const ref = await this.monacoModelService.createModelReference(uri);
+        if (ref.object) {
+            this.toDispose.push(ref);
+        } else {
+            ref.dispose();
+        }
     }
 
     dispose(): void {

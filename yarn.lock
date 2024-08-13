@@ -9040,23 +9040,24 @@ onetime@^5.1.0, onetime@^5.1.2:
   dependencies:
     mimic-fn "^2.1.0"
 
-open-collaboration-protocol@0.0.11:
-  version "0.0.11"
-  resolved "https://registry.yarnpkg.com/open-collaboration-protocol/-/open-collaboration-protocol-0.0.11.tgz#a1becd5a4d7d92887235a566b5888ae2eecfcc69"
-  integrity sha512-yHFa6224+O1+r6qbg4r2DC31ltEXCm5MutoCA+JmsMKTQQXgvh/y29nmTkWrQiWES0SVSZNMRJtv8SSzXqpZng==
+open-collaboration-protocol@0.2.0-next.16e7c68:
+  version "0.2.0-next.16e7c68"
+  resolved "https://registry.yarnpkg.com/open-collaboration-protocol/-/open-collaboration-protocol-0.2.0-next.16e7c68.tgz#a2cb9ab143487ee15a23d4b9306f6e4301154fef"
+  integrity sha512-C6gzm+YgBKOB1kIEo7/sEVyEV1A7UqdsIh4OWOgRJvfEJiqSc6iyZ97IHWI614+uEvwGriHwUgd5XG0f8zNjuQ==
   dependencies:
     base64-js "^1.5.1"
     fflate "^0.8.2"
     msgpackr "^1.10.2"
     semver "^7.6.2"
+    socket.io-client "^4.7.5"
 
-open-collaboration-yjs@0.0.4:
-  version "0.0.4"
-  resolved "https://registry.yarnpkg.com/open-collaboration-yjs/-/open-collaboration-yjs-0.0.4.tgz#2f88c958320d2460597b4bbd1230a7167e384d71"
-  integrity sha512-KO6NfaYOp7ilPtMOfxCsVsz3tSTiOam73VaY1U6vb3Z9p81HBRwJPP08m2vwb0oCOagRcTDWmOf5w1dyaq+lhA==
+open-collaboration-yjs@0.2.0-next.16e7c68:
+  version "0.2.0-next.16e7c68"
+  resolved "https://registry.yarnpkg.com/open-collaboration-yjs/-/open-collaboration-yjs-0.2.0-next.16e7c68.tgz#7c05004a50939ff1332925f85cf1efcc226b09f1"
+  integrity sha512-8IRrYhNa0mQEXCfHwL0yQVEkuQdVUcvFeXzbvwury+H8NfqkVtQzbd6Iga3r4pbEBwXBCIABj7U1kBrSH+e9qw==
   dependencies:
     lib0 "^0.2.94"
-    open-collaboration-protocol "0.0.11"
+    open-collaboration-protocol "0.2.0-next.16e7c68"
     y-protocols "^1.0.6"
 
 open@^7.4.2:
@@ -10777,6 +10778,16 @@ socket.io-client@^4.5.3:
   version "4.7.4"
   resolved "https://registry.yarnpkg.com/socket.io-client/-/socket.io-client-4.7.4.tgz#5f0e060ff34ac0a4b4c5abaaa88e0d1d928c64c8"
   integrity sha512-wh+OkeF0rAVCrABWQBaEjLfb7DVPotMbu0cgWgyR0v6eA4EoVnAwcIeIbcdTE3GT/H3kbdLl7OoH2+asoDRIIg==
+  dependencies:
+    "@socket.io/component-emitter" "~3.1.0"
+    debug "~4.3.2"
+    engine.io-client "~6.5.2"
+    socket.io-parser "~4.2.4"
+
+socket.io-client@^4.7.5:
+  version "4.7.5"
+  resolved "https://registry.yarnpkg.com/socket.io-client/-/socket.io-client-4.7.5.tgz#919be76916989758bdc20eec63f7ee0ae45c05b7"
+  integrity sha512-sJ/tqHOCe7Z50JCBCXrsY3I2k03iOiUe+tj1OmKeD2lXPiGH/RUCdTZFoqVyN7l1MnpIzPrGtLcijffmeouNlQ==
   dependencies:
     "@socket.io/component-emitter" "~3.1.0"
     debug "~4.3.2"

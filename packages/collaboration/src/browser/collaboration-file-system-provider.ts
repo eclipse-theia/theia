@@ -79,17 +79,13 @@ export class CollaborationFileSystemProvider implements FileSystemProviderWithFi
             const stringValue = this.yjs.getText(path);
             return this.encoder.encode(stringValue.toString());
         } else {
-            // Attempt to stat the file to see if it exists on the host system
-            await this.stat(resource);
-            // Return an empty if the file exists
-            // The respective yjs content will be created when the host opens the file
-            return new Uint8Array();
+            const data = await this.connection.fs.readFile(this.host.id, path);
+            return data.content;
         }
     }
     async writeFile(resource: URI, content: Uint8Array, opts: FileWriteOptions): Promise<void> {
-        // For now, we don't support writing to the host file system
-        // const stringValue = this.decoder.decode(content);
-        // await this.connection.fs.writeFile('', this.getHostPath(resource), stringValue);
+        const path = this.getHostPath(resource);
+        await this.connection.fs.writeFile(this.host.id, path, { content });
     }
     watch(resource: URI, opts: WatchOptions): Disposable {
         return Disposable.NULL;

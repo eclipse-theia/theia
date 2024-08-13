@@ -16,9 +16,11 @@
 
 import '../../src/browser/style/index.css';
 
-import { Command, CommandContribution, CommandRegistry, MessageService, nls, Progress, QuickInputService, QuickPickItem } from '@theia/core';
+import {
+    CancellationToken, CancellationTokenSource, Command, CommandContribution, CommandRegistry, MessageService, nls, Progress, QuickInputService, QuickPickItem
+} from '@theia/core';
 import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
-import { ConnectionProvider, WebSocketTransportProvider } from 'open-collaboration-protocol';
+import { ConnectionProvider, SocketIoTransportProvider } from 'open-collaboration-protocol';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { CollaborationInstance, CollaborationInstanceFactory } from './collaboration-instance';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
@@ -43,7 +45,7 @@ export const COLLABORATION_STATUS_BAR_ID = 'statusBar.collaboration';
 
 export const COLLABORATION_AUTH_TOKEN = 'THEIA_COLLAB_AUTH_TOKEN';
 export const COLLABORATION_SERVER_URL = 'COLLABORATION_SERVER_URL';
-export const DEFAULT_COLLABORATION_SERVER_URL = 'http://localhost:8100';
+export const DEFAULT_COLLABORATION_SERVER_URL = 'https://oct-server-staging-ymijt5gjsa-ew.a.run.app/';
 
 @injectable()
 export class CollaborationFrontendContribution implements CommandContribution {
@@ -85,7 +87,7 @@ export class CollaborationFrontendContribution implements CommandContribution {
                 client: FrontendApplicationConfigProvider.get().applicationName,
                 fetch: window.fetch.bind(window),
                 opener: url => this.windowService.openNewWindow(url),
-                transports: [WebSocketTransportProvider],
+                transports: [SocketIoTransportProvider],
                 userToken: localStorage.getItem(COLLABORATION_AUTH_TOKEN) ?? undefined
             });
             this.authHandlerDeferred.resolve(authHandler);
@@ -213,9 +215,16 @@ export class CollaborationFrontendContribution implements CommandContribution {
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(CollaborationCommands.CREATE_ROOM, {
             execute: async () => {
+                const cancelTokenSource = new CancellationTokenSource();
+                const progress = await this.messageService.showProgress({
+                    text: nls.localize('theia/collaboration/creatingRoom', 'Creating Session'),
+                }, () => cancelTokenSource.cancel());
                 try {
                     const authHandler = await this.authHandlerDeferred.promise;
-                    const roomClaim = await authHandler.createRoom();
+                    const roomClaim = await authHandler.createRoom({
+                        reporter: info => progress.report({ message: info.message }),
+                        abortSignal: this.toAbortSignal(cancelTokenSource.token)
+                    });
                     if (roomClaim.loginToken) {
                         localStorage.setItem(COLLABORATION_AUTH_TOKEN, roomClaim.loginToken);
                     }
@@ -233,12 +242,15 @@ export class CollaborationFrontendContribution implements CommandContribution {
                     this.displayCopyNotification(roomCode, true);
                 } catch (err) {
                     await this.messageService.error(nls.localize('theia/collaboration/failedCreate', 'Failed to create room: {0}', err.message));
+                } finally {
+                    progress.cancel();
                 }
             }
         });
         commands.registerCommand(CollaborationCommands.JOIN_ROOM, {
             execute: async () => {
                 let joinRoomProgress: Progress | undefined;
+                const cancelTokenSource = new CancellationTokenSource();
                 try {
                     const authHandler = await this.authHandlerDeferred.promise;
                     const id = await this.quickInputService?.input({
@@ -248,9 +260,13 @@ export class CollaborationFrontendContribution implements CommandContribution {
                         return;
                     }
                     joinRoomProgress = await this.messageService.showProgress({
-                        text: nls.localize('theia/collaboration/joiningRoom', 'Joining collaboration session...')
+                        text: nls.localize('theia/collaboration/joiningRoom', 'Joining Session'),
+                    }, () => cancelTokenSource.cancel());
+                    const roomClaim = await authHandler.joinRoom({
+                        roomId: id,
+                        reporter: info => joinRoomProgress?.report({ message: info.message }),
+                        abortSignal: this.toAbortSignal(cancelTokenSource.token)
                     });
-                    const roomClaim = await authHandler.joinRoom(id);
                     joinRoomProgress.cancel();
                     if (roomClaim.loginToken) {
                         localStorage.setItem(COLLABORATION_AUTH_TOKEN, roomClaim.loginToken);
@@ -271,6 +287,12 @@ export class CollaborationFrontendContribution implements CommandContribution {
                 }
             }
         });
+    }
+
+    protected toAbortSignal(...tokens: CancellationToken[]): AbortSignal {
+        const controller = new AbortController();
+        tokens.forEach(token => token.onCancellationRequested(() => controller.abort()));
+        return controller.signal;
     }
 
     protected async displayCopyNotification(code: string, firstTime = false): Promise<void> {
