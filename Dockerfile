@@ -2,9 +2,6 @@ ARG NODE_VERSION=12.18.3
 FROM node:${NODE_VERSION}-alpine
 RUN apk add --no-cache make pkgconfig gcc g++ python libx11-dev libxkbfile-dev libsecret-dev
 
-# Install Yarn
-RUN npm install -g yarn
-
 ARG version=latest
 WORKDIR /home/theia
 ADD $version.package.json ./package.json
