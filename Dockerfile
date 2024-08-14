@@ -1,6 +1,10 @@
 ARG NODE_VERSION=12.18.3
 FROM node:${NODE_VERSION}-alpine
 RUN apk add --no-cache make pkgconfig gcc g++ python libx11-dev libxkbfile-dev libsecret-dev
+
+# Install Yarn
+RUN npm install -g yarn
+
 ARG version=latest
 WORKDIR /home/theia
 ADD $version.package.json ./package.json
@@ -33,4 +37,4 @@ ENV SHELL=/bin/bash \
     THEIA_DEFAULT_PLUGINS=local-dir:/home/theia/plugins
 ENV USE_LOCAL_GIT true
 USER theia
-ENTRYPOINT [ "node", "/home/theia/src-gen/backend/main.js", "/home/project", "--hostname=0.0.0.0" ]
+ENTRYPOINT [ "node", "/home/theia/src-gen/backend/main.js", "/home/project", "--hostname=0.0.0.
