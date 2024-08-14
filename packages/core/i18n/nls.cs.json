@@ -393,6 +393,10 @@
       "webviewTrace": "Řídí sledování komunikace s webovými pohledy.",
       "webviewWarnIfUnsecure": "Upozorňuje uživatele, že webové náhledy jsou v současné době nasazeny nezabezpečeně."
     },
+    "preferences": {
+      "hostedPlugin": "Hostovaný plugin",
+      "toolbar": "Panel nástrojů"
+    },
     "preview": {
       "openByDefault": "Ve výchozím nastavení otevřete místo editoru náhled."
     },

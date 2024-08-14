@@ -740,9 +740,8 @@ export function createAPIFactory(
                 } else {
                     throw new Error('Invalid arguments');
                 }
-                const result = await notebooksExt.waitForNotebookDocument(uri);
-                return result.apiNotebook;
-
+                // Notebook extension will create a document in openNotebookDocument() or create openNotebookDocument()
+                return notebooksExt.getNotebookDocument(uri).apiNotebook;
             },
             createFileSystemWatcher: (pattern, ignoreCreate, ignoreChange, ignoreDelete): theia.FileSystemWatcher =>
                 extHostFileSystemEvent.createFileSystemWatcher(fromGlobPattern(pattern), ignoreCreate, ignoreChange, ignoreDelete),
@@ -1101,13 +1100,11 @@ export function createAPIFactory(
             get onDidChangeBreakpoints(): theia.Event<theia.BreakpointsChangeEvent> {
                 return debugExt.onDidChangeBreakpoints;
             },
-            /** @stubbed */
             get activeStackItem(): DebugThread | DebugStackFrame | undefined {
-                return undefined;
+                return debugExt.activeStackItem;
             },
-            /** @stubbed */
             get onDidChangeActiveStackItem(): theia.Event<DebugThread | DebugStackFrame | undefined> {
-                return Event.None;
+                return debugExt.onDidChangeActiveStackItem;
             },
             registerDebugAdapterDescriptorFactory(debugType: string, factory: theia.DebugAdapterDescriptorFactory): Disposable {
                 return debugExt.registerDebugAdapterDescriptorFactory(debugType, factory);

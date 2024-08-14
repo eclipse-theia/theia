@@ -105,7 +105,8 @@ export class WebsocketFrontendConnectionService implements FrontendConnectionSer
         socket.on('disconnect', evt => {
             console.info('socked closed');
             channel.disconnect();
-            const timeout = BackendApplicationConfigProvider.get().frontendConnectionTimeout;
+
+            const timeout = this.frontendConnectionTimeout();
             const isMarkedForClose = this.channelsMarkedForClose.delete(frontEndId);
             if (timeout === 0 || isMarkedForClose) {
                 this.closeConnection(frontEndId, evt);
@@ -123,6 +124,15 @@ export class WebsocketFrontendConnectionService implements FrontendConnectionSer
 
     markForClose(channelId: string): void {
         this.channelsMarkedForClose.add(channelId);
+    }
+
+    private frontendConnectionTimeout(): number {
+        const envValue = Number(process.env['FRONTEND_CONNECTION_TIMEOUT']);
+        if (!isNaN(envValue)) {
+            return envValue;
+        }
+
+        return BackendApplicationConfigProvider.get().frontendConnectionTimeout;
     }
 }
 

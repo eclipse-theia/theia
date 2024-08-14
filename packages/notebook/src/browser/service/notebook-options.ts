@@ -37,7 +37,7 @@ const notebookOutputOptionsRelevantPreferences = [
 
 export interface NotebookOutputOptions {
     // readonly outputNodePadding: number;
-    // readonly outputNodeLeftPadding: number;
+    readonly outputNodeLeftPadding: number;
     // readonly previewNodePadding: number;
     // readonly markdownLeftMargin: number;
     // readonly leftMargin: number;
@@ -95,6 +95,7 @@ export class NotebookOptionsService {
             fontSize,
             outputFontSize: outputFontSize,
             fontFamily: this.preferenceService.get<string>('editor.fontFamily')!,
+            outputNodeLeftPadding: 8,
             outputFontFamily: this.getNotebookPreferenceWithDefault<string>(NotebookPreferences.OUTPUT_FONT_FAMILY),
             outputLineHeight: this.computeOutputLineHeight(outputLineHeight, outputFontSize ?? fontSize),
             outputScrolling: this.getNotebookPreferenceWithDefault<boolean>(NotebookPreferences.OUTPUT_SCROLLING)!,

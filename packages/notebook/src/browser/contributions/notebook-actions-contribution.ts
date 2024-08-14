@@ -16,13 +16,12 @@
 
 import { Command, CommandContribution, CommandHandler, CommandRegistry, CompoundMenuNodeRole, MenuContribution, MenuModelRegistry, nls, URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { ApplicationShell, codicon, CommonCommands, KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
+import { ApplicationShell, codicon, KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
 import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookService } from '../service/notebook-service';
 import { CellEditType, CellKind, NotebookCommand } from '../../common';
 import { NotebookKernelQuickPickService } from '../service/notebook-kernel-quick-pick-service';
 import { NotebookExecutionService } from '../service/notebook-execution-service';
-import { NotebookEditorWidget } from '../notebook-editor-widget';
 import { NotebookEditorWidgetService } from '../service/notebook-editor-widget-service';
 import { NOTEBOOK_CELL_CURSOR_FIRST_LINE, NOTEBOOK_CELL_CURSOR_LAST_LINE, NOTEBOOK_CELL_FOCUSED, NOTEBOOK_EDITOR_FOCUSED, NOTEBOOK_HAS_OUTPUTS } from './notebook-context-keys';
 import { NotebookClipboardService } from '../service/notebook-clipboard-service';
@@ -83,6 +82,11 @@ export namespace NotebookCommands {
         id: 'notebook.cell.paste',
         category: 'Notebook',
     });
+
+    export const NOTEBOOK_FIND = Command.toDefaultLocalizedCommand({
+        id: 'notebook.find',
+        category: 'Notebook',
+    });
 }
 
 export enum CellChangeDirection {
@@ -129,8 +133,7 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
 
                 let cellLanguage: string = 'markdown';
                 if (cellKind === CellKind.Code) {
-                    const firstCodeCell = notebookModel.cells.find(cell => cell.cellKind === CellKind.Code);
-                    cellLanguage = firstCodeCell?.language ?? 'plaintext';
+                    cellLanguage = this.notebookService.getCodeCellLanguage(notebookModel);
                 }
 
                 notebookModel.applyEdits([{
@@ -184,12 +187,14 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
 
                         if (change === CellChangeDirection.Up && currentIndex > 0) {
                             model.setSelectedCell(model.cells[currentIndex - 1]);
-                            if (model.selectedCell?.cellKind === CellKind.Code && shouldFocusEditor) {
+                            if ((model.selectedCell?.cellKind === CellKind.Code
+                                || (model.selectedCell?.cellKind === CellKind.Markup && model.selectedCell?.editing)) && shouldFocusEditor) {
                                 model.selectedCell.requestFocusEditor('lastLine');
                             }
                         } else if (change === CellChangeDirection.Down && currentIndex < model.cells.length - 1) {
                             model.setSelectedCell(model.cells[currentIndex + 1]);
-                            if (model.selectedCell?.cellKind === CellKind.Code && shouldFocusEditor) {
+                            if ((model.selectedCell?.cellKind === CellKind.Code
+                                || (model.selectedCell?.cellKind === CellKind.Markup && model.selectedCell?.editing)) && shouldFocusEditor) {
                                 model.selectedCell.requestFocusEditor();
                             }
                         }
@@ -202,20 +207,11 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
                 }
             }
         );
-
-        commands.registerHandler(CommonCommands.UNDO.id, {
-            isEnabled: () => {
-                const widget = this.shell.activeWidget;
-                return widget instanceof NotebookEditorWidget && !Boolean(widget.model?.readOnly);
-            },
-            execute: () => (this.shell.activeWidget as NotebookEditorWidget).undo()
+        commands.registerCommand({ id: 'list.focusUp' }, {
+            execute: () => commands.executeCommand(NotebookCommands.CHANGE_SELECTED_CELL.id, CellChangeDirection.Up)
         });
-        commands.registerHandler(CommonCommands.REDO.id, {
-            isEnabled: () => {
-                const widget = this.shell.activeWidget;
-                return widget instanceof NotebookEditorWidget && !Boolean(widget.model?.readOnly);
-            },
-            execute: () => (this.shell.activeWidget as NotebookEditorWidget).redo()
+        commands.registerCommand({ id: 'list.focusDown' }, {
+            execute: () => commands.executeCommand(NotebookCommands.CHANGE_SELECTED_CELL.id, CellChangeDirection.Down)
         });
 
         commands.registerCommand(NotebookCommands.CUT_SELECTED_CELL, this.editableCommandHandler(
@@ -248,6 +244,12 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
                     const insertIndex = model?.selectedCell ? model.cells.indexOf(model.selectedCell) + (position === 'above' ? 0 : 1) : 0;
                     model?.applyEdits([{ editType: CellEditType.Replace, index: insertIndex, count: 0, cells: [copiedCell] }], true);
                 }
+            }
+        });
+
+        commands.registerCommand(NotebookCommands.NOTEBOOK_FIND, {
+            execute: () => {
+                this.notebookEditorWidgetService.focusedEditor?.showFindWidget();
             }
         });
 
@@ -326,17 +328,22 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
             {
                 command: NotebookCommands.CUT_SELECTED_CELL.id,
                 keybinding: 'ctrlcmd+x',
-                when: `!editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`
+                when: `${NOTEBOOK_EDITOR_FOCUSED} && !inputFocus`
             },
             {
                 command: NotebookCommands.COPY_SELECTED_CELL.id,
                 keybinding: 'ctrlcmd+c',
-                when: `!editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`
+                when: `${NOTEBOOK_EDITOR_FOCUSED} && !inputFocus`
             },
             {
                 command: NotebookCommands.PASTE_CELL.id,
                 keybinding: 'ctrlcmd+v',
-                when: `!editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED}`
+                when: `${NOTEBOOK_EDITOR_FOCUSED} && !inputFocus`
+            },
+            {
+                command: NotebookCommands.NOTEBOOK_FIND.id,
+                keybinding: 'ctrlcmd+f',
+                when: `${NOTEBOOK_EDITOR_FOCUSED}`
             },
         );
     }

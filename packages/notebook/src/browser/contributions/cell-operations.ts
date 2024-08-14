@@ -22,9 +22,14 @@ import { NotebookModel } from '../view-model/notebook-model';
  * a collection of different reusable notbook cell operations
  */
 
-export function changeCellType(notebookModel: NotebookModel, cell: NotebookCellModel, type: CellKind): void {
+export function changeCellType(notebookModel: NotebookModel, cell: NotebookCellModel, type: CellKind, language?: string): void {
     if (cell.cellKind === type) {
         return;
+    }
+    if (type === CellKind.Markup) {
+        language = 'markdown';
+    } else {
+        language ??= cell.language;
     }
     notebookModel.applyEdits([{
         editType: CellEditType.Replace,
@@ -32,7 +37,8 @@ export function changeCellType(notebookModel: NotebookModel, cell: NotebookCellM
         count: 1,
         cells: [{
             ...cell.getData(),
-            cellKind: type
+            cellKind: type,
+            language
         }]
     }], true);
 }

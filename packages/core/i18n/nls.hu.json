@@ -393,6 +393,10 @@
       "webviewTrace": "Vezérli a kommunikáció nyomon követését a webnézetekkel.",
       "webviewWarnIfUnsecure": "Figyelmezteti a felhasználókat, hogy a webnézetek jelenleg nem biztonságosan vannak telepítve."
     },
+    "preferences": {
+      "hostedPlugin": "Hostolt bővítmény",
+      "toolbar": "Eszköztár"
+    },
     "preview": {
       "openByDefault": "Alapértelmezés szerint a szerkesztő helyett az előnézet megnyitása."
     },

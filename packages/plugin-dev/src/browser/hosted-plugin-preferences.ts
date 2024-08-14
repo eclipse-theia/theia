@@ -17,6 +17,7 @@
 import { interfaces } from '@theia/core/shared/inversify';
 import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceContribution, PreferenceSchema } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
+import { PluginDebugPort } from '../common';
 
 export const HostedPluginConfigSchema: PreferenceSchema = {
     'type': 'object',
@@ -42,6 +43,28 @@ export const HostedPluginConfigSchema: PreferenceSchema = {
                 'Array of glob patterns for locating generated JavaScript files (`${pluginPath}` will be replaced by plugin actual path).'
             ),
             default: ['${pluginPath}/out/**/*.js']
+        },
+        'hosted-plugin.debugPorts': {
+            type: 'array',
+            items: {
+                type: 'object',
+                properties: {
+                    'serverName': {
+                        type: 'string',
+                        description: nls.localize('theia/plugin-dev/debugPorts/serverName',
+                            'The plugin host server name, e.g. "hosted-plugin" as in "--hosted-plugin-inspect=" ' +
+                            'or "headless-hosted-plugin" as in "--headless-hosted-plugin-inspect="'),
+                    },
+                    'debugPort': {
+                        type: 'number',
+                        minimum: 0,
+                        maximum: 65535,
+                        description: nls.localize('theia/plugin-dev/debugPorts/debugPort', 'Port to use for this server\'s Node.js debug'),
+                    }
+                },
+            },
+            default: undefined,
+            description: nls.localize('theia/plugin-dev/debugPorts', 'Port configuration per server for Node.js debug'),
         }
     }
 };
@@ -50,6 +73,7 @@ export interface HostedPluginConfiguration {
     'hosted-plugin.watchMode': boolean;
     'hosted-plugin.debugMode': string;
     'hosted-plugin.launchOutFiles': string[];
+    'hosted-plugin.debugPorts': PluginDebugPort[];
 }
 
 export const HostedPluginPreferenceContribution = Symbol('HostedPluginPreferenceContribution');

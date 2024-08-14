@@ -56,11 +56,18 @@ export class DebugThread extends DebugThreadData implements TreeElement {
         return this.session.id + ':' + this.raw.id;
     }
 
+    get threadId(): number {
+        return this.raw.id;
+    }
+
     protected _currentFrame: DebugStackFrame | undefined;
     get currentFrame(): DebugStackFrame | undefined {
         return this._currentFrame;
     }
     set currentFrame(frame: DebugStackFrame | undefined) {
+        if (this._currentFrame?.id === frame?.id) {
+            return;
+        }
         this._currentFrame = frame;
         this.onDidChangedEmitter.fire(undefined);
         this.onDidFocusStackFrameEmitter.fire(frame);

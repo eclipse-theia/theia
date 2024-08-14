@@ -146,14 +146,10 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
         renderer: Renderer;
 
         element: HTMLElement;
+        container: HTMLElement;
 
         constructor(output: webviewCommunication.Output, items: rendererApi.OutputItem[]) {
-            this.element = document.createElement('div');
-            // padding for scrollbars
-            this.element.style.paddingBottom = '10px';
-            this.element.style.paddingRight = '10px';
-            this.element.id = output.id;
-            document.body.appendChild(this.element);
+            this.createHtmlElement(output.id);
             this.outputId = output.id;
             this.allItems = items;
         }
@@ -171,6 +167,25 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
         clear(): void {
             this.renderer?.disposeOutputItem?.(this.renderedItem?.id);
             this.element.innerHTML = '';
+        }
+
+        private createHtmlElement(id: string): void {
+            // Recreates the output container structure used in VS Code
+            this.container = document.createElement('div');
+            this.container.id = 'container';
+            this.container.classList.add('widgetarea');
+            const cellContainer = document.createElement('div');
+            cellContainer.classList.add('cell_container');
+            cellContainer.id = id;
+            this.container.appendChild(cellContainer);
+            const outputContainer = document.createElement('div');
+            outputContainer.classList.add('output-container');
+            cellContainer.appendChild(outputContainer);
+            this.element = document.createElement('div');
+            this.element.id = id;
+            this.element.classList.add('output');
+            outputContainer.appendChild(this.element);
+            document.body.appendChild(this.container);
         }
     }
 
@@ -469,7 +484,7 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
 
     function clearOutput(output: Output): void {
         output.clear();
-        output.element.remove();
+        output.container.remove();
     }
 
     function outputsChanged(changedEvent: webviewCommunication.OutputChangedMessage): void {
@@ -504,16 +519,16 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
         }
     }
 
-    function scrollParent(event: WheelEvent): boolean {
+    function shouldHandleScroll(event: WheelEvent): boolean {
         for (let node = event.target as Node | null; node; node = node.parentNode) {
             if (!(node instanceof Element)) {
-                continue;
+                return false;
             }
 
             // scroll up
             if (event.deltaY < 0 && node.scrollTop > 0) {
                 // there is still some content to scroll
-                return false;
+                return true;
             }
 
             // scroll down
@@ -521,23 +536,31 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
                 // per https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollHeight
                 // scrollTop is not rounded but scrollHeight and clientHeight are
                 // so we need to check if the difference is less than some threshold
-                if (node.scrollHeight - node.scrollTop - node.clientHeight > 2) {
-                    return false;
+                if (node.scrollHeight - node.scrollTop - node.clientHeight < 2) {
+                    continue;
                 }
+
+                // if the node is not scrollable, we can continue. We don't check the computed style always as it's expensive
+                if (window.getComputedStyle(node).overflowY === 'hidden' || window.getComputedStyle(node).overflowY === 'visible') {
+                    continue;
+                }
+
+                return true;
             }
         }
 
-        return true;
+        return false;
     }
 
     const handleWheel = (event: WheelEvent & { wheelDeltaX?: number; wheelDeltaY?: number; wheelDelta?: number }) => {
-        if (scrollParent(event)) {
-            theia.postMessage({
-                type: 'did-scroll-wheel',
-                deltaY: event.deltaY,
-                deltaX: event.deltaX,
-            });
+        if (event.defaultPrevented || shouldHandleScroll(event)) {
+            return;
         }
+        theia.postMessage({
+            type: 'did-scroll-wheel',
+            deltaY: event.deltaY,
+            deltaX: event.deltaX,
+        });
     };
 
     window.addEventListener('message', async rawEvent => {

@@ -21,7 +21,6 @@ import { ApplicationShell, NavigatableWidget, Saveable, SaveableSource, SaveOpti
 import { SaveableService } from '@theia/core/lib/browser/saveable-service';
 import { Reference } from '@theia/core/lib/common/reference';
 import { WebviewWidget } from '../webview/webview';
-import { UndoRedoService } from '@theia/editor/lib/browser/undo-redo-service';
 import { CustomEditorModel } from './custom-editors-main';
 
 @injectable()
@@ -43,9 +42,6 @@ export class CustomEditorWidget extends WebviewWidget implements SaveableSource,
         return this._modelRef.object;
     }
 
-    @inject(UndoRedoService)
-    protected readonly undoRedoService: UndoRedoService;
-
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
 
@@ -64,11 +60,11 @@ export class CustomEditorWidget extends WebviewWidget implements SaveableSource,
     }
 
     undo(): void {
-        this.undoRedoService.undo(this.resource);
+        this._modelRef.object.undo();
     }
 
     redo(): void {
-        this.undoRedoService.redo(this.resource);
+        this._modelRef.object.redo();
     }
 
     async save(options?: SaveOptions): Promise<void> {

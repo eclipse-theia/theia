@@ -67,12 +67,13 @@ export class OVSXApiFilterImpl implements OVSXApiFilter {
 
     protected async queryLatestCompatibleExtension(query: VSXQueryOptions): Promise<VSXExtensionRaw | undefined> {
         let offset = 0;
+        let size = 5;
         let loop = true;
         while (loop) {
             const queryOptions: VSXQueryOptions = {
                 ...query,
                 offset,
-                size: 5 // there is a great chance that the newest version will work
+                size // there is a great chance that the newest version will work
             };
             const results = await this.client.query(queryOptions);
             const compatibleExtension = this.getLatestCompatibleExtension(results.extensions);
@@ -83,6 +84,8 @@ export class OVSXApiFilterImpl implements OVSXApiFilter {
             offset += results.extensions.length;
             // Continue querying if there are more extensions available
             loop = results.totalSize > offset;
+            // Adjust the size to fetch more extensions next time
+            size = Math.min(size * 2, 100);
         }
         return undefined;
     }

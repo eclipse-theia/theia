@@ -99,6 +99,7 @@ export class DebugThreadsWidget extends SourceTreeWidget {
                     this.viewModel.currentSession = node.element;
                     this.debugCallStackItemTypeKey.set('session');
                 } else if (node.element instanceof DebugThread) {
+                    this.viewModel.currentSession = node.element.session;
                     node.element.session.currentThread = node.element;
                     this.debugCallStackItemTypeKey.set('thread');
                 }

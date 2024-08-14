@@ -23,8 +23,12 @@ import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import { CellEditor } from './notebook-cell-editor';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { MonacoEditorServices } from '@theia/monaco/lib/browser/monaco-editor';
-import { nls } from '@theia/core';
+import { CommandRegistry, nls } from '@theia/core';
 import { NotebookContextManager } from '../service/notebook-context-manager';
+import { NotebookOptionsService } from '../service/notebook-options';
+import { NotebookCodeCellStatus } from './notebook-code-cell-view';
+import { NotebookEditorFindMatch, NotebookEditorFindMatchOptions } from './notebook-find-widget';
+import * as mark from 'advanced-mark.js';
 
 @injectable()
 export class NotebookMarkdownCellRenderer implements CellRenderer {
@@ -37,9 +41,21 @@ export class NotebookMarkdownCellRenderer implements CellRenderer {
     @inject(NotebookContextManager)
     protected readonly notebookContextManager: NotebookContextManager;
 
+    @inject(CommandRegistry)
+    protected readonly commandRegistry: CommandRegistry;
+
+    @inject(NotebookOptionsService)
+    protected readonly notebookOptionsService: NotebookOptionsService;
+
     render(notebookModel: NotebookModel, cell: NotebookCellModel): React.ReactNode {
-        return <MarkdownCell markdownRenderer={this.markdownRenderer} monacoServices={this.monacoServices}
-            cell={cell} notebookModel={notebookModel} notebookContextManager={this.notebookContextManager} />;
+        return <MarkdownCell
+            markdownRenderer={this.markdownRenderer}
+            commandRegistry={this.commandRegistry}
+            monacoServices={this.monacoServices}
+            notebookOptionsService={this.notebookOptionsService}
+            cell={cell}
+            notebookModel={notebookModel}
+            notebookContextManager={this.notebookContextManager} />;
     }
 
     renderDragImage(cell: NotebookCellModel): HTMLElement {
@@ -53,39 +69,140 @@ export class NotebookMarkdownCellRenderer implements CellRenderer {
 }
 
 interface MarkdownCellProps {
-    markdownRenderer: MarkdownRenderer,
-    monacoServices: MonacoEditorServices
+    markdownRenderer: MarkdownRenderer;
+    monacoServices: MonacoEditorServices;
 
-    cell: NotebookCellModel,
-    notebookModel: NotebookModel
+    commandRegistry: CommandRegistry;
+    cell: NotebookCellModel;
+    notebookModel: NotebookModel;
     notebookContextManager: NotebookContextManager;
+    notebookOptionsService: NotebookOptionsService;
 }
 
-function MarkdownCell({ markdownRenderer, monacoServices, cell, notebookModel, notebookContextManager }: MarkdownCellProps): React.JSX.Element {
+function MarkdownCell({
+    markdownRenderer, monacoServices, cell, notebookModel, notebookContextManager, notebookOptionsService, commandRegistry
+}: MarkdownCellProps): React.JSX.Element {
     const [editMode, setEditMode] = React.useState(cell.editing);
+    let empty = false;
 
     React.useEffect(() => {
         const listener = cell.onDidRequestCellEditChange(cellEdit => setEditMode(cellEdit));
         return () => listener.dispose();
     }, [editMode]);
 
-    let markdownContent: HTMLElement = React.useMemo(() => {
-        const markdownString = new MarkdownStringImpl(cell.source, { supportHtml: true, isTrusted: true });
-        return markdownRenderer.render(markdownString).element;
-    }, [cell, editMode]);
+    React.useEffect(() => {
+        if (!editMode) {
+            const instance = new mark(markdownContent);
+            cell.onMarkdownFind = options => {
+                instance.unmark();
+                if (empty) {
+                    return [];
+                }
+                return searchInMarkdown(instance, options);
+            };
+            return () => {
+                cell.onMarkdownFind = undefined;
+                instance.unmark();
+            };
+        }
+    }, [editMode, cell.source]);
 
-    if (!markdownContent.hasChildNodes()) {
+    let markdownContent: HTMLElement[] = React.useMemo(() => {
+        const markdownString = new MarkdownStringImpl(cell.source, { supportHtml: true, isTrusted: true });
+        const rendered = markdownRenderer.render(markdownString).element;
+        const children: HTMLElement[] = [];
+        rendered.childNodes.forEach(child => {
+            if (child instanceof HTMLElement) {
+                children.push(child);
+            }
+        });
+        return children;
+    }, [cell.source]);
+
+    if (markdownContent.length === 0) {
         const italic = document.createElement('i');
         italic.className = 'theia-notebook-empty-markdown';
         italic.innerText = nls.localizeByDefault('Empty markdown cell, double-click or press enter to edit.');
         italic.style.pointerEvents = 'none';
-        markdownContent = italic;
+        markdownContent = [italic];
+        empty = true;
     }
 
     return editMode ?
-        <CellEditor cell={cell} notebookModel={notebookModel} monacoServices={monacoServices} notebookContextManager={notebookContextManager} /> :
-        <div className='theia-notebook-markdown-content'
+        (<div className='theia-notebook-markdown-editor-container' key="code">
+            <CellEditor notebookModel={notebookModel} cell={cell}
+                monacoServices={monacoServices}
+                notebookContextManager={notebookContextManager}
+                fontInfo={notebookOptionsService.editorFontInfo} />
+            <NotebookCodeCellStatus cell={cell} notebook={notebookModel}
+                commandRegistry={commandRegistry}
+                onClick={() => cell.requestFocusEditor()} />
+        </div >) :
+        (<div className='theia-notebook-markdown-content' key="markdown"
             onDoubleClick={() => cell.requestEdit()}
-            ref={node => node?.replaceChildren(markdownContent)}
-        />;
+            ref={node => node?.replaceChildren(...markdownContent)}
+        />);
+}
+
+function searchInMarkdown(instance: mark, options: NotebookEditorFindMatchOptions): NotebookEditorFindMatch[] {
+    const matches: NotebookEditorFindMatch[] = [];
+    const markOptions: mark.MarkOptions & mark.RegExpOptions = {
+        className: 'theia-find-match',
+        diacritics: false,
+        caseSensitive: options.matchCase,
+        acrossElements: true,
+        separateWordSearch: false,
+        each: node => {
+            matches.push(new MarkdownEditorFindMatch(node));
+        }
+    };
+    if (options.regex || options.wholeWord) {
+        let search = options.search;
+        if (options.wholeWord) {
+            if (!options.regex) {
+                search = escapeRegExp(search);
+            }
+            search = '\\b' + search + '\\b';
+        }
+        instance.markRegExp(new RegExp(search, options.matchCase ? '' : 'i'), markOptions);
+    } else {
+        instance.mark(options.search, markOptions);
+    }
+    return matches;
+}
+
+function escapeRegExp(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+class MarkdownEditorFindMatch implements NotebookEditorFindMatch {
+
+    constructor(readonly node: Node) { }
+
+    private _selected = false;
+
+    get selected(): boolean {
+        return this._selected;
+    }
+
+    set selected(selected: boolean) {
+        this._selected = selected;
+        const className = 'theia-find-match-selected';
+        if (this.node instanceof HTMLElement) {
+            if (selected) {
+                this.node.classList.add(className);
+            } else {
+                this.node.classList.remove(className);
+            }
+        }
+    }
+
+    show(): void {
+        if (this.node instanceof HTMLElement) {
+            this.node.scrollIntoView({
+                behavior: 'instant',
+                block: 'center'
+            });
+        }
+    }
 }

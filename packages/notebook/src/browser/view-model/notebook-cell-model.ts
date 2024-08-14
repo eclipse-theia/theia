@@ -32,6 +32,8 @@ import { NotebookCellOutputModel } from './notebook-cell-output-model';
 import { PreferenceService } from '@theia/core/lib/browser';
 import { NotebookPreferences } from '../contributions/notebook-preferences';
 import { LanguageService } from '@theia/core/lib/browser/language-service';
+import { NotebookEditorFindMatch, NotebookEditorFindMatchOptions } from '../view/notebook-find-widget';
+import { Range } from '@theia/core/shared/vscode-languageserver-protocol';
 
 export const NotebookCellModelFactory = Symbol('NotebookModelFactory');
 export type NotebookCellModelFactory = (props: NotebookCellModelProps) => NotebookCellModel;
@@ -86,22 +88,22 @@ export interface NotebookCellModelProps {
 export class NotebookCellModel implements NotebookCell, Disposable {
 
     protected readonly onDidChangeOutputsEmitter = new Emitter<NotebookCellOutputsSplice>();
-    readonly onDidChangeOutputs: Event<NotebookCellOutputsSplice> = this.onDidChangeOutputsEmitter.event;
+    readonly onDidChangeOutputs = this.onDidChangeOutputsEmitter.event;
 
     protected readonly onDidChangeOutputItemsEmitter = new Emitter<CellOutput>();
-    readonly onDidChangeOutputItems: Event<CellOutput> = this.onDidChangeOutputItemsEmitter.event;
+    readonly onDidChangeOutputItems = this.onDidChangeOutputItemsEmitter.event;
 
     protected readonly onDidChangeContentEmitter = new Emitter<'content' | 'language' | 'mime'>();
-    readonly onDidChangeContent: Event<'content' | 'language' | 'mime'> = this.onDidChangeContentEmitter.event;
+    readonly onDidChangeContent = this.onDidChangeContentEmitter.event;
 
     protected readonly onDidChangeMetadataEmitter = new Emitter<void>();
-    readonly onDidChangeMetadata: Event<void> = this.onDidChangeMetadataEmitter.event;
+    readonly onDidChangeMetadata = this.onDidChangeMetadataEmitter.event;
 
     protected readonly onDidChangeInternalMetadataEmitter = new Emitter<CellInternalMetadataChangedEvent>();
-    readonly onDidChangeInternalMetadata: Event<CellInternalMetadataChangedEvent> = this.onDidChangeInternalMetadataEmitter.event;
+    readonly onDidChangeInternalMetadata = this.onDidChangeInternalMetadataEmitter.event;
 
     protected readonly onDidChangeLanguageEmitter = new Emitter<string>();
-    readonly onDidChangeLanguage: Event<string> = this.onDidChangeLanguageEmitter.event;
+    readonly onDidChangeLanguage = this.onDidChangeLanguageEmitter.event;
 
     protected readonly onDidRequestCellEditChangeEmitter = new Emitter<boolean>();
     readonly onDidRequestCellEditChange = this.onDidRequestCellEditChangeEmitter.event;
@@ -113,10 +115,16 @@ export class NotebookCellModel implements NotebookCell, Disposable {
     readonly onWillBlurCellEditor = this.onWillBlurCellEditorEmitter.event;
 
     protected readonly onDidChangeEditorOptionsEmitter = new Emitter<MonacoEditor.IOptions>();
-    readonly onDidChangeEditorOptions: Event<MonacoEditor.IOptions> = this.onDidChangeEditorOptionsEmitter.event;
+    readonly onDidChangeEditorOptions = this.onDidChangeEditorOptionsEmitter.event;
 
     protected readonly outputVisibilityChangeEmitter = new Emitter<boolean>();
-    readonly onDidChangeOutputVisibility: Event<boolean> = this.outputVisibilityChangeEmitter.event;
+    readonly onDidChangeOutputVisibility = this.outputVisibilityChangeEmitter.event;
+
+    protected readonly onDidFindMatchesEmitter = new Emitter<NotebookCodeEditorFindMatch[]>();
+    readonly onDidFindMatches: Event<NotebookCodeEditorFindMatch[]> = this.onDidFindMatchesEmitter.event;
+
+    protected readonly onDidSelectFindMatchEmitter = new Emitter<NotebookCodeEditorFindMatch>();
+    readonly onDidSelectFindMatch: Event<NotebookCodeEditorFindMatch> = this.onDidSelectFindMatchEmitter.event;
 
     @inject(NotebookCellModelProps)
     protected readonly props: NotebookCellModelProps;
@@ -175,10 +183,12 @@ export class NotebookCellModel implements NotebookCell, Disposable {
     get source(): string {
         return this.props.source;
     }
+
     set source(source: string) {
         this.props.source = source;
         this.textModel?.textEditorModel.setValue(source);
     }
+
     get language(): string {
         return this.props.language;
     }
@@ -368,6 +378,82 @@ export class NotebookCellModel implements NotebookCell, Disposable {
             this.onDidChangeOutputItemsEmitter.fire(output);
         }
     }
+
+    onMarkdownFind: ((options: NotebookEditorFindMatchOptions) => NotebookEditorFindMatch[]) | undefined;
+
+    showMatch(selected: NotebookCodeEditorFindMatch): void {
+        this.onDidSelectFindMatchEmitter.fire(selected);
+    }
+
+    findMatches(options: NotebookEditorFindMatchOptions): NotebookEditorFindMatch[] {
+        if (this.cellKind === CellKind.Markup && !this.editing) {
+            return this.onMarkdownFind?.(options) ?? [];
+        }
+        if (!this.textModel) {
+            return [];
+        }
+        const matches = options.search ? this.textModel.findMatches({
+            searchString: options.search,
+            isRegex: options.regex,
+            matchCase: options.matchCase,
+            matchWholeWord: options.wholeWord
+        }) : [];
+        const editorFindMatches = matches.map(match => new NotebookCodeEditorFindMatch(this, match.range, this.textModel!));
+        this.onDidFindMatchesEmitter.fire(editorFindMatches);
+        return editorFindMatches;
+    }
+
+    replaceAll(matches: NotebookCodeEditorFindMatch[], value: string): void {
+        const editOperations = matches.map(match => ({
+            range: {
+                startColumn: match.range.start.character,
+                startLineNumber: match.range.start.line,
+                endColumn: match.range.end.character,
+                endLineNumber: match.range.end.line
+            },
+            text: value
+        }));
+        this.textModel?.textEditorModel.pushEditOperations(
+            // eslint-disable-next-line no-null/no-null
+            null,
+            editOperations,
+            // eslint-disable-next-line no-null/no-null
+            () => null);
+    }
+}
+
+export interface NotebookCellFindMatches {
+    matches: NotebookEditorFindMatch[];
+    selected: NotebookEditorFindMatch;
+}
+
+export class NotebookCodeEditorFindMatch implements NotebookEditorFindMatch {
+
+    selected = false;
+
+    constructor(readonly cell: NotebookCellModel, readonly range: Range, readonly textModel: MonacoEditorModel) {
+    }
+
+    show(): void {
+        this.cell.showMatch(this);
+    }
+    replace(value: string): void {
+        this.textModel.textEditorModel.pushEditOperations(
+            // eslint-disable-next-line no-null/no-null
+            null,
+            [{
+                range: {
+                    startColumn: this.range.start.character,
+                    startLineNumber: this.range.start.line,
+                    endColumn: this.range.end.character,
+                    endLineNumber: this.range.end.line
+                },
+                text: value
+            }],
+            // eslint-disable-next-line no-null/no-null
+            () => null);
+    }
+
 }
 
 function computeRunStartTimeAdjustment(oldMetadata: NotebookCellInternalMetadata, newMetadata: NotebookCellInternalMetadata): number | undefined {

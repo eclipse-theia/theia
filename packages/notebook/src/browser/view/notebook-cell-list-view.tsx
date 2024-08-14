@@ -14,14 +14,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import * as React from '@theia/core/shared/react';
-import { CellEditType, CellKind } from '../../common';
+import { CellEditType, CellKind, NotebookCellsChangeType } from '../../common';
 import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookCellToolbarFactory } from './notebook-cell-toolbar-factory';
-import { codicon } from '@theia/core/lib/browser';
+import { animationFrame, codicon, onDomEvent } from '@theia/core/lib/browser';
 import { CommandRegistry, DisposableCollection, nls } from '@theia/core';
 import { NotebookCommands } from '../contributions/notebook-actions-contribution';
 import { NotebookCellActionContribution } from '../contributions/notebook-cell-actions-contribution';
+import { NotebookContextManager } from '../service/notebook-context-manager';
 
 export interface CellRenderer {
     render(notebookData: NotebookModel, cell: NotebookCellModel, index: number): React.ReactNode
@@ -31,6 +32,7 @@ export interface CellRenderer {
 interface CellListProps {
     renderers: Map<CellKind, CellRenderer>;
     notebookModel: NotebookModel;
+    notebookContext: NotebookContextManager;
     toolbarRenderer: NotebookCellToolbarFactory;
     commandRegistry: CommandRegistry
 }
@@ -46,6 +48,7 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
     protected toDispose = new DisposableCollection();
 
     protected static dragGhost: HTMLElement | undefined;
+    protected cellListRef: React.RefObject<HTMLUListElement> = React.createRef();
 
     constructor(props: CellListProps) {
         super(props);
@@ -66,11 +69,36 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
             }
         }));
 
+        this.toDispose.push(props.notebookModel.onDidChangeContent(events => {
+            if (events.some(e => e.kind === NotebookCellsChangeType.Move)) {
+                // When a cell has been moved, we need to rerender the whole component
+                this.forceUpdate();
+            }
+        }));
+
         this.toDispose.push(props.notebookModel.onDidChangeSelectedCell(e => {
             this.setState({
                 ...this.state,
                 selectedCell: e.cell,
                 scrollIntoView: e.scrollIntoView
+            });
+        }));
+
+        this.toDispose.push(onDomEvent(document, 'focusin', () => {
+            animationFrame().then(() => {
+                if (!this.cellListRef.current) {
+                    return;
+                }
+                let hasCellFocus = false;
+                let hasFocus = false;
+                if (this.cellListRef.current.contains(document.activeElement)) {
+                    if (this.props.notebookModel.selectedCell) {
+                        hasCellFocus = true;
+                    }
+                    hasFocus = true;
+                }
+                this.props.notebookContext.changeCellFocus(hasCellFocus);
+                this.props.notebookContext.changeCellListFocus(hasFocus);
             });
         }));
     }
@@ -80,7 +108,7 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
     }
 
     override render(): React.ReactNode {
-        return <ul className='theia-notebook-cell-list'>
+        return <ul className='theia-notebook-cell-list' ref={this.cellListRef}>
             {this.props.notebookModel.cells
                 .map((cell, index) =>
                     <React.Fragment key={'cell-' + cell.handle}>
@@ -103,7 +131,15 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
                             onDragOver={e => this.onDragOver(e, cell)}
                             onDrop={e => this.onDrop(e, index)}
                             draggable={true}
-                            ref={ref => cell === this.state.selectedCell && this.state.scrollIntoView && ref?.scrollIntoView({ block: 'nearest' })}>
+                            tabIndex={-1}
+                            ref={ref => {
+                                if (ref && cell === this.state.selectedCell && this.state.scrollIntoView) {
+                                    ref.scrollIntoView({ block: 'nearest' });
+                                    if (cell.cellKind === CellKind.Markup && !cell.editing) {
+                                        ref.focus();
+                                    }
+                                }
+                            }}>
                             <div className={'theia-notebook-cell-marker' + (this.state.selectedCell === cell ? ' theia-notebook-cell-marker-selected' : '')}></div>
                             <div className='theia-notebook-cell-content'>
                                 {this.renderCellContent(cell, index)}

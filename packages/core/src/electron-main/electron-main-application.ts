@@ -15,8 +15,10 @@
 // *****************************************************************************
 
 import { inject, injectable, named } from 'inversify';
-import { screen, app, BrowserWindow, WebContents, Event as ElectronEvent, BrowserWindowConstructorOptions, nativeImage,
-    nativeTheme, shell, dialog } from '../../electron-shared/electron';
+import {
+    screen, app, BrowserWindow, WebContents, Event as ElectronEvent, BrowserWindowConstructorOptions, nativeImage,
+    nativeTheme, shell, dialog
+} from '../../electron-shared/electron';
 import * as path from 'path';
 import { Argv } from 'yargs';
 import { AddressInfo } from 'net';
@@ -350,6 +352,9 @@ export class ElectronMainApplication {
             alwaysOnTop: true,
             show: false,
             transparent: true,
+            webPreferences: {
+                backgroundThrottling: false
+            }
         });
 
         if (this.isShowWindowEarly()) {
@@ -458,6 +463,7 @@ export class ElectronMainApplication {
                 // Setting the following option to `true` causes some features to break, somehow.
                 // Issue: https://github.com/eclipse-theia/theia/issues/8577
                 nodeIntegrationInWorker: false,
+                backgroundThrottling: false,
                 preload: path.resolve(this.globals.THEIA_APP_PROJECT_PATH, 'lib', 'frontend', 'preload.js').toString()
             },
             ...this.config.electron?.windowOptions || {},

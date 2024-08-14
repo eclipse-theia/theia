@@ -25,7 +25,7 @@ import {
     MAIN_RPC_CONTEXT
 } from '../../../common/plugin-api-rpc';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
-import { Breakpoint, WorkspaceFolder } from '../../../common/plugin-api-rpc-model';
+import { Breakpoint, DebugStackFrameDTO, DebugThreadDTO, WorkspaceFolder } from '../../../common/plugin-api-rpc-model';
 import { LabelProvider } from '@theia/core/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { BreakpointManager, BreakpointsChangeEvent } from '@theia/debug/lib/browser/breakpoint/breakpoint-manager';
@@ -56,6 +56,9 @@ import { DebugContribution } from '@theia/debug/lib/browser/debug-contribution';
 import { ConnectionImpl } from '../../../common/connection';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { DebugSessionOptions as TheiaDebugSessionOptions } from '@theia/debug/lib/browser/debug-session-options';
+import { DebugStackFrame } from '@theia/debug/lib/browser/model/debug-stack-frame';
+import { DebugThread } from '@theia/debug/lib/browser/model/debug-thread';
+import { TestService } from '@theia/test/lib/browser/test-service';
 
 export class DebugMainImpl implements DebugMain, Disposable {
     private readonly debugExt: DebugExt;
@@ -75,6 +78,7 @@ export class DebugMainImpl implements DebugMain, Disposable {
     private readonly fileService: FileService;
     private readonly pluginService: HostedPluginSupport;
     private readonly debugContributionProvider: ContributionProvider<DebugContribution>;
+    private readonly testService: TestService;
     private readonly workspaceService: WorkspaceService;
 
     private readonly debuggerContributions = new Map<string, DisposableCollection>();
@@ -98,6 +102,7 @@ export class DebugMainImpl implements DebugMain, Disposable {
         this.debugContributionProvider = container.getNamed(ContributionProvider, DebugContribution);
         this.fileService = container.get(FileService);
         this.pluginService = container.get(HostedPluginSupport);
+        this.testService = container.get(TestService);
         this.workspaceService = container.get(WorkspaceService);
 
         const fireDidChangeBreakpoints = ({ added, removed, changed }: BreakpointsChangeEvent<SourceBreakpoint | FunctionBreakpoint>) => {
@@ -117,7 +122,9 @@ export class DebugMainImpl implements DebugMain, Disposable {
             this.sessionManager.onDidStartDebugSession(debugSession => this.debugExt.$sessionDidStart(debugSession.id)),
             this.sessionManager.onDidDestroyDebugSession(debugSession => this.debugExt.$sessionDidDestroy(debugSession.id)),
             this.sessionManager.onDidChangeActiveDebugSession(event => this.debugExt.$sessionDidChange(event.current && event.current.id)),
-            this.sessionManager.onDidReceiveDebugSessionCustomEvent(event => this.debugExt.$onSessionCustomEvent(event.session.id, event.event, event.body))
+            this.sessionManager.onDidReceiveDebugSessionCustomEvent(event => this.debugExt.$onSessionCustomEvent(event.session.id, event.event, event.body)),
+            this.sessionManager.onDidFocusStackFrame(stackFrame => this.debugExt.$onDidChangeActiveFrame(this.toDebugStackFrameDTO(stackFrame))),
+            this.sessionManager.onDidFocusThread(debugThread => this.debugExt.$onDidChangeActiveThread(this.toDebugThreadDTO(debugThread))),
         ]);
     }
 
@@ -161,6 +168,7 @@ export class DebugMainImpl implements DebugMain, Disposable {
             this.fileService,
             terminalOptionsExt,
             this.debugContributionProvider,
+            this.testService,
             this.workspaceService,
         );
 
@@ -323,6 +331,7 @@ export class DebugMainImpl implements DebugMain, Disposable {
         } else {
             sessionOptions = { ...sessionOptions, ...options, workspaceFolderUri };
         }
+        sessionOptions.testRun = options.testRun;
 
         // start options
         const session = await this.sessionManager.start(sessionOptions);
@@ -338,6 +347,21 @@ export class DebugMainImpl implements DebugMain, Disposable {
         for (const session of this.sessionManager.sessions) {
             this.sessionManager.terminateSession(session);
         }
+    }
+
+    private toDebugStackFrameDTO(stackFrame: DebugStackFrame | undefined): DebugStackFrameDTO | undefined {
+        return stackFrame ? {
+            sessionId: stackFrame.session.id,
+            frameId: stackFrame.frameId,
+            threadId: stackFrame.thread.threadId
+        } : undefined;
+    }
+
+    private toDebugThreadDTO(debugThread: DebugThread | undefined): DebugThreadDTO | undefined {
+        return debugThread ? {
+            sessionId: debugThread.session.id,
+            threadId: debugThread.threadId
+        } : undefined;
     }
 
     private toTheiaPluginApiBreakpoints(breakpoints: (SourceBreakpoint | FunctionBreakpoint)[]): Breakpoint[] {
