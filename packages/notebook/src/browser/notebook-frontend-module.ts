@@ -47,6 +47,7 @@ import { NotebookClipboardService } from './service/notebook-clipboard-service';
 import { bindNotebookPreferences } from './contributions/notebook-preferences';
 import { NotebookOptionsService } from './service/notebook-options';
 import { NotebookUndoRedoHandler } from './contributions/notebook-undo-redo-handler';
+import { NotebookStatusBarContribution } from './contributions/notebook-status-bar-contribution';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(NotebookColorContribution).toSelf().inSingletonScope();
@@ -112,4 +113,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bind(NotebookUndoRedoHandler).toSelf().inSingletonScope();
     bind(UndoRedoHandler).toService(NotebookUndoRedoHandler);
+
+    bind(NotebookStatusBarContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(NotebookStatusBarContribution);
 });

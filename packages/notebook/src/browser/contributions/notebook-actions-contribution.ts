@@ -26,6 +26,7 @@ import { NotebookEditorWidgetService } from '../service/notebook-editor-widget-s
 import { NOTEBOOK_CELL_CURSOR_FIRST_LINE, NOTEBOOK_CELL_CURSOR_LAST_LINE, NOTEBOOK_CELL_FOCUSED, NOTEBOOK_EDITOR_FOCUSED, NOTEBOOK_HAS_OUTPUTS } from './notebook-context-keys';
 import { NotebookClipboardService } from '../service/notebook-clipboard-service';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
+import { NotebookEditorWidget } from '../notebook-editor-widget';
 
 export namespace NotebookCommands {
     export const ADD_NEW_CELL_COMMAND = Command.toDefaultLocalizedCommand({
@@ -85,6 +86,11 @@ export namespace NotebookCommands {
 
     export const NOTEBOOK_FIND = Command.toDefaultLocalizedCommand({
         id: 'notebook.find',
+        category: 'Notebook',
+    });
+
+    export const CENTER_ACTIVE_CELL = Command.toDefaultLocalizedCommand({
+        id: 'notebook.centerActiveCell',
         category: 'Notebook',
     });
 }
@@ -253,6 +259,13 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
             }
         });
 
+        commands.registerCommand(NotebookCommands.CENTER_ACTIVE_CELL, {
+            execute: (editor?: NotebookEditorWidget) => {
+                const model = editor ? editor.model : this.notebookEditorWidgetService.focusedEditor?.model;
+                model?.selectedCell?.requestCenterEditor();
+            }
+        });
+
     }
 
     protected editableCommandHandler(execute: (notebookModel: NotebookModel) => void): CommandHandler {
@@ -345,6 +358,11 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
                 keybinding: 'ctrlcmd+f',
                 when: `${NOTEBOOK_EDITOR_FOCUSED}`
             },
+            {
+                command: NotebookCommands.CENTER_ACTIVE_CELL.id,
+                keybinding: 'ctrlcmd+l',
+                when: `${NOTEBOOK_EDITOR_FOCUSED}`
+            }
         );
     }
 
