@@ -207,6 +207,12 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
                 }
             }
         );
+        commands.registerCommand({ id: 'list.focusUp' }, {
+            execute: () => commands.executeCommand(NotebookCommands.CHANGE_SELECTED_CELL.id, CellChangeDirection.Up)
+        });
+        commands.registerCommand({ id: 'list.focusDown' }, {
+            execute: () => commands.executeCommand(NotebookCommands.CHANGE_SELECTED_CELL.id, CellChangeDirection.Down)
+        });
 
         commands.registerCommand(NotebookCommands.CUT_SELECTED_CELL, this.editableCommandHandler(
             () => {
