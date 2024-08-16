@@ -32,6 +32,7 @@
     "@theia/ai-core": "1.53.0",
     "@theia/ai-history": "1.53.0",
     "@theia/ai-openai": "1.53.0",
+    "@theia/ai-ollama": "1.53.0",
     "@theia/ai-terminal": "1.53.0",
     "@theia/ai-workspace-agent": "1.53.0",
     "@theia/api-provider-sample": "1.53.0",
