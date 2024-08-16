@@ -52,7 +52,7 @@ export class NotebookStatusBarContribution implements FrontendApplicationContrib
     }
 
     protected async updateStatusbar(editor?: NotebookEditorWidget): Promise<void> {
-        if (!editor && !this.lastFocusedEditor?.isVisible) {
+        if ((!editor && !this.lastFocusedEditor?.isVisible) || editor?.model?.cells.length === 0) {
             this.statusBar.removeElement(NOTEBOOK_CELL_SELECTION_STATUS_BAR_ID);
             return;
         }

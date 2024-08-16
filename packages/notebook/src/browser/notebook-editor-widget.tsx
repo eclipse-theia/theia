@@ -204,6 +204,7 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
         }
         // Ensure that the model is loaded before adding the editor
         this.notebookEditorService.addNotebookEditor(this);
+        this._model.selectedCell = this._model.cells[0];
         this.update();
         this.notebookContextManager.init(this);
         return this._model;
