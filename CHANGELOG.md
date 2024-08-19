@@ -4,6 +4,10 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+<a name="breaking_changes_1.53.0">[Breaking Changes:](#breaking_changes_1.51.0)</a>
+- [dependencies] increased minimum node version to 18. [#14027](https://github.com/eclipse-theia/theia/pull/14027) - Contributed on behalf of STMicroelectronics
+
+
 ## 1.52.0 - 07/25/2024
 
 - [application-package] bumped the default supported API from `1.90.2` to `1.91.1` [#13955](https://github.com/eclipse-theia/theia/pull/13955) - Contributed on behalf of STMicroelectronics
