@@ -3999,3 +3999,13 @@ export class DebugVisualization {
 }
 
 // #endregion
+
+// #region Terminal Shell Integration
+
+export enum TerminalShellExecutionCommandLineConfidence {
+    Low = 0,
+    Medium = 1,
+    High = 2
+}
+
+// #endregion
