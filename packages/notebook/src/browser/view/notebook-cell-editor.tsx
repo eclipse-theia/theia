@@ -124,20 +124,7 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
             animationFrame().then(() => this.setMatches());
         }));
 
-        this.toDispose.push(this.props.cell.onDidSelectFindMatch(match => {
-            const editorDomNode = this.editor?.getControl().getDomNode();
-            if (editorDomNode) {
-                editorDomNode.scrollIntoView({
-                    behavior: 'instant',
-                    block: 'center'
-                });
-            } else {
-                this.container?.scrollIntoView({
-                    behavior: 'instant',
-                    block: 'center'
-                });
-            }
-        }));
+        this.toDispose.push(this.props.cell.onDidSelectFindMatch(match => this.centerEditorInView()));
 
         this.toDispose.push(this.props.notebookModel.onDidChangeSelectedCell(e => {
             if (e.cell !== this.props.cell && this.editor?.getControl().hasTextFocus()) {
@@ -155,6 +142,10 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
             });
             this.toDispose.push(disposable);
         }
+
+        this.toDispose.push(this.props.cell.onDidRequestCenterEditor(() => {
+            this.centerEditorInView();
+        }));
     }
 
     override componentWillUnmount(): void {
@@ -164,6 +155,21 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
     protected disposeEditor(): void {
         this.toDispose.dispose();
         this.toDispose = new DisposableCollection();
+    }
+
+    protected centerEditorInView(): void {
+        const editorDomNode = this.editor?.getControl().getDomNode();
+        if (editorDomNode) {
+            editorDomNode.scrollIntoView({
+                behavior: 'instant',
+                block: 'center'
+            });
+        } else {
+            this.container?.scrollIntoView({
+                behavior: 'instant',
+                block: 'center'
+            });
+        }
     }
 
     protected async initEditor(): Promise<void> {

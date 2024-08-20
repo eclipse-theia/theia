@@ -126,6 +126,9 @@ export class NotebookCellModel implements NotebookCell, Disposable {
     protected readonly onDidSelectFindMatchEmitter = new Emitter<NotebookCodeEditorFindMatch>();
     readonly onDidSelectFindMatch: Event<NotebookCodeEditorFindMatch> = this.onDidSelectFindMatchEmitter.event;
 
+    protected onDidRequestCenterEditorEmitter = new Emitter<void>();
+    readonly onDidRequestCenterEditor = this.onDidRequestCenterEditorEmitter.event;
+
     @inject(NotebookCellModelProps)
     protected readonly props: NotebookCellModelProps;
 
@@ -297,6 +300,10 @@ export class NotebookCellModel implements NotebookCell, Disposable {
     requestBlurEditor(): void {
         this.requestStopEdit();
         this.onWillBlurCellEditorEmitter.fire();
+    }
+
+    requestCenterEditor(): void {
+        this.onDidRequestCenterEditorEmitter.fire();
     }
 
     spliceNotebookCellOutputs(splice: NotebookCellOutputsSplice): void {
