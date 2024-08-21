@@ -18,7 +18,7 @@ import {
     PreferenceDataProperty,
     PreferenceScope,
     TreeNode as BaseTreeNode,
-    ExpandableTreeNode,
+    CompositeTreeNode as BaseCompositeTreeNode,
     SelectableTreeNode,
     PreferenceInspection,
     CommonCommands,
@@ -59,7 +59,8 @@ export namespace Preference {
         };
     }
 
-    export interface CompositeTreeNode extends ExpandableTreeNode, SelectableTreeNode {
+    export interface CompositeTreeNode extends BaseCompositeTreeNode, SelectableTreeNode {
+        expanded?: boolean;
         depth: number;
         label?: string;
     }
@@ -69,6 +70,7 @@ export namespace Preference {
     }
 
     export interface LeafNode extends BaseTreeNode {
+        label?: string;
         depth: number;
         preference: { data: PreferenceDataProperty };
         preferenceId: string;
