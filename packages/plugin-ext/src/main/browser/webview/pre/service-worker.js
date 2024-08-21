@@ -226,7 +226,8 @@ async function processResourceRequest(event, requestUrl, resourceRoot) {
 
     parentClient.postMessage({
         channel: 'load-resource',
-        path: resourcePath
+        path: resourcePath,
+        query: requestUrl.search.replace(/^\?/, '')
     });
 
     return resourceRequestStore.create(webviewId, resourcePath)

@@ -36,5 +36,20 @@ export class GitResource implements Resource {
         return '';
     }
 
+    async getSize(): Promise<number> {
+        if (this.repository) {
+            const path = Repository.relativePath(this.repository, this.uri.withScheme('file'))?.toString();
+            if (path) {
+                const commitish = this.uri.query || 'index';
+                const args = commitish !== 'index' ? ['ls-tree', '--format=%(objectsize)', commitish, path] : ['ls-files', '--format=%(objectsize)', '--', path];
+                const size = (await this.git.exec(this.repository, args)).stdout.split('\n').filter(line => !!line.trim())[0];
+                if (size) {
+                    return parseInt(size);
+                }
+            }
+        }
+        return 0;
+    }
+
     dispose(): void { }
 }

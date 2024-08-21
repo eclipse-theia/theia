@@ -17,16 +17,17 @@
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { CustomEditor, DeployedPlugin } from '../../../common';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 import { CustomEditorOpener } from './custom-editor-opener';
 import { Emitter } from '@theia/core';
-import { ApplicationShell, DefaultOpenerService, OpenWithService, WidgetManager, WidgetOpenerOptions } from '@theia/core/lib/browser';
+import { ApplicationShell, DefaultOpenerService, OpenWithService, WidgetManager } from '@theia/core/lib/browser';
 import { CustomEditorWidget } from './custom-editor-widget';
 
 @injectable()
 export class PluginCustomEditorRegistry {
     private readonly editors = new Map<string, CustomEditor>();
-    private readonly pendingEditors = new Set<CustomEditorWidget>();
-    private readonly resolvers = new Map<string, (widget: CustomEditorWidget, options?: WidgetOpenerOptions) => void>();
+    private readonly pendingEditors = new Map<CustomEditorWidget, { deferred: Deferred<void>, disposable: Disposable }>();
+    private readonly resolvers = new Map<string, (widget: CustomEditorWidget) => Promise<void>>();
 
     private readonly onWillOpenCustomEditorEmitter = new Emitter<string>();
     readonly onWillOpenCustomEditor = this.onWillOpenCustomEditorEmitter.event;
@@ -74,7 +75,8 @@ export class PluginCustomEditorRegistry {
         const editorOpenHandler = new CustomEditorOpener(
             editor,
             this.shell,
-            this.widgetManager
+            this.widgetManager,
+            this
         );
         toDispose.push(this.defaultOpenerService.addHandler(editorOpenHandler));
         toDispose.push(
@@ -86,30 +88,30 @@ export class PluginCustomEditorRegistry {
                 open: uri => editorOpenHandler.open(uri)
             })
         );
-        toDispose.push(
-            editorOpenHandler.onDidOpenCustomEditor(event => this.resolveWidget(event[0], event[1]))
-        );
         return toDispose;
     }
 
-    resolveWidget = (widget: CustomEditorWidget, options?: WidgetOpenerOptions) => {
+    async resolveWidget(widget: CustomEditorWidget): Promise<void> {
         const resolver = this.resolvers.get(widget.viewType);
         if (resolver) {
-            resolver(widget, options);
+            await resolver(widget);
         } else {
-            this.pendingEditors.add(widget);
+            const deferred = new Deferred<void>();
+            const disposable = widget.onDidDispose(() => this.pendingEditors.delete(widget));
+            this.pendingEditors.set(widget, { deferred, disposable });
             this.onWillOpenCustomEditorEmitter.fire(widget.viewType);
+            return deferred.promise;
         }
     };
 
-    registerResolver(viewType: string, resolver: (widget: CustomEditorWidget, options?: WidgetOpenerOptions) => void): Disposable {
+    registerResolver(viewType: string, resolver: (widget: CustomEditorWidget) => Promise<void>): Disposable {
         if (this.resolvers.has(viewType)) {
             throw new Error(`Resolver for ${viewType} already registered`);
         }
 
-        for (const editorWidget of this.pendingEditors) {
+        for (const [editorWidget, { deferred, disposable }] of this.pendingEditors.entries()) {
             if (editorWidget.viewType === viewType) {
-                resolver(editorWidget);
+                resolver(editorWidget).then(() => deferred.resolve(), err => deferred.reject(err)).finally(() => disposable.dispose());
                 this.pendingEditors.delete(editorWidget);
             }
         }
