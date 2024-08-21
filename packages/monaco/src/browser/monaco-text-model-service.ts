@@ -45,13 +45,6 @@ export interface MonacoEditorModelFactory {
 export class MonacoTextModelService implements ITextModelService {
     declare readonly _serviceBrand: undefined;
 
-    /**
-     * This component does some asynchronous work before being fully initialized.
-     *
-     * @deprecated since 1.25.0. Is instantly resolved.
-     */
-    readonly ready: Promise<void> = Promise.resolve();
-
     protected readonly _models = new ReferenceCollection<string, MonacoEditorModel>(
         uri => this.loadModel(new URI(uri))
     );
@@ -121,10 +114,6 @@ export class MonacoTextModelService implements ITextModelService {
         await this.editorPreferences.ready;
         const resource = await this.resourceProvider(uri);
         const model = await (await this.createModel(resource)).load();
-        this.updateModel(model);
-        model.textEditorModel.onDidChangeLanguage(() => this.updateModel(model));
-        const disposable = this.editorPreferences.onPreferenceChanged(change => this.updateModel(model, change));
-        model.onDispose(() => disposable.dispose());
         return model;
     }
 
@@ -152,37 +141,6 @@ export class MonacoTextModelService implements ITextModelService {
 
         }
         return undefined;
-    }
-
-    protected updateModel(model: MonacoEditorModel, change?: EditorPreferenceChange): void {
-        if (!change) {
-            model.textEditorModel.updateOptions(this.getModelOptions(model));
-        } else if (change.affects(model.uri, model.languageId)) {
-            const modelOption = this.toModelOption(change.preferenceName);
-            if (modelOption) {
-                model.textEditorModel.updateOptions(this.getModelOptions(model));
-            }
-        }
-    }
-
-    /** @deprecated pass MonacoEditorModel instead  */
-    protected getModelOptions(uri: string): ITextModelUpdateOptions;
-    protected getModelOptions(model: MonacoEditorModel): ITextModelUpdateOptions;
-    protected getModelOptions(arg: string | MonacoEditorModel): ITextModelUpdateOptions {
-        const uri = typeof arg === 'string' ? arg : arg.uri;
-        const overrideIdentifier = typeof arg === 'string' ? undefined : arg.languageId;
-        return {
-            tabSize: this.editorPreferences.get({ preferenceName: 'editor.tabSize', overrideIdentifier }, undefined, uri),
-            // @monaco-uplift: when available, switch to 'editor.indentSize' preference.
-            indentSize: this.editorPreferences.get({ preferenceName: 'editor.tabSize', overrideIdentifier }, undefined, uri),
-            insertSpaces: this.editorPreferences.get({ preferenceName: 'editor.insertSpaces', overrideIdentifier }, undefined, uri),
-            bracketColorizationOptions: {
-                enabled: this.editorPreferences.get({ preferenceName: 'editor.bracketPairColorization.enabled', overrideIdentifier }, undefined, uri),
-                independentColorPoolPerBracketType: this.editorPreferences.get(
-                    { preferenceName: 'editor.bracketPairColorization.independentColorPoolPerBracketType', overrideIdentifier }, undefined, uri),
-            },
-            trimAutoWhitespace: this.editorPreferences.get({ preferenceName: 'editor.trimAutoWhitespace', overrideIdentifier }, undefined, uri),
-        };
     }
 
     registerTextModelContentProvider(scheme: string, provider: ITextModelContentProvider): IDisposable {
