@@ -316,11 +316,7 @@ export class DynamicMenuWidget extends MenuWidget {
             }
         } else if (menu.command) {
             const node = menu.altNode && this.services.context.altPressed ? menu.altNode : (menu as MenuNode & CommandMenuNode);
-            let contextMatcher: ContextMatcher = this.options.contextKeyService || this.services.contextKeyService;
-            if (node.contextKeyOverlays) {
-                contextMatcher = this.services.contextKeyService.createOverlay(node.contextKeyOverlays.map(item => [item.key, item.value]));
-            }
-            if (commands.isVisible(node.command) && this.undefinedOrMatch(contextMatcher, node.when, this.options.context)) {
+            if (commands.isVisible(node.command) && this.undefinedOrMatch(this.options.contextKeyService ?? this.services.contextKeyService, node.when, this.options.context)) {
                 parentItems.push({
                     command: node.command,
                     type: 'command'

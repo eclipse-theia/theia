@@ -39,8 +39,6 @@ export class ActionMenuNode implements MenuNode, CommandMenuNode, Partial<Altern
 
     get when(): string | undefined { return this.action.when; }
 
-    get contextKeyOverlays(): { key: string, value: string }[] | undefined { return this.action.contextKeyOverlays; }
-
     get id(): string { return this.action.commandId; }
 
     get label(): string {

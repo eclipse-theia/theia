@@ -32,16 +32,14 @@ import { COMMENT_CONTEXT, COMMENT_THREAD_CONTEXT, COMMENT_TITLE } from '../comme
 import { VIEW_ITEM_CONTEXT_MENU } from '../view/tree-view-widget';
 import { WEBVIEW_CONTEXT_MENU, WebviewWidget } from '../webview/webview';
 import { EDITOR_LINENUMBER_CONTEXT_MENU } from '@theia/editor/lib/browser/editor-linenumber-contribution';
-import { TEST_VIEW_CONTEXT_MENU } from '@theia/test/lib/browser/view/test-view-contribution';
+import { PLUGIN_TEST_VIEW_TITLE_MENU, TEST_VIEW_CONTEXT_MENU } from '@theia/test/lib/browser/view/test-view-contribution';
 import { TEST_RUNS_CONTEXT_MENU } from '@theia/test/lib/browser/view/test-run-view-contribution';
 import { TerminalMenus } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
-import { Menu } from '../../../common';
 
 export const PLUGIN_EDITOR_TITLE_MENU = ['plugin_editor/title'];
 export const PLUGIN_EDITOR_TITLE_RUN_MENU = ['plugin_editor/title/run'];
 export const PLUGIN_SCM_TITLE_MENU = ['plugin_scm/title'];
 export const PLUGIN_VIEW_TITLE_MENU = ['plugin_view/title'];
-export const PLUGIN_TEST_VIEW_TITLE_MENU = ['plugin_test/title'];
 
 export const implementedVSCodeContributionPoints = [
     'comments/comment/context',
@@ -105,14 +103,6 @@ export const codeToTheiaMappings = new Map<ContributionPoint, MenuPath[]>([
     ['terminal/context', [TerminalMenus.TERMINAL_CONTRIBUTIONS]],
     ['terminal/title/context', [TerminalMenus.TERMINAL_TITLE_CONTRIBUTIONS]]
 
-]);
-
-export const codeToTheiaGroupProviders = new Map<string, (menu: Menu) => string>([
-    ['testing/profiles/context', () => 'configure']
-]);
-
-export const codeToTheiaContextKeyOverlays = new Map<string, { key: string, values: string[] }>([
-    ['testing/profiles/context', { key: 'testing.profile.context.group', values: ['run', 'debug', 'coverage'] }],
 ]);
 
 type CodeEditorWidget = EditorWidget | WebviewWidget;

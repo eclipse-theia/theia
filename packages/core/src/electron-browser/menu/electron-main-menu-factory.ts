@@ -117,7 +117,7 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
         const maxWidget = document.getElementsByClassName(MAXIMIZED_CLASS);
         if (preference === 'visible' || (preference === 'classic' && maxWidget.length === 0)) {
             const menuModel = this.menuProvider.getMenu(MAIN_MENU_BAR);
-            this._menu = this.fillMenuTemplate([], menuModel, [], { honorDisabled: false, rootMenuPath: MAIN_MENU_BAR });
+            this._menu = this.fillMenuTemplate([], menuModel, [], { honorDisabled: false, rootMenuPath: MAIN_MENU_BAR }, false);
             if (isOSX) {
                 this._menu.unshift(this.createOSXMenu());
             }
@@ -130,13 +130,14 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
 
     createElectronContextMenu(menuPath: MenuPath, args?: any[], context?: HTMLElement, contextKeyService?: ContextMatcher, skipSingleRootNode?: boolean): MenuDto[] {
         const menuModel = skipSingleRootNode ? this.menuProvider.removeSingleRootNode(this.menuProvider.getMenu(menuPath), menuPath) : this.menuProvider.getMenu(menuPath);
-        return this.fillMenuTemplate([], menuModel, args, { showDisabled: true, context, rootMenuPath: menuPath, contextKeyService });
+        return this.fillMenuTemplate([], menuModel, args, { showDisabled: true, context, rootMenuPath: menuPath, contextKeyService }, true);
     }
 
     protected fillMenuTemplate(parentItems: MenuDto[],
         menu: MenuNode,
         args: unknown[] = [],
-        options: ElectronMenuOptions
+        options: ElectronMenuOptions,
+        skipRoot: boolean
     ): MenuDto[] {
         const showDisabled = options?.showDisabled !== false;
         const honorDisabled = options?.honorDisabled !== false;
@@ -148,13 +149,13 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
             }
             const children = CompoundMenuNode.getFlatChildren(menu.children);
             const myItems: MenuDto[] = [];
-            children.forEach(child => this.fillMenuTemplate(myItems, child, args, options));
+            children.forEach(child => this.fillMenuTemplate(myItems, child, args, options, false));
             if (myItems.length === 0) {
                 return parentItems;
             }
-            if (role === CompoundMenuNodeRole.Submenu) {
+            if (!skipRoot && role === CompoundMenuNodeRole.Submenu) {
                 parentItems.push({ label: menu.label, submenu: myItems });
-            } else if (role === CompoundMenuNodeRole.Group && menu.id !== 'inline') {
+            } else {
                 if (parentItems.length && parentItems[parentItems.length - 1].type !== 'separator') {
                     parentItems.push({ type: 'separator' });
                 }

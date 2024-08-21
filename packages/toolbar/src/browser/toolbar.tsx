@@ -17,7 +17,7 @@
 import * as React from '@theia/core/shared/react';
 import { Anchor, ContextMenuAccess, KeybindingRegistry, PreferenceService, Widget, WidgetManager } from '@theia/core/lib/browser';
 import { LabelIcon } from '@theia/core/lib/browser/label-parser';
-import { TabBarToolbar, TabBarToolbarFactory, TabBarToolbarItem } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { ReactTabBarToolbarItem, RenderedToolbarItem, TabBarToolbar, TabBarToolbarFactory } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { MenuPath, ProgressService } from '@theia/core';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
@@ -239,7 +239,7 @@ export class ToolbarImpl extends TabBarToolbar {
         let toolbarItemClassNames = '';
         let renderBody: React.ReactNode;
 
-        if (TabBarToolbarItem.is(item)) {
+        if (!ReactTabBarToolbarItem.is(item)) {
             toolbarItemClassNames = TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM;
             if (this.evaluateWhenClause(item.when)) {
                 toolbarItemClassNames += ' enabled';
@@ -265,7 +265,7 @@ export class ToolbarImpl extends TabBarToolbar {
                 onMouseOut={this.onMouseUpEvent}
                 draggable={true}
                 onDragStart={this.handleOnDragStart}
-                onClick={this.executeCommand}
+                onClick={e => this.executeCommand(e, item)}
                 onDragOver={this.handleOnDragEnter}
                 onDragLeave={this.handleOnDragLeave}
                 onContextMenu={this.handleContextMenu}
@@ -279,7 +279,7 @@ export class ToolbarImpl extends TabBarToolbar {
     }
 
     protected override renderItem(
-        item: TabBarToolbarItem,
+        item: RenderedToolbarItem,
     ): React.ReactNode {
         const classNames = [];
         if (item.text) {
@@ -290,7 +290,7 @@ export class ToolbarImpl extends TabBarToolbar {
                 }
             }
         }
-        const command = this.commands.getCommand(item.command);
+        const command = this.commands.getCommand(item.command!);
         const iconClass = (typeof item.icon === 'function' && item.icon()) || item.icon || command?.iconClass;
         if (iconClass) {
             classNames.push(iconClass);

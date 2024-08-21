@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { interfaces } from '@theia/core/shared/inversify';
-import { ReactTabBarToolbarItem, TabBarToolbar, TabBarToolbarItem } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { ReactTabBarToolbarItem, RenderedToolbarItem, TabBarToolbar, TabBarToolbarItem } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 
 export enum ToolbarAlignment {
     LEFT = 'left',
@@ -52,7 +52,7 @@ export const Toolbar = Symbol('Toolbar');
 export const ToolbarFactory = Symbol('ToolbarFactory');
 export type Toolbar = TabBarToolbar;
 
-export type ToolbarItem = ToolbarContribution | TabBarToolbarItem;
+export type ToolbarItem = ToolbarContribution | RenderedToolbarItem;
 export interface DeflatedContributedToolbarItem { id: string; group: 'contributed' };
 export type ToolbarItemDeflated = DeflatedContributedToolbarItem | TabBarToolbarItem;
 
