@@ -478,6 +478,8 @@ export class TerminalExtImpl implements theia.Terminal {
         this.creationOptions = this.options;
     }
 
+    shellIntegration: theia.TerminalShellIntegration | undefined = undefined;
+
     sendText(text: string, shouldExecute: boolean = true): void {
         this.id.promise.then(id => this.proxy.$sendText(id, text, shouldExecute));
     }

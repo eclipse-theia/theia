@@ -54,7 +54,7 @@ export class VSXExtensionResolver implements PluginDeployerResolver {
         const filter = await this.vsxApiFilter();
         const version = options?.version || id.version;
         if (version) {
-            console.log(`[${id}]: trying to resolve version ${version}...`);
+            console.log(`[${id.id}]: trying to resolve version ${version}...`);
             extension = await filter.findLatestCompatibleExtension({
                 extensionId: id.id,
                 extensionVersion: version,
@@ -62,7 +62,7 @@ export class VSXExtensionResolver implements PluginDeployerResolver {
                 targetPlatform: VSXExtensionResolver.TARGET_PLATFORM
             });
         } else {
-            console.log(`[${id}]: trying to resolve latest version...`);
+            console.log(`[${id.id}]: trying to resolve latest version...`);
             extension = await filter.findLatestCompatibleExtension({
                 extensionId: id.id,
                 includeAllVersions: true,
@@ -82,7 +82,7 @@ export class VSXExtensionResolver implements PluginDeployerResolver {
         if (!options?.ignoreOtherVersions) {
             const existingVersion = this.hasSameOrNewerVersion(id.id, extension);
             if (existingVersion) {
-                console.log(`[${id}]: is already installed with the same or newer version '${existingVersion}'`);
+                console.log(`[${id.id}]: is already installed with the same or newer version '${existingVersion}'`);
                 return;
             }
         }

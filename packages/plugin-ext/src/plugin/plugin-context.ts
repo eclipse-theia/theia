@@ -228,7 +228,8 @@ import {
     LanguageModelError,
     PortAutoForwardAction,
     PortAttributes,
-    DebugVisualization
+    DebugVisualization,
+    TerminalShellExecutionCommandLineConfidence
 } from './types-impl';
 import { AuthenticationExtImpl } from './authentication-ext';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
@@ -636,6 +637,12 @@ export function createAPIFactory(
 
             /** @stubbed ShareProvider */
             registerShareProvider: () => Disposable.NULL,
+            /** @stubbed Terminal Shell Ingration */
+            onDidChangeTerminalShellIntegration: Event.None,
+            /** @stubbed Terminal Shell Ingration */
+            onDidEndTerminalShellExecution: Event.None,
+            /** @stubbed Terminal Shell Ingration */
+            onDidStartTerminalShellExecution: Event.None
         };
 
         const workspace: typeof theia.workspace = {
@@ -1494,7 +1501,8 @@ export function createAPIFactory(
             LanguageModelError,
             PortAutoForwardAction,
             PortAttributes,
-            DebugVisualization
+            DebugVisualization,
+            TerminalShellExecutionCommandLineConfidence
         };
     };
 }
