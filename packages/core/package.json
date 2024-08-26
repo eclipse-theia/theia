@@ -203,7 +203,8 @@
     "generate-layout": "electron ./scripts/generate-layout",
     "generate-theia-re-exports": "theia-re-exports generate && theia-re-exports template README_TEMPLATE.md > README.md",
     "lint": "theiaext lint",
-    "prepare": "yarn -s generate-theia-re-exports",
+    "prepare": "yarn -s generate-theia-re-exports && yarn download:json-schema",
+    "download:json-schema": "node ./scripts/download-catalog.js",
     "test": "theiaext test",
     "version": "yarn -s generate-theia-re-exports",
     "watch": "theiaext watch"
@@ -211,7 +212,8 @@
   "devDependencies": {
     "@theia/ext-scripts": "1.52.0",
     "@theia/re-exports": "1.52.0",
-    "minimist": "^1.2.0"
+    "minimist": "^1.2.0",
+    "nodejs-file-downloader": "4.13.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
