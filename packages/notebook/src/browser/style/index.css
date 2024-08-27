@@ -272,10 +272,10 @@
   border: 1px solid var(--theia-notebook-cellToolbarSeparator);
   background-color: var(--theia-editor-background);
   color: var(--theia-foreground);
-  vertical-align: middle;
-  text-align: center;
+  display: flex;
   height: 24px;
   margin: 0 8px;
+  padding: 2px 4px;
 }
 
 .theia-notebook-add-cell-button:hover {
@@ -286,8 +286,16 @@
   background-color: var(--theia-toolbar-active);
 }
 
-.theia-notebook-add-cell-button-icon {
+.theia-notebook-add-cell-button>* {
   vertical-align: middle;
+}
+
+.theia-notebook-add-cell-button-icon::before {
+  font: normal normal normal 14px/1 codicon;
+}
+
+.theia-notebook-add-cell-button-text {
+  margin: 1px 0 0 4px;
 }
 
 .theia-notebook-cell-output-webview {
