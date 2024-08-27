@@ -71,6 +71,7 @@ export class CollaborationColorService {
     }
 
     requiresDarkFont(color: CollaborationColor): boolean {
+        // From https://stackoverflow.com/a/3943023
         return ((color.r * 0.299) + (color.g * 0.587) + (color.b * 0.114)) > 186;
     }
 }

@@ -58,16 +58,8 @@ export function createCollaborationInstanceContainer(parent: interfaces.Containe
     return child;
 }
 
-export class CollaborationPeer implements Disposable {
+export interface DisposablePeer extends Disposable {
     peer: types.Peer;
-
-    constructor(peer: types.Peer, protected disposable: Disposable) {
-        this.peer = peer;
-    }
-
-    dispose(): void {
-        this.disposable.dispose();
-    }
 }
 
 export const COLLABORATION_SELECTION = 'theia-collaboration-selection';
@@ -108,7 +100,7 @@ export class CollaborationInstance implements Disposable {
     protected readonly utils: CollaborationUtils;
 
     protected identity = new Deferred<types.Peer>();
-    protected peers = new Map<string, CollaborationPeer>();
+    protected peers = new Map<string, DisposablePeer>();
     protected yjs = new Y.Doc();
     protected yjsAwareness = new awarenessProtocol.Awareness(this.yjs);
     protected yjsProvider: OpenCollaborationYjsProvider;
@@ -610,7 +602,10 @@ export class CollaborationInstance implements Disposable {
         const collection = new DisposableCollection();
         collection.push(this.createPeerStyleSheet(peer));
         collection.push(Disposable.create(() => this.peers.delete(peer.id)));
-        const disposablePeer = new CollaborationPeer(peer, collection);
+        const disposablePeer = {
+            peer,
+            dispose: () => collection.dispose()
+        };
         this.peers.set(peer.id, disposablePeer);
     }
 

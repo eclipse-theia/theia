@@ -50,7 +50,7 @@ export const DEFAULT_COLLABORATION_SERVER_URL = 'https://oct-server-staging-ymij
 @injectable()
 export class CollaborationFrontendContribution implements CommandContribution {
 
-    protected readonly authHandlerDeferred = new Deferred<ConnectionProvider>();
+    protected readonly connectionProvider = new Deferred<ConnectionProvider>();
 
     @inject(WindowService)
     protected readonly windowService: WindowService;
@@ -86,12 +86,12 @@ export class CollaborationFrontendContribution implements CommandContribution {
                 url: serverUrl,
                 client: FrontendApplicationConfigProvider.get().applicationName,
                 fetch: window.fetch.bind(window),
-                opener: url => this.windowService.openNewWindow(url),
+                opener: url => this.windowService.openNewWindow(url, { external: true }),
                 transports: [SocketIoTransportProvider],
                 userToken: localStorage.getItem(COLLABORATION_AUTH_TOKEN) ?? undefined
             });
-            this.authHandlerDeferred.resolve(authHandler);
-        }, err => this.authHandlerDeferred.reject(err));
+            this.connectionProvider.resolve(authHandler);
+        }, err => this.connectionProvider.reject(err));
     }
 
     protected async onStatusDefaultClick(): Promise<void> {
@@ -177,7 +177,7 @@ export class CollaborationFrontendContribution implements CommandContribution {
 
     protected async setStatusBarEntryDefault(): Promise<void> {
         await this.setStatusBarEntry({
-            text: '$(codicon-live-share) ' + nls.localizeByDefault('Share'),
+            text: '$(codicon-live-share) ' + nls.localize('theia/collaboration/collaborate', 'Collaborate'),
             tooltip: nls.localize('theia/collaboration/startSession', 'Start or join collaboration session'),
             onclick: () => this.onStatusDefaultClick()
         });
@@ -220,7 +220,7 @@ export class CollaborationFrontendContribution implements CommandContribution {
                     text: nls.localize('theia/collaboration/creatingRoom', 'Creating Session'),
                 }, () => cancelTokenSource.cancel());
                 try {
-                    const authHandler = await this.authHandlerDeferred.promise;
+                    const authHandler = await this.connectionProvider.promise;
                     const roomClaim = await authHandler.createRoom({
                         reporter: info => progress.report({ message: info.message }),
                         abortSignal: this.toAbortSignal(cancelTokenSource.token)
@@ -252,7 +252,7 @@ export class CollaborationFrontendContribution implements CommandContribution {
                 let joinRoomProgress: Progress | undefined;
                 const cancelTokenSource = new CancellationTokenSource();
                 try {
-                    const authHandler = await this.authHandlerDeferred.promise;
+                    const authHandler = await this.connectionProvider.promise;
                     const id = await this.quickInputService?.input({
                         placeHolder: nls.localize('theia/collaboration/enterCode', 'Enter collaboration session code')
                     });
@@ -299,16 +299,16 @@ export class CollaborationFrontendContribution implements CommandContribution {
         navigator.clipboard.writeText(code);
         const notification = nls.localize('theia/collaboration/copiedInvitation', 'Invitation code copied to clipboard.');
         if (firstTime) {
-            const makeReadonly = nls.localize('theia/collaboration/makeReadonly', 'Make readonly');
+            // const makeReadonly = nls.localize('theia/collaboration/makeReadonly', 'Make readonly');
             const copyAgain = nls.localize('theia/collaboration/copyAgain', 'Copy Again');
             const copyResult = await this.messageService.info(
                 notification,
-                makeReadonly,
+                // makeReadonly,
                 copyAgain
             );
-            if (copyResult === makeReadonly && this.currentInstance) {
-                this.currentInstance.readonly = true;
-            }
+            // if (copyResult === makeReadonly && this.currentInstance) {
+            //     this.currentInstance.readonly = true;
+            // }
             if (copyResult === copyAgain) {
                 navigator.clipboard.writeText(code);
             }
