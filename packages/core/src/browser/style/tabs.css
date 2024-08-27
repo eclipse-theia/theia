@@ -464,20 +464,21 @@
 }
 
 .p-TabBar-toolbar .item {
-  display: flex;
-  align-items: center;
-  margin-left: 4px; /* `padding` + `margin-right` from the container toolbar */
   opacity: var(--theia-mod-disabled-opacity);
   cursor: default;
+  display: flex;
+  flex-direction: row;
+  column-gap: 0px;
+  align-items: centery;
+}
+
+.p-TabBar-toolbar .item>div {
+    height: 100%;
 }
 
 .p-TabBar-toolbar .item.enabled {
   opacity: 1;
   cursor: pointer;
-}
-
-.p-TabBar-toolbar .item.enabled .action-label::before {
-  display: flex;
 }
 
 .p-TabBar-toolbar :not(.item.enabled) .action-label {
@@ -491,8 +492,8 @@
 }
 
 .p-TabBar-toolbar .item > div {
-  height: 18px;
-  width: 18px;
+  line-height: calc(var(--theia-icon-size)+2px);
+  height: calc(var(--theia-icon-size)+2px);
   background-repeat: no-repeat;
   line-height: 18px;
 }
@@ -522,25 +523,13 @@
   background: var(--theia-icon-close) no-repeat;
 }
 
-/** Configure layout of a toolbar item that shows a pop-up menu. */
-.p-TabBar-toolbar .item.menu {
-  display: grid;
-}
-
-/** The elements of the item that shows a pop-up menu are stack atop one other. */
-.p-TabBar-toolbar .item.menu > div {
-  grid-area: 1 / 1;
-}
-
 /**
  * The chevron for the pop-up menu indication is shrunk and
  * stuffed in the bottom-right corner.
  */
-.p-TabBar-toolbar .item.menu > .chevron {
-  scale: 50%;
-  align-self: end;
-  justify-self: end;
-  translate: 5px 3px;
+.p-TabBar-toolbar .item.menu .chevron {
+  font-size: 8px;
+  vertical-align: bottom;
 }
 
 #theia-main-content-panel

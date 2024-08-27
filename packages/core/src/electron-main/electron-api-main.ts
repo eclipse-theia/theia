@@ -241,9 +241,20 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
         });
     }
 
+    private isASCI(accelerator: string | undefined): boolean {
+        if (typeof accelerator !== 'string') {
+            return false;
+        }
+        for (let i = 0; i < accelerator.length; i++) {
+            if (accelerator.charCodeAt(i) > 127) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     fromMenuDto(sender: WebContents, menuId: number, menuDto: InternalMenuDto[]): MenuItemConstructorOptions[] {
         return menuDto.map(dto => {
-
             const result: MenuItemConstructorOptions = {
                 id: dto.id,
                 label: dto.label,
@@ -252,7 +263,7 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
                 enabled: dto.enabled,
                 visible: dto.visible,
                 role: dto.role,
-                accelerator: dto.accelerator
+                accelerator: this.isASCI(dto.accelerator) ? dto.accelerator : undefined
             };
             if (dto.submenu) {
                 result.submenu = this.fromMenuDto(sender, menuId, dto.submenu);

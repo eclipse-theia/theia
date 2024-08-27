@@ -108,6 +108,7 @@ export class PluginMenuCommandAdapter implements MenuCommandAdapter {
             ['scm/resourceState/context', toScmArgs],
             ['scm/title', () => [this.toScmArg(this.scmService.selectedRepository)]],
             ['testing/message/context', toTestMessageArgs],
+            ['testing/profiles/context', noArgs],
             ['scm/change/title', (...args) => this.toScmChangeArgs(...args)],
             ['timeline/item/context', (...args) => this.toTimelineArgs(...args)],
             ['view/item/context', (...args) => this.toTreeArgs(...args)],

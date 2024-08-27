@@ -57,8 +57,8 @@ import { FileNavigatorFilter } from './navigator-filter';
 import { WorkspaceNode } from './navigator-tree';
 import { NavigatorContextKeyService } from './navigator-context-key-service';
 import {
+    RenderedToolbarItem,
     TabBarToolbarContribution,
-    TabBarToolbarItem,
     TabBarToolbarRegistry
 } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { FileSystemCommands } from '@theia/filesystem/lib/browser/filesystem-frontend-contribution';
@@ -588,7 +588,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
     /**
      * Register commands to the `More Actions...` navigator toolbar item.
      */
-    public registerMoreToolbarItem = (item: Mutable<TabBarToolbarItem>) => {
+    public registerMoreToolbarItem = (item: Mutable<RenderedToolbarItem> & { command: string }) => {
         const commandId = item.command;
         const id = 'navigator.tabbar.toolbar.' + commandId;
         const command = this.commandRegistry.getCommand(commandId);

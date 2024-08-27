@@ -17,7 +17,6 @@
 import { Command, ContributionProvider, Emitter, MaybePromise, MessageService } from '@theia/core';
 import { Widget } from '@theia/core/lib/browser';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
-import { TabBarToolbarItem } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { injectable, inject, postConstruct, named } from '@theia/core/shared/inversify';
 import { ToolbarDefaultsFactory } from './toolbar-defaults';
@@ -76,7 +75,7 @@ export class ToolbarController {
                         if (contribution) {
                             newGroup.push(contribution);
                         }
-                    } else if (TabBarToolbarItem.is(item)) {
+                    } else {
                         newGroup.push({ ...item });
                     }
                 }

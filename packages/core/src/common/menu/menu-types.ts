@@ -68,6 +68,7 @@ export interface MenuNodeBase extends MenuNodeMetadata, MenuNodeRenderingData { 
  * A menu entry representing an action, e.g. "New File".
  */
 export interface MenuAction extends MenuNodeRenderingData, Pick<MenuNodeMetadata, 'when'> {
+
     /**
      * The command to execute.
      */

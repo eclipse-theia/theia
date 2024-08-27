@@ -26,6 +26,7 @@ import { NavigationLocationService } from '@theia/editor/lib/browser/navigation/
 import { NavigationLocation } from '@theia/editor/lib/browser/navigation/navigation-location';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileNavigatorCommands } from '@theia/navigator/lib/browser/file-navigator-commands';
+export const PLUGIN_TEST_VIEW_TITLE_MENU = ['plugin_test', 'title'];
 
 export namespace TestViewCommands {
     /**
@@ -293,12 +294,20 @@ export class TestViewContribution extends AbstractViewContribution<TestTreeWidge
         toolbar.registerItem({
             id: TestViewCommands.RUN_ALL_TESTS.id,
             command: TestViewCommands.RUN_ALL_TESTS.id,
+            menuPath: PLUGIN_TEST_VIEW_TITLE_MENU,
+            contextKeyOverlays: {
+                'testing.profile.context.group': 'run'
+            },
             priority: 1
         });
 
         toolbar.registerItem({
             id: TestViewCommands.DEBUG_ALL_TESTS.id,
             command: TestViewCommands.DEBUG_ALL_TESTS.id,
+            menuPath: PLUGIN_TEST_VIEW_TITLE_MENU,
+            contextKeyOverlays: {
+                'testing.profile.context.group': 'debug'
+            },
             priority: 2
         });
 

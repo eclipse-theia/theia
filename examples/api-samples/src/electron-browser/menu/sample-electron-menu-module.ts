@@ -29,12 +29,13 @@ class SampleElectronMainMenuFactory extends ElectronMainMenuFactory {
     protected override fillMenuTemplate(parentItems: MenuDto[],
         menu: MenuNode,
         args: unknown[] = [],
-        options: ElectronMenuOptions
+        options: ElectronMenuOptions,
+        skipRoot: boolean
     ): MenuDto[] {
         if (menu instanceof PlaceholderMenuNode) {
             parentItems.push({ label: menu.label, enabled: false, visible: true });
         } else {
-            super.fillMenuTemplate(parentItems, menu, args, options);
+            super.fillMenuTemplate(parentItems, menu, args, options, skipRoot);
         }
         return parentItems;
     }
