@@ -135,6 +135,10 @@ export class CompositeSaveable implements Saveable {
         await Promise.all(this.saveables.map(saveable => saveable.save(options)));
     }
 
+    async revert(options?: Saveable.RevertOptions): Promise<void> {
+        await Promise.all(this.saveables.map(saveable => saveable.revert?.(options)));
+    }
+
     get saveables(): readonly Saveable[] {
         return Array.from(this.saveablesMap.keys());
     }
