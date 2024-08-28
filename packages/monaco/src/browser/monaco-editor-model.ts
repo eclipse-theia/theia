@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Position, Range, TextDocumentSaveReason, TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
+import { Position, Range, TextDocumentSaveReason } from '@theia/core/shared/vscode-languageserver-protocol';
 import { TextEditorDocument, EncodingMode, FindMatchesOptions, FindMatch, EditorPreferences } from '@theia/editor/lib/browser';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import { Emitter, Event } from '@theia/core/lib/common/event';
@@ -48,7 +48,14 @@ export interface WillSaveMonacoModelEvent {
 
 export interface MonacoModelContentChangedEvent {
     readonly model: MonacoEditorModel;
-    readonly contentChanges: TextDocumentContentChangeEvent[];
+    readonly contentChanges: MonacoTextDocumentContentChange[];
+}
+
+export interface MonacoTextDocumentContentChange {
+    readonly range: Range;
+    readonly rangeOffset: number;
+    readonly rangeLength: number;
+    readonly text: string;
 }
 
 export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDocument {
@@ -479,8 +486,8 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
     }
 
     protected ignoreContentChanges = false;
-    protected readonly contentChanges: TextDocumentContentChangeEvent[] = [];
-    protected pushContentChanges(contentChanges: TextDocumentContentChangeEvent[]): void {
+    protected readonly contentChanges: MonacoTextDocumentContentChange[] = [];
+    protected pushContentChanges(contentChanges: MonacoTextDocumentContentChange[]): void {
         if (!this.ignoreContentChanges) {
             this.contentChanges.push(...contentChanges);
         }
@@ -503,11 +510,12 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
         const contentChanges = event.changes.map(change => this.asTextDocumentContentChangeEvent(change));
         return { model: this, contentChanges };
     }
-    protected asTextDocumentContentChangeEvent(change: monaco.editor.IModelContentChange): TextDocumentContentChangeEvent {
+    protected asTextDocumentContentChangeEvent(change: monaco.editor.IModelContentChange): MonacoTextDocumentContentChange {
         const range = this.m2p.asRange(change.range);
+        const rangeOffset = change.rangeOffset;
         const rangeLength = change.rangeLength;
         const text = change.text;
-        return { range, rangeLength, text };
+        return { range, rangeOffset, rangeLength, text };
     }
 
     protected applyEdits(
