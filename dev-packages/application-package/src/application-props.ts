@@ -34,7 +34,8 @@ export namespace ElectronFrontendApplicationConfig {
     export const DEFAULT: ElectronFrontendApplicationConfig = {
         windowOptions: {},
         showWindowEarly: true,
-        splashScreenOptions: {}
+        splashScreenOptions: {},
+        uriScheme: 'theia'
     };
     export interface SplashScreenOptions {
         /**
@@ -85,6 +86,11 @@ export namespace ElectronFrontendApplicationConfig {
          * Defaults to `{}` which results in no splash screen being displayed.
          */
         readonly splashScreenOptions?: SplashScreenOptions;
+
+        /**
+         * The custom uri scheme the application registers to in the operating system.
+         */
+        readonly uriScheme: string;
     }
 }
 
@@ -122,7 +128,8 @@ export namespace FrontendApplicationConfig {
         electron: ElectronFrontendApplicationConfig.DEFAULT,
         defaultLocale: '',
         validatePreferencesSchema: true,
-        reloadOnReconnect: false
+        reloadOnReconnect: false,
+        uriScheme: 'theia'
     };
     export interface Partial extends ApplicationConfig {
 

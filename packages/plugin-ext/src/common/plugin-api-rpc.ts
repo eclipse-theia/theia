@@ -181,6 +181,7 @@ export interface EnvInit {
     appName: string;
     appHost: string;
     appRoot: string;
+    appUriScheme: string;
 }
 
 export interface PluginAPI {
@@ -2241,6 +2242,17 @@ export interface TestingExt {
     $onResolveChildren(controllerId: string, path: string[]): void;
 }
 
+// based from https://github.com/microsoft/vscode/blob/1.85.1/src/vs/workbench/api/common/extHostUrls.ts
+export interface UriExt {
+    registerUriHandler(handler: theia.UriHandler, plugin: PluginInfo): theia.Disposable;
+    $handleExternalUri(uri: UriComponents): Promise<void>;
+}
+
+export interface UriMain {
+    $registerUriHandler(extensionId: string, extensionName: string): void;
+    $unregisterUriHandler(extensionId: string): void;
+}
+
 export interface TestControllerUpdate {
     label: string;
     canRefresh: boolean;
@@ -2318,7 +2330,8 @@ export const PLUGIN_RPC_CONTEXT = {
     TABS_MAIN: <ProxyIdentifier<TabsMain>>createProxyIdentifier<TabsMain>('TabsMain'),
     TELEMETRY_MAIN: <ProxyIdentifier<TelemetryMain>>createProxyIdentifier<TelemetryMain>('TelemetryMain'),
     LOCALIZATION_MAIN: <ProxyIdentifier<LocalizationMain>>createProxyIdentifier<LocalizationMain>('LocalizationMain'),
-    TESTING_MAIN: createProxyIdentifier<TestingMain>('TestingMain')
+    TESTING_MAIN: createProxyIdentifier<TestingMain>('TestingMain'),
+    URI_MAIN: createProxyIdentifier<UriMain>('UriMain')
 };
 
 export const MAIN_RPC_CONTEXT = {
@@ -2360,7 +2373,8 @@ export const MAIN_RPC_CONTEXT = {
     COMMENTS_EXT: createProxyIdentifier<CommentsExt>('CommentsExt'),
     TABS_EXT: createProxyIdentifier<TabsExt>('TabsExt'),
     TELEMETRY_EXT: createProxyIdentifier<TelemetryExt>('TelemetryExt)'),
-    TESTING_EXT: createProxyIdentifier<TestingExt>('TestingExt')
+    TESTING_EXT: createProxyIdentifier<TestingExt>('TestingExt'),
+    URI_EXT: createProxyIdentifier<UriExt>('UriExt')
 };
 
 export interface TasksExt {

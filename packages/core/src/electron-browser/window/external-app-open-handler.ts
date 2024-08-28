@@ -36,7 +36,7 @@ export class ExternalAppOpenHandler implements OpenHandler {
     async open(uri: URI): Promise<undefined> {
         // For files 'file:' scheme, system accepts only the path.
         // For other protocols e.g. 'vscode:' we use the full URI to propagate target app information.
-        window.electronTheiaCore.openWithSystemApp(uri.scheme === 'file' ? uri.path.fsPath() : uri.toString(true));
+        window.electronTheiaCore.openWithSystemApp(uri.toString(true));
         return undefined;
     }
 }

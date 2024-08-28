@@ -74,6 +74,8 @@ export interface TheiaCoreAPI {
     onAboutToClose(handler: () => void): Disposable;
     setCloseRequestHandler(handler: (reason: StopReason) => Promise<boolean>): void;
 
+    setOpenUrlHandler(handler: (url: string) => Promise<boolean>): void;
+
     setSecondaryWindowCloseRequestHandler(windowName: string, handler: () => Promise<boolean>): void;
 
     toggleDevTools(): void;
@@ -129,6 +131,7 @@ export const CHANNEL_MAXIMIZE = 'Maximize';
 export const CHANNEL_IS_MAXIMIZED = 'IsMaximized';
 
 export const CHANNEL_ABOUT_TO_CLOSE = 'AboutToClose';
+export const CHANNEL_OPEN_URL = 'OpenUrl';
 
 export const CHANNEL_UNMAXIMIZE = 'UnMaximize';
 export const CHANNEL_ON_WINDOW_EVENT = 'OnWindowEvent';

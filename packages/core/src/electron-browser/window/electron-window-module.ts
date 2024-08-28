@@ -29,6 +29,7 @@ import { ElectronSecondaryWindowService } from './electron-secondary-window-serv
 import { bindWindowPreferences } from './electron-window-preferences';
 import { ElectronWindowService } from './electron-window-service';
 import { ExternalAppOpenHandler } from './external-app-open-handler';
+import { ElectronUriHandlerContribution } from '../electron-uri-handler';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(ElectronMainWindowService).toDynamicValue(context =>
@@ -37,6 +38,8 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bindWindowPreferences(bind);
     bind(WindowService).to(ElectronWindowService).inSingletonScope();
     bind(FrontendApplicationContribution).toService(WindowService);
+    bind(ElectronUriHandlerContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(ElectronUriHandlerContribution);
     bind(ClipboardService).to(ElectronClipboardService).inSingletonScope();
     rebind(FrontendApplicationStateService).to(ElectronFrontendApplicationStateService).inSingletonScope();
     bind(SecondaryWindowService).to(ElectronSecondaryWindowService).inSingletonScope();

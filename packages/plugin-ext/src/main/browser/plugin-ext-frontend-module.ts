@@ -286,6 +286,6 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(CellOutputWebviewFactory).toFactory(ctx => async (cell: NotebookCellModel, notebook: NotebookModel) =>
         createCellOutputWebviewContainer(ctx.container, cell, notebook).getAsync(CellOutputWebviewImpl)
     );
-
     bindContributionProvider(bind, ArgumentProcessorContribution);
+
 });

@@ -64,6 +64,7 @@ import { NotebookDocumentsMainImpl } from './notebooks/notebook-documents-main';
 import { NotebookKernelsMainImpl } from './notebooks/notebook-kernels-main';
 import { NotebooksAndEditorsMain } from './notebooks/notebook-documents-and-editors-main';
 import { TestingMainImpl } from './test-main';
+import { UriMainImpl } from './uri-main';
 
 export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container): void {
     const authenticationMain = new AuthenticationMainImpl(rpc, container);
@@ -203,4 +204,7 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
 
     const localizationMain = new LocalizationMainImpl(container);
     rpc.set(PLUGIN_RPC_CONTEXT.LOCALIZATION_MAIN, localizationMain);
+
+    const uriMain = new UriMainImpl(rpc, container);
+    rpc.set(PLUGIN_RPC_CONTEXT.URI_MAIN, uriMain);
 }
