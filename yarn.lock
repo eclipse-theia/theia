@@ -9040,10 +9040,10 @@ onetime@^5.1.0, onetime@^5.1.2:
   dependencies:
     mimic-fn "^2.1.0"
 
-open-collaboration-protocol@0.2.0-next.16e7c68:
-  version "0.2.0-next.16e7c68"
-  resolved "https://registry.yarnpkg.com/open-collaboration-protocol/-/open-collaboration-protocol-0.2.0-next.16e7c68.tgz#a2cb9ab143487ee15a23d4b9306f6e4301154fef"
-  integrity sha512-C6gzm+YgBKOB1kIEo7/sEVyEV1A7UqdsIh4OWOgRJvfEJiqSc6iyZ97IHWI614+uEvwGriHwUgd5XG0f8zNjuQ==
+open-collaboration-protocol@0.2.0, open-collaboration-protocol@^0.2.0:
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/open-collaboration-protocol/-/open-collaboration-protocol-0.2.0.tgz#f3f93f22bb5fbb46e3fd31e6bb87f52a9ce6526b"
+  integrity sha512-ZaLMTMyVoJJ0vPjoMXGhNZqiycbfyJPbNCkbI9uHTOYRsvZqreRAFhSd7p9RbxLJNS5xeQGNSfldrhhec94Bmg==
   dependencies:
     base64-js "^1.5.1"
     fflate "^0.8.2"
@@ -9051,13 +9051,13 @@ open-collaboration-protocol@0.2.0-next.16e7c68:
     semver "^7.6.2"
     socket.io-client "^4.7.5"
 
-open-collaboration-yjs@0.2.0-next.16e7c68:
-  version "0.2.0-next.16e7c68"
-  resolved "https://registry.yarnpkg.com/open-collaboration-yjs/-/open-collaboration-yjs-0.2.0-next.16e7c68.tgz#7c05004a50939ff1332925f85cf1efcc226b09f1"
-  integrity sha512-8IRrYhNa0mQEXCfHwL0yQVEkuQdVUcvFeXzbvwury+H8NfqkVtQzbd6Iga3r4pbEBwXBCIABj7U1kBrSH+e9qw==
+open-collaboration-yjs@0.2.0:
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/open-collaboration-yjs/-/open-collaboration-yjs-0.2.0.tgz#7c7e30dba444b9f6947fe76ae02a7c3fdaec6172"
+  integrity sha512-HT2JU/HJObIaQMF/MHt5/5VdOnGn+bVTaTJnyYfyaa/vjqg4Z4Glas3Hc9Ua970ssP3cOIRUQoHQumM0giaxrw==
   dependencies:
     lib0 "^0.2.94"
-    open-collaboration-protocol "0.2.0-next.16e7c68"
+    open-collaboration-protocol "^0.2.0"
     y-protocols "^1.0.6"
 
 open@^7.4.2:

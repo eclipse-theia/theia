@@ -45,7 +45,7 @@ export const COLLABORATION_STATUS_BAR_ID = 'statusBar.collaboration';
 
 export const COLLABORATION_AUTH_TOKEN = 'THEIA_COLLAB_AUTH_TOKEN';
 export const COLLABORATION_SERVER_URL = 'COLLABORATION_SERVER_URL';
-export const DEFAULT_COLLABORATION_SERVER_URL = 'https://oct-server-staging-ymijt5gjsa-ew.a.run.app/';
+export const DEFAULT_COLLABORATION_SERVER_URL = 'https://api.open-collab.tools/';
 
 @injectable()
 export class CollaborationFrontendContribution implements CommandContribution {
@@ -218,6 +218,9 @@ export class CollaborationFrontendContribution implements CommandContribution {
                 const cancelTokenSource = new CancellationTokenSource();
                 const progress = await this.messageService.showProgress({
                     text: nls.localize('theia/collaboration/creatingRoom', 'Creating Session'),
+                    options: {
+                        cancelable: true
+                    }
                 }, () => cancelTokenSource.cancel());
                 try {
                     const authHandler = await this.connectionProvider.promise;
@@ -261,6 +264,9 @@ export class CollaborationFrontendContribution implements CommandContribution {
                     }
                     joinRoomProgress = await this.messageService.showProgress({
                         text: nls.localize('theia/collaboration/joiningRoom', 'Joining Session'),
+                        options: {
+                            cancelable: true
+                        }
                     }, () => cancelTokenSource.cancel());
                     const roomClaim = await authHandler.joinRoom({
                         roomId: id,
