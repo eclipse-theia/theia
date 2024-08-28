@@ -27,7 +27,7 @@ export class TheiaMonacoEditor extends TheiaPageObject {
         await this.page.waitForSelector(this.selector, { state: 'visible' });
     }
 
-    protected viewElement(): Promise<ElementHandle<SVGElement | HTMLElement> | null> {
+    protected async viewElement(): Promise<ElementHandle<SVGElement | HTMLElement> | null> {
         return this.page.$(this.selector);
     }
 

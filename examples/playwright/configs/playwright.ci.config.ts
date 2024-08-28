@@ -21,6 +21,7 @@ const ciConfig: PlaywrightTestConfig = {
     ...baseConfig,
     workers: 1,
     retries: 2,
+    timeout: 30 * 1000,
     reporter: [['list'], ['allure-playwright'], ['github']]
 };
 

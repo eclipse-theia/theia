@@ -48,7 +48,7 @@ abstract class NotebookCellActionBar extends React.Component<NotebookCellToolbar
     }
 
     protected renderItem(item: NotebookCellToolbarItem): React.ReactNode {
-        return <div key={item.id} title={item.label} onClick={item.onClick} className={`${item.icon} ${ACTION_ITEM} theia-notebook-cell-toolbar-item`} />;
+        return <div key={item.id} id={item.id} title={item.label} onClick={item.onClick} className={`${item.icon} ${ACTION_ITEM} theia-notebook-cell-toolbar-item`} />;
     }
 
 }

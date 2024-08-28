@@ -104,7 +104,9 @@
   "theiaPlugins": {
     "eclipse-theia.builtin-extension-pack": "https://open-vsx.org/api/eclipse-theia/builtin-extension-pack/1.88.1/file/eclipse-theia.builtin-extension-pack-1.88.1.vsix",
     "EditorConfig.EditorConfig": "https://open-vsx.org/api/EditorConfig/EditorConfig/0.16.6/file/EditorConfig.EditorConfig-0.16.6.vsix",
-    "dbaeumer.vscode-eslint": "https://open-vsx.org/api/dbaeumer/vscode-eslint/2.4.2/file/dbaeumer.vscode-eslint-2.4.2.vsix"
+    "dbaeumer.vscode-eslint": "https://open-vsx.org/api/dbaeumer/vscode-eslint/2.4.2/file/dbaeumer.vscode-eslint-2.4.2.vsix",
+    "ms-toolsai.jupyter": "https://open-vsx.org/api/ms-toolsai/jupyter/2024.6.0/file/ms-toolsai.jupyter-2024.6.0.vsix",
+    "ms-python.python": "https://open-vsx.org/api/ms-python/python/2024.12.3/file/ms-python.python-2024.12.3.vsix"
   },
   "theiaPluginsExcludeIds": [
     "ms-vscode.js-debug-companion",
@@ -112,6 +114,7 @@
     "vscode.github",
     "vscode.github-authentication",
     "vscode.microsoft-authentication",
-    "ms-vscode.references-view"
+    "ms-vscode.references-view",
+    "ms-python.vscode-pylance"
   ]
 }
