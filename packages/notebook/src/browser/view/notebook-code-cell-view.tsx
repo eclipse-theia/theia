@@ -17,7 +17,6 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { MonacoEditorServices } from '@theia/monaco/lib/browser/monaco-editor';
-import { CellOutputWebviewFactory, CellOutputWebview } from '../renderers/cell-output-webview';
 import { NotebookRendererRegistry } from '../notebook-renderer-registry';
 import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import { NotebookModel } from '../view-model/notebook-model';
@@ -36,6 +35,7 @@ import { NotebookOptionsService } from '../service/notebook-options';
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { MarkdownString } from '@theia/monaco-editor-core/esm/vs/base/common/htmlContent';
 import { NotebookCellEditorService } from '../service/notebook-cell-editor-service';
+import { CellOutputWebview } from '../renderers/cell-output-webview';
 
 @injectable()
 export class NotebookCodeCellRenderer implements CellRenderer {
@@ -44,9 +44,6 @@ export class NotebookCodeCellRenderer implements CellRenderer {
 
     @inject(NotebookRendererRegistry)
     protected readonly notebookRendererRegistry: NotebookRendererRegistry;
-
-    @inject(CellOutputWebviewFactory)
-    protected readonly cellOutputWebviewFactory: CellOutputWebviewFactory;
 
     @inject(NotebookCellToolbarFactory)
     protected readonly notebookCellToolbarFactory: NotebookCellToolbarFactory;
@@ -75,9 +72,19 @@ export class NotebookCodeCellRenderer implements CellRenderer {
     @inject(MarkdownRenderer)
     protected readonly markdownRenderer: MarkdownRenderer;
 
+    @inject(CellOutputWebview)
+    protected readonly outputWebview: CellOutputWebview;
+
     render(notebookModel: NotebookModel, cell: NotebookCellModel, handle: number): React.ReactNode {
         return <div>
-            <div className='theia-notebook-cell-with-sidebar'>
+            <div className='theia-notebook-cell-with-sidebar' ref={ref => {
+                if (ref) {
+                    this.outputWebview.setCellHeight(cell.handle, ref?.getBoundingClientRect().height ?? 0);
+                    new ResizeObserver(entries =>
+                        this.outputWebview.setCellHeight(cell.handle, ref?.getBoundingClientRect().height ?? 0)
+                    ).observe(ref);
+                }
+            }}>
                 <div className='theia-notebook-cell-sidebar'>
                     {this.notebookCellToolbarFactory.renderSidebar(NotebookCellActionContribution.CODE_CELL_SIDEBAR_MENU, cell, {
                         contextMenuArgs: () => [cell], commandArgs: () => [notebookModel, cell]
@@ -99,7 +106,7 @@ export class NotebookCodeCellRenderer implements CellRenderer {
                 </div >
             </div >
             <div className='theia-notebook-cell-with-sidebar'>
-                <NotebookCodeCellOutputs cell={cell} notebook={notebookModel} outputWebviewFactory={this.cellOutputWebviewFactory}
+                <NotebookCodeCellOutputs cell={cell} notebook={notebookModel} outputWebview={this.outputWebview}
                     renderSidebar={() =>
                         this.notebookCellToolbarFactory.renderSidebar(NotebookCellActionContribution.OUTPUT_SIDEBAR_MENU, cell, {
                             contextMenuArgs: () => [notebookModel, cell, cell.outputs[0]]
@@ -260,76 +267,37 @@ export class NotebookCodeCellStatus extends React.Component<NotebookCodeCellStat
 interface NotebookCellOutputProps {
     cell: NotebookCellModel;
     notebook: NotebookModel;
-    outputWebviewFactory: CellOutputWebviewFactory;
+    outputWebview: CellOutputWebview;
     renderSidebar: () => React.ReactNode;
 }
 
 export class NotebookCodeCellOutputs extends React.Component<NotebookCellOutputProps> {
 
-    protected outputsWebview: CellOutputWebview | undefined;
-    protected outputsWebviewPromise: Promise<CellOutputWebview> | undefined;
-
     protected toDispose = new DisposableCollection();
+
+    protected outputHeight: number = 0;
 
     constructor(props: NotebookCellOutputProps) {
         super(props);
+        props.outputWebview.onDidRenderOutput(event => {
+            if (event.cellHandle === props.cell.handle) {
+                this.outputHeight = event.outputHeight;
+                this.forceUpdate();
+            }
+        });
     }
 
     override async componentDidMount(): Promise<void> {
-        const { cell, notebook, outputWebviewFactory } = this.props;
-        this.toDispose.push(cell.onDidChangeOutputs(() => this.updateOutputs()));
-        this.toDispose.push(cell.onDidChangeOutputVisibility(visible => {
-            if (!visible && this.outputsWebview) {
-                this.outputsWebview?.dispose();
-                this.outputsWebview = undefined;
-                this.outputsWebviewPromise = undefined;
-                this.forceUpdate();
-            } else {
-                this.updateOutputs();
-            }
-        }));
-        if (cell.outputs.length > 0) {
-            this.outputsWebviewPromise = outputWebviewFactory(cell, notebook).then(webview => {
-                this.outputsWebview = webview;
-                this.forceUpdate();
-                return webview;
-            });
-        }
-    }
-
-    protected async updateOutputs(): Promise<void> {
-        const { cell, notebook, outputWebviewFactory } = this.props;
-        if (!this.outputsWebviewPromise && cell.outputs.length > 0) {
-            this.outputsWebviewPromise = outputWebviewFactory(cell, notebook).then(webview => {
-                this.outputsWebview = webview;
-                this.forceUpdate();
-                return webview;
-            });
-            this.forceUpdate();
-        } else if (this.outputsWebviewPromise && cell.outputs.length === 0 && cell.internalMetadata.runEndTime) {
-            (await this.outputsWebviewPromise).dispose();
-            this.outputsWebview = undefined;
-            this.outputsWebviewPromise = undefined;
-            this.forceUpdate();
-        }
-    }
-
-    override async componentDidUpdate(): Promise<void> {
-        if (!(await this.outputsWebviewPromise)?.isAttached()) {
-            (await this.outputsWebviewPromise)?.attachWebview();
-        }
-    }
-
-    override async componentWillUnmount(): Promise<void> {
-        this.toDispose.dispose();
-        (await this.outputsWebviewPromise)?.dispose();
+        const { cell } = this.props;
+        this.toDispose.push(cell.onDidChangeOutputs(() => this.forceUpdate()));
     }
 
     override render(): React.ReactNode {
-        return this.outputsWebview && this.props.cell.outputVisible ?
+        return this.props.cell.outputVisible ?
+            // TODO add here the output height
             <>
                 {this.props.renderSidebar()}
-                {this.outputsWebview.render()}
+                <div style={{ marginBottom: this.outputHeight }}></div>
             </> :
             this.props.cell.outputs?.length ? <i className='theia-notebook-collapsed-output'>{nls.localizeByDefault('Outputs are collapsed')}</i> : <></>;
 

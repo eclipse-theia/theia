@@ -20,10 +20,23 @@
 }
 
 .theia-notebook-cell-list {
+  position: absolute;
+  top: 0;
+  width: 100%;
   overflow-y: auto;
   list-style: none;
   padding-left: 0px;
   background-color: var(--theia-notebook-editorBackground);
+  z-index: 0;
+}
+
+
+.theia-notebook-cell-output-webview {
+  padding: 5px 0px;
+  margin: 0px 15px 0px 50px;
+  width: 100%;
+  position: absolute;
+  z-index: 0;
 }
 
 .theia-notebook-cell {
@@ -161,7 +174,6 @@
   display: flex;
   flex-direction: column;
   padding: 2px;
-  background-color: var(--theia-editor-background);
   flex-grow: 1;
 }
 

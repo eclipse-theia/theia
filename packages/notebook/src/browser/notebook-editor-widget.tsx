@@ -18,7 +18,7 @@ import * as React from '@theia/core/shared/react';
 import { CommandRegistry, MenuModelRegistry, URI } from '@theia/core';
 import { ReactWidget, Navigatable, SaveableSource, Message, DelegatingSaveable, lock, unlock, animationFrame } from '@theia/core/lib/browser';
 import { ReactNode } from '@theia/core/shared/react';
-import { CellKind } from '../common';
+import { CellKind, NotebookCellsChangeType } from '../common';
 import { CellRenderer as CellRenderer, NotebookCellListView } from './view/notebook-cell-list-view';
 import { NotebookCodeCellRenderer } from './view/notebook-code-cell-view';
 import { NotebookMarkdownCellRenderer } from './view/notebook-markdown-cell-view';
@@ -35,6 +35,7 @@ import { NotebookViewportService } from './view/notebook-viewport-service';
 import { NotebookCellCommands } from './contributions/notebook-cell-actions-contribution';
 import { NotebookFindWidget } from './view/notebook-find-widget';
 import debounce = require('lodash/debounce');
+import { CellOutputWebview, CellOutputWebviewFactory } from './renderers/cell-output-webview';
 const PerfectScrollbar = require('react-perfect-scrollbar');
 
 export const NotebookEditorWidgetContainerFactory = Symbol('NotebookEditorWidgetContainerFactory');
@@ -43,6 +44,9 @@ export function createNotebookEditorWidgetContainer(parent: interfaces.Container
     const child = parent.createChild();
 
     child.bind(NotebookEditorProps).toConstantValue(props);
+
+    const cellOutputWebviewFactory: CellOutputWebviewFactory = parent.get(CellOutputWebviewFactory);
+    child.bind(CellOutputWebview).toConstantValue(cellOutputWebviewFactory());
 
     child.bind(NotebookContextManager).toSelf().inSingletonScope();
     child.bind(NotebookMainToolbarRenderer).toSelf().inSingletonScope();
@@ -103,6 +107,9 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
 
     @inject(NotebookViewportService)
     protected readonly viewportService: NotebookViewportService;
+
+    @inject(CellOutputWebview)
+    protected readonly cellOutputWebview: CellOutputWebview;
 
     protected readonly onDidChangeModelEmitter = new Emitter<void>();
     readonly onDidChangeModel = this.onDidChangeModelEmitter.event;
@@ -173,11 +180,18 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
                 this.commandRegistry.executeCommand(NotebookCellCommands.EDIT_COMMAND.id, model, model.cells[0]);
                 model.setSelectedCell(model.cells[0]);
             }
+            model.onDidChangeContent(changeEvents => {
+                const cellEvent = changeEvents.filter(event => event.kind === NotebookCellsChangeType.Move || event.kind === NotebookCellsChangeType.ModelChange);
+                if (cellEvent.length > 0) {
+                    this.cellOutputWebview.cellsChanged(cellEvent);
+                }
+            });
         });
     }
 
     protected async waitForData(): Promise<NotebookModel> {
         this._model = await this.props.notebookData;
+        this.cellOutputWebview.init(this._model, this);
         this.saveable.delegate = this._model;
         this.toDispose.push(this._model);
         this.toDispose.push(this._model.onDidChangeContent(() => {
@@ -261,12 +275,15 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
                     <PerfectScrollbar className='theia-notebook-scroll-container'
                         ref={this.scrollBarRef}
                         onScrollY={(e: HTMLDivElement) => this.viewportService.onScroll(e)}>
-                        <NotebookCellListView renderers={this.renderers}
-                            notebookModel={this._model}
-                            notebookContext={this.notebookContextManager}
-                            toolbarRenderer={this.cellToolbarFactory}
-                            commandRegistry={this.commandRegistry}
-                            menuRegistry={this.menuRegistry} />
+                        <div className='theia-notebook-scroll-area'>
+                            {this.cellOutputWebview.render()}
+                            <NotebookCellListView renderers={this.renderers}
+                                notebookModel={this._model}
+                                notebookContext={this.notebookContextManager}
+                                toolbarRenderer={this.cellToolbarFactory}
+                                commandRegistry={this.commandRegistry}
+                                menuRegistry={this.menuRegistry} />
+                        </div>
                     </PerfectScrollbar>
                 </div>
             </div>;

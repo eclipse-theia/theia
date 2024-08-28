@@ -36,11 +36,16 @@ export interface UpdateRenderersMessage {
     readonly rendererData: readonly RendererMetadata[];
 }
 
+export interface CellOutputChange {
+    readonly cellHandle: number;
+    readonly newOutputs?: Output[];
+    readonly start: number;
+    readonly deleteCount: number;
+}
+
 export interface OutputChangedMessage {
     readonly type: 'outputChanged';
-    readonly newOutputs?: Output[];
-    readonly deleteStart?: number;
-    readonly deleteCount?: number;
+    changes: CellOutputChange[];
 }
 
 export interface ChangePreferredMimetypeMessage {
@@ -64,13 +69,45 @@ export interface notebookStylesMessage {
     styles: Record<string, string>;
 }
 
+export interface CellHeigthsMessage {
+    type: 'cellHeigths';
+    cellHeigths: Record<number, number>;
+}
+
+export interface CellMoved {
+    type: 'cellMoved';
+    cellHandle: number;
+    toIndex: number;
+}
+
+export interface CellsSpliced {
+    type: 'cellsSpliced';
+    start: number;
+    deleteCount: number;
+    newCells: number[];
+}
+
+export interface CellsChangedMessage {
+    type: 'cellsChanged';
+    changes: (CellMoved | CellsSpliced)[];
+}
+
+export interface CellHeightUpdateMessage {
+    type: 'cellHeightUpdate';
+    cellHandle: number;
+    height: number;
+}
+
 export type ToWebviewMessage = UpdateRenderersMessage
     | OutputChangedMessage
     | ChangePreferredMimetypeMessage
     | CustomRendererMessage
     | KernelMessage
     | PreloadMessage
-    | notebookStylesMessage;
+    | notebookStylesMessage
+    | CellHeigthsMessage
+    | CellHeightUpdateMessage
+    | CellsChangedMessage;
 
 export interface WebviewInitialized {
     readonly type: 'initialized';
@@ -78,6 +115,9 @@ export interface WebviewInitialized {
 
 export interface OnDidRenderOutput {
     readonly type: 'didRenderOutput';
+    cellHandle: number;
+    outputId: string;
+    outputHeight: number;
     contentHeight: number;
 }
 
@@ -92,7 +132,12 @@ export interface InputFocusChange {
     readonly focused: boolean;
 }
 
-export type FromWebviewMessage = WebviewInitialized | OnDidRenderOutput | WheelMessage | CustomRendererMessage | KernelMessage | InputFocusChange;
+export type FromWebviewMessage = WebviewInitialized
+    | OnDidRenderOutput
+    | WheelMessage
+    | CustomRendererMessage
+    | KernelMessage
+    | InputFocusChange;
 
 export interface Output {
     id: string
@@ -104,4 +149,3 @@ export interface OutputItem {
     readonly mime: string;
     readonly data: Uint8Array;
 }
-

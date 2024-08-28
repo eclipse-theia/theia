@@ -74,6 +74,11 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
     const theia = acquireVsCodeApi();
     const renderFallbackErrorName = 'vscode.fallbackToNextRenderer';
 
+    const container = document.createElement('div');
+    container.id = 'container';
+    container.classList.add('widgetarea');
+    document.body.appendChild(container);
+
     function createEmitter<T>(listenerChange: (listeners: Set<Listener<T>>) => void = () => undefined): EmitterLike<T> {
         const listeners = new Set<Listener<T>>();
         return {
@@ -138,19 +143,107 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
         return module.activate(createKernelContext());
     }
 
-    class Output {
+    class OutputCell {
+        public readonly element: HTMLElement;
+        private readonly outputElements: OutputContainer[] = [];
+
+        constructor(public cellHandle: number, cellIndex?: number) {
+
+            console.log('createNewCell', cellHandle, cellIndex);
+            // const upperWrapperElement = createFocusSink(cellId);
+            // container.appendChild(upperWrapperElement);
+
+            this.element = document.createElement('div');
+            this.element.style.outline = '0';
+
+            this.element.id = `cellHandle${cellHandle}`;
+            this.element.classList.add('cell_container');
+
+            if (cellIndex && cellIndex < container.children.length) {
+                container.insertBefore(container.children[cellIndex], this.element);
+            } else {
+                container.appendChild(this.element);
+            }
+            this.element = this.element;
+
+            // const lowerWrapperElement = createFocusSink(cellId, true);
+            // container.appendChild(lowerWrapperElement);
+        }
+
+        public dispose(): void {
+            this.element.remove();
+        }
+
+        createOutputElement(index: number, output: webviewCommunication.Output, items: rendererApi.OutputItem[]): OutputContainer {
+            let outputContainer = this.outputElements.find(o => o.outputId === output.id);
+            if (!outputContainer) {
+                outputContainer = new OutputContainer(output, items, this.element);
+                this.element.appendChild(outputContainer.element);
+                this.outputElements.splice(index, 0, outputContainer);
+            }
+
+            return outputContainer;
+        }
+
+        public clearOutputs(start: number, deleteCount: number): void {
+            for (const output of this.outputElements.splice(start, deleteCount)) {
+                output?.clear();
+                output.element.remove();
+            }
+        }
+
+        public show(outputId: string, top: number): void {
+            const outputContainer = this.outputElements.find(o => o.outputId === outputId);
+            if (!outputContainer) {
+                return;
+            }
+
+            // this.element.style.visibility = '';
+            // this.element.style.top = `${top}px`;
+        }
+
+        public hide(): void {
+            this.element.style.visibility = 'hidden';
+        }
+
+        public updateCellHeight(height: number): void {
+            this.element.style.paddingTop = `${height + 50}px`;
+        }
+
+        // public updateScroll(request: webviewCommunication.IContentWidgetTopRequest): void {
+        //     this.element.style.top = `${request.cellTop}px`;
+
+        //     const outputElement = this.outputElements.get(request.outputId);
+        //     if (outputElement) {
+        //         outputElement.updateScroll(request.outputOffset);
+
+        //         if (request.forceDisplay && outputElement.element) {
+        //             // TODO @rebornix @mjbvz, there is a misalignment here.
+        //             // We set output visibility on cell container, other than output container or output node itself.
+        //             outputElement.element.style.visibility = '';
+        //         }
+        //     }
+
+        //     if (request.forceDisplay) {
+        //         this.element.style.visibility = '';
+        //     }
+    }
+
+    const cells: OutputCell[] = [];
+
+    class OutputContainer {
         readonly outputId: string;
+        readonly cellId: string;
         renderedItem?: rendererApi.OutputItem;
         allItems: rendererApi.OutputItem[];
 
         renderer: Renderer;
 
         element: HTMLElement;
-        container: HTMLElement;
 
-        constructor(output: webviewCommunication.Output, items: rendererApi.OutputItem[]) {
-            this.createHtmlElement(output.id);
+        constructor(output: webviewCommunication.Output, items: rendererApi.OutputItem[], cellContainer: HTMLElement) {
             this.outputId = output.id;
+            this.createHtmlElement(cellContainer);
             this.allItems = items;
         }
 
@@ -169,27 +262,17 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
             this.element.innerHTML = '';
         }
 
-        private createHtmlElement(id: string): void {
-            // Recreates the output container structure used in VS Code
-            this.container = document.createElement('div');
-            this.container.id = 'container';
-            this.container.classList.add('widgetarea');
-            const cellContainer = document.createElement('div');
-            cellContainer.classList.add('cell_container');
-            cellContainer.id = id;
-            this.container.appendChild(cellContainer);
+        private createHtmlElement(cellContainer: HTMLElement): void {
             const outputContainer = document.createElement('div');
             outputContainer.classList.add('output-container');
             cellContainer.appendChild(outputContainer);
             this.element = document.createElement('div');
-            this.element.id = id;
+            this.element.id = this.outputId;
             this.element.classList.add('output');
             outputContainer.appendChild(this.element);
-            document.body.appendChild(this.container);
         }
-    }
 
-    const outputs: Output[] = [];
+    }
 
     class Renderer {
 
@@ -330,7 +413,7 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
             this.renderers.get(rendererId)?.disposeOutputItem(outputId);
         }
 
-        public async render(output: Output, preferredMimeType: string | undefined, preferredRendererId: string | undefined, signal: AbortSignal): Promise<void> {
+        public async render(output: OutputContainer, preferredMimeType: string | undefined, preferredRendererId: string | undefined, signal: AbortSignal): Promise<void> {
             const item = output.findItemToRender(preferredMimeType);
             const primaryRenderer = this.findRenderer(preferredRendererId, item);
             if (!primaryRenderer) {
@@ -482,40 +565,63 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
 
     await Promise.all(ctx.staticPreloadsData.map(preload => kernelPreloads.load(preload)));
 
-    function clearOutput(output: Output): void {
-        output.clear();
-        output.container.remove();
+    async function outputsChanged(changedEvent: webviewCommunication.OutputChangedMessage): Promise<void> {
+        for (const cellChange of changedEvent.changes) {
+            let cell = cells.find(c => c.cellHandle === cellChange.cellHandle);
+            if (!cell) {
+                cell = new OutputCell(cellChange.cellHandle);
+                cells.push(cell);
+            }
+
+            cell.clearOutputs(cellChange.start, cellChange.deleteCount);
+
+            for (const outputData of cellChange.newOutputs ?? []) {
+                const apiItems: rendererApi.OutputItem[] = outputData.items.map((item, index) => ({
+                    id: `${outputData.id}-${index}`,
+                    mime: item.mime,
+                    metadata: outputData.metadata,
+                    data(): Uint8Array {
+                        return item.data;
+                    },
+                    text(): string {
+                        return new TextDecoder().decode(this.data());
+                    },
+                    json(): unknown {
+                        return JSON.parse(this.text());
+                    },
+                    blob(): Blob {
+                        return new Blob([this.data()], { type: this.mime });
+                    },
+
+                }));
+                const output = cell.createOutputElement(cellChange.start, outputData, apiItems);
+
+                await renderers.render(output, undefined, undefined, new AbortController().signal);
+
+                theia.postMessage(<webviewCommunication.OnDidRenderOutput>{
+                    type: 'didRenderOutput',
+                    cellHandle: cell.cellHandle,
+                    outputId: outputData.id,
+                    outputHeight: document.getElementById(output.outputId)?.clientHeight ?? 0,
+                    contentHeight: document.body.clientHeight
+                });
+
+            }
+        }
     }
 
-    function outputsChanged(changedEvent: webviewCommunication.OutputChangedMessage): void {
-        for (const output of outputs.splice(changedEvent.deleteStart ?? 0, changedEvent.deleteCount ?? 0)) {
-            clearOutput(output);
-        }
-
-        for (const outputData of changedEvent.newOutputs ?? []) {
-            const apiItems: rendererApi.OutputItem[] = outputData.items.map((item, index) => ({
-                id: `${outputData.id}-${index}`,
-                mime: item.mime,
-                metadata: outputData.metadata,
-                data(): Uint8Array {
-                    return item.data;
-                },
-                text(): string {
-                    return new TextDecoder().decode(this.data());
-                },
-                json(): unknown {
-                    return JSON.parse(this.text());
-                },
-                blob(): Blob {
-                    return new Blob([this.data()], { type: this.mime });
-                },
-
-            }));
-
-            const output = new Output(outputData, apiItems);
-            outputs.push(output);
-
-            renderers.render(output, undefined, undefined, new AbortController().signal);
+    function cellsChanged(changes: (webviewCommunication.CellMoved | webviewCommunication.CellsSpliced)[]): void {
+        for (const change of changes) {
+            if (change.type === 'cellMoved') {
+                const currentIndex = cells.findIndex(c => c.cellHandle === change.cellHandle);
+                const cell = cells[currentIndex];
+                cells.splice(change.toIndex, 0, cells.splice(currentIndex, 1)[0]);
+                container.insertBefore(cell.element, container.children[change.toIndex]);
+            } else if (change.type === 'cellsSpliced') {
+                console.log('cellsSpliced', change);
+                const deltedCells = cells.splice(change.start, change.deleteCount, ...change.newCells.map((cellHandle, i) => new OutputCell(cellHandle, change.start + i)));
+                deltedCells.forEach(cell => cell.dispose());
+            }
         }
     }
 
@@ -572,27 +678,30 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
             case 'outputChanged':
                 outputsChanged(event.data);
                 break;
+            case 'cellsChanged':
+                cellsChanged(event.data.changes);
+                break;
             case 'customRendererMessage':
                 renderers.getRenderer(event.data.rendererId)?.receiveMessage(event.data.message);
                 break;
             case 'changePreferredMimetype':
-                const mimeType = event.data.mimeType;
-                outputs.forEach(output => {
-                    output.element.innerHTML = '';
-                    renderers.render(output, mimeType, undefined, new AbortController().signal);
-                });
+                // TODO reimplement
+                // const mimeType = event.data.mimeType;
+                // outputs.forEach(output => {
+                //     output.element.innerHTML = '';
+                //     renderers.render(output, mimeType, undefined, new AbortController().signal);
+                // });
                 break;
             case 'customKernelMessage':
                 onDidReceiveKernelMessage.fire(event.data.message);
                 break;
-            case 'preload': {
+            case 'preload':
                 const resources = event.data.resources;
                 for (const uri of resources) {
                     kernelPreloads.load(uri);
                 }
                 break;
-            }
-            case 'notebookStyles': {
+            case 'notebookStyles':
                 const documentStyle = window.document.documentElement.style;
 
                 for (let i = documentStyle.length - 1; i >= 0; i--) {
@@ -609,7 +718,13 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
                     documentStyle.setProperty(`--${name}`, value);
                 }
                 break;
-            }
+            case 'cellHeightUpdate':
+                const cellHandle = event.data.cellHandle;
+                const cell = cells.find(c => c.cellHandle === cellHandle);
+                if (cell) {
+                    cell.updateCellHeight(event.data.height);
+                }
+                break;
         }
     });
     window.addEventListener('wheel', handleWheel);
