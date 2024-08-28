@@ -265,7 +265,8 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
                             notebookModel={this._model}
                             notebookContext={this.notebookContextManager}
                             toolbarRenderer={this.cellToolbarFactory}
-                            commandRegistry={this.commandRegistry} />
+                            commandRegistry={this.commandRegistry}
+                            menuRegistry={this.menuRegistry} />
                     </PerfectScrollbar>
                 </div>
             </div>;

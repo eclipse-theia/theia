@@ -18,9 +18,9 @@ import { CellEditType, CellKind, NotebookCellsChangeType } from '../../common';
 import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookCellToolbarFactory } from './notebook-cell-toolbar-factory';
-import { animationFrame, codicon, onDomEvent } from '@theia/core/lib/browser';
-import { CommandRegistry, DisposableCollection, nls } from '@theia/core';
-import { NotebookCommands } from '../contributions/notebook-actions-contribution';
+import { animationFrame, onDomEvent } from '@theia/core/lib/browser';
+import { CommandRegistry, DisposableCollection, MenuModelRegistry, MenuNode, nls } from '@theia/core';
+import { NotebookCommands, NotebookMenus } from '../contributions/notebook-actions-contribution';
 import { NotebookCellActionContribution } from '../contributions/notebook-cell-actions-contribution';
 import { NotebookContextManager } from '../service/notebook-context-manager';
 
@@ -34,7 +34,8 @@ interface CellListProps {
     notebookModel: NotebookModel;
     notebookContext: NotebookContextManager;
     toolbarRenderer: NotebookCellToolbarFactory;
-    commandRegistry: CommandRegistry
+    commandRegistry: CommandRegistry;
+    menuRegistry: MenuModelRegistry;
 }
 
 interface NotebookCellListState {
@@ -113,8 +114,9 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
                 .map((cell, index) =>
                     <React.Fragment key={'cell-' + cell.handle}>
                         <NotebookCellDivider
+                            menuRegistry={this.props.menuRegistry}
                             isVisible={() => this.isEnabled()}
-                            onAddNewCell={(kind: CellKind) => this.onAddNewCell(kind, index)}
+                            onAddNewCell={(commandId: string) => this.onAddNewCell(commandId, index)}
                             onDrop={e => this.onDrop(e, index)}
                             onDragOver={e => this.onDragOver(e, cell, 'top')} />
                         {this.shouldRenderDragOverIndicator(cell, 'top') && <CellDropIndicator />}
@@ -155,8 +157,9 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
                 )
             }
             <NotebookCellDivider
+                menuRegistry={this.props.menuRegistry}
                 isVisible={() => this.isEnabled()}
-                onAddNewCell={(kind: CellKind) => this.onAddNewCell(kind, this.props.notebookModel.cells.length)}
+                onAddNewCell={(commandId: string) => this.onAddNewCell(commandId, this.props.notebookModel.cells.length)}
                 onDrop={e => this.onDrop(e, this.props.notebookModel.cells.length - 1)}
                 onDragOver={e => this.onDragOver(e, this.props.notebookModel.cells[this.props.notebookModel.cells.length - 1], 'bottom')} />
         </ul>;
@@ -221,11 +224,11 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
         this.setState({ ...this.state, dragOverIndicator: undefined });
     }
 
-    protected onAddNewCell(kind: CellKind, index: number): void {
+    protected onAddNewCell(commandId: string, index: number): void {
         if (this.isEnabled()) {
-            this.props.commandRegistry.executeCommand(NotebookCommands.ADD_NEW_CELL_COMMAND.id,
+            this.props.commandRegistry.executeCommand(NotebookCommands.CHANGE_SELECTED_CELL.id, index - 1);
+            this.props.commandRegistry.executeCommand(commandId,
                 this.props.notebookModel,
-                kind,
                 index
             );
         }
@@ -242,24 +245,31 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
 
 export interface NotebookCellDividerProps {
     isVisible: () => boolean;
-    onAddNewCell: (type: CellKind) => void;
+    onAddNewCell: (commandId: string) => void;
     onDrop: (event: React.DragEvent<HTMLLIElement>) => void;
     onDragOver: (event: React.DragEvent<HTMLLIElement>) => void;
+    menuRegistry: MenuModelRegistry;
 }
 
-export function NotebookCellDivider({ isVisible, onAddNewCell, onDrop, onDragOver }: NotebookCellDividerProps): React.JSX.Element {
+export function NotebookCellDivider({ isVisible, onAddNewCell, onDrop, onDragOver, menuRegistry }: NotebookCellDividerProps): React.JSX.Element {
     const [hover, setHover] = React.useState(false);
+
+    const menuPath = NotebookMenus.NOTEBOOK_MAIN_TOOLBAR_CELL_ADD_GROUP;
+    const menuItems = menuRegistry.getMenuNode(menuPath).children;
+
+    const renderItem = (item: MenuNode): React.ReactNode => <button
+        key={item.id}
+        className='theia-notebook-add-cell-button'
+        onClick={() => onAddNewCell(item.command || '')}
+        title={nls.localizeByDefault(`Add ${item.label} Cell`)}
+    >
+        <div className={item.icon + ' theia-notebook-add-cell-button-icon'} />
+        <div className='theia-notebook-add-cell-button-text'>{item.label}</div>
+    </button>;
 
     return <li className='theia-notebook-cell-divider' onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} onDrop={onDrop} onDragOver={onDragOver}>
         {hover && isVisible() && <div className='theia-notebook-add-cell-buttons'>
-            <button className='theia-notebook-add-cell-button' onClick={() => onAddNewCell(CellKind.Code)} title={nls.localizeByDefault('Add Code Cell')}>
-                <div className={codicon('add') + ' theia-notebook-add-cell-button-icon'} />
-                {nls.localizeByDefault('Code')}
-            </button>
-            <button className='theia-notebook-add-cell-button' onClick={() => onAddNewCell(CellKind.Markup)} title={nls.localizeByDefault('Add Markdown Cell')}>
-                <div className={codicon('add') + ' theia-notebook-add-cell-button-icon'} />
-                {nls.localizeByDefault('Markdown')}
-            </button>
+            {menuItems.map((item: MenuNode) => renderItem(item))}
         </div>}
     </li>;
 }
