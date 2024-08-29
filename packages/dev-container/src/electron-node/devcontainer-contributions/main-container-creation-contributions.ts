@@ -40,6 +40,8 @@ export class ImageFileContribution implements ContainerCreationContribution {
             await new Promise<void>((res, rej) => api.pull(containerConfig.image, {}, (err, stream) => {
                 if (err) {
                     rej(err);
+                } else if (stream === undefined) {
+                    rej('Stream is undefined');
                 } else {
                     api.modem.followProgress(stream, (error, output) => error ?
                         rej(error) :
