@@ -242,7 +242,7 @@ export class NotebooksAndEditorsMain implements NotebookDocumentsAndEditorsMain 
         return {
             id: notebookEditor.id,
             documentUri: uri.toComponents(),
-            selections: [],
+            selections: [{ start: 0, end: 0 }],
             visibleRanges: []
         };
     }
