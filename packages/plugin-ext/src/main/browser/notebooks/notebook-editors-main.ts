@@ -54,12 +54,25 @@ export class NotebookEditorsMainImpl implements NotebookEditorsMain {
         throw new Error('Method not implemented.');
     }
     $trySetSelections(id: string, range: CellRange[]): void {
-        throw new Error('Method not implemented.');
+        if (!this.mainThreadEditors.has(id)) {
+            throw new Error('Editor not found');
+        }
+        const editor = this.mainThreadEditors.get(id);
+        editor?.model?.setSelectedCell(editor.model.cells[range[0].start]);
     }
 
-    handleEditorsAdded(editors: readonly NotebookEditorWidget[]): void {
+    async handleEditorsAdded(editors: readonly NotebookEditorWidget[]): Promise<void> {
         for (const editor of editors) {
             this.mainThreadEditors.set(editor.id, editor);
+            const model = await editor.ready;
+            model.onDidChangeSelectedCell(e => {
+                const newCellIndex = e.cell ? model.cells.indexOf(e.cell) : -1;
+                this.proxy.$acceptEditorPropertiesChanged(editor.id, {
+                    selections: {
+                        selections: newCellIndex >= 0 ? [{ start: newCellIndex, end: newCellIndex }] : []
+                    }
+                });
+            });
         }
     }
 
