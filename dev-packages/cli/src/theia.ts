@@ -466,13 +466,16 @@ async function theiaCli(): Promise<void> {
                 }
             },
             handler: async ({ freeApi, deeplKey, file, sourceLanguage, languages = [] }) => {
-                await localizationManager.localize({
+                const success = await localizationManager.localize({
                     sourceFile: file,
                     freeApi: freeApi ?? true,
                     authKey: deeplKey,
                     targetLanguages: languages,
                     sourceLanguage
                 });
+                if (!success) {
+                    process.exit(1);
+                }
             }
         })
         .command<{

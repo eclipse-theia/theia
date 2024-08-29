@@ -38,7 +38,7 @@ function getDeepLToken() {
 }
 
 function performDeepLTranslation(token) {
-    cp.spawnSync('yarn', [
+    const childProcess = cp.spawnSync('yarn', [
         'theia', 'nls-localize',
         '-f', './packages/core/i18n/nls.json',
         '--free-api', '-k', token
@@ -46,4 +46,8 @@ function performDeepLTranslation(token) {
         shell: true,
         stdio: 'inherit'
     });
+    if (childProcess.status !== 0) {
+        console.error('DeepL translation failed');
+        process.exit(1);
+    }
 }
