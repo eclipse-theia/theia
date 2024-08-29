@@ -80,6 +80,8 @@ import * as monaco from '@theia/monaco-editor-core';
 import { VSCodeExtensionUri } from '../common/plugin-vscode-uri';
 import { CodeEditorWidgetUtil } from '@theia/plugin-ext/lib/main/browser/menus/vscode-theia-menu-mappings';
 import { OutlineViewContribution } from '@theia/outline-view/lib/browser/outline-view-contribution';
+import { Range } from '@theia/plugin';
+import { MonacoLanguages } from '@theia/monaco/lib/browser/monaco-languages';
 
 export namespace VscodeCommands {
 
@@ -189,6 +191,8 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
     protected readonly messageService: MessageService;
     @inject(OutlineViewContribution)
     protected outlineViewContribution: OutlineViewContribution;
+    @inject(MonacoLanguages)
+    protected monacoLanguages: MonacoLanguages;
 
     private async openWith(commandId: string, resource: URI, columnOrOptions?: ViewColumn | TextDocumentShowOptions, openerId?: string): Promise<boolean> {
         if (!resource) {
@@ -655,6 +659,38 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                     commands.executeCommand<TextEdit[]>('_executeFormatOnTypeProvider', monaco.Uri.from(resource), position, ch, options))
             }
         );
+        commands.registerCommand(
+            {
+                id: 'vscode.executeFoldingRangeProvider'
+            },
+            {
+                execute: ((resource: URI, position: Position) =>
+                    commands.executeCommand<TextEdit[]>('_executeFoldingRangeProvider', monaco.Uri.from(resource), position))
+            }
+        );
+        commands.registerCommand(
+            {
+                id: 'vscode.executeCodeActionProvider'
+            },
+            {
+                execute: ((resource: URI, range: Range, kind?: string, itemResolveCount?: number) =>
+                    commands.executeCommand<TextEdit[]>('_executeCodeActionProvider', monaco.Uri.from(resource), range, kind, itemResolveCount))
+            }
+        );
+        commands.registerCommand(
+            {
+                id: 'vscode.executeWorkspaceSymbolProvider'
+            },
+            {
+                execute: async (queryString: string) =>
+                    (await Promise.all(
+                        this.monacoLanguages.workspaceSymbolProviders
+                            .map(async provider => provider.provideWorkspaceSymbols({ query: queryString }, new CancellationTokenSource().token))))
+                        .flatMap(symbols => symbols)
+                        .filter(symbols => !!symbols)
+            }
+        );
+
         commands.registerCommand(
             {
                 id: 'vscode.prepareCallHierarchy'
