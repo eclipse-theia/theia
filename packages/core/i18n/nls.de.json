@@ -11,6 +11,7 @@
       "noCallers": "Es wurden keine Anrufer entdeckt.",
       "open": "Öffne Aufruf-Hierarchie"
     },
+    "collaboration": {},
     "core": {
       "about": {
         "compatibility": "{0} Kompatibilität",

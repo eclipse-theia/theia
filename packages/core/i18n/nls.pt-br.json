@@ -11,6 +11,7 @@
       "noCallers": "Nenhum chamador foi detectado.",
       "open": "Hierarquia de Chamadas Abertas"
     },
+    "collaboration": {},
     "core": {
       "about": {
         "compatibility": "{0} Compatibilidade",

@@ -11,6 +11,33 @@
       "noCallers": "No callers have been detected.",
       "open": "Open Call Hierarchy"
     },
+    "collaboration": {
+      "collaborate": "Collaborate",
+      "collaboration": "Collaboration",
+      "collaborationWorkspace": "Collaboration Workspace",
+      "connected": "Connected",
+      "connectedSession": "Connected to a collaboration session",
+      "copiedInvitation": "Invitation code copied to clipboard.",
+      "copyAgain": "Copy Again",
+      "createRoom": "Create New Collaboration Session",
+      "creatingRoom": "Creating Session",
+      "end": "End Collaboration Session",
+      "endDetail": "Terminate the session, cease content sharing, and revoke access for others.",
+      "enterCode": "Enter collaboration session code",
+      "failedCreate": "Failed to create room: {0}",
+      "failedJoin": "Failed to join room: {0}",
+      "invite": "Invite Others",
+      "inviteDetail": "Copy the invitation code for sharing it with others to join the session.",
+      "joinRoom": "Join Collaboration Session",
+      "joiningRoom": "Joining Session",
+      "leave": "Leave Collaboration Session",
+      "leaveDetail": "Disconnect from the current collaboration session and close the workspace.",
+      "selectCollaboration": "Select collaboration option",
+      "sharedSession": "Shared a collaboration session",
+      "startSession": "Start or join collaboration session",
+      "userWantsToJoin": "User '{0}' wants to join the collaboration room",
+      "whatToDo": "What would you like to do with other collaborators?"
+    },
     "core": {
       "about": {
         "compatibility": "{0} Compatibility",

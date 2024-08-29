@@ -11,6 +11,7 @@
       "noCallers": "発信者は検出されていません。",
       "open": "オープンコールヒエラルキー"
     },
+    "collaboration": {},
     "core": {
       "about": {
         "compatibility": "{0} 互換性",
