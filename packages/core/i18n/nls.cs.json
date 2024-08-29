@@ -362,6 +362,9 @@
       "alreadyRunning": "Hostovaná instance je již spuštěna.",
       "debugInstance": "Instance ladění",
       "debugMode": "Použití inspect nebo inspect-brk pro ladění Node.js",
+      "debugPorts": {
+        "debugPort": "Port, který se použije pro ladění Node.js tohoto serveru"
+      },
       "devHost": "Vývojový hostitel",
       "failed": "Nepodařilo se spustit hostovanou instanci zásuvného modulu: {0}",
       "hostedPlugin": "Hostovaný plugin",

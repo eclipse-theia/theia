@@ -362,6 +362,9 @@
       "alreadyRunning": "Die gehostete Instanz läuft bereits.",
       "debugInstance": "Debug-Instanz",
       "debugMode": "Verwendung von inspect oder inspect-brk zur Fehlersuche in Node.js",
+      "debugPorts": {
+        "debugPort": "Zu verwendender Port für das Node.js-Debugging dieses Servers"
+      },
       "devHost": "Entwicklung Host",
       "failed": "Die gehostete Plugin-Instanz konnte nicht ausgeführt werden: {0}",
       "hostedPlugin": "Gehostetes Plugin",

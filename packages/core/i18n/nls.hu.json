@@ -362,6 +362,9 @@
       "alreadyRunning": "A hosztolt példány már fut.",
       "debugInstance": "Hibakeresési példány",
       "debugMode": "Az inspect vagy inspect-brk használata a Node.js hibakereséshez",
+      "debugPorts": {
+        "debugPort": "A kiszolgáló Node.js hibakereséséhez használni kívánt port"
+      },
       "devHost": "Fejlesztés Host",
       "failed": "Nem sikerült futtatni a hosztolt plugin példányt: {0}",
       "hostedPlugin": "Hostolt bővítmény",

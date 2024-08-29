@@ -362,6 +362,9 @@
       "alreadyRunning": "L'istanza ospitata è già in esecuzione.",
       "debugInstance": "Istanza di debug",
       "debugMode": "Usare inspect o inspect-brk per il debug di Node.js",
+      "debugPorts": {
+        "debugPort": "Porta da utilizzare per il debug Node.js di questo server"
+      },
       "devHost": "Sviluppo Host",
       "failed": "Impossibile eseguire l'istanza del plugin ospitato: {0}",
       "hostedPlugin": "Plugin ospitato",

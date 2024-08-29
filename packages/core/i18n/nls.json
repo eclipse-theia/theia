@@ -1,7 +1,7 @@
 {
   "debug.breakpoint.editCondition": "Edit Condition...",
   "notebook.cell.changeToCode": "Change Cell to Code",
-  "notebook.cell.changeToMarkdown": "Change Cell to Mardown",
+  "notebook.cell.changeToMarkdown": "Change Cell to Markdown",
   "notebook.cell.insertMarkdownCellAbove": "Insert Markdown Cell Above",
   "notebook.cell.insertMarkdownCellBelow": "Insert Markdown Cell Below",
   "terminal:new:profile": "Create New Integrated Terminal from a Profile",
@@ -362,6 +362,9 @@
       "alreadyRunning": "Hosted instance is already running.",
       "debugInstance": "Debug Instance",
       "debugMode": "Using inspect or inspect-brk for Node.js debug",
+      "debugPorts": {
+        "debugPort": "Port to use for this server's Node.js debug"
+      },
       "devHost": "Development Host",
       "failed": "Failed to run hosted plugin instance: {0}",
       "hostedPlugin": "Hosted Plugin",

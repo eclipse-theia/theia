@@ -54,7 +54,9 @@ export async function deepl(
  */
 function coerceLanguage(parameters: DeeplParameters): void {
     if (parameters.target_lang === 'ZH-CN') {
-        parameters.target_lang = 'ZH';
+        parameters.target_lang = 'ZH-HANS';
+    } else if (parameters.target_lang === 'ZH-TW') {
+        parameters.target_lang = 'ZH-HANT';
     }
 }
 
@@ -101,10 +103,13 @@ export type DeeplLanguage =
     | 'FI'
     | 'FR'
     | 'HU'
+    | 'ID'
     | 'IT'
     | 'JA'
+    | 'KO'
     | 'LT'
     | 'LV'
+    | 'NB'
     | 'NL'
     | 'PL'
     | 'PT-PT'
@@ -115,13 +120,23 @@ export type DeeplLanguage =
     | 'SK'
     | 'SL'
     | 'SV'
+    | 'TR'
+    | 'UK'
     | 'ZH-CN'
+    | 'ZH-TW'
+    | 'ZH-HANS'
+    | 'ZH-HANT'
     | 'ZH';
 
 export const supportedLanguages = [
-    'BG', 'CS', 'DA', 'DE', 'EL', 'EN-GB', 'EN-US', 'EN', 'ES', 'ET', 'FI', 'FR', 'HU', 'IT',
-    'JA', 'LT', 'LV', 'NL', 'PL', 'PT-PT', 'PT-BR', 'PT', 'RO', 'RU', 'SK', 'SL', 'SV', 'ZH-CN'
+    'BG', 'CS', 'DA', 'DE', 'EL', 'EN-GB', 'EN-US', 'EN', 'ES', 'ET', 'FI', 'FR', 'HU', 'ID', 'IT',
+    'JA', 'KO', 'LT', 'LV', 'NL', 'PL', 'PT-PT', 'PT-BR', 'PT', 'RO', 'RU', 'SK', 'SL', 'SV', 'TR', 'UK', 'ZH-CN', 'ZH-TW'
 ];
+
+// From https://code.visualstudio.com/docs/getstarted/locales#_available-locales
+export const defaultLanguages = [
+    'ZH-CN', 'ZH-TW', 'FR', 'DE', 'IT', 'ES', 'JA', 'KO', 'RU', 'PT-BR', 'TR', 'PL', 'CS', 'HU'
+] as const;
 
 export function isSupportedLanguage(language: string): language is DeeplLanguage {
     return supportedLanguages.includes(language.toUpperCase());

@@ -362,6 +362,9 @@
       "alreadyRunning": "Hostowana instancja jest już uruchomiona.",
       "debugInstance": "Instancja debugowania",
       "debugMode": "Używanie inspect lub inspect-brk do debugowania Node.js",
+      "debugPorts": {
+        "debugPort": "Port używany do debugowania Node.js tego serwera"
+      },
       "devHost": "Gospodarz ds. rozwoju",
       "failed": "Failed to run hosted plugin instance: {0}",
       "hostedPlugin": "Wtyczka hostowana",
