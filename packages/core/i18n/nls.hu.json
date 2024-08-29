@@ -11,6 +11,7 @@
       "noCallers": "Nem észleltek hívókat.",
       "open": "Nyílt felhívás hierarchia"
     },
+    "collaboration": {},
     "core": {
       "about": {
         "compatibility": "{0} Kompatibilitás",

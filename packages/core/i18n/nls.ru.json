@@ -11,6 +11,7 @@
       "noCallers": "Вызывающих не обнаружено.",
       "open": "Иерархия открытых звонков"
     },
+    "collaboration": {},
     "core": {
       "about": {
         "compatibility": "{0} Совместимость",

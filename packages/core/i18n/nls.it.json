@@ -11,6 +11,7 @@
       "noCallers": "Non sono stati rilevati chiamanti.",
       "open": "Gerarchia delle chiamate aperte"
     },
+    "collaboration": {},
     "core": {
       "about": {
         "compatibility": "{0} Compatibilità",

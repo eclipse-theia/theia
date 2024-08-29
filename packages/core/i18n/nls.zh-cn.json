@@ -11,6 +11,7 @@
       "noCallers": "没有发现调用者。",
       "open": "打开调用层次结构"
     },
+    "collaboration": {},
     "core": {
       "about": {
         "compatibility": "{0} 兼容性",

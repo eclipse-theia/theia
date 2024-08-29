@@ -11,6 +11,7 @@
       "noCallers": "발신자가 감지되지 않았습니다.",
       "open": "오픈 콜 계층 구조"
     },
+    "collaboration": {},
     "core": {
       "about": {
         "compatibility": "{0} 호환성",

@@ -11,6 +11,7 @@
       "noCallers": "未偵測到來電者。",
       "open": "開放式呼叫層級"
     },
+    "collaboration": {},
     "core": {
       "about": {
         "compatibility": "{0} 相容性",
