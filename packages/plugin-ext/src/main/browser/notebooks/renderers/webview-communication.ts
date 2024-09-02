@@ -74,7 +74,7 @@ export interface CellHeigthsMessage {
     cellHeigths: Record<number, number>;
 }
 
-export interface CellMoved {
+export interface CellsMoved {
     type: 'cellMoved';
     cellHandle: number;
     toIndex: number;
@@ -89,7 +89,7 @@ export interface CellsSpliced {
 
 export interface CellsChangedMessage {
     type: 'cellsChanged';
-    changes: (CellMoved | CellsSpliced)[];
+    changes: Array<CellsMoved | CellsSpliced>;
 }
 
 export interface CellHeightUpdateMessage {
@@ -132,12 +132,18 @@ export interface InputFocusChange {
     readonly focused: boolean;
 }
 
+export interface CellHeightRequest {
+    readonly type: 'cellHeightRequest';
+    readonly cellHandle: number;
+}
+
 export type FromWebviewMessage = WebviewInitialized
     | OnDidRenderOutput
     | WheelMessage
     | CustomRendererMessage
     | KernelMessage
-    | InputFocusChange;
+    | InputFocusChange
+    | CellHeightRequest;
 
 export interface Output {
     id: string

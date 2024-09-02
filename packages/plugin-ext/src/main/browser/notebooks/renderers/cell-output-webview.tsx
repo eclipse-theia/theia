@@ -32,7 +32,7 @@ import { WebviewWidget } from '../../webview/webview';
 import { Message, WidgetManager } from '@theia/core/lib/browser';
 import { outputWebviewPreload, PreloadContext } from './output-webview-internal';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser';
-import { CellsChangedMessage, FromWebviewMessage, OutputChangedMessage } from './webview-communication';
+import { CellsChangedMessage, CellsMoved, CellsSpliced, FromWebviewMessage, OutputChangedMessage } from './webview-communication';
 import { Disposable, DisposableCollection, Emitter, QuickPickService } from '@theia/core';
 import { NotebookModel } from '@theia/notebook/lib/browser/view-model/notebook-model';
 import { NotebookOptionsService, NotebookOutputOptions } from '@theia/notebook/lib/browser/service/notebook-options';
@@ -242,6 +242,8 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
 
     protected toDispose = new DisposableCollection();
 
+    protected cellHeights = new Map<number, number>();
+
     async init(notebook: NotebookModel, editor: NotebookEditorWidget): Promise<void> {
         this.notebook = notebook;
         this.editor = editor;
@@ -370,29 +372,34 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
         this.webviewWidget.sendMessage(updateOutputMessage);
     }
 
-    cellsChanged(cellEvent: NotebookContentChangedEvent[]): void {
+    cellsChanged(cellEvents: NotebookContentChangedEvent[]): void {
+        const changes: Array<CellsMoved | CellsSpliced> = [];
+
+        for (const event of cellEvents) {
+            if (event.kind === NotebookCellsChangeType.Move) {
+                changes.push(...event.cells.map((cell, i) => ({
+                    type: 'cellMoved',
+                    cellHandle: event.cells[0].handle,
+                    toIndex: event.newIdx + i,
+                } as CellsMoved)));
+            } else if (event.kind === NotebookCellsChangeType.ModelChange) {
+                changes.push(...event.changes.map(change => ({
+                    type: 'cellsSpliced',
+                    start: change.start,
+                    deleteCount: change.deleteCount,
+                    newCells: change.newItems.map(cell => cell.handle)
+                } as CellsSpliced)));
+            }
+        }
+
         this.webviewWidget.sendMessage({
             type: 'cellsChanged',
-            changes: cellEvent.flatMap(event => {
-                if (event.kind === NotebookCellsChangeType.Move) {
-                    return event.cells.map((cell, i) => ({
-                        type: 'cellMoved',
-                        cellHandle: event.cells[0].handle,
-                        toIndex: event.newIdx + i,
-                    }));
-                } else if (event.kind === NotebookCellsChangeType.ModelChange) {
-                    event.changes.map(change => ({
-                        type: 'cellsSpliced',
-                        start: change.start,
-                        deleteCount: change.deleteCount,
-                        newCells: change.newItems.map(cell => cell.handle)
-                    }));
-                }
-            }).filter(e => !!e)
+            changes: changes.filter(e => e)
         } as CellsChangedMessage);
     }
 
     setCellHeight(cellHandle: number, height: number): void {
+        this.cellHeights.set(cellHandle, height);
         this.webviewWidget.sendMessage({
             type: 'cellHeightUpdate',
             cellHandle,
@@ -449,6 +456,14 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
                 break;
             case 'inputFocusChanged':
                 this.editor?.outputInputFocusChanged(message.focused);
+                break;
+            case 'cellHeightRequest':
+                const cellHeight = this.cellHeights.get(message.cellHandle) ?? 0;
+                this.webviewWidget.sendMessage({
+                    type: 'cellHeightUpdate',
+                    cellHandle: message.cellHandle,
+                    height: cellHeight
+                });
         }
     }
 

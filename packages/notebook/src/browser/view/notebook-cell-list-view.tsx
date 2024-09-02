@@ -26,6 +26,7 @@ import { NotebookContextManager } from '../service/notebook-context-manager';
 
 export interface CellRenderer {
     render(notebookData: NotebookModel, cell: NotebookCellModel, index: number): React.ReactNode
+    renderSidebar(notebookModel: NotebookModel, cell: NotebookCellModel): React.ReactNode
     renderDragImage(cell: NotebookCellModel): HTMLElement
 }
 
@@ -121,11 +122,6 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
                             onDragOver={e => this.onDragOver(e, cell, 'top')} />
                         {this.shouldRenderDragOverIndicator(cell, 'top') && <CellDropIndicator />}
                         <li className={'theia-notebook-cell' + (this.state.selectedCell === cell ? ' focused' : '') + (this.isEnabled() ? ' draggable' : '')}
-                            onClick={e => {
-                                this.setState({ ...this.state, selectedCell: cell });
-                                this.props.notebookModel.setSelectedCell(cell, false);
-                            }}
-                            onDragStart={e => this.onDragStart(e, index, cell)}
                             onDragEnd={e => {
                                 NotebookCellListView.dragGhost?.remove();
                                 this.setState({ ...this.state, dragOverIndicator: undefined });
@@ -142,7 +138,16 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
                                     }
                                 }
                             }}>
-                            <div className={'theia-notebook-cell-marker' + (this.state.selectedCell === cell ? ' theia-notebook-cell-marker-selected' : '')}></div>
+                            <div className='theia-notebook-cell-sidebar'
+                                onClick={e => {
+                                    this.setState({ ...this.state, selectedCell: cell });
+                                    this.props.notebookModel.setSelectedCell(cell, false);
+                                }}
+                                onDragStart={e => this.onDragStart(e, index, cell)}
+                            >
+                                <div className={'theia-notebook-cell-marker' + (this.state.selectedCell === cell ? ' theia-notebook-cell-marker-selected' : '')}></div>
+                                {this.renderCellSidebar(cell)}
+                            </div>
                             <div className='theia-notebook-cell-content'>
                                 {this.renderCellContent(cell, index)}
                             </div>
@@ -173,7 +178,15 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
         return renderer.render(this.props.notebookModel, cell, index);
     }
 
-    protected onDragStart(event: React.DragEvent<HTMLLIElement>, index: number, cell: NotebookCellModel): void {
+    renderCellSidebar(cell: NotebookCellModel): React.ReactNode {
+        const renderer = this.props.renderers.get(cell.cellKind);
+        if (!renderer) {
+            throw new Error(`No renderer found for cell type ${cell.cellKind}`);
+        }
+        return renderer.renderSidebar(this.props.notebookModel, cell);
+    }
+
+    protected onDragStart(event: React.DragEvent<HTMLElement>, index: number, cell: NotebookCellModel): void {
         event.stopPropagation();
         if (!this.isEnabled()) {
             event.preventDefault();

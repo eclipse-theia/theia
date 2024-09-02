@@ -150,8 +150,6 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
         constructor(public cellHandle: number, cellIndex?: number) {
 
             console.log('createNewCell', cellHandle, cellIndex);
-            // const upperWrapperElement = createFocusSink(cellId);
-            // container.appendChild(upperWrapperElement);
 
             this.element = document.createElement('div');
             this.element.style.outline = '0';
@@ -160,14 +158,15 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
             this.element.classList.add('cell_container');
 
             if (cellIndex && cellIndex < container.children.length) {
-                container.insertBefore(container.children[cellIndex], this.element);
+                console.log('insertBefore', cellIndex, container.children.length);
+                container.insertBefore(this.element, container.children[cellIndex]);
             } else {
+                console.log('appendChild', container.children.length);
                 container.appendChild(this.element);
             }
             this.element = this.element;
 
-            // const lowerWrapperElement = createFocusSink(cellId, true);
-            // container.appendChild(lowerWrapperElement);
+            theia.postMessage({ type: 'cellHeightRequest', cellHandle: cellHandle });
         }
 
         public dispose(): void {
@@ -610,7 +609,7 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
         }
     }
 
-    function cellsChanged(changes: (webviewCommunication.CellMoved | webviewCommunication.CellsSpliced)[]): void {
+    function cellsChanged(changes: (webviewCommunication.CellsMoved | webviewCommunication.CellsSpliced)[]): void {
         for (const change of changes) {
             if (change.type === 'cellMoved') {
                 const currentIndex = cells.findIndex(c => c.cellHandle === change.cellHandle);

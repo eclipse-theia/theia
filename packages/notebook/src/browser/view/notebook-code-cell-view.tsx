@@ -76,36 +76,40 @@ export class NotebookCodeCellRenderer implements CellRenderer {
     protected readonly outputWebview: CellOutputWebview;
 
     render(notebookModel: NotebookModel, cell: NotebookCellModel, handle: number): React.ReactNode {
-        return <div>
-            <div className='theia-notebook-cell-with-sidebar' ref={ref => {
-                if (ref) {
-                    this.outputWebview.setCellHeight(cell.handle, ref?.getBoundingClientRect().height ?? 0);
-                    new ResizeObserver(entries =>
-                        this.outputWebview.setCellHeight(cell.handle, ref?.getBoundingClientRect().height ?? 0)
-                    ).observe(ref);
-                }
-            }}>
-                <div className='theia-notebook-cell-sidebar'>
-                    {this.notebookCellToolbarFactory.renderSidebar(NotebookCellActionContribution.CODE_CELL_SIDEBAR_MENU, cell, {
-                        contextMenuArgs: () => [cell], commandArgs: () => [notebookModel, cell]
-                    })
-                    }
-                    <CodeCellExecutionOrder cell={cell} />
-                </div>
-                <div className='theia-notebook-cell-editor-container'>
-                    <CellEditor notebookModel={notebookModel} cell={cell}
-                        monacoServices={this.monacoServices}
-                        notebookContextManager={this.notebookContextManager}
-                        notebookViewportService={this.notebookViewportService}
-                        notebookCellEditorService={this.notebookCellEditorService}
-                        fontInfo={this.notebookOptionsService.editorFontInfo} />
-                    <NotebookCodeCellStatus cell={cell} notebook={notebookModel}
-                        commandRegistry={this.commandRegistry}
-                        executionStateService={this.executionStateService}
-                        onClick={() => cell.requestFocusEditor()} />
-                </div >
+        return <div className='theia-notebook-cell-with-sidebar' ref={ref => {
+            if (ref) {
+                this.outputWebview.setCellHeight(cell.handle, ref?.getBoundingClientRect().height ?? 0);
+                new ResizeObserver(entries =>
+                    this.outputWebview.setCellHeight(cell.handle, ref?.getBoundingClientRect().height ?? 0)
+                ).observe(ref);
+            }
+        }}>
+
+            <div className='theia-notebook-cell-editor-container'>
+                <CellEditor notebookModel={notebookModel} cell={cell}
+                    monacoServices={this.monacoServices}
+                    notebookContextManager={this.notebookContextManager}
+                    notebookViewportService={this.notebookViewportService}
+                    notebookCellEditorService={this.notebookCellEditorService}
+                    fontInfo={this.notebookOptionsService.editorFontInfo} />
+                <NotebookCodeCellStatus cell={cell} notebook={notebookModel}
+                    commandRegistry={this.commandRegistry}
+                    executionStateService={this.executionStateService}
+                    onClick={() => cell.requestFocusEditor()} />
             </div >
-            <div className='theia-notebook-cell-with-sidebar'>
+        </div >;
+    }
+
+    renderSidebar(notebookModel: NotebookModel, cell: NotebookCellModel): React.ReactNode {
+        return <div>
+            <div className='theia-notebook-cell-sidebar-actions'>
+                {this.notebookCellToolbarFactory.renderSidebar(NotebookCellActionContribution.CODE_CELL_SIDEBAR_MENU, cell, {
+                    contextMenuArgs: () => [cell], commandArgs: () => [notebookModel, cell]
+                })
+                }
+                <CodeCellExecutionOrder cell={cell} />
+            </div>
+            <div>
                 <NotebookCodeCellOutputs cell={cell} notebook={notebookModel} outputWebview={this.outputWebview}
                     renderSidebar={() =>
                         this.notebookCellToolbarFactory.renderSidebar(NotebookCellActionContribution.OUTPUT_SIDEBAR_MENU, cell, {
@@ -113,7 +117,8 @@ export class NotebookCodeCellRenderer implements CellRenderer {
                         })
                     } />
             </div>
-        </div >;
+        </div>;
+
     }
 
     renderDragImage(cell: NotebookCellModel): HTMLElement {
@@ -294,11 +299,9 @@ export class NotebookCodeCellOutputs extends React.Component<NotebookCellOutputP
 
     override render(): React.ReactNode {
         return this.props.cell.outputVisible ?
-            // TODO add here the output height
-            <>
+            <div style={{ minHeight: this.outputHeight }}>
                 {this.props.renderSidebar()}
-                <div style={{ marginBottom: this.outputHeight }}></div>
-            </> :
+            </div> :
             this.props.cell.outputs?.length ? <i className='theia-notebook-collapsed-output'>{nls.localizeByDefault('Outputs are collapsed')}</i> : <></>;
 
     }

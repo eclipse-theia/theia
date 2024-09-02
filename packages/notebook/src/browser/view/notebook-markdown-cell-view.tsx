@@ -63,6 +63,10 @@ export class NotebookMarkdownCellRenderer implements CellRenderer {
             notebookCellEditorService={this.notebookCellEditorService} />;
     }
 
+    renderSidebar(notebookModel: NotebookModel, cell: NotebookCellModel): React.ReactNode {
+        return <div className='theia-notebook-markdown-sidebar'></div>;
+    }
+
     renderDragImage(cell: NotebookCellModel): HTMLElement {
         const dragImage = document.createElement('div');
         dragImage.style.width = this.notebookContextManager.context?.clientWidth + 'px';
