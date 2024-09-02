@@ -19,7 +19,7 @@ import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
 import { EncodingService } from '@theia/core/lib/common/encoding-service';
 import { BrowserFSInitialization, DefaultBrowserFSInitialization } from '@theia/filesystem/lib/browser-only/browserfs-filesystem-initialization';
 import { BrowserFSFileSystemProvider } from '@theia/filesystem/lib/browser-only/browserfs-filesystem-provider';
-import type { FSModule } from 'browserfs/dist/node/core/FS';
+import { fs } from '@zenfs/core';
 
 @injectable()
 export class ExampleBrowserFSInitialization extends DefaultBrowserFSInitialization {
@@ -27,7 +27,7 @@ export class ExampleBrowserFSInitialization extends DefaultBrowserFSInitializati
     @inject(EncodingService)
     protected encodingService: EncodingService;
 
-    override async initializeFS(fs: FSModule, provider: BrowserFSFileSystemProvider): Promise<void> {
+    override async initializeFS(provider: BrowserFSFileSystemProvider): Promise<void> {
         try {
             if (!fs.existsSync('/home/workspace')) {
                 await provider.mkdir(new URI('/home/workspace'));

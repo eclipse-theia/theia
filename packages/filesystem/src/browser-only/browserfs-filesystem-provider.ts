@@ -33,14 +33,10 @@ import {
 import { Event, URI, Disposable, CancellationToken } from '@theia/core';
 import { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ReadableStreamEvents } from '@theia/core/lib/common/stream';
-import { BFSRequire } from 'browserfs';
-import type { FSModule } from 'browserfs/dist/node/core/FS';
-import type { FileSystem } from 'browserfs/dist/node/core/file_system';
-import MountableFileSystem from 'browserfs/dist/node/backend/MountableFileSystem';
 import { basename, dirname, normalize } from 'path';
-import Stats from 'browserfs/dist/node/core/node_fs_stats';
 import { retry } from '@theia/core/lib/common/promise-util';
 import { BrowserFSInitialization } from './browserfs-filesystem-initialization';
+import { fs, Stats } from '@zenfs/core';
 
 // adapted from DiskFileSystemProvider
 @injectable()
@@ -53,15 +49,12 @@ export class BrowserFSFileSystemProvider implements FileSystemProviderWithFileRe
     private writeHandles: Set<number> = new Set();
     private canFlush: boolean = true;
 
-    private fs: FSModule;
-    private mountableFS: MountableFileSystem;
     private initialized: Promise<true>;
 
     constructor(@inject(BrowserFSInitialization) readonly initialization: BrowserFSInitialization) {
         const init = async (): Promise<true> => {
-            this.mountableFS = await initialization.createMountableFileSystem();
-            this.fs = BFSRequire('fs');
-            await initialization.initializeFS(this.fs, new Proxy(this, {
+            await initialization.createMountableFileSystem();
+            await initialization.initializeFS(new Proxy(this, {
                 get(target, prop, receiver): unknown {
                     if (prop === 'initialized') {
                         return Promise.resolve(true);
@@ -74,11 +67,6 @@ export class BrowserFSFileSystemProvider implements FileSystemProviderWithFileRe
         this.initialized = init();
     }
 
-    async mount(mountPoint: string, fs: FileSystem): Promise<void> {
-        await this.initialized;
-        this.mountableFS.mount(mountPoint, fs);
-    };
-
     watch(_resource: URI, _opts: WatchOptions): Disposable {
         return Disposable.NULL;
     }
@@ -88,7 +76,7 @@ export class BrowserFSFileSystemProvider implements FileSystemProviderWithFileRe
 
         let stats: Stats;
         try {
-            stats = await this.promisify(this.fs.stat)(path) as Stats;
+            stats = await this.promisify(fs.stat)(path) as Stats;
         } catch (error) {
             throw this.toFileSystemProviderError(error);
         }
@@ -107,7 +95,7 @@ export class BrowserFSFileSystemProvider implements FileSystemProviderWithFileRe
     async mkdir(resource: URI): Promise<void> {
         await this.initialized;
         try {
-            await this.promisify(this.fs.mkdir)(this.toFilePath(resource));
+            await this.promisify(fs.mkdir)(this.toFilePath(resource));
         } catch (error) {
             throw this.toFileSystemProviderError(error);
         }
@@ -116,7 +104,7 @@ export class BrowserFSFileSystemProvider implements FileSystemProviderWithFileRe
         await this.initialized;
         try {
 
-            const children = await this.promisify(this.fs.readdir)(this.toFilePath(resource)) as string[];
+            const children = await this.promisify(fs.readdir)(this.toFilePath(resource)) as string[];
             const result: [string, FileType][] = [];
             await Promise.all(children.map(async child => {
                 try {
@@ -136,7 +124,7 @@ export class BrowserFSFileSystemProvider implements FileSystemProviderWithFileRe
         await this.initialized;
         // FIXME use options
         try {
-            await this.promisify(this.fs.unlink)(this.toFilePath(resource));
+            await this.promisify(fs.unlink)(this.toFilePath(resource));
         } catch (error) {
             throw this.toFileSystemProviderError(error);
         }
@@ -150,7 +138,7 @@ export class BrowserFSFileSystemProvider implements FileSystemProviderWithFileRe
         }
         try {
             // assume FS is path case sensitive - correct?
-            const targetExists = await this.promisify(this.fs.exists)(toFilePath);
+            const targetExists = await this.promisify(fs.exists)(toFilePath);
             if (targetExists) {
                 throw Error(`File '${toFilePath}' already exists.`);
             }
@@ -158,20 +146,20 @@ export class BrowserFSFileSystemProvider implements FileSystemProviderWithFileRe
                 return Promise.resolve();
             }
 
-            await this.promisify(this.fs.rename)(fromFilePath, toFilePath);
+            await this.promisify(fs.rename)(fromFilePath, toFilePath);
 
-            const stat = await this.promisify(this.fs.lstat)(toFilePath) as Stats;
+            const stat = await this.promisify(fs.lstat)(toFilePath) as Stats;
             if (stat.isDirectory() || stat.isSymbolicLink()) {
                 return Promise.resolve(); // only for files
             }
             const fd = await this.promisify(open)(toFilePath, 'a');
             try {
-                await this.promisify(this.fs.futimes)(fd, stat.atime, new Date());
+                await this.promisify(fs.futimes)(fd, stat.atime, new Date());
             } catch (error) {
                 // ignore
             }
 
-            this.promisify(this.fs.close)(fd);
+            this.promisify(fs.close)(fd);
         } catch (error) {
             // rewrite some typical errors that can happen especially around symlinks
             // to something the user can better understand
@@ -190,7 +178,7 @@ export class BrowserFSFileSystemProvider implements FileSystemProviderWithFileRe
         await this.initialized;
         try {
             const filePath = this.toFilePath(resource);
-            return await this.promisify(this.fs.readFile)(filePath) as Uint8Array;
+            return await this.promisify(fs.readFile)(filePath) as Uint8Array;
         } catch (error) {
             throw this.toFileSystemProviderError(error);
         }
@@ -203,7 +191,7 @@ export class BrowserFSFileSystemProvider implements FileSystemProviderWithFileRe
 
             // Validate target unless { create: true, overwrite: true }
             if (!opts.create || !opts.overwrite) {
-                const fileExists = await this.promisify(this.fs.exists)(filePath);
+                const fileExists = await this.promisify(fs.exists)(filePath);
                 if (fileExists) {
                     if (!opts.overwrite) {
                         throw createFileSystemProviderError('File already exists', FileSystemProviderErrorCode.FileExists);
@@ -251,7 +239,7 @@ export class BrowserFSFileSystemProvider implements FileSystemProviderWithFileRe
                 flags = 'r';
             }
 
-            const handle = await this.promisify(this.fs.open)(filePath, flags) as number;
+            const handle = await this.promisify(fs.open)(filePath, flags) as number;
 
             // remember this handle to track file position of the handle
             // we init the position to 0 since the file descriptor was
@@ -279,7 +267,7 @@ export class BrowserFSFileSystemProvider implements FileSystemProviderWithFileRe
         // to flush the contents to disk if possible.
         if (this.writeHandles.delete(fd) && this.canFlush) {
             try {
-                await this.promisify(this.fs.fdatasync)(fd);
+                await this.promisify(fs.fdatasync)(fd);
             } catch (error) {
                 // In some exotic setups it is well possible that node fails to sync
                 // In that case we disable flushing and log the error to our logger
@@ -288,7 +276,7 @@ export class BrowserFSFileSystemProvider implements FileSystemProviderWithFileRe
             }
         }
 
-        await this.promisify(this.fs.close)(fd);
+        await this.promisify(fs.close)(fd);
     }
     async read(fd: number, pos: number, data: Uint8Array, offset: number, length: number): Promise<number> {
         await this.initialized;
@@ -297,7 +285,7 @@ export class BrowserFSFileSystemProvider implements FileSystemProviderWithFileRe
         let bytesRead: number | null = null;
         try {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const result: { bytesRead: number, buffer: Uint8Array } | number = (await this.promisify(this.fs.read)(fd, data, offset, length, normalizedPos)) as any;
+            const result: { bytesRead: number, buffer: Uint8Array } | number = (await this.promisify(fs.read)(fd, data, offset, length, normalizedPos)) as any;
 
             if (typeof result === 'number') {
                 bytesRead = result; // node.d.ts fail
@@ -327,7 +315,7 @@ export class BrowserFSFileSystemProvider implements FileSystemProviderWithFileRe
         let bytesWritten: number | null = null;
         try {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const result: { bytesWritten: number, buffer: Uint8Array } | number = (await this.promisify(this.fs.write)(fd, data, offset, length, normalizedPos)) as any;
+            const result: { bytesWritten: number, buffer: Uint8Array } | number = (await this.promisify(fs.write)(fd, data, offset, length, normalizedPos)) as any;
 
             if (typeof result === 'number') {
                 bytesWritten = result; // node.d.ts fail
