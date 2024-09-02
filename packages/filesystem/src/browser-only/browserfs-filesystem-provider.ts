@@ -76,7 +76,7 @@ export class BrowserFSFileSystemProvider implements FileSystemProviderWithFileRe
 
         let stats: Stats;
         try {
-            stats = await this.promisify(fs.stat)(path) as Stats;
+            stats = await fs.promises.stat(path) as Stats;
         } catch (error) {
             throw this.toFileSystemProviderError(error);
         }
@@ -95,7 +95,7 @@ export class BrowserFSFileSystemProvider implements FileSystemProviderWithFileRe
     async mkdir(resource: URI): Promise<void> {
         await this.initialized;
         try {
-            await this.promisify(fs.mkdir)(this.toFilePath(resource));
+            await fs.promises.mkdir(this.toFilePath(resource));
         } catch (error) {
             throw this.toFileSystemProviderError(error);
         }
@@ -104,7 +104,7 @@ export class BrowserFSFileSystemProvider implements FileSystemProviderWithFileRe
         await this.initialized;
         try {
 
-            const children = await this.promisify(fs.readdir)(this.toFilePath(resource)) as string[];
+            const children = await fs.promises.readdir(this.toFilePath(resource)) as string[];
             const result: [string, FileType][] = [];
             await Promise.all(children.map(async child => {
                 try {
@@ -124,7 +124,7 @@ export class BrowserFSFileSystemProvider implements FileSystemProviderWithFileRe
         await this.initialized;
         // FIXME use options
         try {
-            await this.promisify(fs.unlink)(this.toFilePath(resource));
+            await fs.promises.unlink(this.toFilePath(resource));
         } catch (error) {
             throw this.toFileSystemProviderError(error);
         }
@@ -138,7 +138,7 @@ export class BrowserFSFileSystemProvider implements FileSystemProviderWithFileRe
         }
         try {
             // assume FS is path case sensitive - correct?
-            const targetExists = await this.promisify(fs.exists)(toFilePath);
+            const targetExists = await fs.promises.exists(toFilePath);
             if (targetExists) {
                 throw Error(`File '${toFilePath}' already exists.`);
             }
@@ -146,20 +146,20 @@ export class BrowserFSFileSystemProvider implements FileSystemProviderWithFileRe
                 return Promise.resolve();
             }
 
-            await this.promisify(fs.rename)(fromFilePath, toFilePath);
+            await fs.promises.rename(fromFilePath, toFilePath);
 
-            const stat = await this.promisify(fs.lstat)(toFilePath) as Stats;
+            const stat = await fs.promises.lstat(toFilePath) as Stats;
             if (stat.isDirectory() || stat.isSymbolicLink()) {
                 return Promise.resolve(); // only for files
             }
-            const fd = await this.promisify(open)(toFilePath, 'a');
+            const file_handle = await fs.promises.open(toFilePath, 'a');
             try {
-                await this.promisify(fs.futimes)(fd, stat.atime, new Date());
+                await file_handle.utimes(stat.atime, new Date());
             } catch (error) {
                 // ignore
             }
 
-            this.promisify(fs.close)(fd);
+            file_handle.close();
         } catch (error) {
             // rewrite some typical errors that can happen especially around symlinks
             // to something the user can better understand
@@ -178,7 +178,7 @@ export class BrowserFSFileSystemProvider implements FileSystemProviderWithFileRe
         await this.initialized;
         try {
             const filePath = this.toFilePath(resource);
-            return await this.promisify(fs.readFile)(filePath) as Uint8Array;
+            return await fs.promises.readFile(filePath) as Uint8Array;
         } catch (error) {
             throw this.toFileSystemProviderError(error);
         }
@@ -191,7 +191,7 @@ export class BrowserFSFileSystemProvider implements FileSystemProviderWithFileRe
 
             // Validate target unless { create: true, overwrite: true }
             if (!opts.create || !opts.overwrite) {
-                const fileExists = await this.promisify(fs.exists)(filePath);
+                const fileExists = await fs.promises.exists(filePath);
                 if (fileExists) {
                     if (!opts.overwrite) {
                         throw createFileSystemProviderError('File already exists', FileSystemProviderErrorCode.FileExists);
@@ -239,7 +239,7 @@ export class BrowserFSFileSystemProvider implements FileSystemProviderWithFileRe
                 flags = 'r';
             }
 
-            const handle = await this.promisify(fs.open)(filePath, flags) as number;
+            const handle = (await fs.promises.open(filePath, flags)).fd;
 
             // remember this handle to track file position of the handle
             // we init the position to 0 since the file descriptor was
