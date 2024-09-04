@@ -21,6 +21,7 @@ new Downloader({
     directory: './lib/browser',
     fileName: 'catalog.json',
     timeout: 60000,
+    proxy: process.env.http_proxy || process.env.HTTP_PROXY,
     cloneFiles: false
 }).download();
 
