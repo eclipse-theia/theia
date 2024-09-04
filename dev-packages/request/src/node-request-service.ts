@@ -31,7 +31,6 @@ export interface NodeRequestOptions extends RequestOptions {
 };
 
 export class NodeRequestService implements RequestService {
-
     protected proxyUrl?: string;
     protected strictSSL?: boolean;
     protected authorization?: string;
@@ -107,9 +106,14 @@ export class NodeRequestService implements RequestService {
                 opts.auth = options.user + ':' + options.password;
             }
 
+            const timeoutHandler = () => {
+                reject('timeout');
+            };
+
             const req = rawRequest(opts, async res => {
                 const followRedirects = options.followRedirects ?? 3;
                 if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && followRedirects > 0 && res.headers.location) {
+                    req.off('timeout', timeoutHandler);
                     this.request({
                         ...options,
                         url: res.headers.location,
@@ -125,6 +129,7 @@ export class NodeRequestService implements RequestService {
                     });
 
                     stream.on('end', () => {
+                        req.off('timeout', timeoutHandler);
                         const buffer = Buffer.concat(chunks);
                         resolve({
                             url: options.url,
@@ -146,9 +151,7 @@ export class NodeRequestService implements RequestService {
                 reject(err);
             });
 
-            req.on('timeout', () => {
-                reject('timeout');
-            });
+            req.on('timeout', timeoutHandler);
 
             if (options.timeout) {
                 req.setTimeout(options.timeout);
