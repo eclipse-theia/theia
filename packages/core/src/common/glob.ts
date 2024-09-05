@@ -454,10 +454,10 @@ function toRegExp(pattern: string): ParsedStringPattern {
 
 /**
  * Simplified glob matching. Supports a subset of glob patterns:
- * - * matches anything inside a path segment
- * - ? matches 1 character inside a path segment
- * - ** matches anything including an empty path segment
- * - simple brace expansion ({js,ts} => js or ts)
+ * - `*` matches anything inside a path segment
+ * - `?` matches 1 character inside a path segment
+ * - `**` matches anything including an empty path segment
+ * - simple brace expansion (`{js,ts}` => js or ts)
  * - character ranges (using [...])
  */
 export function match(pattern: string | IRelativePattern, path: string): boolean;

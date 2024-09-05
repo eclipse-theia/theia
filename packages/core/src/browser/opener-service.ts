@@ -17,6 +17,8 @@
 import { named, injectable, inject } from 'inversify';
 import URI from '../common/uri';
 import { ContributionProvider, Prioritizeable, MaybePromise, Emitter, Event, Disposable } from '../common';
+import { PreferenceService } from './preferences';
+import { match } from '../common/glob';
 
 export interface OpenerOptions {
 }
@@ -95,6 +97,17 @@ export async function open(openerService: OpenerService, uri: URI, options?: Ope
     const opener = await openerService.getOpener(uri, options);
     return opener.open(uri, options);
 }
+
+export function getDefaultHandler(uri: URI, preferenceService: PreferenceService): string | undefined {
+    const associations = preferenceService.get('workbench.editorAssociations', {});
+    const defaultHandler = Object.entries(associations).find(([key]) => match(key, uri.path.base))?.[1];
+    if (typeof defaultHandler === 'string') {
+        return defaultHandler;
+    }
+    return undefined;
+}
+
+export const defaultHandlerPriority = 100_000;
 
 @injectable()
 export class DefaultOpenerService implements OpenerService {
