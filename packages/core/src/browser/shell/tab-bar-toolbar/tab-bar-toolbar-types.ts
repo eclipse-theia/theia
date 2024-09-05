@@ -73,6 +73,10 @@ export interface TabBarToolbarItemBase {
      * If no command is present, this menu will be opened.
      */
     menuPath?: MenuPath;
+    /**
+     * The path of the menu delegate that contributed this toolbar item
+     */
+    delegateMenuPath?: MenuPath;
     contextKeyOverlays?: Record<string, string>;
     /**
      * Optional ordering string for placing the item within its group

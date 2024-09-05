@@ -169,7 +169,27 @@ export class PluginMenuCommandAdapter implements MenuCommandAdapter {
     }
 
     protected getArgumentAdapterForMenu(menuPath: MenuPath): ArgumentAdapter | undefined {
-        return this.argumentAdapters.get(menuPath.join(this.separator));
+        let result;
+        let length = 0;
+        for (const [key, value] of this.argumentAdapters.entries()) {
+            const candidate = key.split(this.separator);
+            if (this.isPrefixOf(candidate, menuPath) && candidate.length > length) {
+                result = value;
+                length = candidate.length;
+            }
+        }
+        return result;
+    }
+    isPrefixOf(candidate: string[], menuPath: MenuPath) {
+        if (candidate.length > menuPath.length) {
+            return false;
+        }
+        for (let i = 0; i < candidate.length; i++) {
+            if (candidate[i] !== menuPath[i]) {
+                return false;
+            }
+        }
+        return true;
     }
 
     protected addArgumentAdapter(menuPath: MenuPath, adapter: ArgumentAdapter): void {

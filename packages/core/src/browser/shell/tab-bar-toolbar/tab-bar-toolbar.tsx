@@ -405,8 +405,8 @@ export class TabBarToolbar extends ReactWidget {
             return;
         }
 
-        if (item.command && item.menuPath) {
-            this.menuCommandExecutor.executeCommand(item.menuPath, item.command, this.current);
+        if (item.command && item.delegateMenuPath) {
+            this.menuCommandExecutor.executeCommand(item.delegateMenuPath, item.command, this.current);
         } else if (item.command) {
             this.commands.executeCommand(item.command, this.current);
         } else if (item.menuPath) {
