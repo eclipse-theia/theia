@@ -180,7 +180,7 @@ export class PluginMenuCommandAdapter implements MenuCommandAdapter {
         }
         return result;
     }
-    isPrefixOf(candidate: string[], menuPath: MenuPath) {
+    isPrefixOf(candidate: string[], menuPath: MenuPath): boolean {
         if (candidate.length > menuPath.length) {
             return false;
         }
