@@ -110,18 +110,17 @@ test.describe('Theia Main Menu', () => {
         expect(await fileDialog.isVisible()).toBe(false);
     });
 
-    test('Create file via New File menu and cancel', async () => {
-        const openFileEntry = 'New File...';
-        await (await menuBar.openMenu('File')).clickMenuItem(openFileEntry);
+    test('Create file via New File menu and accept', async () => {
+        await (await menuBar.openMenu('File')).clickMenuItem('New File...');
         const quickPick = app.page.getByPlaceholder('Select File Type or Enter');
         // type file name and press enter
         await quickPick.fill('test.txt');
         await quickPick.press('Enter');
 
-        // check file dialog is opened and accept with "Create File" button
+        // check file dialog is opened and accept with ENTER
         const fileDialog = await app.page.waitForSelector('div[class="dialogBlock"]');
         expect(await fileDialog.isVisible()).toBe(true);
-        await app.page.locator('#theia-dialog-shell').getByRole('button', { name: 'Create File' }).click();
+        await app.page.locator('#theia-dialog-shell').press('Enter');
         expect(await fileDialog.isVisible()).toBe(false);
 
         // check file in workspace exists
