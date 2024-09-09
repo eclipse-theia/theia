@@ -81,7 +81,7 @@ export class AuthenticationMainImpl implements AuthenticationMain {
     }
 
     $getAccounts(providerId: string): Thenable<readonly theia.AuthenticationSessionAccountInformation[]> {
-        return this.authenticationService.getSessions(providerId).then(sessions => sessions.map(sessions => sessions.account));
+        return this.authenticationService.getSessions(providerId).then(sessions => sessions.map(session => session.account));
     }
 
     async $getSession(providerId: string, scopes: string[], extensionId: string, extensionName: string,
