@@ -89,7 +89,6 @@ export interface AuthenticationProvider {
 
     updateSessionItems(event: AuthenticationProviderAuthenticationSessionsChangeEvent): Promise<void>;
 
-
     /**
      * An [event](#Event) which fires when the array of sessions has changed, or data
      * within a session has changed.
