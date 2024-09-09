@@ -14149,7 +14149,6 @@ export module '@theia/plugin' {
         readonly changed: readonly AuthenticationSession[] | undefined;
     }
 
-
     /**
      * The options passed in to the {@link AuthenticationProvider.getSessions} and
      * {@link AuthenticationProvider.createSession} call.
