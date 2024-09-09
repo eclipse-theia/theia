@@ -57,6 +57,10 @@ export class AuthenticationExtImpl implements AuthenticationExt {
         return this.proxy.$getSession(providerId, scopes, extensionId, extensionName, options);
     }
 
+    getAccounts(providerId: string): Thenable<readonly theia.AuthenticationSessionAccountInformation[]> {
+        return this.proxy.$getAccounts(providerId);
+    }
+
     registerAuthenticationProvider(id: string, label: string, provider: theia.AuthenticationProvider, options?: theia.AuthenticationProviderOptions): theia.Disposable {
         if (this.authenticationProviders.get(id)) {
             throw new Error(`An authentication provider with id '${id}' is already registered.`);
@@ -64,7 +68,7 @@ export class AuthenticationExtImpl implements AuthenticationExt {
 
         this.authenticationProviders.set(id, provider);
 
-        provider.getSessions().then(sessions => { // sessions might have been restored from secret storage
+        provider.getSessions(undefined, {}).then(sessions => { // sessions might have been restored from secret storage
             if (sessions.length > 0) {
                 this.proxy.$onDidChangeSessions(id, {
                     added: sessions,
@@ -87,10 +91,10 @@ export class AuthenticationExtImpl implements AuthenticationExt {
         });
     }
 
-    $createSession(providerId: string, scopes: string[]): Promise<theia.AuthenticationSession> {
+    $createSession(providerId: string, scopes: string[], options: theia.AuthenticationProviderSessionOptions): Promise<theia.AuthenticationSession> {
         const authProvider = this.authenticationProviders.get(providerId);
         if (authProvider) {
-            return Promise.resolve(authProvider.createSession(scopes));
+            return Promise.resolve(authProvider.createSession(scopes, options));
         }
 
         throw new Error(`Unable to find authentication provider with handle: ${providerId}`);
@@ -105,10 +109,10 @@ export class AuthenticationExtImpl implements AuthenticationExt {
         throw new Error(`Unable to find authentication provider with handle: ${providerId}`);
     }
 
-    async $getSessions(providerId: string, scopes?: string[]): Promise<ReadonlyArray<theia.AuthenticationSession>> {
+    async $getSessions(providerId: string, scopes: string[] | undefined, options: theia.AuthenticationProviderSessionOptions): Promise<ReadonlyArray<theia.AuthenticationSession>> {
         const authProvider = this.authenticationProviders.get(providerId);
         if (authProvider) {
-            const sessions = await authProvider.getSessions(scopes);
+            const sessions = await authProvider.getSessions(scopes, options);
 
             /* Wrap the session object received from the plugin to prevent serialization mismatches
             e.g. if the plugin object is constructed with the help of getters they won't be serialized:
