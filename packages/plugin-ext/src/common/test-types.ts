@@ -25,7 +25,7 @@
 
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { UriComponents } from './uri-components';
-import { Location, Range } from './plugin-api-rpc-model';
+import { Location, Range, Position } from './plugin-api-rpc-model';
 import { isObject } from '@theia/core';
 
 export enum TestRunProfileKind {
@@ -74,9 +74,21 @@ export interface TestFailureDTO extends TestStateChangeDTO {
     readonly duration?: number;
 }
 
+export namespace TestFailureDTO {
+    export function is(ref: unknown): ref is TestFailureDTO {
+        return isObject<TestFailureDTO>(ref)
+            && ref.state === (TestExecutionState.Failed || TestExecutionState.Errored);
+    }
+}
 export interface TestSuccessDTO extends TestStateChangeDTO {
     readonly state: TestExecutionState.Passed;
     readonly duration?: number;
+}
+
+export interface TestMessageStackFrameDTO {
+    uri?: UriComponents;
+    position?: Position;
+    label: string;
 }
 
 export interface TestMessageDTO {
@@ -85,6 +97,7 @@ export interface TestMessageDTO {
     readonly location?: Location;
     readonly message: string | MarkdownString;
     readonly contextValue?: string;
+    readonly stackTrace?: TestMessageStackFrameDTO[];
 }
 
 export interface TestItemDTO {

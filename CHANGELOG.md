@@ -6,6 +6,8 @@
 
 <!-- ## Unreleased
 
+- [test] support TestMessage stack traces [#14154](https://github.com/eclipse-theia/theia/pull/14154) - Contributed on behalf of STMicroelectronics
+
 <a name="breaking_changes_1.54.0">[Breaking Changes:](#breaking_changes_1.54.0)</a> -->
 
 ## 1.53.0 - 08/29/2024

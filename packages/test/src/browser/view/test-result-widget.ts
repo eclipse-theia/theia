@@ -14,13 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { BaseWidget, Message, codicon } from '@theia/core/lib/browser';
+import { BaseWidget, LabelProvider, Message, OpenerService, codicon } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { TestOutputUIModel } from './test-output-ui-model';
 import { DisposableCollection, nls } from '@theia/core';
-import { TestFailure, TestMessage } from '../test-service';
+import { TestFailure, TestMessage, TestMessageStackFrame } from '../test-service';
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
+import { URI } from '@theia/core/lib/common/uri';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { NavigationLocationService } from '@theia/editor/lib/browser/navigation/navigation-location-service';
+import { NavigationLocation, Position } from '@theia/editor/lib/browser/navigation/navigation-location';
 
 @injectable()
 export class TestResultWidget extends BaseWidget {
@@ -29,6 +33,10 @@ export class TestResultWidget extends BaseWidget {
 
     @inject(TestOutputUIModel) uiModel: TestOutputUIModel;
     @inject(MarkdownRenderer) markdownRenderer: MarkdownRenderer;
+    @inject(OpenerService) openerService: OpenerService;
+    @inject(FileService) fileService: FileService;
+    @inject(NavigationLocationService) navigationService: NavigationLocationService;
+    @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
 
     protected toDisposeOnRender = new DisposableCollection();
     protected input: TestMessage[] = [];
@@ -82,6 +90,35 @@ export class TestResultWidget extends BaseWidget {
                 this.toDisposeOnRender.push(line);
             } else {
                 this.content.append(this.node.ownerDocument.createTextNode(message.message));
+            }
+            if (message.stackTrace) {
+                message.stackTrace.map(frame => this.renderFrame(frame));
+            }
+        });
+    }
+
+    renderFrame(stackFrame: TestMessageStackFrame): void {
+        const frameElement = this.node.ownerDocument.createElement('div');
+        frameElement.append(this.node.ownerDocument.createTextNode(stackFrame.label));
+
+        // Add URI information as clickable links
+        if (stackFrame.uri) {
+
+            const uri = stackFrame.uri;
+            frameElement.append(' from ');
+            const link = this.node.ownerDocument.createElement('a');
+            link.textContent = `${this.labelProvider.getName(uri)}`;
+            link.title = `${uri}`;
+            link.onclick = () => this.openUriInWorkspace(uri, stackFrame.position);
+            frameElement.append(link);
+        }
+        this.content.append(frameElement);
+    }
+
+    async openUriInWorkspace(uri: URI, position?: Position): Promise<void> {
+        this.fileService.resolve(uri).then(stat => {
+            if (stat.isFile) {
+                this.navigationService.reveal(NavigationLocation.create(uri, position ?? { line: 0, character: 0 }));
             }
         });
     }

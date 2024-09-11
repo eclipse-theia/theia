@@ -40,10 +40,11 @@ import { TestItemImpl, TestItemCollection } from './test-item';
 import { AccumulatingTreeDeltaEmitter, TreeDelta } from '@theia/test/lib/common/tree-delta';
 import {
     TestItemDTO, TestOutputDTO, TestExecutionState, TestRunProfileDTO,
-    TestRunProfileKind, TestRunRequestDTO, TestStateChangeDTO, TestItemReference, TestMessageArg, TestMessageDTO
+    TestRunProfileKind, TestRunRequestDTO, TestStateChangeDTO, TestItemReference, TestMessageArg, TestMessageDTO,
+    TestMessageStackFrameDTO
 } from '../common/test-types';
 import { ChangeBatcher, observableProperty } from '@theia/test/lib/common/collections';
-import { TestRunRequest } from './types-impl';
+import { TestRunRequest, URI } from './types-impl';
 import { MarkdownString } from '../common/plugin-api-rpc-model';
 
 type RefreshHandler = (token: theia.CancellationToken) => void | theia.Thenable<void>;
@@ -374,7 +375,16 @@ export class TestingExtImpl implements TestingExt {
             actualOutput: testMessage.actual,
             expectedOutput: testMessage.expected,
             contextValue: testMessage.contextValue,
-            location: testMessage.location ? Convert.toLocation(testMessage.location) : undefined
+            location: testMessage.location ? Convert.toLocation(testMessage.location) : undefined,
+            stackTrace: testMessage.stackTrace ? testMessage.stackTrace.map(frame => this.toStackFrame(frame)) : undefined
+        };
+    }
+
+    toStackFrame(stackFrame: TestMessageStackFrameDTO): theia.TestMessageStackFrame {
+        return {
+            label: stackFrame.label,
+            position: Convert.toPosition(stackFrame.position),
+            uri: stackFrame.uri ? URI.revive(stackFrame.uri) : undefined
         };
     }
 
