@@ -2398,13 +2398,14 @@ export interface TasksMain {
 }
 
 export interface AuthenticationExt {
-    $getSessions(id: string, scopes?: string[]): Promise<ReadonlyArray<theia.AuthenticationSession>>;
-    $createSession(id: string, scopes: string[]): Promise<theia.AuthenticationSession>;
+    $getSessions(providerId: string, scopes: string[] | undefined, options: theia.AuthenticationProviderSessionOptions): Promise<ReadonlyArray<theia.AuthenticationSession>>;
+    $createSession(id: string, scopes: string[], options: theia.AuthenticationProviderSessionOptions): Promise<theia.AuthenticationSession>;
     $removeSession(id: string, sessionId: string): Promise<void>;
     $onDidChangeAuthenticationSessions(provider: theia.AuthenticationProviderInformation): Promise<void>;
 }
 
 export interface AuthenticationMain {
+    $getAccounts(providerId: string): Thenable<readonly theia.AuthenticationSessionAccountInformation[]>;
     $registerAuthenticationProvider(id: string, label: string, supportsMultipleAccounts: boolean): void;
     $unregisterAuthenticationProvider(id: string): void;
     $onDidChangeSessions(providerId: string, event: AuthenticationProviderAuthenticationSessionsChangeEvent): void;
