@@ -99,6 +99,7 @@ export interface AuthenticationProvider {
      * Get a list of sessions.
      * @param scopes An optional list of scopes. If provided, the sessions returned should match
      * these permissions, otherwise all sessions should be returned.
+     * @param account The optional account that you would like to get the session for
      * @returns A promise that resolves to an array of authentication sessions.
      */
     getSessions(scopes: string[] | undefined, account?: AuthenticationSessionAccountInformation): Thenable<ReadonlyArray<AuthenticationSession>>;
@@ -106,6 +107,7 @@ export interface AuthenticationProvider {
     /**
      * Prompts a user to login.
      * @param scopes A list of scopes, permissions, that the new session should be created with.
+     * @param options The options for createing the session
      * @returns A promise that resolves to an authentication session.
      */
     createSession(scopes: string[], options: AuthenticationProviderSessionOptions): Thenable<AuthenticationSession>;
