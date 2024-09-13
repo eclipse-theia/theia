@@ -23,8 +23,8 @@ import { ChatAgentService } from './chat-agent-service';
 import { AbstractStreamParsingChatAgent, ChatAgent, SystemMessageDescription } from './chat-agents';
 import { ChatRequestModelImpl, InformationalChatResponseContentImpl } from './chat-model';
 
-export const delegateTemplate: PromptTemplate = {
-    id: 'default-delegate-template',
+export const orchestratorTemplate: PromptTemplate = {
+    id: 'orchestrator-system',
     template: `# Instructions
 
 Your task is to identify which Chat Agent(s) should best reply a given user's message.
@@ -76,7 +76,7 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent implem
         this.description = 'This agent analyzes the user request against the description of all available chat agents and selects the best fitting agent to answer the request \
         (by using AI).The user\'s request will be directly delegated to the selected agent without further confirmation.';
         this.variables = ['chatAgents'];
-        this.promptTemplates = [delegateTemplate];
+        this.promptTemplates = [orchestratorTemplate];
         this.fallBackChatAgentId = 'Universal';
     }
 
@@ -89,7 +89,7 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent implem
     }
 
     protected async getSystemMessageDescription(): Promise<SystemMessageDescription | undefined> {
-        const resolvedPrompt = await this.promptService.getPrompt(delegateTemplate.id);
+        const resolvedPrompt = await this.promptService.getPrompt(orchestratorTemplate.id);
         return resolvedPrompt ? SystemMessageDescription.fromResolvedPromptTemplate(resolvedPrompt) : undefined;
     }
 

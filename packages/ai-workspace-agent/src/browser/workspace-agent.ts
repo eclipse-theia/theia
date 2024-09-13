@@ -16,7 +16,7 @@
 import { AbstractStreamParsingChatAgent, ChatAgent, SystemMessageDescription } from '@theia/ai-chat/lib/common';
 import { PromptTemplate, ToolInvocationRegistry } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { template } from '../common/template';
+import { workspaceTemplate } from '../common/template';
 
 @injectable()
 export class WorkspaceAgent extends AbstractStreamParsingChatAgent implements ChatAgent {
@@ -37,12 +37,12 @@ export class WorkspaceAgent extends AbstractStreamParsingChatAgent implements Ch
         this.description = 'This agent can access the users workspace, it can get a list of all available files and retrieve their content. \
     It can therefore answer questions about the current project, project files and source code in the workspace, such as how to build the project, \
     where to put source code, where to find specific code or configurations, etc.';
-        this.promptTemplates = [template];
+        this.promptTemplates = [workspaceTemplate];
         this.variables = [];
     }
 
     protected override async getSystemMessageDescription(): Promise<SystemMessageDescription | undefined> {
-        const resolvedPrompt = await this.promptService.getPrompt(template.id);
+        const resolvedPrompt = await this.promptService.getPrompt(workspaceTemplate.id);
         return resolvedPrompt ? SystemMessageDescription.fromResolvedPromptTemplate(resolvedPrompt) : undefined;
     }
 }
