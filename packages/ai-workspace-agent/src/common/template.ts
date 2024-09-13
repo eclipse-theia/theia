@@ -16,8 +16,8 @@
 import { PromptTemplate } from '@theia/ai-core/lib/common';
 import { GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID } from './functions';
 
-export const template = <PromptTemplate>{
-   id: 'workspace-prompt',
+export const workspaceTemplate = <PromptTemplate>{
+   id: 'workspace-system',
    template: `# Instructions
 
     You are an AI assistant integrated into the Theia IDE, specifically designed to help software developers by

@@ -20,8 +20,8 @@ import {
 import { injectable } from '@theia/core/shared/inversify';
 import { AbstractStreamParsingChatAgent, ChatAgent, SystemMessageDescription } from './chat-agents';
 
-export const defaultTemplate: PromptTemplate = {
-   id: 'default-template',
+export const universalTemplate: PromptTemplate = {
+   id: 'universal-system',
    template: `# Instructions
 
 You are an AI assistant integrated into the Theia IDE, specifically designed to help software developers by
@@ -93,11 +93,11 @@ export class UniversalChatAgent extends AbstractStreamParsingChatAgent implement
          + 'questions the user might ask. The universal agent currently does not have any context by default, i.e. it cannot '
          + 'access the current user context or the workspace.';
       this.variables = [];
-      this.promptTemplates = [defaultTemplate];
+      this.promptTemplates = [universalTemplate];
    }
 
    protected override async getSystemMessageDescription(): Promise<SystemMessageDescription | undefined> {
-      const resolvedPrompt = await this.promptService.getPrompt(defaultTemplate.id);
+      const resolvedPrompt = await this.promptService.getPrompt(universalTemplate.id);
       return resolvedPrompt ? SystemMessageDescription.fromResolvedPromptTemplate(resolvedPrompt) : undefined;
    }
 

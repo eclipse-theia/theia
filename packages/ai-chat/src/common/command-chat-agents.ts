@@ -33,8 +33,8 @@ import {
     generateUuid,
 } from '@theia/core';
 
-export const commandChatAgentSystemPromptTemplate: PromptTemplate = {
-    id: 'command-chat-agent-system-prompt-template',
+export const commandTemplate: PromptTemplate = {
+    id: 'command-system',
     template: `# System Prompt
 
 You are a service that helps users find commands to execute in an IDE.
@@ -267,7 +267,7 @@ export class CommandChatAgent extends AbstractTextToModelParsingChatAgent<Parsed
         this.description = 'This agent is aware of all commands that the user can execute within the Theia IDE, the tool that the user is currently working with. \
         Based on the user request, it can find the right command and then let the user execute it.';
         this.variables = [];
-        this.promptTemplates = [commandChatAgentSystemPromptTemplate];
+        this.promptTemplates = [commandTemplate];
     }
 
     protected async getSystemMessageDescription(): Promise<SystemMessageDescription | undefined> {
@@ -275,7 +275,7 @@ export class CommandChatAgent extends AbstractTextToModelParsingChatAgent<Parsed
         for (const command of this.commandRegistry.getAllCommands()) {
             knownCommands.push(`${command.id}: ${command.label}`);
         }
-        const systemPrompt = await this.promptService.getPrompt('command-chat-agent-system-prompt-template', {
+        const systemPrompt = await this.promptService.getPrompt(commandTemplate.id, {
             'command-ids': knownCommands.join('\n')
         });
         if (systemPrompt === undefined) {

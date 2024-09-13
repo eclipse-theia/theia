@@ -42,7 +42,7 @@ export class AiTerminalAgent implements Agent {
     variables = [];
     promptTemplates = [
         {
-            id: 'ai-terminal:system-prompt',
+            id: 'terminal-system',
             name: 'AI Terminal System Prompt',
             description: 'Prompt for the AI Terminal Assistant',
             template: `
@@ -89,7 +89,7 @@ nothing to commit, working tree clean
 `
         },
         {
-            id: 'ai-terminal:user-prompt',
+            id: 'terminal-user',
             name: 'AI Terminal User Prompt',
             description: 'Prompt that contains the user request',
             template: `
@@ -139,8 +139,8 @@ recent-terminal-contents:
             recentTerminalContents
         };
 
-        const systemPrompt = await this.promptService.getPrompt('ai-terminal:system-prompt', parameters).then(p => p?.text);
-        const userPrompt = await this.promptService.getPrompt('ai-terminal:user-prompt', parameters).then(p => p?.text);
+        const systemPrompt = await this.promptService.getPrompt('terminal-system', parameters).then(p => p?.text);
+        const userPrompt = await this.promptService.getPrompt('terminal-user', parameters).then(p => p?.text);
         if (!systemPrompt || !userPrompt) {
             this.logger.error('The prompt service didn\'t return prompts for the AI Terminal Agent.');
             return [];
