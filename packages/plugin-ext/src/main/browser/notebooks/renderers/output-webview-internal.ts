@@ -74,6 +74,7 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
     const theia = acquireVsCodeApi();
     const renderFallbackErrorName = 'vscode.fallbackToNextRenderer';
 
+    document.body.style.overflow = 'hidden';
     const container = document.createElement('div');
     container.id = 'container';
     container.classList.add('widgetarea');
@@ -144,8 +145,8 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
     }
 
     class OutputCell {
-        public readonly element: HTMLElement;
-        private readonly outputElements: OutputContainer[] = [];
+        readonly element: HTMLElement;
+        readonly outputElements: OutputContainer[] = [];
 
         constructor(public cellHandle: number, cellIndex?: number) {
 
@@ -157,11 +158,14 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
             this.element.id = `cellHandle${cellHandle}`;
             this.element.classList.add('cell_container');
 
+            this.element.addEventListener('focusin', e => {
+                console.log('cell focusin', cellHandle);
+                theia.postMessage({ type: 'cellFocusChanged', cellHandle: cellHandle });
+            });
+
             if (cellIndex && cellIndex < container.children.length) {
-                console.log('insertBefore', cellIndex, container.children.length);
                 container.insertBefore(this.element, container.children[cellIndex]);
             } else {
-                console.log('appendChild', container.children.length);
                 container.appendChild(this.element);
             }
             this.element = this.element;
@@ -259,6 +263,11 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
         clear(): void {
             this.renderer?.disposeOutputItem?.(this.renderedItem?.id);
             this.element.innerHTML = '';
+        }
+
+        preferredMimeTypeChange(mimeType: string): void {
+            this.element.innerHTML = '';
+            renderers.render(this, mimeType, undefined, new AbortController().signal);
         }
 
         private createHtmlElement(cellContainer: HTMLElement): void {
@@ -453,21 +462,21 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
             this.showRenderError(item, output.element, 'No fallback renderers found or all fallback renderers failed.');
         }
 
-        private onRenderCompleted(): void {
+        private onRenderCompleted(cell: OutputCell): void {
             // we need to check for all images are loaded. Otherwise we can't determine the correct height of the output
             const images = Array.from(document.images);
             if (images.length > 0) {
                 Promise.all(images.filter(img => !img.complete).map(img => new Promise(resolve => { img.onload = img.onerror = resolve; }))).then(() => {
-                    theia.postMessage(<webviewCommunication.OnDidRenderOutput>{ type: 'didRenderOutput', contentHeight: document.body.clientHeight });
+                    theia.postMessage(<webviewCommunication.OnDidRenderOutput>{ type: 'didRenderOutput', contentHeight: cell.element.clientHeight });
                     new ResizeObserver(() =>
-                        theia.postMessage(<webviewCommunication.OnDidRenderOutput>{ type: 'didRenderOutput', contentHeight: document.body.clientHeight }))
-                        .observe(document.body);
+                        theia.postMessage(<webviewCommunication.OnDidRenderOutput>{ type: 'didRenderOutput', contentHeight: cell.element.clientHeight }))
+                        .observe(cell.element);
                 });
             } else {
-                theia.postMessage(<webviewCommunication.OnDidRenderOutput>{ type: 'didRenderOutput', contentHeight: document.body.clientHeight });
+                theia.postMessage(<webviewCommunication.OnDidRenderOutput>{ type: 'didRenderOutput', contentHeight: cell.element.clientHeight });
                 new ResizeObserver(() =>
-                    theia.postMessage(<webviewCommunication.OnDidRenderOutput>{ type: 'didRenderOutput', contentHeight: document.body.clientHeight }))
-                    .observe(document.body);
+                    theia.postMessage(<webviewCommunication.OnDidRenderOutput>{ type: 'didRenderOutput', contentHeight: cell.element.clientHeight }))
+                    .observe(cell.element);
             }
 
         }
@@ -615,7 +624,13 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
                 const currentIndex = cells.findIndex(c => c.cellHandle === change.cellHandle);
                 const cell = cells[currentIndex];
                 cells.splice(change.toIndex, 0, cells.splice(currentIndex, 1)[0]);
-                container.insertBefore(cell.element, container.children[change.toIndex]);
+                if (change.toIndex < cells.length - 1) {
+                    container.insertBefore(cell.element, container.children[change.toIndex + (change.toIndex > currentIndex ? 1 : 0)]);
+                } else {
+                    container.appendChild(cell.element);
+                }
+                console.log('cellMoved', change);
+                console.log('cells', cells);
             } else if (change.type === 'cellsSpliced') {
                 console.log('cellsSpliced', change);
                 const deltedCells = cells.splice(change.start, change.deleteCount, ...change.newCells.map((cellHandle, i) => new OutputCell(cellHandle, change.start + i)));
@@ -684,12 +699,11 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
                 renderers.getRenderer(event.data.rendererId)?.receiveMessage(event.data.message);
                 break;
             case 'changePreferredMimetype':
-                // TODO reimplement
-                // const mimeType = event.data.mimeType;
-                // outputs.forEach(output => {
-                //     output.element.innerHTML = '';
-                //     renderers.render(output, mimeType, undefined, new AbortController().signal);
-                // });
+                const handle = event.data.cellHandle;
+                const outputId = event.data.outputId;
+                cells.find(c => c.cellHandle === handle)
+                    ?.outputElements.find(o => o.outputId === outputId)
+                    ?.preferredMimeTypeChange(event.data.mimeType);
                 break;
             case 'customKernelMessage':
                 onDidReceiveKernelMessage.fire(event.data.message);

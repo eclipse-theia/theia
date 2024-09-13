@@ -50,6 +50,7 @@ export interface OutputChangedMessage {
 
 export interface ChangePreferredMimetypeMessage {
     readonly type: 'changePreferredMimetype';
+    readonly cellHandle: number;
     readonly outputId: string;
     readonly mimeType: string;
 }
@@ -132,6 +133,11 @@ export interface InputFocusChange {
     readonly focused: boolean;
 }
 
+export interface CellOuputFocus {
+    readonly type: 'cellFocusChanged';
+    readonly cellHandle: number;
+}
+
 export interface CellHeightRequest {
     readonly type: 'cellHeightRequest';
     readonly cellHandle: number;
@@ -143,6 +149,7 @@ export type FromWebviewMessage = WebviewInitialized
     | CustomRendererMessage
     | KernelMessage
     | InputFocusChange
+    | CellOuputFocus
     | CellHeightRequest;
 
 export interface Output {

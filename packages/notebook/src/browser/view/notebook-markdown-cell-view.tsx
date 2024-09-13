@@ -18,7 +18,7 @@ import * as React from '@theia/core/shared/react';
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering/markdown-string';
 import { NotebookModel } from '../view-model/notebook-model';
-import { CellRenderer } from './notebook-cell-list-view';
+import { CellRenderer, observeCellHeight } from './notebook-cell-list-view';
 import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import { CellEditor } from './notebook-cell-editor';
 import { inject, injectable } from '@theia/core/shared/inversify';
@@ -139,7 +139,7 @@ function MarkdownCell({
     }
 
     return editMode ?
-        (<div className='theia-notebook-markdown-editor-container' key="code">
+        (<div className='theia-notebook-markdown-editor-container' key="code" ref={ref => observeCellHeight(ref, cell)}>
             <CellEditor notebookModel={notebookModel} cell={cell}
                 monacoServices={monacoServices}
                 notebookContextManager={notebookContextManager}
@@ -151,7 +151,10 @@ function MarkdownCell({
         </div >) :
         (<div className='theia-notebook-markdown-content' key="markdown"
             onDoubleClick={() => cell.requestEdit()}
-            ref={node => node?.replaceChildren(...markdownContent)}
+            ref={node => {
+                node?.replaceChildren(...markdownContent);
+                observeCellHeight(node, cell);
+            }}
         />);
 }
 

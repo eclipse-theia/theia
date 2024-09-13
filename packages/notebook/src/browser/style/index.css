@@ -83,7 +83,8 @@
 /* Rendered Markdown Content */
 
 .theia-notebook-markdown-content {
-  padding: 8px 16px 8px 36px;
+  pointer-events: all;
+  padding: 8px 16px 8px 0px;
   font-size: var(--theia-notebook-markdown-size);
 }
 
@@ -101,10 +102,13 @@
   padding-bottom: 0;
 }
 
+.theia-notebook-markdown-sidebar {
+  width: 35px;
+}
+
 /* Markdown cell edit mode */
 .theia-notebook-cell-content:has(.theia-notebook-markdown-editor-container>.theia-notebook-cell-editor) {
   pointer-events: all;
-  margin-left: 36px;
   margin-right: var(--theia-notebook-cell-editor-margin-right);
   outline: 1px solid var(--theia-notebook-cellBorderColor);
 }

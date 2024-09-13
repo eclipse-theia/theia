@@ -129,6 +129,9 @@ export class NotebookCellModel implements NotebookCell, Disposable {
     protected onDidRequestCenterEditorEmitter = new Emitter<void>();
     readonly onDidRequestCenterEditor = this.onDidRequestCenterEditorEmitter.event;
 
+    protected onDidCellHeightChangeEmitter = new Emitter<number>();
+    readonly onDidCellHeightChange = this.onDidCellHeightChangeEmitter.event;
+
     @inject(NotebookCellModelProps)
     protected readonly props: NotebookCellModelProps;
 
@@ -249,6 +252,16 @@ export class NotebookCellModel implements NotebookCell, Disposable {
             this._outputVisible = visible;
             this.outputVisibilityChangeEmitter.fire(visible);
         }
+    }
+
+    protected _cellheight: number = 0;
+    get cellHeight(): number {
+        return this._cellheight;
+    }
+
+    set cellHeight(height: number) {
+        this.onDidCellHeightChangeEmitter.fire(height);
+        this._cellheight = height;
     }
 
     @postConstruct()

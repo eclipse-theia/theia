@@ -32,12 +32,13 @@ import { WebviewWidget } from '../../webview/webview';
 import { Message, WidgetManager } from '@theia/core/lib/browser';
 import { outputWebviewPreload, PreloadContext } from './output-webview-internal';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser';
-import { CellsChangedMessage, CellsMoved, CellsSpliced, FromWebviewMessage, OutputChangedMessage } from './webview-communication';
-import { Disposable, DisposableCollection, Emitter, QuickPickService } from '@theia/core';
+import { CellsChangedMessage, CellsMoved, CellsSpliced, ChangePreferredMimetypeMessage, FromWebviewMessage, OutputChangedMessage } from './webview-communication';
+import { Disposable, DisposableCollection, Emitter, QuickPickService, nls } from '@theia/core';
 import { NotebookModel } from '@theia/notebook/lib/browser/view-model/notebook-model';
 import { NotebookOptionsService, NotebookOutputOptions } from '@theia/notebook/lib/browser/service/notebook-options';
 import { NotebookCellModel } from '@theia/notebook/lib/browser/view-model/notebook-cell-model';
 import { NotebookCellsChangeType } from '@theia/notebook/lib/common';
+import { NotebookCellOutputModel } from '@theia/notebook/lib/browser/view-model/notebook-cell-output-model';
 
 export const AdditionalNotebookCellOutputCss = Symbol('AdditionalNotebookCellOutputCss');
 
@@ -236,13 +237,10 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
     protected editor: NotebookEditorWidget | undefined;
 
     protected element?: HTMLDivElement; // React.createRef<HTMLDivElement>();
-    protected outputPresentationListeners: DisposableCollection = new DisposableCollection();
 
     protected webviewWidget: WebviewWidget;
 
     protected toDispose = new DisposableCollection();
-
-    protected cellHeights = new Map<number, number>();
 
     async init(notebook: NotebookModel, editor: NotebookEditorWidget): Promise<void> {
         this.notebook = notebook;
@@ -274,10 +272,10 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
         this.notebook.onDidAddOrRemoveCell(e => {
             if (e.newCellIds) {
                 const newCells = e.newCellIds.map(id => this.notebook.cells.find(cell => cell.handle === id)).filter(cell => !!cell) as NotebookCellModel[];
-                newCells.forEach(cell => this.attachCellOutputListeners(cell));
+                newCells.forEach(cell => this.attachCellAndOutputListeners(cell));
             }
         });
-        this.notebook.cells.forEach(cell => this.attachCellOutputListeners(cell));
+        this.notebook.cells.forEach(cell => this.attachCellAndOutputListeners(cell));
 
         if (this.editor) {
             this.toDispose.push(this.editor.onDidPostKernelMessage(message => {
@@ -303,7 +301,7 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
         });
     }
 
-    attachCellOutputListeners(cell: NotebookCellModel): void {
+    attachCellAndOutputListeners(cell: NotebookCellModel): void {
         this.toDispose.push(cell.onDidChangeOutputs(outputChange => this.updateOutputs([{
             newOutputs: outputChange.newOutputs,
             start: outputChange.start,
@@ -319,7 +317,7 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
                 deleteCount: 1
             }]);
         }));
-
+        this.toDispose.push(cell.onDidCellHeightChange(height => this.setCellHeight(cell.handle, height)));
     }
 
     render(): React.JSX.Element {
@@ -348,12 +346,6 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
         if (this.webviewWidget.isHidden) {
             this.webviewWidget.show();
         }
-
-        this.outputPresentationListeners.dispose();
-        this.outputPresentationListeners = new DisposableCollection();
-        // for (const output of this.cell.outputs) {
-        //     this.outputPresentationListeners.push(output.onRequestOutputPresentationChange(() => this.requestOutputPresentationUpdate(output)));
-        // }
 
         const updateOutputMessage: OutputChangedMessage = {
             type: 'outputChanged',
@@ -399,7 +391,6 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
     }
 
     setCellHeight(cellHandle: number, height: number): void {
-        this.cellHeights.set(cellHandle, height);
         this.webviewWidget.sendMessage({
             type: 'cellHeightUpdate',
             cellHandle,
@@ -407,20 +398,21 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
         });
     }
 
-    // private async requestOutputPresentationUpdate(output: NotebookCellOutputModel): Promise<void> {
-    //     const selectedMime = await this.quickPickService.show(
-    //         output.outputs.map(item => ({ label: item.mime })),
-    //         { description: nls.localizeByDefault('Select mimetype to render for current output') });
-    //     if (selectedMime) {
-    //         this.webviewWidget.sendMessage({
-    //             type: 'changePreferredMimetype',
-    //             outputId: output.outputId,
-    //             mimeType: selectedMime.label
-    //         } as ChangePreferredMimetypeMessage);
-    //     }
-    // }
+    async requestOutputPresentationUpdate(cellHandle: number, output: NotebookCellOutputModel): Promise<void> {
+        const selectedMime = await this.quickPickService.show(
+            output.outputs.map(item => ({ label: item.mime })),
+            { description: nls.localizeByDefault('Select mimetype to render for current output') });
+        if (selectedMime) {
+            this.webviewWidget.sendMessage({
+                type: 'changePreferredMimetype',
+                cellHandle,
+                outputId: output.outputId,
+                mimeType: selectedMime.label
+            } as ChangePreferredMimetypeMessage);
+        }
+    }
 
-    private handleWebviewMessage(message: FromWebviewMessage): void {
+    protected handleWebviewMessage(message: FromWebviewMessage): void {
         if (!this.editor) {
             throw new Error('No editor found for cell output webview');
         }
@@ -457,8 +449,13 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
             case 'inputFocusChanged':
                 this.editor?.outputInputFocusChanged(message.focused);
                 break;
+            case 'cellFocusChanged':
+                const selectedCell = this.notebook.getCellByHandle(message.cellHandle);
+                if (selectedCell) {
+                    this.notebook.setSelectedCell(selectedCell);
+                }
             case 'cellHeightRequest':
-                const cellHeight = this.cellHeights.get(message.cellHandle) ?? 0;
+                const cellHeight = this.notebook.getCellByHandle(message.cellHandle)?.cellHeight ?? 0;
                 this.webviewWidget.sendMessage({
                     type: 'cellHeightUpdate',
                     cellHandle: message.cellHandle,
@@ -533,7 +530,6 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
 
     dispose(): void {
         this.toDispose.dispose();
-        this.outputPresentationListeners.dispose();
         this.webviewWidget.dispose();
     }
 }

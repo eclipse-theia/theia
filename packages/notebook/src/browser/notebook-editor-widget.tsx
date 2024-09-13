@@ -36,6 +36,7 @@ import { NotebookCellCommands } from './contributions/notebook-cell-actions-cont
 import { NotebookFindWidget } from './view/notebook-find-widget';
 import debounce = require('lodash/debounce');
 import { CellOutputWebview, CellOutputWebviewFactory } from './renderers/cell-output-webview';
+import { NotebookCellOutputModel } from './view-model/notebook-cell-output-model';
 const PerfectScrollbar = require('react-perfect-scrollbar');
 
 export const NotebookEditorWidgetContainerFactory = Symbol('NotebookEditorWidgetContainerFactory');
@@ -297,6 +298,12 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
     protected override onCloseRequest(msg: Message): void {
         super.onCloseRequest(msg);
         this.notebookEditorService.removeNotebookEditor(this);
+    }
+
+    requestOuputPresentationChange(cellHandle: number, output?: NotebookCellOutputModel): void {
+        if (output) {
+            this.cellOutputWebview.requestOutputPresentationUpdate(cellHandle, output);
+        }
     }
 
     postKernelMessage(message: unknown): void {
