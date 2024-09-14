@@ -19,9 +19,9 @@ import { Disposable } from '../common/disposable';
 import { nls } from '../common/nls';
 import { MaybePromise } from '../common/types';
 import { URI } from '../common/uri';
-import { match } from '../common/glob';
-import { QuickInputService, QuickPickItem } from './quick-input';
+import { QuickInputService, QuickPickItem, QuickPickItemOrSeparator } from './quick-input';
 import { PreferenceScope, PreferenceService } from './preferences';
+import { getDefaultHandler } from './opener-service';
 
 export interface OpenWithHandler {
     /**
@@ -87,18 +87,20 @@ export class OpenWithService {
     }
 
     async openWith(uri: URI): Promise<object | undefined> {
-        const associations: Record<string, string> = { ...this.preferenceService.get('workbench.editorAssociations') };
-        const basename = uri.path.base;
+        // Clone the object, because all objects returned by the preferences service are frozen.
+        const associations: Record<string, unknown> = { ...this.preferenceService.get('workbench.editorAssociations') };
         const ext = `*${uri.path.ext}`;
         const handlers = this.getHandlers(uri);
         const ordered = handlers.slice().sort((a, b) => this.getOrder(b, uri) - this.getOrder(a, uri));
-        const defaultHandler = Object.entries(associations).find(([key]) => match(key, basename))?.[1] ?? handlers[0]?.id;
+        const defaultHandler = getDefaultHandler(uri, this.preferenceService) ?? handlers[0]?.id;
         const items = this.getQuickPickItems(ordered, defaultHandler);
-        const result = await this.quickInputService.pick<OpenWithQuickPickItem | { label: string }>([...items, {
+        // Only offer to select a default editor when the file has a file extension
+        const extraItems: QuickPickItemOrSeparator[] = uri.path.ext ? [{
             type: 'separator'
         }, {
             label: nls.localizeByDefault("Configure default editor for '{0}'...", ext)
-        }], {
+        }] : [];
+        const result = await this.quickInputService.pick<OpenWithQuickPickItem | { label: string }>([...items, ...extraItems], {
             placeHolder: nls.localizeByDefault("Select editor for '{0}'", uri.path.base)
         });
         if (result) {
