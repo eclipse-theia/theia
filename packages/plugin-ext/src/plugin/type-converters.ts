@@ -737,39 +737,18 @@ export function toSymbolTag(kind: model.SymbolTag): types.SymbolTag {
  */
 export function toMergedSymbol(uri: UriComponents, symbol: model.DocumentSymbol): theia.SymbolInformation & theia.DocumentSymbol {
     const uriValue = URI.revive(uri);
-    const mergedSymbol = new MergedSymbol(
-        symbol.name,
-        SymbolKind.toSymbolKind(symbol.kind),
-        symbol.containerName ?? '',
-        new types.Location(uriValue, toRange(symbol.range))
-    );
-    mergedSymbol.detail = symbol.detail;
-    mergedSymbol.range = mergedSymbol.location.range;
-    mergedSymbol.selectionRange = toRange(symbol.selectionRange);
-    mergedSymbol.children = symbol.children?.map(child => toMergedSymbol(uri, child)) ?? [];
-    return mergedSymbol;
-}
-
-class MergedSymbol extends types.SymbolInformation implements theia.DocumentSymbol {
-    detail: string;
-    range: theia.Range;
-    selectionRange: theia.Range;
-    children: theia.DocumentSymbol[];
-    override containerName: string;
-
-    override toJSON(): object {
-        return {
-            name: this.name,
-            containerName: this.containerName,
-            kind: this.kind,
-            tags: this.tags,
-            location: this.location,
-            detail: this.detail,
-            range: this.range,
-            selectionRange: this.selectionRange,
-            children: this.children
-        };
-    }
+    const location = new types.Location(uriValue, toRange(symbol.range));
+    return {
+        name: symbol.name,
+        containerName: symbol.containerName ?? '',
+        kind: SymbolKind.toSymbolKind(symbol.kind),
+        tags: [],
+        location,
+        detail: symbol.detail,
+        range: location.range,
+        selectionRange: toRange(symbol.selectionRange),
+        children: symbol.children?.map(child => toMergedSymbol(uri, child)) ?? []
+    };
 }
 
 export function isModelLocation(arg: unknown): arg is model.Location {
