@@ -233,7 +233,7 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
 
     protected render(): ReactNode {
         if (this._model) {
-            return <div className='theia-notebook-main-container'>
+            return <div className='theia-notebook-main-container' tabIndex={-1}>
                 <div className='theia-notebook-overlay'>
                     <NotebookFindWidget
                         ref={this._findWidgetRef}

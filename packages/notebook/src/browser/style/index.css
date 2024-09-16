@@ -209,6 +209,10 @@
   overflow: hidden;
 }
 
+.theia-notebook-main-container:focus {
+  outline: none;
+}
+
 .theia-notebook-main-container .theia-notebook-main-loading-indicator {
   /* `progress-animation` is defined in `packages/core/src/browser/style/progress-bar.css` */
   animation: progress-animation 1.8s 0s infinite cubic-bezier(0.645, 0.045, 0.355, 1);
