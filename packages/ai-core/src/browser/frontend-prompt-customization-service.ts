@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { DisposableCollection, URI } from '@theia/core';
+import { DisposableCollection, URI, Event, Emitter } from '@theia/core';
 import { OpenerService } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { PromptCustomizationService, PromptTemplate } from '../common';
@@ -47,6 +47,9 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
     protected templates = new Map<string, string>();
 
     protected toDispose = new DisposableCollection();
+
+    private readonly onDidChangePromptEmitter = new Emitter<string>();
+    readonly onDidChangePrompt: Event<string> = this.onDidChangePromptEmitter.event;
 
     @postConstruct()
     protected init(): void {
@@ -85,6 +88,8 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
                             _templates.set(this.removePromptTemplateSuffix(updatedFile.resource.path.name), filecontent.value);
                         }
                     }
+                    const id = this.removePromptTemplateSuffix(new URI(child).path.name);
+                    this.onDidChangePromptEmitter.fire(id);
                 }
             }
 

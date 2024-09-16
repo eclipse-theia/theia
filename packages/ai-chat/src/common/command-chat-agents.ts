@@ -18,6 +18,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { AbstractTextToModelParsingChatAgent, ChatAgent, SystemMessageDescription } from './chat-agents';
 import {
     PromptTemplate,
+    AgentSpecificVariables
 } from '@theia/ai-core';
 import {
     ChatRequestModelImpl,
@@ -252,11 +253,13 @@ export class CommandChatAgent extends AbstractTextToModelParsingChatAgent<Parsed
     protected commandRegistry: CommandRegistry;
     @inject(MessageService)
     protected messageService: MessageService;
-
     readonly name: string;
     readonly description: string;
     readonly variables: string[];
     readonly promptTemplates: PromptTemplate[];
+    readonly functions: string[];
+    readonly agentSpecificVariables: AgentSpecificVariables[];
+
     constructor(
     ) {
         super('Command', [{
@@ -268,6 +271,12 @@ export class CommandChatAgent extends AbstractTextToModelParsingChatAgent<Parsed
         Based on the user request, it can find the right command and then let the user execute it.';
         this.variables = [];
         this.promptTemplates = [commandTemplate];
+        this.functions = [];
+        this.agentSpecificVariables = [{
+            name: 'command-ids',
+            description: 'The list of available commands in Theia.',
+            usedInPrompt: true
+        }];
     }
 
     protected async getSystemMessageDescription(): Promise<SystemMessageDescription | undefined> {

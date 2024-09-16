@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import {
-    Agent, CommunicationHistoryEntry, CommunicationRecordingService, getTextOfResponse,
+    Agent, AgentSpecificVariables, CommunicationHistoryEntry, CommunicationRecordingService, getTextOfResponse,
     LanguageModelRegistry, LanguageModelRequest, LanguageModelRequirement, PromptService, PromptTemplate
 } from '@theia/ai-core/lib/common';
 import { generateUuid, ILogger } from '@theia/core';
@@ -116,8 +116,6 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
             enableForwardStability: true,
         };
     }
-    tags?: String[] | undefined;
-    variables: string[] = [];
 
     @inject(ILogger)
     @named('code-completion-agent')
@@ -154,4 +152,13 @@ Only return the exact replacement for [[MARKER]] to complete the snippet.`,
             identifier: 'openai/gpt-4o',
         },
     ];
+    readonly variables: string[] = [];
+    readonly functions: string[] = [];
+    readonly agentSpecificVariables: AgentSpecificVariables[] = [
+        { name: 'file', usedInPrompt: true, description: 'The uri of the file being edited.' },
+        { name: 'language', usedInPrompt: true, description: 'The languageId of the file being edited.' },
+        { name: 'textUntilCurrentPosition', usedInPrompt: true, description: 'The code before the current position of the cursor.' },
+        { name: 'textAfterCurrentPosition', usedInPrompt: true, description: 'The code after the current position of the cursor.' }
+    ];
+    readonly tags?: String[] | undefined;
 }
