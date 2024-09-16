@@ -44,6 +44,7 @@ export class TestResultWidget extends BaseWidget {
 
     constructor() {
         super();
+        this.addClass('theia-test-result-view');
         this.id = TestResultWidget.ID;
         this.title.label = nls.localizeByDefault('Test Results');
         this.title.caption = nls.localizeByDefault('Test Results');
@@ -92,27 +93,35 @@ export class TestResultWidget extends BaseWidget {
                 this.content.append(this.node.ownerDocument.createTextNode(message.message));
             }
             if (message.stackTrace) {
-                message.stackTrace.map(frame => this.renderFrame(frame));
+                const stackTraceElement = this.node.ownerDocument.createElement('div');
+                message.stackTrace.map(frame => this.renderFrame(frame, stackTraceElement));
+                this.content.append(stackTraceElement);
             }
         });
     }
 
-    renderFrame(stackFrame: TestMessageStackFrame): void {
-        const frameElement = this.node.ownerDocument.createElement('div');
-        frameElement.append(this.node.ownerDocument.createTextNode(stackFrame.label));
+    renderFrame(stackFrame: TestMessageStackFrame, stackTraceElement: HTMLElement): void {
+        const frameElement = stackTraceElement.ownerDocument.createElement('div');
+        frameElement.classList.add('debug-frame');
+        frameElement.append(`    ${nls.localize('theia/test/stackFrameAt', 'at')} ${stackFrame.label}`);
 
         // Add URI information as clickable links
         if (stackFrame.uri) {
-
+            frameElement.append(' (');
             const uri = stackFrame.uri;
-            frameElement.append(' from ');
+
             const link = this.node.ownerDocument.createElement('a');
-            link.textContent = `${this.labelProvider.getName(uri)}`;
-            link.title = `${uri}`;
+            let content = `${this.labelProvider.getName(uri)}`;
+            if (stackFrame.position) {
+                content += `:${stackFrame.position.line}:${stackFrame.position.character}`;
+            }
+            link.textContent = content;
+            link.href = `${uri}`;
             link.onclick = () => this.openUriInWorkspace(uri, stackFrame.position);
             frameElement.append(link);
+            frameElement.append(')');
         }
-        this.content.append(frameElement);
+        stackTraceElement.append(frameElement);
     }
 
     async openUriInWorkspace(uri: URI, position?: Position): Promise<void> {

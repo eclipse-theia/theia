@@ -77,7 +77,7 @@ export interface TestFailureDTO extends TestStateChangeDTO {
 export namespace TestFailureDTO {
     export function is(ref: unknown): ref is TestFailureDTO {
         return isObject<TestFailureDTO>(ref)
-            && ref.state === (TestExecutionState.Failed || TestExecutionState.Errored);
+            && (ref.state === TestExecutionState.Failed || ref.state === TestExecutionState.Errored);
     }
 }
 export interface TestSuccessDTO extends TestStateChangeDTO {

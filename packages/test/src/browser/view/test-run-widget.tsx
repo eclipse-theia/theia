@@ -198,7 +198,7 @@ export class TestRunTreeWidget extends TreeWidget {
     @postConstruct()
     protected override init(): void {
         super.init();
-        this.addClass('theia-test-result-view');
+        this.addClass('theia-test-run-view');
         this.model.onSelectionChanged(() => {
             const node = this.model.selectedNodes[0];
             if (node instanceof TestRunNode) {
