@@ -126,7 +126,8 @@ export abstract class AbstractChatAgent {
         public languageModelRequirements: LanguageModelRequirement[],
         protected defaultLanguageModelPurpose: string,
         public iconClass: string = 'codicon codicon-copilot',
-        public locations: ChatAgentLocation[] = ChatAgentLocation.ALL) {
+        public locations: ChatAgentLocation[] = ChatAgentLocation.ALL,
+        public tags: String[] = ['Chat']) {
     }
 
     async invoke(request: ChatRequestModelImpl): Promise<void> {
