@@ -756,6 +756,20 @@ class MergedSymbol extends types.SymbolInformation implements theia.DocumentSymb
     selectionRange: theia.Range;
     children: theia.DocumentSymbol[];
     override containerName: string;
+
+    override toJSON(): object {
+        return {
+            name: this.name,
+            containerName: this.containerName,
+            kind: this.kind,
+            tags: this.tags,
+            location: this.location,
+            detail: this.detail,
+            range: this.range,
+            selectionRange: this.selectionRange,
+            children: this.children
+        };
+    }
 }
 
 export function isModelLocation(arg: unknown): arg is model.Location {
