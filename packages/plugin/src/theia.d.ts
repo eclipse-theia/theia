@@ -3520,7 +3520,6 @@ export module '@theia/plugin' {
          * The icon {@link ThemeColor} for the terminal.
          * The `terminal.ansi*` theme keys are
          * recommended for the best contrast and consistency across themes.
-         * @stubbed
          */
         color?: ThemeColor;
     }
