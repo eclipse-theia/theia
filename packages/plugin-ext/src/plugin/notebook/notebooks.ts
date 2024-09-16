@@ -97,6 +97,13 @@ export class NotebooksExtImpl implements NotebooksExt {
                 }
             }
         });
+
+        textDocumentsAndEditors.onDidChangeActiveTextEditor(e => {
+            if (e?.document.uri.scheme !== CellUri.cellUriScheme) {
+                this.activeNotebookEditor = undefined;
+                this.onDidChangeActiveNotebookEditorEmitter.fire(undefined);
+            }
+        });
     }
 
     async $provideNotebookCellStatusBarItems(handle: number, uri: UriComponents, index: number, token: CancellationToken): Promise<NotebookCellStatusBarListDto | undefined> {
