@@ -19,7 +19,11 @@ import { Emitter, MaybePromise, Event, } from '@theia/core';
 import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
 import { PREFERENCE_NAME_ENABLE_EXPERIMENTAL } from './ai-core-preferences';
 
-export const EXPERIMENTAL_AI_CONTEXT_KEY = 'ai.experimental.enabled';
+/**
+ * Context key for the experimental AI feature. It is set to `true` if the feature is enabled.
+ */
+// We reuse the enablement preference for the context key
+export const EXPERIMENTAL_AI_CONTEXT_KEY = PREFERENCE_NAME_ENABLE_EXPERIMENTAL;
 
 @injectable()
 export class AIActivationService implements FrontendApplicationContribution {
@@ -41,7 +45,7 @@ export class AIActivationService implements FrontendApplicationContribution {
     }
 
     initialize(): MaybePromise<void> {
-        this.isExperimentalEnabledKey = this.contextKeyService.createKey(PREFERENCE_NAME_ENABLE_EXPERIMENTAL, false);
+        this.isExperimentalEnabledKey = this.contextKeyService.createKey(EXPERIMENTAL_AI_CONTEXT_KEY, false);
         this.preferenceService.onPreferenceChanged(e => {
             if (e.preferenceName === PREFERENCE_NAME_ENABLE_EXPERIMENTAL) {
                 this.isExperimentalEnabledKey.set(e.newValue);
