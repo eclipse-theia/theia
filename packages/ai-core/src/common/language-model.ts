@@ -101,7 +101,6 @@ export type LanguageModelProvider = () => Promise<LanguageModel[]>;
 // See also VS Code `ILanguageModelChatMetadata`
 export interface LanguageModelMetaData {
     readonly id: string;
-    readonly providerId: string;
     readonly name?: string;
     readonly vendor?: string;
     readonly version?: string;
@@ -112,7 +111,7 @@ export interface LanguageModelMetaData {
 
 export namespace LanguageModelMetaData {
     export function is(arg: unknown): arg is LanguageModelMetaData {
-        return isObject(arg) && 'id' in arg && 'providerId' in arg;
+        return isObject(arg) && 'id' in arg;
     }
 }
 
@@ -122,7 +121,7 @@ export interface LanguageModel extends LanguageModelMetaData {
 
 export namespace LanguageModel {
     export function is(arg: unknown): arg is LanguageModel {
-        return isObject(arg) && 'id' in arg && 'providerId' in arg && isFunction(arg.request);
+        return isObject(arg) && 'id' in arg && isFunction(arg.request);
     }
 }
 

@@ -17,7 +17,7 @@
 import { LanguageModelRegistry } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { OpenAiModel } from './openai-language-model';
-import { OpenAiLanguageModelsManager } from '../common';
+import { OpenAiLanguageModelsManager, OpenAiModelDescription } from '../common';
 
 @injectable()
 export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsManager {
@@ -33,19 +33,34 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
 
     // Triggered from frontend. In case you want to use the models on the backend
     // without a frontend then call this yourself
-    async createLanguageModels(...modelIds: string[]): Promise<void> {
-        for (const id of modelIds) {
-            // we might be called by multiple frontends, therefore check whether a model actually needs to be created
-            if (!(await this.languageModelRegistry.getLanguageModel(`openai/${id}`))) {
-                this.languageModelRegistry.addLanguageModels([new OpenAiModel(id, () => this.apiKey)]);
+    async createOrUpdateLanguageModels(...modelDescriptions: OpenAiModelDescription[]): Promise<void> {
+        for (const modelDescription of modelDescriptions) {
+            const model = await this.languageModelRegistry.getLanguageModel(modelDescription.id);
+            if (model) {
+                if (!(model instanceof OpenAiModel)) {
+                    console.warn(`Open AI: model ${modelDescription.id} is not an OpenAI model`);
+                    continue;
+                }
+                if (!modelDescription.url) {
+                    // This seems to be an official model, but it was already created. This can happen during the initializing of more than one frontends.
+                    console.info(`Open AI: skip creating model ${modelDescription.id} because it already exists`);
+                    continue;
+                }
+                if (model.url !== modelDescription.url || model.model !== modelDescription.model) {
+                    model.url = modelDescription.url;
+                    model.model = modelDescription.model;
+                } else {
+                    // This can happen during the initializing of more than one frontends.
+                    console.info(`Open AI: skip creating or updating model ${modelDescription.id} because it already exists and is up to date`);
+                }
             } else {
-                console.info(`Open AI: skip creating model ${id} because it already exists`);
+                this.languageModelRegistry.addLanguageModels([new OpenAiModel(modelDescription.id, modelDescription.model, () => this.apiKey, modelDescription.url)]);
             }
         }
     }
 
     removeLanguageModels(...modelIds: string[]): void {
-        this.languageModelRegistry.removeLanguageModels(modelIds.map(id => `openai/${id}`));
+        this.languageModelRegistry.removeLanguageModels(modelIds);
     }
 
     setApiKey(apiKey: string | undefined): void {
