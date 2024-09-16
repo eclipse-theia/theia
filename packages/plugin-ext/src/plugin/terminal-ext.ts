@@ -478,6 +478,7 @@ export class TerminalExtImpl implements theia.Terminal {
         this.creationOptions = this.options;
     }
 
+    /** @stubbed Terminal Shell Ingration */
     shellIntegration: theia.TerminalShellIntegration | undefined = undefined;
 
     sendText(text: string, shouldExecute: boolean = true): void {
