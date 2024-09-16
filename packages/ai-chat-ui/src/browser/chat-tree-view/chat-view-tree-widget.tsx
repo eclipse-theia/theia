@@ -14,11 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import {
-    ChatResponseContent,
     ChatAgentService,
     ChatModel,
     ChatProgressMessage,
     ChatRequestModel,
+    ChatResponseContent,
     ChatResponseModel,
 } from '@theia/ai-chat';
 import { CommandRegistry, ContributionProvider } from '@theia/core';
@@ -40,13 +40,14 @@ import {
     inject,
     injectable,
     named,
-    postConstruct,
+    postConstruct
 } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
-import { MarkdownWrapper } from '../chat-response-renderer/markdown-part-renderer';
+import { ChatNodeToolbarActionContribution } from '../chat-node-toolbar-action-contribution';
 import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
+import { MarkdownWrapper } from '../chat-response-renderer/markdown-part-renderer';
 
 // TODO Instead of directly operating on the ChatRequestModel we could use an intermediate view model
 export interface RequestNode extends TreeNode {
@@ -71,6 +72,9 @@ export class ChatViewTreeWidget extends TreeWidget {
 
     @inject(ContributionProvider) @named(ChatResponsePartRenderer)
     protected readonly chatResponsePartRenderers: ContributionProvider<ChatResponsePartRenderer<ChatResponseContent>>;
+
+    @inject(ContributionProvider) @named(ChatNodeToolbarActionContribution)
+    protected readonly chatNodeToolbarActionContributions: ContributionProvider<ChatNodeToolbarActionContribution>;
 
     @inject(MarkdownRenderer)
     private renderer: MarkdownRenderer;
@@ -257,16 +261,45 @@ export class ChatViewTreeWidget extends TreeWidget {
             </div>
         </React.Fragment>;
     }
+
     private renderAgent(node: RequestNode | ResponseNode): React.ReactNode {
         const inProgress = isResponseNode(node) && !node.response.isComplete && !node.response.isCanceled && !node.response.isError;
+        const toolbarContributions = !inProgress
+            ? this.chatNodeToolbarActionContributions.getContributions()
+                .flatMap(c => c.getToolbarActions(node))
+                .filter(action => this.commandRegistry.isEnabled(action.commandId, node))
+                .sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0))
+            : [];
         return <React.Fragment>
             <div className='theia-ChatNodeHeader'>
                 <div className={`theia-AgentAvatar ${this.getAgentIconClassName(node)}`}></div>
                 <h3 className='theia-AgentLabel'>{this.getAgentLabel(node)}</h3>
                 {inProgress && <span className='theia-ChatContentInProgress'>Generating</span>}
+                <div className='theia-ChatNodeToolbar'>
+                    {!inProgress &&
+                        toolbarContributions.length > 0 &&
+                        toolbarContributions.map(action =>
+                            <span
+                                className={`theia-ChatNodeToolbarAction ${action.icon}`}
+                                title={action.tooltip}
+                                onClick={e => {
+                                    e.stopPropagation();
+                                    this.commandRegistry.executeCommand(action.commandId, node);
+                                }}
+                                onKeyDown={e => {
+                                    if (isEnterKey(e)) {
+                                        e.stopPropagation();
+                                        this.commandRegistry.executeCommand(action.commandId, node);
+                                    }
+                                }}
+                                role='button'
+                            ></span>
+                        )}
+                </div>
             </div>
         </React.Fragment>;
     }
+
     private getAgentLabel(node: RequestNode | ResponseNode): string {
         if (isRequestNode(node)) {
             // TODO find user name
@@ -275,6 +308,7 @@ export class ChatViewTreeWidget extends TreeWidget {
         const agent = node.response.agentId ? this.chatAgentService.getAgent(node.response.agentId) : undefined;
         return agent?.name ?? 'AI';
     }
+
     private getAgentIconClassName(node: RequestNode | ResponseNode): string | undefined {
         if (isRequestNode(node)) {
             return codicon('account');
