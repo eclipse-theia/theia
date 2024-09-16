@@ -601,6 +601,10 @@ class ChatResponseImpl implements ChatResponse {
         return this._content;
     }
 
+    addContents(contents: ChatResponseContent[]): void {
+        contents.forEach(c => this.addContent(c));
+    }
+
     addContent(nextContent: ChatResponseContent): void {
         // TODO: Support more complex merges affecting different content than the last, e.g. via some kind of ProcessorRegistry
         // TODO: Support more of the built-in VS Code behavior, see
