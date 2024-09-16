@@ -281,6 +281,15 @@ export const corePreferenceSchema: PreferenceSchema = {
             default: 200,
             minimum: 10,
             description: nls.localize('theia/core/tabDefaultSize', 'Specifies the default size for tabs.')
+        },
+        'workbench.editorAssociations': {
+            type: 'object',
+            markdownDescription: nls.localizeByDefault('Configure [glob patterns](https://aka.ms/vscode-glob-patterns) to editors (for example `"*.hex": "hexEditor.hexedit"`). These have precedence over the default behavior.'),
+            patternProperties: {
+                '.*': {
+                    type: 'string'
+                }
+            }
         }
     }
 };
