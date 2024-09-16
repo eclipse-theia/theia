@@ -44,7 +44,7 @@ import {
     DocumentHighlight
 } from '@theia/plugin-ext/lib/common/plugin-api-rpc-model';
 import { DocumentsMainImpl } from '@theia/plugin-ext/lib/main/browser/documents-main';
-import { isUriComponents, toDocumentSymbol, toPosition } from '@theia/plugin-ext/lib/plugin/type-converters';
+import { isUriComponents, toMergedSymbol, toPosition } from '@theia/plugin-ext/lib/plugin/type-converters';
 import { ViewColumn } from '@theia/plugin-ext/lib/plugin/types-impl';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser';
 import { WorkspaceService, WorkspaceInput } from '@theia/workspace/lib/browser/workspace-service';
@@ -628,7 +628,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                     if (!Array.isArray(value) || value === undefined) {
                         return undefined;
                     }
-                    return value.map(loc => toDocumentSymbol(loc));
+                    return value.map(loc => toMergedSymbol(resource, loc));
                 })
             }
         );
