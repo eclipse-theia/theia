@@ -483,6 +483,18 @@ export function fromLocation(location: theia.Location | undefined): model.Locati
     };
 }
 
+export function fromLocationToLanguageServerLocation(location: theia.Location): lstypes.Location;
+export function fromLocationToLanguageServerLocation(location: theia.Location | undefined): lstypes.Location | undefined;
+export function fromLocationToLanguageServerLocation(location: theia.Location | undefined): lstypes.Location | undefined {
+    if (!location) {
+        return undefined;
+    }
+    return <lstypes.Location>{
+        uri: location.uri.toString(),
+        range: location.range
+    };
+}
+
 export function fromTextDocumentShowOptions(options: theia.TextDocumentShowOptions): model.TextDocumentShowOptions {
     if (options.selection) {
         return {
@@ -1706,7 +1718,7 @@ export namespace TestMessage {
             return message.map(msg => TestMessage.from(msg)[0]);
         }
         return [{
-            location: fromLocation(message.location),
+            location: fromLocationToLanguageServerLocation(message.location),
             message: fromMarkdown(message.message)!,
             expected: message.expectedOutput,
             actual: message.actualOutput,
@@ -1720,8 +1732,8 @@ export namespace TestMessageStackFrame {
     export function from(stackTrace: theia.TestMessageStackFrame): TestMessageStackFrameDTO {
         return {
             label: stackTrace.label,
-            position: stackTrace.position && fromPosition(stackTrace.position),
-            uri: stackTrace?.uri
+            position: stackTrace.position,
+            uri: stackTrace?.uri?.toString()
         };
     }
 }

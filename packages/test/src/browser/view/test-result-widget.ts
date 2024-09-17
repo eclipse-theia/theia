@@ -108,7 +108,7 @@ export class TestResultWidget extends BaseWidget {
         // Add URI information as clickable links
         if (stackFrame.uri) {
             frameElement.append(' (');
-            const uri = stackFrame.uri;
+            const uri = new URI(stackFrame.uri);
 
             const link = this.node.ownerDocument.createElement('a');
             let content = `${this.labelProvider.getName(uri)}`;

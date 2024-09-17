@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { CancellationToken, ContributionProvider, Disposable, Emitter, Event, QuickPickService, isObject, nls } from '@theia/core/lib/common';
-import { CancellationTokenSource, Location, Range, Position } from '@theia/core/shared/vscode-languageserver-protocol';
+import { CancellationTokenSource, Location, Range, Position, DocumentUri } from '@theia/core/shared/vscode-languageserver-protocol';
 import { CollectionDelta, TreeDelta } from '../common/tree-delta';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import URI from '@theia/core/lib/common/uri';
@@ -64,7 +64,7 @@ export interface TestMessage {
 
 export interface TestMessageStackFrame {
     readonly label: string,
-    readonly uri?: URI,
+    readonly uri?: DocumentUri,
     readonly position?: Position,
 }
 

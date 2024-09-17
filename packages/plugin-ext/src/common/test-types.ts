@@ -25,8 +25,9 @@
 
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { UriComponents } from './uri-components';
-import { Location, Range, Position } from './plugin-api-rpc-model';
+import { Location, Range } from './plugin-api-rpc-model';
 import { isObject } from '@theia/core';
+import * as languageProtocol from '@theia/core/shared/vscode-languageserver-protocol';
 
 export enum TestRunProfileKind {
     Run = 1,
@@ -86,15 +87,15 @@ export interface TestSuccessDTO extends TestStateChangeDTO {
 }
 
 export interface TestMessageStackFrameDTO {
-    uri?: UriComponents;
-    position?: Position;
+    uri?: languageProtocol.DocumentUri;
+    position?: languageProtocol.Position;
     label: string;
 }
 
 export interface TestMessageDTO {
     readonly expected?: string;
     readonly actual?: string;
-    readonly location?: Location;
+    readonly location?: languageProtocol.Location;
     readonly message: string | MarkdownString;
     readonly contextValue?: string;
     readonly stackTrace?: TestMessageStackFrameDTO[];

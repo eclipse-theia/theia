@@ -16,25 +16,23 @@
 
 import { SimpleObservableCollection, TreeCollection, observableProperty } from '@theia/test/lib/common/collections';
 import {
-    TestController, TestItem, TestOutputItem, TestRun, TestRunProfile, TestService, TestState, TestStateChangedEvent, TestMessage,
-    TestFailure, TestMessageStackFrame
+    TestController, TestItem, TestOutputItem, TestRun, TestRunProfile, TestService, TestState, TestStateChangedEvent
 } from '@theia/test/lib/browser/test-service';
 import { TestExecutionProgressService } from '@theia/test/lib/browser/test-execution-progress-service';
 import { AccumulatingTreeDeltaEmitter, CollectionDelta, DeltaKind, TreeDelta, TreeDeltaBuilder } from '@theia/test/lib/common/tree-delta';
-import { Emitter, Location, Range, Position } from '@theia/core/shared/vscode-languageserver-protocol';
-import { Range as PluginRange, Location as PluginLocation, Position as PluginPosition } from '../../common/plugin-api-rpc-model';
+import { Emitter, Location, Range } from '@theia/core/shared/vscode-languageserver-protocol';
+import { Range as PluginRange, Location as PluginLocation } from '../../common/plugin-api-rpc-model';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { CancellationToken, Disposable, Event, URI } from '@theia/core';
 import { MAIN_RPC_CONTEXT, TestControllerUpdate, TestingExt, TestingMain } from '../../common';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { interfaces } from '@theia/core/shared/inversify';
 import {
-    TestExecutionState, TestFailureDTO, TestItemDTO, TestItemReference, TestMessageDTO, TestMessageStackFrameDTO, TestOutputDTO,
+    TestExecutionState, TestItemDTO, TestItemReference, TestOutputDTO,
     TestRunDTO, TestRunProfileDTO, TestStateChangeDTO
 } from '../../common/test-types';
 import { TestRunProfileKind } from '../../plugin/types-impl';
 import { CommandRegistryMainImpl } from './command-registry-main';
-import { UriComponents } from '../../common/uri-components';
 
 export class TestItemCollection extends TreeCollection<string, TestItemImpl, TestItemImpl | TestControllerImpl> {
     override add(item: TestItemImpl): TestItemImpl | undefined {
@@ -338,10 +336,8 @@ class TestRunImpl implements TestRun {
             const item = this.controller.findItem(change.itemPath);
             if (item) {
                 const oldState = this.testStates.get(item);
-                // convert back changes (for example, convert back location from DTO)
-                const convertedState = convertTestState(change);
-                this.testStates.set(item, convertedState);
-                stateEvents.push({ test: item, oldState: oldState, newState: convertedState});
+                this.testStates.set(item, change);
+                stateEvents.push({ test: item, oldState: oldState, newState: change });
             }
         });
         const outputEvents: [TestItem | undefined, TestOutputItem][] = [];
@@ -373,55 +369,6 @@ class TestRunImpl implements TestRun {
     get items(): readonly TestItem[] {
         return [...this.testStates.keys()];
     }
-}
-
-function convertTestState(testStateDto: TestStateChangeDTO): TestState | TestFailure {
-    if (TestFailureDTO.is(testStateDto)) {
-        return {
-            state: testStateDto.state,
-            messages: testStateDto.messages.map(message => convertTestMessage(message)),
-            duration: testStateDto.duration
-        };
-    }
-    return {
-        state: testStateDto.state
-    };
-}
-
-function convertTestMessage(dto: TestMessageDTO): TestMessage {
-    return {
-        message: dto.message,
-        actual: dto.actual,
-        location: dto.location ? convertLocation(dto.location) : undefined,
-        contextValue: dto.contextValue,
-        expected: dto.expected,
-        stackTrace: dto.stackTrace && dto.stackTrace.map(stackFrame => convertStackFrame(stackFrame))
-    };
-}
-
-function convertStackFrame(dto: TestMessageStackFrameDTO): TestMessageStackFrame {
-    return {
-        label: dto.label,
-        position: convertPosition(dto.position),
-        uri: convertURI(dto.uri),
-    };
-}
-
-function convertPosition(position: PluginPosition | undefined): Position | undefined {
-    if (!position) {
-        return undefined;
-    }
-    return {
-        line: position.lineNumber - 1,
-        character: position.column - 1
-    };
-}
-
-function convertURI(uri: UriComponents | undefined): URI | undefined {
-    if (!uri) {
-        return undefined;
-    }
-    return URI.fromComponents(uri);
 }
 
 function convertLocation(location: PluginLocation | undefined): Location | undefined {
