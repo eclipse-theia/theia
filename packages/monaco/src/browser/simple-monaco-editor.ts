@@ -25,6 +25,8 @@ import { MonacoEditorModel } from './monaco-editor-model';
 import { Dimension, EditorMouseEvent, MouseTarget, Position, TextDocumentChangeEvent } from '@theia/editor/lib/browser';
 import * as monaco from '@theia/monaco-editor-core';
 import { ElementExt } from '@theia/core/shared/@phosphor/domutils';
+import { Selection } from '@theia/editor/lib/browser/editor';
+import { SelectionDirection } from '@theia/monaco-editor-core/esm/vs/editor/common/core/selection';
 
 export class SimpleMonacoEditor extends MonacoEditorServices implements Disposable {
 
@@ -32,7 +34,6 @@ export class SimpleMonacoEditor extends MonacoEditorServices implements Disposab
     protected readonly toDispose = new DisposableCollection();
 
     protected readonly onCursorPositionChangedEmitter = new Emitter<Position>();
-    protected readonly onSelectionChangedEmitter = new Emitter<Range>();
     protected readonly onFocusChangedEmitter = new Emitter<boolean>();
     protected readonly onDocumentContentChangedEmitter = new Emitter<TextDocumentChangeEvent>();
     readonly onDocumentContentChanged = this.onDocumentContentChangedEmitter.event;
@@ -57,7 +58,6 @@ export class SimpleMonacoEditor extends MonacoEditorServices implements Disposab
         super(services);
         this.toDispose.pushAll([
             this.onCursorPositionChangedEmitter,
-            this.onSelectionChangedEmitter,
             this.onFocusChangedEmitter,
             this.onDocumentContentChangedEmitter,
             this.onMouseDownEmitter,
@@ -74,6 +74,14 @@ export class SimpleMonacoEditor extends MonacoEditorServices implements Disposab
 
     getControl(): CodeEditorWidget {
         return this.editor;
+    }
+
+    onSelectionChanged(listener: (range: Selection) => void): Disposable {
+        return this.editor.onDidChangeCursorSelection(event =>
+            listener({
+                ...this.m2p.asRange(event.selection),
+                direction: event.selection.getDirection() === SelectionDirection.LTR ? 'ltr' : 'rtl'
+            }));
     }
 
     protected create(options?: MonacoEditor.IOptions, override?: EditorServiceOverrides, widgetOptions?: ICodeEditorWidgetOptions): Disposable {
@@ -156,6 +164,10 @@ export class SimpleMonacoEditor extends MonacoEditorServices implements Disposab
             rangeLength: change.rangeLength,
             text: change.text
         };
+    }
+
+    focus(): void {
+        this.editor.focus();
     }
 
     refresh(): void {

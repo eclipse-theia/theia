@@ -183,10 +183,8 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
         return this._currentEditor;
     }
     protected setCurrentEditor(current: EditorWidget | undefined): void {
-        if (this._currentEditor !== current) {
-            this._currentEditor = current;
-            this.onCurrentEditorChangedEmitter.fire(this._currentEditor);
-        }
+        this._currentEditor = current;
+        this.onCurrentEditorChangedEmitter.fire(this._currentEditor);
     }
     protected updateCurrentEditor(): void {
         const widget = this.shell.currentWidget;

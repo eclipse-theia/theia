@@ -33,11 +33,13 @@ import { Range } from '../../common/plugin-api-rpc-model';
 import { Emitter, Event } from '@theia/core';
 import { TextEditorCursorStyle, cursorStyleToString } from '../../common/editor-options';
 import { TextEditorLineNumbersStyle, EndOfLine } from '../../plugin/types-impl';
+import { SimpleMonacoEditor } from '@theia/monaco/lib/browser/simple-monaco-editor';
+import { EndOfLineSequence, ITextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
 
 export class TextEditorMain implements Disposable {
 
     private properties: TextEditorPropertiesMain | undefined;
-    private editor: MonacoEditor | undefined;
+    private editor: MonacoEditor | SimpleMonacoEditor | undefined;
 
     private readonly onPropertiesChangedEmitter = new Emitter<EditorChangedPropertiesData>();
 
@@ -48,8 +50,8 @@ export class TextEditorMain implements Disposable {
 
     constructor(
         private id: string,
-        private model: monaco.editor.IModel,
-        editor: MonacoEditor
+        private model: monaco.editor.IModel | ITextModel,
+        editor: MonacoEditor | SimpleMonacoEditor
     ) {
         this.toDispose.push(this.model.onDidChangeOptions(() =>
             this.updateProperties(undefined)
@@ -63,7 +65,25 @@ export class TextEditorMain implements Disposable {
     }
 
     private updateProperties(source?: string): void {
-        this.setProperties(TextEditorPropertiesMain.readFromEditor(this.properties, this.model, this.editor!), source);
+        if (this.editor instanceof MonacoEditor) {
+            this.setProperties(TextEditorPropertiesMain.readFromEditor(this.properties, this.model as monaco.editor.IModel, this.editor!), source);
+        } else if (this.editor) {
+            this.setProperties(new TextEditorPropertiesMain(
+                this.editor.getControl().getSelections()?.map(selection => new monaco.Selection(
+                    selection.startLineNumber,
+                    selection.startColumn,
+                    selection.positionLineNumber,
+                    selection.positionColumn)) ?? [],
+                {
+                    cursorStyle: TextEditorCursorStyle.Line,
+                    lineNumbers: TextEditorLineNumbersStyle.On,
+                    insertSpaces: this.model.getOptions().insertSpaces,
+                    tabSize: this.model.getOptions().tabSize,
+                    indentSize: this.model.getOptions().indentSize
+                },
+                []
+            ), source);
+        }
     }
 
     private setProperties(newProperties: TextEditorPropertiesMain, source: string | undefined): void {
@@ -76,7 +96,7 @@ export class TextEditorMain implements Disposable {
 
     protected readonly toDisposeOnEditor = new DisposableCollection();
 
-    private setEditor(editor?: MonacoEditor): void {
+    private setEditor(editor?: MonacoEditor | SimpleMonacoEditor): void {
         if (this.editor === editor) {
             return;
         }
@@ -115,7 +135,7 @@ export class TextEditorMain implements Disposable {
         return this.id;
     }
 
-    getModel(): monaco.editor.IModel {
+    getModel(): monaco.editor.IModel | ITextModel {
         return this.model;
     }
 
@@ -208,7 +228,7 @@ export class TextEditorMain implements Disposable {
     }
 
     revealRange(range: monaco.Range, revealType: TextEditorRevealType): void {
-        if (!this.editor) {
+        if (!this.editor || this.editor instanceof SimpleMonacoEditor) {
             return;
         }
         switch (revealType) {
@@ -240,10 +260,14 @@ export class TextEditorMain implements Disposable {
             return false;
         }
 
-        if (opts.setEndOfLine === EndOfLine.CRLF) {
+        if (opts.setEndOfLine === EndOfLine.CRLF && !this.isSimpleWidget(this.model)) {
             this.model.setEOL(monaco.editor.EndOfLineSequence.CRLF);
-        } else if (opts.setEndOfLine === EndOfLine.LF) {
+        } else if (opts.setEndOfLine === EndOfLine.LF && !this.isSimpleWidget(this.model)) {
             this.model.setEOL(monaco.editor.EndOfLineSequence.LF);
+        } else if (opts.setEndOfLine === EndOfLine.CRLF && this.isSimpleWidget(this.model)) {
+            this.model.setEOL(EndOfLineSequence.CRLF);
+        } else if (opts.setEndOfLine === EndOfLine.LF && this.isSimpleWidget(this.model)) {
+            this.model.setEOL(EndOfLineSequence.CRLF);
         }
 
         const editOperations: monaco.editor.IIdentifiedSingleEditOperation[] = [];
@@ -310,6 +334,10 @@ export class TextEditorMain implements Disposable {
 
     private static toMonacoSelections(selection: Selection): monaco.Selection {
         return new monaco.Selection(selection.selectionStartLineNumber, selection.selectionStartColumn, selection.positionLineNumber, selection.positionColumn);
+    }
+
+    private isSimpleWidget(model: monaco.editor.IModel | ITextModel): model is ITextModel {
+        return !!(model as ITextModel).isForSimpleWidget;
     }
 }
 
