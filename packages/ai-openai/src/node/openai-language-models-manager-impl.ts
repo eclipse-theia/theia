@@ -42,7 +42,7 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                     continue;
                 }
                 if (!modelDescription.url) {
-                    // This seems to be an official model, but it was already created. This can happen during the initializing of more than one frontends.
+                    // This seems to be an official model, but it was already created. This can happen during the initializing of more than one frontend.
                     console.info(`Open AI: skip creating model ${modelDescription.id} because it already exists`);
                     continue;
                 }

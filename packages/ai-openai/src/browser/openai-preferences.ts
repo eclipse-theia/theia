@@ -43,7 +43,7 @@ export const OpenAiPreferencesSchema: PreferenceSchema = {
             type: 'array',
             title: AI_CORE_PREFERENCES_TITLE,
             markdownDescription: 'Integrate custom models compatible with the OpenAI API, for example via `vllm`. The required attributes are `model` and `url`.\
-            Optionally, you can provide an unique `id` to identify the custom model in the UI. If none is given `model` will be used as `id`',
+            Optionally, you can provide a unique `id` to identify the custom model in the UI. If none is given `model` will be used as `id`',
             default: [],
             items: {
                 type: 'object',
