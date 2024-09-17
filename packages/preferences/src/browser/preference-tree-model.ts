@@ -216,12 +216,15 @@ export class PreferenceTreeModel extends TreeModelImpl {
     }
 
     collapseAllExcept(openNode: TreeNode | undefined): void {
-        if (ExpandableTreeNode.is(openNode)) {
+        const openNodes: TreeNode[] = [];
+        while (ExpandableTreeNode.is(openNode)) {
+            openNodes.push(openNode);
             this.expandNode(openNode);
+            openNode = openNode.parent;
         }
         if (CompositeTreeNode.is(this.root)) {
             this.root.children.forEach(child => {
-                if (child !== openNode && ExpandableTreeNode.is(child)) {
+                if (!openNodes.includes(child) && ExpandableTreeNode.is(child)) {
                     this.collapseNode(child);
                 }
             });
