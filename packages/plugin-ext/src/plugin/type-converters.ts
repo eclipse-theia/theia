@@ -731,6 +731,26 @@ export function toSymbolTag(kind: model.SymbolTag): types.SymbolTag {
     }
 }
 
+/**
+ * Creates a merged symbol of type theia.SymbolInformation & theia.DocumentSymbol.
+ * Is only used as the result type of the `vscode.executeDocumentSymbolProvider` command.
+ */
+export function toMergedSymbol(uri: UriComponents, symbol: model.DocumentSymbol): theia.SymbolInformation & theia.DocumentSymbol {
+    const uriValue = URI.revive(uri);
+    const location = new types.Location(uriValue, toRange(symbol.range));
+    return {
+        name: symbol.name,
+        containerName: symbol.containerName ?? '',
+        kind: SymbolKind.toSymbolKind(symbol.kind),
+        tags: [],
+        location,
+        detail: symbol.detail,
+        range: location.range,
+        selectionRange: toRange(symbol.selectionRange),
+        children: symbol.children?.map(child => toMergedSymbol(uri, child)) ?? []
+    };
+}
+
 export function isModelLocation(arg: unknown): arg is model.Location {
     return isObject<model.Location>(arg) &&
         isModelRange(arg.range) &&
