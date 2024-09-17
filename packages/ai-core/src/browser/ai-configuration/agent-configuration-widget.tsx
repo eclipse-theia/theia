@@ -85,10 +85,9 @@ export class AIAgentConfigurationWidget extends ReactWidget {
         </div>;
     }
 
-    private renderAgentName(agent: Agent): string {
-        // Check if the agent has tags, and join them with a comma separator if they exist
-        const tagsSuffix = agent.tags?.length ? ` (${agent.tags.join(', ')})` : '';
-        return `${agent.name}${tagsSuffix}`;
+    private renderAgentName(agent: Agent): React.ReactNode {
+        const tagsSuffix = agent.tags?.length ? <span>{agent.tags.map(tag => <span className='agent-tag'>{tag}</span>)}</span> : '';
+        return <span>{agent.name} {tagsSuffix}</span>;
     }
 
     private renderAgentDetails(): React.ReactNode {
