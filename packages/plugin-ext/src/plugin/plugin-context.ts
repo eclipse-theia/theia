@@ -339,6 +339,9 @@ export function createAPIFactory(
             },
             get onDidChangeSessions(): theia.Event<theia.AuthenticationSessionsChangeEvent> {
                 return authenticationExt.onDidChangeSessions;
+            },
+            getAccounts(providerId: string): Thenable<readonly theia.AuthenticationSessionAccountInformation[]> {
+                return authenticationExt.getAccounts(providerId);
             }
         };
         function commandIsDeclaredInPackage(id: string, model: PluginPackage): boolean {

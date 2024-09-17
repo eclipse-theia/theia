@@ -1,0 +1,75 @@
+.agent-history-widget {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+
+.agent-history-widget .theia-select-component {
+    margin: 10px 0;
+    width: 80%;
+}
+
+.agent-history {
+    width: calc(80% + 16px);
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+}
+
+.theia-card {
+    background-color: var(--theia-sideBar-background);
+    border: 1px solid var(--theia-sideBarSectionHeader-border);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 15px;
+    margin: 10px 0;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.theia-card-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9em;
+    margin-bottom: var(--theia-ui-padding);
+    padding: var(--theia-ui-padding) 0;
+}
+
+.theia-card-content {
+    color: var(--theia-font-color);
+    margin-bottom: 10px;
+}
+
+.theia-card-content p {
+    margin: var(--theia-ui-padding) 0;
+}
+
+.theia-card-request, .theia-card-response {
+    margin-bottom: 10px;
+}
+
+.theia-card-request pre,
+.theia-card-response pre {
+    font-family: monospace;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    background-color: var(--theia-sideBar-background);
+    margin: var(--theia-ui-padding) 0;
+}
+
+.theia-card-request-id,
+.theia-card-session-id,
+.theia-card-timestamp,
+.theia-card-response-time {
+    flex: 1;
+}
+
+.theia-card-request-id,
+.theia-card-timestamp {
+    text-align: left;
+}
+
+.theia-card-session-id,
+.theia-card-response-time {
+    text-align: right;
+}

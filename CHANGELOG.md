@@ -6,9 +6,11 @@
 
 <!-- ## Unreleased
 
+- [plugin] move stubbed API TerminalShellIntegration into main API [#14168](https://github.com/eclipse-theia/theia/pull/14168) - Contributed on behalf of STMicroelectronics
 - [test] support TestMessage stack traces [#14154](https://github.com/eclipse-theia/theia/pull/14154) - Contributed on behalf of STMicroelectronics
 
 <a name="breaking_changes_1.54.0">[Breaking Changes:](#breaking_changes_1.54.0)</a> -->
+- [core] Updated AuthenticationService to handle multiple accounts per provider [#14149](https://github.com/eclipse-theia/theia/pull/14149) - Contributed on behalf of STMicroelectronics
 
 ## 1.53.0 - 08/29/2024
 

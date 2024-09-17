@@ -17,7 +17,10 @@
 import { injectable, postConstruct, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { RecursivePartial, Emitter, Event, MaybePromise, CommandService, nls } from '@theia/core/lib/common';
-import { WidgetOpenerOptions, NavigatableWidgetOpenHandler, NavigatableWidgetOptions, Widget, PreferenceService, CommonCommands, OpenWithService } from '@theia/core/lib/browser';
+import {
+    WidgetOpenerOptions, NavigatableWidgetOpenHandler, NavigatableWidgetOptions, Widget, PreferenceService, CommonCommands, OpenWithService, getDefaultHandler,
+    defaultHandlerPriority
+} from '@theia/core/lib/browser';
 import { EditorWidget } from './editor-widget';
 import { Range, Position, Location, TextEditor } from './editor';
 import { EditorWidgetFactory } from './editor-widget-factory';
@@ -86,12 +89,13 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
             }
         }
         this.openWithService.registerHandler({
-            id: this.id,
+            id: 'default',
             label: this.label,
             providerName: nls.localizeByDefault('Built-in'),
+            canHandle: () => 100,
             // Higher priority than any other handler
             // so that the text editor always appears first in the quick pick
-            canHandle: uri => this.canHandle(uri) * 100,
+            getOrder: () => 10000,
             open: uri => this.open(uri)
         });
         this.updateCurrentEditor();
@@ -112,7 +116,7 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
             if (!(editorPromise instanceof Widget)) {
                 editorPromise.then(editor => this.revealSelection(editor, options, uri));
             } else {
-                this.revealSelection(editorPromise, options);
+                this.revealSelection(editorPromise, options, uri);
             }
         }
         return editorPromise;
@@ -198,6 +202,9 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
     }
 
     canHandle(uri: URI, options?: WidgetOpenerOptions): number {
+        if (getDefaultHandler(uri, this.preferenceService) === 'default') {
+            return defaultHandlerPriority;
+        }
         return 100;
     }
 
