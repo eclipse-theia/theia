@@ -50,20 +50,12 @@ function toOpenAiRole(message: LanguageModelRequestMessage): 'system' | 'user' |
 
 export class OpenAiModel implements LanguageModel {
 
-    readonly providerId = 'openai';
-    readonly vendor: string = 'OpenAI';
-
-    constructor(protected readonly model: string, protected apiKey: () => string | undefined) {
-
-    }
-
-    get id(): string {
-        return this.providerId + '/' + this.model;
-    }
-
-    get name(): string {
-        return this.model;
-    }
+    /**
+     * @param id the unique id for this language model. It will be used to identify the model in the UI.
+     * @param model the model id as it is used by the OpenAI API
+     * @param openAIInitializer initializer for the OpenAI client, used for each request.
+     */
+    constructor(public readonly id: string, public model: string, protected apiKey: (() => string | undefined) | undefined, public url: string | undefined) { }
 
     async request(request: LanguageModelRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
         const openai = this.initializeOpenAi();
@@ -176,10 +168,11 @@ export class OpenAiModel implements LanguageModel {
     }
 
     protected initializeOpenAi(): OpenAI {
-        const key = this.apiKey();
-        if (!key) {
+        const apiKey = this.apiKey && this.apiKey();
+        if (!apiKey && !(this.url)) {
             throw new Error('Please provide OPENAI_API_KEY in preferences or via environment variable');
         }
-        return new OpenAI({ apiKey: key });
+        // do not hand over API key to custom urls
+        return new OpenAI({ apiKey: this.url ? 'no-key' : apiKey, baseURL: this.url });
     }
 }
