@@ -26,9 +26,10 @@ import {
     ChatRequest,
     ChatRequestModel,
     ChatResponseModel,
+    ErrorChatResponseModelImpl,
 } from './chat-model';
 import { ChatAgentService } from './chat-agent-service';
-import { Emitter, ILogger } from '@theia/core';
+import { Emitter, ILogger, generateUuid } from '@theia/core';
 import { ChatRequestParser } from './chat-request-parser';
 import { ChatAgent, ChatAgentLocation } from './chat-agents';
 import { ParsedChatRequestAgentPart, ParsedChatRequestVariablePart, ParsedChatRequest } from './parsed-chat-request';
@@ -161,6 +162,16 @@ export class ChatServiceImpl implements ChatService {
         const parsedRequest = this.chatRequestParser.parseChatRequest(request, session.model.location);
 
         const agent = this.getAgent(parsedRequest);
+        if (agent === undefined) {
+            const error = 'No ChatAgents available to handle request!';
+            this.logger.error(error);
+            const chatResponseModel = new ErrorChatResponseModelImpl(generateUuid(), new Error(error));
+            return {
+                requestCompleted: Promise.reject(error),
+                responseCreated: Promise.reject(error),
+                responseCompleted: Promise.resolve(chatResponseModel),
+            };
+        }
         const requestModel = session.model.addRequest(parsedRequest, agent?.id);
 
         for (const part of parsedRequest.parts) {

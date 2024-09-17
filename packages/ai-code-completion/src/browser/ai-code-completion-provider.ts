@@ -21,6 +21,7 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import { PreferenceService } from '@theia/core/lib/browser';
 import { CancellationTokenSource } from '@theia/core';
 import { PREF_AI_CODE_COMPLETION_PRECOMPUTE } from './ai-code-completion-preference';
+import { AgentService } from '@theia/ai-core';
 
 interface WithArgs<T = unknown[]> {
     args: T;
@@ -33,11 +34,17 @@ export class AICodeCompletionProvider implements monaco.languages.CompletionItem
     @inject(CodeCompletionAgent)
     protected readonly agent: CodeCompletionAgent;
 
+    @inject(AgentService)
+    private readonly agentService: AgentService;
+
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
     async provideCompletionItems(model: monaco.editor.ITextModel, position: monaco.Position,
         context: monaco.languages.CompletionContext, token: monaco.CancellationToken): Promise<monaco.languages.CompletionList | undefined> {
+        if (!this.agentService.isEnabled(this.agent.id)) {
+            return;
+        }
         if (!this.preferenceService.get(PREF_AI_CODE_COMPLETION_PRECOMPUTE, false)) {
             const result = {
                 suggestions: [{
