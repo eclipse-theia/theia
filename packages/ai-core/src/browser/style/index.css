@@ -78,3 +78,11 @@
   flex-direction: row;
   align-items: center;
 }
+
+.agent-tag {
+  padding: calc(var(--theia-ui-padding) * 2 / 3);
+  padding-top: 0px;
+  padding-bottom: 0px;
+  border-radius: calc(var(--theia-ui-padding) * 2 / 3);
+  background: hsla(0, 0%, 68%, 0.31);
+}

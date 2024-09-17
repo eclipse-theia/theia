@@ -73,7 +73,9 @@ export class AIAgentConfigurationWidget extends ReactWidget {
             <div className='configuration-agents-list preferences-tree-widget theia-TreeContainer' style={{ width: '25%' }}>
                 <ul>
                     {this.agentService.getAllAgents().map(agent =>
-                        <li key={agent.id} className='theia-TreeNode theia-CompositeTreeNode theia-ExpandableTreeNode' onClick={() => this.setActiveAgent(agent)}>{agent.name}</li>
+                        <li key={agent.id} className='theia-TreeNode theia-CompositeTreeNode theia-ExpandableTreeNode' onClick={() => this.setActiveAgent(agent)}>
+                            {this.renderAgentName(agent)}
+                        </li>
                     )}
                 </ul>
             </div>
@@ -81,6 +83,11 @@ export class AIAgentConfigurationWidget extends ReactWidget {
                 {this.renderAgentDetails()}
             </div>
         </div>;
+    }
+
+    private renderAgentName(agent: Agent): React.ReactNode {
+        const tagsSuffix = agent.tags?.length ? <span>{agent.tags.map(tag => <span className='agent-tag'>{tag}</span>)}</span> : '';
+        return <span>{agent.name} {tagsSuffix}</span>;
     }
 
     private renderAgentDetails(): React.ReactNode {
@@ -92,7 +99,7 @@ export class AIAgentConfigurationWidget extends ReactWidget {
         const enabled = this.agentService.isEnabled(agent.id);
 
         return <div key={agent.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-            <div className='settings-section-title settings-section-category-title' style={{ paddingLeft: 0, paddingBottom: 10 }}>{agent.name}</div>
+            <div className='settings-section-title settings-section-category-title' style={{ paddingLeft: 0, paddingBottom: 10 }}>{this.renderAgentName(agent)}</div>
             <div style={{ paddingBottom: 10 }}>{agent.description}</div>
             <div style={{ paddingBottom: 10 }}>
                 <label>

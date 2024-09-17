@@ -28,10 +28,17 @@ export const Agent = Symbol('Agent');
  * They can also declare their used prompt templates, which makes them configurable for the user.
  */
 export interface Agent {
-    /** Used to identify an agent, e.g. when it is requesting language models, etc. */
+    /**
+     * Used to identify an agent, e.g. when it is requesting language models, etc.
+     *
+     * @note This parameter might be removed in favor of `name`. Therefore, it is recommended to set `id` to the same value as `name` for now.
+     */
     readonly id: string;
 
-    /** Human-readable name shown to users to identify the agent. */
+    /**
+     * Human-readable name shown to users to identify the agent. Must be unique.
+     * Use short names without "Agent" or "Chat" (see `tags` for adding further properties).
+     */
     readonly name: string;
 
     /** A markdown description of its functionality and its privacy-relevant requirements, including function call handlers that access some data autonomously. */
@@ -45,4 +52,7 @@ export interface Agent {
 
     /** Required language models. This includes the purpose and optional language model selector arguments. See #47. */
     readonly languageModelRequirements: LanguageModelRequirement[];
+
+    /** A list of tags to filter agents and to display capabilities in the UI */
+    readonly tags?: String[];
 }
