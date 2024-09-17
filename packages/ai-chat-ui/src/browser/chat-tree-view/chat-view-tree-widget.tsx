@@ -147,11 +147,10 @@ export class ChatViewTreeWidget extends TreeWidget {
                     <div className="section-content">
                         <p>To enable the experimental AI features, please go to &nbsp;
                             {this.renderLinkButton('the settings menu', CommonCommands.OPEN_PREFERENCES.id)}
-                            &nbsp;and locate the <strong>Extensions &gt; ✨ AI Features [Experimental]</strong> section.</p>
+                            &nbsp;and locate the <strong>AI Features</strong> section.</p>
                         <ol>
                             <li>Toggle the switch for <strong>'Ai-features: Enable'</strong>.</li>
-                            <li>Provide an OpenAI API Key through the <strong>'OpenAI: API Key'</strong> setting or by
-                                setting the <strong>OPENAI_API_KEY</strong> environment variable.</li>
+                            <li>Provide at least one LLM provider (e.g. OpenAI), also see <a href="https://theia-ide.org/docs/user_ai/" target="_blank">the documentation</a> for more information</li>
                         </ol>
                         <p>This will activate the new AI capabilities in the app. Please remember, these features are still in development, so they may change or be unstable. 🚧</p>
                     </div>
@@ -163,11 +162,19 @@ export class ChatViewTreeWidget extends TreeWidget {
                         <p>Once the experimental AI features are enabled, you can access the following views and features:</p>
                         <ul>
                             <li>Code Completion</li>
-                            <li>Quick Fixes</li>
-                            <li>Terminal Assistance</li>
+                            <li>Terminal Assistance (via CTRL+I in a terminal)</li>
+                            <li>This Chat View (features the following agents):
+                                <ul>
+                                    <li>Universal Chat Agent</li>
+                                    <li>Workspace Chat Agent</li>
+                                    <li>Command Chat Agent</li>
+                                    <li>Orchestrator Chat Agent</li>
+                                </ul>
+                            </li>
                             <li>{this.renderLinkButton('AI History View', 'aiHistory:open')}</li>
                             <li>{this.renderLinkButton('AI Configuration View', 'aiConfiguration:open')}</li>
                         </ul>
+                        <p>See <a href="https://theia-ide.org/docs/user_ai/" target="_blank">the documentation</a> for more information</p>
                     </div>
                 </div>
             </div>
