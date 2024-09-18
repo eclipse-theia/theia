@@ -18,32 +18,36 @@ import * as monaco from '@theia/monaco-editor-core';
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { CodeCompletionAgent } from '../common/code-completion-agent';
-import { CompletionTriggerKind } from '@theia/core/shared/vscode-languageserver-protocol';
 import { AgentService } from '@theia/ai-core';
 
 @injectable()
-export class AICodeInlineCompletionsProvider implements monaco.languages.InlineCompletionsProvider {
+export class AICodeInlineCompletionsProvider
+    implements monaco.languages.InlineCompletionsProvider {
     @inject(CodeCompletionAgent)
     protected readonly agent: CodeCompletionAgent;
     @inject(AgentService)
     private readonly agentService: AgentService;
 
-    async provideInlineCompletions(model: monaco.editor.ITextModel, position: monaco.Position,
-        context: monaco.languages.InlineCompletionContext, token: monaco.CancellationToken): Promise<monaco.languages.InlineCompletions | undefined> {
+    async provideInlineCompletions(
+        model: monaco.editor.ITextModel,
+        position: monaco.Position,
+        context: monaco.languages.InlineCompletionContext,
+        token: monaco.CancellationToken
+    ): Promise<monaco.languages.InlineCompletions | undefined> {
         if (!this.agentService.isEnabled(this.agent.id)) {
-            return;
+            return undefined;
         }
-        if (this.agent.provideInlineCompletions) {
-            return this.agent.provideInlineCompletions(model, position, context, token);
-        }
-        // map from regular completion items
-        const items = await this.agent.provideCompletionItems(model, position, { ...context, triggerKind: CompletionTriggerKind.Invoked }, token);
-        return {
-            items: items?.suggestions.map(suggestion => ({ insertText: suggestion.insertText })) ?? []
-        };
+        return this.agent.provideInlineCompletions(
+            model,
+            position,
+            context,
+            token
+        );
     }
 
-    freeInlineCompletions(completions: monaco.languages.InlineCompletions<monaco.languages.InlineCompletion>): void {
+    freeInlineCompletions(
+        completions: monaco.languages.InlineCompletions<monaco.languages.InlineCompletion>
+    ): void {
         // nothing to do
     }
 }
