@@ -114,7 +114,8 @@
   margin: 0px 16px 0px 10px;
 }
 
-.theia-notebook-cell.focused .theia-notebook-cell-editor-container {
+/* Only mark an editor cell focused if the editor has focus */
+.theia-notebook-cell-editor-container:has(.monaco-editor.focused) {
   outline-color: var(--theia-notebook-focusedEditorBorder);
 }
 
