@@ -169,7 +169,6 @@ function findNativeWatcherFile(): string {
     return require.resolve(name);
 }
 
-function buildFile(root: string, name: string, content: string): string {
 async function buildFile(root: string, name: string, content: string): Promise<string> {
     const tmpFile = path.join(root, name);
     await fs.promises.writeFile(tmpFile, content);

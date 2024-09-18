@@ -6,7 +6,7 @@
   "typings": "lib/common/index.d.ts",
   "dependencies": {
     "@babel/runtime": "^7.10.0",
-    "@parcel/watcher": "^2.2.0",
+    "@parcel/watcher": "^2.4.1",
     "@phosphor/algorithm": "1",
     "@phosphor/commands": "1",
     "@phosphor/coreutils": "1",

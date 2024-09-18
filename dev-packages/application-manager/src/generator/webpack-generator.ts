@@ -486,6 +486,8 @@ const config = {
             module: /express/
         }, {
             module: /cross-spawn/
+        }, {
+            module: /@parcel\\/watcher/
         }
     ]
 };
