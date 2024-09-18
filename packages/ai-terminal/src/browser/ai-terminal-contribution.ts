@@ -23,6 +23,7 @@ import { TerminalMenus } from '@theia/terminal/lib/browser/terminal-frontend-con
 import { TerminalWidgetImpl } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { AiTerminalAgent } from './ai-terminal-agent';
 import { AICommandHandlerFactory } from '@theia/ai-core/lib/browser/ai-command-handler-factory';
+import { AgentService } from '@theia/ai-core';
 
 const AI_TERMINAL_COMMAND = {
     id: 'ai-terminal:open',
@@ -41,6 +42,9 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
     @inject(AICommandHandlerFactory)
     protected commandHandlerFactory: AICommandHandlerFactory;
 
+    @inject(AgentService)
+    private readonly agentService: AgentService;
+
     registerKeybindings(keybindings: KeybindingRegistry): void {
         keybindings.registerKeybinding({
             command: AI_TERMINAL_COMMAND.id,
@@ -57,7 +61,7 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(AI_TERMINAL_COMMAND, this.commandHandlerFactory({
             execute: () => {
-                if (this.terminalService.currentTerminal instanceof TerminalWidgetImpl) {
+                if (this.terminalService.currentTerminal instanceof TerminalWidgetImpl && this.agentService.isEnabled(this.terminalAgent.id)) {
                     new AiTerminalChatWidget(
                         this.terminalService.currentTerminal,
                         this.terminalAgent

@@ -767,3 +767,10 @@ class ChatResponseModelImpl implements ChatResponseModel {
         return this._isError;
     }
 }
+
+export class ErrorChatResponseModelImpl extends ChatResponseModelImpl {
+    constructor(requestId: string, error: Error, agentId?: string) {
+        super(requestId, agentId);
+        this.error(error);
+    }
+}

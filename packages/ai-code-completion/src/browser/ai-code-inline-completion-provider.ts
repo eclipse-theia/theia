@@ -19,14 +19,20 @@ import * as monaco from '@theia/monaco-editor-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { CodeCompletionAgent } from '../common/code-completion-agent';
 import { CompletionTriggerKind } from '@theia/core/shared/vscode-languageserver-protocol';
+import { AgentService } from '@theia/ai-core';
 
 @injectable()
 export class AICodeInlineCompletionsProvider implements monaco.languages.InlineCompletionsProvider {
     @inject(CodeCompletionAgent)
     protected readonly agent: CodeCompletionAgent;
+    @inject(AgentService)
+    private readonly agentService: AgentService;
 
     async provideInlineCompletions(model: monaco.editor.ITextModel, position: monaco.Position,
         context: monaco.languages.InlineCompletionContext, token: monaco.CancellationToken): Promise<monaco.languages.InlineCompletions | undefined> {
+        if (!this.agentService.isEnabled(this.agent.id)) {
+            return;
+        }
         if (this.agent.provideInlineCompletions) {
             return this.agent.provideInlineCompletions(model, position, context, token);
         }

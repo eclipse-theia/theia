@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ContributionProvider } from '@theia/core';
 import { Agent } from './agent';
 
@@ -57,17 +57,16 @@ export class AgentServiceImpl implements AgentService {
 
     protected disabledAgents = new Set<string>();
 
-    protected agents: Agent[] = [];
+    protected _agents: Agent[] = [];
 
-    @postConstruct()
-    init(): void {
-        for (const agent of this.agentsProvider.getContributions()) {
-            this.registerAgent(agent);
-        }
+    private get agents(): Agent[] {
+        // We can't collect the contributions at @postConstruct because this will lead to a circular dependency
+        // with agents reusing the chat agent service (e.g. orchestrator) which in turn injects the agent service
+        return [...this.agentsProvider.getContributions(), ...this._agents];
     }
 
     registerAgent(agent: Agent): void {
-        this.agents.push(agent);
+        this._agents.push(agent);
     }
 
     getAgents(): Agent[] {
