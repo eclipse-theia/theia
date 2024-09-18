@@ -231,9 +231,13 @@ export class TabsMainImpl implements TabsMain, Disposable {
         return { kind: TabInputKind.UnknownInput };
     }
 
-    protected connectToSignal<T>(disposableList: DisposableCollection, signal: { connect(listener: T, context: unknown): void, disconnect(listener: T): void }, listener: T): void {
+    protected connectToSignal<T>(disposableList: DisposableCollection,
+        signal: {
+            connect(listener: T, context: unknown): void,
+            disconnect(listener: T, context: unknown): void
+        }, listener: T): void {
         signal.connect(listener, this);
-        disposableList.push(Disposable.create(() => signal.disconnect(listener)));
+        disposableList.push(Disposable.create(() => signal.disconnect(listener, this)));
     }
 
     protected tabDtosEqual(a: TabDto, b: TabDto): boolean {
