@@ -18,70 +18,61 @@ import {
     Agent, CommunicationHistoryEntry, CommunicationRecordingService, getTextOfResponse,
     LanguageModelRegistry, LanguageModelRequest, LanguageModelRequirement, PromptService, PromptTemplate
 } from '@theia/ai-core/lib/common';
-import { CancellationToken, generateUuid, ILogger } from '@theia/core';
+import { generateUuid, ILogger } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
 
 export const CodeCompletionAgent = Symbol('CodeCompletionAgent');
 export interface CodeCompletionAgent extends Agent {
-    provideCompletionItems(model: monaco.editor.ITextModel, position: monaco.Position,
-        context: monaco.languages.CompletionContext, token: monaco.CancellationToken): Promise<monaco.languages.CompletionList | undefined>;
-    provideInlineCompletions?(model: monaco.editor.ITextModel, position: monaco.Position,
+    provideInlineCompletions(model: monaco.editor.ITextModel, position: monaco.Position,
         context: monaco.languages.InlineCompletionContext, token: monaco.CancellationToken): Promise<monaco.languages.InlineCompletions | undefined>
 }
 
 @injectable()
 export class CodeCompletionAgentImpl implements CodeCompletionAgent {
-    variables: string[] = [];
-
-    @inject(ILogger) @named('code-completion-agent')
-    protected logger: ILogger;
-
-    @inject(LanguageModelRegistry)
-    protected languageModelRegistry: LanguageModelRegistry;
-
-    @inject(PromptService)
-    protected promptService: PromptService;
-
-    @inject(CommunicationRecordingService)
-    protected recordingService: CommunicationRecordingService;
-
-    async provideCompletionItems(model: monaco.editor.ITextModel, position: monaco.Position,
-        context: monaco.languages.CompletionContext, token: CancellationToken): Promise<monaco.languages.CompletionList | undefined> {
-
-        const languageModel = await this.languageModelRegistry.selectLanguageModel({
-            agent: this.id,
-            ...this.languageModelRequirements[0]
-        });
+    async provideInlineCompletions(
+        model: monaco.editor.ITextModel,
+        position: monaco.Position,
+        context: monaco.languages.InlineCompletionContext,
+        token: monaco.CancellationToken
+    ): Promise<monaco.languages.InlineCompletions | undefined> {
+        const languageModel =
+            await this.languageModelRegistry.selectLanguageModel({
+                agent: this.id,
+                ...this.languageModelRequirements[0],
+            });
         if (!languageModel) {
-            this.logger.error('No language model found for code-completion-agent');
+            this.logger.error(
+                'No language model found for code-completion-agent'
+            );
             return undefined;
         }
 
         // Get text until the given position
-        const textUntilPosition = model.getValueInRange({
+        const textUntilCurrentPosition = model.getValueInRange({
             startLineNumber: 1,
             startColumn: 1,
             endLineNumber: position.lineNumber,
-            endColumn: position.column
+            endColumn: position.column,
         });
 
         // Get text after the given position
-        const textAfterPosition = model.getValueInRange({
+        const textAfterCurrentPosition = model.getValueInRange({
             startLineNumber: position.lineNumber,
             startColumn: position.column,
             endLineNumber: model.getLineCount(),
-            endColumn: model.getLineMaxColumn(model.getLineCount())
+            endColumn: model.getLineMaxColumn(model.getLineCount()),
         });
 
-        const snippet = `${textUntilPosition}{{MARKER}}${textAfterPosition}`;
         const file = model.uri.toString(false);
         const language = model.getLanguageId();
 
         if (token.isCancellationRequested) {
             return undefined;
         }
-        const prompt = await this.promptService.getPrompt('code-completion-prompt', { snippet, file, language }).then(p => p?.text);
+        const prompt = await this.promptService
+            .getPrompt('code-completion-prompt', { textUntilCurrentPosition, textAfterCurrentPosition, file, language })
+            .then(p => p?.text);
         if (!prompt) {
             this.logger.error('No prompt found for code-completion-agent');
             return undefined;
@@ -90,13 +81,15 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
         // since we do not actually hold complete conversions, the request/response pair is considered a session
         const sessionId = generateUuid();
         const requestId = generateUuid();
-        const request: LanguageModelRequest = { messages: [{ type: 'text', actor: 'user', query: prompt }] };
+        const request: LanguageModelRequest = {
+            messages: [{ type: 'text', actor: 'user', query: prompt }],
+        };
         const requestEntry: CommunicationHistoryEntry = {
             agentId: this.id,
             sessionId,
             timestamp: Date.now(),
             requestId,
-            request: prompt
+            request: prompt,
         };
         if (token.isCancellationRequested) {
             return undefined;
@@ -115,26 +108,34 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
             sessionId,
             timestamp: Date.now(),
             requestId,
-            response: completionText
+            response: completionText,
         });
 
-        const suggestions: monaco.languages.CompletionItem[] = [];
-        const completionItem: monaco.languages.CompletionItem = {
-            preselect: true,
-            label: `${completionText.substring(0, 20)}`,
-            detail: 'AI Generated',
-            documentation: `Generated via ${languageModel.id}`,
-            kind: monaco.languages.CompletionItemKind.Text,
-            insertText: completionText,
-            range: new monaco.Range(position.lineNumber, position.column, position.lineNumber, position.column)
+        return {
+            items: [{ insertText: completionText }],
+            enableForwardStability: true,
         };
-        suggestions.push(completionItem);
-        return { suggestions };
+    }
+    tags?: String[] | undefined;
+    variables: string[] = [];
 
-    };
+    @inject(ILogger)
+    @named('code-completion-agent')
+    protected logger: ILogger;
+
+    @inject(LanguageModelRegistry)
+    protected languageModelRegistry: LanguageModelRegistry;
+
+    @inject(PromptService)
+    protected promptService: PromptService;
+
+    @inject(CommunicationRecordingService)
+    protected recordingService: CommunicationRecordingService;
+
     id = 'Code Completion';
     name = 'Code Completion';
-    description = 'This agent provides inline code completion in the code editor in the Theia IDE.';
+    description =
+        'This agent provides inline code completion in the code editor in the Theia IDE.';
     promptTemplates: PromptTemplate[] = [
         {
             id: 'code-completion-prompt',
@@ -142,13 +143,15 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
 The language of the file is {{language}}. Return your result as plain text without markdown formatting.
 Finish the following code snippet.
 
-{{snippet}}
+{{textUntilCurrentPosition}}[[MARKER]]{{textAfterCurrentPosition}}
 
-Only return the exact replacement for {{MARKER}} to complete the snippet.`,
-        }
+Only return the exact replacement for [[MARKER]] to complete the snippet.`,
+        },
     ];
-    languageModelRequirements: LanguageModelRequirement[] = [{
-        purpose: 'code-completion',
-        identifier: 'openai/gpt-4o'
-    }];
+    languageModelRequirements: LanguageModelRequirement[] = [
+        {
+            purpose: 'code-completion',
+            identifier: 'openai/gpt-4o',
+        },
+    ];
 }

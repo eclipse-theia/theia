@@ -95,6 +95,15 @@ export class OpenAiModel implements LanguageModel {
             runnerEnd = true;
             resolve({ content: error.message });
         });
+        // we need to also listen for the emitted errors, as otherwise any error actually thrown by the API will not be caught
+        runner.emitted('error').then(error => {
+            console.error('Error in OpenAI chat completion stream:', error);
+            runnerEnd = true;
+            resolve({ content: error.message });
+        });
+        runner.emitted('abort').then(() => {
+            // do nothing, as the abort event is only emitted when the runner is aborted by us
+        });
         runner.on('message', message => {
             if (message.role === 'tool') {
                 resolve({ tool_calls: [{ id: message.tool_call_id, finished: true, result: this.getCompletionContent(message) }] });
