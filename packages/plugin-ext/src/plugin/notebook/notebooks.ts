@@ -335,7 +335,7 @@ export class NotebooksExtImpl implements NotebooksExt {
                 console.error(`FAILED to find active notebook editor ${delta.newActiveEditor}`);
             }
             this.activeNotebookEditor = this.editors.get(delta.newActiveEditor);
-            if (!(this.textDocumentsAndEditors.activeEditor()?.document.uri.path === this.activeNotebookEditor?.notebookData.uri.path)) {
+            if (this.textDocumentsAndEditors.activeEditor()?.document.uri.path !== this.activeNotebookEditor?.notebookData.uri.path) {
                 this.textDocumentsAndEditors.acceptEditorsAndDocumentsDelta({
                     newActiveEditor: null
                 });
