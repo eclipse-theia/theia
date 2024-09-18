@@ -224,11 +224,11 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
                     this.props.notebookContextManager.scopedStore.setContext(NOTEBOOK_CELL_CURSOR_LAST_LINE, false);
                 }
             }));
+            this.props.notebookCellEditorService.editorCreated(uri, this.editor);
+            this.setMatches();
             if (cell.editing && notebookModel.selectedCell === cell) {
                 this.editor.getControl().focus();
             }
-            this.props.notebookCellEditorService.editorCreated(uri, this.editor);
-            this.setMatches();
         }
     }
 

@@ -35,6 +35,7 @@ import { TextEditorCursorStyle, cursorStyleToString } from '../../common/editor-
 import { TextEditorLineNumbersStyle, EndOfLine } from '../../plugin/types-impl';
 import { SimpleMonacoEditor } from '@theia/monaco/lib/browser/simple-monaco-editor';
 import { EndOfLineSequence, ITextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
+import { EditorOption, RenderLineNumbersType } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
 
 export class TextEditorMain implements Disposable {
 
@@ -65,25 +66,7 @@ export class TextEditorMain implements Disposable {
     }
 
     private updateProperties(source?: string): void {
-        if (this.editor instanceof MonacoEditor) {
-            this.setProperties(TextEditorPropertiesMain.readFromEditor(this.properties, this.model as monaco.editor.IModel, this.editor!), source);
-        } else if (this.editor) {
-            this.setProperties(new TextEditorPropertiesMain(
-                this.editor.getControl().getSelections()?.map(selection => new monaco.Selection(
-                    selection.startLineNumber,
-                    selection.startColumn,
-                    selection.positionLineNumber,
-                    selection.positionColumn)) ?? [],
-                {
-                    cursorStyle: TextEditorCursorStyle.Line,
-                    lineNumbers: TextEditorLineNumbersStyle.On,
-                    insertSpaces: this.model.getOptions().insertSpaces,
-                    tabSize: this.model.getOptions().tabSize,
-                    indentSize: this.model.getOptions().indentSize
-                },
-                []
-            ), source);
-        }
+        this.setProperties(TextEditorPropertiesMain.readFromEditor(this.properties, this.model, this.editor!), source);
     }
 
     private setProperties(newProperties: TextEditorPropertiesMain, source: string | undefined): void {
@@ -390,17 +373,26 @@ export class TextEditorPropertiesMain {
         return undefined;
     }
 
-    static readFromEditor(prevProperties: TextEditorPropertiesMain | undefined, model: monaco.editor.IModel, editor: MonacoEditor): TextEditorPropertiesMain {
+    static readFromEditor(prevProperties: TextEditorPropertiesMain | undefined,
+        model: monaco.editor.IModel | ITextModel,
+        editor: MonacoEditor | SimpleMonacoEditor): TextEditorPropertiesMain {
+
         const selections = TextEditorPropertiesMain.getSelectionsFromEditor(prevProperties, editor);
         const options = TextEditorPropertiesMain.getOptionsFromEditor(prevProperties, model, editor);
         const visibleRanges = TextEditorPropertiesMain.getVisibleRangesFromEditor(prevProperties, editor);
         return new TextEditorPropertiesMain(selections, options, visibleRanges);
     }
 
-    private static getSelectionsFromEditor(prevProperties: TextEditorPropertiesMain | undefined, editor: MonacoEditor): monaco.Selection[] {
+    private static getSelectionsFromEditor(prevProperties: TextEditorPropertiesMain | undefined, editor: MonacoEditor | SimpleMonacoEditor): monaco.Selection[] {
         let result: monaco.Selection[] | undefined = undefined;
-        if (editor) {
+        if (editor && editor instanceof MonacoEditor) {
             result = editor.getControl().getSelections() || undefined;
+        } else if (editor && editor instanceof SimpleMonacoEditor) {
+            result = editor.getControl().getSelections()?.map(selection => new monaco.Selection(
+                selection.startLineNumber,
+                selection.startColumn,
+                selection.positionLineNumber,
+                selection.positionColumn));
         }
 
         if (!result && prevProperties) {
@@ -413,14 +405,16 @@ export class TextEditorPropertiesMain {
         return result;
     }
 
-    private static getOptionsFromEditor(prevProperties: TextEditorPropertiesMain | undefined, model: monaco.editor.IModel, editor: MonacoEditor): TextEditorConfiguration {
+    private static getOptionsFromEditor(prevProperties: TextEditorPropertiesMain | undefined,
+        model: monaco.editor.IModel | ITextModel,
+        editor: MonacoEditor | SimpleMonacoEditor): TextEditorConfiguration {
         if (model.isDisposed()) {
             return prevProperties!.options;
         }
 
         let cursorStyle: TextEditorCursorStyle;
         let lineNumbers: TextEditorLineNumbersStyle;
-        if (editor) {
+        if (editor && editor instanceof MonacoEditor) {
             const editorOptions = editor.getControl().getOptions();
             const lineNumbersOpts = editorOptions.get(monaco.editor.EditorOption.lineNumbers);
             cursorStyle = editorOptions.get(monaco.editor.EditorOption.cursorStyle);
@@ -438,6 +432,25 @@ export class TextEditorPropertiesMain {
                     lineNumbers = TextEditorLineNumbersStyle.On;
                     break;
             }
+        } else if (editor && editor instanceof SimpleMonacoEditor) {
+            const editorOptions = editor.getControl().getOptions();
+            const lineNumbersOpts = editorOptions.get(EditorOption.lineNumbers);
+            cursorStyle = editorOptions.get(EditorOption.cursorStyle);
+            switch (lineNumbersOpts.renderType) {
+                case RenderLineNumbersType.Off:
+                    lineNumbers = TextEditorLineNumbersStyle.Off;
+                    break;
+                case RenderLineNumbersType.Relative:
+                    lineNumbers = TextEditorLineNumbersStyle.Relative;
+                    break;
+                case RenderLineNumbersType.Interval:
+                    lineNumbers = TextEditorLineNumbersStyle.Interval;
+                    break;
+                default:
+                    lineNumbers = TextEditorLineNumbersStyle.On;
+                    break;
+            }
+
         } else if (prevProperties) {
             cursorStyle = prevProperties.options.cursorStyle;
             lineNumbers = prevProperties.options.lineNumbers;
@@ -456,7 +469,7 @@ export class TextEditorPropertiesMain {
         };
     }
 
-    private static getVisibleRangesFromEditor(prevProperties: TextEditorPropertiesMain | undefined, editor: MonacoEditor): monaco.Range[] {
+    private static getVisibleRangesFromEditor(prevProperties: TextEditorPropertiesMain | undefined, editor: MonacoEditor | SimpleMonacoEditor): monaco.Range[] {
         if (editor) {
             return editor.getControl().getVisibleRanges();
         }
