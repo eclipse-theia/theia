@@ -17,8 +17,8 @@
 import { PreferenceSchema } from '@theia/core/lib/browser/preferences/preference-contribution';
 import { AI_CORE_PREFERENCES_TITLE } from '@theia/ai-core/lib/browser/ai-core-preferences';
 
-export const HOST_PREF = 'ai-features.ollama.host';
-export const MODELS_PREF = 'ai-features.ollama.models';
+export const HOST_PREF = 'ai-features.ollama.ollamaHost';
+export const MODELS_PREF = 'ai-features.ollama.ollamaModels';
 
 export const OllamaPreferencesSchema: PreferenceSchema = {
     type: 'object',
@@ -26,7 +26,7 @@ export const OllamaPreferencesSchema: PreferenceSchema = {
         [HOST_PREF]: {
             type: 'string',
             title: AI_CORE_PREFERENCES_TITLE,
-            description: 'Ollama Host',
+            description: '',
             default: 'http://localhost:11434'
         },
         [MODELS_PREF]: {

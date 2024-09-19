@@ -17,17 +17,17 @@
 import { PreferenceSchema } from '@theia/core/lib/browser/preferences/preference-contribution';
 import { AI_CORE_PREFERENCES_TITLE } from '@theia/ai-core/lib/browser/ai-core-preferences';
 
-export const API_KEY_PREF = 'ai-features.openai.api-key';
-export const MODELS_PREF = 'ai-features.openai.models';
-export const CUSTOM_ENDPOINTS_PREF = 'ai-features.openai.models-custom';
+export const API_KEY_PREF = 'ai-features.openAiOfficial.openAiApiKey';
+export const MODELS_PREF = 'ai-features.openAiOfficial.officialOpenAiModels';
+export const CUSTOM_ENDPOINTS_PREF = 'ai-features.openAiCustom.customOpenAiModels';
 
 export const OpenAiPreferencesSchema: PreferenceSchema = {
     type: 'object',
     properties: {
         [API_KEY_PREF]: {
             type: 'string',
-            markdownDescription: '**Please note:** By using this preference the Open AI API key will be stored in clear text on the machine running Theia.\
-            Use the environment variable `OPENAI_API_KEY` to set the key securely.',
+            markdownDescription: 'Enter an API Key of your official OpenAI Account. **Please note:** By using this preference the Open AI API key will be stored in clear text\
+            on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to set the key securely.',
             title: AI_CORE_PREFERENCES_TITLE,
         },
         [MODELS_PREF]: {
@@ -43,7 +43,7 @@ export const OpenAiPreferencesSchema: PreferenceSchema = {
             type: 'array',
             title: AI_CORE_PREFERENCES_TITLE,
             markdownDescription: 'Integrate custom models compatible with the OpenAI API, for example via `vllm`. The required attributes are `model` and `url`.\
-            Optionally, you can provide a unique `id` to identify the custom model in the UI. If none is given `model` will be used as `id`',
+            Optionally, you can provide a unique `id` to identify the custom model in the UI. If none is given `model` will be used as `id`.',
             default: [],
             items: {
                 type: 'object',
