@@ -52,7 +52,7 @@ export class TheiaNotebookCell extends TheiaPageObject {
      * @returns The mode of the cell, e.g. 'python', 'markdown', etc.
      */
     async mode(): Promise<string> {
-        this.locator.waitFor({ state: 'visible' });
+        await this.locator.waitFor({ state: 'visible' });
         const editorElement = await this.editor.locator.elementHandle();
         if (editorElement === null) {
             throw new Error('Could not find editor element for the notebook cell.');
