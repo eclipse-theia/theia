@@ -26,7 +26,6 @@ export const OllamaPreferencesSchema: PreferenceSchema = {
         [HOST_PREF]: {
             type: 'string',
             title: AI_CORE_PREFERENCES_TITLE,
-            description: '',
             default: 'http://localhost:11434'
         },
         [MODELS_PREF]: {
