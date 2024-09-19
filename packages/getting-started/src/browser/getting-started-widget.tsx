@@ -409,7 +409,7 @@ export class GettingStartedWidget extends ReactWidget {
                     <h3 className='gs-section-header'> 🚀 AI Support in the Theia IDE is available! [Experimental] ✨</h3>
                     <br />
                     <div className='gs-action-container'>
-                        Theia IDE now contains the experimental AI support, which offers early access to cutting-edge AI capabilities within your IDE.
+                        Theia IDE now contains experimental AI support, which offers early access to cutting-edge AI capabilities within your IDE.
                         <br />
                         <br />
                         Please note that these features are disabled by default, ensuring that users can opt-in at their discretion without any concerns.
