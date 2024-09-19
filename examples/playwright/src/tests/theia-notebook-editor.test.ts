@@ -46,6 +46,7 @@ test.describe('Theia Notebook Editor interaction', () => {
 
         const kernels = await editor.availableKernels();
         const msg = `Available kernels:\n ${kernels.join('\n')}`;
+        console.log(msg); // Print available kernels, useful when running in CI.
         expect(kernels.length, msg).toBeGreaterThan(0);
 
         const py3kernel = kernels.filter(kernel => kernel.match(/^Python 3/));

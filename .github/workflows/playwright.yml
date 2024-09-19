@@ -61,8 +61,10 @@ jobs:
 
       - name: Archive test results
         uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 #v4
-        if: ${{ failure() }}
+        if: ${{ !cancelled() }}
         with:
           name: playwright-test-results
-          path: examples/playwright/test-results/
+          path: |
+            examples/playwright/test-results/
+            examples/playwright/playwright-report/
           retention-days: 2
