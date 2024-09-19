@@ -4,6 +4,7 @@
   "version": "1.53.0",
   "description": "Theia - Example code to demonstrate Theia API",
   "dependencies": {
+    "@theia/ai-chat-ui": "1.53.0",
     "@theia/core": "1.53.0",
     "@theia/file-search": "1.53.0",
     "@theia/filesystem": "1.53.0",
