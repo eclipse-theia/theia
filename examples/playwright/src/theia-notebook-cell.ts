@@ -68,19 +68,7 @@ export class TheiaNotebookCell extends TheiaPageObject {
      * @returns The text content of the cell editor.
      */
     async editorText(): Promise<string | undefined> {
-        const lines: string[] = [];
-        const linesCount = await this.monacoEditor.numberOfLines();
-        if (linesCount === undefined) {
-            return undefined;
-        }
-        for (let line = 1; line <= linesCount; line++) {
-            const lineText = await this.monacoEditor.textContentOfLineByLineNumber(line);
-            if (lineText === undefined) {
-                break;
-            }
-            lines.push(lineText);
-        }
-        return lines.join('\n');
+        return this.editor.editorText();
     }
 
     /**
@@ -89,9 +77,7 @@ export class TheiaNotebookCell extends TheiaPageObject {
      * @param lineNumber  The line number where to add the text. Default is 1.
      */
     async addEditorText(text: string, lineNumber: number = 1): Promise<void> {
-        const line = await this.editor.lineByLineNumber(lineNumber);
-        await line?.click();
-        await this.page.keyboard.type(text);
+        await this.editor.addEditorText(text, lineNumber);
     }
 
     /**

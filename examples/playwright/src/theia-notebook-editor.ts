@@ -24,6 +24,15 @@ import { TheiaQuickCommandPalette } from './theia-quick-command-palette';
 import { TheiaToolbarItem } from './theia-toolbar-item';
 import { OSUtil, normalizeId, urlEncodePath } from './util';
 
+export namespace NotebookCommands {
+    export const SELECT_KERNEL_COMMAND = 'notebook.selectKernel';
+    export const ADD_NEW_CELL_COMMAND = 'notebook.add-new-code-cell';
+    export const ADD_NEW_MARKDOWN_CELL_COMMAND = 'notebook.add-new-markdown-cell';
+    export const EXECUTE_NOTEBOOK_COMMAND = 'notebook.execute';
+    export const CLEAR_ALL_OUTPUTS_COMMAND = 'notebook.clear-all-outputs';
+    export const EXPORT_COMMAND = 'jupyter.notebookeditor.export';
+}
+
 export class TheiaNotebookEditor extends TheiaEditor {
 
     constructor(filePath: string, app: TheiaApp) {
@@ -60,7 +69,7 @@ export class TheiaNotebookEditor extends TheiaEditor {
      * @returns The name of the selected kernel.
      */
     async selectedKernel(): Promise<string | undefined | null> {
-        const kernelItem = await this.toolbarItem('notebook.selectKernel');
+        const kernelItem = await this.toolbarItem(NotebookCommands.SELECT_KERNEL_COMMAND);
         if (!kernelItem) {
             throw new Error('Select kernel toolbar item not found.');
         }
@@ -72,8 +81,7 @@ export class TheiaNotebookEditor extends TheiaEditor {
      * @param kernelName  The name of the kernel to select.
      */
     async selectKernel(kernelName: string): Promise<void> {
-        // TODO should we use NotebookCommands.SELECT_KERNEL_COMMAND.id? Need a dependency...
-        await this.triggerToolbarItem('notebook.selectKernel');
+        await this.triggerToolbarItem(NotebookCommands.SELECT_KERNEL_COMMAND);
         const qInput = new TheiaQuickCommandPalette(this.app);
         const widget = await this.page.waitForSelector(qInput.selector, { timeout: 5000 });
         if (widget && !await qInput.isOpen()) {
@@ -84,8 +92,7 @@ export class TheiaNotebookEditor extends TheiaEditor {
     }
 
     async availableKernels(): Promise<string[]> {
-        // TODO should we use NotebookCommands.SELECT_KERNEL_COMMAND.id? Need a dependency...
-        await this.triggerToolbarItem('notebook.selectKernel');
+        await this.triggerToolbarItem(NotebookCommands.SELECT_KERNEL_COMMAND);
         const qInput = new TheiaQuickCommandPalette(this.app);
         const widget = await this.page.waitForSelector(qInput.selector, { timeout: 5000 });
         if (widget && !await qInput.isOpen()) {
@@ -107,7 +114,7 @@ export class TheiaNotebookEditor extends TheiaEditor {
      */
     async addCodeCell(): Promise<void> {
         const currentCellsCount = (await this.cells()).length;
-        await this.triggerToolbarItem('notebook.add-new-code-cell');
+        await this.triggerToolbarItem(NotebookCommands.ADD_NEW_CELL_COMMAND);
         await this.waitForCellCountChanged(currentCellsCount);
     }
 
@@ -116,7 +123,7 @@ export class TheiaNotebookEditor extends TheiaEditor {
      */
     async addMarkdownCell(): Promise<void> {
         const currentCellsCount = (await this.cells()).length;
-        await this.triggerToolbarItem('notebook.add-new-markdown-cell');
+        await this.triggerToolbarItem(NotebookCommands.ADD_NEW_MARKDOWN_CELL_COMMAND);
         await this.waitForCellCountChanged(currentCellsCount);
     }
 
@@ -127,15 +134,15 @@ export class TheiaNotebookEditor extends TheiaEditor {
     }
 
     async executeAllCells(): Promise<void> {
-        this.triggerToolbarItem('notebook.execute');
+        await this.triggerToolbarItem(NotebookCommands.EXECUTE_NOTEBOOK_COMMAND);
     }
 
     async clearAllOutputs(): Promise<void> {
-        this.triggerToolbarItem('notebook.clear-all-outputs');
+        await this.triggerToolbarItem(NotebookCommands.CLEAR_ALL_OUTPUTS_COMMAND);
     }
 
     async exportAs(): Promise<void> {
-        this.triggerToolbarItem('jupyter.notebookeditor.export');
+        await this.triggerToolbarItem(NotebookCommands.EXPORT_COMMAND);
     }
 
     async cells(): Promise<TheiaNotebookCell[]> {

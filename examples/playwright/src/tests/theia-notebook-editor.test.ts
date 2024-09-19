@@ -43,7 +43,6 @@ test.describe('Theia Notebook Editor interaction', () => {
 
     test('kernels are installed', async () => {
         editor = await app.openEditor('sample.ipynb', TheiaNotebookEditor);
-        await editor.tabLocator().click(); // force activate
 
         const kernels = await editor.availableKernels();
         const msg = `Available kernels:\n ${kernels.join('\n')}`;
@@ -97,7 +96,6 @@ test.describe('Theia Notebook Cell interaction', () => {
 
     test.beforeEach(async () => {
         editor = await app.openEditor('sample.ipynb', TheiaNotebookEditor);
-        await editor.tabLocator().click(); // force activate
         const selectedKernel = await editor.selectedKernel();
         if (selectedKernel?.match(/^Python 3/) === null) {
             await editor.selectKernel('Python 3');

@@ -60,7 +60,7 @@ jobs:
         run: yarn --cwd examples/playwright ui-tests-ci
 
       - name: Archive test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 #v4
         if: ${{ failure() }}
         with:
           name: playwright-test-results
