@@ -427,7 +427,7 @@ export class GettingStartedWidget extends ReactWidget {
                         <br />
                         <br />
                         🚧 Please note that this feature is currently in development and may undergo frequent changes.
-                        We encourage feedback, contributions, and sponsorship to support the ongoing development of the AI support use our&nbsp;
+                        We welcome your feedback, contributions, and sponsorship! To support the ongoing development of the AI capabilities please visit the&nbsp;
                         <a
                             role={'button'}
                             tabIndex={0}
