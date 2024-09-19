@@ -36,7 +36,7 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
             \n\
             **Please note! The settings below in this section will only take effect\n\
             once the main feature setting is enabled. After enabling the feature, you need to configure at least one\
-            LLM provider below. Also see [the documentation](https://theia-ide.org/docs/user_ai/)**',
+            LLM provider below. Also see [the documentation](https://theia-ide.org/docs/user_ai/)**.',
             type: 'boolean',
             default: false,
         },
