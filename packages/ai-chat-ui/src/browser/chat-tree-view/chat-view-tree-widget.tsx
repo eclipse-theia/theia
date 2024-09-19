@@ -150,7 +150,7 @@ export class ChatViewTreeWidget extends TreeWidget {
                             &nbsp;and locate the <strong>AI Features</strong> section.</p>
                         <ol>
                             <li>Toggle the switch for <strong>'Ai-features: Enable'</strong>.</li>
-                            <li>Provide at least one LLM provider (e.g. OpenAI), also see <a href="https://theia-ide.org/docs/user_ai/" target="_blank">the documentation</a> for more information</li>
+                            <li>Provide at least one LLM provider (e.g. OpenAI), also see <a href="https://theia-ide.org/docs/user_ai/" target="_blank">the documentation</a> for more information.</li>
                         </ol>
                         <p>This will activate the new AI capabilities in the app. Please remember, these features are still in development, so they may change or be unstable. 🚧</p>
                     </div>
