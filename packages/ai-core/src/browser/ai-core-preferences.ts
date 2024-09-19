@@ -27,15 +27,16 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
     properties: {
         [PREFERENCE_NAME_ENABLE_EXPERIMENTAL]: {
             title: AI_CORE_PREFERENCES_TITLE,
-            markdownDescription: '❗ This setting allows you to access and experiment with our latest AI capabilities.\
+            markdownDescription: '❗ This setting allows you to access and experiment with the latest AI capabilities.\
             \n\
-            Please note that these features are in an experimental phase, which means they may be unstable,\
-            undergo significant changes, or incur additional costs.\
+            Please note that these features are in an experimental phase, which means they may be unstable and\
+            undergo significant changes. It is important to be aware that these experimental features may generate\
+            continuous requests to the language models (LLMs) you provide access to. This might incur costs that you\
+            need to monitor closely. By enabling this option, you acknowledge these risks.\
             \n\
-            By enabling this option, you acknowledge these risks and agree to provide feedback to help us improve.\
-            &nbsp;\n\
             **Please note! The settings below in this section will only take effect\n\
-            once the main feature setting is enabled.**',
+            once the main feature setting is enabled. After enabling the feature, you need to configure at least one\
+            LLM provider below. Also see [the documentation](https://theia-ide.org/docs/user_ai/)**.',
             type: 'boolean',
             default: false,
         },
