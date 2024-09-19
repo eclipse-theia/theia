@@ -19,8 +19,8 @@ import { PreferenceProxyFactory } from '@theia/core/lib/browser/preferences/inje
 import { interfaces } from '@theia/core/shared/inversify';
 
 export const AI_CORE_PREFERENCES_TITLE = '✨ AI Features [Experimental]';
-export const PREFERENCE_NAME_ENABLE_EXPERIMENTAL = 'ai-features.ai-enable.enable';
-export const PREFERENCE_NAME_PROMPT_TEMPLATES = 'ai-features.templates.templates-folder';
+export const PREFERENCE_NAME_ENABLE_EXPERIMENTAL = 'ai-features.AiEnable.enableAI';
+export const PREFERENCE_NAME_PROMPT_TEMPLATES = 'ai-features.promptTemplates.promptTemplatesFolder';
 
 export const aiCorePreferenceSchema: PreferenceSchema = {
     type: 'object',
@@ -42,7 +42,8 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
         },
         [PREFERENCE_NAME_PROMPT_TEMPLATES]: {
             title: AI_CORE_PREFERENCES_TITLE,
-            description: 'Folder for managing custom prompt templates. If not customized the user config directory is used.',
+            description: 'Folder for storing customized prompt templates. If not customized the user config directory is used. Please consider to use a folder, which is\
+            under version control to manage your variants of prompt templates.',
             type: 'string',
             default: '',
             typeDetails: {

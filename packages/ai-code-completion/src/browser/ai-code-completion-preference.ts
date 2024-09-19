@@ -17,7 +17,7 @@
 import { PreferenceSchema } from '@theia/core/lib/browser/preferences/preference-contribution';
 import { AI_CORE_PREFERENCES_TITLE } from '@theia/ai-core/lib/browser/ai-core-preferences';
 
-export const PREF_AI_INLINE_COMPLETION_ENABLE = 'ai-features.code-completion-inline.enable';
+export const PREF_AI_INLINE_COMPLETION_ENABLE = 'ai-features.codeCompletion.enableCodeCompletion';
 
 export const AICodeCompletionPreferencesSchema: PreferenceSchema = {
     type: 'object',
