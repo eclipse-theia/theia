@@ -412,7 +412,7 @@ export class GettingStartedWidget extends ReactWidget {
                         Theia IDE now contains experimental AI support, which offers early access to cutting-edge AI capabilities within your IDE.
                         <br />
                         <br />
-                        Please note that these features are disabled by default, ensuring that users can opt-in at their discretion without any concerns.
+                        Please note that these features are disabled by default, ensuring that users can opt-in at their discretion.
                         For those who choose to enable AI support, it is important to be aware that these experimental features may generate continuous
                         requests to the language models (LLMs) you provide access to. This might incur costs that you need to monitor closely.
                         <br />
