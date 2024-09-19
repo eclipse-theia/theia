@@ -174,7 +174,7 @@ export class ChatViewTreeWidget extends TreeWidget {
                             <li>{this.renderLinkButton('AI History View', 'aiHistory:open')}</li>
                             <li>{this.renderLinkButton('AI Configuration View', 'aiConfiguration:open')}</li>
                         </ul>
-                        <p>See <a href="https://theia-ide.org/docs/user_ai/" target="_blank">the documentation</a> for more information</p>
+                        <p>See <a href="https://theia-ide.org/docs/user_ai/" target="_blank">the documentation</a> for more information.</p>
                     </div>
                 </div>
             </div>
