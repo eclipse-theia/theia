@@ -22,6 +22,9 @@ import { TheiaNotebookEditor } from '../theia-notebook-editor';
 import { TheiaWorkspace } from '../theia-workspace';
 import path = require('path');
 
+// See .github/workflows/playwright.yml for preferred python version
+const preferredKernel = process.env.CI ? 'Python 3.11' : 'Python 3';
+
 test.describe('Theia Notebook Editor interaction', () => {
 
     let app: TheiaApp;
@@ -49,15 +52,15 @@ test.describe('Theia Notebook Editor interaction', () => {
         console.log(msg); // Print available kernels, useful when running in CI.
         expect(kernels.length, msg).toBeGreaterThan(0);
 
-        const py3kernel = kernels.filter(kernel => kernel.match(/^Python 3/));
+        const py3kernel = kernels.filter(kernel => kernel.match(new RegExp(`^${preferredKernel}`)));
         expect(py3kernel.length, msg).toBeGreaterThan(0);
     });
 
     test('should select a kernel', async () => {
         editor = await app.openEditor('sample.ipynb', TheiaNotebookEditor);
-        await editor.selectKernel('Python 3');
+        await editor.selectKernel(preferredKernel);
         const selectedKernel = await editor.selectedKernel();
-        expect(selectedKernel).toMatch(/^Python 3/);
+        expect(selectedKernel).toMatch(new RegExp(`^${preferredKernel}`));
     });
 
     test('should add a new code cell', async () => {
@@ -98,8 +101,8 @@ test.describe('Theia Notebook Cell interaction', () => {
     test.beforeEach(async () => {
         editor = await app.openEditor('sample.ipynb', TheiaNotebookEditor);
         const selectedKernel = await editor.selectedKernel();
-        if (selectedKernel?.match(/^Python 3/) === null) {
-            await editor.selectKernel('Python 3');
+        if (selectedKernel?.match(new RegExp(`^${preferredKernel}`)) === null) {
+            await editor.selectKernel(preferredKernel);
         }
     });
 
