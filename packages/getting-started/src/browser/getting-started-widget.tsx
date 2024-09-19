@@ -445,7 +445,7 @@ export class GettingStartedWidget extends ReactWidget {
                             tabIndex={0}
                             onClick={() => this.doOpenAIChatView()}
                             onKeyDown={(e: React.KeyboardEvent) => this.doOpenAIChatViewEnter(e)}>
-                            {'Open the AI Chat View now to learn how to begin! ✨'}
+                            {'Open the AI Chat View now to learn how to start! ✨'}
                         </a>
                     </div>
                     <br />
