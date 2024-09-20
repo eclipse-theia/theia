@@ -29,9 +29,9 @@ export function bindChatNodeToolbarActionContribution(bind: interfaces.Bind): vo
         getToolbarActions: (args: RequestNode | ResponseNode) => {
             if (isResponseNode(args)) {
                 return [{
-                    commandId: 'core.about',
+                    commandId: 'sample-command',
                     icon: 'codicon codicon-feedback',
-                    tooltip: 'Show about dialog'
+                    tooltip: 'Example command'
                 }];
             } else {
                 return [];
