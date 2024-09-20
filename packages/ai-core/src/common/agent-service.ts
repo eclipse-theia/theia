@@ -66,8 +66,7 @@ export class AgentServiceImpl implements AgentService {
     @postConstruct()
     protected init(): void {
         this.aiSettingsService?.getSettings().then(settings => {
-            const allAgentsSettings = settings.agents;
-            Object.entries(allAgentsSettings).forEach(([agentId, agentSettings]) => {
+            Object.entries(settings).forEach(([agentId, agentSettings]) => {
                 if (agentSettings.enable === false) {
                     this.disabledAgents.add(agentId);
                 }
