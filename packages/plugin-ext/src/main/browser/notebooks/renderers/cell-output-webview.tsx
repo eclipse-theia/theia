@@ -432,7 +432,9 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
                 this.messagingService.getScoped(this.editor.id).postMessage(message.rendererId, message.message);
                 break;
             case 'didRenderOutput':
-                this.webviewWidget.setIframeHeight(message.contentHeight + 5);
+                this.webviewWidget.setIframeHeight(message.bodyHeight);
+                console.log('setIframeHeight', message.bodyHeight);
+                console.log('didRenderOutput', message);
                 this.onDidRenderOutputEmitter.fire({
                     cellHandle: message.cellHandle,
                     outputId: message.outputId,

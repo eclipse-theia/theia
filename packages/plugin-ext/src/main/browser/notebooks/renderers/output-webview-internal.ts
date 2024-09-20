@@ -149,9 +149,6 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
         readonly outputElements: OutputContainer[] = [];
 
         constructor(public cellHandle: number, cellIndex?: number) {
-
-            console.log('createNewCell', cellHandle, cellIndex);
-
             this.element = document.createElement('div');
             this.element.style.outline = '0';
 
@@ -159,7 +156,6 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
             this.element.classList.add('cell_container');
 
             this.element.addEventListener('focusin', e => {
-                console.log('cell focusin', cellHandle);
                 theia.postMessage({ type: 'cellFocusChanged', cellHandle: cellHandle });
             });
 
@@ -177,11 +173,15 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
             this.element.remove();
         }
 
+        calcTotalOutputHeight(): number {
+            return this.outputElements.reduce((acc, output) => acc + output.element.clientHeight, 0) + 5;
+        }
+
         createOutputElement(index: number, output: webviewCommunication.Output, items: rendererApi.OutputItem[]): OutputContainer {
             let outputContainer = this.outputElements.find(o => o.outputId === output.id);
             if (!outputContainer) {
-                outputContainer = new OutputContainer(output, items, this.element);
-                this.element.appendChild(outputContainer.element);
+                outputContainer = new OutputContainer(output, items, this);
+                this.element.appendChild(outputContainer.containerElement);
                 this.outputElements.splice(index, 0, outputContainer);
             }
 
@@ -190,8 +190,9 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
 
         public clearOutputs(start: number, deleteCount: number): void {
             for (const output of this.outputElements.splice(start, deleteCount)) {
+                console.log('clear output', output);
                 output?.clear();
-                output.element.remove();
+                output.containerElement.remove();
             }
         }
 
@@ -200,9 +201,6 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
             if (!outputContainer) {
                 return;
             }
-
-            // this.element.style.visibility = '';
-            // this.element.style.top = `${top}px`;
         }
 
         public hide(): void {
@@ -210,7 +208,7 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
         }
 
         public updateCellHeight(height: number): void {
-            this.element.style.paddingTop = `${height + 50}px`;
+            this.element.style.paddingTop = `${height + 52}px`;
         }
 
         // public updateScroll(request: webviewCommunication.IContentWidgetTopRequest): void {
@@ -243,10 +241,11 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
         renderer: Renderer;
 
         element: HTMLElement;
+        containerElement: HTMLElement;
 
-        constructor(output: webviewCommunication.Output, items: rendererApi.OutputItem[], cellContainer: HTMLElement) {
+        constructor(output: webviewCommunication.Output, items: rendererApi.OutputItem[], private cell: OutputCell) {
             this.outputId = output.id;
-            this.createHtmlElement(cellContainer);
+            this.createHtmlElement();
             this.allItems = items;
         }
 
@@ -267,17 +266,17 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
 
         preferredMimeTypeChange(mimeType: string): void {
             this.element.innerHTML = '';
-            renderers.render(this, mimeType, undefined, new AbortController().signal);
+            renderers.render(this.cell, this, mimeType, undefined, new AbortController().signal);
         }
 
-        private createHtmlElement(cellContainer: HTMLElement): void {
-            const outputContainer = document.createElement('div');
-            outputContainer.classList.add('output-container');
-            cellContainer.appendChild(outputContainer);
+        private createHtmlElement(): void {
+            console.log('createHtmlElement', this.outputId);
+            this.containerElement = document.createElement('div');
+            this.containerElement.classList.add('output-container');
             this.element = document.createElement('div');
             this.element.id = this.outputId;
             this.element.classList.add('output');
-            outputContainer.appendChild(this.element);
+            this.containerElement.appendChild(this.element);
         }
 
     }
@@ -421,7 +420,8 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
             this.renderers.get(rendererId)?.disposeOutputItem(outputId);
         }
 
-        public async render(output: OutputContainer, preferredMimeType: string | undefined, preferredRendererId: string | undefined, signal: AbortSignal): Promise<void> {
+        public async render(cell: OutputCell, output: OutputContainer, preferredMimeType: string | undefined,
+            preferredRendererId: string | undefined, signal: AbortSignal): Promise<void> {
             const item = output.findItemToRender(preferredMimeType);
             const primaryRenderer = this.findRenderer(preferredRendererId, item);
             if (!primaryRenderer) {
@@ -432,7 +432,7 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
             // Try primary renderer first
             if (!(await this.doRender(item, output.element, primaryRenderer, signal)).continue) {
                 output.renderer = primaryRenderer;
-                this.onRenderCompleted();
+                this.onRenderCompleted(cell, output);
                 return;
             }
 
@@ -451,7 +451,7 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
                     if (renderer) {
                         if (!(await this.doRender(additionalItem, output.element, renderer, signal)).continue) {
                             output.renderer = renderer;
-                            this.onRenderCompleted();
+                            this.onRenderCompleted(cell, output);
                             return; // We rendered successfully
                         }
                     }
@@ -462,23 +462,29 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
             this.showRenderError(item, output.element, 'No fallback renderers found or all fallback renderers failed.');
         }
 
-        private onRenderCompleted(cell: OutputCell): void {
+        private onRenderCompleted(cell: OutputCell, output: OutputContainer): void {
             // we need to check for all images are loaded. Otherwise we can't determine the correct height of the output
             const images = Array.from(document.images);
             if (images.length > 0) {
                 Promise.all(images.filter(img => !img.complete).map(img => new Promise(resolve => { img.onload = img.onerror = resolve; }))).then(() => {
-                    theia.postMessage(<webviewCommunication.OnDidRenderOutput>{ type: 'didRenderOutput', contentHeight: cell.element.clientHeight });
-                    new ResizeObserver(() =>
-                        theia.postMessage(<webviewCommunication.OnDidRenderOutput>{ type: 'didRenderOutput', contentHeight: cell.element.clientHeight }))
-                        .observe(cell.element);
+                    this.sendDidRenderMessage(cell, output);
+                    new ResizeObserver(() => this.sendDidRenderMessage(cell, output)).observe(cell.element);
                 });
             } else {
-                theia.postMessage(<webviewCommunication.OnDidRenderOutput>{ type: 'didRenderOutput', contentHeight: cell.element.clientHeight });
-                new ResizeObserver(() =>
-                    theia.postMessage(<webviewCommunication.OnDidRenderOutput>{ type: 'didRenderOutput', contentHeight: cell.element.clientHeight }))
-                    .observe(cell.element);
+                this.sendDidRenderMessage(cell, output);
+                new ResizeObserver(() => this.sendDidRenderMessage(cell, output)).observe(cell.element);
             }
 
+        }
+
+        private sendDidRenderMessage(cell: OutputCell, output: OutputContainer): void {
+            theia.postMessage(<webviewCommunication.OnDidRenderOutput>{
+                type: 'didRenderOutput',
+                cellHandle: cell.cellHandle,
+                outputId: output.outputId,
+                outputHeight: cell.calcTotalOutputHeight(),
+                bodyHeight: document.body.clientHeight
+            });
         }
 
         private async doRender(item: rendererApi.OutputItem, element: HTMLElement, renderer: Renderer, signal: AbortSignal): Promise<{ continue: boolean }> {
@@ -604,14 +610,14 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
                 }));
                 const output = cell.createOutputElement(cellChange.start, outputData, apiItems);
 
-                await renderers.render(output, undefined, undefined, new AbortController().signal);
+                await renderers.render(cell, output, undefined, undefined, new AbortController().signal);
 
                 theia.postMessage(<webviewCommunication.OnDidRenderOutput>{
                     type: 'didRenderOutput',
                     cellHandle: cell.cellHandle,
                     outputId: outputData.id,
                     outputHeight: document.getElementById(output.outputId)?.clientHeight ?? 0,
-                    contentHeight: document.body.clientHeight
+                    bodyHeight: document.body.clientHeight
                 });
 
             }

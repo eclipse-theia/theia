@@ -119,7 +119,7 @@ export interface OnDidRenderOutput {
     cellHandle: number;
     outputId: string;
     outputHeight: number;
-    contentHeight: number;
+    bodyHeight: number;
 }
 
 export interface WheelMessage {
