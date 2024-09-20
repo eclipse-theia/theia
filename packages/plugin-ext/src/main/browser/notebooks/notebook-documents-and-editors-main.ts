@@ -21,7 +21,7 @@
 import { Disposable, DisposableCollection } from '@theia/core';
 import { interfaces } from '@theia/core/shared/inversify';
 import { UriComponents } from '@theia/core/lib/common/uri';
-import { NotebookEditorWidget, NotebookService, NotebookEditorWidgetService } from '@theia/notebook/lib/browser';
+import { NotebookEditorWidget, NotebookService, NotebookEditorWidgetService, NotebookCellEditorService } from '@theia/notebook/lib/browser';
 import { NotebookModel } from '@theia/notebook/lib/browser/view-model/notebook-model';
 import { MAIN_RPC_CONTEXT, NotebookDocumentsAndEditorsDelta, NotebookDocumentsAndEditorsMain, NotebookEditorAddData, NotebookModelAddedData, NotebooksExt } from '../../../common';
 import { RPCProtocol } from '../../../common/rpc-protocol';
@@ -105,6 +105,9 @@ export class NotebooksAndEditorsMain implements NotebookDocumentsAndEditorsMain 
         this.notebookService = container.get(NotebookService);
         this.notebookEditorService = container.get(NotebookEditorWidgetService);
         this.WidgetManager = container.get(WidgetManager);
+        const notebookCellEditorService = container.get(NotebookCellEditorService);
+
+        notebookCellEditorService.onDidChangeFocusedCellEditor(editor => this.proxy.$acceptActiveCellEditorChange(editor?.uri.toString() ?? null), this, this.disposables);
 
         this.notebookService.onDidAddNotebookDocument(async () => this.updateState(), this, this.disposables);
         this.notebookService.onDidRemoveNotebookDocument(async () => this.updateState(), this, this.disposables);

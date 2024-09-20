@@ -97,6 +97,13 @@ export class NotebooksExtImpl implements NotebooksExt {
                 }
             }
         });
+
+        textDocumentsAndEditors.onDidChangeActiveTextEditor(e => {
+            if (e && e?.document.uri.scheme !== CellUri.cellUriScheme && this.activeNotebookEditor) {
+                this.activeNotebookEditor = undefined;
+                this.onDidChangeActiveNotebookEditorEmitter.fire(undefined);
+            }
+        });
     }
 
     async $provideNotebookCellStatusBarItems(handle: number, uri: UriComponents, index: number, token: CancellationToken): Promise<NotebookCellStatusBarListDto | undefined> {
@@ -129,6 +136,15 @@ export class NotebooksExtImpl implements NotebooksExt {
 
     $releaseNotebookCellStatusBarItems(cacheId: number): void {
         this.statusBarRegistry.delete(cacheId);
+    }
+
+    $acceptActiveCellEditorChange(newActiveEditor: string | null): void {
+        const newActiveEditorId = this.textDocumentsAndEditors.allEditors().find(editor => editor.document.uri.toString() === newActiveEditor)?.id;
+        if (newActiveEditorId || newActiveEditor === null) {
+            this.textDocumentsAndEditors.acceptEditorsAndDocumentsDelta({
+                newActiveEditor: newActiveEditorId ?? null
+            });
+        }
     }
 
     // --- serialize/deserialize
@@ -319,6 +335,11 @@ export class NotebooksExtImpl implements NotebooksExt {
                 console.error(`FAILED to find active notebook editor ${delta.newActiveEditor}`);
             }
             this.activeNotebookEditor = this.editors.get(delta.newActiveEditor);
+            if (this.textDocumentsAndEditors.activeEditor()?.document.uri.path !== this.activeNotebookEditor?.notebookData.uri.path) {
+                this.textDocumentsAndEditors.acceptEditorsAndDocumentsDelta({
+                    newActiveEditor: null
+                });
+            }
         }
         if (delta.newActiveEditor !== undefined) {
             this.onDidChangeActiveNotebookEditorEmitter.fire(this.activeNotebookEditor?.apiEditor);

@@ -35,6 +35,7 @@ import { EditorPreferences } from '@theia/editor/lib/browser';
 import { NotebookOptionsService } from '../service/notebook-options';
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { MarkdownString } from '@theia/monaco-editor-core/esm/vs/base/common/htmlContent';
+import { NotebookCellEditorService } from '../service/notebook-cell-editor-service';
 
 @injectable()
 export class NotebookCodeCellRenderer implements CellRenderer {
@@ -62,6 +63,9 @@ export class NotebookCodeCellRenderer implements CellRenderer {
     @inject(EditorPreferences)
     protected readonly editorPreferences: EditorPreferences;
 
+    @inject(NotebookCellEditorService)
+    protected readonly notebookCellEditorService: NotebookCellEditorService;
+
     @inject(CommandRegistry)
     protected readonly commandRegistry: CommandRegistry;
 
@@ -86,6 +90,7 @@ export class NotebookCodeCellRenderer implements CellRenderer {
                         monacoServices={this.monacoServices}
                         notebookContextManager={this.notebookContextManager}
                         notebookViewportService={this.notebookViewportService}
+                        notebookCellEditorService={this.notebookCellEditorService}
                         fontInfo={this.notebookOptionsService.editorFontInfo} />
                     <NotebookCodeCellStatus cell={cell} notebook={notebookModel}
                         commandRegistry={this.commandRegistry}
