@@ -25,6 +25,7 @@ import {
     OutputChannelSeverity,
 } from '@theia/output/lib/browser/output-channel';
 import {
+    AISettingsService,
     DefaultLanguageModelRegistryImpl,
     isLanguageModelParsedResponse,
     isLanguageModelStreamResponse,
@@ -42,7 +43,6 @@ import {
     LanguageModelSelector,
     LanguageModelStreamResponsePart,
 } from '../common';
-import { AISettingsService } from './ai-settings-service';
 
 @injectable()
 export class LanguageModelDelegateClientImpl
@@ -288,7 +288,7 @@ export class FrontendLanguageModelRegistryImpl
 
     override async selectLanguageModels(request: LanguageModelSelector): Promise<LanguageModel[]> {
         await this.initialized;
-        const userSettings = this.settingsService.getAgentSettings(request.agent)?.languageModelRequirements.find(req => req.purpose === request.purpose);
+        const userSettings = (await this.settingsService.getAgentSettings(request.agent))?.languageModelRequirements.find(req => req.purpose === request.purpose);
         if (userSettings?.identifier) {
             const model = await this.getLanguageModel(userSettings.identifier);
             if (model) {
