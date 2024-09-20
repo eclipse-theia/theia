@@ -52,7 +52,7 @@ import { AIConfigurationContainerWidget } from './ai-configuration/ai-configurat
 import { AIVariableConfigurationWidget } from './ai-configuration/variable-configuration-widget';
 import { AICoreFrontendApplicationContribution } from './ai-core-frontend-application-contribution';
 import { bindAICorePreferences } from './ai-core-preferences';
-import { AISettingsService } from './ai-settings-service';
+import { AISettingsServiceImpl } from './ai-settings-service';
 import { FrontendPromptCustomizationServiceImpl } from './frontend-prompt-customization-service';
 import { FrontendVariableService } from './frontend-variable-service';
 import { PromptTemplateContribution } from './prompttemplate-contribution';
@@ -63,6 +63,7 @@ import { AgentsVariableContribution } from '../common/agents-variable-contributi
 import { AIActivationService } from './ai-activation-service';
 import { AgentService, AgentServiceImpl } from '../common/agent-service';
 import { AICommandHandlerFactory } from './ai-command-handler-factory';
+import { AISettingsService } from '../common/settings-service';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, LanguageModelProvider);
@@ -112,7 +113,7 @@ export default new ContainerModule(bind => {
         .inSingletonScope();
 
     bindViewContribution(bind, AIAgentConfigurationViewContribution);
-    bind(AISettingsService).toSelf().inRequestScope();
+    bind(AISettingsService).to(AISettingsServiceImpl).inRequestScope();
     bindContributionProvider(bind, AIVariableContribution);
     bind(FrontendVariableService).toSelf().inSingletonScope();
     bind(AIVariableService).toService(FrontendVariableService);

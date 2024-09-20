@@ -13,9 +13,10 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { inject, injectable, named } from '@theia/core/shared/inversify';
+import { inject, injectable, named, optional, postConstruct } from '@theia/core/shared/inversify';
 import { ContributionProvider } from '@theia/core';
 import { Agent } from './agent';
+import { AISettingsService } from './settings-service';
 
 export const AgentService = Symbol('AgentService');
 
@@ -55,9 +56,23 @@ export class AgentServiceImpl implements AgentService {
     @inject(ContributionProvider) @named(Agent)
     protected readonly agentsProvider: ContributionProvider<Agent>;
 
+    @inject(AISettingsService) @optional()
+    protected readonly aiSettingsService: AISettingsService | undefined;
+
     protected disabledAgents = new Set<string>();
 
     protected _agents: Agent[] = [];
+
+    @postConstruct()
+    protected init(): void {
+        this.aiSettingsService?.getSettings().then(settings => {
+            Object.entries(settings).forEach(([agentId, agentSettings]) => {
+                if (agentSettings.enable === false) {
+                    this.disabledAgents.add(agentId);
+                }
+            });
+        });
+    }
 
     private get agents(): Agent[] {
         // We can't collect the contributions at @postConstruct because this will lead to a circular dependency
@@ -79,10 +94,12 @@ export class AgentServiceImpl implements AgentService {
 
     enableAgent(agentId: string): void {
         this.disabledAgents.delete(agentId);
+        this.aiSettingsService?.updateAgentSettings(agentId, { enable: true });
     }
 
     disableAgent(agentId: string): void {
         this.disabledAgents.add(agentId);
+        this.aiSettingsService?.updateAgentSettings(agentId, { enable: false });
     }
 
     isEnabled(agentId: string): boolean {

@@ -19,6 +19,7 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import * as React from '@theia/core/shared/react';
 import {
     Agent,
+    AISettingsService,
     AIVariableService,
     LanguageModel,
     LanguageModelRegistry,
@@ -27,7 +28,6 @@ import {
     PromptCustomizationService,
     PromptService,
 } from '../../common';
-import { AISettingsService } from '../ai-settings-service';
 import { LanguageModelRenderer } from './language-model-renderer';
 import { TemplateRenderer } from './template-settings-renderer';
 import { AIConfigurationSelectionService } from './ai-configuration-service';
