@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { AgentSpecificVariables } from '@theia/ai-core';
 import {
    PromptTemplate
 } from '@theia/ai-core/lib/common';
@@ -81,6 +82,8 @@ export class UniversalChatAgent extends AbstractStreamParsingChatAgent implement
    description: string;
    variables: string[];
    promptTemplates: PromptTemplate[];
+   readonly functions: string[];
+   readonly agentSpecificVariables: AgentSpecificVariables[];
 
    constructor() {
       super('Universal', [{
@@ -94,6 +97,8 @@ export class UniversalChatAgent extends AbstractStreamParsingChatAgent implement
          + 'access the current user context or the workspace.';
       this.variables = [];
       this.promptTemplates = [universalTemplate];
+      this.functions = [];
+      this.agentSpecificVariables = [];
    }
 
    protected override async getSystemMessageDescription(): Promise<SystemMessageDescription | undefined> {

@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { getJsonOfResponse, LanguageModelResponse } from '@theia/ai-core';
+import { AgentSpecificVariables, getJsonOfResponse, LanguageModelResponse } from '@theia/ai-core';
 import {
     PromptTemplate
 } from '@theia/ai-core/lib/common';
@@ -64,9 +64,12 @@ export const OrchestratorChatAgentId = 'Orchestrator';
 export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent implements ChatAgent {
     name: string;
     description: string;
-    variables: string[];
+    readonly variables: string[];
     promptTemplates: PromptTemplate[];
     fallBackChatAgentId: string;
+    readonly functions: string[] = [];
+    readonly agentSpecificVariables: AgentSpecificVariables[] = [];
+
     constructor() {
         super(OrchestratorChatAgentId, [{
             purpose: 'agent-selection',
@@ -78,6 +81,8 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent implem
         this.variables = ['chatAgents'];
         this.promptTemplates = [orchestratorTemplate];
         this.fallBackChatAgentId = 'Universal';
+        this.functions = [];
+        this.agentSpecificVariables = [];
     }
 
     @inject(ChatAgentService)
