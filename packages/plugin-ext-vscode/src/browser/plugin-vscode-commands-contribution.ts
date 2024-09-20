@@ -52,7 +52,7 @@ import { DiffService } from '@theia/workspace/lib/browser/diff-service';
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import { Position } from '@theia/plugin-ext/lib/common/plugin-api-rpc';
 import { URI } from '@theia/core/shared/vscode-uri';
-import { PluginServer } from '@theia/plugin-ext/lib/common/plugin-protocol';
+import { PluginDeployOptions, PluginIdentifiers, PluginServer } from '@theia/plugin-ext/lib/common/plugin-protocol';
 import { TerminalFrontendContribution } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
 import { QuickOpenWorkspace } from '@theia/workspace/lib/browser/quick-open-workspace';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
@@ -108,6 +108,10 @@ export namespace VscodeCommands {
 
     export const INSTALL_EXTENSION_FROM_ID_OR_URI: Command = {
         id: 'workbench.extensions.installExtension'
+    };
+
+    export const UNINSTALL_EXTENSION: Command = {
+        id: 'workbench.extensions.uninstallExtension'
     };
 
     // see https://github.com/microsoft/vscode/blob/2fc07b811f760549dab9be9d2bedd06c51dfcb9a/src/vs/workbench/contrib/extensions/common/extensions.ts#L246
@@ -378,7 +382,14 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         commands.registerCommand(VscodeCommands.INSTALL_EXTENSION_FROM_ID_OR_URI, {
             execute: async (vsixUriOrExtensionId: TheiaURI | UriComponents | string) => {
                 if (typeof vsixUriOrExtensionId === 'string') {
-                    await this.pluginServer.install(VSCodeExtensionUri.fromId(vsixUriOrExtensionId).toString());
+                    let extensionId = vsixUriOrExtensionId;
+                    let opts: PluginDeployOptions | undefined;
+                    const versionedId = PluginIdentifiers.idAndVersionFromVersionedId(vsixUriOrExtensionId);
+                    if (versionedId) {
+                        extensionId = versionedId.id;
+                        opts = { version: versionedId.version, ignoreOtherVersions: true };
+                    }
+                    await this.pluginServer.install(VSCodeExtensionUri.fromId(extensionId).toString(), undefined, opts);
                 } else {
                     await this.deployPlugin(vsixUriOrExtensionId);
                 }
@@ -393,6 +404,18 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                 } else {
                     await this.deployPlugin(uris);
                 }
+            }
+        });
+        commands.registerCommand(VscodeCommands.UNINSTALL_EXTENSION, {
+            execute: async (id: string) => {
+                if (!id) {
+                    throw new Error(nls.localizeByDefault('Extension id required.'));
+                }
+                const idAndVersion = PluginIdentifiers.idAndVersionFromVersionedId(id);
+                if (!idAndVersion) {
+                    throw new Error(`Invalid extension id: ${id}\nExpected format: <publisher>.<name>@<version>.`);
+                }
+                await this.pluginServer.uninstall(PluginIdentifiers.idAndVersionToVersionedId(idAndVersion));
             }
         });
         commands.registerCommand({ id: 'workbench.action.files.save', }, {
