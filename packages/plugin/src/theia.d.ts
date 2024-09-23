@@ -6728,13 +6728,31 @@ export module '@theia/plugin' {
         badge: ViewBadge | undefined;
 
         /**
-         * Reveal an element. By default revealed element is selected.
+         * Reveals the given element in the tree view.
+         * If the tree view is not visible then the tree view is shown and element is revealed.
          *
+         * By default revealed element is selected.
          * In order to not to select, set the option `select` to `false`.
+         * In order to focus, set the option `focus` to `true`.
+         * In order to expand the revealed element, set the option `expand` to `true`. To expand recursively set `expand` to the number of levels to expand.
          *
-         * **NOTE:** {@link TreeDataProvider TreeDataProvider} is required to implement {@link TreeDataProvider.getParent getParent} method to access this API.
+         * * *NOTE:* In VS Code, you can expand only to 3 levels maximum. This is not the case in Theia, there are no limits to expansion level.
+         * * *NOTE:* The {@link TreeDataProvider} that the `TreeView` {@link window.createTreeView is registered with} with must implement {@link TreeDataProvider.getParent getParent} method to access this API.
          */
-        reveal(element: T, options?: { select?: boolean; focus?: boolean; expand?: boolean | number }): Thenable<void>;
+        reveal(element: T, options?: {
+            /**
+             * If true, then the element will be selected.
+             */
+            readonly select?: boolean;
+            /**
+             * If true, then the element will be focused.
+             */
+            readonly focus?: boolean;
+            /**
+             * If true, then the element will be expanded. If a number is passed, then up to that number of levels of children will be expanded
+             */
+            readonly expand?: boolean | number;
+        }): Thenable<void>;
     }
 
     /**
