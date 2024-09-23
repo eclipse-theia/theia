@@ -212,6 +212,11 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
 
             this.toDispose.push(this.editor.getControl().onDidChangeCursorSelection(e => {
                 const selectedText = this.editor!.getControl().getModel()!.getValueInRange(e.selection);
+                // TODO handle secondary selections
+                this.props.cell.selection = {
+                    start: { line: e.selection.startLineNumber - 1, character: e.selection.startColumn - 1 },
+                    end: { line: e.selection.endLineNumber - 1, character: e.selection.endColumn - 1 }
+                };
                 this.props.notebookModel.selectedText = selectedText;
             }));
             this.toDispose.push(this.editor.getControl().onDidChangeCursorPosition(e => {
