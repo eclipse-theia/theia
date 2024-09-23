@@ -25,7 +25,6 @@ import { URI } from '@theia/core/lib/common/uri';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { NavigationLocationService } from '@theia/editor/lib/browser/navigation/navigation-location-service';
 import { NavigationLocation, Position } from '@theia/editor/lib/browser/navigation/navigation-location';
-
 @injectable()
 export class TestResultWidget extends BaseWidget {
 
@@ -113,7 +112,12 @@ export class TestResultWidget extends BaseWidget {
             const link = this.node.ownerDocument.createElement('a');
             let content = `${this.labelProvider.getName(uri)}`;
             if (stackFrame.position) {
-                content += `:${stackFrame.position.line}:${stackFrame.position.character}`;
+                // Display Position as a 1-based position, similar to Monaco ones.
+                const monacoPosition = {
+                    lineNumber: stackFrame.position.line + 1,
+                    column: stackFrame.position.character + 1
+                };
+                content += `:${monacoPosition.lineNumber}:${monacoPosition.column}`;
             }
             link.textContent = content;
             link.href = `${uri}`;
