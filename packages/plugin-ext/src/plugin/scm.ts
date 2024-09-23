@@ -39,6 +39,7 @@ import { URI, ThemeIcon } from './types-impl';
 import { ScmCommandArg } from '../common/plugin-api-rpc';
 import { sep } from '@theia/core/lib/common/paths';
 import { PluginIconPath } from './plugin-icon-path';
+import { createAPIObject } from './plugin-context';
 type ProviderHandle = number;
 type GroupHandle = number;
 type ResourceStateHandle = number;
@@ -290,6 +291,7 @@ interface ValidateInput {
 export class ScmInputBoxImpl implements theia.SourceControlInputBox {
 
     private _value: string = '';
+    apiObject: theia.SourceControlInputBox;
 
     get value(): string {
         return this._value;
@@ -354,7 +356,7 @@ export class ScmInputBoxImpl implements theia.SourceControlInputBox {
     }
 
     constructor(private plugin: Plugin, private proxy: ScmMain, private sourceControlHandle: number) {
-        // noop
+        this.apiObject = createAPIObject(this);
     }
 
     onInputBoxValueChange(value: string): void {
@@ -543,8 +545,7 @@ class SourceControlImpl implements theia.SourceControl {
         return this._rootUri;
     }
 
-    private _inputBox: ScmInputBoxImpl;
-    get inputBox(): ScmInputBoxImpl { return this._inputBox; }
+    readonly inputBox: ScmInputBoxImpl;
 
     private _count: number | undefined = undefined;
 
@@ -642,7 +643,7 @@ class SourceControlImpl implements theia.SourceControl {
         private _label: string,
         private _rootUri?: theia.Uri
     ) {
-        this._inputBox = new ScmInputBoxImpl(plugin, this.proxy, this.handle);
+        this.inputBox = new ScmInputBoxImpl(plugin, this.proxy, this.handle);
         this.proxy.$registerSourceControl(this.handle, _id, _label, _rootUri);
     }
 
