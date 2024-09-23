@@ -40,10 +40,12 @@ import { TestItemImpl, TestItemCollection } from './test-item';
 import { AccumulatingTreeDeltaEmitter, TreeDelta } from '@theia/test/lib/common/tree-delta';
 import {
     TestItemDTO, TestOutputDTO, TestExecutionState, TestRunProfileDTO,
-    TestRunProfileKind, TestRunRequestDTO, TestStateChangeDTO, TestItemReference, TestMessageArg, TestMessageDTO
+    TestRunProfileKind, TestRunRequestDTO, TestStateChangeDTO, TestItemReference, TestMessageArg, TestMessageDTO,
+    TestMessageStackFrameDTO
 } from '../common/test-types';
+import * as protocol from '@theia/core/shared/vscode-languageserver-protocol';
 import { ChangeBatcher, observableProperty } from '@theia/test/lib/common/collections';
-import { TestRunRequest } from './types-impl';
+import { Location, Position, Range, TestRunRequest, URI } from './types-impl';
 import { MarkdownString } from '../common/plugin-api-rpc-model';
 
 type RefreshHandler = (token: theia.CancellationToken) => void | theia.Thenable<void>;
@@ -374,7 +376,36 @@ export class TestingExtImpl implements TestingExt {
             actualOutput: testMessage.actual,
             expectedOutput: testMessage.expected,
             contextValue: testMessage.contextValue,
-            location: testMessage.location ? Convert.toLocation(testMessage.location) : undefined
+            location: this.toLocation(testMessage.location),
+            stackTrace: testMessage.stackTrace ? testMessage.stackTrace.map(frame => this.toStackFrame(frame)) : undefined
+        };
+    }
+
+    toLocation(location: protocol.Location | undefined): Location | undefined {
+        if (!location) {
+            return undefined;
+        }
+        return new Location(URI.parse(location.uri), this.toRange(location.range));
+    }
+
+    toRange(range: protocol.Range): Range {
+        return new Range(this.toPosition(range.start), this.toPosition(range.end));
+    }
+
+    toPosition(position: protocol.Position): Position;
+    toPosition(position: protocol.Position | undefined): Position | undefined;
+    toPosition(position: protocol.Position | undefined): Position | undefined {
+        if (!position) {
+            return undefined;
+        }
+        return new Position(position.line, position.character);
+    }
+
+    toStackFrame(stackFrame: TestMessageStackFrameDTO): theia.TestMessageStackFrame {
+        return {
+            label: stackFrame.label,
+            position: this.toPosition(stackFrame.position),
+            uri: stackFrame.uri ? URI.parse(stackFrame.uri) : undefined
         };
     }
 
