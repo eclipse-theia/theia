@@ -284,7 +284,7 @@ export function createAPIObject<T extends Object>(rawObject: T): T {
             const isOwnProperty = !!Object.getOwnPropertyDescriptor(rawObject, p);
             const val = Reflect.get(rawObject, p);
             if (!isOwnProperty && typeof val === 'function') {
-                // bind functions that are inherited from the prototype to the object itself. 
+                // bind functions that are inherited from the prototype to the object itself.
                 // This should handle the case of events.
                 return val.bind(rawObject);
             }
