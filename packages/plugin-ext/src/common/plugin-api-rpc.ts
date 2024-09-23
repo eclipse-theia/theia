@@ -2673,6 +2673,7 @@ export interface NotebookDocumentsExt {
 
 export interface NotebookDocumentsAndEditorsExt {
     $acceptDocumentsAndEditorsDelta(delta: NotebookDocumentsAndEditorsDelta): Promise<void>;
+    $acceptActiveCellEditorChange(newActiveEditor: string | null): void;
 }
 
 export interface NotebookDocumentsAndEditorsMain extends Disposable {

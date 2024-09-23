@@ -27,3 +27,4 @@ export * from './protocol';
 export * from './today-variable-contribution';
 export * from './tomorrow-variable-contribution';
 export * from './variable-service';
+export * from './settings-service';

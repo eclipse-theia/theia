@@ -885,7 +885,7 @@ export function createAPIFactory(
 
         const extensions: typeof theia.extensions = Object.freeze({
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            getExtension<T = any>(extensionId: string, includeFromDifferentExtensionHosts: boolean = false): theia.Extension<T> | undefined {
+            getExtension<T = any>(extensionId: string, includeFromDifferentExtensionHosts: boolean = false): theia.Extension<T | undefined> | undefined {
                 includeFromDifferentExtensionHosts = false;
                 const plg = pluginManager.getPluginById(extensionId.toLowerCase());
                 if (plg) {

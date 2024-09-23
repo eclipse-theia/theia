@@ -66,14 +66,16 @@
 }
 
 #ai-variable-configuration-container-widget .variable-references,
-#ai-agent-configuration-container-widget .variable-references {
+#ai-agent-configuration-container-widget .variable-references,
+#ai-agent-configuration-container-widget .function-references {
   margin-left: 0.5rem;
   padding: 0.5rem;
   border-left: solid 1px var(--theia-tree-indentGuidesStroke);
 }
 
 #ai-variable-configuration-container-widget .variable-reference,
-#ai-agent-configuration-container-widget .variable-reference {
+#ai-agent-configuration-container-widget .variable-reference,
+#ai-agent-configuration-container-widget .function-reference {
   display: flex;
   flex-direction: row;
   align-items: center;

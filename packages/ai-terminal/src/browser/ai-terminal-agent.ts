@@ -40,6 +40,13 @@ export class AiTerminalAgent implements Agent {
         Based on the user\'s request, it suggests commands and allows the user to directly paste and execute them in the terminal. \
         It accesses the current directory, environment and the recent terminal output of the terminal session to provide context-aware assistance';
     variables = [];
+    functions = [];
+    agentSpecificVariables = [
+        { name: 'userRequest', usedInPrompt: true, description: 'The user\'s question or request.' },
+        { name: 'shell', usedInPrompt: true, description: 'The shell being used, e.g., /usr/bin/zsh.' },
+        { name: 'cwd', usedInPrompt: true, description: 'The current working directory.' },
+        { name: 'recentTerminalContents', usedInPrompt: true, description: 'The last 0 to 50 recent lines visible in the terminal.' }
+    ];
     promptTemplates = [
         {
             id: 'terminal-system',

@@ -17,6 +17,12 @@
 import { LanguageModelRequirement } from './language-model';
 import { PromptTemplate } from './prompt-service';
 
+export interface AgentSpecificVariables {
+    name: string;
+    description: string;
+    usedInPrompt: boolean;
+}
+
 export const Agent = Symbol('Agent');
 /**
  * Agents represent the main functionality of the AI system. They are responsible for processing user input, collecting information from the environment,
@@ -44,7 +50,7 @@ export interface Agent {
     /** A markdown description of its functionality and its privacy-relevant requirements, including function call handlers that access some data autonomously. */
     readonly description: string;
 
-    /** The list of variable identifiers this agent needs to clarify its context requirements. See #39. */
+    /** The list of global variable identifiers this agent needs to clarify its context requirements. See #39. */
     readonly variables: string[];
 
     /** The prompt templates introduced and used by this agent. */
@@ -55,4 +61,10 @@ export interface Agent {
 
     /** A list of tags to filter agents and to display capabilities in the UI */
     readonly tags?: String[];
+
+    /** The list of local variable identifiers this agent needs to clarify its context requirements. */
+    readonly agentSpecificVariables: AgentSpecificVariables[];
+
+    /** The list of global function identifiers this agent needs to clarify its context requirements. */
+    readonly functions: string[];
 }
