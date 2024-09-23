@@ -30,7 +30,7 @@ export class TextEditorExt implements theia.TextEditor {
     private disposed = false;
     constructor(
         private readonly proxy: TextEditorsMain,
-        private readonly id: string,
+        readonly id: string,
         document: DocumentDataExt,
         private _selections: Selection[],
         options: TextEditorConfiguration,

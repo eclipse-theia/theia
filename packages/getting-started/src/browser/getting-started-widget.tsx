@@ -406,15 +406,15 @@ export class GettingStartedWidget extends ReactWidget {
         return <div className='gs-container gs-experimental-container'>
             <div className='flex-grid'>
                 <div className='col'>
-                    <h3 className='gs-section-header'> 🚀 Theia AI [Experimental] is available! ✨</h3>
+                    <h3 className='gs-section-header'> 🚀 AI Support in the Theia IDE is available! [Experimental] ✨</h3>
                     <br />
                     <div className='gs-action-container'>
-                        Theia IDE now contains the experimental "Theia AI" feature, which offers early access to cutting-edge AI capabilities within your IDE.
+                        Theia IDE now contains experimental AI support, which offers early access to cutting-edge AI capabilities within your IDE.
                         <br />
                         <br />
-                        Please note that these features are disabled by default, ensuring that users can opt-in at their discretion without any concerns.
-                        For those who choose to enable Theia AI, it is important to be aware that these experimental features may generate continuous
-                        requests to the language models (LLMs) you provide access to, potentially incurring additional costs.
+                        Please note that these features are disabled by default, ensuring that users can opt-in at their discretion.
+                        For those who choose to enable AI support, it is important to be aware that these experimental features may generate continuous
+                        requests to the language models (LLMs) you provide access to. This might incur costs that you need to monitor closely.
                         <br />
                         For more details, please visit &nbsp;
                         <a
@@ -422,11 +422,12 @@ export class GettingStartedWidget extends ReactWidget {
                             tabIndex={0}
                             onClick={() => this.doOpenExternalLink(this.theiaAIDocUrl)}
                             onKeyDown={(e: React.KeyboardEvent) => this.doOpenExternalLinkEnter(e, this.theiaAIDocUrl)}>
-                            {'Theia AI Documentation'}
+                            {'the documentation'}
                         </a>.
                         <br />
                         <br />
-                        We encourage feedback, contributions, and sponsorship to support the ongoing development of the Theia AI initiative use our&nbsp;
+                        🚧 Please note that this feature is currently in development and may undergo frequent changes.
+                        We welcome your feedback, contributions, and sponsorship! To support the ongoing development of the AI capabilities please visit the&nbsp;
                         <a
                             role={'button'}
                             tabIndex={0}
@@ -435,20 +436,16 @@ export class GettingStartedWidget extends ReactWidget {
                             {'Github Project'}
                         </a>.
                         &nbsp;Thank you for being part of our community!
-                        <br />
-                        <br />
-                        Please note that this feature is currently in development and may undergo frequent changes. 🚧
                     </div>
                     <br />
                     <div className='gs-action-container'>
-                        Let's dive in!<br /><br />
                         <a
                             role={'button'}
                             style={{ fontSize: 'var(--theia-ui-font-size2)' }}
                             tabIndex={0}
                             onClick={() => this.doOpenAIChatView()}
                             onKeyDown={(e: React.KeyboardEvent) => this.doOpenAIChatViewEnter(e)}>
-                            {'Open the Theia AI Chat View now to catch a first glimpse and learn how to begin! ✨'}
+                            {'Open the AI Chat View now to learn how to start! ✨'}
                         </a>
                     </div>
                     <br />
@@ -458,7 +455,7 @@ export class GettingStartedWidget extends ReactWidget {
         </div>;
     }
 
-    protected doOpenAIChatView = () => this.commandRegistry.executeCommand('ai-chat:open');
+    protected doOpenAIChatView = () => this.commandRegistry.executeCommand('aiChat:toggle');
     protected doOpenAIChatViewEnter = (e: React.KeyboardEvent) => {
         if (this.isEnterKey(e)) {
             this.doOpenAIChatView();

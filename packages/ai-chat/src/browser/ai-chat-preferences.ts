@@ -17,14 +17,15 @@
 import { AI_CORE_PREFERENCES_TITLE } from '@theia/ai-core/lib/browser/ai-core-preferences';
 import { PreferenceSchema } from '@theia/core/lib/browser/preferences/preference-contribution';
 
-export const DEFAULT_CHAT_AGENT_PREF = 'ai-features.chat.default-chat-agent';
+export const DEFAULT_CHAT_AGENT_PREF = 'ai-features.chat.defaultChatAgent';
 
 export const aiChatPreferences: PreferenceSchema = {
     type: 'object',
     properties: {
         [DEFAULT_CHAT_AGENT_PREF]: {
             type: 'string',
-            description: '<agent-name> of the Chat Agent that shall be invoked, if no agent is explicitly mentioned with @<agent-name> in the user query.',
+            description: 'Optional: <agent-name> of the Chat Agent that shall be invoked, if no agent is explicitly mentioned with @<agent-name> in the user query.\
+            If no Default Agent is configured, Theia´s defaults will be applied.',
             title: AI_CORE_PREFERENCES_TITLE,
         }
     }

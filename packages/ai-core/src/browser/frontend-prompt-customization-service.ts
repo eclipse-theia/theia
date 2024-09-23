@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { DisposableCollection, URI } from '@theia/core';
+import { DisposableCollection, URI, Event, Emitter } from '@theia/core';
 import { OpenerService } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { PromptCustomizationService, PromptTemplate } from '../common';
@@ -48,6 +48,9 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
 
     protected toDispose = new DisposableCollection();
 
+    private readonly onDidChangePromptEmitter = new Emitter<string>();
+    readonly onDidChangePrompt: Event<string> = this.onDidChangePromptEmitter.event;
+
     @postConstruct()
     protected init(): void {
         this.preferences.onPreferenceChanged(event => {
@@ -69,31 +72,32 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
 
         this.toDispose.push(this.fileService.watch(templateURI, { recursive: true, excludes: [] }));
         this.toDispose.push(this.fileService.onDidFilesChange(async (event: FileChangesEvent) => {
-
-            for (const child of this.trackedTemplateURIs) {
-                // check deletion and updates
-                if (event.contains(new URI(child))) {
-                    for (const deletedFile of event.getDeleted()) {
-                        if (this.trackedTemplateURIs.has(deletedFile.resource.toString())) {
-                            this.trackedTemplateURIs.delete(deletedFile.resource.toString());
-                            _templates.delete(deletedFile.resource.path.name);
-                        }
-                    }
-                    for (const updatedFile of event.getUpdated()) {
-                        if (this.trackedTemplateURIs.has(updatedFile.resource.toString())) {
-                            const filecontent = await this.fileService.read(updatedFile.resource);
-                            _templates.set(this.removePromptTemplateSuffix(updatedFile.resource.path.name), filecontent.value);
-                        }
-                    }
+            // check deleted templates
+            for (const deletedFile of event.getDeleted()) {
+                if (this.trackedTemplateURIs.has(deletedFile.resource.toString())) {
+                    this.trackedTemplateURIs.delete(deletedFile.resource.toString());
+                    const templateId = this.removePromptTemplateSuffix(deletedFile.resource.path.name);
+                    _templates.delete(templateId);
+                    this.onDidChangePromptEmitter.fire(templateId);
                 }
             }
-
+            // check updated templates
+            for (const updatedFile of event.getUpdated()) {
+                if (this.trackedTemplateURIs.has(updatedFile.resource.toString())) {
+                    const filecontent = await this.fileService.read(updatedFile.resource);
+                    const templateId = this.removePromptTemplateSuffix(updatedFile.resource.path.name);
+                    _templates.set(templateId, filecontent.value);
+                    this.onDidChangePromptEmitter.fire(templateId);
+                }
+            }
             // check new templates
             for (const addedFile of event.getAdded()) {
                 if (addedFile.resource.parent.toString() === templateURI.toString() && addedFile.resource.path.ext === '.prompttemplate') {
                     this.trackedTemplateURIs.add(addedFile.resource.toString());
                     const filecontent = await this.fileService.read(addedFile.resource);
-                    _templates.set(this.removePromptTemplateSuffix(addedFile.resource.path.name), filecontent.value);
+                    const templateId = this.removePromptTemplateSuffix(addedFile.resource.path.name);
+                    _templates.set(templateId, filecontent.value);
+                    this.onDidChangePromptEmitter.fire(templateId);
                 }
             }
 
@@ -112,7 +116,9 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
             if (fileURI.path.ext === '.prompttemplate') {
                 this.trackedTemplateURIs.add(fileURI.toString());
                 const filecontent = await this.fileService.read(fileURI);
-                _templates.set(this.removePromptTemplateSuffix(file.name), filecontent.value);
+                const templateId = this.removePromptTemplateSuffix(file.name);
+                _templates.set(templateId, filecontent.value);
+                this.onDidChangePromptEmitter.fire(templateId);
             }
         }
     }

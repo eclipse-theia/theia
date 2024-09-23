@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { URI } from '@theia/core';
+import { URI, Event } from '@theia/core';
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import { AIVariableService } from './variable-service';
 import { ToolInvocationRegistry } from './tool-invocation-registry';
@@ -104,6 +104,11 @@ export interface PromptCustomizationService {
      * @param uri the uri of the template file
      */
     getTemplateIDFromURI(uri: URI): string | undefined;
+
+    /**
+     * Event which is fired when the prompt template is changed.
+     */
+    readonly onDidChangePrompt: Event<string>;
 }
 
 @injectable()

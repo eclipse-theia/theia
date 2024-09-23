@@ -17,18 +17,14 @@
 import * as monaco from '@theia/monaco-editor-core';
 
 import { FrontendApplicationContribution, PreferenceService } from '@theia/core/lib/browser';
-import { AICodeCompletionProvider } from './ai-code-completion-provider';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { Disposable } from '@theia/core';
 import { AICodeInlineCompletionsProvider } from './ai-code-inline-completion-provider';
-import { PREF_AI_CODE_COMPLETION_ENABLE, PREF_AI_INLINE_COMPLETION_ENABLE } from './ai-code-completion-preference';
+import { PREF_AI_INLINE_COMPLETION_ENABLE } from './ai-code-completion-preference';
 
 @injectable()
 export class AIFrontendApplicationContribution implements FrontendApplicationContribution {
-    @inject(AICodeCompletionProvider)
-    protected codeCompletionProvider: AICodeCompletionProvider;
-
     @inject(AICodeInlineCompletionsProvider)
     private inlineCodeCompletionProvider: AICodeInlineCompletionsProvider;
 
@@ -42,7 +38,6 @@ export class AIFrontendApplicationContribution implements FrontendApplicationCon
 
     onDidInitializeLayout(): void {
         this.preferenceService.ready.then(() => {
-            this.handlePreference(PREF_AI_CODE_COMPLETION_ENABLE, enable => this.handleCodeCompletions(enable));
             this.handlePreference(PREF_AI_INLINE_COMPLETION_ENABLE, enable => this.handleInlineCompletions(enable));
         });
     }
@@ -61,10 +56,6 @@ export class AIFrontendApplicationContribution implements FrontendApplicationCon
             this.toDispose.get(name)?.dispose();
             this.toDispose.set(name, handler(this.preferenceService.get<boolean>(name, false) && change));
         });
-    }
-
-    protected handleCodeCompletions(enable: boolean): Disposable {
-        return enable ? monaco.languages.registerCompletionItemProvider({ scheme: 'file' }, this.codeCompletionProvider) : Disposable.NULL;
     }
 
     protected handleInlineCompletions(enable: boolean): Disposable {
