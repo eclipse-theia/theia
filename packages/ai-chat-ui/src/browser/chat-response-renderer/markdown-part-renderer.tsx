@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { injectable } from '@theia/core/shared/inversify';
 import {
     ChatResponseContent,
     InformationalChatResponseContent,
@@ -23,12 +23,12 @@ import {
 } from '@theia/ai-chat/lib/common';
 import { ReactNode, useEffect, useRef } from '@theia/core/shared/react';
 import * as React from '@theia/core/shared/react';
-import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
-import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
+import * as markdownit from '@theia/core/shared/markdown-it';
+import * as DOMPurify from '@theia/core/shared/dompurify';
 
 @injectable()
 export class MarkdownPartRenderer implements ChatResponsePartRenderer<MarkdownChatResponseContent | InformationalChatResponseContent> {
-    @inject(MarkdownRenderer) private renderer: MarkdownRenderer;
+    protected readonly markdownIt = markdownit();
     canHandle(response: ChatResponseContent): number {
         if (MarkdownChatResponseContent.is(response)) {
             return 10;
@@ -38,34 +38,51 @@ export class MarkdownPartRenderer implements ChatResponsePartRenderer<MarkdownCh
         }
         return -1;
     }
-    private renderMarkdown(md: MarkdownString): HTMLElement {
-        return this.renderer.render(md).element;
-    }
     render(response: MarkdownChatResponseContent | InformationalChatResponseContent): ReactNode {
+        // // eslint-disable-next-line no-null/no-null
+        // const ref: React.MutableRefObject<HTMLDivElement | null> = useRef(null);
+
+        // useEffect(() => {
+        //     const host = document.createElement('div');
+        //     const html = this.markdownIt.render(response.content);
+        //     host.innerHTML = DOMPurify.sanitize(html, {
+        //         ALLOW_UNKNOWN_PROTOCOLS: true // DOMPurify usually strips non http(s) links from hrefs
+        //     });
+        //     while (ref?.current?.firstChild) {
+        //         ref.current.removeChild(ref.current.firstChild);
+        //     }
+
+        //     ref?.current?.appendChild(host);
+        // }, [response.content]);
         // TODO let the user configure whether they want to see informational content
         if (InformationalChatResponseContent.is(response)) {
             // null is valid in React
             // eslint-disable-next-line no-null/no-null
             return null;
         }
-        return <MarkdownWrapper data={response.content} renderCallback={this.renderMarkdown.bind(this)}></MarkdownWrapper>;
+
+        // return <div ref={ref}></div>;
+        return <MarkdownRender response={response} />;
     }
 
 }
 
-export const MarkdownWrapper = (props: { data: MarkdownString, renderCallback: (md: MarkdownString) => HTMLElement }) => {
+const MarkdownRender = ({ response }: { response: MarkdownChatResponseContent | InformationalChatResponseContent }) => {
     // eslint-disable-next-line no-null/no-null
     const ref: React.MutableRefObject<HTMLDivElement | null> = useRef(null);
-
     useEffect(() => {
-        const myDomElement = props.renderCallback(props.data);
-
+        const markdownIt = markdownit();
+        const host = document.createElement('div');
+        const html = markdownIt.render(response.content);
+        host.innerHTML = DOMPurify.sanitize(html, {
+            ALLOW_UNKNOWN_PROTOCOLS: true // DOMPurify usually strips non http(s) links from hrefs
+        });
         while (ref?.current?.firstChild) {
             ref.current.removeChild(ref.current.firstChild);
         }
 
-        ref?.current?.appendChild(myDomElement);
-    }, [props.data.value]);
+        ref?.current?.appendChild(host);
+    }, [response.content]);
 
     return <div ref={ref}></div>;
 };

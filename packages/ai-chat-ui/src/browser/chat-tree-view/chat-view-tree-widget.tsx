@@ -35,7 +35,6 @@ import {
     TreeProps,
     TreeWidget,
 } from '@theia/core/lib/browser';
-import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering/markdown-string';
 import {
     inject,
     injectable,
@@ -44,10 +43,11 @@ import {
 } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 
-import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { ChatNodeToolbarActionContribution } from '../chat-node-toolbar-action-contribution';
 import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
-import { MarkdownWrapper } from '../chat-response-renderer/markdown-part-renderer';
+import * as markdownit from '@theia/core/shared/markdown-it';
+import * as DOMPurify from '@theia/core/shared/dompurify';
+import { useEffect, useRef } from '@theia/core/shared/react';
 
 // TODO Instead of directly operating on the ChatRequestModel we could use an intermediate view model
 export interface RequestNode extends TreeNode {
@@ -75,9 +75,6 @@ export class ChatViewTreeWidget extends TreeWidget {
 
     @inject(ContributionProvider) @named(ChatNodeToolbarActionContribution)
     protected readonly chatNodeToolbarActionContributions: ContributionProvider<ChatNodeToolbarActionContribution>;
-
-    @inject(MarkdownRenderer)
-    private renderer: MarkdownRenderer;
 
     @inject(ChatAgentService)
     protected chatAgentService: ChatAgentService;
@@ -336,16 +333,7 @@ export class ChatViewTreeWidget extends TreeWidget {
     }
 
     private renderChatRequest(node: RequestNode): React.ReactNode {
-        const text = node.request.request.displayText ?? node.request.request.text;
-        const markdownString = new MarkdownStringImpl(text, { supportHtml: true, isTrusted: true });
-        return (
-            <div className={'theia-RequestNode'}>
-                {<MarkdownWrapper
-                    data={markdownString}
-                    renderCallback={() => this.renderer.render(markdownString).element}
-                ></MarkdownWrapper>}
-            </div>
-        );
+        return <ChatRequestRender node={node} />;
     }
 
     private renderChatResponse(node: ResponseNode): React.ReactNode {
@@ -388,6 +376,27 @@ export class ChatViewTreeWidget extends TreeWidget {
         event.preventDefault();
     }
 }
+
+const ChatRequestRender = ({ node }: { node: RequestNode }) => {
+    // eslint-disable-next-line no-null/no-null
+    const ref: React.MutableRefObject<HTMLDivElement | null> = useRef(null);
+    useEffect(() => {
+        const markdownIt = markdownit();
+        const text = node.request.request.displayText ?? node.request.request.text;
+        const host = document.createElement('div');
+        const html = markdownIt.render(text);
+        host.innerHTML = DOMPurify.sanitize(html, {
+            ALLOW_UNKNOWN_PROTOCOLS: true // DOMPurify usually strips non http(s) links from hrefs
+        });
+        while (ref?.current?.firstChild) {
+            ref.current.removeChild(ref.current.firstChild);
+        }
+
+        ref?.current?.appendChild(host);
+    }, [node.request]);
+
+    return <div className={'theia-RequestNode'} ref={ref}></div>;
+};
 
 const ProgressMessage = (c: ChatProgressMessage) => (
     <div className='theia-ResponseNode-ProgressMessage'>
