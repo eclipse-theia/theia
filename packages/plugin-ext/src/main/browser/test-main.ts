@@ -27,7 +27,10 @@ import { CancellationToken, Disposable, Event, URI } from '@theia/core';
 import { MAIN_RPC_CONTEXT, TestControllerUpdate, TestingExt, TestingMain } from '../../common';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { interfaces } from '@theia/core/shared/inversify';
-import { TestExecutionState, TestItemDTO, TestItemReference, TestOutputDTO, TestRunDTO, TestRunProfileDTO, TestStateChangeDTO } from '../../common/test-types';
+import {
+    TestExecutionState, TestItemDTO, TestItemReference, TestOutputDTO,
+    TestRunDTO, TestRunProfileDTO, TestStateChangeDTO
+} from '../../common/test-types';
 import { TestRunProfileKind } from '../../plugin/types-impl';
 import { CommandRegistryMainImpl } from './command-registry-main';
 

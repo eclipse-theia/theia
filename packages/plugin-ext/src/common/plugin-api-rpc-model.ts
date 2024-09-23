@@ -72,6 +72,17 @@ export interface Range {
     readonly endColumn: number;
 }
 
+export interface Position {
+    /**
+     * line number (starts at 1)
+     */
+    readonly lineNumber: number,
+    /**
+     * column (starts at 1)
+     */
+    readonly column: number
+}
+
 export { MarkdownStringDTO as MarkdownString };
 
 export interface SerializedDocumentFilter {

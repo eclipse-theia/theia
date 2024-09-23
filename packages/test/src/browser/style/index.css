@@ -18,23 +18,27 @@
 }
 
 .theia-test-view .passed,
-.theia-test-result-view .passed {
+.theia-test-run-view .passed {
     color: var(--theia-successBackground);
 }
 
 .theia-test-view .failed,
-.theia-test-result-view .failed {
+.theia-test-run-view .failed {
     color: var(--theia-editorError-foreground);
 }
 
 .theia-test-view .errored,
-.theia-test-result-view .errored {
+.theia-test-run-view .errored {
     color: var(--theia-editorError-foreground);
 }
 
 .theia-test-view .queued,
-.theia-test-result-view .queued {
+.theia-test-run-view .queued {
     color: var(--theia-editorWarning-foreground);
+}
+
+.theia-test-result-view .debug-frame {
+    white-space: pre;
 }
 
 .theia-test-view .theia-TreeNode:not(:hover):not(.theia-mod-selected) .theia-test-tree-inline-action {

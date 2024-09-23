@@ -32,7 +32,6 @@ import { TreeViewWidget } from '../view/tree-view-widget';
 import { CodeEditorWidgetUtil, codeToTheiaMappings, ContributionPoint } from './vscode-theia-menu-mappings';
 import { TAB_BAR_TOOLBAR_CONTEXT_MENU } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { TestItem, TestMessage } from '@theia/test/lib/browser/test-service';
-import { fromLocation } from '../hierarchy/hierarchy-types-converters';
 
 export type ArgumentAdapter = (...args: unknown[]) => unknown[];
 
@@ -315,7 +314,8 @@ export class PluginMenuCommandAdapter implements MenuCommandAdapter {
                 actual: testMessage.actual,
                 expected: testMessage.expected,
                 contextValue: testMessage.contextValue,
-                location: testMessage.location ? fromLocation(testMessage.location) : undefined
+                location: testMessage.location,
+                stackTrace: testMessage.stackTrace
             };
             return [TestMessageArg.create(testItemReference, testMessageDTO)];
         }
