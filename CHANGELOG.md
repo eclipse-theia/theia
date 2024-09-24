@@ -6,6 +6,7 @@
 
 <!-- ## Unreleased
 
+- [debug] support 'debug/createConfiguration' menu extension [14215](https://github.com/eclipse-theia/theia/pull/14215) - Contributed on behalf of STMicroelectronics
 - [plugin] move stubbed API TerminalShellIntegration into main API [#14168](https://github.com/eclipse-theia/theia/pull/14168) - Contributed on behalf of STMicroelectronics
 - [plugin] support evolution on proposed API extensionAny [#14199](https://github.com/eclipse-theia/theia/pull/14199) - Contributed on behalf of STMicroelectronics
 - [plugin] updated TreeView reveal options to be readonly [#14198](https://github.com/eclipse-theia/theia/pull/14198) - Contributed on behalf of STMicroelectronics
