@@ -374,7 +374,7 @@ export class ChatRequestModelImpl implements ChatRequestModel {
 }
 
 export class ErrorChatResponseContentImpl implements ErrorChatResponseContent {
-    kind: 'error' = 'error';
+    readonly kind = 'error';
     protected _error: Error;
     constructor(error: Error) {
         this._error = error;
@@ -388,7 +388,7 @@ export class ErrorChatResponseContentImpl implements ErrorChatResponseContent {
 }
 
 export class TextChatResponseContentImpl implements TextChatResponseContent {
-    kind: 'text' = 'text';
+    readonly kind = 'text';
     protected _content: string;
 
     constructor(content: string) {
@@ -410,7 +410,7 @@ export class TextChatResponseContentImpl implements TextChatResponseContent {
 }
 
 export class MarkdownChatResponseContentImpl implements MarkdownChatResponseContent {
-    kind: 'markdownContent' = 'markdownContent';
+    readonly kind = 'markdownContent';
     protected _content: MarkdownStringImpl = new MarkdownStringImpl();
 
     constructor(content: string) {
@@ -432,7 +432,7 @@ export class MarkdownChatResponseContentImpl implements MarkdownChatResponseCont
 }
 
 export class InformationalChatResponseContentImpl implements InformationalChatResponseContent {
-    kind: 'informational' = 'informational';
+    readonly kind = 'informational';
     protected _content: MarkdownStringImpl;
 
     constructor(content: string) {
@@ -454,7 +454,7 @@ export class InformationalChatResponseContentImpl implements InformationalChatRe
 }
 
 export class CodeChatResponseContentImpl implements CodeChatResponseContent {
-    kind: 'code' = 'code';
+    readonly kind = 'code';
     protected _code: string;
     protected _language?: string;
     protected _location?: Location;
@@ -488,7 +488,7 @@ export class CodeChatResponseContentImpl implements CodeChatResponseContent {
 }
 
 export class ToolCallChatResponseContentImpl implements ToolCallChatResponseContent {
-    kind: 'toolCall' = 'toolCall';
+    readonly kind = 'toolCall';
     protected _id?: string;
     protected _name?: string;
     protected _arguments?: string;
@@ -546,7 +546,7 @@ export const COMMAND_CHAT_RESPONSE_COMMAND: Command = {
     id: 'ai-chat.command-chat-response.generic'
 };
 export class CommandChatResponseContentImpl implements CommandChatResponseContent {
-    kind: 'command' = 'command';
+    readonly kind = 'command';
 
     constructor(public command?: Command, public customCallback?: CustomCallback, protected args?: unknown[]) {
     }
@@ -561,7 +561,7 @@ export class CommandChatResponseContentImpl implements CommandChatResponseConten
 }
 
 export class HorizontalLayoutChatResponseContentImpl implements HorizontalLayoutChatResponseContent {
-    kind: 'horizontal' = 'horizontal';
+    readonly kind = 'horizontal';
     protected _content: ChatResponseContent[];
 
     constructor(content: ChatResponseContent[] = []) {
