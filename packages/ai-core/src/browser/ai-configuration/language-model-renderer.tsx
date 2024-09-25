@@ -31,7 +31,7 @@ export const LanguageModelRenderer: React.FC<LanguageModelSettingsProps> = (
 
     const findLanguageModelRequirement = async (purpose: string): Promise<LanguageModelRequirement | undefined> => {
         const requirementSetting = await aiSettingsService.getAgentSettings(agent.id);
-        return requirementSetting?.languageModelRequirements.find(e => e.purpose === purpose);
+        return requirementSetting?.languageModelRequirements?.find(e => e.purpose === purpose);
     };
 
     const [lmRequirementMap, setLmRequirementMap] = React.useState<Record<string, LanguageModelRequirement>>({});

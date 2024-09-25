@@ -28,6 +28,6 @@ export interface AISettingsService {
 }
 export type AISettings = Record<string, AgentSettings>;
 export interface AgentSettings {
-    languageModelRequirements: LanguageModelRequirement[];
-    enable: boolean;
+    languageModelRequirements?: LanguageModelRequirement[];
+    enable?: boolean;
 }
