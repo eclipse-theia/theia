@@ -20,6 +20,7 @@
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatModel.ts
 
 import { Command, Emitter, Event, generateUuid, URI } from '@theia/core';
+import { MarkdownString, MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { Position } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ChatAgentLocation } from './chat-agents';
 import { ParsedChatRequest } from './parsed-chat-request';
@@ -127,7 +128,7 @@ export interface ErrorChatResponseContent extends ChatResponseContent {
 export interface MarkdownChatResponseContent
     extends Required<ChatResponseContent> {
     kind: 'markdownContent';
-    content: string;
+    content: MarkdownString;
 }
 
 export interface CodeChatResponseContent
@@ -186,7 +187,7 @@ export interface CommandChatResponseContent extends ChatResponseContent {
  */
 export interface InformationalChatResponseContent extends ChatResponseContent {
     kind: 'informational';
-    content: string;
+    content: MarkdownString;
 }
 
 export namespace TextChatResponseContent {
@@ -206,7 +207,7 @@ export namespace MarkdownChatResponseContent {
             ChatResponseContent.is(obj) &&
             obj.kind === 'markdownContent' &&
             'content' in obj &&
-            typeof (obj as { content: unknown }).content === 'string'
+            MarkdownString.is((obj as { content: unknown }).content)
         );
     }
 }
@@ -217,7 +218,7 @@ export namespace InformationalChatResponseContent {
             ChatResponseContent.is(obj) &&
             obj.kind === 'informational' &&
             'content' in obj &&
-            typeof (obj as { content: unknown }).content === 'string'
+            MarkdownString.is((obj as { content: unknown }).content)
         );
     }
 }
@@ -410,35 +411,35 @@ export class TextChatResponseContentImpl implements TextChatResponseContent {
 
 export class MarkdownChatResponseContentImpl implements MarkdownChatResponseContent {
     readonly kind = 'markdownContent';
-    protected _content: string;
+    protected _content: MarkdownStringImpl = new MarkdownStringImpl();
 
     constructor(content: string) {
-        this._content = content;
+        this._content.appendMarkdown(content);
     }
 
-    get content(): string {
+    get content(): MarkdownString {
         return this._content;
     }
 
     asString(): string {
-        return this._content;
+        return this._content.value;
     }
 
     merge(nextChatResponseContent: MarkdownChatResponseContent): boolean {
-        this._content += nextChatResponseContent.content;
+        this._content.appendMarkdown(nextChatResponseContent.content.value);
         return true;
     }
 }
 
 export class InformationalChatResponseContentImpl implements InformationalChatResponseContent {
     readonly kind = 'informational';
-    protected _content: string;
+    protected _content: MarkdownStringImpl;
 
     constructor(content: string) {
-        this._content = content;
+        this._content = new MarkdownStringImpl(content);
     }
 
-    get content(): string {
+    get content(): MarkdownString {
         return this._content;
     }
 
@@ -447,7 +448,7 @@ export class InformationalChatResponseContentImpl implements InformationalChatRe
     }
 
     merge(nextChatResponseContent: InformationalChatResponseContent): boolean {
-        this._content += nextChatResponseContent.content;
+        this._content.appendMarkdown(nextChatResponseContent.content.value);
         return true;
     }
 }

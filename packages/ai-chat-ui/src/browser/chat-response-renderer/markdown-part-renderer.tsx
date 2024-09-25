@@ -39,21 +39,6 @@ export class MarkdownPartRenderer implements ChatResponsePartRenderer<MarkdownCh
         return -1;
     }
     render(response: MarkdownChatResponseContent | InformationalChatResponseContent): ReactNode {
-        // // eslint-disable-next-line no-null/no-null
-        // const ref: React.MutableRefObject<HTMLDivElement | null> = useRef(null);
-
-        // useEffect(() => {
-        //     const host = document.createElement('div');
-        //     const html = this.markdownIt.render(response.content);
-        //     host.innerHTML = DOMPurify.sanitize(html, {
-        //         ALLOW_UNKNOWN_PROTOCOLS: true // DOMPurify usually strips non http(s) links from hrefs
-        //     });
-        //     while (ref?.current?.firstChild) {
-        //         ref.current.removeChild(ref.current.firstChild);
-        //     }
-
-        //     ref?.current?.appendChild(host);
-        // }, [response.content]);
         // TODO let the user configure whether they want to see informational content
         if (InformationalChatResponseContent.is(response)) {
             // null is valid in React
@@ -69,11 +54,28 @@ export class MarkdownPartRenderer implements ChatResponsePartRenderer<MarkdownCh
 
 const MarkdownRender = ({ response }: { response: MarkdownChatResponseContent | InformationalChatResponseContent }) => {
     // eslint-disable-next-line no-null/no-null
-    const ref: React.MutableRefObject<HTMLDivElement | null> = useRef(null);
+    const ref = useMarkdownRendering(response.content.value);
+
+    return <div ref={ref}></div>;
+};
+
+/**
+ * This hook uses markdown-it directly to render markdown.
+ * The reason to use markdown-it directly is that the MarkdownRenderer is
+ * overriden by theia with a monaco version. This monaco version strips all html
+ * tags from the markdown with empty content.
+ * This leads to unexpected behavior when rendering markdown with html tags.
+ *
+ * @param markdown the string to render as markdown
+ * @returns the ref to use in an element to render the markdown
+ */
+export const useMarkdownRendering = (markdown: string) => {
+    // eslint-disable-next-line no-null/no-null
+    const ref = useRef<HTMLDivElement | null>(null);
     useEffect(() => {
         const markdownIt = markdownit();
         const host = document.createElement('div');
-        const html = markdownIt.render(response.content);
+        const html = markdownIt.render(markdown);
         host.innerHTML = DOMPurify.sanitize(html, {
             ALLOW_UNKNOWN_PROTOCOLS: true // DOMPurify usually strips non http(s) links from hrefs
         });
@@ -82,7 +84,7 @@ const MarkdownRender = ({ response }: { response: MarkdownChatResponseContent | 
         }
 
         ref?.current?.appendChild(host);
-    }, [response.content]);
+    }, [markdown]);
 
-    return <div ref={ref}></div>;
+    return ref;
 };
