@@ -95,14 +95,12 @@ export class NotebookCodeCellRenderer implements CellRenderer {
     renderSidebar(notebookModel: NotebookModel, cell: NotebookCellModel): React.ReactNode {
         return <div>
             <NotebookCodeCellSidebar cell={cell} notebook={notebookModel} notebookCellToolbarFactory={this.notebookCellToolbarFactory} />
-            <div>
-                <NotebookCodeCellOutputs cell={cell} notebook={notebookModel} outputWebview={this.outputWebview}
-                    renderSidebar={() =>
-                        this.notebookCellToolbarFactory.renderSidebar(NotebookCellActionContribution.OUTPUT_SIDEBAR_MENU, cell, {
-                            contextMenuArgs: () => [notebookModel, cell, cell.outputs[0]]
-                        })
-                    } />
-            </div>
+            <NotebookCodeCellOutputs cell={cell} notebook={notebookModel} outputWebview={this.outputWebview}
+                renderSidebar={() =>
+                    this.notebookCellToolbarFactory.renderSidebar(NotebookCellActionContribution.OUTPUT_SIDEBAR_MENU, cell, {
+                        contextMenuArgs: () => [notebookModel, cell, cell.outputs[0]]
+                    })
+                } />
         </div>;
 
     }
@@ -299,19 +297,20 @@ export class NotebookCodeCellOutputs extends React.Component<NotebookCellOutputP
 
     protected outputHeight: number = 0;
 
-    constructor(props: NotebookCellOutputProps) {
-        super(props);
-        props.outputWebview.onDidRenderOutput(event => {
-            if (event.cellHandle === props.cell.handle) {
-                this.outputHeight = event.outputHeight;
-                this.forceUpdate();
-            }
-        });
-    }
-
     override async componentDidMount(): Promise<void> {
         const { cell } = this.props;
         this.toDispose.push(cell.onDidChangeOutputs(() => this.forceUpdate()));
+        this.toDispose.push(this.props.cell.onDidChangeOutputVisibility(() => this.forceUpdate()));
+        this.toDispose.push(this.props.outputWebview.onDidRenderOutput(event => {
+            if (event.cellHandle === this.props.cell.handle) {
+                this.outputHeight = event.outputHeight;
+                this.forceUpdate();
+            }
+        }));
+    }
+
+    override componentWillUnmount(): void {
+        this.toDispose.dispose();
     }
 
     override render(): React.ReactNode {
@@ -323,7 +322,7 @@ export class NotebookCodeCellOutputs extends React.Component<NotebookCellOutputP
                 {this.props.renderSidebar()}
             </div>;
         }
-        return <i className='theia-notebook-collapsed-output'>{nls.localizeByDefault('Outputs are collapsed')}</i>;
+        return <div className='theia-notebook-collapsed-output-container'><i className='theia-notebook-collapsed-output'>{nls.localizeByDefault('Outputs are collapsed')}</i></div>;
     }
 
 }

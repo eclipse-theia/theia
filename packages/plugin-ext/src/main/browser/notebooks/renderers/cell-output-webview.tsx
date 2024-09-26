@@ -318,6 +318,13 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
             }]);
         }));
         this.toDispose.push(cell.onDidCellHeightChange(height => this.setCellHeight(cell, height)));
+        this.toDispose.push(cell.onDidChangeOutputVisibility(visible => {
+            this.webviewWidget.sendMessage({
+                type: 'outputVisibilityChanged',
+                cellHandle: cell.handle,
+                visible
+            });
+        }));
     }
 
     render(): React.JSX.Element {

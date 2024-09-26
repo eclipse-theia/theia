@@ -335,7 +335,13 @@
   width: 100%;
 }
 
+.theia-notebook-collapsed-output-container {
+  width: 0;
+  overflow: visible;
+}
+
 .theia-notebook-collapsed-output {
+  text-wrap: nowrap;
   padding: 4px 8px;
   color: var(--theia-foreground);
   margin-left: 30px;

@@ -210,9 +210,23 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
         public updateCellHeight(cellKind: number, height: number): void {
             let additionalHeight = 54.5;
             additionalHeight -= cells[0] === this ? 2.5 : 0; // first cell
-            additionalHeight -= cellKind === 1 ? 5 : 0; // markdown cell
             additionalHeight -= this.outputElements.length ? 0 : 5.5; // no outputs
             this.element.style.paddingTop = `${height + additionalHeight}px`;
+        }
+
+        public outputVisibilityChanged(visible: boolean): void {
+            console.log('outputVisibilityChanged', visible);
+            this.outputElements.forEach(output => {
+                output.element.style.display = visible ? 'initial' : 'none';
+            });
+            if (visible) {
+                this.element.getElementsByClassName('output-hidden')?.[0].remove();
+            } else {
+                const outputHiddenElement = document.createElement('div');
+                outputHiddenElement.classList.add('output-hidden');
+                outputHiddenElement.style.height = '16px';
+                this.element.appendChild(outputHiddenElement);
+            }
         }
 
         // public updateScroll(request: webviewCommunication.IContentWidgetTopRequest): void {
@@ -695,6 +709,7 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
 
     window.addEventListener('message', async rawEvent => {
         const event = rawEvent as ({ data: webviewCommunication.ToWebviewMessage });
+        let cellHandle: number | undefined;
         switch (event.data.type) {
             case 'updateRenderers':
                 renderers.updateRendererData(event.data.rendererData);
@@ -709,9 +724,9 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
                 renderers.getRenderer(event.data.rendererId)?.receiveMessage(event.data.message);
                 break;
             case 'changePreferredMimetype':
-                const handle = event.data.cellHandle;
+                cellHandle = event.data.cellHandle;
                 const outputId = event.data.outputId;
-                cells.find(c => c.cellHandle === handle)
+                cells.find(c => c.cellHandle === cellHandle)
                     ?.outputElements.find(o => o.outputId === outputId)
                     ?.preferredMimeTypeChange(event.data.mimeType);
                 break;
@@ -742,11 +757,16 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
                 }
                 break;
             case 'cellHeightUpdate':
-                const cellHandle = event.data.cellHandle;
+                cellHandle = event.data.cellHandle;
                 const cell = cells.find(c => c.cellHandle === cellHandle);
                 if (cell) {
                     cell.updateCellHeight(event.data.cellKind, event.data.height);
                 }
+                break;
+            case 'outputVisibilityChanged':
+                console.log('change visibility', event.data);
+                cellHandle = event.data.cellHandle;
+                cells.find(c => c.cellHandle === cellHandle)?.outputVisibilityChanged(event.data.visible);
                 break;
         }
     });

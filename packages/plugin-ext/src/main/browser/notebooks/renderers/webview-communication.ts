@@ -100,6 +100,12 @@ export interface CellHeightUpdateMessage {
     height: number;
 }
 
+export interface OutputVisibilityChangedMessage {
+    type: 'outputVisibilityChanged';
+    cellHandle: number;
+    visible: boolean;
+}
+
 export type ToWebviewMessage = UpdateRenderersMessage
     | OutputChangedMessage
     | ChangePreferredMimetypeMessage
@@ -109,7 +115,8 @@ export type ToWebviewMessage = UpdateRenderersMessage
     | notebookStylesMessage
     | CellHeigthsMessage
     | CellHeightUpdateMessage
-    | CellsChangedMessage;
+    | CellsChangedMessage
+    | OutputVisibilityChangedMessage;
 
 export interface WebviewInitialized {
     readonly type: 'initialized';
