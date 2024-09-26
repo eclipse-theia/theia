@@ -25,6 +25,7 @@ import { ReactNode, useEffect, useRef } from '@theia/core/shared/react';
 import * as React from '@theia/core/shared/react';
 import * as markdownit from '@theia/core/shared/markdown-it';
 import * as DOMPurify from '@theia/core/shared/dompurify';
+import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 
 @injectable()
 export class MarkdownPartRenderer implements ChatResponsePartRenderer<MarkdownChatResponseContent | InformationalChatResponseContent> {
@@ -52,7 +53,7 @@ export class MarkdownPartRenderer implements ChatResponsePartRenderer<MarkdownCh
 }
 
 const MarkdownRender = ({ response }: { response: MarkdownChatResponseContent | InformationalChatResponseContent }) => {
-    const ref = useMarkdownRendering(response.content.value);
+    const ref = useMarkdownRendering(response.content);
 
     return <div ref={ref}></div>;
 };
@@ -67,13 +68,14 @@ const MarkdownRender = ({ response }: { response: MarkdownChatResponseContent | 
  * @param markdown the string to render as markdown
  * @returns the ref to use in an element to render the markdown
  */
-export const useMarkdownRendering = (markdown: string) => {
+export const useMarkdownRendering = (markdown: string | MarkdownString) => {
     // eslint-disable-next-line no-null/no-null
     const ref = useRef<HTMLDivElement | null>(null);
     useEffect(() => {
         const markdownIt = markdownit();
         const host = document.createElement('div');
-        const html = markdownIt.render(markdown);
+        const markdownString = typeof markdown === 'string' ? markdown : markdown.value;
+        const html = markdownIt.render(markdownString);
         host.innerHTML = DOMPurify.sanitize(html, {
             ALLOW_UNKNOWN_PROTOCOLS: true // DOMPurify usually strips non http(s) links from hrefs
         });
