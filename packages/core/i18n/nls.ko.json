@@ -1,4 +1,6 @@
 {
+  "aiConfiguration:open": "AI 구성 보기 열기",
+  "aiHistory:open": "AI 기록 보기 열기",
   "debug.breakpoint.editCondition": "조건 편집...",
   "notebook.cell.changeToCode": "셀을 코드로 변경",
   "notebook.cell.changeToMarkdown": "셀을 마크다운으로 변경",
@@ -499,6 +501,7 @@
     },
     "test": {
       "cancelAllTestRuns": "모든 테스트 실행 취소",
+      "stackFrameAt": "에서",
       "testRunDefaultName": "{0} 실행 {1}",
       "testRuns": "테스트 실행"
     },

@@ -1,4 +1,6 @@
 {
+  "aiConfiguration:open": "AI-Konfigurationsansicht öffnen",
+  "aiHistory:open": "AI-Historienansicht öffnen",
   "debug.breakpoint.editCondition": "Edit Bedingung...",
   "notebook.cell.changeToCode": "Zelle in Code ändern",
   "notebook.cell.changeToMarkdown": "Zelle in Mardown ändern",
@@ -499,6 +501,7 @@
     },
     "test": {
       "cancelAllTestRuns": "Alle Testläufe abbrechen",
+      "stackFrameAt": "unter",
       "testRunDefaultName": "{0} laufen. {1}",
       "testRuns": "Testläufe"
     },
