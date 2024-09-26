@@ -27,7 +27,7 @@ import { Emitter, Event, WaitUntilEvent } from '@theia/core/lib/common/event';
 import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { LabelProvider, PreferenceScope, PreferenceService, QuickPickValue, StorageService } from '@theia/core/lib/browser';
-import { QuickPickService } from '@theia/core/lib/common/quick-pick-service';
+import { QuickPickItem, QuickPickItemOrSeparator, QuickPickService } from '@theia/core/lib/common/quick-pick-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { DebugConfigurationModel } from './debug-configuration-model';
 import { DebugSessionOptions, DynamicDebugConfigurationSessionOptions } from './debug-session-options';
@@ -40,11 +40,14 @@ import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-mo
 import * as monaco from '@theia/monaco-editor-core';
 import { ICommandService } from '@theia/monaco-editor-core/esm/vs/platform/commands/common/commands';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { nls } from '@theia/core';
+import { ActionMenuNode, CommandService, MenuCommandExecutor, MenuModelRegistry, MenuPath, nls } from '@theia/core';
 import { DebugCompound } from '../common/debug-compound';
-
+import { IReference } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
+import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 export interface WillProvideDebugConfiguration extends WaitUntilEvent {
 }
+
+export const DEBUG_CREATE_CONFIGURATION_MENU: MenuPath = ['debug-create-configuration'];
 
 @injectable()
 export class DebugConfigurationManager {
@@ -75,6 +78,15 @@ export class DebugConfigurationManager {
 
     @inject(WorkspaceVariableContribution)
     protected readonly workspaceVariables: WorkspaceVariableContribution;
+
+    @inject(MenuModelRegistry)
+    protected readonly menuRegistry: MenuModelRegistry;
+
+    @inject(MenuCommandExecutor)
+    protected readonly menuCommandExecutor: MenuCommandExecutor;
+
+    @inject(CommandService)
+    protected readonly commandService: CommandService;
 
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange: Event<void> = this.onDidChangeEmitter.event;
@@ -453,11 +465,70 @@ export class DebugConfigurationManager {
         } catch {
             // Just keep going
         }
+
+        // no configuration yet. Proceed to create the file or use any action registered on the `debug/createConfiguration` menu.
         const debugType = await this.selectDebugType();
         const configurations = debugType ? await this.provideDebugConfigurations(debugType, model.workspaceFolderUri) : [];
+        const commandQuickPicks = this.buildItemsFromMenu();
+
+        if (commandQuickPicks.length > 0) {
+            const quickPickItems: QuickPickItemOrSeparator[] = [];
+            const GENERATE_FILE_ID = 'debug-generate-file';
+            const item: QuickPickItem = {
+                // basic action to provide a launch.json skeleton and user can edit it.
+                label: nls.localize('theia/debug/generateLaunchFile', 'generate launch.json'),
+                id: GENERATE_FILE_ID
+            };
+            quickPickItems.push(item);
+            quickPickItems.push({ type: 'separator' });
+            quickPickItems.push(...commandQuickPicks);
+
+            const selected = await this.quickPickService.show(quickPickItems, { canSelectMany: false });
+            if (selected && selected.id) {
+                if (selected.id === GENERATE_FILE_ID) {
+                    await this.updateTextModel(textModel, configurations);
+                } else {
+                    await this.commandService.executeCommand(selected.id);
+                }
+            }
+        } else {
+            await this.updateTextModel(textModel, configurations);
+        }
+    }
+
+    protected async updateTextModel(textModel: IReference<MonacoEditorModel>, configurations: DebugConfiguration[]): Promise<void> {
         const content = this.getInitialConfigurationContent(configurations);
         textModel.object.textEditorModel.setValue(content); // Will clobber anything the user has entered!
         await textModel.object.save();
+    }
+
+    protected buildItemsFromMenu(): QuickPickItemOrSeparator[] {
+        const menu = this.menuRegistry.getMenu(DEBUG_CREATE_CONFIGURATION_MENU);
+        const quickPickItems = [];
+        for (const child of menu.children) {
+            if (child.children) {
+                for (const grandchild of child.children) {
+                    if (grandchild instanceof ActionMenuNode) {
+                        const { command, label, when } = grandchild;
+                        if (this.menuCommandExecutor.isVisible(DEBUG_CREATE_CONFIGURATION_MENU, command) && (!when || this.contextKeyService.match(when))) {
+                            quickPickItems.push({
+                                label: label,
+                                id: command
+                            });
+                        }
+                    }
+                }
+            } else if (child instanceof ActionMenuNode) {
+                const { command, label, when } = child;
+                if (this.menuCommandExecutor.isVisible(DEBUG_CREATE_CONFIGURATION_MENU, command) && (!when || this.contextKeyService.match(when))) {
+                    quickPickItems.push({
+                        label: label,
+                        id: command
+                    });
+                }
+            }
+        }
+        return quickPickItems;
     }
 
     protected async provideDebugConfigurations(debugType: string, workspaceFolderUri: string | undefined): Promise<DebugConfiguration[]> {
