@@ -53,7 +53,6 @@ export class MarkdownPartRenderer implements ChatResponsePartRenderer<MarkdownCh
 }
 
 const MarkdownRender = ({ response }: { response: MarkdownChatResponseContent | InformationalChatResponseContent }) => {
-    // eslint-disable-next-line no-null/no-null
     const ref = useMarkdownRendering(response.content.value);
 
     return <div ref={ref}></div>;
