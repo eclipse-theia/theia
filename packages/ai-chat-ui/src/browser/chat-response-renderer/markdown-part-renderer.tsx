@@ -46,7 +46,6 @@ export class MarkdownPartRenderer implements ChatResponsePartRenderer<MarkdownCh
             return null;
         }
 
-        // return <div ref={ref}></div>;
         return <MarkdownRender response={response} />;
     }
 
