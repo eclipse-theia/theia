@@ -95,6 +95,7 @@ export interface CellsChangedMessage {
 
 export interface CellHeightUpdateMessage {
     type: 'cellHeightUpdate';
+    cellKind: number;
     cellHandle: number;
     height: number;
 }

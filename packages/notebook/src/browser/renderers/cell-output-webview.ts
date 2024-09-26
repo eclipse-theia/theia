@@ -19,6 +19,7 @@ import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookEditorWidget } from '../notebook-editor-widget';
 import { NotebookContentChangedEvent } from '../notebook-types';
 import { NotebookCellOutputModel } from '../view-model/notebook-cell-output-model';
+import { NotebookCellModel } from '../view-model/notebook-cell-model';
 
 export const CellOutputWebviewFactory = Symbol('outputWebviewFactory');
 export const CellOutputWebview = Symbol('outputWebview');
@@ -39,7 +40,7 @@ export interface CellOutputWebview extends Disposable {
 
     render(): React.ReactNode;
 
-    setCellHeight(cellHandle: number, height: number): void;
+    setCellHeight(cell: NotebookCellModel, height: number): void;
     cellsChanged(cellEvent: NotebookContentChangedEvent[]): void;
     onDidRenderOutput: Event<OutputRenderEvent>
 

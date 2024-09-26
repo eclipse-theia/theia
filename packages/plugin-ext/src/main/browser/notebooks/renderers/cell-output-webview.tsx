@@ -317,7 +317,7 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
                 deleteCount: 1
             }]);
         }));
-        this.toDispose.push(cell.onDidCellHeightChange(height => this.setCellHeight(cell.handle, height)));
+        this.toDispose.push(cell.onDidCellHeightChange(height => this.setCellHeight(cell, height)));
     }
 
     render(): React.JSX.Element {
@@ -390,10 +390,11 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
         } as CellsChangedMessage);
     }
 
-    setCellHeight(cellHandle: number, height: number): void {
+    setCellHeight(cell: NotebookCellModel, height: number): void {
         this.webviewWidget.sendMessage({
             type: 'cellHeightUpdate',
-            cellHandle,
+            cellHandle: cell.handle,
+            cellKind: cell.cellKind,
             height
         });
     }

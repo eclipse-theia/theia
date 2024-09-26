@@ -207,8 +207,12 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
             this.element.style.visibility = 'hidden';
         }
 
-        public updateCellHeight(height: number): void {
-            this.element.style.paddingTop = `${height + 52}px`;
+        public updateCellHeight(cellKind: number, height: number): void {
+            let additionalHeight = 54.5;
+            additionalHeight -= cells[0] === this ? 2.5 : 0; // first cell
+            additionalHeight -= cellKind === 1 ? 5 : 0; // markdown cell
+            additionalHeight -= this.outputElements.length ? 0 : 5.5; // no outputs
+            this.element.style.paddingTop = `${height + additionalHeight}px`;
         }
 
         // public updateScroll(request: webviewCommunication.IContentWidgetTopRequest): void {
@@ -741,7 +745,7 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
                 const cellHandle = event.data.cellHandle;
                 const cell = cells.find(c => c.cellHandle === cellHandle);
                 if (cell) {
-                    cell.updateCellHeight(event.data.height);
+                    cell.updateCellHeight(event.data.cellKind, event.data.height);
                 }
                 break;
         }
