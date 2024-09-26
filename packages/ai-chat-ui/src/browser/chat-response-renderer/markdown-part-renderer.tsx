@@ -71,10 +71,10 @@ const MarkdownRender = ({ response }: { response: MarkdownChatResponseContent | 
 export const useMarkdownRendering = (markdown: string | MarkdownString) => {
     // eslint-disable-next-line no-null/no-null
     const ref = useRef<HTMLDivElement | null>(null);
+    const markdownString = typeof markdown === 'string' ? markdown : markdown.value;
     useEffect(() => {
         const markdownIt = markdownit();
         const host = document.createElement('div');
-        const markdownString = typeof markdown === 'string' ? markdown : markdown.value;
         const html = markdownIt.render(markdownString);
         host.innerHTML = DOMPurify.sanitize(html, {
             ALLOW_UNKNOWN_PROTOCOLS: true // DOMPurify usually strips non http(s) links from hrefs
@@ -84,7 +84,7 @@ export const useMarkdownRendering = (markdown: string | MarkdownString) => {
         }
 
         ref?.current?.appendChild(host);
-    }, [markdown]);
+    }, [markdownString]);
 
     return ref;
 };
