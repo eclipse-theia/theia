@@ -1,4 +1,6 @@
 {
+  "aiConfiguration:open": "Abrir a visualização de Configuração de IA",
+  "aiHistory:open": "Abrir a visualização do histórico de IA",
   "debug.breakpoint.editCondition": "Editar condição...",
   "notebook.cell.changeToCode": "Alterar célula para código",
   "notebook.cell.changeToMarkdown": "Mudança de célula para Mardown",
@@ -499,6 +501,7 @@
     },
     "test": {
       "cancelAllTestRuns": "Cancelar todas as execuções de teste",
+      "stackFrameAt": "em",
       "testRunDefaultName": "{0} executar {1}",
       "testRuns": "Execuções de teste"
     },

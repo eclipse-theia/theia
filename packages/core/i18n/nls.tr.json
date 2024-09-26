@@ -1,4 +1,6 @@
 {
+  "aiConfiguration:open": "AI Yapılandırma görünümünü açın",
+  "aiHistory:open": "Yapay Zeka Geçmişi görünümünü açın",
   "debug.breakpoint.editCondition": "Düzenleme Durumu...",
   "notebook.cell.changeToCode": "Hücreyi Kod Olarak Değiştir",
   "notebook.cell.changeToMarkdown": "Hücreyi Markdown Olarak Değiştirme",
@@ -499,6 +501,7 @@
     },
     "test": {
       "cancelAllTestRuns": "Tüm Test Çalışmalarını İptal Et",
+      "stackFrameAt": "at",
       "testRunDefaultName": "{0} koşmak {1}",
       "testRuns": "Test Çalışmaları"
     },

@@ -1,4 +1,6 @@
 {
+  "aiConfiguration:open": "Откройте представление конфигурации AI",
+  "aiHistory:open": "Откройте представление истории ИИ",
   "debug.breakpoint.editCondition": "Изменить состояние...",
   "notebook.cell.changeToCode": "Измените ячейку на код",
   "notebook.cell.changeToMarkdown": "Измените ячейку на Мардаун",
@@ -499,6 +501,7 @@
     },
     "test": {
       "cancelAllTestRuns": "Отмена всех тестовых запусков",
+      "stackFrameAt": "на",
       "testRunDefaultName": "{0} запустить {1}",
       "testRuns": "Тестовые испытания"
     },

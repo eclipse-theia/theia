@@ -1,4 +1,6 @@
 {
+  "aiConfiguration:open": "Otevřete zobrazení konfigurace AI",
+  "aiHistory:open": "Otevřít zobrazení Historie AI",
   "debug.breakpoint.editCondition": "Upravit stav...",
   "notebook.cell.changeToCode": "Změna buňky na kód",
   "notebook.cell.changeToMarkdown": "Změna buňky na Mardown",
@@ -499,6 +501,7 @@
     },
     "test": {
       "cancelAllTestRuns": "Zrušení všech testovacích běhů",
+      "stackFrameAt": "na adrese",
       "testRunDefaultName": "{0} spustit {1}",
       "testRuns": "Testovací běhy"
     },

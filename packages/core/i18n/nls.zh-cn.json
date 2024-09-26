@@ -1,4 +1,6 @@
 {
+  "aiConfiguration:open": "打开 AI 配置视图",
+  "aiHistory:open": "打开人工智能历史视图",
   "debug.breakpoint.editCondition": "编辑条件...",
   "notebook.cell.changeToCode": "将单元格更改为代码",
   "notebook.cell.changeToMarkdown": "将 Cell 改为 Mardown",
@@ -499,6 +501,7 @@
     },
     "test": {
       "cancelAllTestRuns": "取消所有测试运行",
+      "stackFrameAt": "于",
       "testRunDefaultName": "{0} 运行{1}",
       "testRuns": "测试运行"
     },
