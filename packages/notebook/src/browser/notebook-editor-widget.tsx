@@ -212,7 +212,7 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
 
     protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
-        this.node.focus();
+        (this.node.getElementsByClassName('theia-notebook-main-container')[0] as HTMLDivElement)?.focus();
     }
 
     getResourceUri(): URI | undefined {
