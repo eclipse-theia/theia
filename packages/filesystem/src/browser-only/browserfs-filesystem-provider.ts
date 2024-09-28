@@ -23,21 +23,23 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import {
-    FileChange, FileDeleteOptions,
+    FileChange, FileChangeType, FileDeleteOptions,
     FileOverwriteOptions, FileSystemProviderCapabilities,
     FileSystemProviderError,
     FileSystemProviderErrorCode,
     FileSystemProviderWithFileReadWriteCapability,
     FileType, FileWriteOptions, Stat, WatchOptions, createFileSystemProviderError
 } from '../common/files';
-import { Event, URI, Disposable } from '@theia/core';
+import { Emitter, Event, URI, Disposable } from '@theia/core';
 import { BrowserFSInitialization } from './browserfs-filesystem-initialization';
 // adapted from DiskFileSystemProvider
 @injectable()
 export class BrowserFSFileSystemProvider implements FileSystemProviderWithFileReadWriteCapability {
     capabilities: FileSystemProviderCapabilities = FileSystemProviderCapabilities.FileReadWrite;
     onDidChangeCapabilities: Event<void> = Event.None;
-    onDidChangeFile: Event<readonly FileChange[]> = Event.None;
+
+    private readonly onDidChangeFileEmitter = new Emitter<readonly FileChange[]>();
+    readonly onDidChangeFile = this.onDidChangeFileEmitter.event;
     onFileWatchError: Event<void> = Event.None;
 
     private directoryHandle: FileSystemDirectoryHandle;
@@ -123,59 +125,35 @@ export class BrowserFSFileSystemProvider implements FileSystemProviderWithFileRe
 
     async delete(resource: URI, _opts: FileDeleteOptions): Promise<void> {
         await this.initialized;
-        throw new Error('Method not implemented.');
-        // FIXME use options
-        // try {
-        //     await this.promisify(this.fs.unlink)(this.toFilePath(resource));
-        // } catch (error) {
-        //     throw this.toFileSystemProviderError(error);
-        // }
+        try {
+            const parentURI = resource.parent;
+            const parentHandle = await this.toFileSystemHandle(parentURI, false, true);
+            if (parentHandle.kind !== 'directory') {
+                throw createFileSystemProviderError(new Error('Parent is not a directory'), FileSystemProviderErrorCode.FileNotADirectory);
+            }
+            const dirHandle = parentHandle as FileSystemDirectoryHandle;
+            const name = resource.path.base;
+            return await dirHandle.removeEntry(name, { recursive: _opts.recursive });
+        } catch (error) {
+            throw this.toFileSystemProviderError(error);
+        } finally {
+            this.onDidChangeFileEmitter.fire([{ resource, type: FileChangeType.DELETED }]);
+        }
     }
     async rename(from: URI, to: URI, opts: FileOverwriteOptions): Promise<void> {
         await this.initialized;
-        // const fromFilePath = this.toFilePath(from);
-        // const toFilePath = this.toFilePath(to);
-        // if (fromFilePath === toFilePath) {
-        //     return; // simulate node.js behaviour here and do a no-op if paths match
-        // }
-        // try {
-        //     // assume FS is path case sensitive - correct?
-        //     const targetExists = await this.promisify(this.fs.exists)(toFilePath);
-        //     if (targetExists) {
-        //         throw Error(`File '${toFilePath}' already exists.`);
-        //     }
-        //     if (fromFilePath === toFilePath) {
-        //         return Promise.resolve();
-        //     }
+        try {
+            console.info('rename', from.path.toString(), to.path.toString());
+            const content = await this.readFile(from);
+            await this.writeFile(to, content, { create: true, overwrite: true });
+            await this.delete(from, { recursive: true, useTrash: false });
 
-        //     await this.promisify(this.fs.rename)(fromFilePath, toFilePath);
-
-        //     const stat = await this.promisify(this.fs.lstat)(toFilePath) as Stats;
-        //     if (stat.isDirectory() || stat.isSymbolicLink()) {
-        //         return Promise.resolve(); // only for files
-        //     }
-        //     const fd = await this.promisify(open)(toFilePath, 'a');
-        //     try {
-        //         await this.promisify(this.fs.futimes)(fd, stat.atime, new Date());
-        //     } catch (error) {
-        //         // ignore
-        //     }
-
-        //     this.promisify(this.fs.close)(fd);
-        // } catch (error) {
-        //     // rewrite some typical errors that can happen especially around symlinks
-        //     // to something the user can better understand
-        //     if (error.code === 'EINVAL' || error.code === 'EBUSY' || error.code === 'ENAMETOOLONG') {
-        //         error = new Error(`Unable to move '${basename(fromFilePath)}' into '${basename(dirname(toFilePath))}' (${error.toString()}).`);
-        //     }
-
-        //     throw this.toFileSystemProviderError(error);
-        // }
+            this.onDidChangeFileEmitter.fire([{ resource: to, type: FileChangeType.ADDED }]);
+        } catch (error) {
+            throw this.toFileSystemProviderError(error);
+        }
     }
-    async copy?(from: URI, to: URI, opts: FileOverwriteOptions): Promise<void> {
-        await this.initialized;
-        throw new Error('Method not implemented.');
-    }
+
     async readFile(resource: URI): Promise<Uint8Array> {
         await this.initialized;
 
@@ -208,6 +186,8 @@ export class BrowserFSFileSystemProvider implements FileSystemProviderWithFileRe
             // Write content at once
             console.info('writeFile', resource.path.toString(), content);
             await writeableHandle?.write(content);
+
+            this.onDidChangeFileEmitter.fire([{ resource: resource, type: FileChangeType.ADDED }]);
         } catch (error) {
             throw this.toFileSystemProviderError(error);
         } finally {
