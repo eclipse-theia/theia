@@ -19,7 +19,6 @@ import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
 import { EncodingService } from '@theia/core/lib/common/encoding-service';
 import { BrowserFSInitialization, DefaultBrowserFSInitialization } from '@theia/filesystem/lib/browser-only/browserfs-filesystem-initialization';
 import { BrowserFSFileSystemProvider } from '@theia/filesystem/lib/browser-only/browserfs-filesystem-provider';
-import type { FSModule } from 'browserfs/dist/node/core/FS';
 
 @injectable()
 export class ExampleBrowserFSInitialization extends DefaultBrowserFSInitialization {
@@ -27,18 +26,35 @@ export class ExampleBrowserFSInitialization extends DefaultBrowserFSInitializati
     @inject(EncodingService)
     protected encodingService: EncodingService;
 
-    override async initializeFS(fs: FSModule, provider: BrowserFSFileSystemProvider): Promise<void> {
+    override async initializeFS(dir: FileSystemDirectoryHandle, provider: BrowserFSFileSystemProvider): Promise<void> {
         try {
-            if (!fs.existsSync('/home/workspace')) {
+            // Check whether the directory exists
+            try {
+                await provider.readdir(new URI('/home/workspace'));
+            } catch (e) {
+                console.error('An error occurred while reading the demo workspaces', e);
                 await provider.mkdir(new URI('/home/workspace'));
                 await provider.writeFile(new URI('/home/workspace/my-file.txt'), this.encodingService.encode('foo').buffer, { create: true, overwrite: false });
-                await provider.writeFile(new URI('/home/workspace/my-file2.txt'), this.encodingService.encode('bar').buffer, { create: true, overwrite: false });
             }
-            if (!fs.existsSync('/home/workspace2')) {
+
+            try {
+                await provider.readdir(new URI('/home/workspace2'));
+            } catch (e) {
+                console.error('An error occurred while reading the demo workspaces', e);
                 await provider.mkdir(new URI('/home/workspace2'));
                 await provider.writeFile(new URI('/home/workspace2/my-file.json'), this.encodingService.encode('{ foo: true }').buffer, { create: true, overwrite: false });
-                await provider.writeFile(new URI('/home/workspace2/my-file2.json'), this.encodingService.encode('{ bar: false }').buffer, { create: true, overwrite: false });
             }
+
+            // if (!fs.existsSync('/home/workspace')) {
+            //     await provider.mkdir(new URI('/home/workspace'));
+            //     await provider.writeFile(new URI('/home/workspace/my-file.txt'), this.encodingService.encode('foo').buffer, { create: true, overwrite: false });
+            //     await provider.writeFile(new URI('/home/workspace/my-file2.txt'), this.encodingService.encode('bar').buffer, { create: true, overwrite: false });
+            // }
+            // if (!fs.existsSync('/home/workspace2')) {
+            //     await provider.mkdir(new URI('/home/workspace2'));
+            //     await provider.writeFile(new URI('/home/workspace2/my-file.json'), this.encodingService.encode('{ foo: true }').buffer, { create: true, overwrite: false });
+            //     await provider.writeFile(new URI('/home/workspace2/my-file2.json'), this.encodingService.encode('{ bar: false }').buffer, { create: true, overwrite: false });
+            // }
         } catch (e) {
             console.error('An error occurred while initializing the demo workspaces', e);
         }
