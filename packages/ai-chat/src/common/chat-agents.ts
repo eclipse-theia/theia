@@ -371,7 +371,7 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
         const content = token.content;
         // eslint-disable-next-line no-null/no-null
         if (content !== undefined && content !== null) {
-            return this.defaultContentFactory?.create(content);
+            return this.defaultContentFactory.create(content);
         }
         const toolCalls = token.tool_calls;
         if (toolCalls !== undefined) {

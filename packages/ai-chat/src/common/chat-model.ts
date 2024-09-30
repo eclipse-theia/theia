@@ -602,13 +602,19 @@ class ChatResponseImpl implements ChatResponse {
     }
 
     addContents(contents: ChatResponseContent[]): void {
-        contents.forEach(c => this.addContent(c));
+        contents.forEach(c => this.doAddContent(c));
+        this._onDidChangeEmitter.fire();
     }
 
     addContent(nextContent: ChatResponseContent): void {
         // TODO: Support more complex merges affecting different content than the last, e.g. via some kind of ProcessorRegistry
         // TODO: Support more of the built-in VS Code behavior, see
         //   https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatModel.ts#L188-L244
+        this.doAddContent(nextContent);
+        this._onDidChangeEmitter.fire();
+    }
+
+    protected doAddContent(nextContent: ChatResponseContent): void {
         if (ToolCallChatResponseContent.is(nextContent) && nextContent.id !== undefined) {
             const fittingTool = this._content.find(c => ToolCallChatResponseContent.is(c) && c.id === nextContent.id);
             if (fittingTool !== undefined) {
@@ -617,10 +623,9 @@ class ChatResponseImpl implements ChatResponse {
                 this._content.push(nextContent);
             }
         } else {
-            const lastElement =
-                this._content.length > 0
-                    ? this._content[this._content.length - 1]
-                    : undefined;
+            const lastElement = this._content.length > 0
+                ? this._content[this._content.length - 1]
+                : undefined;
             if (lastElement?.kind === nextContent.kind && ChatResponseContent.hasMerge(lastElement)) {
                 const mergeSuccess = lastElement.merge(nextContent);
                 if (!mergeSuccess) {
@@ -631,7 +636,6 @@ class ChatResponseImpl implements ChatResponse {
             }
         }
         this._updateResponseRepresentation();
-        this._onDidChangeEmitter.fire();
     }
 
     protected _updateResponseRepresentation(): void {
