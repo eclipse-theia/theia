@@ -14,12 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Emitter } from 'vscode-languageserver-protocol';
 import { ApplicationShell, StatefulWidget } from '../shell';
 import { BaseWidget, Message, PanelLayout, SplitPanel, Widget } from './widget';
 import { CompositeSaveable, Saveable, SaveableSource } from '../saveable';
 import { Navigatable } from '../navigatable-types';
-import { URI } from '../../common';
+import { Emitter, URI } from '../../common';
 
 /**
  * A widget containing a number of panes in a split layout.
