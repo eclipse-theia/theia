@@ -190,7 +190,6 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
 
         public clearOutputs(start: number, deleteCount: number): void {
             for (const output of this.outputElements.splice(start, deleteCount)) {
-                console.log('clear output', output);
                 output?.clear();
                 output.containerElement.remove();
             }
@@ -215,7 +214,6 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
         }
 
         public outputVisibilityChanged(visible: boolean): void {
-            console.log('outputVisibilityChanged', visible);
             this.outputElements.forEach(output => {
                 output.element.style.display = visible ? 'initial' : 'none';
             });
@@ -283,12 +281,13 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
         }
 
         preferredMimeTypeChange(mimeType: string): void {
-            this.element.innerHTML = '';
+            this.containerElement.remove();
+            this.createHtmlElement();
+            this.cell.element.appendChild(this.containerElement);
             renderers.render(this.cell, this, mimeType, undefined, new AbortController().signal);
         }
 
         private createHtmlElement(): void {
-            console.log('createHtmlElement', this.outputId);
             this.containerElement = document.createElement('div');
             this.containerElement.classList.add('output-container');
             this.element = document.createElement('div');
@@ -484,10 +483,15 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
             // we need to check for all images are loaded. Otherwise we can't determine the correct height of the output
             const images = Array.from(document.images);
             if (images.length > 0) {
-                Promise.all(images.filter(img => !img.complete).map(img => new Promise(resolve => { img.onload = img.onerror = resolve; }))).then(() => {
-                    this.sendDidRenderMessage(cell, output);
-                    new ResizeObserver(() => this.sendDidRenderMessage(cell, output)).observe(cell.element);
-                });
+                Promise.all(images
+                    .filter(img => !img.complete && !img.dataset.waiting)
+                    .map(img => {
+                        img.dataset.waiting = 'true'; // mark to avoid overriding onload a second time
+                        return new Promise(resolve => { img.onload = img.onerror = resolve; });
+                    })).then(() => {
+                        this.sendDidRenderMessage(cell, output);
+                        new ResizeObserver(() => this.sendDidRenderMessage(cell, output)).observe(cell.element);
+                    });
             } else {
                 this.sendDidRenderMessage(cell, output);
                 new ResizeObserver(() => this.sendDidRenderMessage(cell, output)).observe(cell.element);
@@ -653,10 +657,7 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
                 } else {
                     container.appendChild(cell.element);
                 }
-                console.log('cellMoved', change);
-                console.log('cells', cells);
             } else if (change.type === 'cellsSpliced') {
-                console.log('cellsSpliced', change);
                 const deltedCells = cells.splice(change.start, change.deleteCount, ...change.newCells.map((cellHandle, i) => new OutputCell(cellHandle, change.start + i)));
                 deltedCells.forEach(cell => cell.dispose());
             }
@@ -725,10 +726,9 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
                 break;
             case 'changePreferredMimetype':
                 cellHandle = event.data.cellHandle;
-                const outputId = event.data.outputId;
+                const mimeType = event.data.mimeType;
                 cells.find(c => c.cellHandle === cellHandle)
-                    ?.outputElements.find(o => o.outputId === outputId)
-                    ?.preferredMimeTypeChange(event.data.mimeType);
+                    ?.outputElements.forEach(o => o.preferredMimeTypeChange(mimeType));
                 break;
             case 'customKernelMessage':
                 onDidReceiveKernelMessage.fire(event.data.message);
@@ -764,7 +764,6 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
                 }
                 break;
             case 'outputVisibilityChanged':
-                console.log('change visibility', event.data);
                 cellHandle = event.data.cellHandle;
                 cells.find(c => c.cellHandle === cellHandle)?.outputVisibilityChanged(event.data.visible);
                 break;
