@@ -59,7 +59,7 @@ export function parseContents(
 }
 
 export function findFirstMatch(contentMatchers: ResponseContentMatcher[], text: string): Match | undefined {
-    let earliestMatch: { matcher: ResponseContentMatcher, index: number, content: string } | undefined;
+    let firstMatch: { matcher: ResponseContentMatcher, index: number, content: string } | undefined;
     for (const matcher of contentMatchers) {
         const startMatch = matcher.start.exec(text);
         if (!startMatch) {
@@ -83,10 +83,10 @@ export function findFirstMatch(contentMatchers: ResponseContentMatcher[], text: 
         const index = startMatch.index;
         const contentEnd = index + startMatch[0].length + endMatch.index + endMatch[0].length;
         const content = text.substring(index, contentEnd);
-        if (!earliestMatch || index < earliestMatch.index) {
-            earliestMatch = { matcher, index, content };
+        if (!firstMatch || index < firstMatch.index) {
+            firstMatch = { matcher, index, content };
         }
     }
-    return earliestMatch;
+    return firstMatch;
 }
 
