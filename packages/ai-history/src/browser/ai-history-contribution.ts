@@ -47,7 +47,7 @@ export const AI_HISTORY_VIEW_CLEAR = Command.toLocalizedCommand({
 
 @injectable()
 export class AIHistoryViewContribution extends AIViewContribution<AIHistoryView> implements TabBarToolbarContribution {
-    @inject(CommunicationRecordingService) private recordingService: CommunicationRecordingService
+    @inject(CommunicationRecordingService) private recordingService: CommunicationRecordingService;
 
     constructor() {
         super({
