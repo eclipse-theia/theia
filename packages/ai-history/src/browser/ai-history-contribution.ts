@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { FrontendApplication, Widget, codicon } from '@theia/core/lib/browser';
+import { FrontendApplication, codicon } from '@theia/core/lib/browser';
 import { AIViewContribution } from '@theia/ai-core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { AIHistoryView } from './ai-history-widget';
@@ -47,8 +47,9 @@ export const AI_HISTORY_VIEW_CLEAR = Command.toLocalizedCommand({
 
 @injectable()
 export class AIHistoryViewContribution extends AIViewContribution<AIHistoryView> implements TabBarToolbarContribution {
-    recordingService: CommunicationRecordingService;
-    constructor(@inject(CommunicationRecordingService) recordingService: CommunicationRecordingService) {
+    @inject(CommunicationRecordingService) private recordingService: CommunicationRecordingService
+
+    constructor() {
         super({
             widgetId: AIHistoryView.ID,
             widgetName: AIHistoryView.LABEL,
@@ -58,7 +59,6 @@ export class AIHistoryViewContribution extends AIViewContribution<AIHistoryView>
             },
             toggleCommandId: AI_HISTORY_TOGGLE_COMMAND_ID,
         });
-        this.recordingService = recordingService;
     }
 
     async initializeLayout(_app: FrontendApplication): Promise<void> {
@@ -71,25 +71,25 @@ export class AIHistoryViewContribution extends AIViewContribution<AIHistoryView>
             execute: () => this.openView({ activate: true }),
         });
         registry.registerCommand(AI_HISTORY_VIEW_SORT_CHRONOLOGICALLY, {
-            isEnabled: widget => this.withWidget(widget, () => !widget.isChronologial),
-            isVisible: widget => this.withWidget(widget, () => !widget.isChronologial),
-            execute: widget => this.withWidget(widget, chatWidget => {
-                widget.sortHistory(true);
+            isEnabled: widget => this.withHistoryWidget(widget, historyView => !historyView.isChronologial),
+            isVisible: widget => this.withHistoryWidget(widget, historyView => !historyView.isChronologial),
+            execute: widget => this.withHistoryWidget(widget, historyView => {
+                historyView.sortHistory(true);
                 return true;
             })
         });
         registry.registerCommand(AI_HISTORY_VIEW_SORT_REVERSE_CHRONOLOGICALLY, {
-            isEnabled: widget => this.withWidget(widget, () => widget.isChronologial),
-            isVisible: widget => this.withWidget(widget, () => widget.isChronologial),
-            execute: widget => this.withWidget(widget, chatWidget => {
-                widget.sortHistory(false);
+            isEnabled: widget => this.withHistoryWidget(widget, historyView => historyView.isChronologial),
+            isVisible: widget => this.withHistoryWidget(widget, historyView => historyView.isChronologial),
+            execute: widget => this.withHistoryWidget(widget, historyView => {
+                historyView.sortHistory(false);
                 return true;
             })
         });
         registry.registerCommand(AI_HISTORY_VIEW_CLEAR, {
-            isEnabled: widget => this.withWidget(widget, () => true),
-            isVisible: widget => this.withWidget(widget, () => true),
-            execute: widget => this.withWidget(widget, chatWidget => {
+            isEnabled: widget => this.withHistoryWidget(widget),
+            isVisible: widget => this.withHistoryWidget(widget),
+            execute: widget => this.withHistoryWidget(widget, () => {
                 this.clearHistory();
                 return true;
             })
@@ -99,8 +99,8 @@ export class AIHistoryViewContribution extends AIViewContribution<AIHistoryView>
         this.recordingService.clearHistory();
     }
 
-    protected withWidget(
-        widget: Widget | undefined = this.tryGetWidget(),
+    protected withHistoryWidget(
+        widget: unknown = this.tryGetWidget(),
         predicate: (output: AIHistoryView) => boolean = () => true
     ): boolean | false {
         return widget instanceof AIHistoryView ? predicate(widget) : false;
@@ -122,24 +122,21 @@ export class AIHistoryViewContribution extends AIViewContribution<AIHistoryView>
             id: AI_HISTORY_VIEW_SORT_CHRONOLOGICALLY.id,
             command: AI_HISTORY_VIEW_SORT_CHRONOLOGICALLY.id,
             tooltip: 'Sort chronologically',
-            isVisible: widget => this.isHistoryViewWidget(widget),
+            isVisible: widget => this.withHistoryWidget(widget),
             onDidChange: this.onAIHistoryWidgettStateChanged
         });
         registry.registerItem({
             id: AI_HISTORY_VIEW_SORT_REVERSE_CHRONOLOGICALLY.id,
             command: AI_HISTORY_VIEW_SORT_REVERSE_CHRONOLOGICALLY.id,
             tooltip: 'Sort reverse chronologically',
-            isVisible: widget => this.isHistoryViewWidget(widget),
+            isVisible: widget => this.withHistoryWidget(widget),
             onDidChange: this.onAIHistoryWidgettStateChanged
         });
         registry.registerItem({
             id: AI_HISTORY_VIEW_CLEAR.id,
             command: AI_HISTORY_VIEW_CLEAR.id,
             tooltip: 'Clear History of all agents',
-            isVisible: widget => this.isHistoryViewWidget(widget)
+            isVisible: widget => this.withHistoryWidget(widget)
         });
-    }
-    protected isHistoryViewWidget(widget?: Widget): boolean {
-        return !!widget && AIHistoryView.ID === widget.id;
     }
 }

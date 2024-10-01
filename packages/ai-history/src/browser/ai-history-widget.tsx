@@ -19,9 +19,9 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import * as React from '@theia/core/shared/react';
 import { CommunicationCard } from './ai-history-communication-card';
 import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/select-component';
-import { deepClone, Emitter, Event } from '@theia/core';
+import { deepClone, Emitter } from '@theia/core';
 
-export namespace AIHistoryView {
+namespace AIHistoryView {
     export interface State {
         chronological: boolean;
     }
@@ -41,6 +41,7 @@ export class AIHistoryView extends ReactWidget implements StatefulWidget {
 
     protected _state: AIHistoryView.State = { chronological: false };
     protected readonly onStateChangedEmitter = new Emitter<AIHistoryView.State>();
+    readonly onStateChanged = this.onStateChangedEmitter.event;
 
     constructor() {
         super();
@@ -58,10 +59,6 @@ export class AIHistoryView extends ReactWidget implements StatefulWidget {
     protected set state(state: AIHistoryView.State) {
         this._state = state;
         this.onStateChangedEmitter.fire(this._state);
-    }
-
-    get onStateChanged(): Event<AIHistoryView.State> {
-        return this.onStateChangedEmitter.event;
     }
 
     storeState(): object {
@@ -139,6 +136,6 @@ export class AIHistoryView extends ReactWidget implements StatefulWidget {
     }
 
     get isChronologial(): boolean {
-        return !!this.state.chronological;
+        return this.state.chronological === true;
     }
 }
