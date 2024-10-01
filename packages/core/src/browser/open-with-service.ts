@@ -77,6 +77,10 @@ export class OpenWithService {
     protected readonly handlers: OpenWithHandler[] = [];
 
     registerHandler(handler: OpenWithHandler): Disposable {
+        if (this.handlers.some(h => h.id === handler.id)) {
+            console.warn('Duplicate OpenWithHandler registration: ' + handler.id);
+            return Disposable.NULL;
+        }
         this.handlers.push(handler);
         return Disposable.create(() => {
             const index = this.handlers.indexOf(handler);
