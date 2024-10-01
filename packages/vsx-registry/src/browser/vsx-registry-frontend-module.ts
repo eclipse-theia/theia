@@ -18,7 +18,9 @@ import '../../src/browser/style/index.css';
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import {
-    WidgetFactory, bindViewContribution, FrontendApplicationContribution, ViewContainerIdentifier, OpenHandler, WidgetManager, WebSocketConnectionProvider
+    WidgetFactory, bindViewContribution, FrontendApplicationContribution, ViewContainerIdentifier, OpenHandler, WidgetManager, WebSocketConnectionProvider,
+    WidgetStatusBarContribution,
+    noopWidgetStatusBarContribution
 } from '@theia/core/lib/browser';
 import { VSXExtensionsViewContainer } from './vsx-extensions-view-container';
 import { VSXExtensionsContribution } from './vsx-extensions-contribution';
@@ -64,6 +66,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     })).inSingletonScope();
     bind(VSXExtensionEditorManager).toSelf().inSingletonScope();
     bind(OpenHandler).toService(VSXExtensionEditorManager);
+    bind(WidgetStatusBarContribution).toConstantValue(noopWidgetStatusBarContribution(VSXExtensionEditor));
 
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
         id: VSXExtensionsWidget.ID,
