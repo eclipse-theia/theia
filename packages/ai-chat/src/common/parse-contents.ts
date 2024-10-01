@@ -32,7 +32,7 @@ export function parseContents(
     let currentIndex = 0;
     while (currentIndex < text.length) {
         const remainingText = text.substring(currentIndex);
-        const match = findEarliestMatch(contentMatchers, remainingText);
+        const match = findFirstMatch(contentMatchers, remainingText);
         if (!match) {
             // Add the remaining text as default content
             if (remainingText.length > 0) {
@@ -58,7 +58,7 @@ export function parseContents(
     return result;
 }
 
-export function findEarliestMatch(contentMatchers: ResponseContentMatcher[], text: string): Match | undefined {
+export function findFirstMatch(contentMatchers: ResponseContentMatcher[], text: string): Match | undefined {
     let earliestMatch: { matcher: ResponseContentMatcher, index: number, content: string } | undefined;
     for (const matcher of contentMatchers) {
         const startMatch = matcher.start.exec(text);

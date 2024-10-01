@@ -50,7 +50,7 @@ import {
     MarkdownChatResponseContentImpl,
     ToolCallChatResponseContentImpl
 } from './chat-model';
-import { findEarliestMatch, parseContents } from './parse-contents';
+import { findFirstMatch, parseContents } from './parse-contents';
 import { DefaultResponseContentFactory, ResponseContentMatcher, ResponseContentMatcherProvider } from './response-content-matcher';
 
 /**
@@ -356,11 +356,9 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
                 return;
             }
 
-            const result: ChatResponseContent[] = findEarliestMatch(this.contentMatchers, text) ? this.parseContents(text) : [];
+            const result: ChatResponseContent[] = findFirstMatch(this.contentMatchers, text) ? this.parseContents(text) : [];
             if (result.length > 0) {
-                result.forEach(r => {
-                    request.response.response.addContent(r);
-                });
+                request.response.response.addContents(result);
             } else {
                 request.response.response.addContent(lastContent);
             }
