@@ -331,6 +331,7 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
     }
 
     override dispose(): void {
+        this.cellOutputWebview.dispose();
         this.notebookContextManager.dispose();
         this.onDidChangeModelEmitter.dispose();
         this.onDidPostKernelMessageEmitter.dispose();

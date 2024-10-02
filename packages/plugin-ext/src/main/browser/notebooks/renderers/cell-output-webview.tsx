@@ -242,6 +242,8 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
 
     protected toDispose = new DisposableCollection();
 
+    protected isDisposed = false;
+
     async init(notebook: NotebookModel, editor: NotebookEditorWidget): Promise<void> {
         this.notebook = notebook;
         this.editor = editor;
@@ -396,7 +398,7 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
     }
 
     setCellHeight(cell: NotebookCellModel, height: number): void {
-        if (!this.webviewWidget.disposed) {
+        if (!this.isDisposed) {
             this.webviewWidget.sendMessage({
                 type: 'cellHeightUpdate',
                 cellHandle: cell.handle,
@@ -535,6 +537,7 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
     }
 
     dispose(): void {
+        this.isDisposed = true;
         this.toDispose.dispose();
         this.webviewWidget.dispose();
     }
