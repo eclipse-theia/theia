@@ -511,7 +511,7 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
 
         private async doRender(item: rendererApi.OutputItem, element: HTMLElement, renderer: Renderer, signal: AbortSignal): Promise<{ continue: boolean }> {
             try {
-                (await renderer.getOrLoad())?.renderOutputItem(item, element, signal);
+                await (await renderer.getOrLoad())?.renderOutputItem(item, element, signal);
                 return { continue: false }; // We rendered successfully
             } catch (e) {
                 if (signal.aborted) {
