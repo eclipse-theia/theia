@@ -396,12 +396,14 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
     }
 
     setCellHeight(cell: NotebookCellModel, height: number): void {
-        this.webviewWidget.sendMessage({
-            type: 'cellHeightUpdate',
-            cellHandle: cell.handle,
-            cellKind: cell.cellKind,
-            height
-        });
+        if (!this.webviewWidget.disposed) {
+            this.webviewWidget.sendMessage({
+                type: 'cellHeightUpdate',
+                cellHandle: cell.handle,
+                cellKind: cell.cellKind,
+                height
+            });
+        }
     }
 
     async requestOutputPresentationUpdate(cellHandle: number, output: NotebookCellOutputModel): Promise<void> {

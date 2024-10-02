@@ -337,8 +337,10 @@ class EditorAndDocumentStateComputer implements Disposable {
         }
 
         for (const editor of this.cellEditorService.allCellEditors) {
-            const editorSnapshot = new EditorSnapshot(editor);
-            editors.set(editorSnapshot.id, editorSnapshot);
+            if (editor.getControl()?.getModel()) {
+                const editorSnapshot = new EditorSnapshot(editor);
+                editors.set(editorSnapshot.id, editorSnapshot);
+            }
         };
 
         const newState = new EditorAndDocumentState(models, editors, activeId);
