@@ -35,6 +35,7 @@ import { ChatViewMenuContribution } from './chat-view-contribution';
 import { ChatViewLanguageContribution } from './chat-view-language-contribution';
 import { ChatViewWidget } from './chat-view-widget';
 import { ChatViewWidgetToolbarContribution } from './chat-view-widget-toolbar-contribution';
+import { EditorPreviewManager } from '@theia/editor-preview/lib/browser/editor-preview-manager';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindViewContribution(bind, AIChatContribution);
@@ -71,6 +72,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
 
     bind(AIEditorManager).toSelf().inSingletonScope();
     rebind(EditorManager).toService(AIEditorManager);
+    rebind(EditorPreviewManager).toService(AIEditorManager);
 
     bindContributionProvider(bind, AIEditorSelectionResolver);
     bind(AIEditorSelectionResolver).to(GitHubSelectionResolver).inSingletonScope();
