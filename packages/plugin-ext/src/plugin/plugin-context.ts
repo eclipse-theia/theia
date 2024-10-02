@@ -279,14 +279,14 @@ import { TestingExtImpl } from './tests';
 import { UriExtImpl } from './uri-ext';
 
 export function createAPIObject<T extends Object>(rawObject: T): T {
-    return new Proxy({}, {
+    return new Proxy(rawObject, {
         get(target, p, receiver) {
-            const isOwnProperty = !!Object.getOwnPropertyDescriptor(rawObject, p);
-            const val = Reflect.get(rawObject, p);
+            const isOwnProperty = !!Object.getOwnPropertyDescriptor(target, p);
+            const val = Reflect.get(target, p);
             if (!isOwnProperty && typeof val === 'function') {
                 // bind functions that are inherited from the prototype to the object itself.
                 // This should handle the case of events.
-                return val.bind(rawObject);
+                return val.bind(target);
             }
             return val;
         },
