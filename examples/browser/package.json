@@ -108,6 +108,7 @@
     "watch:compile": "tsc -b -w"
   },
   "devDependencies": {
-    "@theia/cli": "1.57.0"
+    "@theia/cli": "1.57.0",
+    "@theia/native-webpack-plugin": "1.57.0"
   }
 }

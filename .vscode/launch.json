@@ -5,6 +5,20 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "download plugins",
+      "program": "${workspaceFolder}/dev-packages/cli/lib/theia.js",
+      "request": "launch",
+      "args": [
+        "build",
+        "--mode development"
+      ],
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "type": "node",
+      "cwd": "${workspaceFolder}/examples/browser"
+    },
+    {
       "type": "node",
       "request": "attach",
       "name": "Attach by Process ID",
@@ -28,6 +42,7 @@
       "protocol": "inspector",
       "args": [
         ".",
+        "c:\\users\\thomas",
         "--log-level=debug",
         "--hostname=localhost",
         "--no-cluster",
