@@ -17,13 +17,14 @@
 import { GettingStartedContribution } from './getting-started-contribution';
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { GettingStartedWidget } from './getting-started-widget';
-import { WidgetFactory, FrontendApplicationContribution, bindViewContribution } from '@theia/core/lib/browser';
+import { WidgetFactory, FrontendApplicationContribution, bindViewContribution, noopWidgetStatusBarContribution, WidgetStatusBarContribution } from '@theia/core/lib/browser';
 import { bindGettingStartedPreferences } from './getting-started-preferences';
 import '../../src/browser/style/index.css';
 
 export default new ContainerModule((bind: interfaces.Bind) => {
     bindViewContribution(bind, GettingStartedContribution);
     bind(FrontendApplicationContribution).toService(GettingStartedContribution);
+    bind(WidgetStatusBarContribution).toConstantValue(noopWidgetStatusBarContribution(GettingStartedWidget));
     bind(GettingStartedWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(context => ({
         id: GettingStartedWidget.ID,
