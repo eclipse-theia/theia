@@ -147,12 +147,13 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
                                         ref.focus();
                                     }
                                 }
-                            }}>
-                            <div className='theia-notebook-cell-sidebar'
-                                onClick={e => {
-                                    this.setState({ ...this.state, selectedCell: cell });
-                                    this.props.notebookModel.setSelectedCell(cell, false);
-                                }}                            >
+                            }}
+                            onClick={e => {
+                                this.setState({ ...this.state, selectedCell: cell });
+                                this.props.notebookModel.setSelectedCell(cell, false);
+                            }}
+                        >
+                            <div className='theia-notebook-cell-sidebar'>
                                 <div className={'theia-notebook-cell-marker' + (this.state.selectedCell === cell ? ' theia-notebook-cell-marker-selected' : '')}></div>
                                 {this.renderCellSidebar(cell)}
                             </div>
