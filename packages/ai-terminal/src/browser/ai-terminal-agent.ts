@@ -16,12 +16,14 @@
 
 import {
     Agent,
+    CommunicationHistoryEntry,
+    CommunicationRecordingService,
     getJsonOfResponse,
     isLanguageModelParsedResponse,
     LanguageModelRegistry, LanguageModelRequirement,
     PromptService
 } from '@theia/ai-core/lib/common';
-import { ILogger } from '@theia/core';
+import { generateUuid, ILogger } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { z } from 'zod';
 import zodToJsonSchema from 'zod-to-json-schema';
@@ -33,6 +35,8 @@ type Commands = z.infer<typeof Commands>;
 
 @injectable()
 export class AiTerminalAgent implements Agent {
+    @inject(CommunicationRecordingService)
+    protected recordingService: CommunicationRecordingService;
 
     id = 'Terminal Assistant';
     name = 'Terminal Assistant';
@@ -153,6 +157,20 @@ recent-terminal-contents:
             return [];
         }
 
+        // since we do not actually hold complete conversions, the request/response pair is considered a session
+        const sessionId = generateUuid();
+        const requestId = generateUuid();
+        const requestEntry: CommunicationHistoryEntry = {
+            agentId: this.id,
+            sessionId,
+            timestamp: Date.now(),
+            requestId,
+            request: systemPrompt,
+            messages: [userPrompt],
+        };
+
+        this.recordingService.recordRequest(requestEntry);
+
         try {
             const result = await lm.request({
                 messages: [
@@ -181,12 +199,28 @@ recent-terminal-contents:
                 // model returned structured output
                 const parsedResult = Commands.safeParse(result.parsed);
                 if (parsedResult.success) {
+                    const responseText = JSON.stringify(parsedResult.data.commands);
+                    this.recordingService.recordResponse({
+                        agentId: this.id,
+                        sessionId,
+                        timestamp: Date.now(),
+                        requestId,
+                        response: responseText,
+                    });
                     return parsedResult.data.commands;
                 }
             }
 
             // fall back to agent-based parsing of result
             const jsonResult = await getJsonOfResponse(result);
+            const responseText = JSON.stringify(jsonResult);
+            this.recordingService.recordResponse({
+                agentId: this.id,
+                sessionId,
+                timestamp: Date.now(),
+                requestId,
+                response: responseText
+            });
             const parsedJsonResult = Commands.safeParse(jsonResult);
             if (parsedJsonResult.success) {
                 return parsedJsonResult.data.commands;
