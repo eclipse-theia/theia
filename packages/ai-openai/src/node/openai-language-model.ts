@@ -134,9 +134,12 @@ export class OpenAiModel implements LanguageModel {
     }
 
     protected supportsStructuredOutput(): boolean {
-        // currently only the lastest 4o and 4o-mini models support structured output
-        // see https://platform.openai.com/docs/guides/structured-outputs
-        return this.model === 'gpt-4o-2024-08-06' || this.model === 'gpt-4o-mini';
+        // see https://platform.openai.com/docs/models/gpt-4o
+        return [
+            'gpt-4o',
+            'gpt-4o-2024-08-06',
+            'gpt-4o-mini'
+        ].includes(this.model);
     }
 
     protected async handleStructuredOutputRequest(openai: OpenAI, request: LanguageModelRequest): Promise<LanguageModelParsedResponse> {
