@@ -160,16 +160,14 @@ recent-terminal-contents:
         // since we do not actually hold complete conversions, the request/response pair is considered a session
         const sessionId = generateUuid();
         const requestId = generateUuid();
-        const requestEntry: CommunicationHistoryEntry = {
+        this.recordingService.recordRequest({
             agentId: this.id,
             sessionId,
             timestamp: Date.now(),
             requestId,
             request: systemPrompt,
             messages: [userPrompt],
-        };
-
-        this.recordingService.recordRequest(requestEntry);
+        });
 
         try {
             const result = await lm.request({
