@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
-import { bindBrowserFSInitialization } from './filesystem/example-filesystem-initialization';
+import { bindOPFSInitialization } from './filesystem/example-filesystem-initialization';
 
 export default new ContainerModule((
     bind: interfaces.Bind,
@@ -23,5 +23,5 @@ export default new ContainerModule((
     _isBound: interfaces.IsBound,
     rebind: interfaces.Rebind,
 ) => {
-    bindBrowserFSInitialization(bind, rebind);
+    bindOPFSInitialization(bind, rebind);
 });

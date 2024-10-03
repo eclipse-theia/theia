@@ -14,23 +14,23 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import type { BrowserFSFileSystemProvider } from './browserfs-filesystem-provider';
+import type { OPFSFileSystemProvider } from './opfs-filesystem-provider';
 import { injectable } from '@theia/core/shared/inversify';
 
-export const BrowserFSInitialization = Symbol('BrowserFSInitialization');
-export interface BrowserFSInitialization {
+export const OPFSInitialization = Symbol('OPFSInitialization');
+export interface OPFSInitialization {
     createMountableFileSystem(): Promise<FileSystemDirectoryHandle>
-    initializeFS: (fs: FileSystemDirectoryHandle, provider: BrowserFSFileSystemProvider) => Promise<void>;
+    initializeFS: (fs: FileSystemDirectoryHandle, provider: OPFSFileSystemProvider) => Promise<void>;
 }
 
 @injectable()
-export class DefaultBrowserFSInitialization implements BrowserFSInitialization {
+export class DefaultOPFSInitialization implements OPFSInitialization {
 
     createMountableFileSystem(): Promise<FileSystemDirectoryHandle> {
-        return navigator.storage.getDirectory()
+        return navigator.storage.getDirectory();
     }
 
-    async initializeFS(dir: FileSystemDirectoryHandle, provider: BrowserFSFileSystemProvider): Promise<void> {
+    async initializeFS(dir: FileSystemDirectoryHandle, provider: OPFSFileSystemProvider): Promise<void> {
 
     }
 }

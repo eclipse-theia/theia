@@ -31,10 +31,10 @@ import {
     FileType, FileWriteOptions, Stat, WatchOptions, createFileSystemProviderError
 } from '../common/files';
 import { Emitter, Event, URI, Disposable } from '@theia/core';
-import { BrowserFSInitialization } from './browserfs-filesystem-initialization';
+import { OPFSInitialization } from './opfs-filesystem-initialization';
 // adapted from DiskFileSystemProvider
 @injectable()
-export class BrowserFSFileSystemProvider implements FileSystemProviderWithFileReadWriteCapability {
+export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWriteCapability {
     capabilities: FileSystemProviderCapabilities = FileSystemProviderCapabilities.FileReadWrite;
     onDidChangeCapabilities: Event<void> = Event.None;
 
@@ -45,7 +45,7 @@ export class BrowserFSFileSystemProvider implements FileSystemProviderWithFileRe
     private directoryHandle: FileSystemDirectoryHandle;
     private initialized: Promise<true>;
 
-    constructor(@inject(BrowserFSInitialization) readonly initialization: BrowserFSInitialization) {
+    constructor(@inject(OPFSInitialization) readonly initialization: OPFSInitialization) {
         const init = async (): Promise<true> => {
             this.directoryHandle = await initialization.createMountableFileSystem();
             await initialization.initializeFS(this.directoryHandle, new Proxy(this, {
@@ -66,11 +66,11 @@ export class BrowserFSFileSystemProvider implements FileSystemProviderWithFileRe
     }
     async stat(resource: URI): Promise<Stat> {
         await this.initialized;
-        let handle = await this.toFileSystemHandle(resource);
+        const handle = await this.toFileSystemHandle(resource);
 
         if (handle.kind === 'file') {
-            let fileHandle = handle as FileSystemFileHandle
-            let file = await fileHandle.getFile();
+            const fileHandle = handle as FileSystemFileHandle;
+            const file = await fileHandle.getFile();
             return {
                 type: FileType.File,
                 ctime: file.lastModified,
@@ -103,6 +103,7 @@ export class BrowserFSFileSystemProvider implements FileSystemProviderWithFileRe
             const result: [string, FileType][] = [];
 
             // Iterate through the entries in the directory (files and subdirectories)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             for await (const [name, handle] of (directoryHandle as any).entries()) {
                 try {
                     // Determine the type of the entry (file or directory)
@@ -178,7 +179,7 @@ export class BrowserFSFileSystemProvider implements FileSystemProviderWithFileRe
         await this.initialized;
         let writeableHandle: FileSystemWritableFileStream | undefined = undefined;
         try {
-            let handle = await this.toFileSystemHandle(resource, true, false) as FileSystemFileHandle;
+            const handle = await this.toFileSystemHandle(resource, true, false) as FileSystemFileHandle;
 
             // Open
             writeableHandle = await handle?.createWritable();
@@ -198,6 +199,7 @@ export class BrowserFSFileSystemProvider implements FileSystemProviderWithFileRe
     }
 
     private async toFileSystemHandle(resource: URI, create?: boolean, is_dir?: boolean): Promise<FileSystemHandle> {
+        // TODO use constants instead of / for path separator
         const pathParts = resource.path.toString().split('/').filter(Boolean);
 
         return this.recursiveFileSystemHandle(this.directoryHandle, pathParts, create, is_dir);
@@ -219,6 +221,7 @@ export class BrowserFSFileSystemProvider implements FileSystemProviderWithFileRe
 
         // Continue to resolve the path
         const part = pathParts.shift()!;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         for await (const entry of (handle as any).entries()) {
             if (entry[0] === part) {
                 return this.recursiveFileSystemHandle(entry[1], pathParts, create, is_dir);
@@ -227,13 +230,12 @@ export class BrowserFSFileSystemProvider implements FileSystemProviderWithFileRe
 
         // If we haven't found the part, we need to create it along the way
         if (create) {
-            let newHandle = await (handle as FileSystemDirectoryHandle).getDirectoryHandle(part, { create: true });
+            const newHandle = await (handle as FileSystemDirectoryHandle).getDirectoryHandle(part, { create: true });
             return this.recursiveFileSystemHandle(newHandle, pathParts, create, is_dir);
         }
 
         throw FileSystemProviderErrorCode.FileNotFound;
     }
-
 
     private toFileSystemProviderError(error: NodeJS.ErrnoException): FileSystemProviderError {
         if (error instanceof FileSystemProviderError) {

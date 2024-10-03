@@ -16,19 +16,19 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { FileSystemProvider } from '../common/files';
-import { BrowserFSFileSystemProvider } from './browserfs-filesystem-provider';
+import { OPFSFileSystemProvider } from './opfs-filesystem-provider';
 import { RemoteFileSystemProvider, RemoteFileSystemServer } from '../common/remote-file-system-provider';
-import { BrowserFSInitialization, DefaultBrowserFSInitialization } from './browserfs-filesystem-initialization';
+import { OPFSInitialization, DefaultOPFSInitialization } from './opfs-filesystem-initialization';
 import { BrowserOnlyFileSystemProviderServer } from './browser-only-filesystem-provider-server';
 
 export default new ContainerModule((bind, _unbind, isBound, rebind) => {
-    bind(DefaultBrowserFSInitialization).toSelf();
-    bind(BrowserFSFileSystemProvider).toSelf();
-    bind(BrowserFSInitialization).toService(DefaultBrowserFSInitialization);
+    bind(DefaultOPFSInitialization).toSelf();
+    bind(OPFSFileSystemProvider).toSelf();
+    bind(OPFSInitialization).toService(DefaultOPFSInitialization);
     if (isBound(FileSystemProvider)) {
-        rebind(FileSystemProvider).to(BrowserFSFileSystemProvider).inSingletonScope();
+        rebind(FileSystemProvider).to(OPFSFileSystemProvider).inSingletonScope();
     } else {
-        bind(FileSystemProvider).to(BrowserFSFileSystemProvider).inSingletonScope();
+        bind(FileSystemProvider).to(OPFSFileSystemProvider).inSingletonScope();
     }
     if (isBound(RemoteFileSystemProvider)) {
         rebind(RemoteFileSystemServer).to(BrowserOnlyFileSystemProviderServer).inSingletonScope();
