@@ -196,13 +196,13 @@ recent-terminal-contents:
                 // model returned structured output
                 const parsedResult = Commands.safeParse(result.parsed);
                 if (parsedResult.success) {
-                    const responseText = JSON.stringify(parsedResult.data.commands);
+                    const responseTextfromParsed = JSON.stringify(parsedResult.data.commands);
                     this.recordingService.recordResponse({
                         agentId: this.id,
                         sessionId,
                         timestamp: Date.now(),
                         requestId,
-                        response: responseText,
+                        response: responseTextfromParsed,
                     });
                     return parsedResult.data.commands;
                 }
@@ -210,13 +210,13 @@ recent-terminal-contents:
 
             // fall back to agent-based parsing of result
             const jsonResult = await getJsonOfResponse(result);
-            const responseText = JSON.stringify(jsonResult);
+            const responseTextFromJSON = JSON.stringify(jsonResult);
             this.recordingService.recordResponse({
                 agentId: this.id,
                 sessionId,
                 timestamp: Date.now(),
                 requestId,
-                response: responseText
+                response: responseTextFromJSON
             });
             const parsedJsonResult = Commands.safeParse(jsonResult);
             if (parsedJsonResult.success) {
