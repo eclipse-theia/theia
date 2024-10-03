@@ -16,7 +16,6 @@
 
 import {
     Agent,
-    CommunicationHistoryEntry,
     CommunicationRecordingService,
     getJsonOfResponse,
     isLanguageModelParsedResponse,
