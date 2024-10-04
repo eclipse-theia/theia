@@ -14,8 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { isLanguageModelStreamResponse, isLanguageModelTextResponse, LanguageModelResponse, ToolRequest } from './language-model';
+import { isLanguageModelParsedResponse, isLanguageModelStreamResponse, isLanguageModelTextResponse, LanguageModelResponse, ToolRequest } from './language-model';
 
+/**
+ * Retrieves the text content from a `LanguageModelResponse` object.
+ *
+ * **Important:** For stream responses, the stream can only be consumed once. Calling this function multiple times on the same stream response will return an empty string (`''`)
+ * on subsequent calls, as the stream will have already been consumed.
+ *
+ * @param {LanguageModelResponse} response - The response object, which may contain a text, stream, or parsed response.
+ * @returns {Promise<string>} - A promise that resolves to the text content of the response.
+ * @throws {Error} - Throws an error if the response type is not supported or does not contain valid text content.
+ */
 export const getTextOfResponse = async (response: LanguageModelResponse): Promise<string> => {
     if (isLanguageModelTextResponse(response)) {
         return response.text;
@@ -25,12 +35,18 @@ export const getTextOfResponse = async (response: LanguageModelResponse): Promis
             result += chunk.content ?? '';
         }
         return result;
+    } else if (isLanguageModelParsedResponse(response)) {
+        return response.content;
     }
     throw new Error(`Invalid response type ${response}`);
 };
 
 export const getJsonOfResponse = async (response: LanguageModelResponse): Promise<unknown> => {
     const text = await getTextOfResponse(response);
+    return getJsonOfText(text);
+};
+
+export const getJsonOfText = (text: string): unknown => {
     if (text.startsWith('```json')) {
         const regex = /```json\s*([\s\S]*?)\s*```/g;
         let match;
@@ -47,6 +63,7 @@ export const getJsonOfResponse = async (response: LanguageModelResponse): Promis
     }
     throw new Error('Invalid response format');
 };
+
 export const toolRequestToPromptText = (toolRequest: ToolRequest): string => {
     const parameters = toolRequest.parameters;
     let paramsText = '';

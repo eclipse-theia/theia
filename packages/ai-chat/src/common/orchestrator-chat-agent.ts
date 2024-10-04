@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { AgentSpecificVariables, getJsonOfResponse, LanguageModelResponse } from '@theia/ai-core';
+import { AgentSpecificVariables, getJsonOfText, getTextOfResponse, LanguageModelResponse } from '@theia/ai-core';
 import {
     PromptTemplate
 } from '@theia/ai-core/lib/common';
@@ -22,6 +22,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatAgentService } from './chat-agent-service';
 import { AbstractStreamParsingChatAgent, ChatAgent, SystemMessageDescription } from './chat-agents';
 import { ChatRequestModelImpl, InformationalChatResponseContentImpl } from './chat-model';
+import { generateUuid } from '@theia/core';
 
 export const orchestratorTemplate: PromptTemplate = {
     id: 'orchestrator-system',
@@ -59,6 +60,7 @@ You must only use the \`id\` attribute of the agent, never the name.
 `};
 
 export const OrchestratorChatAgentId = 'Orchestrator';
+const OrchestatorRequestIDKey = 'orchestatorRequestIDKey';
 
 @injectable()
 export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent implements ChatAgent {
@@ -74,7 +76,7 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent implem
         super(OrchestratorChatAgentId, [{
             purpose: 'agent-selection',
             identifier: 'openai/gpt-4o',
-        }], 'agent-selection', 'codicon codicon-symbol-boolean');
+        }], 'agent-selection', 'codicon codicon-symbol-boolean', undefined, undefined, false);
         this.name = OrchestratorChatAgentId;
         this.description = 'This agent analyzes the user request against the description of all available chat agents and selects the best fitting agent to answer the request \
         (by using AI).The user\'s request will be directly delegated to the selected agent without further confirmation.';
@@ -88,8 +90,19 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent implem
     @inject(ChatAgentService)
     protected chatAgentService: ChatAgentService;
 
-    override invoke(request: ChatRequestModelImpl): Promise<void> {
+    override async invoke(request: ChatRequestModelImpl): Promise<void> {
         request.response.addProgressMessage({ content: 'Determining the most appropriate agent', status: 'inProgress' });
+        // We generate a dedicated ID for recording the orchestrator request/response, as we will forward the original request to another agent
+        const orchestartorRequestID = generateUuid();
+        request.addData(OrchestatorRequestIDKey, orchestartorRequestID);
+        const userPrompt = request.request.text;
+        this.recordingService.recordRequest({
+            agentId: this.id,
+            sessionId: request.session.id,
+            timestamp: Date.now(),
+            requestId: orchestartorRequestID,
+            request: userPrompt,
+        });
         return super.invoke(request);
     }
 
@@ -100,8 +113,20 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent implem
 
     protected override async addContentsToResponse(response: LanguageModelResponse, request: ChatRequestModelImpl): Promise<void> {
         let agentIds: string[] = [];
+        const responseText = await getTextOfResponse(response);
+        // We use the previously generated, dedicated ID to log the orchestrator response before we forward the original request
+        const orchestratorRequestID = request.getDataByKey(OrchestatorRequestIDKey);
+        if (typeof orchestratorRequestID === 'string') {
+            this.recordingService.recordResponse({
+                agentId: this.id,
+                sessionId: request.session.id,
+                timestamp: Date.now(),
+                requestId: orchestratorRequestID,
+                response: responseText,
+            });
+        }
         try {
-            const jsonResponse = await getJsonOfResponse(response);
+            const jsonResponse = await getJsonOfText(responseText);
             if (Array.isArray(jsonResponse)) {
                 agentIds = jsonResponse.filter((id: string) => id !== this.id);
             }

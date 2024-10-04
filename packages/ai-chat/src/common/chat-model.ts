@@ -73,6 +73,7 @@ export interface ChatRequestModel {
     readonly response: ChatResponseModel;
     readonly message: ParsedChatRequest;
     readonly agentId?: string;
+    readonly data?: { [key: string]: unknown };
 }
 
 export interface ChatProgressMessage {
@@ -342,14 +343,29 @@ export class ChatRequestModelImpl implements ChatRequestModel {
     protected _request: ChatRequest;
     protected _response: ChatResponseModelImpl;
     protected _agentId?: string;
+    protected _data: { [key: string]: unknown };
 
-    constructor(session: ChatModel, public readonly message: ParsedChatRequest, agentId?: string) {
+    constructor(session: ChatModel, public readonly message: ParsedChatRequest, agentId?: string,
+        data: { [key: string]: unknown } = {}) {
         // TODO accept serialized data as a parameter to restore a previously saved ChatRequestModel
         this._request = message.request;
         this._id = generateUuid();
         this._session = session;
         this._response = new ChatResponseModelImpl(this._id, agentId);
         this._agentId = agentId;
+        this._data = data;
+    }
+
+    get data(): { [key: string]: unknown } | undefined {
+        return this._data;
+    }
+
+    addData(key: string, blob: unknown): void {
+        this._data[key] = blob;
+    }
+
+    getDataByKey(key: string): unknown | undefined {
+        return this._data[key];
     }
 
     get id(): string {
