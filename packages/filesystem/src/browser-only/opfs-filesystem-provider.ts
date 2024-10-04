@@ -32,6 +32,12 @@ import {
 } from '../common/files';
 import { Emitter, Event, URI, Disposable } from '@theia/core';
 import { OPFSInitialization } from './opfs-filesystem-initialization';
+
+interface ToFileSystemOptions {
+    isDirectory?: boolean;
+    create?: boolean;
+}
+
 // adapted from DiskFileSystemProvider
 @injectable()
 export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWriteCapability {
@@ -85,12 +91,12 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
                 size: 0
             };
         }
-        throw new Error('Method not implemented.');
+        throw createFileSystemProviderError('File does not exist', FileSystemProviderErrorCode.FileNotFound);
     }
     async mkdir(resource: URI): Promise<void> {
         await this.initialized;
 
-        await this.toFileSystemHandle(resource, true, true);
+        await this.toFileSystemHandle(resource, { create: true, isDirectory: true });
     }
 
     async readdir(resource: URI): Promise<[string, FileType][]> {
@@ -98,7 +104,7 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
 
         try {
             // Get the directory handle from the directoryHandle
-            const directoryHandle = await this.toFileSystemHandle(resource, false, true) as FileSystemDirectoryHandle;
+            const directoryHandle = await this.toFileSystemHandle(resource, { create: false, isDirectory: true }) as FileSystemDirectoryHandle;
 
             const result: [string, FileType][] = [];
 
@@ -113,11 +119,10 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
                         result.push([name, FileType.Directory]);
                     }
                 } catch (error) {
-                    console.trace(error); // Ignore errors for individual entries
+                    console.error(error); // Ignore errors for individual entries, log them and continue
                 }
             }
 
-            console.info('readdir', resource.path.toString(), result);
             return result;
         } catch (error) {
             throw this.toFileSystemProviderError(error);
@@ -128,7 +133,7 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
         await this.initialized;
         try {
             const parentURI = resource.parent;
-            const parentHandle = await this.toFileSystemHandle(parentURI, false, true);
+            const parentHandle = await this.toFileSystemHandle(parentURI, { create: false, isDirectory: true });
             if (parentHandle.kind !== 'directory') {
                 throw createFileSystemProviderError(new Error('Parent is not a directory'), FileSystemProviderErrorCode.FileNotADirectory);
             }
@@ -144,7 +149,6 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
     async rename(from: URI, to: URI, opts: FileOverwriteOptions): Promise<void> {
         await this.initialized;
         try {
-            console.info('rename', from.path.toString(), to.path.toString());
             const content = await this.readFile(from);
             await this.writeFile(to, content, { create: true, overwrite: true });
             await this.delete(from, { recursive: true, useTrash: false });
@@ -160,7 +164,7 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
 
         try {
             // Get the file handle from the directoryHandle
-            const fileHandle = await this.toFileSystemHandle(resource, false, false) as FileSystemFileHandle;
+            const fileHandle = await this.toFileSystemHandle(resource, { create: false, isDirectory: false }) as FileSystemFileHandle;
 
             // Get the file itself (which includes the content)
             const file = await fileHandle.getFile();
@@ -179,13 +183,26 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
         await this.initialized;
         let writeableHandle: FileSystemWritableFileStream | undefined = undefined;
         try {
-            const handle = await this.toFileSystemHandle(resource, true, false) as FileSystemFileHandle;
+            // Validate target unless { create: true, overwrite: true }
+            if (!opts.create || !opts.overwrite) {
+                const fileExists = await this.stat(resource).then(() => true, () => false);
+                if (fileExists) {
+                    if (!opts.overwrite) {
+                        throw createFileSystemProviderError('File already exists', FileSystemProviderErrorCode.FileExists);
+                    }
+                } else {
+                    if (!opts.create) {
+                        throw createFileSystemProviderError('File does not exist', FileSystemProviderErrorCode.FileNotFound);
+                    }
+                }
+            }
+
+            const handle = await this.toFileSystemHandle(resource, { create: true, isDirectory: false }) as FileSystemFileHandle;
 
             // Open
             writeableHandle = await handle?.createWritable();
 
             // Write content at once
-            console.info('writeFile', resource.path.toString(), content);
             await writeableHandle?.write(content);
 
             this.onDidChangeFileEmitter.fire([{ resource: resource, type: FileChangeType.ADDED }]);
@@ -198,24 +215,24 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
         }
     }
 
-    private async toFileSystemHandle(resource: URI, create?: boolean, is_dir?: boolean): Promise<FileSystemHandle> {
+    private async toFileSystemHandle(resource: URI, options?: ToFileSystemOptions): Promise<FileSystemHandle> {
         // TODO use constants instead of / for path separator
         const pathParts = resource.path.toString().split('/').filter(Boolean);
 
-        return this.recursiveFileSystemHandle(this.directoryHandle, pathParts, create, is_dir);
+        return this.recursiveFileSystemHandle(this.directoryHandle, pathParts, options);
     }
 
-    private async recursiveFileSystemHandle(handle: FileSystemDirectoryHandle, pathParts: string[], create?: boolean, is_dir?: boolean): Promise<FileSystemHandle> {
+    private async recursiveFileSystemHandle(handle: FileSystemDirectoryHandle, pathParts: string[], options?: ToFileSystemOptions): Promise<FileSystemHandle> {
         // We reached the end of the path, this happens only when not creating
         if (pathParts.length === 0) {
             return handle;
         }
         // We need to create it and thus we need to stop early to create the file or directory
-        if (pathParts.length === 1 && create) {
-            if (is_dir) {
-                return handle.getDirectoryHandle(pathParts[0], { create: create });
+        if (pathParts.length === 1 && options?.create) {
+            if (options?.isDirectory) {
+                return handle.getDirectoryHandle(pathParts[0], { create: options.create });
             } else {
-                return handle.getFileHandle(pathParts[0], { create: create });
+                return handle.getFileHandle(pathParts[0], { create: options.create });
             }
         }
 
@@ -224,14 +241,14 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         for await (const entry of (handle as any).entries()) {
             if (entry[0] === part) {
-                return this.recursiveFileSystemHandle(entry[1], pathParts, create, is_dir);
+                return this.recursiveFileSystemHandle(entry[1], pathParts, options);
             }
         }
 
         // If we haven't found the part, we need to create it along the way
-        if (create) {
+        if (options?.create) {
             const newHandle = await (handle as FileSystemDirectoryHandle).getDirectoryHandle(part, { create: true });
-            return this.recursiveFileSystemHandle(newHandle, pathParts, create, is_dir);
+            return this.recursiveFileSystemHandle(newHandle, pathParts, options);
         }
 
         throw FileSystemProviderErrorCode.FileNotFound;
