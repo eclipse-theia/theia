@@ -115,7 +115,7 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent implem
         let agentIds: string[] = [];
         const responseText = await getTextOfResponse(response);
         // We use the previously generated, dedicated ID to log the orchestrator response before we forward the original request
-        const orchestratorRequestID = request.getDataByKey(OrchestatorRequestIDKey);
+        const orchestratorRequestId = request.getDataByKey(OrchestatorRequestIdKey);
         if (typeof orchestratorRequestID === 'string') {
             this.recordingService.recordResponse({
                 agentId: this.id,
