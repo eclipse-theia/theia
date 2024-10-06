@@ -360,8 +360,8 @@ export class ChatRequestModelImpl implements ChatRequestModel {
         return this._data;
     }
 
-    addData(key: string, blob: unknown): void {
-        this._data[key] = blob;
+    addData(key: string, value: unknown): void {
+        this._data[key] = value;
     }
 
     getDataByKey(key: string): unknown {
