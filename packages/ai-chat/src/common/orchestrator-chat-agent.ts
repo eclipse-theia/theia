@@ -94,7 +94,7 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent implem
         request.response.addProgressMessage({ content: 'Determining the most appropriate agent', status: 'inProgress' });
         // We generate a dedicated ID for recording the orchestrator request/response, as we will forward the original request to another agent
         const orchestartorRequestID = generateUuid();
-        request.addData(OrchestatorRequestIDKey, orchestartorRequestID);
+        request.addData(OrchestatorRequestIdKey, orchestartorRequestId);
         const userPrompt = request.request.text;
         this.recordingService.recordRequest({
             agentId: this.id,
