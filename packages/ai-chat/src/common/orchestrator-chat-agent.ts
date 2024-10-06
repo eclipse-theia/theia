@@ -121,7 +121,7 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent implem
                 agentId: this.id,
                 sessionId: request.session.id,
                 timestamp: Date.now(),
-                requestId: orchestratorRequestID,
+                requestId: orchestratorRequestId,
                 response: responseText,
             });
         }
