@@ -364,7 +364,7 @@ export class ChatRequestModelImpl implements ChatRequestModel {
         this._data[key] = blob;
     }
 
-    getDataByKey(key: string): unknown | undefined {
+    getDataByKey(key: string): unknown {
         return this._data[key];
     }
 
