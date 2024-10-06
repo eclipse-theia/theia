@@ -60,7 +60,7 @@ You must only use the \`id\` attribute of the agent, never the name.
 `};
 
 export const OrchestratorChatAgentId = 'Orchestrator';
-const OrchestatorRequestIDKey = 'orchestatorRequestIDKey';
+const OrchestatorRequestIdKey = 'orchestatorRequestIdKey';
 
 @injectable()
 export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent implements ChatAgent {
