@@ -45,7 +45,7 @@ export const AdditionalNotebookCellOutputCss = Symbol('AdditionalNotebookCellOut
 export function createCellOutputWebviewContainer(ctx: interfaces.Container): interfaces.Container {
     const child = ctx.createChild();
     child.bind(AdditionalNotebookCellOutputCss).toConstantValue(DEFAULT_NOTEBOOK_OUTPUT_CSS);
-    child.bind(CellOutputWebviewImpl).toSelf().inSingletonScope();
+    child.bind(CellOutputWebviewImpl).toSelf();
     return child;
 }
 
@@ -539,6 +539,5 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
     dispose(): void {
         this.isDisposed = true;
         this.toDispose.dispose();
-        this.webviewWidget.dispose();
     }
 }
