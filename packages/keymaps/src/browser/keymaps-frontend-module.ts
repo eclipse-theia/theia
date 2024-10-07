@@ -22,7 +22,7 @@ import { KeymapsFrontendContribution } from './keymaps-frontend-contribution';
 import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
 import { KeybindingContribution } from '@theia/core/lib/browser/keybinding';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { WidgetFactory } from '@theia/core/lib/browser';
+import { noopWidgetStatusBarContribution, WidgetFactory, WidgetStatusBarContribution } from '@theia/core/lib/browser';
 import { KeybindingWidget } from './keybindings-widget';
 import { KeybindingSchemaUpdater } from './keybinding-schema-updater';
 import { JsonSchemaContribution } from '@theia/core/lib/browser/json-schema-store';
@@ -41,4 +41,5 @@ export default new ContainerModule(bind => {
     })).inSingletonScope();
     bind(KeybindingSchemaUpdater).toSelf().inSingletonScope();
     bind(JsonSchemaContribution).toService(KeybindingSchemaUpdater);
+    bind(WidgetStatusBarContribution).toConstantValue(noopWidgetStatusBarContribution(KeybindingWidget));
 });

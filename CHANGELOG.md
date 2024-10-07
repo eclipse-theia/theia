@@ -4,9 +4,47 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
-<!-- ## Unreleased
+## 1.54.0 - 09/26/2024
 
-<a name="breaking_changes_1.54.0">[Breaking Changes:](#breaking_changes_1.54.0)</a> -->
+- [ai] add Theia AI LLM Support [Experimental] [#14048](https://github.com/eclipse-theia/theia/pull/14048)
+- [ai] adapted default LLM for Theia AI to gpt-4o [#14165](https://github.com/eclipse-theia/theia/pull/14165)
+- [ai] add enable state of agent to preferences [#14206](https://github.com/eclipse-theia/theia/pull/14206)
+- [ai] chore: polished AI code completion [#14192](https://github.com/eclipse-theia/theia/pull/14192)
+- [ai] consistently named agents and added tags [#14182](https://github.com/eclipse-theia/theia/pull/14182)
+- [ai] feat: added toolbar actions for chat nodes [#14181](https://github.com/eclipse-theia/theia/pull/14181) - Contributed on behalf of STMicroelectronics
+- [ai] feat: show variables and functions on AI agent configuration [#14177](https://github.com/eclipse-theia/theia/pull/14177)
+- [ai] feat: supported models served via OpenAI API [#14172](https://github.com/eclipse-theia/theia/pull/14172)
+- [ai] fixed ai-settings retrieval [#14221](https://github.com/eclipse-theia/theia/pull/14221)
+- [ai] fixed enablement of AI support [#14166](https://github.com/eclipse-theia/theia/pull/14166)
+- [ai] improved prompt of workspace agent [#14159](https://github.com/eclipse-theia/theia/pull/14159)
+- [ai] refined AI settings [#14202](https://github.com/eclipse-theia/theia/pull/14202)
+- [ai] refined experimental message for AI features [#14187](https://github.com/eclipse-theia/theia/pull/14187)
+- [ai] removed type duplication for kind property [#14207](https://github.com/eclipse-theia/theia/pull/14207)
+- [ai] consistent prompt ids [#14162](https://github.com/eclipse-theia/theia/pull/14162)
+- [ai] fix: disabled an agent also disabled its UIContribution [#14184](https://github.com/eclipse-theia/theia/pull/14184)
+- [application-package] bumped API version to 1.93.1 [#14224](https://github.com/eclipse-theia/theia/pull/14224) - Contributed on behalf of STMicroelectronics
+- [core] fixed selection of contributed menu action argument adapters [#14132](https://github.com/eclipse-theia/theia/pull/14132) - Contributed on behalf of STMicroelectronics
+- [core] supported proxy env variable for schema catalog download [#14130](https://github.com/eclipse-theia/theia/pull/14130)
+- [core] supported workbench.editorAssociations preference [#14139](https://github.com/eclipse-theia/theia/pull/14139)
+- [editor] aligned active text and notebook editor more towards vscode [#14190](https://github.com/eclipse-theia/theia/pull/14190)
+- [filesystem] fixed FileResource sometimes sending contents change event during writing [#14043](https://github.com/eclipse-theia/theia/pull/14043) - Contributed on behalf of Toro Cloud
+- [notebook] focused notebook cell container correctly [#14175](https://github.com/eclipse-theia/theia/pull/14175)
+- [notebook] fixed notebook context selection [#14179](https://github.com/eclipse-theia/theia/pull/14179)
+- [notebook] made the cell editor border grey when not focused [#14195](https://github.com/eclipse-theia/theia/pull/14195)
+- [plugin] removed stub tag from TerminalOptions#color [#14171](https://github.com/eclipse-theia/theia/pull/14171)
+- [plugin] moved stubbed API TerminalShellIntegration into main API [#14168](https://github.com/eclipse-theia/theia/pull/14168) - Contributed on behalf of STMicroelectronics
+- [plugin] supported evolution on proposed API extensionAny [#14199](https://github.com/eclipse-theia/theia/pull/14199) - Contributed on behalf of STMicroelectronics
+- [plugin] updated TreeView reveal options to be readonly [#14198](https://github.com/eclipse-theia/theia/pull/14198) - Contributed on behalf of STMicroelectronics
+- [plugin-ext] properly supported executeDocumentSymbolProvider command [#14173](https://github.com/eclipse-theia/theia/pull/14173)
+- [plugin-ext] fixed leak in tabs-main.ts [#14186](https://github.com/eclipse-theia/theia/pull/14186)
+- [preferences] expanded plugin preferences on scroll correctly [#14170](https://github.com/eclipse-theia/theia/pull/14170)
+- [test] supported TestMessage stack traces [#14154](https://github.com/eclipse-theia/theia/pull/14154) - Contributed on behalf of STMicroelectronics
+- [workspace] handled only the user workspace security settings [#14147](https://github.com/eclipse-theia/theia/pull/14147)
+
+<a name="breaking_changes_1.54.0">[Breaking Changes:](#breaking_changes_1.54.0)</a>
+
+- [ai] added toolbar actions on chat nodes [#14181](https://github.com/eclipse-theia/theia/pull/14181) - Contributed on behalf of STMicroelectronics
+- [core] updated AuthenticationService to handle multiple accounts per provider [#14149](https://github.com/eclipse-theia/theia/pull/14149) - Contributed on behalf of STMicroelectronics
 
 ## 1.53.0 - 08/29/2024
 

@@ -116,11 +116,12 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
                             for (const grandchild of child.children) {
                                 if (!grandchild.when || this.contextKeyService.match(grandchild.when, widget.node)) {
                                     const menuPath = this.menuRegistry.getPath(grandchild);
-                                    result.push(new ToolbarMenuNodeWrapper(grandchild, child.id, menuPath));
+                                    result.push(new ToolbarMenuNodeWrapper(grandchild, child.id, delegate.menuPath, menuPath));
                                 }
                             }
                         } else if (child.command) {
-                            result.push(new ToolbarMenuNodeWrapper(child, ''));
+                            const menuPath = this.menuRegistry.getPath(child);
+                            result.push(new ToolbarMenuNodeWrapper(child, undefined, delegate.menuPath, menuPath));
                         }
                     }
                 }

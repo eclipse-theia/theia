@@ -1,0 +1,54 @@
+{
+  "name": "@theia/ai-code-completion",
+  "version": "1.54.0",
+  "description": "Theia - AI Core",
+  "dependencies": {
+    "@theia/ai-core": "1.54.0",
+    "@theia/core": "1.54.0",
+    "@theia/filesystem": "1.54.0",
+    "@theia/monaco-editor-core": "1.83.101",
+    "@theia/output": "1.54.0",
+    "@theia/workspace": "1.54.0",
+    "minimatch": "^5.1.0",
+    "tslib": "^2.6.2"
+  },
+  "main": "lib/common",
+  "publishConfig": {
+    "access": "public"
+  },
+  "theiaExtensions": [
+    {
+      "frontend": "lib/browser/ai-code-completion-frontend-module"
+    }
+  ],
+  "keywords": [
+    "theia-extension"
+  ],
+  "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eclipse-theia/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/eclipse-theia/theia/issues"
+  },
+  "homepage": "https://github.com/eclipse-theia/theia",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "build": "theiaext build",
+    "clean": "theiaext clean",
+    "compile": "theiaext compile",
+    "lint": "theiaext lint",
+    "test": "theiaext test",
+    "watch": "theiaext watch"
+  },
+  "devDependencies": {
+    "@theia/ext-scripts": "1.54.0"
+  },
+  "nyc": {
+    "extends": "../../configs/nyc.json"
+  }
+}

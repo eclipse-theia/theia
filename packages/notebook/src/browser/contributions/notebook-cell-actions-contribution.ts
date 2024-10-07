@@ -374,13 +374,13 @@ export class NotebookCellActionContribution implements MenuContribution, Command
             (_, __, output) => output?.requestOutputPresentationUpdate()
         ));
 
-        const insertCommand = (type: CellKind, index: number | 'above' | 'below'): CommandHandler => this.editableCellCommandHandler(() =>
-            commands.executeCommand(NotebookCommands.ADD_NEW_CELL_COMMAND.id, undefined, type, index)
+        const insertCommand = (type: CellKind, index: number | 'above' | 'below', focusContainer: boolean): CommandHandler => this.editableCellCommandHandler(() =>
+            commands.executeCommand(NotebookCommands.ADD_NEW_CELL_COMMAND.id, undefined, type, index, focusContainer)
         );
-        commands.registerCommand(NotebookCellCommands.INSERT_NEW_CELL_ABOVE_COMMAND, insertCommand(CellKind.Code, 'above'));
-        commands.registerCommand(NotebookCellCommands.INSERT_NEW_CELL_BELOW_COMMAND, insertCommand(CellKind.Code, 'below'));
-        commands.registerCommand(NotebookCellCommands.INSERT_MARKDOWN_CELL_ABOVE_COMMAND, insertCommand(CellKind.Markup, 'above'));
-        commands.registerCommand(NotebookCellCommands.INSERT_MARKDOWN_CELL_BELOW_COMMAND, insertCommand(CellKind.Markup, 'below'));
+        commands.registerCommand(NotebookCellCommands.INSERT_NEW_CELL_ABOVE_COMMAND, insertCommand(CellKind.Code, 'above', true));
+        commands.registerCommand(NotebookCellCommands.INSERT_NEW_CELL_BELOW_COMMAND, insertCommand(CellKind.Code, 'below', true));
+        commands.registerCommand(NotebookCellCommands.INSERT_MARKDOWN_CELL_ABOVE_COMMAND, insertCommand(CellKind.Markup, 'above', false));
+        commands.registerCommand(NotebookCellCommands.INSERT_MARKDOWN_CELL_BELOW_COMMAND, insertCommand(CellKind.Markup, 'below', false));
 
         commands.registerCommand(NotebookCellCommands.TO_CODE_CELL_COMMAND, this.editableCellCommandHandler((notebookModel, cell) => {
             changeCellType(notebookModel, cell, CellKind.Code, this.notebookService.getCodeCellLanguage(notebookModel));

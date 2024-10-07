@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { URI, MaybePromise, Disposable } from '@theia/core';
-import { NavigatableWidgetOpenHandler, WidgetOpenerOptions } from '@theia/core/lib/browser';
-import { injectable } from '@theia/core/shared/inversify';
+import { NavigatableWidgetOpenHandler, PreferenceService, WidgetOpenerOptions, getDefaultHandler, defaultHandlerPriority } from '@theia/core/lib/browser';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { NotebookFileSelector, NotebookTypeDescriptor } from '../common/notebook-protocol';
 import { NotebookEditorWidget } from './notebook-editor-widget';
 import { match } from '@theia/core/lib/common/glob';
@@ -33,6 +33,9 @@ export class NotebookOpenHandler extends NavigatableWidgetOpenHandler<NotebookEd
 
     protected notebookTypes: NotebookTypeDescriptor[] = [];
 
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
+
     registerNotebookType(notebookType: NotebookTypeDescriptor): Disposable {
         this.notebookTypes.push(notebookType);
         return Disposable.create(() => {
@@ -41,15 +44,16 @@ export class NotebookOpenHandler extends NavigatableWidgetOpenHandler<NotebookEd
     }
 
     canHandle(uri: URI, options?: NotebookWidgetOpenerOptions): MaybePromise<number> {
+        const defaultHandler = getDefaultHandler(uri, this.preferenceService);
         if (options?.notebookType) {
-            return this.canHandleType(uri, this.notebookTypes.find(type => type.type === options.notebookType));
+            return this.canHandleType(uri, this.notebookTypes.find(type => type.type === options.notebookType), defaultHandler);
         }
-        return Math.max(...this.notebookTypes.map(type => this.canHandleType(uri, type)));
+        return Math.max(...this.notebookTypes.map(type => this.canHandleType(uri, type), defaultHandler));
     }
 
-    canHandleType(uri: URI, notebookType?: NotebookTypeDescriptor): number {
+    canHandleType(uri: URI, notebookType?: NotebookTypeDescriptor, defaultHandler?: string): number {
         if (notebookType?.selector && this.matches(notebookType.selector, uri)) {
-            return this.calculatePriority(notebookType);
+            return notebookType.type === defaultHandler ? defaultHandlerPriority : this.calculatePriority(notebookType);
         } else {
             return 0;
         }
@@ -93,7 +97,9 @@ export class NotebookOpenHandler extends NavigatableWidgetOpenHandler<NotebookEd
                 ...widgetOptions
             };
         }
-        const notebookType = this.findHighestPriorityType(uri);
+        const defaultHandler = getDefaultHandler(uri, this.preferenceService);
+        const notebookType = this.notebookTypes.find(type => type.type === defaultHandler)
+            || this.findHighestPriorityType(uri);
         if (!notebookType) {
             throw new Error('No notebook types registered for uri: ' + uri.toString());
         }

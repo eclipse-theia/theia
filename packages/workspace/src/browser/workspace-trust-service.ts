@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ConfirmDialog, Dialog, PreferenceChange, StorageService } from '@theia/core/lib/browser';
-import { PreferenceService } from '@theia/core/lib/browser/preferences/preference-service';
+import { PreferenceScope, PreferenceService } from '@theia/core/lib/browser/preferences/preference-service';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { nls } from '@theia/core/lib/common/nls';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -115,17 +115,19 @@ export class WorkspaceTrustService {
     }
 
     protected async handlePreferenceChange(change: PreferenceChange): Promise<void> {
-        if (change.preferenceName === WORKSPACE_TRUST_STARTUP_PROMPT && change.newValue !== WorkspaceTrustPrompt.ONCE) {
-            this.storage.setData(STORAGE_TRUSTED, undefined);
-        }
+        if (change.scope === PreferenceScope.User) {
+            if (change.preferenceName === WORKSPACE_TRUST_STARTUP_PROMPT && change.newValue !== WorkspaceTrustPrompt.ONCE) {
+                this.storage.setData(STORAGE_TRUSTED, undefined);
+            }
 
-        if (change.preferenceName === WORKSPACE_TRUST_ENABLED && this.isWorkspaceTrustResolved() && await this.confirmRestart()) {
-            this.windowService.setSafeToShutDown();
-            this.windowService.reload();
-        }
+            if (change.preferenceName === WORKSPACE_TRUST_ENABLED && this.isWorkspaceTrustResolved() && await this.confirmRestart()) {
+                this.windowService.setSafeToShutDown();
+                this.windowService.reload();
+            }
 
-        if (change.preferenceName === WORKSPACE_TRUST_ENABLED || change.preferenceName === WORKSPACE_TRUST_EMPTY_WINDOW) {
-            this.resolveWorkspaceTrust();
+            if (change.preferenceName === WORKSPACE_TRUST_ENABLED || change.preferenceName === WORKSPACE_TRUST_EMPTY_WINDOW) {
+                this.resolveWorkspaceTrust();
+            }
         }
     }
 

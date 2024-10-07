@@ -3036,7 +3036,7 @@ export class DebugThread implements theia.DebugThread {
 }
 
 export class DebugStackFrame implements theia.DebugStackFrame {
-      constructor(readonly session: theia.DebugSession, readonly threadId: number, readonly frameId: number) { }
+    constructor(readonly session: theia.DebugSession, readonly threadId: number, readonly frameId: number) { }
 }
 
 @es5ClassCompat
@@ -3350,6 +3350,7 @@ export class TestMessage implements theia.TestMessage {
     public actualOutput?: string;
     public location?: theia.Location;
     public contextValue?: string;
+    public stackTrace?: theia.TestMessageStackFrame[] | undefined;
 
     public static diff(message: string | theia.MarkdownString, expected: string, actual: string): theia.TestMessage {
         const msg = new TestMessage(message);
@@ -3364,6 +3365,14 @@ export class TestMessage implements theia.TestMessage {
 @es5ClassCompat
 export class TestCoverageCount {
     constructor(public covered: number, public total: number) { }
+}
+
+export class TestMessageStackFrame implements theia.TestMessageStackFrame {
+    constructor(
+        public label: string,
+        public uri?: theia.Uri,
+        public position?: Position
+    ) { }
 }
 
 @es5ClassCompat

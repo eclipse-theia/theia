@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { CancellationToken, ContributionProvider, Disposable, Emitter, Event, QuickPickService, isObject, nls } from '@theia/core/lib/common';
-import { CancellationTokenSource, Location, Range } from '@theia/core/shared/vscode-languageserver-protocol';
+import { CancellationTokenSource, Location, Range, Position, DocumentUri } from '@theia/core/shared/vscode-languageserver-protocol';
 import { CollectionDelta, TreeDelta } from '../common/tree-delta';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import URI from '@theia/core/lib/common/uri';
@@ -56,9 +56,16 @@ export enum TestExecutionState {
 export interface TestMessage {
     readonly expected?: string;
     readonly actual?: string;
-    readonly location: Location;
+    readonly location?: Location;
     readonly message: string | MarkdownString;
     readonly contextValue?: string;
+    readonly stackTrace?: TestMessageStackFrame[];
+}
+
+export interface TestMessageStackFrame {
+    readonly label: string,
+    readonly uri?: DocumentUri,
+    readonly position?: Position,
 }
 
 export namespace TestMessage {
@@ -367,7 +374,7 @@ export class DefaultTestService implements TestService {
 
     selectDefaultProfile(): void {
         this.pickProfileKind().then(kind => {
-           const profiles = this.getControllers().flatMap(c => c.testRunProfiles).filter(profile => profile.kind === kind);
+            const profiles = this.getControllers().flatMap(c => c.testRunProfiles).filter(profile => profile.kind === kind);
             this.pickProfile(profiles, nls.localizeByDefault('Pick a test profile to use')).then(activeProfile => {
                 if (activeProfile) {
                     // only change the default for the controller containing selected profile for default and its profiles with same kind

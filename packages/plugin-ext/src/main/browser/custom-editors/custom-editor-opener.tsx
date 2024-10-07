@@ -15,7 +15,9 @@
 // *****************************************************************************
 
 import URI from '@theia/core/lib/common/uri';
-import { ApplicationShell, DiffUris, OpenHandler, SplitWidget, Widget, WidgetManager, WidgetOpenerOptions } from '@theia/core/lib/browser';
+import {
+    ApplicationShell, DiffUris, OpenHandler, OpenerOptions, PreferenceService, SplitWidget, Widget, WidgetManager, WidgetOpenerOptions, getDefaultHandler, defaultHandlerPriority
+} from '@theia/core/lib/browser';
 import { CustomEditor, CustomEditorPriority, CustomEditorSelector } from '../../../common';
 import { CustomEditorWidget } from './custom-editor-widget';
 import { PluginCustomEditorRegistry } from './plugin-custom-editor-registry';
@@ -35,7 +37,8 @@ export class CustomEditorOpener implements OpenHandler {
         private readonly editor: CustomEditor,
         protected readonly shell: ApplicationShell,
         protected readonly widgetManager: WidgetManager,
-        protected readonly editorRegistry: PluginCustomEditorRegistry
+        protected readonly editorRegistry: PluginCustomEditorRegistry,
+        protected readonly preferenceService: PreferenceService
     ) {
         this.id = CustomEditorOpener.toCustomEditorId(this.editor.viewType);
         this.label = this.editor.displayName;
@@ -45,14 +48,26 @@ export class CustomEditorOpener implements OpenHandler {
         return `custom-editor-${editorViewType}`;
     }
 
-    canHandle(uri: URI): number {
+    canHandle(uri: URI, options?: OpenerOptions): number {
+        let priority = 0;
         const { selector } = this.editor;
         if (DiffUris.isDiffUri(uri)) {
             const [left, right] = DiffUris.decode(uri);
             if (this.matches(selector, right) && this.matches(selector, left)) {
-                return this.getPriority();
+                priority = this.getPriority();
             }
         } else if (this.matches(selector, uri)) {
+            if (getDefaultHandler(uri, this.preferenceService) === this.editor.viewType) {
+                priority = defaultHandlerPriority;
+            } else {
+                priority = this.getPriority();
+            }
+        }
+        return priority;
+    }
+
+    canOpenWith(uri: URI): number {
+        if (this.matches(this.editor.selector, uri)) {
             return this.getPriority();
         }
         return 0;

@@ -14,14 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { BaseWidget, Message, codicon } from '@theia/core/lib/browser';
+import { BaseWidget, LabelProvider, Message, OpenerService, codicon } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { TestOutputUIModel } from './test-output-ui-model';
 import { DisposableCollection, nls } from '@theia/core';
-import { TestFailure, TestMessage } from '../test-service';
+import { TestFailure, TestMessage, TestMessageStackFrame } from '../test-service';
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
-
+import { URI } from '@theia/core/lib/common/uri';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { NavigationLocationService } from '@theia/editor/lib/browser/navigation/navigation-location-service';
+import { NavigationLocation, Position } from '@theia/editor/lib/browser/navigation/navigation-location';
 @injectable()
 export class TestResultWidget extends BaseWidget {
 
@@ -29,6 +32,10 @@ export class TestResultWidget extends BaseWidget {
 
     @inject(TestOutputUIModel) uiModel: TestOutputUIModel;
     @inject(MarkdownRenderer) markdownRenderer: MarkdownRenderer;
+    @inject(OpenerService) openerService: OpenerService;
+    @inject(FileService) fileService: FileService;
+    @inject(NavigationLocationService) navigationService: NavigationLocationService;
+    @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
 
     protected toDisposeOnRender = new DisposableCollection();
     protected input: TestMessage[] = [];
@@ -36,6 +43,7 @@ export class TestResultWidget extends BaseWidget {
 
     constructor() {
         super();
+        this.addClass('theia-test-result-view');
         this.id = TestResultWidget.ID;
         this.title.label = nls.localizeByDefault('Test Results');
         this.title.caption = nls.localizeByDefault('Test Results');
@@ -82,6 +90,48 @@ export class TestResultWidget extends BaseWidget {
                 this.toDisposeOnRender.push(line);
             } else {
                 this.content.append(this.node.ownerDocument.createTextNode(message.message));
+            }
+            if (message.stackTrace) {
+                const stackTraceElement = this.node.ownerDocument.createElement('div');
+                message.stackTrace.map(frame => this.renderFrame(frame, stackTraceElement));
+                this.content.append(stackTraceElement);
+            }
+        });
+    }
+
+    renderFrame(stackFrame: TestMessageStackFrame, stackTraceElement: HTMLElement): void {
+        const frameElement = stackTraceElement.ownerDocument.createElement('div');
+        frameElement.classList.add('debug-frame');
+        frameElement.append(`    ${nls.localize('theia/test/stackFrameAt', 'at')} ${stackFrame.label}`);
+
+        // Add URI information as clickable links
+        if (stackFrame.uri) {
+            frameElement.append(' (');
+            const uri = new URI(stackFrame.uri);
+
+            const link = this.node.ownerDocument.createElement('a');
+            let content = `${this.labelProvider.getName(uri)}`;
+            if (stackFrame.position) {
+                // Display Position as a 1-based position, similar to Monaco ones.
+                const monacoPosition = {
+                    lineNumber: stackFrame.position.line + 1,
+                    column: stackFrame.position.character + 1
+                };
+                content += `:${monacoPosition.lineNumber}:${monacoPosition.column}`;
+            }
+            link.textContent = content;
+            link.href = `${uri}`;
+            link.onclick = () => this.openUriInWorkspace(uri, stackFrame.position);
+            frameElement.append(link);
+            frameElement.append(')');
+        }
+        stackTraceElement.append(frameElement);
+    }
+
+    async openUriInWorkspace(uri: URI, position?: Position): Promise<void> {
+        this.fileService.resolve(uri).then(stat => {
+            if (stat.isFile) {
+                this.navigationService.reveal(NavigationLocation.create(uri, position ?? { line: 0, character: 0 }));
             }
         });
     }

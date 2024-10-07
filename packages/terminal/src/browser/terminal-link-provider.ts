@@ -25,7 +25,7 @@ import { TerminalWidgetImpl } from './terminal-widget-impl';
 
 export const TerminalLinkProvider = Symbol('TerminalLinkProvider');
 export interface TerminalLinkProvider {
-    provideLinks(line: string, terminal: TerminalWidget, cancelationToken?: CancellationToken): Promise<TerminalLink[]>;
+    provideLinks(line: string, terminal: TerminalWidget, cancellationToken?: CancellationToken): Promise<TerminalLink[]>;
 }
 
 export const TerminalLink = Symbol('TerminalLink');

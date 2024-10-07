@@ -20,7 +20,7 @@ import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposa
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { CustomEditorOpener } from './custom-editor-opener';
 import { Emitter } from '@theia/core';
-import { ApplicationShell, DefaultOpenerService, OpenWithService, WidgetManager } from '@theia/core/lib/browser';
+import { ApplicationShell, DefaultOpenerService, OpenWithService, PreferenceService, WidgetManager } from '@theia/core/lib/browser';
 import { CustomEditorWidget } from './custom-editor-widget';
 
 @injectable()
@@ -43,6 +43,9 @@ export class PluginCustomEditorRegistry {
 
     @inject(OpenWithService)
     protected readonly openWithService: OpenWithService;
+
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
 
     @postConstruct()
     protected init(): void {
@@ -76,7 +79,8 @@ export class PluginCustomEditorRegistry {
             editor,
             this.shell,
             this.widgetManager,
-            this
+            this,
+            this.preferenceService
         );
         toDispose.push(this.defaultOpenerService.addHandler(editorOpenHandler));
         toDispose.push(
@@ -84,7 +88,7 @@ export class PluginCustomEditorRegistry {
                 id: editor.viewType,
                 label: editorOpenHandler.label,
                 providerName: plugin.metadata.model.displayName,
-                canHandle: uri => editorOpenHandler.canHandle(uri),
+                canHandle: uri => editorOpenHandler.canOpenWith(uri),
                 open: uri => editorOpenHandler.open(uri)
             })
         );

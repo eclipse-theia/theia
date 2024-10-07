@@ -1,0 +1,51 @@
+{
+  "name": "@theia/ai-terminal",
+  "version": "1.54.0",
+  "description": "Theia - AI Terminal Extension",
+  "dependencies": {
+    "@theia/core": "1.54.0",
+    "@theia/ai-core": "1.54.0",
+    "@theia/ai-chat": "1.54.0",
+    "@theia/terminal": "1.54.0",
+    "zod": "^3.23.8",
+    "zod-to-json-schema": "^3.23.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "theiaExtensions": [
+    {
+      "frontend": "lib/browser/ai-terminal-frontend-module"
+    }
+  ],
+  "keywords": [
+    "theia-extension"
+  ],
+  "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eclipse-theia/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/eclipse-theia/theia/issues"
+  },
+  "homepage": "https://github.com/eclipse-theia/theia",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "build": "theiaext build",
+    "clean": "theiaext clean",
+    "compile": "theiaext compile",
+    "lint": "theiaext lint",
+    "test": "theiaext test",
+    "watch": "theiaext watch"
+  },
+  "devDependencies": {
+    "@theia/ext-scripts": "1.54.0"
+  },
+  "nyc": {
+    "extends": "../../configs/nyc.json"
+  }
+}

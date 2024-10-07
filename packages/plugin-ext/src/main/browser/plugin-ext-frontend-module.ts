@@ -22,7 +22,9 @@ import { ContainerModule } from '@theia/core/shared/inversify';
 import {
     FrontendApplicationContribution, WidgetFactory, bindViewContribution,
     ViewContainerIdentifier, ViewContainer, createTreeContainer, TreeWidget, LabelProviderContribution, LabelProvider,
-    UndoRedoHandler, DiffUris, Navigatable, SplitWidget
+    UndoRedoHandler, DiffUris, Navigatable, SplitWidget,
+    noopWidgetStatusBarContribution,
+    WidgetStatusBarContribution
 } from '@theia/core/lib/browser';
 import { MaybePromise, CommandContribution, ResourceResolver, bindContributionProvider, URI, generateUuid } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
@@ -191,6 +193,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(WebviewSecondaryWindowSupport).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(WebviewSecondaryWindowSupport);
     bind(FrontendApplicationContribution).toService(WebviewContextKeys);
+    bind(WidgetStatusBarContribution).toConstantValue(noopWidgetStatusBarContribution(WebviewWidget));
 
     bind(PluginCustomEditorRegistry).toSelf().inSingletonScope();
     bind(CustomEditorService).toSelf().inSingletonScope();
