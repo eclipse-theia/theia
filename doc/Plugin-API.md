@@ -77,9 +77,9 @@ For headless plugins, "Main-Ext" pattern is very similar, except that there is o
 
 ![Communication between Theia and Plugin API for Headless Plugins](./images/headless-plugin-diagram.svg)
 
-As the lifecycle of a plugin starts inside its process on the `Ext` side, anything that the plugin needs from Theia (e.g. state, command execution, access to services) has to be invoked over RCP via an implementation on the `Main` side.
+As the lifecycle of a plugin starts inside its process on the `Ext` side, anything that the plugin needs from Theia (e.g. state, command execution, access to services) has to be invoked over RPC via an implementation on the `Main` side.
 In the inverse direction, the same is true for code that runs on the `Main` side and that needs something from the plugin side (e.g. changing plugin state after a user input).
-It needs to be invoked over RCP via an implementation on the `Ext` side.
+It needs to be invoked over RPC via an implementation on the `Ext` side.
 Therefore, `Main` and `Ext` interfaces usually come in pairs (e.g. [LanguagesExt](https://github.com/eclipse-theia/theia/blob/541b300adc029ab1dd729da1ca49179ace1447b2/packages/plugin-ext/src/common/plugin-api-rpc.ts#L1401) and [LanguagesMain](https://github.com/eclipse-theia/theia/blob/541b300adc029ab1dd729da1ca49179ace1447b2/packages/plugin-ext/src/common/plugin-api-rpc.ts#L1474)).
 
 To communicate with each other, the implementation of each side of the API - `Main` and `Ext` - has an RPC proxy of its corresponding counterpart.
@@ -160,9 +160,9 @@ export function createAPIFactory(
 
 ### Adding new Ext and Main interfaces with implementations
 
-`Ext` and `Main` interfaces only contain the functions called over RCP.
+`Ext` and `Main` interfaces only contain the functions called over RPC.
 Further functions are just part of the implementations.
-Functions to be called over RCP must start with `$`, e.g. `$executeStuff`.
+Functions to be called over RPC must start with `$`, e.g. `$executeStuff`.
 
 - Define `Ext` and `Main` interfaces in [plugin-ext/src/common/plugin-api-rpc.ts](https://github.com/eclipse-theia/theia/blob/master/packages/plugin-ext/src/common/plugin-api-rpc.ts).
 The interfaces should be suffixed with `Ext` and `Main` correspondingly (e.g. `LanguagesMain` and `LanguagesExt`).
