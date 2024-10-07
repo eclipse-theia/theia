@@ -55,7 +55,6 @@ class NotebookAndEditorState {
         const documentDelta = diffSets(before.documents, after.documents);
         const editorDelta = diffMaps(before.textEditors, after.textEditors);
 
-        const newActiveEditor = before.activeEditor !== after.activeEditor ? after.activeEditor : undefined;
         const visibleEditorDelta = diffMaps(before.visibleEditors, after.visibleEditors);
 
         return {
@@ -63,7 +62,7 @@ class NotebookAndEditorState {
             removedDocuments: documentDelta.removed.map(e => e.uri.toComponents()),
             addedEditors: editorDelta.added,
             removedEditors: editorDelta.removed.map(removed => removed.id),
-            newActiveEditor: newActiveEditor,
+            newActiveEditor: after.activeEditor,
             visibleEditors: visibleEditorDelta.added.length === 0 && visibleEditorDelta.removed.length === 0
                 ? undefined
                 : [...after.visibleEditors].map(editor => editor[0])
@@ -114,7 +113,7 @@ export class NotebooksAndEditorsMain implements NotebookDocumentsAndEditorsMain 
         // this.WidgetManager.onActiveEditorChanged(() => this.updateState(), this, this.disposables);
         this.notebookEditorService.onDidAddNotebookEditor(async editor => this.handleEditorAdd(editor), this, this.disposables);
         this.notebookEditorService.onDidRemoveNotebookEditor(async editor => this.handleEditorRemove(editor), this, this.disposables);
-        this.notebookEditorService.onDidChangeFocusedEditor(async editor => this.updateState(editor), this, this.disposables);
+        this.notebookEditorService.onDidChangeCurrentEditor(async editor => this.updateState(editor), this, this.disposables);
     }
 
     dispose(): void {
@@ -221,7 +220,7 @@ export class NotebooksAndEditorsMain implements NotebookDocumentsAndEditorsMain 
         if (delta.visibleEditors?.length) {
             return false;
         }
-        if (delta.newActiveEditor) {
+        if (delta.newActiveEditor !== undefined) {
             return false;
         }
         return true;

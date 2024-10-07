@@ -15,11 +15,16 @@
 // *****************************************************************************
 
 import { Emitter, URI } from '@theia/core';
-import { injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { SimpleMonacoEditor } from '@theia/monaco/lib/browser/simple-monaco-editor';
+import { NotebookEditorWidgetService } from './notebook-editor-widget-service';
+import { CellUri } from '../../common';
 
 @injectable()
 export class NotebookCellEditorService {
+
+    @inject(NotebookEditorWidgetService)
+    protected readonly notebookEditorWidgetService: NotebookEditorWidgetService;
 
     protected onDidChangeCellEditorsEmitter = new Emitter<void>();
     readonly onDidChangeCellEditors = this.onDidChangeCellEditorsEmitter.event;
@@ -30,6 +35,17 @@ export class NotebookCellEditorService {
     protected currentActiveCell?: SimpleMonacoEditor;
 
     protected currentCellEditors: Map<string, SimpleMonacoEditor> = new Map();
+
+    @postConstruct()
+    protected init(): void {
+        this.notebookEditorWidgetService.onDidChangeCurrentEditor(editor => {
+            // if defocus notebook editor or another notebook editor is focused, clear the active cell
+            if (!editor || (this.currentActiveCell && CellUri.parse(this.currentActiveCell.uri)?.notebook.toString() !== editor?.model?.uri.toString())) {
+                this.currentActiveCell = undefined;
+                this.onDidChangeFocusedCellEditorEmitter.fire(undefined);
+            }
+        });
+    }
 
     get allCellEditors(): SimpleMonacoEditor[] {
         return Array.from(this.currentCellEditors.values());
@@ -46,8 +62,10 @@ export class NotebookCellEditorService {
     }
 
     editorFocusChanged(editor?: SimpleMonacoEditor): void {
-        this.currentActiveCell = editor;
-        this.onDidChangeFocusedCellEditorEmitter.fire(editor);
+        if (editor) {
+            this.currentActiveCell = editor;
+            this.onDidChangeFocusedCellEditorEmitter.fire(editor);
+        }
     }
 
     getActiveCell(): SimpleMonacoEditor | undefined {

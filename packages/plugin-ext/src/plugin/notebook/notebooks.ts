@@ -341,7 +341,7 @@ export class NotebooksExtImpl implements NotebooksExt {
                 });
             }
         }
-        if (delta.newActiveEditor !== undefined) {
+        if (delta.newActiveEditor !== undefined && delta.newActiveEditor !== this.activeNotebookEditor?.id) {
             this.onDidChangeActiveNotebookEditorEmitter.fire(this.activeNotebookEditor?.apiEditor);
         }
     }
