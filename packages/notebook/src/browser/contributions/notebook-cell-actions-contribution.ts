@@ -331,7 +331,9 @@ export class NotebookCellActionContribution implements MenuContribution, Command
                     // eslint-disable-next-line no-null/no-null
                     text: null
                 };
-                textModel.textEditorModel.pushEditOperations([selection], [deleteOp], _op => [selection]);
+                // Create a new undo/redo stack entry
+                textModel.textEditorModel.pushStackElement();
+                textModel.textEditorModel.pushEditOperations([selection], [deleteOp], () => [selection]);
             })
         );
 
