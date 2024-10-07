@@ -4,6 +4,14 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+<!--
+- ## 1.55.0 - XX/XX/2024
+
+<a name="breaking_changes_1.55.0">[Breaking Changes:](#breaking_changes_1.55.0)</a>
+- [dependencies] remove browserfs dependency (replaced by OPFS)
+
+-->
+
 ## 1.54.0 - 09/26/2024
 
 - [ai] add Theia AI LLM Support [Experimental] [#14048](https://github.com/eclipse-theia/theia/pull/14048)
