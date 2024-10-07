@@ -1,4 +1,6 @@
 {
+  "aiConfiguration:open": "AI設定ビューを開く",
+  "aiHistory:open": "AI履歴ビューを開く",
   "debug.breakpoint.editCondition": "編集条件...",
   "notebook.cell.changeToCode": "セルをコードに変更",
   "notebook.cell.changeToMarkdown": "セルをマーダウンに変更",
@@ -499,6 +501,7 @@
     },
     "test": {
       "cancelAllTestRuns": "すべてのテスト実行をキャンセルする",
+      "stackFrameAt": "で",
       "testRunDefaultName": "{0} 走る{1}",
       "testRuns": "テスト走行"
     },

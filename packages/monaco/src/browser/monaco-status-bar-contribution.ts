@@ -14,93 +14,90 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable } from '@theia/core/shared/inversify';
 import { DisposableCollection, nls } from '@theia/core';
-import { FrontendApplicationContribution, FrontendApplication, StatusBar, StatusBarAlignment } from '@theia/core/lib/browser';
-import { EditorCommands, EditorManager, EditorWidget } from '@theia/editor/lib/browser';
+import { StatusBar, StatusBarAlignment, Widget, WidgetStatusBarContribution } from '@theia/core/lib/browser';
+import { EditorCommands, EditorWidget } from '@theia/editor/lib/browser';
 import { MonacoEditor } from './monaco-editor';
 import * as monaco from '@theia/monaco-editor-core';
 
+export const EDITOR_STATUS_TABBING_CONFIG = 'editor-status-tabbing-config';
+export const EDITOR_STATUS_EOL = 'editor-status-eol';
+
 @injectable()
-export class MonacoStatusBarContribution implements FrontendApplicationContribution {
+export class MonacoStatusBarContribution implements WidgetStatusBarContribution<EditorWidget> {
 
     protected readonly toDispose = new DisposableCollection();
 
-    constructor(
-        @inject(EditorManager) protected readonly editorManager: EditorManager,
-        @inject(StatusBar) protected readonly statusBar: StatusBar
-    ) { }
-
-    onStart(app: FrontendApplication): void {
-        this.updateStatusBar();
-        this.editorManager.onCurrentEditorChanged(() => this.updateStatusBar());
+    canHandle(widget: Widget): widget is EditorWidget {
+        if (widget instanceof EditorWidget) {
+            return Boolean(this.getModel(widget));
+        }
+        return false;
     }
 
-    protected updateStatusBar(): void {
-        const editor = this.editorManager.currentEditor;
+    activate(statusBar: StatusBar, editor: EditorWidget): void {
+        this.toDispose.dispose();
         const editorModel = this.getModel(editor);
-        if (editor && editorModel) {
-            this.setConfigTabSizeWidget();
-            this.setLineEndingWidget();
-
-            this.toDispose.dispose();
+        if (editorModel) {
+            this.setConfigTabSizeWidget(statusBar, editorModel);
+            this.setLineEndingWidget(statusBar, editorModel);
             this.toDispose.push(editorModel.onDidChangeOptions(() => {
-                this.setConfigTabSizeWidget();
-                this.setLineEndingWidget();
+                this.setConfigTabSizeWidget(statusBar, editorModel);
+                this.setLineEndingWidget(statusBar, editorModel);
             }));
             let previous = editorModel.getEOL();
             this.toDispose.push(editorModel.onDidChangeContent(e => {
                 if (previous !== e.eol) {
                     previous = e.eol;
-                    this.setLineEndingWidget();
+                    this.setLineEndingWidget(statusBar, editorModel);
                 }
             }));
         } else {
-            this.removeConfigTabSizeWidget();
-            this.removeLineEndingWidget();
+            this.deactivate(statusBar);
         }
     }
 
-    protected setConfigTabSizeWidget(): void {
-        const editor = this.editorManager.currentEditor;
-        const editorModel = this.getModel(editor);
-        if (editor && editorModel) {
-            const modelOptions = editorModel.getOptions();
-            const tabSize = modelOptions.tabSize;
-            const indentSize = modelOptions.indentSize;
-            const spaceOrTabSizeMessage = modelOptions.insertSpaces
-                ? nls.localizeByDefault('Spaces: {0}', indentSize)
-                : nls.localizeByDefault('Tab Size: {0}', tabSize);
-            this.statusBar.setElement('editor-status-tabbing-config', {
-                text: spaceOrTabSizeMessage,
-                alignment: StatusBarAlignment.RIGHT,
-                priority: 10,
-                command: EditorCommands.CONFIG_INDENTATION.id,
-                tooltip: nls.localizeByDefault('Select Indentation')
-            });
-        }
-    }
-    protected removeConfigTabSizeWidget(): void {
-        this.statusBar.removeElement('editor-status-tabbing-config');
+    deactivate(statusBar: StatusBar): void {
+        this.toDispose.dispose();
+        this.removeConfigTabSizeWidget(statusBar);
+        this.removeLineEndingWidget(statusBar);
     }
 
-    protected setLineEndingWidget(): void {
-        const editor = this.editorManager.currentEditor;
-        const editorModel = this.getModel(editor);
-        if (editor && editorModel) {
-            const eol = editorModel.getEOL();
-            const text = eol === '\n' ? 'LF' : 'CRLF';
-            this.statusBar.setElement('editor-status-eol', {
-                text: `${text}`,
-                alignment: StatusBarAlignment.RIGHT,
-                priority: 11,
-                command: EditorCommands.CONFIG_EOL.id,
-                tooltip: nls.localizeByDefault('Select End of Line Sequence')
-            });
-        }
+    protected setConfigTabSizeWidget(statusBar: StatusBar, model: monaco.editor.ITextModel): void {
+        const modelOptions = model.getOptions();
+        const tabSize = modelOptions.tabSize;
+        const indentSize = modelOptions.indentSize;
+        const spaceOrTabSizeMessage = modelOptions.insertSpaces
+            ? nls.localizeByDefault('Spaces: {0}', indentSize)
+            : nls.localizeByDefault('Tab Size: {0}', tabSize);
+        statusBar.setElement(EDITOR_STATUS_TABBING_CONFIG, {
+            text: spaceOrTabSizeMessage,
+            alignment: StatusBarAlignment.RIGHT,
+            priority: 10,
+            command: EditorCommands.CONFIG_INDENTATION.id,
+            tooltip: nls.localizeByDefault('Select Indentation')
+        });
     }
-    protected removeLineEndingWidget(): void {
-        this.statusBar.removeElement('editor-status-eol');
+
+    protected removeConfigTabSizeWidget(statusBar: StatusBar): void {
+        statusBar.removeElement(EDITOR_STATUS_TABBING_CONFIG);
+    }
+
+    protected setLineEndingWidget(statusBar: StatusBar, model: monaco.editor.ITextModel): void {
+        const eol = model.getEOL();
+        const text = eol === '\n' ? 'LF' : 'CRLF';
+        statusBar.setElement(EDITOR_STATUS_EOL, {
+            text: `${text}`,
+            alignment: StatusBarAlignment.RIGHT,
+            priority: 11,
+            command: EditorCommands.CONFIG_EOL.id,
+            tooltip: nls.localizeByDefault('Select End of Line Sequence')
+        });
+    }
+
+    protected removeLineEndingWidget(statusBar: StatusBar): void {
+        statusBar.removeElement(EDITOR_STATUS_EOL);
     }
 
     protected getModel(editor: EditorWidget | undefined): monaco.editor.ITextModel | undefined {

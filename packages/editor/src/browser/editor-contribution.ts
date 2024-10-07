@@ -20,7 +20,9 @@ import { injectable, inject, optional } from '@theia/core/shared/inversify';
 import { StatusBarAlignment, StatusBar } from '@theia/core/lib/browser/status-bar/status-bar';
 import {
     FrontendApplicationContribution, DiffUris, DockLayout,
-    QuickInputService, KeybindingRegistry, KeybindingContribution, SHELL_TABBAR_CONTEXT_SPLIT, ApplicationShell
+    QuickInputService, KeybindingRegistry, KeybindingContribution, SHELL_TABBAR_CONTEXT_SPLIT, ApplicationShell,
+    WidgetStatusBarContribution,
+    Widget
 } from '@theia/core/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { CommandHandler, DisposableCollection, MenuContribution, MenuModelRegistry } from '@theia/core';
@@ -33,9 +35,9 @@ import { EditorWidget } from './editor-widget';
 import { EditorLanguageStatusService } from './language-status/editor-language-status-service';
 
 @injectable()
-export class EditorContribution implements FrontendApplicationContribution, CommandContribution, KeybindingContribution, MenuContribution {
+export class EditorContribution implements FrontendApplicationContribution,
+    CommandContribution, KeybindingContribution, MenuContribution, WidgetStatusBarContribution<EditorWidget> {
 
-    @inject(StatusBar) protected readonly statusBar: StatusBar;
     @inject(EditorManager) protected readonly editorManager: EditorManager;
     @inject(EditorLanguageStatusService) protected readonly languageStatusService: EditorLanguageStatusService;
     @inject(ApplicationShell) protected readonly shell: ApplicationShell;
@@ -48,9 +50,6 @@ export class EditorContribution implements FrontendApplicationContribution, Comm
 
     onStart(): void {
         this.initEditorContextKeys();
-
-        this.updateStatusBar();
-        this.editorManager.onCurrentEditorChanged(() => this.updateStatusBar());
     }
 
     protected initEditorContextKeys(): void {
@@ -72,33 +71,41 @@ export class EditorContribution implements FrontendApplicationContribution, Comm
     }
 
     protected readonly toDisposeOnCurrentEditorChanged = new DisposableCollection();
-    protected updateStatusBar(): void {
-        this.toDisposeOnCurrentEditorChanged.dispose();
 
-        const widget = this.editorManager.currentEditor;
-        const editor = widget && widget.editor;
-        this.updateLanguageStatus(editor);
-        this.updateEncodingStatus(editor);
-        this.setCursorPositionStatus(editor);
-        if (editor) {
-            this.toDisposeOnCurrentEditorChanged.pushAll([
-                editor.onLanguageChanged(() => this.updateLanguageStatus(editor)),
-                editor.onEncodingChanged(() => this.updateEncodingStatus(editor)),
-                editor.onCursorPositionChanged(() => this.setCursorPositionStatus(editor))
-            ]);
-        }
+    canHandle(widget: Widget): widget is EditorWidget {
+        return widget instanceof EditorWidget;
     }
 
-    protected updateLanguageStatus(editor: TextEditor | undefined): void {
+    activate(statusBar: StatusBar, widget: EditorWidget): void {
+        this.toDisposeOnCurrentEditorChanged.dispose();
+        const editor = widget.editor;
+        this.updateLanguageStatus(statusBar, editor);
+        this.updateEncodingStatus(statusBar, editor);
+        this.setCursorPositionStatus(statusBar, editor);
+        this.toDisposeOnCurrentEditorChanged.pushAll([
+            editor.onLanguageChanged(() => this.updateLanguageStatus(statusBar, editor)),
+            editor.onEncodingChanged(() => this.updateEncodingStatus(statusBar, editor)),
+            editor.onCursorPositionChanged(() => this.setCursorPositionStatus(statusBar, editor))
+        ]);
+    }
+
+    deactivate(statusBar: StatusBar): void {
+        this.toDisposeOnCurrentEditorChanged.dispose();
+        this.updateLanguageStatus(statusBar, undefined);
+        this.updateEncodingStatus(statusBar, undefined);
+        this.setCursorPositionStatus(statusBar, undefined);
+    }
+
+    protected updateLanguageStatus(statusBar: StatusBar, editor: TextEditor | undefined): void {
         this.languageStatusService.updateLanguageStatus(editor);
     }
 
-    protected updateEncodingStatus(editor: TextEditor | undefined): void {
+    protected updateEncodingStatus(statusBar: StatusBar, editor: TextEditor | undefined): void {
         if (!editor) {
-            this.statusBar.removeElement('editor-status-encoding');
+            statusBar.removeElement('editor-status-encoding');
             return;
         }
-        this.statusBar.setElement('editor-status-encoding', {
+        statusBar.setElement('editor-status-encoding', {
             text: SUPPORTED_ENCODINGS[editor.getEncoding()].labelShort,
             alignment: StatusBarAlignment.RIGHT,
             priority: 10,
@@ -107,13 +114,13 @@ export class EditorContribution implements FrontendApplicationContribution, Comm
         });
     }
 
-    protected setCursorPositionStatus(editor: TextEditor | undefined): void {
+    protected setCursorPositionStatus(statusBar: StatusBar, editor: TextEditor | undefined): void {
         if (!editor) {
-            this.statusBar.removeElement('editor-status-cursor-position');
+            statusBar.removeElement('editor-status-cursor-position');
             return;
         }
         const { cursor } = editor;
-        this.statusBar.setElement('editor-status-cursor-position', {
+        statusBar.setElement('editor-status-cursor-position', {
             text: nls.localizeByDefault('Ln {0}, Col {1}', cursor.line + 1, editor.getVisibleColumn(cursor)),
             alignment: StatusBarAlignment.RIGHT,
             priority: 100,

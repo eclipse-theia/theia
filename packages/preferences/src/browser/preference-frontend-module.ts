@@ -17,7 +17,7 @@
 import '../../src/browser/style/index.css';
 import './preferences-monaco-contribution';
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
-import { bindViewContribution, FrontendApplicationContribution, OpenHandler } from '@theia/core/lib/browser';
+import { bindViewContribution, FrontendApplicationContribution, noopWidgetStatusBarContribution, OpenHandler, WidgetStatusBarContribution } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { PreferenceTreeGenerator } from './util/preference-tree-generator';
 import { bindPreferenceProviders } from './preference-bindings';
@@ -33,6 +33,7 @@ import { CliPreferences, CliPreferencesPath } from '../common/cli-preferences';
 import { ServiceConnectionProvider } from '@theia/core/lib/browser/messaging/service-connection-provider';
 import { PreferenceFrontendContribution } from './preference-frontend-contribution';
 import { PreferenceLayoutProvider } from './util/preference-layout';
+import { PreferencesWidget } from './views/preference-widget';
 
 export function bindPreferences(bind: interfaces.Bind, unbind: interfaces.Unbind): void {
     bindPreferenceProviders(bind, unbind);
@@ -59,6 +60,8 @@ export function bindPreferences(bind: interfaces.Bind, unbind: interfaces.Unbind
     bind(CliPreferences).toDynamicValue(ctx => ServiceConnectionProvider.createProxy<CliPreferences>(ctx.container, CliPreferencesPath)).inSingletonScope();
     bind(PreferenceFrontendContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(PreferenceFrontendContribution);
+
+    bind(WidgetStatusBarContribution).toConstantValue(noopWidgetStatusBarContribution(PreferencesWidget));
 }
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {

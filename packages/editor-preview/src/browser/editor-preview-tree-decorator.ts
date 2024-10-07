@@ -30,11 +30,10 @@ import {
 import { Disposable } from '@theia/core/lib/common';
 import { OpenEditorNode } from '@theia/navigator/lib/browser/open-editors-widget/navigator-open-editors-tree-model';
 import { EditorPreviewWidget } from './editor-preview-widget';
-import { EditorPreviewManager } from './editor-preview-manager';
 
 @injectable()
 export class EditorPreviewTreeDecorator implements TreeDecorator, FrontendApplicationContribution {
-    @inject(EditorPreviewManager) protected readonly editorPreviewManager: EditorPreviewManager;
+
     @inject(ApplicationShell) protected readonly shell: ApplicationShell;
 
     readonly id = 'theia-open-editors-file-decorator';

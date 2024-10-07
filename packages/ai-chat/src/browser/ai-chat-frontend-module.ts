@@ -33,6 +33,7 @@ import { UniversalChatAgent } from '../common/universal-chat-agent';
 import { aiChatPreferences } from './ai-chat-preferences';
 import { ChatAgentsVariableContribution } from '../common/chat-agents-variable-contribution';
 import { FrontendChatServiceImpl } from './frontend-chat-service';
+import { DefaultResponseContentMatcherProvider, DefaultResponseContentFactory, ResponseContentMatcherProvider } from '../common/response-content-matcher';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, Agent);
@@ -41,6 +42,11 @@ export default new ContainerModule(bind => {
     bind(ChatAgentServiceImpl).toSelf().inSingletonScope();
     bind(ChatAgentService).toService(ChatAgentServiceImpl);
     bind(DefaultChatAgentId).toConstantValue({ id: OrchestratorChatAgentId });
+
+    bindContributionProvider(bind, ResponseContentMatcherProvider);
+    bind(DefaultResponseContentMatcherProvider).toSelf().inSingletonScope();
+    bind(ResponseContentMatcherProvider).toService(DefaultResponseContentMatcherProvider);
+    bind(DefaultResponseContentFactory).toSelf().inSingletonScope();
 
     bind(AIVariableContribution).to(ChatAgentsVariableContribution).inSingletonScope();
 

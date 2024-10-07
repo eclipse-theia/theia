@@ -16,7 +16,9 @@
 import '../../src/browser/style/index.css';
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { FrontendApplicationContribution, KeybindingContribution, LabelProviderContribution, OpenHandler, UndoRedoHandler, WidgetFactory } from '@theia/core/lib/browser';
+import {
+    FrontendApplicationContribution, KeybindingContribution, LabelProviderContribution, OpenHandler, UndoRedoHandler, WidgetFactory, WidgetStatusBarContribution
+} from '@theia/core/lib/browser';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { NotebookOpenHandler } from './notebook-open-handler';
 import { CommandContribution, MenuContribution, ResourceResolver, } from '@theia/core';
@@ -117,5 +119,5 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(UndoRedoHandler).toService(NotebookUndoRedoHandler);
 
     bind(NotebookStatusBarContribution).toSelf().inSingletonScope();
-    bind(FrontendApplicationContribution).toService(NotebookStatusBarContribution);
+    bind(WidgetStatusBarContribution).toService(NotebookStatusBarContribution);
 });

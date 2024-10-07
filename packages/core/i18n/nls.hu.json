@@ -1,4 +1,6 @@
 {
+  "aiConfiguration:open": "AI konfigurációs nézet megnyitása",
+  "aiHistory:open": "AI előzmények nézet megnyitása",
   "debug.breakpoint.editCondition": "Szerkesztési feltétel...",
   "notebook.cell.changeToCode": "Cellát kódra váltani",
   "notebook.cell.changeToMarkdown": "Cellát átváltoztatni Mardown-ra",
@@ -499,6 +501,7 @@
     },
     "test": {
       "cancelAllTestRuns": "Minden tesztfuttatás törlése",
+      "stackFrameAt": "a  címen.",
       "testRunDefaultName": "{0} fuss {1}",
       "testRuns": "Tesztfutások"
     },

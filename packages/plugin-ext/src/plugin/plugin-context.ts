@@ -187,6 +187,7 @@ import {
     TestTag,
     TestRunRequest,
     TestMessage,
+    TestMessageStackFrame,
     ExtensionKind,
     InlineCompletionItem,
     InlineCompletionList,
@@ -277,6 +278,21 @@ import { NotebookDocumentsExtImpl } from './notebook/notebook-documents';
 import { NotebookEditorsExtImpl } from './notebook/notebook-editors';
 import { TestingExtImpl } from './tests';
 import { UriExtImpl } from './uri-ext';
+
+export function createAPIObject<T extends Object>(rawObject: T): T {
+    return new Proxy(rawObject, {
+        get(target, p, receiver) {
+            const isOwnProperty = !!Object.getOwnPropertyDescriptor(target, p);
+            const val = Reflect.get(target, p);
+            if (!isOwnProperty && typeof val === 'function') {
+                // bind functions that are inherited from the prototype to the object itself.
+                // This should handle the case of events.
+                return val.bind(target);
+            }
+            return val;
+        },
+    }) as T;
+}
 
 export function createAPIFactory(
     rpc: RPCProtocol,
@@ -495,7 +511,8 @@ export function createAPIFactory(
                 return quickOpenExt.showQuickPick(plugin, items, options, token);
             },
             createQuickPick<T extends theia.QuickPickItem>(): theia.QuickPick<T> {
-                return quickOpenExt.createQuickPick(plugin);
+
+                return createAPIObject(quickOpenExt.createQuickPick(plugin));
             },
             showWorkspaceFolderPick(options?: theia.WorkspaceFolderPickOptions): PromiseLike<theia.WorkspaceFolder | undefined> {
                 return workspaceExt.pickWorkspaceFolder(options);
@@ -534,9 +551,12 @@ export function createAPIFactory(
                     priority = priorityOrAlignment;
                 }
 
+                // TODO: here
                 return statusBarMessageRegistryExt.createStatusBarItem(alignment, priority, id);
             },
             createOutputChannel(name: string, options?: { log: true }): any {
+
+                // TODO: here
                 return !options
                     ? outputChannelRegistryExt.createOutputChannel(name, pluginToPluginInfo(plugin))
                     : outputChannelRegistryExt.createOutputChannel(name, pluginToPluginInfo(plugin), options);
@@ -545,7 +565,7 @@ export function createAPIFactory(
                 title: string,
                 showOptions: theia.ViewColumn | theia.WebviewPanelShowOptions,
                 options: theia.WebviewPanelOptions & theia.WebviewOptions = {}): theia.WebviewPanel {
-                return webviewExt.createWebview(viewType, title, showOptions, options, plugin);
+                return createAPIObject(webviewExt.createWebview(viewType, title, showOptions, options, plugin));
             },
             registerWebviewPanelSerializer(viewType: string, serializer: theia.WebviewPanelSerializer): theia.Disposable {
                 return webviewExt.registerWebviewPanelSerializer(viewType, serializer, plugin);
@@ -573,19 +593,19 @@ export function createAPIFactory(
             createTerminal(nameOrOptions: theia.TerminalOptions | theia.ExtensionTerminalOptions | theia.ExtensionTerminalOptions | (string | undefined),
                 shellPath?: string,
                 shellArgs?: string[] | string): theia.Terminal {
-                return terminalExt.createTerminal(plugin, nameOrOptions, shellPath, shellArgs);
+                return createAPIObject(terminalExt.createTerminal(plugin, nameOrOptions, shellPath, shellArgs));
             },
             onDidChangeTerminalState,
             onDidCloseTerminal,
             onDidOpenTerminal,
             createTextEditorDecorationType(options: theia.DecorationRenderOptions): theia.TextEditorDecorationType {
-                return editors.createTextEditorDecorationType(options);
+                return createAPIObject(editors.createTextEditorDecorationType(options));
             },
             registerTreeDataProvider<T>(viewId: string, treeDataProvider: theia.TreeDataProvider<T>): Disposable {
                 return treeViewsExt.registerTreeDataProvider(plugin, viewId, treeDataProvider);
             },
             createTreeView<T>(viewId: string, options: theia.TreeViewOptions<T>): theia.TreeView<T> {
-                return treeViewsExt.createTreeView(plugin, viewId, options);
+                return createAPIObject(treeViewsExt.createTreeView(plugin, viewId, options));
             },
             withScmProgress<R>(task: (progress: theia.Progress<number>) => Thenable<R>) {
                 const options: ProgressOptions = { location: ProgressLocation.SourceControl };
@@ -604,7 +624,7 @@ export function createAPIFactory(
                 return uriExt.registerUriHandler(handler, pluginToPluginInfo(plugin));
             },
             createInputBox(): theia.InputBox {
-                return quickOpenExt.createInputBox(plugin);
+                return createAPIObject(quickOpenExt.createInputBox(plugin));
             },
             registerTerminalLinkProvider(provider: theia.TerminalLinkProvider): theia.Disposable {
                 return terminalExt.registerTerminalLinkProvider(provider);
@@ -652,7 +672,7 @@ export function createAPIFactory(
         const workspace: typeof theia.workspace = {
 
             get fs(): theia.FileSystem {
-                return fileSystemExt.fileSystem;
+                return fileSystemExt.fileSystem.apiObject;
             },
 
             get rootPath(): string | undefined {
@@ -755,7 +775,7 @@ export function createAPIFactory(
                 return notebooksExt.getNotebookDocument(uri).apiNotebook;
             },
             createFileSystemWatcher: (pattern, ignoreCreate, ignoreChange, ignoreDelete): theia.FileSystemWatcher =>
-                extHostFileSystemEvent.createFileSystemWatcher(fromGlobPattern(pattern), ignoreCreate, ignoreChange, ignoreDelete),
+                createAPIObject(extHostFileSystemEvent.createFileSystemWatcher(fromGlobPattern(pattern), ignoreCreate, ignoreChange, ignoreDelete)),
             findFiles(include: theia.GlobPattern, exclude?: theia.GlobPattern | null, maxResults?: number, token?: CancellationToken): PromiseLike<URI[]> {
                 return workspaceExt.findFiles(include, exclude, maxResults, token);
             },
@@ -848,7 +868,7 @@ export function createAPIFactory(
                 return telemetryExt.onDidChangeTelemetryEnabled;
             },
             createTelemetryLogger(sender: theia.TelemetrySender, options?: theia.TelemetryLoggerOptions): theia.TelemetryLogger {
-                return telemetryExt.createTelemetryLogger(sender, options);
+                return createAPIObject(telemetryExt.createTelemetryLogger(sender, options));
             },
             get remoteName(): string | undefined { return envExt.remoteName; },
             get machineId(): string { return envExt.machineId; },
@@ -923,7 +943,7 @@ export function createAPIFactory(
                 return <any>languagesExt.getDiagnostics(resource);
             },
             createDiagnosticCollection(name?: string): theia.DiagnosticCollection {
-                return languagesExt.createDiagnosticCollection(name);
+                return createAPIObject(languagesExt.createDiagnosticCollection(name));
             },
             setLanguageConfiguration(language: string, configuration: theia.LanguageConfiguration): theia.Disposable {
                 return languagesExt.setLanguageConfiguration(language, configuration);
@@ -1060,7 +1080,7 @@ export function createAPIFactory(
 
         const tests: typeof theia.tests = {
             createTestController(id, label: string) {
-                return testingExt.createTestController(id, label);
+                return createAPIObject(testingExt.createTestController(id, label));
             }
         };
         /* End of Tests API */
@@ -1172,6 +1192,7 @@ export function createAPIFactory(
             },
 
             get taskExecutions(): ReadonlyArray<theia.TaskExecution> {
+                // TODO: here
                 return tasksExt.taskExecutions;
             },
             onDidStartTask(listener, thisArg?, disposables?) {
@@ -1192,19 +1213,19 @@ export function createAPIFactory(
             get inputBox(): theia.SourceControlInputBox {
                 const inputBox = scmExt.getLastInputBox(plugin);
                 if (inputBox) {
-                    return inputBox;
+                    return inputBox.apiObject;
                 } else {
                     throw new Error('Input box not found!');
                 }
             },
             createSourceControl(id: string, label: string, rootUri?: URI): theia.SourceControl {
-                return scmExt.createSourceControl(plugin, id, label, rootUri);
+                return createAPIObject(scmExt.createSourceControl(plugin, id, label, rootUri));
             }
         };
 
         const comments: typeof theia.comments = {
             createCommentController(id: string, label: string): theia.CommentController {
-                return commentsExt.createCommentController(plugin, id, label);
+                return createAPIObject(commentsExt.createCommentController(plugin, id, label));
             }
         };
 
@@ -1463,6 +1484,7 @@ export function createAPIFactory(
             TestTag,
             TestRunRequest,
             TestMessage,
+            TestMessageStackFrame,
             ExtensionKind,
             InlineCompletionItem,
             InlineCompletionList,

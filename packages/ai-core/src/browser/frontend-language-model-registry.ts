@@ -288,7 +288,7 @@ export class FrontendLanguageModelRegistryImpl
 
     override async selectLanguageModels(request: LanguageModelSelector): Promise<LanguageModel[]> {
         await this.initialized;
-        const userSettings = (await this.settingsService.getAgentSettings(request.agent))?.languageModelRequirements.find(req => req.purpose === request.purpose);
+        const userSettings = (await this.settingsService.getAgentSettings(request.agent))?.languageModelRequirements?.find(req => req.purpose === request.purpose);
         if (userSettings?.identifier) {
             const model = await this.getLanguageModel(userSettings.identifier);
             if (model) {
