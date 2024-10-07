@@ -84,4 +84,5 @@ export default async function runTest(options: TestOptions): Promise<void> {
         ? `http://[${address}]:${port}`
         : `http://${address}:${port}`;
     await testPage.goto(url);
+    await testPage.bringToFront();
 }
