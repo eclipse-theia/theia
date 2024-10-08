@@ -195,14 +195,16 @@ export class NotebooksAndEditorsMain implements NotebookDocumentsAndEditorsMain 
             addedEditors: delta.addedEditors.map(NotebooksAndEditorsMain.asEditorAddData),
         };
 
-        // send to extension FIRST
-        await this.proxy.$acceptDocumentsAndEditorsDelta(dto);
-
-        // handle internally
+        // Handle internally first
+        // In case the plugin wants to perform documents edits immediately
+        // we want to make sure that all events have already been setup
         this.notebookEditorsMain.handleEditorsRemoved(delta.removedEditors);
         this.notebookDocumentsMain.handleNotebooksRemoved(delta.removedDocuments);
         this.notebookDocumentsMain.handleNotebooksAdded(delta.addedDocuments);
         this.notebookEditorsMain.handleEditorsAdded(delta.addedEditors);
+
+        // Send to plugin last
+        await this.proxy.$acceptDocumentsAndEditorsDelta(dto);
     }
 
     private static isDeltaEmpty(delta: NotebookAndEditorDelta): boolean {
