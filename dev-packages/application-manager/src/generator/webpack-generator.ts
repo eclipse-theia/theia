@@ -362,7 +362,7 @@ const production = mode === 'production';
 const commonJsLibraries = {};
 for (const [entryPointName, entryPointPath] of Object.entries({
     ${this.ifPackage('@theia/plugin-ext', "'backend-init-theia': '@theia/plugin-ext/lib/hosted/node/scanners/backend-init-theia',")}
-    ${this.ifPackage('@theia/filesystem', "'nsfw-watcher': '@theia/filesystem/lib/node/nsfw-watcher',")}
+    ${this.ifPackage('@theia/filesystem', "'parcel-watcher': '@theia/filesystem/lib/node/parcel-watcher',")}
     ${this.ifPackage('@theia/plugin-ext-vscode', "'plugin-vscode-init': '@theia/plugin-ext-vscode/lib/node/plugin-vscode-init',")}
     ${this.ifPackage('@theia/api-provider-sample', "'gotd-api-init': '@theia/api-provider-sample/lib/plugin/gotd-api-init',")}
     ${this.ifPackage('@theia/git', "'git-locator-host': '@theia/git/lib/node/git-locator/git-locator-host',")}
@@ -486,6 +486,8 @@ const config = {
             module: /express/
         }, {
             module: /cross-spawn/
+        }, {
+            module: /@parcel\\/watcher/
         }
     ]
 };
