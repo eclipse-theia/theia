@@ -6,6 +6,7 @@
   "typings": "lib/common/index.d.ts",
   "dependencies": {
     "@babel/runtime": "^7.10.0",
+    "@parcel/watcher": "^2.4.1",
     "@phosphor/algorithm": "1",
     "@phosphor/commands": "1",
     "@phosphor/coreutils": "1",
@@ -57,7 +58,6 @@
     "lodash.throttle": "^4.1.1",
     "markdown-it": "^12.3.2",
     "msgpackr": "^1.10.2",
-    "nsfw": "^2.2.4",
     "p-debounce": "^2.1.0",
     "perfect-scrollbar": "^1.3.0",
     "react": "^18.2.0",
@@ -119,11 +119,11 @@
         "vscode-uri"
       ],
       "export =": [
+        "@parcel/watcher as parcelWatcher",
         "dompurify as DOMPurify",
         "express",
         "lodash.debounce as debounce",
         "lodash.throttle as throttle",
-        "nsfw",
         "markdown-it as markdownit",
         "react as React",
         "ws as WebSocket",

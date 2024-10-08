@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2018 Ericsson and others.
+// Copyright (C) 2017-2020 TypeFox and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,5 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-// eslint-disable-next-line spaced-comment
-/// <reference types="@theia/core/src/typings/nsfw/index"/>
+import { Options } from '@theia/core/shared/@parcel/watcher';
+
+/**
+ * Inversify service identifier allowing extensions to override options passed to parcel by the file watcher.
+ */
+export const ParcelWatcherOptions = Symbol('ParcelWatcherOptions');
+export type ParcelWatcherOptions = Options;

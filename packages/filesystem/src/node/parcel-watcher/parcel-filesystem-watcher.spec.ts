@@ -21,16 +21,16 @@ import * as fs from '@theia/core/shared/fs-extra';
 import * as assert from 'assert';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node';
-import { NsfwFileSystemWatcherService } from './nsfw-filesystem-service';
+import { ParcelFileSystemWatcherService } from './parcel-filesystem-service';
 import { DidFilesChangedParams, FileChange, FileChangeType } from '../../common/filesystem-watcher-protocol';
 
 const expect = chai.expect;
 const track = temp.track();
 
-describe('nsfw-filesystem-watcher', function (): void {
+describe('parcel-filesystem-watcher', function (): void {
 
     let root: URI;
-    let watcherService: NsfwFileSystemWatcherService;
+    let watcherService: ParcelFileSystemWatcherService;
     let watcherId: number;
 
     this.timeout(100000);
@@ -38,7 +38,7 @@ describe('nsfw-filesystem-watcher', function (): void {
     beforeEach(async () => {
         let tempPath = temp.mkdirSync('node-fs-root');
         // Sometimes tempPath will use some Windows 8.3 short name in its path. This is a problem
-        // since NSFW always returns paths with long names. We need to convert here.
+        // since parcel always returns paths with long names. We need to convert here.
         // See: https://stackoverflow.com/a/34473971/7983255
         if (process.platform === 'win32') {
             tempPath = cp.execSync(`powershell "(Get-Item -LiteralPath '${tempPath}').FullName"`, {
@@ -46,9 +46,9 @@ describe('nsfw-filesystem-watcher', function (): void {
             }).trim();
         }
         root = FileUri.create(fs.realpathSync(tempPath));
-        watcherService = createNsfwFileSystemWatcherService();
+        watcherService = createParcelFileSystemWatcherService();
         watcherId = await watcherService.watchFileChanges(0, root.toString());
-        await sleep(2000);
+        await sleep(200);
     });
 
     afterEach(async () => {
@@ -76,15 +76,15 @@ describe('nsfw-filesystem-watcher', function (): void {
 
         fs.mkdirSync(FileUri.fsPath(root.resolve('foo')));
         expect(fs.statSync(FileUri.fsPath(root.resolve('foo'))).isDirectory()).to.be.true;
-        await sleep(2000);
+        await sleep(200);
 
         fs.mkdirSync(FileUri.fsPath(root.resolve('foo').resolve('bar')));
         expect(fs.statSync(FileUri.fsPath(root.resolve('foo').resolve('bar'))).isDirectory()).to.be.true;
-        await sleep(2000);
+        await sleep(200);
 
         fs.writeFileSync(FileUri.fsPath(root.resolve('foo').resolve('bar').resolve('baz.txt')), 'baz');
         expect(fs.readFileSync(FileUri.fsPath(root.resolve('foo').resolve('bar').resolve('baz.txt')), 'utf8')).to.be.equal('baz');
-        await sleep(2000);
+        await sleep(200);
 
         assert.deepStrictEqual([...actualUris], expectedUris);
     });
@@ -106,20 +106,20 @@ describe('nsfw-filesystem-watcher', function (): void {
 
         fs.mkdirSync(FileUri.fsPath(root.resolve('foo')));
         expect(fs.statSync(FileUri.fsPath(root.resolve('foo'))).isDirectory()).to.be.true;
-        await sleep(2000);
+        await sleep(200);
 
         fs.mkdirSync(FileUri.fsPath(root.resolve('foo').resolve('bar')));
         expect(fs.statSync(FileUri.fsPath(root.resolve('foo').resolve('bar'))).isDirectory()).to.be.true;
-        await sleep(2000);
+        await sleep(200);
 
         fs.writeFileSync(FileUri.fsPath(root.resolve('foo').resolve('bar').resolve('baz.txt')), 'baz');
         expect(fs.readFileSync(FileUri.fsPath(root.resolve('foo').resolve('bar').resolve('baz.txt')), 'utf8')).to.be.equal('baz');
-        await sleep(2000);
+        await sleep(200);
 
         assert.deepStrictEqual(actualUris.size, 0);
     });
 
-    it('Renaming should emit a DELETED change followed by ADDED', async function (): Promise<void> {
+    it('Renaming should emit a DELETED and ADDED event', async function (): Promise<void> {
         const file_txt = root.resolve('file.txt');
         const FILE_txt = root.resolve('FILE.txt');
         const changes: FileChange[] = [];
@@ -131,41 +131,34 @@ describe('nsfw-filesystem-watcher', function (): void {
             FileUri.fsPath(file_txt),
             'random content\n'
         );
-        await sleep(1000);
+        await sleep(200);
         await fs.promises.rename(
             FileUri.fsPath(file_txt),
             FileUri.fsPath(FILE_txt)
         );
-        await sleep(1000);
+        await sleep(200);
+        // The order of DELETED and ADDED is not deterministic
         try {
             expect(changes).deep.eq([
                 // initial file creation change event:
                 { type: FileChangeType.ADDED, uri: file_txt.toString() },
                 // rename change events:
                 { type: FileChangeType.DELETED, uri: file_txt.toString() },
-                { type: FileChangeType.ADDED, uri: FILE_txt.toString() }
+                { type: FileChangeType.ADDED, uri: FILE_txt.toString() },
             ]);
-        } catch (error) {
-            // TODO: remove this try/catch once the bug on macOS is fixed.
-            // See https://github.com/Axosoft/nsfw/issues/146
-            if (process.platform !== 'darwin') {
-                throw error;
-            }
-            // On macOS we only get ADDED events for some reason
+        } catch {
             expect(changes).deep.eq([
                 // initial file creation change event:
                 { type: FileChangeType.ADDED, uri: file_txt.toString() },
                 // rename change events:
-                { type: FileChangeType.ADDED, uri: file_txt.toString() },
-                { type: FileChangeType.ADDED, uri: FILE_txt.toString() }
+                { type: FileChangeType.ADDED, uri: FILE_txt.toString() },
+                { type: FileChangeType.DELETED, uri: file_txt.toString() },
             ]);
-            // Mark the test case as skipped so it stands out that the bogus branch got tested
-            this.skip();
         }
     });
 
-    function createNsfwFileSystemWatcherService(): NsfwFileSystemWatcherService {
-        return new NsfwFileSystemWatcherService({
+    function createParcelFileSystemWatcherService(): ParcelFileSystemWatcherService {
+        return new ParcelFileSystemWatcherService({
             verbose: true
         });
     }

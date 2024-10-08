@@ -21,7 +21,7 @@ import { FileStatNode, DirNode, FileNode } from './file-tree';
 import { LocationService } from '../location';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { FileService } from '../file-service';
-import { FileOperationError, FileOperationResult, FileChangesEvent, FileChangeType, FileChange, FileOperation, FileOperationEvent } from '../../common/files';
+import { FileOperationError, FileOperationResult, FileChangesEvent, FileChangeType, FileChange } from '../../common/files';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { FileSystemUtils } from '../../common';
@@ -45,7 +45,6 @@ export class FileTreeModel extends CompressedTreeModel implements LocationServic
     protected override init(): void {
         super.init();
         this.toDispose.push(this.fileService.onDidFilesChange(changes => this.onFilesChanged(changes)));
-        this.toDispose.push(this.fileService.onDidRunOperation(event => this.onDidMove(event)));
     }
 
     get location(): URI | undefined {
@@ -90,23 +89,6 @@ export class FileTreeModel extends CompressedTreeModel implements LocationServic
         if (node) {
             yield node;
         }
-    }
-
-    /**
-     * to workaround https://github.com/Axosoft/nsfw/issues/42
-     */
-    protected onDidMove(event: FileOperationEvent): void {
-        if (!event.isOperation(FileOperation.MOVE)) {
-            return;
-        }
-        if (event.resource.parent.toString() === event.target.resource.parent.toString()) {
-            // file rename
-            return;
-        }
-        this.refreshAffectedNodes([
-            event.resource,
-            event.target.resource
-        ]);
     }
 
     protected onFilesChanged(changes: FileChangesEvent): void {

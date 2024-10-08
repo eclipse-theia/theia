@@ -36,6 +36,7 @@ import { EditorLanguageQuickPickService } from '@theia/editor/lib/browser/editor
 import { NotebookService } from '../service/notebook-service';
 import { Selection } from '@theia/monaco-editor-core/esm/vs/editor/common/core/selection';
 import { Range } from '@theia/core/shared/vscode-languageserver-protocol';
+import { NOTEBOOK_EDITOR_ID_PREFIX } from '../notebook-editor-widget';
 
 export namespace NotebookCellCommands {
     /** Parameters: notebookModel: NotebookModel | undefined, cell: NotebookCellModel */
@@ -413,7 +414,9 @@ export class NotebookCellActionContribution implements MenuContribution, Command
             }], true)
         ));
         commands.registerCommand(NotebookCellCommands.CHANGE_OUTPUT_PRESENTATION_COMMAND, this.editableCellCommandHandler(
-            (_, __, output) => output?.requestOutputPresentationUpdate()
+            (notebook, cell, output) => {
+                this.notebookEditorWidgetService.getNotebookEditor(NOTEBOOK_EDITOR_ID_PREFIX + notebook.uri.toString())?.requestOuputPresentationChange(cell.handle, output);
+            }
         ));
 
         const insertCommand = (type: CellKind, index: number | 'above' | 'below', focusContainer: boolean): CommandHandler => this.editableCellCommandHandler(() =>
