@@ -32,7 +32,7 @@ export interface NotebookCellStatusBarItem {
     readonly color?: string | ThemeColor;
     readonly backgroundColor?: string | ThemeColor;
     readonly tooltip?: string | MarkdownString;
-    readonly command?: string | Command;
+    readonly command?: string | (Command & { arguments?: unknown[] });
     readonly accessibilityInformation?: AccessibilityInformation;
     readonly opacity?: string;
     readonly onlyShowWhenActive?: boolean;
@@ -75,11 +75,11 @@ export class NotebookCellStatusBarService implements Disposable {
         });
     }
 
-    async getStatusBarItemsForCell(docUri: URI, cellIndex: number, viewType: string, token: CancellationToken): Promise<NotebookCellStatusBarItemList[]> {
+    async getStatusBarItemsForCell(notebookUri: URI, cellIndex: number, viewType: string, token: CancellationToken): Promise<NotebookCellStatusBarItemList[]> {
         const providers = this.providers.filter(p => p.viewType === viewType || p.viewType === '*');
         return Promise.all(providers.map(async p => {
             try {
-                return await p.provideCellStatusBarItems(docUri, cellIndex, token) ?? { items: [] };
+                return await p.provideCellStatusBarItems(notebookUri, cellIndex, token) ?? { items: [] };
             } catch (e) {
                 console.error(e);
                 return { items: [] };

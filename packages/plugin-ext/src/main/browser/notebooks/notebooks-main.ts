@@ -106,8 +106,8 @@ export class NotebooksMainImpl implements NotebooksMain {
     async $registerNotebookCellStatusBarItemProvider(handle: number, eventHandle: number | undefined, viewType: string): Promise<void> {
         const that = this;
         const provider: NotebookCellStatusBarItemProvider = {
-            async provideCellStatusBarItems(uri: URI, index: number, token: CancellationToken): Promise<NotebookCellStatusBarItemList | undefined> {
-                const result = await that.proxy.$provideNotebookCellStatusBarItems(handle, uri.toComponents(), index, token);
+            async provideCellStatusBarItems(notebookUri: URI, index: number, token: CancellationToken): Promise<NotebookCellStatusBarItemList | undefined> {
+                const result = await that.proxy.$provideNotebookCellStatusBarItems(handle, notebookUri.toComponents(), index, token);
                 return {
                     items: result?.items ?? [],
                     dispose(): void {
