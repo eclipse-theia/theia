@@ -15,7 +15,7 @@
 // *****************************************************************************
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { ILogger } from '@theia/core/lib/common/logger';
-import * as rimraf from 'rimraf';
+import { rimraf } from 'rimraf';
 
 export interface DownloadStorageItem {
     file: string;
@@ -70,11 +70,11 @@ export class FileDownloadCache {
     }
 
     protected deleteRecursively(pathToDelete: string): void {
-        rimraf(pathToDelete, error => {
-            if (error) {
-                this.logger.warn(`An error occurred while deleting the temporary data from the disk. Cannot clean up: ${pathToDelete}.`, error);
-            }
-        });
+        try {
+            rimraf(pathToDelete);
+        } catch (error) {
+            this.logger.warn(`An error occurred while deleting the temporary data from the disk. Cannot clean up: ${pathToDelete}.`, error);
+        }
     }
 
     protected expireDownloads(): void {
