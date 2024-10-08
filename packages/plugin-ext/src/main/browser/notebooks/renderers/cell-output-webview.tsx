@@ -462,6 +462,7 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
                 if (selectedCell) {
                     this.notebook.setSelectedCell(selectedCell);
                 }
+                break;
             case 'cellHeightRequest':
                 const cellHeight = this.notebook.getCellByHandle(message.cellHandle)?.cellHeight ?? 0;
                 this.webviewWidget.sendMessage({
@@ -469,6 +470,10 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
                     cellHandle: message.cellHandle,
                     height: cellHeight
                 });
+                break;
+            case 'bodyHeightChange':
+                this.webviewWidget.setIframeHeight(message.height);
+                break;
         }
     }
 

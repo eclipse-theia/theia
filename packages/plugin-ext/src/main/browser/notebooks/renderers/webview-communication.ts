@@ -151,6 +151,11 @@ export interface CellHeightRequest {
     readonly cellHandle: number;
 }
 
+export interface BodyHeightChange {
+    readonly type: 'bodyHeightChange';
+    readonly height: number;
+}
+
 export type FromWebviewMessage = WebviewInitialized
     | OnDidRenderOutput
     | WheelMessage
@@ -158,7 +163,8 @@ export type FromWebviewMessage = WebviewInitialized
     | KernelMessage
     | InputFocusChange
     | CellOuputFocus
-    | CellHeightRequest;
+    | CellHeightRequest
+    | BodyHeightChange;
 
 export interface Output {
     id: string

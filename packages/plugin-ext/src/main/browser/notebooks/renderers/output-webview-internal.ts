@@ -789,5 +789,12 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
 
     window.addEventListener('focusout', (event: FocusEvent) => focusChange(event, false));
 
+    new ResizeObserver(() => {
+        theia.postMessage({
+            type: 'bodyHeightChange',
+            height: document.body.clientHeight
+        } as webviewCommunication.BodyHeightChange);
+    }).observe(document.body);
+
     theia.postMessage(<webviewCommunication.WebviewInitialized>{ type: 'initialized' });
 }
