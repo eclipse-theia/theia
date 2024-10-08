@@ -23,9 +23,6 @@ export class NotebookCellOutputModel implements Disposable {
     private didChangeDataEmitter = new Emitter<void>();
     readonly onDidChangeData = this.didChangeDataEmitter.event;
 
-    private requestOutputPresentationChangeEmitter = new Emitter<void>();
-    readonly onRequestOutputPresentationChange = this.requestOutputPresentationChangeEmitter.event;
-
     get outputId(): string {
         return this.rawOutput.outputId;
     }
@@ -54,11 +51,6 @@ export class NotebookCellOutputModel implements Disposable {
 
     dispose(): void {
         this.didChangeDataEmitter.dispose();
-        this.requestOutputPresentationChangeEmitter.dispose();
-    }
-
-    requestOutputPresentationUpdate(): void {
-        this.requestOutputPresentationChangeEmitter.fire();
     }
 
     getData(): CellOutput {
