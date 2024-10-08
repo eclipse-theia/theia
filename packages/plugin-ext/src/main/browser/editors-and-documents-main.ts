@@ -250,7 +250,7 @@ class EditorAndDocumentStateComputer implements Disposable {
 
         this.toDispose.push(this.cellEditorService.onDidChangeCellEditors(() => this.update()));
 
-        this.toDispose.push(this.notebookWidgetService.onDidChangeFocusedEditor(() => {
+        this.toDispose.push(this.notebookWidgetService.onDidChangeCurrentEditor(() => {
             this.currentState = this.currentState && new EditorAndDocumentState(
                 this.currentState.documents,
                 this.currentState.editors,
