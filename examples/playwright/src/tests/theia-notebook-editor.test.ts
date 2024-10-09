@@ -149,6 +149,19 @@ test.describe('Theia Notebook Cell interaction', () => {
         expect(await cell.executionCount()).toBe('3');
     });
 
+    test('Check execute all', async () => {
+        const cell = await firstCell(editor);
+        await cell.addEditorText('print("Hallo Notebook!")');
+
+        await editor.addCodeCell();
+        const secondCell = (await editor.cells())[1];
+        await secondCell.addEditorText('print("Bye Notebook!")');
+
+        await editor.executeAllCells();
+
+        expect(await cell.outputText()).toBe('Hallo Notebook!');
+        expect(await secondCell.outputText()).toBe('Bye Notebook!');
+    });
 });
 
 async function firstCell(editor: TheiaNotebookEditor): Promise<TheiaNotebookCell> {

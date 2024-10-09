@@ -27,7 +27,7 @@ export class TheiaNotebookCell extends TheiaPageObject {
 
     protected monacoEditor: TheiaEmbeddedMonacoEditor;
 
-    constructor(protected readonly locator: Locator, app: TheiaApp) {
+    constructor(protected readonly locator: Locator, protected readonly notebookEditorLocator: Locator, app: TheiaApp) {
         super(app);
         const editorLocator = locator.locator('div.theia-notebook-cell-editor');
         this.monacoEditor = new TheiaEmbeddedMonacoEditor(editorLocator, app);
@@ -168,12 +168,22 @@ export class TheiaNotebookCell extends TheiaPageObject {
 
     protected async outputContainer(): Promise<Locator> {
         const outFrame = await this.outputFrame();
-        // check we expect only one output?
-        return outFrame.locator('div.output-container');
+        // each cell has it's own output div with a unique id = cellHandle<handle>
+        const cellOutput = outFrame.locator(`div#cellHandle${await this.cellHandle()}`);
+        return cellOutput.locator('div.output-container');
+    }
+
+    protected async cellHandle(): Promise<string | null> {
+        const handle = await this.locator.getAttribute('data-cell-handle');
+        if (handle === null) {
+            throw new Error('Could not find cell handle attribute `data-cell-handle` for the notebook cell.');
+        }
+        return handle;
     }
 
     protected async outputFrame(): Promise<FrameLocator> {
-        const webViewFrame = this.locator.frameLocator('iframe.webview');
+        const containerDiv = this.notebookEditorLocator.locator('div.theia-notebook-cell-output-webview');
+        const webViewFrame = containerDiv.frameLocator('iframe.webview');
         await webViewFrame.locator('iframe').waitFor({ state: 'attached' });
         return webViewFrame.frameLocator('iframe');
     }

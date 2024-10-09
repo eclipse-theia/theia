@@ -150,7 +150,7 @@ export class TheiaNotebookEditor extends TheiaEditor {
         const cells: Array<TheiaNotebookCell> = [];
         for (const cellLocator of await cellsLocator.all()) {
             await cellLocator.waitFor({ state: 'visible' });
-            cells.push(new TheiaNotebookCell(cellLocator, this.app));
+            cells.push(new TheiaNotebookCell(cellLocator, this.viewLocator(), this.app));
         }
         return cells;
     }
