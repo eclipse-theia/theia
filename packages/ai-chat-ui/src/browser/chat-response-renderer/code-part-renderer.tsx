@@ -128,7 +128,7 @@ const CopyToClipboardButton = (props: { code: string, clipboardService: Clipboar
     const copyCodeToClipboard = React.useCallback(() => {
         clipboardService.writeText(code);
     }, [code, clipboardService]);
-    return <button className='theia-button main' onClick={copyCodeToClipboard}>Copy</button>;
+    return <div className='button codicon codicon-copy' title='Copy' role='button' onClick={copyCodeToClipboard}></div>;
 };
 
 const InsertCodeAtCursorButton = (props: { code: string, editorManager: EditorManager }) => {
@@ -150,7 +150,7 @@ const InsertCodeAtCursorButton = (props: { code: string, editorManager: EditorMa
             }]);
         }
     }, [code, editorManager]);
-    return <button className='theia-button main' onClick={insertCode}>Insert at Cursor</button>;
+    return <div className='button codicon codicon-insert' title='Insert at Cursor' role='button' onClick={insertCode}></div>;
 };
 
 /**
@@ -174,9 +174,9 @@ export const CodeWrapper = (props: {
             autoSizing: true,
             scrollBeyondLastLine: false,
             scrollBeyondLastColumn: 0,
-            renderFinalNewline: 'on',
+            renderFinalNewline: 'off',
             maxHeight: -1,
-            scrollbar: { vertical: 'hidden', horizontal: 'hidden' },
+            scrollbar: { vertical: 'hidden' },
             codeLens: false,
             inlayHints: { enabled: 'off' },
             hover: { enabled: false }
@@ -203,6 +203,5 @@ export const CodeWrapper = (props: {
 
     editorRef.current?.resizeToFit();
 
-    return <div ref={ref}></div>;
+    return <div className='theia-CodeWrapper' ref={ref}></div>;
 };
-
