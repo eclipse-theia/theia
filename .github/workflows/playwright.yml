@@ -13,9 +13,9 @@ on:
 
 jobs:
   build-and-test-playwright:
-    name: Playwright Tests (ubuntu-latest,  Node.js 18.x)
+    name: Playwright Tests (ubuntu-22.04,  Node.js 18.x)
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 60
 
     steps:
