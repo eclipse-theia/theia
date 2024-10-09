@@ -28,12 +28,14 @@ import {
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { NotebookExecutionService } from '../service/notebook-execution-service';
 import { NotebookCellOutputModel } from '../view-model/notebook-cell-output-model';
-import { CellEditType, CellKind } from '../../common';
+import { CellData, CellEditType, CellKind } from '../../common';
 import { NotebookEditorWidgetService } from '../service/notebook-editor-widget-service';
 import { NotebookCommands } from './notebook-actions-contribution';
 import { changeCellType } from './cell-operations';
 import { EditorLanguageQuickPickService } from '@theia/editor/lib/browser/editor-language-quick-pick-service';
 import { NotebookService } from '../service/notebook-service';
+import { Selection } from '@theia/monaco-editor-core/esm/vs/editor/common/core/selection';
+import { Range } from '@theia/core/shared/vscode-languageserver-protocol';
 import { NOTEBOOK_EDITOR_ID_PREFIX } from '../notebook-editor-widget';
 
 export namespace NotebookCellCommands {
@@ -56,7 +58,7 @@ export namespace NotebookCellCommands {
     });
     /** Parameters: notebookModel: NotebookModel, cell: NotebookCellModel */
     export const SPLIT_CELL_COMMAND = Command.toDefaultLocalizedCommand({
-        id: 'notebook.cell.split-cell',
+        id: 'notebook.cell.split',
         iconClass: codicon('split-vertical'),
     });
     /** Parameters: notebookModel: NotebookModel, cell: NotebookCellModel */
@@ -214,12 +216,12 @@ export class NotebookCellActionContribution implements MenuContribution, Command
             order: '20'
         });
 
-        // menus.registerMenuAction(NotebookCellActionContribution.ACTION_MENU, {
-        //     commandId: NotebookCellCommands.SPLIT_CELL_COMMAND.id,
-        //     icon: NotebookCellCommands.SPLIT_CELL_COMMAND.iconClass,
-        //     label: nls.localizeByDefault('Split Cell'),
-        //     order: '20'
-        // });
+        menus.registerMenuAction(NotebookCellActionContribution.ACTION_MENU, {
+            commandId: NotebookCellCommands.SPLIT_CELL_COMMAND.id,
+            icon: NotebookCellCommands.SPLIT_CELL_COMMAND.iconClass,
+            label: nls.localizeByDefault('Split Cell'),
+            order: '20'
+        });
 
         menus.registerMenuAction(NotebookCellActionContribution.ACTION_MENU, {
             commandId: NotebookCellCommands.DELETE_COMMAND.id,
@@ -294,7 +296,47 @@ export class NotebookCellActionContribution implements MenuContribution, Command
                 }]
                     , true);
             }));
-        commands.registerCommand(NotebookCellCommands.SPLIT_CELL_COMMAND);
+        commands.registerCommand(NotebookCellCommands.SPLIT_CELL_COMMAND, this.editableCellCommandHandler(
+            async (notebookModel, cell) => {
+                // selection (0,0,0,0) should also be used in !cell.editing mode, but `cell.editing`
+                // is not properly implemented for Code cells.
+                const cellSelection: Range = cell.selection ?? { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } };
+                const textModel = await cell.resolveTextModel();
+
+                // Create new cell with the text after the cursor
+                const splitOffset = textModel.offsetAt({
+                    line: cellSelection.start.line,
+                    character: cellSelection.start.character
+                });
+                const newCell: CellData = {
+                    cellKind: cell.cellKind,
+                    language: cell.language,
+                    outputs: [],
+                    source: textModel.getText().substring(splitOffset),
+                };
+
+                // add new cell below
+                const index = notebookModel.cells.indexOf(cell);
+                notebookModel.applyEdits([{ editType: CellEditType.Replace, index: index + 1, count: 0, cells: [newCell] }], true);
+
+                // update current cell text (undo-able)
+                const selection = new Selection(cellSelection.start.line + 1, cellSelection.start.character + 1, cellSelection.end.line + 1, cellSelection.end.character + 1);
+                const endPosition = textModel.positionAt(textModel.getText().length);
+                const deleteOp = {
+                    range: {
+                        startLineNumber: selection.startLineNumber,
+                        startColumn: selection.startColumn,
+                        endLineNumber: endPosition.line + 1,
+                        endColumn: endPosition.character + 1
+                    },
+                    // eslint-disable-next-line no-null/no-null
+                    text: null
+                };
+                // Create a new undo/redo stack entry
+                textModel.textEditorModel.pushStackElement();
+                textModel.textEditorModel.pushEditOperations([selection], [deleteOp], () => [selection]);
+            })
+        );
 
         commands.registerCommand(NotebookCellCommands.EXECUTE_SINGLE_CELL_COMMAND, this.editableCellCommandHandler(
             (notebookModel, cell) => {
@@ -511,6 +553,11 @@ export class NotebookCellActionContribution implements MenuContribution, Command
                 keybinding: 'M',
                 when: `!editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED} && ${NOTEBOOK_CELL_TYPE} == 'code'`,
             },
+            {
+                command: NotebookCellCommands.SPLIT_CELL_COMMAND.id,
+                keybinding: KeyCode.createKeyCode({ first: Key.MINUS, modifiers: [KeyModifier.CtrlCmd, KeyModifier.Shift] }).toString(),
+                when: `editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`,
+            }
         );
     }
 }
