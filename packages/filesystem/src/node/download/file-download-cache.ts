@@ -70,11 +70,9 @@ export class FileDownloadCache {
     }
 
     protected deleteRecursively(pathToDelete: string): void {
-        try {
-            rimraf(pathToDelete);
-        } catch (error) {
+        rimraf(pathToDelete).catch(error => {
             this.logger.warn(`An error occurred while deleting the temporary data from the disk. Cannot clean up: ${pathToDelete}.`, error);
-        }
+        });
     }
 
     protected expireDownloads(): void {
