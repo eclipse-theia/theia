@@ -41,6 +41,33 @@ export class TheiaNotebookCell extends TheiaPageObject {
     }
 
     /**
+     * @returns Locator for the sidebar (left) of the cell.
+     */
+    sidebar(): Locator {
+        return this.locator.locator('div.theia-notebook-cell-sidebar');
+    }
+
+    /**
+     * @returns Locator for the toolbar (top) of the cell.
+     */
+    toolbar(): Locator {
+        return this.locator.locator('div.theia-notebook-cell-toolbar');
+    }
+    /**
+     * @returns Locator for the statusbar (bottom) of the cell.
+     */
+    statusbar(): Locator {
+        return this.locator.locator('div.notebook-cell-status');
+    }
+
+    /**
+     * @returns Locator for the status icon inside the statusbar of the cell.
+     */
+    statusIcon(): Locator {
+        return this.statusbar().locator('span.notebook-cell-status-item');
+    }
+
+    /**
      * @returns `true` id the cell is a code cell, `false` otherwise.
      */
     async isCodeCell(): Promise<boolean> {
@@ -84,7 +111,7 @@ export class TheiaNotebookCell extends TheiaPageObject {
      * @param wait If `true` waits for the cell to finish execution, otherwise returns immediately.
      */
     async execute(wait = true): Promise<void> {
-        const execButton = this.sideBar().locator('[id="notebook.cell.execute-cell"]');
+        const execButton = this.sidebar().locator('[id="notebook.cell.execute-cell"]');
         await execButton.waitFor({ state: 'visible' });
         await execButton.click();
         if (wait) {
@@ -94,12 +121,21 @@ export class TheiaNotebookCell extends TheiaPageObject {
     }
 
     /**
+     * Splits the cell into two cells by dividing the cell text on current cursor position.
+     */
+    async splitCell(): Promise<void> {
+        const execButton = this.toolbar().locator('[id="notebook.cell.split"]');
+        await execButton.waitFor({ state: 'visible' });
+        await execButton.click();
+    }
+
+    /**
      *  Waits for the cell to reach a specific status.
      * @param status  The status to wait for. Possible values are 'success', 'error', 'waiting'.
      */
     async waitForCellStatus(...status: CellStatus[]): Promise<void> {
-        await this.cellStatusIcon().waitFor({ state: 'visible' });
-        await this.cellStatusIcon().evaluate(
+        await this.statusIcon().waitFor({ state: 'visible' });
+        await this.statusIcon().evaluate(
             (element, expect) => {
                 if (expect.length === 0) {
                     return true;
@@ -115,19 +151,11 @@ export class TheiaNotebookCell extends TheiaPageObject {
             }, status);
     }
 
-    protected cellStatusBar(): Locator {
-        return this.locator.locator('div.notebook-cell-status');
-    }
-
-    protected cellStatusIcon(): Locator {
-        return this.locator.locator('span.notebook-cell-status-item');
-    }
-
     /**
      * @returns The status of the cell. Possible values are 'success', 'error', 'waiting'.
      */
-    async cellStatus(): Promise<CellStatus> {
-        const statusLocator = this.cellStatusIcon();
+    async status(): Promise<CellStatus> {
+        const statusLocator = this.statusIcon();
         const status = this.toCellStatus(await (await statusLocator.elementHandle())?.getAttribute('class') ?? '');
         return status;
     }
@@ -142,15 +170,11 @@ export class TheiaNotebookCell extends TheiaPageObject {
      * @returns The execution count of the cell.
      */
     async executionCount(): Promise<string | undefined> {
-        const countNode = this.sideBar().locator('span.theia-notebook-code-cell-execution-order');
+        const countNode = this.sidebar().locator('span.theia-notebook-code-cell-execution-order');
         await countNode.waitFor({ state: 'visible' });
         await this.waitForCellStatus('success', 'error');
         const text = await countNode.textContent();
         return text?.substring(1, text.length - 1);
-    }
-
-    protected sideBar(): Locator {
-        return this.locator.locator('div.theia-notebook-cell-sidebar');
     }
 
     /**

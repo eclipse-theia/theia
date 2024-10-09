@@ -34,6 +34,10 @@ test.describe('Theia Notebook Editor interaction', () => {
         app = await loadApp({ playwright, browser });
     });
 
+    test.beforeEach(async ({ playwright, browser }) => {
+        editor = await app.openEditor('sample.ipynb', TheiaNotebookEditor);
+    });
+
     test.afterAll(async () => {
         await app.page.close();
     });
@@ -45,8 +49,6 @@ test.describe('Theia Notebook Editor interaction', () => {
     });
 
     test('kernels are installed', async () => {
-        editor = await app.openEditor('sample.ipynb', TheiaNotebookEditor);
-
         const kernels = await editor.availableKernels();
         const msg = `Available kernels:\n ${kernels.join('\n')}`;
         console.log(msg); // Print available kernels, useful when running in CI.
@@ -57,14 +59,12 @@ test.describe('Theia Notebook Editor interaction', () => {
     });
 
     test('should select a kernel', async () => {
-        editor = await app.openEditor('sample.ipynb', TheiaNotebookEditor);
         await editor.selectKernel(preferredKernel);
         const selectedKernel = await editor.selectedKernel();
         expect(selectedKernel).toMatch(new RegExp(`^${preferredKernel}`));
     });
 
     test('should add a new code cell', async () => {
-        editor = await app.openEditor('sample.ipynb', TheiaNotebookEditor);
         await editor.addCodeCell();
         const cells = await editor.cells();
         expect(cells.length).toBe(2);
@@ -72,8 +72,6 @@ test.describe('Theia Notebook Editor interaction', () => {
     });
 
     test('should add a new markdown cell', async () => {
-        editor = await app.openEditor('sample.ipynb', TheiaNotebookEditor);
-
         await editor.addMarkdownCell();
         await (await editor.cells())[1].addEditorText('print("markdown")');
 
@@ -83,6 +81,47 @@ test.describe('Theia Notebook Editor interaction', () => {
         expect(await cells[1].editorText()).toBe('print("markdown")');
     });
 
+    test('should execute all cells', async () => {
+        const cell = await firstCell(editor);
+        await cell.addEditorText('print("Hallo Notebook!")');
+
+        await editor.addCodeCell();
+        const secondCell = (await editor.cells())[1];
+        await secondCell.addEditorText('print("Bye Notebook!")');
+
+        await editor.executeAllCells();
+
+        expect(await cell.outputText()).toBe('Hallo Notebook!');
+        expect(await secondCell.outputText()).toBe('Bye Notebook!');
+    });
+
+    test('should split cell', async () => {
+        const cell = await firstCell(editor);
+        /*
+        Add cell text:
+        print("Line-1")
+        print("Line-2")
+        */
+        await cell.addEditorText('print("Line-1")\nprint("Line-2")');
+
+        /*
+        Set cursor:
+        print("Line-1")
+        <|>print("Line-2")
+        */
+        const line = await cell.editor.lineByLineNumber(1);
+        await line?.waitForElementState('visible');
+        await line?.click();
+        await line?.press('ArrowRight');
+
+        // split cell
+        await cell.splitCell();
+
+        // expect two cells with text "print("Line-1")" and "print("Line-2")"
+        expect(await editor.cells()).toHaveLength(2);
+        expect(await (await editor.cells())[0].editorText()).toBe('print("Line-1")');
+        expect(await (await editor.cells())[1].editorText()).toBe('print("Line-2")');
+    });
 });
 
 test.describe('Theia Notebook Cell interaction', () => {
@@ -149,19 +188,6 @@ test.describe('Theia Notebook Cell interaction', () => {
         expect(await cell.executionCount()).toBe('3');
     });
 
-    test('Check execute all', async () => {
-        const cell = await firstCell(editor);
-        await cell.addEditorText('print("Hallo Notebook!")');
-
-        await editor.addCodeCell();
-        const secondCell = (await editor.cells())[1];
-        await secondCell.addEditorText('print("Bye Notebook!")');
-
-        await editor.executeAllCells();
-
-        expect(await cell.outputText()).toBe('Hallo Notebook!');
-        expect(await secondCell.outputText()).toBe('Bye Notebook!');
-    });
 });
 
 async function firstCell(editor: TheiaNotebookEditor): Promise<TheiaNotebookCell> {
