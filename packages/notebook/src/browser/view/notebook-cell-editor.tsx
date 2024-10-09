@@ -130,7 +130,7 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
 
         this.toDispose.push(this.props.notebookModel.onDidChangeSelectedCell(e => {
             if (e.cell !== this.props.cell && this.editor?.getControl().hasTextFocus()) {
-                this.props.notebookContextManager.context?.focus();
+                e.cell?.requestFocusEditor();
             }
         }));
         if (!this.props.notebookViewportService || (this.container && this.props.notebookViewportService.isElementInViewport(this.container))) {

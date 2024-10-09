@@ -274,8 +274,10 @@ export class NotebookCellModel implements NotebookCell, Disposable {
     }
 
     set cellHeight(height: number) {
-        this.onDidCellHeightChangeEmitter.fire(height);
-        this._cellheight = height;
+        if (height !== this._cellheight) {
+            this.onDidCellHeightChangeEmitter.fire(height);
+            this._cellheight = height;
+        }
     }
 
     @postConstruct()
