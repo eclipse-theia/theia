@@ -135,7 +135,7 @@ export class AIHistoryView extends ReactWidget implements StatefulWidget {
         this.state = { ...deepClone(this.state), chronological: chronological };
     }
 
-    get isChronologial(): boolean {
+    get isChronological(): boolean {
         return this.state.chronological === true;
     }
 }

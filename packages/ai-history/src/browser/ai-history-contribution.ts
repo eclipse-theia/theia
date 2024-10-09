@@ -71,16 +71,16 @@ export class AIHistoryViewContribution extends AIViewContribution<AIHistoryView>
             execute: () => this.openView({ activate: true }),
         });
         registry.registerCommand(AI_HISTORY_VIEW_SORT_CHRONOLOGICALLY, {
-            isEnabled: widget => this.withHistoryWidget(widget, historyView => !historyView.isChronologial),
-            isVisible: widget => this.withHistoryWidget(widget, historyView => !historyView.isChronologial),
+            isEnabled: widget => this.withHistoryWidget(widget, historyView => !historyView.isChronological),
+            isVisible: widget => this.withHistoryWidget(widget, historyView => !historyView.isChronological),
             execute: widget => this.withHistoryWidget(widget, historyView => {
                 historyView.sortHistory(true);
                 return true;
             })
         });
         registry.registerCommand(AI_HISTORY_VIEW_SORT_REVERSE_CHRONOLOGICALLY, {
-            isEnabled: widget => this.withHistoryWidget(widget, historyView => historyView.isChronologial),
-            isVisible: widget => this.withHistoryWidget(widget, historyView => historyView.isChronologial),
+            isEnabled: widget => this.withHistoryWidget(widget, historyView => historyView.isChronological),
+            isVisible: widget => this.withHistoryWidget(widget, historyView => historyView.isChronological),
             execute: widget => this.withHistoryWidget(widget, historyView => {
                 historyView.sortHistory(false);
                 return true;
