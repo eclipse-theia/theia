@@ -77,4 +77,10 @@ test.describe('Theia Quick Command', () => {
         expect(await notification.isEntryVisible('Positive Integer: 6')).toBe(true);
     });
 
+    test('retrieve and check visible items', async () => {
+        await quickCommand.type('close all tabs', false);
+        const listItems = await Promise.all((await quickCommand.visibleItems()).map(async item => item.textContent()));
+        expect(listItems).toContain('View: Close All Tabs in Main Area');
+    });
+
 });

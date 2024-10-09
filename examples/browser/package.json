@@ -8,7 +8,8 @@
       "config": {
         "applicationName": "Theia Browser Example",
         "preferences": {
-          "files.enableTrash": false
+          "files.enableTrash": false,
+          "security.workspace.trust.enabled": false
         },
         "reloadOnReconnect": true
       }
@@ -19,6 +20,7 @@
       }
     }
   },
+  "theiaPluginsDir": "../../plugins",
   "dependencies": {
     "@theia/ai-chat": "1.54.0",
     "@theia/ai-chat-ui": "1.54.0",
