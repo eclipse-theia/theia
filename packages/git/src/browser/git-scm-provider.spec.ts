@@ -109,7 +109,7 @@ describe('GitScmProvider', () => {
     });
 
     afterEach(async () => {
-        rimraf(FileUri.fsPath(repository.localUri));
+        await rimraf(FileUri.fsPath(repository.localUri));
     });
 
     it('should unstage all the changes', async () => {
