@@ -13,17 +13,25 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-export const LlamafileServerManager = Symbol('LlamafileServerManager');
+export const LlamafileManager = Symbol('LlamafileManager');
 
-export const LlamafileServerManagerPath = '/services/llamafileservermanager';
+export const LlamafileManagerPath = '/services/llamafilemanager';
 
-export interface LlamafileServerManager {
-    startServer(name: string, uri: string, port: number): void;
-    killServer(name: string): void;
-    isStarted(name: string): boolean;
+export interface LlamafileManager {
+    startServer(name: string): Promise<void>;
+    stopServer(name: string): void;
+    getStartedLlamafiles(): Promise<string[]>;
     setClient(client: LlamafileServerManagerClient): void;
+    addLanguageModels(llamaFiles: LlamafileEntry[]): void;
+    removeLanguageModels(modelIds: string[]): void;
 }
 export interface LlamafileServerManagerClient {
     log(llamafileName: string, message: string): void;
     error(llamafileName: string, message: string): void;
+}
+
+export interface LlamafileEntry {
+    name: string;
+    uri: string;
+    port: number;
 }

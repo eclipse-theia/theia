@@ -13,13 +13,12 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { LanguageModelRegistry } from '@theia/ai-core';
 import { AICommandHandlerFactory } from '@theia/ai-core/lib/browser/ai-command-handler-factory';
 import { CommandContribution, CommandRegistry, MessageService } from '@theia/core';
 import { PreferenceService, QuickInputService } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { LlamafileLanguageModel } from '../common/llamafile-language-model';
-import { LlamafileEntry, PREFERENCE_LLAMAFILE } from './llamafile-preferences';
+import { LlamafileEntry, LlamafileManager } from '../common/llamafile-manager';
+import { PREFERENCE_LLAMAFILE } from './llamafile-preferences';
 
 export const StartLlamafileCommand = {
     id: 'llamafile.start',
@@ -45,8 +44,8 @@ export class LlamafileCommandContribution implements CommandContribution {
     @inject(MessageService)
     protected messageService: MessageService;
 
-    @inject(LanguageModelRegistry)
-    protected languageModelRegistry: LanguageModelRegistry;
+    @inject(LlamafileManager)
+    protected llamafileManager: LlamafileManager;
 
     registerCommands(commandRegistry: CommandRegistry): void {
         commandRegistry.registerCommand(StartLlamafileCommand, this.commandHandlerFactory({
@@ -62,12 +61,7 @@ export class LlamafileCommandContribution implements CommandContribution {
                     if (result === undefined) {
                         return;
                     }
-                    const model = await this.getLanguageModelForItem(result.label);
-                    if (model === undefined) {
-                        this.messageService.error('No fitting Llamafile model found.');
-                        return;
-                    }
-                    model.startServer();
+                    this.llamafileManager.startServer(result.label);
                 } catch (error) {
                     console.error('Something went wrong during the llamafile start.', error);
                 }
@@ -76,39 +70,21 @@ export class LlamafileCommandContribution implements CommandContribution {
         commandRegistry.registerCommand(StopLlamafileCommand, this.commandHandlerFactory({
             execute: async () => {
                 try {
-                    const llamaFiles = await this.getStartedLlamafiles();
+                    const llamaFiles = await this.llamafileManager.getStartedLlamafiles();
                     if (llamaFiles === undefined || llamaFiles.length === 0) {
                         this.messageService.error('No Llamafiles running.');
                         return;
                     }
-                    const options = llamaFiles.map(llamaFile => ({ label: llamaFile.name }));
+                    const options = llamaFiles.map(llamaFile => ({ label: llamaFile }));
                     const result = await this.quickInputService.showQuickPick(options);
                     if (result === undefined) {
                         return;
                     }
-                    const model = llamaFiles.find(llamaFile => llamaFile.name === result.label);
-                    if (model === undefined) {
-                        this.messageService.error('No fitting Llamafile model found.');
-                        return;
-                    }
-                    model.killServer();
+                    this.llamafileManager.stopServer(result.label);
                 } catch (error) {
                     console.error('Something went wrong during the llamafile stop.', error);
                 }
             }
         }));
-    }
-
-    private async getLanguageModelForItem(name: string): Promise<LlamafileLanguageModel | undefined> {
-        const result = await this.languageModelRegistry.getLanguageModel(name);
-        if (result instanceof LlamafileLanguageModel) {
-            return result;
-        } else {
-            return undefined;
-        }
-    }
-    private async getStartedLlamafiles(): Promise<LlamafileLanguageModel[]> {
-        const models = await this.languageModelRegistry.getLanguageModels();
-        return models.filter(model => model instanceof LlamafileLanguageModel && model.isStarted) as LlamafileLanguageModel[];
     }
 }

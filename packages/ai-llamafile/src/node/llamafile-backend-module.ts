@@ -15,16 +15,16 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { LlamafileServerManagerImpl } from './llamafile-server-manager-impl';
-import { LlamafileServerManager, LlamafileServerManagerClient, LlamafileServerManagerPath } from '../common/llamafile-server-manager';
+import { LlamafileManagerImpl } from './llamafile-manager-impl';
+import { LlamafileManager, LlamafileServerManagerClient, LlamafileManagerPath } from '../common/llamafile-manager';
 import { ConnectionHandler, RpcConnectionHandler } from '@theia/core';
 
 export default new ContainerModule(bind => {
-    bind(LlamafileServerManager).to(LlamafileServerManagerImpl).inSingletonScope();
+    bind(LlamafileManager).to(LlamafileManagerImpl).inSingletonScope();
     bind(ConnectionHandler).toDynamicValue(ctx => new RpcConnectionHandler<LlamafileServerManagerClient>(
-        LlamafileServerManagerPath,
+        LlamafileManagerPath,
         client => {
-            const service = ctx.container.get<LlamafileServerManager>(LlamafileServerManager);
+            const service = ctx.container.get<LlamafileManager>(LlamafileManager);
             service.setClient(client);
             return service;
         }

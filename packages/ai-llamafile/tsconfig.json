@@ -16,13 +16,7 @@
       "path": "../core"
     },
     {
-      "path": "../filesystem"
-    },
-    {
       "path": "../output"
-    },
-    {
-      "path": "../workspace"
     }
   ]
 }

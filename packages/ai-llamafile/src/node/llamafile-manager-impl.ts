@@ -13,26 +13,50 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { injectable } from '@theia/core/shared/inversify';
+import { LanguageModelRegistry } from '@theia/ai-core';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
-import { dirname, basename } from 'path';
-import { LlamafileServerManager, LlamafileServerManagerClient } from '../common/llamafile-server-manager';
+import { basename, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { LlamafileLanguageModel } from '../common/llamafile-language-model';
+import { LlamafileEntry, LlamafileManager, LlamafileServerManagerClient } from '../common/llamafile-manager';
 
 @injectable()
-export class LlamafileServerManagerImpl implements LlamafileServerManager {
+export class LlamafileManagerImpl implements LlamafileManager {
+
+    @inject(LanguageModelRegistry)
+    protected languageModelRegistry: LanguageModelRegistry;
 
     private processMap: Map<string, ChildProcessWithoutNullStreams> = new Map();
     private client: LlamafileServerManagerClient;
 
-    startServer(name: string, uri: string, port: number): void {
+    addLanguageModels(llamaFiles: LlamafileEntry[]): void {
+        const models = llamaFiles.map(llamafile =>
+            new LlamafileLanguageModel(llamafile.name, llamafile.uri, llamafile.port));
+        this.languageModelRegistry.addLanguageModels(models);
+    }
+    removeLanguageModels(modelIds: string[]): void {
+        this.languageModelRegistry.removeLanguageModels(modelIds);
+    }
+
+    async getStartedLlamafiles(): Promise<string[]> {
+        const models = await this.languageModelRegistry.getLanguageModels();
+        return models.filter(model => model instanceof LlamafileLanguageModel && this.isStarted(model.name)).map(model => model.id);
+    }
+
+    async startServer(name: string): Promise<void> {
         if (!this.processMap.has(name)) {
-            const filePath = fileURLToPath(uri);
+            const models = await this.languageModelRegistry.getLanguageModels();
+            const llm = models.find(model => model.id === name && model instanceof LlamafileLanguageModel) as LlamafileLanguageModel | undefined;
+            if (llm === undefined) {
+                return Promise.reject(`Llamafile ${name} not found`);
+            }
+            const filePath = fileURLToPath(llm.uri);
 
             // Extract the directory and file name
             const dir = dirname(filePath);
             const fileName = basename(filePath);
-            const currentProcess = spawn(`./${fileName}`, ['--port', '' + port, '--server', '--nobrowser'], { cwd: dir });
+            const currentProcess = spawn(`./${fileName}`, ['--port', '' + llm.port, '--server', '--nobrowser'], { cwd: dir });
             this.processMap.set(name, currentProcess);
             currentProcess.stdout.on('data', (data: Buffer) => {
                 const output = data.toString();
@@ -49,7 +73,7 @@ export class LlamafileServerManagerImpl implements LlamafileServerManager {
         }
     }
 
-    killServer(name: string): void {
+    stopServer(name: string): void {
         if (this.processMap.has(name)) {
             const currentProcess = this.processMap.get(name);
             currentProcess!.kill();

@@ -27,7 +27,7 @@ export const aiLlamafilePreferencesSchema: PreferenceSchema = {
             title: AI_LLAMAFILE_PREFERENCES_TITLE,
             markdownDescription: '❗ This setting allows you to add llamafiles.\
             \n\
-            You need to provide a user friendly name, the path to the llamafile and the port to use.\
+            You need to provide a user friendly `name`, the file `uri` to the llamafile and the `port` to use.\
             \n\
             In order to start your llamafile you have to call the "Start Llamafile" command where you can then select the llamafile to start.',
             type: 'array',
@@ -52,11 +52,6 @@ export const aiLlamafilePreferencesSchema: PreferenceSchema = {
         }
     }
 };
-export interface LlamafileEntry {
-    name: string;
-    uri: string;
-    port: number;
-}
 
 export function bindAILlamafilePreferences(bind: interfaces.Bind): void {
     bind(PreferenceContribution).toConstantValue({ schema: aiLlamafilePreferencesSchema });
