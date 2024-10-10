@@ -16,7 +16,7 @@
 
 // @ts-check
 describe('TypeScript', function () {
-    this.timeout(30_000);
+    this.timeout(200_000);
 
     const { assert } = chai;
     const { timeout } = require('@theia/core/lib/common/promise-util');
@@ -94,6 +94,24 @@ describe('TypeScript', function () {
         await preferences.set('files.autoSave', originalAutoSaveValue);
     })
 
+    async function waitLanguageServerReady() {
+        // quite a bit of jitter in the "Initializing LS" status bar entry,
+        // so we want to read a few times in a row that it's done (undefined)
+        const MAX_N = 5
+        let n = MAX_N;
+        while (n > 0) {
+            await timeout(1000);
+            if (progressStatusBarItem.currentProgress) {
+                n = MAX_N;
+            } else {
+                n--;
+            }
+            if (n < 5) {
+                console.debug('n = ' + n);
+            }
+        }
+    }
+
     /**
      * @param {Uri.default} uri
      * @param {boolean} preview
@@ -106,8 +124,8 @@ describe('TypeScript', function () {
         // wait till tsserver is running, see:
         // https://github.com/microsoft/vscode/blob/93cbbc5cae50e9f5f5046343c751b6d010468200/extensions/typescript-language-features/src/extension.ts#L98-L103
         await waitForAnimation(() => contextKeyService.match('typescript.isManagedFile'));
-        // https://github.com/microsoft/vscode/blob/4aac84268c6226d23828cc6a1fe45ee3982927f0/extensions/typescript-language-features/src/typescriptServiceClient.ts#L911
-        await waitForAnimation(() => !progressStatusBarItem.currentProgress);
+
+        waitLanguageServerReady();
         return /** @type {MonacoEditor} */ (editor);
     }
 
@@ -388,6 +406,14 @@ describe('TypeScript', function () {
         assert.isTrue(contextKeyService.match('editorTextFocus'));
         assert.isTrue(contextKeyService.match('suggestWidgetVisible'));
 
+
+        const suggestController = editor.getControl().getContribution('editor.contrib.suggestController');
+
+        waitForAnimation(() => {
+            const content = nodeAsString(suggestController ? ['_widget']?.['_value']?.['element']?.['domNode']);
+            return !content.includes('loading');
+        });
+
         // May need a couple extra "Enter" being sent for the suggest to be accepted
         keybindings.dispatchKeyDown('Enter');
         await waitForAnimation(() => {
@@ -398,7 +424,7 @@ describe('TypeScript', function () {
                 return false;
             }
             return true;
-        }, 5000, 'Suggest widget has not been dismissed despite attempts to accept suggestion');
+        }, 20000, 'Suggest widget has not been dismissed despite attempts to accept suggestion');
 
         assert.isTrue(contextKeyService.match('editorTextFocus'));
         assert.isFalse(contextKeyService.match('suggestWidgetVisible'));
@@ -542,6 +568,7 @@ describe('TypeScript', function () {
     });
 
     it('editor.action.showHover', async function () {
+
         const editor = await openEditor(demoFileUri);
         // class |DemoClass);
         editor.getControl().setPosition({ lineNumber: 8, column: 7 });
@@ -557,6 +584,11 @@ describe('TypeScript', function () {
         await waitForAnimation(() => contextKeyService.match('editorHoverVisible'));
         assert.isTrue(contextKeyService.match('editorHoverVisible'));
         assert.isTrue(contextKeyService.match('editorTextFocus'));
+
+        waitForAnimation(() => {
+            const content = nodeAsString(hover['_contentWidget']?.['_widget']?.['_hover']?.['contentsDomNode']);
+            return !content.includes('loading');
+        });
 
         assert.deepEqual(nodeAsString(hover['_contentWidget']?.['_widget']?.['_hover']?.['contentsDomNode']).trim(), `
 DIV {

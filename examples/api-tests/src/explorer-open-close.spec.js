@@ -123,7 +123,6 @@ describe('Explorer and Editor - open and close', function () {
 
     async function openEditor() {
         await editorManager.open(fileUri, { mode: 'activate' });
-        await waitLanguageServerReady();
         const activeEditor = /** @type {MonacoEditor} */ MonacoEditor.get(editorManager.activeEditor);
         assert.isDefined(activeEditor);
         assert.equal(activeEditor.uri.resolveToAbsolute().toString(), fileUri.resolveToAbsolute().toString());
@@ -135,21 +134,4 @@ describe('Explorer and Editor - open and close', function () {
         assert.isUndefined(activeEditor);
     }
 
-    async function waitLanguageServerReady() {
-        // quite a bit of jitter in the "Initializing LS" status bar entry,
-        // so we want to read a few times in a row that it's done (undefined)
-        const MAX_N = 5
-        let n = MAX_N;
-        while (n > 0) {
-            await pause(1);
-            if (progressStatusBarItem.currentProgress) {
-                n = MAX_N;
-            } else {
-                n--;
-            }
-            if (n < MAX_N) {
-                console.debug('n = ' + n);
-            }
-        }
-    }
 });
