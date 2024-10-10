@@ -27,7 +27,7 @@ import { NotebookCellActionContribution, NotebookCellCommands } from '../contrib
 import { CellExecution, NotebookExecutionStateService } from '../service/notebook-execution-state-service';
 import { codicon } from '@theia/core/lib/browser';
 import { NotebookCellExecutionState } from '../../common';
-import { CommandRegistry, DisposableCollection, nls } from '@theia/core';
+import { CancellationToken, CommandRegistry, DisposableCollection, nls } from '@theia/core';
 import { NotebookContextManager } from '../service/notebook-context-manager';
 import { NotebookViewportService } from './notebook-viewport-service';
 import { EditorPreferences } from '@theia/editor/lib/browser';
@@ -36,6 +36,8 @@ import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/mar
 import { MarkdownString } from '@theia/monaco-editor-core/esm/vs/base/common/htmlContent';
 import { NotebookCellEditorService } from '../service/notebook-cell-editor-service';
 import { CellOutputWebview } from '../renderers/cell-output-webview';
+import { NotebookCellStatusBarItem, NotebookCellStatusBarItemList, NotebookCellStatusBarService } from '../service/notebook-cell-status-bar-service';
+import { LabelParser } from '@theia/core/lib/browser/label-parser';
 
 @injectable()
 export class NotebookCodeCellRenderer implements CellRenderer {
@@ -75,6 +77,12 @@ export class NotebookCodeCellRenderer implements CellRenderer {
     @inject(CellOutputWebview)
     protected readonly outputWebview: CellOutputWebview;
 
+    @inject(NotebookCellStatusBarService)
+    protected readonly notebookCellStatusBarService: NotebookCellStatusBarService;
+
+    @inject(LabelParser)
+    protected readonly labelParser: LabelParser;
+
     render(notebookModel: NotebookModel, cell: NotebookCellModel, handle: number): React.ReactNode {
         return <div className='theia-notebook-cell-with-sidebar' ref={ref => observeCellHeight(ref, cell)}>
             <div className='theia-notebook-cell-editor-container'>
@@ -87,6 +95,8 @@ export class NotebookCodeCellRenderer implements CellRenderer {
                 <NotebookCodeCellStatus cell={cell} notebook={notebookModel}
                     commandRegistry={this.commandRegistry}
                     executionStateService={this.executionStateService}
+                    cellStatusBarService={this.notebookCellStatusBarService}
+                    labelParser={this.labelParser}
                     onClick={() => cell.requestFocusEditor()} />
             </div >
         </div >;
@@ -182,7 +192,9 @@ export interface NotebookCodeCellStatusProps {
     notebook: NotebookModel;
     cell: NotebookCellModel;
     commandRegistry: CommandRegistry;
+    cellStatusBarService: NotebookCellStatusBarService;
     executionStateService?: NotebookExecutionStateService;
+    labelParser: LabelParser;
     onClick: () => void;
 }
 
@@ -194,6 +206,8 @@ export interface NotebookCodeCellStatusState {
 export class NotebookCodeCellStatus extends React.Component<NotebookCodeCellStatusProps, NotebookCodeCellStatusState> {
 
     protected toDispose = new DisposableCollection();
+
+    protected statusBarItems: NotebookCellStatusBarItemList[] = [];
 
     constructor(props: NotebookCodeCellStatusProps) {
         super(props);
@@ -225,6 +239,19 @@ export class NotebookCodeCellStatus extends React.Component<NotebookCodeCellStat
         this.toDispose.push(props.cell.onDidChangeLanguage(() => {
             this.forceUpdate();
         }));
+
+        this.updateStatusBarItems();
+        this.props.cellStatusBarService.onDidChangeItems(() => this.updateStatusBarItems());
+        this.props.notebook.onContentChanged(() => this.updateStatusBarItems());
+    }
+
+    async updateStatusBarItems(): Promise<void> {
+        this.statusBarItems = await this.props.cellStatusBarService.getStatusBarItemsForCell(
+            this.props.notebook.uri,
+            this.props.notebook.cells.indexOf(this.props.cell),
+            this.props.notebook.viewType,
+            CancellationToken.None);
+        this.forceUpdate();
     }
 
     override componentWillUnmount(): void {
@@ -235,6 +262,7 @@ export class NotebookCodeCellStatus extends React.Component<NotebookCodeCellStat
         return <div className='notebook-cell-status' onClick={() => this.props.onClick()}>
             <div className='notebook-cell-status-left'>
                 {this.props.executionStateService && this.renderExecutionState()}
+                {this.statusBarItems?.length && this.renderStatusBarItems()}
             </div>
             <div className='notebook-cell-status-right'>
                 <span className='notebook-cell-language-label' onClick={() => {
@@ -244,7 +272,7 @@ export class NotebookCodeCellStatus extends React.Component<NotebookCodeCellStat
         </div>;
     }
 
-    private renderExecutionState(): React.ReactNode {
+    protected renderExecutionState(): React.ReactNode {
         const state = this.state.currentExecution?.state;
         const { lastRunSuccess } = this.props.cell.internalMetadata;
 
@@ -270,7 +298,7 @@ export class NotebookCodeCellStatus extends React.Component<NotebookCodeCellStat
         </>;
     }
 
-    private getExecutionTime(): number {
+    protected getExecutionTime(): number {
         const { runStartTime, runEndTime } = this.props.cell.internalMetadata;
         const { executionTime } = this.state;
         if (runStartTime !== undefined && runEndTime !== undefined) {
@@ -279,9 +307,42 @@ export class NotebookCodeCellStatus extends React.Component<NotebookCodeCellStat
         return executionTime;
     }
 
-    private renderTime(ms: number): string {
+    protected renderTime(ms: number): string {
         return `${(ms / 1000).toLocaleString(undefined, { maximumFractionDigits: 1, minimumFractionDigits: 1 })}s`;
     }
+
+    protected renderStatusBarItems(): React.ReactNode {
+        return <>
+            {
+                this.statusBarItems.flatMap((itemList, listIndex) =>
+                    itemList.items.map((item, index) => this.renderStatusBarItem(item, `${listIndex}-${index}`)
+                    )
+                )
+            }
+        </>;
+    }
+
+    protected renderStatusBarItem(item: NotebookCellStatusBarItem, key: string): React.ReactNode {
+        const content = this.props.labelParser.parse(item.text).map(part => {
+            if (typeof part === 'string') {
+                return part;
+            } else {
+                return <span key={part.name} className={`codicon codicon-${part.name}`}></span>;
+            }
+        });
+        return <div key={key} className={`cell-status-bar-item ${item.command ? 'cell-status-item-has-command' : ''}`} onClick={async () => {
+            if (item.command) {
+                if (typeof item.command === 'string') {
+                    this.props.commandRegistry.executeCommand(item.command);
+                } else {
+                    this.props.commandRegistry.executeCommand(item.command.id, ...(item.command.arguments ?? []));
+                }
+            }
+        }}>
+            {content}
+        </div>;
+    }
+
 }
 
 interface NotebookCellOutputProps {
