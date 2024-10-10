@@ -279,11 +279,20 @@ export abstract class AbstractChatAgent {
         tools: ToolRequest[] | undefined,
         token: CancellationToken
     ): Promise<LanguageModelResponse> {
+        const settings = this.getLlmSettings();
         const languageModelResponse = languageModel.request({
             messages,
             tools,
+            settings,
         }, token);
         return languageModelResponse;
+    }
+
+    /**
+     * @returns the settings, such as `temperature`, to be used in all language model requests. Returns `undefined` by default.
+     */
+    protected getLlmSettings(): { [key: string]: unknown; } | undefined {
+        return undefined;
     }
 
     protected abstract addContentsToResponse(languageModelResponse: LanguageModelResponse, request: ChatRequestModelImpl): Promise<void>;
