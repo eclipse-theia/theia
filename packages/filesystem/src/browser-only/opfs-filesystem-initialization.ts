@@ -14,14 +14,23 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
-import { bindOPFSInitialization } from './filesystem/example-filesystem-initialization';
+import type { OPFSFileSystemProvider } from './opfs-filesystem-provider';
+import { injectable } from '@theia/core/shared/inversify';
 
-export default new ContainerModule((
-    bind: interfaces.Bind,
-    _unbind: interfaces.Unbind,
-    _isBound: interfaces.IsBound,
-    rebind: interfaces.Rebind,
-) => {
-    bindOPFSInitialization(bind, rebind);
-});
+export const OPFSInitialization = Symbol('OPFSInitialization');
+export interface OPFSInitialization {
+    createMountableFileSystem(): Promise<FileSystemDirectoryHandle>
+    initializeFS: (fs: FileSystemDirectoryHandle, provider: OPFSFileSystemProvider) => Promise<void>;
+}
+
+@injectable()
+export class DefaultOPFSInitialization implements OPFSInitialization {
+
+    createMountableFileSystem(): Promise<FileSystemDirectoryHandle> {
+        return navigator.storage.getDirectory();
+    }
+
+    async initializeFS(dir: FileSystemDirectoryHandle, provider: OPFSFileSystemProvider): Promise<void> {
+
+    }
+}
