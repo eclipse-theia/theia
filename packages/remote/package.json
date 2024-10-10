@@ -10,7 +10,7 @@
     "decompress-tar": "^4.0.0",
     "decompress-targz": "^4.0.0",
     "decompress-unzip": "^4.0.1",
-    "express-http-proxy": "^1.6.3",
+    "express-http-proxy": "^2.1.1",
     "glob": "^8.1.0",
     "socket.io": "^4.5.3",
     "socket.io-client": "^4.5.3",
@@ -55,7 +55,7 @@
     "@theia/ext-scripts": "1.54.0",
     "@types/archiver": "^5.3.2",
     "@types/decompress": "^4.2.4",
-    "@types/express-http-proxy": "^1.6.3",
+    "@types/express-http-proxy": "^1.6.6",
     "@types/glob": "^8.1.0",
     "@types/ssh2": "^1.11.11",
     "@types/ssh2-sftp-client": "^9.0.0"
