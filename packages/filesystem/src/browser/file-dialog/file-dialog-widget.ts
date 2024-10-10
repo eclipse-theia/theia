@@ -55,6 +55,17 @@ export class FileDialogWidget extends FileTreeWidget {
         return attr;
     }
 
+    protected override handleEnter(event: KeyboardEvent): boolean | void {
+        // Handle ENTER in the dialog to Accept.
+        // Tree view will just expand/collapse the node. This works also with arrow keys or SPACE.
+        return false;
+    }
+
+    protected override handleEscape(event: KeyboardEvent): boolean | void {
+        // Handle ESC in the dialog to Cancel and close the Dialog.
+        return false;
+    }
+
     protected override createNodeClassNames(node: TreeNode, props: NodeProps): string[] {
         const classNames = super.createNodeClassNames(node, props);
         if (this.shouldDisableSelection(node)) {
