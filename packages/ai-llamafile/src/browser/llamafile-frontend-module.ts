@@ -17,7 +17,7 @@ import { CommandContribution } from '@theia/core';
 import { FrontendApplicationContribution, RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { OutputChannelManager, OutputChannelSeverity } from '@theia/output/lib/browser/output-channel';
-import { LlamafileServerManager, LlamafileServerManagerClient, LlamafileServerManagerPath } from '../common/llamafile-server-manager';
+import { LlamafileManager, LlamafileManagerPath, LlamafileServerManagerClient } from '../common/llamafile-manager';
 import { LlamafileCommandContribution } from './llamafile-command-contribution';
 import { LlamafileFrontendApplicationContribution } from './llamafile-frontend-application-contribution';
 import { bindAILlamafilePreferences } from './llamafile-preferences';
@@ -25,7 +25,7 @@ import { bindAILlamafilePreferences } from './llamafile-preferences';
 export default new ContainerModule(bind => {
     bind(FrontendApplicationContribution).to(LlamafileFrontendApplicationContribution).inSingletonScope();
     bind(CommandContribution).to(LlamafileCommandContribution).inSingletonScope();
-    bind(LlamafileServerManager).toDynamicValue(ctx => {
+    bind(LlamafileManager).toDynamicValue(ctx => {
         const connection = ctx.container.get<ServiceConnectionProvider>(RemoteConnectionProvider);
         const outputChannelManager = ctx.container.get(OutputChannelManager);
         const client: LlamafileServerManagerClient = {
@@ -38,8 +38,8 @@ export default new ContainerModule(bind => {
                 channel.appendLine(message, OutputChannelSeverity.Info);
             }
         };
-        return connection.createProxy<LlamafileServerManager>(LlamafileServerManagerPath, client);
-    });
+        return connection.createProxy<LlamafileManager>(LlamafileManagerPath, client);
+    }).inSingletonScope();
 
     bindAILlamafilePreferences(bind);
 });

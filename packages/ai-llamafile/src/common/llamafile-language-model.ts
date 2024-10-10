@@ -15,26 +15,13 @@
 // *****************************************************************************
 
 import { LanguageModel, LanguageModelRequest, LanguageModelResponse, LanguageModelStreamResponsePart } from '@theia/ai-core';
-import { LlamafileServerManager } from './llamafile-server-manager';
 
 export class LlamafileLanguageModel implements LanguageModel {
 
     readonly providerId = 'llamafile';
     readonly vendor: string = 'Mozilla';
 
-    constructor(readonly name: string, readonly uri: string, readonly port: number, readonly serverManager: LlamafileServerManager) {
-    }
-
-    startServer(): void {
-        this.serverManager.startServer(this.name, this.uri, this.port);
-    }
-
-    killServer(): void {
-        this.serverManager.killServer(this.name);
-    }
-
-    get isStarted(): boolean {
-        return this.serverManager.isStarted(this.name);
+    constructor(readonly name: string, readonly uri: string, readonly port: number) {
     }
 
     get id(): string {
@@ -72,7 +59,6 @@ export class LlamafileLanguageModel implements LanguageModel {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            // TODO: Get the stream working
             if (!response.body) {
                 throw new Error('Response body is undefined');
             }
@@ -105,27 +91,12 @@ export class LlamafileLanguageModel implements LanguageModel {
                     }
                 }
             };
-
-            // const data = await response.json();
-            // if (data && data.content) {
-            //     return {
-            //         text: data.content
-            //     };
-            // } else {
-            //     return {
-            //         text: 'No content field found in the response.'
-            //     };
-            // }
         } catch (error) {
             console.error('Error:', error);
             return {
                 text: `Error: ${error}`
             };
         }
-    }
-
-    static createNewLlamafileLanguageModel(name: string, uri: string, port: number, serverManager: LlamafileServerManager): LlamafileLanguageModel {
-        return new LlamafileLanguageModel(name, uri, port, serverManager);
     }
 
 }
