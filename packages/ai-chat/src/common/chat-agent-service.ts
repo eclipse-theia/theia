@@ -41,6 +41,18 @@ export interface ChatAgentService {
      * Returns all agents, including disabled ones.
      */
     getAllAgents(): ChatAgent[];
+
+    /**
+     * Allows to register a chat agent programmatically.
+     * @param agent the agent to register
+     */
+    registerChatAgent(agent: ChatAgent): void;
+
+    /**
+     * Allows to unregister a chat agent programmatically.
+     * @param agentId the agent id to unregister
+     */
+    unregisterChatAgent(agentId: string): void;
 }
 @injectable()
 export class ChatAgentServiceImpl implements ChatAgentService {
@@ -64,6 +76,9 @@ export class ChatAgentServiceImpl implements ChatAgentService {
 
     registerChatAgent(agent: ChatAgent): void {
         this._agents.push(agent);
+    }
+    unregisterChatAgent(agentId: string): void {
+        this._agents = this._agents.filter(a => a.id !== agentId);
     }
 
     getAgent(id: string): ChatAgent | undefined {

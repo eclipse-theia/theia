@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { inject, injectable, named, optional, postConstruct } from '@theia/core/shared/inversify';
-import { ContributionProvider } from '@theia/core';
+import { ContributionProvider, Emitter, Event } from '@theia/core';
 import { Agent } from './agent';
 import { AISettingsService } from './settings-service';
 
@@ -48,6 +48,24 @@ export interface AgentService {
      * @return true if the agent is enabled, false otherwise.
      */
     isEnabled(agentId: string): boolean;
+
+    /**
+     * Allows to register an agent programmatically.
+     * @param agent the agent to register
+     */
+    registerAgent(agent: Agent): void;
+
+    /**
+     * Allows to unregister an agent programmatically.
+     * @param agentId the agent id to unregister
+     */
+    unregisterAgent(agentId: string): void;
+
+    /**
+     * Emitted when the list of agents changes.
+     * This can be used to update the UI when agents are added or removed.
+     */
+    onDidChangeAgents: Event<void>;
 }
 
 @injectable()
@@ -62,6 +80,9 @@ export class AgentServiceImpl implements AgentService {
     protected disabledAgents = new Set<string>();
 
     protected _agents: Agent[] = [];
+
+    private readonly onDidChangeAgentsEmitter = new Emitter<void>();
+    readonly onDidChangeAgents = this.onDidChangeAgentsEmitter.event;
 
     @postConstruct()
     protected init(): void {
@@ -82,6 +103,12 @@ export class AgentServiceImpl implements AgentService {
 
     registerAgent(agent: Agent): void {
         this._agents.push(agent);
+        this.onDidChangeAgentsEmitter.fire();
+    }
+
+    unregisterAgent(agentId: string): void {
+        this._agents = this._agents.filter(a => a.id !== agentId);
+        this.onDidChangeAgentsEmitter.fire();
     }
 
     getAgents(): Agent[] {

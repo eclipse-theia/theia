@@ -17,13 +17,14 @@
 import { DisposableCollection, URI, Event, Emitter } from '@theia/core';
 import { OpenerService } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { PromptCustomizationService, PromptTemplate } from '../common';
+import { PromptCustomizationService, PromptTemplate, CustomAgentDescription } from '../common';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileChangesEvent } from '@theia/filesystem/lib/common/files';
 import { AICorePreferences, PREFERENCE_NAME_PROMPT_TEMPLATES } from './ai-core-preferences';
 import { AgentService } from '../common/agent-service';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
+import { load } from 'js-yaml';
 
 @injectable()
 export class FrontendPromptCustomizationServiceImpl implements PromptCustomizationService {
@@ -51,6 +52,9 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
     private readonly onDidChangePromptEmitter = new Emitter<string>();
     readonly onDidChangePrompt: Event<string> = this.onDidChangePromptEmitter.event;
 
+    private readonly onDidChangeCustomAgentsEmitter = new Emitter<void>();
+    readonly onDidChangeCustomAgents = this.onDidChangeCustomAgentsEmitter.event;
+
     @postConstruct()
     protected init(): void {
         this.preferences.onPreferenceChanged(event => {
@@ -72,6 +76,9 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
 
         this.toDispose.push(this.fileService.watch(templateURI, { recursive: true, excludes: [] }));
         this.toDispose.push(this.fileService.onDidFilesChange(async (event: FileChangesEvent) => {
+            if (event.changes.some(change => change.resource.toString().endsWith('customAgents.yml'))) {
+                this.onDidChangeCustomAgentsEmitter.fire();
+            }
             // check deleted templates
             for (const deletedFile of event.getDeleted()) {
                 if (this.trackedTemplateURIs.has(deletedFile.resource.toString())) {
@@ -194,4 +201,32 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
         return undefined;
     }
 
+    async getCustomAgents(): Promise<CustomAgentDescription[]> {
+        const customAgentYamlUri = (await this.getTemplatesDirectoryURI()).resolve('customAgents.yml');
+        const yamlExists = await this.fileService.exists(customAgentYamlUri);
+        if (!yamlExists) {
+            return [];
+        }
+        const filecontent = await this.fileService.read(customAgentYamlUri, { encoding: 'utf-8' });
+        try {
+            const doc = load(filecontent.value);
+            if (!Array.isArray(doc) || !doc.every(entry => CustomAgentDescription.is(entry))) {
+                console.debug('Invalid customAgents.yml file content');
+                return [];
+            }
+            return doc as CustomAgentDescription[];
+        } catch (e) {
+            console.debug(e.message, e);
+            return [];
+        }
+    }
+
+    async openCustomAgentYaml(): Promise<void> {
+        const customAgentYamlUri = (await this.getTemplatesDirectoryURI()).resolve('customAgents.yml');
+        if (! await this.fileService.exists(customAgentYamlUri)) {
+            await this.fileService.createFile(customAgentYamlUri);
+        }
+        const openHandler = await this.openerService.getOpener(customAgentYamlUri);
+        openHandler.open(customAgentYamlUri);
+    }
 }
