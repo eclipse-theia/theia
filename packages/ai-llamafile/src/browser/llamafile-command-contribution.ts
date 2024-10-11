@@ -84,6 +84,7 @@ export class LlamafileCommandContribution implements CommandContribution {
                     this.llamafileManager.stopServer(result.label);
                 } catch (error) {
                     console.error('Something went wrong during the llamafile stop.', error);
+                    this.messageService.error(`Something went wrong during the llamafile stop: ${error.message}.\nFor more information, see the console.`);
                 }
             }
         }));
