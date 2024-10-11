@@ -36,6 +36,15 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
     async createOrUpdateLanguageModels(...modelDescriptions: OpenAiModelDescription[]): Promise<void> {
         for (const modelDescription of modelDescriptions) {
             const model = await this.languageModelRegistry.getLanguageModel(modelDescription.id);
+            const apiKeyProvider = () => {
+                if (modelDescription.apiKey === true) {
+                    return this.apiKey;
+                }
+                if (modelDescription.apiKey) {
+                    return modelDescription.apiKey;
+                }
+                return undefined;
+            };
             if (model) {
                 if (!(model instanceof OpenAiModel)) {
                     console.warn(`Open AI: model ${modelDescription.id} is not an OpenAI model`);
@@ -46,15 +55,11 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                     console.info(`Open AI: skip creating model ${modelDescription.id} because it already exists`);
                     continue;
                 }
-                if (model.url !== modelDescription.url || model.model !== modelDescription.model) {
-                    model.url = modelDescription.url;
-                    model.model = modelDescription.model;
-                } else {
-                    // This can happen during the initializing of more than one frontends.
-                    console.info(`Open AI: skip creating or updating model ${modelDescription.id} because it already exists and is up to date`);
-                }
+                model.url = modelDescription.url;
+                model.model = modelDescription.model;
+                model.apiKey = apiKeyProvider;
             } else {
-                this.languageModelRegistry.addLanguageModels([new OpenAiModel(modelDescription.id, modelDescription.model, () => this.apiKey, modelDescription.url)]);
+                this.languageModelRegistry.addLanguageModels([new OpenAiModel(modelDescription.id, modelDescription.model, apiKeyProvider, modelDescription.url)]);
             }
         }
     }

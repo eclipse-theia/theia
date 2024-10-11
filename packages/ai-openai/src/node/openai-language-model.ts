@@ -55,7 +55,7 @@ export class OpenAiModel implements LanguageModel {
      * @param model the model id as it is used by the OpenAI API
      * @param openAIInitializer initializer for the OpenAI client, used for each request.
      */
-    constructor(public readonly id: string, public model: string, protected apiKey: (() => string | undefined) | undefined, public url: string | undefined) { }
+    constructor(public readonly id: string, public model: string, public apiKey: () => string | undefined, public url: string | undefined) { }
 
     async request(request: LanguageModelRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
         const openai = this.initializeOpenAi();
@@ -180,11 +180,11 @@ export class OpenAiModel implements LanguageModel {
     }
 
     protected initializeOpenAi(): OpenAI {
-        const apiKey = this.apiKey && this.apiKey();
+        const apiKey = this.apiKey();
         if (!apiKey && !(this.url)) {
             throw new Error('Please provide OPENAI_API_KEY in preferences or via environment variable');
         }
-        // do not hand over API key to custom urls
-        return new OpenAI({ apiKey: this.url ? 'no-key' : apiKey, baseURL: this.url });
+        // We need to hand over "some" key, even if a custom url is not key protected as otherwise the OpenAI client will throw an error
+        return new OpenAI({ apiKey: apiKey ?? 'no-key', baseURL: this.url });
     }
 }

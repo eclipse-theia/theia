@@ -43,7 +43,12 @@ export const OpenAiPreferencesSchema: PreferenceSchema = {
             type: 'array',
             title: AI_CORE_PREFERENCES_TITLE,
             markdownDescription: 'Integrate custom models compatible with the OpenAI API, for example via `vllm`. The required attributes are `model` and `url`.\
-            Optionally, you can provide a unique `id` to identify the custom model in the UI. If none is given `model` will be used as `id`.',
+            \n\
+            Optionally, you can\
+            \n\
+            - specify a unique `id` to identify the custom model in the UI. If none is given `model` will be used as `id`.\
+            \n\
+            - provide an `apiKey` to access the API served at the given url. Use `true` to indicate the use of the global OpenAI API key.',
             default: [],
             items: {
                 type: 'object',
@@ -59,7 +64,11 @@ export const OpenAiPreferencesSchema: PreferenceSchema = {
                     id: {
                         type: 'string',
                         title: 'A unique identifier which is used in the UI to identify the custom model',
-                    }
+                    },
+                    apiKey: {
+                        type: ['string', 'boolean'],
+                        title: 'Either the key to access the API served at the given url or `true` to use the global OpenAI API key',
+                    },
                 }
             }
         }
