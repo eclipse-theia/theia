@@ -23,6 +23,7 @@
 
 import './theia-extra';
 import './theia.proposed.canonicalUriProvider';
+import './theia.proposed.createFileSystemWatcher';
 import './theia.proposed.customEditorMove';
 import './theia.proposed.debugVisualization';
 import './theia.proposed.diffCommand';
