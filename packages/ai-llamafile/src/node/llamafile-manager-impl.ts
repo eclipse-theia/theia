@@ -30,10 +30,21 @@ export class LlamafileManagerImpl implements LlamafileManager {
     private processMap: Map<string, ChildProcessWithoutNullStreams> = new Map();
     private client: LlamafileServerManagerClient;
 
-    addLanguageModels(llamaFiles: LlamafileEntry[]): void {
-        const models = llamaFiles.map(llamafile =>
-            new LlamafileLanguageModel(llamafile.name, llamafile.uri, llamafile.port));
-        this.languageModelRegistry.addLanguageModels(models);
+    async addLanguageModels(llamaFiles: LlamafileEntry[]): Promise<void> {
+        for (const llamafile of llamaFiles) {
+            const model = await this.languageModelRegistry.getLanguageModel(llamafile.name);
+            if (model) {
+                if (!(model instanceof LlamafileLanguageModel)) {
+                    console.warn(`Llamafile: model ${model.id} is not an LLamafile model`);
+                    continue;
+                } else {
+                    // This can happen during the initializing of more than one frontends, changes are handled in the frontend
+                    console.info(`Llamafile: skip creating or updating model ${llamafile.name} because it already exists.`);
+                }
+            } else {
+                this.languageModelRegistry.addLanguageModels([new LlamafileLanguageModel(llamafile.name, llamafile.uri, llamafile.port)]);
+            }
+        }
     }
     removeLanguageModels(modelIds: string[]): void {
         this.languageModelRegistry.removeLanguageModels(modelIds);

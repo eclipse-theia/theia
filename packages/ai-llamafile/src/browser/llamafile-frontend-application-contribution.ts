@@ -28,24 +28,32 @@ export class LlamafileFrontendApplicationContribution implements FrontendApplica
     @inject(LlamafileManager)
     protected llamafileManager: LlamafileManager;
 
+    private _llamafilesIds: Set<string> = new Set();
+
     onStart(): void {
         this.preferenceService.ready.then(() => {
             const llamafiles = this.preferenceService.get<LlamafileEntry[]>(PREFERENCE_LLAMAFILE, []);
-
             this.llamafileManager.addLanguageModels(llamafiles);
+            llamafiles.forEach(model => this._llamafilesIds.add(model.name));
 
             this.preferenceService.onPreferenceChanged(event => {
                 if (event.preferenceName === PREFERENCE_LLAMAFILE) {
-                    // old models in the preference
-                    const oldModels = new Set(((event.oldValue ?? []) as LlamafileEntry[]).map(v => v.name));
                     // new models in the preference as map to if a model was added and be able to create the llm and register it
                     const newModels = (event.newValue as LlamafileEntry[]).reduce((acc, v) => { acc.set(v.name, v); return acc; }, new Map<string, LlamafileEntry>());
 
-                    const modelsToRemove = [...oldModels.values()].filter(model => !newModels.has(model));
-                    this.llamafileManager.removeLanguageModels(modelsToRemove);
+                    const modelsToRemove = [...this._llamafilesIds.values()].filter(model => !newModels.has(model));
+                    const modelDescriptionsToAdd = [...newModels.values()].filter(model => !this._llamafilesIds.has(model.name));
+                    const validModelsToAdd = modelDescriptionsToAdd.filter(model =>
+                        model.name !== undefined && model.name.length !== 0 &&
+                        model.uri !== undefined && model.uri.length !== 0 &&
+                        model.port !== undefined && model.port > 1023
+                    );
 
-                    const modelDescriptionsToAdd = [...newModels.values()].filter(model => !oldModels.has(model.name));
-                    this.llamafileManager.addLanguageModels(modelDescriptionsToAdd);
+                    this.llamafileManager.removeLanguageModels(modelsToRemove);
+                    modelsToRemove.forEach(model => this._llamafilesIds.delete(model));
+
+                    this.llamafileManager.addLanguageModels(validModelsToAdd);
+                    validModelsToAdd.forEach(model => this._llamafilesIds.add(model.name));
                 }
             });
         });

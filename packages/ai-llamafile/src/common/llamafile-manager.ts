@@ -22,7 +22,7 @@ export interface LlamafileManager {
     stopServer(name: string): void;
     getStartedLlamafiles(): Promise<string[]>;
     setClient(client: LlamafileServerManagerClient): void;
-    addLanguageModels(llamaFiles: LlamafileEntry[]): void;
+    addLanguageModels(llamaFiles: LlamafileEntry[]): Promise<void>;
     removeLanguageModels(modelIds: string[]): void;
 }
 export interface LlamafileServerManagerClient {
