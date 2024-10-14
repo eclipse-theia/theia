@@ -47,6 +47,7 @@ export class LlamafileManagerImpl implements LlamafileManager {
         }
     }
     removeLanguageModels(modelIds: string[]): void {
+        modelIds.filter(modelId => this.isStarted(modelId)).forEach(modelId => this.stopServer(modelId));
         this.languageModelRegistry.removeLanguageModels(modelIds);
     }
 

@@ -29,7 +29,9 @@ export const aiLlamafilePreferencesSchema: PreferenceSchema = {
             \n\
             You need to provide a user friendly `name`, the file `uri` to the llamafile and the `port` to use.\
             \n\
-            In order to start your llamafile you have to call the "Start Llamafile" command where you can then select the llamafile to start.',
+            In order to start your llamafile you have to call the "Start Llamafile" command where you can then select the llamafile to start.\
+            \n\
+            If you modify an entry, e.g. change the port and the server was already running, then it will be stopped and you have to manually start it again.',
             type: 'array',
             default: [],
             items: {

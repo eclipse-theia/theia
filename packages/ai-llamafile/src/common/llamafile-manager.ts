@@ -35,3 +35,16 @@ export interface LlamafileEntry {
     uri: string;
     port: number;
 }
+
+export namespace LlamafileEntry {
+    export function equals(a: LlamafileEntry, b: LlamafileEntry): boolean {
+        return a.name === b.name && a.uri === b.uri && a.port === b.port;
+    }
+    export function is(entry: unknown): entry is LlamafileEntry {
+        // eslint-disable-next-line no-null/no-null
+        return typeof entry === 'object' && entry !== null
+            && 'name' in entry && typeof entry.name === 'string'
+            && 'uri' in entry && typeof entry.uri === 'string'
+            && 'port' in entry && typeof entry.port === 'number';
+    }
+}
