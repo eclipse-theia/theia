@@ -96,10 +96,6 @@
 #theia-main-content-panel .theia-settings-container .tabbar-underline {
   width: 100%;
   position: absolute;
-  top: calc(
-    var(--theia-private-horizontal-tab-height) +
-      var(--theia-private-horizontal-tab-scrollbar-rail-height) / 2 - 1px
-  );
   border-top: 1px solid var(--theia-tab-unfocusedInactiveForeground);
   z-index: -1;
 }
