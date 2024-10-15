@@ -482,7 +482,7 @@ export class MenuCommandRegistry extends PhosphorCommandRegistry {
             this.addKeyBinding({
                 command: id,
                 keys,
-                selector: '.p-Widget' // We have the PhosphorJS dependency anyway.
+                selector: '.lm-Widget' // We have the PhosphorJS dependency anyway.
             });
         }
         return Disposable.create(() => unregisterCommand.dispose());

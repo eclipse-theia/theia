@@ -556,12 +556,12 @@ export class SidePanelHandler {
             const index = parent.widgets.indexOf(this.container);
             if (this.side === 'left') {
                 const handle = parent.handles[index];
-                if (!handle.classList.contains('p-mod-hidden')) {
+                if (!handle.classList.contains('lm-mod-hidden')) {
                     return handle.offsetLeft;
                 }
             } else if (this.side === 'right') {
                 const handle = parent.handles[index - 1];
-                if (!handle.classList.contains('p-mod-hidden')) {
+                if (!handle.classList.contains('lm-mod-hidden')) {
                     const parentWidth = parent.node.clientWidth;
                     return parentWidth - handle.offsetLeft;
                 }
@@ -632,7 +632,7 @@ export class SidePanelHandler {
         const clonedTab = tab.cloneNode(true) as HTMLElement;
         clonedTab.style.width = '';
         clonedTab.style.height = '';
-        const label = clonedTab.getElementsByClassName('p-TabBar-tabLabel')[0] as HTMLElement;
+        const label = clonedTab.getElementsByClassName('lm-TabBar-tabLabel')[0] as HTMLElement;
         label.style.width = '';
         label.style.height = '';
 
@@ -646,10 +646,10 @@ export class SidePanelHandler {
             supportedActions: 'move',
         });
 
-        tab.classList.add('p-mod-hidden');
+        tab.classList.add('lm-mod-hidden');
         drag.start(clientX, clientY).then(() => {
             // The promise is resolved when the drag has ended
-            tab.classList.remove('p-mod-hidden');
+            tab.classList.remove('lm-mod-hidden');
         });
     }
 

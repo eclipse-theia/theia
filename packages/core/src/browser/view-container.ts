@@ -220,7 +220,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
     }
 
     protected updateSplitterVisibility(): void {
-        const className = 'p-first-visible';
+        const className = 'lm-first-visible';
         let firstFound = false;
         for (const part of this.getParts()) {
             if (!part.isHidden && !firstFound) {
@@ -844,7 +844,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
                         proposedAction: 'move',
                         supportedActions: 'move'
                     });
-                    part.node.classList.add('p-mod-hidden');
+                    part.node.classList.add('lm-mod-hidden');
                     drag.start(event.clientX, event.clientY).then(dropAction => {
                         // The promise is resolved when the drag has ended
                         if (dropAction === 'move' && part.currentViewContainerId !== this.id) {
@@ -852,7 +852,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
                             this.lastVisibleState = this.doStoreState();
                         }
                     });
-                    setTimeout(() => { part.node.classList.remove('p-mod-hidden'); }, 0);
+                    setTimeout(() => { part.node.classList.remove('lm-mod-hidden'); }, 0);
                 }, false));
     }
 

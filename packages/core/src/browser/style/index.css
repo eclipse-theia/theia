@@ -219,11 +219,11 @@ blockquote {
     font-weight: 700;
 }
 
-.p-Widget {
+.lm-Widget {
     font-size: var(--theia-ui-font-size1);
 }
 
-.p-Widget.p-mod-hidden {
+.lm-Widget.lm-mod-hidden {
     display: none !important;
 }
 

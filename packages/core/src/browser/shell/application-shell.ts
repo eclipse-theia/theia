@@ -382,31 +382,31 @@ export class ApplicationShell extends Widget {
     }
 
     protected override onBeforeAttach(msg: Message): void {
-        document.addEventListener('p-dragenter', this, true);
-        document.addEventListener('p-dragover', this, true);
-        document.addEventListener('p-dragleave', this, true);
-        document.addEventListener('p-drop', this, true);
+        document.addEventListener('lm-dragenter', this, true);
+        document.addEventListener('lm-dragover', this, true);
+        document.addEventListener('lm-dragleave', this, true);
+        document.addEventListener('lm-drop', this, true);
     }
 
     protected override onAfterDetach(msg: Message): void {
-        document.removeEventListener('p-dragenter', this, true);
-        document.removeEventListener('p-dragover', this, true);
-        document.removeEventListener('p-dragleave', this, true);
-        document.removeEventListener('p-drop', this, true);
+        document.removeEventListener('lm-dragenter', this, true);
+        document.removeEventListener('lm-dragover', this, true);
+        document.removeEventListener('lm-dragleave', this, true);
+        document.removeEventListener('lm-drop', this, true);
     }
 
     handleEvent(event: Event): void {
         switch (event.type) {
-            case 'p-dragenter':
+            case 'lm-dragenter':
                 this.onDragEnter(event as IDragEvent);
                 break;
-            case 'p-dragover':
+            case 'lm-dragover':
                 this.onDragOver(event as IDragEvent);
                 break;
-            case 'p-drop':
+            case 'lm-drop':
                 this.onDrop(event as IDragEvent);
                 break;
-            case 'p-dragleave':
+            case 'lm-dragleave':
                 this.onDragLeave(event as IDragEvent);
                 break;
         }
@@ -590,7 +590,7 @@ export class ApplicationShell extends Widget {
 
         dockPanel.node.addEventListener('dblclick', event => {
             const el = event.target as Element;
-            if (el.id === MAIN_AREA_ID || el.classList.contains('p-TabBar-content')) {
+            if (el.id === MAIN_AREA_ID || el.classList.contains('lm-TabBar-content')) {
                 this.onDidDoubleClickMainAreaEmitter.fire();
             }
         });
@@ -647,7 +647,7 @@ export class ApplicationShell extends Widget {
             }
             this.refreshBottomPanelToggleButton();
         }, this);
-        dockPanel.node.addEventListener('p-dragenter', event => {
+        dockPanel.node.addEventListener('lm-dragenter', event => {
             // Make sure that the main panel hides its overlay when the bottom panel is expanded
             this.mainPanel.overlay.hide(0);
         });
@@ -780,7 +780,7 @@ export class ApplicationShell extends Widget {
             const index = parent.widgets.indexOf(this.bottomPanel) - 1;
             if (index >= 0) {
                 const handle = parent.handles[index];
-                if (!handle.classList.contains('p-mod-hidden')) {
+                if (!handle.classList.contains('lm-mod-hidden')) {
                     const parentHeight = parent.node.clientHeight;
                     return parentHeight - handle.offsetTop;
                 }
@@ -1021,7 +1021,7 @@ export class ApplicationShell extends Widget {
      */
     findWidgetForElement(element: HTMLElement): Widget | undefined {
         let widgetNode: HTMLElement | null = element;
-        while (widgetNode && !widgetNode.classList.contains('p-Widget')) {
+        while (widgetNode && !widgetNode.classList.contains('lm-Widget')) {
             widgetNode = widgetNode.parentElement;
         }
         if (widgetNode) {
@@ -1051,7 +1051,7 @@ export class ApplicationShell extends Widget {
         if (event?.target instanceof HTMLElement) {
             const tabNode = event.target;
 
-            const titleIndex = Array.from(tabBar.contentNode.getElementsByClassName('p-TabBar-tab'))
+            const titleIndex = Array.from(tabBar.contentNode.getElementsByClassName('lm-TabBar-tab'))
                 .findIndex(node => node.contains(tabNode));
 
             if (titleIndex !== -1) {
@@ -1182,7 +1182,7 @@ export class ApplicationShell extends Widget {
                 panel.markAsCurrent(widget!.title);
             }
             // Add checks to ensure that the 'sash' for left panel is displayed correctly
-            if (newValue.node.className === 'p-Widget theia-view-container p-DockPanel-widget') {
+            if (newValue.node.className === 'lm-Widget theia-view-container lm-DockPanel-widget') {
                 // Set the z-index so elements with `position: fixed` contained in the active widget are displayed correctly
                 this.setZIndex(newValue.node, '1');
             }

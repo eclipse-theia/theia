@@ -94,7 +94,7 @@ export class TheiaPreferenceView extends TheiaView {
     }
 
     protected getScopeSelector(scope: TheiaPreferenceScope): string {
-        return `li.preferences-scope-tab div.p-TabBar-tabLabel:has-text("${scope}")`;
+        return `li.preferences-scope-tab div.lm-TabBar-tabLabel:has-text("${scope}")`;
     }
 
     async openPreferenceScope(scope: TheiaPreferenceScope): Promise<void> {
