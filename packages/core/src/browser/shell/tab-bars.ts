@@ -15,14 +15,14 @@
 // *****************************************************************************
 
 import PerfectScrollbar from 'perfect-scrollbar';
-import { TabBar, Title, Widget } from '@phosphor/widgets';
-import { VirtualElement, h, VirtualDOM, ElementInlineStyle } from '@phosphor/virtualdom';
+import { TabBar, Title, Widget } from '@lumino/widgets';
+import { VirtualElement, h, VirtualDOM, ElementInlineStyle } from '@lumino/virtualdom';
 import { Disposable, DisposableCollection, MenuPath, notEmpty, SelectionService, CommandService, nls, ArrayUtils } from '../../common';
 import { ContextMenuRenderer } from '../context-menu-renderer';
-import { Signal, Slot } from '@phosphor/signaling';
-import { Message, MessageLoop } from '@phosphor/messaging';
-import { ArrayExt } from '@phosphor/algorithm';
-import { ElementExt } from '@phosphor/domutils';
+import { Signal, Slot } from '@lumino/signaling';
+import { Message, MessageLoop } from '@lumino/messaging';
+import { ArrayExt } from '@lumino/algorithm';
+import { ElementExt } from '@lumino/domutils';
 import { TabBarToolbarRegistry, TabBarToolbar } from './tab-bar-toolbar';
 import { TheiaDockPanel, MAIN_AREA_ID, BOTTOM_AREA_ID } from './theia-dock-panel';
 import { WidgetDecoration } from '../widget-decoration';
@@ -30,7 +30,7 @@ import { TabBarDecoratorService } from './tab-bar-decorator';
 import { IconThemeService } from '../icon-theme-service';
 import { BreadcrumbsRenderer, BreadcrumbsRendererFactory } from '../breadcrumbs/breadcrumbs-renderer';
 import { NavigatableWidget } from '../navigatable-types';
-import { IDragEvent } from '@phosphor/dragdrop';
+import { IDragEvent } from '@lumino/dragdrop';
 import { LOCKED_CLASS, PINNED_CLASS } from '../widgets/widget';
 import { CorePreferences } from '../core-preferences';
 import { HoverService } from '../hover-service';

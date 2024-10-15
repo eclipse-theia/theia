@@ -15,13 +15,13 @@
 // *****************************************************************************
 
 import { injectable, inject, optional, postConstruct } from 'inversify';
-import { ArrayExt, find, toArray, each } from '@phosphor/algorithm';
+import { ArrayExt, find, toArray, each } from '@lumino/algorithm';
 import {
     BoxLayout, BoxPanel, DockLayout, DockPanel, FocusTracker, Layout, Panel, SplitLayout,
     SplitPanel, TabBar, Widget, Title
-} from '@phosphor/widgets';
-import { Message } from '@phosphor/messaging';
-import { IDragEvent } from '@phosphor/dragdrop';
+} from '@lumino/widgets';
+import { Message } from '@lumino/messaging';
+import { IDragEvent } from '@lumino/dragdrop';
 import { RecursivePartial, Event as CommonEvent, DisposableCollection, Disposable, environment, isObject } from '../../common';
 import { animationFrame } from '../browser';
 import { Saveable, SaveableWidget, SaveOptions } from '../saveable';

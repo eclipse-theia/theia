@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
-@import url("~@phosphor/widgets/style/index.css");
+@import url("~@lumino/widgets/style/index.css");
 @import url("~font-awesome/css/font-awesome.min.css");
 
 /*-----------------------------------------------------------------------------

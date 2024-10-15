@@ -19,7 +19,7 @@ import { ApplicationShell } from './application-shell';
 import { injectable, inject } from 'inversify';
 import { DisposableCollection, Disposable } from '../../common/disposable';
 import { Emitter, Event } from '../../common/event';
-import { FocusTracker, PanelLayout, SplitPanel } from '@phosphor/widgets';
+import { FocusTracker, PanelLayout, SplitPanel } from '@lumino/widgets';
 import { addEventListener, Widget } from '../widgets';
 /**
  * Contribution that tracks `mouseup` and `mousedown` events.

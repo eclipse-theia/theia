@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { injectable, inject } from 'inversify';
-import { MenuBar, Menu as MenuWidget, Widget } from '@phosphor/widgets';
-import { CommandRegistry as PhosphorCommandRegistry } from '@phosphor/commands';
+import { MenuBar, Menu as MenuWidget, Widget } from '@lumino/widgets';
+import { CommandRegistry as PhosphorCommandRegistry } from '@lumino/commands';
 import {
     CommandRegistry, environment, DisposableCollection, Disposable,
     MenuModelRegistry, MAIN_MENU_BAR, MenuPath, MenuNode, MenuCommandExecutor, CompoundMenuNode, CompoundMenuNodeRole, CommandMenuNode

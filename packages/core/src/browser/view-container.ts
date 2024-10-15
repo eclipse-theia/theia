@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { interfaces, injectable, inject, postConstruct } from 'inversify';
-import { IIterator, toArray, find, some, every, map, ArrayExt } from '@phosphor/algorithm';
+import { IIterator, toArray, find, some, every, map, ArrayExt } from '@lumino/algorithm';
 import {
     Widget, EXPANSION_TOGGLE_CLASS, COLLAPSED_CLASS, CODICON_TREE_ITEM_CLASSES, MessageLoop, Message, SplitPanel,
     BaseWidget, addEventListener, SplitLayout, LayoutItem, PanelLayout, addKeyListener, waitForRevealed, UnsafeWidgetUtilities, DockPanel, PINNED_CLASS
@@ -34,9 +34,9 @@ import { isEmpty, isObject, nls } from '../common';
 import { WidgetManager } from './widget-manager';
 import { Key } from './keys';
 import { ProgressBarFactory } from './progress-bar-factory';
-import { Drag, IDragEvent } from '@phosphor/dragdrop';
-import { MimeData } from '@phosphor/coreutils';
-import { ElementExt } from '@phosphor/domutils';
+import { Drag, IDragEvent } from '@lumino/dragdrop';
+import { MimeData } from '@lumino/coreutils';
+import { ElementExt } from '@lumino/domutils';
 import { TabBarDecoratorService } from './shell/tab-bar-decorator';
 
 export interface ViewContainerTitleOptions {

@@ -15,11 +15,11 @@
 // *****************************************************************************
 
 import { injectable, inject } from 'inversify';
-import { find, map, toArray, some } from '@phosphor/algorithm';
-import { TabBar, Widget, DockPanel, Title, Panel, BoxPanel, BoxLayout, SplitPanel, PanelLayout } from '@phosphor/widgets';
-import { MimeData } from '@phosphor/coreutils';
-import { Drag } from '@phosphor/dragdrop';
-import { AttachedProperty } from '@phosphor/properties';
+import { find, map, toArray, some } from '@lumino/algorithm';
+import { TabBar, Widget, DockPanel, Title, Panel, BoxPanel, BoxLayout, SplitPanel, PanelLayout } from '@lumino/widgets';
+import { MimeData } from '@lumino/coreutils';
+import { Drag } from '@lumino/dragdrop';
+import { AttachedProperty } from '@lumino/properties';
 import { TabBarRendererFactory, TabBarRenderer, SHELL_TABBAR_CONTEXT_MENU, SideTabBar } from './tab-bars';
 import { SidebarMenuWidget, SidebarMenu, SidebarBottomMenuWidgetFactory, SidebarTopMenuWidgetFactory } from './sidebar-menu-widget';
 import { SplitPositionHandler, SplitPositionOptions } from './split-panels';

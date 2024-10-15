@@ -17,8 +17,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { injectable, decorate, unmanaged } from 'inversify';
-import { Title, Widget } from '@phosphor/widgets';
-import { Message, MessageLoop } from '@phosphor/messaging';
+import { Title, Widget } from '@lumino/widgets';
+import { Message, MessageLoop } from '@lumino/messaging';
 import { Emitter, Event, Disposable, DisposableCollection, MaybePromise, isObject } from '../../common';
 import { KeyCode, KeysOrKeyCodes } from '../keyboard/keys';
 
@@ -28,8 +28,8 @@ import { PreviewableWidget } from '../widgets/previewable-widget';
 decorate(injectable(), Widget);
 decorate(unmanaged(), Widget, 0);
 
-export * from '@phosphor/widgets';
-export * from '@phosphor/messaging';
+export * from '@lumino/widgets';
+export * from '@lumino/messaging';
 
 export const ACTION_ITEM = 'action-label';
 
