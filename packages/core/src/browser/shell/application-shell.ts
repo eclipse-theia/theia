@@ -261,6 +261,9 @@ export class ApplicationShell extends Widget {
         return this._mainPanelRenderer;
     }
 
+    private setInitialized: () => void;
+    initialized: Promise<void> = new Promise(resolve => { this.setInitialized = resolve; });
+
     /**
      * Construct a new application shell.
      */
@@ -319,6 +322,7 @@ export class ApplicationShell extends Widget {
                 });
             }
         });
+        this.setInitialized();
     }
 
     protected initializeShell(): void {

@@ -74,7 +74,7 @@ class SampleMenuCommandRegistry extends MenuCommandRegistry {
         return this.addCommand(id, {
             execute: () => { /* NOOP */ },
             label: menu.label,
-            icon: menu.icon,
+            iconClass: menu.icon,
             isEnabled: () => false,
             isVisible: () => true
         });

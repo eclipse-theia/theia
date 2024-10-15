@@ -708,7 +708,7 @@ export class ScrollableTabBar extends TabBar<Widget> {
 
     constructor(options?: TabBar.IOptions<Widget> & PerfectScrollbar.Options, dynamicTabOptions?: ScrollableTabBar.Options) {
         super(options);
-        this.scrollBarFactory = () => new PerfectScrollbar(this.scrollbarHost, options);
+        this.scrollBarFactory = () => new PerfectScrollbar(this.node, options);
         this._dynamicTabOptions = dynamicTabOptions;
         this.rewireDOM();
     }
@@ -740,7 +740,7 @@ export class ScrollableTabBar extends TabBar<Widget> {
     protected rewireDOM(): void {
         const contentNode = this.node.getElementsByClassName(ScrollableTabBar.Styles.TAB_BAR_CONTENT)[0];
         if (!contentNode) {
-            throw new Error("'this.node' does not have the content as a direct child with class name 'p-TabBar-content'.");
+            throw new Error(`'this.node' does not have the content as a direct child with class name '${ScrollableTabBar.Styles.TAB_BAR_CONTENT}'.`);
         }
         this.node.removeChild(contentNode);
         this.contentContainer = document.createElement('div');
@@ -867,7 +867,7 @@ export class ScrollableTabBar extends TabBar<Widget> {
             window.requestAnimationFrame(() => {
                 const tab = this.contentNode.children[index] as HTMLElement;
                 if (tab && this.isVisible) {
-                    const parent = this.scrollbarHost;
+                    const parent = this.node;
                     if (this.orientation === 'horizontal') {
                         const scroll = parent.scrollLeft;
                         const left = tab.offsetLeft;
@@ -900,25 +900,6 @@ export class ScrollableTabBar extends TabBar<Widget> {
         });
         this.pendingReveal = result;
         return result;
-    }
-
-    /**
-     * Overrides the `contentNode` property getter in PhosphorJS' TabBar.
-     */
-    // @ts-expect-error TS2611 `TabBar<T>.contentNode` is declared as `readonly contentNode` but is implemented as a getter.
-    get contentNode(): HTMLUListElement {
-        return this.tabBarContainer.getElementsByClassName(ToolbarAwareTabBar.Styles.TAB_BAR_CONTENT)[0] as HTMLUListElement;
-    }
-
-    /**
-     * Overrides the scrollable host from the parent class.
-     */
-    protected get scrollbarHost(): HTMLElement {
-        return this.tabBarContainer;
-    }
-
-    protected get tabBarContainer(): HTMLElement {
-        return this.node.getElementsByClassName(ToolbarAwareTabBar.Styles.TAB_BAR_CONTENT_CONTAINER)[0] as HTMLElement;
     }
 }
 

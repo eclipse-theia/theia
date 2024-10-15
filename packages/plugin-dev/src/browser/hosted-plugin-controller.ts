@@ -305,7 +305,7 @@ export class HostedPluginController implements FrontendApplicationContribution {
     protected addCommandsForRunningPlugin(commands: CommandRegistry, menu: Menu): void {
         commands.addCommand(HostedPluginCommands.STOP.id, {
             label: nls.localize('theia/plugin-dev/stopInstance', 'Stop Instance'),
-            icon: codicon('debug-stop'),
+            iconClass: codicon('debug-stop'),
             execute: () => setTimeout(() => this.hostedPluginManagerClient.stop(), 100)
         });
 
@@ -316,7 +316,7 @@ export class HostedPluginController implements FrontendApplicationContribution {
 
         commands.addCommand(HostedPluginCommands.RESTART.id, {
             label: nls.localize('theia/plugin-dev/restartInstance', 'Restart Instance'),
-            icon: codicon('debug-restart'),
+            iconClass: codicon('debug-restart'),
             execute: () => setTimeout(() => this.hostedPluginManagerClient.restart(), 100)
         });
 
@@ -332,7 +332,7 @@ export class HostedPluginController implements FrontendApplicationContribution {
     protected addCommandsForStoppedPlugin(commands: CommandRegistry, menu: Menu): void {
         commands.addCommand(HostedPluginCommands.START.id, {
             label: nls.localize('theia/plugin-dev/startInstance', 'Start Instance'),
-            icon: codicon('play'),
+            iconClass: codicon('play'),
             execute: () => setTimeout(() => this.hostedPluginManagerClient.start(), 100)
         });
 
@@ -343,7 +343,7 @@ export class HostedPluginController implements FrontendApplicationContribution {
 
         commands.addCommand(HostedPluginCommands.DEBUG.id, {
             label: nls.localize('theia/plugin-dev/debugInstance', 'Debug Instance'),
-            icon: codicon('debug'),
+            iconClass: codicon('debug'),
             execute: () => setTimeout(() => this.hostedPluginManagerClient.debug(), 100)
         });
 

@@ -16,7 +16,7 @@
 
 import { injectable, inject } from 'inversify';
 import { MenuBar, Menu as MenuWidget, Widget } from '@lumino/widgets';
-import { CommandRegistry as PhosphorCommandRegistry } from '@lumino/commands';
+import { CommandRegistry as LuminoCommandRegistry } from '@lumino/commands';
 import {
     CommandRegistry, environment, DisposableCollection, Disposable,
     MenuModelRegistry, MAIN_MENU_BAR, MenuPath, MenuNode, MenuCommandExecutor, CompoundMenuNode, CompoundMenuNodeRole, CommandMenuNode
@@ -272,14 +272,14 @@ export class DynamicMenuWidget extends MenuWidget {
         });
     }
 
-    public override open(x: number, y: number, options?: MenuWidget.IOpenOptions, anchor?: HTMLElement): void {
+    public override open(x: number, y: number, options?: MenuWidget.IOpenOptions): void {
         const cb = () => {
             this.restoreFocusedElement();
             this.aboutToClose.disconnect(cb);
         };
         this.aboutToClose.connect(cb);
         this.preserveFocusedElement();
-        super.open(x, y, options, anchor);
+        super.open(x, y, options);
     }
 
     protected updateSubMenus(parent: MenuWidget, menu: CompoundMenuNode, commands: MenuCommandRegistry): void {
@@ -415,9 +415,9 @@ export class BrowserMenuBarContribution implements FrontendApplicationContributi
 }
 
 /**
- * Stores Theia-specific action menu nodes instead of PhosphorJS commands with their handlers.
+ * Stores Theia-specific action menu nodes instead of Lumino commands with their handlers.
  */
-export class MenuCommandRegistry extends PhosphorCommandRegistry {
+export class MenuCommandRegistry extends LuminoCommandRegistry {
 
     protected actions = new Map<string, [MenuNode & CommandMenuNode, unknown[]]>();
     protected toDispose = new DisposableCollection();
@@ -466,7 +466,7 @@ export class MenuCommandRegistry extends PhosphorCommandRegistry {
         const unregisterCommand = this.addCommand(id, {
             execute: () => commandExecutor.executeCommand(menuPath, id, ...args),
             label: menu.label,
-            icon: menu.icon,
+            iconClass: menu.icon,
             isEnabled: () => enabled,
             isVisible: () => visible,
             isToggled: () => toggled

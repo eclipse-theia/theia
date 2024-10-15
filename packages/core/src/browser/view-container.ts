@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { interfaces, injectable, inject, postConstruct } from 'inversify';
-import { IIterator, toArray, find, some, every, map, ArrayExt } from '@lumino/algorithm';
+import { find, some, every, map, ArrayExt } from '@lumino/algorithm';
 import {
     Widget, EXPANSION_TOGGLE_CLASS, COLLAPSED_CLASS, CODICON_TREE_ITEM_CLASSES, MessageLoop, Message, SplitPanel,
     BaseWidget, addEventListener, SplitLayout, LayoutItem, PanelLayout, addKeyListener, waitForRevealed, UnsafeWidgetUtilities, DockPanel, PINNED_CLASS
@@ -34,7 +34,7 @@ import { isEmpty, isObject, nls } from '../common';
 import { WidgetManager } from './widget-manager';
 import { Key } from './keys';
 import { ProgressBarFactory } from './progress-bar-factory';
-import { Drag, IDragEvent } from '@lumino/dragdrop';
+import { Drag } from '@lumino/dragdrop';
 import { MimeData } from '@lumino/coreutils';
 import { ElementExt } from '@lumino/domutils';
 import { TabBarDecoratorService } from './shell/tab-bar-decorator';
@@ -713,38 +713,38 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
 
     protected override onBeforeAttach(msg: Message): void {
         super.onBeforeAttach(msg);
-        this.node.addEventListener('p-dragenter', this, true);
-        this.node.addEventListener('p-dragover', this, true);
-        this.node.addEventListener('p-dragleave', this, true);
-        this.node.addEventListener('p-drop', this, true);
+        this.node.addEventListener('lm-dragenter', this, true);
+        this.node.addEventListener('lm-dragover', this, true);
+        this.node.addEventListener('lm-dragleave', this, true);
+        this.node.addEventListener('lm-drop', this, true);
     }
 
     protected override onAfterDetach(msg: Message): void {
         super.onAfterDetach(msg);
-        this.node.removeEventListener('p-dragenter', this, true);
-        this.node.removeEventListener('p-dragover', this, true);
-        this.node.removeEventListener('p-dragleave', this, true);
-        this.node.removeEventListener('p-drop', this, true);
+        this.node.removeEventListener('lm-dragenter', this, true);
+        this.node.removeEventListener('lm-dragover', this, true);
+        this.node.removeEventListener('lm-dragleave', this, true);
+        this.node.removeEventListener('lm-drop', this, true);
     }
 
     handleEvent(event: Event): void {
         switch (event.type) {
-            case 'p-dragenter':
-                this.handleDragEnter(event as IDragEvent);
+            case 'lm-dragenter':
+                this.handleDragEnter(event as Drag.Event);
                 break;
-            case 'p-dragover':
-                this.handleDragOver(event as IDragEvent);
+            case 'lm-dragover':
+                this.handleDragOver(event as Drag.Event);
                 break;
-            case 'p-dragleave':
-                this.handleDragLeave(event as IDragEvent);
+            case 'lm-dragleave':
+                this.handleDragLeave(event as Drag.Event);
                 break;
-            case 'p-drop':
-                this.handleDrop(event as IDragEvent);
+            case 'lm-drop':
+                this.handleDrop(event as Drag.Event);
                 break;
         }
     }
 
-    handleDragEnter(event: IDragEvent): void {
+    handleDragEnter(event: Drag.Event): void {
         if (event.mimeData.hasData('application/vnd.phosphor.view-container-factory')) {
             event.preventDefault();
             event.stopPropagation();
@@ -752,7 +752,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
     }
 
     toDisposeOnDragEnd = new DisposableCollection();
-    handleDragOver(event: IDragEvent): void {
+    handleDragOver(event: Drag.Event): void {
         const factory = event.mimeData.getData('application/vnd.phosphor.view-container-factory');
         const widget = factory && factory();
         if (!(widget instanceof ViewContainerPart)) {
@@ -797,7 +797,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         event.dropAction = event.proposedAction;
     };
 
-    handleDragLeave(event: IDragEvent): void {
+    handleDragLeave(event: Drag.Event): void {
         this.toDisposeOnDragEnd.dispose();
         if (event.mimeData.hasData('application/vnd.phosphor.view-container-factory')) {
             event.preventDefault();
@@ -805,7 +805,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         }
     };
 
-    handleDrop(event: IDragEvent): void {
+    handleDrop(event: Drag.Event): void {
         this.toDisposeOnDragEnd.dispose();
         const factory = event.mimeData.getData('application/vnd.phosphor.view-container-factory');
         const draggedPart = factory && factory();
@@ -1364,13 +1364,13 @@ export class ViewContainerLayout extends SplitLayout {
         return (this as any)._items as Array<LayoutItem & ViewContainerLayout.Item>;
     }
 
-    override iter(): IIterator<ViewContainerPart> {
+    iter(): IterableIterator<ViewContainerPart> {
         return map(this.items, item => item.widget);
     }
 
     // @ts-expect-error TS2611 `SplitLayout.widgets` is declared as `readonly widgets` but is implemented as a getter.
     get widgets(): ViewContainerPart[] {
-        return toArray(this.iter());
+        return Array.from(this.iter());
     }
 
     override attachWidget(index: number, widget: ViewContainerPart): void {
