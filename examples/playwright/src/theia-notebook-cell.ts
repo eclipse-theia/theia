@@ -178,6 +178,14 @@ export class TheiaNotebookCell extends TheiaPageObject {
     }
 
     /**
+     * @returns `true` if the cell is selected (blue vertical line), `false` otherwise.
+     */
+    async isSelected(): Promise<boolean> {
+        const markerClass = await this.locator.locator('div.theia-notebook-cell-marker').getAttribute('class');
+        return markerClass?.includes('theia-notebook-cell-marker-selected') ?? false;
+    }
+
+    /**
      * @returns The output text of the cell.
      */
     async outputText(): Promise<string> {
