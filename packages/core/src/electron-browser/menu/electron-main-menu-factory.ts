@@ -80,7 +80,7 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
     @inject(PreferenceService)
     protected preferencesService: PreferenceService;
 
-    setMenuBar = debounce(() => this.doSetMenuBar());
+    setMenuBar = debounce(() => this.doSetMenuBar(), 100);
 
     @postConstruct()
     postConstruct(): void {
