@@ -38,39 +38,35 @@ export class AIFrontendApplicationContribution implements FrontendApplicationCon
 
     onDidInitializeLayout(): void {
         this.preferenceService.ready.then(() => {
-            // Handle changes in both enable and excluded file extensions preferences
             this.handlePreferences();
         });
     }
 
     protected handlePreferences(): void {
-        const handler = () => this.handleInlineCompletions(
-            this.preferenceService.get<boolean>(PREF_AI_INLINE_COMPLETION_ENABLE, false) && this.activationService.isActive
-        );
+        const handler = () => this.handleInlineCompletions();
 
         this.toDispose.set('inlineCompletions', handler());
 
         this.preferenceService.onPreferenceChanged(event => {
             if (event.preferenceName === PREF_AI_INLINE_COMPLETION_ENABLE || event.preferenceName === PREF_AI_INLINE_COMPLETION_EXCLUDED_EXTENSIONS) {
-                // Re-apply the completions provider when either the enable or excluded file extensions change
                 this.toDispose.get('inlineCompletions')?.dispose();
                 this.toDispose.set('inlineCompletions', handler());
             }
         });
 
         this.activationService.onDidChangeActiveStatus(change => {
-            // Re-apply the completions provider when the activation status changes
             this.toDispose.get('inlineCompletions')?.dispose();
             this.toDispose.set('inlineCompletions', handler());
         });
     }
 
-    protected handleInlineCompletions(enable: boolean): Disposable {
+    protected handleInlineCompletions(): Disposable {
+        const enable = this.preferenceService.get<boolean>(PREF_AI_INLINE_COMPLETION_ENABLE, false) && this.activationService.isActive;
+
         if (!enable) {
             return Disposable.NULL;
         }
 
-        // Get excluded file extensions from preferences
         const excludedExtensions = this.preferenceService.get<string[]>(PREF_AI_INLINE_COMPLETION_EXCLUDED_EXTENSIONS, []);
 
         return monaco.languages.registerInlineCompletionsProvider(
@@ -79,16 +75,13 @@ export class AIFrontendApplicationContribution implements FrontendApplicationCon
                 provideInlineCompletions: (model, position, context, token) => {
                     const fileName = model.uri.toString();
 
-                    // Exclude specific file types based on preferences
                     if (excludedExtensions.some(ext => fileName.endsWith(ext))) {
-                        return { items: [] }; // Return empty result for excluded files
+                        return { items: [] };
                     }
-
-                    // If file type is allowed, return the code completions
                     return this.inlineCodeCompletionProvider.provideInlineCompletions(model, position, context, token);
                 },
                 freeInlineCompletions: completions => {
-                    // No clean up resources necessary
+                    this.inlineCodeCompletionProvider.freeInlineCompletions(completions);
                 }
             }
         );
