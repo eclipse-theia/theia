@@ -21,7 +21,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { Disposable } from '@theia/core';
 import { AICodeInlineCompletionsProvider } from './ai-code-inline-completion-provider';
-import { PREF_AI_INLINE_COMPLETION_ENABLE } from './ai-code-completion-preference';
+import { PREF_AI_INLINE_COMPLETION_ENABLE, PREF_AI_INLINE_COMPLETION_EXCLUDED_EXTENSIONS } from './ai-code-completion-preference';
 
 @injectable()
 export class AIFrontendApplicationContribution implements FrontendApplicationContribution {
@@ -38,27 +38,52 @@ export class AIFrontendApplicationContribution implements FrontendApplicationCon
 
     onDidInitializeLayout(): void {
         this.preferenceService.ready.then(() => {
-            this.handlePreference(PREF_AI_INLINE_COMPLETION_ENABLE, enable => this.handleInlineCompletions(enable));
+            this.handlePreferences();
         });
     }
 
-    protected handlePreference(name: string, handler: (enable: boolean) => Disposable): void {
-        const enable = this.preferenceService.get<boolean>(name, false) && this.activationService.isActive;
-        this.toDispose.set(name, handler(enable));
+    protected handlePreferences(): void {
+        const handler = () => this.handleInlineCompletions();
+
+        this.toDispose.set('inlineCompletions', handler());
 
         this.preferenceService.onPreferenceChanged(event => {
-            if (event.preferenceName === name) {
-                this.toDispose.get(name)?.dispose();
-                this.toDispose.set(name, handler(event.newValue && this.activationService.isActive));
+            if (event.preferenceName === PREF_AI_INLINE_COMPLETION_ENABLE || event.preferenceName === PREF_AI_INLINE_COMPLETION_EXCLUDED_EXTENSIONS) {
+                this.toDispose.get('inlineCompletions')?.dispose();
+                this.toDispose.set('inlineCompletions', handler());
             }
         });
+
         this.activationService.onDidChangeActiveStatus(change => {
-            this.toDispose.get(name)?.dispose();
-            this.toDispose.set(name, handler(this.preferenceService.get<boolean>(name, false) && change));
+            this.toDispose.get('inlineCompletions')?.dispose();
+            this.toDispose.set('inlineCompletions', handler());
         });
     }
 
-    protected handleInlineCompletions(enable: boolean): Disposable {
-        return enable ? monaco.languages.registerInlineCompletionsProvider({ scheme: 'file' }, this.inlineCodeCompletionProvider) : Disposable.NULL;
+    protected handleInlineCompletions(): Disposable {
+        const enable = this.preferenceService.get<boolean>(PREF_AI_INLINE_COMPLETION_ENABLE, false) && this.activationService.isActive;
+
+        if (!enable) {
+            return Disposable.NULL;
+        }
+
+        const excludedExtensions = this.preferenceService.get<string[]>(PREF_AI_INLINE_COMPLETION_EXCLUDED_EXTENSIONS, []);
+
+        return monaco.languages.registerInlineCompletionsProvider(
+            { scheme: 'file' },
+            {
+                provideInlineCompletions: (model, position, context, token) => {
+                    const fileName = model.uri.toString();
+
+                    if (excludedExtensions.some(ext => fileName.endsWith(ext))) {
+                        return { items: [] };
+                    }
+                    return this.inlineCodeCompletionProvider.provideInlineCompletions(model, position, context, token);
+                },
+                freeInlineCompletions: completions => {
+                    this.inlineCodeCompletionProvider.freeInlineCompletions(completions);
+                }
+            }
+        );
     }
 }
