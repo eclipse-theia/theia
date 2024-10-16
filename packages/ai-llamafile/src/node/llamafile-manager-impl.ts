@@ -70,6 +70,7 @@ export class LlamafileManagerImpl implements LlamafileManager {
             const fileName = basename(filePath);
             const currentProcess = spawn(`./${fileName}`, ['--port', '' + llm.port, '--server', '--nobrowser'], { cwd: dir });
             this.processMap.set(name, currentProcess);
+
             currentProcess.stdout.on('data', (data: Buffer) => {
                 const output = data.toString();
                 this.client.log(name, output);
@@ -79,7 +80,11 @@ export class LlamafileManagerImpl implements LlamafileManager {
                 this.client.error(name, output);
             });
             currentProcess.on('close', code => {
-                this.client.log(name, `LlamaFile process exited with code ${code}`);
+                this.client.log(name, `LlamaFile process for file ${name} exited with code ${code}`);
+                this.processMap.delete(name);
+            });
+            currentProcess.on('error', error => {
+                this.client.error(name, `Error starting LlamaFile process for file ${name}: ${error.message}`);
                 this.processMap.delete(name);
             });
         }
