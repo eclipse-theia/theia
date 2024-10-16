@@ -26,6 +26,11 @@ import { AgentService } from '../common/agent-service';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { load } from 'js-yaml';
 
+const templateEntry = `-id: my_agent
+name: My Agent
+description: This is an example agent. Please adapt the properties to fit your needs.
+prompt: You are an example agent. Be nice and helpful to the user.`;
+
 @injectable()
 export class FrontendPromptCustomizationServiceImpl implements PromptCustomizationService {
 
@@ -224,7 +229,7 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
     async openCustomAgentYaml(): Promise<void> {
         const customAgentYamlUri = (await this.getTemplatesDirectoryURI()).resolve('customAgents.yml');
         if (! await this.fileService.exists(customAgentYamlUri)) {
-            await this.fileService.createFile(customAgentYamlUri);
+            await this.fileService.createFile(customAgentYamlUri, BinaryBuffer.fromString(templateEntry));
         }
         const openHandler = await this.openerService.getOpener(customAgentYamlUri);
         openHandler.open(customAgentYamlUri);

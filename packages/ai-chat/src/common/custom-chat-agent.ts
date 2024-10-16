@@ -39,6 +39,6 @@ export class CustomChatAgent
     }
 
     set prompt(prompt: string) {
-        this.promptTemplates.push({ id: `${this.name}_system`, template: prompt });
+        this.promptTemplates.push({ id: `${this.name}_prompt`, template: prompt });
     }
 }

@@ -101,7 +101,9 @@ export class AIAgentConfigurationWidget extends ReactWidget {
                         </li>
                     )}
                 </ul>
-                <button style={{ marginLeft: 0 }} className='theia-button main' onClick={() => this.addCustomAgent()}>Add Custom Agent</button>
+                <div className='configuration-agents-add'>
+                    <button style={{ marginLeft: 0 }} className='theia-button main' onClick={() => this.addCustomAgent()}>Add Custom Agent</button>
+                </div>
             </div>
             <div className='configuration-agent-panel preferences-editor-widget'>
                 {this.renderAgentDetails()}
