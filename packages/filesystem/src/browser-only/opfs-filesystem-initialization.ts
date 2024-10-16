@@ -19,18 +19,18 @@ import { injectable } from '@theia/core/shared/inversify';
 
 export const OPFSInitialization = Symbol('OPFSInitialization');
 export interface OPFSInitialization {
-    createMountableFileSystem(): Promise<FileSystemDirectoryHandle>
-    initializeFS: (fs: FileSystemDirectoryHandle, provider: OPFSFileSystemProvider) => Promise<void>;
+    getRootDirectory(): Promise<FileSystemDirectoryHandle>
+    initializeFS(provider: OPFSFileSystemProvider): Promise<void>;
 }
 
 @injectable()
 export class DefaultOPFSInitialization implements OPFSInitialization {
 
-    createMountableFileSystem(): Promise<FileSystemDirectoryHandle> {
+    getRootDirectory(): Promise<FileSystemDirectoryHandle> {
         return navigator.storage.getDirectory();
     }
 
-    async initializeFS(dir: FileSystemDirectoryHandle, provider: OPFSFileSystemProvider): Promise<void> {
+    async initializeFS(provider: OPFSFileSystemProvider): Promise<void> {
 
     }
 }
