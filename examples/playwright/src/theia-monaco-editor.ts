@@ -104,6 +104,19 @@ export class TheiaMonacoEditor extends TheiaPageObject {
         await this.page.keyboard.type(text);
     }
 
+    /**
+     * @returns `true` if the editor is focused, `false` otherwise.
+     */
+    async isFocused(): Promise<boolean> {
+        const viewElement = await this.viewElement();
+        const monacoEditor = await viewElement?.$('div.monaco-editor');
+        if (!monacoEditor) {
+            throw new Error('Couldn\'t retrieve monaco editor element.');
+        }
+        const editorClass = await monacoEditor.getAttribute('class');
+        return editorClass?.includes('focused') ?? false;
+    }
+
     protected replaceEditorSymbolsWithSpace(content: string): string | Promise<string | undefined> {
         // [ ] &nbsp; => \u00a0 -- NO-BREAK SPACE
         // [·] &middot; => \u00b7 -- MIDDLE DOT

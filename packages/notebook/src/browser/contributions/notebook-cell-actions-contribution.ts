@@ -516,7 +516,7 @@ export class NotebookCellActionContribution implements MenuContribution, Command
             {
                 command: NotebookCellCommands.STOP_EDIT_COMMAND.id,
                 keybinding: 'esc',
-                when: `editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED}`,
+                when: `editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED} && !suggestWidgetVisible`,
             },
             {
                 command: NotebookCellCommands.EXECUTE_SINGLE_CELL_COMMAND.id,
