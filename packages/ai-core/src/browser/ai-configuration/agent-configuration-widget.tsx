@@ -87,6 +87,7 @@ export class AIAgentConfigurationWidget extends ReactWidget {
 
         this.aiSettingsService.onDidChange(() => this.update());
         this.aiConfigurationSelectionService.onDidAgentChange(() => this.update());
+        this.agentService.onDidChangeAgents(() => this.update());
         this.update();
     }
 
@@ -100,6 +101,9 @@ export class AIAgentConfigurationWidget extends ReactWidget {
                         </li>
                     )}
                 </ul>
+                <div className='configuration-agents-add'>
+                    <button style={{ marginLeft: 0 }} className='theia-button main' onClick={() => this.addCustomAgent()}>Add Custom Agent</button>
+                </div>
             </div>
             <div className='configuration-agent-panel preferences-editor-widget'>
                 {this.renderAgentDetails()}
@@ -203,6 +207,10 @@ export class AIAgentConfigurationWidget extends ReactWidget {
 
     protected showVariableConfigurationTab(): void {
         this.aiConfigurationSelectionService.selectConfigurationTab(AIVariableConfigurationWidget.ID);
+    }
+
+    protected addCustomAgent(): void {
+        this.promptCustomizationService.openCustomAgentYaml();
     }
 
     protected setActiveAgent(agent: Agent): void {

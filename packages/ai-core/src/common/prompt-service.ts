@@ -69,6 +69,27 @@ export interface PromptService {
     getAllPrompts(): PromptMap;
 }
 
+export interface CustomAgentDescription {
+    id: string;
+    name: string;
+    description: string;
+    prompt: string;
+}
+export namespace CustomAgentDescription {
+    export function is(entry: unknown): entry is CustomAgentDescription {
+        // eslint-disable-next-line no-null/no-null
+        return typeof entry === 'object' && entry !== null
+            && 'id' in entry && typeof entry.id === 'string'
+            && 'name' in entry && typeof entry.name === 'string'
+            && 'description' in entry && typeof entry.description === 'string'
+            && 'prompt' in entry
+            && typeof entry.prompt === 'string';
+    }
+    export function equals(a: CustomAgentDescription, b: CustomAgentDescription): boolean {
+        return a.id === b.id && a.name === b.name && a.description === b.description && a.prompt === b.prompt;
+    }
+}
+
 export const PromptCustomizationService = Symbol('PromptCustomizationService');
 export interface PromptCustomizationService {
     /**
@@ -109,6 +130,22 @@ export interface PromptCustomizationService {
      * Event which is fired when the prompt template is changed.
      */
     readonly onDidChangePrompt: Event<string>;
+
+    /**
+     * Return all custom agents.
+     * @returns all custom agents
+     */
+    getCustomAgents(): Promise<CustomAgentDescription[]>;
+
+    /**
+     * Event which is fired when custom agents are modified.
+     */
+    readonly onDidChangeCustomAgents: Event<void>;
+
+    /**
+     * Open the custom agent yaml file.
+     */
+    openCustomAgentYaml(): void;
 }
 
 @injectable()
