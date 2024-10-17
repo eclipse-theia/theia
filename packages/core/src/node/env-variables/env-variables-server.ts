@@ -23,6 +23,7 @@ import { EnvVariable, EnvVariablesServer } from '../../common/env-variables';
 import { isWindows } from '../../common/os';
 import { FileUri } from '../../common/file-uri';
 import { BackendApplicationPath } from '../backend-application';
+import { BackendApplicationConfigProvider } from '../backend-application-config-provider';
 
 @injectable()
 export class EnvVariablesServerImpl implements EnvVariablesServer {
@@ -64,7 +65,7 @@ export class EnvVariablesServerImpl implements EnvVariablesServer {
                 this.pathExistenceCache[userDataPath] = true;
             }
         } else {
-            process.env.THEIA_CONFIG_DIR = join(homedir(), '.theia');
+            process.env.THEIA_CONFIG_DIR = join(homedir(), BackendApplicationConfigProvider.get().configurationFolder);
         }
         return FileUri.create(process.env.THEIA_CONFIG_DIR).toString();
     }
