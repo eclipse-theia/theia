@@ -14,12 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Command, CommandContribution, CommandRegistry, environment, isOSX, CancellationTokenSource, MessageService } from '@theia/core';
+import { CallHierarchyService, CallHierarchyServiceProvider } from '@theia/callhierarchy/lib/browser';
+import { CancellationTokenSource, Command, CommandContribution, CommandRegistry, MessageService, environment, isOSX } from '@theia/core';
 import {
     ApplicationShell,
     CommonCommands,
     NavigatableWidget,
-    OpenerService, OpenHandler,
+    OpenHandler,
+    OpenerService,
     QuickInputService,
     Saveable,
     TabBar,
@@ -28,60 +30,59 @@ import {
 } from '@theia/core/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { ApplicationShellMouseTracker } from '@theia/core/lib/browser/shell/application-shell-mouse-tracker';
-import { CommandService } from '@theia/core/lib/common/command';
-import TheiaURI from '@theia/core/lib/common/uri';
-import { EditorManager, EditorCommands } from '@theia/editor/lib/browser';
-import {
-    TextDocumentShowOptions,
-    Location,
-    CallHierarchyItem,
-    CallHierarchyIncomingCall,
-    CallHierarchyOutgoingCall,
-    TypeHierarchyItem,
-    Hover,
-    TextEdit,
-    FormattingOptions,
-    DocumentHighlight
-} from '@theia/plugin-ext/lib/common/plugin-api-rpc-model';
-import { DocumentsMainImpl } from '@theia/plugin-ext/lib/main/browser/documents-main';
-import { isUriComponents, toMergedSymbol, toPosition } from '@theia/plugin-ext/lib/plugin/type-converters';
-import { ViewColumn } from '@theia/plugin-ext/lib/plugin/types-impl';
-import { WorkspaceCommands } from '@theia/workspace/lib/browser';
-import { WorkspaceService, WorkspaceInput } from '@theia/workspace/lib/browser/workspace-service';
-import { DiffService } from '@theia/workspace/lib/browser/diff-service';
-import { inject, injectable, optional } from '@theia/core/shared/inversify';
-import { Position } from '@theia/plugin-ext/lib/common/plugin-api-rpc';
-import { URI } from '@theia/core/shared/vscode-uri';
-import { PluginServer } from '@theia/plugin-ext/lib/common/plugin-protocol';
-import { TerminalFrontendContribution } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
-import { QuickOpenWorkspace } from '@theia/workspace/lib/browser/quick-open-workspace';
-import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
-import {
-    FileNavigatorCommands,
-    FILE_NAVIGATOR_TOGGLE_COMMAND_ID
-} from '@theia/navigator/lib/browser/navigator-contribution';
-import { FILE_NAVIGATOR_ID, FileNavigatorWidget } from '@theia/navigator/lib/browser';
 import { SelectableTreeNode } from '@theia/core/lib/browser/tree/tree-selection';
-import { UriComponents } from '@theia/plugin-ext/lib/common/uri-components';
+import { WindowService } from '@theia/core/lib/browser/window/window-service';
+import { CommandService } from '@theia/core/lib/common/command';
+import { nls } from '@theia/core/lib/common/nls';
+import TheiaURI from '@theia/core/lib/common/uri';
+import { inject, injectable, optional } from '@theia/core/shared/inversify';
+import { URI } from '@theia/core/shared/vscode-uri';
+import { EditorCommands, EditorManager } from '@theia/editor/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { CallHierarchyServiceProvider, CallHierarchyService } from '@theia/callhierarchy/lib/browser';
-import { TypeHierarchyServiceProvider, TypeHierarchyService } from '@theia/typehierarchy/lib/browser';
+import * as monaco from '@theia/monaco-editor-core';
+import { MonacoLanguages } from '@theia/monaco/lib/browser/monaco-languages';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
+import { FILE_NAVIGATOR_ID, FileNavigatorWidget } from '@theia/navigator/lib/browser';
+import {
+    FILE_NAVIGATOR_TOGGLE_COMMAND_ID,
+    FileNavigatorCommands
+} from '@theia/navigator/lib/browser/navigator-contribution';
+import { OutlineViewContribution } from '@theia/outline-view/lib/browser/outline-view-contribution';
+import { Range } from '@theia/plugin';
+import { Position } from '@theia/plugin-ext/lib/common/plugin-api-rpc';
+import {
+    CallHierarchyIncomingCall,
+    CallHierarchyItem,
+    CallHierarchyOutgoingCall,
+    DocumentHighlight,
+    FormattingOptions,
+    Hover,
+    Location,
+    TextDocumentShowOptions,
+    TextEdit,
+    TypeHierarchyItem
+} from '@theia/plugin-ext/lib/common/plugin-api-rpc-model';
+import { PluginDeployOptions, PluginIdentifiers, PluginServer } from '@theia/plugin-ext/lib/common/plugin-protocol';
+import { UriComponents } from '@theia/plugin-ext/lib/common/uri-components';
+import { CustomEditorOpener } from '@theia/plugin-ext/lib/main/browser/custom-editors/custom-editor-opener';
+import { DocumentsMainImpl } from '@theia/plugin-ext/lib/main/browser/documents-main';
 import {
     fromCallHierarchyCalleeToModelCallHierarchyOutgoingCall,
     fromCallHierarchyCallerToModelCallHierarchyIncomingCall,
     fromItemHierarchyDefinition,
     toItemHierarchyDefinition
 } from '@theia/plugin-ext/lib/main/browser/hierarchy/hierarchy-types-converters';
-import { CustomEditorOpener } from '@theia/plugin-ext/lib/main/browser/custom-editors/custom-editor-opener';
-import { nls } from '@theia/core/lib/common/nls';
-import { WindowService } from '@theia/core/lib/browser/window/window-service';
-import * as monaco from '@theia/monaco-editor-core';
-import { VSCodeExtensionUri } from '../common/plugin-vscode-uri';
 import { CodeEditorWidgetUtil } from '@theia/plugin-ext/lib/main/browser/menus/vscode-theia-menu-mappings';
-import { OutlineViewContribution } from '@theia/outline-view/lib/browser/outline-view-contribution';
-import { Range } from '@theia/plugin';
-import { MonacoLanguages } from '@theia/monaco/lib/browser/monaco-languages';
+import { isUriComponents, toMergedSymbol, toPosition } from '@theia/plugin-ext/lib/plugin/type-converters';
+import { ViewColumn } from '@theia/plugin-ext/lib/plugin/types-impl';
+import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
+import { TerminalFrontendContribution } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
+import { TypeHierarchyService, TypeHierarchyServiceProvider } from '@theia/typehierarchy/lib/browser';
+import { WorkspaceCommands } from '@theia/workspace/lib/browser';
+import { DiffService } from '@theia/workspace/lib/browser/diff-service';
+import { QuickOpenWorkspace } from '@theia/workspace/lib/browser/quick-open-workspace';
+import { WorkspaceInput, WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import { VSCodeExtensionUri } from '../common/plugin-vscode-uri';
 
 export namespace VscodeCommands {
 
@@ -108,6 +109,10 @@ export namespace VscodeCommands {
 
     export const INSTALL_FROM_VSIX: Command = {
         id: 'workbench.extensions.installExtension'
+    };
+
+    export const UNINSTALL_EXTENSION: Command = {
+        id: 'workbench.extensions.uninstallExtension'
     };
 }
 
@@ -370,14 +375,34 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         commands.registerCommand({ id: 'workbench.files.action.refreshFilesExplorer' }, {
             execute: () => commands.executeCommand(FileNavigatorCommands.REFRESH_NAVIGATOR.id)
         });
-        commands.registerCommand({ id: VscodeCommands.INSTALL_FROM_VSIX.id }, {
+        commands.registerCommand(VscodeCommands.INSTALL_FROM_VSIX, {
             execute: async (vsixUriOrExtensionId: TheiaURI | UriComponents | string) => {
                 if (typeof vsixUriOrExtensionId === 'string') {
-                    await this.pluginServer.deploy(VSCodeExtensionUri.fromId(vsixUriOrExtensionId).toString());
+                    let extensionId = vsixUriOrExtensionId;
+                    let opts: PluginDeployOptions | undefined;
+                    if (PluginIdentifiers.isVersionedId(vsixUriOrExtensionId)) {
+                        const idAndVersion = PluginIdentifiers.getIdAndVersion(vsixUriOrExtensionId);
+                        extensionId = idAndVersion[0];
+                        opts = { version: idAndVersion[1]!, ignoreOtherVersions: true };
+                    }
+                    await this.pluginServer.deploy(VSCodeExtensionUri.fromId(extensionId).toString(), undefined, opts);
                 } else {
                     const uriPath = isUriComponents(vsixUriOrExtensionId) ? URI.revive(vsixUriOrExtensionId).fsPath : await this.fileService.fsPath(vsixUriOrExtensionId);
                     await this.pluginServer.deploy(`local-file:${uriPath}`);
                 }
+            }
+        });
+        commands.registerCommand(VscodeCommands.UNINSTALL_EXTENSION, {
+            execute: async (id: string) => {
+                if (!id) {
+                    throw new Error(nls.localizeByDefault('Extension id required.'));
+                }
+                if (!PluginIdentifiers.isVersionedId(id)) {
+                    throw new Error(`Invalid extension id: ${id}\nExpected format: <publisher>.<name>@<version>.`);
+                }
+                const idAndVersion = PluginIdentifiers.identifiersFromVersionedId(id);
+                const pluginId = PluginIdentifiers.componentsToVersionedId(idAndVersion!);
+                await this.pluginServer.uninstall(pluginId);
             }
         });
         commands.registerCommand({ id: 'workbench.action.files.save', }, {
