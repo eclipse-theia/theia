@@ -330,6 +330,7 @@ export class NotebooksExtImpl implements NotebooksExt {
         if (delta.newActiveEditor === null) {
             // clear active notebook as current active editor is non-notebook editor
             this.activeNotebookEditor = undefined;
+            this.onDidChangeActiveNotebookEditorEmitter.fire(undefined);
         } else if (delta.newActiveEditor) {
             const activeEditor = this.editors.get(delta.newActiveEditor);
             if (!activeEditor) {
@@ -341,8 +342,6 @@ export class NotebooksExtImpl implements NotebooksExt {
                     newActiveEditor: null
                 });
             }
-        }
-        if (delta.newActiveEditor !== undefined && delta.newActiveEditor !== this.activeNotebookEditor?.id) {
             this.onDidChangeActiveNotebookEditorEmitter.fire(this.activeNotebookEditor?.apiEditor);
         }
     }
