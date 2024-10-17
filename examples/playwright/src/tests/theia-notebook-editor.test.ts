@@ -188,6 +188,39 @@ test.describe('Theia Notebook Cell interaction', () => {
         expect(await cell.executionCount()).toBe('3');
     });
 
+    test('Check arrow up and down works', async () => {
+        const cell = await firstCell(editor);
+        await editor.addCodeCell();
+        const secondCell = (await editor.cells())[1];
+        // second cell is selected after creation
+        expect(await secondCell.isSelected()).toBe(true);
+        // select cell above
+        await editor.page.keyboard.type('second cell');
+        await secondCell.editor.page.keyboard.press('ArrowUp');
+        expect(await cell.isSelected()).toBe(true);
+
+        // select cell below
+        await cell.app.page.keyboard.press('ArrowDown');
+        expect(await secondCell.isSelected()).toBe(true);
+    });
+
+    test('Check arrow-up/arrow-down/escape with code completion', async () => {
+        const cell = await firstCell(editor);
+        await editor.addCodeCell();
+        await cell.addEditorText('print("Test code completion")\n');
+
+        await editor.page.keyboard.press('Control+Space'); // call CC (suggestWidgetVisible=true)
+        await editor.page.keyboard.press('Escape');  // close CC
+        // check the same cell still selected and not lose the edit mode
+        expect(await cell.editor.isFocused()).toBe(true);
+
+        await editor.page.keyboard.press('Control+Space'); // call CC (suggestWidgetVisible=true)
+        await editor.page.keyboard.press('ArrowDown'); // select next entry in CC list
+        await editor.page.keyboard.press('Enter'); // apply completion
+        // check the same cell still selected and not the second one due to 'ArrowDown' being pressed
+        expect(await cell.isSelected()).toBe(true);
+
+    });
 });
 
 async function firstCell(editor: TheiaNotebookEditor): Promise<TheiaNotebookCell> {
