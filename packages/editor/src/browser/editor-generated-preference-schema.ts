@@ -759,7 +759,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             nls.localizeByDefault("`cursorSurroundingLines` is enforced only when triggered via the keyboard or API."),
             nls.localizeByDefault("`cursorSurroundingLines` is enforced always.")
         ],
-        "markdownDescription": nls.localize("theia/editor/editor.cursorSurroundingLinesStyle", "Controls when `#cursorSurroundingLines#` should be enforced."),
+        "markdownDescription": nls.localizeByDefault("Controls when `#editor.cursorSurroundingLines#` should be enforced."),
         "type": "string",
         "enum": [
             "default",
