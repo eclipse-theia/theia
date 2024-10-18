@@ -223,7 +223,18 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
                 console.debug('Invalid customAgents.yml file content');
                 return [];
             }
-            return doc as CustomAgentDescription[];
+            const readAgents = doc as CustomAgentDescription[];
+            // make sure all agents are unique (id and name)
+            const uniqueAgentIds = new Set<string>();
+            const uniqueAgens: CustomAgentDescription[] = [];
+            readAgents.forEach(agent => {
+                if (uniqueAgentIds.has(`${agent.id}_${agent.name}`)) {
+                    return;
+                }
+                uniqueAgentIds.add(`${agent.id}_${agent.name}`);
+                uniqueAgens.push(agent);
+            });
+            return uniqueAgens;
         } catch (e) {
             console.debug(e.message, e);
             return [];
