@@ -228,10 +228,10 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
             const uniqueAgentIds = new Set<string>();
             const uniqueAgens: CustomAgentDescription[] = [];
             readAgents.forEach(agent => {
-                if (uniqueAgentIds.has(`${agent.id}_${agent.name}`)) {
+                if (uniqueAgentIds.has(agent.id)) {
                     return;
                 }
-                uniqueAgentIds.add(`${agent.id}_${agent.name}`);
+                uniqueAgentIds.add(agent.id);
                 uniqueAgens.push(agent);
             });
             return uniqueAgens;
