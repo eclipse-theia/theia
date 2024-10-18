@@ -22,7 +22,8 @@
     "lib": [
       "ES2019",
       "ES2020.Promise",
-      "DOM"
+      "DOM",
+      "DOM.AsyncIterable"
     ],
     "sourceMap": true
   }
