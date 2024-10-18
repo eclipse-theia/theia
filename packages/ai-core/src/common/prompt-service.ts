@@ -74,6 +74,7 @@ export interface CustomAgentDescription {
     name: string;
     description: string;
     prompt: string;
+    defaultLLM: string;
 }
 export namespace CustomAgentDescription {
     export function is(entry: unknown): entry is CustomAgentDescription {
@@ -83,10 +84,12 @@ export namespace CustomAgentDescription {
             && 'name' in entry && typeof entry.name === 'string'
             && 'description' in entry && typeof entry.description === 'string'
             && 'prompt' in entry
-            && typeof entry.prompt === 'string';
+            && typeof entry.prompt === 'string'
+            && 'defaultLLM' in entry
+            && typeof entry.defaultLLM === 'string';
     }
     export function equals(a: CustomAgentDescription, b: CustomAgentDescription): boolean {
-        return a.id === b.id && a.name === b.name && a.description === b.description && a.prompt === b.prompt;
+        return a.id === b.id && a.name === b.name && a.description === b.description && a.prompt === b.prompt && a.defaultLLM === b.defaultLLM;
     }
 }
 

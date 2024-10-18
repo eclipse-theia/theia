@@ -18,12 +18,12 @@ import { AgentService, CustomAgentDescription, PromptCustomizationService } from
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatAgentService } from '../common';
-import { FactoryOfCustomAgents } from './custom-agent-factory';
+import { CustomAgentFactory } from './custom-agent-factory';
 
 @injectable()
 export class AICustomAgentsFrontendApplicationContribution implements FrontendApplicationContribution {
-    @inject(FactoryOfCustomAgents)
-    protected readonly customAgentFactory: FactoryOfCustomAgents;
+    @inject(CustomAgentFactory)
+    protected readonly customAgentFactory: CustomAgentFactory;
 
     @inject(PromptCustomizationService)
     protected readonly customizationService: PromptCustomizationService;
@@ -38,7 +38,7 @@ export class AICustomAgentsFrontendApplicationContribution implements FrontendAp
     onStart(): void {
         this.customizationService?.getCustomAgents().then(customAgents => {
             customAgents.forEach(agent => {
-                this.customAgentFactory(agent.id, agent.name, agent.description, agent.prompt);
+                this.customAgentFactory(agent.id, agent.name, agent.description, agent.prompt, agent.defaultLLM);
                 this.knownCustomAgents.set(agent.id, agent);
             });
         }).catch(e => {
@@ -59,7 +59,7 @@ export class AICustomAgentsFrontendApplicationContribution implements FrontendAp
                 });
                 customAgentsToAdd
                     .forEach(agent => {
-                        this.customAgentFactory(agent.id, agent.name, agent.description, agent.prompt);
+                        this.customAgentFactory(agent.id, agent.name, agent.description, agent.prompt, agent.defaultLLM);
                         this.knownCustomAgents.set(agent.id, agent);
                     });
             }).catch(e => {

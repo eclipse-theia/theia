@@ -16,5 +16,5 @@
 
 import { CustomChatAgent } from '../common';
 
-export const FactoryOfCustomAgents = Symbol('FactoryOfCustomAgents');
-export type FactoryOfCustomAgents = (id: string, name: string, description: string, prompt: string) => CustomChatAgent;
+export const CustomAgentFactory = Symbol('CustomAgentFactory');
+export type CustomAgentFactory = (id: string, name: string, description: string, prompt: string, defaultLLM: string) => CustomChatAgent;

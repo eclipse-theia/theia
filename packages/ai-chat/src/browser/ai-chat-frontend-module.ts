@@ -36,7 +36,7 @@ import { UniversalChatAgent } from '../common/universal-chat-agent';
 import { aiChatPreferences } from './ai-chat-preferences';
 import { AICustomAgentsFrontendApplicationContribution } from './custom-agent-frontend-application-contribution';
 import { FrontendChatServiceImpl } from './frontend-chat-service';
-import { FactoryOfCustomAgents } from './custom-agent-factory';
+import { CustomAgentFactory } from './custom-agent-factory';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, Agent);
@@ -74,13 +74,17 @@ export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: aiChatPreferences });
 
     bind(CustomChatAgent).toSelf();
-    bind(FactoryOfCustomAgents).toFactory<CustomChatAgent, [string, string, string, string]>(
-        ctx => (id: string, name: string, description: string, prompt: string) => {
+    bind(CustomAgentFactory).toFactory<CustomChatAgent, [string, string, string, string, string]>(
+        ctx => (id: string, name: string, description: string, prompt: string, defaultLLM: string) => {
             const agent = ctx.container.get<CustomChatAgent>(CustomChatAgent);
             agent.id = id;
             agent.name = name;
             agent.description = description;
             agent.prompt = prompt;
+            agent.languageModelRequirements = [{
+                purpose: 'chat',
+                identifier: defaultLLM,
+            }];
             ctx.container.get<ChatAgentService>(ChatAgentService).registerChatAgent(agent);
             ctx.container.get<AgentService>(AgentService).registerAgent(agent);
             return agent;
