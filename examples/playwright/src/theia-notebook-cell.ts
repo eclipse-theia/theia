@@ -198,7 +198,14 @@ export class TheiaNotebookCell extends TheiaPageObject {
         return spanTexts.join('');
     }
 
-    protected async outputContainer(): Promise<Locator> {
+    /**
+     * Selects the cell itself not it's editor. Important for shortcut usage like copy-, cut-, paste-cell.
+     */
+    async selectCell(): Promise<void> {
+        await this.sidebar().click();
+    }
+
+    async outputContainer(): Promise<Locator> {
         const outFrame = await this.outputFrame();
         // each cell has it's own output div with a unique id = cellHandle<handle>
         const cellOutput = outFrame.locator(`div#cellHandle${await this.cellHandle()}`);

@@ -204,6 +204,80 @@ test.describe('Theia Notebook Cell interaction', () => {
         expect(await secondCell.isSelected()).toBe(true);
     });
 
+    test('Check k(up)/j(down) selection works', async () => {
+        const cell = await firstCell(editor);
+        await editor.addCodeCell();
+        const secondCell = (await editor.cells())[1];
+        // second cell is selected after creation
+        expect(await secondCell.isSelected()).toBe(true);
+        await secondCell.selectCell(); // deselect editor focus
+
+        // select cell above
+        await secondCell.editor.page.keyboard.press('k');
+        expect(await cell.isSelected()).toBe(true);
+
+        // select cell below
+        await cell.app.page.keyboard.press('j');
+        expect(await secondCell.isSelected()).toBe(true);
+    });
+
+    test('Check x/c/v works', async () => {
+        const cell = await firstCell(editor);
+        await cell.addEditorText('print("First cell")');
+        await editor.addCodeCell();
+        const secondCell = (await editor.cells())[1];
+        await secondCell.addEditorText('print("Second cell")');
+        await secondCell.selectCell(); // deselect editor focus
+
+        // cut second cell
+        await secondCell.page.keyboard.press('x');
+        await editor.waitForCellCountChanged(2);
+        expect((await editor.cells()).length).toBe(1);
+
+        // paste second cell
+        await cell.selectCell();
+        await cell.page.keyboard.press('v');
+        await editor.waitForCellCountChanged(1);
+        expect((await editor.cells()).length).toBe(2);
+        const pastedCell = (await editor.cells())[1];
+        expect(await pastedCell.isSelected()).toBe(true);
+
+        // copy first cell
+        await cell.selectCell(); // deselect editor focus
+        await cell.page.keyboard.press('c');
+        // paste copied cell
+        await cell.page.keyboard.press('v');
+        await editor.waitForCellCountChanged(2);
+        expect((await editor.cells()).length).toBe(3);
+        expect(await (await editor.cells())[0].editorText()).toBe('print("First cell")');
+        expect(await (await editor.cells())[1].editorText()).toBe('print("First cell")');
+        expect(await (await editor.cells())[2].editorText()).toBe('print("Second cell")');
+    });
+
+    test('Check LineNumber switch `l` works', async () => {
+        const cell = await firstCell(editor);
+        await cell.addEditorText('print("First cell")');
+        await cell.selectCell();
+        await cell.page.keyboard.press('l');
+        // NOTE: div.line-numbers is not visible
+        await cell.editor.locator.locator('.overflow-guard > div.line-numbers').waitFor({ state: 'attached' });
+    });
+
+    test('Check Collapse output switch `o` works', async () => {
+        const cell = await firstCell(editor);
+        await cell.addEditorText('print("Check output collapse")');
+        await cell.selectCell();
+        await cell.execute(); // produce output
+        expect(await cell.outputText()).toBe('Check output collapse');
+
+        await cell.page.keyboard.press('o');
+        await (await cell.outputContainer()).waitFor({ state: 'hidden' });
+        await cell.page.keyboard.press('o');
+        await (await cell.outputContainer()).waitFor({ state: 'visible' });
+
+        expect(await cell.outputText()).toBe('Check output collapse');
+    });
+
     test('Check arrow-up/arrow-down/escape with code completion', async () => {
         await editor.addMarkdownCell();
         const mdCell = (await editor.cells())[1];
@@ -226,7 +300,7 @@ test.describe('Theia Notebook Cell interaction', () => {
 });
 
 async function ensureCodeCompletionVisible(parent: Locator): Promise<void> {
-    await parent.locator('.monaco-editor .suggest-widget').waitFor({ timeout: 5000 });
+    await parent.locator('div.monaco-editor div.suggest-widget').waitFor({ timeout: 5000 });
 }
 
 async function firstCell(editor: TheiaNotebookEditor): Promise<TheiaNotebookCell> {
