@@ -127,7 +127,7 @@ export class TheiaNotebookEditor extends TheiaEditor {
         await this.waitForCellCountChanged(currentCellsCount);
     }
 
-    protected async waitForCellCountChanged(prevCount: number): Promise<void> {
+    async waitForCellCountChanged(prevCount: number): Promise<void> {
         await this.viewLocator().locator('li.theia-notebook-cell').evaluateAll(
             (elements, currentCount) => elements.length !== currentCount, prevCount
         );

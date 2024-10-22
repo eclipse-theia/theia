@@ -67,4 +67,4 @@ jobs:
           path: |
             examples/playwright/test-results/
             examples/playwright/playwright-report/
-          retention-days: 2
+          retention-days: 7
