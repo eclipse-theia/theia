@@ -254,6 +254,7 @@ export class FileUploadService {
         } catch (error) {
             uploadSemaphore.cancel();
             if (!isCancelled(error)) {
+                this.messageService.error(nls.localize('theia/filesystem/uploadFailed', 'An error occurred while uploading a file. {0}', error.message));
                 throw error;
             }
         }
@@ -348,6 +349,10 @@ export class FileUploadService {
                     unregister();
                     if (xhr.status === 200) {
                         resolve();
+                    } else if (xhr.status === 500 && xhr.statusText !== xhr.response) {
+                        // internal error with cause message
+                        // see packages/filesystem/src/node/node-file-upload-service.ts
+                        reject(new Error(`Internal server error: ${xhr.response}`));
                     } else {
                         reject(new Error(`POST request failed: ${xhr.status} ${xhr.statusText}`));
                     }
