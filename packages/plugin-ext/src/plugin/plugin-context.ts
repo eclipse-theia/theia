@@ -1304,6 +1304,10 @@ export function createAPIFactory(
             registerMappedEditsProvider(documentSelector: theia.DocumentSelector, provider: theia.MappedEditsProvider): Disposable {
                 return Disposable.NULL;
             },
+            /** @stubbed MappedEditsProvider */
+            registerMappedEditsProvider2(provider: theia.MappedEditsProvider2) {
+                return Disposable.NULL;
+            },
             /** @stubbed ChatRequestHandler */
             createChatParticipant(id: string, handler: theia.ChatRequestHandler): theia.ChatParticipant {
                 return {
