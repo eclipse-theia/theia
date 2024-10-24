@@ -85,8 +85,8 @@ export class TheiaElectronWindow {
         this._window.setMenuBarVisibility(false);
         if (!this.options.preventAutomaticShow) {
             this.attachReadyToShow();
+            this.restoreMaximizedState();
         }
-        this.restoreMaximizedState();
         this.attachCloseListeners();
         this.trackApplicationState();
         this.attachReloadListener();
@@ -196,6 +196,9 @@ export class TheiaElectronWindow {
     protected trackApplicationState(): void {
         this.toDispose.push(TheiaRendererAPI.onApplicationStateChanged(this.window.webContents, state => {
             this.applicationState = state;
+            if (state === 'ready' && this.options.preventAutomaticShow) {
+                this.restoreMaximizedState();
+            }
         }));
     }
 
