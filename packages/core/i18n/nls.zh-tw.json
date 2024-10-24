@@ -1,4 +1,6 @@
 {
+  "aiConfiguration:open": "開啟 AI 設定檢視",
+  "aiHistory:open": "開啟 AI 歷史檢視",
   "debug.breakpoint.editCondition": "編輯條件...",
   "notebook.cell.changeToCode": "變更儲存格為代碼",
   "notebook.cell.changeToMarkdown": "變更儲存格為 Markdown",
@@ -499,6 +501,7 @@
     },
     "test": {
       "cancelAllTestRuns": "取消所有測試執行",
+      "stackFrameAt": "於",
       "testRunDefaultName": "{0} 跑{1}",
       "testRuns": "測試運行"
     },

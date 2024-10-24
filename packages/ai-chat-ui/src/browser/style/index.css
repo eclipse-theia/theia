@@ -16,8 +16,7 @@
   cursor: default;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 16px 20px;
+  padding: 16px 20px 6px 20px;
   user-select: text;
   -webkit-user-select: text;
   border-bottom: 1px solid var(--theia-sideBarSectionHeader-border);
@@ -31,12 +30,13 @@ div:last-child > .theia-ChatNode {
 .theia-ChatNodeHeader {
   align-items: center;
   display: flex;
+  justify-content: space-between;
+  height: 24px;
   gap: 8px;
   width: 100%;
 }
 
 .theia-ChatNodeHeader .theia-AgentAvatar {
-  display: flex;
   pointer-events: none;
   user-select: none;
   font-size: 20px;
@@ -91,16 +91,44 @@ div:last-child > .theia-ChatNode {
   font-weight: 600;
 }
 
-.theia-ChatNode .rendered-markdown p {
-  margin: 0 0 16px;
+.theia-ChatNode .theia-ChatNodeToolbar {
+  margin-left: auto;
+  line-height: 18px;
+}
+.theia-ChatNodeToolbar .theia-ChatNodeToolbarAction {
+  display: none;
+  align-items: center;
+  padding: 4px;
+  border-radius: 5px;
+}
+.theia-ChatNode:hover .theia-ChatNodeToolbar .theia-ChatNodeToolbarAction {
+  display: inline-block;
+}
+.theia-ChatNodeToolbar .theia-ChatNodeToolbarAction:hover {
+  cursor: pointer;
+  background-color: var(--theia-toolbar-hoverBackground);
 }
 
-.theia-ChatNode:last-child .rendered-markdown > :last-child {
+.theia-ChatNode {
+  line-height: 1.3rem;
+}
+
+.theia-ChatNode ul,
+.theia-ChatNode ol {
+  padding-inline-start: 1rem;
+}
+
+.theia-ChatNode li > p {
+  margin-top: 0;
   margin-bottom: 0;
 }
 
-.theia-ChatNode .rendered-markdown {
-  line-height: 1.3rem;
+.theia-ChatNode .theia-CodeWrapper {
+  padding: 0.5em;
+  background-color: var(--theia-editor-background);
+  border-radius: 6px;
+  border: var(--theia-border-width) solid var(--theia-checkbox-border);
+  font-size: var(--theia-code-font-size);
 }
 
 .chat-input-widget {
@@ -200,7 +228,7 @@ div:last-child > .theia-ChatNode {
 .theia-CodePartRenderer-root {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   border: 1px solid var(--theia-input-border);
   border-radius: 4px;
 }
@@ -213,11 +241,20 @@ div:last-child > .theia-ChatNode {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
 }
 
-.theia-CodePartRenderer-right button {
-  margin-left: 4px;
+.theia-CodePartRenderer-right .button {
+  margin-left: 2px;
+  width: 18px;
+  height: 18px;
+  padding: 2px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.theia-CodePartRenderer-right .button:hover {
+  background-color: var(--theia-toolbar-hoverBackground);
 }
 
 .theia-CodePartRenderer-separator {
@@ -230,13 +267,24 @@ div:last-child > .theia-ChatNode {
   font-weight: normal;
   color: var(--theia-descriptionForeground);
   line-height: 20px;
-  margin-bottom: 6px;
+  margin-top: 13px;
+  margin-bottom: 13px;
   cursor: pointer;
 }
 
 .theia-toolCall .fa,
 .theia-toolCall details summary::marker {
   color: var(--theia-button-background);
+}
+
+.theia-toolCall details pre {
+  cursor: text;
+  line-height: 1rem;
+  margin-top: 0;
+  margin-bottom: 0;
+  padding: 6px;
+  background-color: var(--theia-editor-background);
+  overflow: auto;
 }
 
 .theia-ResponseNode-ProgressMessage {

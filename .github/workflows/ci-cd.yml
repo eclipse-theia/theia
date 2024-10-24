@@ -13,7 +13,7 @@ jobs:
 
   lint:
     name: Lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 60
 
     steps:
@@ -51,7 +51,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-2019, ubuntu-latest, macos-14]
+        os: [windows-2019, ubuntu-22.04, macos-14]
         node: [18.x, 20.x]
 
     runs-on: ${{ matrix.os }}

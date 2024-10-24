@@ -14,16 +14,25 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { DisposableCollection, URI } from '@theia/core';
+import { DisposableCollection, URI, Event, Emitter } from '@theia/core';
 import { OpenerService } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { PromptCustomizationService, PromptTemplate } from '../common';
+import { PromptCustomizationService, PromptTemplate, CustomAgentDescription } from '../common';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileChangesEvent } from '@theia/filesystem/lib/common/files';
 import { AICorePreferences, PREFERENCE_NAME_PROMPT_TEMPLATES } from './ai-core-preferences';
 import { AgentService } from '../common/agent-service';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
+import { load, dump } from 'js-yaml';
+
+const templateEntry = {
+    id: 'my_agent',
+    name: 'My Agent',
+    description: 'This is an example agent. Please adapt the properties to fit your needs.',
+    prompt: 'You are an example agent. Be nice and helpful to the user.',
+    defaultLLM: 'openai/gpt-4o'
+};
 
 @injectable()
 export class FrontendPromptCustomizationServiceImpl implements PromptCustomizationService {
@@ -48,6 +57,12 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
 
     protected toDispose = new DisposableCollection();
 
+    private readonly onDidChangePromptEmitter = new Emitter<string>();
+    readonly onDidChangePrompt: Event<string> = this.onDidChangePromptEmitter.event;
+
+    private readonly onDidChangeCustomAgentsEmitter = new Emitter<void>();
+    readonly onDidChangeCustomAgents = this.onDidChangeCustomAgentsEmitter.event;
+
     @postConstruct()
     protected init(): void {
         this.preferences.onPreferenceChanged(event => {
@@ -69,36 +84,41 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
 
         this.toDispose.push(this.fileService.watch(templateURI, { recursive: true, excludes: [] }));
         this.toDispose.push(this.fileService.onDidFilesChange(async (event: FileChangesEvent) => {
-
-            for (const child of this.trackedTemplateURIs) {
-                // check deletion and updates
-                if (event.contains(new URI(child))) {
-                    for (const deletedFile of event.getDeleted()) {
-                        if (this.trackedTemplateURIs.has(deletedFile.resource.toString())) {
-                            this.trackedTemplateURIs.delete(deletedFile.resource.toString());
-                            _templates.delete(deletedFile.resource.path.name);
-                        }
-                    }
-                    for (const updatedFile of event.getUpdated()) {
-                        if (this.trackedTemplateURIs.has(updatedFile.resource.toString())) {
-                            const filecontent = await this.fileService.read(updatedFile.resource);
-                            _templates.set(this.removePromptTemplateSuffix(updatedFile.resource.path.name), filecontent.value);
-                        }
-                    }
+            if (event.changes.some(change => change.resource.toString().endsWith('customAgents.yml'))) {
+                this.onDidChangeCustomAgentsEmitter.fire();
+            }
+            // check deleted templates
+            for (const deletedFile of event.getDeleted()) {
+                if (this.trackedTemplateURIs.has(deletedFile.resource.toString())) {
+                    this.trackedTemplateURIs.delete(deletedFile.resource.toString());
+                    const templateId = this.removePromptTemplateSuffix(deletedFile.resource.path.name);
+                    _templates.delete(templateId);
+                    this.onDidChangePromptEmitter.fire(templateId);
                 }
             }
-
+            // check updated templates
+            for (const updatedFile of event.getUpdated()) {
+                if (this.trackedTemplateURIs.has(updatedFile.resource.toString())) {
+                    const filecontent = await this.fileService.read(updatedFile.resource);
+                    const templateId = this.removePromptTemplateSuffix(updatedFile.resource.path.name);
+                    _templates.set(templateId, filecontent.value);
+                    this.onDidChangePromptEmitter.fire(templateId);
+                }
+            }
             // check new templates
             for (const addedFile of event.getAdded()) {
                 if (addedFile.resource.parent.toString() === templateURI.toString() && addedFile.resource.path.ext === '.prompttemplate') {
                     this.trackedTemplateURIs.add(addedFile.resource.toString());
                     const filecontent = await this.fileService.read(addedFile.resource);
-                    _templates.set(this.removePromptTemplateSuffix(addedFile.resource.path.name), filecontent.value);
+                    const templateId = this.removePromptTemplateSuffix(addedFile.resource.path.name);
+                    _templates.set(templateId, filecontent.value);
+                    this.onDidChangePromptEmitter.fire(templateId);
                 }
             }
 
         }));
 
+        this.onDidChangeCustomAgentsEmitter.fire();
         const stat = await this.fileService.resolve(templateURI);
         if (stat.children === undefined) {
             return;
@@ -112,7 +132,9 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
             if (fileURI.path.ext === '.prompttemplate') {
                 this.trackedTemplateURIs.add(fileURI.toString());
                 const filecontent = await this.fileService.read(fileURI);
-                _templates.set(this.removePromptTemplateSuffix(file.name), filecontent.value);
+                const templateId = this.removePromptTemplateSuffix(file.name);
+                _templates.set(templateId, filecontent.value);
+                this.onDidChangePromptEmitter.fire(templateId);
             }
         }
     }
@@ -188,4 +210,47 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
         return undefined;
     }
 
+    async getCustomAgents(): Promise<CustomAgentDescription[]> {
+        const customAgentYamlUri = (await this.getTemplatesDirectoryURI()).resolve('customAgents.yml');
+        const yamlExists = await this.fileService.exists(customAgentYamlUri);
+        if (!yamlExists) {
+            return [];
+        }
+        const filecontent = await this.fileService.read(customAgentYamlUri, { encoding: 'utf-8' });
+        try {
+            const doc = load(filecontent.value);
+            if (!Array.isArray(doc) || !doc.every(entry => CustomAgentDescription.is(entry))) {
+                console.debug('Invalid customAgents.yml file content');
+                return [];
+            }
+            const readAgents = doc as CustomAgentDescription[];
+            // make sure all agents are unique (id and name)
+            const uniqueAgentIds = new Set<string>();
+            const uniqueAgens: CustomAgentDescription[] = [];
+            readAgents.forEach(agent => {
+                if (uniqueAgentIds.has(agent.id)) {
+                    return;
+                }
+                uniqueAgentIds.add(agent.id);
+                uniqueAgens.push(agent);
+            });
+            return uniqueAgens;
+        } catch (e) {
+            console.debug(e.message, e);
+            return [];
+        }
+    }
+
+    async openCustomAgentYaml(): Promise<void> {
+        const customAgentYamlUri = (await this.getTemplatesDirectoryURI()).resolve('customAgents.yml');
+        const content = dump([templateEntry]);
+        if (! await this.fileService.exists(customAgentYamlUri)) {
+            await this.fileService.createFile(customAgentYamlUri, BinaryBuffer.fromString(content));
+        } else {
+            const fileContent = (await this.fileService.readFile(customAgentYamlUri)).value;
+            await this.fileService.writeFile(customAgentYamlUri, BinaryBuffer.concat([fileContent, BinaryBuffer.fromString(content)]));
+        }
+        const openHandler = await this.openerService.getOpener(customAgentYamlUri);
+        openHandler.open(customAgentYamlUri);
+    }
 }

@@ -17,6 +17,12 @@
 import { LanguageModelRequirement } from './language-model';
 import { PromptTemplate } from './prompt-service';
 
+export interface AgentSpecificVariables {
+    name: string;
+    description: string;
+    usedInPrompt: boolean;
+}
+
 export const Agent = Symbol('Agent');
 /**
  * Agents represent the main functionality of the AI system. They are responsible for processing user input, collecting information from the environment,
@@ -28,16 +34,23 @@ export const Agent = Symbol('Agent');
  * They can also declare their used prompt templates, which makes them configurable for the user.
  */
 export interface Agent {
-    /** Used to identify an agent, e.g. when it is requesting language models, etc. */
+    /**
+     * Used to identify an agent, e.g. when it is requesting language models, etc.
+     *
+     * @note This parameter might be removed in favor of `name`. Therefore, it is recommended to set `id` to the same value as `name` for now.
+     */
     readonly id: string;
 
-    /** Human-readable name shown to users to identify the agent. */
+    /**
+     * Human-readable name shown to users to identify the agent. Must be unique.
+     * Use short names without "Agent" or "Chat" (see `tags` for adding further properties).
+     */
     readonly name: string;
 
     /** A markdown description of its functionality and its privacy-relevant requirements, including function call handlers that access some data autonomously. */
     readonly description: string;
 
-    /** The list of variable identifiers this agent needs to clarify its context requirements. See #39. */
+    /** The list of global variable identifiers this agent needs to clarify its context requirements. See #39. */
     readonly variables: string[];
 
     /** The prompt templates introduced and used by this agent. */
@@ -45,4 +58,13 @@ export interface Agent {
 
     /** Required language models. This includes the purpose and optional language model selector arguments. See #47. */
     readonly languageModelRequirements: LanguageModelRequirement[];
+
+    /** A list of tags to filter agents and to display capabilities in the UI */
+    readonly tags?: String[];
+
+    /** The list of local variable identifiers this agent needs to clarify its context requirements. */
+    readonly agentSpecificVariables: AgentSpecificVariables[];
+
+    /** The list of global function identifiers this agent needs to clarify its context requirements. */
+    readonly functions: string[];
 }

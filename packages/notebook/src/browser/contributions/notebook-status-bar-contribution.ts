@@ -14,10 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
-import { FrontendApplicationContribution, StatusBar, StatusBarAlignment } from '@theia/core/lib/browser';
+import { injectable } from '@theia/core/shared/inversify';
+import { StatusBar, StatusBarAlignment, Widget, WidgetStatusBarContribution } from '@theia/core/lib/browser';
 import { Disposable } from '@theia/core/lib/common';
-import { NotebookEditorWidgetService } from '../service/notebook-editor-widget-service';
 import { NotebookEditorWidget } from '../notebook-editor-widget';
 import { nls } from '@theia/core';
 import { NotebookCommands } from './notebook-actions-contribution';
@@ -25,53 +24,43 @@ import { NotebookCommands } from './notebook-actions-contribution';
 export const NOTEBOOK_CELL_SELECTION_STATUS_BAR_ID = 'notebook-cell-selection-position';
 
 @injectable()
-export class NotebookStatusBarContribution implements FrontendApplicationContribution {
+export class NotebookStatusBarContribution implements WidgetStatusBarContribution<NotebookEditorWidget> {
 
-    @inject(StatusBar) protected readonly statusBar: StatusBar;
-    @inject(NotebookEditorWidgetService) protected readonly editorWidgetService: NotebookEditorWidgetService;
+    protected onDeactivate: Disposable | undefined;
 
-    protected currentCellSelectionListener: Disposable | undefined;
-    protected lastFocusedEditor: NotebookEditorWidget | undefined;
-
-    onStart(): void {
-        this.editorWidgetService.onDidChangeFocusedEditor(editor => {
-            this.currentCellSelectionListener?.dispose();
-            this.currentCellSelectionListener = editor?.model?.onDidChangeSelectedCell(() =>
-                this.updateStatusbar(editor)
-            );
-            editor?.onDidDispose(() => {
-                this.lastFocusedEditor = undefined;
-                this.updateStatusbar();
-            });
-            this.updateStatusbar(editor);
-            this.lastFocusedEditor = editor;
-        });
-        if (this.editorWidgetService.focusedEditor) {
-            this.updateStatusbar();
-        }
+    canHandle(widget: Widget): widget is NotebookEditorWidget {
+        return widget instanceof NotebookEditorWidget;
     }
 
-    protected async updateStatusbar(editor?: NotebookEditorWidget): Promise<void> {
-        if ((!editor && !this.lastFocusedEditor?.isVisible) || editor?.model?.cells.length === 0) {
-            this.statusBar.removeElement(NOTEBOOK_CELL_SELECTION_STATUS_BAR_ID);
+    activate(statusBar: StatusBar, widget: NotebookEditorWidget): void {
+        widget.ready.then(model => {
+            this.onDeactivate = model.onDidChangeSelectedCell(() => {
+                this.updateStatusbar(statusBar, widget);
+            });
+        });
+        this.updateStatusbar(statusBar, widget);
+    }
+
+    deactivate(statusBar: StatusBar): void {
+        this.onDeactivate?.dispose();
+        this.updateStatusbar(statusBar);
+    }
+
+    protected async updateStatusbar(statusBar: StatusBar, editor?: NotebookEditorWidget): Promise<void> {
+        const model = await editor?.ready;
+        if (!model || model.cells.length === 0 || !model.selectedCell) {
+            statusBar.removeElement(NOTEBOOK_CELL_SELECTION_STATUS_BAR_ID);
             return;
         }
 
-        await editor?.ready;
-        if (!editor?.model) {
-            return;
-        }
+        const selectedCellIndex = model.cells.indexOf(model.selectedCell) + 1;
 
-        const selectedCellIndex = editor.model.selectedCell ? editor.model.cells.indexOf(editor.model.selectedCell) + 1 : '';
-
-        this.statusBar.setElement(NOTEBOOK_CELL_SELECTION_STATUS_BAR_ID, {
-            text: nls.localizeByDefault('Cell {0} of {1}', selectedCellIndex, editor.model.cells.length),
+        statusBar.setElement(NOTEBOOK_CELL_SELECTION_STATUS_BAR_ID, {
+            text: nls.localizeByDefault('Cell {0} of {1}', selectedCellIndex, model.cells.length),
             alignment: StatusBarAlignment.RIGHT,
             priority: 100,
             command: NotebookCommands.CENTER_ACTIVE_CELL.id,
             arguments: [editor]
         });
-
     }
-
 }

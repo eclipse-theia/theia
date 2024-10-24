@@ -34,7 +34,7 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
             {response.finished ?
                 <details>
                     <summary>Ran {response.name}</summary>
-                    <p>{response.result}</p>
+                    <pre>{this.tryPrettyPrintJson(response)}</pre>
                 </details>
                 : <span><Spinner /> Running [{response.name}]</span>
             }
@@ -42,6 +42,17 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
 
     }
 
+    private tryPrettyPrintJson(response: ToolCallChatResponseContent): string | undefined {
+        let responseContent = response.result;
+        try {
+            if (response.result) {
+                responseContent = JSON.stringify(JSON.parse(response.result), undefined, 2);
+            }
+        } catch (e) {
+            // fall through
+        }
+        return responseContent;
+    }
 }
 
 const Spinner = () => (

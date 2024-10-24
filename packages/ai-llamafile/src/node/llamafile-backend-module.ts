@@ -14,5 +14,19 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './ai-code-completion-provider';
-export * from '../common/code-completion-agent';
+import { ContainerModule } from '@theia/core/shared/inversify';
+import { LlamafileManagerImpl } from './llamafile-manager-impl';
+import { LlamafileManager, LlamafileServerManagerClient, LlamafileManagerPath } from '../common/llamafile-manager';
+import { ConnectionHandler, RpcConnectionHandler } from '@theia/core';
+
+export default new ContainerModule(bind => {
+    bind(LlamafileManager).to(LlamafileManagerImpl).inSingletonScope();
+    bind(ConnectionHandler).toDynamicValue(ctx => new RpcConnectionHandler<LlamafileServerManagerClient>(
+        LlamafileManagerPath,
+        client => {
+            const service = ctx.container.get<LlamafileManager>(LlamafileManager);
+            service.setClient(client);
+            return service;
+        }
+    )).inSingletonScope();
+});

@@ -144,6 +144,7 @@ import { bindTreePreferences } from './tree';
 import { OpenWithService } from './open-with-service';
 import { ViewColumnService } from './shell/view-column-service';
 import { DomInputUndoRedoHandler, UndoRedoHandler, UndoRedoHandlerService } from './undo-redo-handler';
+import { WidgetStatusBarContribution, WidgetStatusBarService } from './widget-status-bar-service';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
@@ -471,4 +472,8 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bindContributionProvider(bind, UndoRedoHandler);
     bind(DomInputUndoRedoHandler).toSelf().inSingletonScope();
     bind(UndoRedoHandler).toService(DomInputUndoRedoHandler);
+
+    bind(WidgetStatusBarService).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(WidgetStatusBarService);
+    bindContributionProvider(bind, WidgetStatusBarContribution);
 });

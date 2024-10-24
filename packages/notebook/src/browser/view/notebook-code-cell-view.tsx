@@ -17,24 +17,27 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { MonacoEditorServices } from '@theia/monaco/lib/browser/monaco-editor';
-import { CellOutputWebviewFactory, CellOutputWebview } from '../renderers/cell-output-webview';
 import { NotebookRendererRegistry } from '../notebook-renderer-registry';
 import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import { NotebookModel } from '../view-model/notebook-model';
 import { CellEditor } from './notebook-cell-editor';
-import { CellRenderer } from './notebook-cell-list-view';
+import { CellRenderer, observeCellHeight } from './notebook-cell-list-view';
 import { NotebookCellToolbarFactory } from './notebook-cell-toolbar-factory';
 import { NotebookCellActionContribution, NotebookCellCommands } from '../contributions/notebook-cell-actions-contribution';
 import { CellExecution, NotebookExecutionStateService } from '../service/notebook-execution-state-service';
 import { codicon } from '@theia/core/lib/browser';
 import { NotebookCellExecutionState } from '../../common';
-import { CommandRegistry, DisposableCollection, nls } from '@theia/core';
+import { CancellationToken, CommandRegistry, DisposableCollection, nls } from '@theia/core';
 import { NotebookContextManager } from '../service/notebook-context-manager';
 import { NotebookViewportService } from './notebook-viewport-service';
 import { EditorPreferences } from '@theia/editor/lib/browser';
 import { NotebookOptionsService } from '../service/notebook-options';
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { MarkdownString } from '@theia/monaco-editor-core/esm/vs/base/common/htmlContent';
+import { NotebookCellEditorService } from '../service/notebook-cell-editor-service';
+import { CellOutputWebview } from '../renderers/cell-output-webview';
+import { NotebookCellStatusBarItem, NotebookCellStatusBarItemList, NotebookCellStatusBarService } from '../service/notebook-cell-status-bar-service';
+import { LabelParser } from '@theia/core/lib/browser/label-parser';
 
 @injectable()
 export class NotebookCodeCellRenderer implements CellRenderer {
@@ -43,9 +46,6 @@ export class NotebookCodeCellRenderer implements CellRenderer {
 
     @inject(NotebookRendererRegistry)
     protected readonly notebookRendererRegistry: NotebookRendererRegistry;
-
-    @inject(CellOutputWebviewFactory)
-    protected readonly cellOutputWebviewFactory: CellOutputWebviewFactory;
 
     @inject(NotebookCellToolbarFactory)
     protected readonly notebookCellToolbarFactory: NotebookCellToolbarFactory;
@@ -62,6 +62,9 @@ export class NotebookCodeCellRenderer implements CellRenderer {
     @inject(EditorPreferences)
     protected readonly editorPreferences: EditorPreferences;
 
+    @inject(NotebookCellEditorService)
+    protected readonly notebookCellEditorService: NotebookCellEditorService;
+
     @inject(CommandRegistry)
     protected readonly commandRegistry: CommandRegistry;
 
@@ -71,37 +74,45 @@ export class NotebookCodeCellRenderer implements CellRenderer {
     @inject(MarkdownRenderer)
     protected readonly markdownRenderer: MarkdownRenderer;
 
+    @inject(CellOutputWebview)
+    protected readonly outputWebview: CellOutputWebview;
+
+    @inject(NotebookCellStatusBarService)
+    protected readonly notebookCellStatusBarService: NotebookCellStatusBarService;
+
+    @inject(LabelParser)
+    protected readonly labelParser: LabelParser;
+
     render(notebookModel: NotebookModel, cell: NotebookCellModel, handle: number): React.ReactNode {
-        return <div>
-            <div className='theia-notebook-cell-with-sidebar'>
-                <div className='theia-notebook-cell-sidebar'>
-                    {this.notebookCellToolbarFactory.renderSidebar(NotebookCellActionContribution.CODE_CELL_SIDEBAR_MENU, cell, {
-                        contextMenuArgs: () => [cell], commandArgs: () => [notebookModel, cell]
-                    })
-                    }
-                    <CodeCellExecutionOrder cell={cell} />
-                </div>
-                <div className='theia-notebook-cell-editor-container'>
-                    <CellEditor notebookModel={notebookModel} cell={cell}
-                        monacoServices={this.monacoServices}
-                        notebookContextManager={this.notebookContextManager}
-                        notebookViewportService={this.notebookViewportService}
-                        fontInfo={this.notebookOptionsService.editorFontInfo} />
-                    <NotebookCodeCellStatus cell={cell} notebook={notebookModel}
-                        commandRegistry={this.commandRegistry}
-                        executionStateService={this.executionStateService}
-                        onClick={() => cell.requestFocusEditor()} />
-                </div >
+        return <div className='theia-notebook-cell-with-sidebar' ref={ref => observeCellHeight(ref, cell)}>
+            <div className='theia-notebook-cell-editor-container'>
+                <CellEditor notebookModel={notebookModel} cell={cell}
+                    monacoServices={this.monacoServices}
+                    notebookContextManager={this.notebookContextManager}
+                    notebookViewportService={this.notebookViewportService}
+                    notebookCellEditorService={this.notebookCellEditorService}
+                    fontInfo={this.notebookOptionsService.editorFontInfo} />
+                <NotebookCodeCellStatus cell={cell} notebook={notebookModel}
+                    commandRegistry={this.commandRegistry}
+                    executionStateService={this.executionStateService}
+                    cellStatusBarService={this.notebookCellStatusBarService}
+                    labelParser={this.labelParser}
+                    onClick={() => cell.requestFocusEditor()} />
             </div >
-            <div className='theia-notebook-cell-with-sidebar'>
-                <NotebookCodeCellOutputs cell={cell} notebook={notebookModel} outputWebviewFactory={this.cellOutputWebviewFactory}
-                    renderSidebar={() =>
-                        this.notebookCellToolbarFactory.renderSidebar(NotebookCellActionContribution.OUTPUT_SIDEBAR_MENU, cell, {
-                            contextMenuArgs: () => [notebookModel, cell, cell.outputs[0]]
-                        })
-                    } />
-            </div>
         </div >;
+    }
+
+    renderSidebar(notebookModel: NotebookModel, cell: NotebookCellModel): React.ReactNode {
+        return <div>
+            <NotebookCodeCellSidebar cell={cell} notebook={notebookModel} notebookCellToolbarFactory={this.notebookCellToolbarFactory} />
+            <NotebookCodeCellOutputs cell={cell} notebook={notebookModel} outputWebview={this.outputWebview}
+                renderSidebar={() =>
+                    this.notebookCellToolbarFactory.renderSidebar(NotebookCellActionContribution.OUTPUT_SIDEBAR_MENU, cell, {
+                        contextMenuArgs: () => [notebookModel, cell, cell.outputs[0]]
+                    })
+                } />
+        </div>;
+
     }
 
     renderDragImage(cell: NotebookCellModel): HTMLElement {
@@ -146,11 +157,44 @@ export class NotebookCodeCellRenderer implements CellRenderer {
 
 }
 
+export interface NotebookCodeCellSidebarProps {
+    cell: NotebookCellModel;
+    notebook: NotebookModel;
+    notebookCellToolbarFactory: NotebookCellToolbarFactory
+}
+
+export class NotebookCodeCellSidebar extends React.Component<NotebookCodeCellSidebarProps> {
+
+    protected toDispose = new DisposableCollection();
+
+    constructor(props: NotebookCodeCellSidebarProps) {
+        super(props);
+
+        this.toDispose.push(props.cell.onDidCellHeightChange(() => this.forceUpdate()));
+    }
+
+    override componentWillUnmount(): void {
+        this.toDispose.dispose();
+    }
+
+    override render(): React.ReactNode {
+        return <div className='theia-notebook-cell-sidebar-actions' style={{ height: `${this.props.cell.cellHeight}px` }}>
+            {this.props.notebookCellToolbarFactory.renderSidebar(NotebookCellActionContribution.CODE_CELL_SIDEBAR_MENU, this.props.cell, {
+                contextMenuArgs: () => [this.props.cell], commandArgs: () => [this.props.notebook, this.props.cell]
+            })
+            }
+            <CodeCellExecutionOrder cell={this.props.cell} />
+        </div>;
+    }
+}
+
 export interface NotebookCodeCellStatusProps {
     notebook: NotebookModel;
     cell: NotebookCellModel;
     commandRegistry: CommandRegistry;
+    cellStatusBarService: NotebookCellStatusBarService;
     executionStateService?: NotebookExecutionStateService;
+    labelParser: LabelParser;
     onClick: () => void;
 }
 
@@ -162,6 +206,8 @@ export interface NotebookCodeCellStatusState {
 export class NotebookCodeCellStatus extends React.Component<NotebookCodeCellStatusProps, NotebookCodeCellStatusState> {
 
     protected toDispose = new DisposableCollection();
+
+    protected statusBarItems: NotebookCellStatusBarItemList[] = [];
 
     constructor(props: NotebookCodeCellStatusProps) {
         super(props);
@@ -193,6 +239,19 @@ export class NotebookCodeCellStatus extends React.Component<NotebookCodeCellStat
         this.toDispose.push(props.cell.onDidChangeLanguage(() => {
             this.forceUpdate();
         }));
+
+        this.updateStatusBarItems();
+        this.props.cellStatusBarService.onDidChangeItems(() => this.updateStatusBarItems());
+        this.props.notebook.onContentChanged(() => this.updateStatusBarItems());
+    }
+
+    async updateStatusBarItems(): Promise<void> {
+        this.statusBarItems = await this.props.cellStatusBarService.getStatusBarItemsForCell(
+            this.props.notebook.uri,
+            this.props.notebook.cells.indexOf(this.props.cell),
+            this.props.notebook.viewType,
+            CancellationToken.None);
+        this.forceUpdate();
     }
 
     override componentWillUnmount(): void {
@@ -203,6 +262,7 @@ export class NotebookCodeCellStatus extends React.Component<NotebookCodeCellStat
         return <div className='notebook-cell-status' onClick={() => this.props.onClick()}>
             <div className='notebook-cell-status-left'>
                 {this.props.executionStateService && this.renderExecutionState()}
+                {this.statusBarItems?.length && this.renderStatusBarItems()}
             </div>
             <div className='notebook-cell-status-right'>
                 <span className='notebook-cell-language-label' onClick={() => {
@@ -212,7 +272,7 @@ export class NotebookCodeCellStatus extends React.Component<NotebookCodeCellStat
         </div>;
     }
 
-    private renderExecutionState(): React.ReactNode {
+    protected renderExecutionState(): React.ReactNode {
         const state = this.state.currentExecution?.state;
         const { lastRunSuccess } = this.props.cell.internalMetadata;
 
@@ -238,7 +298,7 @@ export class NotebookCodeCellStatus extends React.Component<NotebookCodeCellStat
         </>;
     }
 
-    private getExecutionTime(): number {
+    protected getExecutionTime(): number {
         const { runStartTime, runEndTime } = this.props.cell.internalMetadata;
         const { executionTime } = this.state;
         if (runStartTime !== undefined && runEndTime !== undefined) {
@@ -247,87 +307,83 @@ export class NotebookCodeCellStatus extends React.Component<NotebookCodeCellStat
         return executionTime;
     }
 
-    private renderTime(ms: number): string {
+    protected renderTime(ms: number): string {
         return `${(ms / 1000).toLocaleString(undefined, { maximumFractionDigits: 1, minimumFractionDigits: 1 })}s`;
     }
+
+    protected renderStatusBarItems(): React.ReactNode {
+        return <>
+            {
+                this.statusBarItems.flatMap((itemList, listIndex) =>
+                    itemList.items.map((item, index) => this.renderStatusBarItem(item, `${listIndex}-${index}`)
+                    )
+                )
+            }
+        </>;
+    }
+
+    protected renderStatusBarItem(item: NotebookCellStatusBarItem, key: string): React.ReactNode {
+        const content = this.props.labelParser.parse(item.text).map(part => {
+            if (typeof part === 'string') {
+                return part;
+            } else {
+                return <span key={part.name} className={`codicon codicon-${part.name}`}></span>;
+            }
+        });
+        return <div key={key} className={`cell-status-bar-item ${item.command ? 'cell-status-item-has-command' : ''}`} onClick={async () => {
+            if (item.command) {
+                if (typeof item.command === 'string') {
+                    this.props.commandRegistry.executeCommand(item.command);
+                } else {
+                    this.props.commandRegistry.executeCommand(item.command.id, ...(item.command.arguments ?? []));
+                }
+            }
+        }}>
+            {content}
+        </div>;
+    }
+
 }
 
 interface NotebookCellOutputProps {
     cell: NotebookCellModel;
     notebook: NotebookModel;
-    outputWebviewFactory: CellOutputWebviewFactory;
+    outputWebview: CellOutputWebview;
     renderSidebar: () => React.ReactNode;
 }
 
 export class NotebookCodeCellOutputs extends React.Component<NotebookCellOutputProps> {
 
-    protected outputsWebview: CellOutputWebview | undefined;
-    protected outputsWebviewPromise: Promise<CellOutputWebview> | undefined;
-
     protected toDispose = new DisposableCollection();
 
-    constructor(props: NotebookCellOutputProps) {
-        super(props);
-    }
+    protected outputHeight: number = 0;
 
     override async componentDidMount(): Promise<void> {
-        const { cell, notebook, outputWebviewFactory } = this.props;
-        this.toDispose.push(cell.onDidChangeOutputs(() => this.updateOutputs()));
-        this.toDispose.push(cell.onDidChangeOutputVisibility(visible => {
-            if (!visible && this.outputsWebview) {
-                this.outputsWebview?.dispose();
-                this.outputsWebview = undefined;
-                this.outputsWebviewPromise = undefined;
+        const { cell } = this.props;
+        this.toDispose.push(cell.onDidChangeOutputs(() => this.forceUpdate()));
+        this.toDispose.push(this.props.cell.onDidChangeOutputVisibility(() => this.forceUpdate()));
+        this.toDispose.push(this.props.outputWebview.onDidRenderOutput(event => {
+            if (event.cellHandle === this.props.cell.handle) {
+                this.outputHeight = event.outputHeight;
                 this.forceUpdate();
-            } else {
-                this.updateOutputs();
             }
         }));
-        if (cell.outputs.length > 0) {
-            this.outputsWebviewPromise = outputWebviewFactory(cell, notebook).then(webview => {
-                this.outputsWebview = webview;
-                this.forceUpdate();
-                return webview;
-            });
-        }
     }
 
-    protected async updateOutputs(): Promise<void> {
-        const { cell, notebook, outputWebviewFactory } = this.props;
-        if (!this.outputsWebviewPromise && cell.outputs.length > 0) {
-            this.outputsWebviewPromise = outputWebviewFactory(cell, notebook).then(webview => {
-                this.outputsWebview = webview;
-                this.forceUpdate();
-                return webview;
-            });
-            this.forceUpdate();
-        } else if (this.outputsWebviewPromise && cell.outputs.length === 0 && cell.internalMetadata.runEndTime) {
-            (await this.outputsWebviewPromise).dispose();
-            this.outputsWebview = undefined;
-            this.outputsWebviewPromise = undefined;
-            this.forceUpdate();
-        }
-    }
-
-    override async componentDidUpdate(): Promise<void> {
-        if (!(await this.outputsWebviewPromise)?.isAttached()) {
-            (await this.outputsWebviewPromise)?.attachWebview();
-        }
-    }
-
-    override async componentWillUnmount(): Promise<void> {
+    override componentWillUnmount(): void {
         this.toDispose.dispose();
-        (await this.outputsWebviewPromise)?.dispose();
     }
 
     override render(): React.ReactNode {
-        return this.outputsWebview && this.props.cell.outputVisible ?
-            <>
+        if (!this.props.cell.outputs?.length) {
+            return <></>;
+        }
+        if (this.props.cell.outputVisible) {
+            return <div style={{ minHeight: this.outputHeight }}>
                 {this.props.renderSidebar()}
-                {this.outputsWebview.render()}
-            </> :
-            this.props.cell.outputs?.length ? <i className='theia-notebook-collapsed-output'>{nls.localizeByDefault('Outputs are collapsed')}</i> : <></>;
-
+            </div>;
+        }
+        return <div className='theia-notebook-collapsed-output-container'><i className='theia-notebook-collapsed-output'>{nls.localizeByDefault('Outputs are collapsed')}</i></div>;
     }
 
 }

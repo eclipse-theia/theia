@@ -48,7 +48,6 @@ export class BackendLanguageModelRegistry extends DefaultLanguageModelRegistryIm
     mapToMetaData(model: LanguageModel): LanguageModelMetaData {
         return {
             id: model.id,
-            providerId: model.providerId,
             name: model.name,
             vendor: model.vendor,
             version: model.version,

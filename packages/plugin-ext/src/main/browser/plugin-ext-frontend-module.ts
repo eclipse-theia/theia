@@ -22,7 +22,9 @@ import { ContainerModule } from '@theia/core/shared/inversify';
 import {
     FrontendApplicationContribution, WidgetFactory, bindViewContribution,
     ViewContainerIdentifier, ViewContainer, createTreeContainer, TreeWidget, LabelProviderContribution, LabelProvider,
-    UndoRedoHandler, DiffUris, Navigatable, SplitWidget
+    UndoRedoHandler, DiffUris, Navigatable, SplitWidget,
+    noopWidgetStatusBarContribution,
+    WidgetStatusBarContribution
 } from '@theia/core/lib/browser';
 import { MaybePromise, CommandContribution, ResourceResolver, bindContributionProvider, URI, generateUuid } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
@@ -86,8 +88,6 @@ import { LanguagePackService, languagePackServicePath } from '../../common/langu
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { CellOutputWebviewFactory } from '@theia/notebook/lib/browser';
 import { CellOutputWebviewImpl, createCellOutputWebviewContainer } from './notebooks/renderers/cell-output-webview';
-import { NotebookCellModel } from '@theia/notebook/lib/browser/view-model/notebook-cell-model';
-import { NotebookModel } from '@theia/notebook/lib/browser/view-model/notebook-model';
 import { ArgumentProcessorContribution } from './command-registry-main';
 import { WebviewSecondaryWindowSupport } from './webview/webview-secondary-window-support';
 import { CustomEditorUndoRedoHandler } from './custom-editors/custom-editor-undo-redo-handler';
@@ -191,6 +191,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(WebviewSecondaryWindowSupport).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(WebviewSecondaryWindowSupport);
     bind(FrontendApplicationContribution).toService(WebviewContextKeys);
+    bind(WidgetStatusBarContribution).toConstantValue(noopWidgetStatusBarContribution(WebviewWidget));
 
     bind(PluginCustomEditorRegistry).toSelf().inSingletonScope();
     bind(CustomEditorService).toSelf().inSingletonScope();
@@ -283,8 +284,8 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
         return provider.createProxy<LanguagePackService>(languagePackServicePath);
     }).inSingletonScope();
 
-    bind(CellOutputWebviewFactory).toFactory(ctx => async (cell: NotebookCellModel, notebook: NotebookModel) =>
-        createCellOutputWebviewContainer(ctx.container, cell, notebook).getAsync(CellOutputWebviewImpl)
+    bind(CellOutputWebviewFactory).toFactory(ctx => () =>
+        createCellOutputWebviewContainer(ctx.container).get(CellOutputWebviewImpl)
     );
     bindContributionProvider(bind, ArgumentProcessorContribution);
 

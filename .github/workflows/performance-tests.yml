@@ -7,7 +7,7 @@ jobs:
   build-and-test-performance:
     name: Performance Tests
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 30
 
     steps:

@@ -126,7 +126,7 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(NotebookCommands.ADD_NEW_CELL_COMMAND, {
-            execute: (notebookModel: NotebookModel, cellKind: CellKind = CellKind.Markup, index?: number | 'above' | 'below') => {
+            execute: (notebookModel: NotebookModel, cellKind: CellKind = CellKind.Markup, index?: number | 'above' | 'below', focusContainer?: boolean) => {
                 notebookModel = notebookModel ?? this.notebookEditorWidgetService.focusedEditor?.model;
 
                 let insertIndex: number = 0;
@@ -154,6 +154,9 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
                         metadata: {},
                     }]
                 }], true);
+                if (focusContainer) {
+                    notebookModel.selectedCell?.requestBlurEditor();
+                }
             }
         });
 

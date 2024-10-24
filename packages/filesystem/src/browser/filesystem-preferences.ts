@@ -46,8 +46,7 @@ export const filesystemPreferenceSchema: PreferenceSchema = {
             },
             default: {
                 '**/.git/objects/**': true,
-                '**/.git/subtree-cache/**': true,
-                '**/node_modules/**': true
+                '**/.git/subtree-cache/**': true
             },
             scope: 'resource'
         },

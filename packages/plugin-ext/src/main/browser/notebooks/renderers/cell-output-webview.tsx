@@ -19,34 +19,33 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as React from '@theia/core/shared/react';
-import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
 import { generateUuid } from '@theia/core/lib/common/uuid';
 import {
     NotebookRendererMessagingService, CellOutputWebview, NotebookRendererRegistry,
-    NotebookEditorWidgetService, NotebookCellOutputsSplice, NOTEBOOK_EDITOR_ID_PREFIX, NotebookKernelService, NotebookEditorWidget
+    NotebookEditorWidgetService, NotebookKernelService, NotebookEditorWidget,
+    OutputRenderEvent,
+    NotebookCellOutputsSplice,
+    NotebookContentChangedEvent
 } from '@theia/notebook/lib/browser';
-import { NotebookCellModel } from '@theia/notebook/lib/browser/view-model/notebook-cell-model';
 import { WebviewWidget } from '../../webview/webview';
 import { Message, WidgetManager } from '@theia/core/lib/browser';
 import { outputWebviewPreload, PreloadContext } from './output-webview-internal';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser';
-import { ChangePreferredMimetypeMessage, FromWebviewMessage, OutputChangedMessage } from './webview-communication';
-import { CellUri } from '@theia/notebook/lib/common';
-import { Disposable, DisposableCollection, nls, QuickPickService } from '@theia/core';
-import { NotebookCellOutputModel } from '@theia/notebook/lib/browser/view-model/notebook-cell-output-model';
+import { CellsChangedMessage, CellsMoved, CellsSpliced, ChangePreferredMimetypeMessage, FromWebviewMessage, OutputChangedMessage } from './webview-communication';
+import { Disposable, DisposableCollection, Emitter, QuickPickService, nls } from '@theia/core';
 import { NotebookModel } from '@theia/notebook/lib/browser/view-model/notebook-model';
 import { NotebookOptionsService, NotebookOutputOptions } from '@theia/notebook/lib/browser/service/notebook-options';
+import { NotebookCellModel } from '@theia/notebook/lib/browser/view-model/notebook-cell-model';
+import { NotebookCellsChangeType } from '@theia/notebook/lib/common';
+import { NotebookCellOutputModel } from '@theia/notebook/lib/browser/view-model/notebook-cell-output-model';
 
-const CellModel = Symbol('CellModel');
-const Notebook = Symbol('NotebookModel');
 export const AdditionalNotebookCellOutputCss = Symbol('AdditionalNotebookCellOutputCss');
 
-export function createCellOutputWebviewContainer(ctx: interfaces.Container, cell: NotebookCellModel, notebook: NotebookModel): interfaces.Container {
+export function createCellOutputWebviewContainer(ctx: interfaces.Container): interfaces.Container {
     const child = ctx.createChild();
-    child.bind(CellModel).toConstantValue(cell);
-    child.bind(Notebook).toConstantValue(notebook);
     child.bind(AdditionalNotebookCellOutputCss).toConstantValue(DEFAULT_NOTEBOOK_OUTPUT_CSS);
-    child.bind(CellOutputWebviewImpl).toSelf().inSingletonScope();
+    child.bind(CellOutputWebviewImpl).toSelf();
     return child;
 }
 
@@ -191,17 +190,15 @@ tbody th {
 }
 `;
 
+interface CellOutputUpdate extends NotebookCellOutputsSplice {
+    cellHandle: number
+}
+
 @injectable()
 export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
 
     @inject(NotebookRendererMessagingService)
     protected readonly messagingService: NotebookRendererMessagingService;
-
-    @inject(CellModel)
-    protected readonly cell: NotebookCellModel;
-
-    @inject(Notebook)
-    protected readonly notebook: NotebookModel;
 
     @inject(WidgetManager)
     protected readonly widgetManager: WidgetManager;
@@ -227,54 +224,37 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
     @inject(NotebookOptionsService)
     protected readonly notebookOptionsService: NotebookOptionsService;
 
+    // returns the output Height
+    protected readonly onDidRenderOutputEmitter = new Emitter<OutputRenderEvent>();
+    readonly onDidRenderOutput = this.onDidRenderOutputEmitter.event;
+
+    protected notebook: NotebookModel;
+
     protected options: NotebookOutputOptions;
 
     readonly id = generateUuid();
 
     protected editor: NotebookEditorWidget | undefined;
 
-    protected readonly elementRef = React.createRef<HTMLDivElement>();
-    protected outputPresentationListeners: DisposableCollection = new DisposableCollection();
+    protected element?: HTMLDivElement; // React.createRef<HTMLDivElement>();
 
     protected webviewWidget: WebviewWidget;
 
     protected toDispose = new DisposableCollection();
 
-    @postConstruct()
-    protected async init(): Promise<void> {
-        this.editor = this.notebookEditorWidgetService.getNotebookEditor(NOTEBOOK_EDITOR_ID_PREFIX + CellUri.parse(this.cell.uri)?.notebook);
+    protected isDisposed = false;
+
+    async init(notebook: NotebookModel, editor: NotebookEditorWidget): Promise<void> {
+        this.notebook = notebook;
+        this.editor = editor;
         this.options = this.notebookOptionsService.computeOutputOptions();
         this.toDispose.push(this.notebookOptionsService.onDidChangeOutputOptions(options => {
             this.options = options;
             this.updateStyles();
         }));
 
-        this.toDispose.push(this.cell.onDidChangeOutputs(outputChange => this.updateOutput(outputChange)));
-        this.toDispose.push(this.cell.onDidChangeOutputItems(output => {
-            this.updateOutput({ start: this.cell.outputs.findIndex(o => o.outputId === output.outputId), deleteCount: 1, newOutputs: [output] });
-        }));
-
-        if (this.editor) {
-            this.toDispose.push(this.editor.onDidPostKernelMessage(message => {
-                // console.log('from extension customKernelMessage ', JSON.stringify(message));
-                this.webviewWidget.sendMessage({
-                    type: 'customKernelMessage',
-                    message
-                });
-            }));
-
-            this.toDispose.push(this.editor.onPostRendererMessage(messageObj => {
-                // console.log('from extension customRendererMessage ', JSON.stringify(messageObj));
-                this.webviewWidget.sendMessage({
-                    type: 'customRendererMessage',
-                    ...messageObj
-                });
-            }));
-
-        }
-
         this.webviewWidget = await this.widgetManager.getOrCreateWidget(WebviewWidget.FACTORY_ID, { id: this.id });
-        this.webviewWidget.parent = this.editor ?? null;
+        // this.webviewWidget.parent = this.editor ?? null;
         this.webviewWidget.setContentOptions({
             allowScripts: true,
             // eslint-disable-next-line max-len
@@ -291,92 +271,209 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
         });
         this.webviewWidget.setHTML(await this.createWebviewContent());
 
+        this.notebook.onDidAddOrRemoveCell(e => {
+            if (e.newCellIds) {
+                const newCells = e.newCellIds.map(id => this.notebook.cells.find(cell => cell.handle === id)).filter(cell => !!cell) as NotebookCellModel[];
+                newCells.forEach(cell => this.attachCellAndOutputListeners(cell));
+            }
+        });
+        this.notebook.cells.forEach(cell => this.attachCellAndOutputListeners(cell));
+
+        if (this.editor) {
+            this.toDispose.push(this.editor.onDidPostKernelMessage(message => {
+                this.webviewWidget.sendMessage({
+                    type: 'customKernelMessage',
+                    message
+                });
+            }));
+
+            this.toDispose.push(this.editor.onPostRendererMessage(messageObj => {
+                this.webviewWidget.sendMessage({
+                    type: 'customRendererMessage',
+                    ...messageObj
+                });
+            }));
+
+        }
+
         this.webviewWidget.onMessage((message: FromWebviewMessage) => {
             this.handleWebviewMessage(message);
         });
     }
 
+    attachCellAndOutputListeners(cell: NotebookCellModel): void {
+        this.toDispose.push(cell.onDidChangeOutputs(outputChange => this.updateOutputs([{
+            newOutputs: outputChange.newOutputs,
+            start: outputChange.start,
+            deleteCount: outputChange.deleteCount,
+            cellHandle: cell.handle
+        }])));
+        this.toDispose.push(cell.onDidChangeOutputItems(output => {
+            const oldOutputIndex = cell.outputs.findIndex(o => o.outputId === output.outputId);
+            this.updateOutputs([{
+                cellHandle: cell.handle,
+                newOutputs: [output],
+                start: oldOutputIndex,
+                deleteCount: 1
+            }]);
+        }));
+        this.toDispose.push(cell.onDidCellHeightChange(height => this.setCellHeight(cell, height)));
+        this.toDispose.push(cell.onDidChangeOutputVisibility(visible => {
+            this.webviewWidget.sendMessage({
+                type: 'outputVisibilityChanged',
+                cellHandle: cell.handle,
+                visible
+            });
+        }));
+    }
+
     render(): React.JSX.Element {
-        return <div className='theia-notebook-cell-output-webview' ref={this.elementRef}></div>;
+        return <div className='theia-notebook-cell-output-webview' ref={element => {
+            if (element) {
+                this.element = element;
+                this.attachWebview();
+            }
+        }}></div>;
     }
 
     attachWebview(): void {
-        if (this.elementRef.current) {
+        if (this.element) {
             this.webviewWidget.processMessage(new Message('before-attach'));
-            this.elementRef.current.appendChild(this.webviewWidget.node);
+            this.element.appendChild(this.webviewWidget.node);
             this.webviewWidget.processMessage(new Message('after-attach'));
             this.webviewWidget.setIframeHeight(0);
         }
     }
 
     isAttached(): boolean {
-        return this.elementRef.current?.contains(this.webviewWidget.node) ?? false;
+        return this.element?.contains(this.webviewWidget.node) ?? false;
     }
 
-    updateOutput(update: NotebookCellOutputsSplice): void {
+    updateOutputs(updates: CellOutputUpdate[]): void {
         if (this.webviewWidget.isHidden) {
             this.webviewWidget.show();
         }
 
-        this.outputPresentationListeners.dispose();
-        this.outputPresentationListeners = new DisposableCollection();
-        for (const output of this.cell.outputs) {
-            this.outputPresentationListeners.push(output.onRequestOutputPresentationChange(() => this.requestOutputPresentationUpdate(output)));
-        }
-
         const updateOutputMessage: OutputChangedMessage = {
             type: 'outputChanged',
-            newOutputs: update.newOutputs.map(output => ({
-                id: output.outputId,
-                items: output.outputs.map(item => ({ mime: item.mime, data: item.data.buffer })),
-                metadata: output.metadata
-            })),
-            deleteStart: update.start,
-            deleteCount: update.deleteCount
+            changes: updates.map(update => ({
+                cellHandle: update.cellHandle,
+                newOutputs: update.newOutputs.map(output => ({
+                    id: output.outputId,
+                    items: output.outputs.map(item => ({ mime: item.mime, data: item.data.buffer })),
+                    metadata: output.metadata
+                })),
+                start: update.start,
+                deleteCount: update.deleteCount
+            }))
         };
 
         this.webviewWidget.sendMessage(updateOutputMessage);
     }
 
-    private async requestOutputPresentationUpdate(output: NotebookCellOutputModel): Promise<void> {
+    cellsChanged(cellEvents: NotebookContentChangedEvent[]): void {
+        const changes: Array<CellsMoved | CellsSpliced> = [];
+
+        for (const event of cellEvents) {
+            if (event.kind === NotebookCellsChangeType.Move) {
+                changes.push(...event.cells.map((cell, i) => ({
+                    type: 'cellMoved',
+                    cellHandle: event.cells[0].handle,
+                    toIndex: event.newIdx + i,
+                } as CellsMoved)));
+            } else if (event.kind === NotebookCellsChangeType.ModelChange) {
+                changes.push(...event.changes.map(change => ({
+                    type: 'cellsSpliced',
+                    start: change.start,
+                    deleteCount: change.deleteCount,
+                    newCells: change.newItems.map(cell => cell.handle)
+                } as CellsSpliced)));
+            }
+        }
+
+        this.webviewWidget.sendMessage({
+            type: 'cellsChanged',
+            changes: changes.filter(e => e)
+        } as CellsChangedMessage);
+    }
+
+    setCellHeight(cell: NotebookCellModel, height: number): void {
+        if (!this.isDisposed) {
+            this.webviewWidget.sendMessage({
+                type: 'cellHeightUpdate',
+                cellHandle: cell.handle,
+                cellKind: cell.cellKind,
+                height
+            });
+        }
+    }
+
+    async requestOutputPresentationUpdate(cellHandle: number, output: NotebookCellOutputModel): Promise<void> {
         const selectedMime = await this.quickPickService.show(
             output.outputs.map(item => ({ label: item.mime })),
             { description: nls.localizeByDefault('Select mimetype to render for current output') });
         if (selectedMime) {
             this.webviewWidget.sendMessage({
                 type: 'changePreferredMimetype',
+                cellHandle,
                 outputId: output.outputId,
                 mimeType: selectedMime.label
             } as ChangePreferredMimetypeMessage);
         }
     }
 
-    private handleWebviewMessage(message: FromWebviewMessage): void {
+    protected handleWebviewMessage(message: FromWebviewMessage): void {
         if (!this.editor) {
             throw new Error('No editor found for cell output webview');
         }
 
         switch (message.type) {
             case 'initialized':
-                this.updateOutput({ newOutputs: this.cell.outputs, start: 0, deleteCount: 0 });
+                this.updateOutputs(this.notebook.cells.map(cell => ({
+                    cellHandle: cell.handle,
+                    newOutputs: cell.outputs,
+                    start: 0,
+                    deleteCount: 0
+                })));
                 this.updateStyles();
                 break;
             case 'customRendererMessage':
-                // console.log('from webview customRendererMessage ', message.rendererId, '', JSON.stringify(message.message));
                 this.messagingService.getScoped(this.editor.id).postMessage(message.rendererId, message.message);
                 break;
             case 'didRenderOutput':
-                this.webviewWidget.setIframeHeight(message.contentHeight + 5);
+                this.webviewWidget.setIframeHeight(message.bodyHeight);
+                this.onDidRenderOutputEmitter.fire({
+                    cellHandle: message.cellHandle,
+                    outputId: message.outputId,
+                    outputHeight: message.outputHeight
+                });
                 break;
             case 'did-scroll-wheel':
                 this.editor.node.getElementsByClassName('theia-notebook-viewport')[0].children[0].scrollBy(message.deltaX, message.deltaY);
                 break;
             case 'customKernelMessage':
-                // console.log('from webview customKernelMessage ', JSON.stringify(message.message));
                 this.editor.recieveKernelMessage(message.message);
                 break;
             case 'inputFocusChanged':
                 this.editor?.outputInputFocusChanged(message.focused);
+                break;
+            case 'cellFocusChanged':
+                const selectedCell = this.notebook.getCellByHandle(message.cellHandle);
+                if (selectedCell) {
+                    this.notebook.setSelectedCell(selectedCell);
+                }
+                break;
+            case 'cellHeightRequest':
+                const cellHeight = this.notebook.getCellByHandle(message.cellHandle)?.cellHeight ?? 0;
+                this.webviewWidget.sendMessage({
+                    type: 'cellHeightUpdate',
+                    cellHandle: message.cellHandle,
+                    height: cellHeight
+                });
+                break;
+            case 'bodyHeightChange':
+                this.webviewWidget.setIframeHeight(message.height);
+                break;
         }
     }
 
@@ -445,8 +542,7 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
     }
 
     dispose(): void {
+        this.isDisposed = true;
         this.toDispose.dispose();
-        this.outputPresentationListeners.dispose();
-        this.webviewWidget.dispose();
     }
 }

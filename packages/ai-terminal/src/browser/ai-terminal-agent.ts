@@ -16,12 +16,13 @@
 
 import {
     Agent,
+    CommunicationRecordingService,
     getJsonOfResponse,
     isLanguageModelParsedResponse,
     LanguageModelRegistry, LanguageModelRequirement,
     PromptService
 } from '@theia/ai-core/lib/common';
-import { ILogger } from '@theia/core';
+import { generateUuid, ILogger } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { z } from 'zod';
 import zodToJsonSchema from 'zod-to-json-schema';
@@ -33,6 +34,8 @@ type Commands = z.infer<typeof Commands>;
 
 @injectable()
 export class AiTerminalAgent implements Agent {
+    @inject(CommunicationRecordingService)
+    protected recordingService: CommunicationRecordingService;
 
     id = 'Terminal Assistant';
     name = 'Terminal Assistant';
@@ -40,6 +43,13 @@ export class AiTerminalAgent implements Agent {
         Based on the user\'s request, it suggests commands and allows the user to directly paste and execute them in the terminal. \
         It accesses the current directory, environment and the recent terminal output of the terminal session to provide context-aware assistance';
     variables = [];
+    functions = [];
+    agentSpecificVariables = [
+        { name: 'userRequest', usedInPrompt: true, description: 'The user\'s question or request.' },
+        { name: 'shell', usedInPrompt: true, description: 'The shell being used, e.g., /usr/bin/zsh.' },
+        { name: 'cwd', usedInPrompt: true, description: 'The current working directory.' },
+        { name: 'recentTerminalContents', usedInPrompt: true, description: 'The last 0 to 50 recent lines visible in the terminal.' }
+    ];
     promptTemplates = [
         {
             id: 'terminal-system',
@@ -146,6 +156,18 @@ recent-terminal-contents:
             return [];
         }
 
+        // since we do not actually hold complete conversions, the request/response pair is considered a session
+        const sessionId = generateUuid();
+        const requestId = generateUuid();
+        this.recordingService.recordRequest({
+            agentId: this.id,
+            sessionId,
+            timestamp: Date.now(),
+            requestId,
+            request: systemPrompt,
+            messages: [userPrompt],
+        });
+
         try {
             const result = await lm.request({
                 messages: [
@@ -174,12 +196,28 @@ recent-terminal-contents:
                 // model returned structured output
                 const parsedResult = Commands.safeParse(result.parsed);
                 if (parsedResult.success) {
+                    const responseTextfromParsed = JSON.stringify(parsedResult.data.commands);
+                    this.recordingService.recordResponse({
+                        agentId: this.id,
+                        sessionId,
+                        timestamp: Date.now(),
+                        requestId,
+                        response: responseTextfromParsed,
+                    });
                     return parsedResult.data.commands;
                 }
             }
 
             // fall back to agent-based parsing of result
             const jsonResult = await getJsonOfResponse(result);
+            const responseTextFromJSON = JSON.stringify(jsonResult);
+            this.recordingService.recordResponse({
+                agentId: this.id,
+                sessionId,
+                timestamp: Date.now(),
+                requestId,
+                response: responseTextFromJSON
+            });
             const parsedJsonResult = Commands.safeParse(jsonResult);
             if (parsedJsonResult.success) {
                 return parsedJsonResult.data.commands;

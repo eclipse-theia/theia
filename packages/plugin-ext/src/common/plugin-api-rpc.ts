@@ -805,9 +805,9 @@ export interface RegisterTreeDataProviderOptions {
 }
 
 export interface TreeViewRevealOptions {
-    select: boolean
-    focus: boolean
-    expand: boolean | number
+    readonly select: boolean
+    readonly focus: boolean
+    readonly expand: boolean | number
 }
 
 export interface TreeViewsMain {
@@ -2673,6 +2673,7 @@ export interface NotebookDocumentsExt {
 
 export interface NotebookDocumentsAndEditorsExt {
     $acceptDocumentsAndEditorsDelta(delta: NotebookDocumentsAndEditorsDelta): Promise<void>;
+    $acceptActiveCellEditorChange(newActiveEditor: string | null): void;
 }
 
 export interface NotebookDocumentsAndEditorsMain extends Disposable {

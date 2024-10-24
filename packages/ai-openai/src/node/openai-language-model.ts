@@ -50,20 +50,12 @@ function toOpenAiRole(message: LanguageModelRequestMessage): 'system' | 'user' |
 
 export class OpenAiModel implements LanguageModel {
 
-    readonly providerId = 'openai';
-    readonly vendor: string = 'OpenAI';
-
-    constructor(protected readonly model: string, protected apiKey: () => string | undefined) {
-
-    }
-
-    get id(): string {
-        return this.providerId + '/' + this.model;
-    }
-
-    get name(): string {
-        return this.model;
-    }
+    /**
+     * @param id the unique id for this language model. It will be used to identify the model in the UI.
+     * @param model the model id as it is used by the OpenAI API
+     * @param openAIInitializer initializer for the OpenAI client, used for each request.
+     */
+    constructor(public readonly id: string, public model: string, public apiKey: () => string | undefined, public url: string | undefined) { }
 
     async request(request: LanguageModelRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
         const openai = this.initializeOpenAi();
@@ -103,6 +95,15 @@ export class OpenAiModel implements LanguageModel {
             runnerEnd = true;
             resolve({ content: error.message });
         });
+        // we need to also listen for the emitted errors, as otherwise any error actually thrown by the API will not be caught
+        runner.emitted('error').then(error => {
+            console.error('Error in OpenAI chat completion stream:', error);
+            runnerEnd = true;
+            resolve({ content: error.message });
+        });
+        runner.emitted('abort').then(() => {
+            // do nothing, as the abort event is only emitted when the runner is aborted by us
+        });
         runner.on('message', message => {
             if (message.role === 'tool') {
                 resolve({ tool_calls: [{ id: message.tool_call_id, finished: true, result: this.getCompletionContent(message) }] });
@@ -133,9 +134,12 @@ export class OpenAiModel implements LanguageModel {
     }
 
     protected supportsStructuredOutput(): boolean {
-        // currently only the lastest 4o and 4o-mini models support structured output
-        // see https://platform.openai.com/docs/guides/structured-outputs
-        return this.model === 'gpt-4o-2024-08-06' || this.model === 'gpt-4o-mini';
+        // see https://platform.openai.com/docs/models/gpt-4o
+        return [
+            'gpt-4o',
+            'gpt-4o-2024-08-06',
+            'gpt-4o-mini'
+        ].includes(this.model);
     }
 
     protected async handleStructuredOutputRequest(openai: OpenAI, request: LanguageModelRequest): Promise<LanguageModelParsedResponse> {
@@ -176,10 +180,11 @@ export class OpenAiModel implements LanguageModel {
     }
 
     protected initializeOpenAi(): OpenAI {
-        const key = this.apiKey();
-        if (!key) {
+        const apiKey = this.apiKey();
+        if (!apiKey && !(this.url)) {
             throw new Error('Please provide OPENAI_API_KEY in preferences or via environment variable');
         }
-        return new OpenAI({ apiKey: key });
+        // We need to hand over "some" key, even if a custom url is not key protected as otherwise the OpenAI client will throw an error
+        return new OpenAI({ apiKey: apiKey ?? 'no-key', baseURL: this.url });
     }
 }

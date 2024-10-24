@@ -15,27 +15,29 @@
 // *****************************************************************************
 
 import { bindContributionProvider, CommandContribution, MenuContribution } from '@theia/core';
-import { bindViewContribution, FrontendApplicationContribution, WidgetFactory, } from '@theia/core/lib/browser';
+import { bindViewContribution, FrontendApplicationContribution, WidgetFactory } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { EditorManager } from '@theia/editor/lib/browser';
 import '../../src/browser/style/index.css';
 import { AIChatContribution } from './ai-chat-ui-contribution';
 import { AIChatInputWidget } from './chat-input-widget';
-import { CodePartRenderer, CommandPartRenderer, HorizontalLayoutPartRenderer, MarkdownPartRenderer, ErrorPartRenderer, ToolCallPartRenderer } from './chat-response-renderer';
+import { ChatNodeToolbarActionContribution } from './chat-node-toolbar-action-contribution';
+import { ChatResponsePartRenderer } from './chat-response-part-renderer';
+import { CodePartRenderer, CommandPartRenderer, ErrorPartRenderer, HorizontalLayoutPartRenderer, MarkdownPartRenderer, ToolCallPartRenderer } from './chat-response-renderer';
 import {
     AIEditorManager, AIEditorSelectionResolver,
     GitHubSelectionResolver, TextFragmentSelectionResolver, TypeDocSymbolSelectionResolver
 } from './chat-response-renderer/ai-editor-manager';
 import { createChatViewTreeWidget } from './chat-tree-view';
 import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
-import { ChatViewLanguageContribution } from './chat-view-language-contribution';
 import { ChatViewMenuContribution } from './chat-view-contribution';
+import { ChatViewLanguageContribution } from './chat-view-language-contribution';
 import { ChatViewWidget } from './chat-view-widget';
 import { ChatViewWidgetToolbarContribution } from './chat-view-widget-toolbar-contribution';
-import { ChatResponsePartRenderer } from './chat-response-part-renderer';
+import { EditorPreviewManager } from '@theia/editor-preview/lib/browser/editor-preview-manager';
 
-export default new ContainerModule((bind, _ubind, _isBound, rebind) => {
+export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindViewContribution(bind, AIChatContribution);
     bind(TabBarToolbarContribution).toService(AIChatContribution);
 
@@ -70,6 +72,7 @@ export default new ContainerModule((bind, _ubind, _isBound, rebind) => {
 
     bind(AIEditorManager).toSelf().inSingletonScope();
     rebind(EditorManager).toService(AIEditorManager);
+    rebind(EditorPreviewManager).toService(AIEditorManager);
 
     bindContributionProvider(bind, AIEditorSelectionResolver);
     bind(AIEditorSelectionResolver).to(GitHubSelectionResolver).inSingletonScope();
@@ -81,6 +84,7 @@ export default new ContainerModule((bind, _ubind, _isBound, rebind) => {
 
     bind(FrontendApplicationContribution).to(ChatViewLanguageContribution).inSingletonScope();
 
+    bindContributionProvider(bind, ChatNodeToolbarActionContribution);
 });
 
 function bindChatViewWidget(bind: interfaces.Bind): void {

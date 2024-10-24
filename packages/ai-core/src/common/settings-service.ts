@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2018 Ericsson and others.
+// Copyright (C) 2024 EclipseSource GmbH.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -13,6 +13,21 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+import { Event } from '@theia/core';
+import { LanguageModelRequirement } from './language-model';
 
-// eslint-disable-next-line spaced-comment
-/// <reference types="@theia/core/src/typings/nsfw/index"/>
+export const AISettingsService = Symbol('AISettingsService');
+/**
+ * Service to store and retrieve settings on a per-agent basis.
+ */
+export interface AISettingsService {
+    updateAgentSettings(agent: string, agentSettings: Partial<AgentSettings>): Promise<void>;
+    getAgentSettings(agent: string): Promise<AgentSettings | undefined>;
+    getSettings(): Promise<AISettings>;
+    onDidChange: Event<void>;
+}
+export type AISettings = Record<string, AgentSettings>;
+export interface AgentSettings {
+    languageModelRequirements?: LanguageModelRequirement[];
+    enable?: boolean;
+}

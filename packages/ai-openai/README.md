@@ -14,7 +14,25 @@
 
 The `@theia/ai-openai` integrates OpenAI's models with Theia AI.
 The OpenAI API key and the models to use can be configured via preferences.
-Alternatively the OpenAI API key can also be handed in via an environment variable.
+Alternatively the OpenAI API key can also be handed in via the `OPENAI_API_KEY` variable.
+
+### Custom models
+
+The extension also supports OpenAI compatible models hosted on different end points.
+You can configure the end points via the `ai-features.openAiCustom.customOpenAiModels` preference:
+
+```ts
+{
+    model: string
+    url: string
+    id?: string
+    apiKey?: string | true
+}
+```
+
+- `model` and `url` are mandatory attributes, indicating the end point and model to use
+- `id` is an optional attribute which is used in the UI to refer to this configuration
+- `apiKey` is either the key to access the API served at the given URL or `true` to use the global OpenAI API key. If not given 'no-key' will be used.
 
 ## Additional Information
 

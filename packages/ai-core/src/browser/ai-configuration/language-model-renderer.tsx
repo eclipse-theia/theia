@@ -16,7 +16,7 @@
 import * as React from '@theia/core/shared/react';
 import { Agent, LanguageModelRequirement } from '../../common';
 import { LanguageModel, LanguageModelRegistry } from '../../common/language-model';
-import { AISettingsService } from '../ai-settings-service';
+import { AISettingsService } from '../../common/settings-service';
 import { Mutable } from '@theia/core';
 
 export interface LanguageModelSettingsProps {
@@ -29,9 +29,9 @@ export interface LanguageModelSettingsProps {
 export const LanguageModelRenderer: React.FC<LanguageModelSettingsProps> = (
     { agent, languageModels, aiSettingsService, languageModelRegistry }) => {
 
-    const findLanguageModelRequirement = (purpose: string): LanguageModelRequirement | undefined => {
-        const requirementSetting = aiSettingsService.getAgentSettings(agent.id);
-        return requirementSetting?.languageModelRequirements.find(e => e.purpose === purpose);
+    const findLanguageModelRequirement = async (purpose: string): Promise<LanguageModelRequirement | undefined> => {
+        const requirementSetting = await aiSettingsService.getAgentSettings(agent.id);
+        return requirementSetting?.languageModelRequirements?.find(e => e.purpose === purpose);
     };
 
     const [lmRequirementMap, setLmRequirementMap] = React.useState<Record<string, LanguageModelRequirement>>({});
@@ -41,7 +41,7 @@ export const LanguageModelRenderer: React.FC<LanguageModelSettingsProps> = (
             const map = await agent.languageModelRequirements.reduce(async (accPromise, curr) => {
                 const acc = await accPromise;
                 // take the agents requirements and override them with the user settings if present
-                const lmRequirement = findLanguageModelRequirement(curr.purpose) ?? curr;
+                const lmRequirement = await findLanguageModelRequirement(curr.purpose) ?? curr;
                 // if no llm is selected through the identifier, see what would be the default
                 if (!lmRequirement.identifier) {
                     const llm = await languageModelRegistry.selectLanguageModel({ agent: agent.id, ...lmRequirement });

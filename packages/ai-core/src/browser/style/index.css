@@ -66,15 +66,30 @@
 }
 
 #ai-variable-configuration-container-widget .variable-references,
-#ai-agent-configuration-container-widget .variable-references {
+#ai-agent-configuration-container-widget .variable-references,
+#ai-agent-configuration-container-widget .function-references {
   margin-left: 0.5rem;
   padding: 0.5rem;
   border-left: solid 1px var(--theia-tree-indentGuidesStroke);
 }
 
 #ai-variable-configuration-container-widget .variable-reference,
-#ai-agent-configuration-container-widget .variable-reference {
+#ai-agent-configuration-container-widget .variable-reference,
+#ai-agent-configuration-container-widget .function-reference {
   display: flex;
   flex-direction: row;
   align-items: center;
+}
+
+.agent-tag {
+  padding: calc(var(--theia-ui-padding) * 2 / 3);
+  padding-top: 0px;
+  padding-bottom: 0px;
+  border-radius: calc(var(--theia-ui-padding) * 2 / 3);
+  background: hsla(0, 0%, 68%, 0.31);
+}
+
+.configuration-agents-add {
+  margin-top: 3em;
+  margin-left: 0;
 }

@@ -1,6 +1,6 @@
 {
   "name": "@theia/playwright",
-  "version": "1.53.0",
+  "version": "1.54.0",
   "description": "System tests for Theia",
   "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
   "repository": {
@@ -39,7 +39,7 @@
     "allure-commandline": "^2.23.1",
     "allure-playwright": "^2.5.0",
     "cross-env": "^7.0.3",
-    "rimraf": "^2.6.1",
+    "rimraf": "^5.0.0",
     "typescript": "~5.4.5"
   },
   "publishConfig": {

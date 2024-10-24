@@ -73,6 +73,7 @@ export interface ChatRequestModel {
     readonly response: ChatResponseModel;
     readonly message: ParsedChatRequest;
     readonly agentId?: string;
+    readonly data?: { [key: string]: unknown };
 }
 
 export interface ChatProgressMessage {
@@ -342,14 +343,29 @@ export class ChatRequestModelImpl implements ChatRequestModel {
     protected _request: ChatRequest;
     protected _response: ChatResponseModelImpl;
     protected _agentId?: string;
+    protected _data: { [key: string]: unknown };
 
-    constructor(session: ChatModel, public readonly message: ParsedChatRequest, agentId?: string) {
+    constructor(session: ChatModel, public readonly message: ParsedChatRequest, agentId?: string,
+        data: { [key: string]: unknown } = {}) {
         // TODO accept serialized data as a parameter to restore a previously saved ChatRequestModel
         this._request = message.request;
         this._id = generateUuid();
         this._session = session;
         this._response = new ChatResponseModelImpl(this._id, agentId);
         this._agentId = agentId;
+        this._data = data;
+    }
+
+    get data(): { [key: string]: unknown } | undefined {
+        return this._data;
+    }
+
+    addData(key: string, value: unknown): void {
+        this._data[key] = value;
+    }
+
+    getDataByKey(key: string): unknown {
+        return this._data[key];
     }
 
     get id(): string {
@@ -374,7 +390,7 @@ export class ChatRequestModelImpl implements ChatRequestModel {
 }
 
 export class ErrorChatResponseContentImpl implements ErrorChatResponseContent {
-    kind: 'error' = 'error';
+    readonly kind = 'error';
     protected _error: Error;
     constructor(error: Error) {
         this._error = error;
@@ -388,7 +404,7 @@ export class ErrorChatResponseContentImpl implements ErrorChatResponseContent {
 }
 
 export class TextChatResponseContentImpl implements TextChatResponseContent {
-    kind: 'text' = 'text';
+    readonly kind = 'text';
     protected _content: string;
 
     constructor(content: string) {
@@ -410,7 +426,7 @@ export class TextChatResponseContentImpl implements TextChatResponseContent {
 }
 
 export class MarkdownChatResponseContentImpl implements MarkdownChatResponseContent {
-    kind: 'markdownContent' = 'markdownContent';
+    readonly kind = 'markdownContent';
     protected _content: MarkdownStringImpl = new MarkdownStringImpl();
 
     constructor(content: string) {
@@ -432,7 +448,7 @@ export class MarkdownChatResponseContentImpl implements MarkdownChatResponseCont
 }
 
 export class InformationalChatResponseContentImpl implements InformationalChatResponseContent {
-    kind: 'informational' = 'informational';
+    readonly kind = 'informational';
     protected _content: MarkdownStringImpl;
 
     constructor(content: string) {
@@ -454,7 +470,7 @@ export class InformationalChatResponseContentImpl implements InformationalChatRe
 }
 
 export class CodeChatResponseContentImpl implements CodeChatResponseContent {
-    kind: 'code' = 'code';
+    readonly kind = 'code';
     protected _code: string;
     protected _language?: string;
     protected _location?: Location;
@@ -488,7 +504,7 @@ export class CodeChatResponseContentImpl implements CodeChatResponseContent {
 }
 
 export class ToolCallChatResponseContentImpl implements ToolCallChatResponseContent {
-    kind: 'toolCall' = 'toolCall';
+    readonly kind = 'toolCall';
     protected _id?: string;
     protected _name?: string;
     protected _arguments?: string;
@@ -546,7 +562,7 @@ export const COMMAND_CHAT_RESPONSE_COMMAND: Command = {
     id: 'ai-chat.command-chat-response.generic'
 };
 export class CommandChatResponseContentImpl implements CommandChatResponseContent {
-    kind: 'command' = 'command';
+    readonly kind = 'command';
 
     constructor(public command?: Command, public customCallback?: CustomCallback, protected args?: unknown[]) {
     }
@@ -561,7 +577,7 @@ export class CommandChatResponseContentImpl implements CommandChatResponseConten
 }
 
 export class HorizontalLayoutChatResponseContentImpl implements HorizontalLayoutChatResponseContent {
-    kind: 'horizontal' = 'horizontal';
+    readonly kind = 'horizontal';
     protected _content: ChatResponseContent[];
 
     constructor(content: ChatResponseContent[] = []) {
@@ -601,10 +617,20 @@ class ChatResponseImpl implements ChatResponse {
         return this._content;
     }
 
+    addContents(contents: ChatResponseContent[]): void {
+        contents.forEach(c => this.doAddContent(c));
+        this._onDidChangeEmitter.fire();
+    }
+
     addContent(nextContent: ChatResponseContent): void {
         // TODO: Support more complex merges affecting different content than the last, e.g. via some kind of ProcessorRegistry
         // TODO: Support more of the built-in VS Code behavior, see
         //   https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatModel.ts#L188-L244
+        this.doAddContent(nextContent);
+        this._onDidChangeEmitter.fire();
+    }
+
+    protected doAddContent(nextContent: ChatResponseContent): void {
         if (ToolCallChatResponseContent.is(nextContent) && nextContent.id !== undefined) {
             const fittingTool = this._content.find(c => ToolCallChatResponseContent.is(c) && c.id === nextContent.id);
             if (fittingTool !== undefined) {
@@ -613,10 +639,9 @@ class ChatResponseImpl implements ChatResponse {
                 this._content.push(nextContent);
             }
         } else {
-            const lastElement =
-                this._content.length > 0
-                    ? this._content[this._content.length - 1]
-                    : undefined;
+            const lastElement = this._content.length > 0
+                ? this._content[this._content.length - 1]
+                : undefined;
             if (lastElement?.kind === nextContent.kind && ChatResponseContent.hasMerge(lastElement)) {
                 const mergeSuccess = lastElement.merge(nextContent);
                 if (!mergeSuccess) {
@@ -627,7 +652,6 @@ class ChatResponseImpl implements ChatResponse {
             }
         }
         this._updateResponseRepresentation();
-        this._onDidChangeEmitter.fire();
     }
 
     protected _updateResponseRepresentation(): void {
@@ -765,5 +789,12 @@ class ChatResponseModelImpl implements ChatResponseModel {
     }
     get isError(): boolean {
         return this._isError;
+    }
+}
+
+export class ErrorChatResponseModelImpl extends ChatResponseModelImpl {
+    constructor(requestId: string, error: Error, agentId?: string) {
+        super(requestId, agentId);
+        this.error(error);
     }
 }

@@ -31,7 +31,7 @@ import { expect } from 'chai';
 import * as fs from 'fs-extra';
 import * as os from 'os';
 import * as path from 'path';
-import * as rimraf from 'rimraf';
+import { rimraf } from 'rimraf';
 import * as sinon from 'sinon';
 import { Git, GitFileStatus, Repository } from '../common';
 import { DugiteGit } from '../node/dugite-git';
@@ -109,12 +109,7 @@ describe('GitScmProvider', () => {
     });
 
     afterEach(async () => {
-        await new Promise<void>((resolve, reject) => rimraf(FileUri.fsPath(repository.localUri), error => {
-            if (error) {
-                reject(error);
-            }
-            resolve();
-        }));
+        await rimraf(FileUri.fsPath(repository.localUri));
     });
 
     it('should unstage all the changes', async () => {

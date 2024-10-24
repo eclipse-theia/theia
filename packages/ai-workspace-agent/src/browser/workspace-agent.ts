@@ -14,9 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { AbstractStreamParsingChatAgent, ChatAgent, SystemMessageDescription } from '@theia/ai-chat/lib/common';
-import { PromptTemplate, ToolInvocationRegistry } from '@theia/ai-core';
+import { AgentSpecificVariables, PromptTemplate, ToolInvocationRegistry } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { workspaceTemplate } from '../common/template';
+import { FILE_CONTENT_FUNCTION_ID, GET_WORKSPACE_FILE_LIST_FUNCTION_ID } from '../common/functions';
 
 @injectable()
 export class WorkspaceAgent extends AbstractStreamParsingChatAgent implements ChatAgent {
@@ -24,6 +25,8 @@ export class WorkspaceAgent extends AbstractStreamParsingChatAgent implements Ch
     description: string;
     promptTemplates: PromptTemplate[];
     variables: never[];
+    readonly agentSpecificVariables: AgentSpecificVariables[];
+    readonly functions: string[];
 
     @inject(ToolInvocationRegistry)
     protected toolInvocationRegistry: ToolInvocationRegistry;
@@ -39,6 +42,8 @@ export class WorkspaceAgent extends AbstractStreamParsingChatAgent implements Ch
     where to put source code, where to find specific code or configurations, etc.';
         this.promptTemplates = [workspaceTemplate];
         this.variables = [];
+        this.agentSpecificVariables = [];
+        this.functions = [GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID];
     }
 
     protected override async getSystemMessageDescription(): Promise<SystemMessageDescription | undefined> {

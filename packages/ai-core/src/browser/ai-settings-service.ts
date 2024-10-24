@@ -15,42 +15,36 @@
 // *****************************************************************************
 import { DisposableCollection, Emitter, Event } from '@theia/core';
 import { PreferenceScope, PreferenceService } from '@theia/core/lib/browser';
-import { JSONObject } from '@theia/core/shared/@phosphor/coreutils';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { LanguageModelRequirement } from '../common';
+import { JSONObject } from '@theia/core/shared/@phosphor/coreutils';
+import { AISettings, AISettingsService, AgentSettings } from '../common';
 
 @injectable()
-export class AISettingsService {
+export class AISettingsServiceImpl implements AISettingsService {
     @inject(PreferenceService) protected preferenceService: PreferenceService;
-    static readonly PREFERENCE_NAME = 'ai.settings';
+    static readonly PREFERENCE_NAME = 'ai-features.agentSettings';
 
     protected toDispose = new DisposableCollection();
 
     protected readonly onDidChangeEmitter = new Emitter<void>();
     onDidChange: Event<void> = this.onDidChangeEmitter.event;
 
-    updateAgentSettings(agent: string, agentSettings: AgentSettings): void {
-        const settings = this.getSettings();
-        settings.agents[agent] = agentSettings;
-        this.preferenceService.set(AISettingsService.PREFERENCE_NAME, settings, PreferenceScope.User);
+    async updateAgentSettings(agent: string, agentSettings: Partial<AgentSettings>): Promise<void> {
+        const settings = await this.getSettings();
+        const newAgentSettings = { ...settings[agent], ...agentSettings };
+        settings[agent] = newAgentSettings;
+        this.preferenceService.set(AISettingsServiceImpl.PREFERENCE_NAME, settings, PreferenceScope.User);
         this.onDidChangeEmitter.fire();
     }
 
-    getAgentSettings(agent: string): AgentSettings | undefined {
-        const settings = this.getSettings();
-        return settings.agents[agent];
+    async getAgentSettings(agent: string): Promise<AgentSettings | undefined> {
+        const settings = await this.getSettings();
+        return settings[agent];
     }
 
-    getSettings(): AISettings {
-        const pref = this.preferenceService.inspect<AISettings>(AISettingsService.PREFERENCE_NAME);
-        return pref?.value ? pref.value : { agents: {} };
+    async getSettings(): Promise<AISettings> {
+        await this.preferenceService.ready;
+        const pref = this.preferenceService.inspect<AISettings & JSONObject>(AISettingsServiceImpl.PREFERENCE_NAME);
+        return pref?.value ? pref.value : {};
     }
-
-}
-export interface AISettings extends JSONObject {
-    agents: Record<string, AgentSettings>
-}
-
-interface AgentSettings extends JSONObject {
-    languageModelRequirements: LanguageModelRequirement[];
 }

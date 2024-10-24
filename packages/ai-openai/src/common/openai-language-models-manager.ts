@@ -15,9 +15,27 @@
 // *****************************************************************************
 export const OPENAI_LANGUAGE_MODELS_MANAGER_PATH = '/services/open-ai/language-model-manager';
 export const OpenAiLanguageModelsManager = Symbol('OpenAiLanguageModelsManager');
+export interface OpenAiModelDescription {
+    /**
+     * The identifier of the model which will be shown in the UI.
+     */
+    id: string;
+    /**
+     * The model ID as used by the OpenAI API.
+     */
+    model: string;
+    /**
+     * The OpenAI API compatible endpoint where the model is hosted. If not provided the default OpenAI endpoint will be used.
+     */
+    url?: string;
+    /**
+     * The key for the model. If 'true' is provided the global OpenAI API key will be used.
+     */
+    apiKey: string | true | undefined;
+}
 export interface OpenAiLanguageModelsManager {
     apiKey: string | undefined;
     setApiKey(key: string | undefined): void;
-    createLanguageModels(...modelIds: string[]): Promise<void>;
+    createOrUpdateLanguageModels(...models: OpenAiModelDescription[]): Promise<void>;
     removeLanguageModels(...modelIds: string[]): void
 }
