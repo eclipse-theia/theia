@@ -28,6 +28,8 @@ import { ProviderResult } from '@theia/monaco-editor-core/esm/vs/editor/common/l
 const PROMPT_TEMPLATE_LANGUAGE_ID = 'theia-ai-prompt-template';
 const PROMPT_TEMPLATE_TEXTMATE_SCOPE = 'source.prompttemplate';
 
+export const PROMPT_TEMPLATE_EXTENSION = '.prompttemplate';
+
 export const DISCARD_PROMPT_TEMPLATE_CUSTOMIZATIONS: Command = {
     id: 'theia-ai-prompt-template:discard',
     iconClass: codicon('discard'),
@@ -81,7 +83,7 @@ export class PromptTemplateContribution implements LanguageGrammarDefinitionCont
                 'Theia AI Prompt Templates'
             ],
             'extensions': [
-                '.prompttemplate',
+                PROMPT_TEMPLATE_EXTENSION,
             ],
             'filenames': []
         });
