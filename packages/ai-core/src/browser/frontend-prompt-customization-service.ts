@@ -17,12 +17,11 @@
 import { DisposableCollection, URI, Event, Emitter } from '@theia/core';
 import { OpenerService } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { PromptCustomizationService, PromptTemplate, CustomAgentDescription } from '../common';
+import { PromptCustomizationService, CustomAgentDescription } from '../common';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileChangesEvent } from '@theia/filesystem/lib/common/files';
 import { AICorePreferences, PREFERENCE_NAME_PROMPT_TEMPLATES } from './ai-core-preferences';
-import { AgentService } from '../common/agent-service';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { load, dump } from 'js-yaml';
 
@@ -48,9 +47,6 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
 
     @inject(OpenerService)
     protected readonly openerService: OpenerService;
-
-    @inject(AgentService)
-    protected readonly agentService: AgentService;
 
     protected readonly trackedTemplateURIs = new Set<string>();
     protected templates = new Map<string, string>();
@@ -168,17 +164,10 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
         return this.templates.get(id);
     }
 
-    async editTemplate(id: string, content?: string): Promise<void> {
-        const template = this.getOriginalTemplate(id);
-        if (template === undefined) {
-            throw new Error(`Unable to edit template ${id}: template not found.`);
-        }
+    async editTemplate(id: string, defaultContent?: string): Promise<void> {
         const editorUri = await this.getTemplateURI(id);
         if (! await this.fileService.exists(editorUri)) {
-            await this.fileService.createFile(editorUri, BinaryBuffer.fromString(content ?? template.template));
-        } else if (content) {
-            // Write content to the file before opening it
-            await this.fileService.writeFile(editorUri, BinaryBuffer.fromString(content));
+            await this.fileService.createFile(editorUri, BinaryBuffer.fromString(defaultContent ?? ''));
         }
         const openHandler = await this.openerService.getOpener(editorUri);
         openHandler.open(editorUri);
@@ -189,17 +178,6 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
         if (await this.fileService.exists(editorUri)) {
             await this.fileService.delete(editorUri);
         }
-    }
-
-    getOriginalTemplate(id: string): PromptTemplate | undefined {
-        for (const agent of this.agentService.getAllAgents()) {
-            for (const template of agent.promptTemplates) {
-                if (template.id === id) {
-                    return template;
-                }
-            }
-        }
-        return undefined;
     }
 
     getTemplateIDFromURI(uri: URI): string | undefined {

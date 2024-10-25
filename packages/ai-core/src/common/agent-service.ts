@@ -13,10 +13,11 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { inject, injectable, named, optional, postConstruct } from '@theia/core/shared/inversify';
-import { ContributionProvider, Emitter, Event } from '@theia/core';
+import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
+import { Emitter, Event } from '@theia/core';
 import { Agent } from './agent';
 import { AISettingsService } from './settings-service';
+import { PromptService } from './prompt-service';
 
 export const AgentService = Symbol('AgentService');
 
@@ -71,11 +72,11 @@ export interface AgentService {
 @injectable()
 export class AgentServiceImpl implements AgentService {
 
-    @inject(ContributionProvider) @named(Agent)
-    protected readonly agentsProvider: ContributionProvider<Agent>;
-
     @inject(AISettingsService) @optional()
     protected readonly aiSettingsService: AISettingsService | undefined;
+
+    @inject(PromptService)
+    protected readonly promptService: PromptService;
 
     protected disabledAgents = new Set<string>();
 
@@ -95,28 +96,29 @@ export class AgentServiceImpl implements AgentService {
         });
     }
 
-    private get agents(): Agent[] {
-        // We can't collect the contributions at @postConstruct because this will lead to a circular dependency
-        // with agents reusing the chat agent service (e.g. orchestrator) which in turn injects the agent service
-        return [...this.agentsProvider.getContributions(), ...this._agents];
-    }
-
     registerAgent(agent: Agent): void {
         this._agents.push(agent);
+        agent.promptTemplates.forEach(
+            template => this.promptService.storePrompt(template.id, template.template)
+        );
         this.onDidChangeAgentsEmitter.fire();
     }
 
     unregisterAgent(agentId: string): void {
+        const agent = this._agents.find(a => a.id === agentId);
         this._agents = this._agents.filter(a => a.id !== agentId);
         this.onDidChangeAgentsEmitter.fire();
+        agent?.promptTemplates.forEach(
+            template => this.promptService.removePrompt(template.id)
+        );
     }
 
     getAgents(): Agent[] {
-        return this.agents.filter(agent => this.isEnabled(agent.id));
+        return this._agents.filter(agent => this.isEnabled(agent.id));
     }
 
     getAllAgents(): Agent[] {
-        return this.agents;
+        return this._agents;
     }
 
     enableAgent(agentId: string): void {
