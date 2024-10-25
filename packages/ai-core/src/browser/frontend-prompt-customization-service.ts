@@ -25,6 +25,7 @@ import { AICorePreferences, PREFERENCE_NAME_PROMPT_TEMPLATES } from './ai-core-p
 import { AgentService } from '../common/agent-service';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { load, dump } from 'js-yaml';
+import { PROMPT_TEMPLATE_EXTENSION } from './prompttemplate-contribution';
 
 const templateEntry = {
     id: 'my_agent',
@@ -99,19 +100,19 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
             // check updated templates
             for (const updatedFile of event.getUpdated()) {
                 if (this.trackedTemplateURIs.has(updatedFile.resource.toString())) {
-                    const filecontent = await this.fileService.read(updatedFile.resource);
+                    const fileContent = await this.fileService.read(updatedFile.resource);
                     const templateId = this.removePromptTemplateSuffix(updatedFile.resource.path.name);
-                    _templates.set(templateId, filecontent.value);
+                    _templates.set(templateId, fileContent.value);
                     this.onDidChangePromptEmitter.fire(templateId);
                 }
             }
             // check new templates
             for (const addedFile of event.getAdded()) {
-                if (addedFile.resource.parent.toString() === templateURI.toString() && addedFile.resource.path.ext === '.prompttemplate') {
+                if (addedFile.resource.parent.toString() === templateURI.toString() && addedFile.resource.path.ext === PROMPT_TEMPLATE_EXTENSION) {
                     this.trackedTemplateURIs.add(addedFile.resource.toString());
-                    const filecontent = await this.fileService.read(addedFile.resource);
+                    const fileContent = await this.fileService.read(addedFile.resource);
                     const templateId = this.removePromptTemplateSuffix(addedFile.resource.path.name);
-                    _templates.set(templateId, filecontent.value);
+                    _templates.set(templateId, fileContent.value);
                     this.onDidChangePromptEmitter.fire(templateId);
                 }
             }
@@ -129,11 +130,11 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
                 continue;
             }
             const fileURI = file.resource;
-            if (fileURI.path.ext === '.prompttemplate') {
+            if (fileURI.path.ext === PROMPT_TEMPLATE_EXTENSION) {
                 this.trackedTemplateURIs.add(fileURI.toString());
-                const filecontent = await this.fileService.read(fileURI);
+                const fileContent = await this.fileService.read(fileURI);
                 const templateId = this.removePromptTemplateSuffix(file.name);
-                _templates.set(templateId, filecontent.value);
+                _templates.set(templateId, fileContent.value);
                 this.onDidChangePromptEmitter.fire(templateId);
             }
         }
@@ -149,11 +150,11 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
     }
 
     protected async getTemplateURI(templateId: string): Promise<URI> {
-        return (await this.getTemplatesDirectoryURI()).resolve(`${templateId}.prompttemplate`);
+        return (await this.getTemplatesDirectoryURI()).resolve(`${templateId}${PROMPT_TEMPLATE_EXTENSION}`);
     }
 
     protected removePromptTemplateSuffix(filename: string): string {
-        const suffix = '.prompttemplate';
+        const suffix = PROMPT_TEMPLATE_EXTENSION;
         if (filename.endsWith(suffix)) {
             return filename.slice(0, -suffix.length);
         }
@@ -216,9 +217,9 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
         if (!yamlExists) {
             return [];
         }
-        const filecontent = await this.fileService.read(customAgentYamlUri, { encoding: 'utf-8' });
+        const fileContent = await this.fileService.read(customAgentYamlUri, { encoding: 'utf-8' });
         try {
-            const doc = load(filecontent.value);
+            const doc = load(fileContent.value);
             if (!Array.isArray(doc) || !doc.every(entry => CustomAgentDescription.is(entry))) {
                 console.debug('Invalid customAgents.yml file content');
                 return [];
@@ -226,15 +227,15 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
             const readAgents = doc as CustomAgentDescription[];
             // make sure all agents are unique (id and name)
             const uniqueAgentIds = new Set<string>();
-            const uniqueAgens: CustomAgentDescription[] = [];
+            const uniqueAgents: CustomAgentDescription[] = [];
             readAgents.forEach(agent => {
                 if (uniqueAgentIds.has(agent.id)) {
                     return;
                 }
                 uniqueAgentIds.add(agent.id);
-                uniqueAgens.push(agent);
+                uniqueAgents.push(agent);
             });
-            return uniqueAgens;
+            return uniqueAgents;
         } catch (e) {
             console.debug(e.message, e);
             return [];
