@@ -125,6 +125,7 @@ div:last-child > .theia-ChatNode {
 
 .theia-ChatNode .theia-CodeWrapper {
   padding: 0.5em;
+  padding-bottom: 0;
   background-color: var(--theia-editor-background);
   border-radius: 6px;
   border: var(--theia-border-width) solid var(--theia-checkbox-border);
