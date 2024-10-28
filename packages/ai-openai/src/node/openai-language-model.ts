@@ -20,7 +20,8 @@ import {
     LanguageModelRequest,
     LanguageModelRequestMessage,
     LanguageModelResponse,
-    LanguageModelStreamResponsePart
+    LanguageModelStreamResponsePart,
+    LanguageModelTextResponse
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 import OpenAI from 'openai';
@@ -59,6 +60,10 @@ export class OpenAiModel implements LanguageModel {
 
     async request(request: LanguageModelRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
         const openai = this.initializeOpenAi();
+
+        if (this.isNonStreamingModel(this.model)) {
+            return this.handleNonStreamingRequest(openai, request);
+        }
 
         if (request.response_format?.type === 'json_schema' && this.supportsStructuredOutput()) {
             return this.handleStructuredOutputRequest(openai, request);
@@ -131,6 +136,24 @@ export class OpenAiModel implements LanguageModel {
             }
         };
         return { stream: asyncIterator };
+    }
+
+    protected async handleNonStreamingRequest(openai: OpenAI, request: LanguageModelRequest): Promise<LanguageModelTextResponse> {
+        const response = await openai.chat.completions.create({
+            model: this.model,
+            messages: request.messages.map(toOpenAIMessage),
+            ...request.settings
+        });
+
+        const message = response.choices[0].message;
+
+        return {
+            text: message.content ?? ''
+        };
+    }
+
+    protected isNonStreamingModel(model: string): boolean {
+        return ['o1-preview'].includes(model);
     }
 
     protected supportsStructuredOutput(): boolean {
