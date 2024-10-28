@@ -25,7 +25,7 @@ export interface TemplateSettingProps {
 
 export const TemplateRenderer: React.FC<TemplateSettingProps> = ({ agentId, template, promptCustomizationService }) => {
     const openTemplate = React.useCallback(async () => {
-        promptCustomizationService.editTemplate(template.id);
+        promptCustomizationService.editTemplate(template.id, template.template);
     }, [template, promptCustomizationService]);
     const resetTemplate = React.useCallback(async () => {
         promptCustomizationService.resetTemplate(template.id);

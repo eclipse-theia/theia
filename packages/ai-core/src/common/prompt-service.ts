@@ -58,11 +58,16 @@ export interface PromptService {
      */
     getPrompt(id: string, args?: { [key: string]: unknown }): Promise<ResolvedPromptTemplate | undefined>;
     /**
-     * Manually add a prompt to the list of prompts.
+     * Adds a prompt to the list of prompts.
      * @param id the id of the prompt
      * @param prompt the prompt template to store
      */
     storePrompt(id: string, prompt: string): void;
+    /**
+     * Removes a prompt from the list of prompts.
+     * @param id the id of the prompt
+     */
+    removePrompt(id: string): void;
     /**
      * Return all known prompts as a {@link PromptMap map}.
      */
@@ -113,9 +118,9 @@ export interface PromptCustomizationService {
      * on the implementation. Implementation may for example decide to
      * open an editor, or request more information from the user, ...
      * @param id the template id.
-     * @param content optional content to customize the template.
+     * @param content optional default content to initialize the template
      */
-    editTemplate(id: string, content?: string): void;
+    editTemplate(id: string, defaultContent?: string): void;
 
     /**
      * Reset the template to its default value.
@@ -249,5 +254,8 @@ export class PromptServiceImpl implements PromptService {
     }
     storePrompt(id: string, prompt: string): void {
         this._prompts[id] = { id, template: prompt };
+    }
+    removePrompt(id: string): void {
+        delete this._prompts[id];
     }
 }
