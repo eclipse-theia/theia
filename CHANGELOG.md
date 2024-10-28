@@ -4,6 +4,10 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## 1.55.0 - not yet release
+
+- [application-package] feat: provide an application prop to set the configuration area [#14319](https://github.com/eclipse-theia/theia/pull/14319) - Contributed on behalf of STMicroelectronics
+
 ## 1.54.0 - 09/26/2024
 
 - [ai] add Theia AI LLM Support [Experimental] [#14048](https://github.com/eclipse-theia/theia/pull/14048)
