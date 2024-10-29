@@ -508,3 +508,22 @@ mark.theia-find-match.theia-find-match-selected {
   color: var(--theia-editor-findMatchForeground);
   background-color: var(--theia-editor-findMatchBackground);
 }
+
+.cell-status-bar-item {
+  align-items: center;
+  display: flex;
+  height: 16px;
+  margin: 0 3px;
+  overflow: hidden;
+  padding: 0 3px;
+  text-overflow: clip;
+  white-space: pre;
+}
+
+.cell-status-item-has-command {
+  cursor: pointer;
+}
+
+.cell-status-item-has-command:hover {
+  background-color: var(--theia-toolbar-hoverBackground);
+}

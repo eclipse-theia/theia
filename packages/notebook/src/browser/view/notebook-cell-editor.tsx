@@ -103,15 +103,7 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
             this.props.notebookContextManager.scopedStore.setContext(NOTEBOOK_CELL_CURSOR_LAST_LINE, currentLine === lineCount);
         }));
 
-        this.toDispose.push(this.props.cell.onWillBlurCellEditor(() => {
-            let parent = this.container?.parentElement;
-            while (parent && !parent.classList.contains('theia-notebook-cell')) {
-                parent = parent.parentElement;
-            }
-            if (parent) {
-                parent.focus();
-            }
-        }));
+        this.toDispose.push(this.props.cell.onWillBlurCellEditor(() => this.blurEditor()));
 
         this.toDispose.push(this.props.cell.onDidChangeEditorOptions(options => {
             this.editor?.getControl().updateOptions(options);
@@ -130,7 +122,7 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
 
         this.toDispose.push(this.props.notebookModel.onDidChangeSelectedCell(e => {
             if (e.cell !== this.props.cell && this.editor?.getControl().hasTextFocus()) {
-                this.props.notebookContextManager.context?.focus();
+                this.blurEditor();
             }
         }));
         if (!this.props.notebookViewportService || (this.container && this.props.notebookViewportService.isElementInViewport(this.container))) {
@@ -231,7 +223,7 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
             }));
             this.props.notebookCellEditorService.editorCreated(uri, this.editor);
             this.setMatches();
-            if (cell.editing && notebookModel.selectedCell === cell) {
+            if (notebookModel.selectedCell === cell) {
                 this.editor.getControl().focus();
             }
         }
@@ -276,6 +268,16 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
         return <div className='theia-notebook-cell-editor' onResize={this.handleResize} id={this.props.cell.uri.toString()}
             ref={container => this.setContainer(container)} style={{ height: this.editor ? undefined : this.estimateHeight() }}>
         </div >;
+    }
+
+    protected blurEditor(): void {
+        let parent = this.container?.parentElement;
+        while (parent && !parent.classList.contains('theia-notebook-cell')) {
+            parent = parent.parentElement;
+        }
+        if (parent) {
+            parent.focus();
+        }
     }
 
 }

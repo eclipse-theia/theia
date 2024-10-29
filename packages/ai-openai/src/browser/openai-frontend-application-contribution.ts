@@ -64,7 +64,7 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
 
                     const modelsToRemove = oldModels.filter(model => !newModels.some(newModel => newModel.id === model.id));
                     const modelsToAddOrUpdate = newModels.filter(newModel => !oldModels.some(model =>
-                        model.id === newModel.id && model.model === newModel.model && model.url === newModel.url));
+                        model.id === newModel.id && model.model === newModel.model && model.url === newModel.url && model.apiKey === newModel.apiKey));
 
                     this.manager.removeLanguageModels(...modelsToRemove.map(model => model.id));
                     this.manager.createOrUpdateLanguageModels(...modelsToAddOrUpdate);
@@ -77,21 +77,23 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
 function createOpenAIModelDescription(modelId: string): OpenAiModelDescription {
     return {
         id: `openai/${modelId}`,
-        model: modelId
+        model: modelId,
+        apiKey: true
     };
 }
 
 function createCustomModelDescriptionsFromPreferences(preferences: Partial<OpenAiModelDescription>[]): OpenAiModelDescription[] {
     return preferences.reduce((acc, pref) => {
-        if (!pref.model || !pref.url) {
+        if (!pref.model || !pref.url || typeof pref.model !== 'string' || typeof pref.url !== 'string') {
             return acc;
         }
         return [
             ...acc,
             {
-                id: pref.id ?? pref.model,
+                id: pref.id && typeof pref.id === 'string' ? pref.id : pref.model,
                 model: pref.model,
-                url: pref.url
+                url: pref.url,
+                apiKey: typeof pref.apiKey === 'string' || pref.apiKey === true ? pref.apiKey : undefined
             }
         ];
     }, []);

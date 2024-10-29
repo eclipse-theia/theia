@@ -23,7 +23,7 @@ import {
     AIVariableResolver,
     AIVariableService,
     ResolvedAIVariable
-} from '../../../ai-core/src/common/variable-service';
+} from '@theia/ai-core';
 import { ChatAgentService } from './chat-agent-service';
 
 export const CHAT_AGENTS_VARIABLE: AIVariable = {

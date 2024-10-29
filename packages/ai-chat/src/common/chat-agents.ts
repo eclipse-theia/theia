@@ -137,7 +137,8 @@ export abstract class AbstractChatAgent {
         protected defaultLanguageModelPurpose: string,
         public iconClass: string = 'codicon codicon-copilot',
         public locations: ChatAgentLocation[] = ChatAgentLocation.ALL,
-        public tags: String[] = ['Chat']) {
+        public tags: String[] = ['Chat'],
+        public defaultLogging: boolean = true) {
     }
 
     @postConstruct()
@@ -152,14 +153,16 @@ export abstract class AbstractChatAgent {
                 throw new Error('Couldn\'t find a matching language model. Please check your setup!');
             }
             const messages = await this.getMessages(request.session);
-            this.recordingService.recordRequest({
-                agentId: this.id,
-                sessionId: request.session.id,
-                timestamp: Date.now(),
-                requestId: request.id,
-                request: request.request.text,
-                messages
-            });
+            if (this.defaultLogging) {
+                this.recordingService.recordRequest({
+                    agentId: this.id,
+                    sessionId: request.session.id,
+                    timestamp: Date.now(),
+                    requestId: request.id,
+                    request: request.request.text,
+                    messages
+                });
+            }
 
             const systemMessageDescription = await this.getSystemMessageDescription();
             const tools: Map<string, ToolRequest> = new Map();
@@ -192,13 +195,15 @@ export abstract class AbstractChatAgent {
             );
             await this.addContentsToResponse(languageModelResponse, request);
             request.response.complete();
-            this.recordingService.recordResponse({
-                agentId: this.id,
-                sessionId: request.session.id,
-                timestamp: Date.now(),
-                requestId: request.response.requestId,
-                response: request.response.response.asString()
-            });
+            if (this.defaultLogging) {
+                this.recordingService.recordResponse({
+                    agentId: this.id,
+                    sessionId: request.session.id,
+                    timestamp: Date.now(),
+                    requestId: request.response.requestId,
+                    response: request.response.response.asString()
+                });
+            }
         } catch (e) {
             this.handleError(request, e);
         }
@@ -274,11 +279,20 @@ export abstract class AbstractChatAgent {
         tools: ToolRequest[] | undefined,
         token: CancellationToken
     ): Promise<LanguageModelResponse> {
+        const settings = this.getLlmSettings();
         const languageModelResponse = languageModel.request({
             messages,
             tools,
+            settings,
         }, token);
         return languageModelResponse;
+    }
+
+    /**
+     * @returns the settings, such as `temperature`, to be used in all language model requests. Returns `undefined` by default.
+     */
+    protected getLlmSettings(): { [key: string]: unknown; } | undefined {
+        return undefined;
     }
 
     protected abstract addContentsToResponse(languageModelResponse: LanguageModelResponse, request: ChatRequestModelImpl): Promise<void>;
@@ -307,25 +321,30 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
             const contents = this.parseContents(languageModelResponse.text);
             request.response.response.addContents(contents);
             request.response.complete();
-            this.recordingService.recordResponse({
-                agentId: this.id,
-                sessionId: request.session.id,
-                timestamp: Date.now(),
-                requestId: request.response.requestId,
-                response: request.response.response.asString()
-            });
+            if (this.defaultLogging) {
+                this.recordingService.recordResponse({
+                    agentId: this.id,
+                    sessionId: request.session.id,
+                    timestamp: Date.now(),
+                    requestId: request.response.requestId,
+                    response: request.response.response.asString()
+
+                });
+            }
             return;
         }
         if (isLanguageModelStreamResponse(languageModelResponse)) {
             await this.addStreamResponse(languageModelResponse, request);
             request.response.complete();
-            this.recordingService.recordResponse({
-                agentId: this.id,
-                sessionId: request.session.id,
-                timestamp: Date.now(),
-                requestId: request.response.requestId,
-                response: request.response.response.asString()
-            });
+            if (this.defaultLogging) {
+                this.recordingService.recordResponse({
+                    agentId: this.id,
+                    sessionId: request.session.id,
+                    timestamp: Date.now(),
+                    requestId: request.response.requestId,
+                    response: request.response.response.asString()
+                });
+            }
             return;
         }
         this.logger.error(

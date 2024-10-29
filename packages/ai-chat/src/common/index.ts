@@ -13,12 +13,13 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-export * from './chat-agent-service';
 export * from './chat-agents';
+export * from './chat-agent-service';
 export * from './chat-model';
-export * from './parsed-chat-request';
 export * from './chat-request-parser';
 export * from './chat-service';
 export * from './command-chat-agents';
-export * from './universal-chat-agent';
+export * from './custom-chat-agent';
+export * from './parsed-chat-request';
 export * from './orchestrator-chat-agent';
+export * from './universal-chat-agent';

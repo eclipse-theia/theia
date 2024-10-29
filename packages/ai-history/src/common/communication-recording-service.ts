@@ -29,6 +29,9 @@ export class DefaultCommunicationRecordingService implements CommunicationRecord
     protected onDidRecordResponseEmitter = new Emitter<CommunicationResponseEntry>();
     readonly onDidRecordResponse: Event<CommunicationResponseEntry> = this.onDidRecordResponseEmitter.event;
 
+    protected onStructuralChangeEmitter = new Emitter<void>();
+    readonly onStructuralChange: Event<void> = this.onStructuralChangeEmitter.event;
+
     protected history: Map<string, CommunicationHistory> = new Map();
 
     getHistory(agentId: string): CommunicationHistory {
@@ -59,5 +62,10 @@ export class DefaultCommunicationRecordingService implements CommunicationRecord
                 this.onDidRecordResponseEmitter.fire(responseEntry);
             }
         }
+    }
+
+    clearHistory(): void {
+        this.history.clear();
+        this.onStructuralChangeEmitter.fire(undefined);
     }
 }

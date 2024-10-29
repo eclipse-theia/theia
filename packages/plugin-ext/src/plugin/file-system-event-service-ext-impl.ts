@@ -48,7 +48,7 @@ type Event<T> = vscode.Event<T>;
 type IExtensionDescription = Plugin;
 type IWaitUntil = WaitUntilEvent;
 
-class FileSystemWatcher implements vscode.FileSystemWatcher {
+export class FileSystemWatcher implements vscode.FileSystemWatcher {
 
     private readonly _onDidCreate = new Emitter<vscode.Uri>();
     private readonly _onDidChange = new Emitter<vscode.Uri>();
@@ -68,7 +68,8 @@ class FileSystemWatcher implements vscode.FileSystemWatcher {
         return Boolean(this._config & 0b100);
     }
 
-    constructor(dispatcher: Event<FileSystemEvents>, globPattern: string | IRelativePattern, ignoreCreateEvents?: boolean, ignoreChangeEvents?: boolean, ignoreDeleteEvents?: boolean) {
+    constructor(dispatcher: Event<FileSystemEvents>, globPattern: string | IRelativePattern,
+        ignoreCreateEvents?: boolean, ignoreChangeEvents?: boolean, ignoreDeleteEvents?: boolean, excludes?: string[]) {
 
         this._config = 0;
         if (ignoreCreateEvents) {
@@ -82,12 +83,13 @@ class FileSystemWatcher implements vscode.FileSystemWatcher {
         }
 
         const parsedPattern = parse(globPattern);
+        const excludePatterns = excludes?.map(exclude => parse(exclude)) || [];
 
         const subscription = dispatcher(events => {
             if (!ignoreCreateEvents) {
                 for (const created of events.created) {
                     const uri = URI.revive(created);
-                    if (parsedPattern(uri.fsPath)) {
+                    if (parsedPattern(uri.fsPath) && !excludePatterns.some(p => p(uri.fsPath))) {
                         this._onDidCreate.fire(uri);
                     }
                 }
@@ -95,7 +97,7 @@ class FileSystemWatcher implements vscode.FileSystemWatcher {
             if (!ignoreChangeEvents) {
                 for (const changed of events.changed) {
                     const uri = URI.revive(changed);
-                    if (parsedPattern(uri.fsPath)) {
+                    if (parsedPattern(uri.fsPath) && !excludePatterns.some(p => p(uri.fsPath))) {
                         this._onDidChange.fire(uri);
                     }
                 }
@@ -103,7 +105,7 @@ class FileSystemWatcher implements vscode.FileSystemWatcher {
             if (!ignoreDeleteEvents) {
                 for (const deleted of events.deleted) {
                     const uri = URI.revive(deleted);
-                    if (parsedPattern(uri.fsPath)) {
+                    if (parsedPattern(uri.fsPath) && !excludePatterns.some(p => p(uri.fsPath))) {
                         this._onDidDelete.fire(uri);
                     }
                 }
@@ -113,7 +115,7 @@ class FileSystemWatcher implements vscode.FileSystemWatcher {
         this._disposable = Disposable.from(this._onDidCreate, this._onDidChange, this._onDidDelete, subscription);
     }
 
-    dispose() {
+    dispose(): void {
         this._disposable.dispose();
     }
 
@@ -160,8 +162,9 @@ export class ExtHostFileSystemEventService implements ExtHostFileSystemEventServ
 
     // --- file events
 
-    createFileSystemWatcher(globPattern: string | IRelativePattern, ignoreCreateEvents?: boolean, ignoreChangeEvents?: boolean, ignoreDeleteEvents?: boolean): vscode.FileSystemWatcher {
-        return new FileSystemWatcher(this._onFileSystemEvent.event, globPattern, ignoreCreateEvents, ignoreChangeEvents, ignoreDeleteEvents);
+    createFileSystemWatcher(globPattern: string | IRelativePattern, ignoreCreateEvents?: boolean,
+        ignoreChangeEvents?: boolean, ignoreDeleteEvents?: boolean, excludes?: string[]): vscode.FileSystemWatcher {
+        return new FileSystemWatcher(this._onFileSystemEvent.event, globPattern, ignoreCreateEvents, ignoreChangeEvents, ignoreDeleteEvents, excludes);
     }
 
     $onFileEvent(events: FileSystemEvents) {

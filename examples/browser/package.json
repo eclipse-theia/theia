@@ -27,6 +27,7 @@
     "@theia/ai-code-completion": "1.54.0",
     "@theia/ai-core": "1.54.0",
     "@theia/ai-history": "1.54.0",
+    "@theia/ai-llamafile": "1.54.0",
     "@theia/ai-ollama": "1.54.0",
     "@theia/ai-openai": "1.54.0",
     "@theia/ai-terminal": "1.54.0",

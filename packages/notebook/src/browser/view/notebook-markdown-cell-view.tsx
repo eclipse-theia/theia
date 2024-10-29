@@ -30,6 +30,8 @@ import { NotebookCodeCellStatus } from './notebook-code-cell-view';
 import { NotebookEditorFindMatch, NotebookEditorFindMatchOptions } from './notebook-find-widget';
 import * as mark from 'advanced-mark.js';
 import { NotebookCellEditorService } from '../service/notebook-cell-editor-service';
+import { NotebookCellStatusBarService } from '../service/notebook-cell-status-bar-service';
+import { LabelParser } from '@theia/core/lib/browser/label-parser';
 
 @injectable()
 export class NotebookMarkdownCellRenderer implements CellRenderer {
@@ -51,6 +53,12 @@ export class NotebookMarkdownCellRenderer implements CellRenderer {
     @inject(NotebookCellEditorService)
     protected readonly notebookCellEditorService: NotebookCellEditorService;
 
+    @inject(NotebookCellStatusBarService)
+    protected readonly notebookCellStatusBarService: NotebookCellStatusBarService;
+
+    @inject(LabelParser)
+    protected readonly labelParser: LabelParser;
+
     render(notebookModel: NotebookModel, cell: NotebookCellModel): React.ReactNode {
         return <MarkdownCell
             markdownRenderer={this.markdownRenderer}
@@ -60,7 +68,10 @@ export class NotebookMarkdownCellRenderer implements CellRenderer {
             cell={cell}
             notebookModel={notebookModel}
             notebookContextManager={this.notebookContextManager}
-            notebookCellEditorService={this.notebookCellEditorService} />;
+            notebookCellEditorService={this.notebookCellEditorService}
+            notebookCellStatusBarService={this.notebookCellStatusBarService}
+            labelParser={this.labelParser}
+        />;
     }
 
     renderSidebar(notebookModel: NotebookModel, cell: NotebookCellModel): React.ReactNode {
@@ -86,11 +97,15 @@ interface MarkdownCellProps {
     notebookModel: NotebookModel;
     notebookContextManager: NotebookContextManager;
     notebookOptionsService: NotebookOptionsService;
-    notebookCellEditorService: NotebookCellEditorService
+    notebookCellEditorService: NotebookCellEditorService;
+    notebookCellStatusBarService: NotebookCellStatusBarService;
+    labelParser: LabelParser;
 }
 
 function MarkdownCell({
-    markdownRenderer, monacoServices, cell, notebookModel, notebookContextManager, notebookOptionsService, commandRegistry, notebookCellEditorService
+    markdownRenderer, monacoServices, cell, notebookModel, notebookContextManager,
+    notebookOptionsService, commandRegistry, notebookCellEditorService, notebookCellStatusBarService,
+    labelParser
 }: MarkdownCellProps): React.JSX.Element {
     const [editMode, setEditMode] = React.useState(cell.editing);
     let empty = false;
@@ -147,6 +162,8 @@ function MarkdownCell({
                 fontInfo={notebookOptionsService.editorFontInfo} />
             <NotebookCodeCellStatus cell={cell} notebook={notebookModel}
                 commandRegistry={commandRegistry}
+                cellStatusBarService={notebookCellStatusBarService}
+                labelParser={labelParser}
                 onClick={() => cell.requestFocusEditor()} />
         </div >) :
         (<div className='theia-notebook-markdown-content' key="markdown"
