@@ -6,6 +6,7 @@
 
 ## 1.55.0 - not yet released
 
+- [application-package] bumped API version to 1.94.2 [#14371](https://github.com/eclipse-theia/theia/pull/14371) - Contributed on behalf of STMicroelectronics
 - [application-package] feat: provide an application prop to set the configuration area [#14319](https://github.com/eclipse-theia/theia/pull/14319) - Contributed on behalf of STMicroelectronics
 - [plugin] supported MappedEditProviders proposed API evolution [#14276](https://github.com/eclipse-theia/theia/pull/14276) - Contributed on behalf of STMicroelectronics
 
