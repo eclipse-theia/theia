@@ -42,6 +42,8 @@ export interface CommunicationRecordingService {
 
     getHistory(agentId: string): CommunicationHistory;
 
+    getSessionHistory(sessionId: string): CommunicationHistory;
+
     clearHistory(): void;
     readonly onStructuralChange: Event<void>;
 }
