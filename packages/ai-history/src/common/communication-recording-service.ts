@@ -38,6 +38,14 @@ export class DefaultCommunicationRecordingService implements CommunicationRecord
         return this.history.get(agentId) || [];
     }
 
+    getSessionHistory(sessionId: string): CommunicationHistory {
+        return Array.from(
+            this.history.values()
+        ).reduce((acc, current) =>
+            acc.concat(current.filter(entry => entry.sessionId === sessionId)), []
+        );
+    }
+
     recordRequest(requestEntry: CommunicationHistoryEntry): void {
         this.logger.debug('Recording request:', requestEntry.request);
         if (this.history.has(requestEntry.agentId)) {
