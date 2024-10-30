@@ -48,7 +48,9 @@ export const OpenAiPreferencesSchema: PreferenceSchema = {
             \n\
             - specify a unique `id` to identify the custom model in the UI. If none is given `model` will be used as `id`.\
             \n\
-            - provide an `apiKey` to access the API served at the given url. Use `true` to indicate the use of the global OpenAI API key.',
+            - provide an `apiKey` to access the API served at the given url. Use `true` to indicate the use of the global OpenAI API key.\
+            \n\
+            Refer to [our documentation](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm) for more information.',
             default: [],
             items: {
                 type: 'object',
