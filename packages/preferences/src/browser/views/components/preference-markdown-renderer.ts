@@ -68,7 +68,7 @@ export class PreferenceMarkdownRenderer {
                 const command = this.commandRegistry.getCommand(id);
                 if (command) {
                     const name = `${command.category ? `${command.category}: ` : ''}${command.label}`;
-                    return `<a class="disabled-link" title="${id}">${name}</a>`;
+                    return `<span class="command-link" title="${id}">${name}</span>`;
                 }
                 // If nothing was found, print a warning
                 console.warn(`Linked preference "${id}" not found.`);

@@ -234,9 +234,8 @@
   text-decoration: none;
 }
 
-.theia-settings-container .disabled-link {
-  pointer-events: none;
-  cursor: default;
+.theia-settings-container .command-link {
+  color: var(--theia-textLink-foreground);
 }
 
 .theia-settings-container .settings-section a:hover {
