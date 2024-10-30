@@ -234,6 +234,11 @@
   text-decoration: none;
 }
 
+.theia-settings-container .disabled-link {
+  pointer-events: none;
+  cursor: default;
+}
+
 .theia-settings-container .settings-section a:hover {
   text-decoration: underline;
 }
