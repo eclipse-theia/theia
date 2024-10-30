@@ -1,6 +1,9 @@
 {
   "aiConfiguration:open": "AI 구성 보기 열기",
+  "aiHistory:clear": "AI 기록: 기록 지우기",
   "aiHistory:open": "AI 기록 보기 열기",
+  "aiHistory:sortChronologically": "AI 기록: 시간순으로 정렬",
+  "aiHistory:sortReverseChronologically": "AI 기록: 시간순으로 역순 정렬",
   "debug.breakpoint.editCondition": "조건 편집...",
   "notebook.cell.changeToCode": "셀을 코드로 변경",
   "notebook.cell.changeToMarkdown": "셀을 마크다운으로 변경",
@@ -208,6 +211,7 @@
       "prepareDownloadLink": "다운로드 링크 준비 중...",
       "processedOutOf": "처리된 {0} 중 {1}",
       "replaceTitle": "파일 바꾸기",
+      "uploadFailed": "파일을 업로드하는 동안 오류가 발생했습니다. {0}",
       "uploadFiles": "파일 업로드...",
       "uploadedOutOf": "업로드 {0} 중 {1}"
     },

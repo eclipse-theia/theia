@@ -1,6 +1,9 @@
 {
   "aiConfiguration:open": "Otevřete zobrazení konfigurace AI",
+  "aiHistory:clear": "Historie umělé inteligence: Vymazat historii",
   "aiHistory:open": "Otevřít zobrazení Historie AI",
+  "aiHistory:sortChronologically": "Historie umělé inteligence: Seřadit chronologicky",
+  "aiHistory:sortReverseChronologically": "Historie umělé inteligence: Řadit zpětně chronologicky",
   "debug.breakpoint.editCondition": "Upravit stav...",
   "notebook.cell.changeToCode": "Změna buňky na kód",
   "notebook.cell.changeToMarkdown": "Změna buňky na Mardown",
@@ -208,6 +211,7 @@
       "prepareDownloadLink": "Připravujeme odkaz ke stažení...",
       "processedOutOf": "Zpracováno {0} z {1}",
       "replaceTitle": "Nahradit soubor",
+      "uploadFailed": "Při nahrávání souboru došlo k chybě. {0}",
       "uploadFiles": "Nahrávání souborů...",
       "uploadedOutOf": "Nahráno {0} z {1}"
     },
