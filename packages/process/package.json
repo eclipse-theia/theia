@@ -4,7 +4,7 @@
   "description": "Theia process support.",
   "dependencies": {
     "@theia/core": "1.54.0",
-    "node-pty": "0.11.0-beta24",
+    "node-pty": "^1.0.0",
     "string-argv": "^0.1.1",
     "tslib": "^2.6.2"
   },
