@@ -23,6 +23,7 @@ import { ChatAgentService } from './chat-agent-service';
 import { AbstractStreamParsingChatAgent, ChatAgent, SystemMessageDescription } from './chat-agents';
 import { ChatRequestModelImpl, InformationalChatResponseContentImpl } from './chat-model';
 import { generateUuid } from '@theia/core';
+import { ChatHistoryEntry } from './chat-history-entry';
 
 export const orchestratorTemplate: PromptTemplate = {
     id: 'orchestrator-system',
@@ -60,7 +61,7 @@ You must only use the \`id\` attribute of the agent, never the name.
 `};
 
 export const OrchestratorChatAgentId = 'Orchestrator';
-const OrchestatorRequestIdKey = 'orchestatorRequestIdKey';
+const OrchestratorRequestIdKey = 'orchestatorRequestIdKey';
 
 @injectable()
 export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent implements ChatAgent {
@@ -93,16 +94,15 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent implem
     override async invoke(request: ChatRequestModelImpl): Promise<void> {
         request.response.addProgressMessage({ content: 'Determining the most appropriate agent', status: 'inProgress' });
         // We generate a dedicated ID for recording the orchestrator request/response, as we will forward the original request to another agent
-        const orchestartorRequestId = generateUuid();
-        request.addData(OrchestatorRequestIdKey, orchestartorRequestId);
-        const userPrompt = request.request.text;
-        this.recordingService.recordRequest({
-            agentId: this.id,
-            sessionId: request.session.id,
-            timestamp: Date.now(),
-            requestId: orchestartorRequestId,
-            request: userPrompt,
-        });
+        const orchestratorRequestId = generateUuid();
+        request.addData(OrchestratorRequestIdKey, orchestratorRequestId);
+        const systemMessage = (await this.getSystemMessageDescription())?.text;
+        this.recordingService.recordRequest(
+            ChatHistoryEntry.fromRequest(this.id, request, {
+                requestId: orchestratorRequestId,
+                systemMessage
+            })
+        );
         return super.invoke(request);
     }
 
@@ -115,12 +115,11 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent implem
         let agentIds: string[] = [];
         const responseText = await getTextOfResponse(response);
         // We use the previously generated, dedicated ID to log the orchestrator response before we forward the original request
-        const orchestratorRequestId = request.getDataByKey(OrchestatorRequestIdKey);
+        const orchestratorRequestId = request.getDataByKey(OrchestratorRequestIdKey);
         if (typeof orchestratorRequestId === 'string') {
             this.recordingService.recordResponse({
                 agentId: this.id,
                 sessionId: request.session.id,
-                timestamp: Date.now(),
                 requestId: orchestratorRequestId,
                 response: responseText,
             });

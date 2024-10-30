@@ -26,18 +26,22 @@ export interface CommunicationHistoryEntry {
     request?: string;
     response?: string;
     responseTime?: number;
+    systemMessage?: string;
     messages?: unknown[];
 }
 
 export type CommunicationRequestEntry = Omit<CommunicationHistoryEntry, 'response' | 'responseTime'>;
 export type CommunicationResponseEntry = Omit<CommunicationHistoryEntry, 'request'>;
 
+export type CommunicationRequestEntryParam = Omit<CommunicationRequestEntry, 'timestamp'> & Partial<Pick<CommunicationHistoryEntry, 'timestamp'>>;
+export type CommunicationResponseEntryParam = Omit<CommunicationResponseEntry, 'timestamp'> & Partial<Pick<CommunicationHistoryEntry, 'timestamp'>>;
+
 export const CommunicationRecordingService = Symbol('CommunicationRecordingService');
 export interface CommunicationRecordingService {
-    recordRequest(requestEntry: CommunicationRequestEntry): void;
+    recordRequest(requestEntry: CommunicationRequestEntryParam): void;
     readonly onDidRecordRequest: Event<CommunicationRequestEntry>;
 
-    recordResponse(responseEntry: CommunicationResponseEntry): void;
+    recordResponse(responseEntry: CommunicationResponseEntryParam): void;
     readonly onDidRecordResponse: Event<CommunicationResponseEntry>;
 
     getHistory(agentId: string): CommunicationHistory;
