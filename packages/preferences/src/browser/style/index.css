@@ -234,6 +234,10 @@
   text-decoration: none;
 }
 
+.theia-settings-container .command-link {
+  color: var(--theia-textLink-foreground);
+}
+
 .theia-settings-container .settings-section a:hover {
   text-decoration: underline;
 }
