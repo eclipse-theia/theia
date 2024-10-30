@@ -1,6 +1,9 @@
 {
   "aiConfiguration:open": "Otwórz widok konfiguracji AI",
+  "aiHistory:clear": "Historia AI: Wyczyść historię",
   "aiHistory:open": "Otwórz widok historii AI",
+  "aiHistory:sortChronologically": "Historia AI: Sortuj chronologicznie",
+  "aiHistory:sortReverseChronologically": "Historia AI: Sortuj chronologicznie",
   "debug.breakpoint.editCondition": "Warunek edycji...",
   "notebook.cell.changeToCode": "Zmień komórkę na kod",
   "notebook.cell.changeToMarkdown": "Zmień komórkę na Mardown",
@@ -208,6 +211,7 @@
       "prepareDownloadLink": "Przygotowywanie linku do pobrania...",
       "processedOutOf": "Przetworzono {0} z {1}.",
       "replaceTitle": "Wymiana pliku",
+      "uploadFailed": "Wystąpił błąd podczas przesyłania pliku. {0}",
       "uploadFiles": "Prześlij pliki...",
       "uploadedOutOf": "Przesłano {0} z {1}."
     },

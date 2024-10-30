@@ -1,6 +1,9 @@
 {
   "aiConfiguration:open": "Aprire la vista Configurazione AI",
+  "aiHistory:clear": "Storia dell'IA: Cancella la storia",
   "aiHistory:open": "Aprire la vista Cronologia AI",
+  "aiHistory:sortChronologically": "Storia dell'intelligenza artificiale: Ordinamento cronologico",
+  "aiHistory:sortReverseChronologically": "Storia dell'intelligenza artificiale: Ordinamento cronologico inverso",
   "debug.breakpoint.editCondition": "Modifica della condizione...",
   "notebook.cell.changeToCode": "Cambia cella in codice",
   "notebook.cell.changeToMarkdown": "Cambiare la cella in Mardown",
@@ -208,6 +211,7 @@
       "prepareDownloadLink": "Preparazione del link per il download...",
       "processedOutOf": "Elaborato {0} su {1}",
       "replaceTitle": "Sostituire il file",
+      "uploadFailed": "Si è verificato un errore durante il caricamento di un file. {0}",
       "uploadFiles": "Carica i file...",
       "uploadedOutOf": "Caricato {0} su {1}"
     },

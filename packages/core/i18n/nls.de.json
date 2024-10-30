@@ -1,6 +1,9 @@
 {
   "aiConfiguration:open": "AI-Konfigurationsansicht öffnen",
+  "aiHistory:clear": "AI-Verlauf: Geschichte löschen",
   "aiHistory:open": "AI-Historienansicht öffnen",
+  "aiHistory:sortChronologically": "AI-Geschichte: Chronologisch sortieren",
+  "aiHistory:sortReverseChronologically": "AI-Geschichte: Rückwärts chronologisch sortieren",
   "debug.breakpoint.editCondition": "Edit Bedingung...",
   "notebook.cell.changeToCode": "Zelle in Code ändern",
   "notebook.cell.changeToMarkdown": "Zelle in Mardown ändern",
@@ -208,6 +211,7 @@
       "prepareDownloadLink": "Download-Link wird vorbereitet...",
       "processedOutOf": "Verarbeitet {0} von {1}",
       "replaceTitle": "Datei austauschen",
+      "uploadFailed": "Beim Hochladen einer Datei ist ein Fehler aufgetreten. {0}",
       "uploadFiles": "Dateien hochladen...",
       "uploadedOutOf": "Hochgeladen {0} von {1}"
     },

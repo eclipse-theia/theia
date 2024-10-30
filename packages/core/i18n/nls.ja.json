@@ -1,6 +1,9 @@
 {
   "aiConfiguration:open": "AI設定ビューを開く",
+  "aiHistory:clear": "AI履歴クリアヒストリー",
   "aiHistory:open": "AI履歴ビューを開く",
+  "aiHistory:sortChronologically": "AIの歴史年代順に並べ替える",
+  "aiHistory:sortReverseChronologically": "AIの歴史年代順に並べ替える",
   "debug.breakpoint.editCondition": "編集条件...",
   "notebook.cell.changeToCode": "セルをコードに変更",
   "notebook.cell.changeToMarkdown": "セルをマーダウンに変更",
@@ -208,6 +211,7 @@
       "prepareDownloadLink": "ダウンロードリンクの準備中...",
       "processedOutOf": "{1}のうち{0}を処理",
       "replaceTitle": "ファイルの置き換え",
+      "uploadFailed": "ファイルのアップロード中にエラーが発生しました。{0}",
       "uploadFiles": "ファイルのアップロード...",
       "uploadedOutOf": "{1}のうち{0}をアップロードしました。"
     },
