@@ -4,11 +4,57 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
-## 1.55.0 - not yet released
+<!-- ## 1.56.0 - not yet released -->
 
+## 1.55.0 - 10/31/2024
+
+- [ai] added logic to allow to order and clear AI History view [#14233](https://github.com/eclipse-theia/theia/pull/14233)
+- [ai] added preference to exclude files from code completion [#14315](https://github.com/eclipse-theia/theia/pull/14315)
+- [ai] added support for custom agents [#14301](https://github.com/eclipse-theia/theia/pull/14301)
+- [ai] added support for custom keys for custom Open AI models [#14299](https://github.com/eclipse-theia/theia/pull/14299)
+- [ai] added support for llamafile as ai model provider [#14281](https://github.com/eclipse-theia/theia/pull/14281)
+- [ai] added support for o1-preview [#14356](https://github.com/eclipse-theia/theia/pull/14356)
+- [ai] added support to make response parsing extensible [#14196](https://github.com/eclipse-theia/theia/pull/14196) - Contributed on behalf of STMicroelectronics
+- [ai] added support to query history by session [#14368](https://github.com/eclipse-theia/theia/pull/14368) - Contributed on behalf of STMicroelectronics
+- [ai] fixed markdown request renderer [#14211](https://github.com/eclipse-theia/theia/pull/14211)
+- [ai] improved custom OpenAI and llama-file preference description [#14376](https://github.com/eclipse-theia/theia/pull/14376)
+- [ai] improved styling of the chat widget [#14278](https://github.com/eclipse-theia/theia/pull/14278) - Contributed on behalf of STMicroelectronics
+- [ai] updated list of OpenAI models supporting structured output [#14247](https://github.com/eclipse-theia/theia/pull/14247)
+- [ai] updated logic so that orchestrator logs its own requests [#14255](https://github.com/eclipse-theia/theia/pull/14255)
+- [ai] updated logic to allow customizing the LLM request settings [#14284](https://github.com/eclipse-theia/theia/pull/14284) - Contributed on behalf of STMicroelectronics
+- [ai] updated logic to avoid line wrap in code response parts [#14363](https://github.com/eclipse-theia/theia/pull/14363)
+- [ai] updated terminal agent to record its requests [#14246](https://github.com/eclipse-theia/theia/pull/14246)
+- [application-package] added an application prop to set the configuration area [#14319](https://github.com/eclipse-theia/theia/pull/14319) - Contributed on behalf of STMicroelectronics
 - [application-package] bumped API version to 1.94.2 [#14371](https://github.com/eclipse-theia/theia/pull/14371) - Contributed on behalf of STMicroelectronics
-- [application-package] feat: provide an application prop to set the configuration area [#14319](https://github.com/eclipse-theia/theia/pull/14319) - Contributed on behalf of STMicroelectronics
+- [cli] upgraded puppeteer to 23.1.0 [#14261](https://github.com/eclipse-theia/theia/pull/14261) - Contributed on behalf of STMicroelectronics
+- [core] fixed circular imports when importing ReactDialog [#14352](https://github.com/eclipse-theia/theia/pull/14352)
+- [core] fixed css calc expression to have space around operator [#14241](https://github.com/eclipse-theia/theia/pull/14241) - Contributed on behalf of STMicroelectronics
+- [core] fixed duplicate text editor entry [#14238](https://github.com/eclipse-theia/theia/pull/14238)
+- [core] improved widget specific status bar handling [#14239](https://github.com/eclipse-theia/theia/pull/14239)
+- [core] replaced nsfw with @parcel/watcher [#14194](https://github.com/eclipse-theia/theia/pull/14194)
+- [core] updated logic to set menu bar less often at startup [#14295](https://github.com/eclipse-theia/theia/pull/14295) - Contributed on behalf of STMicroelectronics
+- [core] updated logic to start menu handler ids at one, not zero [#14282](https://github.com/eclipse-theia/theia/pull/14282) - Contributed on behalf of STMicroelectronics
+- [core] upgraded express to 4.21.0 [#14283](https://github.com/eclipse-theia/theia/pull/14283) - Contributed on behalf of STMicroelectronics
+- [filesystem] added logic to New File dialog to accept Enter for default [#14146](https://github.com/eclipse-theia/theia/pull/14146)
+- [filesystem] updated logic to show error message when uploading fails [#14349](https://github.com/eclipse-theia/theia/pull/14349)
+- [filesystem] updated rimraf to 5 [#14273](https://github.com/eclipse-theia/theia/pull/14273)
+- [notebook] added Cell Tag Support for Notebooks [#14271](https://github.com/eclipse-theia/theia/pull/14271)
+- [notebook] added notebook split cell command [#14212](https://github.com/eclipse-theia/theia/pull/14212)
+- [notebook] fixed notebook editor focusing [#14229](https://github.com/eclipse-theia/theia/pull/14229)
+- [notebook] fixed notebook editor staying current even when selecting sidebar or bottom panel [#14262](https://github.com/eclipse-theia/theia/pull/14262)
+- [notebook] optimized notebook webview output [#14234](https://github.com/eclipse-theia/theia/pull/14234)
+- [notebook] updated logic to blur cell on shift+enter, only update cell height when changed [#14277](https://github.com/eclipse-theia/theia/pull/14277)
+- [notebook] updated logic to ensure notebook document event registration [#14242](https://github.com/eclipse-theia/theia/pull/14242)
+- [notebook] updated logic to not disable cell edit mode when escaping code completion in notebooks [#14328](https://github.com/eclipse-theia/theia/pull/14328)
+- [playwright] added Playwright API for Notebooks [#14098](https://github.com/eclipse-theia/theia/pull/14098)
+- [plugin] added support for proposed signature for workspace.createFileSystemWatcher [#14303](https://github.com/eclipse-theia/theia/pull/14303) - Contributed on behalf of STMicroelectronics
+- [plugin] fixed the onDidChangeActiveNotebookEditorEmitter to fire correctly [#14321](https://github.com/eclipse-theia/theia/pull/14321)
 - [plugin] supported MappedEditProviders proposed API evolution [#14276](https://github.com/eclipse-theia/theia/pull/14276) - Contributed on behalf of STMicroelectronics
+- [plugin] updated logic to accept a string argument in env.openExternal API [#14350](https://github.com/eclipse-theia/theia/pull/14350) - Contributed on behalf of STMicroelectronics
+- [plugin] updated logic to properly dispose tab/title-based resources on tab close [#14359](https://github.com/eclipse-theia/theia/pull/14359)
+- [plugin] wrapped api objects returned to clients in a proxy [#14213](https://github.com/eclipse-theia/theia/pull/14213) - Contributed on behalf of STMicroelectronics
+- [preferences] improved preference renderer linking [#14311](https://github.com/eclipse-theia/theia/pull/14311)
+- [workspace] optimized showing recent workspaces [#14260](https://github.com/eclipse-theia/theia/pull/14260)
 
 ## 1.54.0 - 09/26/2024
 
