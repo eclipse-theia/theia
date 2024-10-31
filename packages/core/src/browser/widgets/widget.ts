@@ -396,7 +396,6 @@ export function unpin(title: Title<Widget>): void {
     title.className = title.className.replace(PINNED_CLASS, '').trim();
 }
 
-
 export function isLocked(title: Title<Widget>): boolean {
     return title.className.includes(LOCKED_CLASS);
 }
