@@ -18,6 +18,7 @@ import { PreferenceSchema } from '@theia/core/lib/browser/preferences/preference
 import { AI_CORE_PREFERENCES_TITLE } from '@theia/ai-core/lib/browser/ai-core-preferences';
 
 export const PREF_AI_INLINE_COMPLETION_ENABLE = 'ai-features.codeCompletion.enableCodeCompletion';
+export const PREF_AI_INLINE_COMPLETION_AUTOMATIC_ENABLE = 'ai-features.codeCompletion.automaticCodeCompletion';
 export const PREF_AI_INLINE_COMPLETION_EXCLUDED_EXTENSIONS = 'ai-features.codeCompletion.excludedFileExtensions';
 
 export const AICodeCompletionPreferencesSchema: PreferenceSchema = {
@@ -28,6 +29,12 @@ export const AICodeCompletionPreferencesSchema: PreferenceSchema = {
             type: 'boolean',
             description: 'Enable AI completions inline within any (Monaco) editor.',
             default: false
+        },
+        [PREF_AI_INLINE_COMPLETION_AUTOMATIC_ENABLE]: {
+            title: AI_CORE_PREFERENCES_TITLE,
+            type: 'boolean',
+            description: 'Automatically trigger AI completions inline within any (Monaco) editor while editing.',
+            default: true
         },
         [PREF_AI_INLINE_COMPLETION_EXCLUDED_EXTENSIONS]: {
             title: 'Excluded File Extensions',
