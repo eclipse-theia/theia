@@ -31,13 +31,30 @@
     display: flex;
     justify-content: space-between;
     font-size: 0.9em;
-    margin-bottom: var(--theia-ui-padding);
     padding: var(--theia-ui-padding) 0;
 }
 
 .theia-card-content {
     color: var(--theia-font-color);
     margin-bottom: 10px;
+}
+
+.theia-card-content h2 {
+    font-size: var(--theia-ui-font-size2);
+}
+.theia-card-content h3 {
+    font-size: var(--theia-ui-font-size1);
+    font-weight: bold;
+}
+
+.theia-card-content .theia-card-context h2 {
+    display: inline;
+}
+.theia-card-content .theia-card-context ul {
+    padding-inline-start: 20px;
+}
+.theia-card-content .theia-card-context pre {
+    overflow: scroll;
 }
 
 .theia-card-content p {

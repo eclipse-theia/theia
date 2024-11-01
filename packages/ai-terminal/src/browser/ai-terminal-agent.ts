@@ -149,9 +149,9 @@ recent-terminal-contents:
             recentTerminalContents
         };
 
-        const systemPrompt = await this.promptService.getPrompt('terminal-system', parameters).then(p => p?.text);
-        const userPrompt = await this.promptService.getPrompt('terminal-user', parameters).then(p => p?.text);
-        if (!systemPrompt || !userPrompt) {
+        const systemMessage = await this.promptService.getPrompt('terminal-system', parameters).then(p => p?.text);
+        const request = await this.promptService.getPrompt('terminal-user', parameters).then(p => p?.text);
+        if (!systemMessage || !request) {
             this.logger.error('The prompt service didn\'t return prompts for the AI Terminal Agent.');
             return [];
         }
@@ -162,10 +162,9 @@ recent-terminal-contents:
         this.recordingService.recordRequest({
             agentId: this.id,
             sessionId,
-            timestamp: Date.now(),
             requestId,
-            request: systemPrompt,
-            messages: [userPrompt],
+            request,
+            systemMessage
         });
 
         try {
@@ -174,12 +173,12 @@ recent-terminal-contents:
                     {
                         actor: 'ai',
                         type: 'text',
-                        query: systemPrompt
+                        query: systemMessage
                     },
                     {
                         actor: 'user',
                         type: 'text',
-                        query: userPrompt
+                        query: request
                     }
                 ],
                 response_format: {
@@ -196,14 +195,8 @@ recent-terminal-contents:
                 // model returned structured output
                 const parsedResult = Commands.safeParse(result.parsed);
                 if (parsedResult.success) {
-                    const responseTextfromParsed = JSON.stringify(parsedResult.data.commands);
-                    this.recordingService.recordResponse({
-                        agentId: this.id,
-                        sessionId,
-                        timestamp: Date.now(),
-                        requestId,
-                        response: responseTextfromParsed,
-                    });
+                    const response = JSON.stringify(parsedResult.data.commands);
+                    this.recordingService.recordResponse({ agentId: this.id, sessionId, requestId, response, systemMessage });
                     return parsedResult.data.commands;
                 }
             }
@@ -211,13 +204,7 @@ recent-terminal-contents:
             // fall back to agent-based parsing of result
             const jsonResult = await getJsonOfResponse(result);
             const responseTextFromJSON = JSON.stringify(jsonResult);
-            this.recordingService.recordResponse({
-                agentId: this.id,
-                sessionId,
-                timestamp: Date.now(),
-                requestId,
-                response: responseTextFromJSON
-            });
+            this.recordingService.recordResponse({ agentId: this.id, sessionId, requestId, response: responseTextFromJSON });
             const parsedJsonResult = Commands.safeParse(jsonResult);
             if (parsedJsonResult.success) {
                 return parsedJsonResult.data.commands;
