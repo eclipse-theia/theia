@@ -102,13 +102,17 @@ export class AIHistoryView extends ReactWidget implements StatefulWidget {
         return (
             <div className='agent-history-widget'>
                 <SelectComponent
-                    options={this.agentService.getAllAgents().map(agent => ({ value: agent.id, label: agent.name, description: agent.description }))}
+                    options={this.agentService.getAllAgents().map(agent => ({
+                        value: agent.id,
+                        label: agent.name,
+                        description: agent.description || ''
+                    }))}
                     onChange={selectionChange}
                     defaultValue={this.selectedAgent?.id} />
                 <div className='agent-history'>
                     {this.renderHistory()}
                 </div>
-            </div >
+            </div>
         );
     }
 
