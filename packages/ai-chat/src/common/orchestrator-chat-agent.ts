@@ -96,10 +96,12 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent implem
         // We generate a dedicated ID for recording the orchestrator request/response, as we will forward the original request to another agent
         const orchestratorRequestId = generateUuid();
         request.addData(OrchestratorRequestIdKey, orchestratorRequestId);
+        const messages = await this.getMessages(request.session);
         const systemMessage = (await this.getSystemMessageDescription())?.text;
         this.recordingService.recordRequest(
             ChatHistoryEntry.fromRequest(this.id, request, {
                 requestId: orchestratorRequestId,
+                messages,
                 systemMessage
             })
         );
