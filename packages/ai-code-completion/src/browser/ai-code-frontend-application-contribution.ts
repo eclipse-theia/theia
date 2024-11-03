@@ -21,7 +21,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { Disposable } from '@theia/core';
 import { AICodeInlineCompletionsProvider } from './ai-code-inline-completion-provider';
-import { PREF_AI_INLINE_COMPLETION_AUTOMATIC_ENABLE, PREF_AI_INLINE_COMPLETION_ENABLE, PREF_AI_INLINE_COMPLETION_EXCLUDED_EXTENSIONS } from './ai-code-completion-preference';
+import { PREF_AI_INLINE_COMPLETION_AUTOMATIC_ENABLE, PREF_AI_INLINE_COMPLETION_EXCLUDED_EXTENSIONS } from './ai-code-completion-preference';
 import { InlineCompletionTriggerKind } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
 
 @injectable()
@@ -49,8 +49,7 @@ export class AIFrontendApplicationContribution implements FrontendApplicationCon
         this.toDispose.set('inlineCompletions', handler());
 
         this.preferenceService.onPreferenceChanged(event => {
-            if (event.preferenceName === PREF_AI_INLINE_COMPLETION_ENABLE
-                || event.preferenceName === PREF_AI_INLINE_COMPLETION_AUTOMATIC_ENABLE
+            if (event.preferenceName === PREF_AI_INLINE_COMPLETION_AUTOMATIC_ENABLE
                 || event.preferenceName === PREF_AI_INLINE_COMPLETION_EXCLUDED_EXTENSIONS) {
                 this.toDispose.get('inlineCompletions')?.dispose();
                 this.toDispose.set('inlineCompletions', handler());
@@ -66,18 +65,15 @@ export class AIFrontendApplicationContribution implements FrontendApplicationCon
     registerKeybindings(keybindings: KeybindingRegistry): void {
         keybindings.registerKeybinding({
             command: 'editor.action.inlineSuggest.trigger',
-            keybinding: 'Ctrl+Shift+Space',
+            keybinding: 'Shift+Space',
             when: '!editorReadonly && editorTextFocus'
         });
     }
 
     protected handleInlineCompletions(): Disposable {
-        const enable = this.preferenceService.get<boolean>(PREF_AI_INLINE_COMPLETION_ENABLE, false) && this.activationService.isActive;
-
-        if (!enable) {
+        if (!this.activationService.isActive) {
             return Disposable.NULL;
         }
-
         const automatic = this.preferenceService.get<boolean>(PREF_AI_INLINE_COMPLETION_AUTOMATIC_ENABLE, true);
         const excludedExtensions = this.preferenceService.get<string[]>(PREF_AI_INLINE_COMPLETION_EXCLUDED_EXTENSIONS, []);
 
