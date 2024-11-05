@@ -23,7 +23,7 @@ import {
 import { ElectronMainMenuFactory } from './electron-main-menu-factory';
 import { ContextMenuContext } from '../../browser/menu/context-menu-context';
 import { MenuPath, MenuContribution, MenuModelRegistry } from '../../common';
-import { BrowserContextMenuRenderer } from '../../browser/menu/browser-context-menu-renderer';
+import { BrowserContextMenuAccess, BrowserContextMenuRenderer } from '../../browser/menu/browser-context-menu-renderer';
 
 export class ElectronContextMenuAccess extends ContextMenuAccess {
     constructor(readonly menuHandle: Promise<number>) {
@@ -115,7 +115,14 @@ export class ElectronContextMenuRenderer extends BrowserContextMenuRenderer {
             this.context.resetAltPressed();
             return new ElectronContextMenuAccess(menuHandle);
         } else {
-            return super.doRender(options);
+            const menuAccess = super.doRender(options);
+            const node = (menuAccess as BrowserContextMenuAccess).menu.node;
+            // ensure the context menu is not displayed outside of the main area
+            if (node.style.top && parseInt(node.style.top.substring(0, node.style.top.length - 2)) < 32) {
+                node.style.top = '32px';
+                node.style.maxHeight = `calc(${node.style.maxHeight} - 32px)`;
+            }
+            return menuAccess;
         }
     }
 
