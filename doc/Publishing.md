@@ -83,6 +83,7 @@ The release instructions are as follows:
 - Perform the release using `yarn publish:latest` - choose an appropriate version.
 - Keep the `packages/core/README.md` updates in a separate commit ([example](https://github.com/eclipse-theia/theia/commit/21fa2ec688e4a8bcf10203d6dc0f730af43a7f58)).
 - Prepare a release - create a branch with the pattern `release/x.y.z` (ex: `release/1.40.x`).
+- Run the [*Package Native Dependencies*](https://github.com/eclipse-theia/theia/actions/workflows/native-dependencies.yml) GitHub Action on the new branch and download the resulting artifacts.
 - Once approved, merge using `Rebase and Merge` (**DO NOT `Squash and Merge`**).
 - Once the pull-request is merged, pull the changes locally and tag the publishing commit (ex: `git tag -a "${version} ${sha} -m "${version}"`).
 - Publish the tag to GitHub.
@@ -94,6 +95,7 @@ The release instructions are as follows:
   - Use the `generate release notes` button to generate the list of contributors (including new ones), and format them similarly to other releases.
   - Include a release `description` to include a reference to the `changelog` at the respective `sha` and release version.
   - Include a reference to the migration guide in the release description.
+  - Add the artifacts of the *Package Native Dependencies* GitHub Action to the release assets.
   - Select _"Publish Release"_ bottom at the bottom of the page.
   - For additional information, please consult the official GitHub documentation regarding [creating releases](https://help.github.com/en/github/administering-a-repository/managing-releases-in-a-repository#creating-a-release).
 
