@@ -117,10 +117,11 @@ export class ElectronContextMenuRenderer extends BrowserContextMenuRenderer {
         } else {
             const menuAccess = super.doRender(options);
             const node = (menuAccess as BrowserContextMenuAccess).menu.node;
+            const topPanelHeight = document.getElementById('theia-top-panel')?.clientHeight ?? 0;
             // ensure the context menu is not displayed outside of the main area
-            if (node.style.top && parseInt(node.style.top.substring(0, node.style.top.length - 2)) < 32) {
-                node.style.top = '32px';
-                node.style.maxHeight = `calc(${node.style.maxHeight} - 32px)`;
+            if (node.style.top && parseInt(node.style.top.substring(0, node.style.top.length - 2)) < topPanelHeight) {
+                node.style.top = `${topPanelHeight}px`;
+                node.style.maxHeight = `calc(${node.style.maxHeight} - ${topPanelHeight}px)`;
             }
             return menuAccess;
         }
