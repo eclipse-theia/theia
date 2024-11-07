@@ -15,9 +15,11 @@
 // *****************************************************************************
 
 import '../../src/browser/style/index.css';
-require('../../src/browser/style/materialcolors.css').use();
+import '../../src/browser/style/materialcolors.css';
+import '@phosphor/widgets/style/index.css';
 import 'font-awesome/css/font-awesome.min.css';
 import 'file-icons-js/css/style.css';
+import 'perfect-scrollbar/css/perfect-scrollbar.css';
 import '@vscode/codicons/dist/codicon.css';
 
 import { ContainerModule } from 'inversify';
