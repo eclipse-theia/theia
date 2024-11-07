@@ -40,7 +40,7 @@
     "escape-html": "^1.0.3",
     "filenamify": "^4.1.0",
     "is-electron": "^2.2.0",
-    "jsonc-parser": "^2.2.0",
+    "jsonc-parser": "^3.3.1",
     "lodash.clonedeep": "^4.5.0",
     "macaddress": "^0.5.3",
     "mime": "^2.4.4",

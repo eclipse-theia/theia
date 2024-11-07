@@ -16,6 +16,9 @@
       "path": "../ffmpeg"
     },
     {
+      "path": "../native-esbuild-plugin"
+    },
+    {
       "path": "../native-webpack-plugin"
     }
   ]
