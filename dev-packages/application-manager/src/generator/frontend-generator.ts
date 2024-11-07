@@ -66,6 +66,7 @@ export class FrontendGenerator extends AbstractGenerator {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="stylesheet" href="./bundle.css">
   <title>${this.pck.props.frontend.config.applicationName}</title>`;
     }
 

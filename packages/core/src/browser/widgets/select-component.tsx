@@ -149,7 +149,7 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
         return optimal + 20; // Just to be safe, add another 20 pixels here
     }
 
-   protected attachListeners(): void {
+    protected attachListeners(): void {
         const hide = (event: Event) => {
             if (!this.dropdownRef.current?.contains(event.target as Node)) {
                 this.hide();

@@ -26,10 +26,7 @@ export class PluginWorker {
     public readonly rpc: RPCProtocol;
 
     constructor() {
-        this.worker = new Worker(new URL('./worker/worker-main',
-            // @ts-expect-error (TS1343)
-            // We compile to CommonJS but `import.meta` is still available in the browser
-            import.meta.url));
+        this.worker = new Worker(new URL('./worker/worker-main'));
 
         const channel = new BasicChannel(() => {
             const writer = new Uint8ArrayWriteBuffer();
