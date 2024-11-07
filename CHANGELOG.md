@@ -9,6 +9,7 @@
 <a name="breaking_changes_1.72.0">[Breaking Changes:](#breaking_changes_1.72.0)</a>
 
 - [ai-chat] the `'*'` magic key inside `ai-features.chat.toolConfirmation` is no longer honored; migrate to the new `ai-features.chat.defaultToolConfirmation` preference [#17452](https://github.com/eclipse-theia/theia/pull/17452)
+- [native-webpack-plugin] The `@theia/native-webpack-plugin` package has been renamed to `@theia/bundle-plugin` [#14414](https://github.com/eclipse-theia/theia/pull/14414).
 
 ## 1.71.0 - 4/30/2026
 

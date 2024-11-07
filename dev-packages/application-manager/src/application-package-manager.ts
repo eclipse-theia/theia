@@ -19,7 +19,7 @@ import * as fs from 'fs-extra';
 import * as cp from 'child_process';
 import * as semver from 'semver';
 import { ApplicationPackage, ApplicationPackageOptions } from '@theia/application-package';
-import { WebpackGenerator, FrontendGenerator, BackendGenerator } from './generator';
+import { BundlerGenerator, FrontendGenerator, BackendGenerator } from './generator';
 import { ApplicationProcess } from './application-process';
 import { GeneratorOptions } from './generator/abstract-generator';
 import yargs = require('yargs');
@@ -73,12 +73,14 @@ export class ApplicationPackageManager {
     }
 
     async clean(): Promise<void> {
-        const webpackGenerator = new WebpackGenerator(this.pck);
+        const bundlerGenerator = new BundlerGenerator(this.pck);
         await Promise.all([
             this.remove(this.pck.lib()),
             this.remove(this.pck.srcGen()),
-            this.remove(webpackGenerator.genConfigPath),
-            this.remove(webpackGenerator.genNodeConfigPath)
+            this.remove(bundlerGenerator.genConfigPath),
+            this.remove(bundlerGenerator.genNodeConfigPath),
+            this.remove(bundlerGenerator.genESBuildBrowserPath),
+            this.remove(bundlerGenerator.genESBuildNodePath),
         ]);
     }
 
@@ -99,7 +101,7 @@ export class ApplicationPackageManager {
             throw error;
         }
         await Promise.all([
-            new WebpackGenerator(this.pck, options).generate(),
+            new BundlerGenerator(this.pck, options).generate(),
             new BackendGenerator(this.pck, options).generate(),
             new FrontendGenerator(this.pck, options).generate(),
         ]);
@@ -111,9 +113,15 @@ export class ApplicationPackageManager {
     }
 
     async build(args: string[] = [], options: GeneratorOptions = {}): Promise<void> {
+        const bundlerGenerator = new BundlerGenerator(this.pck);
         await this.generate(options);
         await this.copy();
-        return this.__process.run('webpack', args);
+        if (await bundlerGenerator.preferESBuild()) {
+            const process = this.__process.spawn('node', [bundlerGenerator.esbuildPath, ...args]);
+            return this.__process.promisify('esbuild', process);
+        } else {
+            return this.__process.run('webpack', args);
+        }
     }
 
     start(args: string[] = []): cp.ChildProcess {

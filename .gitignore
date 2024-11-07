@@ -15,6 +15,7 @@ errorShots
 examples/*/src-gen
 examples/*/gen-webpack.config.js
 examples/*/gen-webpack.node.config.js
+examples/*/gen-esbuild.*.mjs
 examples/*/.test
 .browser_modules
 **/docs/api
