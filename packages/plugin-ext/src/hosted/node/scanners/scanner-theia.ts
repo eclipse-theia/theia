@@ -730,6 +730,7 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
             view: rawViewWelcome.view,
             content: rawViewWelcome.contents,
             when: rawViewWelcome.when,
+            enablement: rawViewWelcome.enablement,
             // if the plugin contributes Welcome view to its own view - it will be ordered first
             order: pluginViewsIds.findIndex(v => v === rawViewWelcome.view) > -1 ? 0 : 1
         };
