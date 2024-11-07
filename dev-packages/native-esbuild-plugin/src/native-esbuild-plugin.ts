@@ -97,7 +97,7 @@ class PluginImpl implements Plugin {
                     ? join(resolveModulePath('@vscode/windows-ca-certs'), 'build', 'Release', 'crypt32.node')
                     : '',
                 // Simply mark the dependency as external on non-Windows platforms
-                external: windows
+                external: !windows
             };
         });
         build.onResolve({ filter: /\.\/build\/Release\/keymapping$/ }, () => ({
