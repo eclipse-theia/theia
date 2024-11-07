@@ -15,15 +15,15 @@
  ********************************************************************************/
 
 /* Import base configuration styles */
-@import url("./ai-configuration-base.css");
-@import url("./ai-configuration-list-detail.css");
-@import url("./ai-configuration-cards.css");
-@import url("./ai-configuration-table.css");
-@import url("./ai-configuration-hierarchical.css");
+@import "./ai-configuration-base.css";
+@import "./ai-configuration-list-detail.css";
+@import "./ai-configuration-cards.css";
+@import "./ai-configuration-table.css";
+@import "./ai-configuration-hierarchical.css";
 
 /* Import widget-specific styles */
-@import url("./widgets/model-aliases-configuration.css");
-@import url("./widgets/mcp-configuration.css");
+@import "./widgets/model-aliases-configuration.css";
+@import "./widgets/mcp-configuration.css";
 
 /* Override preferences grid layout for AI Configuration widgets */
 .ai-configuration-widget.theia-settings-container {

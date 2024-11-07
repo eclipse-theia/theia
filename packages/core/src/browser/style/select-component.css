@@ -15,8 +15,6 @@
  ********************************************************************************/
 
 .theia-select-component-container {
-  /* required to set z-index */
-  position: fixed;
   /* dialog overlay has a z-index of 5000 */
   z-index: 6000;
 }
