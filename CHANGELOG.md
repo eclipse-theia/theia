@@ -7,7 +7,7 @@
 <!-- ## 1.56.0 - not yet released
 
 <a name="breaking_changes_1.56.0">[Breaking Changes:](#breaking_changes_1.56.0)</a>
-- [dependencies] remove browserfs dependency (replaced by OPFS)
+- [browser-only] remove browserfs dependency (replaced by OPFS)
 
 -->
 
