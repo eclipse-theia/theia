@@ -14,9 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-
-
-
 // @ts-check
 describe('SCM', function () {
 
@@ -31,6 +28,8 @@ describe('SCM', function () {
     const { ScmService } = require('@theia/scm/lib/browser/scm-service');
     const { ScmWidget } = require('@theia/scm/lib/browser/scm-widget');
     const { CommandRegistry } = require('@theia/core/lib/common');
+    const { PreferenceService } = require('@theia/core/lib/browser');
+
 
     /** @type {import('inversify').Container} */
     const container = window['theia'].container;
@@ -40,6 +39,7 @@ describe('SCM', function () {
     const service = container.get(ScmService);
     const commandRegistry = container.get(CommandRegistry);
     const pluginService = container.get(HostedPluginSupport);
+    const preferences = container.get(PreferenceService);
 
     /** @type {ScmWidget} */
     let scmWidget;
@@ -80,6 +80,12 @@ describe('SCM', function () {
         });
         return success;
     }
+
+
+    before(async () => {
+        preferences.set('git.autoRepositoryDetection', true);
+        preferences.set('git.openRepositoryInParentFolders', 'always');
+    });
 
     beforeEach(async () => {
         if (!pluginService.getPlugin(gitPluginId)) {

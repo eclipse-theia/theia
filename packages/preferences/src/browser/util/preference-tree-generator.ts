@@ -39,6 +39,7 @@ export class PreferenceTreeGenerator {
     @inject(PreferenceLayoutProvider) protected readonly layoutProvider: PreferenceLayoutProvider;
 
     protected _root: CompositeTreeNode;
+    protected _idCache = new Map<string, string>();
 
     protected readonly onSchemaChangedEmitter = new Emitter<CompositeTreeNode>();
     readonly onSchemaChanged = this.onSchemaChangedEmitter.event;
@@ -60,6 +61,7 @@ export class PreferenceTreeGenerator {
     }
 
     generateTree(): CompositeTreeNode {
+        this._idCache.clear();
         const preferencesSchema = this.schemaProvider.getCombinedSchema();
         const propertyNames = Object.keys(preferencesSchema.properties);
         const groups = new Map<string, Preference.CompositeTreeNode>();
@@ -121,7 +123,7 @@ export class PreferenceTreeGenerator {
 
     protected createBuiltinLeafNode(name: string, property: PreferenceDataProperty, root: CompositeTreeNode, groups: Map<string, Preference.CompositeTreeNode>): void {
         const layoutItem = this.layoutProvider.getLayoutForPreference(name);
-        const labels = layoutItem ? layoutItem.id.split('.') : name.split('.');
+        const labels = (layoutItem?.id ?? name).split('.');
         const groupID = this.getGroupName(labels);
         const subgroupName = this.getSubgroupName(labels, groupID);
         const subgroupID = [groupID, subgroupName].join('.');
@@ -129,14 +131,15 @@ export class PreferenceTreeGenerator {
             id: groupID,
             group: groupID,
             root,
-            groups
+            groups,
+            label: this.generateName(groupID)
         });
         const immediateParent = subgroupName ? this.getOrCreatePreferencesGroup({
             id: subgroupID,
             group: groupID,
             root: toplevelParent,
             groups,
-            label: layoutItem?.label
+            label: layoutItem?.label ?? this.generateName(subgroupName)
         }) : undefined;
         this.createLeafNode(name, immediateParent || toplevelParent, property);
     }
@@ -177,9 +180,7 @@ export class PreferenceTreeGenerator {
     }
 
     getNodeId(preferenceId: string): string {
-        const expectedGroup = this.getGroupName(preferenceId.split('.'));
-        const expectedId = `${expectedGroup}@${preferenceId}`;
-        return expectedId;
+        return this._idCache.get(preferenceId) ?? '';
     }
 
     protected getGroupName(labels: string[]): string {
@@ -198,6 +199,10 @@ export class PreferenceTreeGenerator {
         } else {
             return undefined;
         }
+    }
+
+    protected generateName(id: string): string {
+        return id.substring(0, 1).toUpperCase() + id.substring(1);
     }
 
     doHandleChangedSchema(): void {
@@ -226,6 +231,7 @@ export class PreferenceTreeGenerator {
             preference: { data },
             depth: Preference.TreeNode.isTopLevel(preferencesGroup) ? 1 : 2
         };
+        this._idCache.set(property, newNode.id);
         CompositeTreeNode.addChild(preferencesGroup, newNode);
         return newNode;
     }

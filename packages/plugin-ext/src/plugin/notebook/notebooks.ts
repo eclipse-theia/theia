@@ -22,14 +22,14 @@ import { CancellationToken, Disposable, DisposableCollection, Emitter, Event, UR
 import { URI as TheiaURI } from '../types-impl';
 import * as theia from '@theia/plugin';
 import {
-    CommandRegistryExt, NotebookCellStatusBarListDto, NotebookDataDto,
+    NotebookCellStatusBarListDto, NotebookDataDto,
     NotebookDocumentsAndEditorsDelta, NotebookDocumentShowOptions, NotebookDocumentsMain, NotebookEditorAddData, NotebookEditorsMain, NotebooksExt, NotebooksMain, Plugin,
     PLUGIN_RPC_CONTEXT
 } from '../../common';
 import { Cache } from '../../common/cache';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { UriComponents } from '../../common/uri-components';
-import { CommandsConverter } from '../command-registry';
+import { CommandRegistryImpl, CommandsConverter } from '../command-registry';
 import * as typeConverters from '../type-converters';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { Cell, NotebookDocument } from './notebook-document';
@@ -74,10 +74,11 @@ export class NotebooksExtImpl implements NotebooksExt {
 
     constructor(
         rpc: RPCProtocol,
-        commands: CommandRegistryExt,
+        commands: CommandRegistryImpl,
         private textDocumentsAndEditors: EditorsAndDocumentsExtImpl,
         private textDocuments: DocumentsExtImpl,
     ) {
+        this.commandsConverter = commands.converter;
         this.notebookProxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.NOTEBOOKS_MAIN);
         this.notebookDocumentsProxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_MAIN);
         this.notebookEditors = rpc.getProxy(PLUGIN_RPC_CONTEXT.NOTEBOOK_EDITORS_MAIN);
@@ -329,6 +330,7 @@ export class NotebooksExtImpl implements NotebooksExt {
         if (delta.newActiveEditor === null) {
             // clear active notebook as current active editor is non-notebook editor
             this.activeNotebookEditor = undefined;
+            this.onDidChangeActiveNotebookEditorEmitter.fire(undefined);
         } else if (delta.newActiveEditor) {
             const activeEditor = this.editors.get(delta.newActiveEditor);
             if (!activeEditor) {
@@ -340,8 +342,6 @@ export class NotebooksExtImpl implements NotebooksExt {
                     newActiveEditor: null
                 });
             }
-        }
-        if (delta.newActiveEditor !== undefined) {
             this.onDidChangeActiveNotebookEditorEmitter.fire(this.activeNotebookEditor?.apiEditor);
         }
     }

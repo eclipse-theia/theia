@@ -62,6 +62,10 @@ export interface NotebookCell {
     metadata: NotebookCellMetadata;
     internalMetadata: NotebookCellInternalMetadata;
     text: string;
+    /**
+     * The selection of the cell. Zero-based line/character coordinates.
+     */
+    selection: Range | undefined;
     onDidChangeOutputs?: Event<NotebookCellOutputsSplice>;
     onDidChangeOutputItems?: Event<CellOutput>;
     onDidChangeLanguage: Event<string>;
@@ -128,6 +132,9 @@ export class NotebookCellModel implements NotebookCell, Disposable {
 
     protected onDidRequestCenterEditorEmitter = new Emitter<void>();
     readonly onDidRequestCenterEditor = this.onDidRequestCenterEditorEmitter.event;
+
+    protected onDidCellHeightChangeEmitter = new Emitter<number>();
+    readonly onDidCellHeightChange = this.onDidCellHeightChangeEmitter.event;
 
     @inject(NotebookCellModelProps)
     protected readonly props: NotebookCellModelProps;
@@ -248,6 +255,28 @@ export class NotebookCellModel implements NotebookCell, Disposable {
         if (this._outputVisible !== visible) {
             this._outputVisible = visible;
             this.outputVisibilityChangeEmitter.fire(visible);
+        }
+    }
+
+    protected _selection: Range | undefined = undefined;
+
+    get selection(): Range | undefined {
+        return this._selection;
+    }
+
+    set selection(selection: Range | undefined) {
+        this._selection = selection;
+    }
+
+    protected _cellheight: number = 0;
+    get cellHeight(): number {
+        return this._cellheight;
+    }
+
+    set cellHeight(height: number) {
+        if (height !== this._cellheight) {
+            this.onDidCellHeightChangeEmitter.fire(height);
+            this._cellheight = height;
         }
     }
 

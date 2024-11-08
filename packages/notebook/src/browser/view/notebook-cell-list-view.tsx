@@ -26,7 +26,17 @@ import { NotebookContextManager } from '../service/notebook-context-manager';
 
 export interface CellRenderer {
     render(notebookData: NotebookModel, cell: NotebookCellModel, index: number): React.ReactNode
+    renderSidebar(notebookModel: NotebookModel, cell: NotebookCellModel): React.ReactNode
     renderDragImage(cell: NotebookCellModel): HTMLElement
+}
+
+export function observeCellHeight(ref: HTMLDivElement | null, cell: NotebookCellModel): void {
+    if (ref) {
+        cell.cellHeight = ref?.getBoundingClientRect().height ?? 0;
+        new ResizeObserver(entries =>
+            cell.cellHeight = ref?.getBoundingClientRect().height ?? 0
+        ).observe(ref);
+    }
 }
 
 interface CellListProps {
@@ -109,7 +119,7 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
     }
 
     override render(): React.ReactNode {
-        return <ul className='theia-notebook-cell-list' ref={this.cellListRef}>
+        return <ul className='theia-notebook-cell-list' ref={this.cellListRef} onDragStart={e => this.onDragStart(e)}>
             {this.props.notebookModel.cells
                 .map((cell, index) =>
                     <React.Fragment key={'cell-' + cell.handle}>
@@ -119,13 +129,8 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
                             onAddNewCell={(commandId: string) => this.onAddNewCell(commandId, index)}
                             onDrop={e => this.onDrop(e, index)}
                             onDragOver={e => this.onDragOver(e, cell, 'top')} />
-                        {this.shouldRenderDragOverIndicator(cell, 'top') && <CellDropIndicator />}
+                        <CellDropIndicator visible={this.shouldRenderDragOverIndicator(cell, 'top')} />
                         <li className={'theia-notebook-cell' + (this.state.selectedCell === cell ? ' focused' : '') + (this.isEnabled() ? ' draggable' : '')}
-                            onClick={e => {
-                                this.setState({ ...this.state, selectedCell: cell });
-                                this.props.notebookModel.setSelectedCell(cell, false);
-                            }}
-                            onDragStart={e => this.onDragStart(e, index, cell)}
                             onDragEnd={e => {
                                 NotebookCellListView.dragGhost?.remove();
                                 this.setState({ ...this.state, dragOverIndicator: undefined });
@@ -134,6 +139,7 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
                             onDrop={e => this.onDrop(e, index)}
                             draggable={true}
                             tabIndex={-1}
+                            data-cell-handle={cell.handle}
                             ref={ref => {
                                 if (ref && cell === this.state.selectedCell && this.state.scrollIntoView) {
                                     ref.scrollIntoView({ block: 'nearest' });
@@ -141,8 +147,16 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
                                         ref.focus();
                                     }
                                 }
-                            }}>
-                            <div className={'theia-notebook-cell-marker' + (this.state.selectedCell === cell ? ' theia-notebook-cell-marker-selected' : '')}></div>
+                            }}
+                            onClick={e => {
+                                this.setState({ ...this.state, selectedCell: cell });
+                                this.props.notebookModel.setSelectedCell(cell, false);
+                            }}
+                        >
+                            <div className='theia-notebook-cell-sidebar'>
+                                <div className={'theia-notebook-cell-marker' + (this.state.selectedCell === cell ? ' theia-notebook-cell-marker-selected' : '')}></div>
+                                {this.renderCellSidebar(cell)}
+                            </div>
                             <div className='theia-notebook-cell-content'>
                                 {this.renderCellContent(cell, index)}
                             </div>
@@ -152,7 +166,7 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
                                 })
                             }
                         </li>
-                        {this.shouldRenderDragOverIndicator(cell, 'bottom') && <CellDropIndicator />}
+                        <CellDropIndicator visible={this.shouldRenderDragOverIndicator(cell, 'bottom')} />
                     </React.Fragment>
                 )
             }
@@ -173,12 +187,29 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
         return renderer.render(this.props.notebookModel, cell, index);
     }
 
-    protected onDragStart(event: React.DragEvent<HTMLLIElement>, index: number, cell: NotebookCellModel): void {
+    renderCellSidebar(cell: NotebookCellModel): React.ReactNode {
+        const renderer = this.props.renderers.get(cell.cellKind);
+        if (!renderer) {
+            throw new Error(`No renderer found for cell type ${cell.cellKind}`);
+        }
+        return renderer.renderSidebar(this.props.notebookModel, cell);
+    }
+
+    protected onDragStart(event: React.DragEvent<HTMLElement>): void {
         event.stopPropagation();
         if (!this.isEnabled()) {
             event.preventDefault();
             return;
         }
+
+        const cellHandle = (event.target as HTMLLIElement).getAttribute('data-cell-handle');
+
+        if (!cellHandle) {
+            throw new Error('Cell handle not found in element for cell drag event');
+        }
+
+        const index = this.props.notebookModel.getCellIndexByHandle(parseInt(cellHandle));
+        const cell = this.props.notebookModel.cells[index];
 
         NotebookCellListView.dragGhost = document.createElement('div');
         NotebookCellListView.dragGhost.classList.add('theia-notebook-drag-ghost-image');
@@ -274,6 +305,6 @@ export function NotebookCellDivider({ isVisible, onAddNewCell, onDrop, onDragOve
     </li>;
 }
 
-function CellDropIndicator(): React.JSX.Element {
-    return <div className='theia-notebook-cell-drop-indicator' />;
+function CellDropIndicator(props: { visible: boolean }): React.JSX.Element {
+    return <div className='theia-notebook-cell-drop-indicator' style={{ visibility: props.visible ? 'visible' : 'hidden' }} />;
 }

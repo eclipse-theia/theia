@@ -52,6 +52,7 @@ import {
 } from './chat-model';
 import { findFirstMatch, parseContents } from './parse-contents';
 import { DefaultResponseContentFactory, ResponseContentMatcher, ResponseContentMatcherProvider } from './response-content-matcher';
+import { ChatHistoryEntry } from './chat-history-entry';
 
 /**
  * A conversation consists of a sequence of ChatMessages.
@@ -137,7 +138,8 @@ export abstract class AbstractChatAgent {
         protected defaultLanguageModelPurpose: string,
         public iconClass: string = 'codicon codicon-copilot',
         public locations: ChatAgentLocation[] = ChatAgentLocation.ALL,
-        public tags: String[] = ['Chat']) {
+        public tags: String[] = ['Chat'],
+        public defaultLogging: boolean = true) {
     }
 
     @postConstruct()
@@ -151,17 +153,19 @@ export abstract class AbstractChatAgent {
             if (!languageModel) {
                 throw new Error('Couldn\'t find a matching language model. Please check your setup!');
             }
-            const messages = await this.getMessages(request.session);
-            this.recordingService.recordRequest({
-                agentId: this.id,
-                sessionId: request.session.id,
-                timestamp: Date.now(),
-                requestId: request.id,
-                request: request.request.text,
-                messages
-            });
 
             const systemMessageDescription = await this.getSystemMessageDescription();
+            const messages = await this.getMessages(request.session);
+            if (this.defaultLogging) {
+                this.recordingService.recordRequest(
+                    ChatHistoryEntry.fromRequest(
+                        this.id, request, {
+                        messages,
+                        systemMessage: systemMessageDescription?.text
+                    })
+                );
+            }
+
             const tools: Map<string, ToolRequest> = new Map();
             if (systemMessageDescription) {
                 const systemMsg: ChatMessage = {
@@ -192,13 +196,9 @@ export abstract class AbstractChatAgent {
             );
             await this.addContentsToResponse(languageModelResponse, request);
             request.response.complete();
-            this.recordingService.recordResponse({
-                agentId: this.id,
-                sessionId: request.session.id,
-                timestamp: Date.now(),
-                requestId: request.response.requestId,
-                response: request.response.response.asString()
-            });
+            if (this.defaultLogging) {
+                this.recordingService.recordResponse(ChatHistoryEntry.fromResponse(this.id, request));
+            }
         } catch (e) {
             this.handleError(request, e);
         }
@@ -274,11 +274,20 @@ export abstract class AbstractChatAgent {
         tools: ToolRequest[] | undefined,
         token: CancellationToken
     ): Promise<LanguageModelResponse> {
+        const settings = this.getLlmSettings();
         const languageModelResponse = languageModel.request({
             messages,
             tools,
+            settings,
         }, token);
         return languageModelResponse;
+    }
+
+    /**
+     * @returns the settings, such as `temperature`, to be used in all language model requests. Returns `undefined` by default.
+     */
+    protected getLlmSettings(): { [key: string]: unknown; } | undefined {
+        return undefined;
     }
 
     protected abstract addContentsToResponse(languageModelResponse: LanguageModelResponse, request: ChatRequestModelImpl): Promise<void>;
@@ -307,25 +316,17 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
             const contents = this.parseContents(languageModelResponse.text);
             request.response.response.addContents(contents);
             request.response.complete();
-            this.recordingService.recordResponse({
-                agentId: this.id,
-                sessionId: request.session.id,
-                timestamp: Date.now(),
-                requestId: request.response.requestId,
-                response: request.response.response.asString()
-            });
+            if (this.defaultLogging) {
+                this.recordingService.recordResponse(ChatHistoryEntry.fromResponse(this.id, request));
+            }
             return;
         }
         if (isLanguageModelStreamResponse(languageModelResponse)) {
             await this.addStreamResponse(languageModelResponse, request);
             request.response.complete();
-            this.recordingService.recordResponse({
-                agentId: this.id,
-                sessionId: request.session.id,
-                timestamp: Date.now(),
-                requestId: request.response.requestId,
-                response: request.response.response.asString()
-            });
+            if (this.defaultLogging) {
+                this.recordingService.recordResponse(ChatHistoryEntry.fromResponse(this.id, request));
+            }
             return;
         }
         this.logger.error(

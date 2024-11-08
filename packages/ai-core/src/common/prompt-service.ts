@@ -58,15 +58,44 @@ export interface PromptService {
      */
     getPrompt(id: string, args?: { [key: string]: unknown }): Promise<ResolvedPromptTemplate | undefined>;
     /**
-     * Manually add a prompt to the list of prompts.
+     * Adds a prompt to the list of prompts.
      * @param id the id of the prompt
      * @param prompt the prompt template to store
      */
     storePrompt(id: string, prompt: string): void;
     /**
+     * Removes a prompt from the list of prompts.
+     * @param id the id of the prompt
+     */
+    removePrompt(id: string): void;
+    /**
      * Return all known prompts as a {@link PromptMap map}.
      */
     getAllPrompts(): PromptMap;
+}
+
+export interface CustomAgentDescription {
+    id: string;
+    name: string;
+    description: string;
+    prompt: string;
+    defaultLLM: string;
+}
+export namespace CustomAgentDescription {
+    export function is(entry: unknown): entry is CustomAgentDescription {
+        // eslint-disable-next-line no-null/no-null
+        return typeof entry === 'object' && entry !== null
+            && 'id' in entry && typeof entry.id === 'string'
+            && 'name' in entry && typeof entry.name === 'string'
+            && 'description' in entry && typeof entry.description === 'string'
+            && 'prompt' in entry
+            && typeof entry.prompt === 'string'
+            && 'defaultLLM' in entry
+            && typeof entry.defaultLLM === 'string';
+    }
+    export function equals(a: CustomAgentDescription, b: CustomAgentDescription): boolean {
+        return a.id === b.id && a.name === b.name && a.description === b.description && a.prompt === b.prompt && a.defaultLLM === b.defaultLLM;
+    }
 }
 
 export const PromptCustomizationService = Symbol('PromptCustomizationService');
@@ -89,9 +118,9 @@ export interface PromptCustomizationService {
      * on the implementation. Implementation may for example decide to
      * open an editor, or request more information from the user, ...
      * @param id the template id.
-     * @param content optional content to customize the template.
+     * @param content optional default content to initialize the template
      */
-    editTemplate(id: string, content?: string): void;
+    editTemplate(id: string, defaultContent?: string): void;
 
     /**
      * Reset the template to its default value.
@@ -109,6 +138,22 @@ export interface PromptCustomizationService {
      * Event which is fired when the prompt template is changed.
      */
     readonly onDidChangePrompt: Event<string>;
+
+    /**
+     * Return all custom agents.
+     * @returns all custom agents
+     */
+    getCustomAgents(): Promise<CustomAgentDescription[]>;
+
+    /**
+     * Event which is fired when custom agents are modified.
+     */
+    readonly onDidChangeCustomAgents: Event<void>;
+
+    /**
+     * Open the custom agent yaml file.
+     */
+    openCustomAgentYaml(): void;
 }
 
 @injectable()
@@ -209,5 +254,8 @@ export class PromptServiceImpl implements PromptService {
     }
     storePrompt(id: string, prompt: string): void {
         this._prompts[id] = { id, template: prompt };
+    }
+    removePrompt(id: string): void {
+        delete this._prompts[id];
     }
 }

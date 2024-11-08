@@ -193,6 +193,7 @@ export interface PluginPackageViewWelcome {
     view: string;
     contents: string;
     when?: string;
+    enablement?: string;
 }
 
 export interface PluginPackageCommand {
@@ -853,6 +854,7 @@ export interface ViewWelcome {
     view: string;
     content: string;
     when?: string;
+    enablement?: string;
     order: number;
 }
 

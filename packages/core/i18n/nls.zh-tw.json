@@ -1,6 +1,9 @@
 {
   "aiConfiguration:open": "開啟 AI 設定檢視",
+  "aiHistory:clear": "AI 歷史:清除歷史",
   "aiHistory:open": "開啟 AI 歷史檢視",
+  "aiHistory:sortChronologically": "AI 歷史:依時間順序排序",
+  "aiHistory:sortReverseChronologically": "AI 歷史:按時間順序逆向排序",
   "debug.breakpoint.editCondition": "編輯條件...",
   "notebook.cell.changeToCode": "變更儲存格為代碼",
   "notebook.cell.changeToMarkdown": "變更儲存格為 Markdown",
@@ -208,6 +211,7 @@
       "prepareDownloadLink": "準備下載連結...",
       "processedOutOf": "加工{0} 出{1}",
       "replaceTitle": "取代檔案",
+      "uploadFailed": "上傳檔案時發生錯誤。{0}",
       "uploadFiles": "上傳檔案...",
       "uploadedOutOf": "上傳{0} 出{1}"
     },

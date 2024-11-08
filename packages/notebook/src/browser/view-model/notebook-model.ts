@@ -509,8 +509,12 @@ export class NotebookModel implements Saveable, Disposable {
         return true;
     }
 
-    protected getCellIndexByHandle(handle: number): number {
+    getCellIndexByHandle(handle: number): number {
         return this.cells.findIndex(c => c.handle === handle);
+    }
+
+    getCellByHandle(handle: number): NotebookCellModel | undefined {
+        return this.cells.find(c => c.handle === handle);
     }
 
     protected isCellMetadataChanged(a: NotebookCellMetadata, b: NotebookCellMetadata): boolean {

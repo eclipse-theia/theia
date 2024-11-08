@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2018 Ericsson and others.
+// Copyright (C) 2024 Toro Cloud Pty Ltd and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,5 +14,34 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-// eslint-disable-next-line spaced-comment
-/// <reference types="@theia/core/src/typings/nsfw/index"/>
+import * as assert from 'assert';
+import * as React from 'react';
+import { enableJSDOM } from '../test/jsdom';
+
+let disableJSDOM = enableJSDOM();
+
+import { ReactDialog } from './react-dialog';
+
+class MyDialog extends ReactDialog<void> {
+    constructor() {
+        super({ title: '' });
+    }
+
+    override get value(): void {
+        return;
+    }
+
+    protected override render(): React.ReactNode {
+        return <></>;
+    }
+}
+
+describe('ReactDialog', () => {
+    before(() => disableJSDOM = enableJSDOM());
+    after(() => disableJSDOM());
+
+    it('should be extended', () => {
+        const dialog = new MyDialog();
+        assert.equal(dialog instanceof ReactDialog, true);
+    });
+});

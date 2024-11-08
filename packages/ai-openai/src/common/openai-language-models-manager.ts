@@ -28,6 +28,10 @@ export interface OpenAiModelDescription {
      * The OpenAI API compatible endpoint where the model is hosted. If not provided the default OpenAI endpoint will be used.
      */
     url?: string;
+    /**
+     * The key for the model. If 'true' is provided the global OpenAI API key will be used.
+     */
+    apiKey: string | true | undefined;
 }
 export interface OpenAiLanguageModelsManager {
     apiKey: string | undefined;

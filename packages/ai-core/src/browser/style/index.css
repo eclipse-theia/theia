@@ -88,3 +88,8 @@
   border-radius: calc(var(--theia-ui-padding) * 2 / 3);
   background: hsla(0, 0%, 68%, 0.31);
 }
+
+.configuration-agents-add {
+  margin-top: 3em;
+  margin-left: 0;
+}

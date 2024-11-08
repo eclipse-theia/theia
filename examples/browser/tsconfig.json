@@ -24,6 +24,9 @@
       "path": "../../packages/ai-history"
     },
     {
+      "path": "../../packages/ai-llamafile"
+    },
+    {
       "path": "../../packages/ai-ollama"
     },
     {

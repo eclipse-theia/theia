@@ -1,6 +1,9 @@
 {
   "aiConfiguration:open": "AI Yapılandırma görünümünü açın",
+  "aiHistory:clear": "AI Geçmişi: Geçmişi Temizle",
   "aiHistory:open": "Yapay Zeka Geçmişi görünümünü açın",
+  "aiHistory:sortChronologically": "Yapay Zeka Geçmişi: Kronolojik olarak sırala",
+  "aiHistory:sortReverseChronologically": "Yapay Zeka Tarihi: Ters kronolojik olarak sırala",
   "debug.breakpoint.editCondition": "Düzenleme Durumu...",
   "notebook.cell.changeToCode": "Hücreyi Kod Olarak Değiştir",
   "notebook.cell.changeToMarkdown": "Hücreyi Markdown Olarak Değiştirme",
@@ -208,6 +211,7 @@
       "prepareDownloadLink": "İndirme bağlantısı hazırlanıyor...",
       "processedOutOf": "İşlenmiş {0} dışında {1}",
       "replaceTitle": "Dosya Değiştir",
+      "uploadFailed": "Dosya yüklenirken bir hata oluştu. {0}",
       "uploadFiles": "Dosya Yükle...",
       "uploadedOutOf": "{0} adresinden yüklendi {1}"
     },

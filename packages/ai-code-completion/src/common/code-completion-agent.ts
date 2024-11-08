@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import {
-    Agent, AgentSpecificVariables, CommunicationHistoryEntry, CommunicationRecordingService, getTextOfResponse,
+    Agent, AgentSpecificVariables, CommunicationRecordingService, getTextOfResponse,
     LanguageModelRegistry, LanguageModelRequest, LanguageModelRequirement, PromptService, PromptTemplate
 } from '@theia/ai-core/lib/common';
 import { generateUuid, ILogger } from '@theia/core';
@@ -84,17 +84,15 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
         const request: LanguageModelRequest = {
             messages: [{ type: 'text', actor: 'user', query: prompt }],
         };
-        const requestEntry: CommunicationHistoryEntry = {
-            agentId: this.id,
-            sessionId,
-            timestamp: Date.now(),
-            requestId,
-            request: prompt,
-        };
         if (token.isCancellationRequested) {
             return undefined;
         }
-        this.recordingService.recordRequest(requestEntry);
+        this.recordingService.recordRequest({
+            agentId: this.id,
+            sessionId,
+            requestId,
+            request: prompt,
+        });
         const response = await languageModel.request(request, token);
         if (token.isCancellationRequested) {
             return undefined;
@@ -106,7 +104,6 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
         this.recordingService.recordResponse({
             agentId: this.id,
             sessionId,
-            timestamp: Date.now(),
             requestId,
             response: completionText,
         });

@@ -250,7 +250,7 @@ class EditorAndDocumentStateComputer implements Disposable {
 
         this.toDispose.push(this.cellEditorService.onDidChangeCellEditors(() => this.update()));
 
-        this.toDispose.push(this.notebookWidgetService.onDidChangeFocusedEditor(() => {
+        this.toDispose.push(this.notebookWidgetService.onDidChangeCurrentEditor(() => {
             this.currentState = this.currentState && new EditorAndDocumentState(
                 this.currentState.documents,
                 this.currentState.editors,
@@ -337,8 +337,10 @@ class EditorAndDocumentStateComputer implements Disposable {
         }
 
         for (const editor of this.cellEditorService.allCellEditors) {
-            const editorSnapshot = new EditorSnapshot(editor);
-            editors.set(editorSnapshot.id, editorSnapshot);
+            if (editor.getControl()?.getModel()) {
+                const editorSnapshot = new EditorSnapshot(editor);
+                editors.set(editorSnapshot.id, editorSnapshot);
+            }
         };
 
         const newState = new EditorAndDocumentState(models, editors, activeId);

@@ -29,14 +29,37 @@ export const CommunicationCard: React.FC<CommunicationCardProps> = ({ entry }) =
         <div className='theia-card-content'>
             {entry.request && (
                 <div className='theia-card-request'>
-                    <p><strong>Request</strong></p>
+                    <h2>Request</h2>
                     <pre>{entry.request}</pre>
                 </div>
             )}
             {entry.response && (
                 <div className='theia-card-response'>
-                    <p><strong>Response</strong></p>
+                    <h2>Response</h2>
                     <pre>{entry.response}</pre>
+                </div>
+            )}
+            {(entry.systemMessage || (entry.messages && entry.messages.length > 0)) && (
+                <div className='theia-card-context'>
+                    <details>
+                        <summary><h2>Context</h2></summary>
+                        {(entry.systemMessage && (
+                            <div className='theia-context-system-message'>
+                                <h3>System Message</h3>
+                                <pre>{entry.systemMessage}</pre>
+                            </div>
+                        ))}
+                        {(entry.messages && entry.messages.length > 0) && (
+                            <div className='theia-context-messages'>
+                                <h3>Messages</h3>
+                                <ul>
+                                    {entry.messages.map((message, index) => (
+                                        <li key={index}><pre>{JSON.stringify(message, undefined, 2)}</pre></li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+                    </details>
                 </div>
             )}
         </div>

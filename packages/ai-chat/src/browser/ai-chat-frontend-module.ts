@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Agent, AIVariableContribution } from '@theia/ai-core/lib/common';
+import { Agent, AgentService, AIVariableContribution } from '@theia/ai-core/lib/common';
 import { bindContributionProvider } from '@theia/core';
-import { PreferenceContribution } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, PreferenceContribution } from '@theia/core/lib/browser';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import {
     ChatAgent,
@@ -27,13 +27,17 @@ import {
     ChatService,
     DefaultChatAgentId
 } from '../common';
+import { ChatAgentsVariableContribution } from '../common/chat-agents-variable-contribution';
 import { CommandChatAgent } from '../common/command-chat-agents';
+import { CustomChatAgent } from '../common/custom-chat-agent';
 import { OrchestratorChatAgent, OrchestratorChatAgentId } from '../common/orchestrator-chat-agent';
+import { DefaultResponseContentFactory, DefaultResponseContentMatcherProvider, ResponseContentMatcherProvider } from '../common/response-content-matcher';
 import { UniversalChatAgent } from '../common/universal-chat-agent';
 import { aiChatPreferences } from './ai-chat-preferences';
-import { ChatAgentsVariableContribution } from '../common/chat-agents-variable-contribution';
+import { AICustomAgentsFrontendApplicationContribution } from './custom-agent-frontend-application-contribution';
 import { FrontendChatServiceImpl } from './frontend-chat-service';
-import { DefaultResponseContentMatcherProvider, DefaultResponseContentFactory, ResponseContentMatcherProvider } from '../common/response-content-matcher';
+import { CustomAgentFactory } from './custom-agent-factory';
+import { O1ChatAgent } from '../common/o1-chat-agent';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, Agent);
@@ -60,6 +64,10 @@ export default new ContainerModule(bind => {
     bind(Agent).toService(OrchestratorChatAgent);
     bind(ChatAgent).toService(OrchestratorChatAgent);
 
+    bind(O1ChatAgent).toSelf().inSingletonScope();
+    bind(Agent).toService(O1ChatAgent);
+    bind(ChatAgent).toService(O1ChatAgent);
+
     bind(UniversalChatAgent).toSelf().inSingletonScope();
     bind(Agent).toService(UniversalChatAgent);
     bind(ChatAgent).toService(UniversalChatAgent);
@@ -69,4 +77,22 @@ export default new ContainerModule(bind => {
     bind(ChatAgent).toService(CommandChatAgent);
 
     bind(PreferenceContribution).toConstantValue({ schema: aiChatPreferences });
+
+    bind(CustomChatAgent).toSelf();
+    bind(CustomAgentFactory).toFactory<CustomChatAgent, [string, string, string, string, string]>(
+        ctx => (id: string, name: string, description: string, prompt: string, defaultLLM: string) => {
+            const agent = ctx.container.get<CustomChatAgent>(CustomChatAgent);
+            agent.id = id;
+            agent.name = name;
+            agent.description = description;
+            agent.prompt = prompt;
+            agent.languageModelRequirements = [{
+                purpose: 'chat',
+                identifier: defaultLLM,
+            }];
+            ctx.container.get<ChatAgentService>(ChatAgentService).registerChatAgent(agent);
+            ctx.container.get<AgentService>(AgentService).registerAgent(agent);
+            return agent;
+        });
+    bind(FrontendApplicationContribution).to(AICustomAgentsFrontendApplicationContribution).inSingletonScope();
 });

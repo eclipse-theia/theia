@@ -191,7 +191,8 @@ export type BackendApplicationConfig = RequiredRecursive<BackendApplicationConfi
 export namespace BackendApplicationConfig {
     export const DEFAULT: BackendApplicationConfig = {
         singleInstance: true,
-        frontendConnectionTimeout: 0
+        frontendConnectionTimeout: 0,
+        configurationFolder: '.theia'
     };
     export interface Partial extends ApplicationConfig {
 
@@ -206,6 +207,13 @@ export namespace BackendApplicationConfig {
          * The time in ms the connection context will be preserved for reconnection after a front end disconnects.
          */
         readonly frontendConnectionTimeout?: number;
+
+        /**
+         * Configuration folder within the home user folder
+         *
+         * Defaults to `.theia`
+         */
+        readonly configurationFolder?: string;
     }
 }
 

@@ -1,6 +1,9 @@
 {
   "aiConfiguration:open": "AI konfigurációs nézet megnyitása",
+  "aiHistory:clear": "AI történelem: Előzmények törlése",
   "aiHistory:open": "AI előzmények nézet megnyitása",
+  "aiHistory:sortChronologically": "AI történelem: Rendezés időrendben",
+  "aiHistory:sortReverseChronologically": "AI történelem: Fordított kronológiai rendezés",
   "debug.breakpoint.editCondition": "Szerkesztési feltétel...",
   "notebook.cell.changeToCode": "Cellát kódra váltani",
   "notebook.cell.changeToMarkdown": "Cellát átváltoztatni Mardown-ra",
@@ -208,6 +211,7 @@
       "prepareDownloadLink": "Letöltési link előkészítése...",
       "processedOutOf": "{0} feldolgozva {1}-ből {0}",
       "replaceTitle": "Fájl cseréje",
+      "uploadFailed": "Hiba történt egy fájl feltöltése közben. {0}",
       "uploadFiles": "Fájlok feltöltése...",
       "uploadedOutOf": "Feltöltött {0} a {1}-ből {0}"
     },

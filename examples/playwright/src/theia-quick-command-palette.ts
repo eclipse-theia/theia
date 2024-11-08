@@ -78,4 +78,14 @@ export class TheiaQuickCommandPalette extends TheiaPageObject {
         }
         return command.$('.monaco-list-row.focused .monaco-highlighted-label');
     }
+
+    async visibleItems(): Promise<ElementHandle<SVGElement | HTMLElement>[]> {
+        // FIXME rewrite with locators
+        const command = await this.page.waitForSelector(this.selector);
+        if (!command) {
+            throw new Error('No selected command found!');
+        }
+        return command.$$('.monaco-highlighted-label');
+    }
+
 }

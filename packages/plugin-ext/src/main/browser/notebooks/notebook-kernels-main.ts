@@ -25,13 +25,13 @@ import { CellExecuteUpdateDto, CellExecutionCompleteDto, MAIN_RPC_CONTEXT, Noteb
 import { RPCProtocol } from '../../../common/rpc-protocol';
 import {
     CellExecution, NotebookEditorWidgetService, NotebookExecutionStateService,
-    NotebookKernelChangeEvent, NotebookKernelService, NotebookService
+    NotebookKernelChangeEvent, NotebookKernelService, NotebookService, NotebookKernel as NotebookKernelServiceKernel
 } from '@theia/notebook/lib/browser';
 import { interfaces } from '@theia/core/shared/inversify';
 import { NotebookKernelSourceAction } from '@theia/notebook/lib/common';
 import { NotebookDto } from './notebook-dto';
 
-abstract class NotebookKernel {
+abstract class NotebookKernel implements NotebookKernelServiceKernel {
     private readonly onDidChangeEmitter = new Emitter<NotebookKernelChangeEvent>();
     private readonly preloads: { uri: URI; provides: readonly string[] }[];
     readonly onDidChange: Event<NotebookKernelChangeEvent> = this.onDidChangeEmitter.event;

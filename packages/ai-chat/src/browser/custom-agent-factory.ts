@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2017-2020 TypeFox and others.
+// Copyright (C) 2024 EclipseSource GmbH.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,10 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as nsfw from '@theia/core/shared/nsfw';
+import { CustomChatAgent } from '../common';
 
-/**
- * Inversify service identifier allowing extensions to override options passed to nsfw by the file watcher.
- */
-export const NsfwOptions = Symbol('NsfwOptions');
-export type NsfwOptions = nsfw.Options;
+export const CustomAgentFactory = Symbol('CustomAgentFactory');
+export type CustomAgentFactory = (id: string, name: string, description: string, prompt: string, defaultLLM: string) => CustomChatAgent;
