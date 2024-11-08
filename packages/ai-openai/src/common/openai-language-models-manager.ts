@@ -32,6 +32,10 @@ export interface OpenAiModelDescription {
      * The key for the model. If 'true' is provided the global OpenAI API key will be used.
      */
     apiKey: string | true | undefined;
+    /**
+     * Indicate whether the streaming API shall be used.
+     */
+    disableStreaming: boolean;
 }
 export interface OpenAiLanguageModelsManager {
     apiKey: string | undefined;
