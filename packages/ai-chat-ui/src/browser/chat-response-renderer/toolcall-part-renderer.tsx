@@ -29,17 +29,45 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
         }
         return -1;
     }
-    render(response: ToolCallChatResponseContent): ReactNode {
-        return <h4 className='theia-toolCall'>
-            {response.finished ?
-                <details>
-                    <summary>Ran {response.name}</summary>
-                    <pre>{this.tryPrettyPrintJson(response)}</pre>
-                </details>
-                : <span><Spinner /> Running [{response.name}]</span>
-            }
-        </h4>;
 
+    renderCollapsibleArguments(args: string | undefined): ReactNode {
+        return (
+            args && (
+                <details style={{ display: 'inline' }}>
+                    <summary
+                        style={{
+                            display: 'inline',
+                            cursor: 'pointer',
+                            textDecoration: 'underline',
+                        }}>
+                        &gt;
+                    </summary>
+                    <span>{JSON.stringify(args, undefined, 2)}</span>
+                </details>
+            )
+        );
+    }
+
+    render(response: ToolCallChatResponseContent): ReactNode {
+        return (
+            <h4 className='theia-toolCall'>
+                {response.finished ? (
+                    <details>
+                        <summary>Ran [{response.name}
+                            {response.arguments && <>({this.renderCollapsibleArguments(response.arguments)})</>}
+                            ]</summary>
+                        <pre>{this.tryPrettyPrintJson(response)}</pre>
+                        {this.renderCollapsibleArguments(response.arguments)}
+                    </details>
+                ) : (
+                    <span>
+                        <Spinner /> Running [{response.name}
+                        {response.arguments && <>({this.renderCollapsibleArguments(response.arguments)})</>}
+                        ]
+                    </span>
+                )}
+            </h4>
+        );
     }
 
     private tryPrettyPrintJson(response: ToolCallChatResponseContent): string | undefined {
