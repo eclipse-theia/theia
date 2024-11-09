@@ -136,6 +136,41 @@ class PluginImpl implements Plugin {
                 copyNodePtySpawnHelper(outdir);
             }
         });
+        this.setupNodeRequires(build);
+    }
+
+    private setupNodeRequires(build: PluginBuild): void {
+        // By default, ESBuild does not handle `.node` files. We need to handle them ourselves.
+        // When using the `file` loader directly, the files only get exposed via their paths.
+        // However, we want to load them directly as native modules via `require`.
+        build.onResolve({ filter: /\.node$/, namespace: 'file' }, args => {
+            try {
+                // Move the resolved path to the `node-file` namespace to load it as a native module.
+                const resolved = require.resolve(args.path, { paths: [args.resolveDir] });
+                return {
+                    path: resolved,
+                    namespace: 'node-file',
+                };
+            } catch {
+                // If the module cannot be resolved, mark it as external.
+                return {
+                    external: true
+                };
+            }
+        });
+        build.onLoad({ filter: /.*/, namespace: 'node-file' }, args => ({
+            // Replace the require statement with a direct require call to the native module.
+            contents: `
+              import path from ${JSON.stringify(args.path)}
+              try { module.exports = require(path) }
+              catch { throw new Error('Could not load native module from "${args.path}"') }
+            `,
+        }));
+        build.onResolve({ filter: /\.node$/, namespace: 'node-file' }, args => ({
+            // Finally, resolve the `.node` file to the local path.
+            path: args.path,
+            namespace: 'file',
+        }));
     }
 }
 
