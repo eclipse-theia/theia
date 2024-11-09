@@ -34,7 +34,8 @@ export class GetWorkspaceDirectoryStructure implements ToolProvider {
         return {
             id: GetWorkspaceDirectoryStructure.ID,
             name: GetWorkspaceDirectoryStructure.ID,
-            description: 'Retrieve the complete directory structure of the workspace, listing only directories (no file contents). This structure excludes specific directories, such as node_modules and hidden files, ensuring paths are within workspace boundaries.',
+            description: `Retrieve the complete directory structure of the workspace, listing only directories (no file contents). This structure excludes specific directories,
+            such as node_modules and hidden files, ensuring paths are within workspace boundaries.`,
             handler: () => this.getDirectoryStructure()
         };
     }
@@ -63,7 +64,7 @@ export class GetWorkspaceDirectoryStructure implements ToolProvider {
 
         if (stat && stat.isDirectory && stat.children) {
             for (const child of stat.children) {
-                if (!child.isDirectory || shouldExclude(child)) continue;
+                if (!child.isDirectory || shouldExclude(child)) { continue; };
                 const path = `${prefix}${child.resource.path.base}/`;
                 result.push(path);
                 result.push(...await this.buildDirectoryStructure(child.resource, `${path}`));
@@ -82,13 +83,15 @@ export class FileContentFunction implements ToolProvider {
         return {
             id: FileContentFunction.ID,
             name: FileContentFunction.ID,
-            description: 'The relative path to the target file within the workspace. This path is resolved from the workspace root, and only files within the workspace boundaries are accessible. Attempting to access paths outside the workspace will result in an error.',
+            description: `The relative path to the target file within the workspace. This path is resolved from the workspace root, and only files within the workspace boundaries
+             are accessible. Attempting to access paths outside the workspace will result in an error.`,
             parameters: {
                 type: 'object',
                 properties: {
                     file: {
                         type: 'string',
-                        description: 'Return the content of a specified file within the workspace. The file path must be provided relative to the workspace root. Only files within workspace boundaries are accessible; attempting to access files outside the workspace will return an error.',
+                        description: `Return the content of a specified file within the workspace. The file path must be provided relative to the workspace root. Only files within
+                         workspace boundaries are accessible; attempting to access files outside the workspace will return an error.`,
                     }
                 }
             },
@@ -129,14 +132,14 @@ export class FileContentFunction implements ToolProvider {
             const fileStat = await this.fileService.resolve(targetUri);
 
             if (!fileStat || fileStat.isDirectory) {
-                return JSON.stringify({ error: "File not found" });
+                return JSON.stringify({ error: 'File not found' });
             }
 
             const fileContent = await this.fileService.read(targetUri);
             return fileContent.value;
 
         } catch (error) {
-            return JSON.stringify({ error: "File not found" });
+            return JSON.stringify({ error: 'File not found' });
         }
     }
 }
@@ -154,11 +157,13 @@ export class GetWorkspaceFileList implements ToolProvider {
                 properties: {
                     path: {
                         type: 'string',
-                        description: 'Optional relative path to a directory within the workspace. If no path is specified, the function lists contents directly in the workspace root. Paths are resolved within workspace boundaries only; paths outside the workspace or unvalidated paths will result in an error.'
+                        description: `Optional relative path to a directory within the workspace. If no path is specified, the function lists contents directly in the workspace
+                         root. Paths are resolved within workspace boundaries only; paths outside the workspace or unvalidated paths will result in an error.`
                     }
                 }
             },
-            description: 'List files and directories within a specified workspace directory. Paths are relative to the workspace root, and only workspace-contained paths are allowed. If no path is provided, the root contents are listed. Paths outside the workspace will result in an error.',
+            description: `List files and directories within a specified workspace directory. Paths are relative to the workspace root, and only workspace-contained paths are
+             allowed. If no path is provided, the root contents are listed. Paths outside the workspace will result in an error.`,
             handler: (arg_string: string) => {
                 const args = JSON.parse(arg_string);
                 return this.getProjectFileList(args.path);
@@ -189,12 +194,12 @@ export class GetWorkspaceFileList implements ToolProvider {
         try {
             const stat = await this.fileService.resolve(targetUri);
             if (!stat || !stat.isDirectory) {
-                return ["Error: Directory not found"];
+                return ['Error: Directory not found'];
             }
             return await this.listFilesDirectly(targetUri, workspaceRootUri);
 
         } catch (error) {
-            return ["Error: Directory not found"];
+            return ['Error: Directory not found'];
         }
     }
 

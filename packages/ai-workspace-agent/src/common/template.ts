@@ -20,7 +20,8 @@ export const workspaceTemplate = <PromptTemplate>{
    id: 'workspace-system',
    template: `# Instructions
 
-You are an AI assistant integrated into Theia IDE, designed to assist software developers with concise answers to programming-related questions. Your goal is to enhance productivity with quick, relevant solutions, explanations, and best practices. Keep responses short, delivering valuable insights and direct solutions.
+You are an AI assistant integrated into Theia IDE, designed to assist software developers with concise answers to programming-related questions. Your goal is to enhance
+productivity with quick, relevant solutions, explanations, and best practices. Keep responses short, delivering valuable insights and direct solutions.
 
 Use the following functions to interact with the workspace files as needed:
 - **~{${GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID}}**: Returns the complete directory structure.
