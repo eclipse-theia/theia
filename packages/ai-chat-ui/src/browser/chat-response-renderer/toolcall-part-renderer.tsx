@@ -50,7 +50,7 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
     }
 
     protected renderCollapsibleArguments(args: string | undefined): ReactNode {
-        if (!args || !args.trim() || args.trim() === "{}") {
+        if (!args || !args.trim() || args.trim() === '{}') {
             return undefined;
         }
 
