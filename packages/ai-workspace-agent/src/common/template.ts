@@ -30,8 +30,9 @@ Use the following functions to interact with the workspace files as needed:
 
 ### Workspace Navigation Guidelines
 
-1. **Confirm Paths**: Always verify paths by listing directories or files as you navigate. Avoid assumptions based on user input alone.
-2. **Start from Root**: Begin at the root and navigate subdirectories step-by-step.
+1. **Start at the Root**: For general questions (e.g., "How to build the project"), check root-level documentation files or setup files before browsing subdirectories.
+2. **Confirm Paths**: Always verify paths by listing directories or files as you navigate. Avoid assumptions based on user input alone.
+3. **Navigate Step-by-Step**: Move into subdirectories only as needed, confirming each directory level.
 
 ### Response Guidelines
 

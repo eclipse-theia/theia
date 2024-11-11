@@ -21,9 +21,34 @@ import { FileStat } from '@theia/filesystem/lib/common/files';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FILE_CONTENT_FUNCTION_ID, GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID, GET_WORKSPACE_FILE_LIST_FUNCTION_ID } from '../common/functions';
 
-function shouldExclude(stat: FileStat): boolean {
-    const excludedFolders = ['node_modules', 'lib'];
-    return stat.resource.path.base.startsWith('.') || excludedFolders.includes(stat.resource.path.base);
+@injectable()
+export class WorkspaceUtils {
+    @inject(WorkspaceService)
+    protected workspaceService: WorkspaceService;
+
+    async getWorkspaceRoot(): Promise<URI> {
+        const wsRoots = await this.workspaceService.roots;
+        if (wsRoots.length === 0) {
+            throw new Error('No workspace has been opened yet');
+        }
+        return wsRoots[0].resource;
+    }
+
+    ensureWithinWorkspace(targetUri: URI, workspaceRootUri: URI): void {
+        if (!targetUri.toString().startsWith(workspaceRootUri.toString())) {
+            throw new Error('Access outside of the workspace is not allowed');
+        }
+    }
+    /**
+     * Determines whether a given file or directory should be excluded from workspace operations.
+     *
+     * @param stat - The `FileStat` object representing the file or directory to check.
+     * @returns `true` if the file or directory should be excluded, `false` otherwise.
+     */
+    shouldExclude(stat: FileStat): boolean {
+        const excludedFolders = ['node_modules', 'lib'];
+        return stat.resource.path.base.startsWith('.') || excludedFolders.includes(stat.resource.path.base);
+    }
 }
 
 @injectable()
@@ -40,22 +65,21 @@ export class GetWorkspaceDirectoryStructure implements ToolProvider {
         };
     }
 
-    @inject(WorkspaceService)
-    protected workspaceService: WorkspaceService;
-
     @inject(FileService)
     protected readonly fileService: FileService;
 
-    private async getDirectoryStructure(): Promise<string[]> {
-        const wsRoots = await this.workspaceService.roots;
+    @inject(WorkspaceUtils)
+    protected workspaceUtils: WorkspaceUtils;
 
-        if (wsRoots.length === 0) {
-            throw new Error('Workspace root not found');
+    private async getDirectoryStructure(): Promise<string[]> {
+        let workspaceRoot;
+        try {
+            workspaceRoot = await this.workspaceUtils.getWorkspaceRoot();
+        } catch (error) {
+            return [`Error: ${error.message}`];
         }
 
-        const workspaceRootUri = wsRoots[0].resource;
-
-        return this.buildDirectoryStructure(workspaceRootUri);
+        return this.buildDirectoryStructure(workspaceRoot);
     }
 
     private async buildDirectoryStructure(uri: URI, prefix: string = ''): Promise<string[]> {
@@ -64,7 +88,7 @@ export class GetWorkspaceDirectoryStructure implements ToolProvider {
 
         if (stat && stat.isDirectory && stat.children) {
             for (const child of stat.children) {
-                if (!child.isDirectory || shouldExclude(child)) { continue; };
+                if (!child.isDirectory || this.workspaceUtils.shouldExclude(child)) { continue; };
                 const path = `${prefix}${child.resource.path.base}/`;
                 result.push(path);
                 result.push(...await this.buildDirectoryStructure(child.resource, `${path}`));
@@ -102,11 +126,11 @@ export class FileContentFunction implements ToolProvider {
         };
     }
 
-    @inject(WorkspaceService)
-    protected workspaceService: WorkspaceService;
-
     @inject(FileService)
     protected readonly fileService: FileService;
+
+    @inject(WorkspaceUtils)
+    protected readonly workspaceUtils: WorkspaceUtils;
 
     private parseArg(arg_string: string): string {
         const result = JSON.parse(arg_string);
@@ -114,19 +138,15 @@ export class FileContentFunction implements ToolProvider {
     }
 
     private async getFileContent(file: string): Promise<string> {
-        const wsRoots = await this.workspaceService.roots;
-
-        if (wsRoots.length === 0) {
-            throw new Error('Workspace root not found');
+        let workspaceRoot;
+        try {
+            workspaceRoot = await this.workspaceUtils.getWorkspaceRoot();
+        } catch (error) {
+            return JSON.stringify({ error: error.message });
         }
 
-        const workspaceRootUri = wsRoots[0].resource;
-
-        const targetUri = workspaceRootUri.resolve(file);
-
-        if (!targetUri.toString().startsWith(workspaceRootUri.toString())) {
-            throw new Error('Access outside of the workspace is not allowed');
-        }
+        const targetUri = workspaceRoot.resolve(file);
+        this.workspaceUtils.ensureWithinWorkspace(targetUri, workspaceRoot);
 
         try {
             const fileStat = await this.fileService.resolve(targetUri);
@@ -171,32 +191,29 @@ export class GetWorkspaceFileList implements ToolProvider {
         };
     }
 
-    @inject(WorkspaceService)
-    protected workspaceService: WorkspaceService;
-
     @inject(FileService)
     protected readonly fileService: FileService;
 
+    @inject(WorkspaceUtils)
+    protected workspaceUtils: WorkspaceUtils;
+
     async getProjectFileList(path?: string): Promise<string[]> {
-        const wsRoots = await this.workspaceService.roots;
-
-        if (wsRoots.length === 0) {
-            throw new Error('Workspace root not found');
+        let workspaceRoot;
+        try {
+            workspaceRoot = await this.workspaceUtils.getWorkspaceRoot();
+        } catch (error) {
+            return [`Error: ${error.message}`];
         }
 
-        const workspaceRootUri = wsRoots[0].resource;
-        const targetUri = path ? workspaceRootUri.resolve(path) : workspaceRootUri;
-
-        if (!targetUri.toString().startsWith(workspaceRootUri.toString())) {
-            throw new Error('Access outside of the workspace is not allowed');
-        }
+        const targetUri = path ? workspaceRoot.resolve(path) : workspaceRoot;
+        this.workspaceUtils.ensureWithinWorkspace(targetUri, workspaceRoot);
 
         try {
             const stat = await this.fileService.resolve(targetUri);
             if (!stat || !stat.isDirectory) {
                 return ['Error: Directory not found'];
             }
-            return await this.listFilesDirectly(targetUri, workspaceRootUri);
+            return await this.listFilesDirectly(targetUri, workspaceRoot);
 
         } catch (error) {
             return ['Error: Directory not found'];
@@ -208,7 +225,7 @@ export class GetWorkspaceFileList implements ToolProvider {
         const result: string[] = [];
 
         if (stat && stat.isDirectory) {
-            if (shouldExclude(stat)) {
+            if (this.workspaceUtils.shouldExclude(stat)) {
                 return result;
             }
             const children = await this.fileService.resolve(uri);
