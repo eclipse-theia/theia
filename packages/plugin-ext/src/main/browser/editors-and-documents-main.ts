@@ -317,7 +317,7 @@ class EditorAndDocumentStateComputer implements Disposable {
         }
 
         let activeId: string | null = null;
-        const activeEditor = MonacoEditor.getCurrent(this.editorService);
+        const activeEditor = MonacoEditor.getCurrent(this.editorService) ?? this.cellEditorService.getActiveCell();
 
         const editors = new Map<string, EditorSnapshot>();
         for (const widget of this.editorService.all) {
@@ -340,6 +340,9 @@ class EditorAndDocumentStateComputer implements Disposable {
             if (editor.getControl()?.getModel()) {
                 const editorSnapshot = new EditorSnapshot(editor);
                 editors.set(editorSnapshot.id, editorSnapshot);
+                if (activeEditor === editor) {
+                    activeId = editorSnapshot.id;
+                }
             }
         };
 
