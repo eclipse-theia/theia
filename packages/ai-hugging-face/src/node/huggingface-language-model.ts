@@ -49,7 +49,6 @@ function toRoleLabel(actor: MessageActor): string {
 }
 
 export class HuggingFaceModel implements LanguageModel {
-    private hfInference: HfInference;
 
     /**
      * @param id the unique id for this language model. It will be used to identify the model in the UI.
@@ -57,23 +56,19 @@ export class HuggingFaceModel implements LanguageModel {
      * @param apiKey function to retrieve the API key for Hugging Face
      */
     constructor(public readonly id: string, public model: string, public apiKey: () => string | undefined) {
-        const token = this.apiKey();
-        if (!token) {
-            throw new Error('Please provide a Hugging Face API token.');
-        }
-        this.hfInference = new HfInference(token);
     }
 
     async request(request: LanguageModelRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
+        const hfInference = this.initializeHfInference();
         if (this.isStreamingSupported(this.model)) {
-            return this.handleStreamingRequest(request, cancellationToken);
+            return this.handleStreamingRequest(hfInference, request, cancellationToken);
         } else {
-            return this.handleNonStreamingRequest(request);
+            return this.handleNonStreamingRequest(hfInference, request);
         }
     }
 
-    protected async handleNonStreamingRequest(request: LanguageModelRequest): Promise<LanguageModelTextResponse> {
-        const response = await this.hfInference.textGeneration({
+    protected async handleNonStreamingRequest(hfInference: HfInference, request: LanguageModelRequest): Promise<LanguageModelTextResponse> {
+        const response = await hfInference.textGeneration({
             model: this.model,
             inputs: toHuggingFacePrompt(request.messages),
             parameters: {
@@ -92,8 +87,8 @@ export class HuggingFaceModel implements LanguageModel {
         };
     }
 
-    protected async handleStreamingRequest(request: LanguageModelRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
-        const stream = this.hfInference.textGenerationStream({
+    protected async handleStreamingRequest(hfInference: HfInference, request: LanguageModelRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
+        const stream = hfInference.textGenerationStream({
             model: this.model,
             inputs: toHuggingFacePrompt(request.messages),
             parameters: {
@@ -122,5 +117,13 @@ export class HuggingFaceModel implements LanguageModel {
     protected isStreamingSupported(model: string): boolean {
         // Assuming all models support streaming for now; can be refined if needed
         return true;
+    }
+
+    private initializeHfInference(): HfInference {
+        const token = this.apiKey();
+        if (!token) {
+            throw new Error('Please provide a Hugging Face API token.');
+        }
+        return new HfInference(token);
     }
 }
