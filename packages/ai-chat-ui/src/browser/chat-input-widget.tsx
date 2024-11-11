@@ -126,6 +126,9 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     const lastRequest = allRequests.length === 0 ? undefined : allRequests[allRequests.length - 1];
 
     const createInputElement = async () => {
+        const padding = 8;
+        const lineHeight = 20;
+        const maxHeight = 240;
         const resource = await props.untitledResourceResolver.createUntitledResource('', CHAT_VIEW_LANGUAGE_EXTENSION);
         const editor = await props.editorProvider.createInline(resource.uri, editorContainerRef.current!, {
             language: CHAT_VIEW_LANGUAGE_EXTENSION,
@@ -133,7 +136,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             codeLens: false,
             inlayHints: { enabled: 'off' },
             hover: { enabled: false },
-            autoSizing: true,
+            autoSizing: false, // we handle the sizing ourselves
             scrollBeyondLastLine: false,
             scrollBeyondLastColumn: 0,
             minHeight: 1,
@@ -144,8 +147,8 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             scrollbar: { horizontal: 'hidden' },
             automaticLayout: true,
             lineNumbers: 'off',
-            lineHeight: 20,
-            padding: { top: 8 },
+            lineHeight,
+            padding: { top: padding },
             suggest: {
                 showIcons: true,
                 showSnippets: false,
@@ -158,8 +161,23 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             stickyScroll: { enabled: false },
         });
 
-        editor.getControl().onDidChangeModelContent(() => {
-            layout();
+        if (editorContainerRef.current) {
+            editorContainerRef.current.style.height = (lineHeight + (2 * padding)) + 'px';
+        }
+
+        const updateEditorHeight = () => {
+            if (editorContainerRef.current) {
+                const contentHeight = editor.getControl().getContentHeight() + padding;
+                editorContainerRef.current.style.height = `${Math.min(contentHeight, maxHeight)}px`;
+            }
+        };
+        editor.getControl().onDidChangeModelContent(updateEditorHeight);
+        const resizeObserver = new ResizeObserver(updateEditorHeight);
+        if (editorContainerRef.current) {
+            resizeObserver.observe(editorContainerRef.current);
+        }
+        editor.getControl().onDidDispose(() => {
+            resizeObserver.disconnect();
         });
 
         editor.getControl().onContextMenu(e =>
@@ -193,19 +211,6 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         if (editorRef.current) {
             editorRef.current.document.textEditorModel.setValue('');
         }
-    };
-
-    function layout(): void {
-        if (editorRef.current === undefined) {
-            return;
-        }
-        const hiddenClass = 'hidden';
-        const editor = editorRef.current;
-        if (editor.document.textEditorModel.getValue().length > 0) {
-            placeholderRef.current?.classList.add(hiddenClass);
-        } else {
-            placeholderRef.current?.classList.remove(hiddenClass);
-        }
     }
 
     const onKeyDown = React.useCallback((event: React.KeyboardEvent) => {
@@ -218,10 +223,20 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         }
     }, [props.isEnabled]);
 
+    const handleInputFocus = () => {
+        placeholderRef.current?.classList.add('hidden');
+    };
+
+    const handleInputBlur = () => {
+        if (!editorRef.current?.getControl().getValue()) {
+            placeholderRef.current?.classList.remove('hidden');
+        }
+    };
+
     return <div className='theia-ChatInput'>
         <div className='theia-ChatInput-Editor-Box'>
-            <div className='theia-ChatInput-Editor' ref={editorContainerRef} onKeyDown={onKeyDown}>
-                <div ref={placeholderRef} className='theia-ChatInput-Editor-Placeholder'>Enter your question</div>
+            <div className='theia-ChatInput-Editor' ref={editorContainerRef} onKeyDown={onKeyDown} onFocus={handleInputFocus} onBlur={handleInputBlur}>
+                <div ref={placeholderRef} className='theia-ChatInput-Editor-Placeholder'>Ask a question</div>
             </div>
         </div>
         <div className="theia-ChatInputOptions">
