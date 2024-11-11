@@ -30,44 +30,45 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
         return -1;
     }
 
-    renderCollapsibleArguments(args: string | undefined): ReactNode {
-        return (
-            args && (
-                <details style={{ display: 'inline' }}>
-                    <summary
-                        style={{
-                            display: 'inline',
-                            cursor: 'pointer',
-                            textDecoration: 'underline',
-                        }}>
-                        &gt;
-                    </summary>
-                    <span>{JSON.stringify(args, undefined, 2)}</span>
-                </details>
-            )
-        );
-    }
-
     render(response: ToolCallChatResponseContent): ReactNode {
         return (
             <h4 className='theia-toolCall'>
                 {response.finished ? (
                     <details>
-                        <summary>Ran [{response.name}
-                            {response.arguments && <>({this.renderCollapsibleArguments(response.arguments)})</>}
-                            ]</summary>
+                        <summary>Ran {response.name}
+                            ({this.renderCollapsibleArguments(response.arguments)})
+                        </summary>
                         <pre>{this.tryPrettyPrintJson(response)}</pre>
-                        {this.renderCollapsibleArguments(response.arguments)}
                     </details>
                 ) : (
                     <span>
-                        <Spinner /> Running [{response.name}
-                        {response.arguments && <>({this.renderCollapsibleArguments(response.arguments)})</>}
-                        ]
+                        <Spinner /> Running {response.name}({this.renderCollapsibleArguments(response.arguments)})
                     </span>
                 )}
             </h4>
         );
+    }
+
+    protected renderCollapsibleArguments(args: string | undefined): ReactNode {
+        if (!args || !args.trim() || args.trim() === "{}") {
+            return undefined;
+        }
+
+        return (
+            <details className="collapsible-arguments">
+                <summary className="collapsible-arguments-summary">...</summary>
+                <span>{this.prettyPrintArgs(args)}</span>
+            </details>
+        );
+    }
+
+    private prettyPrintArgs(args: string): string {
+        try {
+            return JSON.stringify(JSON.parse(args), undefined, 2);
+        } catch (e) {
+            // fall through
+            return args;
+        }
     }
 
     private tryPrettyPrintJson(response: ToolCallChatResponseContent): string | undefined {

@@ -288,6 +288,15 @@ div:last-child > .theia-ChatNode {
   overflow: auto;
 }
 
+.collapsible-arguments {
+  display: inline;
+}
+
+.collapsible-arguments-summary {
+  display: inline;
+  text-decoration: underline;
+}
+
 .theia-ResponseNode-ProgressMessage {
   font-weight: normal;
   color: var(--theia-descriptionForeground);
