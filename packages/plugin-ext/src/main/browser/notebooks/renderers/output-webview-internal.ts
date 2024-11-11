@@ -159,7 +159,7 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
                 theia.postMessage({ type: 'cellFocusChanged', cellHandle: cellHandle });
             });
 
-            if (cellIndex && cellIndex < container.children.length) {
+            if (cellIndex !== undefined && cellIndex < container.children.length) {
                 container.insertBefore(this.element, container.children[cellIndex]);
             } else {
                 container.appendChild(this.element);
