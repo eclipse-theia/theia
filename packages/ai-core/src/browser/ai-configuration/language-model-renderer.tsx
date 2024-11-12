@@ -99,7 +99,7 @@ export const LanguageModelRenderer: React.FC<LanguageModelSettingsProps> = (
                             onChange={event => onSelectedModelChange(requirements.purpose, event)}
                         >
                             <option value=""></option>
-                            {languageModels?.map(model => (
+                            {languageModels?.sort((a, b) => (a.name ?? a.id).localeCompare(b.name ?? b.id)).map(model => (
                                 <option key={model.id} value={model.id}>{model.name ?? model.id}</option>
                             ))}
                         </select>
