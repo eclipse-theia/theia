@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from '@theia/core/shared/inversify';
+import { injectable, unmanaged } from '@theia/core/shared/inversify';
 import { TreeImpl, CompositeTreeNode, TreeNode, SelectableTreeNode, ExpandableTreeNode } from '@theia/core/lib/browser';
 import { MarkerManager } from './marker-manager';
 import { Marker } from '../common/marker';
@@ -32,8 +32,8 @@ export interface MarkerOptions {
 export abstract class MarkerTree<T extends object> extends TreeImpl {
 
     constructor(
-        protected readonly markerManager: MarkerManager<T>,
-        protected readonly markerOptions: MarkerOptions
+        @unmanaged() protected readonly markerManager: MarkerManager<T>,
+        @unmanaged() protected readonly markerOptions: MarkerOptions
     ) {
         super();
 

@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, unmanaged } from '@theia/core/shared/inversify';
 import { EditorManager, TextEditor, EditorDecoration, EditorDecorationOptions, Range, Position, EditorDecorationStyle } from '@theia/editor/lib/browser';
 import { GitFileBlame } from '../../common';
 import { Disposable, DisposableCollection, nls } from '@theia/core';
@@ -28,7 +28,7 @@ import { LanguageSelector } from '@theia/monaco-editor-core/esm/vs/editor/common
 export class BlameDecorator implements monaco.languages.HoverProvider {
 
     constructor(
-        protected blameDecorationsStyleSheet: CSSStyleSheet = DecorationStyle.createStyleSheet('gitBlameDecorationsStyle')
+        @unmanaged() protected blameDecorationsStyleSheet: CSSStyleSheet = DecorationStyle.createStyleSheet('gitBlameDecorationsStyle')
     ) {
         DecorationStyle.getOrCreateStyleRule(`.${BlameDecorator.GIT_BLAME_HIGHLIGHT}`,
             this.blameDecorationsStyleSheet).style.backgroundColor = 'var(--theia-gitlens-lineHighlightBackgroundColor)';
