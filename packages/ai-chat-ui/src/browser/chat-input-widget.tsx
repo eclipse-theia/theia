@@ -126,7 +126,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     const lastRequest = allRequests.length === 0 ? undefined : allRequests[allRequests.length - 1];
 
     const createInputElement = async () => {
-        const padding = 8;
+        const paddingTop = 8;
         const lineHeight = 20;
         const maxHeight = 240;
         const resource = await props.untitledResourceResolver.createUntitledResource('', CHAT_VIEW_LANGUAGE_EXTENSION);
@@ -148,7 +148,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             automaticLayout: true,
             lineNumbers: 'off',
             lineHeight,
-            padding: { top: padding },
+            padding: { top: paddingTop },
             suggest: {
                 showIcons: true,
                 showSnippets: false,
@@ -162,12 +162,12 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         });
 
         if (editorContainerRef.current) {
-            editorContainerRef.current.style.height = (lineHeight + (2 * padding)) + 'px';
+            editorContainerRef.current.style.height = (lineHeight + (2 * paddingTop)) + 'px';
         }
 
         const updateEditorHeight = () => {
             if (editorContainerRef.current) {
-                const contentHeight = editor.getControl().getContentHeight() + padding;
+                const contentHeight = editor.getControl().getContentHeight() + paddingTop;
                 editorContainerRef.current.style.height = `${Math.min(contentHeight, maxHeight)}px`;
             }
         };
