@@ -16,7 +16,6 @@
 
 import * as Y from 'yjs';
 import { Disposable, Emitter, Event, URI } from '@theia/core';
-import { injectable } from '@theia/core/shared/inversify';
 import {
     FileChange, FileDeleteOptions,
     FileOverwriteOptions, FileSystemProviderCapabilities, FileType, Stat, WatchOptions, FileSystemProviderWithFileReadWriteCapability, FileWriteOptions
@@ -32,7 +31,6 @@ export namespace CollaborationURI {
     }
 }
 
-@injectable()
 export class CollaborationFileSystemProvider implements FileSystemProviderWithFileReadWriteCapability {
 
     capabilities = FileSystemProviderCapabilities.FileReadWrite;
