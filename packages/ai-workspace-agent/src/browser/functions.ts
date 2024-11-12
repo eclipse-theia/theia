@@ -22,7 +22,7 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FILE_CONTENT_FUNCTION_ID, GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID, GET_WORKSPACE_FILE_LIST_FUNCTION_ID } from '../common/functions';
 
 @injectable()
-export class WorkspaceUtils {
+export class WorkspaceFunctionScope {
     @inject(WorkspaceService)
     protected workspaceService: WorkspaceService;
 
@@ -68,13 +68,13 @@ export class GetWorkspaceDirectoryStructure implements ToolProvider {
     @inject(FileService)
     protected readonly fileService: FileService;
 
-    @inject(WorkspaceUtils)
-    protected workspaceUtils: WorkspaceUtils;
+    @inject(WorkspaceFunctionScope)
+    protected workspaceScope: WorkspaceFunctionScope;
 
     private async getDirectoryStructure(): Promise<string[]> {
         let workspaceRoot;
         try {
-            workspaceRoot = await this.workspaceUtils.getWorkspaceRoot();
+            workspaceRoot = await this.workspaceScope.getWorkspaceRoot();
         } catch (error) {
             return [`Error: ${error.message}`];
         }
@@ -88,7 +88,7 @@ export class GetWorkspaceDirectoryStructure implements ToolProvider {
 
         if (stat && stat.isDirectory && stat.children) {
             for (const child of stat.children) {
-                if (!child.isDirectory || this.workspaceUtils.shouldExclude(child)) { continue; };
+                if (!child.isDirectory || this.workspaceScope.shouldExclude(child)) { continue; };
                 const path = `${prefix}${child.resource.path.base}/`;
                 result.push(path);
                 result.push(...await this.buildDirectoryStructure(child.resource, `${path}`));
@@ -129,8 +129,8 @@ export class FileContentFunction implements ToolProvider {
     @inject(FileService)
     protected readonly fileService: FileService;
 
-    @inject(WorkspaceUtils)
-    protected readonly workspaceUtils: WorkspaceUtils;
+    @inject(WorkspaceFunctionScope)
+    protected readonly workspaceScope: WorkspaceFunctionScope;
 
     private parseArg(arg_string: string): string {
         const result = JSON.parse(arg_string);
@@ -140,13 +140,13 @@ export class FileContentFunction implements ToolProvider {
     private async getFileContent(file: string): Promise<string> {
         let workspaceRoot;
         try {
-            workspaceRoot = await this.workspaceUtils.getWorkspaceRoot();
+            workspaceRoot = await this.workspaceScope.getWorkspaceRoot();
         } catch (error) {
             return JSON.stringify({ error: error.message });
         }
 
         const targetUri = workspaceRoot.resolve(file);
-        this.workspaceUtils.ensureWithinWorkspace(targetUri, workspaceRoot);
+        this.workspaceScope.ensureWithinWorkspace(targetUri, workspaceRoot);
 
         try {
             const fileStat = await this.fileService.resolve(targetUri);
@@ -194,19 +194,19 @@ export class GetWorkspaceFileList implements ToolProvider {
     @inject(FileService)
     protected readonly fileService: FileService;
 
-    @inject(WorkspaceUtils)
-    protected workspaceUtils: WorkspaceUtils;
+    @inject(WorkspaceFunctionScope)
+    protected workspaceScope: WorkspaceFunctionScope;
 
     async getProjectFileList(path?: string): Promise<string[]> {
         let workspaceRoot;
         try {
-            workspaceRoot = await this.workspaceUtils.getWorkspaceRoot();
+            workspaceRoot = await this.workspaceScope.getWorkspaceRoot();
         } catch (error) {
             return [`Error: ${error.message}`];
         }
 
         const targetUri = path ? workspaceRoot.resolve(path) : workspaceRoot;
-        this.workspaceUtils.ensureWithinWorkspace(targetUri, workspaceRoot);
+        this.workspaceScope.ensureWithinWorkspace(targetUri, workspaceRoot);
 
         try {
             const stat = await this.fileService.resolve(targetUri);
@@ -225,7 +225,7 @@ export class GetWorkspaceFileList implements ToolProvider {
         const result: string[] = [];
 
         if (stat && stat.isDirectory) {
-            if (this.workspaceUtils.shouldExclude(stat)) {
+            if (this.workspaceScope.shouldExclude(stat)) {
                 return result;
             }
             const children = await this.fileService.resolve(uri);
