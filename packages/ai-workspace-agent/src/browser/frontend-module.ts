@@ -17,7 +17,7 @@ import { ContainerModule } from '@theia/core/shared/inversify';
 import { ChatAgent } from '@theia/ai-chat/lib/common';
 import { Agent, ToolProvider } from '@theia/ai-core/lib/common';
 import { WorkspaceAgent } from './workspace-agent';
-import { FileContentFunction, GetWorkspaceFileList } from './functions';
+import { FileContentFunction, GetWorkspaceDirectoryStructure, GetWorkspaceFileList, WorkspaceFunctionScope } from './functions';
 
 export default new ContainerModule(bind => {
     bind(WorkspaceAgent).toSelf().inSingletonScope();
@@ -25,4 +25,6 @@ export default new ContainerModule(bind => {
     bind(ChatAgent).toService(WorkspaceAgent);
     bind(ToolProvider).to(GetWorkspaceFileList);
     bind(ToolProvider).to(FileContentFunction);
+    bind(ToolProvider).to(GetWorkspaceDirectoryStructure);
+    bind(WorkspaceFunctionScope).toSelf().inSingletonScope();
 });
