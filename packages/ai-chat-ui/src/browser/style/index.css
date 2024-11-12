@@ -163,6 +163,7 @@ div:last-child > .theia-ChatNode {
   display: flex;
   flex-direction: column-reverse;
   overflow: hidden;
+  transition: height 0.05s ease-in-out;
 }
 
 .theia-ChatInput-Editor:has(.monaco-editor.focused) {
