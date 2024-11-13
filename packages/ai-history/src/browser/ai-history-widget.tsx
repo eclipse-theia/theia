@@ -19,7 +19,7 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import * as React from '@theia/core/shared/react';
 import { CommunicationCard } from './ai-history-communication-card';
 import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/select-component';
-import { deepClone, Emitter } from '@theia/core';
+import { deepClone } from '@theia/core';
 
 namespace AIHistoryView {
     export interface State {
@@ -40,8 +40,6 @@ export class AIHistoryView extends ReactWidget implements StatefulWidget {
     protected selectedAgent?: Agent;
 
     protected _state: AIHistoryView.State = { chronological: false };
-    protected readonly onStateChangedEmitter = new Emitter<AIHistoryView.State>();
-    readonly onStateChanged = this.onStateChangedEmitter.event;
 
     constructor() {
         super();
@@ -58,7 +56,7 @@ export class AIHistoryView extends ReactWidget implements StatefulWidget {
 
     protected set state(state: AIHistoryView.State) {
         this._state = state;
-        this.onStateChangedEmitter.fire(this._state);
+        this.update();
     }
 
     storeState(): object {
@@ -79,7 +77,6 @@ export class AIHistoryView extends ReactWidget implements StatefulWidget {
         this.toDispose.push(this.recordingService.onDidRecordRequest(entry => this.historyContentUpdated(entry)));
         this.toDispose.push(this.recordingService.onDidRecordResponse(entry => this.historyContentUpdated(entry)));
         this.toDispose.push(this.recordingService.onStructuralChange(() => this.update()));
-        this.toDispose.push(this.onStateChanged(newState => this.update()));
         this.selectAgent(this.agentService.getAllAgents()[0]);
     }
 
@@ -99,10 +96,17 @@ export class AIHistoryView extends ReactWidget implements StatefulWidget {
             this.selectedAgent = this.agentService.getAllAgents().find(agent => agent.id === value.value);
             this.update();
         };
+        const agents = this.agentService.getAllAgents();
+        if (agents.length === 0) {
+            return (
+                <div className='agent-history-widget'>
+                    <div className='theia-card no-content'>No agent available.</div>
+                </div >);
+        }
         return (
             <div className='agent-history-widget'>
                 <SelectComponent
-                    options={this.agentService.getAllAgents().map(agent => ({
+                    options={agents.map(agent => ({
                         value: agent.id,
                         label: agent.name,
                         description: agent.description || ''
