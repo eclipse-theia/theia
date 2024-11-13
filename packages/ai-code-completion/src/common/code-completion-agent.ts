@@ -157,5 +157,5 @@ Only return the exact replacement for [[MARKER]] to complete the snippet.`,
         { name: 'textUntilCurrentPosition', usedInPrompt: true, description: 'The code before the current position of the cursor.' },
         { name: 'textAfterCurrentPosition', usedInPrompt: true, description: 'The code after the current position of the cursor.' }
     ];
-    readonly tags?: String[] | undefined;
+    readonly tags?: string[] | undefined;
 }

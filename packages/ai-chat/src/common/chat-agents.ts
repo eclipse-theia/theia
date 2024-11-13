@@ -138,7 +138,7 @@ export abstract class AbstractChatAgent {
         protected defaultLanguageModelPurpose: string,
         public iconClass: string = 'codicon codicon-copilot',
         public locations: ChatAgentLocation[] = ChatAgentLocation.ALL,
-        public tags: String[] = ['Chat'],
+        public tags: string[] = ['Chat'],
         public defaultLogging: boolean = true) {
     }
 
