@@ -6,6 +6,8 @@
 
 <!-- ## 1.56.0 - not yet released -->
 
+- [plugin] added stubs for the additional LanguageModel APIs [#14446](https://github.com/eclipse-theia/theia/pull/14446) - Contributed on behalf of STMicroelectronics
+
 ## 1.55.0 - 10/31/2024
 
 - [ai] added logic to allow to order and clear AI History view [#14233](https://github.com/eclipse-theia/theia/pull/14233)
