@@ -112,7 +112,7 @@ export class AIAgentConfigurationWidget extends ReactWidget {
     }
 
     private renderAgentName(agent: Agent): React.ReactNode {
-        const tagsSuffix = agent.tags?.length ? <span>{agent.tags.map(tag => <span className='agent-tag'>{tag}</span>)}</span> : '';
+        const tagsSuffix = agent.tags?.length ? <span>{agent.tags.map(tag => <span key={tag} className='agent-tag'>{tag}</span>)}</span> : '';
         return <span>{agent.name} {tagsSuffix}</span>;
     }
 
