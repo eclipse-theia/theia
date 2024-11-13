@@ -17,6 +17,7 @@
 
 /** @type {{[ruleId: string]: import('eslint').Rule.RuleModule}} */
 exports.rules = {
+    "annotation-check": require('./rules/annotation-check'),
     "localization-check": require('./rules/localization-check'),
     "no-src-import": require('./rules/no-src-import'),
     "runtime-import-check": require('./rules/runtime-import-check'),
