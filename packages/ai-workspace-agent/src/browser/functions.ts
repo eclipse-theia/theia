@@ -20,11 +20,25 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FILE_CONTENT_FUNCTION_ID, GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID, GET_WORKSPACE_FILE_LIST_FUNCTION_ID } from '../common/functions';
-
+import ignore from 'ignore';
+import { Minimatch } from 'minimatch';
+import { PreferenceService } from '@theia/core/lib/browser';
+import { CONSIDER_GITIGNORE_PREF, USER_EXCLUDES_PREF } from './workspace-preferences';
 @injectable()
 export class WorkspaceFunctionScope {
+    protected readonly GITIGNORE_FILE_NAME = '.gitignore';
+
     @inject(WorkspaceService)
     protected workspaceService: WorkspaceService;
+
+    @inject(FileService)
+    protected fileService: FileService;
+
+    @inject(PreferenceService)
+    protected preferences: PreferenceService;
+
+    private gitignoreMatcher: ReturnType<typeof ignore> | undefined;
+    private gitignoreWatcherInitialized = false;
 
     async getWorkspaceRoot(): Promise<URI> {
         const wsRoots = await this.workspaceService.roots;
@@ -39,15 +53,59 @@ export class WorkspaceFunctionScope {
             throw new Error('Access outside of the workspace is not allowed');
         }
     }
-    /**
-     * Determines whether a given file or directory should be excluded from workspace operations.
-     *
-     * @param stat - The `FileStat` object representing the file or directory to check.
-     * @returns `true` if the file or directory should be excluded, `false` otherwise.
-     */
-    shouldExclude(stat: FileStat): boolean {
-        const excludedFolders = ['node_modules', 'lib'];
-        return stat.resource.path.base.startsWith('.') || excludedFolders.includes(stat.resource.path.base);
+
+    private async initializeGitignoreWatcher(workspaceRoot: URI): Promise<void> {
+        if (this.gitignoreWatcherInitialized) {
+            return;
+        }
+
+        const gitignoreUri = workspaceRoot.resolve(this.GITIGNORE_FILE_NAME);
+        this.fileService.watch(gitignoreUri);
+
+        this.fileService.onDidFilesChange(async event => {
+            if (event.contains(gitignoreUri)) {
+                this.gitignoreMatcher = undefined;
+            }
+        });
+
+        this.gitignoreWatcherInitialized = true;
+    }
+
+    async shouldExclude(stat: FileStat): Promise<boolean> {
+        const considerGitIgnore = this.preferences.get(CONSIDER_GITIGNORE_PREF, false);
+        const userExcludes = this.preferences.get<string[]>(USER_EXCLUDES_PREF, []);
+
+        const fileName = stat.resource.path.base;
+
+        for (const pattern of userExcludes) {
+            const matcher = new Minimatch(pattern, { dot: true });
+            if (matcher.match(fileName)) { return true; }
+        }
+
+        if (considerGitIgnore) {
+            const workspaceRoot = await this.getWorkspaceRoot();
+            await this.initializeGitignoreWatcher(workspaceRoot);
+
+            const gitignoreUri = workspaceRoot.resolve(this.GITIGNORE_FILE_NAME);
+
+            try {
+                const fileStat = await this.fileService.resolve(gitignoreUri);
+                if (fileStat && !fileStat.isDirectory) {
+                    if (!this.gitignoreMatcher) {
+                        const gitignoreContent = await this.fileService.read(gitignoreUri);
+                        this.gitignoreMatcher = ignore().add(gitignoreContent.value);
+                    }
+                    const relativePath = workspaceRoot.relative(stat.resource);
+                    if (relativePath && this.gitignoreMatcher.ignores(relativePath.toString())) {
+                        return true;
+                    }
+                }
+            } catch (error) {
+                // If .gitignore does not exist or cannot be read, continue without error
+            }
+        }
+
+        return false;
     }
 }
 
@@ -88,7 +146,7 @@ export class GetWorkspaceDirectoryStructure implements ToolProvider {
 
         if (stat && stat.isDirectory && stat.children) {
             for (const child of stat.children) {
-                if (!child.isDirectory || this.workspaceScope.shouldExclude(child)) { continue; };
+                if (!child.isDirectory || await this.workspaceScope.shouldExclude(child)) { continue; };
                 const path = `${prefix}${child.resource.path.base}/`;
                 result.push(path);
                 result.push(...await this.buildDirectoryStructure(child.resource, `${path}`));
@@ -225,12 +283,15 @@ export class GetWorkspaceFileList implements ToolProvider {
         const result: string[] = [];
 
         if (stat && stat.isDirectory) {
-            if (this.workspaceScope.shouldExclude(stat)) {
+            if (await this.workspaceScope.shouldExclude(stat)) {
                 return result;
             }
             const children = await this.fileService.resolve(uri);
             if (children.children) {
                 for (const child of children.children) {
+                    if (await this.workspaceScope.shouldExclude(child)) {
+                        continue;
+                    };
                     const relativePath = workspaceRootUri.relative(child.resource);
                     if (relativePath) {
                         result.push(relativePath.toString());
