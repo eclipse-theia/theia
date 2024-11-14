@@ -87,11 +87,11 @@ export class WorkspaceFunctionScope {
         return false;
     }
 
-    private isUserExcluded(fileName: string, userExcludePatterns: string[]): boolean {
+    protected isUserExcluded(fileName: string, userExcludePatterns: string[]): boolean {
         return userExcludePatterns.some(pattern => new Minimatch(pattern, { dot: true }).match(fileName));
     }
 
-    private async isGitIgnored(stat: FileStat, workspaceRoot: URI): Promise<boolean> {
+    protected async isGitIgnored(stat: FileStat, workspaceRoot: URI): Promise<boolean> {
         await this.initializeGitignoreWatcher(workspaceRoot);
 
         const gitignoreUri = workspaceRoot.resolve(this.GITIGNORE_FILE_NAME);
