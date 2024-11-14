@@ -100,7 +100,7 @@ export class WorkspaceFunctionScope {
                         return true;
                     }
                 }
-            } catch (error) {
+            } catch {
                 // If .gitignore does not exist or cannot be read, continue without error
             }
         }
