@@ -98,13 +98,18 @@ export class WorkspaceFunctionScope {
 
         try {
             const fileStat = await this.fileService.resolve(gitignoreUri);
-            if (fileStat && !fileStat.isDirectory) {
+            if (fileStat) {
                 if (!this.gitignoreMatcher) {
                     const gitignoreContent = await this.fileService.read(gitignoreUri);
                     this.gitignoreMatcher = ignore().add(gitignoreContent.value);
                 }
                 const relativePath = workspaceRoot.relative(stat.resource);
-                if (relativePath && this.gitignoreMatcher.ignores(relativePath.toString())) { return true; }
+                if (relativePath) {
+                    const relativePathStr = relativePath.toString() + (stat.isDirectory ? '/' : '');
+                    if (this.gitignoreMatcher.ignores(relativePathStr)) {
+                        return true;
+                    }
+                }
             }
         } catch {
             // If .gitignore does not exist or cannot be read, continue without error
