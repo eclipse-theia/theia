@@ -128,6 +128,11 @@ export abstract class AbstractChatAgent {
     @inject(ContributionProvider) @named(ResponseContentMatcherProvider)
     protected contentMatcherProviders: ContributionProvider<ResponseContentMatcherProvider>;
     protected contentMatchers: ResponseContentMatcher[] = [];
+    /**
+     * Agent-specific content matchers used by this agent in addition to the contributed content matchers.
+     * @see ResponseContentMatcherProvider
+     */
+    protected additionalContentMatchers: ResponseContentMatcher[] = [];
 
     @inject(DefaultResponseContentFactory)
     protected defaultContentFactory: DefaultResponseContentFactory;
@@ -144,7 +149,15 @@ export abstract class AbstractChatAgent {
 
     @postConstruct()
     init(): void {
-        this.contentMatchers = this.contentMatcherProviders.getContributions().flatMap(provider => provider.matchers);
+        this.initializeContentMatchers();
+    }
+
+    protected initializeContentMatchers(): void {
+        const contributedContentMatchers = this.contentMatcherProviders.getContributions().flatMap(provider => provider.matchers);
+        this.contentMatchers = [
+            ...contributedContentMatchers,
+            ...this.additionalContentMatchers
+        ];
     }
 
     async invoke(request: ChatRequestModelImpl): Promise<void> {
@@ -195,7 +208,7 @@ export abstract class AbstractChatAgent {
                 cancellationToken.token
             );
             await this.addContentsToResponse(languageModelResponse, request);
-            request.response.complete();
+            await this.onResponseComplete(request);
             if (this.defaultLogging) {
                 this.recordingService.recordResponse(ChatHistoryEntry.fromResponse(this.id, request));
             }
@@ -204,9 +217,10 @@ export abstract class AbstractChatAgent {
         }
     }
 
-    protected parseContents(text: string): ChatResponseContent[] {
+    protected parseContents(text: string, request: ChatRequestModelImpl): ChatResponseContent[] {
         return parseContents(
             text,
+            request,
             this.contentMatchers,
             this.defaultContentFactory?.create.bind(this.defaultContentFactory)
         );
@@ -290,6 +304,16 @@ export abstract class AbstractChatAgent {
         return undefined;
     }
 
+    /**
+     * Invoked after the response by the LLM completed successfully.
+     *
+     * The default implementation sets the state of the response to `complete`.
+     * Subclasses may override this method to perform additional actions or keep the response open for processing further requests.
+     */
+    protected async onResponseComplete(request: ChatRequestModelImpl): Promise<void> {
+        return request.response.complete();
+    }
+
     protected abstract addContentsToResponse(languageModelResponse: LanguageModelResponse, request: ChatRequestModelImpl): Promise<void>;
 }
 
@@ -313,20 +337,12 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
 
     protected override async addContentsToResponse(languageModelResponse: LanguageModelResponse, request: ChatRequestModelImpl): Promise<void> {
         if (isLanguageModelTextResponse(languageModelResponse)) {
-            const contents = this.parseContents(languageModelResponse.text);
+            const contents = this.parseContents(languageModelResponse.text, request);
             request.response.response.addContents(contents);
-            request.response.complete();
-            if (this.defaultLogging) {
-                this.recordingService.recordResponse(ChatHistoryEntry.fromResponse(this.id, request));
-            }
             return;
         }
         if (isLanguageModelStreamResponse(languageModelResponse)) {
             await this.addStreamResponse(languageModelResponse, request);
-            request.response.complete();
-            if (this.defaultLogging) {
-                this.recordingService.recordResponse(ChatHistoryEntry.fromResponse(this.id, request));
-            }
             return;
         }
         this.logger.error(
@@ -341,7 +357,7 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
 
     protected async addStreamResponse(languageModelResponse: LanguageModelStreamResponse, request: ChatRequestModelImpl): Promise<void> {
         for await (const token of languageModelResponse.stream) {
-            const newContents = this.parse(token, request.response.response.content);
+            const newContents = this.parse(token, request);
             if (isArray(newContents)) {
                 request.response.response.addContents(newContents);
             } else {
@@ -357,7 +373,7 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
                 return;
             }
 
-            const result: ChatResponseContent[] = findFirstMatch(this.contentMatchers, text) ? this.parseContents(text) : [];
+            const result: ChatResponseContent[] = findFirstMatch(this.contentMatchers, text) ? this.parseContents(text, request) : [];
             if (result.length > 0) {
                 request.response.response.addContents(result);
             } else {
@@ -366,11 +382,11 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
         }
     }
 
-    protected parse(token: LanguageModelStreamResponsePart, previousContent: ChatResponseContent[]): ChatResponseContent | ChatResponseContent[] {
+    protected parse(token: LanguageModelStreamResponsePart, request: ChatRequestModelImpl): ChatResponseContent | ChatResponseContent[] {
         const content = token.content;
         // eslint-disable-next-line no-null/no-null
         if (content !== undefined && content !== null) {
-            return this.defaultContentFactory.create(content);
+            return this.defaultContentFactory.create(content, request);
         }
         const toolCalls = token.tool_calls;
         if (toolCalls !== undefined) {
@@ -378,7 +394,7 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
                 new ToolCallChatResponseContentImpl(toolCall.id, toolCall.function?.name, toolCall.function?.arguments, toolCall.finished, toolCall.result));
             return toolCallContents;
         }
-        return this.defaultContentFactory.create('');
+        return this.defaultContentFactory.create('', request);
     }
 
 }

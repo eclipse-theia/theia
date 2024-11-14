@@ -36,6 +36,7 @@ import { ChatViewLanguageContribution } from './chat-view-language-contribution'
 import { ChatViewWidget } from './chat-view-widget';
 import { ChatViewWidgetToolbarContribution } from './chat-view-widget-toolbar-contribution';
 import { EditorPreviewManager } from '@theia/editor-preview/lib/browser/editor-preview-manager';
+import { QuestionPartRenderer } from './chat-response-renderer/question-part-renderer';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindViewContribution(bind, AIChatContribution);
@@ -66,6 +67,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(ChatResponsePartRenderer).to(CommandPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(ToolCallPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(ErrorPartRenderer).inSingletonScope();
+    bind(ChatResponsePartRenderer).to(QuestionPartRenderer).inSingletonScope();
     [CommandContribution, MenuContribution].forEach(serviceIdentifier =>
         bind(serviceIdentifier).to(ChatViewMenuContribution).inSingletonScope()
     );
