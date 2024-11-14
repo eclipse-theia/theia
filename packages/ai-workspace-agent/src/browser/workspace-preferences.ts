@@ -31,7 +31,7 @@ export const WorkspacePreferencesSchema: PreferenceSchema = {
         [USER_EXCLUDES_PREF]: {
             type: 'array',
             title: 'User Excludes',
-            description: 'List of patterns (glob or regex) for files/folders to exclude by default.',
+            description: 'List of patterns (glob or regex) for files/folders to exclude.',
             default: ['node_modules', 'lib', '.*'],
             items: {
                 type: 'string'
