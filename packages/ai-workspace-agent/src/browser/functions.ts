@@ -23,7 +23,7 @@ import { FILE_CONTENT_FUNCTION_ID, GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID
 import ignore from 'ignore';
 import { Minimatch } from 'minimatch';
 import { PreferenceService } from '@theia/core/lib/browser';
-import { CONSIDER_GITIGNORE_PREF, USER_EXCLUDES_PREF } from './workspace-preferences';
+import { CONSIDER_GITIGNORE_PREF, USER_EXCLUDE_PATTERN_PREF } from './workspace-preferences';
 @injectable()
 export class WorkspaceFunctionScope {
     protected readonly GITIGNORE_FILE_NAME = '.gitignore';
@@ -72,41 +72,46 @@ export class WorkspaceFunctionScope {
     }
 
     async shouldExclude(stat: FileStat): Promise<boolean> {
-        const considerGitIgnore = this.preferences.get(CONSIDER_GITIGNORE_PREF, false);
-        const userExcludes = this.preferences.get<string[]>(USER_EXCLUDES_PREF, []);
+        const shouldConsiderGitIgnore = this.preferences.get(CONSIDER_GITIGNORE_PREF, false);
+        const userExcludePatterns = this.preferences.get<string[]>(USER_EXCLUDE_PATTERN_PREF, []);
 
-        const fileName = stat.resource.path.base;
-
-        for (const pattern of userExcludes) {
-            const matcher = new Minimatch(pattern, { dot: true });
-            if (matcher.match(fileName)) { return true; }
+        if (this.isUserExcluded(stat.resource.path.base, userExcludePatterns)) {
+            return true;
         }
-
-        if (considerGitIgnore) {
-            const workspaceRoot = await this.getWorkspaceRoot();
-            await this.initializeGitignoreWatcher(workspaceRoot);
-
-            const gitignoreUri = workspaceRoot.resolve(this.GITIGNORE_FILE_NAME);
-
-            try {
-                const fileStat = await this.fileService.resolve(gitignoreUri);
-                if (fileStat && !fileStat.isDirectory) {
-                    if (!this.gitignoreMatcher) {
-                        const gitignoreContent = await this.fileService.read(gitignoreUri);
-                        this.gitignoreMatcher = ignore().add(gitignoreContent.value);
-                    }
-                    const relativePath = workspaceRoot.relative(stat.resource);
-                    if (relativePath && this.gitignoreMatcher.ignores(relativePath.toString())) {
-                        return true;
-                    }
-                }
-            } catch {
-                // If .gitignore does not exist or cannot be read, continue without error
-            }
+        const workspaceRoot = await this.getWorkspaceRoot();
+        if (shouldConsiderGitIgnore && await this.isGitIgnored(stat, workspaceRoot)) {
+            return true;
         }
 
         return false;
     }
+
+    private isUserExcluded(fileName: string, userExcludePatterns: string[]): boolean {
+        return userExcludePatterns.some(pattern => new Minimatch(pattern, { dot: true }).match(fileName));
+    }
+
+    private async isGitIgnored(stat: FileStat, workspaceRoot: URI): Promise<boolean> {
+        await this.initializeGitignoreWatcher(workspaceRoot);
+
+        const gitignoreUri = workspaceRoot.resolve(this.GITIGNORE_FILE_NAME);
+
+        try {
+            const fileStat = await this.fileService.resolve(gitignoreUri);
+            if (fileStat && !fileStat.isDirectory) {
+                if (!this.gitignoreMatcher) {
+                    const gitignoreContent = await this.fileService.read(gitignoreUri);
+                    this.gitignoreMatcher = ignore().add(gitignoreContent.value);
+                }
+                const relativePath = workspaceRoot.relative(stat.resource);
+                if (relativePath && this.gitignoreMatcher.ignores(relativePath.toString())) { return true; }
+            }
+        } catch {
+            // If .gitignore does not exist or cannot be read, continue without error
+        }
+
+        return false;
+    }
+
 }
 
 @injectable()

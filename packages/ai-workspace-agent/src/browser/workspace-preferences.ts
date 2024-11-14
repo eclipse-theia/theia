@@ -16,8 +16,8 @@
 
 import { PreferenceSchema } from '@theia/core/lib/browser/preferences/preference-contribution';
 
-export const CONSIDER_GITIGNORE_PREF = 'ai-features.workspace-functions.considerGitIgnore';
-export const USER_EXCLUDES_PREF = 'ai-features.workspace-functions.userExcludes';
+export const CONSIDER_GITIGNORE_PREF = 'ai-features.workspaceFunctions.considerGitIgnore';
+export const USER_EXCLUDE_PATTERN_PREF = 'ai-features.workspaceFunctions.userExcludes';
 
 export const WorkspacePreferencesSchema: PreferenceSchema = {
     type: 'object',
@@ -28,9 +28,9 @@ export const WorkspacePreferencesSchema: PreferenceSchema = {
             description: 'If enabled, excludes files/folders specified in a global .gitignore file (expected location is the workspace root).',
             default: false
         },
-        [USER_EXCLUDES_PREF]: {
+        [USER_EXCLUDE_PATTERN_PREF]: {
             type: 'array',
-            title: 'User Excludes',
+            title: 'Excluded File Patterns',
             description: 'List of patterns (glob or regex) for files/folders to exclude.',
             default: ['node_modules', 'lib', '.*'],
             items: {
