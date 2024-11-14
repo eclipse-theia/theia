@@ -24,6 +24,7 @@ import ignore from 'ignore';
 import { Minimatch } from 'minimatch';
 import { PreferenceService } from '@theia/core/lib/browser';
 import { CONSIDER_GITIGNORE_PREF, USER_EXCLUDE_PATTERN_PREF } from './workspace-preferences';
+
 @injectable()
 export class WorkspaceFunctionScope {
     protected readonly GITIGNORE_FILE_NAME = '.gitignore';
