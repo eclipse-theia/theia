@@ -18,8 +18,11 @@ import { ChatAgent } from '@theia/ai-chat/lib/common';
 import { Agent, ToolProvider } from '@theia/ai-core/lib/common';
 import { WorkspaceAgent } from './workspace-agent';
 import { FileContentFunction, GetWorkspaceDirectoryStructure, GetWorkspaceFileList, WorkspaceFunctionScope } from './functions';
+import { PreferenceContribution } from '@theia/core/lib/browser';
+import { WorkspacePreferencesSchema } from './workspace-preferences';
 
 export default new ContainerModule(bind => {
+    bind(PreferenceContribution).toConstantValue({ schema: WorkspacePreferencesSchema });
     bind(WorkspaceAgent).toSelf().inSingletonScope();
     bind(Agent).toService(WorkspaceAgent);
     bind(ChatAgent).toService(WorkspaceAgent);
