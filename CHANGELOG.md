@@ -5,6 +5,8 @@
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
 <!-- ## 1.56.0 - not yet released -->
+<a name="breaking_changes_1.56.0">[Breaking Changes:](#breaking_changes_1.56.0)</a>
+- [core] Do not dispose dialogs on close - [#14456](https://github.com/eclipse-theia/theia/pull/14456) - Contributed on behalf of STMicroelectronics 
 
 ## 1.55.0 - 10/31/2024
 
