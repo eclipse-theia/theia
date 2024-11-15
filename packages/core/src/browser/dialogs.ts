@@ -285,9 +285,9 @@ export abstract class AbstractDialog<T> extends BaseWidget {
     protected override onCloseRequest(msg: Message): void {
         // super.onCloseRequest() would automatically dispose the dialog, which we don't want because we're reusing it
         if (this.parent) {
+            // eslint-disable-next-line no-null/no-null
             this.parent = null;
-        }
-        else if (this.isAttached) {
+        } else if (this.isAttached) {
             Widget.detach(this);
         }
     }
