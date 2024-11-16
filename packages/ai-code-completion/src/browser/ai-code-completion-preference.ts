@@ -20,6 +20,7 @@ import { AI_CORE_PREFERENCES_TITLE } from '@theia/ai-core/lib/browser/ai-core-pr
 export const PREF_AI_INLINE_COMPLETION_ENABLE = 'ai-features.codeCompletion.enableCodeCompletion';
 export const PREF_AI_INLINE_COMPLETION_AUTOMATIC_ENABLE = 'ai-features.codeCompletion.automaticCodeCompletion';
 export const PREF_AI_INLINE_COMPLETION_EXCLUDED_EXTENSIONS = 'ai-features.codeCompletion.excludedFileExtensions';
+export const PREF_AI_INLINE_COMPLETION_STRIP_BACKTICKS = 'ai-features.codeCompletion.stripBackticks';
 
 export const AICodeCompletionPreferencesSchema: PreferenceSchema = {
     type: 'object',
@@ -40,6 +41,14 @@ export const AICodeCompletionPreferencesSchema: PreferenceSchema = {
                 type: 'string'
             },
             default: []
+        },
+        [PREF_AI_INLINE_COMPLETION_STRIP_BACKTICKS]: {
+            title: 'Strip Backticks from Inline Completions',
+            type: 'boolean',
+            description: 'Remove surrounding backticks from the code returned by some LLMs. If a backtick is detected, all content after the closing\
+             backtick is stripped as well. This setting helps ensure plain code is returned when language models use markdown-like formatting.',
+            default: true
         }
+
     }
 };

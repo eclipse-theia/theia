@@ -21,6 +21,8 @@ import {
 import { generateUuid, ILogger } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
+import { PREF_AI_INLINE_COMPLETION_STRIP_BACKTICKS } from './ai-code-completion-preference';
+import { PreferenceService } from '@theia/core/lib/browser';
 
 export const CodeCompletionAgent = Symbol('CodeCompletionAgent');
 export interface CodeCompletionAgent extends Agent {
@@ -30,6 +32,10 @@ export interface CodeCompletionAgent extends Agent {
 
 @injectable()
 export class CodeCompletionAgentImpl implements CodeCompletionAgent {
+
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
+
     async provideInlineCompletions(
         model: monaco.editor.ITextModel,
         position: monaco.Position,
@@ -97,10 +103,12 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
         if (token.isCancellationRequested) {
             return undefined;
         }
-        const completionText = await getTextOfResponse(response);
+        let completionText = await getTextOfResponse(response);
+
         if (token.isCancellationRequested) {
             return undefined;
         }
+
         this.recordingService.recordResponse({
             agentId: this.id,
             sessionId,
@@ -108,10 +116,24 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
             response: completionText,
         });
 
+        if (this.preferenceService.get<boolean>(PREF_AI_INLINE_COMPLETION_STRIP_BACKTICKS, true)) {
+            completionText = this.stripBackticks(completionText);
+        }
+
         return {
             items: [{ insertText: completionText }],
             enableForwardStability: true,
         };
+    }
+
+    protected stripBackticks(text: string): string {
+        if (text.startsWith('```')) {
+            // Remove the first backticks and any language identifier
+            const startRemoved = text.slice(3).replace(/^\w*\n/, '');
+            const secondBacktickIndex = startRemoved.indexOf('```');
+            return secondBacktickIndex !== -1 ? startRemoved.slice(0, secondBacktickIndex).trim() : startRemoved.trim();
+        }
+        return text;
     }
 
     @inject(ILogger)
