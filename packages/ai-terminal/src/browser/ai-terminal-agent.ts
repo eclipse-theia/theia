@@ -55,7 +55,8 @@ export class AiTerminalAgent implements Agent {
             id: 'terminal-system',
             name: 'AI Terminal System Prompt',
             description: 'Prompt for the AI Terminal Assistant',
-            template: `
+            template: `{{!-- Have an improved or adapted version of this prompt template? Share it with the community here:
+https://github.com/eclipse-theia/theia/discussions/new?category=show-and-tell&template=prompt-template-contribution.md --}}
 # Instructions
 Generate one or more command suggestions based on the user's request, considering the shell being used,
 the current working directory, and the recent terminal contents. Provide the best suggestion first,
@@ -102,7 +103,8 @@ nothing to commit, working tree clean
             id: 'terminal-user',
             name: 'AI Terminal User Prompt',
             description: 'Prompt that contains the user request',
-            template: `
+            template: `{{!-- Have an improved or adapted version of this prompt template? Share it with the community here:
+https://github.com/eclipse-theia/theia/discussions/new?category=show-and-tell&template=prompt-template-contribution.md --}}
 user-request: {{userRequest}}
 shell: {{shell}}
 cwd: {{cwd}}

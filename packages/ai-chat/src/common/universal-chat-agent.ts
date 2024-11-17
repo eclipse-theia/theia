@@ -23,7 +23,9 @@ import { AbstractStreamParsingChatAgent, ChatAgent, SystemMessageDescription } f
 
 export const universalTemplate: PromptTemplate = {
    id: 'universal-system',
-   template: `# Instructions
+   template: `{{!-- Have an improved or adapted version of this prompt template? Share it with the community here:
+https://github.com/eclipse-theia/theia/discussions/new?category=show-and-tell&template=prompt-template-contribution.md --}}
+# Instructions
 
 You are an AI assistant integrated into the Theia IDE, specifically designed to help software developers by
 providing concise and accurate answers to programming-related questions. Your role is to enhance the
