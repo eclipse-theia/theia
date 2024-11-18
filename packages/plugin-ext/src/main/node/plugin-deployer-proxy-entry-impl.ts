@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { injectable } from '@theia/core/shared/inversify';
+import { injectable, unmanaged } from '@theia/core/shared/inversify';
 import { PluginDeployerEntry, PluginDeployerEntryType, PluginType } from '../../common/plugin-protocol';
 import { PluginDeployerEntryImpl } from './plugin-deployer-entry-impl';
 
@@ -25,7 +25,10 @@ export class ProxyPluginDeployerEntry<T> implements PluginDeployerEntry {
 
     private readonly deployerName: string;
 
-    constructor(readonly deployer: T, readonly delegate: PluginDeployerEntryImpl) {
+    constructor(
+        @unmanaged() readonly deployer: T,
+        @unmanaged() readonly delegate: PluginDeployerEntryImpl
+    ) {
         this.deployerName = (this.deployer as {}).constructor.name;
     }
 

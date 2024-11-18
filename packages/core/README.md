@@ -92,7 +92,7 @@ export class SomeClass {
     - `@theia/request/lib/node-request-service` (from [`@theia/request@1.55.0`](https://www.npmjs.com/package/@theia/request/v/1.55.0))
     - `fs-extra` (from [`fs-extra@^4.0.2`](https://www.npmjs.com/package/fs-extra))
     - `fuzzy` (from [`fuzzy@^0.1.3`](https://www.npmjs.com/package/fuzzy))
-    - `inversify` (from [`inversify@^6.0.1`](https://www.npmjs.com/package/inversify))
+    - `inversify` (from [`inversify@^6.1.3`](https://www.npmjs.com/package/inversify))
     - `react-dom` (from [`react-dom@^18.2.0`](https://www.npmjs.com/package/react-dom))
     - `react-dom/client` (from [`react-dom@^18.2.0`](https://www.npmjs.com/package/react-dom))
     - `react-virtuoso` (from [`react-virtuoso@^2.17.0`](https://www.npmjs.com/package/react-virtuoso))

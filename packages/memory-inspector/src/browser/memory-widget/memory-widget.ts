@@ -45,7 +45,7 @@ export class MemoryWidget<
         options?: MemoryWidgetOptions,
     ): MemoryWidget<Options, Table> {
         const child = MemoryWidget.createContainer(parent, optionsWidget, tableWidget, optionSymbol, options);
-        return child.get(MemoryWidget);
+        return child.get<MemoryWidget<Options, Table>>(MemoryWidget);
     }
 
     static createContainer(

@@ -16,7 +16,7 @@
 
 /* eslint-disable @theia/localization-check */
 
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, unmanaged } from '@theia/core/shared/inversify';
 import {
     AutoClosingPair,
     AutoClosingPairConditional,
@@ -100,7 +100,10 @@ export abstract class AbstractPluginScanner implements PluginScanner {
     @inject(PluginUriFactory)
     protected readonly pluginUriFactory: PluginUriFactory;
 
-    constructor(private readonly _apiType: PluginEngine, private readonly _backendInitPath?: string) { }
+    constructor(
+        @unmanaged() private readonly _apiType: PluginEngine,
+        @unmanaged() private readonly _backendInitPath?: string) {
+    }
 
     get apiType(): PluginEngine {
         return this._apiType;
