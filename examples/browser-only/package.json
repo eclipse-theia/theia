@@ -14,6 +14,10 @@
       }
     }
   },
+  "theiaPluginsDir": "plugins",
+  "theiaPlugins": {
+    "vscode.typescript": "https://open-vsx.org/api/vscode/typescript/1.88.1/file/vscode.typescript-1.88.1.vsix"
+  },
   "dependencies": {
     "@theia/ai-chat": "1.54.0",
     "@theia/ai-chat-ui": "1.54.0",
@@ -72,6 +76,7 @@
     "clean": "theia clean",
     "build": "yarn -s compile && yarn -s bundle",
     "bundle": "theia build --mode development",
+    "download:plugins": "theia download:plugins",
     "compile": "tsc -b",
     "start": "theia start",
     "start:debug": "yarn -s start --log-level=debug",

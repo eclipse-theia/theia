@@ -14,23 +14,36 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // ****************************************************************************
 
-import { injectable } from '@theia/core/shared/inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import { DeployedPlugin, ExtPluginApi, GetDeployedPluginsParams, HostedPluginClient, HostedPluginServer } from '../../common';
 import { Event, RpcConnectionEventEmitter } from '@theia/core';
+
+export const PluginLocalOptions = Symbol('PluginLocalOptions');
+export interface PluginLocalOptions {
+    pluginDirectory: string;
+    pluginMetadata: DeployedPlugin[];
+}
 
 @injectable()
 export class FrontendHostedPluginServer implements HostedPluginServer, RpcConnectionEventEmitter {
     readonly onDidOpenConnection: Event<void> = Event.None;
     readonly onDidCloseConnection: Event<void> = Event.None;
+
+    @inject(PluginLocalOptions)
+    protected readonly options: PluginLocalOptions;
+
     async getDeployedPluginIds(): Promise<`${string}.${string}@${string}`[]> {
-        return [];
+        console.log('getDeployedPluginIds');
+        // Use the plugin metadata to build the correct plugin id
+        return this.options.pluginMetadata.map(p => p.metadata.model.id + '@' + p.metadata.model.version as `${string}.${string}@${string}`);
     }
     async getUninstalledPluginIds(): Promise<readonly `${string}.${string}@${string}`[]> {
         return [];
 
     }
     async getDeployedPlugins(params: GetDeployedPluginsParams): Promise<DeployedPlugin[]> {
-        return [];
+        console.log('getDeployedPlugins');
+        return this.options.pluginMetadata;
     }
 
     async getExtPluginAPI(): Promise<ExtPluginApi[]> {
