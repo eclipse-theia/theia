@@ -244,4 +244,60 @@ describe('PromptService', () => {
         expect(prompt?.text).to.equal('Hi, John! {{!-- Another comment --}}');
     });
 
+    it('should return all variant IDs of a given prompt', () => {
+        promptService.storePromptTemplate({ id: 'main', template: 'Main template' });
+
+        promptService.storePromptTemplate({
+            id: 'variant1',
+            template: 'Variant 1',
+            variantOf: 'main'
+        });
+        promptService.storePromptTemplate({
+            id: 'variant2',
+            template: 'Variant 2',
+            variantOf: 'main'
+        });
+        promptService.storePromptTemplate({
+            id: 'variant3',
+            template: 'Variant 3',
+            variantOf: 'main'
+        });
+
+        const variantIds = promptService.getVariantIds('main');
+        expect(variantIds).to.deep.equal(['variant1', 'variant2', 'variant3']);
+    });
+
+    it('should return an empty array if no variants exist for a given prompt', () => {
+        promptService.storePromptTemplate({ id: 'main', template: 'Main template' });
+
+        const variantIds = promptService.getVariantIds('main');
+        expect(variantIds).to.deep.equal([]);
+    });
+
+    it('should return an empty array if the main prompt ID does not exist', () => {
+        const variantIds = promptService.getVariantIds('nonExistent');
+        expect(variantIds).to.deep.equal([]);
+    });
+
+    it('should not influence prompts without variants when other prompts have variants', () => {
+        promptService.storePromptTemplate({ id: 'mainWithVariants', template: 'Main template with variants' });
+        promptService.storePromptTemplate({ id: 'mainWithoutVariants', template: 'Main template without variants' });
+
+        promptService.storePromptTemplate({
+            id: 'variant1',
+            template: 'Variant 1',
+            variantOf: 'mainWithVariants'
+        });
+        promptService.storePromptTemplate({
+            id: 'variant2',
+            template: 'Variant 2',
+            variantOf: 'mainWithVariants'
+        });
+
+        const variantsForMainWithVariants = promptService.getVariantIds('mainWithVariants');
+        const variantsForMainWithoutVariants = promptService.getVariantIds('mainWithoutVariants');
+
+        expect(variantsForMainWithVariants).to.deep.equal(['variant1', 'variant2']);
+        expect(variantsForMainWithoutVariants).to.deep.equal([]);
+    });
 });
