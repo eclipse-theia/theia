@@ -17,7 +17,8 @@ if (hasNlsFileChanged()) {
 }
 
 function performNlsExtract() {
-    cp.spawnSync('yarn', [
+    cp.spawnSync('npm', [
+        'run',
         'theia', 'nls-extract',
         '-o', './packages/core/i18n/nls.json',
         '-e', 'vscode',
@@ -38,7 +39,7 @@ function getDeepLToken() {
 }
 
 function performDeepLTranslation(token) {
-    const childProcess = cp.spawnSync('yarn', [
+    const childProcess = cp.spawnSync('npx', [
         'theia', 'nls-localize',
         '-f', './packages/core/i18n/nls.json',
         '--free-api', '-k', token

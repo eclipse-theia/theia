@@ -46,7 +46,7 @@ export class ImageFileContribution implements ContainerCreationContribution {
                 } else if (stream === undefined) {
                     rej('Stream is undefined');
                 } else {
-                    api.modem.followProgress(stream, (error, output) => error ?
+                    api.modem.followProgress(stream!, (error, output) => error ?
                         rej(error) :
                         res(), progress => outputprovider.onRemoteOutput(OutputHelper.parseProgress(progress)));
                 }
