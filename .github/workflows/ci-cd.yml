@@ -82,11 +82,6 @@ jobs:
           NODE_OPTIONS: --max_old_space_size=4096
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9
 
-      - name: Download Plugins
-        if: runner.os == 'Linux'
-        shell: bash
-        run: |
-          npm run download:plugins --rate-limit 3
 
       - name: Build
         shell: bash
@@ -97,6 +92,12 @@ jobs:
           NODE_OPTIONS: --max_old_space_size=4096
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9
 
+      - name: Download Plugins
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          npm run download:plugins --rate-limit 3
+          
       - name: Test (headless)
         if: matrix.tests != 'skip'
         shell: bash
