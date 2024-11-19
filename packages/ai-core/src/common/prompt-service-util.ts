@@ -25,3 +25,7 @@ export function matchVariablesRegEx(template: string): RegExpMatchArray[] {
 
 /** Match function/tool references in the prompt. The format is `~{functionId}`. */
 export const PROMPT_FUNCTION_REGEX = /\~\{\s*(.*?)\s*\}/g;
+
+export function matchFunctionsRegEx(template: string): RegExpMatchArray[] {
+    return [...template.matchAll(PROMPT_FUNCTION_REGEX)];
+}

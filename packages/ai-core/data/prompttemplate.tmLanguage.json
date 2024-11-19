@@ -3,7 +3,7 @@
   "patterns": [
     {
       "name": "invalid.illegal.mismatched.prompttemplate",
-      "match": "\\{\\{\\{[^}]*\\}\\}(?!\\})",
+      "match": "\\{\\{\\{[^{}]*\\}\\}(?!\\})",
       "captures": {
         "0": {
           "name": "invalid.illegal.bracket.mismatch"
@@ -12,7 +12,7 @@
     },
     {
       "name": "invalid.illegal.mismatched.prompttemplate",
-      "match": "\\{\\{[^}]*\\}\\}\\}(?!\\})",
+      "match": "\\{\\{[^{}]*\\}\\}\\}(?!\\})",
       "captures": {
         "0": {
           "name": "invalid.illegal.bracket.mismatch"
