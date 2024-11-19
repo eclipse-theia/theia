@@ -35,15 +35,16 @@ jobs:
 
       - name: Pre-npm-Publish
         run: |
-          yarn global add node-gyp
-          yarn --skip-integrity-check --network-timeout 100000
+          npm install -g node-gyp
+          npm ci
+          npm run build
         env:
           NODE_OPTIONS: --max_old_space_size=4096
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9
 
       - name: Pre-docs-Publish
         run: |
-          yarn docs
+          npm run docs
         env:
           NODE_OPTIONS: --max_old_space_size=14336
 
@@ -61,7 +62,7 @@ jobs:
           retry_wait_seconds: 30
           max_attempts: 3
           retry_on: error
-          command: yarn publish:next
+          command: npm run publish:next
           on_retry_command: git reset --hard
         env:
           NPM_CONFIG_PROVENANCE: "true"

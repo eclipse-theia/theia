@@ -191,7 +191,7 @@ yarn browser build
 yarn electron build
 
 # build both example applications at once:
-yarn build:examples
+yarn build:applications
 ```
 
 To learn more and understand precisely what's going on, please look at scripts in [package.json](../package.json).

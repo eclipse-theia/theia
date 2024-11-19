@@ -36,7 +36,7 @@ const config: PlaywrightTestConfig = {
     ],
     // Reuse Theia backend on port 3000 or start instance before executing the tests
     webServer: {
-        command: 'yarn theia:start',
+        command: 'npm run theia:start',
         port: 3000,
         reuseExistingServer: true
     }

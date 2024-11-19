@@ -107,7 +107,7 @@ export class HostedPluginsManagerImpl implements HostedPluginsManager {
     }
 
     protected runWatchScript(pluginRootPath: string): Promise<void> {
-        const watchProcess = cp.spawn('yarn', ['run', 'watch'], { cwd: pluginRootPath, shell: true });
+        const watchProcess = cp.spawn('npm', ['run', 'watch'], { cwd: pluginRootPath, shell: true });
         watchProcess.on('exit', () => this.unregisterWatchScript(pluginRootPath));
 
         this.watchCompilationRegistry.set(pluginRootPath, watchProcess);
