@@ -16,14 +16,14 @@
 
 import { Key, KeyCode } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
-import TextareaAutosize from 'react-autosize-textarea';
+import TextareaAutosize from 'react-textarea-autosize';
 import debounce = require('@theia/core/shared/lodash.debounce');
 
 interface HistoryState {
     history: string[];
     index: number;
 };
-type TextareaAttributes = React.TextareaHTMLAttributes<HTMLTextAreaElement>;
+type TextareaAttributes = Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, 'style'>;
 
 export class SearchInWorkspaceTextArea extends React.Component<TextareaAttributes, HistoryState> {
     static LIMIT = 100;

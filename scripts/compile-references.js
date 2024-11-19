@@ -36,29 +36,8 @@ const ROOT = path.join(__dirname, '..');
 
 const FORCE_REWRITE = process.argv.includes('--force-rewrite');
 
-/** @type {{ [packageName: string]: YarnWorkspace }} */
-const YARN_WORKSPACES = JSON.parse(cp.execSync('yarn --silent workspaces info', { cwd: ROOT }).toString());
-
-// Add the package name inside each package object.
-for (const [packageName, yarnWorkspace] of Object.entries(YARN_WORKSPACES)) {
-    yarnWorkspace.name = packageName;
-    // For some reason Yarn doesn't report local peer dependencies, so we'll manually do it:
-    const { peerDependencies } = require(path.resolve(ROOT, yarnWorkspace.location, 'package.json'));
-    if (typeof peerDependencies === 'object') {
-        for (const peerDependency of Object.keys(peerDependencies)) {
-            if (peerDependency in YARN_WORKSPACES) {
-                yarnWorkspace.workspaceDependencies.push(peerDependency);
-            }
-        }
-    }
-}
-
-/** @type {YarnWorkspace} */
-const THEIA_MONOREPO = {
-    name: '@theia/monorepo',
-    workspaceDependencies: Object.keys(YARN_WORKSPACES),
-    location: '.',
-};
+const PACKAGE_LIST = JSON.parse(cp.execSync('npx lerna ls --loglevel=silent --all --json', { cwd: ROOT }).toString());
+const DEPENDENCIES = JSON.parse(cp.execSync('npx lerna ls --loglevel=silent --all --graph', { cwd: ROOT }).toString());
 
 compileTypeScriptReferences().catch(error => {
     console.error(error);
@@ -69,24 +48,28 @@ compileTypeScriptReferences().catch(error => {
  * This script main entry point.
  */
 async function compileTypeScriptReferences() {
-    await Promise.all([THEIA_MONOREPO, ...Object.values(YARN_WORKSPACES)].map(async package => {
+    await Promise.all(Object.values(PACKAGE_LIST).map(async package => {
         const references = await getTypescriptReferences(package);
         await configureTypeScriptReferences(package, references);
     }))
 }
 
 /**
- * @param {YarnWorkspace} requestedPackage
+ * @param {WorkspacePackage} requestedPackage
  * @returns {Promise<string[]>} TypeScript relative project references for `requestedPackage`.
  */
 async function getTypescriptReferences(requestedPackage) {
-    const references = await Promise.all((requestedPackage.workspaceDependencies || []).map(async dependency => {
-        const depWorkspace = YARN_WORKSPACES[dependency];
-        const depConfig = path.join(ROOT, depWorkspace.location, 'tsconfig.json');
+    const dependencies = DEPENDENCIES[requestedPackage.name] || [];
+    const references = await Promise.all(dependencies.map(async dependency => {
+        const depWorkspace = PACKAGE_LIST.find(package => package.name === dependency);
+        if (!depWorkspace) {
+            return undefined;
+        }
+        const depConfig = path.join(depWorkspace.location, 'tsconfig.json');
         if (!await fileExists(depConfig)) {
             return undefined; // ignore because dep has no tsconfig
         }
-        return path.posix.relative(requestedPackage.location, depWorkspace.location);
+        return path.relative(requestedPackage.location, depWorkspace.location).replaceAll('\\', '/');
     }));
     return references.filter(reference => reference !== undefined);
 }
@@ -95,14 +78,14 @@ async function getTypescriptReferences(requestedPackage) {
  * Wires a given compilation tsconfig file according to the provided references.
  * This allows TypeScript to operate in build mode.
  *
- * @param {YarnWorkspace} targetPackage for debug purpose.
+ * @param {WorkspacePackage} targetPackage for debug purpose.
  * @param {string[]} expectedReferences list of paths to the related project roots.
  * @returns {Promise<boolean>} rewrite was needed.
  */
 async function configureTypeScriptReferences(targetPackage, expectedReferences) {
     expectedReferences = [...expectedReferences].sort();
     let needRewrite = FORCE_REWRITE;
-    const tsconfigPath = path.resolve(ROOT, targetPackage.location, 'tsconfig.json');
+    const tsconfigPath = path.resolve(targetPackage.location, 'tsconfig.json');
     if (!await fileExists(tsconfigPath)) {
         return false;
     }
@@ -161,8 +144,7 @@ function fileExists(file) {
 }
 
 /**
- * @typedef YarnWorkspace
+ * @typedef WorkspacePackage
  * @property {string} name
  * @property {string} location
- * @property {string[]} [workspaceDependencies]
  */

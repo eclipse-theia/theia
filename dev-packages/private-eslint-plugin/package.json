@@ -5,10 +5,10 @@
   "description": "Custom ESLint rules for developing Theia extensions and applications",
   "main": "index.js",
   "scripts": {
-    "prepare": "tsc -b"
+    "afterInstall": "npm run compile",
+    "compile": "theiaext compile"
   },
   "dependencies": {
-    "@theia/core": "1.57.0",
     "@theia/ext-scripts": "1.57.0",
     "@theia/re-exports": "1.57.0",
     "js-levenshtein": "^1.1.6"

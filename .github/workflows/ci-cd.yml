@@ -34,8 +34,8 @@ jobs:
       - name: Install and Build
         shell: bash
         run: |
-          yarn global add node-gyp
-          yarn --skip-integrity-check --network-timeout 100000
+          npm install -g node-gyp
+          npm ci
           ./scripts/check_git_status.sh
         env:
           NODE_OPTIONS: --max_old_space_size=4096
@@ -43,7 +43,7 @@ jobs:
 
       - name: Lint
         run: |
-          yarn lint
+          npm run lint
 
   build:
     name: Build and Test (${{ matrix.os }}, node-${{ matrix.node }})
@@ -72,44 +72,38 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install
+      - name: Build
         shell: bash
         run: |
-          yarn global add node-gyp
-          yarn --skip-integrity-check --network-timeout 100000
+          npm install -g node-gyp
+          npm ci
+          npm run build
+          git status
           ./scripts/check_git_status.sh
         env:
           NODE_OPTIONS: --max_old_space_size=4096
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9
+
 
       - name: Download Plugins
         if: runner.os == 'Linux'
         shell: bash
         run: |
-          yarn -s download:plugins --rate-limit 3
-
-      - name: Build
-        shell: bash
-        run: |
-          yarn build:examples
-          ./scripts/check_git_status.sh
-        env:
-          NODE_OPTIONS: --max_old_space_size=4096
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9
-
+          npm run download:plugins -- --rate-limit 3
+          
       - name: Test (headless)
         if: matrix.tests != 'skip'
         shell: bash
         run: |
-          yarn browser rebuild
-          yarn test:theia
+          npm run rebuild:browser
+          npm run test:theia
 
       - name: Test (browser)
         if: matrix.tests != 'skip' && runner.os == 'Linux'
         run: |
-          xvfb-run -a yarn browser test
+          xvfb-run -a npm run test:browser
 
       - name: Test (electron)
         if: matrix.tests != 'skip' && runner.os == 'Linux'
         run: |
-          xvfb-run -a yarn electron test
+          xvfb-run -a npm run test:electron
