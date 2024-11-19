@@ -6,6 +6,7 @@
 
 <!-- ## 1.56.0 - not yet released -->
 
+- [core] fixed electron win background color [#14491](https://github.com/eclipse-theia/theia/pull/14491) - Contributed on behalf of STMicroelectronics
 - [plugin] added support for ThemeColor property id [#14437](https://github.com/eclipse-theia/theia/pull/14437) - Contributed on behalf of STMicroelectronics
 
 ## 1.55.0 - 10/31/2024
