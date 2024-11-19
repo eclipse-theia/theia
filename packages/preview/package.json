@@ -8,9 +8,8 @@
     "@theia/mini-browser": "1.55.0",
     "@theia/monaco": "1.55.0",
     "@types/highlight.js": "^10.1.0",
-    "@types/markdown-it-anchor": "^4.0.1",
     "highlight.js": "10.4.1",
-    "markdown-it-anchor": "~5.0.0",
+    "markdown-it-anchor": "^9.2.0",
     "tslib": "^2.6.2"
   },
   "publishConfig": {

@@ -56,7 +56,7 @@
     "keytar": "7.2.0",
     "lodash.debounce": "^4.0.8",
     "lodash.throttle": "^4.1.1",
-    "markdown-it": "^12.3.2",
+    "markdown-it": "^14.1.0",
     "msgpackr": "^1.10.2",
     "p-debounce": "^2.1.0",
     "perfect-scrollbar": "^1.3.0",
@@ -199,14 +199,13 @@
   "scripts": {
     "build": "theiaext build",
     "clean": "theiaext clean",
-    "compile": "theiaext compile",
+    "compile": "theiaext compile && npm run generate-theia-re-exports && npm run download:json-schema",
     "generate-layout": "electron ./scripts/generate-layout",
     "generate-theia-re-exports": "theia-re-exports generate && theia-re-exports template README_TEMPLATE.md > README.md",
     "lint": "theiaext lint",
-    "prepare": "yarn -s generate-theia-re-exports && yarn download:json-schema",
     "download:json-schema": "node ./scripts/download-catalog.js",
     "test": "theiaext test",
-    "version": "yarn -s generate-theia-re-exports",
+    "version": "npm run -s generate-theia-re-exports",
     "watch": "theiaext watch"
   },
   "devDependencies": {

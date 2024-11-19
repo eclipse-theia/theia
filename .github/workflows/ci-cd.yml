@@ -91,7 +91,7 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          yarn build:examples
+          yarn build:applications
           ./scripts/check_git_status.sh
         env:
           NODE_OPTIONS: --max_old_space_size=4096

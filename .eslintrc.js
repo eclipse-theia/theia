@@ -10,9 +10,5 @@ module.exports = {
     ignorePatterns: [
         '**/{node_modules,lib}',
         'plugins'
-    ],
-    parserOptions: {
-        tsconfigRootDir: __dirname,
-        project: 'tsconfig.json'
-    }
+    ]
 };

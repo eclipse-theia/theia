@@ -53,13 +53,6 @@ for (const [packageName, yarnWorkspace] of Object.entries(YARN_WORKSPACES)) {
     }
 }
 
-/** @type {YarnWorkspace} */
-const THEIA_MONOREPO = {
-    name: '@theia/monorepo',
-    workspaceDependencies: Object.keys(YARN_WORKSPACES),
-    location: '.',
-};
-
 compileTypeScriptReferences().catch(error => {
     console.error(error);
     process.exitCode = 1;
@@ -69,7 +62,7 @@ compileTypeScriptReferences().catch(error => {
  * This script main entry point.
  */
 async function compileTypeScriptReferences() {
-    await Promise.all([THEIA_MONOREPO, ...Object.values(YARN_WORKSPACES)].map(async package => {
+    await Promise.all(Object.values(YARN_WORKSPACES).map(async package => {
         const references = await getTypescriptReferences(package);
         await configureTypeScriptReferences(package, references);
     }))

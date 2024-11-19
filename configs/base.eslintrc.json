@@ -8,10 +8,10 @@
     }
   },
   "plugins": [
-    "@theia",
+"@theia",
     "@typescript-eslint",
     "@typescript-eslint/tslint",
-    "import",
+        "import",
     "no-null"
   ],
   "env": {
