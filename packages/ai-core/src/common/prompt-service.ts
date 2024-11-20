@@ -20,7 +20,7 @@ import { AIVariableService } from './variable-service';
 import { ToolInvocationRegistry } from './tool-invocation-registry';
 import { toolRequestToPromptText } from './language-model-util';
 import { ToolRequest } from './language-model';
-import { PROMPT_VARIABLE_REGEX, PROMPT_FUNCTION_REGEX } from './prompt-service-util';
+import { matchFunctionsRegEx, matchVariablesRegEx } from './prompt-service-util';
 
 export interface PromptTemplate {
     id: string;
@@ -181,13 +181,14 @@ export class PromptServiceImpl implements PromptService {
     getDefaultRawPrompt(id: string): PromptTemplate | undefined {
         return this._prompts[id];
     }
+
     async getPrompt(id: string, args?: { [key: string]: unknown }): Promise<ResolvedPromptTemplate | undefined> {
         const prompt = this.getRawPrompt(id);
         if (prompt === undefined) {
             return undefined;
         }
 
-        const matches = [...prompt.template.matchAll(PROMPT_VARIABLE_REGEX)];
+        const matches = matchVariablesRegEx(prompt.template);
         const variableAndArgReplacements = await Promise.all(matches.map(async match => {
             const completeText = match[0];
             const variableAndArg = match[1];
@@ -207,7 +208,7 @@ export class PromptServiceImpl implements PromptService {
             };
         }));
 
-        const functionMatches = [...prompt.template.matchAll(PROMPT_FUNCTION_REGEX)];
+        const functionMatches = matchFunctionsRegEx(prompt.template);
         const functions = new Map<string, ToolRequest>();
         const functionReplacements = functionMatches.map(match => {
             const completeText = match[0];

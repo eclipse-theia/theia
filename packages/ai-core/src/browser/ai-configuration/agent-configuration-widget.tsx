@@ -23,8 +23,8 @@ import {
     AIVariableService,
     LanguageModel,
     LanguageModelRegistry,
+    matchVariablesRegEx,
     PROMPT_FUNCTION_REGEX,
-    PROMPT_VARIABLE_REGEX,
     PromptCustomizationService,
     PromptService,
 } from '../../common';
@@ -182,7 +182,7 @@ export class AIAgentConfigurationWidget extends ReactWidget {
         promptTemplates.forEach(template => {
             const storedPrompt = this.promptService.getRawPrompt(template.id);
             const prompt = storedPrompt?.template ?? template.template;
-            const variableMatches = [...prompt.matchAll(PROMPT_VARIABLE_REGEX)];
+            const variableMatches = matchVariablesRegEx(prompt);
 
             variableMatches.forEach(match => {
                 const variableId = match[1];

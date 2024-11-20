@@ -2,17 +2,56 @@
   "scopeName": "source.prompttemplate",
   "patterns": [
     {
-      "name": "variable.other.prompttemplate",
-      "begin": "{{",
+      "name": "invalid.illegal.mismatched.prompttemplate",
+      "match": "\\{\\{\\{[^{}]*\\}\\}(?!\\})",
+      "captures": {
+        "0": {
+          "name": "invalid.illegal.bracket.mismatch"
+        }
+      }
+    },
+    {
+      "name": "invalid.illegal.mismatched.prompttemplate",
+      "match": "\\{\\{[^{}]*\\}\\}\\}(?!\\})",
+      "captures": {
+        "0": {
+          "name": "invalid.illegal.bracket.mismatch"
+        }
+      }
+    },
+    {
+      "name": "variable.other.prompttemplate.double",
+      "begin": "\\{\\{",
       "beginCaptures": {
         "0": {
-          "name": "punctuation.definition.brace.begin"
+          "name": "punctuation.definition.variable.begin"
         }
       },
-      "end": "}}",
+      "end": "\\}\\}(?!\\})",
       "endCaptures": {
         "0": {
-          "name": "punctuation.definition.brace.end"
+          "name": "punctuation.definition.variable.end"
+        }
+      },
+      "patterns": [
+        {
+          "name": "keyword.control",
+          "match": "[a-zA-Z_][a-zA-Z0-9_]*"
+        }
+      ]
+    },
+    {
+      "name": "variable.other.prompttemplate.triple",
+      "begin": "\\{\\{\\{",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.variable.begin"
+        }
+      },
+      "end": "\\}\\}\\}(?!\\})",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.variable.end"
         }
       },
       "patterns": [
