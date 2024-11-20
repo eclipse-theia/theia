@@ -161,6 +161,10 @@ export class DebugVariable extends ExpressionContainer {
         return this._value || this.variable.value;
     }
 
+    get readOnly(): boolean {
+        return this.variable.presentationHint?.attributes?.includes('readOnly') ?? false;
+    }
+
     override render(): React.ReactNode {
         const { type, value, name } = this;
         return <div className={this.variableClassName}>
@@ -234,7 +238,7 @@ export class DebugVariable extends ExpressionContainer {
     protected setNameRef = (nameRef: HTMLSpanElement | null) => this.nameRef = nameRef || undefined;
 
     async open(): Promise<void> {
-        if (!this.supportSetVariable) {
+        if (!this.supportSetVariable || this.readOnly) {
             return;
         }
         const input = new SingleTextInputDialog({
