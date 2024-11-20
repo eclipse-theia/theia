@@ -66,16 +66,17 @@ const MarkdownRender = ({ response }: { response: MarkdownChatResponseContent | 
  * This leads to unexpected behavior when rendering markdown with html tags.
  *
  * @param markdown the string to render as markdown
+ * @param skipSurroundingParagraph whether plain text should be surrounded by a paragraph (default: false)
  * @returns the ref to use in an element to render the markdown
  */
-export const useMarkdownRendering = (markdown: string | MarkdownString) => {
+export const useMarkdownRendering = (markdown: string | MarkdownString, skipSurroundingParagraph: boolean = false) => {
     // eslint-disable-next-line no-null/no-null
     const ref = useRef<HTMLDivElement | null>(null);
     const markdownString = typeof markdown === 'string' ? markdown : markdown.value;
     useEffect(() => {
         const markdownIt = markdownit();
         const host = document.createElement('div');
-        const html = markdownIt.render(markdownString);
+        const html = skipSurroundingParagraph ? markdownIt.render(markdownString).replace(/^<p>|<\/p>|<p><\/p>$/g, '') : markdownIt.render(markdownString);
         host.innerHTML = DOMPurify.sanitize(html, {
             ALLOW_UNKNOWN_PROTOCOLS: true // DOMPurify usually strips non http(s) links from hrefs
         });
