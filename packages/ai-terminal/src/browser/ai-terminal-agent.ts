@@ -103,7 +103,7 @@ nothing to commit, working tree clean
             id: 'terminal-user',
             name: 'AI Terminal User Prompt',
             description: 'Prompt that contains the user request',
-            template: `{{!-- Have an improved or adapted version of this prompt template? Share it with the community here:
+            template: `{{!-- Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=show-and-tell&template=prompt-template-contribution.md --}}
 user-request: {{userRequest}}
 shell: {{shell}}
