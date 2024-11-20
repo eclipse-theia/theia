@@ -290,6 +290,7 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
         private createHtmlElement(): void {
             this.containerElement = document.createElement('div');
             this.containerElement.classList.add('output-container');
+            this.containerElement.style.minHeight = '20px';
             this.element = document.createElement('div');
             this.element.id = this.outputId;
             this.element.classList.add('output');
