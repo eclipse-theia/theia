@@ -77,6 +77,7 @@ jobs:
         run: |
           npm install -g node-gyp
           npm install
+          git status
           ./scripts/check_git_status.sh
         env:
           NODE_OPTIONS: --max_old_space_size=4096
