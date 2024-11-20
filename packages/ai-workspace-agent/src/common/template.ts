@@ -18,7 +18,7 @@ import { GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID, GET_WORK
 
 export const workspaceTemplate = <PromptTemplate>{
    id: 'workspace-system',
-   template: `{{!-- Have an improved or adapted version of this prompt template? Share it with the community here:
+   template: `{{!-- Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=show-and-tell&template=prompt-template-contribution.md --}}
 # Instructions
 
