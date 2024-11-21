@@ -856,7 +856,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
 
         registry.registerCommand(DebugCommands.SET_VARIABLE_VALUE, {
             execute: () => this.selectedVariable && this.selectedVariable.open(),
-            isEnabled: () => !!this.selectedVariable && this.selectedVariable.supportSetVariable,
+            isEnabled: () => !!this.selectedVariable && this.selectedVariable.supportSetVariable && !this.selectedVariable.readOnly,
             isVisible: () => !!this.selectedVariable && this.selectedVariable.supportSetVariable
         });
         registry.registerCommand(DebugCommands.COPY_VARIABLE_VALUE, {

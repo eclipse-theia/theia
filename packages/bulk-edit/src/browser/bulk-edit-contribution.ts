@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject, optional } from '@theia/core/shared/inversify';
+import { injectable, inject, optional, postConstruct } from '@theia/core/shared/inversify';
 import { Widget } from '@theia/core/lib/browser/widgets/widget';
 import { CommandRegistry } from '@theia/core/lib/common';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
@@ -28,12 +28,15 @@ import { ResourceEdit } from '@theia/monaco-editor-core/esm/vs/editor/browser/se
 
 @injectable()
 export class BulkEditContribution extends AbstractViewContribution<BulkEditTreeWidget> implements TabBarToolbarContribution {
-    private edits: ResourceEdit[];
+    protected edits: ResourceEdit[];
 
     @inject(QuickViewService) @optional()
     protected override readonly quickView: QuickViewService;
 
-    constructor(private readonly bulkEditService: MonacoBulkEditService) {
+    @inject(MonacoBulkEditService)
+    protected readonly bulkEditService: MonacoBulkEditService;
+
+    constructor() {
         super({
             widgetId: BULK_EDIT_TREE_WIDGET_ID,
             widgetName: BULK_EDIT_WIDGET_NAME,
@@ -41,6 +44,10 @@ export class BulkEditContribution extends AbstractViewContribution<BulkEditTreeW
                 area: 'bottom'
             }
         });
+    }
+
+    @postConstruct()
+    protected init(): void {
         this.bulkEditService.setPreviewHandler((edits: ResourceEdit[]) => this.previewEdit(edits));
     }
 

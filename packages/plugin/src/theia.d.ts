@@ -2697,6 +2697,11 @@ export module '@theia/plugin' {
      */
     export class ThemeColor {
         /**
+         * The id of this color.
+         */
+        readonly id: string;
+
+        /**
          * Creates a reference to a theme color.
          */
         constructor(id: string);

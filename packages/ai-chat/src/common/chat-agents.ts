@@ -39,7 +39,7 @@ import {
     MessageActor,
 } from '@theia/ai-core/lib/common';
 import { CancellationToken, CancellationTokenSource, ContributionProvider, ILogger, isArray } from '@theia/core';
-import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, named, postConstruct, unmanaged } from '@theia/core/shared/inversify';
 import { ChatAgentService } from './chat-agent-service';
 import {
     ChatModel,
@@ -133,13 +133,13 @@ export abstract class AbstractChatAgent {
     protected defaultContentFactory: DefaultResponseContentFactory;
 
     constructor(
-        public id: string,
-        public languageModelRequirements: LanguageModelRequirement[],
-        protected defaultLanguageModelPurpose: string,
-        public iconClass: string = 'codicon codicon-copilot',
-        public locations: ChatAgentLocation[] = ChatAgentLocation.ALL,
-        public tags: String[] = ['Chat'],
-        public defaultLogging: boolean = true) {
+        @unmanaged() public id: string,
+        @unmanaged() public languageModelRequirements: LanguageModelRequirement[],
+        @unmanaged() protected defaultLanguageModelPurpose: string,
+        @unmanaged() public iconClass: string = 'codicon codicon-copilot',
+        @unmanaged() public locations: ChatAgentLocation[] = ChatAgentLocation.ALL,
+        @unmanaged() public tags: string[] = ['Chat'],
+        @unmanaged() public defaultLogging: boolean = true) {
     }
 
     @postConstruct()

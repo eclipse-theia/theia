@@ -283,6 +283,7 @@ export class ChatViewTreeWidget extends TreeWidget {
                         toolbarContributions.length > 0 &&
                         toolbarContributions.map(action =>
                             <span
+                                key={action.commandId}
                                 className={`theia-ChatNodeToolbarAction ${action.icon}`}
                                 title={action.tooltip}
                                 onClick={e => {

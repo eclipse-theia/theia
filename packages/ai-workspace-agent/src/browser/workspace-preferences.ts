@@ -15,30 +15,27 @@
 // *****************************************************************************
 
 import { PreferenceSchema } from '@theia/core/lib/browser/preferences/preference-contribution';
-import { AI_CORE_PREFERENCES_TITLE } from '@theia/ai-core/lib/browser/ai-core-preferences';
 
-export const PREF_AI_INLINE_COMPLETION_AUTOMATIC_ENABLE = 'ai-features.codeCompletion.automaticCodeCompletion';
-export const PREF_AI_INLINE_COMPLETION_EXCLUDED_EXTENSIONS = 'ai-features.codeCompletion.excludedFileExtensions';
+export const CONSIDER_GITIGNORE_PREF = 'ai-features.workspaceFunctions.considerGitIgnore';
+export const USER_EXCLUDE_PATTERN_PREF = 'ai-features.workspaceFunctions.userExcludes';
 
-export const AICodeCompletionPreferencesSchema: PreferenceSchema = {
+export const WorkspacePreferencesSchema: PreferenceSchema = {
     type: 'object',
     properties: {
-        [PREF_AI_INLINE_COMPLETION_AUTOMATIC_ENABLE]: {
-            title: AI_CORE_PREFERENCES_TITLE,
+        [CONSIDER_GITIGNORE_PREF]: {
             type: 'boolean',
-            description: 'Automatically trigger AI completions inline within any (Monaco) editor while editing.\
-            \n\
-            Alternatively, you can manually trigger the code via the command "Trigger Inline Suggestion" or the default shortcut "SHIFT+Space".',
-            default: true
+            title: 'Consider .gitignore',
+            description: 'If enabled, excludes files/folders specified in a global .gitignore file (expected location is the workspace root).',
+            default: false
         },
-        [PREF_AI_INLINE_COMPLETION_EXCLUDED_EXTENSIONS]: {
-            title: 'Excluded File Extensions',
+        [USER_EXCLUDE_PATTERN_PREF]: {
             type: 'array',
-            description: 'Specify file extensions (e.g., .md, .txt) where AI completions should be disabled.',
+            title: 'Excluded File Patterns',
+            description: 'List of patterns (glob or regex) for files/folders to exclude.',
+            default: ['node_modules', 'lib', '.*'],
             items: {
                 type: 'string'
-            },
-            default: []
+            }
         }
     }
 };
