@@ -159,4 +159,89 @@ describe('PromptService', () => {
         const prompt17 = await promptService.getPrompt('17', { name: 'John' });
         expect(prompt17?.text).to.equal('Hi, John! John');
     });
+
+    it('should strip single-line comments at the start of the template', () => {
+        promptService.storePrompt('comment-basic', '{{!-- Comment --}}Hello, {{name}}!');
+        const prompt = promptService.getUnresolvedPrompt('comment-basic');
+        expect(prompt?.template).to.equal('Hello, {{name}}!');
+    });
+
+    it('should remove line break after first-line comment', () => {
+        promptService.storePrompt('comment-line-break', '{{!-- Comment --}}\nHello, {{name}}!');
+        const prompt = promptService.getUnresolvedPrompt('comment-line-break');
+        expect(prompt?.template).to.equal('Hello, {{name}}!');
+    });
+
+    it('should strip multiline comments at the start of the template', () => {
+        promptService.storePrompt('comment-multiline', '{{!--\nMultiline comment\n--}}\nGoodbye, {{name}}!');
+        const prompt = promptService.getUnresolvedPrompt('comment-multiline');
+        expect(prompt?.template).to.equal('Goodbye, {{name}}!');
+    });
+
+    it('should not strip comments not in the first line', () => {
+        promptService.storePrompt('comment-second-line', 'Hello, {{name}}!\n{{!-- Comment --}}');
+        const prompt = promptService.getUnresolvedPrompt('comment-second-line');
+        expect(prompt?.template).to.equal('Hello, {{name}}!\n{{!-- Comment --}}');
+    });
+
+    it('should treat unclosed comments as regular text', () => {
+        promptService.storePrompt('comment-unclosed', '{{!-- Unclosed comment');
+        const prompt = promptService.getUnresolvedPrompt('comment-unclosed');
+        expect(prompt?.template).to.equal('{{!-- Unclosed comment');
+    });
+
+    it('should treat standalone closing delimiters as regular text', () => {
+        promptService.storePrompt('comment-standalone', '--}} Hello, {{name}}!');
+        const prompt = promptService.getUnresolvedPrompt('comment-standalone');
+        expect(prompt?.template).to.equal('--}} Hello, {{name}}!');
+    });
+
+    it('should handle nested comments and stop at the first closing tag', () => {
+        promptService.storePrompt('nested-comment', '{{!-- {{!-- Nested comment --}} --}}text');
+        const prompt = promptService.getUnresolvedPrompt('nested-comment');
+        expect(prompt?.template).to.equal('--}}text');
+    });
+
+    it('should handle templates with only comments', () => {
+        promptService.storePrompt('comment-only', '{{!-- Only comments --}}');
+        const prompt = promptService.getUnresolvedPrompt('comment-only');
+        expect(prompt?.template).to.equal('');
+    });
+
+    it('should handle mixed delimiters on the same line', () => {
+        promptService.storePrompt('comment-mixed', '{{!-- Unclosed comment --}}');
+        const prompt = promptService.getUnresolvedPrompt('comment-mixed');
+        expect(prompt?.template).to.equal('');
+    });
+
+    it('should resolve variables after stripping single-line comments', async () => {
+        promptService.storePrompt('comment-resolve', '{{!-- Comment --}}Hello, {{name}}!');
+        const prompt = await promptService.getPrompt('comment-resolve', { name: 'John' });
+        expect(prompt?.text).to.equal('Hello, John!');
+    });
+
+    it('should resolve variables in multiline templates with comments', async () => {
+        promptService.storePrompt('comment-multiline-vars', '{{!--\nMultiline comment\n--}}\nHello, {{name}}!');
+        const prompt = await promptService.getPrompt('comment-multiline-vars', { name: 'John' });
+        expect(prompt?.text).to.equal('Hello, John!');
+    });
+
+    it('should resolve variables with standalone closing delimiters', async () => {
+        promptService.storePrompt('comment-standalone-vars', '--}} Hello, {{name}}!');
+        const prompt = await promptService.getPrompt('comment-standalone-vars', { name: 'John' });
+        expect(prompt?.text).to.equal('--}} Hello, John!');
+    });
+
+    it('should treat unclosed comments as text and resolve variables', async () => {
+        promptService.storePrompt('comment-unclosed-vars', '{{!-- Unclosed comment\nHello, {{name}}!');
+        const prompt = await promptService.getPrompt('comment-unclosed-vars', { name: 'John' });
+        expect(prompt?.text).to.equal('{{!-- Unclosed comment\nHello, John!');
+    });
+
+    it('should handle templates with mixed comments and variables', async () => {
+        promptService.storePrompt('comment-mixed-vars', '{{!-- Comment --}}Hi, {{name}}! {{!-- Another comment --}}');
+        const prompt = await promptService.getPrompt('comment-mixed-vars', { name: 'John' });
+        expect(prompt?.text).to.equal('Hi, John! {{!-- Another comment --}}');
+    });
+
 });

@@ -36,7 +36,9 @@ import {
 
 export const commandTemplate: PromptTemplate = {
     id: 'command-system',
-    template: `# System Prompt
+    template: `{{!-- Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
+https://github.com/eclipse-theia/theia/discussions/new?category=show-and-tell&template=prompt-template-contribution.md --}}
+# System Prompt
 
 You are a service that helps users find commands to execute in an IDE.
 You reply with stringified JSON Objects that tell the user which command to execute and its arguments, if any. 

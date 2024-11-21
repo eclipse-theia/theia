@@ -40,10 +40,15 @@ export interface ResolvedPromptTemplate {
 export const PromptService = Symbol('PromptService');
 export interface PromptService {
     /**
-     * Retrieve the raw {@link PromptTemplate} object.
+     * Retrieve the raw {@link PromptTemplate} object (unresolved variables, functions and including comments).
      * @param id the id of the {@link PromptTemplate}
      */
     getRawPrompt(id: string): PromptTemplate | undefined;
+    /**
+     * Retrieve the unresolved {@link PromptTemplate} object (unresolved variables, functions, excluding comments)
+     * @param id the id of the {@link PromptTemplate}
+     */
+    getUnresolvedPrompt(id: string): PromptTemplate | undefined;
     /**
      * Retrieve the default raw {@link PromptTemplate} object.
      * @param id the id of the {@link PromptTemplate}
@@ -182,8 +187,24 @@ export class PromptServiceImpl implements PromptService {
         return this._prompts[id];
     }
 
+    getUnresolvedPrompt(id: string): PromptTemplate | undefined {
+        const rawPrompt = this.getRawPrompt(id);
+        if (!rawPrompt) {
+            return undefined;
+        }
+        return {
+            id: rawPrompt.id,
+            template: this.stripComments(rawPrompt.template)
+        };
+    }
+
+    protected stripComments(template: string): string {
+        const commentRegex = /^\s*{{!--[\s\S]*?--}}\s*\n?/;
+        return commentRegex.test(template) ? template.replace(commentRegex, '').trimStart() : template;
+    }
+
     async getPrompt(id: string, args?: { [key: string]: unknown }): Promise<ResolvedPromptTemplate | undefined> {
-        const prompt = this.getRawPrompt(id);
+        const prompt = this.getUnresolvedPrompt(id);
         if (prompt === undefined) {
             return undefined;
         }
