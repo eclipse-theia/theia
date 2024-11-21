@@ -21,7 +21,7 @@
     "patches"
   ],
   "bin": {
-    "theia": "./bin/theia",
+    "theia": "./bin/theia.js",
     "theia-patch": "./bin/theia-patch.js"
   },
   "scripts": {
