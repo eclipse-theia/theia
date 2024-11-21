@@ -19,7 +19,7 @@
 const path = require('path');
 const cp = require('child_process');
 
-const extScriptsPck = require(path.resolve(__dirname, 'package.json'));
+const extScriptsPck = require(path.resolve(__dirname, '../package.json'));
 
 /**
  * Lookup the requested ext:script to run, returns the full command line to execute.
