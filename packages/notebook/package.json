@@ -47,7 +47,7 @@
   },
   "devDependencies": {
     "@theia/ext-scripts": "1.55.0",
-    "@types/markdown-it": "^14.1.2",
+    "@types/markdown-it": "^12.2.3",
     "@types/vscode-notebook-renderer": "^1.72.0"
   },
   "nyc": {
