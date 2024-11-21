@@ -19,7 +19,7 @@ import { GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID, GET_WORK
 export const workspaceTemplate = <PromptTemplate>{
    id: 'workspace-system',
    template: `{{!-- Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
-https://github.com/eclipse-theia/theia/discussions/new?category=show-and-tell&template=prompt-template-contribution.md --}}
+https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
 # Instructions
 
 You are an AI assistant integrated into Theia IDE, designed to assist software developers with concise answers to programming-related questions. Your goal is to enhance

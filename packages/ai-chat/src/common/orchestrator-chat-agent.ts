@@ -28,7 +28,7 @@ import { ChatHistoryEntry } from './chat-history-entry';
 export const orchestratorTemplate: PromptTemplate = {
     id: 'orchestrator-system',
     template: `{{!-- Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
-https://github.com/eclipse-theia/theia/discussions/new?category=show-and-tell&template=prompt-template-contribution.md --}}
+https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
 # Instructions
 
 Your task is to identify which Chat Agent(s) should best reply a given user's message.
