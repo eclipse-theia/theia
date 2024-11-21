@@ -162,7 +162,6 @@ export class AIAgentConfigurationWidget extends ReactWidget {
                 })()}
             </div>
 
-
             <div className='ai-lm-requirements'>
                 <LanguageModelRenderer
                     agent={agent}
