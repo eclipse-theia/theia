@@ -35,6 +35,7 @@ export module '@theia/plugin' {
     export interface ConversationResponse {
         readonly type: 'response';
         readonly message: string;
+        readonly result?: ChatResult;
         readonly references?: DocumentContextItem[];
     }
 
@@ -69,7 +70,7 @@ export module '@theia/plugin' {
     }
 
     export interface MappedEditsRequest {
-        readonly codeBlocks: { code: string; resource: Uri }[];
+        readonly codeBlocks: { code: string; resource: Uri; markdownBeforeBlock?: string }[];
         // for every prior response that contains codeblocks, make sure we pass the code as well as the resources based on the reported codemapper URIs
         readonly conversation: (ConversationRequest | ConversationResponse)[];
     }
