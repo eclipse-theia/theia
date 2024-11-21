@@ -88,7 +88,7 @@ export const TemplateRenderer: React.FC<TemplateRendererProps> = ({
                 {variantIds.length > 1 && (
                     <>
                         <label htmlFor={`variant-selector-${template.id}`} className="template-select-label">
-                            Variant:
+                            Select Variant:
                         </label>
                         <select
                             id={`variant-selector-${template.id}`}

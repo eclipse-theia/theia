@@ -140,22 +140,28 @@ export class AIAgentConfigurationWidget extends ReactWidget {
             <div className="settings-section-subcategory-title ai-settings-section-subcategory-title">
                 Prompt Templates
             </div>
-            <div className='ai-templates'>
-                {agent.promptTemplates
-                    ?.filter(template => !template.variantOf)
-                    .map(template => (
-                        <div key={agent.id + '.' + template.id}>
-                            <TemplateRenderer
-                                key={agent?.id + '.' + template.id}
-                                agentId={agent.id}
-                                template={template}
-                                promptService={this.promptService}
-                                aiSettingsService={this.aiSettingsService}
-                                promptCustomizationService={this.promptCustomizationService}
-                            />
-                        </div>
-                    ))}
+            <div className="ai-templates">
+                {(() => {
+                    const defaultTemplates = agent.promptTemplates?.filter(template => !template.variantOf) || [];
+                    return defaultTemplates.length > 0 ? (
+                        defaultTemplates.map(template => (
+                            <div key={agent.id + '.' + template.id}>
+                                <TemplateRenderer
+                                    key={agent.id + '.' + template.id}
+                                    agentId={agent.id}
+                                    template={template}
+                                    promptService={this.promptService}
+                                    aiSettingsService={this.aiSettingsService}
+                                    promptCustomizationService={this.promptCustomizationService}
+                                />
+                            </div>
+                        ))
+                    ) : (
+                        <div>No default template available</div>
+                    );
+                })()}
             </div>
+
 
             <div className='ai-lm-requirements'>
                 <LanguageModelRenderer
