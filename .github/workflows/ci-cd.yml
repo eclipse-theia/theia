@@ -97,7 +97,7 @@ jobs:
         if: runner.os == 'Linux'
         shell: bash
         run: |
-          npm run download:plugins --rate-limit 3
+          npm run download:plugins -- --rate-limit 3
           
       - name: Test (headless)
         if: matrix.tests != 'skip'
