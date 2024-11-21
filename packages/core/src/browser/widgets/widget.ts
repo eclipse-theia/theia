@@ -117,7 +117,7 @@ export class BaseWidget extends Widget implements PreviewableWidget {
     protected scrollBar?: PerfectScrollbar;
     protected scrollOptions?: PerfectScrollbar.Options;
 
-    constructor(options?: Widget.IOptions) {
+    constructor(@unmanaged() options?: Widget.IOptions) {
         super(options);
     }
 

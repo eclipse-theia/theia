@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject, unmanaged } from 'inversify';
 import { Disposable, MaybePromise, CancellationTokenSource, nls } from '../common';
 import { Key } from './keyboard/keys';
 import { Widget, BaseWidget, Message, addKeyListener, codiconArray } from './widgets/widget';
@@ -151,8 +151,8 @@ export abstract class AbstractDialog<T> extends BaseWidget {
     protected activeElement: HTMLElement | undefined;
 
     constructor(
-        protected readonly props: DialogProps,
-        options?: Widget.IOptions
+        @unmanaged() protected readonly props: DialogProps,
+        @unmanaged() options?: Widget.IOptions
     ) {
         super(options);
         this.id = 'theia-dialog-shell';

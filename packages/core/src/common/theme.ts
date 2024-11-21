@@ -38,7 +38,7 @@ export interface ThemeChangeEvent {
 }
 
 export interface ThemeColor {
-    id: string;
+    readonly id: string;
 }
 
 export interface ThemeIcon {
