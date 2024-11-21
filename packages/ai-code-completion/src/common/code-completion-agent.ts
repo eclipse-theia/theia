@@ -135,7 +135,7 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
         {
             id: 'code-completion-prompt',
             template: `{{!-- Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
-https://github.com/eclipse-theia/theia/discussions/new?category=show-and-tell&template=prompt-template-contribution.md --}}
+https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
 You are a code completion agent. The current file you have to complete is named {{file}}.
 The language of the file is {{language}}. Return your result as plain text without markdown formatting.
 Finish the following code snippet.
