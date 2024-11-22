@@ -23,6 +23,7 @@ import { CommandRegistry, DisposableCollection, MenuModelRegistry, MenuNode, nls
 import { NotebookCommands, NotebookMenus } from '../contributions/notebook-actions-contribution';
 import { NotebookCellActionContribution } from '../contributions/notebook-cell-actions-contribution';
 import { NotebookContextManager } from '../service/notebook-context-manager';
+import { NotebookCellEditorService } from '../service/notebook-cell-editor-service';
 
 export interface CellRenderer {
     render(notebookData: NotebookModel, cell: NotebookCellModel, index: number): React.ReactNode
@@ -46,6 +47,7 @@ interface CellListProps {
     toolbarRenderer: NotebookCellToolbarFactory;
     commandRegistry: CommandRegistry;
     menuRegistry: MenuModelRegistry;
+    notebookCellEditorService: NotebookCellEditorService;
 }
 
 interface NotebookCellListState {
@@ -141,9 +143,12 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
                             tabIndex={-1}
                             data-cell-handle={cell.handle}
                             ref={ref => {
-                                if (ref && cell === this.state.selectedCell && this.state.scrollIntoView) {
-                                    ref.scrollIntoView({ block: 'nearest' });
-                                    if (cell.cellKind === CellKind.Markup && !cell.editing) {
+                                if (ref && cell === this.state.selectedCell) {
+                                    if (this.state.scrollIntoView) {
+                                        ref.scrollIntoView({ block: 'nearest' });
+                                    }
+                                    if ((cell.cellKind === CellKind.Markup && !cell.editing) ||
+                                        (cell.cellKind === CellKind.Code && this.props.notebookCellEditorService.getActiveCell()?.uri.toString() !== cell.uri.toString())) {
                                         ref.focus();
                                     }
                                 }

@@ -37,6 +37,7 @@ import { NotebookFindWidget } from './view/notebook-find-widget';
 import debounce = require('lodash/debounce');
 import { CellOutputWebview, CellOutputWebviewFactory } from './renderers/cell-output-webview';
 import { NotebookCellOutputModel } from './view-model/notebook-cell-output-model';
+import { NotebookCellEditorService } from './service/notebook-cell-editor-service';
 const PerfectScrollbar = require('react-perfect-scrollbar');
 
 export const NotebookEditorWidgetContainerFactory = Symbol('NotebookEditorWidgetContainerFactory');
@@ -111,6 +112,9 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
 
     @inject(CellOutputWebview)
     protected readonly cellOutputWebview: CellOutputWebview;
+
+    @inject(NotebookCellEditorService)
+    protected readonly notebookCellEditorService: NotebookCellEditorService;
 
     protected readonly onDidChangeModelEmitter = new Emitter<void>();
     readonly onDidChangeModel = this.onDidChangeModelEmitter.event;
@@ -283,7 +287,9 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
                                 notebookContext={this.notebookContextManager}
                                 toolbarRenderer={this.cellToolbarFactory}
                                 commandRegistry={this.commandRegistry}
-                                menuRegistry={this.menuRegistry} />
+                                menuRegistry={this.menuRegistry}
+                                notebookCellEditorService={this.notebookCellEditorService}
+                            />
                         </div>
                     </PerfectScrollbar>
                 </div>
