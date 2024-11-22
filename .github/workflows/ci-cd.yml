@@ -77,21 +77,13 @@ jobs:
         run: |
           npm install -g node-gyp
           npm install
+          npm run build
           git status
           ./scripts/check_git_status.sh
         env:
           NODE_OPTIONS: --max_old_space_size=4096
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9
 
-
-      - name: Build
-        shell: bash
-        run: |
-          npm run build
-          ./scripts/check_git_status.sh
-        env:
-          NODE_OPTIONS: --max_old_space_size=4096
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9
 
       - name: Download Plugins
         if: runner.os == 'Linux'
