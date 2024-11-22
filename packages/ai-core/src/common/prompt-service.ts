@@ -69,12 +69,6 @@ export interface PromptService {
      */
     getPrompt(id: string, args?: { [key: string]: unknown }): Promise<ResolvedPromptTemplate | undefined>;
     /**
-     * Adds a prompt to the list of prompts.
-     * @param id the id of the prompt
-     * @param prompt the prompt template to store
-     */
-    storePrompt(id: string, prompt: string): void;
-    /**
      * Adds a {@link PromptTemplate} to the list of prompts.
      * @param promptTemplate the prompt template to store
      */
@@ -315,9 +309,6 @@ export class PromptServiceImpl implements PromptService {
         } else {
             return { ...this._prompts };
         }
-    }
-    storePrompt(id: string, prompt: string): void {
-        this._prompts[id] = { id, template: prompt };
     }
     removePrompt(id: string): void {
         delete this._prompts[id];
