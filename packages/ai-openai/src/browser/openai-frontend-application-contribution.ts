@@ -69,7 +69,7 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                             model.model === newModel.model &&
                             model.url === newModel.url &&
                             model.apiKey === newModel.apiKey &&
-                            model.disableStreaming === newModel.disableStreaming));
+                            model.enableStreaming === newModel.enableStreaming));
 
                     this.manager.removeLanguageModels(...modelsToRemove.map(model => model.id));
                     this.manager.createOrUpdateLanguageModels(...modelsToAddOrUpdate);
@@ -79,14 +79,14 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
     }
 }
 
-const openAIModelsWithoutStreaming = ['o1-preview'];
+const openAIModelsWithDisabledStreaming = ['o1-preview'];
 
 function createOpenAIModelDescription(modelId: string): OpenAiModelDescription {
     return {
         id: `openai/${modelId}`,
         model: modelId,
         apiKey: true,
-        disableStreaming: openAIModelsWithoutStreaming.includes(modelId)
+        enableStreaming: !openAIModelsWithDisabledStreaming.includes(modelId)
     };
 }
 
@@ -102,7 +102,7 @@ function createCustomModelDescriptionsFromPreferences(preferences: Partial<OpenA
                 model: pref.model,
                 url: pref.url,
                 apiKey: typeof pref.apiKey === 'string' || pref.apiKey === true ? pref.apiKey : undefined,
-                disableStreaming: !!pref.disableStreaming
+                enableStreaming: pref.enableStreaming ?? true
             }
         ];
     }, []);

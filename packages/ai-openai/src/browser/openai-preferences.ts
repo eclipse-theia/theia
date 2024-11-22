@@ -50,7 +50,7 @@ export const OpenAiPreferencesSchema: PreferenceSchema = {
             \n\
             - provide an `apiKey` to access the API served at the given url. Use `true` to indicate the use of the global OpenAI API key.\
             \n\
-            - specify `disableStreaming: true` to indicate that streaming shall not be used.\
+            - specify `enableStreaming: false` to indicate that streaming shall not be used.\
             \n\
             Refer to [our documentation](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm) for more information.',
             default: [],
@@ -73,9 +73,9 @@ export const OpenAiPreferencesSchema: PreferenceSchema = {
                         type: ['string', 'boolean'],
                         title: 'Either the key to access the API served at the given url or `true` to use the global OpenAI API key',
                     },
-                    disableStreaming: {
+                    enableStreaming: {
                         type: 'boolean',
-                        title: 'Indicates whether the streaming API shall be used. `false` by default.',
+                        title: 'Indicates whether the streaming API shall be used. `true` by default.',
                     }
                 }
             }

@@ -35,7 +35,7 @@ export interface OpenAiModelDescription {
     /**
      * Indicate whether the streaming API shall be used.
      */
-    disableStreaming: boolean;
+    enableStreaming: boolean;
 }
 export interface OpenAiLanguageModelsManager {
     apiKey: string | undefined;
