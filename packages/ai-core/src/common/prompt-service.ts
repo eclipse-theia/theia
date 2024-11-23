@@ -21,10 +21,16 @@ import { ToolInvocationRegistry } from './tool-invocation-registry';
 import { toolRequestToPromptText } from './language-model-util';
 import { ToolRequest } from './language-model';
 import { matchFunctionsRegEx, matchVariablesRegEx } from './prompt-service-util';
+import { AISettingsService } from './settings-service';
 
 export interface PromptTemplate {
     id: string;
     template: string;
+    /**
+     * (Optional) The ID of the main template for which this template is a variant.
+     * If present, this indicates that the current template represents an alternative version of the specified main template.
+     */
+    variantOf?: string;
 }
 
 export interface PromptMap { [id: string]: PromptTemplate }
@@ -63,11 +69,10 @@ export interface PromptService {
      */
     getPrompt(id: string, args?: { [key: string]: unknown }): Promise<ResolvedPromptTemplate | undefined>;
     /**
-     * Adds a prompt to the list of prompts.
-     * @param id the id of the prompt
-     * @param prompt the prompt template to store
+     * Adds a {@link PromptTemplate} to the list of prompts.
+     * @param promptTemplate the prompt template to store
      */
-    storePrompt(id: string, prompt: string): void;
+    storePromptTemplate(promptTemplate: PromptTemplate): void;
     /**
      * Removes a prompt from the list of prompts.
      * @param id the id of the prompt
@@ -77,6 +82,20 @@ export interface PromptService {
      * Return all known prompts as a {@link PromptMap map}.
      */
     getAllPrompts(): PromptMap;
+    /**
+     * Retrieve all variant IDs of a given {@link PromptTemplate}.
+     * @param id the id of the main {@link PromptTemplate}
+     * @returns an array of string IDs representing the variants of the given template
+     */
+    getVariantIds(id: string): string[];
+    /**
+     * Retrieve the currently selected variant ID for a given main prompt ID.
+     * If a variant is selected for the main prompt, it will be returned.
+     * Otherwise, the main prompt ID will be returned.
+     * @param id the id of the main prompt
+     * @returns the variant ID if one is selected, or the main prompt ID otherwise
+     */
+    getVariantId(id: string): Promise<string>;
 }
 
 export interface CustomAgentDescription {
@@ -163,6 +182,9 @@ export interface PromptCustomizationService {
 
 @injectable()
 export class PromptServiceImpl implements PromptService {
+    @inject(AISettingsService) @optional()
+    protected readonly settingsService: AISettingsService | undefined;
+
     @inject(PromptCustomizationService) @optional()
     protected readonly customizationService: PromptCustomizationService | undefined;
 
@@ -203,8 +225,22 @@ export class PromptServiceImpl implements PromptService {
         return commentRegex.test(template) ? template.replace(commentRegex, '').trimStart() : template;
     }
 
+    async getVariantId(id: string): Promise<string> {
+        if (this.settingsService !== undefined) {
+            const agentSettingsMap = await this.settingsService.getSettings();
+
+            for (const agentSettings of Object.values(agentSettingsMap)) {
+                if (agentSettings.selectedVariants && agentSettings.selectedVariants[id]) {
+                    return agentSettings.selectedVariants[id];
+                }
+            }
+        }
+        return id;
+    }
+
     async getPrompt(id: string, args?: { [key: string]: unknown }): Promise<ResolvedPromptTemplate | undefined> {
-        const prompt = this.getUnresolvedPrompt(id);
+        const variantId = await this.getVariantId(id);
+        const prompt = this.getUnresolvedPrompt(variantId);
         if (prompt === undefined) {
             return undefined;
         }
@@ -274,10 +310,15 @@ export class PromptServiceImpl implements PromptService {
             return { ...this._prompts };
         }
     }
-    storePrompt(id: string, prompt: string): void {
-        this._prompts[id] = { id, template: prompt };
-    }
     removePrompt(id: string): void {
         delete this._prompts[id];
+    }
+    getVariantIds(id: string): string[] {
+        return Object.values(this._prompts)
+            .filter(prompt => prompt.variantOf === id)
+            .map(variant => variant.id);
+    }
+    storePromptTemplate(promptTemplate: PromptTemplate): void {
+        this._prompts[promptTemplate.id] = promptTemplate;
     }
 }

@@ -78,6 +78,12 @@ simple solutions.
 `
 };
 
+export const universalTemplateVariant: PromptTemplate = {
+   id: 'universal-system-empty',
+   template: '',
+   variantOf: universalTemplate.id,
+};
+
 @injectable()
 export class UniversalChatAgent extends AbstractStreamParsingChatAgent implements ChatAgent {
    name: string;
@@ -98,7 +104,7 @@ export class UniversalChatAgent extends AbstractStreamParsingChatAgent implement
          + 'questions the user might ask. The universal agent currently does not have any context by default, i.e. it cannot '
          + 'access the current user context or the workspace.';
       this.variables = [];
-      this.promptTemplates = [universalTemplate];
+      this.promptTemplates = [universalTemplate, universalTemplateVariant];
       this.functions = [];
       this.agentSpecificVariables = [];
    }
