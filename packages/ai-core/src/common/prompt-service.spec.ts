@@ -160,55 +160,55 @@ describe('PromptService', () => {
 
     it('should strip single-line comments at the start of the template', () => {
         promptService.storePromptTemplate({ id: 'comment-basic', template: '{{!-- Comment --}}Hello, {{name}}!' });
-        const prompt = promptService.getUnresolvedPrompt('comment-basic');
+        const prompt = promptService.getUnresolvedMainPrompt('comment-basic');
         expect(prompt?.template).to.equal('Hello, {{name}}!');
     });
 
     it('should remove line break after first-line comment', () => {
         promptService.storePromptTemplate({ id: 'comment-line-break', template: '{{!-- Comment --}}\nHello, {{name}}!' });
-        const prompt = promptService.getUnresolvedPrompt('comment-line-break');
+        const prompt = promptService.getUnresolvedMainPrompt('comment-line-break');
         expect(prompt?.template).to.equal('Hello, {{name}}!');
     });
 
     it('should strip multiline comments at the start of the template', () => {
         promptService.storePromptTemplate({ id: 'comment-multiline', template: '{{!--\nMultiline comment\n--}}\nGoodbye, {{name}}!' });
-        const prompt = promptService.getUnresolvedPrompt('comment-multiline');
+        const prompt = promptService.getUnresolvedMainPrompt('comment-multiline');
         expect(prompt?.template).to.equal('Goodbye, {{name}}!');
     });
 
     it('should not strip comments not in the first line', () => {
         promptService.storePromptTemplate({ id: 'comment-second-line', template: 'Hello, {{name}}!\n{{!-- Comment --}}' });
-        const prompt = promptService.getUnresolvedPrompt('comment-second-line');
+        const prompt = promptService.getUnresolvedMainPrompt('comment-second-line');
         expect(prompt?.template).to.equal('Hello, {{name}}!\n{{!-- Comment --}}');
     });
 
     it('should treat unclosed comments as regular text', () => {
         promptService.storePromptTemplate({ id: 'comment-unclosed', template: '{{!-- Unclosed comment' });
-        const prompt = promptService.getUnresolvedPrompt('comment-unclosed');
+        const prompt = promptService.getUnresolvedMainPrompt('comment-unclosed');
         expect(prompt?.template).to.equal('{{!-- Unclosed comment');
     });
 
     it('should treat standalone closing delimiters as regular text', () => {
         promptService.storePromptTemplate({ id: 'comment-standalone', template: '--}} Hello, {{name}}!' });
-        const prompt = promptService.getUnresolvedPrompt('comment-standalone');
+        const prompt = promptService.getUnresolvedMainPrompt('comment-standalone');
         expect(prompt?.template).to.equal('--}} Hello, {{name}}!');
     });
 
     it('should handle nested comments and stop at the first closing tag', () => {
         promptService.storePromptTemplate({ id: 'nested-comment', template: '{{!-- {{!-- Nested comment --}} --}}text' });
-        const prompt = promptService.getUnresolvedPrompt('nested-comment');
+        const prompt = promptService.getUnresolvedMainPrompt('nested-comment');
         expect(prompt?.template).to.equal('--}}text');
     });
 
     it('should handle templates with only comments', () => {
         promptService.storePromptTemplate({ id: 'comment-only', template: '{{!-- Only comments --}}' });
-        const prompt = promptService.getUnresolvedPrompt('comment-only');
+        const prompt = promptService.getUnresolvedMainPrompt('comment-only');
         expect(prompt?.template).to.equal('');
     });
 
     it('should handle mixed delimiters on the same line', () => {
         promptService.storePromptTemplate({ id: 'comment-mixed', template: '{{!-- Unclosed comment --}}' });
-        const prompt = promptService.getUnresolvedPrompt('comment-mixed');
+        const prompt = promptService.getUnresolvedMainPrompt('comment-mixed');
         expect(prompt?.template).to.equal('');
     });
 
@@ -298,4 +298,5 @@ describe('PromptService', () => {
         expect(variantsForMainWithVariants).to.deep.equal(['variant1', 'variant2']);
         expect(variantsForMainWithoutVariants).to.deep.equal([]);
     });
+
 });

@@ -21,6 +21,7 @@ import {
 import { generateUuid, ILogger } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
+import { CodeCompletionPromptMetaData, CodeCompletionPromptParserService } from './prompt-metadata-parsing-service';
 
 export const CodeCompletionAgent = Symbol('CodeCompletionAgent');
 export interface CodeCompletionAgent extends Agent {
@@ -30,6 +31,11 @@ export interface CodeCompletionAgent extends Agent {
 
 @injectable()
 export class CodeCompletionAgentImpl implements CodeCompletionAgent {
+    @inject(CodeCompletionPromptParserService)
+    protected readonly codeCodeCompletionsPromptParserService: CodeCompletionPromptParserService;
+
+    private readonly CODE_COMPLETION_MAIN_PROMPT_ID = 'code-completion-prompt';
+
     async provideInlineCompletions(
         model: monaco.editor.ITextModel,
         position: monaco.Position,
@@ -47,6 +53,16 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
             );
             return undefined;
         }
+
+        const unresolvedPrompt = await this.promptService.getUnresolvedPrompt(this.CODE_COMPLETION_MAIN_PROMPT_ID);
+        if (!unresolvedPrompt) {
+            this.logger.error('No prompt found for code-completion-agent');
+            return undefined;
+        }
+        const { metadata, prompt: modifiedPrompt } = this.getPromptMetaData(unresolvedPrompt);
+        unresolvedPrompt.template = modifiedPrompt;
+
+        console.log('metadata', metadata);
 
         // Get text until the given position
         const prefix = model.getValueInRange({
@@ -71,18 +87,15 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
             return undefined;
         }
         const prompt = await this.promptService
-            .getPrompt('code-completion-prompt', { prefix, suffix, file, language })
+            .resolvePrompt(unresolvedPrompt, { prefix, suffix, file, language })
             .then(p => p?.text);
-        if (!prompt) {
-            this.logger.error('No prompt found for code-completion-agent');
-            return undefined;
-        }
 
         // since we do not actually hold complete conversions, the request/response pair is considered a session
         const sessionId = generateUuid();
         const requestId = generateUuid();
         const request: LanguageModelRequest = {
             messages: [{ type: 'text', actor: 'user', query: prompt }],
+            settings: metadata?.requestSettings || {}
         };
         if (token.isCancellationRequested) {
             return undefined;
@@ -113,6 +126,12 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
             enableForwardStability: true,
         };
     }
+    protected getPromptMetaData(unresolvedPrompt: PromptTemplate | undefined): { metadata: CodeCompletionPromptMetaData | undefined; prompt: string } {
+        if (!unresolvedPrompt || !unresolvedPrompt.template) {
+            return { metadata: undefined, prompt: unresolvedPrompt?.template || '' };
+        }
+        return this.codeCodeCompletionsPromptParserService.parse(unresolvedPrompt.template);
+    }
 
     @inject(ILogger)
     @named('code-completion-agent')
@@ -133,7 +152,7 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
         'This agent provides inline code completion in the code editor in the Theia IDE.';
     promptTemplates: PromptTemplate[] = [
         {
-            id: 'code-completion-prompt',
+            id: this.CODE_COMPLETION_MAIN_PROMPT_ID,
             template: `{{!-- Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
 You are a code completion agent. The current file you have to complete is named {{file}}.

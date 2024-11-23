@@ -197,7 +197,7 @@ export class AIAgentConfigurationWidget extends ReactWidget {
         const promptTemplates = agent.promptTemplates;
         const result: ParsedPrompt = { functions: [], globalVariables: [], agentSpecificVariables: [] };
         promptTemplates.forEach(template => {
-            const storedPrompt = this.promptService.getUnresolvedPrompt(template.id);
+            const storedPrompt = this.promptService.getUnresolvedMainPrompt(template.id);
             const prompt = storedPrompt?.template ?? template.template;
             const variableMatches = matchVariablesRegEx(prompt);
 

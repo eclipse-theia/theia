@@ -51,10 +51,17 @@ export interface PromptService {
      */
     getRawPrompt(id: string): PromptTemplate | undefined;
     /**
+     * Retrieve the default unresolved {@link PromptTemplate} object (unresolved variables, functions, excluding comments)
+     * If a variant is selected for the prompt, the variant will be returned.
+     * @param id the id of the main {@link PromptTemplate}
+     */
+    getUnresolvedPrompt(id: string): Promise<PromptTemplate | undefined>;
+    /**
      * Retrieve the unresolved {@link PromptTemplate} object (unresolved variables, functions, excluding comments)
+     * Even if a variant is selected for prompt, the main prompt will be returned.
      * @param id the id of the {@link PromptTemplate}
      */
-    getUnresolvedPrompt(id: string): PromptTemplate | undefined;
+    getUnresolvedMainPrompt(id: string): PromptTemplate | undefined;
     /**
      * Retrieve the default raw {@link PromptTemplate} object.
      * @param id the id of the {@link PromptTemplate}
@@ -64,10 +71,27 @@ export interface PromptService {
      * Allows to directly replace placeholders in the prompt. The supported format is 'Hi {{name}}!'.
      * The placeholder is then searched inside the args object and replaced.
      * Function references are also supported via format '~{functionId}'.
+     * If a variant is selected for the prompt id, the variant will be returned.
      * @param id the id of the prompt
      * @param args the object with placeholders, mapping the placeholder key to the value
      */
     getPrompt(id: string, args?: { [key: string]: unknown }): Promise<ResolvedPromptTemplate | undefined>;
+    /**
+     * Resolves a {@link PromptTemplate} by replacing variables and function placeholders with their resolved values.
+     * Variables in the prompt template are replaced with values from the `args` parameter if provided,
+     * or by using the {@link AIVariableService} for resolution.
+     * Function placeholders are replaced with their textual representations, and all referenced functions
+     * are included in the returned `functionDescriptions`.
+     *
+     * @param prompt - The {@link PromptTemplate} to resolve.
+     * @param args - (Optional) An object mapping variable names to their replacement values.
+     *               For example, a template `Hello, {{name}}!` will replace `{{name}}` with the value
+     *               of `args['name']` if provided.
+     * @returns A {@link ResolvedPromptTemplate} containing:
+     *   - The resolved text with all placeholders replaced.
+     *   - A map of all function descriptions referenced in the template.
+     */
+    resolvePrompt(prompt: PromptTemplate, args?: { [key: string]: unknown }): Promise<ResolvedPromptTemplate>
     /**
      * Adds a {@link PromptTemplate} to the list of prompts.
      * @param promptTemplate the prompt template to store
@@ -209,7 +233,7 @@ export class PromptServiceImpl implements PromptService {
         return this._prompts[id];
     }
 
-    getUnresolvedPrompt(id: string): PromptTemplate | undefined {
+    getUnresolvedMainPrompt(id: string): PromptTemplate | undefined {
         const rawPrompt = this.getRawPrompt(id);
         if (!rawPrompt) {
             return undefined;
@@ -218,6 +242,11 @@ export class PromptServiceImpl implements PromptService {
             id: rawPrompt.id,
             template: this.stripComments(rawPrompt.template)
         };
+    }
+
+    async getUnresolvedPrompt(id: string): Promise<PromptTemplate | undefined> {
+        const variantId = await this.getVariantId(id);
+        return Promise.resolve(this.getUnresolvedMainPrompt(variantId));
     }
 
     protected stripComments(template: string): string {
@@ -239,12 +268,14 @@ export class PromptServiceImpl implements PromptService {
     }
 
     async getPrompt(id: string, args?: { [key: string]: unknown }): Promise<ResolvedPromptTemplate | undefined> {
-        const variantId = await this.getVariantId(id);
-        const prompt = this.getUnresolvedPrompt(variantId);
+        const prompt = await this.getUnresolvedPrompt(id);
         if (prompt === undefined) {
             return undefined;
         }
+        return this.resolvePrompt(prompt, args);
+    }
 
+    async resolvePrompt(prompt: PromptTemplate, args?: { [key: string]: unknown }): Promise<ResolvedPromptTemplate> {
         const matches = matchVariablesRegEx(prompt.template);
         const variableAndArgReplacements = await Promise.all(matches.map(async match => {
             const completeText = match[0];
@@ -284,11 +315,12 @@ export class PromptServiceImpl implements PromptService {
         const replacements = [...variableAndArgReplacements, ...functionReplacements];
         replacements.forEach(replacement => resolvedTemplate = resolvedTemplate.replace(replacement.placeholder, replacement.value));
         return {
-            id,
+            id: prompt.id,
             text: resolvedTemplate,
             functionDescriptions: functions.size > 0 ? functions : undefined
         };
     }
+
     getAllPrompts(): PromptMap {
         if (this.customizationService !== undefined) {
             const myCustomization = this.customizationService;
