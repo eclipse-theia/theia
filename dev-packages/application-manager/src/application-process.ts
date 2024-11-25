@@ -55,7 +55,7 @@ export class ApplicationProcess {
     spawnBin(command: string, args: string[], options?: cp.SpawnOptions): cp.ChildProcess {
         const binPath = this.resolveBin(this.binProjectPath, command);
         if (!binPath) {
-            throw new Error(`Could not resolve ${command} relative to ${this.binProjectPath}`)
+            throw new Error(`Could not resolve ${command} relative to ${this.binProjectPath}`);
         }
         return this.spawn(binPath, args, {
             ...options,
