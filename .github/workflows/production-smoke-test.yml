@@ -48,4 +48,4 @@ jobs:
 
       - name: Run Smoke Test (examples/playwright/src/tests/theia-app)
         shell: bash
-        run: npm run test:playwright && npm run theia-app
+        run: npm run test:playwright -- theia-app
