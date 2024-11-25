@@ -62,7 +62,7 @@
     "build:browser": "cd examples/browser && npm run build",
     "build:browser-only": "cd examples/browser-only && npm run build",
     "build:electron": "cd examples/electron && npm run build",
-    "build:tools": "lerna run build --scope \"@theia/re-exports\"",
+    "build:tools": "lerna run compile --scope \"@theia/{re-exports,eslint-plugin}\"",
     "clean": "npm run -s rebuild:clean && npm run -s lint:clean && lerna run clean",
     "compile": "lerna run compile --concurrency=1",
     "compute-references": "node scripts/compile-references.js",
