@@ -29,7 +29,7 @@ export const AICodeCompletionPreferencesSchema: PreferenceSchema = {
             description: 'Automatically trigger AI completions inline within any (Monaco) editor while editing.\
             \n\
             Alternatively, you can manually trigger the code via the command "Trigger Inline Suggestion" or the default shortcut "SHIFT+Space".',
-            default: true
+            default: false
         },
         [PREF_AI_INLINE_COMPLETION_EXCLUDED_EXTENSIONS]: {
             title: 'Excluded File Extensions',
