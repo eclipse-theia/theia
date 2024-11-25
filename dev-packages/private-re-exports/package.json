@@ -16,6 +16,7 @@
     "theia-re-exports": "bin/theia-re-exports.js"
   },
   "scripts": {
+    "afterInstall": "npm run build",
     "build": "theiaext build",
     "clean": "theiaext clean",
     "compile": "theiaext compile",

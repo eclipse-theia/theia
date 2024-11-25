@@ -199,8 +199,9 @@
   "scripts": {
     "build": "theiaext build",
     "clean": "theiaext clean",
-    "compile": "theiaext compile && npm run generate-theia-re-exports && npm run download:json-schema",
+    "compile": "theiaext compile",
     "generate-layout": "electron ./scripts/generate-layout",
+    "afterInstall": "npm run generate-theia-re-exports && npm run download:json-schema",
     "generate-theia-re-exports": "theia-re-exports generate && theia-re-exports template README_TEMPLATE.md > README.md",
     "lint": "theiaext lint",
     "download:json-schema": "node ./scripts/download-catalog.js",

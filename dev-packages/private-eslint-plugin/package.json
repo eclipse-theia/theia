@@ -5,6 +5,7 @@
   "description": "Custom ESLint rules for developing Theia extensions and applications",
   "main": "index.js",
   "scripts": {
+    "afterInstall": "npm run compile",
     "compile": "theiaext compile"
   },
   "dependencies": {

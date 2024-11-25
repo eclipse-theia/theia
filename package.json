@@ -57,7 +57,7 @@
   },
   "scripts": {
     "all": "npm -s install && npm run -s lint && npm run -s build",
-    "build": "npm run build:tools && lerna run generate-theia-re-exports && npm run compile && npm run build:applications",
+    "build": "npm run compile && npm run build:applications",
     "build:applications": "npm run build:browser && npm run build:browser-only && npm run build:electron",
     "build:browser": "cd examples/browser && npm run build",
     "build:browser-only": "cd examples/browser-only && npm run build",
@@ -73,7 +73,7 @@
     "lint": "lerna run lint",
     "lint:clean": "rimraf .eslintcache",
     "preinstall": "node-gyp install",
-    "postinstall": "theia-patch && npm run -s compute-references",
+    "postinstall": "theia-patch && npm run -s compute-references && lerna run afterInstall",
     "publish:latest": "lerna publish --exact --yes --no-push",
     "publish:next": "lerna publish preminor --exact --canary --preid next --dist-tag next --no-git-reset --no-git-tag-version --no-push --yes && npm run -s publish:check",
     "publish:check": "node scripts/check-publish.js",
