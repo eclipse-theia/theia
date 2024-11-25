@@ -44,7 +44,7 @@ jobs:
         run: |
           npm install -g node-gyp
           npm install
-          npm run build
+          cd examples/browser && npm run build
           npm run download:plugins
         env:
           NODE_OPTIONS: --max_old_space_size=4096

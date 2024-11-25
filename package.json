@@ -85,7 +85,7 @@
     "test:browser": "cd examples/browser && npm run test",
     "test:electron": "cd examples/electron && npm run test",
     "test:theia": "lerna run --scope \"@theia/!(example-)*\" test --stream --concurrency=1",
-    "test:playwright": "npm run -s --cwd examples/playwright ui-tests",
+    "test:playwright": "cd examples/playwright && npm run -s ui-tests",
     "version": "lerna run version",
     "performance:startup": "npm run -s performance:startup:browser && npm run -s performance:startup:electron",
     "performance:startup:browser": "concurrently --success first -k -r \"cd scripts/performance && node browser-performance.js --name 'Browser Frontend Startup' --folder browser --runs 10\" \"npm run -s --cwd examples/browser start\"",
