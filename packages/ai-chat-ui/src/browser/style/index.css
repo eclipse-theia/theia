@@ -289,12 +289,18 @@ div:last-child > .theia-ChatNode {
 }
 
 .collapsible-arguments {
-  display: inline;
+  display: inline-block;
 }
 
-.collapsible-arguments-summary {
-  display: inline;
+.collapsible-arguments .collapsible-arguments-summary {
+  display: inline-block;
+  white-space: nowrap;
   text-decoration: underline;
+}
+
+details[open].collapsible-arguments,
+details[open].collapsible-arguments .collapsible-arguments-summary {
+  display: unset;
 }
 
 .theia-ResponseNode-ProgressMessage {
