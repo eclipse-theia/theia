@@ -77,7 +77,6 @@ export class HuggingFaceModel implements LanguageModel {
         }
     }
 
-
     protected getSettings(request: LanguageModelRequest): Record<string, unknown> {
         const settings = request.settings ? request.settings : this.defaultRequestSettings;
         if (!settings) {
