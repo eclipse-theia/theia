@@ -61,12 +61,12 @@ const MarkdownRender = ({ response }: { response: MarkdownChatResponseContent | 
 /**
  * This hook uses markdown-it directly to render markdown.
  * The reason to use markdown-it directly is that the MarkdownRenderer is
- * overriden by theia with a monaco version. This monaco version strips all html
+ * overridden by theia with a monaco version. This monaco version strips all html
  * tags from the markdown with empty content.
  * This leads to unexpected behavior when rendering markdown with html tags.
  *
  * @param markdown the string to render as markdown
- * @param skipSurroundingParagraph whether plain text should be surrounded by a paragraph (default: false)
+ * @param skipSurroundingParagraph whether to remove a surrounding paragraph element (default: false)
  * @returns the ref to use in an element to render the markdown
  */
 export const useMarkdownRendering = (markdown: string | MarkdownString, skipSurroundingParagraph: boolean = false) => {
@@ -76,6 +76,7 @@ export const useMarkdownRendering = (markdown: string | MarkdownString, skipSurr
     useEffect(() => {
         const markdownIt = markdownit();
         const host = document.createElement('div');
+        // markdownIt always puts the content in a paragraph element, so we remove it if we don't want it
         const html = skipSurroundingParagraph ? markdownIt.render(markdownString).replace(/^<p>|<\/p>|<p><\/p>$/g, '') : markdownIt.render(markdownString);
         host.innerHTML = DOMPurify.sanitize(html, {
             ALLOW_UNKNOWN_PROTOCOLS: true // DOMPurify usually strips non http(s) links from hrefs

@@ -464,6 +464,7 @@ const ChatRequestRender = (
                             />
                         );
                     } else {
+                        // maintain the leading and trailing spaces with explicit `&nbsp;`, otherwise they would get trimmed by the markdown renderer
                         const ref = useMarkdownRendering(part.text.replace(/^\s|\s$/g, '&nbsp;'), true);
                         return (
                             <span key={index} ref={ref}></span>
