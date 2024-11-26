@@ -68,6 +68,16 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
         return Disposable.NULL;
     }
 
+    async exists(resource: URI): Promise<boolean> {
+        try {
+            await this.initialized;
+            await this.toFileSystemHandle(resource);
+            return true;
+        } catch (error) {
+            return false;
+        }
+    }
+
     async stat(resource: URI): Promise<Stat> {
         try {
             await this.initialized;
