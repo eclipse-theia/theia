@@ -92,10 +92,10 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
                 };
             }
 
-            throw createFileSystemProviderError('File does not exist', FileSystemProviderErrorCode.FileNotFound);
+            throw createFileSystemProviderError('Unknown file handle error', FileSystemProviderErrorCode.Unknown);
 
         } catch (error) {
-            throw createFileSystemProviderError('File does not exist', FileSystemProviderErrorCode.FileNotFound);
+            throw createFileSystemProviderError(`Error while accessing resource ${resource.toString()}`, FileSystemProviderErrorCode.Unknown);
         }
     }
 
@@ -120,16 +120,11 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
 
             // Iterate through the entries in the directory (files and subdirectories)
             for await (const [name, handle] of directoryHandle.entries()) {
-                try {
-                    // Determine the type of the entry (file or directory)
-                    if (handle.kind === 'file') {
-                        result.push([name, FileType.File]);
-                    } else if (handle.kind === 'directory') {
-                        result.push([name, FileType.Directory]);
-                    }
-                } catch (error) {
-                    // Ignore errors for individual entries, log them and continue
-                    // console.error(error);
+                // Determine the type of the entry (file or directory)
+                if (handle.kind === 'file') {
+                    result.push([name, FileType.File]);
+                } else if (handle.kind === 'directory') {
+                    result.push([name, FileType.Directory]);
                 }
             }
 
