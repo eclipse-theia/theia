@@ -18,7 +18,7 @@ import {
     Agent, AgentSpecificVariables, CommunicationRecordingService, getTextOfResponse,
     LanguageModelRegistry, LanguageModelRequest, LanguageModelRequirement, PromptService, PromptTemplate
 } from '@theia/ai-core/lib/common';
-import { generateUuid, ILogger } from '@theia/core';
+import { generateUuid, ILogger, ProgressService } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
 
@@ -36,82 +36,89 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
         context: monaco.languages.InlineCompletionContext,
         token: monaco.CancellationToken
     ): Promise<monaco.languages.InlineCompletions | undefined> {
-        const languageModel =
-            await this.languageModelRegistry.selectLanguageModel({
-                agent: this.id,
-                ...this.languageModelRequirements[0],
+        const progress = await this.progressService.showProgress(
+            { text: 'Calculating AI code completion...', options: { location: 'window' } }
+        );
+        try {
+            const languageModel =
+                await this.languageModelRegistry.selectLanguageModel({
+                    agent: this.id,
+                    ...this.languageModelRequirements[0],
+                });
+            if (!languageModel) {
+                this.logger.error(
+                    'No language model found for code-completion-agent'
+                );
+                return undefined;
+            }
+
+            // Get text until the given position
+            const prefix = model.getValueInRange({
+                startLineNumber: 1,
+                startColumn: 1,
+                endLineNumber: position.lineNumber,
+                endColumn: position.column,
             });
-        if (!languageModel) {
-            this.logger.error(
-                'No language model found for code-completion-agent'
-            );
-            return undefined;
-        }
 
-        // Get text until the given position
-        const prefix = model.getValueInRange({
-            startLineNumber: 1,
-            startColumn: 1,
-            endLineNumber: position.lineNumber,
-            endColumn: position.column,
-        });
+            // Get text after the given position
+            const suffix = model.getValueInRange({
+                startLineNumber: position.lineNumber,
+                startColumn: position.column,
+                endLineNumber: model.getLineCount(),
+                endColumn: model.getLineMaxColumn(model.getLineCount()),
+            });
 
-        // Get text after the given position
-        const suffix = model.getValueInRange({
-            startLineNumber: position.lineNumber,
-            startColumn: position.column,
-            endLineNumber: model.getLineCount(),
-            endColumn: model.getLineMaxColumn(model.getLineCount()),
-        });
+            const file = model.uri.toString(false);
+            const language = model.getLanguageId();
 
-        const file = model.uri.toString(false);
-        const language = model.getLanguageId();
+            if (token.isCancellationRequested) {
+                return undefined;
+            }
+            const prompt = await this.promptService
+                .getPrompt('code-completion-prompt', { prefix, suffix, file, language })
+                .then(p => p?.text);
+            if (!prompt) {
+                this.logger.error('No prompt found for code-completion-agent');
+                return undefined;
+            }
 
-        if (token.isCancellationRequested) {
-            return undefined;
-        }
-        const prompt = await this.promptService
-            .getPrompt('code-completion-prompt', { prefix, suffix, file, language })
-            .then(p => p?.text);
-        if (!prompt) {
-            this.logger.error('No prompt found for code-completion-agent');
-            return undefined;
-        }
+            // since we do not actually hold complete conversions, the request/response pair is considered a session
+            const sessionId = generateUuid();
+            const requestId = generateUuid();
+            const request: LanguageModelRequest = {
+                messages: [{ type: 'text', actor: 'user', query: prompt }],
+            };
+            if (token.isCancellationRequested) {
+                return undefined;
+            }
+            this.recordingService.recordRequest({
+                agentId: this.id,
+                sessionId,
+                requestId,
+                request: prompt,
+            });
+            const response = await languageModel.request(request, token);
+            if (token.isCancellationRequested) {
+                return undefined;
+            }
+            const completionText = await getTextOfResponse(response);
+            if (token.isCancellationRequested) {
+                return undefined;
+            }
+            this.recordingService.recordResponse({
+                agentId: this.id,
+                sessionId,
+                requestId,
+                response: completionText,
+            });
 
-        // since we do not actually hold complete conversions, the request/response pair is considered a session
-        const sessionId = generateUuid();
-        const requestId = generateUuid();
-        const request: LanguageModelRequest = {
-            messages: [{ type: 'text', actor: 'user', query: prompt }],
-        };
-        if (token.isCancellationRequested) {
-            return undefined;
+            return {
+                items: [{ insertText: completionText }],
+                enableForwardStability: true,
+            };
+        } finally {
+            progress.cancel();
         }
-        this.recordingService.recordRequest({
-            agentId: this.id,
-            sessionId,
-            requestId,
-            request: prompt,
-        });
-        const response = await languageModel.request(request, token);
-        if (token.isCancellationRequested) {
-            return undefined;
-        }
-        const completionText = await getTextOfResponse(response);
-        if (token.isCancellationRequested) {
-            return undefined;
-        }
-        this.recordingService.recordResponse({
-            agentId: this.id,
-            sessionId,
-            requestId,
-            response: completionText,
-        });
-
-        return {
-            items: [{ insertText: completionText }],
-            enableForwardStability: true,
-        };
     }
 
     @inject(ILogger)
@@ -126,6 +133,9 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
 
     @inject(CommunicationRecordingService)
     protected recordingService: CommunicationRecordingService;
+
+    @inject(ProgressService)
+    protected progressService: ProgressService;
 
     id = 'Code Completion';
     name = 'Code Completion';
