@@ -860,7 +860,7 @@ class ChatResponseModelImpl implements ChatResponseModel {
         this._onDidChangeEmitter.fire();
     }
 
-    continue(): void {
+    stopWaitingForInput(): void {
         this._isWaitingForInput = false;
         this._onDidChangeEmitter.fire();
     }

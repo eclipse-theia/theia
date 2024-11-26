@@ -161,9 +161,9 @@ export class AskAndContinueChatAgent extends AbstractStreamParsingChatAgent impl
         if (progressMessage) {
             request.response.updateProgressMessage({ ...progressMessage, show: 'untilFirstContent', status: 'completed' });
         }
-        request.response.continue();
+        request.response.stopWaitingForInput();
         // We're reusing the original request here as a shortcut. In combination with the override of 'getMessages' we continue generating.
-        // In a real-world scenario, you would likely create a new request here.
+        // In a real-world scenario, you would likely manually interact with an LLM here to generate and append the next response.
         this.invoke(request);
     }
 
