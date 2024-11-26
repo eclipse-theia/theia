@@ -59,30 +59,11 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
         },
         [PREFERENCE_NAME_REQUEST_SETTINGS]: {
             title: 'Custom Request Settings',
-            description: 'Allows specifying custom request settings for multiple models. Example:\n\
-            ```json\n\
-            [\n\
-                {\n\
-                    "modelId": "modelId",\n\
-                    "requestSettings": {\n\
-                        "temperature": 0.7,\n\
-                        "maxTokens": 200,\n\
-                        "stop": ["<|endoftext|>", "<eoa>"]\n\
-                    }\n\
-                    "providerId": "huggingface"\n\
-                },\n\
-                {\n\
-                    "modelId": "anotherModel",\n\
-                    "requestSettings": {\n\
-                        "temperature": 0.5,\n\
-                        "top_p": 0.9\n\
-                    }\n\
-                }\n\
-            ]\n\
-            ```\n\
+            markdownDescription: 'Allows specifying custom request settings for multiple models.\n\
             Each object represents the configuration for a specific model. The `modelId` field specifies the model ID, `requestSettings` defines model-specific settings.\n\
             The `providerId` field is optional and allows you to apply the settings to a specific provider. If not set, the settings will be applied to all providers.\n\
-            Example providerIds: huggingface, openai, ollama, llamafile.',
+            Example providerIds: huggingface, openai, ollama, llamafile.\n\
+            Refer to [our documentation](https://theia-ide.org/docs/user_ai/#custom-request-settings) for more information.',
             type: 'array',
             items: {
                 type: 'object',
