@@ -92,6 +92,7 @@ export class HoverService {
         return this._hoverHost;
     }
     protected pendingTimeout: Disposable | undefined;
+    protected pendingHoverCancellation: Disposable | undefined;
     protected hoverTarget: HTMLElement | undefined;
     protected lastHidHover = Date.now();
     protected readonly disposeOnHide = new DisposableCollection();
@@ -99,7 +100,11 @@ export class HoverService {
     requestHover(request: HoverRequest): void {
         if (request.target !== this.hoverTarget) {
             this.cancelHover();
-            this.pendingTimeout = disposableTimeout(() => this.renderHover(request), this.getHoverDelay());
+            const hoverDelay = this.getHoverDelay();
+            this.pendingTimeout = disposableTimeout(() => this.renderHover(request), hoverDelay);
+            if (hoverDelay > 0) {
+                this.cancelHoverOnMouseOut(request);
+            }
         }
     }
 
@@ -110,6 +115,8 @@ export class HoverService {
     }
 
     protected async renderHover(request: HoverRequest): Promise<void> {
+        this.cancelPendingHoverCancellation();
+
         const host = this.hoverHost;
         let firstChild: HTMLElement | undefined;
         const { target, content, position, cssClasses } = request;
@@ -194,6 +201,12 @@ export class HoverService {
         return position;
     }
 
+    /** Cancel the pending cancellation of hover. */
+    protected cancelPendingHoverCancellation(): void {
+        this.pendingHoverCancellation?.dispose();
+        this.pendingHoverCancellation = undefined;
+    }
+
     protected listenForMouseOut(): void {
         const handleMouseMove = (e: MouseEvent) => {
             if (e.target instanceof Node && !this.hoverHost.contains(e.target) && !this.hoverTarget?.contains(e.target)) {
@@ -202,6 +215,18 @@ export class HoverService {
         };
         document.addEventListener('mousemove', handleMouseMove);
         this.disposeOnHide.push({ dispose: () => document.removeEventListener('mousemove', handleMouseMove) });
+    }
+
+    protected cancelHoverOnMouseOut(request: HoverRequest): void {
+        this.cancelPendingHoverCancellation();
+        const target = request.target;
+        const handleMouseLeave = (): void => {
+            this.cancelHover();
+            this.cancelPendingHoverCancellation();
+        };
+        target.addEventListener('mouseleave', handleMouseLeave);
+        this.pendingHoverCancellation = this.disposeOnHide.push(
+            Disposable.create(() => target.removeEventListener('mouseleave', handleMouseLeave)));
     }
 
     cancelHover(): void {
