@@ -27,10 +27,11 @@ export class PluginRemoteCliContribution implements RemoteCliContribution {
 
     enhanceArgs(context: RemoteCliContext): MaybePromise<string[]> {
         const pluginsFolder = this.pluginCliContribution.localDir();
-        if (!pluginsFolder) {
-            return [];
-        } else {
+        const defaultPlugins = process.env.THEIA_DEFAULT_PLUGINS;
+        if (pluginsFolder || defaultPlugins) {
             return ['--plugins=local-dir:./plugins'];
         }
+        return [];
+
     }
 }
