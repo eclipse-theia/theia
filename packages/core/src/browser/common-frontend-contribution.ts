@@ -1199,7 +1199,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     }
 
     protected async openAbout(): Promise<void> {
-        this.aboutDialog.open();
+        this.aboutDialog.open(false);
     }
 
     protected shouldPreventClose = false;

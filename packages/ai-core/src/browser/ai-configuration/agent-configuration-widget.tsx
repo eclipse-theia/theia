@@ -23,8 +23,8 @@ import {
     AIVariableService,
     LanguageModel,
     LanguageModelRegistry,
+    matchVariablesRegEx,
     PROMPT_FUNCTION_REGEX,
-    PROMPT_VARIABLE_REGEX,
     PromptCustomizationService,
     PromptService,
 } from '../../common';
@@ -112,7 +112,7 @@ export class AIAgentConfigurationWidget extends ReactWidget {
     }
 
     private renderAgentName(agent: Agent): React.ReactNode {
-        const tagsSuffix = agent.tags?.length ? <span>{agent.tags.map(tag => <span className='agent-tag'>{tag}</span>)}</span> : '';
+        const tagsSuffix = agent.tags?.length ? <span>{agent.tags.map(tag => <span key={tag} className='agent-tag'>{tag}</span>)}</span> : '';
         return <span>{agent.name} {tagsSuffix}</span>;
     }
 
@@ -137,14 +137,31 @@ export class AIAgentConfigurationWidget extends ReactWidget {
                     Enable Agent
                 </label>
             </div>
-            <div className='ai-templates'>
-                {agent.promptTemplates?.map(template =>
-                    <TemplateRenderer
-                        key={agent?.id + '.' + template.id}
-                        agentId={agent.id}
-                        template={template}
-                        promptCustomizationService={this.promptCustomizationService} />)}
+            <div className="settings-section-subcategory-title ai-settings-section-subcategory-title">
+                Prompt Templates
             </div>
+            <div className="ai-templates">
+                {(() => {
+                    const defaultTemplates = agent.promptTemplates?.filter(template => !template.variantOf) || [];
+                    return defaultTemplates.length > 0 ? (
+                        defaultTemplates.map(template => (
+                            <div key={agent.id + '.' + template.id}>
+                                <TemplateRenderer
+                                    key={agent.id + '.' + template.id}
+                                    agentId={agent.id}
+                                    template={template}
+                                    promptService={this.promptService}
+                                    aiSettingsService={this.aiSettingsService}
+                                    promptCustomizationService={this.promptCustomizationService}
+                                />
+                            </div>
+                        ))
+                    ) : (
+                        <div>No default template available</div>
+                    );
+                })()}
+            </div>
+
             <div className='ai-lm-requirements'>
                 <LanguageModelRenderer
                     agent={agent}
@@ -180,9 +197,9 @@ export class AIAgentConfigurationWidget extends ReactWidget {
         const promptTemplates = agent.promptTemplates;
         const result: ParsedPrompt = { functions: [], globalVariables: [], agentSpecificVariables: [] };
         promptTemplates.forEach(template => {
-            const storedPrompt = this.promptService.getRawPrompt(template.id);
+            const storedPrompt = this.promptService.getUnresolvedPrompt(template.id);
             const prompt = storedPrompt?.template ?? template.template;
-            const variableMatches = [...prompt.matchAll(PROMPT_VARIABLE_REGEX)];
+            const variableMatches = matchVariablesRegEx(prompt);
 
             variableMatches.forEach(match => {
                 const variableId = match[1];

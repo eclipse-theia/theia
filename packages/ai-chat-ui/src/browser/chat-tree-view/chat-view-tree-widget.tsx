@@ -267,6 +267,7 @@ export class ChatViewTreeWidget extends TreeWidget {
 
     private renderAgent(node: RequestNode | ResponseNode): React.ReactNode {
         const inProgress = isResponseNode(node) && !node.response.isComplete && !node.response.isCanceled && !node.response.isError;
+        const waitingForInput = isResponseNode(node) && node.response.isWaitingForInput;
         const toolbarContributions = !inProgress
             ? this.chatNodeToolbarActionContributions.getContributions()
                 .flatMap(c => c.getToolbarActions(node))
@@ -277,12 +278,14 @@ export class ChatViewTreeWidget extends TreeWidget {
             <div className='theia-ChatNodeHeader'>
                 <div className={`theia-AgentAvatar ${this.getAgentIconClassName(node)}`}></div>
                 <h3 className='theia-AgentLabel'>{this.getAgentLabel(node)}</h3>
-                {inProgress && <span className='theia-ChatContentInProgress'>Generating</span>}
+                {inProgress && !waitingForInput && <span className='theia-ChatContentInProgress'>Generating</span>}
+                {inProgress && waitingForInput && <span className='theia-ChatContentInProgress'>Waiting for input</span>}
                 <div className='theia-ChatNodeToolbar'>
                     {!inProgress &&
                         toolbarContributions.length > 0 &&
                         toolbarContributions.map(action =>
                             <span
+                                key={action.commandId}
                                 className={`theia-ChatNodeToolbarAction ${action.icon}`}
                                 title={action.tooltip}
                                 onClick={e => {
@@ -339,12 +342,28 @@ export class ChatViewTreeWidget extends TreeWidget {
             <div className={'theia-ResponseNode'}>
                 {!node.response.isComplete
                     && node.response.response.content.length === 0
-                    && node.response.progressMessages.map((c, i) =>
-                        <ProgressMessage {...c} key={`${node.id}-progress-${i}`} />
-                    )}
+                    && node.response.progressMessages
+                        .filter(c => c.show === 'untilFirstContent')
+                        .map((c, i) =>
+                            <ProgressMessage {...c} key={`${node.id}-progress-untilFirstContent-${i}`} />
+                        )
+                }
                 {node.response.response.content.map((c, i) =>
                     <div className='theia-ResponseNode-Content' key={`${node.id}-content-${i}`}>{this.getChatResponsePartRenderer(c, node)}</div>
                 )}
+                {!node.response.isComplete
+                    && node.response.progressMessages
+                        .filter(c => c.show === 'whileIncomplete')
+                        .map((c, i) =>
+                            <ProgressMessage {...c} key={`${node.id}-progress-whileIncomplete-${i}`} />
+                        )
+                }
+                {node.response.progressMessages
+                    .filter(c => c.show === 'forever')
+                    .map((c, i) =>
+                        <ProgressMessage {...c} key={`${node.id}-progress-afterComplete-${i}`} />
+                    )
+                }
             </div>
         );
     }

@@ -57,9 +57,12 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                 }
                 model.url = modelDescription.url;
                 model.model = modelDescription.model;
+                model.enableStreaming = modelDescription.enableStreaming;
                 model.apiKey = apiKeyProvider;
             } else {
-                this.languageModelRegistry.addLanguageModels([new OpenAiModel(modelDescription.id, modelDescription.model, apiKeyProvider, modelDescription.url)]);
+                this.languageModelRegistry.addLanguageModels([
+                    new OpenAiModel(modelDescription.id, modelDescription.model, modelDescription.enableStreaming, apiKeyProvider, modelDescription.url)
+                ]);
             }
         }
     }

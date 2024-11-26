@@ -116,6 +116,10 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
         }));
 
         this.onDidChangeCustomAgentsEmitter.fire();
+
+        if (!(await this.fileService.exists(templateURI))) {
+            return;
+        }
         const stat = await this.fileService.resolve(templateURI);
         if (stat.children === undefined) {
             return;

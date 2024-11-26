@@ -49,7 +49,7 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
         }
 
         // Get text until the given position
-        const textUntilCurrentPosition = model.getValueInRange({
+        const prefix = model.getValueInRange({
             startLineNumber: 1,
             startColumn: 1,
             endLineNumber: position.lineNumber,
@@ -57,7 +57,7 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
         });
 
         // Get text after the given position
-        const textAfterCurrentPosition = model.getValueInRange({
+        const suffix = model.getValueInRange({
             startLineNumber: position.lineNumber,
             startColumn: position.column,
             endLineNumber: model.getLineCount(),
@@ -71,7 +71,7 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
             return undefined;
         }
         const prompt = await this.promptService
-            .getPrompt('code-completion-prompt', { textUntilCurrentPosition, textAfterCurrentPosition, file, language })
+            .getPrompt('code-completion-prompt', { prefix, suffix, file, language })
             .then(p => p?.text);
         if (!prompt) {
             this.logger.error('No prompt found for code-completion-agent');
@@ -134,11 +134,13 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
     promptTemplates: PromptTemplate[] = [
         {
             id: 'code-completion-prompt',
-            template: `You are a code completion agent. The current file you have to complete is named {{file}}.
+            template: `{{!-- Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
+https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
+You are a code completion agent. The current file you have to complete is named {{file}}.
 The language of the file is {{language}}. Return your result as plain text without markdown formatting.
 Finish the following code snippet.
 
-{{textUntilCurrentPosition}}[[MARKER]]{{textAfterCurrentPosition}}
+{{prefix}}[[MARKER]]{{suffix}}
 
 Only return the exact replacement for [[MARKER]] to complete the snippet.`,
         },
@@ -154,8 +156,8 @@ Only return the exact replacement for [[MARKER]] to complete the snippet.`,
     readonly agentSpecificVariables: AgentSpecificVariables[] = [
         { name: 'file', usedInPrompt: true, description: 'The uri of the file being edited.' },
         { name: 'language', usedInPrompt: true, description: 'The languageId of the file being edited.' },
-        { name: 'textUntilCurrentPosition', usedInPrompt: true, description: 'The code before the current position of the cursor.' },
-        { name: 'textAfterCurrentPosition', usedInPrompt: true, description: 'The code after the current position of the cursor.' }
+        { name: 'prefix', usedInPrompt: true, description: 'The code before the current position of the cursor.' },
+        { name: 'suffix', usedInPrompt: true, description: 'The code after the current position of the cursor.' }
     ];
-    readonly tags?: String[] | undefined;
+    readonly tags?: string[] | undefined;
 }

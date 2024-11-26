@@ -99,7 +99,7 @@ export class AgentServiceImpl implements AgentService {
     registerAgent(agent: Agent): void {
         this._agents.push(agent);
         agent.promptTemplates.forEach(
-            template => this.promptService.storePrompt(template.id, template.template)
+            template => this.promptService.storePromptTemplate(template)
         );
         this.onDidChangeAgentsEmitter.fire();
     }

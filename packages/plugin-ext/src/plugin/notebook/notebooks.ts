@@ -20,7 +20,7 @@
 
 import { CancellationToken, Disposable, DisposableCollection, Emitter, Event, URI } from '@theia/core';
 import { URI as TheiaURI } from '../types-impl';
-import * as theia from '@theia/plugin';
+import type * as theia from '@theia/plugin';
 import {
     NotebookCellStatusBarListDto, NotebookDataDto,
     NotebookDocumentsAndEditorsDelta, NotebookDocumentShowOptions, NotebookDocumentsMain, NotebookEditorAddData, NotebookEditorsMain, NotebooksExt, NotebooksMain, Plugin,
@@ -337,12 +337,14 @@ export class NotebooksExtImpl implements NotebooksExt {
                 console.error(`FAILED to find active notebook editor ${delta.newActiveEditor}`);
             }
             this.activeNotebookEditor = this.editors.get(delta.newActiveEditor);
-            if (this.textDocumentsAndEditors.activeEditor()?.document.uri.path !== this.activeNotebookEditor?.notebookData.uri.path) {
-                this.textDocumentsAndEditors.acceptEditorsAndDocumentsDelta({
-                    newActiveEditor: null
-                });
-            }
             this.onDidChangeActiveNotebookEditorEmitter.fire(this.activeNotebookEditor?.apiEditor);
+
+            const newActiveCell = this.activeApiNotebookEditor?.notebook.cellAt(this.activeApiNotebookEditor.selection.start);
+            this.textDocumentsAndEditors.acceptEditorsAndDocumentsDelta({
+                newActiveEditor: newActiveCell?.kind === 2 /* code cell */ ?
+                    this.textDocumentsAndEditors.allEditors().find(editor => editor.document.uri.toString() === newActiveCell.document.uri.toString())?.id ?? null :
+                    null
+            });
         }
     }
 
