@@ -5,7 +5,6 @@ import { mockData } from './mock-plugin-metadata';
 
 export const bindPluginInitialization = (bind: interfaces.Bind, rebind: interfaces.Rebind): void => {
     const pluginLocalOptions = {
-        pluginDirectory: '',
         pluginMetadata: mockData,
     };
     bind(PluginLocalOptions).toConstantValue(pluginLocalOptions);

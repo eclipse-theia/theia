@@ -20,7 +20,6 @@ import { Event, RpcConnectionEventEmitter } from '@theia/core';
 
 export const PluginLocalOptions = Symbol('PluginLocalOptions');
 export interface PluginLocalOptions {
-    pluginDirectory: string;
     pluginMetadata: DeployedPlugin[];
 }
 
