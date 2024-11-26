@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { ChatResponseContent, CodeChatResponseContentImpl, MarkdownChatResponseContentImpl } from './chat-model';
+import { ChatRequestModelImpl, ChatResponseContent, CodeChatResponseContentImpl, MarkdownChatResponseContentImpl } from './chat-model';
 import { parseContents } from './parse-contents';
 import { CodeContentMatcher, ResponseContentMatcher } from './response-content-matcher';
 
@@ -33,22 +33,24 @@ export const CommandContentMatcher: ResponseContentMatcher = {
     }
 };
 
+const fakeRequest = {} as ChatRequestModelImpl;
+
 describe('parseContents', () => {
     it('should parse code content', () => {
         const text = '```typescript\nconsole.log("Hello World");\n```';
-        const result = parseContents(text);
+        const result = parseContents(text, fakeRequest);
         expect(result).to.deep.equal([new CodeChatResponseContentImpl('console.log("Hello World");', 'typescript')]);
     });
 
     it('should parse markdown content', () => {
         const text = 'Hello **World**';
-        const result = parseContents(text);
+        const result = parseContents(text, fakeRequest);
         expect(result).to.deep.equal([new MarkdownChatResponseContentImpl('Hello **World**')]);
     });
 
     it('should parse multiple content blocks', () => {
         const text = '```typescript\nconsole.log("Hello World");\n```\nHello **World**';
-        const result = parseContents(text);
+        const result = parseContents(text, fakeRequest);
         expect(result).to.deep.equal([
             new CodeChatResponseContentImpl('console.log("Hello World");', 'typescript'),
             new MarkdownChatResponseContentImpl('\nHello **World**')
@@ -57,7 +59,7 @@ describe('parseContents', () => {
 
     it('should parse multiple content blocks with different languages', () => {
         const text = '```typescript\nconsole.log("Hello World");\n```\n```python\nprint("Hello World")\n```';
-        const result = parseContents(text);
+        const result = parseContents(text, fakeRequest);
         expect(result).to.deep.equal([
             new CodeChatResponseContentImpl('console.log("Hello World");', 'typescript'),
             new CodeChatResponseContentImpl('print("Hello World")', 'python')
@@ -66,7 +68,7 @@ describe('parseContents', () => {
 
     it('should parse multiple content blocks with different languages and markdown', () => {
         const text = '```typescript\nconsole.log("Hello World");\n```\nHello **World**\n```python\nprint("Hello World")\n```';
-        const result = parseContents(text);
+        const result = parseContents(text, fakeRequest);
         expect(result).to.deep.equal([
             new CodeChatResponseContentImpl('console.log("Hello World");', 'typescript'),
             new MarkdownChatResponseContentImpl('\nHello **World**\n'),
@@ -76,7 +78,7 @@ describe('parseContents', () => {
 
     it('should parse content blocks with empty content', () => {
         const text = '```typescript\n```\nHello **World**\n```python\nprint("Hello World")\n```';
-        const result = parseContents(text);
+        const result = parseContents(text, fakeRequest);
         expect(result).to.deep.equal([
             new CodeChatResponseContentImpl('', 'typescript'),
             new MarkdownChatResponseContentImpl('\nHello **World**\n'),
@@ -86,7 +88,7 @@ describe('parseContents', () => {
 
     it('should parse content with markdown, code, and markdown', () => {
         const text = 'Hello **World**\n```typescript\nconsole.log("Hello World");\n```\nGoodbye **World**';
-        const result = parseContents(text);
+        const result = parseContents(text, fakeRequest);
         expect(result).to.deep.equal([
             new MarkdownChatResponseContentImpl('Hello **World**\n'),
             new CodeChatResponseContentImpl('console.log("Hello World");', 'typescript'),
@@ -96,25 +98,25 @@ describe('parseContents', () => {
 
     it('should handle text with no special content', () => {
         const text = 'Just some plain text.';
-        const result = parseContents(text);
+        const result = parseContents(text, fakeRequest);
         expect(result).to.deep.equal([new MarkdownChatResponseContentImpl('Just some plain text.')]);
     });
 
     it('should handle text with only start code block', () => {
         const text = '```typescript\nconsole.log("Hello World");';
-        const result = parseContents(text);
+        const result = parseContents(text, fakeRequest);
         expect(result).to.deep.equal([new MarkdownChatResponseContentImpl('```typescript\nconsole.log("Hello World");')]);
     });
 
     it('should handle text with only end code block', () => {
         const text = 'console.log("Hello World");\n```';
-        const result = parseContents(text);
+        const result = parseContents(text, fakeRequest);
         expect(result).to.deep.equal([new MarkdownChatResponseContentImpl('console.log("Hello World");\n```')]);
     });
 
     it('should handle text with unmatched code block', () => {
         const text = '```typescript\nconsole.log("Hello World");\n```\n```python\nprint("Hello World")';
-        const result = parseContents(text);
+        const result = parseContents(text, fakeRequest);
         expect(result).to.deep.equal([
             new CodeChatResponseContentImpl('console.log("Hello World");', 'typescript'),
             new MarkdownChatResponseContentImpl('\n```python\nprint("Hello World")')
@@ -123,7 +125,7 @@ describe('parseContents', () => {
 
     it('should parse code block without newline after language', () => {
         const text = '```typescript console.log("Hello World");```';
-        const result = parseContents(text);
+        const result = parseContents(text, fakeRequest);
         expect(result).to.deep.equal([
             new MarkdownChatResponseContentImpl('```typescript console.log("Hello World");```')
         ]);
@@ -131,7 +133,7 @@ describe('parseContents', () => {
 
     it('should parse with matches of multiple different matchers and default', () => {
         const text = '<command>\nMY_SPECIAL_COMMAND\n</command>\nHello **World**\n```python\nprint("Hello World")\n```\n<command>\nMY_SPECIAL_COMMAND2\n</command>';
-        const result = parseContents(text, [CodeContentMatcher, CommandContentMatcher]);
+        const result = parseContents(text, fakeRequest, [CodeContentMatcher, CommandContentMatcher]);
         expect(result).to.deep.equal([
             new CommandChatResponseContentImpl('MY_SPECIAL_COMMAND'),
             new MarkdownChatResponseContentImpl('\nHello **World**\n'),

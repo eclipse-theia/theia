@@ -77,6 +77,7 @@ export class HuggingFaceModel implements LanguageModel {
         }
     }
 
+
     protected getSettings(request: LanguageModelRequest): Record<string, unknown> {
         const settings = request.settings ? request.settings : this.defaultRequestSettings;
         if (!settings) {
@@ -115,6 +116,7 @@ export class HuggingFaceModel implements LanguageModel {
         request: LanguageModelRequest,
         cancellationToken?: CancellationToken
     ): Promise<LanguageModelResponse> {
+
         const settings = this.getSettings(request);
 
         const stream = hfInference.textGenerationStream({
