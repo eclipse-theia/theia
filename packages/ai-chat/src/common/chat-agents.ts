@@ -128,11 +128,6 @@ export abstract class AbstractChatAgent {
     @inject(ContributionProvider) @named(ResponseContentMatcherProvider)
     protected contentMatcherProviders: ContributionProvider<ResponseContentMatcherProvider>;
     protected contentMatchers: ResponseContentMatcher[] = [];
-    /**
-     * Agent-specific content matchers used by this agent in addition to the contributed content matchers.
-     * @see ResponseContentMatcherProvider
-     */
-    protected additionalContentMatchers: ResponseContentMatcher[] = [];
 
     @inject(DefaultResponseContentFactory)
     protected defaultContentFactory: DefaultResponseContentFactory;
@@ -154,10 +149,7 @@ export abstract class AbstractChatAgent {
 
     protected initializeContentMatchers(): void {
         const contributedContentMatchers = this.contentMatcherProviders.getContributions().flatMap(provider => provider.matchers);
-        this.contentMatchers = [
-            ...contributedContentMatchers,
-            ...this.additionalContentMatchers
-        ];
+        this.contentMatchers.push(...contributedContentMatchers);
     }
 
     async invoke(request: ChatRequestModelImpl): Promise<void> {

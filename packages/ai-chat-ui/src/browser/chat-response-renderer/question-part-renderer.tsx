@@ -42,7 +42,7 @@ export class QuestionPartRenderer
                                 className={`theia-button theia-QuestionPartRenderer-option ${question.selectedOption === option ? 'selected' : ''}`}
                                 onClick={() => {
                                     question.selectedOption = option;
-                                    question.handler(option, question.request);
+                                    question.handler(option);
                                 }}
                                 disabled={question.selectedOption !== undefined || !node.response.isWaitingForInput}
                                 key={index}
