@@ -13,7 +13,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  */
-import { ChatResponseContent } from './chat-model';
+import { ChatRequestModelImpl, ChatResponseContent } from './chat-model';
 import { CodeContentMatcher, MarkdownContentFactory, ResponseContentFactory, ResponseContentMatcher } from './response-content-matcher';
 
 interface Match {
@@ -24,6 +24,7 @@ interface Match {
 
 export function parseContents(
     text: string,
+    request: ChatRequestModelImpl,
     contentMatchers: ResponseContentMatcher[] = [CodeContentMatcher],
     defaultContentFactory: ResponseContentFactory = MarkdownContentFactory
 ): ChatResponseContent[] {
@@ -36,7 +37,7 @@ export function parseContents(
         if (!match) {
             // Add the remaining text as default content
             if (remainingText.length > 0) {
-                result.push(defaultContentFactory(remainingText));
+                result.push(defaultContentFactory(remainingText, request));
             }
             break;
         }
@@ -45,11 +46,11 @@ export function parseContents(
         if (match.index > 0) {
             const precedingContent = remainingText.substring(0, match.index);
             if (precedingContent.trim().length > 0) {
-                result.push(defaultContentFactory(precedingContent));
+                result.push(defaultContentFactory(precedingContent, request));
             }
         }
         // 2. Add the matched content object
-        result.push(match.matcher.contentFactory(match.content));
+        result.push(match.matcher.contentFactory(match.content, request));
         // Update currentIndex to the end of the end of the match
         // And continue with the search after the end of the match
         currentIndex += match.index + match.content.length;
