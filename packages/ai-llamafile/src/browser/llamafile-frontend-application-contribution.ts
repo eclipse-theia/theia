@@ -18,7 +18,9 @@ import { FrontendApplicationContribution, PreferenceService } from '@theia/core/
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { LlamafileEntry, LlamafileManager } from '../common/llamafile-manager';
 import { PREFERENCE_LLAMAFILE } from './llamafile-preferences';
+import { PREFERENCE_NAME_REQUEST_SETTINGS, RequestSetting } from '@theia/ai-core/lib/browser/ai-core-preferences';
 
+const LLAMAFILE_ID = 'llamafile';
 @injectable()
 export class LlamafileFrontendApplicationContribution implements FrontendApplicationContribution {
 
@@ -33,27 +35,63 @@ export class LlamafileFrontendApplicationContribution implements FrontendApplica
     onStart(): void {
         this.preferenceService.ready.then(() => {
             const llamafiles = this.preferenceService.get<LlamafileEntry[]>(PREFERENCE_LLAMAFILE, []);
-            this.llamafileManager.addLanguageModels(llamafiles);
-            llamafiles.forEach(model => this._knownLlamaFiles.set(model.name, model));
+            const requestSettings = this.preferenceService.get<RequestSetting[]>(PREFERENCE_NAME_REQUEST_SETTINGS, []);
+            const modelsWithSettings = llamafiles.map(model => this.applyRequestSettingsToLlamaFile(model, requestSettings));
+
+            this.llamafileManager.addLanguageModels(modelsWithSettings);
+            modelsWithSettings.forEach(model => this._knownLlamaFiles.set(model.name, model));
 
             this.preferenceService.onPreferenceChanged(event => {
                 if (event.preferenceName === PREFERENCE_LLAMAFILE) {
-                    // only new models which are actual LLamaFileEntries
-                    const newModels = event.newValue.filter((llamafileEntry: unknown) => LlamafileEntry.is(llamafileEntry)) as LlamafileEntry[];
-
-                    const llamafilesToAdd = newModels.filter(llamafile =>
-                        !this._knownLlamaFiles.has(llamafile.name) || !LlamafileEntry.equals(this._knownLlamaFiles.get(llamafile.name)!, llamafile));
-
-                    const llamafileIdsToRemove = [...this._knownLlamaFiles.values()].filter(llamafile =>
-                        !newModels.find(a => LlamafileEntry.equals(a, llamafile))).map(a => a.name);
-
-                    this.llamafileManager.removeLanguageModels(llamafileIdsToRemove);
-                    llamafileIdsToRemove.forEach(model => this._knownLlamaFiles.delete(model));
-
-                    this.llamafileManager.addLanguageModels(llamafilesToAdd);
-                    llamafilesToAdd.forEach(model => this._knownLlamaFiles.set(model.name, model));
+                    this.handleLlamaFilePreferenceChange(event.newValue as LlamafileEntry[]);
+                } else if (event.preferenceName === PREFERENCE_NAME_REQUEST_SETTINGS) {
+                    this.handleRequestSettingsChange(event.newValue as RequestSetting[]);
                 }
             });
         });
+    }
+
+    protected handleLlamaFilePreferenceChange(newModels: LlamafileEntry[]): void {
+        const requestSettings = this.preferenceService.get<RequestSetting[]>(PREFERENCE_NAME_REQUEST_SETTINGS, []);
+
+        // Models to add or update
+        const llamafilesToAdd = newModels.filter(llamafile =>
+            !this._knownLlamaFiles.has(llamafile.name) ||
+            !LlamafileEntry.equals(this._knownLlamaFiles.get(llamafile.name)!, llamafile));
+
+        // Models to remove
+        const llamafileIdsToRemove = [...this._knownLlamaFiles.values()].filter(llamafile =>
+            !newModels.find(newModel => LlamafileEntry.equals(newModel, llamafile)))
+            .map(llamafile => llamafile.name);
+
+        // Update the manager
+        this.llamafileManager.removeLanguageModels(llamafileIdsToRemove);
+        llamafileIdsToRemove.forEach(id => this._knownLlamaFiles.delete(id));
+
+        const modelsWithSettings = llamafilesToAdd.map(model => this.applyRequestSettingsToLlamaFile(model, requestSettings));
+        this.llamafileManager.addLanguageModels(modelsWithSettings);
+        modelsWithSettings.forEach(model => this._knownLlamaFiles.set(model.name, model));
+    }
+
+    protected handleRequestSettingsChange(newSettings: RequestSetting[]): void {
+        const llamafiles = this.preferenceService.get<LlamafileEntry[]>(PREFERENCE_LLAMAFILE, []);
+        const modelsWithSettings = llamafiles.map(model => this.applyRequestSettingsToLlamaFile(model, newSettings));
+
+        this.llamafileManager.addLanguageModels(modelsWithSettings);
+        modelsWithSettings.forEach(model => this._knownLlamaFiles.set(model.name, model));
+    }
+
+    protected applyRequestSettingsToLlamaFile(model: LlamafileEntry, requestSettings: RequestSetting[]): LlamafileEntry {
+        const matchingSettings = requestSettings.filter(
+            setting => (!setting.providerId || setting.providerId === LLAMAFILE_ID) && setting.modelId === model.name
+        );
+        if (matchingSettings.length > 1) {
+            console.warn(`Multiple entries found for model "${model.name}". Using the first match.`);
+        }
+
+        return {
+            ...model,
+            defaultRequestSettings: matchingSettings[0]?.requestSettings
+        };
     }
 }

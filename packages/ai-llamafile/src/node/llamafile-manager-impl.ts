@@ -35,14 +35,20 @@ export class LlamafileManagerImpl implements LlamafileManager {
             const model = await this.languageModelRegistry.getLanguageModel(llamafile.name);
             if (model) {
                 if (!(model instanceof LlamafileLanguageModel)) {
-                    console.warn(`Llamafile: model ${model.id} is not an LLamafile model`);
+                    console.warn(`Llamafile: model ${model.id} is not a Llamafile model`);
                     continue;
                 } else {
-                    // This can happen during the initializing of more than one frontends, changes are handled in the frontend
-                    console.info(`Llamafile: skip creating or updating model ${llamafile.name} because it already exists.`);
+                    model.defaultRequestSettings = llamafile.defaultRequestSettings;
                 }
             } else {
-                this.languageModelRegistry.addLanguageModels([new LlamafileLanguageModel(llamafile.name, llamafile.uri, llamafile.port)]);
+                this.languageModelRegistry.addLanguageModels([
+                    new LlamafileLanguageModel(
+                        llamafile.name,
+                        llamafile.uri,
+                        llamafile.port,
+                        llamafile.defaultRequestSettings
+                    )
+                ]);
             }
         }
     }

@@ -36,6 +36,10 @@ export interface OpenAiModelDescription {
      * Indicate whether the streaming API shall be used.
      */
     enableStreaming: boolean;
+    /**
+     * Default request settings for the OpenAI model.
+     */
+    defaultRequestSettings?: { [key: string]: unknown };
 }
 export interface OpenAiLanguageModelsManager {
     apiKey: string | undefined;

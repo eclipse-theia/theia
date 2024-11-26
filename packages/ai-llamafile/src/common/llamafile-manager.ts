@@ -34,17 +34,34 @@ export interface LlamafileEntry {
     name: string;
     uri: string;
     port: number;
+    /**
+     * Default request settings for the Llama model.
+     */
+    defaultRequestSettings?: { [key: string]: unknown };
 }
 
 export namespace LlamafileEntry {
     export function equals(a: LlamafileEntry, b: LlamafileEntry): boolean {
-        return a.name === b.name && a.uri === b.uri && a.port === b.port;
+        return (
+            a.name === b.name &&
+            a.uri === b.uri &&
+            a.port === b.port &&
+            JSON.stringify(a.defaultRequestSettings) === JSON.stringify(b.defaultRequestSettings)
+        );
     }
+
     export function is(entry: unknown): entry is LlamafileEntry {
-        // eslint-disable-next-line no-null/no-null
-        return typeof entry === 'object' && entry !== null
-            && 'name' in entry && typeof entry.name === 'string'
-            && 'uri' in entry && typeof entry.uri === 'string'
-            && 'port' in entry && typeof entry.port === 'number';
+        return (
+            typeof entry === 'object' &&
+            // eslint-disable-next-line no-null/no-null
+            entry !== null &&
+            'name' in entry && typeof (entry as LlamafileEntry).name === 'string' &&
+            'uri' in entry && typeof (entry as LlamafileEntry).uri === 'string' &&
+            'port' in entry && typeof (entry as LlamafileEntry).port === 'number' &&
+            ('defaultRequestSettings' in entry
+                ? typeof (entry as LlamafileEntry).defaultRequestSettings === 'object' ||
+                typeof (entry as LlamafileEntry).defaultRequestSettings === 'undefined'
+                : true)
+        );
     }
 }

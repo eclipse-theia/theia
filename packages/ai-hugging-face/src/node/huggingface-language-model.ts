@@ -55,8 +55,18 @@ export class HuggingFaceModel implements LanguageModel {
      * @param model the model id as it is used by the Hugging Face API
      * @param apiKey function to retrieve the API key for Hugging Face
      */
-    constructor(public readonly id: string, public model: string, public apiKey: () => string | undefined) {
-    }
+    constructor(
+        public readonly id: string,
+        public model: string,
+        public apiKey: () => string | undefined,
+        public readonly name?: string,
+        public readonly vendor?: string,
+        public readonly version?: string,
+        public readonly family?: string,
+        public readonly maxInputTokens?: number,
+        public readonly maxOutputTokens?: number,
+        public defaultRequestSettings?: Record<string, unknown>
+    ) { }
 
     async request(request: LanguageModelRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
         const hfInference = this.initializeHfInference();
@@ -67,15 +77,16 @@ export class HuggingFaceModel implements LanguageModel {
         }
     }
 
-    protected getDefaultSettings(): Record<string, unknown> {
-        return {
-            max_new_tokens: 2024,
-            stop: ['<|endoftext|>', '<eos>']
-        };
+    protected getSettings(request: LanguageModelRequest): Record<string, unknown> {
+        const settings = request.settings ? request.settings : this.defaultRequestSettings;
+        if (!settings) {
+            return {};
+        }
+        return settings;
     }
 
     protected async handleNonStreamingRequest(hfInference: HfInference, request: LanguageModelRequest): Promise<LanguageModelTextResponse> {
-        const settings = request.settings || this.getDefaultSettings();
+        const settings = this.getSettings(request);
 
         const response = await hfInference.textGeneration({
             model: this.model,
@@ -104,7 +115,7 @@ export class HuggingFaceModel implements LanguageModel {
         request: LanguageModelRequest,
         cancellationToken?: CancellationToken
     ): Promise<LanguageModelResponse> {
-        const settings = request.settings || this.getDefaultSettings();
+        const settings = this.getSettings(request);
 
         const stream = hfInference.textGenerationStream({
             model: this.model,
