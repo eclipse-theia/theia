@@ -137,14 +137,31 @@ export class AIAgentConfigurationWidget extends ReactWidget {
                     Enable Agent
                 </label>
             </div>
-            <div className='ai-templates'>
-                {agent.promptTemplates?.map(template =>
-                    <TemplateRenderer
-                        key={agent?.id + '.' + template.id}
-                        agentId={agent.id}
-                        template={template}
-                        promptCustomizationService={this.promptCustomizationService} />)}
+            <div className="settings-section-subcategory-title ai-settings-section-subcategory-title">
+                Prompt Templates
             </div>
+            <div className="ai-templates">
+                {(() => {
+                    const defaultTemplates = agent.promptTemplates?.filter(template => !template.variantOf) || [];
+                    return defaultTemplates.length > 0 ? (
+                        defaultTemplates.map(template => (
+                            <div key={agent.id + '.' + template.id}>
+                                <TemplateRenderer
+                                    key={agent.id + '.' + template.id}
+                                    agentId={agent.id}
+                                    template={template}
+                                    promptService={this.promptService}
+                                    aiSettingsService={this.aiSettingsService}
+                                    promptCustomizationService={this.promptCustomizationService}
+                                />
+                            </div>
+                        ))
+                    ) : (
+                        <div>No default template available</div>
+                    );
+                })()}
+            </div>
+
             <div className='ai-lm-requirements'>
                 <LanguageModelRenderer
                     agent={agent}

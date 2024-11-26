@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { LanguageModel, LanguageModelRequest, LanguageModelResponse, LanguageModelStreamResponsePart } from '@theia/ai-core';
-
+import { CancellationToken } from '@theia/core';
 export class LlamafileLanguageModel implements LanguageModel {
 
     readonly providerId = 'llamafile';
@@ -28,7 +28,7 @@ export class LlamafileLanguageModel implements LanguageModel {
         return this.name;
     }
 
-    async request(request: LanguageModelRequest): Promise<LanguageModelResponse> {
+    async request(request: LanguageModelRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
         try {
             let prompt = request.messages.map(message => {
                 switch (message.actor) {
@@ -70,6 +70,10 @@ export class LlamafileLanguageModel implements LanguageModel {
                     [Symbol.asyncIterator](): AsyncIterator<LanguageModelStreamResponsePart> {
                         return {
                             async next(): Promise<IteratorResult<LanguageModelStreamResponsePart>> {
+                                if (cancellationToken?.isCancellationRequested) {
+                                    reader.cancel();
+                                    return { value: undefined, done: true };
+                                }
                                 const { value, done } = await reader.read();
                                 if (done) {
                                     return { value: undefined, done: true };

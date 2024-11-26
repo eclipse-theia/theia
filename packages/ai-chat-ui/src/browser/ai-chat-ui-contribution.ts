@@ -52,7 +52,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
                 rank: 100
             },
             toggleCommandId: AI_CHAT_TOGGLE_COMMAND_ID,
-            toggleKeybinding: 'ctrlcmd+shift+e'
+            toggleKeybinding: 'ctrlcmd+alt+i'
         });
     }
 

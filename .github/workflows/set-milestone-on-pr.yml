@@ -15,7 +15,7 @@
 # Set milestone on each pull request by using the next minor version
 # next version is computed using npm version tool
 on:
-  pull_request:
+  pull_request_target:
     branches: [master]
     types: [closed]
 

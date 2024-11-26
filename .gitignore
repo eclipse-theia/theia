@@ -35,3 +35,4 @@ dependency-check-summary.txt*
 /performance-result.json
 *.vsix
 /scripts/native-dependencies-*
+allure-results
