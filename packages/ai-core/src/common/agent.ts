@@ -60,7 +60,7 @@ export interface Agent {
     readonly languageModelRequirements: LanguageModelRequirement[];
 
     /** A list of tags to filter agents and to display capabilities in the UI */
-    readonly tags?: String[];
+    readonly tags?: string[];
 
     /** The list of local variable identifiers this agent needs to clarify its context requirements. */
     readonly agentSpecificVariables: AgentSpecificVariables[];

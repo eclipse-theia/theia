@@ -25,13 +25,15 @@ export const aiLlamafilePreferencesSchema: PreferenceSchema = {
     properties: {
         [PREFERENCE_LLAMAFILE]: {
             title: AI_LLAMAFILE_PREFERENCES_TITLE,
-            markdownDescription: '❗ This setting allows you to add llamafiles.\
+            markdownDescription: 'This setting allows you to configure and manage LlamaFile models in Theia IDE.\
             \n\
-            You need to provide a user friendly `name`, the file `uri` to the llamafile and the `port` to use.\
+            Each entry requires a user-friendly `name`, the file `uri` pointing to your LlamaFile, and the `port` on which it will run.\
             \n\
-            In order to start your llamafile you have to call the "Start Llamafile" command where you can then select the llamafile to start.\
+            To start a LlamaFile, use the "Start LlamaFile" command, which enables you to select the desired model.\
             \n\
-            If you modify an entry, e.g. change the port and the server was already running, then it will be stopped and you have to manually start it again.',
+            If you edit an entry (e.g., change the port), any running instance will stop, and you will need to manually start it again.\
+            \n\
+            [Learn more about configuring and managing LlamaFiles in the Theia IDE documentation](https://theia-ide.org/docs/user_ai/#llamafile-models).',
             type: 'array',
             default: [],
             items: {

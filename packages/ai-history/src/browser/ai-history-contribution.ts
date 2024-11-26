@@ -15,7 +15,7 @@
 // *****************************************************************************
 import { FrontendApplication, codicon } from '@theia/core/lib/browser';
 import { AIViewContribution } from '@theia/ai-core/lib/browser';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { AIHistoryView } from './ai-history-widget';
 import { Command, CommandRegistry, Emitter } from '@theia/core';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
@@ -49,6 +49,9 @@ export const AI_HISTORY_VIEW_CLEAR = Command.toLocalizedCommand({
 export class AIHistoryViewContribution extends AIViewContribution<AIHistoryView> implements TabBarToolbarContribution {
     @inject(CommunicationRecordingService) private recordingService: CommunicationRecordingService;
 
+    protected readonly chronologicalChangedEmitter = new Emitter<void>();
+    protected readonly chronologicalStateChanged = this.chronologicalChangedEmitter.event;
+
     constructor() {
         super({
             widgetId: AIHistoryView.ID,
@@ -75,6 +78,7 @@ export class AIHistoryViewContribution extends AIViewContribution<AIHistoryView>
             isVisible: widget => this.withHistoryWidget(widget, historyView => !historyView.isChronological),
             execute: widget => this.withHistoryWidget(widget, historyView => {
                 historyView.sortHistory(true);
+                this.chronologicalChangedEmitter.fire();
                 return true;
             })
         });
@@ -83,6 +87,7 @@ export class AIHistoryViewContribution extends AIViewContribution<AIHistoryView>
             isVisible: widget => this.withHistoryWidget(widget, historyView => historyView.isChronological),
             execute: widget => this.withHistoryWidget(widget, historyView => {
                 historyView.sortHistory(false);
+                this.chronologicalChangedEmitter.fire();
                 return true;
             })
         });
@@ -106,31 +111,20 @@ export class AIHistoryViewContribution extends AIViewContribution<AIHistoryView>
         return widget instanceof AIHistoryView ? predicate(widget) : false;
     }
 
-    protected readonly onAIHistoryWidgetStateChangedEmitter = new Emitter<void>();
-    protected readonly onAIHistoryWidgettStateChanged = this.onAIHistoryWidgetStateChangedEmitter.event;
-
-    @postConstruct()
-    protected override init(): void {
-        super.init();
-        this.widget.then(widget => {
-            widget.onStateChanged(() => this.onAIHistoryWidgetStateChangedEmitter.fire());
-        });
-    }
-
     registerToolbarItems(registry: TabBarToolbarRegistry): void {
         registry.registerItem({
             id: AI_HISTORY_VIEW_SORT_CHRONOLOGICALLY.id,
             command: AI_HISTORY_VIEW_SORT_CHRONOLOGICALLY.id,
             tooltip: 'Sort chronologically',
             isVisible: widget => this.withHistoryWidget(widget),
-            onDidChange: this.onAIHistoryWidgettStateChanged
+            onDidChange: this.chronologicalStateChanged
         });
         registry.registerItem({
             id: AI_HISTORY_VIEW_SORT_REVERSE_CHRONOLOGICALLY.id,
             command: AI_HISTORY_VIEW_SORT_REVERSE_CHRONOLOGICALLY.id,
             tooltip: 'Sort reverse chronologically',
             isVisible: widget => this.withHistoryWidget(widget),
-            onDidChange: this.onAIHistoryWidgettStateChanged
+            onDidChange: this.chronologicalStateChanged
         });
         registry.registerItem({
             id: AI_HISTORY_VIEW_CLEAR.id,

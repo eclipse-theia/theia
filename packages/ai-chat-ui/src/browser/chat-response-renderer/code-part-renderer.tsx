@@ -176,7 +176,11 @@ export const CodeWrapper = (props: {
             scrollBeyondLastColumn: 0,
             renderFinalNewline: 'off',
             maxHeight: -1,
-            scrollbar: { vertical: 'hidden' },
+            scrollbar: {
+                vertical: 'hidden',
+                alwaysConsumeMouseWheel: false
+            },
+            wordWrap: 'off',
             codeLens: false,
             inlayHints: { enabled: 'off' },
             hover: { enabled: false }

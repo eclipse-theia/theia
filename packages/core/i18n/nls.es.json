@@ -1,6 +1,9 @@
 {
   "aiConfiguration:open": "Abrir la vista Configuración AI",
+  "aiHistory:clear": "Historia de la IA: Borrar historial",
   "aiHistory:open": "Abrir la vista Historial de IA",
+  "aiHistory:sortChronologically": "Historia de la IA: Ordenar cronológicamente",
+  "aiHistory:sortReverseChronologically": "Historia de la IA: Ordenar cronológicamente inverso",
   "debug.breakpoint.editCondition": "Editar condición...",
   "notebook.cell.changeToCode": "Cambiar celda por código",
   "notebook.cell.changeToMarkdown": "Cambiar Celda a Mardown",
@@ -208,6 +211,7 @@
       "prepareDownloadLink": "Preparando enlace de descarga...",
       "processedOutOf": "Procesado {0} de {1}",
       "replaceTitle": "Sustituir archivo",
+      "uploadFailed": "Se ha producido un error al cargar un archivo. {0}",
       "uploadFiles": "Subir archivos...",
       "uploadedOutOf": "Cargado {0} de {1}"
     },

@@ -19,28 +19,35 @@
 *  Licensed under the MIT License. See License.txt in the project root for license information.
 *--------------------------------------------------------------------------------------------*/
 // some code is copied and modified from: https://github.com/microsoft/vscode/blob/573e5145ae3b50523925a6f6315d373e649d1b06/src/vs/base/common/linkedText.ts
+// aligned the API and enablement behavior to https://github.com/microsoft/vscode/blob/c711bc9333ba339fde1a530de0094b3fa32f09de/src/vs/base/common/linkedText.ts
 
 import React = require('react');
 import { inject, injectable } from 'inversify';
-import { CommandRegistry } from '../../common';
+import { URI as CodeUri } from 'vscode-uri';
+import { CommandRegistry, DisposableCollection } from '../../common';
+import URI from '../../common/uri';
 import { ContextKeyService } from '../context-key-service';
+import { LabelIcon, LabelParser } from '../label-parser';
+import { OpenerService, open } from '../opener-service';
+import { codicon } from '../widgets';
+import { WindowService } from '../window/window-service';
 import { TreeModel } from './tree-model';
 import { TreeWidget } from './tree-widget';
-import { WindowService } from '../window/window-service';
 
-interface ViewWelcome {
+export interface ViewWelcome {
     readonly view: string;
     readonly content: string;
     readonly when?: string;
+    readonly enablement?: string;
     readonly order: number;
 }
 
-interface IItem {
+export interface IItem {
     readonly welcomeInfo: ViewWelcome;
     visible: boolean;
 }
 
-interface ILink {
+export interface ILink {
     readonly label: string;
     readonly href: string;
     readonly title?: string;
@@ -59,6 +66,14 @@ export class TreeViewWelcomeWidget extends TreeWidget {
 
     @inject(WindowService)
     protected readonly windowService: WindowService;
+
+    @inject(LabelParser)
+    protected readonly labelParser: LabelParser;
+
+    @inject(OpenerService)
+    protected readonly openerService: OpenerService;
+
+    protected readonly toDisposeBeforeUpdateViewWelcomeNodes = new DisposableCollection();
 
     protected viewWelcomeNodes: React.ReactNode[] = [];
     protected defaultItem: IItem | undefined;
@@ -130,13 +145,31 @@ export class TreeViewWelcomeWidget extends TreeWidget {
 
     protected updateViewWelcomeNodes(): void {
         this.viewWelcomeNodes = [];
+        this.toDisposeBeforeUpdateViewWelcomeNodes.dispose();
         const items = this.visibleItems.sort((a, b) => a.order - b.order);
 
-        for (const [iIndex, { content }] of items.entries()) {
+        const enablementKeys: Set<string>[] = [];
+        // the plugin-view-registry will push the changes when there is a change in the `when` prop  which controls the visibility
+        // this listener is to update the enablement of the components in the view welcome
+        this.toDisposeBeforeUpdateViewWelcomeNodes.push(
+            this.contextService.onDidChange(event => {
+                if (enablementKeys.some(keys => event.affects(keys))) {
+                    this.updateViewWelcomeNodes();
+                    this.update();
+                }
+            })
+        );
+        // Note: VS Code does not support the `renderSecondaryButtons` prop in welcome content either.
+        for (const { content, enablement } of items) {
+            const itemEnablementKeys = enablement
+                ? this.contextService.parseKeys(enablement)
+                : undefined;
+            if (itemEnablementKeys) {
+                enablementKeys.push(itemEnablementKeys);
+            }
             const lines = content.split('\n');
 
-            for (let [lIndex, line] of lines.entries()) {
-                const lineKey = `${iIndex}-${lIndex}`;
+            for (let line of lines) {
                 line = line.trim();
 
                 if (!line) {
@@ -146,42 +179,35 @@ export class TreeViewWelcomeWidget extends TreeWidget {
                 const linkedTextItems = this.parseLinkedText(line);
 
                 if (linkedTextItems.length === 1 && typeof linkedTextItems[0] !== 'string') {
+                    const node = linkedTextItems[0];
                     this.viewWelcomeNodes.push(
-                        this.renderButtonNode(linkedTextItems[0], lineKey)
+                        this.renderButtonNode(
+                            node,
+                            this.viewWelcomeNodes.length,
+                            enablement
+                        )
                     );
                 } else {
-                    const linkedTextNodes: React.ReactNode[] = [];
-
-                    for (const [nIndex, node] of linkedTextItems.entries()) {
-                        const linkedTextKey = `${lineKey}-${nIndex}`;
-
-                        if (typeof node === 'string') {
-                            linkedTextNodes.push(
-                                this.renderTextNode(node, linkedTextKey)
-                            );
-                        } else {
-                            linkedTextNodes.push(
-                                this.renderCommandLinkNode(node, linkedTextKey)
-                            );
-                        }
-                    }
+                    const renderNode = (item: LinkedTextItem, index: number) => typeof item == 'string'
+                        ? this.renderTextNode(item, index)
+                        : this.renderLinkNode(item, index, enablement);
 
                     this.viewWelcomeNodes.push(
-                        <div key={`line-${lineKey}`}>
-                            {...linkedTextNodes}
-                        </div>
+                        <p key={`p-${this.viewWelcomeNodes.length}`}>
+                            {...linkedTextItems.flatMap(renderNode)}
+                        </p>
                     );
                 }
             }
         }
     }
 
-    protected renderButtonNode(node: ILink, lineKey: string): React.ReactNode {
+    protected renderButtonNode(node: ILink, lineKey: string | number, enablement: string | undefined): React.ReactNode {
         return (
             <div key={`line-${lineKey}`} className='theia-WelcomeViewButtonWrapper'>
                 <button title={node.title}
                     className='theia-button theia-WelcomeViewButton'
-                    disabled={!this.isEnabledClick(node.href)}
+                    disabled={!this.isEnabledClick(enablement)}
                     onClick={e => this.openLinkOrCommand(e, node.href)}>
                     {node.label}
                 </button>
@@ -189,14 +215,22 @@ export class TreeViewWelcomeWidget extends TreeWidget {
         );
     }
 
-    protected renderTextNode(node: string, textKey: string): React.ReactNode {
-        return <span key={`text-${textKey}`}>{node}</span>;
+    protected renderTextNode(node: string, textKey: string | number): React.ReactNode {
+        return <span key={`text-${textKey}`}>
+            {this.labelParser.parse(node)
+                .map((segment, index) =>
+                    LabelIcon.is(segment)
+                        ? <span
+                            key={index}
+                            className={codicon(segment.name)}
+                        />
+                        : <span key={index}>{segment}</span>)}</span>;
     }
 
-    protected renderCommandLinkNode(node: ILink, linkKey: string): React.ReactNode {
+    protected renderLinkNode(node: ILink, linkKey: string | number, enablement: string | undefined): React.ReactNode {
         return (
             <a key={`link-${linkKey}`}
-                className={this.getLinkClassName(node.href)}
+                className={this.getLinkClassName(node.href, enablement)}
                 title={node.title || ''}
                 onClick={e => this.openLinkOrCommand(e, node.href)}>
                 {node.label}
@@ -204,37 +238,39 @@ export class TreeViewWelcomeWidget extends TreeWidget {
         );
     }
 
-    protected getLinkClassName(href: string): string {
+    protected getLinkClassName(href: string, enablement: string | undefined): string {
         const classNames = ['theia-WelcomeViewCommandLink'];
-        if (!this.isEnabledClick(href)) {
+        // Only command-backed links can be disabled. All other, https:, file: remain enabled
+        if (href.startsWith('command:') && !this.isEnabledClick(enablement)) {
             classNames.push('disabled');
         }
         return classNames.join(' ');
     }
 
-    protected isEnabledClick(href: string): boolean {
-        if (href.startsWith('command:')) {
-            const command = href.replace('command:', '');
-            return this.commands.isEnabled(command);
-        }
-        return true;
+    protected isEnabledClick(enablement: string | undefined): boolean {
+        return typeof enablement === 'string'
+            ? this.contextService.match(enablement)
+            : true;
     }
 
-    protected openLinkOrCommand = (event: React.MouseEvent, href: string): void => {
+    protected openLinkOrCommand = (event: React.MouseEvent, value: string): void => {
         event.stopPropagation();
 
-        if (href.startsWith('command:')) {
-            const command = href.replace('command:', '');
+        if (value.startsWith('command:')) {
+            const command = value.replace('command:', '');
             this.commands.executeCommand(command);
+        } else if (value.startsWith('file:')) {
+            const uri = value.replace('file:', '');
+            open(this.openerService, new URI(CodeUri.file(uri).toString()));
         } else {
-            this.windowService.openNewWindow(href, { external: true });
+            this.windowService.openNewWindow(value, { external: true });
         }
     };
 
     protected parseLinkedText(text: string): LinkedTextItem[] {
         const result: LinkedTextItem[] = [];
 
-        const linkRegex = /\[([^\]]+)\]\(((?:https?:\/\/|command:)[^\)\s]+)(?: ("|')([^\3]+)(\3))?\)/gi;
+        const linkRegex = /\[([^\]]+)\]\(((?:https?:\/\/|command:|file:)[^\)\s]+)(?: (["'])(.+?)(\3))?\)/gi;
         let index = 0;
         let match: RegExpExecArray | null;
 

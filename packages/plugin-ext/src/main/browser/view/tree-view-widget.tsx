@@ -45,7 +45,6 @@ import { View } from '../../../common/plugin-protocol';
 import { URI } from '@theia/core/lib/common/uri';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
-import { LabelParser } from '@theia/core/lib/browser/label-parser';
 import { AccessibilityInformation } from '@theia/plugin';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { DecoratedTreeNode } from '@theia/core/lib/browser/tree/tree-decorator';
@@ -455,9 +454,6 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
 
     @inject(HoverService)
     protected readonly hoverService: HoverService;
-
-    @inject(LabelParser)
-    protected readonly labelParser: LabelParser;
 
     @inject(ColorRegistry)
     protected readonly colorRegistry: ColorRegistry;

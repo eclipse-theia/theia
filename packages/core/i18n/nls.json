@@ -1,6 +1,9 @@
 {
   "aiConfiguration:open": "Open AI Configuration view",
+  "aiHistory:clear": "AI History: Clear History",
   "aiHistory:open": "Open AI History view",
+  "aiHistory:sortChronologically": "AI History: Sort chronologically",
+  "aiHistory:sortReverseChronologically": "AI History: Sort reverse chronologically",
   "debug.breakpoint.editCondition": "Edit Condition...",
   "notebook.cell.changeToCode": "Change Cell to Code",
   "notebook.cell.changeToMarkdown": "Change Cell to Markdown",
@@ -208,6 +211,7 @@
       "prepareDownloadLink": "Preparing download link...",
       "processedOutOf": "Processed {0} out of {1}",
       "replaceTitle": "Replace File",
+      "uploadFailed": "An error occurred while uploading a file. {0}",
       "uploadFiles": "Upload Files...",
       "uploadedOutOf": "Uploaded {0} out of {1}"
     },

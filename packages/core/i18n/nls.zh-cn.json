@@ -1,6 +1,9 @@
 {
   "aiConfiguration:open": "打开 AI 配置视图",
+  "aiHistory:clear": "人工智能历史:清除历史记录",
   "aiHistory:open": "打开人工智能历史视图",
+  "aiHistory:sortChronologically": "人工智能历史:按时间顺序排列",
+  "aiHistory:sortReverseChronologically": "人工智能历史:按时间倒序排序",
   "debug.breakpoint.editCondition": "编辑条件...",
   "notebook.cell.changeToCode": "将单元格更改为代码",
   "notebook.cell.changeToMarkdown": "将 Cell 改为 Mardown",
@@ -208,6 +211,7 @@
       "prepareDownloadLink": "准备下载链接...",
       "processedOutOf": "在{1}中处理了{0}。",
       "replaceTitle": "替换文件",
+      "uploadFailed": "上传文件时发生错误。{0}",
       "uploadFiles": "上传文件...",
       "uploadedOutOf": "上传了{0}出{1}。"
     },

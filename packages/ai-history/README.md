@@ -15,7 +15,6 @@
 The `@theia/ai-history` extension offers a framework for agents to record their requests and responses.
 It also offers a view to inspect the history.
 
-
 ## Additional Information
 
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)

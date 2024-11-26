@@ -55,7 +55,8 @@ export class AiTerminalAgent implements Agent {
             id: 'terminal-system',
             name: 'AI Terminal System Prompt',
             description: 'Prompt for the AI Terminal Assistant',
-            template: `
+            template: `{{!-- Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
+https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
 # Instructions
 Generate one or more command suggestions based on the user's request, considering the shell being used,
 the current working directory, and the recent terminal contents. Provide the best suggestion first,
@@ -102,7 +103,8 @@ nothing to commit, working tree clean
             id: 'terminal-user',
             name: 'AI Terminal User Prompt',
             description: 'Prompt that contains the user request',
-            template: `
+            template: `{{!-- Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
+https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
 user-request: {{userRequest}}
 shell: {{shell}}
 cwd: {{cwd}}
@@ -149,9 +151,9 @@ recent-terminal-contents:
             recentTerminalContents
         };
 
-        const systemPrompt = await this.promptService.getPrompt('terminal-system', parameters).then(p => p?.text);
-        const userPrompt = await this.promptService.getPrompt('terminal-user', parameters).then(p => p?.text);
-        if (!systemPrompt || !userPrompt) {
+        const systemMessage = await this.promptService.getPrompt('terminal-system', parameters).then(p => p?.text);
+        const request = await this.promptService.getPrompt('terminal-user', parameters).then(p => p?.text);
+        if (!systemMessage || !request) {
             this.logger.error('The prompt service didn\'t return prompts for the AI Terminal Agent.');
             return [];
         }
@@ -162,10 +164,9 @@ recent-terminal-contents:
         this.recordingService.recordRequest({
             agentId: this.id,
             sessionId,
-            timestamp: Date.now(),
             requestId,
-            request: systemPrompt,
-            messages: [userPrompt],
+            request,
+            systemMessage
         });
 
         try {
@@ -174,12 +175,12 @@ recent-terminal-contents:
                     {
                         actor: 'ai',
                         type: 'text',
-                        query: systemPrompt
+                        query: systemMessage
                     },
                     {
                         actor: 'user',
                         type: 'text',
-                        query: userPrompt
+                        query: request
                     }
                 ],
                 response_format: {
@@ -196,14 +197,8 @@ recent-terminal-contents:
                 // model returned structured output
                 const parsedResult = Commands.safeParse(result.parsed);
                 if (parsedResult.success) {
-                    const responseTextfromParsed = JSON.stringify(parsedResult.data.commands);
-                    this.recordingService.recordResponse({
-                        agentId: this.id,
-                        sessionId,
-                        timestamp: Date.now(),
-                        requestId,
-                        response: responseTextfromParsed,
-                    });
+                    const response = JSON.stringify(parsedResult.data.commands);
+                    this.recordingService.recordResponse({ agentId: this.id, sessionId, requestId, response, systemMessage });
                     return parsedResult.data.commands;
                 }
             }
@@ -211,13 +206,7 @@ recent-terminal-contents:
             // fall back to agent-based parsing of result
             const jsonResult = await getJsonOfResponse(result);
             const responseTextFromJSON = JSON.stringify(jsonResult);
-            this.recordingService.recordResponse({
-                agentId: this.id,
-                sessionId,
-                timestamp: Date.now(),
-                requestId,
-                response: responseTextFromJSON
-            });
+            this.recordingService.recordResponse({ agentId: this.id, sessionId, requestId, response: responseTextFromJSON });
             const parsedJsonResult = Commands.safeParse(jsonResult);
             if (parsedJsonResult.success) {
                 return parsedJsonResult.data.commands;

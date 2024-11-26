@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from '@theia/core/shared/inversify';
+import { injectable, unmanaged } from '@theia/core/shared/inversify';
 import { ILogger, Disposable, DisposableCollection, Emitter, Event, MaybePromise } from '@theia/core/lib/common/';
 import { TaskInfo, TaskExitedEvent, TaskConfiguration, TaskOutputEvent, ManagedTask, ManagedTaskManager } from '../common/task-protocol';
 /**
@@ -43,9 +43,9 @@ export abstract class Task implements Disposable, ManagedTask {
     readonly outputEmitter: Emitter<TaskOutputEvent>;
 
     constructor(
-        protected readonly taskManager: ManagedTaskManager<Task>,
-        protected readonly logger: ILogger,
-        protected readonly options: TaskOptions
+        @unmanaged() protected readonly taskManager: ManagedTaskManager<Task>,
+        @unmanaged() protected readonly logger: ILogger,
+        @unmanaged() protected readonly options: TaskOptions
     ) {
         this.taskId = this.taskManager.register(this, this.options.context);
         this.exitEmitter = new Emitter<TaskExitedEvent>();

@@ -20,7 +20,8 @@ import {
     LanguageModelRequest,
     LanguageModelRequestMessage,
     LanguageModelResponse,
-    LanguageModelStreamResponsePart
+    LanguageModelStreamResponsePart,
+    LanguageModelTextResponse
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 import OpenAI from 'openai';
@@ -53,12 +54,18 @@ export class OpenAiModel implements LanguageModel {
     /**
      * @param id the unique id for this language model. It will be used to identify the model in the UI.
      * @param model the model id as it is used by the OpenAI API
-     * @param openAIInitializer initializer for the OpenAI client, used for each request.
+     * @param enableStreaming whether the streaming API shall be used
+     * @param apiKey a function that returns the API key to use for this model, called on each request
+     * @param url the OpenAI API compatible endpoint where the model is hosted. If not provided the default OpenAI endpoint will be used.
      */
-    constructor(public readonly id: string, public model: string, public apiKey: () => string | undefined, public url: string | undefined) { }
+    constructor(public readonly id: string, public model: string, public enableStreaming: boolean, public apiKey: () => string | undefined, public url: string | undefined) { }
 
     async request(request: LanguageModelRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
         const openai = this.initializeOpenAi();
+
+        if (this.isNonStreamingModel(this.model)) {
+            return this.handleNonStreamingRequest(openai, request);
+        }
 
         if (request.response_format?.type === 'json_schema' && this.supportsStructuredOutput()) {
             return this.handleStructuredOutputRequest(openai, request);
@@ -131,6 +138,24 @@ export class OpenAiModel implements LanguageModel {
             }
         };
         return { stream: asyncIterator };
+    }
+
+    protected async handleNonStreamingRequest(openai: OpenAI, request: LanguageModelRequest): Promise<LanguageModelTextResponse> {
+        const response = await openai.chat.completions.create({
+            model: this.model,
+            messages: request.messages.map(toOpenAIMessage),
+            ...request.settings
+        });
+
+        const message = response.choices[0].message;
+
+        return {
+            text: message.content ?? ''
+        };
+    }
+
+    protected isNonStreamingModel(_model: string): boolean {
+        return !this.enableStreaming;
     }
 
     protected supportsStructuredOutput(): boolean {

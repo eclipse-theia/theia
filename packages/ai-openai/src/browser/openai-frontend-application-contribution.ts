@@ -63,8 +63,13 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                     const newModels = createCustomModelDescriptionsFromPreferences(event.newValue);
 
                     const modelsToRemove = oldModels.filter(model => !newModels.some(newModel => newModel.id === model.id));
-                    const modelsToAddOrUpdate = newModels.filter(newModel => !oldModels.some(model =>
-                        model.id === newModel.id && model.model === newModel.model && model.url === newModel.url && model.apiKey === newModel.apiKey));
+                    const modelsToAddOrUpdate = newModels.filter(newModel =>
+                        !oldModels.some(model =>
+                            model.id === newModel.id &&
+                            model.model === newModel.model &&
+                            model.url === newModel.url &&
+                            model.apiKey === newModel.apiKey &&
+                            model.enableStreaming === newModel.enableStreaming));
 
                     this.manager.removeLanguageModels(...modelsToRemove.map(model => model.id));
                     this.manager.createOrUpdateLanguageModels(...modelsToAddOrUpdate);
@@ -74,11 +79,14 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
     }
 }
 
+const openAIModelsWithDisabledStreaming = ['o1-preview'];
+
 function createOpenAIModelDescription(modelId: string): OpenAiModelDescription {
     return {
         id: `openai/${modelId}`,
         model: modelId,
-        apiKey: true
+        apiKey: true,
+        enableStreaming: !openAIModelsWithDisabledStreaming.includes(modelId)
     };
 }
 
@@ -93,7 +101,8 @@ function createCustomModelDescriptionsFromPreferences(preferences: Partial<OpenA
                 id: pref.id && typeof pref.id === 'string' ? pref.id : pref.model,
                 model: pref.model,
                 url: pref.url,
-                apiKey: typeof pref.apiKey === 'string' || pref.apiKey === true ? pref.apiKey : undefined
+                apiKey: typeof pref.apiKey === 'string' || pref.apiKey === true ? pref.apiKey : undefined,
+                enableStreaming: pref.enableStreaming ?? true
             }
         ];
     }, []);

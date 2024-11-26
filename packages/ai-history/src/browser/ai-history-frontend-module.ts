@@ -34,7 +34,7 @@ export default new ContainerModule(bind => {
 
     bindViewContribution(bind, AIHistoryViewContribution);
 
-    bind(AIHistoryView).toSelf().inSingletonScope();
+    bind(AIHistoryView).toSelf();
     bind(WidgetFactory).toDynamicValue(context => ({
         id: AIHistoryView.ID,
         createWidget: () => context.container.get<AIHistoryView>(AIHistoryView)

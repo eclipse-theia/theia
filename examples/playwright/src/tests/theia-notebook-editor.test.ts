@@ -21,6 +21,7 @@ import { TheiaNotebookCell } from '../theia-notebook-cell';
 import { TheiaNotebookEditor } from '../theia-notebook-editor';
 import { TheiaWorkspace } from '../theia-workspace';
 import path = require('path');
+import fs = require('fs');
 
 // See .github/workflows/playwright.yml for preferred python version
 const preferredKernel = process.env.CI ? 'Python 3.11' : 'Python 3';
@@ -39,7 +40,9 @@ test.describe('Theia Notebook Editor interaction', () => {
     });
 
     test.afterAll(async () => {
-        await app.page.close();
+        if (app.page) {
+            await app.page.close();
+        }
     });
 
     test.afterEach(async () => {
@@ -110,9 +113,11 @@ test.describe('Theia Notebook Editor interaction', () => {
         <|>print("Line-2")
         */
         const line = await cell.editor.lineByLineNumber(1);
-        await line?.waitForElementState('visible');
-        await line?.click();
-        await line?.press('ArrowRight');
+        expect(line, { message: 'Line number 1 should exists' }).toBeDefined();
+        const box = await line?.boundingBox();
+        console.log(`Split cell test: visible = ${await line?.isVisible()}, box = {${box?.x},${box?.y},${box?.width},${box?.height}}`);
+        await line!.click();
+        await line!.press('ArrowRight');
 
         // split cell
         await cell.splitCell();
@@ -134,7 +139,9 @@ test.describe('Theia Notebook Cell interaction', () => {
     });
 
     test.afterAll(async () => {
-        await app.page.close();
+        if (app.page) {
+            await app.page.close();
+        }
     });
 
     test.beforeEach(async () => {
@@ -309,8 +316,9 @@ async function firstCell(editor: TheiaNotebookEditor): Promise<TheiaNotebookCell
 
 async function loadApp(args: TheiaPlaywrightTestConfig & PlaywrightWorkerArgs): Promise<TheiaApp> {
     const workingDir = path.resolve();
-    // correct WS path. When running from IDE the path is playwright/configs with CLI it's playwright/
-    const prefix = workingDir.endsWith('playwright/configs') ? '../' : '';
+    // correct WS path. When running from IDE the path is workspace root or playwright/configs, with CLI it's playwright/
+    const isWsRoot = fs.existsSync(path.join(workingDir, 'examples', 'playwright'));
+    const prefix = isWsRoot ? 'examples/playwright/' : (workingDir.endsWith('playwright/configs') ? '../' : '');
     const ws = new TheiaWorkspace([prefix + 'src/tests/resources/notebook-files']);
     const app = await TheiaAppLoader.load(args, ws);
     // auto-save are disabled using settings.json file

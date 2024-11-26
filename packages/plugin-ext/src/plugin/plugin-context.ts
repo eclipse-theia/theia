@@ -226,7 +226,13 @@ import {
     ChatResultFeedbackKind,
     LanguageModelChatMessage,
     LanguageModelChatMessageRole,
+    LanguageModelChatToolMode,
     LanguageModelError,
+    LanguageModelPromptTsxPart,
+    LanguageModelTextPart,
+    LanguageModelToolCallPart,
+    LanguageModelToolResult,
+    LanguageModelToolResultPart,
     PortAutoForwardAction,
     PortAttributes,
     DebugVisualization,
@@ -1304,6 +1310,10 @@ export function createAPIFactory(
             registerMappedEditsProvider(documentSelector: theia.DocumentSelector, provider: theia.MappedEditsProvider): Disposable {
                 return Disposable.NULL;
             },
+            /** @stubbed MappedEditsProvider */
+            registerMappedEditsProvider2(provider: theia.MappedEditsProvider2) {
+                return Disposable.NULL;
+            },
             /** @stubbed ChatRequestHandler */
             createChatParticipant(id: string, handler: theia.ChatRequestHandler): theia.ChatParticipant {
                 return {
@@ -1321,7 +1331,17 @@ export function createAPIFactory(
                 return Promise.resolve([]);
             },
             /** @stubbed LanguageModelChat */
-            onDidChangeChatModels: (listener, thisArgs?, disposables?) => Event.None(listener, thisArgs, disposables)
+            onDidChangeChatModels: (listener, thisArgs?, disposables?) => Event.None(listener, thisArgs, disposables),
+            /** @stubbed LanguageModelTool */
+            invokeTool(name: string, options: theia.LanguageModelToolInvocationOptions<object>, token?: CancellationToken): Thenable<theia.LanguageModelToolResult> {
+                return Promise.resolve({ content: [] });
+            },
+            /** @stubbed LanguageModelTool */
+            registerTool<T>(name: string, tool: theia.LanguageModelTool<T>): Disposable {
+                return Disposable.NULL;
+            },
+            /** @stubbed LanguageModelTool */
+            tools: []
         };
 
         return <typeof theia>{
@@ -1541,6 +1561,12 @@ export function createAPIFactory(
             LanguageModelChatMessage,
             LanguageModelChatMessageRole,
             LanguageModelError,
+            LanguageModelChatToolMode,
+            LanguageModelPromptTsxPart,
+            LanguageModelTextPart,
+            LanguageModelToolCallPart,
+            LanguageModelToolResult,
+            LanguageModelToolResultPart,
             PortAutoForwardAction,
             PortAttributes,
             DebugVisualization,

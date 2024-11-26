@@ -39,7 +39,7 @@ import {
     MessageActor,
 } from '@theia/ai-core/lib/common';
 import { CancellationToken, CancellationTokenSource, ContributionProvider, ILogger, isArray } from '@theia/core';
-import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, named, postConstruct, unmanaged } from '@theia/core/shared/inversify';
 import { ChatAgentService } from './chat-agent-service';
 import {
     ChatModel,
@@ -52,6 +52,7 @@ import {
 } from './chat-model';
 import { findFirstMatch, parseContents } from './parse-contents';
 import { DefaultResponseContentFactory, ResponseContentMatcher, ResponseContentMatcherProvider } from './response-content-matcher';
+import { ChatHistoryEntry } from './chat-history-entry';
 
 /**
  * A conversation consists of a sequence of ChatMessages.
@@ -132,18 +133,23 @@ export abstract class AbstractChatAgent {
     protected defaultContentFactory: DefaultResponseContentFactory;
 
     constructor(
-        public id: string,
-        public languageModelRequirements: LanguageModelRequirement[],
-        protected defaultLanguageModelPurpose: string,
-        public iconClass: string = 'codicon codicon-copilot',
-        public locations: ChatAgentLocation[] = ChatAgentLocation.ALL,
-        public tags: String[] = ['Chat'],
-        public defaultLogging: boolean = true) {
+        @unmanaged() public id: string,
+        @unmanaged() public languageModelRequirements: LanguageModelRequirement[],
+        @unmanaged() protected defaultLanguageModelPurpose: string,
+        @unmanaged() public iconClass: string = 'codicon codicon-copilot',
+        @unmanaged() public locations: ChatAgentLocation[] = ChatAgentLocation.ALL,
+        @unmanaged() public tags: string[] = ['Chat'],
+        @unmanaged() public defaultLogging: boolean = true) {
     }
 
     @postConstruct()
     init(): void {
-        this.contentMatchers = this.contentMatcherProviders.getContributions().flatMap(provider => provider.matchers);
+        this.initializeContentMatchers();
+    }
+
+    protected initializeContentMatchers(): void {
+        const contributedContentMatchers = this.contentMatcherProviders.getContributions().flatMap(provider => provider.matchers);
+        this.contentMatchers.push(...contributedContentMatchers);
     }
 
     async invoke(request: ChatRequestModelImpl): Promise<void> {
@@ -152,19 +158,19 @@ export abstract class AbstractChatAgent {
             if (!languageModel) {
                 throw new Error('Couldn\'t find a matching language model. Please check your setup!');
             }
-            const messages = await this.getMessages(request.session);
-            if (this.defaultLogging) {
-                this.recordingService.recordRequest({
-                    agentId: this.id,
-                    sessionId: request.session.id,
-                    timestamp: Date.now(),
-                    requestId: request.id,
-                    request: request.request.text,
-                    messages
-                });
-            }
 
             const systemMessageDescription = await this.getSystemMessageDescription();
+            const messages = await this.getMessages(request.session);
+            if (this.defaultLogging) {
+                this.recordingService.recordRequest(
+                    ChatHistoryEntry.fromRequest(
+                        this.id, request, {
+                        messages,
+                        systemMessage: systemMessageDescription?.text
+                    })
+                );
+            }
+
             const tools: Map<string, ToolRequest> = new Map();
             if (systemMessageDescription) {
                 const systemMsg: ChatMessage = {
@@ -194,24 +200,19 @@ export abstract class AbstractChatAgent {
                 cancellationToken.token
             );
             await this.addContentsToResponse(languageModelResponse, request);
-            request.response.complete();
+            await this.onResponseComplete(request);
             if (this.defaultLogging) {
-                this.recordingService.recordResponse({
-                    agentId: this.id,
-                    sessionId: request.session.id,
-                    timestamp: Date.now(),
-                    requestId: request.response.requestId,
-                    response: request.response.response.asString()
-                });
+                this.recordingService.recordResponse(ChatHistoryEntry.fromResponse(this.id, request));
             }
         } catch (e) {
             this.handleError(request, e);
         }
     }
 
-    protected parseContents(text: string): ChatResponseContent[] {
+    protected parseContents(text: string, request: ChatRequestModelImpl): ChatResponseContent[] {
         return parseContents(
             text,
+            request,
             this.contentMatchers,
             this.defaultContentFactory?.create.bind(this.defaultContentFactory)
         );
@@ -295,6 +296,16 @@ export abstract class AbstractChatAgent {
         return undefined;
     }
 
+    /**
+     * Invoked after the response by the LLM completed successfully.
+     *
+     * The default implementation sets the state of the response to `complete`.
+     * Subclasses may override this method to perform additional actions or keep the response open for processing further requests.
+     */
+    protected async onResponseComplete(request: ChatRequestModelImpl): Promise<void> {
+        return request.response.complete();
+    }
+
     protected abstract addContentsToResponse(languageModelResponse: LanguageModelResponse, request: ChatRequestModelImpl): Promise<void>;
 }
 
@@ -318,33 +329,12 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
 
     protected override async addContentsToResponse(languageModelResponse: LanguageModelResponse, request: ChatRequestModelImpl): Promise<void> {
         if (isLanguageModelTextResponse(languageModelResponse)) {
-            const contents = this.parseContents(languageModelResponse.text);
+            const contents = this.parseContents(languageModelResponse.text, request);
             request.response.response.addContents(contents);
-            request.response.complete();
-            if (this.defaultLogging) {
-                this.recordingService.recordResponse({
-                    agentId: this.id,
-                    sessionId: request.session.id,
-                    timestamp: Date.now(),
-                    requestId: request.response.requestId,
-                    response: request.response.response.asString()
-
-                });
-            }
             return;
         }
         if (isLanguageModelStreamResponse(languageModelResponse)) {
             await this.addStreamResponse(languageModelResponse, request);
-            request.response.complete();
-            if (this.defaultLogging) {
-                this.recordingService.recordResponse({
-                    agentId: this.id,
-                    sessionId: request.session.id,
-                    timestamp: Date.now(),
-                    requestId: request.response.requestId,
-                    response: request.response.response.asString()
-                });
-            }
             return;
         }
         this.logger.error(
@@ -359,7 +349,7 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
 
     protected async addStreamResponse(languageModelResponse: LanguageModelStreamResponse, request: ChatRequestModelImpl): Promise<void> {
         for await (const token of languageModelResponse.stream) {
-            const newContents = this.parse(token, request.response.response.content);
+            const newContents = this.parse(token, request);
             if (isArray(newContents)) {
                 request.response.response.addContents(newContents);
             } else {
@@ -375,7 +365,7 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
                 return;
             }
 
-            const result: ChatResponseContent[] = findFirstMatch(this.contentMatchers, text) ? this.parseContents(text) : [];
+            const result: ChatResponseContent[] = findFirstMatch(this.contentMatchers, text) ? this.parseContents(text, request) : [];
             if (result.length > 0) {
                 request.response.response.addContents(result);
             } else {
@@ -384,11 +374,11 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
         }
     }
 
-    protected parse(token: LanguageModelStreamResponsePart, previousContent: ChatResponseContent[]): ChatResponseContent | ChatResponseContent[] {
+    protected parse(token: LanguageModelStreamResponsePart, request: ChatRequestModelImpl): ChatResponseContent | ChatResponseContent[] {
         const content = token.content;
         // eslint-disable-next-line no-null/no-null
         if (content !== undefined && content !== null) {
-            return this.defaultContentFactory.create(content);
+            return this.defaultContentFactory.create(content, request);
         }
         const toolCalls = token.tool_calls;
         if (toolCalls !== undefined) {
@@ -396,7 +386,7 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
                 new ToolCallChatResponseContentImpl(toolCall.id, toolCall.function?.name, toolCall.function?.arguments, toolCall.finished, toolCall.result));
             return toolCallContents;
         }
-        return this.defaultContentFactory.create('');
+        return this.defaultContentFactory.create('', request);
     }
 
 }
