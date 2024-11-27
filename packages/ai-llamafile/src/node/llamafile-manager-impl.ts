@@ -19,7 +19,7 @@ import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
 import { basename, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { LlamafileLanguageModel } from '../common/llamafile-language-model';
-import { LlamafileEntry, LlamafileManager, LlamafileServerManagerClient } from '../common/llamafile-manager';
+import { LlamafileManager, LlamafileModelDescription, LlamafileServerManagerClient } from '../common/llamafile-manager';
 
 @injectable()
 export class LlamafileManagerImpl implements LlamafileManager {
@@ -30,15 +30,16 @@ export class LlamafileManagerImpl implements LlamafileManager {
     private processMap: Map<string, ChildProcessWithoutNullStreams> = new Map();
     private client: LlamafileServerManagerClient;
 
-    async addLanguageModels(llamaFiles: LlamafileEntry[]): Promise<void> {
-        for (const llamafile of llamaFiles) {
+    async addLanguageModels(LlamafileModelDescriptions: LlamafileModelDescription[]): Promise<void> {
+        for (const llamafile of LlamafileModelDescriptions) {
             const model = await this.languageModelRegistry.getLanguageModel(llamafile.name);
             if (model) {
                 if (!(model instanceof LlamafileLanguageModel)) {
                     console.warn(`Llamafile: model ${model.id} is not a Llamafile model`);
                     continue;
                 } else {
-                    model.defaultRequestSettings = llamafile.defaultRequestSettings;
+                    // This can happen during the initializing of more than one frontends, changes are handled in the frontend
+                    console.info(`Llamafile: skip creating or updating model ${llamafile.name} because it already exists.`);
                 }
             } else {
                 this.languageModelRegistry.addLanguageModels([
@@ -52,6 +53,19 @@ export class LlamafileManagerImpl implements LlamafileManager {
             }
         }
     }
+
+    async updateRequestSettings(modelId: string, requestSettings?: { [key: string]: unknown; }): Promise<void> {
+        const model = await this.languageModelRegistry.getLanguageModel(modelId);
+        if (model) {
+            if (!(model instanceof LlamafileLanguageModel)) {
+                console.warn(`Llamafile: model ${model.id} is not a Llamafile model`);
+                return;
+            } else {
+                model.defaultRequestSettings = requestSettings;
+            }
+        }
+    }
+
     removeLanguageModels(modelIds: string[]): void {
         modelIds.filter(modelId => this.isStarted(modelId)).forEach(modelId => this.stopServer(modelId));
         this.languageModelRegistry.removeLanguageModels(modelIds);
