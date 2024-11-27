@@ -5,12 +5,15 @@
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
 <!-- ## 1.56.0 - not yet released -->
-<a name="breaking_changes_1.56.0">[Breaking Changes:](#breaking_changes_1.56.0)</a>
-- [core] Do not dispose dialogs on close - [#14456](https://github.com/eclipse-theia/theia/pull/14456) - Contributed on behalf of STMicroelectronics 
+- [application-package] bumped API version to 1.95.3 [#14541](https://github.com/eclipse-theia/theia/pull/14541) - Contributed on behalf of STMicroelectronics
 - [core] fixed electron win background color [#14491](https://github.com/eclipse-theia/theia/pull/14491) - Contributed on behalf of STMicroelectronics
 - [plugin] added stubs for the additional LanguageModel APIs [#14446](https://github.com/eclipse-theia/theia/pull/14446) - Contributed on behalf of STMicroelectronics
 - [plugin] added support for ThemeColor property id [#14437](https://github.com/eclipse-theia/theia/pull/14437) - Contributed on behalf of STMicroelectronics
 - [plugin] supported MappedEditProviders proposed API evolution [#14453](https://github.com/eclipse-theia/theia/pull/14453) - Contributed on behalf of STMicroelectronics
+
+<a name="breaking_changes_1.56.0">[Breaking Changes:](#breaking_changes_1.56.0)</a>
+
+- [core] Do not dispose dialogs on close - [#14456](https://github.com/eclipse-theia/theia/pull/14456) - Contributed on behalf of STMicroelectronics
 
 ## 1.55.0 - 10/31/2024
 
