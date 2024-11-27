@@ -86,7 +86,6 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                 model.model === newModel.model &&
                 model.url === newModel.url &&
                 model.apiKey === newModel.apiKey &&
-                model.defaultRequestSettings === newModel.defaultRequestSettings &&
                 model.enableStreaming === newModel.enableStreaming));
 
         this.manager.removeLanguageModels(...modelsToRemove.map(model => model.id));
