@@ -55,7 +55,7 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                 model.enableStreaming = modelDescription.enableStreaming;
                 model.url = modelDescription.url;
                 model.apiKey = apiKeyProvider;
-                model.defaultRequestSettings = modelDescription.defaultRequestSettings; // Update default settings
+                model.defaultRequestSettings = modelDescription.defaultRequestSettings;
             } else {
                 this.languageModelRegistry.addLanguageModels([
                     new OpenAiModel(
