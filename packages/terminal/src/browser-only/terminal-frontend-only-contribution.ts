@@ -60,6 +60,6 @@ export class TerminalFrontendOnlyContribution implements TerminalService {
     }
 
     async getDefaultShell(): Promise<string> {
-        return 'none';
+        return '';
     }
 }
