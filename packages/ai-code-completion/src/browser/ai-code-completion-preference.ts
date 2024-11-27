@@ -19,6 +19,7 @@ import { AI_CORE_PREFERENCES_TITLE } from '@theia/ai-core/lib/browser/ai-core-pr
 
 export const PREF_AI_INLINE_COMPLETION_AUTOMATIC_ENABLE = 'ai-features.codeCompletion.automaticCodeCompletion';
 export const PREF_AI_INLINE_COMPLETION_EXCLUDED_EXTENSIONS = 'ai-features.codeCompletion.excludedFileExtensions';
+export const PREF_AI_INLINE_COMPLETION_MAX_CONTEXT_LINES = 'ai-features.codeCompletion.maxContextLines';
 
 export const AICodeCompletionPreferencesSchema: PreferenceSchema = {
     type: 'object',
@@ -39,6 +40,14 @@ export const AICodeCompletionPreferencesSchema: PreferenceSchema = {
                 type: 'string'
             },
             default: []
+        },
+        [PREF_AI_INLINE_COMPLETION_MAX_CONTEXT_LINES]: {
+            title: 'Maximum Context Lines',
+            type: 'number',
+            description: 'The maximum number of lines shared between the prefix and suffix for AI code completion.\
+            Set this to 0 to use the full file as context without any line limit.',
+            default: 0,
+            minimum: 0
         }
     }
 };

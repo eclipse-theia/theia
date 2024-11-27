@@ -16,7 +16,7 @@
 
 import { ILogger } from '@theia/core';
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { CodeCompletionAgent, CodeCompletionAgentImpl } from '../common/code-completion-agent';
+import { CodeCompletionAgent, CodeCompletionAgentImpl } from './code-completion-agent';
 import { AIFrontendApplicationContribution } from './ai-code-frontend-application-contribution';
 import { FrontendApplicationContribution, KeybindingContribution, PreferenceContribution } from '@theia/core/lib/browser';
 import { Agent } from '@theia/ai-core';
