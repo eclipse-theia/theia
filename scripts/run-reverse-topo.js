@@ -28,7 +28,7 @@
 const cp = require('child_process');
 
 /** @type {LernaPackage[]} */
-const LERNA_SORT = JSON.parse(cp.execSync('yarn --silent lerna ls --sort --json').toString());
+const LERNA_SORT = JSON.parse(cp.execSync('npm run --silent lerna ls --sort --json').toString());
 
 /** @type {{ [key: string]: YarnWorkspace  }} */
 const YARN_WORKSPACES = JSON.parse(cp.execSync('yarn --silent workspaces info').toString());

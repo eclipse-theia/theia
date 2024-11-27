@@ -21,14 +21,14 @@ import { AbstractGenerator } from './abstract-generator';
 export class WebpackGenerator extends AbstractGenerator {
 
     async generate(): Promise<void> {
-        await this.write(this.genConfigPath, this.compileWebpackConfig());
+                await this.write(this.genConfigPath, this.compileWebpackConfig());
         if (!this.pck.isBrowserOnly()) {
             await this.write(this.genNodeConfigPath, this.compileNodeWebpackConfig());
         }
         if (await this.shouldGenerateUserWebpackConfig()) {
             await this.write(this.configPath, this.compileUserWebpackConfig());
         }
-    }
+            }
 
     protected async shouldGenerateUserWebpackConfig(): Promise<boolean> {
         if (!(await fs.pathExists(this.configPath))) {
@@ -48,10 +48,6 @@ export class WebpackGenerator extends AbstractGenerator {
 
     get genNodeConfigPath(): string {
         return this.pck.path('gen-webpack.node.config.js');
-    }
-
-    protected resolve(moduleName: string, path: string): string {
-        return this.pck.resolveModulePath(moduleName, path).split(paths.sep).join('/');
     }
 
     protected compileWebpackConfig(): string {

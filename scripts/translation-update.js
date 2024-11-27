@@ -17,7 +17,8 @@ if (hasNlsFileChanged()) {
 }
 
 function performNlsExtract() {
-    cp.spawnSync('yarn', [
+    cp.spawnSync('npm', [
+        'run',
         'theia', 'nls-extract',
         '-o', './packages/core/i18n/nls.json',
         '-e', 'vscode',

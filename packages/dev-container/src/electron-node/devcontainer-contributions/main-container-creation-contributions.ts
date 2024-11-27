@@ -41,7 +41,7 @@ export class ImageFileContribution implements ContainerCreationContribution {
                 if (err) {
                     rej(err);
                 } else {
-                    api.modem.followProgress(stream, (error, output) => error ?
+                    api.modem.followProgress(stream!, (error, output) => error ?
                         rej(error) :
                         res(), progress => outputprovider.onRemoteOutput(OutputHelper.parseProgress(progress)));
                 }
