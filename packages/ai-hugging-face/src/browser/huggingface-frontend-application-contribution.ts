@@ -20,7 +20,7 @@ import { HuggingFaceLanguageModelsManager, HuggingFaceModelDescription } from '.
 import { API_KEY_PREF, MODELS_PREF } from './huggingface-preferences';
 import { PREFERENCE_NAME_REQUEST_SETTINGS, RequestSetting } from '@theia/ai-core/lib/browser/ai-core-preferences';
 
-const HUGGINGFACE_ID = 'huggingface';
+const HUGGINGFACE_PROVIDER_ID = 'huggingface';
 @injectable()
 export class HuggingFaceFrontendApplicationContribution implements FrontendApplicationContribution {
 
@@ -61,7 +61,7 @@ export class HuggingFaceFrontendApplicationContribution implements FrontendAppli
         const modelsToRemove = [...oldModels].filter(model => !updatedModels.has(model));
         const modelsToAdd = [...updatedModels].filter(model => !oldModels.has(model));
 
-        this.manager.removeLanguageModels(...modelsToRemove.map(model => `${HUGGINGFACE_ID}/${model}`));
+        this.manager.removeLanguageModels(...modelsToRemove.map(model => `${HUGGINGFACE_PROVIDER_ID}/${model}`));
         const requestSettings = this.preferenceService.get<RequestSetting[]>(PREFERENCE_NAME_REQUEST_SETTINGS, []);
         this.manager.createOrUpdateLanguageModels(...modelsToAdd.map(modelId => this.createHuggingFaceModelDescription(modelId, requestSettings)));
         this.prevModels = newModels;
@@ -76,9 +76,9 @@ export class HuggingFaceFrontendApplicationContribution implements FrontendAppli
         modelId: string,
         requestSettings: RequestSetting[]
     ): HuggingFaceModelDescription {
-        const id = `${HUGGINGFACE_ID}/${modelId}`;
+        const id = `${HUGGINGFACE_PROVIDER_ID}/${modelId}`;
         const matchingSettings = requestSettings.filter(
-            setting => (!setting.providerId || setting.providerId === HUGGINGFACE_ID) && setting.modelId === modelId
+            setting => (!setting.providerId || setting.providerId === HUGGINGFACE_PROVIDER_ID) && setting.modelId === modelId
         );
         if (matchingSettings.length > 1) {
             console.warn(

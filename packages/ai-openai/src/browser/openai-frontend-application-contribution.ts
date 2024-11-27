@@ -20,7 +20,7 @@ import { OpenAiLanguageModelsManager, OpenAiModelDescription } from '../common';
 import { API_KEY_PREF, CUSTOM_ENDPOINTS_PREF, MODELS_PREF } from './openai-preferences';
 import { PREFERENCE_NAME_REQUEST_SETTINGS, RequestSetting } from '@theia/ai-core/lib/browser/ai-core-preferences';
 
-const OPENAI_ID = 'openai';
+const OPENAI_PROVIDER_ID = 'openai';
 
 @injectable()
 export class OpenAiFrontendApplicationContribution implements FrontendApplicationContribution {
@@ -103,8 +103,8 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
     }
 
     protected createOpenAIModelDescription(modelId: string, requestSettings: RequestSetting[]): OpenAiModelDescription {
-        const id = `${OPENAI_ID}/${modelId}`;
-        const modelRequestSetting = this.getMatchingRequestSetting(modelId, OPENAI_ID, requestSettings);
+        const id = `${OPENAI_PROVIDER_ID}/${modelId}`;
+        const modelRequestSetting = this.getMatchingRequestSetting(modelId, OPENAI_PROVIDER_ID, requestSettings);
         return {
             id: id,
             model: modelId,
@@ -123,7 +123,7 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                 return acc;
             }
 
-            const modelRequestSetting = this.getMatchingRequestSetting(pref.model, OPENAI_ID, requestSettings);
+            const modelRequestSetting = this.getMatchingRequestSetting(pref.model, OPENAI_PROVIDER_ID, requestSettings);
 
             return [
                 ...acc,

@@ -20,7 +20,7 @@ import { OllamaLanguageModelsManager, OllamaModelDescription } from '../common';
 import { HOST_PREF, MODELS_PREF } from './ollama-preferences';
 import { PREFERENCE_NAME_REQUEST_SETTINGS, RequestSetting } from '@theia/ai-core/lib/browser/ai-core-preferences';
 
-const OLLAMA_ID = 'ollama';
+const OLLAMA_PROVIDER_ID = 'ollama';
 @injectable()
 export class OllamaFrontendApplicationContribution implements FrontendApplicationContribution {
 
@@ -73,9 +73,9 @@ export class OllamaFrontendApplicationContribution implements FrontendApplicatio
     }
 
     protected createOllamaModelDescription(modelId: string, requestSettings: RequestSetting[]): OllamaModelDescription {
-        const id = `${OLLAMA_ID}/${modelId}`;
+        const id = `${OLLAMA_PROVIDER_ID}/${modelId}`;
         const matchingSettings = requestSettings.filter(
-            setting => (!setting.providerId || setting.providerId === OLLAMA_ID) && setting.modelId === modelId
+            setting => (!setting.providerId || setting.providerId === OLLAMA_PROVIDER_ID) && setting.modelId === modelId
         );
         if (matchingSettings.length > 1) {
             console.warn(`Multiple entries found for modelId "${modelId}". Using the first match and ignoring the rest.`);

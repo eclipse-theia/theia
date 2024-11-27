@@ -20,7 +20,7 @@ import { LlamafileEntry, LlamafileManager } from '../common/llamafile-manager';
 import { PREFERENCE_LLAMAFILE } from './llamafile-preferences';
 import { PREFERENCE_NAME_REQUEST_SETTINGS, RequestSetting } from '@theia/ai-core/lib/browser/ai-core-preferences';
 
-const LLAMAFILE_ID = 'llamafile';
+const LLAMAFILE_PROVIDER_ID = 'llamafile';
 @injectable()
 export class LlamafileFrontendApplicationContribution implements FrontendApplicationContribution {
 
@@ -83,7 +83,7 @@ export class LlamafileFrontendApplicationContribution implements FrontendApplica
 
     protected applyRequestSettingsToLlamaFile(model: LlamafileEntry, requestSettings: RequestSetting[]): LlamafileEntry {
         const matchingSettings = requestSettings.filter(
-            setting => (!setting.providerId || setting.providerId === LLAMAFILE_ID) && setting.modelId === model.name
+            setting => (!setting.providerId || setting.providerId === LLAMAFILE_PROVIDER_ID) && setting.modelId === model.name
         );
         if (matchingSettings.length > 1) {
             console.warn(`Multiple entries found for model "${model.name}". Using the first match.`);
