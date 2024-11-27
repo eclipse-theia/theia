@@ -34,20 +34,19 @@ export const TemplateRenderer: React.FC<TemplateRendererProps> = ({
     promptService,
     aiSettingsService,
 }) => {
-    const [variantIds, setVariantIds] = React.useState<string[]>([]);
+    const variantIds = [DEFAULT_VARIANT, ...promptService.getVariantIds(template.id)];
     const [selectedVariant, setSelectedVariant] = React.useState<string>(DEFAULT_VARIANT);
 
-    React.useEffect(() => {
+    React.useMemo(() => {
         (async () => {
-            const variants = promptService.getVariantIds(template.id);
-            setVariantIds([DEFAULT_VARIANT, ...variants]);
-
             const agentSettings = await aiSettingsService.getAgentSettings(agentId);
             const currentVariant =
                 agentSettings?.selectedVariants?.[template.id] || DEFAULT_VARIANT;
             setSelectedVariant(currentVariant);
         })();
-    }, [template.id, promptService, aiSettingsService, agentId]);
+    }, [template.id, aiSettingsService, agentId]);
+
+    const isInvalidVariant = !variantIds.includes(selectedVariant);
 
     const handleVariantChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
         const newVariant = event.target.value;
@@ -68,16 +67,16 @@ export const TemplateRenderer: React.FC<TemplateRendererProps> = ({
         });
     };
 
-    const openTemplate = React.useCallback(async () => {
+    const openTemplate = () => {
         const templateId = selectedVariant === DEFAULT_VARIANT ? template.id : selectedVariant;
         const selectedTemplate = promptService.getRawPrompt(templateId);
         promptCustomizationService.editTemplate(templateId, selectedTemplate?.template || '');
-    }, [selectedVariant, template.id, promptService, promptCustomizationService]);
+    };
 
-    const resetTemplate = React.useCallback(async () => {
+    const resetTemplate = () => {
         const templateId = selectedVariant === DEFAULT_VARIANT ? template.id : selectedVariant;
         promptCustomizationService.resetTemplate(templateId);
-    }, [selectedVariant, template.id, promptCustomizationService]);
+    };
 
     return (
         <div className="template-renderer">
@@ -92,10 +91,15 @@ export const TemplateRenderer: React.FC<TemplateRendererProps> = ({
                         </label>
                         <select
                             id={`variant-selector-${template.id}`}
-                            className="theia-select template-variant-selector"
-                            value={selectedVariant}
+                            className={`theia-select template-variant-selector ${isInvalidVariant ? 'error' : ''}`}
+                            value={isInvalidVariant ? 'invalid' : selectedVariant}
                             onChange={handleVariantChange}
                         >
+                            {isInvalidVariant && (
+                                <option value="invalid" disabled>
+                                    The selected variant is no longer available
+                                </option>
+                            )}
                             {variantIds.map(variantId => (
                                 <option key={variantId} value={variantId}>
                                     {variantId}
@@ -104,10 +108,18 @@ export const TemplateRenderer: React.FC<TemplateRendererProps> = ({
                         </select>
                     </>
                 )}
-                <button className="theia-button main" onClick={openTemplate}>
+                <button
+                    className="theia-button main"
+                    onClick={openTemplate}
+                    disabled={isInvalidVariant}
+                >
                     Edit
                 </button>
-                <button className="theia-button secondary" onClick={resetTemplate}>
+                <button
+                    className="theia-button secondary"
+                    onClick={resetTemplate}
+                    disabled={isInvalidVariant}
+                >
                     Reset
                 </button>
             </div>
