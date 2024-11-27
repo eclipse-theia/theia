@@ -133,7 +133,7 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                     url: pref.url,
                     apiKey: typeof pref.apiKey === 'string' || pref.apiKey === true ? pref.apiKey : undefined,
                     enableStreaming: pref.enableStreaming ?? true,
-                    defaultRequestSettings: modelRequestSetting?.requestSettings ?? pref.defaultRequestSettings
+                    defaultRequestSettings: modelRequestSetting?.requestSettings
                 }
             ];
         }, []);
