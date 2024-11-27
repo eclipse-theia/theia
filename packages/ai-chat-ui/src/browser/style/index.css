@@ -132,6 +132,20 @@ div:last-child > .theia-ChatNode {
   font-size: var(--theia-code-font-size);
 }
 
+.theia-RequestNode > p div {
+  display: inline;
+}
+
+.theia-RequestNode .theia-RequestNode-AgentLabel,
+.theia-RequestNode .theia-RequestNode-VariableLabel {
+  padding: calc(var(--theia-ui-padding) * 2 / 3);
+  padding-top: 0px;
+  padding-bottom: 0px;
+  border-radius: calc(var(--theia-ui-padding) * 2 / 3);
+  background: var(--theia-badge-background);
+  color: var(--theia-badge-foreground);
+}
+
 .chat-input-widget {
   align-items: flex-end;
   display: flex;
