@@ -31,7 +31,7 @@ import { DockerContainerService } from './docker-container-service';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { WriteStream } from 'tty';
 import { PassThrough } from 'stream';
-import { exec } from 'child_process';
+import { exec, execSync } from 'child_process';
 import { DevContainerFileService } from './dev-container-file-service';
 import { ContainerOutputProvider } from '../electron-common/container-output-provider';
 
@@ -303,9 +303,13 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
         return deferred.promise;
     }
 
-    async dispose(): Promise<void> {
+    disposeSync(): void {
         // cant use dockerrode here since this needs to happen on one tick
-        exec(`docker stop ${this.container.id}`);
+        execSync(`docker stop ${this.container.id}`);
+    }
+
+    async dispose(): Promise<void> {
+        return this.container.stop();
     }
 
 }
