@@ -40,12 +40,12 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
             this.manager.setApiKey(apiKey);
 
             const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
-            const requestSettings = this.preferenceService.get<RequestSetting[]>(PREFERENCE_NAME_REQUEST_SETTINGS, []);
+            const requestSettings = this.getRequestSettingsPref();
             this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createOpenAIModelDescription(modelId, requestSettings)));
             this.prevModels = [...models];
 
             const customModels = this.preferenceService.get<Partial<OpenAiModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []);
-            this.manager.createOrUpdateLanguageModels(...this.createCustomModelDescriptionsFromPreferences(customModels));
+            this.manager.createOrUpdateLanguageModels(...this.createCustomModelDescriptionsFromPreferences(customModels, this.getRequestSettingsPref()));
             this.prevCustomModels = [...customModels];
 
             this.preferenceService.onPreferenceChanged(event => {
@@ -70,14 +70,19 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
         const modelsToAdd = [...updatedModels].filter(model => !oldModels.has(model));
 
         this.manager.removeLanguageModels(...modelsToRemove.map(model => `openai/${model}`));
-        const requestSettings = this.preferenceService.get<RequestSetting[]>(PREFERENCE_NAME_REQUEST_SETTINGS, []);
+        const requestSettings = this.getRequestSettingsPref();
         this.manager.createOrUpdateLanguageModels(...modelsToAdd.map(modelId => this.createOpenAIModelDescription(modelId, requestSettings)));
         this.prevModels = newModels;
     }
 
+    private getRequestSettingsPref(): RequestSetting[] {
+        return this.preferenceService.get<RequestSetting[]>(PREFERENCE_NAME_REQUEST_SETTINGS, []);
+    }
+
     protected handleCustomModelChanges(newCustomModels: Partial<OpenAiModelDescription>[]): void {
-        const oldModels = this.createCustomModelDescriptionsFromPreferences(this.prevCustomModels);
-        const newModels = this.createCustomModelDescriptionsFromPreferences(newCustomModels);
+        const requestSettings = this.getRequestSettingsPref();
+        const oldModels = this.createCustomModelDescriptionsFromPreferences(this.prevCustomModels, requestSettings);
+        const newModels = this.createCustomModelDescriptionsFromPreferences(newCustomModels, requestSettings);
 
         const modelsToRemove = oldModels.filter(model => !newModels.some(newModel => newModel.id === model.id));
         const modelsToAddOrUpdate = newModels.filter(newModel =>
@@ -115,7 +120,7 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
 
     protected createCustomModelDescriptionsFromPreferences(
         preferences: Partial<OpenAiModelDescription>[],
-        requestSettings: RequestSetting[] = []
+        requestSettings: RequestSetting[]
     ): OpenAiModelDescription[] {
         return preferences.reduce((acc, pref) => {
             if (!pref.model || !pref.url || typeof pref.model !== 'string' || typeof pref.url !== 'string') {
