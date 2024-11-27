@@ -105,10 +105,13 @@ export class RemoteFrontendContribution implements CommandContribution, Frontend
         });
     }
 
-    protected disconnectRemote(): void {
-        const port = new URLSearchParams(location.search).get('localPort');
-        if (port) {
-            this.windowService.reload({ search: { port } });
+    protected async disconnectRemote(): Promise<void> {
+        const searchParams = new URLSearchParams(location.search);
+        const localPort = searchParams.get('localPort');
+        if (localPort) {
+            const currentPort = searchParams.get('port');
+            this.remoteStatusService.connectionClosed(parseInt(currentPort ?? '0'));
+            this.windowService.reload({ search: { port: localPort } });
         }
     }
 
