@@ -56,6 +56,7 @@ export interface ChatSession {
     title?: string;
     model: ChatModel;
     isActive: boolean;
+    pinnedAgent?: ChatAgent;
 }
 
 export interface ActiveSessionChangedEvent {
@@ -127,7 +128,8 @@ export class ChatServiceImpl implements ChatService {
         const session: ChatSessionInternal = {
             id: model.id,
             model,
-            isActive: true
+            isActive: true,
+            pinnedAgent: undefined
         };
         this._sessions.push(session);
         this.setActiveSession(session.id, options);
@@ -160,8 +162,10 @@ export class ChatServiceImpl implements ChatService {
         session.title = request.text;
 
         const parsedRequest = this.chatRequestParser.parseChatRequest(request, session.model.location);
+        if (session.pinnedAgent) {
 
-        const agent = this.getAgent(parsedRequest);
+        }
+        const agent = this.getAgent(parsedRequest, session);
         if (agent === undefined) {
             const error = 'No ChatAgents available to handle request!';
             this.logger.error(error);
@@ -219,10 +223,15 @@ export class ChatServiceImpl implements ChatService {
         return invocation;
     }
 
-    protected getAgent(parsedRequest: ParsedChatRequest): ChatAgent | undefined {
+    protected getAgent(parsedRequest: ParsedChatRequest, session: ChatSession): ChatAgent | undefined {
         const agentPart = this.getMentionedAgent(parsedRequest);
+
+        if (session.pinnedAgent) {
+            return session.pinnedAgent
+        }
         if (agentPart) {
-            return this.chatAgentService.getAgent(agentPart.agentId);
+            session.pinnedAgent = this.chatAgentService.getAgent(agentPart.agentId);
+            return session.pinnedAgent;
         }
         if (this.defaultChatAgentId) {
             return this.chatAgentService.getAgent(this.defaultChatAgentId.id);

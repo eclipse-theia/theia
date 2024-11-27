@@ -24,6 +24,7 @@ import { CHAT_VIEW_LANGUAGE_EXTENSION } from './chat-view-language-contribution'
 import { IMouseEvent } from '@theia/monaco-editor-core';
 
 type Query = (query: string) => Promise<void>;
+type Unpin = () => void;
 type Cancel = (requestModel: ChatRequestModel) => void;
 
 @injectable()
@@ -49,6 +50,10 @@ export class AIChatInputWidget extends ReactWidget {
     set onQuery(query: Query) {
         this._onQuery = query;
     }
+    private _onUnpin: Unpin;
+    set onUnpin(unpin: Unpin) {
+        this._onUnpin = unpin;
+    }
     private _onCancel: Cancel;
     set onCancel(cancel: Cancel) {
         this._onCancel = cancel;
@@ -56,6 +61,11 @@ export class AIChatInputWidget extends ReactWidget {
     private _chatModel: ChatModel;
     set chatModel(chatModel: ChatModel) {
         this._chatModel = chatModel;
+        this.update();
+    }
+    private _pinnedAgent: ChatAgent | undefined;
+    set pinnedAgent(pinnedAgent: ChatAgent | undefined) {
+        this._pinnedAgent = pinnedAgent;
         this.update();
     }
 
@@ -78,8 +88,10 @@ export class AIChatInputWidget extends ReactWidget {
         return (
             <ChatInput
                 onQuery={this._onQuery.bind(this)}
+                onUnpin={this._onUnpin.bind(this)}
                 onCancel={this._onCancel.bind(this)}
                 chatModel={this._chatModel}
+                pinnedAgent={this._pinnedAgent}
                 getChatAgents={this.getChatAgents.bind(this)}
                 editorProvider={this.editorProvider}
                 untitledResourceResolver={this.untitledResourceResolver}
@@ -107,8 +119,10 @@ export class AIChatInputWidget extends ReactWidget {
 interface ChatInputProperties {
     onCancel: (requestModel: ChatRequestModel) => void;
     onQuery: (query: string) => void;
+    onUnpin: () => void;
     isEnabled?: boolean;
     chatModel: ChatModel;
+    pinnedAgent?: ChatAgent;
     getChatAgents: () => ChatAgent[];
     editorProvider: MonacoEditorProvider;
     untitledResourceResolver: UntitledResourceResolver;
@@ -233,7 +247,17 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         }
     };
 
+    const handleUnpin = () => {
+        props.onUnpin();
+    }
+
     return <div className='theia-ChatInput'>
+        {props.pinnedAgent !== undefined &&
+            <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-between", margin: "10px" }}>
+                <p>dsakdjaldkjasda {props.pinnedAgent.name}</p>
+                < span className="codicon codicon-remove-close option" title="unpin" onClick={handleUnpin} />
+            </div>
+        }
         <div className='theia-ChatInput-Editor-Box'>
             <div className='theia-ChatInput-Editor' ref={editorContainerRef} onKeyDown={onKeyDown} onFocus={handleInputFocus} onBlur={handleInputBlur}>
                 <div ref={placeholderRef} className='theia-ChatInput-Editor-Placeholder'>Ask a question</div>

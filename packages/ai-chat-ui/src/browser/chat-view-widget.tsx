@@ -22,6 +22,8 @@ import { AIChatInputWidget } from './chat-input-widget';
 import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
 import { AIActivationService } from '@theia/ai-core/lib/browser/ai-activation-service';
 
+import { ILogger } from '@theia/core';
+
 export namespace ChatViewWidget {
     export interface State {
         locked?: boolean;
@@ -48,6 +50,9 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
 
     @inject(AIActivationService)
     protected readonly activationService: AIActivationService;
+
+    @inject(ILogger)
+    protected readonly logger: ILogger;
 
     protected chatSession: ChatSession;
 
@@ -91,8 +96,10 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         this.chatSession = this.chatService.createSession();
 
         this.inputWidget.onQuery = this.onQuery.bind(this);
+        this.inputWidget.onUnpin = this.onUnpin.bind(this)
         this.inputWidget.onCancel = this.onCancel.bind(this);
         this.inputWidget.chatModel = this.chatSession.model;
+        this.inputWidget.pinnedAgent = this.chatSession.pinnedAgent;
         this.treeWidget.trackChatModel(this.chatSession.model);
 
         this.initListeners();
@@ -111,10 +118,15 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         this.toDispose.push(
             this.chatService.onActiveSessionChanged(event => {
                 const session = event.sessionId ? this.chatService.getSession(event.sessionId) : this.chatService.createSession();
+
                 if (session) {
+
+                    this.logger.info("session:", session)
+
                     this.chatSession = session;
                     this.treeWidget.trackChatModel(this.chatSession.model);
                     this.inputWidget.chatModel = this.chatSession.model;
+                    this.inputWidget.pinnedAgent = this.chatSession.pinnedAgent;
                     if (event.focus) {
                         this.show();
                     }
@@ -157,6 +169,15 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
             text: query
         };
 
+        // TODO
+        // if (!this.chatSession.pinnedAgent && query.startsWith('@')) {
+        //     const agent = query.split(' ')[0].substring(1);
+        //     this.chatSession.pinnedAgent = agent;
+        //     this.inputWidget.pinnedAgent = this.chatSession.pinnedAgent;
+        // }
+
+        // this.logger.info("pinned agent", this.chatSession.pinnedAgent);
+
         const requestProgress = await this.chatService.sendRequest(this.chatSession.id, chatRequest);
         requestProgress?.responseCompleted.then(responseModel => {
             if (responseModel.isError) {
@@ -168,6 +189,12 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
             return;
         }
         // Tree Widget currently tracks the ChatModel itself. Therefore no notification necessary.
+    }
+
+    protected onUnpin(): void {
+        this.logger.info("unpin")
+        this.chatSession.pinnedAgent = undefined;
+        this.inputWidget.pinnedAgent = this.chatSession.pinnedAgent;
     }
 
     protected onCancel(requestModel: ChatRequestModel): void {
