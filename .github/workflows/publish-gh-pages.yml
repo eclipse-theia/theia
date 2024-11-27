@@ -10,15 +10,14 @@ on:
 
 jobs:
   publish:
-    name: Publish GitHub pages
-    needs: build
+    name: Publish GitHub Pages
     runs-on: ubuntu-22.04
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
-          fetch-depth: 0 # To fetch all history for all branches and tags. (Will be required for caching with lerna: https://github.com/markuplint/markuplint/pull/111)
+          fetch-depth: 0 # Fetch all history for all branches and tags
 
       - name: Use Node.js 20.x
         uses: actions/setup-node@1a4442cacd436585916779262731d5b162bc6ec7 # v3.8.2
@@ -29,19 +28,43 @@ jobs:
       - name: Use Python 3.x
         uses: actions/setup-python@b64ffcaf5b410884ad320a9cfac8866006a109aa # v4.8.0
         with:
-          python-version: "3.x"
+          python-version: "3.11"
 
-      - name: Pre-docs-Publish
+      - name: Build documentation
         run: |
+          yarn global add node-gyp
           yarn --skip-integrity-check --network-timeout 100000
           yarn docs
         env:
           NODE_OPTIONS: --max_old_space_size=14336
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish GH Pages
-        uses: peaceiris/actions-gh-pages@373f7f263a76c20808c831209c920827a82a2847 # v3.9.3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./gh-pages
-          force_orphan: true # will only keep latest commit on branch gh-pages
+      - name: Set up Git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Checkout gh-pages branch
+        run: |
+          git fetch origin gh-pages
+          git checkout gh-pages || git checkout --orphan gh-pages
+
+      - name: Copy new documentation to gh-pages
+        run: |
+          mkdir -p docs/next
+          mkdir -p docs/${{ inputs.version }}
+          rsync -a --delete gh-pages/docs/next/ docs/next/
+          rsync -a --delete gh-pages/docs/next/ docs/${{ inputs.version }}/
+          rsync -a ./gh-pages/docs/next/ docs/next/
+          rsync -a ./gh-pages/docs/next/ docs/${{ inputs.version }}/
+
+      - name: Commit and push changes
+        run: |
+          git add docs/next docs/${{ inputs.version }}
+          git commit -m "Update documentation for version ${{ inputs.version }}"
+          git clean -xfd
+          ls -al .
+          ls -al docs
+        #          git push origin gh-pages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
