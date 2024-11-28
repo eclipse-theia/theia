@@ -44,8 +44,8 @@ export const AICodeCompletionPreferencesSchema: PreferenceSchema = {
         [PREF_AI_INLINE_COMPLETION_MAX_CONTEXT_LINES]: {
             title: 'Maximum Context Lines',
             type: 'number',
-            description: 'The maximum number of lines shared between the prefix and suffix for AI code completion.\
-            Set this to 0 to use the full file as context without any line limit.',
+            description: 'The maximum number of lines used as context, distributed among the lines before and after the cursor position (prefix and suffix).\
+            Set this to -1 to use the full file as context without any line limit and 0 to only use the current line.',
             default: 0,
             minimum: 0
         }

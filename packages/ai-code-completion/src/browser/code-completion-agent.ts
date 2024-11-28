@@ -54,12 +54,17 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
                 return undefined;
             }
 
-            const maxContextLines = this.preferences.get<number>(PREF_AI_INLINE_COMPLETION_MAX_CONTEXT_LINES, 0);
+            const maxContextLines = this.preferences.get<number>(PREF_AI_INLINE_COMPLETION_MAX_CONTEXT_LINES, -1);
 
             let prefixStartLine = 1;
             let suffixEndLine = model.getLineCount();
+            // if maxContextLines is -1, use the full file as context without any line limit
 
-            if (maxContextLines > 0) {
+            if (maxContextLines === 0) {
+                // Only the cursor line
+                prefixStartLine = position.lineNumber;
+                suffixEndLine = position.lineNumber;
+            } else if (maxContextLines > 0) {
                 const linesBeforeCursor = position.lineNumber - 1;
                 const linesAfterCursor = model.getLineCount() - position.lineNumber;
 
@@ -69,7 +74,7 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
                     linesBeforeCursor
                 );
                 const suffixLines = Math.min(
-                    maxContextLines - prefixLines,
+                    Math.floor(maxContextLines / 2),
                     linesAfterCursor
                 );
 
