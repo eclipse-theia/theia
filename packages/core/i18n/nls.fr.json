@@ -144,7 +144,6 @@
       "editor.accessibilitySupport2": "Supposons qu'il n'y ait pas de lecteur d'écran",
       "editor.bracketPairColorization.enabled": "Contrôle si la colorisation des paires de crochets est activée ou non. Utilisez `#workbench.colorCustomizations#` pour surcharger les couleurs de mise en évidence des crochets.",
       "editor.codeActionWidget.includeNearbyQuickfixes": "Activer/désactiver l'affichage de la réparation rapide la plus proche dans une ligne lorsqu'il n'y a pas de diagnostic en cours.",
-      "editor.cursorSurroundingLinesStyle": "Contrôle quand `#cursorSurroundingLines#` doit être appliqué.",
       "editor.detectIndentation": "Contrôle si `#editor.tabSize#` et `#editor.insertSpaces#` seront automatiquement détectés lors de l'ouverture d'un fichier en fonction de son contenu.",
       "editor.dropIntoEditor.enabled": "Contrôle si vous pouvez glisser-déposer un fichier dans un éditeur de texte en maintenant la touche \"Maj\" enfoncée (au lieu d'ouvrir le fichier dans un éditeur).",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Tentera de formater uniquement les modifications (nécessite le contrôle de la source). Si le contrôle de la source ne peut pas être utilisé, alors le fichier entier sera formaté.",

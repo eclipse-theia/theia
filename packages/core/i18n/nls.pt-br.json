@@ -144,7 +144,6 @@
       "editor.accessibilitySupport2": "Suponha que um leitor de tela não esteja conectado",
       "editor.bracketPairColorization.enabled": "Controla se a colorização de pares de colchetes está ativada ou não. Use `#workbench.colorCustomizations#` para substituir as cores de destaque dos colchetes.",
       "editor.codeActionWidget.includeNearbyQuickfixes": "Ativar/desativar a exibição do reparo rápido mais próximo em uma linha quando não estiver em um diagnóstico no momento.",
-      "editor.cursorSurroundingLinesStyle": "Controla quando o `#cursorSurroundingLines#` deve ser aplicado.",
       "editor.detectIndentation": "Controla se `#editor.tabSize#` e `#editor.insertSpaces#` serão detectados automaticamente quando um arquivo for aberto com base no conteúdo do arquivo.",
       "editor.dropIntoEditor.enabled": "Controla se você pode arrastar e soltar um arquivo em um editor de texto mantendo pressionada a tecla `shift` (em vez de abrir o arquivo em um editor).",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Tentará formatar modificações apenas (requer controle de fonte). Se o controle da fonte não puder ser usado, então o arquivo inteiro será formatado.",

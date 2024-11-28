@@ -144,7 +144,6 @@
       "editor.accessibilitySupport2": "Feltételezzük, hogy a képernyőolvasó nincs csatlakoztatva",
       "editor.bracketPairColorization.enabled": "Szabályozza, hogy a zárójelpár színezése engedélyezve legyen-e vagy sem. Használja a `#workbench.colorCustomizations#` parancsot a zárójelek kiemelési színeinek felülbírálásához.",
       "editor.codeActionWidget.includeNearbyQuickfixes": "A legközelebbi gyorsjavítás megjelenítésének engedélyezése/letiltása egy soron belül, ha éppen nem diagnosztikán van.",
-      "editor.cursorSurroundingLinesStyle": "Szabályozza, hogy mikor legyen érvényes a `#cursorSurroundingLines#`.",
       "editor.detectIndentation": "Szabályozza, hogy a `#editor.tabSize#` és a `#editor.insertSpaces#` automatikusan felismerésre kerüljön-e egy fájl megnyitásakor a fájl tartalma alapján.",
       "editor.dropIntoEditor.enabled": "Azt szabályozza, hogy a \"shift\" lenyomva tartásával húzhat-e egy fájlt egy szövegszerkesztőbe (ahelyett, hogy megnyitná a fájlt egy szerkesztőprogramban).",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Csak a módosítások formázására tesz kísérletet (forrásellenőrzés szükséges). Ha a forrásellenőrzés nem használható, akkor a teljes fájl lesz formázva.",

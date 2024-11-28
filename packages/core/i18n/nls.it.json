@@ -144,7 +144,6 @@
       "editor.accessibilitySupport2": "Supponiamo che un lettore di schermo non sia collegato",
       "editor.bracketPairColorization.enabled": "Controlla se la colorazione delle coppie di parentesi è abilitata o meno. Usare `#workbench.colorCustomizations#` per sovrascrivere i colori di evidenziazione delle parentesi.",
       "editor.codeActionWidget.includeNearbyQuickfixes": "Abilita/disabilita la visualizzazione della soluzione rapida più vicina all'interno di una linea quando non è in corso una diagnostica.",
-      "editor.cursorSurroundingLinesStyle": "Controlla quando `#cursorSurroundingLines#` deve essere applicato.",
       "editor.detectIndentation": "Controlla se `#editor.tabSize#` e `#editor.insertSpaces#` saranno rilevati automaticamente all'apertura di un file, in base al suo contenuto.",
       "editor.dropIntoEditor.enabled": "Controlla se è possibile trascinare e rilasciare un file in un editor di testo tenendo premuto `shift` (invece di aprire il file in un editor).",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Tenterà di formattare solo le modifiche (richiede il controllo della fonte). Se il controllo della fonte non può essere usato, allora l'intero file sarà formattato.",

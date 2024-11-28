@@ -144,7 +144,6 @@
       "editor.accessibilitySupport2": "Bir ekran okuyucunun bağlı olmadığını varsayalım",
       "editor.bracketPairColorization.enabled": "Ayraç çifti renklendirmesinin etkin olup olmadığını kontrol eder. Ayraç vurgu renklerini geçersiz kılmak için `#workbench.colorCustomizations#` kullanın.",
       "editor.codeActionWidget.includeNearbyQuickfixes": "O anda bir tanılama üzerinde değilken bir hat içindeki en yakın hızlı düzeltmeyi göstermeyi etkinleştirin/devre dışı bırakın.",
-      "editor.cursorSurroundingLinesStyle": "Ne zaman `#cursorSurroundingLines#` uygulanacağını kontrol eder.",
       "editor.detectIndentation": "Dosya içeriğine bağlı olarak bir dosya açıldığında `#editor.tabSize#` ve `#editor.insertSpaces#` öğelerinin otomatik olarak algılanıp algılanmayacağını kontrol eder.",
       "editor.dropIntoEditor.enabled": "Bir dosyayı `shift` tuşunu basılı tutarak bir metin düzenleyicisine sürükleyip bırakıp bırakamayacağınızı kontrol eder (dosyayı bir düzenleyicide açmak yerine).",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Yalnızca değişiklikleri biçimlendirmeye çalışır (kaynak kontrolü gerektirir). Kaynak kontrolü kullanılamazsa, tüm dosya biçimlendirilecektir.",
