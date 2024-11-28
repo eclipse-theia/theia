@@ -51,6 +51,9 @@
     "editor.tabSize": 2,
     "editor.defaultFormatter": "vscode.json-language-features",
   },
+  "[markdown]": {
+    "editor.defaultFormatter": "DavidAnson.vscode-markdownlint"
+  },
   "typescript.tsdk": "node_modules/typescript/lib",
   "files.insertFinalNewline": true,
   "clang-format.language.typescript.enable": false,
