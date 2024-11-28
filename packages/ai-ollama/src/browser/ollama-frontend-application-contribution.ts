@@ -16,9 +16,11 @@
 
 import { FrontendApplicationContribution, PreferenceService } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { OllamaLanguageModelsManager } from '../common';
+import { OllamaLanguageModelsManager, OllamaModelDescription } from '../common';
 import { HOST_PREF, MODELS_PREF } from './ollama-preferences';
+import { PREFERENCE_NAME_REQUEST_SETTINGS, RequestSetting } from '@theia/ai-core/lib/browser/ai-core-preferences';
 
+const OLLAMA_PROVIDER_ID = 'ollama';
 @injectable()
 export class OllamaFrontendApplicationContribution implements FrontendApplicationContribution {
 
@@ -36,24 +38,54 @@ export class OllamaFrontendApplicationContribution implements FrontendApplicatio
             this.manager.setHost(host);
 
             const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
-            this.manager.createLanguageModels(...models);
+            const requestSettings = this.preferenceService.get<RequestSetting[]>(PREFERENCE_NAME_REQUEST_SETTINGS, []);
+            this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createOllamaModelDescription(modelId, requestSettings)));
             this.prevModels = [...models];
 
             this.preferenceService.onPreferenceChanged(event => {
                 if (event.preferenceName === HOST_PREF) {
                     this.manager.setHost(event.newValue);
                 } else if (event.preferenceName === MODELS_PREF) {
-                    const oldModels = new Set(this.prevModels);
-                    const newModels = new Set(event.newValue as string[]);
-
-                    const modelsToRemove = [...oldModels].filter(model => !newModels.has(model));
-                    const modelsToAdd = [...newModels].filter(model => !oldModels.has(model));
-
-                    this.manager.removeLanguageModels(...modelsToRemove);
-                    this.manager.createLanguageModels(...modelsToAdd);
-                    this.prevModels = [...event.newValue];
+                    this.handleModelChanges(event.newValue as string[]);
+                } else if (event.preferenceName === PREFERENCE_NAME_REQUEST_SETTINGS) {
+                    this.handleRequestSettingsChange(event.newValue as RequestSetting[]);
                 }
             });
         });
+    }
+
+    protected handleModelChanges(newModels: string[]): void {
+        const oldModels = new Set(this.prevModels);
+        const updatedModels = new Set(newModels);
+
+        const modelsToRemove = [...oldModels].filter(model => !updatedModels.has(model));
+        const modelsToAdd = [...updatedModels].filter(model => !oldModels.has(model));
+
+        this.manager.removeLanguageModels(...modelsToRemove);
+        const requestSettings = this.preferenceService.get<RequestSetting[]>(PREFERENCE_NAME_REQUEST_SETTINGS, []);
+        this.manager.createOrUpdateLanguageModels(...modelsToAdd.map(modelId => this.createOllamaModelDescription(modelId, requestSettings)));
+        this.prevModels = newModels;
+    }
+
+    protected handleRequestSettingsChange(newSettings: RequestSetting[]): void {
+        const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
+        this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createOllamaModelDescription(modelId, newSettings)));
+    }
+
+    protected createOllamaModelDescription(modelId: string, requestSettings: RequestSetting[]): OllamaModelDescription {
+        const id = `${OLLAMA_PROVIDER_ID}/${modelId}`;
+        const matchingSettings = requestSettings.filter(
+            setting => (!setting.providerId || setting.providerId === OLLAMA_PROVIDER_ID) && setting.modelId === modelId
+        );
+        if (matchingSettings.length > 1) {
+            console.warn(`Multiple entries found for modelId "${modelId}". Using the first match and ignoring the rest.`);
+        }
+
+        const modelRequestSetting = matchingSettings[0];
+        return {
+            id: id,
+            model: modelId,
+            defaultRequestSettings: modelRequestSetting?.requestSettings
+        };
     }
 }
