@@ -59,7 +59,6 @@ export class OllamaModel implements LanguageModel {
 
     async request(request: LanguageModelRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
         const settings = this.getSettings(request);
-        console.log(JSON.stringify(settings));
         const ollama = this.initializeOllama();
 
         if (request.response_format?.type === 'json_schema') {
