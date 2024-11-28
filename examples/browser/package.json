@@ -22,6 +22,7 @@
   },
   "theiaPluginsDir": "../../plugins",
   "dependencies": {
+    "@theia/ai-anthropic": "1.56.0",
     "@theia/ai-chat": "1.56.0",
     "@theia/ai-chat-ui": "1.56.0",
     "@theia/ai-code-completion": "1.56.0",
