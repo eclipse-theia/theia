@@ -37,7 +37,10 @@ export class ImageFileContribution implements ContainerCreationContribution {
     async handleContainerCreation(createOptions: Docker.ContainerCreateOptions, containerConfig: ImageContainer,
         api: Docker, outputprovider: ContainerOutputProvider): Promise<void> {
         if (containerConfig.image) {
-            await new Promise<void>((res, rej) => api.pull(containerConfig.image, {}, (err, stream) => {
+            const platform = process.platform;
+            const arch = process.arch;
+            const options = platform === 'darwin' && arch === 'arm64' ? { platform: 'amd64' } : {};
+            await new Promise<void>((res, rej) => api.pull(containerConfig.image, options, (err, stream) => {
                 if (err) {
                     rej(err);
                 } else {
