@@ -17,35 +17,34 @@
 import { URI } from '@theia/core';
 import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
 import { EncodingService } from '@theia/core/lib/common/encoding-service';
-import { BrowserFSInitialization, DefaultBrowserFSInitialization } from '@theia/filesystem/lib/browser-only/browserfs-filesystem-initialization';
-import { BrowserFSFileSystemProvider } from '@theia/filesystem/lib/browser-only/browserfs-filesystem-provider';
-import type { FSModule } from 'browserfs/dist/node/core/FS';
+import { OPFSInitialization, DefaultOPFSInitialization } from '@theia/filesystem/lib/browser-only/opfs-filesystem-initialization';
+import { OPFSFileSystemProvider } from '@theia/filesystem/lib/browser-only/opfs-filesystem-provider';
 
 @injectable()
-export class ExampleBrowserFSInitialization extends DefaultBrowserFSInitialization {
+export class ExampleOPFSInitialization extends DefaultOPFSInitialization {
 
     @inject(EncodingService)
     protected encodingService: EncodingService;
 
-    override async initializeFS(fs: FSModule, provider: BrowserFSFileSystemProvider): Promise<void> {
-        try {
-            if (!fs.existsSync('/home/workspace')) {
-                await provider.mkdir(new URI('/home/workspace'));
-                await provider.writeFile(new URI('/home/workspace/my-file.txt'), this.encodingService.encode('foo').buffer, { create: true, overwrite: false });
-                await provider.writeFile(new URI('/home/workspace/my-file2.txt'), this.encodingService.encode('bar').buffer, { create: true, overwrite: false });
-            }
-            if (!fs.existsSync('/home/workspace2')) {
-                await provider.mkdir(new URI('/home/workspace2'));
-                await provider.writeFile(new URI('/home/workspace2/my-file.json'), this.encodingService.encode('{ foo: true }').buffer, { create: true, overwrite: false });
-                await provider.writeFile(new URI('/home/workspace2/my-file2.json'), this.encodingService.encode('{ bar: false }').buffer, { create: true, overwrite: false });
-            }
-        } catch (e) {
-            console.error('An error occurred while initializing the demo workspaces', e);
+    override async initializeFS(provider: OPFSFileSystemProvider): Promise<void> {
+        // Check whether the directory exists
+        if (await provider.exists(new URI('/home/workspace'))) {
+            await provider.readdir(new URI('/home/workspace'));
+        } else {
+            await provider.mkdir(new URI('/home/workspace'));
+            await provider.writeFile(new URI('/home/workspace/my-file.txt'), this.encodingService.encode('foo').buffer, { create: true, overwrite: false });
+        }
+
+        if (await provider.exists(new URI('/home/workspace2'))) {
+            await provider.readdir(new URI('/home/workspace2'));
+        } else {
+            await provider.mkdir(new URI('/home/workspace2'));
+            await provider.writeFile(new URI('/home/workspace2/my-file.json'), this.encodingService.encode('{ foo: true }').buffer, { create: true, overwrite: false });
         }
     }
 }
 
-export const bindBrowserFSInitialization = (bind: interfaces.Bind, rebind: interfaces.Rebind): void => {
-    bind(ExampleBrowserFSInitialization).toSelf();
-    rebind(BrowserFSInitialization).toService(ExampleBrowserFSInitialization);
+export const bindOPFSInitialization = (bind: interfaces.Bind, rebind: interfaces.Rebind): void => {
+    bind(ExampleOPFSInitialization).toSelf();
+    rebind(OPFSInitialization).toService(ExampleOPFSInitialization);
 };
