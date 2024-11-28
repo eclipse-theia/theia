@@ -169,6 +169,10 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
         return this.templates.get(id);
     }
 
+    getCustomPromptTemplateIDs(): string[] {
+        return Array.from(this.templates.keys());
+    }
+
     async editTemplate(id: string, defaultContent?: string): Promise<void> {
         const editorUri = await this.getTemplateURI(id);
         if (! await this.fileService.exists(editorUri)) {

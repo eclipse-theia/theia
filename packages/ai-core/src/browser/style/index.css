@@ -48,7 +48,11 @@
   min-width: 120px;
 }
 
-
+.template-variant-selector.error {
+  border-color: var(--theia-errorForeground);
+  background-color: var(--theia-errorBackground, rgba(255, 0, 0, 0.1));
+  color: var(--theia-errorForeground);
+}
 
 #ai-variable-configuration-container-widget,
 #ai-agent-configuration-container-widget {
