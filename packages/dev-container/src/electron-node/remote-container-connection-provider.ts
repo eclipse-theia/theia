@@ -121,8 +121,8 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
         }
     }
 
-    getDevContainerFiles(): Promise<DevContainerFile[]> {
-        return this.devContainerFileService.getAvailableFiles();
+    getDevContainerFiles(workspacePath: string): Promise<DevContainerFile[]> {
+        return this.devContainerFileService.getAvailableFiles(workspacePath);
     }
 
     async createContainerConnection(container: Docker.Container, docker: Docker, name?: string): Promise<RemoteDockerContainerConnection> {

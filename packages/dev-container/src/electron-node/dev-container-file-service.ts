@@ -38,12 +38,7 @@ export class DevContainerFileService {
         return configuration;
     }
 
-    async getAvailableFiles(): Promise<DevContainerFile[]> {
-        const workspace = await this.workspaceServer.getMostRecentlyUsedWorkspace();
-        if (!workspace) {
-            return [];
-        }
-
+    async getAvailableFiles(workspace: string): Promise<DevContainerFile[]> {
         const devcontainerPath = new URI(workspace).path.join('.devcontainer').fsPath();
 
         return (await this.searchForDevontainerJsonFiles(devcontainerPath, 1)).map(file => ({
@@ -54,7 +49,7 @@ export class DevContainerFileService {
     }
 
     protected async searchForDevontainerJsonFiles(directory: string, depth: number): Promise<string[]> {
-        if (depth < 0) {
+        if (depth < 0 || !fs.existsSync(directory)) {
             return [];
         }
         const filesPaths = (await fs.readdir(directory)).map(file => new Path(directory).join(file).fsPath());

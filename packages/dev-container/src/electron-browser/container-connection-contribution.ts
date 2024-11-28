@@ -84,7 +84,11 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
     }
 
     async getOrSelectDevcontainerFile(): Promise<string | undefined> {
-        const devcontainerFiles = await this.connectionProvider.getDevContainerFiles();
+        const workspace = await this.workspaceService.workspace;
+        if(!workspace) {
+            return;
+        }
+        const devcontainerFiles = await this.connectionProvider.getDevContainerFiles(workspace.resource.path.toString());
 
         if (devcontainerFiles.length === 1) {
             return devcontainerFiles[0].path;
