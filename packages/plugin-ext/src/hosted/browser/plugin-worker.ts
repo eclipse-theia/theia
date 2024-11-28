@@ -27,9 +27,8 @@ export class PluginWorker {
 
     constructor() {
         this.worker = new Worker(new URL('./worker/worker-main',
-            // @ts-expect-error (TS1343)
             // We compile to CommonJS but `import.meta` is still available in the browser
-            import.meta.url));
+            ''));
 
         const channel = new BasicChannel(() => {
             const writer = new Uint8ArrayWriteBuffer();

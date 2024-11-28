@@ -22,6 +22,9 @@
       "path": "dev-packages/localization-manager"
     },
     {
+      "path": "dev-packages/native-esbuild-plugin"
+    },
+    {
       "path": "dev-packages/native-webpack-plugin"
     },
     {

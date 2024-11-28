@@ -64,7 +64,7 @@ export class ApplicationProcess {
         return process.platform === 'win32' ? commandPath + '.cmd' : commandPath;
     }
 
-    protected promisify(command: string, p: cp.ChildProcess): Promise<void> {
+    promisify(command: string, p: cp.ChildProcess): Promise<void> {
         return new Promise((resolve, reject) => {
             p.stdout!.on('data', data => this.pck.log(data.toString()));
             p.stderr!.on('data', data => this.pck.error(data.toString()));
