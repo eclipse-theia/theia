@@ -35,6 +35,7 @@ import { ChatAgent, ChatAgentLocation } from './chat-agents';
 import { ParsedChatRequestAgentPart, ParsedChatRequestVariablePart, ParsedChatRequest } from './parsed-chat-request';
 import { AIVariableService } from '@theia/ai-core';
 import { Event } from '@theia/core/shared/vscode-languageserver-protocol';
+import { OrchestratorChatAgentId } from "./orchestrator-chat-agent";
 
 export interface ChatRequestInvocation {
     /**
@@ -162,10 +163,14 @@ export class ChatServiceImpl implements ChatService {
         session.title = request.text;
 
         const parsedRequest = this.chatRequestParser.parseChatRequest(request, session.model.location);
-        if (session.pinnedAgent) {
+        let agent = this.getAgent(parsedRequest);
 
+        if (!session.pinnedAgent && agent && agent.id !== OrchestratorChatAgentId) {
+            session.pinnedAgent = agent;
+        } else if (session.pinnedAgent && this.getMentionedAgent(parsedRequest) === undefined) {
+            agent = session.pinnedAgent;
         }
-        const agent = this.getAgent(parsedRequest, session);
+
         if (agent === undefined) {
             const error = 'No ChatAgents available to handle request!';
             this.logger.error(error);
@@ -223,15 +228,10 @@ export class ChatServiceImpl implements ChatService {
         return invocation;
     }
 
-    protected getAgent(parsedRequest: ParsedChatRequest, session: ChatSession): ChatAgent | undefined {
+    protected getAgent(parsedRequest: ParsedChatRequest): ChatAgent | undefined {
         const agentPart = this.getMentionedAgent(parsedRequest);
-
-        if (session.pinnedAgent) {
-            return session.pinnedAgent
-        }
         if (agentPart) {
-            session.pinnedAgent = this.chatAgentService.getAgent(agentPart.agentId);
-            return session.pinnedAgent;
+            return this.chatAgentService.getAgent(agentPart.agentId);
         }
         if (this.defaultChatAgentId) {
             return this.chatAgentService.getAgent(this.defaultChatAgentId.id);

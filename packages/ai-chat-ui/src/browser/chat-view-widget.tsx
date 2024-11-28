@@ -169,20 +169,13 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
             text: query
         };
 
-        // TODO
-        // if (!this.chatSession.pinnedAgent && query.startsWith('@')) {
-        //     const agent = query.split(' ')[0].substring(1);
-        //     this.chatSession.pinnedAgent = agent;
-        //     this.inputWidget.pinnedAgent = this.chatSession.pinnedAgent;
-        // }
-
-        // this.logger.info("pinned agent", this.chatSession.pinnedAgent);
-
         const requestProgress = await this.chatService.sendRequest(this.chatSession.id, chatRequest);
         requestProgress?.responseCompleted.then(responseModel => {
             if (responseModel.isError) {
                 this.messageService.error(responseModel.errorObject?.message ?? 'An error occurred druring chat service invocation.');
             }
+        }).finally(() => {
+            this.inputWidget.pinnedAgent = this.chatSession.pinnedAgent;
         });
         if (!requestProgress) {
             this.messageService.error(`Was not able to send request "${chatRequest.text}" to session ${this.chatSession.id}`);
