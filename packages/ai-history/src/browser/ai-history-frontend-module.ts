@@ -21,6 +21,7 @@ import { ILogger } from '@theia/core';
 import { AIHistoryViewContribution } from './ai-history-contribution';
 import { AIHistoryView } from './ai-history-widget';
 import '../../src/browser/style/ai-history.css';
+import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 
 export default new ContainerModule(bind => {
     bind(DefaultCommunicationRecordingService).toSelf().inSingletonScope();
@@ -33,9 +34,11 @@ export default new ContainerModule(bind => {
 
     bindViewContribution(bind, AIHistoryViewContribution);
 
-    bind(AIHistoryView).toSelf().inSingletonScope();
+    bind(AIHistoryView).toSelf();
     bind(WidgetFactory).toDynamicValue(context => ({
         id: AIHistoryView.ID,
         createWidget: () => context.container.get<AIHistoryView>(AIHistoryView)
     })).inSingletonScope();
+    bind(TabBarToolbarContribution).toService(AIHistoryViewContribution);
+
 });

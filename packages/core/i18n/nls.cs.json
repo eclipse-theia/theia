@@ -1,6 +1,9 @@
 {
   "aiConfiguration:open": "Otevřete zobrazení konfigurace AI",
+  "aiHistory:clear": "Historie umělé inteligence: Vymazat historii",
   "aiHistory:open": "Otevřít zobrazení Historie AI",
+  "aiHistory:sortChronologically": "Historie umělé inteligence: Seřadit chronologicky",
+  "aiHistory:sortReverseChronologically": "Historie umělé inteligence: Řadit zpětně chronologicky",
   "debug.breakpoint.editCondition": "Upravit stav...",
   "notebook.cell.changeToCode": "Změna buňky na kód",
   "notebook.cell.changeToMarkdown": "Změna buňky na Mardown",
@@ -141,7 +144,6 @@
       "editor.accessibilitySupport2": "Předpokládejme, že není připojena čtečka obrazovky",
       "editor.bracketPairColorization.enabled": "Ovládá, zda je obarvení dvojice závorek povoleno, nebo ne. Pro přepsání barev zvýraznění závorek použijte `#workbench.colorCustomizations#`.",
       "editor.codeActionWidget.includeNearbyQuickfixes": "Povolení/zakázání zobrazení nejbližší opravy v rámci řádku, pokud se zrovna neprovádí diagnostika.",
-      "editor.cursorSurroundingLinesStyle": "Řídí, kdy se má vynutit `#cursorSurroundingLines#`.",
       "editor.detectIndentation": "Řídí, zda se při otevření souboru automaticky zjistí `#editor.tabSize#` a `#editor.insertSpaces#` na základě obsahu souboru.",
       "editor.dropIntoEditor.enabled": "Ovládá, zda můžete soubor přetáhnout do textového editoru podržením klávesy `shift` (namísto otevření souboru v editoru).",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Pokusí se formátovat pouze změny (vyžaduje kontrolu zdrojů). Pokud nelze použít kontrolu zdrojů, bude formátován celý soubor.",
@@ -208,6 +210,7 @@
       "prepareDownloadLink": "Připravujeme odkaz ke stažení...",
       "processedOutOf": "Zpracováno {0} z {1}",
       "replaceTitle": "Nahradit soubor",
+      "uploadFailed": "Při nahrávání souboru došlo k chybě. {0}",
       "uploadFiles": "Nahrávání souborů...",
       "uploadedOutOf": "Nahráno {0} z {1}"
     },

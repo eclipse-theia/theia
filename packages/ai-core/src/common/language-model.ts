@@ -107,6 +107,11 @@ export interface LanguageModelMetaData {
     readonly family?: string;
     readonly maxInputTokens?: number;
     readonly maxOutputTokens?: number;
+    /**
+     * Default request settings for the language model. These settings can be set by a user preferences.
+     * Settings in a request will override these default settings.
+     */
+    readonly defaultRequestSettings?: { [key: string]: unknown };
 }
 
 export namespace LanguageModelMetaData {

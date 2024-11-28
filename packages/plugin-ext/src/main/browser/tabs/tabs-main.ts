@@ -43,6 +43,7 @@ export class TabsMainImpl implements TabsMain, Disposable {
     private applicationShell: ApplicationShell;
 
     private disposableTabBarListeners: DisposableCollection = new DisposableCollection();
+    private disposableTitleListeners: Map<string, DisposableCollection> = new Map();
     private toDisposeOnDestroy: DisposableCollection = new DisposableCollection();
 
     private groupIdCounter = 1;
@@ -131,6 +132,7 @@ export class TabsMainImpl implements TabsMain, Disposable {
         }
         const newTabGroupModel = new Map<TabBar<Widget>, TabGroupDto>();
         this.tabInfoLookup.clear();
+        this.disposableTitleListeners.forEach(disposable => disposable.dispose());
         this.disposableTabBarListeners.dispose();
         this.applicationShell.mainAreaTabBars
             .forEach(tabBar => {
@@ -185,12 +187,21 @@ export class TabsMainImpl implements TabsMain, Disposable {
         };
     }
 
+    protected getTitleDisposables(title: Title<Widget>): DisposableCollection {
+        let disposable = this.disposableTitleListeners.get(title.owner.id);
+        if (!disposable) {
+            disposable = new DisposableCollection();
+            this.disposableTitleListeners.set(title.owner.id, disposable);
+        }
+        return disposable;
+    }
+
     protected attachListenersToTabBar(tabBar: TabBar<Widget> | undefined): void {
         if (!tabBar) {
             return;
         }
         tabBar.titles.forEach(title => {
-            this.connectToSignal(this.disposableTabBarListeners, title.changed, this.onTabTitleChanged);
+            this.connectToSignal(this.getTitleDisposables(title), title.changed, this.onTabTitleChanged);
         });
 
         this.connectToSignal(this.disposableTabBarListeners, tabBar.tabMoved, this.onTabMoved);
@@ -261,7 +272,7 @@ export class TabsMainImpl implements TabsMain, Disposable {
     // #region event listeners
     private onTabCreated(tabBar: TabBar<Widget>, args: TabBar.ITabActivateRequestedArgs<Widget>): void {
         const group = this.getOrRebuildModel(this.tabGroupModel, tabBar);
-        this.connectToSignal(this.disposableTabBarListeners, args.title.changed, this.onTabTitleChanged);
+        this.connectToSignal(this.getTitleDisposables(args.title), args.title.changed, this.onTabTitleChanged);
         const tabDto = this.createTabDto(args.title, group.groupId, true);
         this.tabInfoLookup.set(args.title, { group, tab: tabDto, tabIndex: args.index });
         group.tabs.splice(args.index, 0, tabDto);
@@ -306,6 +317,8 @@ export class TabsMainImpl implements TabsMain, Disposable {
     }
 
     private onTabClosed(tabInfo: TabInfo, title: Title<Widget>): void {
+        this.disposableTitleListeners.get(title.owner.id)?.dispose();
+        this.disposableTitleListeners.delete(title.owner.id);
         tabInfo.group.tabs.splice(tabInfo.tabIndex, 1);
         this.tabInfoLookup.delete(title);
         this.updateTabIndices(tabInfo, tabInfo.tabIndex);
@@ -384,5 +397,7 @@ export class TabsMainImpl implements TabsMain, Disposable {
     dispose(): void {
         this.toDisposeOnDestroy.dispose();
         this.disposableTabBarListeners.dispose();
+        this.disposableTitleListeners.forEach(disposable => disposable.dispose());
+        this.disposableTitleListeners.clear();
     }
 }

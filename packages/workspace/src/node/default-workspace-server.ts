@@ -161,7 +161,12 @@ export class DefaultWorkspaceServer implements WorkspaceServer, BackendApplicati
     }
 
     protected async workspaceStillExist(workspaceRootUri: string): Promise<boolean> {
-        return fs.pathExists(FileUri.fsPath(workspaceRootUri));
+        const uri = new URI(workspaceRootUri);
+        // Non file system workspaces cannot be checked for existence
+        if (uri.scheme !== 'file') {
+            return false;
+        }
+        return fs.pathExists(uri.path.fsPath());
     }
 
     protected async getWorkspaceURIFromCli(): Promise<string | undefined> {

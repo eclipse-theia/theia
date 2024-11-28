@@ -73,12 +73,14 @@ export interface ChatRequestModel {
     readonly response: ChatResponseModel;
     readonly message: ParsedChatRequest;
     readonly agentId?: string;
+    readonly data?: { [key: string]: unknown };
 }
 
 export interface ChatProgressMessage {
     kind: 'progressMessage';
     id: string;
     status: 'inProgress' | 'completed' | 'failed';
+    show: 'untilFirstContent' | 'whileIncomplete' | 'forever';
     content: string;
 }
 
@@ -278,6 +280,42 @@ export namespace ErrorChatResponseContent {
     }
 }
 
+export type QuestionResponseHandler = (
+    selectedOption: { text: string, value?: string },
+) => void;
+
+export interface QuestionResponseContent extends ChatResponseContent {
+    kind: 'question';
+    question: string;
+    options: { text: string, value?: string }[];
+    selectedOption?: { text: string, value?: string };
+    handler: QuestionResponseHandler;
+    request: ChatRequestModelImpl;
+}
+
+export namespace QuestionResponseContent {
+    export function is(obj: unknown): obj is QuestionResponseContent {
+        return (
+            ChatResponseContent.is(obj) &&
+            obj.kind === 'question' &&
+            'question' in obj &&
+            typeof (obj as { question: unknown }).question === 'string' &&
+            'options' in obj &&
+            Array.isArray((obj as { options: unknown }).options) &&
+            (obj as { options: unknown[] }).options.every(option =>
+                typeof option === 'object' &&
+                option && 'text' in option &&
+                typeof (option as { text: unknown }).text === 'string' &&
+                ('value' in option ? typeof (option as { value: unknown }).value === 'string' || typeof (option as { value: unknown }).value === 'undefined' : true)
+            ) &&
+            'handler' in obj &&
+            typeof (obj as { handler: unknown }).handler === 'function' &&
+            'request' in obj &&
+            obj.request instanceof ChatRequestModelImpl
+        );
+    }
+}
+
 export interface ChatResponse {
     readonly content: ChatResponseContent[];
     asString(): string;
@@ -291,6 +329,7 @@ export interface ChatResponseModel {
     readonly response: ChatResponse;
     readonly isComplete: boolean;
     readonly isCanceled: boolean;
+    readonly isWaitingForInput: boolean;
     readonly isError: boolean;
     readonly agentId?: string
     readonly errorObject?: Error;
@@ -342,14 +381,29 @@ export class ChatRequestModelImpl implements ChatRequestModel {
     protected _request: ChatRequest;
     protected _response: ChatResponseModelImpl;
     protected _agentId?: string;
+    protected _data: { [key: string]: unknown };
 
-    constructor(session: ChatModel, public readonly message: ParsedChatRequest, agentId?: string) {
+    constructor(session: ChatModel, public readonly message: ParsedChatRequest, agentId?: string,
+        data: { [key: string]: unknown } = {}) {
         // TODO accept serialized data as a parameter to restore a previously saved ChatRequestModel
         this._request = message.request;
         this._id = generateUuid();
         this._session = session;
         this._response = new ChatResponseModelImpl(this._id, agentId);
         this._agentId = agentId;
+        this._data = data;
+    }
+
+    get data(): { [key: string]: unknown } | undefined {
+        return this._data;
+    }
+
+    addData(key: string, value: unknown): void {
+        this._data[key] = value;
+    }
+
+    getDataByKey(key: string): unknown {
+        return this._data[key];
     }
 
     get id(): string {
@@ -586,6 +640,31 @@ export class HorizontalLayoutChatResponseContentImpl implements HorizontalLayout
     }
 }
 
+/**
+ * Default implementation for the QuestionResponseContent.
+ */
+export class QuestionResponseContentImpl implements QuestionResponseContent {
+    readonly kind = 'question';
+    protected _selectedOption: { text: string; value?: string } | undefined;
+    constructor(public question: string, public options: { text: string, value?: string }[],
+        public request: ChatRequestModelImpl, public handler: QuestionResponseHandler) {
+    }
+    set selectedOption(option: { text: string; value?: string; } | undefined) {
+        this._selectedOption = option;
+        this.request.response.response.responseContentChanged();
+    }
+    get selectedOption(): { text: string; value?: string; } | undefined {
+        return this._selectedOption;
+    }
+    asString?(): string | undefined {
+        return `Question: ${this.question}
+${this.selectedOption ? `Answer: ${this.selectedOption?.text}` : 'No answer'}`;
+    }
+    merge?(): boolean {
+        return false;
+    }
+}
+
 class ChatResponseImpl implements ChatResponse {
     protected readonly _onDidChangeEmitter = new Emitter<void>();
     onDidChange: Event<void> = this._onDidChangeEmitter.event;
@@ -638,6 +717,11 @@ class ChatResponseImpl implements ChatResponse {
         this._updateResponseRepresentation();
     }
 
+    responseContentChanged(): void {
+        this._updateResponseRepresentation();
+        this._onDidChangeEmitter.fire();
+    }
+
     protected _updateResponseRepresentation(): void {
         this._responseRepresentation = this._content
             .map(responseContent => {
@@ -672,6 +756,7 @@ class ChatResponseModelImpl implements ChatResponseModel {
     protected _response: ChatResponseImpl;
     protected _isComplete: boolean;
     protected _isCanceled: boolean;
+    protected _isWaitingForInput: boolean;
     protected _agentId?: string;
     protected _isError: boolean;
     protected _errorObject: Error | undefined;
@@ -686,6 +771,7 @@ class ChatResponseModelImpl implements ChatResponseModel {
         this._response = response;
         this._isComplete = false;
         this._isCanceled = false;
+        this._isWaitingForInput = false;
         this._agentId = agentId;
     }
 
@@ -712,6 +798,7 @@ class ChatResponseModelImpl implements ChatResponseModel {
             kind: 'progressMessage',
             id,
             status: message.status ?? 'inProgress',
+            show: message.show ?? 'untilFirstContent',
             ...message,
         };
         this._progressMessages.push(newMessage);
@@ -743,6 +830,10 @@ class ChatResponseModelImpl implements ChatResponseModel {
         return this._isCanceled;
     }
 
+    get isWaitingForInput(): boolean {
+        return this._isWaitingForInput;
+    }
+
     get agentId(): string | undefined {
         return this._agentId;
     }
@@ -753,17 +844,31 @@ class ChatResponseModelImpl implements ChatResponseModel {
 
     complete(): void {
         this._isComplete = true;
+        this._isWaitingForInput = false;
         this._onDidChangeEmitter.fire();
     }
 
     cancel(): void {
         this._isComplete = true;
         this._isCanceled = true;
+        this._isWaitingForInput = false;
         this._onDidChangeEmitter.fire();
     }
+
+    waitForInput(): void {
+        this._isWaitingForInput = true;
+        this._onDidChangeEmitter.fire();
+    }
+
+    stopWaitingForInput(): void {
+        this._isWaitingForInput = false;
+        this._onDidChangeEmitter.fire();
+    }
+
     error(error: Error): void {
         this._isComplete = true;
         this._isCanceled = false;
+        this._isWaitingForInput = false;
         this._isError = true;
         this._errorObject = error;
         this._onDidChangeEmitter.fire();

@@ -21,7 +21,7 @@
 const _glob = require('glob');
 const debug = require('debug')('ts-clean');
 const fs = require('fs');
-const nsfw = require('nsfw');
+const parcelWatcher = require('@parcel/watcher');
 const path = require('path');
 const util = require('util');
 const yargs = require('yargs');
@@ -121,13 +121,11 @@ async function tsClean() {
  */
 async function tsCleanWatch(src, dst, dry) {
     await tsCleanRun(src, dst, dry);
-    const watcher = await nsfw(src, async events => {
+    await parcelWatcher.subscribe(src, async (_err, events) => {
         for (const event of events) {
             let absolute;
-            if (event.action === nsfw.actions.DELETED) {
-                absolute = path.resolve(event.directory, event.file);
-            } else if (event.action === nsfw.actions.RENAMED) {
-                absolute = path.resolve(event.directory, event.oldFile);
+            if (event.type === 'delete') {
+                absolute = event.path;
             } else {
                 continue;
             }
@@ -143,7 +141,6 @@ async function tsCleanWatch(src, dst, dry) {
             }));
         }
     });
-    await watcher.start();
 }
 
 /**

@@ -38,7 +38,9 @@ export abstract class ReactWidget extends BaseWidget {
 
     protected override onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
-        this.nodeRoot.render(<React.Fragment>{this.render()}</React.Fragment>);
+        if (!this.isDisposed) {
+            this.nodeRoot.render(<React.Fragment>{this.render()}</React.Fragment>);
+        }
     }
 
     /**

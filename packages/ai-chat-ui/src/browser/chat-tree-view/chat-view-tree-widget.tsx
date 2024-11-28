@@ -14,12 +14,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import {
+    ChatAgent,
     ChatAgentService,
     ChatModel,
     ChatProgressMessage,
     ChatRequestModel,
     ChatResponseContent,
     ChatResponseModel,
+    ParsedChatRequestAgentPart,
+    ParsedChatRequestVariablePart,
 } from '@theia/ai-chat';
 import { CommandRegistry, ContributionProvider } from '@theia/core';
 import {
@@ -27,6 +30,7 @@ import {
     CommonCommands,
     CompositeTreeNode,
     ContextMenuRenderer,
+    HoverService,
     Key,
     KeyCode,
     NodeProps,
@@ -46,6 +50,7 @@ import * as React from '@theia/core/shared/react';
 import { ChatNodeToolbarActionContribution } from '../chat-node-toolbar-action-contribution';
 import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
 import { useMarkdownRendering } from '../chat-response-renderer/markdown-part-renderer';
+import { AIVariableService } from '@theia/ai-core';
 
 // TODO Instead of directly operating on the ChatRequestModel we could use an intermediate view model
 export interface RequestNode extends TreeNode {
@@ -77,8 +82,14 @@ export class ChatViewTreeWidget extends TreeWidget {
     @inject(ChatAgentService)
     protected chatAgentService: ChatAgentService;
 
+    @inject(AIVariableService)
+    protected readonly variableService: AIVariableService;
+
     @inject(CommandRegistry)
     private commandRegistry: CommandRegistry;
+
+    @inject(HoverService)
+    private hoverService: HoverService;
 
     protected _shouldScrollToEnd = true;
 
@@ -267,22 +278,39 @@ export class ChatViewTreeWidget extends TreeWidget {
 
     private renderAgent(node: RequestNode | ResponseNode): React.ReactNode {
         const inProgress = isResponseNode(node) && !node.response.isComplete && !node.response.isCanceled && !node.response.isError;
+        const waitingForInput = isResponseNode(node) && node.response.isWaitingForInput;
         const toolbarContributions = !inProgress
             ? this.chatNodeToolbarActionContributions.getContributions()
                 .flatMap(c => c.getToolbarActions(node))
                 .filter(action => this.commandRegistry.isEnabled(action.commandId, node))
                 .sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0))
             : [];
+        const agentLabel = React.createRef<HTMLHeadingElement>();
+        const agentDescription = this.getAgent(node)?.description;
         return <React.Fragment>
             <div className='theia-ChatNodeHeader'>
                 <div className={`theia-AgentAvatar ${this.getAgentIconClassName(node)}`}></div>
-                <h3 className='theia-AgentLabel'>{this.getAgentLabel(node)}</h3>
+                <h3 ref={agentLabel}
+                    className='theia-AgentLabel'
+                    onMouseEnter={() => {
+                        if (agentDescription) {
+                            this.hoverService.requestHover({
+                                content: agentDescription,
+                                target: agentLabel.current!,
+                                position: 'right'
+                            });
+                        }
+                    }}>
+                    {this.getAgentLabel(node)}
+                </h3>
                 {inProgress && <span className='theia-ChatContentInProgress'>Generating</span>}
+                {inProgress && waitingForInput && <span className='theia-ChatContentInProgress'>Waiting for input</span>}
                 <div className='theia-ChatNodeToolbar'>
                     {!inProgress &&
                         toolbarContributions.length > 0 &&
                         toolbarContributions.map(action =>
                             <span
+                                key={action.commandId}
                                 className={`theia-ChatNodeToolbarAction ${action.icon}`}
                                 title={action.tooltip}
                                 onClick={e => {
@@ -308,8 +336,14 @@ export class ChatViewTreeWidget extends TreeWidget {
             // TODO find user name
             return 'You';
         }
-        const agent = node.response.agentId ? this.chatAgentService.getAgent(node.response.agentId) : undefined;
-        return agent?.name ?? 'AI';
+        return this.getAgent(node)?.name ?? 'AI';
+    }
+
+    private getAgent(node: RequestNode | ResponseNode): ChatAgent | undefined {
+        if (isRequestNode(node)) {
+            return undefined;
+        }
+        return node.response.agentId ? this.chatAgentService.getAgent(node.response.agentId) : undefined;
     }
 
     private getAgentIconClassName(node: RequestNode | ResponseNode): string | undefined {
@@ -331,7 +365,12 @@ export class ChatViewTreeWidget extends TreeWidget {
     }
 
     private renderChatRequest(node: RequestNode): React.ReactNode {
-        return <ChatRequestRender node={node} />;
+        return <ChatRequestRender
+            node={node}
+            hoverService={this.hoverService}
+            chatAgentService={this.chatAgentService}
+            variableService={this.variableService}
+        />;
     }
 
     private renderChatResponse(node: ResponseNode): React.ReactNode {
@@ -339,12 +378,28 @@ export class ChatViewTreeWidget extends TreeWidget {
             <div className={'theia-ResponseNode'}>
                 {!node.response.isComplete
                     && node.response.response.content.length === 0
-                    && node.response.progressMessages.map((c, i) =>
-                        <ProgressMessage {...c} key={`${node.id}-progress-${i}`} />
-                    )}
+                    && node.response.progressMessages
+                        .filter(c => c.show === 'untilFirstContent')
+                        .map((c, i) =>
+                            <ProgressMessage {...c} key={`${node.id}-progress-untilFirstContent-${i}`} />
+                        )
+                }
                 {node.response.response.content.map((c, i) =>
                     <div className='theia-ResponseNode-Content' key={`${node.id}-content-${i}`}>{this.getChatResponsePartRenderer(c, node)}</div>
                 )}
+                {!node.response.isComplete
+                    && node.response.progressMessages
+                        .filter(c => c.show === 'whileIncomplete')
+                        .map((c, i) =>
+                            <ProgressMessage {...c} key={`${node.id}-progress-whileIncomplete-${i}`} />
+                        )
+                }
+                {node.response.progressMessages
+                    .filter(c => c.show === 'forever')
+                    .map((c, i) =>
+                        <ProgressMessage {...c} key={`${node.id}-progress-afterComplete-${i}`} />
+                    )
+                }
             </div>
         );
     }
@@ -375,11 +430,79 @@ export class ChatViewTreeWidget extends TreeWidget {
     }
 }
 
-const ChatRequestRender = ({ node }: { node: RequestNode }) => {
-    const text = node.request.request.displayText ?? node.request.request.text;
-    const ref = useMarkdownRendering(text);
+const ChatRequestRender = (
+    {
+        node, hoverService, chatAgentService, variableService
+    }: {
+        node: RequestNode,
+        hoverService: HoverService,
+        chatAgentService: ChatAgentService,
+        variableService: AIVariableService
+    }) => {
+    const parts = node.request.message.parts;
+    return (
+        <div className="theia-RequestNode">
+            <p>
+                {parts.map((part, index) => {
+                    if (part instanceof ParsedChatRequestAgentPart || part instanceof ParsedChatRequestVariablePart) {
+                        let description = undefined;
+                        let className = '';
+                        if (part instanceof ParsedChatRequestAgentPart) {
+                            description = chatAgentService.getAgent(part.agentId)?.description;
+                            className = 'theia-RequestNode-AgentLabel';
+                        } else if (part instanceof ParsedChatRequestVariablePart) {
+                            description = variableService.getVariable(part.variableName)?.description;
+                            className = 'theia-RequestNode-VariableLabel';
+                        }
+                        return (
+                            <HoverableLabel
+                                key={index}
+                                text={part.text}
+                                description={description}
+                                hoverService={hoverService}
+                                className={className}
+                            />
+                        );
+                    } else {
+                        // maintain the leading and trailing spaces with explicit `&nbsp;`, otherwise they would get trimmed by the markdown renderer
+                        const ref = useMarkdownRendering(part.text.replace(/^\s|\s$/g, '&nbsp;'), true);
+                        return (
+                            <span key={index} ref={ref}></span>
+                        );
+                    }
+                })}
+            </p>
+        </div>
+    );
+};
 
-    return <div className={'theia-RequestNode'} ref={ref}></div>;
+const HoverableLabel = (
+    {
+        text, description, hoverService, className
+    }: {
+        text: string,
+        description?: string,
+        hoverService: HoverService,
+        className: string
+    }) => {
+    const spanRef = React.createRef<HTMLSpanElement>();
+    return (
+        <span
+            className={className}
+            ref={spanRef}
+            onMouseEnter={() => {
+                if (description) {
+                    hoverService.requestHover({
+                        content: description,
+                        target: spanRef.current!,
+                        position: 'right'
+                    });
+                }
+            }}
+        >
+            {text}
+        </span>
+    );
 };
 
 const ProgressMessage = (c: ChatProgressMessage) => (

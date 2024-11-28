@@ -388,11 +388,16 @@ export class TextEditorPropertiesMain {
         if (editor && editor instanceof MonacoEditor) {
             result = editor.getControl().getSelections() || undefined;
         } else if (editor && editor instanceof SimpleMonacoEditor) {
-            result = editor.getControl().getSelections()?.map(selection => new monaco.Selection(
-                selection.startLineNumber,
-                selection.startColumn,
-                selection.positionLineNumber,
-                selection.positionColumn));
+            result = editor.getControl().getSelections()?.map(selection => {
+                const monacoSelection = new monaco.Selection(
+                    selection.selectionStartLineNumber,
+                    selection.selectionStartColumn,
+                    selection.positionLineNumber,
+                    selection.positionColumn);
+                monacoSelection.setStartPosition(selection.startLineNumber, selection.startColumn);
+                monacoSelection.setEndPosition(selection.endLineNumber, selection.endColumn);
+                return monacoSelection;
+            });
         }
 
         if (!result && prevProperties) {

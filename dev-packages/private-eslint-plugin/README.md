@@ -17,6 +17,11 @@ The plugin helps identify problems during development through static analysis in
 
 ## Rules
 
+### `annotation-check`:
+
+Inversify >=6.1 requires to annotate all constructor parameters of injectable classes as otherwise runtime errors are thrown.
+The rule checks that all constructor parameters of injectable classes are annotated with `@inject`, `@unmanaged` or `@multiInject`.
+
 ### `localization-check`:
 
 The rule prevents the following localization related issues:

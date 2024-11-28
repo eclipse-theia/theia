@@ -46,8 +46,7 @@ export const filesystemPreferenceSchema: PreferenceSchema = {
             },
             default: {
                 '**/.git/objects/**': true,
-                '**/.git/subtree-cache/**': true,
-                '**/node_modules/**': true
+                '**/.git/subtree-cache/**': true
             },
             scope: 'resource'
         },
@@ -96,6 +95,12 @@ export const filesystemPreferenceSchema: PreferenceSchema = {
             description: nls.localizeByDefault('When enabled, will trim trailing whitespace when saving a file.'),
             scope: 'language-overridable'
         },
+        'files.insertFinalNewline': {
+            type: 'boolean',
+            default: false,
+            description: nls.localizeByDefault('When enabled, insert a final new line at the end of the file when saving it.'),
+            scope: 'language-overridable'
+        },
         'files.maxConcurrentUploads': {
             type: 'integer',
             default: 1,
@@ -117,6 +122,7 @@ export interface FileSystemConfiguration {
     'files.participants.timeout': number
     'files.maxFileSizeMB': number
     'files.trimTrailingWhitespace': boolean
+    'files.insertFinalNewline': boolean
     'files.maxConcurrentUploads': number
 }
 

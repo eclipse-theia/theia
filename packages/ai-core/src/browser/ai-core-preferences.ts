@@ -21,6 +21,7 @@ import { interfaces } from '@theia/core/shared/inversify';
 export const AI_CORE_PREFERENCES_TITLE = '✨ AI Features [Experimental]';
 export const PREFERENCE_NAME_ENABLE_EXPERIMENTAL = 'ai-features.AiEnable.enableAI';
 export const PREFERENCE_NAME_PROMPT_TEMPLATES = 'ai-features.promptTemplates.promptTemplatesFolder';
+export const PREFERENCE_NAME_REQUEST_SETTINGS = 'ai-features.modelSettings.requestSettings';
 
 export const aiCorePreferenceSchema: PreferenceSchema = {
     type: 'object',
@@ -55,13 +56,51 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
                     canSelectMany: false
                 }
             },
-
+        },
+        [PREFERENCE_NAME_REQUEST_SETTINGS]: {
+            title: 'Custom Request Settings',
+            markdownDescription: 'Allows specifying custom request settings for multiple models.\n\
+            Each object represents the configuration for a specific model. The `modelId` field specifies the model ID, `requestSettings` defines model-specific settings.\n\
+            The `providerId` field is optional and allows you to apply the settings to a specific provider. If not set, the settings will be applied to all providers.\n\
+            Example providerIds: huggingface, openai, ollama, llamafile.\n\
+            Refer to [our documentation](https://theia-ide.org/docs/user_ai/#custom-request-settings) for more information.',
+            type: 'array',
+            items: {
+                type: 'object',
+                properties: {
+                    modelId: {
+                        type: 'string',
+                        description: 'The model id'
+                    },
+                    requestSettings: {
+                        type: 'object',
+                        additionalProperties: true,
+                        description: 'Settings for the specific model ID.',
+                    },
+                    providerId: {
+                        type: 'string',
+                        description: 'The (optional) provider id to apply the settings to. If not set, the settings will be applied to all providers.',
+                    },
+                },
+            },
+            default: [],
         }
     }
 };
 export interface AICoreConfiguration {
     [PREFERENCE_NAME_ENABLE_EXPERIMENTAL]: boolean | undefined;
     [PREFERENCE_NAME_PROMPT_TEMPLATES]: string | undefined;
+    [PREFERENCE_NAME_REQUEST_SETTINGS]: Array<{
+        modelId: string;
+        requestSettings?: { [key: string]: unknown };
+        providerId?: string;
+    }> | undefined;
+}
+
+export interface RequestSetting {
+    modelId: string;
+    requestSettings?: { [key: string]: unknown };
+    providerId?: string;
 }
 
 export const AICorePreferences = Symbol('AICorePreferences');

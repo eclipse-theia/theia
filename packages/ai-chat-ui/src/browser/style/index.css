@@ -16,8 +16,7 @@
   cursor: default;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 16px 20px;
+  padding: 16px 20px 6px 20px;
   user-select: text;
   -webkit-user-select: text;
   border-bottom: 1px solid var(--theia-sideBarSectionHeader-border);
@@ -110,16 +109,41 @@ div:last-child > .theia-ChatNode {
   background-color: var(--theia-toolbar-hoverBackground);
 }
 
-.theia-ChatNode .rendered-markdown p {
-  margin: 0 0 16px;
+.theia-ChatNode {
+  line-height: 1.3rem;
 }
 
-.theia-ChatNode:last-child .rendered-markdown > :last-child {
+.theia-ChatNode ul,
+.theia-ChatNode ol {
+  padding-inline-start: 1rem;
+}
+
+.theia-ChatNode li > p {
+  margin-top: 0;
   margin-bottom: 0;
 }
 
-.theia-ChatNode .rendered-markdown {
-  line-height: 1.3rem;
+.theia-ChatNode .theia-CodeWrapper {
+  padding: 0.5em;
+  padding-bottom: 0;
+  background-color: var(--theia-editor-background);
+  border-radius: 6px;
+  border: var(--theia-border-width) solid var(--theia-checkbox-border);
+  font-size: var(--theia-code-font-size);
+}
+
+.theia-RequestNode > p div {
+  display: inline;
+}
+
+.theia-RequestNode .theia-RequestNode-AgentLabel,
+.theia-RequestNode .theia-RequestNode-VariableLabel {
+  padding: calc(var(--theia-ui-padding) * 2 / 3);
+  padding-top: 0px;
+  padding-bottom: 0px;
+  border-radius: calc(var(--theia-ui-padding) * 2 / 3);
+  background: var(--theia-badge-background);
+  color: var(--theia-badge-foreground);
 }
 
 .chat-input-widget {
@@ -153,6 +177,7 @@ div:last-child > .theia-ChatNode {
   display: flex;
   flex-direction: column-reverse;
   overflow: hidden;
+  transition: height 0.05s ease-in-out;
 }
 
 .theia-ChatInput-Editor:has(.monaco-editor.focused) {
@@ -219,8 +244,8 @@ div:last-child > .theia-ChatNode {
 .theia-CodePartRenderer-root {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  border: 1px solid var(--theia-input-border);
+  gap: 2px;
+  border: var(--theia-border-width) solid var(--theia-input-border);
   border-radius: 4px;
 }
 
@@ -232,11 +257,20 @@ div:last-child > .theia-ChatNode {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
 }
 
-.theia-CodePartRenderer-right button {
-  margin-left: 4px;
+.theia-CodePartRenderer-right .button {
+  margin-left: 2px;
+  width: 18px;
+  height: 18px;
+  padding: 2px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.theia-CodePartRenderer-right .button:hover {
+  background-color: var(--theia-toolbar-hoverBackground);
 }
 
 .theia-CodePartRenderer-separator {
@@ -245,17 +279,70 @@ div:last-child > .theia-ChatNode {
   background-color: var(--theia-input-border);
 }
 
+.theia-QuestionPartRenderer-root {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: var(--theia-border-width) solid
+    var(--theia-sideBarSectionHeader-border);
+  padding: 8px 12px 12px;
+  border-radius: 5px;
+  margin: 0 0 8px 0;
+}
+.theia-QuestionPartRenderer-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.theia-QuestionPartRenderer-option {
+  min-width: 100px;
+  flex: 1 1 auto;
+  margin: 0;
+}
+.theia-QuestionPartRenderer-option.selected:disabled:hover {
+  background-color: var(--theia-button-disabledBackground);
+}
+.theia-QuestionPartRenderer-option:disabled:not(.selected) {
+  background-color: var(--theia-button-secondaryBackground);
+}
+
 .theia-toolCall {
   font-weight: normal;
   color: var(--theia-descriptionForeground);
   line-height: 20px;
-  margin-bottom: 6px;
+  margin-top: 13px;
+  margin-bottom: 13px;
   cursor: pointer;
 }
 
 .theia-toolCall .fa,
 .theia-toolCall details summary::marker {
   color: var(--theia-button-background);
+}
+
+.theia-toolCall details pre {
+  cursor: text;
+  line-height: 1rem;
+  margin-top: 0;
+  margin-bottom: 0;
+  padding: 6px;
+  background-color: var(--theia-editor-background);
+  overflow: auto;
+}
+
+.collapsible-arguments {
+  display: inline-block;
+}
+
+.collapsible-arguments .collapsible-arguments-summary {
+  display: inline-block;
+  white-space: nowrap;
+  text-decoration: underline;
+}
+
+details[open].collapsible-arguments,
+details[open].collapsible-arguments .collapsible-arguments-summary {
+  display: unset;
 }
 
 .theia-ResponseNode-ProgressMessage {

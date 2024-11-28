@@ -44,12 +44,11 @@
     "lerna": "^7.1.1",
     "mkdirp": "^0.5.0",
     "node-gyp": "^9.0.0",
-    "nsfw": "^2.2.4",
     "nyc": "^15.0.0",
-    "puppeteer": "19.7.2",
-    "puppeteer-core": "19.7.2",
+    "puppeteer": "23.1.0",
+    "puppeteer-core": "23.1.0",
     "puppeteer-to-istanbul": "1.4.0",
-    "rimraf": "^2.6.1",
+    "rimraf": "^5.0.0",
     "sinon": "^12.0.0",
     "temp": "^0.9.1",
     "tslint": "^5.12.0",
@@ -105,7 +104,9 @@
   "theiaPlugins": {
     "eclipse-theia.builtin-extension-pack": "https://open-vsx.org/api/eclipse-theia/builtin-extension-pack/1.88.1/file/eclipse-theia.builtin-extension-pack-1.88.1.vsix",
     "EditorConfig.EditorConfig": "https://open-vsx.org/api/EditorConfig/EditorConfig/0.16.6/file/EditorConfig.EditorConfig-0.16.6.vsix",
-    "dbaeumer.vscode-eslint": "https://open-vsx.org/api/dbaeumer/vscode-eslint/2.4.2/file/dbaeumer.vscode-eslint-2.4.2.vsix"
+    "dbaeumer.vscode-eslint": "https://open-vsx.org/api/dbaeumer/vscode-eslint/2.4.2/file/dbaeumer.vscode-eslint-2.4.2.vsix",
+    "ms-toolsai.jupyter": "https://open-vsx.org/api/ms-toolsai/jupyter/2024.6.0/file/ms-toolsai.jupyter-2024.6.0.vsix",
+    "ms-python.python": "https://open-vsx.org/api/ms-python/python/2024.12.3/file/ms-python.python-2024.12.3.vsix"
   },
   "theiaPluginsExcludeIds": [
     "ms-vscode.js-debug-companion",
@@ -113,6 +114,7 @@
     "vscode.github",
     "vscode.github-authentication",
     "vscode.microsoft-authentication",
-    "ms-vscode.references-view"
+    "ms-vscode.references-view",
+    "ms-python.vscode-pylance"
   ]
 }

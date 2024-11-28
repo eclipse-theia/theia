@@ -86,8 +86,20 @@ export class TheiaPreferenceView extends TheiaView {
         super(TheiaSettingsViewData, app);
     }
 
-    override async open(preferenceScope = TheiaPreferenceScope.Workspace): Promise<TheiaView> {
-        await this.app.quickCommandPalette.trigger('Preferences: Open Settings (UI)');
+    /**
+     * @param preferenceScope The preference scope (Workspace or User) to open the view for. Default is Workspace.
+     * @param useMenu  If true, the view will be opened via the main menu. If false,
+     *  the view will be opened via the quick command palette. Default is using the main menu.
+     * @returns  The TheiaPreferenceView page object instance.
+     */
+    override async open(preferenceScope = TheiaPreferenceScope.Workspace, useMenu: boolean = true): Promise<TheiaView> {
+        if (useMenu) {
+            const mainMenu = await this.app.menuBar.openMenu('File');
+            await (await mainMenu.menuItemByNamePath('Preferences', 'Settings'))?.click();
+        } else {
+            await this.app.quickCommandPalette.type('Preferences:');
+            await this.app.quickCommandPalette.trigger('Preferences: Open Settings (UI)');
+        }
         await this.waitForVisible();
         await this.openPreferenceScope(preferenceScope);
         return this;

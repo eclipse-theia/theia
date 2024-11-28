@@ -34,7 +34,7 @@ export const OpenAiPreferencesSchema: PreferenceSchema = {
             type: 'array',
             description: 'Official OpenAI models to use',
             title: AI_CORE_PREFERENCES_TITLE,
-            default: ['gpt-4o', 'gpt-4o-2024-08-06', 'gpt-4o-2024-05-13', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-4', 'gpt-3.5-turbo'],
+            default: ['gpt-4o', 'gpt-4o-2024-08-06', 'gpt-4o-2024-05-13', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-4', 'gpt-3.5-turbo', 'o1-preview'],
             items: {
                 type: 'string'
             }
@@ -43,7 +43,16 @@ export const OpenAiPreferencesSchema: PreferenceSchema = {
             type: 'array',
             title: AI_CORE_PREFERENCES_TITLE,
             markdownDescription: 'Integrate custom models compatible with the OpenAI API, for example via `vllm`. The required attributes are `model` and `url`.\
-            Optionally, you can provide a unique `id` to identify the custom model in the UI. If none is given `model` will be used as `id`.',
+            \n\
+            Optionally, you can\
+            \n\
+            - specify a unique `id` to identify the custom model in the UI. If none is given `model` will be used as `id`.\
+            \n\
+            - provide an `apiKey` to access the API served at the given url. Use `true` to indicate the use of the global OpenAI API key.\
+            \n\
+            - specify `enableStreaming: false` to indicate that streaming shall not be used.\
+            \n\
+            Refer to [our documentation](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm) for more information.',
             default: [],
             items: {
                 type: 'object',
@@ -59,6 +68,14 @@ export const OpenAiPreferencesSchema: PreferenceSchema = {
                     id: {
                         type: 'string',
                         title: 'A unique identifier which is used in the UI to identify the custom model',
+                    },
+                    apiKey: {
+                        type: ['string', 'boolean'],
+                        title: 'Either the key to access the API served at the given url or `true` to use the global OpenAI API key',
+                    },
+                    enableStreaming: {
+                        type: 'boolean',
+                        title: 'Indicates whether the streaming API shall be used. `true` by default.',
                     }
                 }
             }

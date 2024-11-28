@@ -588,6 +588,10 @@ async function theiaCli(): Promise<void> {
                 if (!process.env.THEIA_CONFIG_DIR) {
                     process.env.THEIA_CONFIG_DIR = temp.track().mkdirSync('theia-test-config-dir');
                 }
+                const args = ['--no-sandbox'];
+                if (!testInspect) {
+                    args.push('--headless=old');
+                }
                 await runTest({
                     start: () => new Promise((resolve, reject) => {
                         const serverProcess = manager.start(toStringArray(theiaArgs));
@@ -596,11 +600,13 @@ async function theiaCli(): Promise<void> {
                         serverProcess.on('close', (code, signal) => reject(`Server process exited unexpectedly: ${code ?? signal}`));
                     }),
                     launch: {
-                        args: ['--no-sandbox'],
+                        args: args,
                         // eslint-disable-next-line no-null/no-null
                         defaultViewport: null, // view port can take available space instead of 800x600 default
                         devtools: testInspect,
-                        executablePath: executablePath()
+                        headless: testInspect ? false : 'shell',
+                        executablePath: executablePath(),
+                        protocolTimeout: 600000
                     },
                     files: {
                         extension: testExtension,

@@ -5,7 +5,7 @@ on: workflow_dispatch
 jobs:
   translation:
     name: Translation Update
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 60
 
     steps:

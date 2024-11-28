@@ -70,7 +70,7 @@ export class SomeClass {
 
 - `@theia/core/electron-shared/...`
     - `native-keymap` (from [`native-keymap@^2.2.1`](https://www.npmjs.com/package/native-keymap))
-    - `electron` (from [`electron@^30.1.2`](https://www.npmjs.com/package/electron))
+    - `electron` (from [`electron@30.1.2`](https://www.npmjs.com/package/electron/v/30.1.2))
     - `electron-store` (from [`electron-store@^8.0.0`](https://www.npmjs.com/package/electron-store))
     - `fix-path` (from [`fix-path@^3.0.0`](https://www.npmjs.com/package/fix-path))
 - `@theia/core/shared/...`
@@ -84,25 +84,25 @@ export class SomeClass {
     - `@lumino/signaling` (from [`@lumino/signaling@^2.1.3`](https://www.npmjs.com/package/@lumino/signaling))
     - `@lumino/virtualdom` (from [`@lumino/virtualdom@^2.0.2`](https://www.npmjs.com/package/@lumino/virtualdom))
     - `@lumino/widgets` (from [`@lumino/widgets@2.5.0`](https://www.npmjs.com/package/@lumino/widgets/v/2.5.0))
-    - `@theia/application-package` (from [`@theia/application-package@1.54.0`](https://www.npmjs.com/package/@theia/application-package/v/1.54.0))
-    - `@theia/application-package/lib/api` (from [`@theia/application-package@1.54.0`](https://www.npmjs.com/package/@theia/application-package/v/1.54.0))
-    - `@theia/application-package/lib/environment` (from [`@theia/application-package@1.54.0`](https://www.npmjs.com/package/@theia/application-package/v/1.54.0))
-    - `@theia/request` (from [`@theia/request@1.54.0`](https://www.npmjs.com/package/@theia/request/v/1.54.0))
-    - `@theia/request/lib/proxy` (from [`@theia/request@1.54.0`](https://www.npmjs.com/package/@theia/request/v/1.54.0))
-    - `@theia/request/lib/node-request-service` (from [`@theia/request@1.54.0`](https://www.npmjs.com/package/@theia/request/v/1.54.0))
+    - `@theia/application-package` (from [`@theia/application-package@1.56.0`](https://www.npmjs.com/package/@theia/application-package/v/1.56.0))
+    - `@theia/application-package/lib/api` (from [`@theia/application-package@1.56.0`](https://www.npmjs.com/package/@theia/application-package/v/1.56.0))
+    - `@theia/application-package/lib/environment` (from [`@theia/application-package@1.56.0`](https://www.npmjs.com/package/@theia/application-package/v/1.56.0))
+    - `@theia/request` (from [`@theia/request@1.56.0`](https://www.npmjs.com/package/@theia/request/v/1.56.0))
+    - `@theia/request/lib/proxy` (from [`@theia/request@1.56.0`](https://www.npmjs.com/package/@theia/request/v/1.56.0))
+    - `@theia/request/lib/node-request-service` (from [`@theia/request@1.56.0`](https://www.npmjs.com/package/@theia/request/v/1.56.0))
     - `fs-extra` (from [`fs-extra@^4.0.2`](https://www.npmjs.com/package/fs-extra))
     - `fuzzy` (from [`fuzzy@^0.1.3`](https://www.npmjs.com/package/fuzzy))
-    - `inversify` (from [`inversify@^6.0.1`](https://www.npmjs.com/package/inversify))
+    - `inversify` (from [`inversify@^6.1.3`](https://www.npmjs.com/package/inversify))
     - `react-dom` (from [`react-dom@^18.2.0`](https://www.npmjs.com/package/react-dom))
     - `react-dom/client` (from [`react-dom@^18.2.0`](https://www.npmjs.com/package/react-dom))
     - `react-virtuoso` (from [`react-virtuoso@^2.17.0`](https://www.npmjs.com/package/react-virtuoso))
     - `vscode-languageserver-protocol` (from [`vscode-languageserver-protocol@^3.17.2`](https://www.npmjs.com/package/vscode-languageserver-protocol))
     - `vscode-uri` (from [`vscode-uri@^2.1.1`](https://www.npmjs.com/package/vscode-uri))
+    - `@parcel/watcher` (from [`@parcel/watcher@^2.5.0`](https://www.npmjs.com/package/@parcel/watcher))
     - `dompurify` (from [`dompurify@^2.2.9`](https://www.npmjs.com/package/dompurify))
-    - `express` (from [`express@^4.16.3`](https://www.npmjs.com/package/express))
+    - `express` (from [`express@^4.21.0`](https://www.npmjs.com/package/express))
     - `lodash.debounce` (from [`lodash.debounce@^4.0.8`](https://www.npmjs.com/package/lodash.debounce))
     - `lodash.throttle` (from [`lodash.throttle@^4.1.1`](https://www.npmjs.com/package/lodash.throttle))
-    - `nsfw` (from [`nsfw@^2.2.4`](https://www.npmjs.com/package/nsfw))
     - `markdown-it` (from [`markdown-it@^12.3.2`](https://www.npmjs.com/package/markdown-it))
     - `react` (from [`react@^18.2.0`](https://www.npmjs.com/package/react))
     - `ws` (from [`ws@^8.17.1`](https://www.npmjs.com/package/ws))
@@ -138,8 +138,8 @@ existing loggers.  However, each log message specifies from which logger it
 comes from, which can give an idea, without having to read the code:
 
 ```
-root INFO [nsfw-watcher: 10734] Started watching: /Users/captain.future/git/theia/CONTRIBUTING.md
-^^^^ ^^^^  ^^^^^^^^^^^^^^^^^^^
+root INFO [parcel-watcher: 10734] Started watching: /Users/captain.future/git/theia/CONTRIBUTING.md
+^^^^ ^^^^  ^^^^^^^^^^^^^^^^^^^^^
 ```
 Where `root` is the name of the logger and `INFO` is the log level. These are optionally followed by the name of a child process and the process ID.
 

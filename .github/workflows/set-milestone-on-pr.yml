@@ -15,14 +15,14 @@
 # Set milestone on each pull request by using the next minor version
 # next version is computed using npm version tool
 on:
-  pull_request:
+  pull_request_target:
     branches: [master]
     types: [closed]
 
 jobs:
   set-milestone:
     if: github.event.pull_request.merged == true
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout code
         uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0

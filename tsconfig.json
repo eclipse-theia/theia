@@ -70,6 +70,12 @@
       "path": "packages/ai-history"
     },
     {
+      "path": "packages/ai-hugging-face"
+    },
+    {
+      "path": "packages/ai-llamafile"
+    },
+    {
       "path": "packages/ai-ollama"
     },
     {

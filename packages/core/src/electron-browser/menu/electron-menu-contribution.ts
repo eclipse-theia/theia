@@ -29,7 +29,6 @@ import { WindowService } from '../../browser/window/window-service';
 import { WindowTitleService } from '../../browser/window/window-title-service';
 
 import '../../../src/electron-browser/menu/electron-menu-style.css';
-import { MenuDto } from '../../electron-common/electron-api';
 import { ThemeService } from '../../browser/theming';
 import { ThemeChangeEvent } from '../../common/theme';
 
@@ -203,7 +202,7 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
         }
     }
 
-    protected setMenu(app: FrontendApplication, electronMenu: MenuDto[] | undefined = this.factory.createElectronMenuBar()): void {
+    protected setMenu(app: FrontendApplication): void {
         if (!isOSX) {
             this.hideTopPanel(app);
             if (this.titleBarStyle === 'custom' && !this.menuBar) {
@@ -211,7 +210,7 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
                 return;
             }
         }
-        window.electronTheiaCore.setMenu(electronMenu);
+        this.factory.setMenuBar();
     }
 
     protected createCustomTitleBar(app: FrontendApplication): void {

@@ -31,6 +31,7 @@ import { bindSampleAppInfo } from './vsx/sample-frontend-app-info';
 import { bindTestSample } from './test/sample-test-contribution';
 import { bindSampleFileSystemCapabilitiesCommands } from './file-system/sample-file-system-capabilities';
 import { bindChatNodeToolbarActionContribution } from './chat/chat-node-toolbar-action-contribution';
+import { bindAskAndContinueChatAgentContribution } from './chat/ask-and-continue-chat-agent-contribution';
 
 export default new ContainerModule((
     bind: interfaces.Bind,
@@ -38,6 +39,7 @@ export default new ContainerModule((
     isBound: interfaces.IsBound,
     rebind: interfaces.Rebind,
 ) => {
+    bindAskAndContinueChatAgentContribution(bind);
     bindChatNodeToolbarActionContribution(bind);
     bindDynamicLabelProvider(bind);
     bindSampleUnclosableView(bind);

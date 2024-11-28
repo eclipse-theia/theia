@@ -14,36 +14,30 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CancellationToken, DisposableCollection, Emitter, Event, URI } from '@theia/core';
+import { CancellationToken, DisposableCollection, Emitter, URI } from '@theia/core';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
-import { CellEditType, NotebookCellModelResource, NotebookCellStatusBarItem, NotebookData, NotebookModelResource, TransientOptions } from '@theia/notebook/lib/common';
+import { CellEditType, NotebookCellModelResource, NotebookData, NotebookModelResource, TransientOptions } from '@theia/notebook/lib/common';
 import { NotebookService, NotebookWorkspaceEdit } from '@theia/notebook/lib/browser';
 import { Disposable } from '@theia/plugin';
 import { CommandRegistryMain, MAIN_RPC_CONTEXT, NotebooksExt, NotebooksMain, WorkspaceEditDto, WorkspaceNotebookCellEditDto } from '../../../common';
 import { RPCProtocol } from '../../../common/rpc-protocol';
 import { NotebookDto } from './notebook-dto';
-import { UriComponents } from '@theia/core/lib/common/uri';
 import { HostedPluginSupport } from '../../../hosted/browser/hosted-plugin';
 import { NotebookModel } from '@theia/notebook/lib/browser/view-model/notebook-model';
 import { NotebookCellModel } from '@theia/notebook/lib/browser/view-model/notebook-cell-model';
 import { interfaces } from '@theia/core/shared/inversify';
-
-export interface NotebookCellStatusBarItemList {
-    items: NotebookCellStatusBarItem[];
-    dispose?(): void;
-}
-
-export interface NotebookCellStatusBarItemProvider {
-    viewType: string;
-    onDidChangeStatusBarItems?: Event<void>;
-    provideCellStatusBarItems(uri: UriComponents, index: number, token: CancellationToken): Promise<NotebookCellStatusBarItemList | undefined>;
-}
+import {
+    NotebookCellStatusBarItemProvider,
+    NotebookCellStatusBarItemList,
+    NotebookCellStatusBarService
+} from '@theia/notebook/lib/browser/service/notebook-cell-status-bar-service';
 
 export class NotebooksMainImpl implements NotebooksMain {
 
     protected readonly disposables = new DisposableCollection();
 
     protected notebookService: NotebookService;
+    protected cellStatusBarService: NotebookCellStatusBarService;
 
     protected readonly proxy: NotebooksExt;
     protected readonly notebookSerializer = new Map<number, Disposable>();
@@ -55,6 +49,7 @@ export class NotebooksMainImpl implements NotebooksMain {
         commands: CommandRegistryMain
     ) {
         this.notebookService = container.get(NotebookService);
+        this.cellStatusBarService = container.get(NotebookCellStatusBarService);
         const plugins = container.get(HostedPluginSupport);
 
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.NOTEBOOKS_EXT);
@@ -111,8 +106,8 @@ export class NotebooksMainImpl implements NotebooksMain {
     async $registerNotebookCellStatusBarItemProvider(handle: number, eventHandle: number | undefined, viewType: string): Promise<void> {
         const that = this;
         const provider: NotebookCellStatusBarItemProvider = {
-            async provideCellStatusBarItems(uri: UriComponents, index: number, token: CancellationToken): Promise<NotebookCellStatusBarItemList | undefined> {
-                const result = await that.proxy.$provideNotebookCellStatusBarItems(handle, uri, index, token);
+            async provideCellStatusBarItems(notebookUri: URI, index: number, token: CancellationToken): Promise<NotebookCellStatusBarItemList | undefined> {
+                const result = await that.proxy.$provideNotebookCellStatusBarItems(handle, notebookUri.toComponents(), index, token);
                 return {
                     items: result?.items ?? [],
                     dispose(): void {
@@ -131,8 +126,8 @@ export class NotebooksMainImpl implements NotebooksMain {
             provider.onDidChangeStatusBarItems = emitter.event;
         }
 
-        // const disposable = this._cellStatusBarService.registerCellStatusBarItemProvider(provider);
-        // this.notebookCellStatusBarRegistrations.set(handle, disposable);
+        const disposable = this.cellStatusBarService.registerCellStatusBarItemProvider(provider);
+        this.notebookCellStatusBarRegistrations.set(handle, disposable);
     }
 
     async $unregisterNotebookCellStatusBarItemProvider(handle: number, eventHandle: number | undefined): Promise<void> {

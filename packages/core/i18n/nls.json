@@ -1,6 +1,9 @@
 {
   "aiConfiguration:open": "Open AI Configuration view",
+  "aiHistory:clear": "AI History: Clear History",
   "aiHistory:open": "Open AI History view",
+  "aiHistory:sortChronologically": "AI History: Sort chronologically",
+  "aiHistory:sortReverseChronologically": "AI History: Sort reverse chronologically",
   "debug.breakpoint.editCondition": "Edit Condition...",
   "notebook.cell.changeToCode": "Change Cell to Code",
   "notebook.cell.changeToMarkdown": "Change Cell to Markdown",
@@ -141,7 +144,6 @@
       "editor.accessibilitySupport2": "Assume a screen reader is not attached",
       "editor.bracketPairColorization.enabled": "Controls whether bracket pair colorization is enabled or not. Use `#workbench.colorCustomizations#` to override the bracket highlight colors.",
       "editor.codeActionWidget.includeNearbyQuickfixes": "Enable/disable showing nearest quickfix within a line when not currently on a diagnostic.",
-      "editor.cursorSurroundingLinesStyle": "Controls when `#cursorSurroundingLines#` should be enforced.",
       "editor.detectIndentation": "Controls whether `#editor.tabSize#` and `#editor.insertSpaces#` will be automatically detected when a file is opened based on the file contents.",
       "editor.dropIntoEditor.enabled": "Controls whether you can drag and drop a file into a text editor by holding down `shift` (instead of opening the file in an editor).",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Will attempt to format modifications only (requires source control). If source control can't be used, then the whole file will be formatted.",
@@ -208,6 +210,7 @@
       "prepareDownloadLink": "Preparing download link...",
       "processedOutOf": "Processed {0} out of {1}",
       "replaceTitle": "Replace File",
+      "uploadFailed": "An error occurred while uploading a file. {0}",
       "uploadFiles": "Upload Files...",
       "uploadedOutOf": "Uploaded {0} out of {1}"
     },

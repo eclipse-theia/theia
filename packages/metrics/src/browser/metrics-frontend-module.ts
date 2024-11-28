@@ -24,5 +24,5 @@ export default new ContainerModule(bind => {
     bind(MeasurementNotificationService).toDynamicValue(ctx => {
         const connection = ctx.container.get(WebSocketConnectionProvider);
         return connection.createProxy<MeasurementNotificationService>(measurementNotificationServicePath);
-    });
+    }).inSingletonScope();
 });

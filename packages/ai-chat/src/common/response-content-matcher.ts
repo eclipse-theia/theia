@@ -14,13 +14,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  */
 import {
+    ChatRequestModelImpl,
     ChatResponseContent,
     CodeChatResponseContentImpl,
     MarkdownChatResponseContentImpl
 } from './chat-model';
 import { injectable } from '@theia/core/shared/inversify';
 
-export type ResponseContentFactory = (content: string) => ChatResponseContent;
+export type ResponseContentFactory = (content: string, request: ChatRequestModelImpl) => ChatResponseContent;
 
 export const MarkdownContentFactory: ResponseContentFactory = (content: string) =>
     new MarkdownChatResponseContentImpl(content);
@@ -33,8 +34,8 @@ export const MarkdownContentFactory: ResponseContentFactory = (content: string) 
  */
 @injectable()
 export class DefaultResponseContentFactory {
-    create(content: string): ChatResponseContent {
-        return MarkdownContentFactory(content);
+    create(content: string, request: ChatRequestModelImpl): ChatResponseContent {
+        return MarkdownContentFactory(content, request);
     }
 }
 

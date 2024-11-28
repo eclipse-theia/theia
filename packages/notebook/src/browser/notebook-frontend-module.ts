@@ -51,6 +51,7 @@ import { NotebookOptionsService } from './service/notebook-options';
 import { NotebookUndoRedoHandler } from './contributions/notebook-undo-redo-handler';
 import { NotebookStatusBarContribution } from './contributions/notebook-status-bar-contribution';
 import { NotebookCellEditorService } from './service/notebook-cell-editor-service';
+import { NotebookCellStatusBarService } from './service/notebook-cell-status-bar-service';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(NotebookColorContribution).toSelf().inSingletonScope();
@@ -74,6 +75,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(NotebookKernelQuickPickService).toSelf().inSingletonScope();
     bind(NotebookClipboardService).toSelf().inSingletonScope();
     bind(NotebookCellEditorService).toSelf().inSingletonScope();
+    bind(NotebookCellStatusBarService).toSelf().inSingletonScope();
 
     bind(NotebookCellResourceResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toService(NotebookCellResourceResolver);

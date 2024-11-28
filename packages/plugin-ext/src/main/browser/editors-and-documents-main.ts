@@ -250,7 +250,7 @@ class EditorAndDocumentStateComputer implements Disposable {
 
         this.toDispose.push(this.cellEditorService.onDidChangeCellEditors(() => this.update()));
 
-        this.toDispose.push(this.notebookWidgetService.onDidChangeFocusedEditor(() => {
+        this.toDispose.push(this.notebookWidgetService.onDidChangeCurrentEditor(() => {
             this.currentState = this.currentState && new EditorAndDocumentState(
                 this.currentState.documents,
                 this.currentState.editors,
@@ -317,7 +317,7 @@ class EditorAndDocumentStateComputer implements Disposable {
         }
 
         let activeId: string | null = null;
-        const activeEditor = MonacoEditor.getCurrent(this.editorService);
+        const activeEditor = MonacoEditor.getCurrent(this.editorService) ?? this.cellEditorService.getActiveCell();
 
         const editors = new Map<string, EditorSnapshot>();
         for (const widget of this.editorService.all) {
@@ -337,8 +337,13 @@ class EditorAndDocumentStateComputer implements Disposable {
         }
 
         for (const editor of this.cellEditorService.allCellEditors) {
-            const editorSnapshot = new EditorSnapshot(editor);
-            editors.set(editorSnapshot.id, editorSnapshot);
+            if (editor.getControl()?.getModel()) {
+                const editorSnapshot = new EditorSnapshot(editor);
+                editors.set(editorSnapshot.id, editorSnapshot);
+                if (activeEditor === editor) {
+                    activeId = editorSnapshot.id;
+                }
+            }
         };
 
         const newState = new EditorAndDocumentState(models, editors, activeId);

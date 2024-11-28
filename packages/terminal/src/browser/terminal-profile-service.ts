@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { Emitter, Event } from '@theia/core';
-import { injectable } from '@theia/core/shared/inversify';
+import { injectable, unmanaged } from '@theia/core/shared/inversify';
 import { TerminalWidget } from './base/terminal-widget';
 import { ShellTerminalProfile } from './shell-terminal-profile';
 
@@ -95,7 +95,7 @@ export class DefaultTerminalProfileService implements TerminalProfileService {
     onRemoved: Event<string> = this.onRemovedEmitter.event;
     onDidChangeDefaultShell: Event<string> = this.onDidChangeDefaultShellEmitter.event;
 
-    constructor(...stores: TerminalProfileStore[]) {
+    constructor(@unmanaged() ...stores: TerminalProfileStore[]) {
         this.stores = stores;
         for (const store of this.stores) {
             store.onAdded(e => {

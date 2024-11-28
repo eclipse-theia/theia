@@ -13,7 +13,14 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { CommunicationHistory, CommunicationHistoryEntry, CommunicationRecordingService, CommunicationRequestEntry, CommunicationResponseEntry } from '@theia/ai-core';
+import {
+    CommunicationHistory,
+    CommunicationRecordingService,
+    CommunicationRequestEntry,
+    CommunicationRequestEntryParam,
+    CommunicationResponseEntry,
+    CommunicationResponseEntryParam
+} from '@theia/ai-core';
 import { Emitter, Event, ILogger } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 
@@ -29,35 +36,53 @@ export class DefaultCommunicationRecordingService implements CommunicationRecord
     protected onDidRecordResponseEmitter = new Emitter<CommunicationResponseEntry>();
     readonly onDidRecordResponse: Event<CommunicationResponseEntry> = this.onDidRecordResponseEmitter.event;
 
+    protected onStructuralChangeEmitter = new Emitter<void>();
+    readonly onStructuralChange: Event<void> = this.onStructuralChangeEmitter.event;
+
     protected history: Map<string, CommunicationHistory> = new Map();
 
     getHistory(agentId: string): CommunicationHistory {
         return this.history.get(agentId) || [];
     }
 
-    recordRequest(requestEntry: CommunicationHistoryEntry): void {
-        this.logger.debug('Recording request:', requestEntry.request);
-        if (this.history.has(requestEntry.agentId)) {
-            this.history.get(requestEntry.agentId)?.push(requestEntry);
-        } else {
-            this.history.set(requestEntry.agentId, [requestEntry]);
-        }
-        this.onDidRecordRequestEmitter.fire(requestEntry);
+    getSessionHistory(sessionId: string): CommunicationHistory {
+        return Array.from(
+            this.history.values()
+        ).reduce((acc, current) =>
+            acc.concat(current.filter(entry => entry.sessionId === sessionId)), []
+        );
     }
 
-    recordResponse(responseEntry: CommunicationHistoryEntry): void {
+    recordRequest(requestEntry: CommunicationRequestEntryParam): void {
+        this.logger.debug('Recording request:', requestEntry.request);
+        const completedEntry = { timestamp: Date.now(), ...requestEntry };
+        if (this.history.has(requestEntry.agentId)) {
+            this.history.get(requestEntry.agentId)?.push(completedEntry);
+        } else {
+            this.history.set(requestEntry.agentId, [completedEntry]);
+        }
+        this.onDidRecordRequestEmitter.fire(completedEntry);
+    }
+
+    recordResponse(responseEntry: CommunicationResponseEntryParam): void {
         this.logger.debug('Recording response:', responseEntry.response);
-        if (this.history.has(responseEntry.agentId)) {
-            const entry = this.history.get(responseEntry.agentId);
+        const completedEntry = { timestamp: Date.now(), ...responseEntry };
+        if (this.history.has(completedEntry.agentId)) {
+            const entry = this.history.get(completedEntry.agentId);
             if (entry) {
-                const matchingRequest = entry.find(e => e.requestId === responseEntry.requestId);
+                const matchingRequest = entry.find(e => e.requestId === completedEntry.requestId);
                 if (!matchingRequest) {
                     throw Error('No matching request found for response');
                 }
-                matchingRequest.response = responseEntry.response;
-                matchingRequest.responseTime = responseEntry.timestamp - matchingRequest.timestamp;
-                this.onDidRecordResponseEmitter.fire(responseEntry);
+                matchingRequest.response = completedEntry.response;
+                matchingRequest.responseTime = completedEntry.timestamp - matchingRequest.timestamp;
+                this.onDidRecordResponseEmitter.fire(completedEntry);
             }
         }
+    }
+
+    clearHistory(): void {
+        this.history.clear();
+        this.onStructuralChangeEmitter.fire(undefined);
     }
 }

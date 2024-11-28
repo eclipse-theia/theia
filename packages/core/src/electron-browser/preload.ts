@@ -35,8 +35,8 @@ const { ipcRenderer, contextBridge } = require('electron');
 
 // a map of menuId => map<handler id => handler>
 const commandHandlers = new Map<number, Map<number, () => void>>();
-let nextHandlerId = 0;
-const mainMenuId = 0;
+let nextHandlerId = 1;
+const mainMenuId = 1;
 let nextMenuId = mainMenuId + 1;
 
 let openUrlHandler: ((url: string) => Promise<boolean>) | undefined;

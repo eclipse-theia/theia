@@ -11,9 +11,9 @@ on:
 
 jobs:
   build-and-test-playwright:
-    name: Smoke Test for Browser Example Production Build on ubuntu-latest with Node.js 18.x
+    name: Smoke Test for Browser Example Production Build on ubuntu-22.04 with Node.js 18.x
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 60
 
     steps:

@@ -1,6 +1,9 @@
 {
   "aiConfiguration:open": "Aprire la vista Configurazione AI",
+  "aiHistory:clear": "Storia dell'IA: Cancella la storia",
   "aiHistory:open": "Aprire la vista Cronologia AI",
+  "aiHistory:sortChronologically": "Storia dell'intelligenza artificiale: Ordinamento cronologico",
+  "aiHistory:sortReverseChronologically": "Storia dell'intelligenza artificiale: Ordinamento cronologico inverso",
   "debug.breakpoint.editCondition": "Modifica della condizione...",
   "notebook.cell.changeToCode": "Cambia cella in codice",
   "notebook.cell.changeToMarkdown": "Cambiare la cella in Mardown",
@@ -141,7 +144,6 @@
       "editor.accessibilitySupport2": "Supponiamo che un lettore di schermo non sia collegato",
       "editor.bracketPairColorization.enabled": "Controlla se la colorazione delle coppie di parentesi è abilitata o meno. Usare `#workbench.colorCustomizations#` per sovrascrivere i colori di evidenziazione delle parentesi.",
       "editor.codeActionWidget.includeNearbyQuickfixes": "Abilita/disabilita la visualizzazione della soluzione rapida più vicina all'interno di una linea quando non è in corso una diagnostica.",
-      "editor.cursorSurroundingLinesStyle": "Controlla quando `#cursorSurroundingLines#` deve essere applicato.",
       "editor.detectIndentation": "Controlla se `#editor.tabSize#` e `#editor.insertSpaces#` saranno rilevati automaticamente all'apertura di un file, in base al suo contenuto.",
       "editor.dropIntoEditor.enabled": "Controlla se è possibile trascinare e rilasciare un file in un editor di testo tenendo premuto `shift` (invece di aprire il file in un editor).",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Tenterà di formattare solo le modifiche (richiede il controllo della fonte). Se il controllo della fonte non può essere usato, allora l'intero file sarà formattato.",
@@ -208,6 +210,7 @@
       "prepareDownloadLink": "Preparazione del link per il download...",
       "processedOutOf": "Elaborato {0} su {1}",
       "replaceTitle": "Sostituire il file",
+      "uploadFailed": "Si è verificato un errore durante il caricamento di un file. {0}",
       "uploadFiles": "Carica i file...",
       "uploadedOutOf": "Caricato {0} su {1}"
     },

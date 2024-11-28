@@ -40,8 +40,9 @@ import { State, StateMachine, LinkComputer, Edge } from '../common/link-computer
 import { commonPrefixLength } from '@theia/core/lib/common/strings';
 import { CharCode } from '@theia/core/lib/common/char-code';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
-import { Emitter } from '@theia/core/shared/vscode-languageserver-protocol';
 import { MarkdownString } from '../common/plugin-api-rpc-model';
+import { Emitter } from '@theia/core/lib/common';
+import { createAPIObject } from './plugin-context';
 
 type IDisposable = vscode.Disposable;
 
@@ -137,8 +138,11 @@ export class FsLinkProvider {
 }
 
 class ConsumerFileSystem implements vscode.FileSystem {
+    apiObject: vscode.FileSystem;
 
-    constructor(private _proxy: FileSystemMain, private _capabilities: Map<string, number>) { }
+    constructor(private _proxy: FileSystemMain, private _capabilities: Map<string, number>) {
+        this.apiObject = createAPIObject(this);
+    }
 
     stat(uri: vscode.Uri): Promise<vscode.FileStat> {
         return this._proxy.$stat(uri).catch(ConsumerFileSystem._handleError);
@@ -210,7 +214,7 @@ export class FileSystemExtImpl implements FileSystemExt {
 
     private _handlePool: number = 0;
 
-    readonly fileSystem: vscode.FileSystem;
+    readonly fileSystem: ConsumerFileSystem;
 
     constructor(rpc: RPCProtocol) {
         this._proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.FILE_SYSTEM_MAIN);

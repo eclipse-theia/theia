@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { AgentSpecificVariables, getJsonOfResponse, LanguageModelResponse } from '@theia/ai-core';
+import { AgentSpecificVariables, getJsonOfText, getTextOfResponse, LanguageModelResponse } from '@theia/ai-core';
 import {
     PromptTemplate
 } from '@theia/ai-core/lib/common';
@@ -22,10 +22,14 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatAgentService } from './chat-agent-service';
 import { AbstractStreamParsingChatAgent, ChatAgent, SystemMessageDescription } from './chat-agents';
 import { ChatRequestModelImpl, InformationalChatResponseContentImpl } from './chat-model';
+import { generateUuid } from '@theia/core';
+import { ChatHistoryEntry } from './chat-history-entry';
 
 export const orchestratorTemplate: PromptTemplate = {
     id: 'orchestrator-system',
-    template: `# Instructions
+    template: `{{!-- Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
+https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
+# Instructions
 
 Your task is to identify which Chat Agent(s) should best reply a given user's message.
 You consider all messages of the conversation to ensure consistency and avoid agent switches without a clear context change.
@@ -59,6 +63,7 @@ You must only use the \`id\` attribute of the agent, never the name.
 `};
 
 export const OrchestratorChatAgentId = 'Orchestrator';
+const OrchestratorRequestIdKey = 'orchestatorRequestIdKey';
 
 @injectable()
 export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent implements ChatAgent {
@@ -74,7 +79,7 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent implem
         super(OrchestratorChatAgentId, [{
             purpose: 'agent-selection',
             identifier: 'openai/gpt-4o',
-        }], 'agent-selection', 'codicon codicon-symbol-boolean');
+        }], 'agent-selection', 'codicon codicon-symbol-boolean', undefined, undefined, false);
         this.name = OrchestratorChatAgentId;
         this.description = 'This agent analyzes the user request against the description of all available chat agents and selects the best fitting agent to answer the request \
         (by using AI).The user\'s request will be directly delegated to the selected agent without further confirmation.';
@@ -88,8 +93,20 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent implem
     @inject(ChatAgentService)
     protected chatAgentService: ChatAgentService;
 
-    override invoke(request: ChatRequestModelImpl): Promise<void> {
+    override async invoke(request: ChatRequestModelImpl): Promise<void> {
         request.response.addProgressMessage({ content: 'Determining the most appropriate agent', status: 'inProgress' });
+        // We generate a dedicated ID for recording the orchestrator request/response, as we will forward the original request to another agent
+        const orchestratorRequestId = generateUuid();
+        request.addData(OrchestratorRequestIdKey, orchestratorRequestId);
+        const messages = await this.getMessages(request.session);
+        const systemMessage = (await this.getSystemMessageDescription())?.text;
+        this.recordingService.recordRequest(
+            ChatHistoryEntry.fromRequest(this.id, request, {
+                requestId: orchestratorRequestId,
+                messages,
+                systemMessage
+            })
+        );
         return super.invoke(request);
     }
 
@@ -100,8 +117,19 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent implem
 
     protected override async addContentsToResponse(response: LanguageModelResponse, request: ChatRequestModelImpl): Promise<void> {
         let agentIds: string[] = [];
+        const responseText = await getTextOfResponse(response);
+        // We use the previously generated, dedicated ID to log the orchestrator response before we forward the original request
+        const orchestratorRequestId = request.getDataByKey(OrchestratorRequestIdKey);
+        if (typeof orchestratorRequestId === 'string') {
+            this.recordingService.recordResponse({
+                agentId: this.id,
+                sessionId: request.session.id,
+                requestId: orchestratorRequestId,
+                response: responseText,
+            });
+        }
         try {
-            const jsonResponse = await getJsonOfResponse(response);
+            const jsonResponse = await getJsonOfText(responseText);
             if (Array.isArray(jsonResponse)) {
                 agentIds = jsonResponse.filter((id: string) => id !== this.id);
             }

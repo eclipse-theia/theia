@@ -20,10 +20,24 @@
 }
 
 .theia-notebook-cell-list {
+  position: absolute;
+  top: 0;
+  width: 100%;
   overflow-y: auto;
   list-style: none;
   padding-left: 0px;
   background-color: var(--theia-notebook-editorBackground);
+  z-index: 0;
+  pointer-events: none;
+}
+
+
+.theia-notebook-cell-output-webview {
+  padding: 5px 0px;
+  margin: 0px 15px 0px 50px;
+  width: calc(100% - 60px);
+  position: absolute;
+  z-index: 0;
 }
 
 .theia-notebook-cell {
@@ -69,7 +83,8 @@
 /* Rendered Markdown Content */
 
 .theia-notebook-markdown-content {
-  padding: 8px 16px 8px 36px;
+  pointer-events: all;
+  padding: 8px 16px 8px 0px;
   font-size: var(--theia-notebook-markdown-size);
 }
 
@@ -87,9 +102,13 @@
   padding-bottom: 0;
 }
 
+.theia-notebook-markdown-sidebar {
+  width: 35px;
+}
+
 /* Markdown cell edit mode */
 .theia-notebook-cell-content:has(.theia-notebook-markdown-editor-container>.theia-notebook-cell-editor) {
-  margin-left: 36px;
+  pointer-events: all;
   margin-right: var(--theia-notebook-cell-editor-margin-right);
   outline: 1px solid var(--theia-notebook-cellBorderColor);
 }
@@ -108,6 +127,7 @@
 }
 
 .theia-notebook-cell-editor-container {
+  pointer-events: all;
   width: calc(100% - 46px);
   flex: 1;
   outline: 1px solid var(--theia-notebook-cellBorderColor);
@@ -149,6 +169,7 @@
 }
 
 .theia-notebook-cell-toolbar {
+  pointer-events: all;
   border: 1px solid var(--theia-notebook-cellToolbarSeparator);
   display: flex;
   position: absolute;
@@ -161,11 +182,15 @@
   display: flex;
   flex-direction: column;
   padding: 2px;
-  background-color: var(--theia-editor-background);
   flex-grow: 1;
 }
 
 .theia-notebook-cell-sidebar {
+  pointer-events: all;
+  display: flex;
+}
+
+.theia-notebook-cell-sidebar-actions {
   display: flex;
   flex-direction: column;
 }
@@ -194,6 +219,7 @@
 }
 
 .theia-notebook-cell-divider {
+  pointer-events: all;
   height: 25px;
   width: 100%;
 }
@@ -303,19 +329,19 @@
   margin: 1px 0 0 4px;
 }
 
-.theia-notebook-cell-output-webview {
-  padding: 5px 0px;
-  margin: 0px 15px 0px 9px;
-  width: 100%;
-}
-
 .theia-notebook-cell-drop-indicator {
   height: 2px;
   background-color: var(--theia-notebook-focusedCellBorder);
   width: 100%;
 }
 
+.theia-notebook-collapsed-output-container {
+  width: 0;
+  overflow: visible;
+}
+
 .theia-notebook-collapsed-output {
+  text-wrap: nowrap;
   padding: 4px 8px;
   color: var(--theia-foreground);
   margin-left: 30px;
@@ -481,4 +507,23 @@ mark.theia-find-match {
 mark.theia-find-match.theia-find-match-selected {
   color: var(--theia-editor-findMatchForeground);
   background-color: var(--theia-editor-findMatchBackground);
+}
+
+.cell-status-bar-item {
+  align-items: center;
+  display: flex;
+  height: 16px;
+  margin: 0 3px;
+  overflow: hidden;
+  padding: 0 3px;
+  text-overflow: clip;
+  white-space: pre;
+}
+
+.cell-status-item-has-command {
+  cursor: pointer;
+}
+
+.cell-status-item-has-command:hover {
+  background-color: var(--theia-toolbar-hoverBackground);
 }
