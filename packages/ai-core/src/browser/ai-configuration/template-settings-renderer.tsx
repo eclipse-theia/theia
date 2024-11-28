@@ -37,7 +37,7 @@ export const TemplateRenderer: React.FC<TemplateRendererProps> = ({
     const variantIds = [DEFAULT_VARIANT, ...promptService.getVariantIds(template.id)];
     const [selectedVariant, setSelectedVariant] = React.useState<string>(DEFAULT_VARIANT);
 
-    React.useMemo(() => {
+    React.useEffect(() => {
         (async () => {
             const agentSettings = await aiSettingsService.getAgentSettings(agentId);
             const currentVariant =
