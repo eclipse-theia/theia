@@ -731,7 +731,7 @@ export class ScrollableTabBar extends TabBar<Widget> {
     }
 
     /**
-     * Restructures the DOM defined in PhosphorJS.
+     * Restructures the DOM defined in Lumino.
      *
      * By default the tabs (`li`) are contained in the `this.contentNode` (`ul`) which is wrapped in a `div` (`this.node`).
      * Instead of this structure, we add a container for the `this.contentNode` and for the toolbar.
@@ -1018,7 +1018,7 @@ export class ToolbarAwareTabBar extends ScrollableTabBar {
     }
 
     /**
-     * Restructures the DOM defined in PhosphorJS.
+     * Restructures the DOM defined in Lumino.
      *
      * By default the tabs (`li`) are contained in the `this.contentNode` (`ul`) which is wrapped in a `div` (`this.node`).
      * Instead of this structure, we add a container for the `this.contentNode` and for the toolbar.
@@ -1382,7 +1382,7 @@ export class SideTabBar extends ScrollableTabBar {
      */
     protected onDragEnter = (event: IDragEvent) => {
         this.cancelViewContainerDND();
-        if (event.mimeData.getData('application/vnd.phosphor.view-container-factory')) {
+        if (event.mimeData.getData('application/vnd.lumino.view-container-factory')) {
             event.preventDefault();
             event.stopPropagation();
         }
@@ -1393,7 +1393,7 @@ export class SideTabBar extends ScrollableTabBar {
      * Defines the appropriate `dropAction` and opens the tab on which the mouse stands on for more than 800 ms.
      */
     protected onDragOver = (event: IDragEvent) => {
-        const factory = event.mimeData.getData('application/vnd.phosphor.view-container-factory');
+        const factory = event.mimeData.getData('application/vnd.lumino.view-container-factory');
         const widget = factory && factory();
         if (!widget) {
             event.dropAction = 'none';

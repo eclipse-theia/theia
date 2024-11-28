@@ -638,7 +638,7 @@ export class SidePanelHandler {
 
         // Create and start a drag to move the selected tab to another panel
         const mimeData = new MimeData();
-        mimeData.setData('application/vnd.phosphor.widget-factory', () => title.owner);
+        mimeData.setData('application/vnd.lumino.widget-factory', () => title.owner);
         const drag = new Drag({
             mimeData,
             dragImage: clonedTab,

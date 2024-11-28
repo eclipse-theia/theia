@@ -418,7 +418,7 @@ export class ApplicationShell extends Widget {
 
     protected onDragEnter({ mimeData }: IDragEvent): void {
         if (!this.dragState) {
-            if (mimeData && mimeData.hasData('application/vnd.phosphor.widget-factory')) {
+            if (mimeData && mimeData.hasData('application/vnd.lumino.widget-factory')) {
                 // The drag contains a widget, so we'll track it and expand side panels as needed
                 this.dragState = {
                     startTime: performance.now(),

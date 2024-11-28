@@ -62,8 +62,8 @@ export const DEFAULT_SCROLL_OPTIONS: PerfectScrollbar.Options = {
 };
 
 /**
- * At a number of places in the code, we have effectively reimplemented Phosphor's Widget.attach and Widget.detach,
- * but omitted the checks that Phosphor expects to be performed for those operations. That is a bad idea, because it
+ * At a number of places in the code, we have effectively reimplemented Lumino's Widget.attach and Widget.detach,
+ * but omitted the checks that Lumino expects to be performed for those operations. That is a bad idea, because it
  * means that we are telling widgets that they are attached or detached when not all the conditions that should apply
  * do apply. We should explicitly mark those locations so that we know where we should go fix them later.
  */

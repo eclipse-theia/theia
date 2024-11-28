@@ -482,7 +482,7 @@ export class MenuCommandRegistry extends LuminoCommandRegistry {
             this.addKeyBinding({
                 command: id,
                 keys,
-                selector: '.lm-Widget' // We have the PhosphorJS dependency anyway.
+                selector: '.lm-Widget' // We have the Lumino dependency anyway.
             });
         }
         return Disposable.create(() => unregisterCommand.dispose());

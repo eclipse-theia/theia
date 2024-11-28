@@ -745,7 +745,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
     }
 
     handleDragEnter(event: Drag.Event): void {
-        if (event.mimeData.hasData('application/vnd.phosphor.view-container-factory')) {
+        if (event.mimeData.hasData('application/vnd.lumino.view-container-factory')) {
             event.preventDefault();
             event.stopPropagation();
         }
@@ -753,7 +753,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
 
     toDisposeOnDragEnd = new DisposableCollection();
     handleDragOver(event: Drag.Event): void {
-        const factory = event.mimeData.getData('application/vnd.phosphor.view-container-factory');
+        const factory = event.mimeData.getData('application/vnd.lumino.view-container-factory');
         const widget = factory && factory();
         if (!(widget instanceof ViewContainerPart)) {
             return;
@@ -799,7 +799,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
 
     handleDragLeave(event: Drag.Event): void {
         this.toDisposeOnDragEnd.dispose();
-        if (event.mimeData.hasData('application/vnd.phosphor.view-container-factory')) {
+        if (event.mimeData.hasData('application/vnd.lumino.view-container-factory')) {
             event.preventDefault();
             event.stopPropagation();
         }
@@ -807,7 +807,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
 
     handleDrop(event: Drag.Event): void {
         this.toDisposeOnDragEnd.dispose();
-        const factory = event.mimeData.getData('application/vnd.phosphor.view-container-factory');
+        const factory = event.mimeData.getData('application/vnd.lumino.view-container-factory');
         const draggedPart = factory && factory();
         if (!(draggedPart instanceof ViewContainerPart)) {
             event.dropAction = 'none';
@@ -834,7 +834,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
                 event => {
                     event.preventDefault();
                     const mimeData = new MimeData();
-                    mimeData.setData('application/vnd.phosphor.view-container-factory', () => part);
+                    mimeData.setData('application/vnd.lumino.view-container-factory', () => part);
                     const clonedHeader = part.headerElement.cloneNode(true) as HTMLElement;
                     clonedHeader.style.width = part.node.style.width;
                     clonedHeader.style.opacity = '0.6';
