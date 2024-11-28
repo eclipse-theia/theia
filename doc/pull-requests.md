@@ -15,30 +15,8 @@ If a rule causes distress during discussions itself, it has to be reviewed on [t
 ## Opening a Pull Request
 
 <a name="pr-template"></a>
-- [1.](#pr-template) Each PR description has to follow the following template:
 
-  ```md
-  <!--
-  Thank you for your Pull Request. Please provide a description and review
-  the requirements below.
-
-  Contributors guide: https://github.com/eclipse-theia/theia/blob/master/CONTRIBUTING.md
-  -->
-
-  #### What it does
-  <!-- Include relevant issues and describe how they are addressed. -->
-
-  #### How to test
-  <!-- Explain how a reviewer can reproduce a bug, test new functionality or verify performance improvements. -->
-
-  #### Review checklist
-
-  - [ ] As an author, I have thoroughly tested my changes and carefully followed [the review guidelines](https://github.com/eclipse-theia/theia/blob/master/doc/pull-requests.md#requesting-a-review)
-
-  #### Reminder for reviewers
-
-  - As a reviewer, I agree to review in accordance with [the review guidelines](https://github.com/eclipse-theia/theia/blob/master/doc/pull-requests.md#reviewing)
-  ```
+- [1.](#pr-template) Each PR description has to follow the [PR template](https://github.com/eclipse-theia/theia/blob/master/.github/PULL_REQUEST_TEMPLATE.md)
 
 <a name="design-review"></a>
 - [2.](#design-review) A PR can be opened early for the design review before going into the detailed implementation.
@@ -67,24 +45,22 @@ If a rule causes distress during discussions itself, it has to be reviewed on [t
 - [1.](#checklist-build-and-test) The new code is built and tested according to the `How to test` section of a PR description.
 <a name="checklist-project-org"></a>
 - [2.](#checklist-project-org) The new code is aligned with the [project organization](code-organization.md) and [coding conventions](coding-guidelines.md).
-<a name="checklist-changelog"></a>
-- [3.](#checklist-changelog) [Changelog](https://github.com/eclipse-theia/theia/blob/master/CHANGELOG.md) is updated.
 <a name="checklist-breaking-changes"></a>
-- [4.](#checklist-breaking-changes) Breaking changes are justified and recorded in the [changelog](https://github.com/eclipse-theia/theia/blob/master/CHANGELOG.md).
+- [3.](#checklist-breaking-changes) Breaking changes are justified and recorded in the [changelog](https://github.com/eclipse-theia/theia/blob/master/CHANGELOG.md).
 <a name="checklist-dependencies"></a>
-- [5.](#checklist-dependencies) New dependencies are justified and [verified](https://github.com/eclipse-theia/theia/wiki/Registering-CQs#wip---new-ecd-theia-intellectual-property-clearance-approach-experimental).
+- [4.](#checklist-dependencies) New dependencies are justified and [verified](https://github.com/eclipse-theia/theia/wiki/Registering-CQs#wip---new-ecd-theia-intellectual-property-clearance-approach-experimental).
 <a name="checklist-copied-code"></a>
-- [6.](#checklist-copied-code) Copied code is justified and [approved via a CQ](https://github.com/eclipse-theia/theia/wiki/Registering-CQs#case-3rd-party-project-code-copiedforked-from-another-project-into-eclipse-theia-maintained-by-us).
+- [5.](#checklist-copied-code) Copied code is justified and [approved via a CQ](https://github.com/eclipse-theia/theia/wiki/Registering-CQs#case-3rd-party-project-code-copiedforked-from-another-project-into-eclipse-theia-maintained-by-us).
   - Look closely at the GitHub actions running for your PR: the 3pp/dash license check should be green.
   - If red: it most likely mean you need to create a CQ.
 <a name="checklist-copyright"></a>
-- [7.](#checklist-copyright) Each new file has proper copyright with the current year and the name of contributing entity (individual or company).
+- [6.](#checklist-copyright) Each new file has proper copyright with the current year and the name of contributing entity (individual or company).
 <a name="checklist-sign-off"></a>
-- [8.](#checklist-sign-off) Commits are signed-off: https://github.com/eclipse-theia/theia/blob/master/CONTRIBUTING.md#sign-your-work.
+- [7.](#checklist-sign-off) Commits are signed-off: https://github.com/eclipse-theia/theia/blob/master/CONTRIBUTING.md#sign-your-work.
 <a name="checklist-meaningful-commits"></a>
-- [9.](#checklist-meaningful-commit) Each commit has meaningful title and a body that explains what it does. One can take inspiration from the `What it does` section from the PR.
+- [8.](#checklist-meaningful-commit) Each commit has meaningful title and a body that explains what it does. One can take inspiration from the `What it does` section from the PR.
 <a name="checklist-commit-history"></a>
-- [10.](#checklist-commit-history) Commit history is rebased on master and contains only meaningful commits and changes (less are usually better).
+- [9.](#checklist-commit-history) Commit history is rebased on master and contains only meaningful commits and changes (less are usually better).
   - For example, use `git pull -r` or `git fetch && git rebase` to pick up changes from the master.
 
 ## Reviewing

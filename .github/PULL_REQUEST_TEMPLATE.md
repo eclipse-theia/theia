@@ -21,6 +21,14 @@ vulnerabilities.
 
 <!-- Please list potential follow-up work, including known issues, possible future work, identified technical debt, and potentially introduced technical debt. If the PR introduces technical debt, specify the reason why this is acceptable. Please create tickets and link them here. Please use the label "technical debt" for new issues when it applies. -->
 
+#### Breaking changes
+
+- [ ] This PR introduces breaking changes and requires careful review. If yes, the breaking changes section in the [changelog](https://github.com/eclipse-theia/theia/blob/master/CHANGELOG.md) has been updated.
+
+#### Attribution
+
+<!-- If the changelog entry for this change should contain an attribution at the end (e.g. Contributed on behalf of x) add it in this section -->
+
 #### Review checklist
 
 - [ ] As an author, I have thoroughly tested my changes and carefully followed [the review guidelines](https://github.com/theia-ide/theia/blob/master/doc/pull-requests.md#requesting-a-review)
