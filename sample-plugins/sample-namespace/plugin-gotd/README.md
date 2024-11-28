@@ -20,6 +20,7 @@ An example demonstrating three Theia concepts:
 
 Thus this plug-in demonstrates the capability of a VS Code-compatible plugin to provide two distinct backend entry-points for the two different backend contexts.
 As declared in the `package.json` manifest:
+
 - in the headless plugin host, the entry-point script is `headless.js` via the Theia-specific the `"theiaPlugin"` object
 - in the backend plugin host for a frontend connection, the entry-point script is `backend.js` via the VS Code standard `"main"` property
 
@@ -40,5 +41,6 @@ The sample uses the custom `gotd` API to log a greeting upon activation.
 - [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)
 
 ## Trademark
+
 "Theia" is a trademark of the Eclipse Foundation
-https://www.eclipse.org/theia
+<https://www.eclipse.org/theia>
