@@ -144,7 +144,6 @@
       "editor.accessibilitySupport2": "Предположим, что устройство чтения с экрана не подключено",
       "editor.bracketPairColorization.enabled": "Управляет тем, включена или нет раскраска пар скобок. Используйте `#workbench.colorCustomizations#`, чтобы переопределить цвета выделения скобок.",
       "editor.codeActionWidget.includeNearbyQuickfixes": "Включить/выключить показ ближайшего быстрого исправления в линии, если в данный момент нет диагностики.",
-      "editor.cursorSurroundingLinesStyle": "Контролирует, когда `#cursorSurroundingLines#` должен быть применен.",
       "editor.detectIndentation": "Определяет, будут ли `#editor.tabSize#` и `#editor.insertSpaces#` автоматически определяться при открытии файла на основе его содержимого.",
       "editor.dropIntoEditor.enabled": "Позволяет перетащить файл в текстовый редактор, удерживая клавишу `shift` (вместо открытия файла в редакторе).",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Попытается отформатировать только модификации (требуется контроль исходного текста). Если контроль источника не может быть использован, то будет отформатирован весь файл.",

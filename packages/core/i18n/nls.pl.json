@@ -144,7 +144,6 @@
       "editor.accessibilitySupport2": "Załóżmy, że czytnik ekranu nie jest podłączony",
       "editor.bracketPairColorization.enabled": "Kontroluje, czy kolorowanie par nawiasów jest włączone, czy nie. Użyj `#workbench.colorCustomizations#`, aby zastąpić kolory podświetlenia nawiasów.",
       "editor.codeActionWidget.includeNearbyQuickfixes": "Włączenie/wyłączenie wyświetlania najbliższego quickfixa w linii, gdy nie jest on aktualnie w diagnostyce.",
-      "editor.cursorSurroundingLinesStyle": "Kontroluje, kiedy `#cursorSurroundingLines#` powinien być wymuszany.",
       "editor.detectIndentation": "Kontroluje, czy `#editor.tabSize#` i `#editor.insertSpaces#` będą automatycznie wykrywane podczas otwierania pliku na podstawie jego zawartości.",
       "editor.dropIntoEditor.enabled": "Kontroluje, czy można przeciągnąć i upuścić plik do edytora tekstu, przytrzymując `shift` (zamiast otwierać plik w edytorze).",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Spowoduje próbę sformatowania tylko modyfikacji (wymaga kontroli źródła). Jeśli kontrola źródła nie może być użyta, sformatowany zostanie cały plik.",
