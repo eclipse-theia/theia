@@ -46,8 +46,8 @@ export const AICodeCompletionPreferencesSchema: PreferenceSchema = {
             type: 'number',
             description: 'The maximum number of lines used as context, distributed among the lines before and after the cursor position (prefix and suffix).\
             Set this to -1 to use the full file as context without any line limit and 0 to only use the current line.',
-            default: 0,
-            minimum: 0
+            default: -1,
+            minimum: -1
         }
     }
 };
