@@ -303,7 +303,7 @@ export class ChatViewTreeWidget extends TreeWidget {
                     }}>
                     {this.getAgentLabel(node)}
                 </h3>
-                {inProgress && <span className='theia-ChatContentInProgress'>Generating</span>}
+                {inProgress && !waitingForInput && <span className='theia-ChatContentInProgress'>Generating</span>}
                 {inProgress && waitingForInput && <span className='theia-ChatContentInProgress'>Waiting for input</span>}
                 <div className='theia-ChatNodeToolbar'>
                     {!inProgress &&
