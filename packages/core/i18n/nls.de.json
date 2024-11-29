@@ -144,7 +144,6 @@
       "editor.accessibilitySupport2": "Angenommen, ein Bildschirmlesegerät ist nicht angeschlossen",
       "editor.bracketPairColorization.enabled": "Steuert, ob die Einfärbung von Klammerpaaren aktiviert ist oder nicht. Verwenden Sie `#workbench.colorCustomizations#`, um die Farben der Klammerhervorhebung zu überschreiben.",
       "editor.codeActionWidget.includeNearbyQuickfixes": "Aktivieren/Deaktivieren der Anzeige des nächstgelegenen Quickfix innerhalb einer Zeile, wenn keine Diagnose durchgeführt wird.",
-      "editor.cursorSurroundingLinesStyle": "Steuert, wann `#cursorSurroundingLines#` erzwungen werden soll.",
       "editor.detectIndentation": "Steuert, ob `#editor.tabSize#` und `#editor.insertSpaces#` automatisch erkannt werden, wenn eine Datei geöffnet wird, basierend auf dem Inhalt der Datei.",
       "editor.dropIntoEditor.enabled": "Steuert, ob Sie eine Datei durch Ziehen und Ablegen in einen Texteditor ziehen können, indem Sie die \"Umschalttaste\" gedrückt halten (anstatt die Datei in einem Editor zu öffnen).",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Es wird versucht, nur Änderungen zu formatieren (erfordert Quellensicherung). Wenn die Versionskontrolle nicht verwendet werden kann, wird die gesamte Datei formatiert.",

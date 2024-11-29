@@ -144,7 +144,6 @@
       "editor.accessibilitySupport2": "화면 리더가 연결되어 있지 않다고 가정합니다.",
       "editor.bracketPairColorization.enabled": "대괄호 쌍 색상화 사용 여부를 제어합니다. 대괄호 하이라이트 색상을 재정의하려면 `#workbench.colorCustomizations#`를 사용합니다.",
       "editor.codeActionWidget.includeNearbyQuickfixes": "현재 진단 중이 아닐 때 줄 내에서 가장 가까운 퀵픽스 표시를 사용/사용 안 함으로 설정합니다.",
-      "editor.cursorSurroundingLinesStyle": "커서 서라운드 라인 적용 시기를 제어합니다.",
       "editor.detectIndentation": "파일 내용을 기반으로 파일을 열 때 `#편집기.탭 크기#` 및 `#편집기.삽입 공백#`을 자동으로 감지할지 여부를 제어합니다.",
       "editor.dropIntoEditor.enabled": "편집기에서 파일을 여는 대신 'Shift' 키를 누른 채로 파일을 텍스트 편집기로 끌어다 놓을 수 있는지 여부를 제어합니다.",
       "editor.formatOnSaveMode.modificationsIfAvailable": "수정 사항만 포맷하려고 시도합니다(소스 제어 필요). 소스 제어를 사용할 수 없는 경우 전체 파일이 포맷됩니다.",

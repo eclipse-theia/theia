@@ -21,6 +21,8 @@ import {
 import { generateUuid, ILogger, ProgressService } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
+import { PREF_AI_INLINE_COMPLETION_MAX_CONTEXT_LINES } from './ai-code-completion-preference';
+import { PreferenceService } from '@theia/core/lib/browser';
 
 export const CodeCompletionAgent = Symbol('CodeCompletionAgent');
 export interface CodeCompletionAgent extends Agent {
@@ -52,20 +54,46 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
                 return undefined;
             }
 
-            // Get text until the given position
+            const maxContextLines = this.preferences.get<number>(PREF_AI_INLINE_COMPLETION_MAX_CONTEXT_LINES, -1);
+
+            let prefixStartLine = 1;
+            let suffixEndLine = model.getLineCount();
+            // if maxContextLines is -1, use the full file as context without any line limit
+
+            if (maxContextLines === 0) {
+                // Only the cursor line
+                prefixStartLine = position.lineNumber;
+                suffixEndLine = position.lineNumber;
+            } else if (maxContextLines > 0) {
+                const linesBeforeCursor = position.lineNumber - 1;
+                const linesAfterCursor = model.getLineCount() - position.lineNumber;
+
+                // Allocate one more line to the prefix in case of an odd maxContextLines
+                const prefixLines = Math.min(
+                    Math.ceil(maxContextLines / 2),
+                    linesBeforeCursor
+                );
+                const suffixLines = Math.min(
+                    Math.floor(maxContextLines / 2),
+                    linesAfterCursor
+                );
+
+                prefixStartLine = Math.max(1, position.lineNumber - prefixLines);
+                suffixEndLine = Math.min(model.getLineCount(), position.lineNumber + suffixLines);
+            }
+
             const prefix = model.getValueInRange({
-                startLineNumber: 1,
+                startLineNumber: prefixStartLine,
                 startColumn: 1,
                 endLineNumber: position.lineNumber,
                 endColumn: position.column,
             });
 
-            // Get text after the given position
             const suffix = model.getValueInRange({
                 startLineNumber: position.lineNumber,
                 startColumn: position.column,
-                endLineNumber: model.getLineCount(),
-                endColumn: model.getLineMaxColumn(model.getLineCount()),
+                endLineNumber: suffixEndLine,
+                endColumn: model.getLineMaxColumn(suffixEndLine),
             });
 
             const file = model.uri.toString(false);
@@ -136,6 +164,9 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
 
     @inject(ProgressService)
     protected progressService: ProgressService;
+
+    @inject(PreferenceService)
+    protected preferences: PreferenceService;
 
     id = 'Code Completion';
     name = 'Code Completion';

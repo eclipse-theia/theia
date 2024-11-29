@@ -21,14 +21,37 @@ export class LlamafileLanguageModel implements LanguageModel {
     readonly providerId = 'llamafile';
     readonly vendor: string = 'Mozilla';
 
-    constructor(readonly name: string, readonly uri: string, readonly port: number) {
-    }
+    /**
+     * @param name the unique name for this language model. It will be used to identify the model in the UI.
+     * @param uri the URI pointing to the Llamafile model location.
+     * @param port the port on which the Llamafile model server operates.
+     * @param defaultRequestSettings optional default settings for requests made using this model.
+     */
+    constructor(
+        public readonly name: string,
+        public readonly uri: string,
+        public readonly port: number,
+        public defaultRequestSettings?: { [key: string]: unknown }
+    ) { }
 
     get id(): string {
         return this.name;
     }
+    protected getSettings(request: LanguageModelRequest): Record<string, unknown> {
+        const settings = request.settings ? request.settings : this.defaultRequestSettings;
+        if (!settings) {
+            return {
+                n_predict: 200,
+                stream: true,
+                stop: ['</s>', 'Llama:', 'User:', '<|eot_id|>'],
+                cache_prompt: true,
+            };
+        }
+        return settings;
+    }
 
     async request(request: LanguageModelRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
+        const settings = this.getSettings(request);
         try {
             let prompt = request.messages.map(message => {
                 switch (message.actor) {
@@ -48,10 +71,7 @@ export class LlamafileLanguageModel implements LanguageModel {
                 },
                 body: JSON.stringify({
                     prompt: prompt,
-                    n_predict: 200,
-                    stream: true,
-                    stop: ['</s>', 'Llama:', 'User:', '<|eot_id|>'],
-                    cache_prompt: true,
+                    ...settings
                 }),
             });
 

@@ -24,7 +24,7 @@ import {
     ToolRequest
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
-import { ChatRequest, ChatResponse, Message, Ollama, Tool } from 'ollama';
+import { ChatRequest, ChatResponse, Message, Ollama, Options, Tool } from 'ollama';
 
 export const OllamaModelIdentifier = Symbol('OllamaModelIdentifier');
 
@@ -37,30 +37,40 @@ export class OllamaModel implements LanguageModel {
     readonly providerId = 'ollama';
     readonly vendor: string = 'Ollama';
 
-    constructor(protected readonly model: string, protected host: () => string | undefined) {
-    }
+    /**
+     * @param id the unique id for this language model. It will be used to identify the model in the UI.
+     * @param model the unique model name as used in the Ollama environment.
+     * @param hostProvider a function to provide the host URL for the Ollama server.
+     * @param defaultRequestSettings optional default settings for requests made using this model.
+     */
+    constructor(
+        public readonly id: string,
+        protected readonly model: string,
+        protected host: () => string | undefined,
+        public defaultRequestSettings?: { [key: string]: unknown }
+    ) { }
 
-    get id(): string {
-        return this.providerId + '/' + this.model;
-    }
-
-    get name(): string {
-        return this.model;
+    protected getSettings(request: LanguageModelRequest): Partial<ChatRequest> {
+        const settings = request.settings ?? this.defaultRequestSettings ?? {};
+        return {
+            options: settings as Partial<Options>
+        };
     }
 
     async request(request: LanguageModelRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
+        const settings = this.getSettings(request);
         const ollama = this.initializeOllama();
 
         if (request.response_format?.type === 'json_schema') {
             return this.handleStructuredOutputRequest(ollama, request);
         }
         const response = await ollama.chat({
-            ...this.DEFAULT_REQUEST_SETTINGS,
             model: this.model,
+            ...this.DEFAULT_REQUEST_SETTINGS,
+            ...settings,
             messages: request.messages.map(this.toOllamaMessage),
             stream: true,
             tools: request.tools?.map(this.toOllamaTool),
-            ...request.settings
         });
 
         cancellationToken?.onCancellationRequested(() => {
@@ -77,12 +87,14 @@ export class OllamaModel implements LanguageModel {
     }
 
     protected async handleStructuredOutputRequest(ollama: Ollama, request: LanguageModelRequest): Promise<LanguageModelParsedResponse> {
+        const settings = this.getSettings(request);
         const result = await ollama.chat({
+            ...settings,
             ...this.DEFAULT_REQUEST_SETTINGS,
             model: this.model,
             messages: request.messages.map(this.toOllamaMessage),
             format: 'json',
-            ...request.settings
+            stream: false,
         });
         try {
             return {

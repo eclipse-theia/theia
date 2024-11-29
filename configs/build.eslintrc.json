@@ -2,5 +2,12 @@
   "extends": [
     "./base.eslintrc.json",
     "./errors.eslintrc.json"
-  ]
+  ],
+  "parserOptions": {
+    "lib": [
+      "ES2019",
+      "ES2020.Promise",
+      "DOM"
+    ]
+  }
 }
