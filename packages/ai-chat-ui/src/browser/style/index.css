@@ -159,11 +159,29 @@ div:last-child>.theia-ChatNode {
   overflow: hidden;
 }
 
+.theia-ChatInput-Popup {
+  position: relative;
+  bottom: -5px;
+  right: -2px;
+  padding-top: 7px;
+  padding-left: 10px;
+  padding-right: 10px;
+  padding-bottom: 9px;
+  display: flex;
+  flex-direction: row;
+  align-items: start;
+  align-self: flex-end;
+  gap: 10px;
+  border: var(--theia-border-width) solid var(--theia-dropdown-border);
+  border-radius: 4px;
+}
+
 .theia-ChatInput-Editor {
   width: 100%;
   height: auto;
   border: var(--theia-border-width) solid var(--theia-dropdown-border);
   border-radius: 4px;
+  position: relative;
   display: flex;
   flex-direction: column-reverse;
   overflow: hidden;
@@ -184,8 +202,8 @@ div:last-child>.theia-ChatNode {
 
 .theia-ChatInput-Editor-Placeholder {
   position: absolute;
-  top: -3px;
-  left: 19px;
+  top: 0;
+  left: 8px;
   right: 0;
   bottom: 0;
   display: flex;

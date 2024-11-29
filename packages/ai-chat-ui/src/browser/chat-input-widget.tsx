@@ -252,13 +252,13 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     }
 
     return <div className='theia-ChatInput'>
-        {props.pinnedAgent !== undefined &&
-            <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-between" }}>
-                <p>{props.pinnedAgent.name}</p>
-                <span className="codicon codicon-remove-close option" title="unpin" onClick={handleUnpin} />
-            </div>
-        }
         <div className='theia-ChatInput-Editor-Box'>
+            {props.pinnedAgent !== undefined &&
+                <div className='theia-ChatInput-Popup'>
+                    <span>@{props.pinnedAgent.name}</span>
+                    <span className="codicon codicon-remove-close option" title="unpin" onClick={handleUnpin} />
+                </div>
+            }
             <div className='theia-ChatInput-Editor' ref={editorContainerRef} onKeyDown={onKeyDown} onFocus={handleInputFocus} onBlur={handleInputBlur}>
                 <div ref={placeholderRef} className='theia-ChatInput-Editor-Placeholder'>Ask a question</div>
             </div>

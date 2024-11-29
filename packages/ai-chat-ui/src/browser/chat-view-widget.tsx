@@ -22,8 +22,6 @@ import { AIChatInputWidget } from './chat-input-widget';
 import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
 import { AIActivationService } from '@theia/ai-core/lib/browser/ai-activation-service';
 
-import { ILogger } from '@theia/core';
-
 export namespace ChatViewWidget {
     export interface State {
         locked?: boolean;
@@ -50,9 +48,6 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
 
     @inject(AIActivationService)
     protected readonly activationService: AIActivationService;
-
-    @inject(ILogger)
-    protected readonly logger: ILogger;
 
     protected chatSession: ChatSession;
 
@@ -120,9 +115,6 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
                 const session = event.sessionId ? this.chatService.getSession(event.sessionId) : this.chatService.createSession();
 
                 if (session) {
-
-                    this.logger.info("session:", session)
-
                     this.chatSession = session;
                     this.treeWidget.trackChatModel(this.chatSession.model);
                     this.inputWidget.chatModel = this.chatSession.model;
@@ -185,7 +177,6 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
     }
 
     protected onUnpin(): void {
-        this.logger.info("unpin")
         this.chatSession.pinnedAgent = undefined;
         this.inputWidget.pinnedAgent = this.chatSession.pinnedAgent;
     }
