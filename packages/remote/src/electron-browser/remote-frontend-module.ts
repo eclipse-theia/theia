@@ -16,7 +16,7 @@
 
 import { bindContributionProvider, CommandContribution } from '@theia/core';
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { bindViewContribution, FrontendApplicationContribution, WidgetFactory } from '@theia/core/lib/browser';
+import { bindViewContribution, FrontendApplicationContribution, isRemote, WidgetFactory } from '@theia/core/lib/browser';
 import { RemoteSSHContribution } from './remote-ssh-contribution';
 import { RemoteSSHConnectionProvider, RemoteSSHConnectionProviderPath } from '../electron-common/remote-ssh-connection-provider';
 import { RemoteFrontendContribution } from './remote-frontend-contribution';
@@ -71,11 +71,11 @@ export default new ContainerModule((bind, _, __, rebind) => {
         ServiceConnectionProvider.createLocalProxy<RemotePortForwardingProvider>(ctx.container, RemoteRemotePortForwardingProviderPath)).inSingletonScope();
 
     bind(LocalRemoteFileSytemServer).toDynamicValue(ctx =>
-        isRemoteConnection() ?
+        isRemote ?
             ServiceConnectionProvider.createLocalProxy(ctx.container, remoteFileSystemPath, new RemoteFileSystemProxyFactory()) :
             ctx.container.get(RemoteFileSystemServer));
     bind(LocalEnvVariablesServer).toDynamicValue(ctx =>
-        isRemoteConnection() ?
+        isRemote ?
             ServiceConnectionProvider.createLocalProxy<EnvVariablesServer>(ctx.container, envVariablesPath) :
             ctx.container.get(EnvVariablesServer));
     bind(LocalRemoteFileSystemProvider).toSelf().inSingletonScope();
@@ -83,6 +83,3 @@ export default new ContainerModule((bind, _, __, rebind) => {
 
 });
 
-function isRemoteConnection(): boolean {
-    return !!new URLSearchParams(window.location.search).get('localPort');
-}

@@ -23,6 +23,7 @@ import { LocalEnvVariablesServer, LocalRemoteFileSystemProvider } from './local-
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { URI } from '@theia/core';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
+import { getCurrentPort } from '@theia/core/lib/electron-browser/messaging/electron-local-ws-connection-source';
 
 /**
  * This overide is to have remote connections still use settings, keymaps, etc. from the local machine.
@@ -42,7 +43,7 @@ export class RemoteUserStorageContribution extends UserStorageContribution {
 
     @postConstruct()
     protected init(): void {
-        const port = new URLSearchParams(location.search).get('port');
+        const port = getCurrentPort();
         if (port) {
             this.remoteStatusService.getStatus(Number(port)).then(status => this.isRemoteConnection.resolve(status.alive));
         }
