@@ -34,6 +34,27 @@ import { PreferenceService } from '../preferences/preference-service';
 export abstract class MenuBarWidget extends MenuBar {
     abstract activateMenu(label: string, ...labels: string[]): Promise<MenuWidget>;
     abstract triggerMenuItem(label: string, ...labels: string[]): Promise<MenuWidget.IItem>;
+    /*
+     * We override the activeIndex setter to avoid the menu items check
+     * See https://github.com/jupyterlab/lumino/issues/729
+     */
+    override set activeIndex(value: number) {
+        // Adjust the value for an out of range index.
+        if (value < 0 || value >= Reflect.get(this, '_menus').length) {
+            value = -1;
+        }
+
+        // Bail early if the index will not change.
+        if (Reflect.get(this, '_activeIndex') === value) {
+            return;
+        }
+
+        // Update the active index.
+        Reflect.set(this, '_activeIndex', value);
+
+        // Schedule an update of the items.
+        this.update();
+    }
 }
 
 export interface BrowserMenuOptions extends MenuWidget.IOptions {
