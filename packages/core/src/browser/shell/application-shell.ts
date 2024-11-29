@@ -21,7 +21,7 @@ import {
     SplitPanel, TabBar, Widget, Title
 } from '@lumino/widgets';
 import { Message } from '@lumino/messaging';
-import { IDragEvent } from '@lumino/dragdrop';
+import { Drag } from '@lumino/dragdrop';
 import { RecursivePartial, Event as CommonEvent, DisposableCollection, Disposable, environment, isObject } from '../../common';
 import { animationFrame } from '../browser';
 import { Saveable, SaveableWidget, SaveOptions } from '../saveable';
@@ -169,7 +169,7 @@ interface WidgetDragState {
     leftExpanded: boolean;
     rightExpanded: boolean;
     bottomExpanded: boolean;
-    lastDragOver?: IDragEvent;
+    lastDragOver?: Drag.Event;
     leaveTimeout?: number;
 }
 
@@ -402,21 +402,21 @@ export class ApplicationShell extends Widget {
     handleEvent(event: Event): void {
         switch (event.type) {
             case 'lm-dragenter':
-                this.onDragEnter(event as IDragEvent);
+                this.onDragEnter(event as Drag.Event);
                 break;
             case 'lm-dragover':
-                this.onDragOver(event as IDragEvent);
+                this.onDragOver(event as Drag.Event);
                 break;
             case 'lm-drop':
-                this.onDrop(event as IDragEvent);
+                this.onDrop(event as Drag.Event);
                 break;
             case 'lm-dragleave':
-                this.onDragLeave(event as IDragEvent);
+                this.onDragLeave(event as Drag.Event);
                 break;
         }
     }
 
-    protected onDragEnter({ mimeData }: IDragEvent): void {
+    protected onDragEnter({ mimeData }: Drag.Event): void {
         if (!this.dragState) {
             if (mimeData && mimeData.hasData('application/vnd.lumino.widget-factory')) {
                 // The drag contains a widget, so we'll track it and expand side panels as needed
@@ -430,7 +430,7 @@ export class ApplicationShell extends Widget {
         }
     }
 
-    protected onDragOver(event: IDragEvent): void {
+    protected onDragOver(event: Drag.Event): void {
         const state = this.dragState;
         if (state) {
             state.lastDragOver = event;
@@ -499,7 +499,7 @@ export class ApplicationShell extends Widget {
         }
     }
 
-    protected onDrop(event: IDragEvent): void {
+    protected onDrop(event: Drag.Event): void {
         const state = this.dragState;
         if (state) {
             if (state.leaveTimeout) {
@@ -521,7 +521,7 @@ export class ApplicationShell extends Widget {
         }
     }
 
-    protected onDragLeave(event: IDragEvent): void {
+    protected onDragLeave(event: Drag.Event): void {
         const state = this.dragState;
         if (state) {
             state.lastDragOver = undefined;

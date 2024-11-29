@@ -30,7 +30,7 @@ import { TabBarDecoratorService } from './tab-bar-decorator';
 import { IconThemeService } from '../icon-theme-service';
 import { BreadcrumbsRenderer, BreadcrumbsRendererFactory } from '../breadcrumbs/breadcrumbs-renderer';
 import { NavigatableWidget } from '../navigatable-types';
-import { IDragEvent } from '@lumino/dragdrop';
+import { Drag } from '@lumino/dragdrop';
 import { LOCKED_CLASS, PINNED_CLASS } from '../widgets/widget';
 import { CorePreferences } from '../core-preferences';
 import { HoverService } from '../hover-service';
@@ -1299,10 +1299,10 @@ export class SideTabBar extends ScrollableTabBar {
                 super.handleEvent(event);
                 break;
             case 'lm-dragenter':
-                this.onDragEnter(event as IDragEvent);
+                this.onDragEnter(event as Drag.Event);
                 break;
             case 'lm-dragover':
-                this.onDragOver(event as IDragEvent);
+                this.onDragOver(event as Drag.Event);
                 break;
             case 'lm-dragleave': case 'lm-drop':
                 this.cancelViewContainerDND();
@@ -1380,7 +1380,7 @@ export class SideTabBar extends ScrollableTabBar {
     /**
      * Handles `viewContainerPart` drag enter.
      */
-    protected onDragEnter = (event: IDragEvent) => {
+    protected onDragEnter = (event: Drag.Event) => {
         this.cancelViewContainerDND();
         if (event.mimeData.getData('application/vnd.lumino.view-container-factory')) {
             event.preventDefault();
@@ -1392,7 +1392,7 @@ export class SideTabBar extends ScrollableTabBar {
      * Handle `viewContainerPart` drag over,
      * Defines the appropriate `dropAction` and opens the tab on which the mouse stands on for more than 800 ms.
      */
-    protected onDragOver = (event: IDragEvent) => {
+    protected onDragOver = (event: Drag.Event) => {
         const factory = event.mimeData.getData('application/vnd.lumino.view-container-factory');
         const widget = factory && factory();
         if (!widget) {
