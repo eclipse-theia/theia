@@ -54,7 +54,7 @@ To perform the upgrade:
   > We’ll post updates when the release starts and once it’s done.
   > Please avoid merging any PRs during the release until we confirm it's over.
 
-- Refer to [this example](https://github.com/eclipse-theia/theia/discussions/13314) for guidance.
+- Refer to [this example](https://github.com/eclipse-theia/theia/discussions/14547) for guidance.
 - Also send a mail to `theia-dev@eclipse.org` (don't forget to add the link to the discussion):
 
   > Hi,
