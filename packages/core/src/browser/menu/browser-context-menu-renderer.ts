@@ -40,7 +40,7 @@ export class BrowserContextMenuRenderer extends ContextMenuRenderer {
         if (onHide) {
             contextMenu.aboutToClose.connect(() => onHide!());
         }
-        contextMenu.open(x, y, { host: context });
+        contextMenu.open(x, y, { host: context?.ownerDocument.body});
         return new BrowserContextMenuAccess(contextMenu);
     }
 
