@@ -104,7 +104,7 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
     }
 
     async doOpenInContainer(devcontainerFile: DevContainerFile): Promise<void> {
-        const lastContainerInfoKey = `${LAST_USED_CONTAINER}:${devcontainerFile}`;
+        const lastContainerInfoKey = `${LAST_USED_CONTAINER}:${devcontainerFile.path}`;
         const lastContainerInfo = await this.workspaceStorageService.getData<LastContainerInfo | undefined>(lastContainerInfoKey);
 
         this.containerOutputProvider.openChannel();
