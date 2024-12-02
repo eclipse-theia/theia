@@ -82,7 +82,7 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
             throw new Error(`Devcontainer file at ${filePath} not found in workspace`);
         }
 
-        return this.doOpenInContainer(devcontainerFile);
+        return this.doOpenInContainer(devcontainerFile, uri.toString());
     }
 
     async getWorkspaceLabel(uri: URI): Promise<string | undefined> {
@@ -103,7 +103,7 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
         this.doOpenInContainer(devcontainerFile);
     }
 
-    async doOpenInContainer(devcontainerFile: DevContainerFile): Promise<void> {
+    async doOpenInContainer(devcontainerFile: DevContainerFile, workspaceUri?: string): Promise<void> {
         const lastContainerInfoKey = `${LAST_USED_CONTAINER}:${devcontainerFile.path}`;
         const lastContainerInfo = await this.workspaceStorageService.getData<LastContainerInfo | undefined>(lastContainerInfoKey);
 
@@ -112,7 +112,8 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
         const connectionResult = await this.connectionProvider.connectToContainer({
             nodeDownloadTemplate: this.remotePreferences['remote.nodeDownloadTemplate'],
             lastContainerInfo,
-            devcontainerFile: devcontainerFile.path
+            devcontainerFile: devcontainerFile.path,
+            workspaceUri
         });
 
         this.workspaceStorageService.setData<LastContainerInfo>(lastContainerInfoKey, {

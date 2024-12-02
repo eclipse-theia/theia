@@ -19,7 +19,7 @@ import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { WorkspaceServer } from '@theia/workspace/lib/common';
 import * as fs from '@theia/core/shared/fs-extra';
 import * as Docker from 'dockerode';
-import { LastContainerInfo } from '../electron-common/remote-container-connection-provider';
+import { ContainerConnectionOptions } from '../electron-common/remote-container-connection-provider';
 import { DevContainerConfiguration } from './devcontainer-file';
 import { DevContainerFileService } from './dev-container-file-service';
 import { ContainerOutputProvider } from '../electron-common/container-output-provider';
@@ -60,15 +60,14 @@ export class DockerContainerService {
     @inject(DevContainerFileService)
     protected readonly devContainerFileService: DevContainerFileService;
 
-    async getOrCreateContainer(docker: Docker, devcontainerFile: string,
-        lastContainerInfo?: LastContainerInfo, outputProvider?: ContainerOutputProvider): Promise<Docker.Container> {
+    async getOrCreateContainer(docker: Docker, options: ContainerConnectionOptions, outputProvider?: ContainerOutputProvider): Promise<Docker.Container> {
         let container;
 
-        const workspace = new URI(await this.workspaceServer.getMostRecentlyUsedWorkspace());
+        const workspace = new URI(options.workspaceUri ?? await this.workspaceServer.getMostRecentlyUsedWorkspace());
 
-        if (lastContainerInfo && fs.statSync(devcontainerFile).mtimeMs < lastContainerInfo.lastUsed) {
+        if (options.lastContainerInfo && fs.statSync(options.devcontainerFile).mtimeMs < options.lastContainerInfo.lastUsed) {
             try {
-                container = docker.getContainer(lastContainerInfo.id);
+                container = docker.getContainer(options.lastContainerInfo.id);
                 if ((await container.inspect()).State.Running) {
                     await container.restart();
                 } else {
@@ -80,7 +79,7 @@ export class DockerContainerService {
             }
         }
         if (!container) {
-            container = await this.buildContainer(docker, devcontainerFile, workspace, outputProvider);
+            container = await this.buildContainer(docker, options.devcontainerFile, workspace, outputProvider);
         }
         return container;
     }
