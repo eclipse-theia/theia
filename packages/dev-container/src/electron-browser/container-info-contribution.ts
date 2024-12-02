@@ -20,6 +20,7 @@ import type { ContainerInspectInfo } from 'dockerode';
 import { RemoteContainerConnectionProvider } from '../electron-common/remote-container-connection-provider';
 import { PortForwardingService } from '@theia/remote/lib/electron-browser/port-forwarding/port-forwarding-service';
 import { getCurrentPort } from '@theia/core/lib/electron-browser/messaging/electron-local-ws-connection-source';
+import { WindowTitleService } from '@theia/core/lib/browser/window/window-title-service';
 
 @injectable()
 export class ContainerInfoContribution implements FrontendApplicationContribution {
@@ -30,11 +31,23 @@ export class ContainerInfoContribution implements FrontendApplicationContributio
     @inject(PortForwardingService)
     protected readonly portForwardingService: PortForwardingService;
 
+    @inject(WindowTitleService)
+    protected readonly windowTitleService: WindowTitleService;
+
     containerInfo: ContainerInspectInfo | undefined;
 
-    async onStart(): Promise<void> {
-        this.containerInfo = await this.connectionProvider.getCurrentContainerInfo(parseInt(getCurrentPort() ?? '0'));
+    initialize(): void {
+        this.connectionProvider.getCurrentContainerInfo(parseInt(new URLSearchParams(location.search).get('port') ?? '0')).then(info => {
+            if (info) {
+                this.containerInfo = info;
+                this.windowTitleService.update({
+                    devContainer: `Dev Container @ ${info?.Platform ?? ''}`
+                });
+            }
+        });
+    }
 
+    async onStart(): Promise<void> {
         this.portForwardingService.forwardedPorts = Object.entries(this.containerInfo?.NetworkSettings.Ports ?? {}).flatMap(([_, ports]) => (
             ports.map(port => ({
                 editing: false,
