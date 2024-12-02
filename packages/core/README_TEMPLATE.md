@@ -71,7 +71,6 @@ export class SomeClass {
 ## Re-Exports
 
 {{#reExportsDirectories}}
-
 - `@theia/core/{{&directory}}/...`
     {{#packages}}
     {{#modules}}

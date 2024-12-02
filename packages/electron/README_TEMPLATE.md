@@ -17,7 +17,6 @@ The `@theia/electron` extension bundles all Electron-specific dependencies and c
 ## Re-Exports
 
 {{#reExportsDirectories}}
-
 - `@theia/electron/{{&directory}}/...`
     {{#packages}}
     {{#modules}}
