@@ -16,12 +16,14 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { AbstractRemoteRegistryContribution, RemoteRegistry } from '@theia/remote/lib/electron-browser/remote-registry-contribution';
-import { LastContainerInfo, RemoteContainerConnectionProvider } from '../electron-common/remote-container-connection-provider';
+import { DevContainerFile, LastContainerInfo, RemoteContainerConnectionProvider } from '../electron-common/remote-container-connection-provider';
 import { RemotePreferences } from '@theia/remote/lib/electron-browser/remote-preferences';
 import { WorkspaceStorageService } from '@theia/workspace/lib/browser/workspace-storage-service';
-import { Command, QuickInputService } from '@theia/core';
-import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import { Command, MaybePromise, QuickInputService, URI } from '@theia/core';
+import { WorkspaceInput, WorkspaceOpenHandlerContribution, WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { ContainerOutputProvider } from './container-output-provider';
+import { WorkspaceServer } from '@theia/workspace/lib/common';
+import { DEV_CONTAINER_PATH_QUERY, DEV_CONTAINER_WORKSPACE_SCHEME } from '../electron-common/dev-container-workspaces';
 
 export namespace RemoteContainerCommands {
     export const REOPEN_IN_CONTAINER = Command.toLocalizedCommand({
@@ -33,7 +35,7 @@ export namespace RemoteContainerCommands {
 
 const LAST_USED_CONTAINER = 'lastUsedContainer';
 @injectable()
-export class ContainerConnectionContribution extends AbstractRemoteRegistryContribution {
+export class ContainerConnectionContribution extends AbstractRemoteRegistryContribution implements WorkspaceOpenHandlerContribution {
 
     @inject(RemoteContainerConnectionProvider)
     protected readonly connectionProvider: RemoteContainerConnectionProvider;
@@ -47,6 +49,9 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
+    @inject(WorkspaceServer)
+    protected readonly workspaceServer: WorkspaceServer;
+
     @inject(QuickInputService)
     protected readonly quickInputService: QuickInputService;
 
@@ -59,11 +64,46 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
         });
     }
 
+    canHandle(uri: URI): MaybePromise<boolean> {
+        return uri.scheme === DEV_CONTAINER_WORKSPACE_SCHEME;
+    }
+
+    async openWorkspace(uri: URI, options?: WorkspaceInput | undefined): Promise<void> {
+        const filePath = new URLSearchParams(uri.query).get(DEV_CONTAINER_PATH_QUERY);
+
+        if (!filePath) {
+            throw new Error('No devcontainer file specified for workspace');
+        }
+
+        const devcontainerFiles = await this.connectionProvider.getDevContainerFiles(uri.path.toString());
+        const devcontainerFile = devcontainerFiles.find(file => file.path === filePath);
+
+        if (!devcontainerFile) {
+            throw new Error(`Devcontainer file at ${filePath} not found in workspace`);
+        }
+
+        return this.doOpenInContainer(devcontainerFile);
+    }
+
+    async getWorkspaceLabel(uri: URI): Promise<string | undefined> {
+        const containerFilePath = new URLSearchParams(uri.query).get(DEV_CONTAINER_PATH_QUERY);
+        if (!containerFilePath) {
+            return;
+        };
+        const files = await this.connectionProvider.getDevContainerFiles(uri.path.toString());
+        const devcontainerFile = files.find(file => file.path === containerFilePath);
+        return `${uri.path.base} @ ${devcontainerFile?.name} [Dev Container]`;
+    }
+
     async openInContainer(): Promise<void> {
         const devcontainerFile = await this.getOrSelectDevcontainerFile();
         if (!devcontainerFile) {
             return;
         }
+        this.doOpenInContainer(devcontainerFile);
+    }
+
+    async doOpenInContainer(devcontainerFile: DevContainerFile): Promise<void> {
         const lastContainerInfoKey = `${LAST_USED_CONTAINER}:${devcontainerFile}`;
         const lastContainerInfo = await this.workspaceStorageService.getData<LastContainerInfo | undefined>(lastContainerInfoKey);
 
@@ -72,7 +112,7 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
         const connectionResult = await this.connectionProvider.connectToContainer({
             nodeDownloadTemplate: this.remotePreferences['remote.nodeDownloadTemplate'],
             lastContainerInfo,
-            devcontainerFile
+            devcontainerFile: devcontainerFile.path
         });
 
         this.workspaceStorageService.setData<LastContainerInfo>(lastContainerInfoKey, {
@@ -80,10 +120,13 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
             lastUsed: Date.now()
         });
 
+        this.workspaceServer.setMostRecentlyUsedWorkspace(
+            `${DEV_CONTAINER_WORKSPACE_SCHEME}:${this.workspaceService.workspace?.resource.path}?${DEV_CONTAINER_PATH_QUERY}=${devcontainerFile.path}`);
+
         this.openRemote(connectionResult.port, false, connectionResult.workspacePath);
     }
 
-    async getOrSelectDevcontainerFile(): Promise<string | undefined> {
+    async getOrSelectDevcontainerFile(): Promise<DevContainerFile | undefined> {
         const workspace = this.workspaceService.workspace;
         if (!workspace) {
             return;
@@ -91,14 +134,14 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
         const devcontainerFiles = await this.connectionProvider.getDevContainerFiles(workspace.resource.path.toString());
 
         if (devcontainerFiles.length === 1) {
-            return devcontainerFiles[0].path;
+            return devcontainerFiles[0];
         }
 
         return (await this.quickInputService.pick(devcontainerFiles.map(file => ({
             type: 'item',
             label: file.name,
             description: file.path,
-            file: file.path,
+            file: file,
         })), {
             title: 'Select a devcontainer.json file'
         }))?.file;
