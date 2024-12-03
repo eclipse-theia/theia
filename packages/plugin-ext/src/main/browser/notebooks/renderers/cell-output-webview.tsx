@@ -354,12 +354,12 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
             this.webviewWidget.show();
         }
 
-        const visibleCells = this.notebook.getVisibleCells();
+        const visibleCells = new Set(this.notebook.getVisibleCells().map(cell => cell.handle));
 
         const updateOutputMessage: OutputChangedMessage = {
             type: 'outputChanged',
             changes: updates
-                .filter(update => visibleCells.some(cell => cell.handle === update.cellHandle))
+                .filter(update => visibleCells.has(update.cellHandle))
                 .map(update => ({
                     cellHandle: update.cellHandle,
                     newOutputs: update.newOutputs.map(output => ({
@@ -388,12 +388,12 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
                     toIndex: event.newIdx + i,
                 } as CellsMoved)));
             } else if (event.kind === NotebookCellsChangeType.ModelChange) {
-                const visibleCells = this.notebook.getVisibleCells();
+                const visibleCells = new Set(this.notebook.getVisibleCells());
                 changes.push(...event.changes.map(change => ({
                     type: 'cellsSpliced',
                     start: change.start,
                     deleteCount: change.deleteCount,
-                    newCells: change.newItems.filter(cell => visibleCells.includes(cell as NotebookCellModel)).map(cell => cell.handle)
+                    newCells: change.newItems.filter(cell => visibleCells.has(cell as NotebookCellModel)).map(cell => cell.handle)
                 } as CellsSpliced)));
             }
         }
