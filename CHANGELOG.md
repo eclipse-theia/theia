@@ -4,6 +4,10 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+<a name="breaking_changes_1.57.0">[Breaking Changes:](#breaking_changes_1.57.0)</a>
+
+- [remote] use local settings and configuration while connected to remote (rebinds UserStorageProvider) [#14548]https://github.com/eclipse-theia/theia/pull/14548/
+
 ## 1.56.0 - 11/28/2024
 
 - [ai] added support for users to specify custom request settings, model, and optionally provider-specific [#14535](https://github.com/eclipse-theia/theia/pull/14535)

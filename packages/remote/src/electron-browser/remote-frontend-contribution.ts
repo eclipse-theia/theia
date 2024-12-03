@@ -21,6 +21,7 @@ import { RemoteStatus, RemoteStatusService } from '../electron-common/remote-sta
 import { RemoteRegistry, RemoteRegistryContribution } from './remote-registry-contribution';
 import { RemoteService } from './remote-service';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
+import { getLocalPort, getCurrentPort } from '@theia/core/lib/electron-browser/messaging/electron-local-ws-connection-source';
 
 export namespace RemoteCommands {
     export const REMOTE_SELECT: Command = {
@@ -59,7 +60,7 @@ export class RemoteFrontendContribution implements CommandContribution, Frontend
     protected remoteRegistry = new RemoteRegistry();
 
     async configure(): Promise<void> {
-        const port = new URLSearchParams(location.search).get('port');
+        const port = getCurrentPort();
         if (port) {
             const status = await this.remoteStatusService.getStatus(Number(port));
             await this.setStatusBar(status);
@@ -106,9 +107,9 @@ export class RemoteFrontendContribution implements CommandContribution, Frontend
     }
 
     protected async disconnectRemote(): Promise<void> {
-        const searchParams = new URLSearchParams(location.search);
-        const localPort = searchParams.get('localPort');
+        const localPort = getLocalPort();
         if (localPort) {
+            const searchParams = new URLSearchParams(location.search);
             const currentPort = searchParams.get('port');
             this.remoteStatusService.connectionClosed(parseInt(currentPort ?? '0'));
             this.windowService.reload({ search: { port: localPort } });

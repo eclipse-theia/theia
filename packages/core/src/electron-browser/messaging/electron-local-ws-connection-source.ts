@@ -23,6 +23,11 @@ export function getLocalPort(): string | undefined {
     return params.get('localPort') ?? undefined;
 }
 
+export function getCurrentPort(): string | undefined {
+    const params = new URLSearchParams(location.search);
+    return params.get('port') ?? undefined;
+}
+
 @injectable()
 export class ElectronLocalWebSocketConnectionSource extends WebSocketConnectionSource {
 
