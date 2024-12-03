@@ -15,14 +15,17 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { RemoteContainerConnectionProvider } from '../electron-common/remote-container-connection-provider';
-import { PortForwardingService } from '@theia/remote/lib/electron-browser/port-forwarding/port-forwarding-service';
 import { WindowTitleContribution } from '@theia/core/lib/browser/window/window-title-service';
 import { RemoteStatus, RemoteStatusService } from '@theia/remote/lib/electron-common/remote-status-service';
+import { FrontendApplicationContribution, LabelProviderContribution } from '@theia/core/lib/browser';
+import type { ContainerInspectInfo } from 'dockerode';
+import { RemoteContainerConnectionProvider } from '../electron-common/remote-container-connection-provider';
+import { PortForwardingService } from '@theia/remote/lib/electron-browser/port-forwarding/port-forwarding-service';
+import { DEV_CONTAINER_PATH_QUERY } from '../electron-common/dev-container-workspaces';
+import { URI } from '@theia/core';
 
 @injectable()
-export class ContainerInfoContribution implements FrontendApplicationContribution, WindowTitleContribution {
+export class ContainerInfoContribution implements FrontendApplicationContribution, WindowTitleContribution, LabelProviderContribution {
     @inject(RemoteContainerConnectionProvider)
     protected readonly connectionProvider: RemoteContainerConnectionProvider;
 
@@ -33,6 +36,8 @@ export class ContainerInfoContribution implements FrontendApplicationContributio
     protected readonly remoteStatusService: RemoteStatusService;
 
     protected status: RemoteStatus | undefined;
+    protected containerInfo: ContainerInspectInfo | undefined;
+    protected containerFilePath: string | undefined;
 
     async onStart(): Promise<void> {
         const containerPort = parseInt(new URLSearchParams(location.search).get('port') ?? '0');
@@ -54,6 +59,25 @@ export class ContainerInfoContribution implements FrontendApplicationContributio
             title = `${title} [Dev Container${devcontainerName ? ': ' + devcontainerName : ''}]`;
         }
         return title;
+    }
+
+    canHandle(element: object): number {
+        if ('query' in element) {
+            let containerFilePath = new URLSearchParams((element as URI).query).get(DEV_CONTAINER_PATH_QUERY);
+            if (containerFilePath) {
+                if (containerFilePath.startsWith((element as URI).path.toString())) {
+                    containerFilePath = containerFilePath.replace((element as URI).path.toString(), '');
+                }
+                this.containerFilePath = containerFilePath;
+                return 100;
+            };
+            return 0;
+        }
+        return 0;
+    }
+
+    getLongName(element: URI): string | undefined {
+        return `${element.path.base} [Dev Container: ${this.containerFilePath}]`;
     }
 
 }
