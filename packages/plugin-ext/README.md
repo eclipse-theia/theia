@@ -16,7 +16,7 @@ The `@theia/plugin-ext` extension contributes functionality for the `plugin` API
 
 ## Implementation
 
-The implementation is inspired from: https://blog.mattbierner.com/vscode-webview-web-learnings/.
+The implementation is inspired from: <https://blog.mattbierner.com/vscode-webview-web-learnings/>.
 
 ## Environment Variables
 
@@ -50,5 +50,6 @@ The property is used to control whether or not extension-packs and extension-dep
 - [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)
 
 ## Trademark
+
 "Theia" is a trademark of the Eclipse Foundation
-https://www.eclipse.org/theia
+<https://www.eclipse.org/theia>

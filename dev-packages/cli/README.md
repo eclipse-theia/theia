@@ -103,6 +103,7 @@ For example, an application can update the preference value for `files.enableTra
 ### Default Theme
 
 Default color and icon themes can be configured in `theia.frontend.config` section:
+
 ```json
 "theia": {
     "frontend": {
@@ -219,7 +220,7 @@ To run the backend server:
 
     theia start
 
-For the browser target a server is started on http://localhost:3000 by default.
+For the browser target a server is started on <http://localhost:3000> by default.
 For the electron target a server is started on `localhost` host with the dynamically allocated port by default.
 
 Arguments are passed directly to a server, use `--help` to learn which options are supported.
@@ -230,8 +231,7 @@ To debug the backend server:
 
     theia start --inspect
 
-Theia CLI accepts `--inspect` node flag: https://nodejs.org/en/docs/inspector/#command-line-options.
-
+Theia CLI accepts `--inspect` node flag: <https://nodejs.org/en/docs/inspector/#command-line-options>.
 
 ## Testing
 
@@ -324,8 +324,10 @@ The property `theiaPlugins` describes the list of plugins to download, for examp
     "rust-analyzer": "https://open-vsx.org/api/rust-lang/rust-analyzer/${targetPlatform}/0.4.1473/file/rust-lang.rust-analyzer-0.4.1473@${targetPlatform}.vsix"
 }
 ```
-As seen in the `rust-analyzer` entry we can use placeholders in the URLs. Supported placeholders are: 
-- The `${targetPlatform}` Placeholder, which resolves to a string like `win32-x64` describing the local system and architecture. This is useful for adding non-universal plugins. 
+
+As seen in the `rust-analyzer` entry we can use placeholders in the URLs. Supported placeholders are:
+
+- The `${targetPlatform}` Placeholder, which resolves to a string like `win32-x64` describing the local system and architecture. This is useful for adding non-universal plugins.
 
 Please note that in order to use `extensionPacks` properly you should use `namespace.name` as the `id` you give extensions so that when resolving the pack we do not re-download an existing plugin under a different name.
 
@@ -363,5 +365,6 @@ bundled-application.exe --no-cluster
 - [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)
 
 ## Trademark
+
 "Theia" is a trademark of the Eclipse Foundation
-https://www.eclipse.org/theia
+<https://www.eclipse.org/theia>

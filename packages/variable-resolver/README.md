@@ -15,8 +15,10 @@
 The `@theia/variable-resolved` extension provides variable substitution mechanism inside of strings using `${variableName}` syntax.
 
 ### Variable Contribution Point
+
 Extension provides a hook that allows any extensions to contribute its own variables.
 Here's the example of contributing two variables:
+
 - `${file}` - returns the name of the file opened in the current editor
 - `${lineNumber}` - returns the current line number in the current file
 
@@ -68,6 +70,7 @@ Note that a Variable is resolved to `MaybePromise<string | undefined>` which mea
 ### Using the Variable Resolver Service
 
 There's the example of how one can use Variable Resolver Service in its own plugin:
+
 ```typescript
 @injectable()
 export class MyService {
@@ -85,6 +88,7 @@ export class MyService {
 ```
 
 If `package.json` file is currently opened and cursor is on line 5 then the following output will be logged to the console:
+
 ```
 cursor is in file package.json on line 5
 ```
@@ -101,14 +105,15 @@ cursor is in file package.json on line 5
 - [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)
 
 ## Trademark
-"Theia" is a trademark of the Eclipse Foundation
-https://www.eclipse.org/theia
 
+"Theia" is a trademark of the Eclipse Foundation
+<https://www.eclipse.org/theia>
 
 # Theia - Variable Resolver Extension
 
 The extension
 
 ## License
+
 - [Eclipse Public License 2.0](http://www.eclipse.org/legal/epl-2.0/)
 - [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)

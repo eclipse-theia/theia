@@ -4,9 +4,9 @@
 
 We aim to support Node.js current _Active LTS_ version.
 
-See https://nodejs.org/en/about/releases/ to see the status of Node.js versions.
+See <https://nodejs.org/en/about/releases/> to see the status of Node.js versions.
 
-We recommend setting up your environment to run Theia using the Node.js _Active LTS_, but any supported version should work as well. File an issue otherwise: https://github.com/eclipse-theia/theia/issues/new/choose.
+We recommend setting up your environment to run Theia using the Node.js _Active LTS_, but any supported version should work as well. File an issue otherwise: <https://github.com/eclipse-theia/theia/issues/new/choose>.
 
 Note that the Node.js version you should use depends on your own project's dependencies: packages other than Theia might have their own requirements, so we try to support a reasonable range for adopters to be able to satisfy such constraints.
 
@@ -24,7 +24,7 @@ Note that the Node.js version you should use depends on your own project's depen
 
 We aim to use Electron's latest _Stable Release_.
 
-See https://www.electronjs.org/releases/stable to see the latest Electron stable releases.
+See <https://www.electronjs.org/releases/stable> to see the latest Electron stable releases.
 
 Note that clearing new Electron releases IP-wise is a lot of work and may cause us to lag behind a bit.
 

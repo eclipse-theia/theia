@@ -58,4 +58,4 @@ Although these backend services live on a different remote system, the frontend 
 ## Trademark
 
 "Theia" is a trademark of the Eclipse Foundation
-https://www.eclipse.org/theia
+<https://www.eclipse.org/theia>

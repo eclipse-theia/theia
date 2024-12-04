@@ -20,7 +20,7 @@ The `@theia/electron` extension bundles all Electron-specific dependencies and c
 - `@theia/electron/{{&directory}}/...`
     {{#packages}}
     {{#modules}}
-    - `{{&moduleName}}` (from [`{{&packageName}}@{{&versionRange}}`]({{&npmUrl}}))
+  - `{{&moduleName}}` (from [`{{&packageName}}@{{&versionRange}}`]({{&npmUrl}}))
     {{/modules}}
     {{/packages}}
 {{/reExportsDirectories}}
@@ -37,5 +37,6 @@ The `@theia/electron` extension bundles all Electron-specific dependencies and c
 - [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)
 
 ## Trademark
+
 "Theia" is a trademark of the Eclipse Foundation
-https://www.eclipse.org/theia
+<https://www.eclipse.org/theia>

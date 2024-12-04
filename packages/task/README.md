@@ -17,6 +17,7 @@ The `@theia/task` extension extension permits executing scripts or binaries in t
 Tasks launch configurations can be defined independently for each workspace, under `.theia/tasks.json`. When present, they are automatically picked-up when a client opens a workspace, and watches for changes. A task can be executed by triggering the "Run Task" command (shortcut F1). A list of known tasks will then be available, one of which can be selected to trigger execution.
 
 Each task configuration looks like this:
+
 ``` json
 {
     "label": "Test task - list workspace files recursively",
@@ -48,6 +49,7 @@ Each task configuration looks like this:
 *args*: a list of strings, each one being one argument to pass to the command.
 
 *options*: the command options used when the command is executed. This is the place to provide the
+
 - *cwd*: the current working directory, in which the task's command will execute. This is the equivalent of doing a "cd" to that directory, on the command-line, before running the command. This can contain the variable *${workspaceFolder}*, which will be replaced at execution time by the path of the current workspace. If left undefined, will by default be set to workspace root.
 - *env*: the environment of the executed program or shell. If omitted the parent process' environment is used.
 - *shell*: configuration of the shell when task type is `shell`, where users can specify the shell to use with *shell*, and the arguments to be passed to the shell executable to run in command mode with *args*.
@@ -61,6 +63,7 @@ By default, *command* and *args* above are used on all platforms. However it's n
 *linux*: if *linux* is defined, its command, command arguments, and options (i.e., *linux.command*, *linux.args*, and *linux.options*) will take precedence over the *command*, *args*, and *options*, when the task is executed on a Linux backend.
 
 Here is a sample tasks.json that can be used to test tasks. Just add this content under the theia source directory, in directory `.theia`:
+
 ``` json
 {
     // Some sample Theia tasks
@@ -145,7 +148,9 @@ Here is a sample tasks.json that can be used to test tasks. Just add this conten
 ```
 
 ## Variables substitution
+
 The variables are supported in the following properties, using `${variableName}` syntax:
+
 - `command`
 - `args`
 - `options.cwd`
@@ -162,15 +167,20 @@ The variables are supported in the following properties, using `${variableName}`
 See [here](https://www.theia-ide.org/doc/index.html) for a detailed documentation.
 
 ## Contribution points
+
 The extension provides contribution points:
+
 - `browser/TaskContribution` - allows an extension to provide its own Task format and/or to provide the Tasks programmatically to the system
+
 ```typescript
 export interface TaskContribution {
     registerResolvers?(resolvers: TaskResolverRegistry): void;
     registerProviders?(providers: TaskProviderRegistry): void;
 }
 ```
+
 - `node/TaskRunnerContribution` - allows an extension to provide its own way of running/killing a Task
+
 ```typescript
 export interface TaskRunnerContribution {
     registerRunner(runners: TaskRunnerRegistry): void;
@@ -189,5 +199,6 @@ export interface TaskRunnerContribution {
 - [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)
 
 ## Trademark
+
 "Theia" is a trademark of the Eclipse Foundation
-https://www.eclipse.org/theia
+<https://www.eclipse.org/theia>

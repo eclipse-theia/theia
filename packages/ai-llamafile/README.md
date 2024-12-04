@@ -4,21 +4,21 @@ The AI Llamafile package provides an integration that allows users to manage and
 
 ## Features
 
--   Start and stop Llamafile language servers.
+- Start and stop Llamafile language servers.
 
 ## Commands
 
 ### Start Llamafile
 
--   **Command ID:** `llamafile.start`
--   **Label:** `Start Llamafile`
--   **Functionality:** Allows you to start a Llamafile language server by selecting from a list of configured Llamafiles.
+- **Command ID:** `llamafile.start`
+- **Label:** `Start Llamafile`
+- **Functionality:** Allows you to start a Llamafile language server by selecting from a list of configured Llamafiles.
 
 ### Stop Llamafile
 
--   **Command ID:** `llamafile.stop`
--   **Label:** `Stop Llamafile`
--   **Functionality:** Allows you to stop a running Llamafile language server by selecting from a list of currently running Llamafiles.
+- **Command ID:** `llamafile.stop`
+- **Label:** `Stop Llamafile`
+- **Functionality:** Allows you to stop a running Llamafile language server by selecting from a list of currently running Llamafiles.
 
 ## Usage
 

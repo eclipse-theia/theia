@@ -17,6 +17,7 @@ The `@theia/search-in-workspace` extension provides the ability to perform searc
 ## Search Widget
 
 The `@theia/search-in-workspace` extension contributes the `Search` widget which is capable of performing different types of searches include the possibility to:
+
 - Perform standard searches
 - Perform searches using regular expressions
 - Perform searches within an `include` list (search for specific types of files (ex: `*.ts`))
@@ -36,5 +37,6 @@ The `@theia/search-in-workspace` extension contributes the `Search` widget which
 - [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)
 
 ## Trademark
+
 "Theia" is a trademark of the Eclipse Foundation
-https://www.eclipse.org/theia
+<https://www.eclipse.org/theia>

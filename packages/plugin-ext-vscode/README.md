@@ -15,7 +15,6 @@
 The `@theia/plugin-ext-vscode` extension contributes functionality to be able to successfully run VS Code extensions in the application.
 The extension is mandatory for any application which requires VS Code extension support.
 
-
 ## Additional Information
 
 - [API documentation for `@theia/plugin-ext-vscode`](https://eclipse-theia.github.io/theia/docs/next/modules/plugin_ext_vscode.html)
@@ -28,5 +27,6 @@ The extension is mandatory for any application which requires VS Code extension 
 - [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)
 
 ## Trademark
+
 "Theia" is a trademark of the Eclipse Foundation
-https://www.eclipse.org/theia
+<https://www.eclipse.org/theia>

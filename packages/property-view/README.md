@@ -17,6 +17,7 @@ The `@theia/property-view` extension contributes a generic, global property view
 The property view widget can be opened/toggled either via menu _View->Properties_ or via shortcut <kbd>Shift+Alt+P</kbd>. It is located in the bottom dock area by default.
 
 The following two default content widgets are implemented in this extension:
+
 - EmptyPropertyViewWidget: If no other widget can be provided, a simple message (_No properties available_) is shown.
 - ResourcePropertyViewWidget: Can handle `FileSelection`s and `Navigatable` selections (which provide their resource URI) and displays the general `FileStat` information (e.g. location, name, last modified) in a TreeWidget.
 
@@ -36,9 +37,11 @@ To contribute a specific property view, it is necessary to implement a `Property
 - [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)
 
 ## Trademark
+
 "Theia" is a trademark of the Eclipse Foundation
-https://www.eclipse.org/theia
+<https://www.eclipse.org/theia>
 
 ## License
+
 - [Eclipse Public License 2.0](http://www.eclipse.org/legal/epl-2.0/)
 - [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)

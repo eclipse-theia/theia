@@ -14,6 +14,7 @@
 
 The `@theia/markers` adds support for file markers (diagnostic markers (`errors`, `warnings`, `infos`, `hint`)) for a given file.
 The extension contributes, the following:
+
 - `problems view`: a dedicated view to viewing diagnostic markers contributed by language-servers, linters, task problem matchers for the workspace
 - `marker decoration`: ability to decorate different components of the application based on markers (ex: file explorer)
 
@@ -29,5 +30,6 @@ The extension contributes, the following:
 - [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)
 
 ## Trademark
+
 "Theia" is a trademark of the Eclipse Foundation
-https://www.eclipse.org/theia
+<https://www.eclipse.org/theia>

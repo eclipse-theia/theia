@@ -17,10 +17,10 @@ The `@theia/electron` extension bundles all Electron-specific dependencies and c
 ## Re-Exports
 
 - `@theia/electron/shared/...`
-    - `native-keymap` (from [`native-keymap@^2.2.1`](https://www.npmjs.com/package/native-keymap))
-    - `electron` (from [`electron@30.1.2`](https://www.npmjs.com/package/electron/v/30.1.2))
-    - `electron-store` (from [`electron-store@^8.0.0`](https://www.npmjs.com/package/electron-store))
-    - `fix-path` (from [`fix-path@^3.0.0`](https://www.npmjs.com/package/fix-path))
+  - `native-keymap` (from [`native-keymap@^2.2.1`](https://www.npmjs.com/package/native-keymap))
+  - `electron` (from [`electron@30.1.2`](https://www.npmjs.com/package/electron/v/30.1.2))
+  - `electron-store` (from [`electron-store@^8.0.0`](https://www.npmjs.com/package/electron-store))
+  - `fix-path` (from [`fix-path@^3.0.0`](https://www.npmjs.com/package/fix-path))
 
 ## Additional Information
 
@@ -34,5 +34,6 @@ The `@theia/electron` extension bundles all Electron-specific dependencies and c
 - [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)
 
 ## Trademark
+
 "Theia" is a trademark of the Eclipse Foundation
-https://www.eclipse.org/theia
+<https://www.eclipse.org/theia>
