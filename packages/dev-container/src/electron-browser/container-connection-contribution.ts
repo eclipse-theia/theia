@@ -92,7 +92,7 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
         };
         const files = await this.connectionProvider.getDevContainerFiles(uri.path.toString());
         const devcontainerFile = files.find(file => file.path === containerFilePath);
-        return `${uri.path.base} @ ${devcontainerFile?.name} [Dev Container]`;
+        return `${uri.path.base} [Dev Container: ${devcontainerFile?.name}]`;
     }
 
     async openInContainer(): Promise<void> {
