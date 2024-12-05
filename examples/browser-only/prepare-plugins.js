@@ -8,15 +8,35 @@ async function run() {
     const pck = JSON.parse(await fs.readFile(path.resolve('package.json'), 'utf8'));
 
     // Resolve the directory for which to download the plugins.
-    const pluginsDir = pck.theiaPluginsDir || 'plugins';
+    const pluginsDir = pck.theiaPluginsDir || 'extension';
 
-    // Move all the plugins from pluginsDir into /lib/frontend/hostedPlugin
-    const plugins = await glob(`${pluginsDir}/**/*`, { nodir: true });
-    for (const plugin of plugins) {
-        const target = path.join('lib', 'frontend', 'hostedPlugin', path.relative(pluginsDir, plugin));
-        await fs.mkdir(path.dirname(target), { recursive: true });
-        await fs.copyFile(plugin, target);
+    // Find all `plugin/extension/*` directories.
+    const plugins = await glob(`${pluginsDir}/*/extension`);
+
+    for (const pluginExtensionPath of plugins) {
+        // Extract the plugin name from the parent folder of the extension.
+        const pluginName = path.basename(path.dirname(pluginExtensionPath)).replace(/[.\-]/g, '_');
+        const targetDir = path.join('lib', 'frontend', 'hostedPlugin', pluginName);
+
+        // Ensure the target directory exists.
+        await fs.mkdir(targetDir, { recursive: true });
+
+        // Copy the content of the `extension` folder to the target directory.
+        const files = await glob(`${pluginExtensionPath}/**/*`, { nodir: true });
+        for (const file of files) {
+            const relativePath = path.relative(pluginExtensionPath, file);
+            const target = path.join(targetDir, relativePath);
+
+            // Ensure the target directory structure exists.
+            await fs.mkdir(path.dirname(target), { recursive: true });
+
+            // Copy the file.
+            await fs.copyFile(file, target);
+        }
     }
 }
 
-run();
+run().catch(err => {
+    console.error(err);
+    process.exit(1);
+});

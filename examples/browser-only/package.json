@@ -16,7 +16,7 @@
   },
   "theiaPluginsDir": "plugins",
   "theiaPlugins": {
-    "vscode.typescript": "https://open-vsx.org/api/vscode/typescript/1.88.1/file/vscode.typescript-1.88.1.vsix"
+    "vscode.simple-browser": "https://open-vsx.org/api/vscode/simple-browser/1.88.1/file/vscode.simple-browser-1.88.1.vsix"
   },
   "dependencies": {
     "@theia/ai-chat": "1.54.0",
@@ -74,9 +74,10 @@
   "scripts": {
     "prepare:no-native": "lerna run prepare --scope=\"@theia/re-exports\" && lerna run generate-theia-re-exports --scope=\"@theia/core\"",
     "clean": "theia clean",
-    "build": "yarn -s compile && yarn -s bundle",
+    "build": "yarn -s compile && yarn deploy:plugin && yarn -s bundle",
     "bundle": "theia build --mode development",
     "download:plugins": "theia download:plugins",
+    "deploy:plugin": "node ./prepare-plugins.js",
     "compile": "tsc -b",
     "start": "theia start",
     "start:debug": "yarn -s start --log-level=debug",

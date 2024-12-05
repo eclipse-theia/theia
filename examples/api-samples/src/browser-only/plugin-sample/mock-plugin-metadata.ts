@@ -19,8 +19,8 @@ export const mockData: any[] = [
     metadata: {
       host: 'main',
       'model': {
-        'packagePath': '/theia/plugins/demo-plugin', // Deprecated
-        'packageUri': 'file:///theia/plugins/demo-plugin', // TODO Path to the plugin
+        'packagePath': '/Users/robertjandow/Documents/Development/theia/plugins/demo-plugin', // Deprecated
+        'packageUri': 'file:///Users/robertjandow/Documents/Development/theia/plugins/demo-plugin',
         'id': 'theia.demo-plugin',
         'name': 'demo-plugin',
         'publisher': 'theia',
@@ -39,7 +39,7 @@ export const mockData: any[] = [
         'startMethod': 'start',
         'stopMethod': 'stop',
         'frontendModuleName': 'theia_demo_plugin',
-        'backendInitPath': '/theia/examples/browser/lib/backend/backend-init-theia' // TODO Path to the backend initialization file
+        'backendInitPath': '/Users/robertjandow/Documents/Development/theia/examples/browser/lib/backend/backend-init-theia'
       },
       'outOfSync': false,
       'isUnderDevelopment': false
@@ -50,5 +50,61 @@ export const mockData: any[] = [
         '*'
       ]
     }
+  },
+  {
+    metadata: {
+      host: 'main',
+      'model': {
+        'packagePath': '/Users/robertjandow/Documents/Development/theia/plugins/vscode.simple-browser/extension', // Deprecated
+        'packageUri': 'file:///Users/robertjandow/Documents/Development/theia/plugins/vscode.simple-browser/extension',
+        'id': 'vscode.simple-browser',
+        'name': 'simple-browser',
+        'publisher': 'vscode',
+        'version': '1.88.1',
+        'displayName': 'vscode.simple-browser',
+        'description': '',
+        'engine': {
+          'type': 'vscode',
+          'version': '^1.70.0'
+        },
+        'entryPoint': {
+          'frontend': 'dist/browser/extension.js'
+        }
+      },
+      'lifecycle': {
+        'startMethod': 'start',
+        'stopMethod': 'stop',
+        'frontendModuleName': 'vscode_simple_browser',
+        'backendInitPath': '/Users/robertjandow/Documents/Development/theia/examples/browser/lib/backend/plugin-vscode-init'
+      },
+      'outOfSync': false,
+      'isUnderDevelopment': false
+    },
+    'type': 0,
+    "contributes": {
+      "activationEvents": [
+        "*"
+      ],
+      "commands": [
+        {
+          "command": "simpleBrowser.show",
+          "title": "Show",
+          "category": "Simple Browser"
+        }
+      ],
+      "configuration": [
+        {
+          "title": "Simple Browser",
+          "properties": {
+            "simpleBrowser.focusLockIndicator.enabled": {
+              "type": "boolean",
+              "default": true,
+              "title": "Focus Lock Indicator Enabled",
+              "description": "%configuration.focusLockIndicator.enabled.description%"
+            }
+          }
+        }
+      ]
+    },
   },
 ];
