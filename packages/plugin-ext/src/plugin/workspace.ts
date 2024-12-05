@@ -188,8 +188,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
         });
     }
 
-    findFiles(include: theia.GlobPattern, exclude?: theia.GlobPattern | null, maxResults?: number,
-        token: CancellationToken = CancellationToken.None): PromiseLike<URI[]> {
+    findFiles(include: theia.GlobPattern, exclude?: theia.GlobPattern | null, maxResults?: number, token: CancellationToken = CancellationToken.None): PromiseLike<URI[]> {
         let includePattern: string;
         let includeFolderUri: string | undefined;
         if (include) {
@@ -203,25 +202,29 @@ export class WorkspaceExtImpl implements WorkspaceExt {
             includePattern = '';
         }
 
-        let excludePatternOrDisregardExcludes: string | false;
-        if (exclude === undefined) {
-            excludePatternOrDisregardExcludes = ''; // default excludes
-        } else if (exclude) {
+        let excludeString: string = '';
+        let useFileExcludes = true;
+        if (exclude === null) {
+            useFileExcludes = false;
+        } else if (exclude !== undefined) {
             if (typeof exclude === 'string') {
-                excludePatternOrDisregardExcludes = exclude;
+                excludeString = exclude;
             } else {
-                excludePatternOrDisregardExcludes = exclude.pattern;
+                excludeString = exclude.pattern;
             }
-        } else {
-            excludePatternOrDisregardExcludes = false; // no excludes
         }
 
         if (token && token.isCancellationRequested) {
             return Promise.resolve([]);
         }
 
-        return this.proxy.$startFileSearch(includePattern, includeFolderUri, excludePatternOrDisregardExcludes, maxResults, token)
-            .then(data => Array.isArray(data) ? data.map(uri => URI.revive(uri)) : []);
+        return this.proxy.$startFileSearch(includePattern, includeFolderUri, {
+            maxResults,
+            exclude: excludeString,
+            useDefaultExcludes: useFileExcludes,
+            useDefaultSearchExcludes: false,
+            useIgnoreFiles: false
+        }, token).then(data => Array.isArray(data) ? data.map(uri => URI.revive(uri)) : []);
     }
 
     findTextInFiles(query: theia.TextSearchQuery, optionsOrCallback: theia.FindTextInFilesOptions | ((result: theia.TextSearchResult) => void),
