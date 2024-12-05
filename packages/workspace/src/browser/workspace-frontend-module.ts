@@ -18,7 +18,7 @@ import '../../src/browser/style/index.css';
 
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { CommandContribution, MenuContribution, bindRootContributionProvider } from '@theia/core/lib/common';
-import { WebSocketConnectionProvider, FrontendApplicationContribution, KeybindingContribution } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, KeybindingContribution, ServiceConnectionProvider } from '@theia/core/lib/browser';
 import {
     OpenFileDialogFactory,
     SaveFileDialogFactory,
@@ -71,10 +71,9 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
     bind(FrontendApplicationContribution).toService(WorkspaceService);
 
     bind(CanonicalUriService).toSelf().inSingletonScope();
-    bind(WorkspaceServer).toDynamicValue(ctx => {
-        const provider = ctx.container.get(WebSocketConnectionProvider);
-        return provider.createProxy<WorkspaceServer>(workspacePath);
-    }).inSingletonScope();
+    bind(WorkspaceServer).toDynamicValue(ctx =>
+        ServiceConnectionProvider.createLocalProxy<WorkspaceServer>(ctx.container, workspacePath)
+    ).inSingletonScope();
 
     bind(WorkspaceFrontendContribution).toSelf().inSingletonScope();
     for (const identifier of [FrontendApplicationContribution, CommandContribution, KeybindingContribution, MenuContribution]) {
