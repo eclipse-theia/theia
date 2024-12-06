@@ -25,6 +25,10 @@ import '../../src/browser/style/hover-service.css';
 
 export type HoverPosition = 'left' | 'right' | 'top' | 'bottom';
 
+// Threshold, in milliseconds, over which a mouse movement is not considered
+// quick enough as to be ignored
+const quickMouseThresholdMillis = 200;
+
 export namespace HoverPosition {
     export function invertIfNecessary(position: HoverPosition, target: DOMRect, host: DOMRect, totalWidth: number, totalHeight: number): HoverPosition {
         if (position === 'left') {
@@ -91,25 +95,37 @@ export class HoverService {
         }
         return this._hoverHost;
     }
+
+    // Pending presentation of the hover pop-up
     protected pendingTimeout: Disposable | undefined;
+    // Pending cancellation of presentation of the hover pop-up or
+    // dismissal of the hover pop-up currently presented
+    protected pendingHoverCancel: Disposable | undefined;
     protected hoverTarget: HTMLElement | undefined;
     protected lastHidHover = Date.now();
     protected readonly disposeOnHide = new DisposableCollection();
 
     requestHover(request: HoverRequest): void {
         if (request.target !== this.hoverTarget) {
+            this.pendingHoverCancel?.dispose();
             this.cancelHover();
-            this.pendingTimeout = disposableTimeout(() => this.renderHover(request), this.getHoverDelay());
+            const hoverDelay = this.getHoverDelay();
+            this.pendingTimeout = disposableTimeout(() => this.renderHover(request), hoverDelay);
+            if (hoverDelay > 0) {
+                this.cancelPendingHoverOnMouseOut(request);
+            }
         }
     }
 
     protected getHoverDelay(): number {
-        return Date.now() - this.lastHidHover < 200
+        return Date.now() - this.lastHidHover < quickMouseThresholdMillis
             ? 0
             : this.preferences.get('workbench.hover.delay', isOSX ? 1500 : 500);
     }
 
     protected async renderHover(request: HoverRequest): Promise<void> {
+        this.pendingHoverCancel?.dispose();
+
         const host = this.hoverHost;
         let firstChild: HTMLElement | undefined;
         const { target, content, position, cssClasses } = request;
@@ -197,15 +213,38 @@ export class HoverService {
     protected listenForMouseOut(): void {
         const handleMouseMove = (e: MouseEvent) => {
             if (e.target instanceof Node && !this.hoverHost.contains(e.target) && !this.hoverTarget?.contains(e.target)) {
-                this.cancelHover();
+                this.pendingHoverCancel?.dispose();
+                this.pendingHoverCancel = disposableTimeout(() => {
+                    if (!this.hoverHost.matches(':hover')) {
+                        this.cancelHover();
+                    }
+                }, quickMouseThresholdMillis);
+                this.disposeOnHide.push(this.pendingHoverCancel);
             }
         };
         document.addEventListener('mousemove', handleMouseMove);
         this.disposeOnHide.push({ dispose: () => document.removeEventListener('mousemove', handleMouseMove) });
     }
 
+    protected cancelPendingHoverOnMouseOut(request: HoverRequest): void {
+        this.pendingHoverCancel?.dispose();
+        const target = request.target;
+        const handleMouseLeave = (): void => {
+            // Cancel the pending hover if it hasn't yet been presented
+            if (!this.hoverHost.isConnected) {
+                this.cancelHover();
+            }
+            this.pendingHoverCancel?.dispose();
+        };
+        target.addEventListener('mouseleave', handleMouseLeave);
+        this.pendingHoverCancel = Disposable.create(
+            () => target.removeEventListener('mouseleave', handleMouseLeave));
+        this.disposeOnHide.push(this.pendingHoverCancel);
+    }
+
     cancelHover(): void {
         this.pendingTimeout?.dispose();
+        this.pendingHoverCancel?.dispose();
         this.unRenderHover();
         this.disposeOnHide.dispose();
         this.hoverTarget = undefined;
