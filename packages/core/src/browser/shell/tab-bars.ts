@@ -686,6 +686,10 @@ export class TabBarRenderer extends TabBar.Renderer {
 
 }
 
+export interface TabBarPrivateMethods {
+    _releaseMouse(): void;
+}
+
 /**
  * A specialized tab bar for the main and bottom areas.
  */
@@ -708,7 +712,7 @@ export class ScrollableTabBar extends TabBar<Widget> {
 
     constructor(options?: TabBar.IOptions<Widget> & PerfectScrollbar.Options, dynamicTabOptions?: ScrollableTabBar.Options) {
         super(options);
-        this.scrollBarFactory = () => new PerfectScrollbar(this.node, options);
+        this.scrollBarFactory = () => new PerfectScrollbar(this.scrollbarHost, options);
         this._dynamicTabOptions = dynamicTabOptions;
         this.rewireDOM();
     }
@@ -728,6 +732,23 @@ export class ScrollableTabBar extends TabBar<Widget> {
         }
         super.dispose();
         this.toDispose.dispose();
+    }
+
+    protected override onBeforeAttach(msg: Message): void {
+        this.contentNode.addEventListener('pointerdown', this);
+        this.contentNode.addEventListener('dblclick', this);
+        this.contentNode.addEventListener('keydown', this);
+    }
+
+    protected override onAfterDetach(msg: Message): void {
+        this.contentNode.removeEventListener('pointerdown', this);
+        this.contentNode.removeEventListener('dblclick', this);
+        this.contentNode.removeEventListener('keydown', this);
+        this.doReleaseMouse();
+    }
+
+    protected doReleaseMouse(): void {
+        (this as unknown as TabBarPrivateMethods)._releaseMouse();
     }
 
     /**
@@ -803,7 +824,7 @@ export class ScrollableTabBar extends TabBar<Widget> {
             } else {
                 this.needsRecompute = false;
                 if (this.orientation === 'horizontal') {
-                    let availableWidth = this.node.clientWidth;
+                    let availableWidth = this.scrollbarHost.clientWidth;
                     let effectiveWidth = availableWidth;
                     if (!this.openTabsContainer.classList.contains('lm-mod-hidden')) {
                         availableWidth += this.openTabsContainer.getBoundingClientRect().width;
@@ -867,7 +888,7 @@ export class ScrollableTabBar extends TabBar<Widget> {
             window.requestAnimationFrame(() => {
                 const tab = this.contentNode.children[index] as HTMLElement;
                 if (tab && this.isVisible) {
-                    const parent = this.node;
+                    const parent = this.scrollbarHost;
                     if (this.orientation === 'horizontal') {
                         const scroll = parent.scrollLeft;
                         const left = tab.offsetLeft;
@@ -900,6 +921,25 @@ export class ScrollableTabBar extends TabBar<Widget> {
         });
         this.pendingReveal = result;
         return result;
+    }
+
+    /**
+     * Overrides the `contentNode` property getter in PhosphorJS' TabBar.
+     */
+    // @ts-expect-error TS2611 `TabBar<T>.contentNode` is declared as `readonly contentNode` but is implemented as a getter.
+    get contentNode(): HTMLUListElement {
+        return this.node.getElementsByClassName(ToolbarAwareTabBar.Styles.TAB_BAR_CONTENT)[0] as HTMLUListElement;
+    }
+
+    /**
+     * Overrides the scrollable host from the parent class.
+     */
+    protected get scrollbarHost(): HTMLElement {
+        return this.tabBarContainer;
+    }
+
+    protected get tabBarContainer(): HTMLElement {
+        return this.node.getElementsByClassName(ToolbarAwareTabBar.Styles.TAB_BAR_CONTENT_CONTAINER)[0] as HTMLElement;
     }
 }
 
@@ -1286,16 +1326,16 @@ export class SideTabBar extends ScrollableTabBar {
      */
     override handleEvent(event: Event): void {
         switch (event.type) {
-            case 'mousedown':
-                this.onMouseDown(event as MouseEvent);
+            case 'pointerdown':
+                this.onMouseDown(event as PointerEvent);
                 super.handleEvent(event);
                 break;
-            case 'mouseup':
+            case 'pointerup':
                 super.handleEvent(event);
-                this.onMouseUp(event as MouseEvent);
+                this.onMouseUp(event as PointerEvent);
                 break;
             case 'mousemove':
-                this.onMouseMove(event as MouseEvent);
+                this.onMouseMove(event as PointerEvent);
                 super.handleEvent(event);
                 break;
             case 'lm-dragenter':

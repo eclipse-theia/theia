@@ -331,12 +331,6 @@
   height: var(--theia-private-horizontal-tab-scrollbar-rail-height) !important;
 }
 
-.lm-TabBar[data-orientation="horizontal"] .lm-TabBar-content-container>.ps__rail-x:hover>.ps__thumb-x,
-.lm-TabBar[data-orientation="horizontal"] .lm-TabBar-content-container>.ps__rail-x:focus>.ps__thumb-x {
-  height: calc(var(--theia-private-horizontal-tab-scrollbar-height) / 2) !important;
-  bottom: calc((var(--theia-private-horizontal-tab-scrollbar-rail-height) - var(--theia-private-horizontal-tab-scrollbar-height)) / 2);
-}
-
 .lm-TabBar[data-orientation="vertical"] .lm-TabBar-content-container>.ps__rail-y {
   width: var(--theia-private-horizontal-tab-scrollbar-rail-height);
   z-index: 1000;
