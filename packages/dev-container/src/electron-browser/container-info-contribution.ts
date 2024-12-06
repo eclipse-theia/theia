@@ -15,33 +15,69 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { FrontendApplicationContribution } from '@theia/core/lib/browser';
+import { WindowTitleContribution } from '@theia/core/lib/browser/window/window-title-service';
+import { RemoteStatus, RemoteStatusService } from '@theia/remote/lib/electron-common/remote-status-service';
+import { FrontendApplicationContribution, LabelProviderContribution } from '@theia/core/lib/browser';
 import type { ContainerInspectInfo } from 'dockerode';
 import { RemoteContainerConnectionProvider } from '../electron-common/remote-container-connection-provider';
 import { PortForwardingService } from '@theia/remote/lib/electron-browser/port-forwarding/port-forwarding-service';
-import { getCurrentPort } from '@theia/core/lib/electron-browser/messaging/electron-local-ws-connection-source';
+import { DEV_CONTAINER_PATH_QUERY } from '../electron-common/dev-container-workspaces';
+import { URI } from '@theia/core';
 
 @injectable()
-export class ContainerInfoContribution implements FrontendApplicationContribution {
-
+export class ContainerInfoContribution implements FrontendApplicationContribution, WindowTitleContribution, LabelProviderContribution {
     @inject(RemoteContainerConnectionProvider)
     protected readonly connectionProvider: RemoteContainerConnectionProvider;
 
     @inject(PortForwardingService)
     protected readonly portForwardingService: PortForwardingService;
 
-    containerInfo: ContainerInspectInfo | undefined;
+    @inject(RemoteStatusService)
+    protected readonly remoteStatusService: RemoteStatusService;
+
+    protected status: RemoteStatus | undefined;
+    protected containerInfo: ContainerInspectInfo | undefined;
+    protected containerFilePath: string | undefined;
 
     async onStart(): Promise<void> {
-        this.containerInfo = await this.connectionProvider.getCurrentContainerInfo(parseInt(getCurrentPort() ?? '0'));
+        const containerPort = parseInt(new URLSearchParams(location.search).get('port') ?? '0');
+        const containerInfo = await this.connectionProvider.getCurrentContainerInfo(containerPort);
+        this.status = await this.remoteStatusService.getStatus(containerPort);
 
-        this.portForwardingService.forwardedPorts = Object.entries(this.containerInfo?.NetworkSettings.Ports ?? {}).flatMap(([_, ports]) => (
+        this.portForwardingService.forwardedPorts = Object.entries(containerInfo?.NetworkSettings.Ports ?? {}).flatMap(([_, ports]) => (
             ports.map(port => ({
                 editing: false,
                 address: port.HostIp ?? '',
                 localPort: parseInt(port.HostPort ?? '0'),
                 origin: 'container'
             }))));
+    }
+
+    enhanceTitle(title: string, parts: Map<string, string | undefined>): string {
+        if (this.status && this.status.alive) {
+            const devcontainerName = this.status.name;
+            title = `${title} [Dev Container${devcontainerName ? ': ' + devcontainerName : ''}]`;
+        }
+        return title;
+    }
+
+    canHandle(element: object): number {
+        if ('query' in element) {
+            let containerFilePath = new URLSearchParams((element as URI).query).get(DEV_CONTAINER_PATH_QUERY);
+            if (containerFilePath) {
+                if (containerFilePath.startsWith((element as URI).path.toString())) {
+                    containerFilePath = containerFilePath.replace((element as URI).path.toString(), '');
+                }
+                this.containerFilePath = containerFilePath;
+                return 100;
+            };
+            return 0;
+        }
+        return 0;
+    }
+
+    getLongName(element: URI): string | undefined {
+        return `${element.path.base} [Dev Container: ${this.containerFilePath}]`;
     }
 
 }
