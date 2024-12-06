@@ -2163,7 +2163,7 @@ export module '@theia/plugin' {
         /**
          * The icon path or {@link ThemeIcon} for the QuickPickItem.
          */
-        iconPath?: Uri | { light: Uri; dark: Uri } | ThemeIcon;
+        iconPath?: IconPath;
 
         /**
          * A human-readable string which is rendered less prominent in the same line. Supports rendering of
@@ -2739,6 +2739,21 @@ export module '@theia/plugin' {
          */
         private constructor(id: string, color?: ThemeColor);
     }
+
+    /**
+     * Represents an icon in the UI. This is either an uri, separate uris for the light- and dark-themes,
+     * or a {@link ThemeIcon theme icon}.
+     */
+    export type IconPath = Uri | {
+        /**
+         * The icon path for the light theme.
+         */
+        light: Uri;
+        /**
+         * The icon path for the dark theme.
+         */
+        dark: Uri;
+    } | ThemeIcon;
 
     /**
      * Represents the state of a window.
@@ -3520,7 +3535,7 @@ export module '@theia/plugin' {
         /**
          * The icon path or {@link ThemeIcon} for the terminal.
          */
-        iconPath?: Uri | { light: Uri; dark: Uri } | ThemeIcon;
+        iconPath?: IconPath;
 
         /**
          * The icon {@link ThemeColor} for the terminal.
@@ -3640,7 +3655,7 @@ export module '@theia/plugin' {
         /**
          * The icon path or {@link ThemeIcon} for the terminal.
          */
-        iconPath?: Uri | { light: Uri; dark: Uri } | ThemeIcon;
+        iconPath?: IconPath;
 
         /**
          * The icon {@link ThemeColor} for the terminal.
@@ -6227,7 +6242,7 @@ export module '@theia/plugin' {
         /**
          * Icon for the button.
          */
-        readonly iconPath: Uri | { light: Uri; dark: Uri } | ThemeIcon;
+        readonly iconPath: IconPath;
 
         /**
          * An optional tooltip.
@@ -6841,7 +6856,7 @@ export module '@theia/plugin' {
          * When `falsy`, {@link ThemeIcon.Folder Folder Theme Icon} is assigned, if item is collapsible otherwise {@link ThemeIcon.File File Theme Icon}.
          * When a {@link ThemeIcon ThemeIcon} is specified, icon is derived from the current file icon theme for the specified theme icon using {@link TreeItem.resourceUri resourceUri} (if provided).
          */
-        iconPath?: string | Uri | { light: string | Uri; dark: string | Uri } | ThemeIcon;
+        iconPath?: string | IconPath;
 
         /**
          * A human readable string which is rendered less prominent.
@@ -10612,7 +10627,7 @@ export module '@theia/plugin' {
         /**
          * The icon path or {@link ThemeIcon ThemeIcon} for the edit.
          */
-        iconPath?: Uri | { light: Uri; dark: Uri } | ThemeIcon;
+        iconPath?: IconPath;
     }
 
     /**
@@ -17473,16 +17488,7 @@ export module '@theia/plugin' {
         /**
          * An icon for the participant shown in UI.
          */
-        iconPath?: Uri | {
-            /**
-             * The icon path for the light theme.
-             */
-            light: Uri;
-            /**
-             * The icon path for the dark theme.
-             */
-            dark: Uri;
-        } | ThemeIcon;
+        iconPath?: IconPath;
 
         /**
          * The handler for requests to this participant.
@@ -17652,16 +17658,7 @@ export module '@theia/plugin' {
          * @param value A uri or location
          * @param iconPath Icon for the reference shown in UI
          */
-        reference(value: Uri | Location, iconPath?: Uri | ThemeIcon | {
-            /**
-             * The icon path for the light theme.
-             */
-            light: Uri;
-            /**
-             * The icon path for the dark theme.
-             */
-            dark: Uri;
-        }): void;
+        reference(value: Uri | Location, iconPath?: IconPath): void;
 
         /**
          * Pushes a part to this stream.
@@ -17781,32 +17778,14 @@ export module '@theia/plugin' {
         /**
          * The icon for the reference.
          */
-        iconPath?: Uri | ThemeIcon | {
-            /**
-             * The icon path for the light theme.
-             */
-            light: Uri;
-            /**
-             * The icon path for the dark theme.
-             */
-            dark: Uri;
-        };
+        iconPath?: IconPath;
 
         /**
          * Create a new ChatResponseReferencePart.
          * @param value A uri or location
          * @param iconPath Icon for the reference shown in UI
          */
-        constructor(value: Uri | Location, iconPath?: Uri | ThemeIcon | {
-            /**
-             * The icon path for the light theme.
-             */
-            light: Uri;
-            /**
-             * The icon path for the dark theme.
-             */
-            dark: Uri;
-        });
+        constructor(value: Uri | Location, iconPath?: IconPath);
     }
 
     /**
