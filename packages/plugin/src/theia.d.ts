@@ -10290,7 +10290,7 @@ export module '@theia/plugin' {
          * @return An array of commands, quick fixes, or refactorings or a thenable of such. The lack of a result can be
          * signaled by returning `undefined`, `null`, or an empty array.
          */
-        provideCodeActions(document: TextDocument, range: Range | Selection, context: CodeActionContext, token: CancellationToken): ProviderResult<(Command | T)[]>;
+        provideCodeActions(document: TextDocument, range: Range | Selection, context: CodeActionContext, token: CancellationToken): ProviderResult<Array<Command | T>>;
 
         /**
          * Given a code action fill in its `edit`-property. Changes to
@@ -13165,7 +13165,7 @@ export module '@theia/plugin' {
          * @param args The command arguments.
          * @param options Optional options for the started the shell.
          */
-        constructor(command: string | ShellQuotedString, args: (string | ShellQuotedString)[], options?: ShellExecutionOptions);
+        constructor(command: string | ShellQuotedString, args: Array<string | ShellQuotedString>, options?: ShellExecutionOptions);
 
         /**
          * The shell command line. Is `undefined` if created with a command and arguments.
