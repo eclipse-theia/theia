@@ -14,9 +14,6 @@
     "tslib": "^2.6.2"
   },
 
-  "resolutions": {
-    "perfect-scrollbar": "1.5.5"
-  },
   "publishConfig": {
     "access": "public"
   },
