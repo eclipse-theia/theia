@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
-import { injectable } from '@theia/core/shared/inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import {
     ChatResponseContent,
     InformationalChatResponseContent,
@@ -26,9 +26,12 @@ import * as React from '@theia/core/shared/react';
 import * as markdownit from '@theia/core/shared/markdown-it';
 import * as DOMPurify from '@theia/core/shared/dompurify';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
+import { OpenerService, open } from '@theia/core/lib/browser';
+import { URI } from '@theia/core';
 
 @injectable()
 export class MarkdownPartRenderer implements ChatResponsePartRenderer<MarkdownChatResponseContent | InformationalChatResponseContent> {
+    @inject(OpenerService) protected readonly openerService: OpenerService;
     protected readonly markdownIt = markdownit();
     canHandle(response: ChatResponseContent): number {
         if (MarkdownChatResponseContent.is(response)) {
@@ -47,13 +50,12 @@ export class MarkdownPartRenderer implements ChatResponsePartRenderer<MarkdownCh
             return null;
         }
 
-        return <MarkdownRender response={response} />;
+        return <MarkdownRender response={response} openerService={this.openerService} />;
     }
-
 }
 
-const MarkdownRender = ({ response }: { response: MarkdownChatResponseContent | InformationalChatResponseContent }) => {
-    const ref = useMarkdownRendering(response.content);
+const MarkdownRender = ({ response, openerService }: { response: MarkdownChatResponseContent | InformationalChatResponseContent; openerService: OpenerService }) => {
+    const ref = useMarkdownRendering(response.content, openerService);
 
     return <div ref={ref}></div>;
 };
@@ -62,31 +64,56 @@ const MarkdownRender = ({ response }: { response: MarkdownChatResponseContent | 
  * This hook uses markdown-it directly to render markdown.
  * The reason to use markdown-it directly is that the MarkdownRenderer is
  * overridden by theia with a monaco version. This monaco version strips all html
- * tags from the markdown with empty content.
- * This leads to unexpected behavior when rendering markdown with html tags.
+ * tags from the markdown with empty content. This leads to unexpected behavior when
+ * rendering markdown with html tags.
+ *
+ * Moreover, we want to intercept link clicks to use the Theia OpenerService instead of the default browser behavior.
  *
  * @param markdown the string to render as markdown
  * @param skipSurroundingParagraph whether to remove a surrounding paragraph element (default: false)
+ * @param openerService the service to handle link opening
  * @returns the ref to use in an element to render the markdown
  */
-export const useMarkdownRendering = (markdown: string | MarkdownString, skipSurroundingParagraph: boolean = false) => {
+export const useMarkdownRendering = (markdown: string | MarkdownString, openerService: OpenerService, skipSurroundingParagraph: boolean = false) => {
+    // null is valid in React
     // eslint-disable-next-line no-null/no-null
     const ref = useRef<HTMLDivElement | null>(null);
     const markdownString = typeof markdown === 'string' ? markdown : markdown.value;
     useEffect(() => {
         const markdownIt = markdownit();
         const host = document.createElement('div');
-        // markdownIt always puts the content in a paragraph element, so we remove it if we don't want it
+
+        // markdownIt always puts the content in a paragraph element, so we remove it if we don't want that
         const html = skipSurroundingParagraph ? markdownIt.render(markdownString).replace(/^<p>|<\/p>|<p><\/p>$/g, '') : markdownIt.render(markdownString);
+
         host.innerHTML = DOMPurify.sanitize(html, {
-            ALLOW_UNKNOWN_PROTOCOLS: true // DOMPurify usually strips non http(s) links from hrefs
+            // DOMPurify usually strips non http(s) links from hrefs
+            // but we want to allow them (see handleClick via OpenerService below)
+            ALLOW_UNKNOWN_PROTOCOLS: true
         });
         while (ref?.current?.firstChild) {
             ref.current.removeChild(ref.current.firstChild);
         }
-
         ref?.current?.appendChild(host);
-    }, [markdownString]);
+
+        // intercept link clicks to use the Theia OpenerService instead of the default browser behavior
+        const handleClick = (event: MouseEvent) => {
+            let target = event.target as HTMLElement;
+            while (target && target.tagName !== 'A') {
+                target = target.parentElement as HTMLElement;
+            }
+            if (target && target.tagName === 'A') {
+                const href = target.getAttribute('href');
+                if (href) {
+                    open(openerService, new URI(href));
+                    event.preventDefault();
+                }
+            }
+        };
+
+        ref?.current?.addEventListener('click', handleClick);
+        return () => ref.current?.removeEventListener('click', handleClick);
+    }, [markdownString, skipSurroundingParagraph, openerService]);
 
     return ref;
 };
