@@ -109,10 +109,11 @@ Breaking changes:
 - [workspace] added path when creating a new folder [#6545](https://github.com/eclipse-theia/theia/pull/6545)
 
 Breaking changes:
+
 - [core] renamed preference `list.openMode` to `workbench.list.openMode` [#6481](https://github.com/eclipse-theia/theia/pull/6481)
 - [monaco] removed monaco prefix from commands [#5590](https://github.com/eclipse-theia/theia/pull/5590)
 - [plugin] re-implemented webviews to align with [VS Code browser implementation](https://blog.mattbierner.com/vscode-webview-web-learnings/) [#6465](https://github.com/eclipse-theia/theia/pull/6465)
-  - Security: `vscode.previewHTML` is removed, see https://code.visualstudio.com/updates/v1_33#_removing-the-vscodepreviewhtml-command
+  - Security: `vscode.previewHTML` is removed, see <https://code.visualstudio.com/updates/v1_33#_removing-the-vscodepreviewhtml-command>
   - Security: Before all webviews were deployed on [the same origin](https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy)
   allowing them to break out and manipulate shared data as cookies, local storage or even start service workers
   for the main window as well as for each other. Now each webview will be deployed on own origin by default.
@@ -165,11 +166,11 @@ Breaking changes:
 - [monaco] fixed incorrect preference initialization [#6450](https://github.com/eclipse-theia/theia/pull/6450)
 - [monaco] rebinded keybinding for 'Go to Definition' [#6411](https://github.com/eclipse-theia/theia/pull/6411)
 - [plugin] improved tree views: [#6342](https://github.com/eclipse-theia/theia/pull/6342)
-    - added logic to not execute commands on selection change
-    - added better handling of `undefined` 'treeItem.label'
-    - added better styling support for item actions
-    - added better support for descriptions
-    - fixed styling issues
+  - added logic to not execute commands on selection change
+  - added better handling of `undefined` 'treeItem.label'
+  - added better styling support for item actions
+  - added better support for descriptions
+  - fixed styling issues
 - [plugin-ext] added `OutputChannelRegistry` interface and add it into the rpc [#6413](https://github.com/eclipse-theia/theia/pull/6413)
 - [plugin-ext] added configuration attribute to `DebugSession` [#6382](https://github.com/eclipse-theia/theia/pull/6382)
 - [plugin-ext] added logic to pass `pluginInfo` through the output channel append method [#6312](https://github.com/eclipse-theia/theia/pull/6312)
@@ -461,7 +462,6 @@ Breaking changes:
 - [plugin] fixed typo in 'HostedInstanceState' enum from RUNNNING to RUNNING in `plugin-dev` extension [#5608](https://github.com/theia-ide/theia/pull/5608)
 - [plugin] removed member `processOptions` from `AbstractHostedInstanceManager` as it is not initialized or used [#5608](https://github.com/theia-ide/theia/pull/5608)
 
-
 ## v0.8.0 - 27/06/2019
 
 - [core] added bépo keyboard layout
@@ -508,7 +508,7 @@ Breaking changes:
   - `URI.withoutScheme` is removed, in order to get a path use `URI.path`
 - [core] `SelectionCommandHandler.getMulitSelection()` is renamed into `SelectionCommandHandler.getMultiSelection()`
 - [debug] align commands with VS Code [#5102](https://github.com/theia-ide/theia/issues/5102)
-    - `debug.restart` renamed to `workbench.action.debug.restart`
+  - `debug.restart` renamed to `workbench.action.debug.restart`
 - [plugin] 'Hosted mode' extracted in `plugin-dev` extension
 - [preferences] removed constructor from the `FolderPreferenceProvider` class
 - [preferences] renamed overridenPreferenceName to overriddenPreferenceName
@@ -640,6 +640,7 @@ Breaking changes:
 - [dialog] updated `validate` and `accept` methods so they are now Promisified [#4764](https://github.com/theia-ide/theia/pull/4764)
 - [editor] turned off autoSave by default to align with VSCode [#4777](https://github.com/theia-ide/theia/pull/4777)
   - default settings can be overridden in application package.json:
+
   ```json
   {
     "private": true,
@@ -655,6 +656,7 @@ Breaking changes:
     }
   }
   ```
+
 - [electron] removed cluster mode and startup timeout setting
 - [electron] updated Electron to make runtime dependencies optional [#4873](https://github.com/theia-ide/theia/pull/4873)
 - [extension-manager] deprecated [#4876](https://github.com/theia-ide/theia/pull/4876)
@@ -671,7 +673,7 @@ Breaking changes:
 - [core] improved scrollbar styling
 - [core] updated tabbar toolbar to use VSCode icons
 - [core] updated the UI with numerous improvements including sidepanel icons, better alignment, tabbar and menu size
-- [cpp] added new `cpp.clangTidy `and `cpp.clangTidyChecks` preferences to lint cpp program when clangd v9+ is used
+- [cpp] added new `cpp.clangTidy`and `cpp.clangTidyChecks` preferences to lint cpp program when clangd v9+ is used
 - [cpp] fixed properly restarting clangd language server when changing cpp build configurations
 - [debug] added new debug preferences to control `view`, `console`, and `location` appearance
 - [editorconfig] added support to apply properties to monaco editor when opening/switching editors
@@ -686,8 +688,8 @@ Breaking changes:
 - [mini-browser] improved error handling of iframe errors
 - [navigator] added `Collapse All` toolbar item
 - [navigator] updated the navigator to handle multi-root workspaces better
-- [plugin-ext] added `workspace.onDidRenameFile ` Plug-in API
-- [plugin-ext] added `workspace.onWillRenameFile ` Plug-in API
+- [plugin-ext] added `workspace.onDidRenameFile` Plug-in API
+- [plugin-ext] added `workspace.onWillRenameFile` Plug-in API
 - [plugin-ext] added `workspace.registerFileSystemProvider` Plug-in API
 - [plugin-ext] added `workspace.saveAll` Plug-in API
 - [plugin-ext] added `workspace.updateWorkspaceFolders` Plug-in API
@@ -811,16 +813,16 @@ Breaking changes:
   - editor context menu group changes:
     - `2_cut_copy_paste` renamed to `9_cutcopypaste` group
 - [debug] align commands with VS Code [#4204](https://github.com/theia-ide/theia/issues/4204)
-    - `debug.breakpoint.toggle` renamed to `editor.debug.action.toggleBreakpoint`
-    - `debug.start` renamed to `workbench.action.debug.start`
-    - `debug.thread.continue` renamed to `workbench.action.debug.continue`
-    - `debug.start.noDebug` renamed to `workbench.action.debug.run`
-    - `debug.thread.pause` renamed to `workbench.action.debug.pause`
-    - `debug.thread.stepin` renamed to `workbench.action.debug.stepInto`
-    - `debug.thread.stepout` renamed to `workbench.action.debug.stepOut`
-    - `debug.thread.next` renamed to `workbench.action.debug.stepOver`
-    - `debug.stop` renamed to `workbench.action.debug.stop`
-    - `debug.editor.showHover` renamed to `editor.debug.action.showDebugHover`
+  - `debug.breakpoint.toggle` renamed to `editor.debug.action.toggleBreakpoint`
+  - `debug.start` renamed to `workbench.action.debug.start`
+  - `debug.thread.continue` renamed to `workbench.action.debug.continue`
+  - `debug.start.noDebug` renamed to `workbench.action.debug.run`
+  - `debug.thread.pause` renamed to `workbench.action.debug.pause`
+  - `debug.thread.stepin` renamed to `workbench.action.debug.stepInto`
+  - `debug.thread.stepout` renamed to `workbench.action.debug.stepOut`
+  - `debug.thread.next` renamed to `workbench.action.debug.stepOver`
+  - `debug.stop` renamed to `workbench.action.debug.stop`
+  - `debug.editor.showHover` renamed to `editor.debug.action.showDebugHover`
 - multi-root workspace support for preferences [#3247](https://github.com/theia-ide/theia/pull/3247)
   - `PreferenceProvider`
     - is changed from a regular class to an abstract class

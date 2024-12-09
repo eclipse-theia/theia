@@ -14,6 +14,7 @@
 
 The `@theia/api-provider-sample` extension is a programming example showing how to define and provide a custom API object for _plugins_ to use.
 The purpose of the extension is to:
+
 - provide developers with realistic coding examples of providing custom API objects
 - provide easy-to-use and test examples for features when reviewing pull requests
 
@@ -31,7 +32,7 @@ The source code is laid out in the `src/` tree as follows:
   The `GreetingExtImpl` and similar classes communicate with the actual API implementation (`GreetingMainImpl` etc.) classes in the main Theia process via RPC
 - `node/` — the API classes implementing `GreetingMain` and similar interfaces and the Inversify bindings that register the API provider.
   All code in this directory runs in the main Theia Node process
- - `common/` — the RPC API Ext/Main interface definitions corresponding to the backend of the `gotd` plugin API
+- `common/` — the RPC API Ext/Main interface definitions corresponding to the backend of the `gotd` plugin API
 
 ## Additional Information
 
@@ -44,5 +45,6 @@ The source code is laid out in the `src/` tree as follows:
 - [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)
 
 ## Trademark
+
 "Theia" is a trademark of the Eclipse Foundation
-https://www.eclipse.org/theia
+<https://www.eclipse.org/theia>
