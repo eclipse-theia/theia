@@ -3417,6 +3417,7 @@ export class FileCoverage {
         public statementCoverage: TestCoverageCount,
         public branchCoverage?: TestCoverageCount,
         public declarationCoverage?: TestCoverageCount,
+        public includesTests?: theia.TestItem[],
     ) { }
 }
 
