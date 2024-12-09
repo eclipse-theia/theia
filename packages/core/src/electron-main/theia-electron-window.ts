@@ -186,10 +186,18 @@ export class TheiaElectronWindow {
     }
 
     protected restoreMaximizedState(): void {
-        if (this.options.isMaximized) {
-            this._window.maximize();
+        const restore = () => {
+            if (this.options.isMaximized) {
+                this._window.maximize();
+            } else {
+                this._window.unmaximize();
+            }
+        };
+
+        if (this._window.isVisible()) {
+            restore();
         } else {
-            this._window.unmaximize();
+            this._window.once('show', () => restore());
         }
     }
 
