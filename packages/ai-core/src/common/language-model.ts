@@ -38,6 +38,7 @@ export interface ToolRequest {
     parameters?: { type?: 'object', properties: Record<string, { type: string, [key: string]: unknown }> };
     description?: string;
     handler: (arg_string: string) => Promise<unknown>;
+    providerName?: string;
 }
 export interface LanguageModelRequest {
     messages: LanguageModelRequestMessage[],
