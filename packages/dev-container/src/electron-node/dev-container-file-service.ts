@@ -49,7 +49,7 @@ export class DevContainerFileService {
     }
 
     protected async searchForDevontainerJsonFiles(directory: string, depth: number): Promise<string[]> {
-        if (depth < 0 || !fs.existsSync(directory)) {
+        if (depth < 0 || !await fs.pathExists(directory)) {
             return [];
         }
         const filesPaths = (await fs.readdir(directory)).map(file => new Path(directory).join(file).fsPath());
