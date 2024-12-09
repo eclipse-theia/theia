@@ -14,15 +14,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, named } from '@theia/core/shared/inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { GrammarDefinition, GrammarDefinitionProvider, LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/monaco/lib/browser/textmate';
 import * as monaco from '@theia/monaco-editor-core';
-import { Command, CommandContribution, CommandRegistry, ContributionProvider, MessageService } from '@theia/core';
+import { Command, CommandContribution, CommandRegistry, MessageService } from '@theia/core';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 
 import { codicon, Widget } from '@theia/core/lib/browser';
 import { EditorWidget, ReplaceOperation } from '@theia/editor/lib/browser';
-import { PromptCustomizationService, PromptService, ToolProvider } from '../common';
+import { PromptCustomizationService, PromptService, ToolInvocationRegistry } from '../common';
 import { ProviderResult } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
 
 const PROMPT_TEMPLATE_LANGUAGE_ID = 'theia-ai-prompt-template';
@@ -56,9 +56,8 @@ export class PromptTemplateContribution implements LanguageGrammarDefinitionCont
     @inject(PromptCustomizationService)
     protected readonly customizationService: PromptCustomizationService;
 
-    @inject(ContributionProvider)
-    @named(ToolProvider)
-    private toolProviders: ContributionProvider<ToolProvider>;
+    @inject(ToolInvocationRegistry)
+    protected readonly toolInvocationRegistry: ToolInvocationRegistry;
 
     readonly config: monaco.languages.LanguageConfiguration =
         {
@@ -115,7 +114,7 @@ export class PromptTemplateContribution implements LanguageGrammarDefinitionCont
             model,
             position,
             '~{',
-            this.toolProviders.getContributions().map(provider => provider.getTool()),
+            this.toolInvocationRegistry.getAllFunctions(),
             monaco.languages.CompletionItemKind.Function,
             tool => tool.id,
             tool => tool.name,

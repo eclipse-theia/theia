@@ -29,6 +29,7 @@
     "@theia/ai-history": "1.56.0",
     "@theia/ai-huggingface": "1.56.0",
     "@theia/ai-llamafile": "1.56.0",
+    "@theia/ai-mcp": "1.56.0",
     "@theia/ai-ollama": "1.56.0",
     "@theia/ai-openai": "1.56.0",
     "@theia/ai-terminal": "1.56.0",
