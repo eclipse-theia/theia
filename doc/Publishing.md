@@ -106,9 +106,17 @@ Format:
 
 ### 2.1 Performing a Release
 
-- Announce that the release is starting in the discussion.
+- Announce that the release is starting in the discussion (not needed for patch releases):
 
-  > The release will start now, We’ll post an update once it has completed.
+  > The release will start now. We’ll post an update once it has completed.
+
+- Ensure the release branch is checked out (e.g., `release/1.55.x`).
+
+- Clean the working directory:
+
+  ```bash
+  git clean -xdf
+  ```
 
 - Build the changes:
 
@@ -116,41 +124,77 @@ Format:
   yarn
   ```
 
-- Confirm the changes are built (individual `@theia` extensions should have their `lib/` folders present).
-- Perform the release using:
+- Confirm the changes are built (ensure `@theia` extensions have their `lib/` folders).
+
+- Create a short-lived granular npm auth token ([instructions](https://docs.npmjs.com/creating-and-viewing-access-tokens#creating-granular-access-tokens-on-the-website)):
+  - Expiration: `7 days`.
+  - Under Packages and scopes:
+    - Permissions: `Read and write`.
+    - Select `Only select packages and scopes`
+    - Select packages and scopes: `@theia`.
+
+- Set the token:
+
+  ```bash
+  npm set "//registry.npmjs.org/:_authToken=${TOKEN}"
+  ```
+
+- Perform the release:
 
   ```bash
   yarn publish:latest
   ```
 
-  Choose the appropriate version.
+  Select the appropriate version.
 
-- Update `packages/core/README.md` in a separate commit named `core: update re-exports for {version}` ([example](https://github.com/eclipse-theia/theia/commit/21fa2ec688e4a8bcf10203d6dc0f730af43a7f58)).
-- Add all other changes to a commit named `v{version}`.
-- Push the branch and create a PR named `Theia {version}`.
-- Run the [_Package Native Dependencies_](https://github.com/eclipse-theia/theia/actions/workflows/native-dependencies.yml) GitHub Action on the new branch and download the resulting artifacts.
-- Wait for approval.
-- Merge using `Rebase and Merge` (**DO NOT `Squash and Merge`**).
-- Tag the publishing commit after merging:
+  _NOTE:_ For a patch release on an earlier version (e.g., 1.55.1 when 1.56.0 exists), use:
+
+  ```bash
+  yarn publish:patch
+  ```
+
+- Verify the packages are published on npm.
+
+- Remove the auth token:
+
+  ```bash
+  npm logout
+  ```
+
+- Update `packages/core/README.md` in a commit named `core: update re-exports for {version}` ([example](https://github.com/eclipse-theia/theia/commit/21fa2ec688e4a8bcf10203d6dc0f730af43a7f58)).
+
+- Add other changes in a commit named `v{version}`.
+
+- Push the branch.
+
+- Run the [_Package Native Dependencies_](https://github.com/eclipse-theia/theia/actions/workflows/native-dependencies.yml) GitHub Action on the new branch and download the artifacts.
+
+- Create a PR (not needed for patch releases):
+  - Name: `Theia {version}`.
+  - Wait for approval.
+  - Merge using `Rebase and Merge` (**DO NOT `Squash and Merge`**).
+
+- Tag the publishing commit after merging (for patch releases, tag directly on the release branch):
 
   ```bash
   git tag -a v{version} ${sha} -m "v{version}"
   ```
 
-- Publish the tag to GitHub:
+- Push the tag:
 
   ```bash
   git push origin v{version}
   ```
 
 - Create a GitHub release:
-  - Draft a new release on the [releases page](https://github.com/eclipse-theia/theia/releases).
-  - Choose the appropriate release `tag` and input a `name` (e.g., `v1.55.0`, `Eclipse Theia v1.55.0`).
-  - Use the `generate release notes` button for contributors, and format them similarly to other releases.
-  - Reference the `changelog` and breaking changes in the description.
-  - Add the _Package Native Dependencies_ artifacts to the release assets.
+  - Draft a release on the [releases page](https://github.com/eclipse-theia/theia/releases).
+  - Choose the appropriate `tag` and input a `name` (e.g., `v1.55.0`, `Eclipse Theia v1.55.0`).
+  - Use `generate release notes` for contributors and format like previous releases.
+  - Reference the `changelog` and breaking changes.
+  - Attach _Package Native Dependencies_ artifacts.
+  - Mark the release as `latest` (_Do not mark for a patch on an older version_).
   - Select _"Publish Release"_.
-  - For additional details, consult [GitHub documentation](https://help.github.com/en/github/administering-a-repository/managing-releases-in-a-repository#creating-a-release).
+  - See [GitHub documentation](https://help.github.com/en/github/administering-a-repository/managing-releases-in-a-repository#creating-a-release) for details.
 
 ### 2.2 Community Releases
 
