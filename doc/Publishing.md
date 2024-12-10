@@ -136,8 +136,10 @@ Format:
 - Set the token:
 
   ```bash
-  npm set "//registry.npmjs.org/:_authToken=${TOKEN}"
+   npm set "//registry.npmjs.org/:_authToken=${TOKEN}"
   ```
+
+  _Note:_ Add a whitespace in front of this command to ensure it is not added to the shell's history (might not work for all shells).
 
 - Perform the release:
 
