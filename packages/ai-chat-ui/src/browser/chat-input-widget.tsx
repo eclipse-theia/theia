@@ -43,6 +43,8 @@ export class AIChatInputWidget extends ReactWidget {
     @inject(ContextMenuRenderer)
     protected readonly contextMenuRenderer: ContextMenuRenderer;
 
+    protected editorRef: MonacoEditor | undefined = undefined;
+
     protected isEnabled = false;
 
     private _onQuery: Query;
@@ -65,9 +67,12 @@ export class AIChatInputWidget extends ReactWidget {
         this.title.closable = false;
         this.update();
     }
+
     protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
-        this.node.focus({ preventScroll: true });
+        if (this.editorRef) {
+            this.editorRef.focus();
+        }
     }
 
     protected getChatAgents(): ChatAgent[] {
@@ -85,6 +90,7 @@ export class AIChatInputWidget extends ReactWidget {
                 untitledResourceResolver={this.untitledResourceResolver}
                 contextMenuCallback={this.handleContextMenu.bind(this)}
                 isEnabled={this.isEnabled}
+                setEditorRef={editor => { this.editorRef = editor; }}
             />
         );
     }
@@ -113,6 +119,7 @@ interface ChatInputProperties {
     editorProvider: MonacoEditorProvider;
     untitledResourceResolver: UntitledResourceResolver;
     contextMenuCallback: (event: IMouseEvent) => void;
+    setEditorRef: (editor: MonacoEditor | undefined) => void;
 }
 const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInputProperties) => {
 
@@ -171,7 +178,10 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                 editorContainerRef.current.style.height = `${Math.min(contentHeight, maxHeight)}px`;
             }
         };
-        editor.getControl().onDidChangeModelContent(updateEditorHeight);
+        editor.getControl().onDidChangeModelContent(() => {
+            updateEditorHeight();
+            handleOnChange();
+        });
         const resizeObserver = new ResizeObserver(updateEditorHeight);
         if (editorContainerRef.current) {
             resizeObserver.observe(editorContainerRef.current);
@@ -185,6 +195,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         );
 
         editorRef.current = editor;
+        props.setEditorRef(editor);
     };
 
     React.useEffect(() => {
@@ -194,6 +205,10 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                 editorRef.current.dispose();
             }
         };
+    }, []);
+
+    React.useEffect(() => () => {
+        props.setEditorRef(undefined);
     }, []);
 
     React.useEffect(() => {
@@ -224,12 +239,28 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     }, [props.isEnabled]);
 
     const handleInputFocus = () => {
-        placeholderRef.current?.classList.add('hidden');
+        hidePlaceholderIfEditorFilled();
+    };
+
+    const handleOnChange = () => {
+        showPlaceholderIfEditorEmpty();
+        hidePlaceholderIfEditorFilled();
     };
 
     const handleInputBlur = () => {
+        showPlaceholderIfEditorEmpty();
+    };
+
+    const showPlaceholderIfEditorEmpty = () => {
         if (!editorRef.current?.getControl().getValue()) {
             placeholderRef.current?.classList.remove('hidden');
+        }
+    };
+
+    const hidePlaceholderIfEditorFilled = () => {
+        const value = editorRef.current?.getControl().getValue();
+        if (value && value.length > 0) {
+            placeholderRef.current?.classList.add('hidden');
         }
     };
 
