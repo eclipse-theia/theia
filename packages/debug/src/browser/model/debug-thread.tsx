@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as React from '@theia/core/shared/react';
-import { CancellationTokenSource, Emitter, Event, nls } from '@theia/core';
+import { CancellationTokenSource, Emitter, Event, MessageType, nls } from '@theia/core';
 import { DebugProtocol } from '@vscode/debugprotocol/lib/debugProtocol';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
 import { DebugStackFrame } from './debug-stack-frame';
@@ -127,8 +127,10 @@ export class DebugThread extends DebugThreadData implements TreeElement {
         const response: DebugProtocol.GotoTargetsResponse = await this.session.sendRequest('gotoTargets', { source, line: position.lineNumber, column: position.column });
 
         if (response && response.body.targets.length === 0) {
-            throw new Error('Unable to perform Jump to Cursor as there were no targets');
+            this.session.showMessage(MessageType.Warning, "No executable code is associated at the current cursor position.");
+            return;
         }
+
         const targetId = response.body.targets[0].id;
         return this.session.sendRequest('goto', this.toArgs({ targetId }));
     }

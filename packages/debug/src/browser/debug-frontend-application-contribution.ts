@@ -67,8 +67,6 @@ export namespace DebugMenus {
     export const DEBUG_BREAKPOINTS = [...DEBUG, 'f_breakpoints'];
 }
 
-
-
 function nlsEditBreakpoint(breakpoint: string): string {
     return nls.localizeByDefault('Edit {0}...', nls.localizeByDefault(breakpoint));
 }
@@ -245,7 +243,8 @@ export namespace DebugCommands {
     });
     export const JUMP_TO_CURSOR = Command.toDefaultLocalizedCommand({
         id: 'editor.debug.action.jumpToCursor',
-        label: 'Debug: Jump to Cursor'
+        category: DEBUG_CATEGORY,
+        label: 'Jump to Cursor'
     });
 
     export const RESTART_FRAME = Command.toDefaultLocalizedCommand({
