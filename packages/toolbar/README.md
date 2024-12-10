@@ -12,7 +12,7 @@
 
 ## Description
 
-The `@theia/toolbar` extension contributes a global toolbar to the application shell. The toolbar supplements the `Command Palette` and allows users to easily add, remove, and rearrange toolbar items to their liking. The toolbar is hidden by default and ships with a default layout which can be overridden by downstream applications. Extenders can also contribute custom widgets to the toolbar through a contribution point. 
+The `@theia/toolbar` extension contributes a global toolbar to the application shell. The toolbar supplements the `Command Palette` and allows users to easily add, remove, and rearrange toolbar items to their liking. The toolbar is hidden by default and ships with a default layout which can be overridden by downstream applications. Extenders can also contribute custom widgets to the toolbar through a contribution point.
 
 ## Additional Information
 
@@ -28,5 +28,6 @@ An example toolbar custom widget and layout override can be found in [here](http
 - [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)
 
 ## Trademark
+
 "Theia" is a trademark of the Eclipse Foundation
-https://www.eclipse.org/theia
+<https://www.eclipse.org/theia>

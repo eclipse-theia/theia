@@ -45,7 +45,6 @@ Additionally, Theia provides a simple way to translate the generated JSON files 
 }
 ```
 
-
 Only JSON entries without corresponding translations are translated using DeepL. This ensures that manual changes to the translated files aren't overwritten and only new translation entries are actually sent to DeepL.
 
 Use `theia nls-localize --help` for more information on how to use the command and supply DeepL API keys.
@@ -63,5 +62,6 @@ For more information, see the [internationalization documentation](https://theia
 - [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)
 
 ## Trademark
+
 "Theia" is a trademark of the Eclipse Foundation
-https://www.eclipse.org/theia
+<https://www.eclipse.org/theia>

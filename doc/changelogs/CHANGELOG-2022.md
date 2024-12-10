@@ -105,9 +105,9 @@ generating the main code bundle (as before), the second serves to generate a *.c
 - [plugin-ext] `when` clauses removed from `codeToTheiaMappings` [#11741](https://github.com/eclipse-theia/theia/pull/#11741)
 - [terminal] the `AbstractCmdClickTerminalContribution` API has been removed in favor of the `TerminalLinkProvider` interface [#11552](https://github.com/eclipse-theia/theia/pull/11552) - Contributed on behalf of STMicroelectronics
 - [typehierarchy] - Adding Support of vscode TypeHierarchy API with the following breaking changes: [#11694](https://github.com/eclipse-theia/theia/pull/11694)
-  -  [plugin-ext/main] The file `callhierarchy-type-converters.ts` was renamed to `hierarchy-types-converters.ts`
-      - The method `toDefinition` was renamed to `toItemHierarchyDefinition` and the overloaded signatures were removed.
-      - The method `fromDefinition` was replaced for `fromItemHierarchyDefinition` to convert both `TypeHierarchyItem` and `CallHierarchyItem` to a common `HierarchyItem`.
+  - [plugin-ext/main] The file `callhierarchy-type-converters.ts` was renamed to `hierarchy-types-converters.ts`
+    - The method `toDefinition` was renamed to `toItemHierarchyDefinition` and the overloaded signatures were removed.
+    - The method `fromDefinition` was replaced for `fromItemHierarchyDefinition` to convert both `TypeHierarchyItem` and `CallHierarchyItem` to a common `HierarchyItem`.
   - [plugin-ext/plugin] - `type-converters.ts #fromCallHierarchyItem` was replaced by `fromHierarchyItem` to convert from `CallHierarchyItem` or `TypeHierarchyItem` to `HierarchyItem`.
 
 ## v1.30.0 - 9/29/2022
@@ -569,9 +569,9 @@ generating the main code bundle (as before), the second serves to generate a *.c
 - [debug] The interface method `DebugService#provideDynamicDebugConfigurations` changes the return type to `Record<string, DebugConfiguration[]>` [#10910](https://github.com/eclipse-theia/theia/pull/10910)
   This impacts the corresponding return type for `DebugConfigurationManager#provideDynamicDebugConfigurations`.
   The following functions under `plugin-api-rpc.ts#DebugExt` and in the `PluginDebugAdapterContribution` are deprecated
-    * $provideDebugConfigurations
-    * $resolveDebugConfigurations
-    * $resolveDebugConfigurationWithSubstitutedVariablesByHandle
+  - $provideDebugConfigurations
+  - $resolveDebugConfigurations
+  - $resolveDebugConfigurationWithSubstitutedVariablesByHandle
     The `PluginDebugAdapterContributionRegistrator` interface has been removed
 - [filesystem] The `generateUniqueResourceURI` method from the `FileSystemUtils` class has an updated signature. Additionally, the method now returns a generated Uri that uses spaces as separators. The naming scheme was also changed to match VSCode. [10767](https://github.com/eclipse-theia/theia/pull/10767)
 - [markers] `ProblemDecorator` reimplemented to reduce redundancy and align more closely with VSCode. `collectMarkers` now returns `Map<string, TreeDecoration.Data>`, `getOverlayIconColor` renamed to `getColor`, `getOverlayIcon` removed, `appendContainerMarkers` returns `void` [#10820](https://github.com/eclipse-theia/theia/pull/10820)
