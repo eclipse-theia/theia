@@ -25,6 +25,10 @@ import '../../src/browser/style/hover-service.css';
 
 export type HoverPosition = 'left' | 'right' | 'top' | 'bottom';
 
+// Threshold, in milliseconds, over which a mouse movement is not considered
+// quick enough as to be ignored
+const quickMouseThresholdMillis = 200;
+
 export namespace HoverPosition {
     export function invertIfNecessary(position: HoverPosition, target: DOMRect, host: DOMRect, totalWidth: number, totalHeight: number): HoverPosition {
         if (position === 'left') {
@@ -100,11 +104,13 @@ export class HoverService {
         if (request.target !== this.hoverTarget) {
             this.cancelHover();
             this.pendingTimeout = disposableTimeout(() => this.renderHover(request), this.getHoverDelay());
+            this.hoverTarget = request.target;
+            this.listenForMouseOut();
         }
     }
 
     protected getHoverDelay(): number {
-        return Date.now() - this.lastHidHover < 200
+        return Date.now() - this.lastHidHover < quickMouseThresholdMillis
             ? 0
             : this.preferences.get('workbench.hover.delay', isOSX ? 1500 : 500);
     }
@@ -116,7 +122,6 @@ export class HoverService {
         if (cssClasses) {
             host.classList.add(...cssClasses);
         }
-        this.hoverTarget = target;
         if (content instanceof HTMLElement) {
             host.appendChild(content);
             firstChild = content;
@@ -155,8 +160,6 @@ export class HoverService {
                 }
             }
         });
-
-        this.listenForMouseOut();
     }
 
     protected setHostPosition(target: HTMLElement, host: HTMLElement, position: HoverPosition): HoverPosition {
@@ -197,7 +200,11 @@ export class HoverService {
     protected listenForMouseOut(): void {
         const handleMouseMove = (e: MouseEvent) => {
             if (e.target instanceof Node && !this.hoverHost.contains(e.target) && !this.hoverTarget?.contains(e.target)) {
-                this.cancelHover();
+                this.disposeOnHide.push(disposableTimeout(() => {
+                    if (!this.hoverHost.matches(':hover') && !this.hoverTarget?.matches(':hover')) {
+                        this.cancelHover();
+                    }
+                }, quickMouseThresholdMillis));
             }
         };
         document.addEventListener('mousemove', handleMouseMove);
