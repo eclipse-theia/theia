@@ -60,7 +60,7 @@ export class MCPServerManagerImpl implements MCPServerManager {
     public async getTools(serverName: string): Promise<any> {
         const server = this.servers.get(serverName);
         if (!server) {
-            throw new Error(`Server "${serverName}" not found.`);
+            throw new Error(`MCP server "${serverName}" not found.`);
         }
         return server.getTools();
 
