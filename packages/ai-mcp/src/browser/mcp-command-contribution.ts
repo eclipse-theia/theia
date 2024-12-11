@@ -48,7 +48,7 @@ export class MCPCommandContribution implements CommandContribution {
 
     private async getMCPServerSelection(serverNames: String[]): Promise<string | undefined> {
         if (!serverNames || serverNames.length === 0) {
-            this.messageService.error('No MCP Servers configured.');
+            this.messageService.error('No MCP servers configured.');
             return undefined;
         }
         const options = serverNames.map(mcpServerName => ({ label: mcpServerName as string }));
