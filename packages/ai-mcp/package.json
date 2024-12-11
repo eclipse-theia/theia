@@ -12,8 +12,8 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/ai-mcp-frontend-module",
-      "backend": "lib/node/ai-mcp-backend-module"
+      "frontend": "lib/browser/mcp-frontend-module",
+      "backend": "lib/node/mcp-backend-module"
     }
   ],
   "keywords": [
