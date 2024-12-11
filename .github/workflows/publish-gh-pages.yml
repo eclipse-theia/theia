@@ -2,6 +2,7 @@ name: Publish GitHub Pages
 
 permissions:
   id-token: write
+  contents: write
 
 on:
   workflow_dispatch:
