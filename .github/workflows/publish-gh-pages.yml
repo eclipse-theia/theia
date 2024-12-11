@@ -1,5 +1,8 @@
 name: Publish GitHub Pages
 
+permissions:
+  id-token: write
+
 on:
   workflow_dispatch:
 
