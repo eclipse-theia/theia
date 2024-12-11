@@ -49,7 +49,7 @@ export class MCPServerManagerImpl implements MCPServerManager {
     async startServer(serverName: string): Promise<void> {
         const server = this.servers.get(serverName);
         if (!server) {
-            throw new Error(`Server "${serverName}" not found.`);
+            throw new Error(`MCP server "${serverName}" not found.`);
         }
         await server.start();
     }
