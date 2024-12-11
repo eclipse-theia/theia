@@ -1,12 +1,12 @@
 {
   "name": "@theia/core",
-  "version": "1.55.0",
+  "version": "1.56.0",
   "description": "Theia is a cloud & desktop IDE framework implemented in TypeScript.",
   "main": "lib/common/index.js",
   "typings": "lib/common/index.d.ts",
   "dependencies": {
     "@babel/runtime": "^7.10.0",
-    "@parcel/watcher": "^2.4.1",
+    "@parcel/watcher": "^2.5.0",
     "@phosphor/algorithm": "1",
     "@phosphor/commands": "1",
     "@phosphor/coreutils": "1",
@@ -17,8 +17,8 @@
     "@phosphor/signaling": "1",
     "@phosphor/virtualdom": "1",
     "@phosphor/widgets": "1",
-    "@theia/application-package": "1.55.0",
-    "@theia/request": "1.55.0",
+    "@theia/application-package": "1.56.0",
+    "@theia/request": "1.56.0",
     "@types/body-parser": "^1.16.4",
     "@types/cookie": "^0.3.3",
     "@types/dompurify": "^2.2.2",
@@ -59,7 +59,7 @@
     "markdown-it": "^12.3.2",
     "msgpackr": "^1.10.2",
     "p-debounce": "^2.1.0",
-    "perfect-scrollbar": "^1.3.0",
+    "perfect-scrollbar": "^1.5.5",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-tooltip": "^4.2.21",
@@ -210,8 +210,8 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.55.0",
-    "@theia/re-exports": "1.55.0",
+    "@theia/ext-scripts": "1.56.0",
+    "@theia/re-exports": "1.56.0",
     "minimist": "^1.2.0",
     "nodejs-file-downloader": "4.13.0"
   },

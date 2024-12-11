@@ -43,8 +43,22 @@ export class HuggingFaceLanguageModelsManagerImpl implements HuggingFaceLanguage
                 }
                 model.model = modelDescription.model;
                 model.apiKey = apiKeyProvider;
+                model.defaultRequestSettings = modelDescription.defaultRequestSettings;
             } else {
-                this.languageModelRegistry.addLanguageModels([new HuggingFaceModel(modelDescription.id, modelDescription.model, apiKeyProvider)]);
+                this.languageModelRegistry.addLanguageModels([
+                    new HuggingFaceModel(
+                        modelDescription.id,
+                        modelDescription.model,
+                        apiKeyProvider,
+                        undefined,
+                        undefined,
+                        undefined,
+                        undefined,
+                        undefined,
+                        undefined,
+                        modelDescription.defaultRequestSettings
+                    )
+                ]);
             }
         }
     }

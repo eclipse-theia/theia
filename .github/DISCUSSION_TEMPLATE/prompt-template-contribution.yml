@@ -1,12 +1,10 @@
-name: Prompt Template Submission
-description: Submit a prompt template, detailing its functionality and tested results.
-title: Prompt Template for <Agent Name> <Describe Functionality>
+title: "Prompt Template for <Agent Name> <Describe Functionality>"
 body:
   - type: textarea
     id: what_template_does
     attributes:
       label: What Does This Template Do?
-      description: Provide a brief description of the prompt template. What problem does it solve? What specific functionality and agent does it enhance and how? 
+      description: Provide a brief description of the prompt template. What problem does it solve? What specific functionality and agent does it enhance and how?
       placeholder: Enter a description of the template.
     validations:
       required: true
@@ -25,7 +23,7 @@ body:
     attributes:
       label: Tested LLMs
       description: List the language models this template has been tested with, including versions, providers, and notable performance observations.
-      placeholder: |- 
+      placeholder: |-
         - LLM Name & Version (e.g., OpenAI GPT-4)
         - Provider (e.g., OpenAI, llama-file, Ollama)
         - Observations or challenges
@@ -37,7 +35,7 @@ body:
     attributes:
       label: Example User Requests
       description: Provide some example user requests tested with this template.
-      placeholder: |- 
+      placeholder: |-
         1. Example Request 1: [User input]
         2. Example Request 2: [User input]
         3. Example Request 3: [User input]
@@ -76,7 +74,7 @@ body:
 
             ### Developer Certificate of Origin 1.1
 
-            Copyright (C) 2004, 2006 The Linux Foundation and its contributors.  
+            Copyright (C) 2004, 2006 The Linux Foundation and its contributors.
             660 York Street, Suite 102, San Francisco, CA 94110 USA
 
             Everyone is permitted to copy and distribute verbatim copies of this license document, but changing it is not allowed.
@@ -85,9 +83,9 @@ body:
 
             By making a contribution to this project, I certify that:
 
-            (a) The contribution was created in whole or in part by me and I have the right to submit it under the open-source license indicated in the file; or  
-            (b) The contribution is based upon previous work that, to the best of my knowledge, is covered under an appropriate open-source license and I have the right under that license to submit that work with modifications, whether created in whole or in part by me, under the same open-source license (unless I am permitted to submit under a different license), as indicated in the file; or  
-            (c) The contribution was provided directly to me by some other person who certified (a), (b), or (c) and I have not modified it.  
+            (a) The contribution was created in whole or in part by me and I have the right to submit it under the open-source license indicated in the file; or
+            (b) The contribution is based upon previous work that, to the best of my knowledge, is covered under an appropriate open-source license and I have the right under that license to submit that work with modifications, whether created in whole or in part by me, under the same open-source license (unless I am permitted to submit under a different license), as indicated in the file; or
+            (c) The contribution was provided directly to me by some other person who certified (a), (b), or (c) and I have not modified it.
 
             (d) I understand and agree that this project and the contribution are public and that a record of the contribution (including all personal information I submit with it, including my signoff) is maintained indefinitely and may be redistributed consistent with this project or the open-source license(s) involved.
 

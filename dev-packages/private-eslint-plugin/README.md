@@ -17,25 +17,32 @@ The plugin helps identify problems during development through static analysis in
 
 ## Rules
 
-### `localization-check`:
+### `annotation-check`
+
+Inversify >=6.1 requires to annotate all constructor parameters of injectable classes as otherwise runtime errors are thrown.
+The rule checks that all constructor parameters of injectable classes are annotated with `@inject`, `@unmanaged` or `@multiInject`.
+
+### `localization-check`
 
 The rule prevents the following localization related issues:
+
 - incorrect usage of the `nls.localizeByDefault` function by using an incorrect default value.
 - unnecessary call to `nls.localize` which could be replaced by `nls.localizeByDefault`.
 
-### `no-src-import`:
+### `no-src-import`
 
 The rule prevents imports using `/src/` rather than `/lib/` as it causes build failures.
 The rule helps developers more easily identify the cause of build errors caused by the incorrect import.
 
-#### `runtime-import-check`:
+#### `runtime-import-check`
 
 The rule prevents imports from folders meant for incompatible runtimes.
 The check enforces the [code organization guidelines](https://github.com/eclipse-theia/theia/wiki/Code-Organization) of the framework and guards against invalid imports which may cause unforeseen issues downstream.
 
-#### `shared-dependencies`:
+#### `shared-dependencies`
 
 The rule prevents the following:
+
 - prevents the implicit use of a shared dependency from `@theia/core`.
 - prevents extensions from depending on a shared dependency without re-using it from `@theia/core`.
 
@@ -46,10 +53,10 @@ The rule prevents the following:
 
 ## License
 
--   [Eclipse Public License 2.0](http://www.eclipse.org/legal/epl-2.0/)
--   [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)
+- [Eclipse Public License 2.0](http://www.eclipse.org/legal/epl-2.0/)
+- [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)
 
 ## Trademark
 
 "Theia" is a trademark of the Eclipse Foundation
-https://www.eclipse.org/theia
+<https://www.eclipse.org/theia>

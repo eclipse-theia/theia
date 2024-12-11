@@ -31,5 +31,7 @@ export const RemoteStatusServicePath = '/remote/status';
 export const RemoteStatusService = Symbol('RemoteStatusService');
 
 export interface RemoteStatusService {
-    getStatus(localPort: number): Promise<RemoteStatus>
+    getStatus(localPort: number): Promise<RemoteStatus>;
+
+    connectionClosed(localPort: number): Promise<void>;
 }

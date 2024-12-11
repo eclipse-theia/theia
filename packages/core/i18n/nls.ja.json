@@ -144,7 +144,6 @@
       "editor.accessibilitySupport2": "スクリーンリーダーが添付されていないと仮定する",
       "editor.bracketPairColorization.enabled": "ブラケットペアのカラー化を有効にするかどうかを制御する。ブラケットのハイライト色を上書きするには `#workbench.colorCustomizations#` を使用してください。",
       "editor.codeActionWidget.includeNearbyQuickfixes": "現在診断中でない場合に、行内に最も近いクイックフィックスを表示するかどうかを設定します。",
-      "editor.cursorSurroundingLinesStyle": "cursorSurroundingLines#`を実行するタイミングを制御する。",
       "editor.detectIndentation": "ファイルを開いたときに、ファイルの内容に基づいて `#editor.tabSize#` と `#editor.insertSpaces#` を自動的に検出するかどうかを制御する。",
       "editor.dropIntoEditor.enabled": "shift`を押しながらファイルをテキストエディタにドラッグ＆ドロップできるかどうかをコントロールします(エディタでファイルを開く代わりに)。",
       "editor.formatOnSaveMode.modificationsIfAvailable": "変更点のみをフォーマットしようとします(ソースコントロールが必要です)。ソースコントロールが使用できない場合は、ファイル全体がフォーマットされます。",

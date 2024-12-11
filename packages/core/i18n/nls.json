@@ -144,7 +144,6 @@
       "editor.accessibilitySupport2": "Assume a screen reader is not attached",
       "editor.bracketPairColorization.enabled": "Controls whether bracket pair colorization is enabled or not. Use `#workbench.colorCustomizations#` to override the bracket highlight colors.",
       "editor.codeActionWidget.includeNearbyQuickfixes": "Enable/disable showing nearest quickfix within a line when not currently on a diagnostic.",
-      "editor.cursorSurroundingLinesStyle": "Controls when `#cursorSurroundingLines#` should be enforced.",
       "editor.detectIndentation": "Controls whether `#editor.tabSize#` and `#editor.insertSpaces#` will be automatically detected when a file is opened based on the file contents.",
       "editor.dropIntoEditor.enabled": "Controls whether you can drag and drop a file into a text editor by holding down `shift` (instead of opening the file in an editor).",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Will attempt to format modifications only (requires source control). If source control can't be used, then the whole file will be formatted.",

@@ -167,6 +167,8 @@ export class RemoteSetupService {
                 arch = 'x64';
             } else if (archResult.match(/i\d83/)) { // i386, i483, i683
                 arch = 'x86';
+            } else if (archResult.includes('aarch64')) {
+                arch = 'arm64';
             } else {
                 arch = archResult.trim();
             }

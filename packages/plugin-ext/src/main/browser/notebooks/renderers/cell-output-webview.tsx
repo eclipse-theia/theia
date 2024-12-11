@@ -354,21 +354,27 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
             this.webviewWidget.show();
         }
 
+        const visibleCells = new Set(this.notebook.getVisibleCells().map(cell => cell.handle));
+
         const updateOutputMessage: OutputChangedMessage = {
             type: 'outputChanged',
-            changes: updates.map(update => ({
-                cellHandle: update.cellHandle,
-                newOutputs: update.newOutputs.map(output => ({
-                    id: output.outputId,
-                    items: output.outputs.map(item => ({ mime: item.mime, data: item.data.buffer })),
-                    metadata: output.metadata
-                })),
-                start: update.start,
-                deleteCount: update.deleteCount
-            }))
+            changes: updates
+                .filter(update => visibleCells.has(update.cellHandle))
+                .map(update => ({
+                    cellHandle: update.cellHandle,
+                    newOutputs: update.newOutputs.map(output => ({
+                        id: output.outputId,
+                        items: output.outputs.map(item => ({ mime: item.mime, data: item.data.buffer })),
+                        metadata: output.metadata
+                    })),
+                    start: update.start,
+                    deleteCount: update.deleteCount
+                }))
         };
 
-        this.webviewWidget.sendMessage(updateOutputMessage);
+        if (updateOutputMessage.changes.length > 0) {
+            this.webviewWidget.sendMessage(updateOutputMessage);
+        }
     }
 
     cellsChanged(cellEvents: NotebookContentChangedEvent[]): void {
@@ -382,11 +388,12 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
                     toIndex: event.newIdx + i,
                 } as CellsMoved)));
             } else if (event.kind === NotebookCellsChangeType.ModelChange) {
+                const visibleCells = new Set(this.notebook.getVisibleCells());
                 changes.push(...event.changes.map(change => ({
                     type: 'cellsSpliced',
                     start: change.start,
                     deleteCount: change.deleteCount,
-                    newCells: change.newItems.map(cell => cell.handle)
+                    newCells: change.newItems.filter(cell => visibleCells.has(cell as NotebookCellModel)).map(cell => cell.handle)
                 } as CellsSpliced)));
             }
         }
@@ -429,7 +436,7 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
 
         switch (message.type) {
             case 'initialized':
-                this.updateOutputs(this.notebook.cells.map(cell => ({
+                this.updateOutputs(this.notebook.getVisibleCells().map(cell => ({
                     cellHandle: cell.handle,
                     newOutputs: cell.outputs,
                     start: 0,

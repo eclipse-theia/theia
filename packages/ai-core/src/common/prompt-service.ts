@@ -136,6 +136,7 @@ export interface PromptCustomizationService {
      */
     getCustomizedPromptTemplate(id: string): string | undefined
 
+    getCustomPromptTemplateIDs(): string[];
     /**
      * Edit the template. If the content is specified, is will be
      * used to customize the template. Otherwise, the behavior depends
@@ -314,9 +315,18 @@ export class PromptServiceImpl implements PromptService {
         delete this._prompts[id];
     }
     getVariantIds(id: string): string[] {
-        return Object.values(this._prompts)
+        const allCustomPromptTemplateIds = this.customizationService?.getCustomPromptTemplateIDs() || [];
+        const knownPromptIds = Object.keys(this._prompts);
+
+        // We filter out known IDs from the custom prompt template IDs, these are no variants, but customizations. Then we retain IDs that start with the main ID
+        const customVariantIds = allCustomPromptTemplateIds.filter(customId =>
+            !knownPromptIds.includes(customId) && customId.startsWith(id)
+        );
+        const variantIds = Object.values(this._prompts)
             .filter(prompt => prompt.variantOf === id)
             .map(variant => variant.id);
+
+        return [...variantIds, ...customVariantIds];
     }
     storePromptTemplate(promptTemplate: PromptTemplate): void {
         this._prompts[promptTemplate.id] = promptTemplate;

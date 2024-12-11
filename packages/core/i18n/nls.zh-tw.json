@@ -144,7 +144,6 @@
       "editor.accessibilitySupport2": "假設沒有連接螢幕閱讀器",
       "editor.bracketPairColorization.enabled": "控制是否啟用括號對著色。使用 `#workbench.colorCustomizations#` 來覆寫括弧高亮顏色。",
       "editor.codeActionWidget.includeNearbyQuickfixes": "當目前未進行診斷時,啟用/停用在行內顯示最近的快速修復。",
-      "editor.cursorSurroundingLinesStyle": "控制何時執行 `#cursorSurroundingLines#`。",
       "editor.detectIndentation": "控制在開啟檔案時,是否會根據檔案內容自動偵測 `#editor.tabSize#` 和 `#editor.insertSpaces#`。",
       "editor.dropIntoEditor.enabled": "控制是否可以按住 `shift` 將檔案拖放到文字編輯器中 (而不是在編輯器中開啟檔案)。",
       "editor.formatOnSaveMode.modificationsIfAvailable": "僅嘗試格式化修改 (需要來源控制)。如果無法使用原始碼控制,則會格式化整個檔案。",

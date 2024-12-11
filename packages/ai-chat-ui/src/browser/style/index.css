@@ -132,6 +132,20 @@ div:last-child > .theia-ChatNode {
   font-size: var(--theia-code-font-size);
 }
 
+.theia-RequestNode > p div {
+  display: inline;
+}
+
+.theia-RequestNode .theia-RequestNode-AgentLabel,
+.theia-RequestNode .theia-RequestNode-VariableLabel {
+  padding: calc(var(--theia-ui-padding) * 2 / 3);
+  padding-top: 0px;
+  padding-bottom: 0px;
+  border-radius: calc(var(--theia-ui-padding) * 2 / 3);
+  background: var(--theia-badge-background);
+  color: var(--theia-badge-foreground);
+}
+
 .chat-input-widget {
   align-items: flex-end;
   display: flex;
@@ -314,6 +328,21 @@ div:last-child > .theia-ChatNode {
   padding: 6px;
   background-color: var(--theia-editor-background);
   overflow: auto;
+}
+
+.collapsible-arguments {
+  display: inline-block;
+}
+
+.collapsible-arguments .collapsible-arguments-summary {
+  display: inline-block;
+  white-space: nowrap;
+  text-decoration: underline;
+}
+
+details[open].collapsible-arguments,
+details[open].collapsible-arguments .collapsible-arguments-summary {
+  display: unset;
 }
 
 .theia-ResponseNode-ProgressMessage {

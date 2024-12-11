@@ -17,6 +17,7 @@
 import { Emitter } from '@theia/core';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { RemotePortForwardingProvider } from '../../electron-common/remote-port-forwarding-provider';
+import { getCurrentPort } from '@theia/core/lib/electron-browser/messaging/electron-local-ws-connection-source';
 
 export interface ForwardedPort {
     localPort?: number;
@@ -50,7 +51,7 @@ export class PortForwardingService {
     }
 
     updatePort(port: ForwardedPort, newAdress: string): void {
-        const connectionPort = new URLSearchParams(location.search).get('port');
+        const connectionPort = getCurrentPort();
         if (!connectionPort) {
             // if there is no open remote connection we can't forward a port
             return;

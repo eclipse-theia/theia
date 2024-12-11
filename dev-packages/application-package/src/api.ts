@@ -18,4 +18,4 @@
  * The default supported API version the framework supports.
  * The version should be in the format `x.y.z`.
  */
-export const DEFAULT_SUPPORTED_API_VERSION = '1.94.2';
+export const DEFAULT_SUPPORTED_API_VERSION = '1.95.3';

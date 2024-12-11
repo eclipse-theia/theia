@@ -144,7 +144,6 @@
       "editor.accessibilitySupport2": "Předpokládejme, že není připojena čtečka obrazovky",
       "editor.bracketPairColorization.enabled": "Ovládá, zda je obarvení dvojice závorek povoleno, nebo ne. Pro přepsání barev zvýraznění závorek použijte `#workbench.colorCustomizations#`.",
       "editor.codeActionWidget.includeNearbyQuickfixes": "Povolení/zakázání zobrazení nejbližší opravy v rámci řádku, pokud se zrovna neprovádí diagnostika.",
-      "editor.cursorSurroundingLinesStyle": "Řídí, kdy se má vynutit `#cursorSurroundingLines#`.",
       "editor.detectIndentation": "Řídí, zda se při otevření souboru automaticky zjistí `#editor.tabSize#` a `#editor.insertSpaces#` na základě obsahu souboru.",
       "editor.dropIntoEditor.enabled": "Ovládá, zda můžete soubor přetáhnout do textového editoru podržením klávesy `shift` (namísto otevření souboru v editoru).",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Pokusí se formátovat pouze změny (vyžaduje kontrolu zdrojů). Pokud nelze použít kontrolu zdrojů, bude formátován celý soubor.",

@@ -144,7 +144,6 @@
       "editor.accessibilitySupport2": "假设未连接屏幕阅读器",
       "editor.bracketPairColorization.enabled": "控制是否启用括号对着色。使用 `#workbench.colorCustomizations#` 覆盖括号高亮颜色。",
       "editor.codeActionWidget.includeNearbyQuickfixes": "启用/禁用在当前未进行诊断时显示行内最近的快速修复。",
-      "editor.cursorSurroundingLinesStyle": "控制何时执行 `#cursorSurroundingLines#` 。",
       "editor.detectIndentation": "控制打开文件时是否根据文件内容自动检测 `#editor.tabSize#` 和 `#editor.insertSpaces#`。",
       "editor.dropIntoEditor.enabled": "控制是否可以按住 `shift` 将文件拖放到文本编辑器中(而不是在编辑器中打开文件)。",
       "editor.formatOnSaveMode.modificationsIfAvailable": "将尝试只对修改部分进行格式化(需要源代码控制)。如果不能使用源码控制,那么整个文件将被格式化。",

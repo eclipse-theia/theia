@@ -16,6 +16,7 @@ The `@theia/getting-started` extension contributes a default `getting-started` w
 opening the application without any workspace present or if the widget is explicitly opened (through the menu or command).
 
 The `getting-started` widget provides useful commands and functionality for quickly getting up to speed with the application. For example:
+
 - `open commands`: commands which are used to open files, folders, and workspaces quickly.
 - `recent workspaces`: recently used workspaces are listed for easy and quick access.
 - `settings commands`: commands which are used to open the preferences and keyboard shortcuts widgets.
@@ -33,5 +34,6 @@ The `getting-started` widget provides useful commands and functionality for quic
 - [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)
 
 ## Trademark
+
 "Theia" is a trademark of the Eclipse Foundation
-https://www.eclipse.org/theia
+<https://www.eclipse.org/theia>
