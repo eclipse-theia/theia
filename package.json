@@ -4,16 +4,18 @@
   "version": "0.0.0",
   "engines": {
     "yarn": ">=1.7.0 <2",
-    "node": ">=16"
+    "node": ">=18"
   },
   "resolutions": {
-    "**/@types/node": "18"
+    "**/@types/node": "18",
+    "**/nan": "2.20.0",
+    "**/perfect-scrollbar": "1.5.5"
   },
   "devDependencies": {
     "@types/chai": "4.3.0",
     "@types/chai-spies": "1.0.3",
     "@types/chai-string": "^1.4.0",
-    "@types/jsdom": "^21.1.1",
+    "@types/jsdom": "^21.1.7",
     "@types/node": "18",
     "@types/sinon": "^10.0.6",
     "@types/temp": "^0.9.1",
@@ -39,16 +41,15 @@
     "if-env": "^1.0.4",
     "ignore-styles": "^5.0.1",
     "improved-yarn-audit": "^3.0.0",
-    "jsdom": "^21.1.1",
+    "jsdom": "^22.1.0",
     "lerna": "^7.1.1",
     "mkdirp": "^0.5.0",
     "node-gyp": "^9.0.0",
-    "nsfw": "^2.2.4",
     "nyc": "^15.0.0",
-    "puppeteer": "19.7.2",
-    "puppeteer-core": "19.7.2",
+    "puppeteer": "23.1.0",
+    "puppeteer-core": "23.1.0",
     "puppeteer-to-istanbul": "1.4.0",
-    "rimraf": "^2.6.1",
+    "rimraf": "^5.0.0",
     "sinon": "^12.0.0",
     "temp": "^0.9.1",
     "tslint": "^5.12.0",
@@ -80,6 +81,7 @@
     "postinstall": "theia-patch",
     "prepare": "yarn -s compile:references && lerna run prepare && yarn -s compile",
     "publish:latest": "lerna publish --exact --yes --no-push",
+    "publish:patch": "lerna publish --exact --yes --no-push --dist-tag patch",
     "publish:next": "lerna publish preminor --exact --canary --preid next --dist-tag next --no-git-reset --no-git-tag-version --no-push --yes && yarn -s publish:check",
     "publish:check": "node scripts/check-publish.js",
     "rebuild:clean": "rimraf .browser_modules",
@@ -104,7 +106,9 @@
   "theiaPlugins": {
     "eclipse-theia.builtin-extension-pack": "https://open-vsx.org/api/eclipse-theia/builtin-extension-pack/1.88.1/file/eclipse-theia.builtin-extension-pack-1.88.1.vsix",
     "EditorConfig.EditorConfig": "https://open-vsx.org/api/EditorConfig/EditorConfig/0.16.6/file/EditorConfig.EditorConfig-0.16.6.vsix",
-    "dbaeumer.vscode-eslint": "https://open-vsx.org/api/dbaeumer/vscode-eslint/2.4.2/file/dbaeumer.vscode-eslint-2.4.2.vsix"
+    "dbaeumer.vscode-eslint": "https://open-vsx.org/api/dbaeumer/vscode-eslint/2.4.2/file/dbaeumer.vscode-eslint-2.4.2.vsix",
+    "ms-toolsai.jupyter": "https://open-vsx.org/api/ms-toolsai/jupyter/2024.6.0/file/ms-toolsai.jupyter-2024.6.0.vsix",
+    "ms-python.python": "https://open-vsx.org/api/ms-python/python/2024.12.3/file/ms-python.python-2024.12.3.vsix"
   },
   "theiaPluginsExcludeIds": [
     "ms-vscode.js-debug-companion",
@@ -112,6 +116,7 @@
     "vscode.github",
     "vscode.github-authentication",
     "vscode.microsoft-authentication",
-    "ms-vscode.references-view"
+    "ms-vscode.references-view",
+    "ms-python.vscode-pylance"
   ]
 }

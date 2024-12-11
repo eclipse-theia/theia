@@ -56,6 +56,7 @@ export const frontendOnlyApplicationModule = new ContainerModule((bind, unbind, 
         getExtensionsInfos: async (): Promise<ExtensionInfo[]> => [],
         getApplicationInfo: async (): Promise<ApplicationInfo | undefined> => undefined,
         getApplicationRoot: async (): Promise<string> => '',
+        getApplicationPlatform: () => Promise.resolve('web'),
         getBackendOS: async (): Promise<OS.Type> => OS.Type.Linux
     };
     if (isBound(ApplicationServer)) {

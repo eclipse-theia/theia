@@ -20,6 +20,7 @@ export const VSX_ENVIRONMENT_PATH = '/services/vsx-environment';
 
 export const VSXEnvironment = Symbol('VSXEnvironment');
 export interface VSXEnvironment {
+    getRateLimit(): Promise<number>;
     getRegistryUri(): Promise<string>;
     getRegistryApiUri(): Promise<string>;
     getVscodeApiVersion(): Promise<string>;

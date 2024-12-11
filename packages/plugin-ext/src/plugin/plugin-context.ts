@@ -19,7 +19,7 @@
 
 import type * as theia from '@theia/plugin';
 import { CommandRegistryImpl } from './command-registry';
-import { Emitter } from '@theia/core/lib/common/event';
+import { Emitter, Event } from '@theia/core/lib/common/event';
 import { CancellationError, CancellationToken, CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { QuickOpenExtImpl } from './quick-open';
 import {
@@ -124,6 +124,8 @@ import {
     Breakpoint,
     SourceBreakpoint,
     FunctionBreakpoint,
+    DebugStackFrame,
+    DebugThread,
     FoldingRange,
     FoldingRangeKind,
     SelectionRange,
@@ -185,6 +187,7 @@ import {
     TestTag,
     TestRunRequest,
     TestMessage,
+    TestMessageStackFrame,
     ExtensionKind,
     InlineCompletionItem,
     InlineCompletionList,
@@ -211,7 +214,29 @@ import {
     DeclarationCoverage,
     FileCoverage,
     StatementCoverage,
-    TestCoverageCount
+    TestCoverageCount,
+    ChatRequestTurn,
+    ChatResponseTurn,
+    ChatResponseAnchorPart,
+    ChatResponseCommandButtonPart,
+    ChatResponseFileTreePart,
+    ChatResponseMarkdownPart,
+    ChatResponseProgressPart,
+    ChatResponseReferencePart,
+    ChatResultFeedbackKind,
+    LanguageModelChatMessage,
+    LanguageModelChatMessageRole,
+    LanguageModelChatToolMode,
+    LanguageModelError,
+    LanguageModelPromptTsxPart,
+    LanguageModelTextPart,
+    LanguageModelToolCallPart,
+    LanguageModelToolResult,
+    LanguageModelToolResultPart,
+    PortAutoForwardAction,
+    PortAttributes,
+    DebugVisualization,
+    TerminalShellExecutionCommandLineConfidence
 } from './types-impl';
 import { AuthenticationExtImpl } from './authentication-ext';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
@@ -258,6 +283,23 @@ import { NotebookKernelsExtImpl } from './notebook/notebook-kernels';
 import { NotebookDocumentsExtImpl } from './notebook/notebook-documents';
 import { NotebookEditorsExtImpl } from './notebook/notebook-editors';
 import { TestingExtImpl } from './tests';
+import { UriExtImpl } from './uri-ext';
+import { isObject } from '@theia/core';
+
+export function createAPIObject<T extends Object>(rawObject: T): T {
+    return new Proxy(rawObject, {
+        get(target, p, receiver) {
+            const isOwnProperty = !!Object.getOwnPropertyDescriptor(target, p);
+            const val = Reflect.get(target, p);
+            if (!isOwnProperty && typeof val === 'function') {
+                // bind functions that are inherited from the prototype to the object itself.
+                // This should handle the case of events.
+                return val.bind(target);
+            }
+            return val;
+        },
+    }) as T;
+}
 
 export function createAPIFactory(
     rpc: RPCProtocol,
@@ -302,10 +344,11 @@ export function createAPIFactory(
     const themingExt = rpc.set(MAIN_RPC_CONTEXT.THEMING_EXT, new ThemingExtImpl(rpc));
     const commentsExt = rpc.set(MAIN_RPC_CONTEXT.COMMENTS_EXT, new CommentsExtImpl(rpc, commandRegistry, documents));
     const tabsExt = rpc.set(MAIN_RPC_CONTEXT.TABS_EXT, new TabsExtImpl(rpc));
-    const customEditorExt = rpc.set(MAIN_RPC_CONTEXT.CUSTOM_EDITORS_EXT, new CustomEditorsExtImpl(rpc, documents, webviewExt, workspaceExt));
+    const customEditorExt = rpc.set(MAIN_RPC_CONTEXT.CUSTOM_EDITORS_EXT, new CustomEditorsExtImpl(rpc, documents, webviewExt));
     const webviewViewsExt = rpc.set(MAIN_RPC_CONTEXT.WEBVIEW_VIEWS_EXT, new WebviewViewsExtImpl(rpc, webviewExt));
     const telemetryExt = rpc.set(MAIN_RPC_CONTEXT.TELEMETRY_EXT, new TelemetryExtImpl());
     const testingExt = rpc.set(MAIN_RPC_CONTEXT.TESTING_EXT, new TestingExtImpl(rpc, commandRegistry));
+    const uriExt = rpc.set(MAIN_RPC_CONTEXT.URI_EXT, new UriExtImpl(rpc));
     rpc.set(MAIN_RPC_CONTEXT.DEBUG_EXT, debugExt);
 
     return function (plugin: InternalPlugin): typeof theia {
@@ -318,6 +361,9 @@ export function createAPIFactory(
             },
             get onDidChangeSessions(): theia.Event<theia.AuthenticationSessionsChangeEvent> {
                 return authenticationExt.onDidChangeSessions;
+            },
+            getAccounts(providerId: string): Thenable<readonly theia.AuthenticationSessionAccountInformation[]> {
+                return authenticationExt.getAccounts(providerId);
             }
         };
         function commandIsDeclaredInPackage(id: string, model: PluginPackage): boolean {
@@ -469,10 +515,11 @@ export function createAPIFactory(
             },
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             showQuickPick(items: any, options?: theia.QuickPickOptions, token?: theia.CancellationToken): any {
-                return quickOpenExt.showQuickPick(items, options, token);
+                return quickOpenExt.showQuickPick(plugin, items, options, token);
             },
             createQuickPick<T extends theia.QuickPickItem>(): theia.QuickPick<T> {
-                return quickOpenExt.createQuickPick(plugin);
+
+                return createAPIObject(quickOpenExt.createQuickPick(plugin));
             },
             showWorkspaceFolderPick(options?: theia.WorkspaceFolderPickOptions): PromiseLike<theia.WorkspaceFolder | undefined> {
                 return workspaceExt.pickWorkspaceFolder(options);
@@ -511,9 +558,12 @@ export function createAPIFactory(
                     priority = priorityOrAlignment;
                 }
 
+                // TODO: here
                 return statusBarMessageRegistryExt.createStatusBarItem(alignment, priority, id);
             },
             createOutputChannel(name: string, options?: { log: true }): any {
+
+                // TODO: here
                 return !options
                     ? outputChannelRegistryExt.createOutputChannel(name, pluginToPluginInfo(plugin))
                     : outputChannelRegistryExt.createOutputChannel(name, pluginToPluginInfo(plugin), options);
@@ -522,7 +572,7 @@ export function createAPIFactory(
                 title: string,
                 showOptions: theia.ViewColumn | theia.WebviewPanelShowOptions,
                 options: theia.WebviewPanelOptions & theia.WebviewOptions = {}): theia.WebviewPanel {
-                return webviewExt.createWebview(viewType, title, showOptions, options, plugin);
+                return createAPIObject(webviewExt.createWebview(viewType, title, showOptions, options, plugin));
             },
             registerWebviewPanelSerializer(viewType: string, serializer: theia.WebviewPanelSerializer): theia.Disposable {
                 return webviewExt.registerWebviewPanelSerializer(viewType, serializer, plugin);
@@ -550,19 +600,19 @@ export function createAPIFactory(
             createTerminal(nameOrOptions: theia.TerminalOptions | theia.ExtensionTerminalOptions | theia.ExtensionTerminalOptions | (string | undefined),
                 shellPath?: string,
                 shellArgs?: string[] | string): theia.Terminal {
-                return terminalExt.createTerminal(nameOrOptions, shellPath, shellArgs);
+                return createAPIObject(terminalExt.createTerminal(plugin, nameOrOptions, shellPath, shellArgs));
             },
             onDidChangeTerminalState,
             onDidCloseTerminal,
             onDidOpenTerminal,
             createTextEditorDecorationType(options: theia.DecorationRenderOptions): theia.TextEditorDecorationType {
-                return editors.createTextEditorDecorationType(options);
+                return createAPIObject(editors.createTextEditorDecorationType(options));
             },
             registerTreeDataProvider<T>(viewId: string, treeDataProvider: theia.TreeDataProvider<T>): Disposable {
                 return treeViewsExt.registerTreeDataProvider(plugin, viewId, treeDataProvider);
             },
             createTreeView<T>(viewId: string, options: theia.TreeViewOptions<T>): theia.TreeView<T> {
-                return treeViewsExt.createTreeView(plugin, viewId, options);
+                return createAPIObject(treeViewsExt.createTreeView(plugin, viewId, options));
             },
             withScmProgress<R>(task: (progress: theia.Progress<number>) => Thenable<R>) {
                 const options: ProgressOptions = { location: ProgressLocation.SourceControl };
@@ -578,11 +628,10 @@ export function createAPIFactory(
                 return decorationsExt.registerFileDecorationProvider(provider, pluginToPluginInfo(plugin));
             },
             registerUriHandler(handler: theia.UriHandler): theia.Disposable {
-                // TODO ?
-                return new Disposable(() => { });
+                return uriExt.registerUriHandler(handler, pluginToPluginInfo(plugin));
             },
             createInputBox(): theia.InputBox {
-                return quickOpenExt.createInputBox(plugin);
+                return createAPIObject(quickOpenExt.createInputBox(plugin));
             },
             registerTerminalLinkProvider(provider: theia.TerminalLinkProvider): theia.Disposable {
                 return terminalExt.registerTerminalLinkProvider(provider);
@@ -619,12 +668,34 @@ export function createAPIFactory(
 
             /** @stubbed ShareProvider */
             registerShareProvider: () => Disposable.NULL,
+            /** @stubbed Terminal Shell Ingration */
+            onDidChangeTerminalShellIntegration: Event.None,
+            /** @stubbed Terminal Shell Ingration */
+            onDidEndTerminalShellExecution: Event.None,
+            /** @stubbed Terminal Shell Ingration */
+            onDidStartTerminalShellExecution: Event.None
         };
 
+        function createFileSystemWatcher(pattern: RelativePattern, options?: theia.FileSystemWatcherOptions): theia.FileSystemWatcher;
+        function createFileSystemWatcher(pattern: theia.GlobPattern, ignoreCreateEvents?: boolean, ignoreChangeEvents?:
+            boolean, ignoreDeleteEvents?: boolean): theia.FileSystemWatcher;
+        function createFileSystemWatcher(pattern: RelativePattern | theia.GlobPattern,
+            ignoreCreateOrOptions?: theia.FileSystemWatcherOptions | boolean, ignoreChangeEventsBoolean?: boolean, ignoreDeleteEventsBoolean?: boolean): theia.FileSystemWatcher {
+            if (isObject<theia.FileSystemWatcherOptions>(ignoreCreateOrOptions)) {
+                const { ignoreCreateEvents, ignoreChangeEvents, ignoreDeleteEvents, excludes } = (ignoreCreateOrOptions as theia.FileSystemWatcherOptions);
+                return createAPIObject(
+                    extHostFileSystemEvent.createFileSystemWatcher(fromGlobPattern(pattern),
+                        ignoreCreateEvents, ignoreChangeEvents, ignoreDeleteEvents, excludes));
+            } else {
+                return createAPIObject(
+                    extHostFileSystemEvent.createFileSystemWatcher(fromGlobPattern(pattern),
+                        ignoreCreateOrOptions as boolean, ignoreChangeEventsBoolean, ignoreDeleteEventsBoolean));
+            }
+        }
         const workspace: typeof theia.workspace = {
 
             get fs(): theia.FileSystem {
-                return fileSystemExt.fileSystem;
+                return fileSystemExt.fileSystem.apiObject;
             },
 
             get rootPath(): string | undefined {
@@ -723,12 +794,10 @@ export function createAPIFactory(
                 } else {
                     throw new Error('Invalid arguments');
                 }
-                const result = await notebooksExt.waitForNotebookDocument(uri);
-                return result.apiNotebook;
-
+                // Notebook extension will create a document in openNotebookDocument() or create openNotebookDocument()
+                return notebooksExt.getNotebookDocument(uri).apiNotebook;
             },
-            createFileSystemWatcher: (pattern, ignoreCreate, ignoreChange, ignoreDelete): theia.FileSystemWatcher =>
-                extHostFileSystemEvent.createFileSystemWatcher(fromGlobPattern(pattern), ignoreCreate, ignoreChange, ignoreDelete),
+            createFileSystemWatcher,
             findFiles(include: theia.GlobPattern, exclude?: theia.GlobPattern | null, maxResults?: number, token?: CancellationToken): PromiseLike<URI[]> {
                 return workspaceExt.findFiles(include, exclude, maxResults, token);
             },
@@ -800,7 +869,13 @@ export function createAPIFactory(
             },
             getCanonicalUri(uri: theia.Uri, options: theia.CanonicalUriRequestOptions, token: CancellationToken): theia.ProviderResult<theia.Uri> {
                 return workspaceExt.getCanonicalUri(uri, options, token);
-            }
+            },
+            /**
+             * @stubbed
+             * This is a stub implementation, that should minimally satisfy vscode extensions
+             * that currently use this proposed API.
+             */
+            registerPortAttributesProvider: () => Disposable.NULL
         };
 
         const onDidChangeLogLevel = new Emitter<theia.LogLevel>();
@@ -815,7 +890,7 @@ export function createAPIFactory(
                 return telemetryExt.onDidChangeTelemetryEnabled;
             },
             createTelemetryLogger(sender: theia.TelemetrySender, options?: theia.TelemetryLoggerOptions): theia.TelemetryLogger {
-                return telemetryExt.createTelemetryLogger(sender, options);
+                return createAPIObject(telemetryExt.createTelemetryLogger(sender, options));
             },
             get remoteName(): string | undefined { return envExt.remoteName; },
             get machineId(): string { return envExt.machineId; },
@@ -851,7 +926,7 @@ export function createAPIFactory(
 
         const extensions: typeof theia.extensions = Object.freeze({
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            getExtension<T = any>(extensionId: string, includeFromDifferentExtensionHosts: boolean = false): theia.Extension<T> | undefined {
+            getExtension<T = any>(extensionId: string, includeFromDifferentExtensionHosts: boolean = false): theia.Extension<T | undefined> | undefined {
                 includeFromDifferentExtensionHosts = false;
                 const plg = pluginManager.getPluginById(extensionId.toLowerCase());
                 if (plg) {
@@ -890,7 +965,7 @@ export function createAPIFactory(
                 return <any>languagesExt.getDiagnostics(resource);
             },
             createDiagnosticCollection(name?: string): theia.DiagnosticCollection {
-                return languagesExt.createDiagnosticCollection(name);
+                return createAPIObject(languagesExt.createDiagnosticCollection(name));
             },
             setLanguageConfiguration(language: string, configuration: theia.LanguageConfiguration): theia.Disposable {
                 return languagesExt.setLanguageConfiguration(language, configuration);
@@ -1027,7 +1102,7 @@ export function createAPIFactory(
 
         const tests: typeof theia.tests = {
             createTestController(id, label: string) {
-                return testingExt.createTestController(id, label);
+                return createAPIObject(testingExt.createTestController(id, label));
             }
         };
         /* End of Tests API */
@@ -1078,6 +1153,12 @@ export function createAPIFactory(
             get onDidChangeBreakpoints(): theia.Event<theia.BreakpointsChangeEvent> {
                 return debugExt.onDidChangeBreakpoints;
             },
+            get activeStackItem(): DebugThread | DebugStackFrame | undefined {
+                return debugExt.activeStackItem;
+            },
+            get onDidChangeActiveStackItem(): theia.Event<DebugThread | DebugStackFrame | undefined> {
+                return debugExt.onDidChangeActiveStackItem;
+            },
             registerDebugAdapterDescriptorFactory(debugType: string, factory: theia.DebugAdapterDescriptorFactory): Disposable {
                 return debugExt.registerDebugAdapterDescriptorFactory(debugType, factory);
             },
@@ -1112,7 +1193,11 @@ export function createAPIFactory(
             },
             asDebugSourceUri(source: theia.DebugProtocolSource, session?: theia.DebugSession): theia.Uri {
                 return debugExt.asDebugSourceUri(source, session);
-            }
+            },
+            /** @stubbed Due to proposed API */
+            registerDebugVisualizationProvider: () => Disposable.NULL,
+            /** @stubbed Due to proposed API */
+            registerDebugVisualizationTreeProvider: () => Disposable.NULL
         };
 
         const tasks: typeof theia.tasks = {
@@ -1129,6 +1214,7 @@ export function createAPIFactory(
             },
 
             get taskExecutions(): ReadonlyArray<theia.TaskExecution> {
+                // TODO: here
                 return tasksExt.taskExecutions;
             },
             onDidStartTask(listener, thisArg?, disposables?) {
@@ -1149,19 +1235,19 @@ export function createAPIFactory(
             get inputBox(): theia.SourceControlInputBox {
                 const inputBox = scmExt.getLastInputBox(plugin);
                 if (inputBox) {
-                    return inputBox;
+                    return inputBox.apiObject;
                 } else {
                     throw new Error('Input box not found!');
                 }
             },
             createSourceControl(id: string, label: string, rootUri?: URI): theia.SourceControl {
-                return scmExt.createSourceControl(plugin, id, label, rootUri);
+                return createAPIObject(scmExt.createSourceControl(plugin, id, label, rootUri));
             }
         };
 
         const comments: typeof theia.comments = {
             createCommentController(id: string, label: string): theia.CommentController {
-                return commentsExt.createCommentController(plugin, id, label);
+                return createAPIObject(commentsExt.createCommentController(plugin, id, label));
             }
         };
 
@@ -1219,11 +1305,43 @@ export function createAPIFactory(
             }
         };
 
-        const chat: typeof theia.chat    = {
+        const chat: typeof theia.chat = {
             /** @stubbed MappedEditsProvider */
             registerMappedEditsProvider(documentSelector: theia.DocumentSelector, provider: theia.MappedEditsProvider): Disposable {
                 return Disposable.NULL;
+            },
+            /** @stubbed MappedEditsProvider */
+            registerMappedEditsProvider2(provider: theia.MappedEditsProvider2) {
+                return Disposable.NULL;
+            },
+            /** @stubbed ChatRequestHandler */
+            createChatParticipant(id: string, handler: theia.ChatRequestHandler): theia.ChatParticipant {
+                return {
+                    id,
+                    requestHandler: handler,
+                    dispose() { },
+                    onDidReceiveFeedback: (listener, thisArgs?, disposables?) => Event.None(listener, thisArgs, disposables)
+                };
             }
+        };
+
+        const lm: typeof theia.lm = {
+            /** @stubbed LanguageModelChat */
+            selectChatModels(selector?: theia.LanguageModelChatSelector): Thenable<theia.LanguageModelChat[]> {
+                return Promise.resolve([]);
+            },
+            /** @stubbed LanguageModelChat */
+            onDidChangeChatModels: (listener, thisArgs?, disposables?) => Event.None(listener, thisArgs, disposables),
+            /** @stubbed LanguageModelTool */
+            invokeTool(name: string, options: theia.LanguageModelToolInvocationOptions<object>, token?: CancellationToken): Thenable<theia.LanguageModelToolResult> {
+                return Promise.resolve({ content: [] });
+            },
+            /** @stubbed LanguageModelTool */
+            registerTool<T>(name: string, tool: theia.LanguageModelTool<T>): Disposable {
+                return Disposable.NULL;
+            },
+            /** @stubbed LanguageModelTool */
+            tools: []
         };
 
         return <typeof theia>{
@@ -1244,6 +1362,7 @@ export function createAPIFactory(
             notebooks,
             l10n,
             tests,
+            lm,
             // Types
             StatusBarAlignment: StatusBarAlignment,
             Disposable: Disposable,
@@ -1341,6 +1460,8 @@ export function createAPIFactory(
             Breakpoint,
             SourceBreakpoint,
             FunctionBreakpoint,
+            DebugStackFrame,
+            DebugThread,
             Color,
             ColorInformation,
             ColorPresentation,
@@ -1399,6 +1520,7 @@ export function createAPIFactory(
             TestTag,
             TestRunRequest,
             TestMessage,
+            TestMessageStackFrame,
             ExtensionKind,
             InlineCompletionItem,
             InlineCompletionList,
@@ -1426,7 +1548,29 @@ export function createAPIFactory(
             DeclarationCoverage,
             FileCoverage,
             StatementCoverage,
-            TestCoverageCount
+            TestCoverageCount,
+            ChatRequestTurn,
+            ChatResponseTurn,
+            ChatResponseAnchorPart,
+            ChatResponseCommandButtonPart,
+            ChatResponseFileTreePart,
+            ChatResponseMarkdownPart,
+            ChatResponseProgressPart,
+            ChatResponseReferencePart,
+            ChatResultFeedbackKind,
+            LanguageModelChatMessage,
+            LanguageModelChatMessageRole,
+            LanguageModelError,
+            LanguageModelChatToolMode,
+            LanguageModelPromptTsxPart,
+            LanguageModelTextPart,
+            LanguageModelToolCallPart,
+            LanguageModelToolResult,
+            LanguageModelToolResultPart,
+            PortAutoForwardAction,
+            PortAttributes,
+            DebugVisualization,
+            TerminalShellExecutionCommandLineConfidence
         };
     };
 }
@@ -1508,7 +1652,7 @@ export class PluginExt<T> extends Plugin<T> implements ExtensionPlugin<T> {
 
         this.extensionPath = this.pluginPath;
         this.extensionUri = this.pluginUri;
-        this.extensionKind = ExtensionKind.UI; // stub as a local extension (not running on a remote workspace)
+        this.extensionKind = pluginManager.getPluginKind();
         this.isFromDifferentExtensionHost = isFromDifferentExtensionHost;
     }
 

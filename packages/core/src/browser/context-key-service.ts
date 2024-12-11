@@ -16,6 +16,7 @@
 
 import { injectable } from 'inversify';
 import { Emitter, Event } from '../common/event';
+import { Disposable } from '../common';
 
 export type ContextKeyValue = null | undefined | boolean | number | string
     | Array<null | undefined | boolean | number | string>
@@ -83,11 +84,10 @@ export interface ContextKeyService extends ContextMatcher {
     setContext(key: string, value: unknown): void;
 }
 
-export type ScopedValueStore = Omit<ContextKeyService, 'onDidChange' | 'match' | 'parseKeys' | 'with' | 'createOverlay'>;
+export type ScopedValueStore = Omit<ContextKeyService, 'onDidChange' | 'match' | 'parseKeys' | 'with' | 'createOverlay'> & Disposable;
 
 @injectable()
 export class ContextKeyServiceDummyImpl implements ContextKeyService {
-
     protected readonly onDidChangeEmitter = new Emitter<ContextKeyChangeEvent>();
     readonly onDidChange = this.onDidChangeEmitter.event;
     protected fireDidChange(event: ContextKeyChangeEvent): void {
@@ -122,7 +122,7 @@ export class ContextKeyServiceDummyImpl implements ContextKeyService {
     /**
      * Details should implemented by an extension, e.g. by the monaco extension.
      */
-    createScoped(target: HTMLElement): ContextKeyService {
+    createScoped(target: HTMLElement): ScopedValueStore {
         return this;
     }
 

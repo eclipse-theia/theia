@@ -176,6 +176,10 @@
   text-align: left;
 }
 
+.quick-input-list .monaco-icon-label::before {
+  height: 22px;
+}
+
 .codicon-file.default-file-icon.file-icon {
   padding-left: 2px;
   height: 22px;

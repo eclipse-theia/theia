@@ -73,7 +73,13 @@ export class NodeFileUploadService implements BackendApplicationContribution {
             response.status(200).send(target); // ok
         } catch (error) {
             console.error(error);
-            response.sendStatus(500); // internal server error
+            if (error.message) {
+                // internal server error with error message as response
+                response.status(500).send(error.message);
+            } else {
+                // default internal server error
+                response.sendStatus(500);
+            }
         }
     }
 

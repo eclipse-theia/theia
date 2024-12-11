@@ -14,6 +14,7 @@
 
 The `@theia/core` extension is the main extension for all Theia-based applications, and provides the main framework for all dependent extensions.
 The extension provides the base APIs for all Theia-based applications, including:
+
 - Application APIs
 - Shell APIs
 - Base Widgets
@@ -38,6 +39,7 @@ A Theia extension is a node package declaring `theiaExtensions` property in `pac
 ```
 
 Each extension can consist of the following modules:
+
 - `frontend` is used in the browser env and as well in the electron if `frontendElectron` is not provided
 - `frontendElectron` is used in the electron env
 - `backend` is used in the node env and as well in the electron env if `backendElectron` is not provided
@@ -72,7 +74,7 @@ export class SomeClass {
 - `@theia/core/{{&directory}}/...`
     {{#packages}}
     {{#modules}}
-    - `{{&moduleName}}` (from [`{{&packageName}}@{{&versionRange}}`]({{&npmUrl}}))
+  - `{{&moduleName}}` (from [`{{&packageName}}@{{&versionRange}}`]({{&npmUrl}}))
     {{/modules}}
     {{/packages}}
 {{/reExportsDirectories}}
@@ -107,9 +109,10 @@ existing loggers.  However, each log message specifies from which logger it
 comes from, which can give an idea, without having to read the code:
 
 ```
-root INFO [nsfw-watcher: 10734] Started watching: /Users/captain.future/git/theia/CONTRIBUTING.md
-^^^^ ^^^^  ^^^^^^^^^^^^^^^^^^^
+root INFO [parcel-watcher: 10734] Started watching: /Users/captain.future/git/theia/CONTRIBUTING.md
+^^^^ ^^^^  ^^^^^^^^^^^^^^^^^^^^^
 ```
+
 Where `root` is the name of the logger and `INFO` is the log level. These are optionally followed by the name of a child process and the process ID.
 
 ## Environment Variables
@@ -121,6 +124,10 @@ Where `root` is the name of the logger and `INFO` is the log level. These are op
   - If possible, you should set this environment variable:
     - When not set, Theia will allow any origin to access the WebSocket services.
     - When set, Theia will only allow the origins defined in this environment variable.
+- `FRONTEND_CONNECTION_TIMEOUT`
+  - The duration in milliseconds during which the backend keeps the connection contexts for the frontend to reconnect.
+  - This duration defaults to '0' if not set.
+  - If set to negative number, the backend will never close the connection.
 
 ## Additional Information
 
@@ -134,5 +141,6 @@ Where `root` is the name of the logger and `INFO` is the log level. These are op
 - [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)
 
 ## Trademark
+
 "Theia" is a trademark of the Eclipse Foundation
-https://www.eclipse.org/theia
+<https://www.eclipse.org/theia>

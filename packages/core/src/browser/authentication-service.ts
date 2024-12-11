@@ -32,6 +32,13 @@ export interface AuthenticationSessionAccountInformation {
     readonly id: string;
     readonly label: string;
 }
+export interface AuthenticationProviderSessionOptions {
+    /**
+     * The account that is being asked about. If this is passed in, the provider should
+     * attempt to return the sessions that are only related to this account.
+     */
+    account?: AuthenticationSessionAccountInformation;
+}
 
 export interface AuthenticationSession {
     id: string;
@@ -83,16 +90,6 @@ export interface AuthenticationProvider {
     updateSessionItems(event: AuthenticationProviderAuthenticationSessionsChangeEvent): Promise<void>;
 
     /**
-     * @deprecated use `createSession` instead.
-     */
-    login(scopes: string[]): Promise<AuthenticationSession>;
-
-    /**
-     * @deprecated use `removeSession` instead.
-     */
-    logout(sessionId: string): Promise<void>;
-
-    /**
      * An [event](#Event) which fires when the array of sessions has changed, or data
      * within a session has changed.
      */
@@ -102,16 +99,18 @@ export interface AuthenticationProvider {
      * Get a list of sessions.
      * @param scopes An optional list of scopes. If provided, the sessions returned should match
      * these permissions, otherwise all sessions should be returned.
+     * @param account The optional account that you would like to get the session for
      * @returns A promise that resolves to an array of authentication sessions.
      */
-    getSessions(scopes?: string[]): Thenable<ReadonlyArray<AuthenticationSession>>;
+    getSessions(scopes: string[] | undefined, account?: AuthenticationSessionAccountInformation): Thenable<ReadonlyArray<AuthenticationSession>>;
 
     /**
      * Prompts a user to login.
      * @param scopes A list of scopes, permissions, that the new session should be created with.
+     * @param options The options for createing the session
      * @returns A promise that resolves to an authentication session.
      */
-    createSession(scopes: string[]): Thenable<AuthenticationSession>;
+    createSession(scopes: string[], options: AuthenticationProviderSessionOptions): Thenable<AuthenticationSession>;
 
     /**
      * Removes the session corresponding to session id.
@@ -133,10 +132,11 @@ export interface AuthenticationService {
     readonly onDidUnregisterAuthenticationProvider: Event<AuthenticationProviderInformation>;
 
     readonly onDidChangeSessions: Event<{ providerId: string, label: string, event: AuthenticationProviderAuthenticationSessionsChangeEvent }>;
-    getSessions(providerId: string, scopes?: string[]): Promise<ReadonlyArray<AuthenticationSession>>;
+    readonly onDidUpdateSignInCount: Event<number>;
+    getSessions(providerId: string, scopes?: string[], user?: AuthenticationSessionAccountInformation): Promise<ReadonlyArray<AuthenticationSession>>;
     getLabel(providerId: string): string;
     supportsMultipleAccounts(providerId: string): boolean;
-    login(providerId: string, scopes: string[]): Promise<AuthenticationSession>;
+    login(providerId: string, scopes: string[], options?: AuthenticationProviderSessionOptions): Promise<AuthenticationSession>;
     logout(providerId: string, sessionId: string): Promise<void>;
 
     signOutOfAccount(providerId: string, accountName: string): Promise<void>;
@@ -157,14 +157,17 @@ export class AuthenticationServiceImpl implements AuthenticationService {
 
     protected authenticationProviders: Map<string, AuthenticationProvider> = new Map<string, AuthenticationProvider>();
 
-    private onDidRegisterAuthenticationProviderEmitter: Emitter<AuthenticationProviderInformation> = new Emitter<AuthenticationProviderInformation>();
+    private readonly onDidRegisterAuthenticationProviderEmitter: Emitter<AuthenticationProviderInformation> = new Emitter<AuthenticationProviderInformation>();
     readonly onDidRegisterAuthenticationProvider: Event<AuthenticationProviderInformation> = this.onDidRegisterAuthenticationProviderEmitter.event;
 
-    private onDidUnregisterAuthenticationProviderEmitter: Emitter<AuthenticationProviderInformation> = new Emitter<AuthenticationProviderInformation>();
+    private readonly onDidUnregisterAuthenticationProviderEmitter: Emitter<AuthenticationProviderInformation> = new Emitter<AuthenticationProviderInformation>();
     readonly onDidUnregisterAuthenticationProvider: Event<AuthenticationProviderInformation> = this.onDidUnregisterAuthenticationProviderEmitter.event;
 
-    private onDidChangeSessionsEmitter: Emitter<SessionChangeEvent> = new Emitter<SessionChangeEvent>();
+    private readonly onDidChangeSessionsEmitter: Emitter<SessionChangeEvent> = new Emitter<SessionChangeEvent>();
     readonly onDidChangeSessions: Event<SessionChangeEvent> = this.onDidChangeSessionsEmitter.event;
+
+    private readonly onDidChangeSignInCountEmitter: Emitter<number> = new Emitter<number>();
+    readonly onDidUpdateSignInCount: Event<number> = this.onDidChangeSignInCountEmitter.event;
 
     @inject(MenuModelRegistry) protected readonly menus: MenuModelRegistry;
     @inject(CommandRegistry) protected readonly commands: CommandRegistry;
@@ -295,7 +298,8 @@ export class AuthenticationServiceImpl implements AuthenticationService {
             return;
         }
 
-        const sessions = await provider.getSessions();
+        const previousSize = this.signInRequestItems.size;
+        const sessions = await provider.getSessions(undefined);
         Object.keys(existingRequestsForProvider).forEach(requestedScopes => {
             if (sessions.some(session => session.scopes.slice().sort().join('') === requestedScopes)) {
                 const sessionRequest = existingRequestsForProvider[requestedScopes];
@@ -311,6 +315,9 @@ export class AuthenticationServiceImpl implements AuthenticationService {
                 }
             }
         });
+        if (previousSize !== this.signInRequestItems.size) {
+            this.onDidChangeSignInCountEmitter.fire(this.signInRequestItems.size);
+        }
     }
 
     async requestNewSession(providerId: string, scopes: string[], extensionId: string, extensionName: string): Promise<void> {
@@ -341,7 +348,7 @@ export class AuthenticationServiceImpl implements AuthenticationService {
             }
 
             const menuItem = this.menus.registerMenuAction(ACCOUNTS_SUBMENU, {
-                label: `Sign in to use ${extensionName} (1)`,
+                label: nls.localizeByDefault('Sign in with {0} to use {1} (1)', provider.label, extensionName),
                 order: '1',
                 commandId: `${extensionId}signIn`,
             });
@@ -362,6 +369,7 @@ export class AuthenticationServiceImpl implements AuthenticationService {
                 }
             });
 
+            const previousSize = this.signInRequestItems.size;
             if (providerRequests) {
                 const existingRequest = providerRequests[scopesList] || { disposables: [], requestingExtensionIds: [] };
 
@@ -377,6 +385,9 @@ export class AuthenticationServiceImpl implements AuthenticationService {
                         requestingExtensionIds: [extensionId]
                     }
                 });
+            }
+            if (previousSize !== this.signInRequestItems.size) {
+                this.onDidChangeSignInCountEmitter.fire(this.signInRequestItems.size);
             }
         }
     }
@@ -399,19 +410,19 @@ export class AuthenticationServiceImpl implements AuthenticationService {
         }
     }
 
-    async getSessions(id: string, scopes?: string[]): Promise<ReadonlyArray<AuthenticationSession>> {
+    async getSessions(id: string, scopes?: string[], user?: AuthenticationSessionAccountInformation): Promise<ReadonlyArray<AuthenticationSession>> {
         const authProvider = this.authenticationProviders.get(id);
         if (authProvider) {
-            return authProvider.getSessions(scopes);
+            return authProvider.getSessions(scopes, user);
         } else {
             throw new Error(`No authentication provider '${id}' is currently registered.`);
         }
     }
 
-    async login(id: string, scopes: string[]): Promise<AuthenticationSession> {
+    async login(id: string, scopes: string[], options?: AuthenticationProviderSessionOptions): Promise<AuthenticationSession> {
         const authProvider = this.authenticationProviders.get(id);
         if (authProvider) {
-            return authProvider.createSession(scopes);
+            return authProvider.createSession(scopes, options || {});
         } else {
             throw new Error(`No authentication provider '${id}' is currently registered.`);
         }

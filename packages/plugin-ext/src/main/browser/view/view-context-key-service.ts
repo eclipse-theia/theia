@@ -19,11 +19,6 @@ import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-k
 
 @injectable()
 export class ViewContextKeyService {
-    protected _view: ContextKey<string>;
-    get view(): ContextKey<string> {
-        return this._view;
-    }
-
     protected _viewItem: ContextKey<string>;
     get viewItem(): ContextKey<string> {
         return this._viewItem;
@@ -56,7 +51,6 @@ export class ViewContextKeyService {
 
     @postConstruct()
     protected init(): void {
-        this._view = this.contextKeyService.createKey('view', '');
         this._viewItem = this.contextKeyService.createKey('viewItem', '');
         this._activeViewlet = this.contextKeyService.createKey('activeViewlet', '');
         this._activePanel = this.contextKeyService.createKey('activePanel', '');

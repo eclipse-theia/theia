@@ -1,4 +1,9 @@
 {
+  "aiConfiguration:open": "Abrir a visualização de Configuração de IA",
+  "aiHistory:clear": "Histórico da IA: Limpar histórico",
+  "aiHistory:open": "Abrir a visualização do histórico de IA",
+  "aiHistory:sortChronologically": "História da IA: Ordenar cronologicamente",
+  "aiHistory:sortReverseChronologically": "História da IA: Classificar em ordem cronológica inversa",
   "debug.breakpoint.editCondition": "Editar condição...",
   "notebook.cell.changeToCode": "Alterar célula para código",
   "notebook.cell.changeToMarkdown": "Mudança de célula para Mardown",
@@ -10,6 +15,33 @@
     "callhierarchy": {
       "noCallers": "Nenhum chamador foi detectado.",
       "open": "Hierarquia de Chamadas Abertas"
+    },
+    "collaboration": {
+      "collaborate": "Colaborar",
+      "collaboration": "Colaboração",
+      "collaborationWorkspace": "Espaço de trabalho de colaboração",
+      "connected": "Conectado",
+      "connectedSession": "Conectado a uma sessão de colaboração",
+      "copiedInvitation": "Código do convite copiado para a área de transferência.",
+      "copyAgain": "Copiar novamente",
+      "createRoom": "Criar nova sessão de colaboração",
+      "creatingRoom": "Criação de sessão",
+      "end": "Encerrar a sessão de colaboração",
+      "endDetail": "Encerrar a sessão, interromper o compartilhamento de conteúdo e revogar o acesso de outras pessoas.",
+      "enterCode": "Digite o código da sessão de colaboração",
+      "failedCreate": "Falha ao criar a sala: {0}",
+      "failedJoin": "Falha ao entrar na sala: {0}",
+      "invite": "Convidar outras pessoas",
+      "inviteDetail": "Copie o código do convite para compartilhá-lo com outras pessoas e participar da sessão.",
+      "joinRoom": "Participe da sessão de colaboração",
+      "joiningRoom": "Sessão de ingresso",
+      "leave": "Sair da sessão de colaboração",
+      "leaveDetail": "Desconecte-se da sessão de colaboração atual e feche o espaço de trabalho.",
+      "selectCollaboration": "Selecione a opção de colaboração",
+      "sharedSession": "Compartilhou uma sessão de colaboração",
+      "startSession": "Iniciar ou participar de uma sessão de colaboração",
+      "userWantsToJoin": "O usuário '{0}' deseja participar da sala de colaboração",
+      "whatToDo": "O que você gostaria de fazer com outros colaboradores?"
     },
     "core": {
       "about": {
@@ -112,7 +144,6 @@
       "editor.accessibilitySupport2": "Suponha que um leitor de tela não esteja conectado",
       "editor.bracketPairColorization.enabled": "Controla se a colorização de pares de colchetes está ativada ou não. Use `#workbench.colorCustomizations#` para substituir as cores de destaque dos colchetes.",
       "editor.codeActionWidget.includeNearbyQuickfixes": "Ativar/desativar a exibição do reparo rápido mais próximo em uma linha quando não estiver em um diagnóstico no momento.",
-      "editor.cursorSurroundingLinesStyle": "Controla quando o `#cursorSurroundingLines#` deve ser aplicado.",
       "editor.detectIndentation": "Controla se `#editor.tabSize#` e `#editor.insertSpaces#` serão detectados automaticamente quando um arquivo for aberto com base no conteúdo do arquivo.",
       "editor.dropIntoEditor.enabled": "Controla se você pode arrastar e soltar um arquivo em um editor de texto mantendo pressionada a tecla `shift` (em vez de abrir o arquivo em um editor).",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Tentará formatar modificações apenas (requer controle de fonte). Se o controle da fonte não puder ser usado, então o arquivo inteiro será formatado.",
@@ -179,6 +210,7 @@
       "prepareDownloadLink": "Preparando o link para download...",
       "processedOutOf": "Processado {0} de {1}",
       "replaceTitle": "Substituir arquivo",
+      "uploadFailed": "Ocorreu um erro ao fazer o upload de um arquivo. {0}",
       "uploadFiles": "Carregar arquivos...",
       "uploadedOutOf": "Carregado {0} de {1}"
     },
@@ -346,12 +378,6 @@
       "reveal": "Revelar no Explorer",
       "toggleHiddenFiles": "Alternar arquivos ocultos"
     },
-    "notebook": {
-      "dragGhostImage": {
-        "codeText": "Célula de código selecionada",
-        "markdownText": "Célula Mardown selecionada"
-      }
-    },
     "output": {
       "clearOutputChannel": "Canal de saída livre...",
       "closeOutputChannel": "Fechar canal de saída...",
@@ -368,6 +394,9 @@
       "alreadyRunning": "A instância anfitriã já está funcionando.",
       "debugInstance": "Instância de depuração",
       "debugMode": "Usando a inspeção ou a inspeção-brk para o Node.js debug",
+      "debugPorts": {
+        "debugPort": "Porta a ser usada para a depuração do Node.js deste servidor"
+      },
       "devHost": "Anfitrião do desenvolvimento",
       "failed": "Falha na execução da instância de plugin hospedado: {0}",
       "hostedPlugin": "Plugin hospedado",
@@ -398,6 +427,10 @@
       "plugins": "Plugins",
       "webviewTrace": "Controla o rastreamento da comunicação com visualizações na web.",
       "webviewWarnIfUnsecure": "Adverte os usuários de que as visualizações na web são atualmente implantadas de forma insegura."
+    },
+    "preferences": {
+      "hostedPlugin": "Plug-in hospedado",
+      "toolbar": "Barra de ferramentas"
     },
     "preview": {
       "openByDefault": "Abrir a visualização em vez do editor por padrão."
@@ -471,6 +504,7 @@
     },
     "test": {
       "cancelAllTestRuns": "Cancelar todas as execuções de teste",
+      "stackFrameAt": "em",
       "testRunDefaultName": "{0} executar {1}",
       "testRuns": "Execuções de teste"
     },
@@ -533,7 +567,6 @@
       "confirmMessage.uriMultiple": "Você realmente quer apagar todos os {0} arquivos selecionados?",
       "confirmMessage.uriSingle": "Você realmente quer apagar {0}?",
       "duplicate": "Duplicata",
-      "failApply": "Não foi possível aplicar alterações ao novo arquivo",
       "failSaveAs": "Não é possível executar \"{0}\" para o widget atual.",
       "newFilePlaceholder": "Nome do arquivo",
       "newFolderPlaceholder": "Nome da pasta",

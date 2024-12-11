@@ -22,7 +22,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import debounce = require('@theia/core/shared/lodash.debounce');
-import { injectable, inject, interfaces, named, postConstruct } from '@theia/core/shared/inversify';
+import { injectable, inject, interfaces, named, postConstruct, unmanaged } from '@theia/core/shared/inversify';
 import { PluginMetadata, HostedPluginServer, DeployedPlugin, PluginServer, PluginIdentifiers } from '../../common/plugin-protocol';
 import { AbstractPluginManagerExt, ConfigStorage } from '../../common/plugin-api-rpc';
 import {
@@ -103,7 +103,7 @@ export abstract class AbstractHostedPluginSupport<PM extends AbstractPluginManag
         return this.deferredDidStart.promise;
     }
 
-    constructor(protected readonly clientId: string) { }
+    constructor(@unmanaged() protected readonly clientId: string) { }
 
     @postConstruct()
     protected init(): void {

@@ -13,6 +13,15 @@
       "path": "../../dev-packages/ovsx-client"
     },
     {
+      "path": "../../packages/ai-chat"
+    },
+    {
+      "path": "../../packages/ai-chat-ui"
+    },
+    {
+      "path": "../../packages/ai-core"
+    },
+    {
       "path": "../../packages/core"
     },
     {

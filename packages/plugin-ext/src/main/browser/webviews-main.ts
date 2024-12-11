@@ -191,7 +191,12 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async $postMessage(handle: string, value: any): Promise<boolean> {
-        const webview = await this.getWebview(handle);
+        // Due to async nature of $postMessage, the webview may have been disposed in the meantime.
+        // Therefore, don't throw an error if the webview is not found, but return false in this case.
+        const webview = await this.tryGetWebview(handle);
+        if (!webview) {
+            return false;
+        }
         webview.sendMessage(value);
         return true;
     }

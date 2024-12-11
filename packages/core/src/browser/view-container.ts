@@ -29,7 +29,7 @@ import { MAIN_AREA_ID, BOTTOM_AREA_ID } from './shell/theia-dock-panel';
 import { FrontendApplicationStateService } from './frontend-application-state';
 import { ContextMenuRenderer, Anchor } from './context-menu-renderer';
 import { parseCssMagnitude } from './browser';
-import { TabBarToolbarRegistry, TabBarToolbarFactory, TabBarToolbar, TabBarDelegator, TabBarToolbarItem } from './shell/tab-bar-toolbar';
+import { TabBarToolbarRegistry, TabBarToolbarFactory, TabBarToolbar, TabBarDelegator, RenderedToolbarItem } from './shell/tab-bar-toolbar';
 import { isEmpty, isObject, nls } from '../common';
 import { WidgetManager } from './widget-manager';
 import { Key } from './keys';
@@ -324,7 +324,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         return 'view';
     }
 
-    protected registerToolbarItem(commandId: string, options?: Partial<Omit<TabBarToolbarItem, 'id' | 'command'>>): void {
+    protected registerToolbarItem(commandId: string, options?: Partial<Omit<RenderedToolbarItem, 'id' | 'command'>>): void {
         const newId = `${this.id}-tabbar-toolbar-${commandId}`;
         const existingHandler = this.commandRegistry.getAllHandlers(commandId)[0];
         const existingCommand = this.commandRegistry.getCommand(commandId);

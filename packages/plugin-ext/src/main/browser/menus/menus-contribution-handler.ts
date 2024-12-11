@@ -107,10 +107,11 @@ export class MenusContributionPointHandler {
                         if (command) {
                             toDispose.push(this.commandAdapter.addCommand(command));
                             targets.forEach(target => {
+
                                 const node = new ActionMenuNode({
                                     commandId: command,
                                     when: item.when,
-                                    order,
+                                    order
                                 }, this.commands);
                                 const parent = this.menuRegistry.getMenuNode(target, group);
                                 toDispose.push(parent.addNode(node));

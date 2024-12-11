@@ -17,11 +17,11 @@
 import debounce = require('lodash.debounce');
 import { inject, injectable, named } from 'inversify';
 // eslint-disable-next-line max-len
-import { CommandMenuNode, CommandRegistry, CompoundMenuNode, ContributionProvider, Disposable, DisposableCollection, Emitter, Event, MenuModelRegistry, MenuNode, MenuPath } from '../../../common';
+import { CommandRegistry, ContributionProvider, Disposable, DisposableCollection, Emitter, Event, MenuModelRegistry, MenuNode, MenuPath } from '../../../common';
 import { ContextKeyService } from '../../context-key-service';
 import { FrontendApplicationContribution } from '../../frontend-application-contribution';
 import { Widget } from '../../widgets';
-import { AnyToolbarItem, ConditionalToolbarItem, MenuDelegate, MenuToolbarItem, ReactTabBarToolbarItem, TabBarToolbarItem } from './tab-bar-toolbar-types';
+import { MenuDelegate, ReactTabBarToolbarItem, RenderedToolbarItem, TabBarToolbarItem } from './tab-bar-toolbar-types';
 import { ToolbarMenuNodeWrapper } from './tab-bar-toolbar-menu-adapters';
 
 /**
@@ -75,7 +75,7 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
      *
      * @param item the item to register.
      */
-    registerItem(item: TabBarToolbarItem | ReactTabBarToolbarItem): Disposable {
+    registerItem(item: RenderedToolbarItem | ReactTabBarToolbarItem): Disposable {
         const { id } = item;
         if (this.items.has(id)) {
             throw new Error(`A toolbar item is already registered with the '${id}' ID.`);
@@ -110,24 +110,18 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
         for (const delegate of this.menuDelegates.values()) {
             if (delegate.isVisible(widget)) {
                 const menu = this.menuRegistry.getMenu(delegate.menuPath);
-                const children = CompoundMenuNode.getFlatChildren(menu.children);
-                for (const child of children) {
+                for (const child of menu.children) {
                     if (!child.when || this.contextKeyService.match(child.when, widget.node)) {
                         if (child.children) {
                             for (const grandchild of child.children) {
                                 if (!grandchild.when || this.contextKeyService.match(grandchild.when, widget.node)) {
-                                    if (CommandMenuNode.is(grandchild)) {
-                                        result.push(new ToolbarMenuNodeWrapper(grandchild, child.id, delegate.menuPath));
-                                    } else if (CompoundMenuNode.is(grandchild)) {
-                                        let menuPath;
-                                        if (menuPath = this.menuRegistry.getPath(grandchild)) {
-                                            result.push(new ToolbarMenuNodeWrapper(grandchild, child.id, menuPath));
-                                        }
-                                    }
+                                    const menuPath = this.menuRegistry.getPath(grandchild);
+                                    result.push(new ToolbarMenuNodeWrapper(grandchild, child.id, delegate.menuPath, menuPath));
                                 }
                             }
                         } else if (child.command) {
-                            result.push(new ToolbarMenuNodeWrapper(child, '', delegate.menuPath));
+                            const menuPath = this.menuRegistry.getPath(child);
+                            result.push(new ToolbarMenuNodeWrapper(child, undefined, delegate.menuPath, menuPath));
                         }
                     }
                 }
@@ -145,15 +139,17 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
      * @returns `false` if the `item` should be suppressed, otherwise `true`
      */
     protected isItemVisible(item: TabBarToolbarItem | ReactTabBarToolbarItem, widget: Widget): boolean {
-        if (TabBarToolbarItem.is(item) && item.command && !this.isTabBarToolbarItemVisible(item, widget)) {
+        if (!this.isConditionalItemVisible(item, widget)) {
             return false;
         }
-        if (MenuToolbarItem.is(item) && !this.isMenuToolbarItemVisible(item, widget)) {
+
+        if (item.command && !this.commandRegistry.isVisible(item.command, widget)) {
             return false;
         }
-        if (AnyToolbarItem.isConditional(item) && !this.isConditionalItemVisible(item, widget)) {
+        if (item.menuPath && !this.isNonEmptyMenu(item, widget)) {
             return false;
         }
+
         // The item is not vetoed. Accept it
         return true;
     }
@@ -166,7 +162,7 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
      * @param widget the widget that is updating the toolbar
      * @returns `false` if the `item` should be suppressed, otherwise `true`
      */
-    protected isConditionalItemVisible(item: ConditionalToolbarItem, widget: Widget): boolean {
+    protected isConditionalItemVisible(item: TabBarToolbarItem, widget: Widget): boolean {
         if (item.isVisible && !item.isVisible(widget)) {
             return false;
         }
@@ -177,19 +173,6 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
     }
 
     /**
-     * Query whether a tab-bar toolbar `item` that has a command should be shown in the toolbar.
-     * This implementation returns `false` if the `item`'s command is not visible in the
-     * `widget` according to the command registry.
-     *
-     * @param item a tab-bar toolbar item that has a non-empty `command`
-     * @param widget the widget that is updating the toolbar
-     * @returns `false` if the `item` should be suppressed, otherwise `true`
-     */
-    protected isTabBarToolbarItemVisible(item: TabBarToolbarItem, widget: Widget): boolean {
-        return this.commandRegistry.isVisible(item.command, widget);
-    }
-
-    /**
      * Query whether a menu toolbar `item` should be shown in the toolbar.
      * This implementation returns `false` if the `item` does not have any actual menu to show.
      *
@@ -197,7 +180,10 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
      * @param widget the widget that is updating the toolbar
      * @returns `false` if the `item` should be suppressed, otherwise `true`
      */
-    protected isMenuToolbarItemVisible(item: MenuToolbarItem, widget: Widget): boolean {
+    isNonEmptyMenu(item: TabBarToolbarItem, widget: Widget | undefined): boolean {
+        if (!item.menuPath) {
+            return false;
+        }
         const menu = this.menuRegistry.getMenu(item.menuPath);
         const isVisible: (node: MenuNode) => boolean = node =>
             node.children?.length
@@ -220,7 +206,7 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
         }
     }
 
-    registerMenuDelegate(menuPath: MenuPath, when?: string | ((widget: Widget) => boolean)): Disposable {
+    registerMenuDelegate(menuPath: MenuPath, when?: ((widget: Widget) => boolean)): Disposable {
         const id = this.toElementId(menuPath);
         if (!this.menuDelegates.has(id)) {
             const isVisible: MenuDelegate['isVisible'] = !when

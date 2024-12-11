@@ -1,4 +1,9 @@
 {
+  "aiConfiguration:open": "AI konfigurációs nézet megnyitása",
+  "aiHistory:clear": "AI történelem: Előzmények törlése",
+  "aiHistory:open": "AI előzmények nézet megnyitása",
+  "aiHistory:sortChronologically": "AI történelem: Rendezés időrendben",
+  "aiHistory:sortReverseChronologically": "AI történelem: Fordított kronológiai rendezés",
   "debug.breakpoint.editCondition": "Szerkesztési feltétel...",
   "notebook.cell.changeToCode": "Cellát kódra váltani",
   "notebook.cell.changeToMarkdown": "Cellát átváltoztatni Mardown-ra",
@@ -10,6 +15,33 @@
     "callhierarchy": {
       "noCallers": "Nem észleltek hívókat.",
       "open": "Nyílt felhívás hierarchia"
+    },
+    "collaboration": {
+      "collaborate": "Együttműködés",
+      "collaboration": "Együttműködés",
+      "collaborationWorkspace": "Együttműködési munkaterület",
+      "connected": "Csatlakoztatva",
+      "connectedSession": "Együttműködési munkamenethez csatlakoztatva",
+      "copiedInvitation": "Meghívó kódja a vágólapra másolva.",
+      "copyAgain": "Ismétlemásolás",
+      "createRoom": "Új együttműködési munkamenet létrehozása",
+      "creatingRoom": "Munkamenet létrehozása",
+      "end": "Együttműködési ülés befejezése",
+      "endDetail": "A munkamenet megszüntetése, a tartalom megosztásának megszüntetése és a hozzáférés visszavonása mások számára.",
+      "enterCode": "Adja meg az együttműködési munkamenet kódját",
+      "failedCreate": "Nem sikerült helyet létrehozni: {0}",
+      "failedJoin": "Nem sikerült csatlakozni a szobához: {0}",
+      "invite": "Mások meghívása",
+      "inviteDetail": "Másolja ki a meghívó kódját, hogy másokkal is megoszthassa, és csatlakozhasson az üléshez.",
+      "joinRoom": "Csatlakozzon az együttműködési üléshez",
+      "joiningRoom": "Csatlakozási munkamenet",
+      "leave": "Hagyja el az együttműködési ülést",
+      "leaveDetail": "Szakítsa meg a kapcsolatot az aktuális együttműködési munkamenetből, és zárja be a munkaterületet.",
+      "selectCollaboration": "Együttműködési lehetőség kiválasztása",
+      "sharedSession": "Közös együttműködési munkamenet",
+      "startSession": "Együttműködési munkamenet indítása vagy ahhoz való csatlakozás",
+      "userWantsToJoin": "Felhasználó '{0}' csatlakozni szeretne a kollaborációs szobához",
+      "whatToDo": "Mit szeretnél csinálni más munkatársakkal?"
     },
     "core": {
       "about": {
@@ -112,7 +144,6 @@
       "editor.accessibilitySupport2": "Feltételezzük, hogy a képernyőolvasó nincs csatlakoztatva",
       "editor.bracketPairColorization.enabled": "Szabályozza, hogy a zárójelpár színezése engedélyezve legyen-e vagy sem. Használja a `#workbench.colorCustomizations#` parancsot a zárójelek kiemelési színeinek felülbírálásához.",
       "editor.codeActionWidget.includeNearbyQuickfixes": "A legközelebbi gyorsjavítás megjelenítésének engedélyezése/letiltása egy soron belül, ha éppen nem diagnosztikán van.",
-      "editor.cursorSurroundingLinesStyle": "Szabályozza, hogy mikor legyen érvényes a `#cursorSurroundingLines#`.",
       "editor.detectIndentation": "Szabályozza, hogy a `#editor.tabSize#` és a `#editor.insertSpaces#` automatikusan felismerésre kerüljön-e egy fájl megnyitásakor a fájl tartalma alapján.",
       "editor.dropIntoEditor.enabled": "Azt szabályozza, hogy a \"shift\" lenyomva tartásával húzhat-e egy fájlt egy szövegszerkesztőbe (ahelyett, hogy megnyitná a fájlt egy szerkesztőprogramban).",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Csak a módosítások formázására tesz kísérletet (forrásellenőrzés szükséges). Ha a forrásellenőrzés nem használható, akkor a teljes fájl lesz formázva.",
@@ -179,6 +210,7 @@
       "prepareDownloadLink": "Letöltési link előkészítése...",
       "processedOutOf": "{0} feldolgozva {1}-ből {0}",
       "replaceTitle": "Fájl cseréje",
+      "uploadFailed": "Hiba történt egy fájl feltöltése közben. {0}",
       "uploadFiles": "Fájlok feltöltése...",
       "uploadedOutOf": "Feltöltött {0} a {1}-ből {0}"
     },
@@ -346,12 +378,6 @@
       "reveal": "Feltárása az Explorerben",
       "toggleHiddenFiles": "Rejtett fájlok kapcsolása"
     },
-    "notebook": {
-      "dragGhostImage": {
-        "codeText": "Kijelölt kódcella",
-        "markdownText": "Mardown cella kiválasztva"
-      }
-    },
     "output": {
       "clearOutputChannel": "Tiszta kimeneti csatorna...",
       "closeOutputChannel": "Kimeneti csatorna bezárása...",
@@ -368,6 +394,9 @@
       "alreadyRunning": "A hosztolt példány már fut.",
       "debugInstance": "Hibakeresési példány",
       "debugMode": "Az inspect vagy inspect-brk használata a Node.js hibakereséshez",
+      "debugPorts": {
+        "debugPort": "A kiszolgáló Node.js hibakereséséhez használni kívánt port"
+      },
       "devHost": "Fejlesztés Host",
       "failed": "Nem sikerült futtatni a hosztolt plugin példányt: {0}",
       "hostedPlugin": "Hostolt bővítmény",
@@ -398,6 +427,10 @@
       "plugins": "Plugins",
       "webviewTrace": "Vezérli a kommunikáció nyomon követését a webnézetekkel.",
       "webviewWarnIfUnsecure": "Figyelmezteti a felhasználókat, hogy a webnézetek jelenleg nem biztonságosan vannak telepítve."
+    },
+    "preferences": {
+      "hostedPlugin": "Hostolt bővítmény",
+      "toolbar": "Eszköztár"
     },
     "preview": {
       "openByDefault": "Alapértelmezés szerint a szerkesztő helyett az előnézet megnyitása."
@@ -471,6 +504,7 @@
     },
     "test": {
       "cancelAllTestRuns": "Minden tesztfuttatás törlése",
+      "stackFrameAt": "a  címen.",
       "testRunDefaultName": "{0} fuss {1}",
       "testRuns": "Tesztfutások"
     },
@@ -533,7 +567,6 @@
       "confirmMessage.uriMultiple": "Tényleg törölni szeretné az összes {0} kiválasztott fájlt?",
       "confirmMessage.uriSingle": "Tényleg törölni akarja a {0}-t?",
       "duplicate": "Duplikátum",
-      "failApply": "Nem tudta alkalmazni a változtatásokat az új fájlra",
       "failSaveAs": "Nem lehet futtatni a \"{0}\"-t az aktuális widgethez.",
       "newFilePlaceholder": "Fájlnév",
       "newFolderPlaceholder": "Mappa neve",

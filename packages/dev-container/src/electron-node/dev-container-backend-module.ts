@@ -26,6 +26,8 @@ import { ContainerOutputProvider } from '../electron-common/container-output-pro
 import { ExtensionsContribution, registerTheiaStartOptionsContributions, SettingsContribution } from './devcontainer-contributions/cli-enhancing-creation-contributions';
 import { RemoteCliContribution } from '@theia/core/lib/node/remote/remote-cli-contribution';
 import { ProfileFileModificationContribution } from './devcontainer-contributions/profile-file-modification-contribution';
+import { DevContainerWorkspaceHandler } from './dev-container-workspace-handler';
+import { WorkspaceHandlerContribution } from '@theia/workspace/lib/node/default-workspace-server';
 
 export const remoteConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {
     bindContributionProvider(bind, ContainerCreationContribution);
@@ -55,4 +57,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(SettingsContribution).toSelf().inSingletonScope();
     bind(RemoteCliContribution).toService(ExtensionsContribution);
     bind(RemoteCliContribution).toService(SettingsContribution);
+
+    bind(DevContainerWorkspaceHandler).toSelf().inSingletonScope();
+    bind(WorkspaceHandlerContribution).toService(DevContainerWorkspaceHandler);
 });

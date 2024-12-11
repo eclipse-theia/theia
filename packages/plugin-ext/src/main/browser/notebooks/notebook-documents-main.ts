@@ -21,7 +21,7 @@ import { NotebookModelResolverService } from '@theia/notebook/lib/browser';
 import { NotebookModel } from '@theia/notebook/lib/browser/view-model/notebook-model';
 import { NotebookCellsChangeType } from '@theia/notebook/lib/common';
 import { NotebookMonacoTextModelService } from '@theia/notebook/lib/browser/service/notebook-monaco-text-model-service';
-import { MAIN_RPC_CONTEXT, NotebookCellsChangedEventDto, NotebookDataDto, NotebookDocumentsExt, NotebookDocumentsMain } from '../../../common';
+import { MAIN_RPC_CONTEXT, NotebookCellsChangedEventDto, NotebookDataDto, NotebookDocumentsExt, NotebookDocumentsMain, NotebookRawContentEventDto } from '../../../common';
 import { RPCProtocol } from '../../../common/rpc-protocol';
 import { NotebookDto } from './notebook-dto';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
@@ -156,19 +156,39 @@ export class NotebookDocumentsMainImpl implements NotebookDocumentsMain {
         //     ref.dispose();
         // });
 
+        const uriComponents = ref.uri.toComponents();
         // untitled notebooks are dirty by default
-        this.proxy.$acceptDirtyStateChanged(ref.uri.toComponents(), true);
+        this.proxy.$acceptDirtyStateChanged(uriComponents, true);
 
-        // apply content changes... slightly HACKY -> this triggers a change event
+        // apply content changes...
         if (options.content) {
             const data = NotebookDto.fromNotebookDataDto(options.content);
             ref.setData(data);
+
+            // Create and send a change events
+            const rawEvents: NotebookRawContentEventDto[] = [];
+            if (options.content.cells && options.content.cells.length > 0) {
+                rawEvents.push({
+                    kind: NotebookCellsChangeType.ModelChange,
+                    changes: [{ start: 0, deleteCount: 0, newItems: ref.cells.map(NotebookDto.toNotebookCellDto) }]
+                });
+            }
+            if (options.content.metadata) {
+                rawEvents.push({
+                    kind: NotebookCellsChangeType.ChangeDocumentMetadata,
+                    metadata: options.content.metadata
+                });
+            }
+            if (rawEvents.length > 0) {
+                this.proxy.$acceptModelChanged(uriComponents, { versionId: 1, rawEvents }, true);
+            }
         }
-        return ref.uri.toComponents();
+        return uriComponents;
     }
 
     async $tryOpenNotebook(uriComponents: UriComponents): Promise<UriComponents> {
         const uri = URI.fromComponents(uriComponents);
+        await this.notebookModelResolverService.resolve(uri);
         return uri.toComponents();
     }
 

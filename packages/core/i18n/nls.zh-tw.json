@@ -1,0 +1,588 @@
+{
+  "aiConfiguration:open": "開啟 AI 設定檢視",
+  "aiHistory:clear": "AI 歷史:清除歷史",
+  "aiHistory:open": "開啟 AI 歷史檢視",
+  "aiHistory:sortChronologically": "AI 歷史:依時間順序排序",
+  "aiHistory:sortReverseChronologically": "AI 歷史:按時間順序逆向排序",
+  "debug.breakpoint.editCondition": "編輯條件...",
+  "notebook.cell.changeToCode": "變更儲存格為代碼",
+  "notebook.cell.changeToMarkdown": "變更儲存格為 Markdown",
+  "notebook.cell.insertMarkdownCellAbove": "在上方插入 Markdown 單元格",
+  "notebook.cell.insertMarkdownCellBelow": "在下方插入 Markdown 單元格",
+  "terminal:new:profile": "從設定檔建立新的整合式終端機",
+  "terminal:profile:default": "選擇預設終端設定檔",
+  "theia": {
+    "callhierarchy": {
+      "noCallers": "未偵測到來電者。",
+      "open": "開放式呼叫層級"
+    },
+    "collaboration": {
+      "collaborate": "合作",
+      "collaboration": "合作",
+      "collaborationWorkspace": "協同工作區",
+      "connected": "連接",
+      "connectedSession": "連接至協作會議",
+      "copiedInvitation": "邀請函代碼已複製到剪貼簿。",
+      "copyAgain": "再次複製",
+      "createRoom": "建立新的協作會議",
+      "creatingRoom": "創建會話",
+      "end": "結束協作會議",
+      "endDetail": "終止會話、停止內容共用,並取消其他人的存取權限。",
+      "enterCode": "輸入協作會議代碼",
+      "failedCreate": "建立空間失敗:{0}",
+      "failedJoin": "未能加入房間:{0}",
+      "invite": "邀請他人",
+      "inviteDetail": "複製邀請代碼,以便與他人分享,參加會議。",
+      "joinRoom": "加入協作會議",
+      "joiningRoom": "加入會議",
+      "leave": "休假協作會議",
+      "leaveDetail": "中斷目前的協作工作階段,並關閉工作區。",
+      "selectCollaboration": "選擇合作選項",
+      "sharedSession": "分享協作會議",
+      "startSession": "開始或加入協作會議",
+      "userWantsToJoin": "使用者 '{0}' 想要加入協作室",
+      "whatToDo": "您想與其他合作者做什麼?"
+    },
+    "core": {
+      "about": {
+        "compatibility": "{0} 相容性",
+        "defaultApi": "預設{0} API",
+        "version": "版本"
+      },
+      "common": {
+        "closeAll": "關閉所有標籤",
+        "closeAllTabMain": "關閉主區域中的所有標籤",
+        "closeOtherTabMain": "關閉主區中的其他標籤",
+        "closeOthers": "關閉其他標籤",
+        "closeRight": "向右關閉標籤",
+        "closeTab": "關閉標籤",
+        "closeTabMain": "關閉主區域中的標籤",
+        "collapseAllTabs": "折疊所有側板",
+        "collapseBottomPanel": "切換底部面板",
+        "collapseTab": "折疊側板",
+        "showNextTabGroup": "切換到下一個標籤組",
+        "showNextTabInGroup": "切換到群組中的下一個標籤",
+        "showPreviousTabGroup": "切換到上一個標籤組",
+        "showPreviousTabInGroup": "切換到群組中的上一個標籤",
+        "toggleMaximized": "切換最大化"
+      },
+      "copyInfo": "先開啟檔案以複製其路徑",
+      "copyWarn": "請使用瀏覽器的複製指令或捷徑。",
+      "cutWarn": "請使用瀏覽器的剪下指令或捷徑。",
+      "enhancedPreview": {
+        "classic": "顯示標籤的簡單預覽及基本資訊。",
+        "enhanced": "顯示標籤的增強預覽,並提供其他資訊。",
+        "visual": "顯示標籤的視覺預覽。"
+      },
+      "file": {
+        "browse": "瀏覽"
+      },
+      "highlightModifiedTabs": "控制是否在已修改(髒)的編輯器標籤上畫上邊框。",
+      "keybindingStatus": "{0} 被按下,等待更多的按鍵",
+      "keyboard": {
+        "choose": "選擇鍵盤配置",
+        "chooseLayout": "選擇鍵盤配置",
+        "current": "(目前:{0})",
+        "currentLayout": "- 目前佈局",
+        "mac": "Mac 鍵盤",
+        "pc": "PC 鍵盤",
+        "tryDetect": "嘗試從瀏覽器資訊和按下的按鍵偵測鍵盤配置。"
+      },
+      "navigator": {
+        "clipboardWarn": "拒絕存取剪貼板。檢查瀏覽器的權限。",
+        "clipboardWarnFirefox": "剪貼板 API 不可用。您可以在 '{1}' 頁面上的 '{0}' 偏好設定啟用。然後重新載入 Theia。請注意,這將允許 FireFox 完全存取系統剪貼板。"
+      },
+      "offline": "離線",
+      "pasteWarn": "請使用瀏覽器的貼上指令或捷徑。",
+      "quitMessage": "任何未儲存的變更都不會儲存。",
+      "resetWorkbenchLayout": "重設工作台佈局",
+      "searchbox": {
+        "close": "關閉(逃生)",
+        "next": "下一頁 (向下)",
+        "previous": "上一頁 (上)"
+      },
+      "secondaryWindow": {
+        "alwaysOnTop": "啟用時,次要視窗會停留在所有其他視窗之上,包括不同應用程式的視窗。",
+        "description": "設定抽取的次要視窗的初始位置和大小。",
+        "fullSize": "擷取的 widget 位置和大小將與執行中的 Theia 應用程式相同。",
+        "halfWidth": "擷取的 widget 位置和大小將是執行中的 Theia 應用程式寬度的一半。",
+        "originalSize": "提取出來的 widget 的位置和大小將與原始 widget 相同。"
+      },
+      "silentNotifications": "控制是否抑制通知彈出。",
+      "tabDefaultSize": "指定標籤的預設大小。",
+      "tabMaximize": "控制是否在雙擊時將索引標籤最大化。",
+      "tabMinimumSize": "指定標籤頁的最小尺寸。",
+      "tabShrinkToFit": "縮小標籤以符合可用空間。"
+    },
+    "debug": {
+      "addConfigurationPlaceholder": "選擇要新增組態的工作區根",
+      "breakpoint": "断点",
+      "compound-cycle": "啟動組態 '{0}' 包含與本身的循環",
+      "continueAll": "繼續全部",
+      "copyExpressionValue": "複製表達值",
+      "dataBreakpoint": "資料中斷點",
+      "debugVariableInput": "設定{0} 值",
+      "entry": "入口",
+      "exception": "例外",
+      "functionBreakpoint": "函數中斷點",
+      "goto": "到達",
+      "instruction-breakpoint": "指令中斷點",
+      "instructionBreakpoint": "指令中斷點",
+      "missingConfiguration": "動態設定 '{0}:{1}' 遺失或不適用",
+      "pause": "暫停",
+      "pauseAll": "暫停全部",
+      "reveal": "揭示",
+      "step": "步驟",
+      "threads": "線程",
+      "toggleTracing": "啟用/停用與除錯介面卡的追蹤通訊"
+    },
+    "editor": {
+      "diffEditor.wordWrap2": "行會根據 `#editor.wordWrap#` 設定來換行。",
+      "dirtyEncoding": "檔案已損壞。請先儲存檔案,再以其他編碼重新開啟。",
+      "editor.accessibilitySupport0": "使用平台 API 來偵測是否已連接螢幕閱讀器",
+      "editor.accessibilitySupport1": "針對螢幕閱讀器的使用進行最佳化",
+      "editor.accessibilitySupport2": "假設沒有連接螢幕閱讀器",
+      "editor.bracketPairColorization.enabled": "控制是否啟用括號對著色。使用 `#workbench.colorCustomizations#` 來覆寫括弧高亮顏色。",
+      "editor.codeActionWidget.includeNearbyQuickfixes": "當目前未進行診斷時,啟用/停用在行內顯示最近的快速修復。",
+      "editor.detectIndentation": "控制在開啟檔案時,是否會根據檔案內容自動偵測 `#editor.tabSize#` 和 `#editor.insertSpaces#`。",
+      "editor.dropIntoEditor.enabled": "控制是否可以按住 `shift` 將檔案拖放到文字編輯器中 (而不是在編輯器中開啟檔案)。",
+      "editor.formatOnSaveMode.modificationsIfAvailable": "僅嘗試格式化修改 (需要來源控制)。如果無法使用原始碼控制,則會格式化整個檔案。",
+      "editor.hover.hidingDelay": "控制以毫秒為單位的延遲時間,之後懸浮會隱藏。需要啟用 `editor.hover.sticky`。",
+      "editor.inlayHints.enabled1": "鑲嵌提示依預設顯示,並在按住 Ctrl+Alt 時隱藏",
+      "editor.inlayHints.enabled2": "內嵌提示預設為隱藏,按住 Ctrl+Alt 時會顯示。",
+      "editor.inlayHints.fontFamily": "控制編輯器中內嵌提示的字型族。設定為空時,會使用 `#editor.fontFamily#`。",
+      "editor.inlayHints.fontSize": "控制編輯器中內嵌提示的字型大小。當設定值小於或大於編輯器字型大小時,預設會使用 `#editor.fontSize#`。",
+      "editor.insertSpaces": "按下 `Tab` 時插入空格。當 `#editor.detectIndentation#` 啟用時,此設定會根據檔案內容覆寫。",
+      "editor.occurrencesHighlight": "控制編輯器是否要高亮顯示語意符號的出現。",
+      "editor.quickSuggestions": "控制輸入時是否自動顯示建議。在輸入註解、字串和其他程式碼時,可以控制這一點。快速建議可設定為以 ghost text 或建議 widget 顯示。同時也要注意 `#editor.supplyOnTriggerCharacters#` 設定,它可以控制是否由特殊字符觸發建議。",
+      "editor.stickyScroll.scrollWithEditor": "使用編輯器的水平捲動條啟用黏貼捲動 widget 的捲動。",
+      "editor.suggestFontSize": "建議 Widget 的字型大小。設定為 `0` 時,會使用 `#editor.fontSize#` 的值。",
+      "editor.suggestLineHeight": "建議 widget 的行高。設定為 `0` 時,會使用 `#editor.lineHeight#` 的值。最小值為 8。",
+      "editor.tabSize": "制表符等於的空格數目。當 `#editor.detectIndentation#` 啟用時,此設定會根據檔案內容覆寫。",
+      "editor.useTabStops": "插入和刪除空白跟著制表符停止。",
+      "editor.wordBasedSuggestions": "控制是否應根據文件中的字詞計算完成度。",
+      "editor.wordBasedSuggestionsMode": "控制從哪些文件中計算出基於字詞的完成度。",
+      "files.autoSave": "控制有未儲存變更的編輯器 [自動儲存](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save)。",
+      "files.autoSave.afterDelay": "有變更的編輯器會在設定的 `#files.autoSaveDelay#` 後自動儲存。",
+      "files.autoSave.off": "有變更的編輯器不會自動儲存。",
+      "files.autoSave.onFocusChange": "當編輯器失去焦點時,會自動儲存有變更的編輯器。",
+      "files.autoSave.onWindowChange": "當視窗失去焦點時,會自動儲存有變更的編輯器。",
+      "formatOnSaveTimeout": "以毫秒為單位的逾時,逾時後檔案儲存時執行的格式化會被取消。",
+      "persistClosedEditors": "控制是否在視窗重新載入時持續工作區的已關閉編輯歷史。",
+      "showAllEditors": "顯示所有開啟的編輯器",
+      "splitHorizontal": "水平分割編輯器",
+      "splitVertical": "垂直分割編輯器",
+      "toggleStickyScroll": "切換黏貼捲動"
+    },
+    "file-search": {
+      "toggleIgnoredFiles": "(按{0} 顯示/隱藏忽略的檔案)"
+    },
+    "fileDialog": {
+      "showHidden": "顯示隱藏的檔案"
+    },
+    "fileSystem": {
+      "fileResource": {
+        "overWriteBody": "您要覆寫檔案系統上對 '{0}' 所做的變更?"
+      }
+    },
+    "filesystem": {
+      "copiedToClipboard": "將下載連結複製到剪貼簿。",
+      "copyDownloadLink": "複製下載連結",
+      "dialog": {
+        "initialLocation": "前往初始位置",
+        "multipleItemMessage": "您只能選擇一個項目",
+        "name": "名稱:",
+        "navigateBack": "導航返回",
+        "navigateForward": "向前導航",
+        "navigateUp": "向上瀏覽一個目錄"
+      },
+      "fileResource": {
+        "binaryFileQuery": "打開它可能需要一些時間,而且可能會導致 IDE 無反應。您到底要不要開啟 '{0}' 呢?",
+        "binaryTitle": "檔案為二進位或使用不支援的文字編碼。",
+        "largeFileTitle": "檔案太大 ({0})。",
+        "overwriteTitle": "檔案系統中的檔案 '{0}' 已變更。"
+      },
+      "filesExclude": "設定 glob 模式以排除檔案和資料夾。例如,檔案總管會根據此設定決定顯示或隱藏哪些檔案和資料夾。",
+      "format": "格式:",
+      "maxConcurrentUploads": "上傳多個檔案時,同時上傳的最大檔案數量。0 表示所有檔案都會同時上傳。",
+      "maxFileSizeMB": "控制可開啟的最大檔案大小 (以 MB 為單位)。",
+      "prepareDownload": "準備下載...",
+      "prepareDownloadLink": "準備下載連結...",
+      "processedOutOf": "加工{0} 出{1}",
+      "replaceTitle": "取代檔案",
+      "uploadFailed": "上傳檔案時發生錯誤。{0}",
+      "uploadFiles": "上傳檔案...",
+      "uploadedOutOf": "上傳{0} 出{1}"
+    },
+    "getting-started": {
+      "apiComparator": "{0} API 相容性",
+      "newExtension": "建立新擴展區",
+      "newPlugin": "建立新的外掛程式",
+      "startup-editor": {
+        "welcomePage": "開啟歡迎頁面,其內容可協助您開始使用{0} 和擴充套件。"
+      }
+    },
+    "git": {
+      "aFewSecondsAgo": "數秒前",
+      "addSignedOff": "新增簽署人",
+      "amendReuseMessage": "若要重複使用上次的提交訊息,請按「Enter」或「Escape」取消。",
+      "amendRewrite": "重寫先前的提交訊息。按「Enter」確認或按「Escape」取消。",
+      "checkoutCreateLocalBranchWithName": "建立新的本地分支,名稱為{0}。按「Enter」確認或按「Escape」取消。",
+      "checkoutProvideBranchName": "請提供分行名稱。 ",
+      "checkoutSelectRef": "選擇要結帳的參考資料或建立新的本地分支:",
+      "cloneQuickInputLabel": "請提供 Git 儲存庫位置。按「Enter」確認或按「Escape」取消。",
+      "cloneRepository": "克隆 Git 倉庫:{0}。按「Enter」確認或按「Escape」取消。",
+      "compareWith": "比較...",
+      "compareWithBranchOrTag": "選取分支或標籤,與目前使用中的{0} 分支進行比較:",
+      "diff": "差異",
+      "dirtyDiffLinesLimit": "如果編輯器的行數超過此限制,則不顯示髒的差異裝飾。",
+      "dropStashMessage": "成功移除藏匿物。",
+      "editorDecorationsEnabled": "在編輯器中顯示 git 裝飾。",
+      "fetchPickRemote": "選取遠端擷取:",
+      "gitDecorationsColors": "在導覽器中使用顏色裝飾。",
+      "mergeQuickPickPlaceholder": "選取一個分支合併到目前使用中的{0} 分支:",
+      "missingUserInfo": "請確定您在 git 中設定了「user.name」和「user.email」。",
+      "noHistoryForError": "沒有關於{0}",
+      "noPreviousCommit": "之前沒有承諾修正",
+      "noRepositoriesSelected": "未選擇儲存庫。",
+      "prepositionIn": "於",
+      "repositoryNotInitialized": "儲存庫{0} 尚未初始化。",
+      "stashChanges": "儲存變更。按「Enter」確認,或按「Escape」取消。",
+      "stashChangesWithMessage": "儲存庫隨訊息變更:{0}.按「Enter」確認或按「Escape」取消。",
+      "tabTitleIndex": "{0} (索引)",
+      "tabTitleWorkingTree": "{0} (工作樹)",
+      "toggleBlameAnnotations": "切換指責註釋"
+    },
+    "keybinding-schema-updater": {
+      "deprecation": "改用 `when` 子句。"
+    },
+    "keymaps": {
+      "addKeybindingTitle": "新增鍵盤綁定{0}",
+      "editKeybinding": "編輯按鍵...",
+      "editKeybindingTitle": "編輯{0}",
+      "editWhenExpression": "編輯當表達...",
+      "editWhenExpressionTitle": "編輯{0}",
+      "keybinding": {
+        "copy": "複製鍵綁定",
+        "copyCommandId": "複製鍵綁定指令 ID",
+        "copyCommandTitle": "複製鍵綁定指令標題",
+        "edit": "編輯按鍵...",
+        "editWhenExpression": "編輯按鍵綁定當表達..."
+      },
+      "keybindingCollidesValidation": "按鍵目前碰撞",
+      "requiredKeybindingValidation": "需要 keybinding 值",
+      "resetKeybindingConfirmation": "您真的要將此按鍵綁定重設為預設值?",
+      "resetKeybindingTitle": "重設{0}",
+      "resetMultipleKeybindingsWarning": "如果此命令存在多個按鍵綁定,則所有按鍵綁定都會被重設。"
+    },
+    "localize": {
+      "offlineTooltip": "無法連線至後端。"
+    },
+    "markers": {
+      "clearAll": "全部清除",
+      "noProblems": "到目前為止,工作區尚未偵測到任何問題。",
+      "tabbarDecorationsEnabled": "在標籤列中顯示問題裝飾符(診斷標記)。"
+    },
+    "memory-inspector": {
+      "addressTooltip": "要顯示的記憶體位置、位址或演算至位址的表達式",
+      "ascii": "ASCII",
+      "binary": "二進制",
+      "byteSize": "位元組大小",
+      "bytesPerGroup": "每組位元組",
+      "closeSettings": "關閉設定",
+      "columns": "欄位",
+      "command": {
+        "createNewMemory": "建立新的記憶體檢查器",
+        "createNewRegisterView": "建立新的註冊檢視",
+        "followPointer": "追蹤指針",
+        "followPointerMemory": "在記憶體檢視器中追蹤指針",
+        "resetValue": "重設值",
+        "showRegister": "在記憶體檢查器中顯示暫存器",
+        "viewVariable": "在記憶體檢視器中顯示變數"
+      },
+      "data": "資料",
+      "decimal": "十進制",
+      "diff": {
+        "label": "差異:{0}"
+      },
+      "diff-widget": {
+        "offset-label": "{0} 偏移",
+        "offset-title": "偏移記憶體的位元組{0}"
+      },
+      "editable": {
+        "apply": "應用變更",
+        "clear": "清楚的變更"
+      },
+      "endianness": "尾數",
+      "extraColumn": "額外欄位",
+      "groupsPerRow": "每行的群組",
+      "hexadecimal": "十六進位",
+      "length": "長度",
+      "lengthTooltip": "要取得的位元組數量,以十進位或十六進位表示",
+      "memory": {
+        "addressField": {
+          "memoryReadError": "在 Location(位置)欄位中輸入地址或表達式。"
+        },
+        "freeze": "凍結記憶體檢視",
+        "hideSettings": "隱藏設定面板",
+        "readError": {
+          "bounds": "超出記憶體範圍,結果會被截斷。",
+          "noContents": "目前沒有可用的記憶體內容。"
+        },
+        "readLength": {
+          "memoryReadError": "在 Length(長度)欄位中輸入長度(十進制或十六進制數字)。"
+        },
+        "showSettings": "顯示設定面板",
+        "unfreeze": "解除凍結記憶體檢視",
+        "userError": "取得記憶體時發生錯誤。"
+      },
+      "memoryCategory": "記憶體檢查器",
+      "memoryInspector": "記憶體檢查器",
+      "memoryTitle": "記憶體",
+      "octal": "八進制",
+      "offset": "偏移",
+      "offsetTooltip": "當導航時,要加到目前記憶體位置的偏移量",
+      "provider": {
+        "localsError": "無法讀取本機變數。沒有啟動除錯階段。",
+        "readError": "無法讀取記憶體。沒有作用中的除錯會話。",
+        "writeError": "無法寫入記憶體。沒有作用中的除錯會話。"
+      },
+      "register": "註冊",
+      "register-widget": {
+        "filter-placeholder": "過濾器 (以)"
+      },
+      "registerReadError": "取得暫存器時發生錯誤。",
+      "registers": "註冊",
+      "toggleComparisonWidgetVisibility": "切換比較小工具的可見性",
+      "utils": {
+        "afterBytes": "您必須在要比較的兩個 widget 中都載入記憶體。{0} 沒有載入記憶體。",
+        "bytesMessage": "您必須在要比較的兩個 widget 中都載入記憶體。{0} 沒有載入記憶體。"
+      }
+    },
+    "messages": {
+      "notificationTimeout": "超時後,資訊性通知將會隱藏。",
+      "toggleNotifications": "切換通知"
+    },
+    "mini-browser": {
+      "typeUrl": "輸入 URL"
+    },
+    "monaco": {
+      "noSymbolsMatching": "沒有符合的符號",
+      "typeToSearchForSymbols": "輸入以搜尋符號"
+    },
+    "navigator": {
+      "autoReveal": "自動揭示",
+      "clipboardWarn": "拒絕存取剪貼板。檢查瀏覽器的權限。",
+      "clipboardWarnFirefox": "剪貼板 API 不可用。您可以在 '{1}' 頁面上的 '{0}' 偏好設定啟用。然後重新載入 Theia。請注意,這將允許 FireFox 完全存取系統剪貼板。",
+      "refresh": "在瀏覽器中重新整理",
+      "reveal": "在瀏覽器中顯示",
+      "toggleHiddenFiles": "切換隱藏檔案"
+    },
+    "output": {
+      "clearOutputChannel": "清除輸出通道...",
+      "closeOutputChannel": "關閉輸出通道...",
+      "hiddenChannels": "隱藏通道",
+      "hideOutputChannel": "隱藏輸出通道...",
+      "maxChannelHistory": "輸出通道中的最大項目數量。",
+      "outputChannels": "輸出通道",
+      "showOutputChannel": "顯示輸出通道..."
+    },
+    "plugin": {
+      "blockNewTab": "您的瀏覽器無法開啟新標籤頁"
+    },
+    "plugin-dev": {
+      "alreadyRunning": "托管实例已在运行。",
+      "debugInstance": "除錯實例",
+      "debugMode": "使用 inspect 或 inspect-brk 進行 Node.js 除錯",
+      "debugPorts": {
+        "debugPort": "此伺服器的 Node.js 除錯要使用的連接埠"
+      },
+      "devHost": "開發主機",
+      "failed": "執行虛擬外掛實例失敗:{0}",
+      "hostedPlugin": "託管外掛程式",
+      "hostedPluginRunning": "託管外掛程式: 執行中",
+      "hostedPluginStarting": "託管外掛程式:啟動",
+      "hostedPluginStopped": "託管外掛程式:已停止",
+      "hostedPluginWatching": "託管外掛程式:觀看",
+      "instanceTerminated": "{0} 已終止",
+      "launchOutFiles": "用於定位產生的 JavaScript 檔案的 glob 模式陣列 (`${pluginPath}`將被 plugin 的實際路徑取代)。",
+      "noValidPlugin": "指定的資料夾不包含有效的外掛程式。",
+      "notRunning": "托管实例未运行。",
+      "pluginFolder": "外掛程式資料夾設定為:{0}",
+      "preventedNewTab": "您的瀏覽器無法開啟新標籤頁",
+      "restartInstance": "重新啟動實體",
+      "running": "主機實例執行於:",
+      "select": "選擇",
+      "selectPath": "選擇路徑",
+      "startInstance": "啟動實例",
+      "starting": "啟動託管實例伺服器 ...",
+      "stopInstance": "停止實例",
+      "unknownTerminated": "實例已終止",
+      "watchMode": "在開發中的外掛程式上執行觀察程式"
+    },
+    "plugin-ext": {
+      "authentication-main": {
+        "loginTitle": "登入"
+      },
+      "plugins": "外掛程式",
+      "webviewTrace": "控制 webviews 的通訊追蹤。",
+      "webviewWarnIfUnsecure": "警告使用者目前以不安全的方式部署 webview。"
+    },
+    "preferences": {
+      "hostedPlugin": "託管外掛程式",
+      "toolbar": "工具列"
+    },
+    "preview": {
+      "openByDefault": "預設開啟預覽而非編輯器。"
+    },
+    "property-view": {
+      "created": "創建",
+      "directory": "目錄",
+      "lastModified": "最後修改",
+      "location": "地點",
+      "noProperties": "無房產可供選擇。",
+      "properties": "屬性",
+      "size": "尺寸",
+      "symbolicLink": "符號連結"
+    },
+    "scm": {
+      "amend": "修正",
+      "amendHeadCommit": "HEAD 承諾",
+      "amendLastCommit": "修正上次提交",
+      "changeRepository": "變更儲存庫...",
+      "config.untrackedChanges": "控制未追蹤變更的行為。",
+      "config.untrackedChanges.hidden": "隱藏的",
+      "config.untrackedChanges.mixed": "混合",
+      "config.untrackedChanges.separate": "獨立",
+      "dirtyDiff": {
+        "close": "關閉變更窺視"
+      },
+      "history": "歷史",
+      "noRepositoryFound": "未找到儲存庫",
+      "unamend": "Unamend",
+      "unamendCommit": "取消修正提交"
+    },
+    "search-in-workspace": {
+      "includeIgnoredFiles": "包含忽略的檔案",
+      "noFolderSpecified": "您尚未開啟或指定資料夾。目前只搜尋開啟的檔案。",
+      "resultSubset": "這只是所有結果的子集。請使用更明確的搜尋字詞縮小結果清單的範圍。",
+      "searchOnEditorModification": "修改時搜尋使用中的編輯器。"
+    },
+    "secondary-window": {
+      "extract-widget": "將檢視移至次要視窗"
+    },
+    "shell-area": {
+      "secondary": "輔助窗口"
+    },
+    "task": {
+      "attachTask": "附加任務...",
+      "clearHistory": "清除歷史",
+      "noTaskToRun": "未找到要執行的任務。配置任務...",
+      "openUserTasks": "開啟使用者任務"
+    },
+    "terminal": {
+      "defaultProfile": "上使用的預設設定檔{0}",
+      "enableCopy": "啟用 ctrl-c(macOS 上為 cmd-c)複製選取的文字",
+      "enablePaste": "啟用 ctrl-v(macOS 上為 cmd-v)從剪貼簿貼上",
+      "profileArgs": "此設定檔使用的 shell 參數。",
+      "profileColor": "與終端關聯的終端主題顏色 ID。",
+      "profileDefault": "選擇預設設定檔...",
+      "profileIcon": "要與終端圖示關聯的 codicon ID。\nterminal-tmux:\"$(terminal-tmux)\"",
+      "profileNew": "新終端機 (含簡介)...",
+      "profilePath": "此設定檔使用的 shell 路徑。",
+      "profiles": "建立新終端時要顯示的設定檔。使用可選的 args 手動設定路徑屬性。\n將現有的設定檔設定為「null」,以從清單中隱藏設定檔,例如: `\"{0}\": null`。",
+      "rendererType": "控制終端機的呈現方式。",
+      "rendererTypeDeprecationMessage": "渲染器類型不再支援為選項。",
+      "selectProfile": "為新終端選擇設定檔",
+      "shell.deprecated": "這已經被廢棄,新的建議配置預設 shell 的方式是在 'terminal.integrated.profiles.{0}' 中建立終端設定檔,並在 'terminal.integrated.defaultProfile.{0}.' 中將其設定檔名稱設定為預設值。",
+      "shellArgsLinux": "在 Linux 終端時要使用的命令列參數。",
+      "shellArgsOsx": "在 macOS 終端時要使用的命令列參數。",
+      "shellArgsWindows": "在 Windows 終端時要使用的命令列參數。",
+      "shellLinux": "終端在 Linux 上使用的 shell 路徑 (預設值: '{0}'})。",
+      "shellOsx": "終端在 macOS 上使用的 shell 路徑 (預設值: '{0}'})。",
+      "shellWindows": "終端在 Windows 上使用的 shell 路徑。(預設值:'{0}' )。"
+    },
+    "test": {
+      "cancelAllTestRuns": "取消所有測試執行",
+      "stackFrameAt": "於",
+      "testRunDefaultName": "{0} 跑{1}",
+      "testRuns": "測試運行"
+    },
+    "toolbar": {
+      "addCommand": "新增指令至工具列",
+      "addCommandPlaceholder": "尋找要加入工具列的指令",
+      "centerColumn": "中柱",
+      "failedUpdate": "更新 '{1}' 中 '{0}' 的值失敗。",
+      "filterIcons": "篩選器圖示",
+      "iconSelectDialog": "為 '{0}' 選擇圖示",
+      "iconSet": "圖示集",
+      "insertGroupLeft": "插入群組分隔線(左)",
+      "insertGroupRight": "插入群組分隔線(右)",
+      "leftColumn": "左欄",
+      "openJSON": "自訂工具列 (開啟 JSON)",
+      "removeCommand": "從工具列移除指令",
+      "restoreDefaults": "還原工具列預設值",
+      "rightColumn": "右欄",
+      "selectIcon": "選擇圖示",
+      "toggleToolbar": "切換工具列",
+      "toolbarLocationPlaceholder": "您希望在哪裡加入指令?",
+      "useDefaultIcon": "使用預設圖示"
+    },
+    "typehierarchy": {
+      "subtypeHierarchy": "子類別階層",
+      "supertypeHierarchy": "超類型層級"
+    },
+    "vsx-registry": {
+      "confirmDialogMessage": "副檔名 \"{0}\" 未經驗證,可能會構成安全風險。",
+      "confirmDialogTitle": "您確定要繼續安裝嗎?",
+      "downloadCount": "下載計數:{0}",
+      "errorFetching": "取得擴充套件時出錯。",
+      "errorFetchingConfigurationHint": "這可能是網路組態問題造成的。",
+      "failedInstallingVSIX": "從 VSIX 安裝{0} 失敗。",
+      "invalidVSIX": "選取的檔案不是有效的「*.vsix」外掛程式。",
+      "license": "許可證:{0}",
+      "onlyShowVerifiedExtensionsDescription": "這可讓{0} 只顯示已驗證的擴充套件。",
+      "onlyShowVerifiedExtensionsTitle": "只顯示已驗證的擴充套件",
+      "recommendedExtensions": "您要為此套件庫安裝建議的擴充套件嗎?",
+      "searchPlaceholder": "搜尋擴展名稱{0}",
+      "showInstalled": "顯示已安裝的擴充套件",
+      "showRecommendedExtensions": "控制是否顯示擴展建議的通知。",
+      "vsx-extensions-contribution": {
+        "update-version-uninstall-error": "移除副檔名時發生錯誤:{0}。",
+        "update-version-version-error": "{1} 的{0} 版本安裝失敗。"
+      }
+    },
+    "webview": {
+      "goToReadme": "前往 README",
+      "messageWarning": "            {0} 端點的主機模式已變更為 `{1}`;變更模式可能會導致安全漏洞。             詳情請參閱 `{2}`。"
+    },
+    "workspace": {
+      "compareWithEachOther": "相互比較",
+      "confirmDeletePermanently.description": "使用垃圾桶刪除 \"{0}\" 失敗。您想要永久刪除嗎?",
+      "confirmDeletePermanently.solution": "您可以在喜好設定中停用垃圾桶的使用。",
+      "confirmDeletePermanently.title": "刪除檔案出錯",
+      "confirmMessage.delete": "您真的要刪除下列檔案嗎?",
+      "confirmMessage.dirtyMultiple": "您真的想要刪除{0} 檔案中未儲存的變更嗎?",
+      "confirmMessage.dirtySingle": "您真的要刪除{0} 未儲存的變更嗎?",
+      "confirmMessage.uriMultiple": "您真的要刪除所有{0} 選取的檔案?",
+      "confirmMessage.uriSingle": "您真的要刪除{0}?",
+      "duplicate": "重複",
+      "failSaveAs": "無法為目前的 widget 執行 \"{0}\"。",
+      "newFilePlaceholder": "檔案名稱",
+      "newFolderPlaceholder": "資料夾名稱",
+      "noErasure": "注意:磁碟上的任何內容都不會被刪除",
+      "openRecentPlaceholder": "輸入您要開啟的工作區名稱",
+      "openRecentWorkspace": "開啟最近工作區...",
+      "preserveWindow": "啟用在目前視窗中開啟工作區。",
+      "removeFolder": "您確定要從工作區移除下列資料夾?",
+      "removeFolders": "您確定要從工作區移除下列資料夾?",
+      "trashTitle": "移動{0} 到垃圾桶",
+      "trustEmptyWindow": "控制預設是否信任空工作區。",
+      "trustEnabled": "控制是否啟用工作區信任。如果停用,則信任所有工作區。",
+      "trustRequest": "擴充套件要求信任工作區,但對應的 API 尚未完全支援。您要信任此工作區嗎?",
+      "untitled-cleanup": "似乎有許多無標題的工作區檔案。請檢查{0} 並移除任何未使用的檔案。",
+      "workspaceFolderAdded": "已建立具有多個根的工作區。您是否要將工作區設定儲存為檔案?",
+      "workspaceFolderAddedTitle": "資料夾新增至工作區"
+    }
+  }
+}

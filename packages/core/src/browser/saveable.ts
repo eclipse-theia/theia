@@ -21,7 +21,8 @@ import { MaybePromise } from '../common/types';
 import { Key } from './keyboard/keys';
 import { AbstractDialog } from './dialogs';
 import { nls } from '../common/nls';
-import { DisposableCollection, isObject } from '../common';
+import { Disposable, DisposableCollection, isObject } from '../common';
+import { BinaryBuffer } from '../common/buffer';
 
 export type AutoSaveMode = 'off' | 'afterDelay' | 'onFocusChange' | 'onWindowChange';
 
@@ -46,13 +47,17 @@ export interface Saveable {
      */
     revert?(options?: Saveable.RevertOptions): Promise<void>;
     /**
-     * Creates a snapshot of the dirty state.
+     * Creates a snapshot of the dirty state. See also {@link Saveable.Snapshot}.
      */
     createSnapshot?(): Saveable.Snapshot;
     /**
      * Applies the given snapshot to the dirty state.
      */
     applySnapshot?(snapshot: object): void;
+    /**
+     * Serializes the full state of the saveable item to a binary buffer.
+     */
+    serialize?(): Promise<BinaryBuffer>;
 }
 
 export interface SaveableSource {
@@ -79,6 +84,7 @@ export class DelegatingSaveable implements Saveable {
     revert?(options?: Saveable.RevertOptions): Promise<void>;
     createSnapshot?(): Saveable.Snapshot;
     applySnapshot?(snapshot: object): void;
+    serialize?(): Promise<BinaryBuffer>;
 
     protected _delegate?: Saveable;
     protected toDispose = new DisposableCollection();
@@ -101,8 +107,77 @@ export class DelegatingSaveable implements Saveable {
         this.revert = delegate.revert?.bind(delegate);
         this.createSnapshot = delegate.createSnapshot?.bind(delegate);
         this.applySnapshot = delegate.applySnapshot?.bind(delegate);
+        this.serialize = delegate.serialize?.bind(delegate);
     }
 
+}
+
+export class CompositeSaveable implements Saveable {
+    protected isDirty = false;
+    protected readonly onDirtyChangedEmitter = new Emitter<void>();
+    protected readonly onContentChangedEmitter = new Emitter<void>();
+    protected readonly toDispose = new DisposableCollection(this.onDirtyChangedEmitter, this.onContentChangedEmitter);
+    protected readonly saveablesMap = new Map<Saveable, Disposable>();
+
+    get dirty(): boolean {
+        return this.isDirty;
+    }
+
+    get onDirtyChanged(): Event<void> {
+        return this.onDirtyChangedEmitter.event;
+    }
+
+    get onContentChanged(): Event<void> {
+        return this.onContentChangedEmitter.event;
+    }
+
+    async save(options?: SaveOptions): Promise<void> {
+        await Promise.all(this.saveables.map(saveable => saveable.save(options)));
+    }
+
+    async revert(options?: Saveable.RevertOptions): Promise<void> {
+        await Promise.all(this.saveables.map(saveable => saveable.revert?.(options)));
+    }
+
+    get saveables(): readonly Saveable[] {
+        return Array.from(this.saveablesMap.keys());
+    }
+
+    add(saveable: Saveable): void {
+        if (this.saveablesMap.has(saveable)) {
+            return;
+        }
+        const toDispose = new DisposableCollection();
+        this.toDispose.push(toDispose);
+        this.saveablesMap.set(saveable, toDispose);
+        toDispose.push(Disposable.create(() => {
+            this.saveablesMap.delete(saveable);
+        }));
+        toDispose.push(saveable.onDirtyChanged(() => {
+            const wasDirty = this.isDirty;
+            this.isDirty = this.saveables.some(s => s.dirty);
+            if (this.isDirty !== wasDirty) {
+                this.onDirtyChangedEmitter.fire();
+            }
+        }));
+        toDispose.push(saveable.onContentChanged(() => {
+            this.onContentChangedEmitter.fire();
+        }));
+        if (saveable.dirty && !this.isDirty) {
+            this.isDirty = true;
+            this.onDirtyChangedEmitter.fire();
+        }
+    }
+
+    remove(saveable: Saveable): boolean {
+        const toDispose = this.saveablesMap.get(saveable);
+        toDispose?.dispose();
+        return !!toDispose;
+    }
+
+    dispose(): void {
+        this.toDispose.dispose();
+    }
 }
 
 export namespace Saveable {
@@ -114,7 +189,16 @@ export namespace Saveable {
         soft?: boolean
     }
 
+    /**
+     * A snapshot of a saveable item.
+     * Applying a snapshot of a saveable on another (of the same type) using the `applySnapshot` should yield the state of the original saveable.
+     */
     export type Snapshot = { value: string } | { read(): string | null };
+    export namespace Snapshot {
+        export function read(snapshot: Snapshot): string | undefined {
+            return 'value' in snapshot ? snapshot.value : (snapshot.read() ?? undefined);
+        }
+    }
     export function isSource(arg: unknown): arg is SaveableSource {
         return isObject<SaveableSource>(arg) && is(arg.saveable);
     }

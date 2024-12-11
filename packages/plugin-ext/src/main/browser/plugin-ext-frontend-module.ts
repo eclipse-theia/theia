@@ -21,9 +21,12 @@ import '../../../src/main/browser/style/comments.css';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import {
     FrontendApplicationContribution, WidgetFactory, bindViewContribution,
-    ViewContainerIdentifier, ViewContainer, createTreeContainer, TreeWidget, LabelProviderContribution
+    ViewContainerIdentifier, ViewContainer, createTreeContainer, TreeWidget, LabelProviderContribution, LabelProvider,
+    UndoRedoHandler, DiffUris, Navigatable, SplitWidget,
+    noopWidgetStatusBarContribution,
+    WidgetStatusBarContribution
 } from '@theia/core/lib/browser';
-import { MaybePromise, CommandContribution, ResourceResolver, bindContributionProvider } from '@theia/core/lib/common';
+import { MaybePromise, CommandContribution, ResourceResolver, bindContributionProvider, URI, generateUuid } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
 import { HostedPluginSupport } from '../../hosted/browser/hosted-plugin';
 import { HostedPluginWatcher } from '../../hosted/browser/hosted-plugin-watcher';
@@ -66,7 +69,6 @@ import { CommentsService, PluginCommentService } from './comments/comments-servi
 import { CommentingRangeDecorator } from './comments/comments-decorator';
 import { CommentsContribution } from './comments/comments-contribution';
 import { CommentsContextKeyService } from './comments/comments-context-key-service';
-import { CustomEditorContribution } from './custom-editors/custom-editor-contribution';
 import { PluginCustomEditorRegistry } from './custom-editors/plugin-custom-editor-registry';
 import { CustomEditorWidgetFactory } from '../browser/custom-editors/custom-editor-widget-factory';
 import { CustomEditorWidget } from './custom-editors/custom-editor-widget';
@@ -86,10 +88,9 @@ import { LanguagePackService, languagePackServicePath } from '../../common/langu
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { CellOutputWebviewFactory } from '@theia/notebook/lib/browser';
 import { CellOutputWebviewImpl, createCellOutputWebviewContainer } from './notebooks/renderers/cell-output-webview';
-import { NotebookCellModel } from '@theia/notebook/lib/browser/view-model/notebook-cell-model';
-import { NotebookModel } from '@theia/notebook/lib/browser/view-model/notebook-model';
 import { ArgumentProcessorContribution } from './command-registry-main';
 import { WebviewSecondaryWindowSupport } from './webview/webview-secondary-window-support';
+import { CustomEditorUndoRedoHandler } from './custom-editors/custom-editor-undo-redo-handler';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
@@ -190,15 +191,34 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(WebviewSecondaryWindowSupport).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(WebviewSecondaryWindowSupport);
     bind(FrontendApplicationContribution).toService(WebviewContextKeys);
-
-    bind(CustomEditorContribution).toSelf().inSingletonScope();
-    bind(CommandContribution).toService(CustomEditorContribution);
+    bind(WidgetStatusBarContribution).toConstantValue(noopWidgetStatusBarContribution(WebviewWidget));
 
     bind(PluginCustomEditorRegistry).toSelf().inSingletonScope();
     bind(CustomEditorService).toSelf().inSingletonScope();
     bind(CustomEditorWidget).toSelf();
     bind(CustomEditorWidgetFactory).toDynamicValue(ctx => new CustomEditorWidgetFactory(ctx.container)).inSingletonScope();
     bind(WidgetFactory).toService(CustomEditorWidgetFactory);
+    bind(CustomEditorUndoRedoHandler).toSelf().inSingletonScope();
+    bind(UndoRedoHandler).toService(CustomEditorUndoRedoHandler);
+
+    bind(WidgetFactory).toDynamicValue(ctx => ({
+        id: CustomEditorWidget.SIDE_BY_SIDE_FACTORY_ID,
+        createWidget: (arg: { uri: string, viewType: string }) => {
+            const uri = new URI(arg.uri);
+            const [leftUri, rightUri] = DiffUris.decode(uri);
+            const navigatable: Navigatable = {
+                getResourceUri: () => rightUri,
+                createMoveToUri: resourceUri => DiffUris.encode(leftUri, rightUri.withPath(resourceUri.path))
+            };
+            const widget = new SplitWidget({ navigatable });
+            widget.id = arg.viewType + '.side-by-side:' + generateUuid();
+            const labelProvider = ctx.container.get(LabelProvider);
+            widget.title.label = labelProvider.getName(uri);
+            widget.title.iconClass = labelProvider.getIcon(uri);
+            widget.title.closable = true;
+            return widget;
+        }
+    })).inSingletonScope();
 
     bind(PluginViewWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
@@ -264,9 +284,9 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
         return provider.createProxy<LanguagePackService>(languagePackServicePath);
     }).inSingletonScope();
 
-    bind(CellOutputWebviewFactory).toFactory(ctx => async (cell: NotebookCellModel, notebook: NotebookModel) =>
-        createCellOutputWebviewContainer(ctx.container, cell, notebook).getAsync(CellOutputWebviewImpl)
+    bind(CellOutputWebviewFactory).toFactory(ctx => () =>
+        createCellOutputWebviewContainer(ctx.container).get(CellOutputWebviewImpl)
     );
-
     bindContributionProvider(bind, ArgumentProcessorContribution);
+
 });

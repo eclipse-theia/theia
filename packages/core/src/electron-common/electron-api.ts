@@ -56,7 +56,11 @@ export interface TheiaCoreAPI {
     focusWindow(name?: string): void;
 
     showItemInFolder(fsPath: string): void;
-    openWithSystemApp(fsPath: string): void;
+
+    /**
+     * @param location The location to open with the system app. This can be a file path or a URL.
+     */
+    openWithSystemApp(location: string): void;
 
     getTitleBarStyleAtStartup(): Promise<string>;
     setTitleBarStyle(style: string): void;
@@ -70,6 +74,8 @@ export interface TheiaCoreAPI {
     onAboutToClose(handler: () => void): Disposable;
     setCloseRequestHandler(handler: (reason: StopReason) => Promise<boolean>): void;
 
+    setOpenUrlHandler(handler: (url: string) => Promise<boolean>): void;
+
     setSecondaryWindowCloseRequestHandler(windowName: string, handler: () => Promise<boolean>): void;
 
     toggleDevTools(): void;
@@ -80,7 +86,7 @@ export interface TheiaCoreAPI {
     isFullScreen(): boolean; // TODO: this should really be async, since it blocks the renderer process
     toggleFullScreen(): void;
 
-    requestReload(): void;
+    requestReload(newUrl?: string): void;
     restart(): void;
 
     applicationStateChanged(state: FrontendApplicationState): void;
@@ -125,6 +131,7 @@ export const CHANNEL_MAXIMIZE = 'Maximize';
 export const CHANNEL_IS_MAXIMIZED = 'IsMaximized';
 
 export const CHANNEL_ABOUT_TO_CLOSE = 'AboutToClose';
+export const CHANNEL_OPEN_URL = 'OpenUrl';
 
 export const CHANNEL_UNMAXIMIZE = 'UnMaximize';
 export const CHANNEL_ON_WINDOW_EVENT = 'OnWindowEvent';

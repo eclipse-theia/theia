@@ -24,6 +24,7 @@ const REQUIRE_RIPGREP = '@vscode/ripgrep';
 const REQUIRE_VSCODE_WINDOWS_CA_CERTS = '@vscode/windows-ca-certs';
 const REQUIRE_BINDINGS = 'bindings';
 const REQUIRE_KEYMAPPING = './build/Release/keymapping';
+const REQUIRE_PARCEL_WATCHER = './build/Release/watcher.node';
 
 export interface NativeWebpackPluginOptions {
     out: string;
@@ -72,7 +73,8 @@ export class NativeWebpackPlugin {
                 [REQUIRE_RIPGREP]: ripgrepFile,
                 [REQUIRE_BINDINGS]: bindingsFile,
                 [REQUIRE_KEYMAPPING]: keymappingFile,
-                [REQUIRE_VSCODE_WINDOWS_CA_CERTS]: windowsCaCertsFile
+                [REQUIRE_VSCODE_WINDOWS_CA_CERTS]: windowsCaCertsFile,
+                [REQUIRE_PARCEL_WATCHER]: findNativeWatcherFile()
             };
         });
         compiler.hooks.normalModuleFactory.tap(
@@ -152,6 +154,19 @@ export class NativeWebpackPlugin {
         await fs.promises.copyFile(source, target);
         await fs.promises.chmod(target, 0o777);
     }
+}
+
+function findNativeWatcherFile(): string {
+    let name = `@parcel/watcher-${process.platform}-${process.arch}`;
+    if (process.platform === 'linux') {
+        const { MUSL, family } = require('detect-libc');
+        if (family === MUSL) {
+            name += '-musl';
+        } else {
+            name += '-glibc';
+        }
+    }
+    return require.resolve(name);
 }
 
 async function buildFile(root: string, name: string, content: string): Promise<string> {

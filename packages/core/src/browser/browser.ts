@@ -18,7 +18,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { environment } from '../common';
+import { Disposable, environment } from '../common';
 
 const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : '';
 
@@ -34,9 +34,14 @@ export const isSafari = (userAgent.indexOf('Chrome') === -1) && (userAgent.index
 export const isIPad = (userAgent.indexOf('iPad') >= 0);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 /**
- * @deprecated us Environment.electron.is
+ * @deprecated use Environment.electron.is
  */
 export const isNative = environment.electron.is();
+/**
+ * Determines whether the backend is running in a remote environment.
+ * I.e. we use the browser version or connect to a remote Theia instance in Electron.
+ */
+export const isRemote = !environment.electron.is() || new URL(location.href).searchParams.has('localPort');
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const isBasicWasmSupported = typeof (window as any).WebAssembly !== 'undefined';
 
@@ -222,4 +227,13 @@ function getMeasurementElement(style?: PartialCSSStyle): HTMLElement {
         }
     }
     return measureElement;
+}
+
+export function onDomEvent<K extends keyof HTMLElementEventMap>(
+    element: Node,
+    type: K,
+    listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => unknown,
+    options?: boolean | AddEventListenerOptions): Disposable {
+    element.addEventListener(type, listener, options);
+    return { dispose: () => element.removeEventListener(type, listener, options) };
 }

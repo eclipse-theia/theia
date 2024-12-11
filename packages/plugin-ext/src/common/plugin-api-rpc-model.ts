@@ -72,6 +72,17 @@ export interface Range {
     readonly endColumn: number;
 }
 
+export interface Position {
+    /**
+     * line number (starts at 1)
+     */
+    readonly lineNumber: number,
+    /**
+     * column (starts at 1)
+     */
+    readonly column: number
+}
+
 export { MarkdownStringDTO as MarkdownString };
 
 export interface SerializedDocumentFilter {
@@ -895,3 +906,13 @@ export interface InlineCompletionsProvider<T extends InlineCompletions = InlineC
     freeInlineCompletions(completions: T): void;
 }
 
+export interface DebugStackFrameDTO {
+    readonly sessionId: string,
+    readonly frameId: number,
+    readonly threadId: number
+}
+
+export interface DebugThreadDTO {
+    readonly sessionId: string,
+    readonly threadId: number
+}

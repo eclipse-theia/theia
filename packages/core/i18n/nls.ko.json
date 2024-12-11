@@ -1,0 +1,588 @@
+{
+  "aiConfiguration:open": "AI 구성 보기 열기",
+  "aiHistory:clear": "AI 기록: 기록 지우기",
+  "aiHistory:open": "AI 기록 보기 열기",
+  "aiHistory:sortChronologically": "AI 기록: 시간순으로 정렬",
+  "aiHistory:sortReverseChronologically": "AI 기록: 시간순으로 역순 정렬",
+  "debug.breakpoint.editCondition": "조건 편집...",
+  "notebook.cell.changeToCode": "셀을 코드로 변경",
+  "notebook.cell.changeToMarkdown": "셀을 마크다운으로 변경",
+  "notebook.cell.insertMarkdownCellAbove": "위에 마크다운 셀 삽입",
+  "notebook.cell.insertMarkdownCellBelow": "아래에 마크다운 셀 삽입",
+  "terminal:new:profile": "프로필에서 새 통합 터미널 만들기",
+  "terminal:profile:default": "기본 터미널 프로필을 선택합니다.",
+  "theia": {
+    "callhierarchy": {
+      "noCallers": "발신자가 감지되지 않았습니다.",
+      "open": "오픈 콜 계층 구조"
+    },
+    "collaboration": {
+      "collaborate": "협업",
+      "collaboration": "협업",
+      "collaborationWorkspace": "협업 작업 공간",
+      "connected": "연결됨",
+      "connectedSession": "공동 작업 세션에 연결됨",
+      "copiedInvitation": "초대 코드가 클립보드에 복사되었습니다.",
+      "copyAgain": "다시 복사",
+      "createRoom": "새 공동 작업 세션 만들기",
+      "creatingRoom": "세션 만들기",
+      "end": "협업 세션 종료",
+      "endDetail": "세션을 종료하고, 콘텐츠 공유를 중단하고, 다른 사용자의 액세스 권한을 취소합니다.",
+      "enterCode": "공동 작업 세션 코드 입력",
+      "failedCreate": "공간을 만들지 못했습니다: {0}",
+      "failedJoin": "방에 참여하지 못했습니다: {0}",
+      "invite": "다른 사람 초대",
+      "inviteDetail": "초대 코드를 복사하여 다른 사람들과 공유하여 세션에 참여합니다.",
+      "joinRoom": "협업 세션 참여",
+      "joiningRoom": "세션 참여",
+      "leave": "공동 작업 세션 나가기",
+      "leaveDetail": "현재 공동 작업 세션에서 연결을 끊고 워크스페이스를 닫습니다.",
+      "selectCollaboration": "협업 옵션 선택",
+      "sharedSession": "공동 작업 세션 공유",
+      "startSession": "공동 작업 세션 시작 또는 참여",
+      "userWantsToJoin": "사용자 '{0}' 가 공동 작업실에 참여하려고 합니다.",
+      "whatToDo": "다른 공동 작업자들과 함께 무엇을 하고 싶으신가요?"
+    },
+    "core": {
+      "about": {
+        "compatibility": "{0} 호환성",
+        "defaultApi": "기본값 {0} API",
+        "version": "버전"
+      },
+      "common": {
+        "closeAll": "모든 탭 닫기",
+        "closeAllTabMain": "메인 영역의 모든 탭 닫기",
+        "closeOtherTabMain": "메인 영역에서 다른 탭 닫기",
+        "closeOthers": "다른 탭 닫기",
+        "closeRight": "오른쪽 탭 닫기",
+        "closeTab": "탭 닫기",
+        "closeTabMain": "메인 영역에서 탭 닫기",
+        "collapseAllTabs": "모든 측면 패널 접기",
+        "collapseBottomPanel": "하단 패널 토글",
+        "collapseTab": "측면 패널 접기",
+        "showNextTabGroup": "다음 탭 그룹으로 전환",
+        "showNextTabInGroup": "그룹에서 다음 탭으로 전환",
+        "showPreviousTabGroup": "이전 탭 그룹으로 전환",
+        "showPreviousTabInGroup": "그룹에서 이전 탭으로 전환",
+        "toggleMaximized": "최대화 토글"
+      },
+      "copyInfo": "먼저 파일을 열어 경로를 복사합니다.",
+      "copyWarn": "브라우저의 복사 명령 또는 바로 가기를 사용하세요.",
+      "cutWarn": "브라우저의 잘라내기 명령 또는 바로 가기를 사용하세요.",
+      "enhancedPreview": {
+        "classic": "기본 정보가 포함된 탭의 간단한 미리 보기를 표시합니다.",
+        "enhanced": "추가 정보가 포함된 탭의 향상된 미리 보기를 표시합니다.",
+        "visual": "탭의 시각적 미리 보기를 표시합니다."
+      },
+      "file": {
+        "browse": "찾아보기"
+      },
+      "highlightModifiedTabs": "수정된(더티) 편집기 탭에 상단 테두리를 그릴지 여부를 제어합니다.",
+      "keybindingStatus": "{0} 키를 누르고 더 많은 키를 기다렸습니다.",
+      "keyboard": {
+        "choose": "키보드 레이아웃 선택",
+        "chooseLayout": "키보드 레이아웃 선택",
+        "current": "(현재: {0})",
+        "currentLayout": " - 현재 레이아웃",
+        "mac": "Mac 키보드",
+        "pc": "PC 키보드",
+        "tryDetect": "브라우저 정보 및 누른 키에서 키보드 레이아웃을 감지해 보세요."
+      },
+      "navigator": {
+        "clipboardWarn": "클립보드에 대한 액세스가 거부되었습니다. 브라우저의 권한을 확인하세요.",
+        "clipboardWarnFirefox": "클립보드 API를 사용할 수 없습니다. '{0}' 페이지의 '{1}' 환경 설정에서 활성화할 수 있습니다. 그런 다음 Theia를 다시 로드합니다. 이렇게 하면 FireFox가 시스템 클립보드에 대한 전체 액세스 권한을 갖게 됩니다."
+      },
+      "offline": "오프라인",
+      "pasteWarn": "브라우저의 붙여넣기 명령 또는 바로 가기를 사용하세요.",
+      "quitMessage": "저장하지 않은 변경 사항은 저장되지 않습니다.",
+      "resetWorkbenchLayout": "워크벤치 레이아웃 재설정",
+      "searchbox": {
+        "close": "닫기(탈출)",
+        "next": "다음 (아래로)",
+        "previous": "이전 (위로)"
+      },
+      "secondaryWindow": {
+        "alwaysOnTop": "활성화하면 보조 창이 다른 애플리케이션의 창을 포함한 다른 모든 창 위에 표시됩니다.",
+        "description": "추출된 보조 창의 초기 위치와 크기를 설정합니다.",
+        "fullSize": "추출된 위젯의 위치와 크기는 실행 중인 테아 애플리케이션과 동일합니다.",
+        "halfWidth": "추출된 위젯의 위치와 크기는 실행 중인 테아 애플리케이션 너비의 절반이 됩니다.",
+        "originalSize": "추출된 위젯의 위치와 크기는 원래 위젯과 동일합니다."
+      },
+      "silentNotifications": "알림 팝업 표시 여부를 제어합니다.",
+      "tabDefaultSize": "탭의 기본 크기를 지정합니다.",
+      "tabMaximize": "더블 클릭 시 탭을 최대화할지 여부를 제어합니다.",
+      "tabMinimumSize": "탭의 최소 크기를 지정합니다.",
+      "tabShrinkToFit": "사용 가능한 공간에 맞게 탭을 축소합니다."
+    },
+    "debug": {
+      "addConfigurationPlaceholder": "구성을 추가할 작업 공간 루트를 선택합니다.",
+      "breakpoint": "브레이크포인트",
+      "compound-cycle": "실행 구성 '{0}' 자체에 사이클이 포함되어 있습니다.",
+      "continueAll": "모두 계속하기",
+      "copyExpressionValue": "표현식 값 복사",
+      "dataBreakpoint": "데이터 중단점",
+      "debugVariableInput": "{0} 값 설정",
+      "entry": "항목",
+      "exception": "예외",
+      "functionBreakpoint": "함수 중단점",
+      "goto": "goto",
+      "instruction-breakpoint": "명령어 중단점",
+      "instructionBreakpoint": "명령어 중단점",
+      "missingConfiguration": "동적 구성 '{0}:{1}' 이 누락되었거나 해당되지 않습니다.",
+      "pause": "일시 중지",
+      "pauseAll": "모두 일시 중지",
+      "reveal": "공개",
+      "step": "단계",
+      "threads": "스레드",
+      "toggleTracing": "디버그 어댑터와의 추적 통신 활성화/비활성화"
+    },
+    "editor": {
+      "diffEditor.wordWrap2": "줄 바꿈은 `#편집기.wordWrap#` 설정에 따라 줄 바꿈됩니다.",
+      "dirtyEncoding": "파일이 더럽습니다. 다른 인코딩으로 다시 열기 전에 먼저 저장해 주세요.",
+      "editor.accessibilitySupport0": "플랫폼 API를 사용하여 스크린 리더가 연결된 경우 감지하기",
+      "editor.accessibilitySupport1": "화면 리더 사용에 맞게 최적화",
+      "editor.accessibilitySupport2": "화면 리더가 연결되어 있지 않다고 가정합니다.",
+      "editor.bracketPairColorization.enabled": "대괄호 쌍 색상화 사용 여부를 제어합니다. 대괄호 하이라이트 색상을 재정의하려면 `#workbench.colorCustomizations#`를 사용합니다.",
+      "editor.codeActionWidget.includeNearbyQuickfixes": "현재 진단 중이 아닐 때 줄 내에서 가장 가까운 퀵픽스 표시를 사용/사용 안 함으로 설정합니다.",
+      "editor.detectIndentation": "파일 내용을 기반으로 파일을 열 때 `#편집기.탭 크기#` 및 `#편집기.삽입 공백#`을 자동으로 감지할지 여부를 제어합니다.",
+      "editor.dropIntoEditor.enabled": "편집기에서 파일을 여는 대신 'Shift' 키를 누른 채로 파일을 텍스트 편집기로 끌어다 놓을 수 있는지 여부를 제어합니다.",
+      "editor.formatOnSaveMode.modificationsIfAvailable": "수정 사항만 포맷하려고 시도합니다(소스 제어 필요). 소스 제어를 사용할 수 없는 경우 전체 파일이 포맷됩니다.",
+      "editor.hover.hidingDelay": "호버가 숨겨지는 지연 시간(밀리초)을 제어합니다. editor.hover.sticky`가 활성화되어 있어야 합니다.",
+      "editor.inlayHints.enabled1": "인레이 힌트는 기본적으로 표시되며 Ctrl+Alt를 누르고 있으면 숨겨집니다.",
+      "editor.inlayHints.enabled2": "인레이 힌트는 기본적으로 숨겨져 있으며 Ctrl+Alt를 누르고 있으면 표시됩니다.",
+      "editor.inlayHints.fontFamily": "편집기에서 인레이 힌트의 글꼴 패밀리를 제어합니다. 비워두면 `#editor.fontFamily#`가 사용됩니다.",
+      "editor.inlayHints.fontSize": "에디터에서 인레이 힌트의 글꼴 크기를 제어합니다. 기본적으로 설정된 값이 `5`보다 작거나 편집기 글꼴 크기보다 큰 경우 `#editor.fontSize#`가 사용됩니다.",
+      "editor.insertSpaces": "Tab`을 누를 때 공백을 삽입합니다. 이 설정은 `#편집기 감지 들여쓰기#`가 켜져 있을 때 파일 내용에 따라 재정의됩니다.",
+      "editor.occurrencesHighlight": "편집기에서 의미 기호 발생을 강조 표시할지 여부를 제어합니다.",
+      "editor.quickSuggestions": "입력하는 동안 제안을 자동으로 표시할지 여부를 제어합니다. 주석, 문자열 및 기타 코드를 입력할 때 이 기능을 제어할 수 있습니다. 빠른 제안은 고스트 텍스트로 표시하거나 제안 위젯과 함께 표시하도록 구성할 수 있습니다. 또한 특수 문자에 의해 제안이 트리거되는지 여부를 제어하는 '#editor.suggestOnTriggerCharacters#'설정도 알아두세요.",
+      "editor.stickyScroll.scrollWithEditor": "편집기의 가로 스크롤 막대를 사용하여 고정 스크롤 위젯의 스크롤을 활성화합니다.",
+      "editor.suggestFontSize": "추천 위젯의 글꼴 크기입니다. 0`으로 설정하면 `#editor.fontSize#`의 값이 사용됩니다.",
+      "editor.suggestLineHeight": "제안 위젯의 줄 높이입니다. '0'으로 설정하면 '#편집기줄높이#'의 값이 사용됩니다. 최소값은 8입니다.",
+      "editor.tabSize": "탭의 공백 수입니다. 이 설정은 `#편집기 감지 들여쓰기#`가 켜져 있을 때 파일 내용에 따라 재정의됩니다.",
+      "editor.useTabStops": "공백을 삽입하고 삭제하면 탭이 멈춥니다.",
+      "editor.wordBasedSuggestions": "문서의 단어를 기준으로 완성을 계산할지 여부를 제어합니다.",
+      "editor.wordBasedSuggestionsMode": "문서에서 단어 기반 완성을 계산하는 컨트롤입니다.",
+      "files.autoSave": "저장되지 않은 변경 사항이 있는 편집기의 [자동 저장](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save)을 제어합니다.",
+      "files.autoSave.afterDelay": "변경 사항이 있는 편집기는 설정된 `#files.autoSaveDelay#`가 지난 후에 자동으로 저장됩니다.",
+      "files.autoSave.off": "변경 사항이 있는 편집기는 자동으로 저장되지 않습니다.",
+      "files.autoSave.onFocusChange": "편집기가 포커스를 잃으면 변경 사항이 있는 편집기가 자동으로 저장됩니다.",
+      "files.autoSave.onWindowChange": "창이 포커스를 잃으면 변경 사항이 있는 편집기가 자동으로 저장됩니다.",
+      "formatOnSaveTimeout": "파일 저장 시 실행되는 서식이 취소되는 시간 초과(밀리초)입니다.",
+      "persistClosedEditors": "창을 다시 로드할 때 작업 영역의 닫힌 편집기 기록을 유지할지 여부를 제어합니다.",
+      "showAllEditors": "열려 있는 모든 편집기 표시",
+      "splitHorizontal": "편집기 가로 분할",
+      "splitVertical": "편집기 세로 분할",
+      "toggleStickyScroll": "고정 스크롤 토글"
+    },
+    "file-search": {
+      "toggleIgnoredFiles": " (무시된 파일을 표시/숨기려면 {0} 을 누르세요.)"
+    },
+    "fileDialog": {
+      "showHidden": "숨겨진 파일 표시"
+    },
+    "fileSystem": {
+      "fileResource": {
+        "overWriteBody": "파일 시스템의 '{0}' 변경 내용을 덮어쓰시겠습니까?"
+      }
+    },
+    "filesystem": {
+      "copiedToClipboard": "다운로드 링크를 클립보드에 복사합니다.",
+      "copyDownloadLink": "다운로드 링크 복사",
+      "dialog": {
+        "initialLocation": "초기 위치로 이동",
+        "multipleItemMessage": "하나의 항목만 선택할 수 있습니다.",
+        "name": "이름:",
+        "navigateBack": "뒤로 이동",
+        "navigateForward": "앞으로 탐색",
+        "navigateUp": "하나의 디렉터리로 이동"
+      },
+      "fileResource": {
+        "binaryFileQuery": "열면 시간이 걸리고 IDE가 응답하지 않을 수 있습니다. 그래도 '{0}' 을 열시겠습니까?",
+        "binaryTitle": "파일이 바이너리이거나 지원되지 않는 텍스트 인코딩을 사용합니다.",
+        "largeFileTitle": "파일이 너무 큽니다({0}).",
+        "overwriteTitle": "파일 시스템에서 '{0}' 파일이 변경되었습니다."
+      },
+      "filesExclude": "파일 및 폴더를 제외하기 위한 글로브 패턴을 구성합니다. 예를 들어, 파일 탐색기는 이 설정에 따라 표시하거나 숨길 파일 및 폴더를 결정합니다.",
+      "format": "형식:",
+      "maxConcurrentUploads": "여러 파일을 업로드할 때 업로드할 수 있는 최대 동시 파일 수입니다. 0은 모든 파일이 동시에 업로드됨을 의미합니다.",
+      "maxFileSizeMB": "열 수 있는 최대 파일 크기(MB)를 제어합니다.",
+      "prepareDownload": "다운로드 준비 중...",
+      "prepareDownloadLink": "다운로드 링크 준비 중...",
+      "processedOutOf": "처리된 {0} 중 {1}",
+      "replaceTitle": "파일 바꾸기",
+      "uploadFailed": "파일을 업로드하는 동안 오류가 발생했습니다. {0}",
+      "uploadFiles": "파일 업로드...",
+      "uploadedOutOf": "업로드 {0} 중 {1}"
+    },
+    "getting-started": {
+      "apiComparator": "{0} API 호환성",
+      "newExtension": "새 확장 프로그램 구축",
+      "newPlugin": "새 플러그인 구축",
+      "startup-editor": {
+        "welcomePage": "{0} 및 확장 프로그램을 시작하는 데 도움이 되는 콘텐츠가 있는 시작 페이지를 엽니다."
+      }
+    },
+    "git": {
+      "aFewSecondsAgo": "몇 초 전",
+      "addSignedOff": "결재자 추가",
+      "amendReuseMessage": "마지막 커밋 메시지를 다시 사용하려면 'Enter' 또는 'Escape'를 눌러 취소합니다.",
+      "amendRewrite": "이전 커밋 메시지를 다시 작성합니다. 'Enter'를 눌러 확인하거나 'Escape'를 눌러 취소합니다.",
+      "checkoutCreateLocalBranchWithName": "{0} 이라는 이름으로 새 로컬 브랜치를 만듭니다. 'Enter'를 눌러 확인하거나 'Escape'를 눌러 취소합니다.",
+      "checkoutProvideBranchName": "지점 이름을 입력하세요. ",
+      "checkoutSelectRef": "결제할 참조를 선택하거나 새 로컬 지점을 생성합니다:",
+      "cloneQuickInputLabel": "Git 리포지토리 위치를 입력하세요. 'Enter'를 눌러 확인하거나 'Escape'를 눌러 취소합니다.",
+      "cloneRepository": "Git 리포지토리를 복제합니다: {0}. 'Enter'를 눌러 확인하거나 'Escape'를 눌러 취소합니다.",
+      "compareWith": "비교 대상...",
+      "compareWithBranchOrTag": "현재 활성화된 {0} 브랜치와 비교할 브랜치 또는 태그를 선택합니다:",
+      "diff": "Diff",
+      "dirtyDiffLinesLimit": "편집기의 줄 수가 이 제한을 초과하는 경우 더티 디프 장식을 표시하지 않습니다.",
+      "dropStashMessage": "보관함이 성공적으로 제거되었습니다.",
+      "editorDecorationsEnabled": "에디터에서 git 장식을 표시합니다.",
+      "fetchPickRemote": "가져올 리모컨을 선택합니다:",
+      "gitDecorationsColors": "내비게이터에서 색상 장식을 사용합니다.",
+      "mergeQuickPickPlaceholder": "현재 활성 상태인 {0} 브랜치에 병합할 브랜치를 선택합니다:",
+      "missingUserInfo": "git에서 'user.name'과 'user.email'을 구성했는지 확인하세요.",
+      "noHistoryForError": "다음에 사용할 수 있는 기록이 없습니다. {0}",
+      "noPreviousCommit": "수정할 이전 커밋이 없습니다.",
+      "noRepositoriesSelected": "선택한 리포지토리가 없습니다.",
+      "prepositionIn": "in",
+      "repositoryNotInitialized": "리포지토리 {0} 가 아직 초기화되지 않았습니다.",
+      "stashChanges": "변경 사항을 저장합니다. 'Enter'를 눌러 확인하거나 'Escape'를 눌러 취소합니다.",
+      "stashChangesWithMessage": "메시지와 함께 변경 사항을 저장합니다: {0}. 'Enter'를 눌러 확인하거나 'Escape'를 눌러 취소합니다.",
+      "tabTitleIndex": "{0} (색인)",
+      "tabTitleWorkingTree": "{0} (작업 트리)",
+      "toggleBlameAnnotations": "비난 주석 토글"
+    },
+    "keybinding-schema-updater": {
+      "deprecation": "대신 '언제' 절을 사용합니다."
+    },
+    "keymaps": {
+      "addKeybindingTitle": "다음에 대한 키 바인딩 추가 {0}",
+      "editKeybinding": "키 바인딩 편집...",
+      "editKeybindingTitle": "다음에 대한 키 바인딩 편집 {0}",
+      "editWhenExpression": "표현식 편집...",
+      "editWhenExpressionTitle": "다음에 대한 표현식 편집 {0}",
+      "keybinding": {
+        "copy": "키 바인딩 복사",
+        "copyCommandId": "키 바인딩 명령 ID 복사",
+        "copyCommandTitle": "키 바인딩 명령 제목 복사",
+        "edit": "키 바인딩 편집...",
+        "editWhenExpression": "표현식 편집 시 키 바인딩..."
+      },
+      "keybindingCollidesValidation": "현재 충돌하는 키 바인딩",
+      "requiredKeybindingValidation": "키 바인딩 값은 필수입니다.",
+      "resetKeybindingConfirmation": "이 키 바인딩을 정말 기본값으로 재설정하시겠습니까?",
+      "resetKeybindingTitle": "다음에 대한 키 바인딩 재설정 {0}",
+      "resetMultipleKeybindingsWarning": "이 명령에 대해 여러 개의 키 바인딩이 있는 경우 모두 재설정됩니다."
+    },
+    "localize": {
+      "offlineTooltip": "백엔드에 연결할 수 없습니다."
+    },
+    "markers": {
+      "clearAll": "모두 지우기",
+      "noProblems": "지금까지 워크스페이스에서 문제가 감지되지 않았습니다.",
+      "tabbarDecorationsEnabled": "탭 표시줄에 문제 데코레이터(진단 마커)를 표시합니다."
+    },
+    "memory-inspector": {
+      "addressTooltip": "표시할 메모리 위치, 주소 또는 주소로 평가하는 표현식",
+      "ascii": "ASCII",
+      "binary": "바이너리",
+      "byteSize": "바이트 크기",
+      "bytesPerGroup": "그룹당 바이트 수",
+      "closeSettings": "설정 닫기",
+      "columns": "열",
+      "command": {
+        "createNewMemory": "새 메모리 검사기 만들기",
+        "createNewRegisterView": "새 등록 보기 만들기",
+        "followPointer": "포인터 팔로우",
+        "followPointerMemory": "메모리 인스펙터에서 포인터 팔로우",
+        "resetValue": "값 재설정",
+        "showRegister": "메모리 검사기에서 등록 표시",
+        "viewVariable": "메모리 인스펙터에서 변수 표시"
+      },
+      "data": "데이터",
+      "decimal": "십진수",
+      "diff": {
+        "label": "Diff: {0}"
+      },
+      "diff-widget": {
+        "offset-label": "{0} 오프셋",
+        "offset-title": "메모리에서 오프셋할 바이트 {0}"
+      },
+      "editable": {
+        "apply": "변경 사항 적용",
+        "clear": "변경 사항 지우기"
+      },
+      "endianness": "엔디안",
+      "extraColumn": "추가 열",
+      "groupsPerRow": "행별 그룹",
+      "hexadecimal": "16진수",
+      "length": "길이",
+      "lengthTooltip": "가져올 바이트 수(10진수 또는 16진수)",
+      "memory": {
+        "addressField": {
+          "memoryReadError": "위치 필드에 주소 또는 표현식을 입력합니다."
+        },
+        "freeze": "메모리 고정 보기",
+        "hideSettings": "설정 패널 숨기기",
+        "readError": {
+          "bounds": "메모리 한도를 초과하면 결과가 잘립니다.",
+          "noContents": "현재 사용할 수 있는 메모리 콘텐츠가 없습니다."
+        },
+        "readLength": {
+          "memoryReadError": "길이 필드에 길이(10진수 또는 16진수)를 입력합니다."
+        },
+        "showSettings": "설정 패널 표시",
+        "unfreeze": "메모리 고정 해제 보기",
+        "userError": "메모리를 가져오는 동안 오류가 발생했습니다."
+      },
+      "memoryCategory": "메모리 검사기",
+      "memoryInspector": "메모리 검사기",
+      "memoryTitle": "메모리",
+      "octal": "옥탈",
+      "offset": "오프셋",
+      "offsetTooltip": "탐색 시 현재 메모리 위치에 추가할 오프셋입니다.",
+      "provider": {
+        "localsError": "로컬 변수를 읽을 수 없습니다. 활성 디버그 세션이 없습니다.",
+        "readError": "메모리를 읽을 수 없습니다. 활성 디버그 세션이 없습니다.",
+        "writeError": "메모리를 쓸 수 없습니다. 활성 디버그 세션이 없습니다."
+      },
+      "register": "등록하기",
+      "register-widget": {
+        "filter-placeholder": "필터(로 시작)"
+      },
+      "registerReadError": "레지스터를 가져오는 동안 오류가 발생했습니다.",
+      "registers": "레지스터",
+      "toggleComparisonWidgetVisibility": "비교 위젯 표시 여부 토글",
+      "utils": {
+        "afterBytes": "비교하려는 두 위젯 모두에 메모리를 로드해야 합니다. {0} 메모리가 로드되지 않았습니다.",
+        "bytesMessage": "비교하려는 두 위젯 모두에 메모리를 로드해야 합니다. {0} 메모리가 로드되지 않았습니다."
+      }
+    },
+    "messages": {
+      "notificationTimeout": "이 시간 초과 후에는 정보 알림이 숨겨집니다.",
+      "toggleNotifications": "알림 토글"
+    },
+    "mini-browser": {
+      "typeUrl": "URL 입력"
+    },
+    "monaco": {
+      "noSymbolsMatching": "일치하는 기호 없음",
+      "typeToSearchForSymbols": "기호를 검색하려면 입력하세요."
+    },
+    "navigator": {
+      "autoReveal": "자동 공개",
+      "clipboardWarn": "클립보드에 대한 액세스가 거부되었습니다. 브라우저의 권한을 확인하세요.",
+      "clipboardWarnFirefox": "클립보드 API를 사용할 수 없습니다. '{0}' 페이지의 '{1}' 환경 설정에서 활성화할 수 있습니다. 그런 다음 Theia를 다시 로드합니다. 이렇게 하면 FireFox가 시스템 클립보드에 대한 전체 액세스 권한을 갖게 됩니다.",
+      "refresh": "탐색기에서 새로 고침",
+      "reveal": "탐색기에서 공개",
+      "toggleHiddenFiles": "숨겨진 파일 토글"
+    },
+    "output": {
+      "clearOutputChannel": "출력 채널 지우기...",
+      "closeOutputChannel": "출력 채널 닫기...",
+      "hiddenChannels": "숨겨진 채널",
+      "hideOutputChannel": "출력 채널 숨기기...",
+      "maxChannelHistory": "출력 채널의 최대 항목 수입니다.",
+      "outputChannels": "출력 채널",
+      "showOutputChannel": "출력 채널 표시..."
+    },
+    "plugin": {
+      "blockNewTab": "브라우저가 새 탭을 열지 못했습니다."
+    },
+    "plugin-dev": {
+      "alreadyRunning": "호스팅된 인스턴스가 이미 실행 중입니다.",
+      "debugInstance": "인스턴스 디버그",
+      "debugMode": "Node.js 디버그에 inspect 또는 inspect-brk 사용",
+      "debugPorts": {
+        "debugPort": "이 서버의 Node.js 디버그에 사용할 포트"
+      },
+      "devHost": "개발 호스트",
+      "failed": "호스팅된 플러그인 인스턴스를 실행하지 못했습니다: {0}",
+      "hostedPlugin": "호스팅 플러그인",
+      "hostedPluginRunning": "호스팅 플러그인: 실행 중",
+      "hostedPluginStarting": "호스팅 플러그인: 시작",
+      "hostedPluginStopped": "호스팅 플러그인: 중지됨",
+      "hostedPluginWatching": "호스팅 플러그인: 보기",
+      "instanceTerminated": "{0} 종료되었습니다.",
+      "launchOutFiles": "생성된 자바스크립트 파일을 찾기 위한 글로브 패턴 배열(`${플러그인패스}`는 플러그인 실제 경로로 대체됨).",
+      "noValidPlugin": "지정한 폴더에 유효한 플러그인이 포함되어 있지 않습니다.",
+      "notRunning": "호스팅된 인스턴스가 실행되고 있지 않습니다.",
+      "pluginFolder": "플러그인 폴더로 설정됩니다: {0}",
+      "preventedNewTab": "브라우저가 새 탭을 열지 못했습니다.",
+      "restartInstance": "인스턴스 다시 시작",
+      "running": "호스팅된 인스턴스가 실행 중입니다:",
+      "select": "선택",
+      "selectPath": "경로 선택",
+      "startInstance": "인스턴스 시작",
+      "starting": "호스팅 인스턴스 서버 시작 ...",
+      "stopInstance": "인스턴스 중지",
+      "unknownTerminated": "인스턴스가 종료되었습니다.",
+      "watchMode": "개발 중인 플러그인에서 감시자 실행"
+    },
+    "plugin-ext": {
+      "authentication-main": {
+        "loginTitle": "로그인"
+      },
+      "plugins": "플러그인",
+      "webviewTrace": "웹뷰로 통신 추적을 제어합니다.",
+      "webviewWarnIfUnsecure": "웹뷰가 현재 안전하지 않게 배포되었음을 사용자에게 경고합니다."
+    },
+    "preferences": {
+      "hostedPlugin": "호스팅 플러그인",
+      "toolbar": "도구 모음"
+    },
+    "preview": {
+      "openByDefault": "기본적으로 편집기 대신 미리 보기를 엽니다."
+    },
+    "property-view": {
+      "created": "생성됨",
+      "directory": "디렉토리",
+      "lastModified": "마지막 수정",
+      "location": "위치",
+      "noProperties": "사용 가능한 숙소가 없습니다.",
+      "properties": "속성",
+      "size": "크기",
+      "symbolicLink": "기호 링크"
+    },
+    "scm": {
+      "amend": "수정",
+      "amendHeadCommit": "HEAD 커밋",
+      "amendLastCommit": "마지막 커밋 수정",
+      "changeRepository": "리포지토리 변경...",
+      "config.untrackedChanges": "추적되지 않은 변경 사항의 작동 방식을 제어합니다.",
+      "config.untrackedChanges.hidden": "숨겨진",
+      "config.untrackedChanges.mixed": "혼합",
+      "config.untrackedChanges.separate": "분리",
+      "dirtyDiff": {
+        "close": "변경 사항 미리 보기 닫기"
+      },
+      "history": "역사",
+      "noRepositoryFound": "리포지토리를 찾을 수 없습니다.",
+      "unamend": "수정 취소",
+      "unamendCommit": "커밋 수정 취소"
+    },
+    "search-in-workspace": {
+      "includeIgnoredFiles": "무시된 파일 포함",
+      "noFolderSpecified": "폴더를 열거나 지정하지 않았습니다. 현재 열려 있는 파일만 검색됩니다.",
+      "resultSubset": "이는 전체 결과의 일부일 뿐입니다. 보다 구체적인 검색어를 사용하여 결과 목록의 범위를 좁히세요.",
+      "searchOnEditorModification": "수정한 경우 활성 편집기를 검색합니다."
+    },
+    "secondary-window": {
+      "extract-widget": "보기를 보조 창으로 이동"
+    },
+    "shell-area": {
+      "secondary": "보조 창"
+    },
+    "task": {
+      "attachTask": "작업 첨부...",
+      "clearHistory": "기록 지우기",
+      "noTaskToRun": "실행할 작업을 찾을 수 없습니다. 작업 구성...",
+      "openUserTasks": "사용자 작업 열기"
+    },
+    "terminal": {
+      "defaultProfile": "다음에서 사용되는 기본 프로필 {0}",
+      "enableCopy": "ctrl-c(macOS의 경우 cmd-c)를 활성화하여 선택한 텍스트를 복사합니다.",
+      "enablePaste": "클립보드에서 붙여넣기하려면 ctrl-v(macOS의 경우 cmd-v)를 사용하도록 설정합니다.",
+      "profileArgs": "이 프로필이 사용하는 셸 인수입니다.",
+      "profileColor": "단말기와 연결할 단말기 테마 색상 ID입니다.",
+      "profileDefault": "기본 프로필...을 선택합니다.",
+      "profileIcon": "터미널 아이콘과 연결할 코디콘 ID입니다.\nterminal-tmux:\"$(terminal-tmux)\"",
+      "profileNew": "새 터미널(프로필 포함)...",
+      "profilePath": "이 프로필이 사용하는 셸의 경로입니다.",
+      "profiles": "새 터미널을 만들 때 표시할 프로필입니다. 선택적 인수를 사용하여 경로 속성을 수동으로 설정합니다.\n기존 프로필을 `null`로 설정하면 목록에서 프로필을 숨길 수 있습니다(예: `\"{0}\": null`).",
+      "rendererType": "터미널 렌더링 방식을 제어합니다.",
+      "rendererTypeDeprecationMessage": "렌더러 유형은 더 이상 옵션으로 지원되지 않습니다.",
+      "selectProfile": "새 터미널의 프로필을 선택합니다.",
+      "shell.deprecated": "이 방법은 더 이상 사용되지 않으며, 기본 셸을 구성하는 새로운 권장 방법은 'terminal.integrated.profiles.{0}' 에서 터미널 프로필을 생성하고 'terminal.integrated.defaultProfile.{0}' 에서 프로필 이름을 기본값으로 설정하는 것입니다.",
+      "shellArgsLinux": "Linux 터미널에서 사용할 명령줄 인수입니다.",
+      "shellArgsOsx": "macOS 터미널에서 사용할 명령줄 인수입니다.",
+      "shellArgsWindows": "Windows 터미널에서 사용할 명령줄 인수입니다.",
+      "shellLinux": "터미널이 Linux에서 사용하는 셸 경로입니다(기본값: '{0}'}).",
+      "shellOsx": "터미널이 macOS에서 사용하는 셸의 경로(기본값: '{0}'})입니다.",
+      "shellWindows": "터미널이 Windows에서 사용하는 셸의 경로입니다. (기본값: '{0}')."
+    },
+    "test": {
+      "cancelAllTestRuns": "모든 테스트 실행 취소",
+      "stackFrameAt": "에서",
+      "testRunDefaultName": "{0} 실행 {1}",
+      "testRuns": "테스트 실행"
+    },
+    "toolbar": {
+      "addCommand": "도구 모음에 명령 추가",
+      "addCommandPlaceholder": "도구 모음에 추가할 명령 찾기",
+      "centerColumn": "중앙 열",
+      "failedUpdate": "'{1}'의 '{0}' 값을 업데이트하지 못했습니다.",
+      "filterIcons": "필터 아이콘",
+      "iconSelectDialog": "'{0}' 아이콘을 선택합니다.",
+      "iconSet": "아이콘 세트",
+      "insertGroupLeft": "그룹 구분 기호 삽입(왼쪽)",
+      "insertGroupRight": "그룹 구분 기호 삽입(오른쪽)",
+      "leftColumn": "왼쪽 열",
+      "openJSON": "툴바 사용자 지정(JSON 열기)",
+      "removeCommand": "도구 모음에서 명령 제거",
+      "restoreDefaults": "도구 모음 기본값 복원",
+      "rightColumn": "오른쪽 열",
+      "selectIcon": "아이콘 선택",
+      "toggleToolbar": "툴바 토글",
+      "toolbarLocationPlaceholder": "명령어를 어디에 추가하고 싶으신가요?",
+      "useDefaultIcon": "기본 아이콘 사용"
+    },
+    "typehierarchy": {
+      "subtypeHierarchy": "하위 유형 계층 구조",
+      "supertypeHierarchy": "슈퍼타입 계층 구조"
+    },
+    "vsx-registry": {
+      "confirmDialogMessage": "확장자 \"{0}\"는 확인되지 않았으며 보안 위험을 초래할 수 있습니다.",
+      "confirmDialogTitle": "설치를 계속 진행하시겠습니까?",
+      "downloadCount": "다운로드 횟수: {0}",
+      "errorFetching": "확장 프로그램 가져오기 오류가 발생했습니다.",
+      "errorFetchingConfigurationHint": "이는 네트워크 구성 문제로 인해 발생할 수 있습니다.",
+      "failedInstallingVSIX": "VSIX에서 {0} 설치에 실패했습니다.",
+      "invalidVSIX": "선택한 파일이 유효한 \"*.vsix\" 플러그인이 아닙니다.",
+      "license": "라이선스: {0}",
+      "onlyShowVerifiedExtensionsDescription": "이렇게 하면 {0} 에 확인된 확장자만 표시할 수 있습니다.",
+      "onlyShowVerifiedExtensionsTitle": "인증된 확장 프로그램만 표시",
+      "recommendedExtensions": "이 리포지토리에 권장되는 확장 프로그램을 설치하시겠습니까?",
+      "searchPlaceholder": "에서 확장 프로그램 검색 {0}",
+      "showInstalled": "설치된 확장 프로그램 표시",
+      "showRecommendedExtensions": "확장 프로그램 권장 사항에 대한 알림 표시 여부를 제어합니다.",
+      "vsx-extensions-contribution": {
+        "update-version-uninstall-error": "확장 프로그램을 제거하는 동안 오류가 발생했습니다: {0}.",
+        "update-version-version-error": "{1} 의 버전 {0} 을 설치하지 못했습니다."
+      }
+    },
+    "webview": {
+      "goToReadme": "README로 이동",
+      "messageWarning": "            {0} 엔드포인트의 호스트 패턴이 `{1}`로 변경되었으며, 패턴을 변경하면 보안 취약점이 발생할 수 있습니다.             자세한 내용은 `{2}`를 참조하세요."
+    },
+    "workspace": {
+      "compareWithEachOther": "서로 비교하기",
+      "confirmDeletePermanently.description": "휴지통을 사용하여 \"{0}\"를 삭제하지 못했습니다. 대신 영구 삭제를 하시겠습니까?",
+      "confirmDeletePermanently.solution": "환경설정에서 휴지통 사용을 비활성화할 수 있습니다.",
+      "confirmDeletePermanently.title": "파일 삭제 중 오류 발생",
+      "confirmMessage.delete": "다음 파일을 정말 삭제하시겠습니까?",
+      "confirmMessage.dirtyMultiple": "저장되지 않은 변경 사항이 있는 {0} 파일을 정말 삭제하시겠습니까?",
+      "confirmMessage.dirtySingle": "저장되지 않은 변경 사항이 있는 {0} 을 정말 삭제하시겠습니까?",
+      "confirmMessage.uriMultiple": "선택한 {0} 파일을 모두 삭제하시겠습니까?",
+      "confirmMessage.uriSingle": "{0} 을 삭제하시겠습니까?",
+      "duplicate": "중복",
+      "failSaveAs": "현재 위젯에 대해 \"{0}\"를 실행할 수 없습니다.",
+      "newFilePlaceholder": "파일 이름",
+      "newFolderPlaceholder": "폴더 이름",
+      "noErasure": "참고: 디스크에서 아무것도 지워지지 않습니다.",
+      "openRecentPlaceholder": "열려는 워크스페이스의 이름을 입력합니다.",
+      "openRecentWorkspace": "최근 작업 공간 열기...",
+      "preserveWindow": "현재 창에서 작업 공간 열기를 활성화합니다.",
+      "removeFolder": "작업 공간에서 다음 폴더를 제거하시겠습니까?",
+      "removeFolders": "작업 공간에서 다음 폴더를 제거하시겠습니까?",
+      "trashTitle": "{0} 을 휴지통으로 이동",
+      "trustEmptyWindow": "빈 작업 공간을 기본적으로 신뢰할지 여부를 제어합니다.",
+      "trustEnabled": "워크스페이스 신뢰의 사용 여부를 제어합니다. 비활성화하면 모든 워크스페이스가 신뢰됩니다.",
+      "trustRequest": "확장 프로그램에서 워크스페이스 신뢰를 요청하지만 해당 API가 아직 완전히 지원되지 않습니다. 이 워크스페이스를 신뢰하시겠습니까?",
+      "untitled-cleanup": "제목이 없는 작업 공간 파일이 많이 있는 것 같습니다. {0} 을 확인하여 사용하지 않는 파일을 제거하세요.",
+      "workspaceFolderAdded": "여러 루트가 있는 워크스페이스가 만들어졌습니다. 워크스페이스 구성을 파일로 저장하시겠습니까?",
+      "workspaceFolderAddedTitle": "워크스페이스에 폴더 추가"
+    }
+  }
+}

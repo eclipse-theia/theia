@@ -9,10 +9,34 @@
       "path": "../../dev-packages/cli"
     },
     {
+      "path": "../../packages/ai-chat"
+    },
+    {
+      "path": "../../packages/ai-chat-ui"
+    },
+    {
+      "path": "../../packages/ai-code-completion"
+    },
+    {
+      "path": "../../packages/ai-core"
+    },
+    {
+      "path": "../../packages/ai-history"
+    },
+    {
+      "path": "../../packages/ai-ollama"
+    },
+    {
+      "path": "../../packages/ai-openai"
+    },
+    {
       "path": "../../packages/bulk-edit"
     },
     {
       "path": "../../packages/callhierarchy"
+    },
+    {
+      "path": "../../packages/collaboration"
     },
     {
       "path": "../../packages/console"

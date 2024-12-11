@@ -1,0 +1,127 @@
+.ai-configuration-widget {
+  padding: var(--theia-ui-padding);
+}
+
+.theia-ai-settings-container {
+  padding: var(--theia-ui-padding);
+}
+
+.language-model-container {
+  padding-top: calc(2 * var(--theia-ui-padding));
+}
+
+.language-model-container .theia-select {
+  margin-left: var(--theia-ui-padding);
+}
+
+.theia-settings-container .settings-section-subcategory-title.ai-settings-section-subcategory-title {
+  padding-left: 0;
+}
+
+.ai-templates {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.template-renderer {
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+}
+
+.template-header {
+  margin-bottom: 8px;
+}
+
+.template-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.template-select-label {
+  margin-right: 5px;
+}
+
+.template-variant-selector {
+  min-width: 120px;
+}
+
+.template-variant-selector.error {
+  border-color: var(--theia-errorForeground);
+  background-color: var(--theia-errorBackground, rgba(255, 0, 0, 0.1));
+  color: var(--theia-errorForeground);
+}
+
+#ai-variable-configuration-container-widget,
+#ai-agent-configuration-container-widget {
+  margin-top: 5px;
+}
+
+/* Variable Settings */
+#ai-variable-configuration-container-widget ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#ai-variable-configuration-container-widget .variable-item {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+}
+
+#ai-variable-configuration-container-widget .variable-args {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+}
+
+/* Agent Settings */
+#ai-agent-configuration-container-widget ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.ai-agent-configuration-main {
+  display: flex;
+  flex-direction: row;
+}
+
+.configuration-agents-list {
+  width: 128px;
+}
+
+.configuration-agent-panel {
+  flex: 1;
+}
+
+#ai-variable-configuration-container-widget .variable-references,
+#ai-agent-configuration-container-widget .variable-references,
+#ai-agent-configuration-container-widget .function-references {
+  margin-left: 0.5rem;
+  padding: 0.5rem;
+  border-left: solid 1px var(--theia-tree-indentGuidesStroke);
+}
+
+#ai-variable-configuration-container-widget .variable-reference,
+#ai-agent-configuration-container-widget .variable-reference,
+#ai-agent-configuration-container-widget .function-reference {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.agent-tag {
+  padding: calc(var(--theia-ui-padding) * 2 / 3);
+  padding-top: 0px;
+  padding-bottom: 0px;
+  border-radius: calc(var(--theia-ui-padding) * 2 / 3);
+  background: hsla(0, 0%, 68%, 0.31);
+}
+
+.configuration-agents-add {
+  margin-top: 3em;
+  margin-left: 0;
+}

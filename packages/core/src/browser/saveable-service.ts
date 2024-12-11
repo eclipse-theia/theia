@@ -174,7 +174,10 @@ export class SaveableService implements FrontendApplicationContribution {
         setDirty(saveableWidget, saveable.dirty);
         saveable.onDirtyChanged(() => setDirty(saveableWidget, saveable.dirty));
         const closeWithSaving = this.createCloseWithSaving();
-        const closeWithoutSaving = () => this.closeWithoutSaving(saveableWidget, false);
+        const closeWithoutSaving = async () => {
+            const revert = Saveable.closingWidgetWouldLoseSaveable(saveableWidget, Array.from(this.saveThrottles.keys()));
+            await this.closeWithoutSaving(saveableWidget, revert);
+        };
         Object.assign(saveableWidget, {
             closeWithoutSaving,
             closeWithSaving,
@@ -224,7 +227,8 @@ export class SaveableService implements FrontendApplicationContribution {
         }
         const notLastWithDocument = !Saveable.closingWidgetWouldLoseSaveable(widget, Array.from(this.saveThrottles.keys()));
         if (notLastWithDocument) {
-            return widget.closeWithoutSaving(false).then(() => undefined);
+            await widget.closeWithoutSaving(false);
+            return undefined;
         }
         if (options && options.shouldSave) {
             return options.shouldSave();

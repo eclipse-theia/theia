@@ -312,7 +312,8 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         } else {
             this.contributedProfileStore.registerTerminalProfile('SHELL', new ShellTerminalProfile(this, {
                 shellPath: await this.resolveShellPath('${SHELL}')!,
-                shellArgs: ['-l']
+                shellArgs: ['-l'],
+                iconClass: 'codicon codicon-terminal'
             }));
         }
 

@@ -1,0 +1,415 @@
+.chat-view-widget {
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-tree-view-widget {
+  flex: 1;
+}
+
+.chat-input-widget > .ps__rail-x,
+.chat-input-widget > .ps__rail-y {
+  display: none !important;
+}
+
+.theia-ChatNode {
+  cursor: default;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 20px 6px 20px;
+  user-select: text;
+  -webkit-user-select: text;
+  border-bottom: 1px solid var(--theia-sideBarSectionHeader-border);
+  overflow-wrap: break-word;
+}
+
+div:last-child > .theia-ChatNode {
+  border: none;
+}
+
+.theia-ChatNodeHeader {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  height: 24px;
+  gap: 8px;
+  width: 100%;
+}
+
+.theia-ChatNodeHeader .theia-AgentAvatar {
+  pointer-events: none;
+  user-select: none;
+  font-size: 20px;
+}
+
+.theia-ChatNodeHeader .theia-AgentLabel {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.theia-ChatNodeHeader .theia-ChatContentInProgress {
+  color: var(--theia-disabledForeground);
+}
+
+.theia-ChatNodeHeader .theia-ChatContentInProgress-Cancel {
+  position: absolute;
+  z-index: 999;
+  right: 20px;
+}
+
+@keyframes dots {
+  0%,
+  20% {
+    content: "";
+  }
+
+  40% {
+    content: ".";
+  }
+
+  60% {
+    content: "..";
+  }
+
+  80%,
+  100% {
+    content: "...";
+  }
+}
+
+.theia-ChatNodeHeader .theia-ChatContentInProgress::after {
+  content: "";
+  animation: dots 1s steps(1, end) infinite;
+}
+
+.theia-ChatNode .codicon {
+  text-align: left;
+}
+
+.theia-AgentLabel {
+  font-weight: 600;
+}
+
+.theia-ChatNode .theia-ChatNodeToolbar {
+  margin-left: auto;
+  line-height: 18px;
+}
+.theia-ChatNodeToolbar .theia-ChatNodeToolbarAction {
+  display: none;
+  align-items: center;
+  padding: 4px;
+  border-radius: 5px;
+}
+.theia-ChatNode:hover .theia-ChatNodeToolbar .theia-ChatNodeToolbarAction {
+  display: inline-block;
+}
+.theia-ChatNodeToolbar .theia-ChatNodeToolbarAction:hover {
+  cursor: pointer;
+  background-color: var(--theia-toolbar-hoverBackground);
+}
+
+.theia-ChatNode {
+  line-height: 1.3rem;
+}
+
+.theia-ChatNode ul,
+.theia-ChatNode ol {
+  padding-inline-start: 1rem;
+}
+
+.theia-ChatNode li > p {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.theia-ChatNode .theia-CodeWrapper {
+  padding: 0.5em;
+  padding-bottom: 0;
+  background-color: var(--theia-editor-background);
+  border-radius: 6px;
+  border: var(--theia-border-width) solid var(--theia-checkbox-border);
+  font-size: var(--theia-code-font-size);
+}
+
+.theia-RequestNode > p div {
+  display: inline;
+}
+
+.theia-RequestNode .theia-RequestNode-AgentLabel,
+.theia-RequestNode .theia-RequestNode-VariableLabel {
+  padding: calc(var(--theia-ui-padding) * 2 / 3);
+  padding-top: 0px;
+  padding-bottom: 0px;
+  border-radius: calc(var(--theia-ui-padding) * 2 / 3);
+  background: var(--theia-badge-background);
+  color: var(--theia-badge-foreground);
+}
+
+.chat-input-widget {
+  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+}
+
+.theia-ChatInput {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  gap: 4px;
+}
+
+.theia-ChatInput-Editor-Box {
+  margin-bottom: 2px;
+  padding: 10px;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+}
+
+.theia-ChatInput-Editor {
+  width: 100%;
+  height: auto;
+  border: var(--theia-border-width) solid var(--theia-dropdown-border);
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column-reverse;
+  overflow: hidden;
+  transition: height 0.05s ease-in-out;
+}
+
+.theia-ChatInput-Editor:has(.monaco-editor.focused) {
+  border-color: var(--theia-focusBorder);
+}
+
+.theia-ChatInput-Editor .monaco-editor {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+.theia-ChatInput-Editor-Placeholder {
+  position: absolute;
+  top: -3px;
+  left: 19px;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  color: var(--theia-descriptionForeground);
+  pointer-events: none;
+  z-index: 10;
+  text-align: left;
+}
+.theia-ChatInput-Editor-Placeholder.hidden {
+  display: none;
+}
+
+.theia-ChatInput-Editor .monaco-editor .margin,
+.theia-ChatInput-Editor .monaco-editor .monaco-editor-background,
+.theia-ChatInput-Editor .monaco-editor .inputarea.ime-input {
+  padding-left: 8px !important;
+}
+
+.theia-ChatInputOptions {
+  position: absolute;
+  bottom: 31px;
+  right: 26px;
+  width: 10px;
+  height: 10px;
+}
+
+.theia-ChatInputOptions .option {
+  width: 21px;
+  height: 21px;
+  margin-top: 2px;
+  display: inline-block;
+  box-sizing: border-box;
+  user-select: none;
+  background-repeat: no-repeat;
+  background-position: center;
+  border: var(--theia-border-width) solid transparent;
+  opacity: 0.7;
+  cursor: pointer;
+}
+
+.theia-ChatInputOptions .option:hover {
+  opacity: 1;
+}
+
+.theia-CodePartRenderer-root {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: var(--theia-border-width) solid var(--theia-input-border);
+  border-radius: 4px;
+}
+
+.theia-CodePartRenderer-left {
+  flex-grow: 1;
+}
+
+.theia-CodePartRenderer-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-left: 2px;
+  padding-right: 2px;
+}
+
+.theia-CodePartRenderer-right .button {
+  margin-left: 2px;
+  width: 18px;
+  height: 18px;
+  padding: 2px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.theia-CodePartRenderer-right .button:hover {
+  background-color: var(--theia-toolbar-hoverBackground);
+}
+
+.theia-CodePartRenderer-separator {
+  width: 100%;
+  height: 1px;
+  background-color: var(--theia-input-border);
+}
+
+.theia-QuestionPartRenderer-root {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: var(--theia-border-width) solid
+    var(--theia-sideBarSectionHeader-border);
+  padding: 8px 12px 12px;
+  border-radius: 5px;
+  margin: 0 0 8px 0;
+}
+.theia-QuestionPartRenderer-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.theia-QuestionPartRenderer-option {
+  min-width: 100px;
+  flex: 1 1 auto;
+  margin: 0;
+}
+.theia-QuestionPartRenderer-option.selected:disabled:hover {
+  background-color: var(--theia-button-disabledBackground);
+}
+.theia-QuestionPartRenderer-option:disabled:not(.selected) {
+  background-color: var(--theia-button-secondaryBackground);
+}
+
+.theia-toolCall {
+  font-weight: normal;
+  color: var(--theia-descriptionForeground);
+  line-height: 20px;
+  margin-top: 13px;
+  margin-bottom: 13px;
+  cursor: pointer;
+}
+
+.theia-toolCall .fa,
+.theia-toolCall details summary::marker {
+  color: var(--theia-button-background);
+}
+
+.theia-toolCall details pre {
+  cursor: text;
+  line-height: 1rem;
+  margin-top: 0;
+  margin-bottom: 0;
+  padding: 6px;
+  background-color: var(--theia-editor-background);
+  overflow: auto;
+}
+
+.collapsible-arguments {
+  display: inline-block;
+}
+
+.collapsible-arguments .collapsible-arguments-summary {
+  display: inline-block;
+  white-space: nowrap;
+  text-decoration: underline;
+}
+
+details[open].collapsible-arguments,
+details[open].collapsible-arguments .collapsible-arguments-summary {
+  display: unset;
+}
+
+.theia-ResponseNode-ProgressMessage {
+  font-weight: normal;
+  color: var(--theia-descriptionForeground);
+  line-height: 20px;
+  margin-bottom: 6px;
+}
+
+.theia-ResponseNode-ProgressMessage .inProgress {
+  color: var(--theia-progressBar-background);
+}
+.theia-ResponseNode-ProgressMessage .completed {
+  color: var(--theia-successBackground);
+}
+.theia-ResponseNode-ProgressMessage .failed {
+  color: var(--theia-errorForeground);
+}
+
+.spinner {
+  display: inline-block;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.theia-ChatPart-Error {
+  display: flex;
+  flex-direction: row;
+  gap: 0.5em;
+  color: var(--theia-errorForeground);
+}
+
+.section-header {
+  font-weight: bold;
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+.section-title {
+  font-weight: bold;
+  font-size: 14px;
+  margin: 20px 0px;
+}
+
+.disable-message {
+  font-size: 12px;
+  line-height: 1.6;
+  padding: 15px;
+}
+
+.section-content p {
+  margin: 10px 0;
+}
+
+.section-content a {
+  cursor: pointer;
+}
+
+.section-content strong {
+  font-weight: bold;
+}

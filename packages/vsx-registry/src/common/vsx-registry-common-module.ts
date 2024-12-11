@@ -17,25 +17,33 @@
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { OVSXClientProvider, OVSXUrlResolver } from '../common';
 import { RequestService } from '@theia/core/shared/@theia/request';
-import { ExtensionIdMatchesFilterFactory, OVSXApiFilter, OVSXApiFilterImpl, OVSXClient, OVSXHttpClient, OVSXRouterClient, RequestContainsFilterFactory } from '@theia/ovsx-client';
+import {
+    ExtensionIdMatchesFilterFactory, OVSXApiFilter, OVSXApiFilterImpl, OVSXApiFilterProvider, OVSXClient, OVSXHttpClient, OVSXRouterClient, RequestContainsFilterFactory
+} from '@theia/ovsx-client';
 import { VSXEnvironment } from './vsx-environment';
+import { RateLimiter } from 'limiter';
 
 export default new ContainerModule(bind => {
     bind(OVSXUrlResolver)
-        .toFunction(url => url);
+        .toFunction((url: string) => url);
     bind(OVSXClientProvider)
         .toDynamicValue(ctx => {
             const vsxEnvironment = ctx.container.get<VSXEnvironment>(VSXEnvironment);
             const requestService = ctx.container.get<RequestService>(RequestService);
-            const urlResolver = ctx.container.get(OVSXUrlResolver);
+            const urlResolver = ctx.container.get<OVSXUrlResolver>(OVSXUrlResolver);
             const clientPromise = Promise
                 .all([
                     vsxEnvironment.getRegistryApiUri(),
                     vsxEnvironment.getOvsxRouterConfig?.(),
+                    vsxEnvironment.getRateLimit()
                 ])
-                .then<OVSXClient>(async ([apiUrl, ovsxRouterConfig]) => {
+                .then<OVSXClient>(async ([apiUrl, ovsxRouterConfig, rateLimit]) => {
+                    const rateLimiter = new RateLimiter({
+                        interval: 'second',
+                        tokensPerInterval: rateLimit
+                    });
                     if (ovsxRouterConfig) {
-                        const clientFactory = OVSXHttpClient.createClientFactory(requestService);
+                        const clientFactory = OVSXHttpClient.createClientFactory(requestService, rateLimiter);
                         return OVSXRouterClient.FromConfig(
                             ovsxRouterConfig,
                             async url => clientFactory(await urlResolver(url)),
@@ -44,7 +52,8 @@ export default new ContainerModule(bind => {
                     }
                     return new OVSXHttpClient(
                         await urlResolver(apiUrl),
-                        requestService
+                        requestService,
+                        rateLimiter
                     );
                 });
             // reuse the promise for subsequent calls to this provider
@@ -54,10 +63,23 @@ export default new ContainerModule(bind => {
     bind(OVSXApiFilter)
         .toDynamicValue(ctx => {
             const vsxEnvironment = ctx.container.get<VSXEnvironment>(VSXEnvironment);
-            const apiFilter = new OVSXApiFilterImpl('-- temporary invalid version value --');
+            const apiFilter = new OVSXApiFilterImpl(undefined!, '-- temporary invalid version value --');
             vsxEnvironment.getVscodeApiVersion()
                 .then(apiVersion => apiFilter.supportedApiVersion = apiVersion);
+            const clientProvider = ctx.container.get<OVSXClientProvider>(OVSXClientProvider);
+            Promise.resolve(clientProvider()).then(client => {
+                apiFilter.client = client;
+            });
             return apiFilter;
         })
         .inSingletonScope();
+    bind(OVSXApiFilterProvider)
+        .toProvider(ctx => async () => {
+            const vsxEnvironment = ctx.container.get<VSXEnvironment>(VSXEnvironment);
+            const clientProvider = ctx.container.get<OVSXClientProvider>(OVSXClientProvider);
+            const client = await clientProvider();
+            const apiVersion = await vsxEnvironment.getVscodeApiVersion();
+            const apiFilter = new OVSXApiFilterImpl(client, apiVersion);
+            return apiFilter;
+        });
 });

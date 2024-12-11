@@ -18,15 +18,20 @@ import * as path from 'path';
 import * as yargs from '@theia/core/shared/yargs';
 import * as fs from '@theia/core/shared/fs-extra';
 import * as jsoncparser from 'jsonc-parser';
-import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
+import { injectable, inject, postConstruct, named } from '@theia/core/shared/inversify';
 import { FileUri, BackendApplicationContribution } from '@theia/core/lib/node';
 import { CliContribution } from '@theia/core/lib/node/cli';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { WorkspaceServer, UntitledWorkspaceService } from '../common';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import URI from '@theia/core/lib/common/uri';
-import { notEmpty } from '@theia/core';
+import { ContributionProvider, notEmpty } from '@theia/core';
 
+export const WorkspaceHandlerContribution = Symbol('workspaceHandlerContribution');
+export interface WorkspaceHandlerContribution {
+    canHandle(uri: URI): boolean;
+    workspaceStillExists(uri: URI): Promise<boolean>;
+}
 @injectable()
 export class WorkspaceCliContribution implements CliContribution {
 
@@ -101,6 +106,9 @@ export class DefaultWorkspaceServer implements WorkspaceServer, BackendApplicati
     @inject(UntitledWorkspaceService)
     protected readonly untitledWorkspaceService: UntitledWorkspaceService;
 
+    @inject(ContributionProvider) @named(WorkspaceHandlerContribution)
+    protected readonly workspaceHandlers: ContributionProvider<WorkspaceHandlerContribution>;
+
     @postConstruct()
     protected init(): void {
         this.doInit();
@@ -161,7 +169,14 @@ export class DefaultWorkspaceServer implements WorkspaceServer, BackendApplicati
     }
 
     protected async workspaceStillExist(workspaceRootUri: string): Promise<boolean> {
-        return fs.pathExists(FileUri.fsPath(workspaceRootUri));
+        const uri = new URI(workspaceRootUri);
+
+        for (const handler of this.workspaceHandlers.getContributions()) {
+            if (handler.canHandle(uri)) {
+                return handler.workspaceStillExists(uri);
+            }
+        }
+        return false;
     }
 
     protected async getWorkspaceURIFromCli(): Promise<string | undefined> {
@@ -220,6 +235,18 @@ export class DefaultWorkspaceServer implements WorkspaceServer, BackendApplicati
         if (olderUntitledWorkspaces.length > 0) {
             await this.writeToUserHome({ recentRoots: await this.getRecentWorkspaces() });
         }
+    }
+}
+
+@injectable()
+export class FileWorkspaceHandlerContribution implements WorkspaceHandlerContribution {
+
+    canHandle(uri: URI): boolean {
+        return uri.scheme === 'file';
+    }
+
+    async workspaceStillExists(uri: URI): Promise<boolean> {
+        return fs.pathExists(uri.path.fsPath());
     }
 }
 

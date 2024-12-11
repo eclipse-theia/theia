@@ -100,6 +100,10 @@ export interface DebugSessionOptions {
     suppressSaveBeforeStart?: boolean;
     suppressDebugStatusbar?: boolean;
     suppressDebugView?: boolean;
+    testRun?: {
+        controllerId: string,
+        runId: string
+    }
 }
 
 export enum DebugConsoleMode {

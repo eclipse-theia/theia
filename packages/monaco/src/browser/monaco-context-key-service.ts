@@ -109,9 +109,9 @@ export class MonacoContextKeyService implements TheiaContextKeyService {
     createScoped(target: HTMLElement): ScopedValueStore {
         const scoped = this.contextKeyService.createScoped(target);
         if (scoped instanceof AbstractContextKeyService) {
-            return scoped as AbstractContextKeyService & { createScoped(): ScopedValueStore };
+            return scoped as unknown as ScopedValueStore;
         }
-        return this;
+        throw new Error('Could not created scoped value store');
     }
 
     createOverlay(overlay: Iterable<[string, unknown]>): ContextMatcher {

@@ -18,9 +18,7 @@ import { injectable, inject, named } from 'inversify';
 import { ContributionProvider } from '../common/contribution-provider';
 import { FrontendApplicationContribution } from './frontend-application-contribution';
 import { MaybePromise } from '../common';
-import { Endpoint } from './endpoint';
 import { timeout, Deferred } from '../common/promise-util';
-import { RequestContext, RequestService } from '@theia/request';
 
 export interface JsonSchemaConfiguration {
     fileMatch: string | string[];
@@ -95,16 +93,9 @@ export class JsonSchemaStore implements FrontendApplicationContribution {
 
 @injectable()
 export class DefaultJsonSchemaContribution implements JsonSchemaContribution {
-
-    @inject(RequestService)
-    protected readonly requestService: RequestService;
-
-    protected readonly jsonSchemaUrl = `${new Endpoint().httpScheme}//schemastore.org/api/json/catalog.json`;
-
     async registerSchemas(context: JsonSchemaRegisterContext): Promise<void> {
-        const response = await this.requestService.request({ url: this.jsonSchemaUrl });
-        const schemas = RequestContext.asJson<{ schemas: DefaultJsonSchemaContribution.SchemaData[] }>(response).schemas;
-        for (const s of schemas) {
+        const catalog = require('./catalog.json') as { schemas: DefaultJsonSchemaContribution.SchemaData[] };
+        for (const s of catalog.schemas) {
             if (s.fileMatch) {
                 context.registerSchema({
                     fileMatch: s.fileMatch,

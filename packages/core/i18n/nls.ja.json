@@ -1,4 +1,9 @@
 {
+  "aiConfiguration:open": "AI設定ビューを開く",
+  "aiHistory:clear": "AI履歴クリアヒストリー",
+  "aiHistory:open": "AI履歴ビューを開く",
+  "aiHistory:sortChronologically": "AIの歴史年代順に並べ替える",
+  "aiHistory:sortReverseChronologically": "AIの歴史年代順に並べ替える",
   "debug.breakpoint.editCondition": "編集条件...",
   "notebook.cell.changeToCode": "セルをコードに変更",
   "notebook.cell.changeToMarkdown": "セルをマーダウンに変更",
@@ -10,6 +15,33 @@
     "callhierarchy": {
       "noCallers": "発信者は検出されていません。",
       "open": "オープンコールヒエラルキー"
+    },
+    "collaboration": {
+      "collaborate": "コラボレーション",
+      "collaboration": "コラボレーション",
+      "collaborationWorkspace": "コラボレーション・ワークスペース",
+      "connected": "接続済み",
+      "connectedSession": "コラボレーション・セッションに接続",
+      "copiedInvitation": "招待状コードがクリップボードにコピーされました。",
+      "copyAgain": "コピー・アゲイン",
+      "createRoom": "新しいコラボレーション・セッションの作成",
+      "creatingRoom": "セッションの作成",
+      "end": "コラボレーション・セッション終了",
+      "endDetail": "セッションを終了し、コンテンツの共有を停止し、他の人のアクセスを取り消す。",
+      "enterCode": "コラボレーションセッションコードを入力",
+      "failedCreate": "部屋の作成に失敗しました:{0}",
+      "failedJoin": "入室に失敗:{0}",
+      "invite": "他の人を招待する",
+      "inviteDetail": "招待コードをコピーして他の人と共有し、セッションに参加してください。",
+      "joinRoom": "コラボレーション・セッションに参加",
+      "joiningRoom": "セッションへの参加",
+      "leave": "コラボレーション・セッション",
+      "leaveDetail": "現在のコラボレーションセッションから切断し、ワークスペースを閉じます。",
+      "selectCollaboration": "コラボレーション・オプションを選択",
+      "sharedSession": "コラボレーション・セッションを共有",
+      "startSession": "コラボレーションセッションの開始または参加",
+      "userWantsToJoin": "ユーザー '{0}' がコラボレーションルームへの参加を希望しています。",
+      "whatToDo": "他の協力者とどんなことをしたいですか?"
     },
     "core": {
       "about": {
@@ -112,7 +144,6 @@
       "editor.accessibilitySupport2": "スクリーンリーダーが添付されていないと仮定する",
       "editor.bracketPairColorization.enabled": "ブラケットペアのカラー化を有効にするかどうかを制御する。ブラケットのハイライト色を上書きするには `#workbench.colorCustomizations#` を使用してください。",
       "editor.codeActionWidget.includeNearbyQuickfixes": "現在診断中でない場合に、行内に最も近いクイックフィックスを表示するかどうかを設定します。",
-      "editor.cursorSurroundingLinesStyle": "cursorSurroundingLines#`を実行するタイミングを制御する。",
       "editor.detectIndentation": "ファイルを開いたときに、ファイルの内容に基づいて `#editor.tabSize#` と `#editor.insertSpaces#` を自動的に検出するかどうかを制御する。",
       "editor.dropIntoEditor.enabled": "shift`を押しながらファイルをテキストエディタにドラッグ＆ドロップできるかどうかをコントロールします(エディタでファイルを開く代わりに)。",
       "editor.formatOnSaveMode.modificationsIfAvailable": "変更点のみをフォーマットしようとします(ソースコントロールが必要です)。ソースコントロールが使用できない場合は、ファイル全体がフォーマットされます。",
@@ -179,6 +210,7 @@
       "prepareDownloadLink": "ダウンロードリンクの準備中...",
       "processedOutOf": "{1}のうち{0}を処理",
       "replaceTitle": "ファイルの置き換え",
+      "uploadFailed": "ファイルのアップロード中にエラーが発生しました。{0}",
       "uploadFiles": "ファイルのアップロード...",
       "uploadedOutOf": "{1}のうち{0}をアップロードしました。"
     },
@@ -346,12 +378,6 @@
       "reveal": "エクスプローラーでの表示",
       "toggleHiddenFiles": "隠しファイルのトグル"
     },
-    "notebook": {
-      "dragGhostImage": {
-        "codeText": "選択されたコードセル",
-        "markdownText": "マーダウンのセルを選択"
-      }
-    },
     "output": {
       "clearOutputChannel": "クリア出力チャンネル...",
       "closeOutputChannel": "出力チャンネルを閉じる...",
@@ -368,6 +394,9 @@
       "alreadyRunning": "ホストされているインスタンスはすでに実行されています。",
       "debugInstance": "デバッグインスタンス",
       "debugMode": "Node.js のデバッグに inspect または inspect-brk を使用する",
+      "debugPorts": {
+        "debugPort": "このサーバーのNode.jsデバッグに使用するポート。"
+      },
       "devHost": "開発ホスト",
       "failed": "ホストされたプラグインインスタンスの実行に失敗しました。{0}",
       "hostedPlugin": "ホスト型プラグイン",
@@ -398,6 +427,10 @@
       "plugins": "プラグイン",
       "webviewTrace": "ウェブビューによる通信のトレースを制御します。",
       "webviewWarnIfUnsecure": "現在、ウェブビューが安全でない状態で展開されていることをユーザーに警告します。"
+    },
+    "preferences": {
+      "hostedPlugin": "ホスト型プラグイン",
+      "toolbar": "ツールバー"
     },
     "preview": {
       "openByDefault": "デフォルトではエディタではなくプレビューを開くようになっています。"
@@ -471,6 +504,7 @@
     },
     "test": {
       "cancelAllTestRuns": "すべてのテスト実行をキャンセルする",
+      "stackFrameAt": "で",
       "testRunDefaultName": "{0} 走る{1}",
       "testRuns": "テスト走行"
     },
@@ -533,7 +567,6 @@
       "confirmMessage.uriMultiple": "本当に{0}個の選択されたファイルをすべて削除しますか?",
       "confirmMessage.uriSingle": "本当に{0}を削除するのですか?",
       "duplicate": "デュプリケート",
-      "failApply": "新しいファイルに変更を適用できなかった",
       "failSaveAs": "現在のウィジェットでは\"{0}\"を実行できません。",
       "newFilePlaceholder": "ファイル名",
       "newFolderPlaceholder": "フォルダー名",

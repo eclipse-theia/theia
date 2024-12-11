@@ -1,0 +1,588 @@
+{
+  "aiConfiguration:open": "AI Yapılandırma görünümünü açın",
+  "aiHistory:clear": "AI Geçmişi: Geçmişi Temizle",
+  "aiHistory:open": "Yapay Zeka Geçmişi görünümünü açın",
+  "aiHistory:sortChronologically": "Yapay Zeka Geçmişi: Kronolojik olarak sırala",
+  "aiHistory:sortReverseChronologically": "Yapay Zeka Tarihi: Ters kronolojik olarak sırala",
+  "debug.breakpoint.editCondition": "Düzenleme Durumu...",
+  "notebook.cell.changeToCode": "Hücreyi Kod Olarak Değiştir",
+  "notebook.cell.changeToMarkdown": "Hücreyi Markdown Olarak Değiştirme",
+  "notebook.cell.insertMarkdownCellAbove": "Markdown Hücresini Yukarıya Ekleme",
+  "notebook.cell.insertMarkdownCellBelow": "Aşağıya Markdown Hücresi Ekleme",
+  "terminal:new:profile": "Profilden Yeni Entegre Terminal Oluşturma",
+  "terminal:profile:default": "Varsayılan Terminal Profilini seçin",
+  "theia": {
+    "callhierarchy": {
+      "noCallers": "Herhangi bir arayan tespit edilmedi.",
+      "open": "Açık Çağrı Hiyerarşisi"
+    },
+    "collaboration": {
+      "collaborate": "İşbirliği yapın",
+      "collaboration": "İşbirliği",
+      "collaborationWorkspace": "İşbirliği Çalışma Alanı",
+      "connected": "Bağlı",
+      "connectedSession": "Bir işbirliği oturumuna bağlandı",
+      "copiedInvitation": "Davetiye kodu panoya kopyalandı.",
+      "copyAgain": "Tekrar Kopyala",
+      "createRoom": "Yeni İşbirliği Oturumu Oluştur",
+      "creatingRoom": "Oturum Oluşturma",
+      "end": "İşbirliği Oturumunu Sonlandırın",
+      "endDetail": "Oturumu sonlandırın, içerik paylaşımını durdurun ve başkalarının erişimini iptal edin.",
+      "enterCode": "İşbirliği oturum kodunu girin",
+      "failedCreate": "Oda oluşturulamadı: {0}",
+      "failedJoin": "Odaya katılamadı: {0}",
+      "invite": "Başkalarını Davet Edin",
+      "inviteDetail": "Oturuma katılmak üzere başkalarıyla paylaşmak için davet kodunu kopyalayın.",
+      "joinRoom": "İşbirliği Oturumuna Katılın",
+      "joiningRoom": "Katılma Oturumu",
+      "leave": "İşbirliği Oturumundan Ayrılın",
+      "leaveDetail": "Geçerli işbirliği oturumunun bağlantısını kesin ve çalışma alanını kapatın.",
+      "selectCollaboration": "İşbirliği seçeneğini belirleyin",
+      "sharedSession": "Bir işbirliği oturumu paylaştı",
+      "startSession": "İşbirliği oturumunu başlatın veya oturuma katılın",
+      "userWantsToJoin": "Kullanıcı '{0}' işbirliği odasına katılmak istiyor",
+      "whatToDo": "Diğer işbirlikçilerle neler yapmak istersiniz?"
+    },
+    "core": {
+      "about": {
+        "compatibility": "{0} Uyumluluk",
+        "defaultApi": "Varsayılan {0} API",
+        "version": "Versiyon"
+      },
+      "common": {
+        "closeAll": "Tüm Sekmeleri Kapat",
+        "closeAllTabMain": "Ana Alandaki Tüm Sekmeleri Kapat",
+        "closeOtherTabMain": "Ana Alandaki Diğer Sekmeleri Kapat",
+        "closeOthers": "Diğer Sekmeleri Kapat",
+        "closeRight": "Sekmeleri Sağa Kapat",
+        "closeTab": "Sekmeyi Kapat",
+        "closeTabMain": "Ana Alandaki Sekmeyi Kapat",
+        "collapseAllTabs": "Tüm Yan Panelleri Daralt",
+        "collapseBottomPanel": "Alt Paneli Değiştir",
+        "collapseTab": "Yan Paneli Daralt",
+        "showNextTabGroup": "Sonraki Sekme Grubuna Geç",
+        "showNextTabInGroup": "Gruptaki Sonraki Sekmeye Geç",
+        "showPreviousTabGroup": "Önceki Sekme Grubuna Geç",
+        "showPreviousTabInGroup": "Grupta Önceki Sekmeye Geç",
+        "toggleMaximized": "Maksimize Edilmiş Değiştir"
+      },
+      "copyInfo": "Yolunu kopyalamak için önce bir dosya açın",
+      "copyWarn": "Lütfen tarayıcının kopyala komutunu veya kısayolunu kullanın.",
+      "cutWarn": "Lütfen tarayıcının kes komutunu veya kısayolunu kullanın.",
+      "enhancedPreview": {
+        "classic": "Temel bilgileri içeren sekmenin basit bir önizlemesini görüntüleyin.",
+        "enhanced": "Sekmenin ek bilgiler içeren gelişmiş bir önizlemesini görüntüleyin.",
+        "visual": "Sekmenin görsel bir önizlemesini görüntüleyin."
+      },
+      "file": {
+        "browse": "Gözat"
+      },
+      "highlightModifiedTabs": "Değiştirilmiş (kirli) düzenleyici sekmelerinde bir üst kenarlık çizilip çizilmeyeceğini kontrol eder.",
+      "keybindingStatus": "{0} basıldı, daha fazla tuş beklendi",
+      "keyboard": {
+        "choose": "Klavye Düzenini Seçin",
+        "chooseLayout": "Bir klavye düzeni seçin",
+        "current": "(güncel: {0})",
+        "currentLayout": " - mevcut düzen",
+        "mac": "Mac Klavyeleri",
+        "pc": "PC Klavyeleri",
+        "tryDetect": "Tarayıcı bilgilerinden ve basılan tuşlardan klavye düzenini tespit etmeye çalışın."
+      },
+      "navigator": {
+        "clipboardWarn": "Panoya erişim reddedildi. Tarayıcınızın izinlerini kontrol edin.",
+        "clipboardWarnFirefox": "Pano API'si mevcut değildir. '{1}' sayfasındaki '{0}' tercihi ile etkinleştirilebilir. Ardından Theia'yı yeniden yükleyin. FireFox'un sistem panosuna tam erişim sağlamasına izin vereceğini unutmayın."
+      },
+      "offline": "Çevrimdışı",
+      "pasteWarn": "Lütfen tarayıcının yapıştırma komutunu veya kısayolunu kullanın.",
+      "quitMessage": "Kaydedilmemiş hiçbir değişiklik kaydedilmeyecektir.",
+      "resetWorkbenchLayout": "Çalışma Tezgahı Düzenini Sıfırla",
+      "searchbox": {
+        "close": "Kapat (Kaçış)",
+        "next": "Sonraki (Aşağı)",
+        "previous": "Önceki (Yukarı)"
+      },
+      "secondaryWindow": {
+        "alwaysOnTop": "Etkinleştirildiğinde, ikincil pencere farklı uygulamalarınkiler de dahil olmak üzere diğer tüm pencerelerin üzerinde kalır.",
+        "description": "Çıkarılan ikincil pencerenin ilk konumunu ve boyutunu ayarlar.",
+        "fullSize": "Çıkarılan widget'ın konumu ve boyutu, çalışan Theia uygulamasıyla aynı olacaktır.",
+        "halfWidth": "Çıkarılan widget'ın konumu ve boyutu, çalışan Theia uygulamasının genişliğinin yarısı kadar olacaktır.",
+        "originalSize": "Çıkarılan widget'ın konumu ve boyutu orijinal widget ile aynı olacaktır."
+      },
+      "silentNotifications": "Bildirim açılır pencerelerinin bastırılıp bastırılmayacağını denetler.",
+      "tabDefaultSize": "Sekmeler için varsayılan boyutu belirtir.",
+      "tabMaximize": "Çift tıklamada sekmelerin büyütülüp büyütülmeyeceğini kontrol eder.",
+      "tabMinimumSize": "Sekmeler için minimum boyutu belirtir.",
+      "tabShrinkToFit": "Sekmeleri mevcut alana sığacak şekilde küçültün."
+    },
+    "debug": {
+      "addConfigurationPlaceholder": "Yapılandırma eklemek için çalışma alanı kökünü seçin",
+      "breakpoint": "kesme noktası",
+      "compound-cycle": "Başlat yapılandırması '{0}' kendisiyle birlikte bir döngü içerir",
+      "continueAll": "Tümü Devam Ediyor",
+      "copyExpressionValue": "İfade Değerini Kopyala",
+      "dataBreakpoint": "veri kesme noktası",
+      "debugVariableInput": "{0} Değerini Ayarla",
+      "entry": "Giriş",
+      "exception": "istisna",
+      "functionBreakpoint": "fonksiyon kesme noktası",
+      "goto": "Goto",
+      "instruction-breakpoint": "Talimat Kesme Noktası",
+      "instructionBreakpoint": "talimat kesme noktası",
+      "missingConfiguration": "Dinamik yapılandırma '{0}:{1}' eksik veya uygulanabilir değil",
+      "pause": "duraklama",
+      "pauseAll": "Tümünü Duraklat",
+      "reveal": "Açığa Çıkar",
+      "step": "adım",
+      "threads": "İplikler",
+      "toggleTracing": "Hata ayıklama bağdaştırıcılarıyla izleme iletişimini etkinleştirme/devre dışı bırakma"
+    },
+    "editor": {
+      "diffEditor.wordWrap2": "Satırlar `#editor.wordWrap#` ayarına göre sarılacaktır.",
+      "dirtyEncoding": "Dosya kirli. Lütfen başka bir kodlama ile yeniden açmadan önce kaydedin.",
+      "editor.accessibilitySupport0": "Bir Ekran Okuyucunun takılı olduğunu algılamak için platform API'lerini kullanma",
+      "editor.accessibilitySupport1": "Ekran Okuyucu ile kullanım için optimize edin",
+      "editor.accessibilitySupport2": "Bir ekran okuyucunun bağlı olmadığını varsayalım",
+      "editor.bracketPairColorization.enabled": "Ayraç çifti renklendirmesinin etkin olup olmadığını kontrol eder. Ayraç vurgu renklerini geçersiz kılmak için `#workbench.colorCustomizations#` kullanın.",
+      "editor.codeActionWidget.includeNearbyQuickfixes": "O anda bir tanılama üzerinde değilken bir hat içindeki en yakın hızlı düzeltmeyi göstermeyi etkinleştirin/devre dışı bırakın.",
+      "editor.detectIndentation": "Dosya içeriğine bağlı olarak bir dosya açıldığında `#editor.tabSize#` ve `#editor.insertSpaces#` öğelerinin otomatik olarak algılanıp algılanmayacağını kontrol eder.",
+      "editor.dropIntoEditor.enabled": "Bir dosyayı `shift` tuşunu basılı tutarak bir metin düzenleyicisine sürükleyip bırakıp bırakamayacağınızı kontrol eder (dosyayı bir düzenleyicide açmak yerine).",
+      "editor.formatOnSaveMode.modificationsIfAvailable": "Yalnızca değişiklikleri biçimlendirmeye çalışır (kaynak kontrolü gerektirir). Kaynak kontrolü kullanılamazsa, tüm dosya biçimlendirilecektir.",
+      "editor.hover.hidingDelay": "Üzerine gelinen öğenin gizlenmesinden sonraki gecikmeyi milisaniye cinsinden kontrol eder. Etkinleştirilmek için `editor.hover.sticky` gerektirir.",
+      "editor.inlayHints.enabled1": "Kakma ipuçları varsayılan olarak gösterilir ve Ctrl+Alt tuşları basılı tutulduğunda gizlenir",
+      "editor.inlayHints.enabled2": "Kakma ipuçları varsayılan olarak gizlidir ve Ctrl+Alt tuşları basılı tutulduğunda gösterilir",
+      "editor.inlayHints.fontFamily": "Düzenleyicideki yerleşik ipuçlarının yazı tipi ailesini kontrol eder. Boş olarak ayarlandığında, `#editor.fontFamily#` kullanılır.",
+      "editor.inlayHints.fontSize": "Düzenleyicideki yerleşik ipuçlarının yazı tipi boyutunu kontrol eder. Yapılandırılan değer `5`ten küçük veya düzenleyici yazı tipi boyutundan büyük olduğunda varsayılan olarak `#editor.fontSize#` kullanılır.",
+      "editor.insertSpaces": "Tab` tuşuna basıldığında boşluk ekler. Bu ayar, `#editor.detectIndentation#` açık olduğunda dosya içeriğine göre geçersiz kılınır.",
+      "editor.occurrencesHighlight": "Düzenleyicinin anlamsal sembol oluşumlarını vurgulayıp vurgulamayacağını kontrol eder.",
+      "editor.quickSuggestions": "Yazarken önerilerin otomatik olarak gösterilip gösterilmeyeceğini kontrol eder. Bu, yorumlar, dizeler ve diğer kodların yazılması için kontrol edilebilir. Hızlı öneri, hayalet metin olarak veya öneri widget'ı ile gösterilecek şekilde yapılandırılabilir. Ayrıca önerilerin özel karakterler tarafından tetiklenip tetiklenmeyeceğini kontrol eden '#editor.suggestOnTriggerCharacters#'ayarına da dikkat edin.",
+      "editor.stickyScroll.scrollWithEditor": "Yapışkan kaydırma widget'ının düzenleyicinin yatay kaydırma çubuğu ile kaydırılmasını etkinleştirin.",
+      "editor.suggestFontSize": "Suggest widget'ı için yazı tipi boyutu. 0` olarak ayarlandığında, `#editor.fontSize#` değeri kullanılır.",
+      "editor.suggestLineHeight": "Suggest widget'ı için satır yüksekliği. 0` olarak ayarlandığında, `#editor.lineHeight#` değeri kullanılır. Minimum değer 8`dir.",
+      "editor.tabSize": "Bir sekmenin eşit olduğu boşluk sayısı. Bu ayar, `#editor.detectIndentation#` açık olduğunda dosya içeriğine göre geçersiz kılınır.",
+      "editor.useTabStops": "Boşluk ekleme ve silme sekme duraklarını takip eder.",
+      "editor.wordBasedSuggestions": "Tamamlamaların belgedeki sözcüklere göre hesaplanıp hesaplanmayacağını denetler.",
+      "editor.wordBasedSuggestionsMode": "Kelime tabanlı tamamlamaların hangi belgelerden hesaplanacağını kontrol eder.",
+      "files.autoSave": "Kaydedilmemiş değişiklikleri olan editörlerin [otomatik kaydet] (https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save) kontrollerini yapar.",
+      "files.autoSave.afterDelay": "Değişiklikler içeren bir düzenleyici, yapılandırılan `#files.autoSaveDelay#` değerinden sonra otomatik olarak kaydedilir.",
+      "files.autoSave.off": "Değişiklik yapılan bir düzenleyici asla otomatik olarak kaydedilmez.",
+      "files.autoSave.onFocusChange": "Düzenleyici odağı kaybettiğinde değişiklik yapılan bir düzenleyici otomatik olarak kaydedilir.",
+      "files.autoSave.onWindowChange": "Değişiklikler içeren bir düzenleyici, pencere odağını kaybettiğinde otomatik olarak kaydedilir.",
+      "formatOnSaveTimeout": "Dosya kaydedildiğinde çalıştırılan biçimlendirmenin iptal edileceği milisaniye cinsinden zaman aşımı.",
+      "persistClosedEditors": "Pencere yeniden yüklenirken çalışma alanı için kapalı düzenleyici geçmişinin devam ettirilip ettirilmeyeceğini kontrol eder.",
+      "showAllEditors": "Tüm Açık Editörleri Göster",
+      "splitHorizontal": "Bölme Düzenleyici Yatay",
+      "splitVertical": "Bölünmüş Editör Dikey",
+      "toggleStickyScroll": "Yapışkan Kaydırmayı Değiştir"
+    },
+    "file-search": {
+      "toggleIgnoredFiles": " (Yok sayılan dosyaları göstermek/gizlemek için {0} adresine basın)"
+    },
+    "fileDialog": {
+      "showHidden": "Gizli dosyaları göster"
+    },
+    "fileSystem": {
+      "fileResource": {
+        "overWriteBody": "Dosya sisteminde '{0}' adresinde yapılan değişikliklerin üzerine yazmak istiyor musunuz?"
+      }
+    },
+    "filesystem": {
+      "copiedToClipboard": "İndirme bağlantısını panoya kopyaladım.",
+      "copyDownloadLink": "İndirme Bağlantısını Kopyala",
+      "dialog": {
+        "initialLocation": "İlk Konuma Git",
+        "multipleItemMessage": "Yalnızca bir öğe seçebilirsiniz",
+        "name": "İsim:",
+        "navigateBack": "Geri Git",
+        "navigateForward": "İleriye Yönelin",
+        "navigateUp": "Bir Dizinde Gezinme"
+      },
+      "fileResource": {
+        "binaryFileQuery": "Açmak biraz zaman alabilir ve IDE'nin yanıt vermemesine neden olabilir. Yine de '{0}' adresini açmak istiyor musunuz?",
+        "binaryTitle": "Dosya ya ikilidir ya da desteklenmeyen bir metin kodlaması kullanmaktadır.",
+        "largeFileTitle": "Dosya çok büyük ({0}).",
+        "overwriteTitle": "Dosya sisteminde '{0}' dosyası değiştirildi."
+      },
+      "filesExclude": "Dosya ve klasörleri dışlamak için glob kalıplarını yapılandırın. Örneğin, dosya Gezgini bu ayara göre hangi dosya ve klasörlerin gösterileceğine veya gizleneceğine karar verir.",
+      "format": "Format:",
+      "maxConcurrentUploads": "Birden fazla dosya yüklerken yüklenecek maksimum eşzamanlı dosya sayısı. 0, tüm dosyaların eşzamanlı olarak yükleneceği anlamına gelir.",
+      "maxFileSizeMB": "Açılabilecek maksimum dosya boyutunu MB cinsinden kontrol eder.",
+      "prepareDownload": "İndirme hazırlanıyor...",
+      "prepareDownloadLink": "İndirme bağlantısı hazırlanıyor...",
+      "processedOutOf": "İşlenmiş {0} dışında {1}",
+      "replaceTitle": "Dosya Değiştir",
+      "uploadFailed": "Dosya yüklenirken bir hata oluştu. {0}",
+      "uploadFiles": "Dosya Yükle...",
+      "uploadedOutOf": "{0} adresinden yüklendi {1}"
+    },
+    "getting-started": {
+      "apiComparator": "{0} API Uyumluluğu",
+      "newExtension": "Yeni Bir Uzantı İnşa Etmek",
+      "newPlugin": "Yeni Bir Eklenti Oluşturma",
+      "startup-editor": {
+        "welcomePage": "{0} ve uzantılarını kullanmaya başlamanıza yardımcı olacak içeriğe sahip Hoş Geldiniz sayfasını açın."
+      }
+    },
+    "git": {
+      "aFewSecondsAgo": "birkaç saniye önce",
+      "addSignedOff": "Signed-off-by ekleyin",
+      "amendReuseMessage": "Son taahhüt mesajını yeniden kullanmak için 'Enter' tuşuna veya iptal etmek için 'Escape' tuşuna basın.",
+      "amendRewrite": "Önceki commit mesajını yeniden yazın. Onaylamak için 'Enter' tuşuna veya iptal etmek için 'Escape' tuşuna basın.",
+      "checkoutCreateLocalBranchWithName": "Adı: {0} olan yeni bir yerel şube oluşturun. Onaylamak için 'Enter' tuşuna veya iptal etmek için 'Escape' tuşuna basın.",
+      "checkoutProvideBranchName": "Lütfen bir şube adı belirtiniz. ",
+      "checkoutSelectRef": "Ödeme yapmak veya yeni bir yerel şube oluşturmak için bir ref seçin:",
+      "cloneQuickInputLabel": "Lütfen bir Git deposu konumu girin. Onaylamak için 'Enter' tuşuna veya iptal etmek için 'Escape' tuşuna basın.",
+      "cloneRepository": "Git deposunu klonlayın: {0}. Onaylamak için 'Enter' tuşuna veya iptal etmek için 'Escape' tuşuna basın.",
+      "compareWith": "İle Karşılaştırın...",
+      "compareWithBranchOrTag": "O anda etkin olan {0} dalı ile karşılaştırmak için bir dal veya etiket seçin:",
+      "diff": "Diff",
+      "dirtyDiffLinesLimit": "Düzenleyicinin satır sayısı bu sınırı aşarsa, kirli fark süslemelerini gösterme.",
+      "dropStashMessage": "Zula başarıyla kaldırıldı.",
+      "editorDecorationsEnabled": "Düzenleyicide git süslemelerini göster.",
+      "fetchPickRemote": "Getirmek için bir uzaktan kumanda seçin:",
+      "gitDecorationsColors": "Navigatörde renk dekorasyonunu kullanın.",
+      "mergeQuickPickPlaceholder": "Şu anda etkin olan {0} dalıyla birleştirmek için bir dal seçin:",
+      "missingUserInfo": "git'te 'user.name' ve 'user.email' dosyalarınızı yapılandırdığınızdan emin olun.",
+      "noHistoryForError": "için mevcut bir geçmiş bulunmamaktadır. {0}",
+      "noPreviousCommit": "Değişiklik yapmak için önceden taahhüt yok",
+      "noRepositoriesSelected": "Hiçbir depo seçilmemiştir.",
+      "prepositionIn": "içinde",
+      "repositoryNotInitialized": "{0} deposu henüz başlatılmadı.",
+      "stashChanges": "Zula değişiklikleri. Onaylamak için 'Enter' tuşuna veya iptal etmek için 'Escape' tuşuna basın.",
+      "stashChangesWithMessage": "Zula mesajla değişir: {0}. Onaylamak için 'Enter' tuşuna veya iptal etmek için 'Escape' tuşuna basın.",
+      "tabTitleIndex": "{0} (Dizin)",
+      "tabTitleWorkingTree": "{0} (Çalışma ağacı)",
+      "toggleBlameAnnotations": "Suçlama Ek Açıklamalarını Değiştir"
+    },
+    "keybinding-schema-updater": {
+      "deprecation": "Bunun yerine `when` cümlesini kullanın."
+    },
+    "keymaps": {
+      "addKeybindingTitle": "Şunlar için Tuş Bağlama Ekle {0}",
+      "editKeybinding": "Tuş Bağlamasını Düzenle...",
+      "editKeybindingTitle": "için Tuş Bağlamasını Düzenle {0}",
+      "editWhenExpression": "İfade Ne Zaman Düzenlenir...",
+      "editWhenExpressionTitle": "İfade için Düzenle {0}",
+      "keybinding": {
+        "copy": "Tuş Bağlamayı Kopyala",
+        "copyCommandId": "Tuş Bağlama Komut Kimliğini Kopyala",
+        "copyCommandTitle": "Tuş Bağlantısını Kopyala Komut Başlığı",
+        "edit": "Tuş Bağlamasını Düzenle...",
+        "editWhenExpression": "İfade Olduğunda Tuş Bağlantısını Düzenle..."
+      },
+      "keybindingCollidesValidation": "tuş bağlama şu anda çakışıyor",
+      "requiredKeybindingValidation": "tuş bağlama değeri gereklidir",
+      "resetKeybindingConfirmation": "Bu tuş bağlamayı gerçekten varsayılan değerine sıfırlamak istiyor musunuz?",
+      "resetKeybindingTitle": "için tuş bağlamayı sıfırla {0}",
+      "resetMultipleKeybindingsWarning": "Bu komut için birden fazla tuş ataması varsa, hepsi sıfırlanacaktır."
+    },
+    "localize": {
+      "offlineTooltip": "Arka uca bağlanılamıyor."
+    },
+    "markers": {
+      "clearAll": "Tümünü Temizle",
+      "noProblems": "Çalışma alanında şu ana kadar herhangi bir sorun tespit edilmedi.",
+      "tabbarDecorationsEnabled": "Sekme çubuklarında sorun dekoratörlerini (tanılama işaretleyicileri) gösterin."
+    },
+    "memory-inspector": {
+      "addressTooltip": "Görüntülenecek bellek konumu, bir adres veya bir adrese göre değerlendirilen ifade",
+      "ascii": "ASCII",
+      "binary": "İkili",
+      "byteSize": "Bayt Boyutu",
+      "bytesPerGroup": "Grup Başına Bayt",
+      "closeSettings": "Ayarları Kapat",
+      "columns": "Sütunlar",
+      "command": {
+        "createNewMemory": "Yeni Bellek Denetçisi Oluşturun",
+        "createNewRegisterView": "Yeni Kayıt Görünümü Oluştur",
+        "followPointer": "Pointer'ı Takip Edin",
+        "followPointerMemory": "Bellek Denetçisinde İşaretçiyi Takip Etme",
+        "resetValue": "Sıfırlama Değeri",
+        "showRegister": "Bellek Denetçisinde Kaydı Göster",
+        "viewVariable": "Değişkeni Bellek Denetçisinde Göster"
+      },
+      "data": "Veri",
+      "decimal": "Ondalık",
+      "diff": {
+        "label": "Diff: {0}"
+      },
+      "diff-widget": {
+        "offset-label": "{0} Ofset",
+        "offset-title": "Belleğin kaydırılacağı baytlar {0}"
+      },
+      "editable": {
+        "apply": "Değişiklikleri Uygula",
+        "clear": "Açık Değişiklikler"
+      },
+      "endianness": "Endianness",
+      "extraColumn": "Ekstra Sütun",
+      "groupsPerRow": "Satır Başına Gruplar",
+      "hexadecimal": "Onaltılık",
+      "length": "Uzunluk",
+      "lengthTooltip": "Getirilecek bayt sayısı, ondalık veya onaltılık olarak",
+      "memory": {
+        "addressField": {
+          "memoryReadError": "Konum alanına bir adres veya ifade girin."
+        },
+        "freeze": "Bellek Görünümünü Dondur",
+        "hideSettings": "Ayarlar Panelini Gizle",
+        "readError": {
+          "bounds": "Bellek sınırları aşıldı, sonuç kesilecektir.",
+          "noContents": "Şu anda kullanılabilir bellek içeriği yok."
+        },
+        "readLength": {
+          "memoryReadError": "Uzunluk alanına bir uzunluk (ondalık veya onaltılık sayı) girin."
+        },
+        "showSettings": "Ayarlar Panelini Göster",
+        "unfreeze": "Bellek Görünümünü Çöz",
+        "userError": "Bellek alınırken bir hata oluştu."
+      },
+      "memoryCategory": "Bellek Denetçisi",
+      "memoryInspector": "Bellek Denetçisi",
+      "memoryTitle": "Hafıza",
+      "octal": "Sekizli",
+      "offset": "Ofset",
+      "offsetTooltip": "Gezinirken geçerli bellek konumuna eklenecek ofset",
+      "provider": {
+        "localsError": "Yerel değişkenler okunamıyor. Etkin hata ayıklama oturumu yok.",
+        "readError": "Bellek okunamıyor. Etkin hata ayıklama oturumu yok.",
+        "writeError": "Bellek yazılamıyor. Etkin hata ayıklama oturumu yok."
+      },
+      "register": "Kayıt Olun",
+      "register-widget": {
+        "filter-placeholder": "Filtre (ile başlar)"
+      },
+      "registerReadError": "Kayıtların alınmasında bir hata oluştu.",
+      "registers": "Kayıtlar",
+      "toggleComparisonWidgetVisibility": "Karşılaştırma Widget Görünürlüğünü Aç / Kapat",
+      "utils": {
+        "afterBytes": "Karşılaştırmak istediğiniz her iki widget'a da bellek yüklemeniz gerekir. {0} adresinde bellek yüklü değildir.",
+        "bytesMessage": "Karşılaştırmak istediğiniz her iki widget'a da bellek yüklemeniz gerekir. {0} adresinde bellek yüklü değildir."
+      }
+    },
+    "messages": {
+      "notificationTimeout": "Bilgilendirici bildirimler bu zaman aşımından sonra gizlenecektir.",
+      "toggleNotifications": "Bildirimleri Aç / Kapat"
+    },
+    "mini-browser": {
+      "typeUrl": "Bir URL yazın"
+    },
+    "monaco": {
+      "noSymbolsMatching": "Eşleşen sembol yok",
+      "typeToSearchForSymbols": "Sembolleri aramak için yazın"
+    },
+    "navigator": {
+      "autoReveal": "Otomatik Gösterge",
+      "clipboardWarn": "Panoya erişim reddedildi. Tarayıcınızın izinlerini kontrol edin.",
+      "clipboardWarnFirefox": "Pano API'si mevcut değildir. '{1}' sayfasındaki '{0}' tercihi ile etkinleştirilebilir. Ardından Theia'yı yeniden yükleyin. FireFox'un sistem panosuna tam erişim sağlamasına izin vereceğini unutmayın.",
+      "refresh": "Explorer'da Yenile",
+      "reveal": "Explorer'da Göster",
+      "toggleHiddenFiles": "Gizli Dosyaları Aç / Kapat"
+    },
+    "output": {
+      "clearOutputChannel": "Çıkış Kanalını Temizle...",
+      "closeOutputChannel": "Çıkış Kanalını Kapat...",
+      "hiddenChannels": "Gizli Kanallar",
+      "hideOutputChannel": "Çıkış Kanalını Gizle...",
+      "maxChannelHistory": "Bir çıkış kanalındaki maksimum giriş sayısı.",
+      "outputChannels": "Çıkış Kanalları",
+      "showOutputChannel": "Çıkış Kanalını Göster..."
+    },
+    "plugin": {
+      "blockNewTab": "Tarayıcınız yeni bir sekme açılmasını engelledi"
+    },
+    "plugin-dev": {
+      "alreadyRunning": "Barındırılan örnek zaten çalışıyor.",
+      "debugInstance": "Hata Ayıklama Örneği",
+      "debugMode": "Node.js hata ayıklama için inspect veya inspect-brk kullanma",
+      "debugPorts": {
+        "debugPort": "Bu sunucunun Node.js hata ayıklaması için kullanılacak bağlantı noktası"
+      },
+      "devHost": "Geliştirme Ev Sahibi",
+      "failed": "Barındırılan eklenti örneği çalıştırılamadı: {0}",
+      "hostedPlugin": "Barındırılan Eklenti",
+      "hostedPluginRunning": "Barındırılan Eklenti: Çalışıyor",
+      "hostedPluginStarting": "Barındırılan Eklenti: Başlıyor",
+      "hostedPluginStopped": "Barındırılan Eklenti: Durduruldu",
+      "hostedPluginWatching": "Barındırılan Eklenti: İzleme",
+      "instanceTerminated": "{0} sonlandırıldı",
+      "launchOutFiles": "Oluşturulan JavaScript dosyalarını bulmak için glob kalıpları dizisi (`${pluginPath}` eklentinin gerçek yolu ile değiştirilecektir).",
+      "noValidPlugin": "Belirtilen klasör geçerli bir eklenti içermiyor.",
+      "notRunning": "Barındırılan örnek çalışmıyor.",
+      "pluginFolder": "Eklenti klasörü olarak ayarlanmıştır: {0}",
+      "preventedNewTab": "Tarayıcınız yeni bir sekme açılmasını engelledi",
+      "restartInstance": "Örneği Yeniden Başlat",
+      "running": "Barındırılan örnek şu adreste çalışıyor:",
+      "select": "Seçiniz",
+      "selectPath": "Yol Seçin",
+      "startInstance": "Örneği Başlat",
+      "starting": "Barındırılan örnek sunucusu başlatılıyor ...",
+      "stopInstance": "Örneği Durdur",
+      "unknownTerminated": "Örnek sonlandırıldı",
+      "watchMode": "Geliştirme aşamasındaki eklenti üzerinde izleyiciyi çalıştırın"
+    },
+    "plugin-ext": {
+      "authentication-main": {
+        "loginTitle": "Giriş"
+      },
+      "plugins": "Eklentiler",
+      "webviewTrace": "Web görünümleri ile iletişim izlemeyi kontrol eder.",
+      "webviewWarnIfUnsecure": "Kullanıcıları web görünümlerinin şu anda güvenli olmayan bir şekilde dağıtıldığı konusunda uyarır."
+    },
+    "preferences": {
+      "hostedPlugin": "Barındırılan Eklenti",
+      "toolbar": "Araç Çubuğu"
+    },
+    "preview": {
+      "openByDefault": "Varsayılan olarak düzenleyici yerine önizlemeyi açın."
+    },
+    "property-view": {
+      "created": "Oluşturuldu",
+      "directory": "Rehber",
+      "lastModified": "Son değişiklik",
+      "location": "Konum",
+      "noProperties": "Mevcut mülk yok.",
+      "properties": "Özellikler",
+      "size": "Boyut",
+      "symbolicLink": "Sembolik bağlantı"
+    },
+    "scm": {
+      "amend": "Değiştirmek",
+      "amendHeadCommit": "HEAD Commit",
+      "amendLastCommit": "Son taahhüdü değiştirin",
+      "changeRepository": "Depoyu Değiştir...",
+      "config.untrackedChanges": "İzlenmeyen değişikliklerin nasıl davranacağını kontrol eder.",
+      "config.untrackedChanges.hidden": "gizli",
+      "config.untrackedChanges.mixed": "karışık",
+      "config.untrackedChanges.separate": "ayrı",
+      "dirtyDiff": {
+        "close": "Kapat Değişim Peek Görünümü"
+      },
+      "history": "Tarih",
+      "noRepositoryFound": "Depo bulunamadı",
+      "unamend": "Unamend",
+      "unamendCommit": "Değişikliği kaldır"
+    },
+    "search-in-workspace": {
+      "includeIgnoredFiles": "Yoksayılan Dosyaları Dahil Etme",
+      "noFolderSpecified": "Bir klasör açmadınız veya belirtmediniz. Şu anda yalnızca açık dosyalar aranmaktadır.",
+      "resultSubset": "Bu, tüm sonuçların yalnızca bir alt kümesidir. Sonuç listesini daraltmak için daha spesifik bir arama terimi kullanın.",
+      "searchOnEditorModification": "Değiştirildiğinde etkin düzenleyicide arama yapın."
+    },
+    "secondary-window": {
+      "extract-widget": "Görünümü İkincil Pencereye Taşı"
+    },
+    "shell-area": {
+      "secondary": "İkincil Pencere"
+    },
+    "task": {
+      "attachTask": "Görev Ekle...",
+      "clearHistory": "Geçmişi Temizle",
+      "noTaskToRun": "Çalıştırılacak görev bulunamadı. Görevleri Yapılandır...",
+      "openUserTasks": "Kullanıcı Görevlerini Aç"
+    },
+    "terminal": {
+      "defaultProfile": "üzerinde kullanılan varsayılan profil {0}",
+      "enableCopy": "Seçili metni kopyalamak için ctrl-c'yi (macOS'ta cmd-c) etkinleştirin",
+      "enablePaste": "Panodan yapıştırmak için ctrl-v'yi (macOS'ta cmd-v) etkinleştirin",
+      "profileArgs": "Bu profilin kullandığı kabuk argümanları.",
+      "profileColor": "Terminalle ilişkilendirilecek bir terminal tema rengi kimliği.",
+      "profileDefault": "Varsayılan Profil'i seçin...",
+      "profileIcon": "Terminal simgesiyle ilişkilendirilecek bir codicon kimliği.\nterminal-tmux:\"$(terminal-tmux)\"",
+      "profileNew": "Yeni Terminal (Profilli)...",
+      "profilePath": "Bu profilin kullandığı kabuğun yolu.",
+      "profiles": "Yeni bir terminal oluştururken sunulacak profiller. Yol özelliğini isteğe bağlı args ile manuel olarak ayarlayın.\nProfili listeden gizlemek için mevcut bir profili `null` olarak ayarlayın, örneğin: `\"{0}\": null`.",
+      "rendererType": "Terminalin nasıl oluşturulacağını kontrol eder.",
+      "rendererTypeDeprecationMessage": "Oluşturucu türü artık bir seçenek olarak desteklenmemektedir.",
+      "selectProfile": "Yeni terminal için bir profil seçin",
+      "shell.deprecated": "Bu kullanımdan kaldırılmıştır, varsayılan kabuğunuzu yapılandırmak için önerilen yeni yol 'terminal.integrated.profiles.{0}' içinde bir terminal profili oluşturmak ve profil adını 'terminal.integrated.defaultProfile.{0}' içinde varsayılan olarak ayarlamaktır.",
+      "shellArgsLinux": "Linux terminalindeyken kullanılacak komut satırı argümanları.",
+      "shellArgsOsx": "macOS terminalindeyken kullanılacak komut satırı argümanları.",
+      "shellArgsWindows": "Windows terminalindeyken kullanılacak komut satırı argümanları.",
+      "shellLinux": "Terminalin Linux üzerinde kullandığı kabuğun yolu (varsayılan: '{0}'}).",
+      "shellOsx": "Terminalin macOS üzerinde kullandığı kabuğun yolu (varsayılan: '{0}'}).",
+      "shellWindows": "Terminalin Windows üzerinde kullandığı kabuğun yolu. (varsayılan: '{0}')."
+    },
+    "test": {
+      "cancelAllTestRuns": "Tüm Test Çalışmalarını İptal Et",
+      "stackFrameAt": "at",
+      "testRunDefaultName": "{0} koşmak {1}",
+      "testRuns": "Test Çalışmaları"
+    },
+    "toolbar": {
+      "addCommand": "Araç Çubuğuna Komut Ekleme",
+      "addCommandPlaceholder": "Araç çubuğuna eklemek için bir komut bulun",
+      "centerColumn": "Orta Kolon",
+      "failedUpdate": "'{1}' içindeki '{0}' değeri güncellenemedi.",
+      "filterIcons": "Filtre Simgeleri",
+      "iconSelectDialog": "'{0}' için bir Simge seçin",
+      "iconSet": "Simge Seti",
+      "insertGroupLeft": "Grup Ayırıcı Ekle (Sol)",
+      "insertGroupRight": "Grup Ayırıcı Ekle (Sağ)",
+      "leftColumn": "Sol Sütun",
+      "openJSON": "Araç Çubuğunu Özelleştir (JSON'u Aç)",
+      "removeCommand": "Command'ı Araç Çubuğundan Kaldır",
+      "restoreDefaults": "Araç Çubuğu Varsayılanlarını Geri Yükle",
+      "rightColumn": "Sağ Sütun",
+      "selectIcon": "Simge Seçin",
+      "toggleToolbar": "Araç Çubuğunu Değiştir",
+      "toolbarLocationPlaceholder": "Komutun nereye eklenmesini istersiniz?",
+      "useDefaultIcon": "Varsayılan Simgeyi Kullan"
+    },
+    "typehierarchy": {
+      "subtypeHierarchy": "Alt Tip Hiyerarşisi",
+      "supertypeHierarchy": "Süper Tip Hiyerarşisi"
+    },
+    "vsx-registry": {
+      "confirmDialogMessage": "\"{0}\" uzantısı doğrulanmamıştır ve güvenlik riski oluşturabilir.",
+      "confirmDialogTitle": "Kuruluma devam etmek istediğinizden emin misiniz?",
+      "downloadCount": "İndirme sayısı: {0}",
+      "errorFetching": "Uzantılar getirilirken hata oluştu.",
+      "errorFetchingConfigurationHint": "Bunun nedeni ağ yapılandırma sorunları olabilir.",
+      "failedInstallingVSIX": "VSIX'ten {0} yüklenemedi.",
+      "invalidVSIX": "Seçilen dosya geçerli bir \"*.vsix\" eklentisi değil.",
+      "license": "Ruhsat: {0}",
+      "onlyShowVerifiedExtensionsDescription": "Bu, {0} adresinin yalnızca doğrulanmış uzantıları göstermesini sağlar.",
+      "onlyShowVerifiedExtensionsTitle": "Yalnızca Doğrulanmış Uzantıları Göster",
+      "recommendedExtensions": "Bu depo için önerilen uzantıları yüklemek istiyor musunuz?",
+      "searchPlaceholder": "Uzantıları içinde ara {0}",
+      "showInstalled": "Yüklü Uzantıları Göster",
+      "showRecommendedExtensions": "Uzantı önerileri için bildirimlerin gösterilip gösterilmeyeceğini kontrol eder.",
+      "vsx-extensions-contribution": {
+        "update-version-uninstall-error": "Uzantı kaldırılırken hata oluştu: {0}.",
+        "update-version-version-error": "{1}'un {0} sürümü yüklenemedi."
+      }
+    },
+    "webview": {
+      "goToReadme": "README'ye Git",
+      "messageWarning": "            {0} uç noktasının ana bilgisayar kalıbı `{1}` olarak değiştirildi; kalıbın değiştirilmesi güvenlik açıklarına yol açabilir.             Daha fazla bilgi için `{2}` adresine bakın."
+    },
+    "workspace": {
+      "compareWithEachOther": "Birbirleriyle Karşılaştırın",
+      "confirmDeletePermanently.description": "Çöp Kutusu kullanılarak \"{0}\" silinemedi. Bunun yerine kalıcı olarak silmek mi istiyorsunuz?",
+      "confirmDeletePermanently.solution": "Tercihlerde Çöp Kutusu kullanımını devre dışı bırakabilirsiniz.",
+      "confirmDeletePermanently.title": "Dosya silinirken hata oluştu",
+      "confirmMessage.delete": "Aşağıdaki dosyaları gerçekten silmek istiyor musunuz?",
+      "confirmMessage.dirtyMultiple": "Kaydedilmemiş değişiklikler içeren {0} dosyalarını gerçekten silmek istiyor musunuz?",
+      "confirmMessage.dirtySingle": "Kaydedilmemiş değişikliklerle {0} adresini gerçekten silmek istiyor musunuz?",
+      "confirmMessage.uriMultiple": "Gerçekten tüm {0} seçili dosyaları silmek istiyor musunuz?",
+      "confirmMessage.uriSingle": "{0} adresini gerçekten silmek istiyor musunuz?",
+      "duplicate": "Yinelenen",
+      "failSaveAs": "Geçerli widget için \"{0}\" çalıştırılamıyor.",
+      "newFilePlaceholder": "Dosya Adı",
+      "newFolderPlaceholder": "Klasör adı",
+      "noErasure": "Not: Diskten hiçbir şey silinmeyecektir",
+      "openRecentPlaceholder": "Açmak istediğiniz çalışma alanının adını yazın",
+      "openRecentWorkspace": "Son Çalışma Alanını Aç...",
+      "preserveWindow": "Geçerli pencerede çalışma alanlarını açmayı etkinleştirir.",
+      "removeFolder": "Aşağıdaki klasörü çalışma alanından kaldırmak istediğinizden emin misiniz?",
+      "removeFolders": "Aşağıdaki klasörleri çalışma alanından kaldırmak istediğinizden emin misiniz?",
+      "trashTitle": "{0} adresini Çöp Kutusuna Taşı",
+      "trustEmptyWindow": "Varsayılan olarak boş çalışma alanına güvenilip güvenilmeyeceğini denetler.",
+      "trustEnabled": "Çalışma alanı güveninin etkin olup olmadığını denetler. Devre dışı bırakılırsa, tüm çalışma alanlarına güvenilir.",
+      "trustRequest": "Bir uzantı çalışma alanı güveni talep ediyor ancak ilgili API henüz tam olarak desteklenmiyor. Bu çalışma alanına güvenmek istiyor musunuz?",
+      "untitled-cleanup": "Çok sayıda başlıksız çalışma alanı dosyası var gibi görünüyor. Lütfen {0} adresini kontrol edin ve kullanılmayan dosyaları kaldırın.",
+      "workspaceFolderAdded": "Birden fazla kökü olan bir çalışma alanı oluşturuldu. Çalışma alanı yapılandırmanızı bir dosya olarak kaydetmek istiyor musunuz?",
+      "workspaceFolderAddedTitle": "Çalışma Alanına eklenen klasör"
+    }
+  }
+}

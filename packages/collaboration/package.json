@@ -1,0 +1,57 @@
+{
+  "name": "@theia/collaboration",
+  "version": "1.56.0",
+  "description": "Theia - Collaboration Extension",
+  "dependencies": {
+    "@theia/core": "1.56.0",
+    "@theia/editor": "1.56.0",
+    "@theia/filesystem": "1.56.0",
+    "@theia/monaco": "1.56.0",
+    "@theia/monaco-editor-core": "1.83.101",
+    "@theia/workspace": "1.56.0",
+    "open-collaboration-protocol": "0.2.0",
+    "open-collaboration-yjs": "0.2.0",
+    "socket.io-client": "^4.5.3",
+    "yjs": "^13.6.7",
+    "lib0": "^0.2.52",
+    "y-protocols": "^1.0.6"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "theiaExtensions": [
+    {
+      "frontend": "lib/browser/collaboration-frontend-module"
+    }
+  ],
+  "keywords": [
+    "theia-extension"
+  ],
+  "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eclipse-theia/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/eclipse-theia/theia/issues"
+  },
+  "homepage": "https://github.com/eclipse-theia/theia",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "build": "theiaext build",
+    "clean": "theiaext clean",
+    "compile": "theiaext compile",
+    "lint": "theiaext lint",
+    "test": "theiaext test",
+    "watch": "theiaext watch"
+  },
+  "devDependencies": {
+    "@theia/ext-scripts": "1.56.0"
+  },
+  "nyc": {
+    "extends": "../../configs/nyc.json"
+  }
+}

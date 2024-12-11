@@ -71,25 +71,30 @@ export class BrowserMainMenuFactory implements MenuWidgetFactory {
         const menuBar = new DynamicMenuBarWidget();
         menuBar.id = 'theia:menubar';
         this.corePreferences.ready.then(() => {
-            this.showMenuBar(menuBar, this.corePreferences.get('window.menuBarVisibility', 'classic'));
+            this.showMenuBar(menuBar);
         });
-        const preferenceListener = this.corePreferences.onPreferenceChanged(preference => {
-            if (preference.preferenceName === 'window.menuBarVisibility') {
-                this.showMenuBar(menuBar, preference.newValue);
-            }
-        });
-        const keybindingListener = this.keybindingRegistry.onKeybindingsChanged(() => {
-            const preference = this.corePreferences['window.menuBarVisibility'];
-            this.showMenuBar(menuBar, preference);
-        });
-        menuBar.disposed.connect(() => {
-            preferenceListener.dispose();
-            keybindingListener.dispose();
-        });
+        const disposable = new DisposableCollection(
+            this.corePreferences.onPreferenceChanged(change => {
+                if (change.preferenceName === 'window.menuBarVisibility') {
+                    this.showMenuBar(menuBar, change.newValue);
+                }
+            }),
+            this.keybindingRegistry.onKeybindingsChanged(() => {
+                this.showMenuBar(menuBar);
+            }),
+            this.menuProvider.onDidChange(() => {
+                this.showMenuBar(menuBar);
+            })
+        );
+        menuBar.disposed.connect(() => disposable.dispose());
         return menuBar;
     }
 
-    protected showMenuBar(menuBar: DynamicMenuBarWidget, preference: string | undefined): void {
+    protected getMenuBarVisibility(): string {
+        return this.corePreferences.get('window.menuBarVisibility', 'classic');
+    }
+
+    protected showMenuBar(menuBar: DynamicMenuBarWidget, preference = this.getMenuBarVisibility()): void {
         if (preference && ['classic', 'visible'].includes(preference)) {
             menuBar.clearMenus();
             this.fillMenuBar(menuBar);
@@ -187,13 +192,13 @@ export class DynamicMenuBarWidget extends MenuBarWidget {
         this.openActiveMenu();
         await waitForRevealed(menu);
 
-        const menuPath = [label];
+        const menuPath = [label, ...labels];
 
         let current = menu;
         for (const itemLabel of labels) {
             const item = current.items.find(i => i.label === itemLabel);
             if (!item || !item.submenu) {
-                throw new Error(`could not find '${label}' submenu in ${menuPath.map(l => "'" + l + "'").join(' -> ')} menu`);
+                throw new Error(`could not find '${itemLabel}' submenu in ${menuPath.map(l => "'" + l + "'").join(' -> ')} menu`);
             }
             current.activeItem = item;
             current.triggerActiveItem();
@@ -211,7 +216,7 @@ export class DynamicMenuBarWidget extends MenuBarWidget {
         const menu = await this.activateMenu(menuPath[0], ...menuPath.slice(1));
         const item = menu.items.find(i => i.label === labels[labels.length - 1]);
         if (!item) {
-            throw new Error(`could not find '${label}' item in ${menuPath.map(l => "'" + l + "'").join(' -> ')} menu`);
+            throw new Error(`could not find '${labels[labels.length - 1]}' item in ${menuPath.map(l => "'" + l + "'").join(' -> ')} menu`);
         }
         menu.activeItem = item;
         menu.triggerActiveItem();
@@ -468,9 +473,11 @@ export class MenuCommandRegistry extends PhosphorCommandRegistry {
         });
 
         const bindings = keybindingRegistry.getKeybindingsForCommand(id);
-        // Only consider the first keybinding.
+        // Only consider the first active keybinding.
         if (bindings.length) {
-            const binding = bindings[0];
+            const binding = bindings.length > 1 ?
+                bindings.find(b => !b.when || this.services.contextKeyService.match(b.when)) ?? bindings[0] :
+                bindings[0];
             const keys = keybindingRegistry.acceleratorFor(binding, ' ', true);
             this.addKeyBinding({
                 command: id,

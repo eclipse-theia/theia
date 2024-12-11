@@ -55,7 +55,13 @@ export class WindowStateExtImpl implements WindowStateExt {
         this.windowStateChangedEmitter.fire(this.windowStateCached);
     }
 
-    openUri(uri: URI): Promise<boolean> {
+    async openUri(uriOrString: URI | string): Promise<boolean> {
+        let uri: URI;
+        if (typeof uriOrString === 'string') {
+            uri = URI.parse(uriOrString);
+        } else {
+            uri = uriOrString;
+        }
         if (!uri.scheme.trim().length) {
             throw new Error('Invalid scheme - cannot be empty');
         }

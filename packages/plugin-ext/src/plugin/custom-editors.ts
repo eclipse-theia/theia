@@ -25,11 +25,11 @@ import { RPCProtocol } from '../common/rpc-protocol';
 import { Disposable, URI } from './types-impl';
 import { UriComponents } from '../common/uri-components';
 import { DocumentsExtImpl } from './documents';
-import { WebviewImpl, WebviewsExtImpl } from './webviews';
+import { WebviewsExtImpl } from './webviews';
 import { CancellationToken, CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
-import { WorkspaceExtImpl } from './workspace';
 import { Cache } from '../common/cache';
+import * as Converters from './type-converters';
 
 export class CustomEditorsExtImpl implements CustomEditorsExt {
     private readonly proxy: CustomEditorsMain;
@@ -38,8 +38,7 @@ export class CustomEditorsExtImpl implements CustomEditorsExt {
 
     constructor(rpc: RPCProtocol,
         private readonly documentExt: DocumentsExtImpl,
-        private readonly webviewExt: WebviewsExtImpl,
-        private readonly workspace: WorkspaceExtImpl) {
+        private readonly webviewExt: WebviewsExtImpl) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.CUSTOM_EDITORS_MAIN);
     }
 
@@ -116,22 +115,21 @@ export class CustomEditorsExtImpl implements CustomEditorsExt {
         document.dispose();
     }
 
-    async $resolveWebviewEditor<T>(
+    async $resolveWebviewEditor(
         resource: UriComponents,
         handler: string,
         viewType: string,
         title: string,
-        widgetOpenerOptions: object | undefined,
-        options: theia.WebviewPanelOptions & theia.WebviewOptions,
+        position: number,
+        options: theia.WebviewPanelOptions,
         cancellation: CancellationToken
     ): Promise<void> {
         const entry = this.editorProviders.get(viewType);
         if (!entry) {
             throw new Error(`No provider found for '${viewType}'`);
         }
-        const panel = this.webviewExt.createWebviewPanel(viewType, title, {}, options, entry.plugin, handler, false);
-        const webviewOptions = WebviewImpl.toWebviewOptions(options, this.workspace, entry.plugin);
-        await this.proxy.$createCustomEditorPanel(handler, title, widgetOpenerOptions, webviewOptions);
+        const viewColumn = Converters.toViewColumn(position);
+        const panel = this.webviewExt.createWebviewPanel(viewType, title, { viewColumn }, options, entry.plugin, handler, false);
 
         const revivedResource = URI.revive(resource);
 

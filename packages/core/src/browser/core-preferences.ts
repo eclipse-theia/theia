@@ -98,7 +98,9 @@ export const corePreferenceSchema: PreferenceSchema = {
                 nls.localizeByDefault('Menu is displayed at the top of the window and only hidden in full screen mode.'),
                 nls.localizeByDefault('Menu is always visible at the top of the window even in full screen mode.'),
                 nls.localizeByDefault('Menu is always hidden.'),
-                nls.localizeByDefault('Menu is displayed as a compact button in the side bar. This value is ignored when {0} is {1}.', '`#window.titleBarStyle#`', '`native`')
+                environment.electron.is()
+                    ? nls.localizeByDefault('Menu is displayed as a compact button in the side bar. This value is ignored when {0} is {1}.', '`#window.titleBarStyle#`', '`native`')
+                    : nls.localizeByDefault('Menu is displayed as a compact button in the side bar.')
             ],
             default: 'classic',
             scope: 'application',
@@ -281,6 +283,15 @@ export const corePreferenceSchema: PreferenceSchema = {
             default: 200,
             minimum: 10,
             description: nls.localize('theia/core/tabDefaultSize', 'Specifies the default size for tabs.')
+        },
+        'workbench.editorAssociations': {
+            type: 'object',
+            markdownDescription: nls.localizeByDefault('Configure [glob patterns](https://aka.ms/vscode-glob-patterns) to editors (for example `"*.hex": "hexEditor.hexedit"`). These have precedence over the default behavior.'),
+            patternProperties: {
+                '.*': {
+                    type: 'string'
+                }
+            }
         }
     }
 };

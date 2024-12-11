@@ -18,7 +18,7 @@ import * as chalk from 'chalk';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import { Localization, sortLocalization } from './common';
-import { deepl, DeeplLanguage, DeeplParameters, isSupportedLanguage, supportedLanguages } from './deepl-api';
+import { deepl, DeeplLanguage, DeeplParameters, defaultLanguages, isSupportedLanguage } from './deepl-api';
 
 export interface LocalizationOptions {
     freeApi: Boolean
@@ -34,7 +34,7 @@ export class LocalizationManager {
 
     constructor(private localizationFn = deepl) { }
 
-    async localize(options: LocalizationOptions): Promise<void> {
+    async localize(options: LocalizationOptions): Promise<boolean> {
         let source: Localization = {};
         const cwd = process.env.INIT_CWD || process.cwd();
         const sourceFile = path.resolve(cwd, options.sourceFile);
@@ -52,8 +52,10 @@ export class LocalizationManager {
                 languages.push(targetLanguage);
             }
         }
-        if (languages.length !== options.targetLanguages.length) {
-            console.log('Supported languages: ' + supportedLanguages.join(', '));
+        if (languages.length === 0) {
+            // No supported languages were found, default to all supported languages
+            console.log('No languages were specified, defaulting to all supported languages for VS Code');
+            languages.push(...defaultLanguages);
         }
         const existingTranslations: Map<string, Localization> = new Map();
         for (const targetLanguage of languages) {
@@ -64,7 +66,8 @@ export class LocalizationManager {
                 existingTranslations.set(targetLanguage, {});
             }
         }
-        await Promise.all(languages.map(language => this.translateLanguage(source, existingTranslations.get(language)!, language, options)));
+        const results = await Promise.all(languages.map(language => this.translateLanguage(source, existingTranslations.get(language)!, language, options)));
+        let result = results.reduce((acc, val) => acc && val, true);
 
         for (const targetLanguage of languages) {
             const targetPath = this.translationFileName(sourceFile, targetLanguage);
@@ -73,8 +76,10 @@ export class LocalizationManager {
                 await fs.writeJson(targetPath, sortLocalization(translation), { spaces: 2 });
             } catch {
                 console.error(chalk.red(`Error writing translated file to '${targetPath}'`));
+                result = false;
             }
         }
+        return result;
     }
 
     protected translationFileName(original: string, language: string): string {
@@ -83,7 +88,7 @@ export class LocalizationManager {
         return path.join(directory, `${fileName}.${language.toLowerCase()}.json`);
     }
 
-    async translateLanguage(source: Localization, target: Localization, targetLanguage: string, options: LocalizationOptions): Promise<void> {
+    async translateLanguage(source: Localization, target: Localization, targetLanguage: string, options: LocalizationOptions): Promise<boolean> {
         const map = this.buildLocalizationMap(source, target);
         if (map.text.length > 0) {
             try {
@@ -100,11 +105,14 @@ export class LocalizationManager {
                     map.localize(i, this.removeIgnoreTags(text));
                 });
                 console.log(chalk.green(`Successfully translated ${map.text.length} value${map.text.length > 1 ? 's' : ''} for language "${targetLanguage}"`));
+                return true;
             } catch (e) {
                 console.log(chalk.red(`Could not translate into language "${targetLanguage}"`), e);
+                return false;
             }
         } else {
             console.log(`No translation necessary for language "${targetLanguage}"`);
+            return true;
         }
     }
 

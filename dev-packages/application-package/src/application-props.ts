@@ -34,7 +34,8 @@ export namespace ElectronFrontendApplicationConfig {
     export const DEFAULT: ElectronFrontendApplicationConfig = {
         windowOptions: {},
         showWindowEarly: true,
-        splashScreenOptions: {}
+        splashScreenOptions: {},
+        uriScheme: 'theia'
     };
     export interface SplashScreenOptions {
         /**
@@ -85,6 +86,11 @@ export namespace ElectronFrontendApplicationConfig {
          * Defaults to `{}` which results in no splash screen being displayed.
          */
         readonly splashScreenOptions?: SplashScreenOptions;
+
+        /**
+         * The custom uri scheme the application registers to in the operating system.
+         */
+        readonly uriScheme: string;
     }
 }
 
@@ -122,7 +128,8 @@ export namespace FrontendApplicationConfig {
         electron: ElectronFrontendApplicationConfig.DEFAULT,
         defaultLocale: '',
         validatePreferencesSchema: true,
-        reloadOnReconnect: false
+        reloadOnReconnect: false,
+        uriScheme: 'theia'
     };
     export interface Partial extends ApplicationConfig {
 
@@ -183,8 +190,9 @@ export namespace FrontendApplicationConfig {
 export type BackendApplicationConfig = RequiredRecursive<BackendApplicationConfig.Partial>;
 export namespace BackendApplicationConfig {
     export const DEFAULT: BackendApplicationConfig = {
-        singleInstance: false,
-        frontendConnectionTimeout: 0
+        singleInstance: true,
+        frontendConnectionTimeout: 0,
+        configurationFolder: '.theia'
     };
     export interface Partial extends ApplicationConfig {
 
@@ -199,6 +207,13 @@ export namespace BackendApplicationConfig {
          * The time in ms the connection context will be preserved for reconnection after a front end disconnects.
          */
         readonly frontendConnectionTimeout?: number;
+
+        /**
+         * Configuration folder within the home user folder
+         *
+         * Defaults to `.theia`
+         */
+        readonly configurationFolder?: string;
     }
 }
 

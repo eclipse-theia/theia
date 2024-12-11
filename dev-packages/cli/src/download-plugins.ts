@@ -16,7 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { OVSXApiFilterImpl, OVSXClient } from '@theia/ovsx-client';
+import { OVSXApiFilterImpl, OVSXClient, VSXTargetPlatform } from '@theia/ovsx-client';
 import * as chalk from 'chalk';
 import * as decompress from 'decompress';
 import { promises as fs } from 'fs';
@@ -55,8 +55,6 @@ export interface DownloadPluginsOptions {
      * Fetch plugins in parallel
      */
     parallel?: boolean;
-
-    rateLimit?: number;
 }
 
 interface PluginDownload {
@@ -65,17 +63,20 @@ interface PluginDownload {
     version?: string | undefined
 }
 
-export default async function downloadPlugins(ovsxClient: OVSXClient, requestService: RequestService, options: DownloadPluginsOptions = {}): Promise<void> {
+export default async function downloadPlugins(
+    ovsxClient: OVSXClient,
+    rateLimiter: RateLimiter,
+    requestService: RequestService,
+    options: DownloadPluginsOptions = {}
+): Promise<void> {
     const {
         packed = false,
         ignoreErrors = false,
         apiVersion = DEFAULT_SUPPORTED_API_VERSION,
-        rateLimit = 15,
         parallel = true
     } = options;
 
-    const rateLimiter = new RateLimiter({ tokensPerInterval: rateLimit, interval: 'second' });
-    const apiFilter = new OVSXApiFilterImpl(apiVersion);
+    const apiFilter = new OVSXApiFilterImpl(ovsxClient, apiVersion);
 
     // Collect the list of failures to be appended at the end of the script.
     const failures: string[] = [];
@@ -129,8 +130,11 @@ export default async function downloadPlugins(ovsxClient: OVSXClient, requestSer
             await parallelOrSequence(Array.from(ids, id => async () => {
                 try {
                     await rateLimiter.removeTokens(1);
-                    const { extensions } = await ovsxClient.query({ extensionId: id, includeAllVersions: true });
-                    const extension = apiFilter.getLatestCompatibleExtension(extensions);
+                    const extension = await apiFilter.findLatestCompatibleExtension({
+                        extensionId: id,
+                        includeAllVersions: true,
+                        targetPlatform
+                    });
                     const version = extension?.version;
                     const downloadUrl = extension?.files.download;
                     if (downloadUrl) {
@@ -140,6 +144,7 @@ export default async function downloadPlugins(ovsxClient: OVSXClient, requestSer
                         failures.push(`No download url for extension pack ${id} (${version})`);
                     }
                 } catch (err) {
+                    console.error(err);
                     failures.push(err.message);
                 }
             }));
@@ -170,8 +175,10 @@ export default async function downloadPlugins(ovsxClient: OVSXClient, requestSer
     }
 }
 
+const targetPlatform = `${process.platform}-${process.arch}` as VSXTargetPlatform;
+
 const placeholders: Record<string, string> = {
-    targetPlatform: `${process.platform}-${process.arch}`
+    targetPlatform
 };
 function resolveDownloadUrlPlaceholders(url: string): string {
     for (const [name, value] of Object.entries(placeholders)) {

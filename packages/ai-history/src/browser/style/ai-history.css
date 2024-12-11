@@ -1,0 +1,92 @@
+.agent-history-widget {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+
+.agent-history-widget .theia-select-component {
+    margin: 10px 0;
+    width: 80%;
+}
+
+.agent-history {
+    width: calc(80% + 16px);
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+}
+
+.theia-card {
+    background-color: var(--theia-sideBar-background);
+    border: 1px solid var(--theia-sideBarSectionHeader-border);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 15px;
+    margin: 10px 0;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.theia-card-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9em;
+    padding: var(--theia-ui-padding) 0;
+}
+
+.theia-card-content {
+    color: var(--theia-font-color);
+    margin-bottom: 10px;
+}
+
+.theia-card-content h2 {
+    font-size: var(--theia-ui-font-size2);
+}
+.theia-card-content h3 {
+    font-size: var(--theia-ui-font-size1);
+    font-weight: bold;
+}
+
+.theia-card-content .theia-card-context h2 {
+    display: inline;
+}
+.theia-card-content .theia-card-context ul {
+    padding-inline-start: 20px;
+}
+.theia-card-content .theia-card-context pre {
+    overflow: scroll;
+}
+
+.theia-card-content p {
+    margin: var(--theia-ui-padding) 0;
+}
+
+.theia-card-request, .theia-card-response {
+    margin-bottom: 10px;
+}
+
+.theia-card-request pre,
+.theia-card-response pre {
+    font-family: monospace;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    background-color: var(--theia-sideBar-background);
+    margin: var(--theia-ui-padding) 0;
+}
+
+.theia-card-request-id,
+.theia-card-session-id,
+.theia-card-timestamp,
+.theia-card-response-time {
+    flex: 1;
+}
+
+.theia-card-request-id,
+.theia-card-timestamp {
+    text-align: left;
+}
+
+.theia-card-session-id,
+.theia-card-response-time {
+    text-align: right;
+}

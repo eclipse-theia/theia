@@ -14,21 +14,29 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { LabelProviderContribution, TreeNode } from '@theia/core/lib/browser';
 import { Preference } from './preference-types';
-import { PreferenceTreeGenerator } from './preference-tree-generator';
+import { PreferenceLayoutProvider } from './preference-layout';
+
 @injectable()
 export class PreferenceTreeLabelProvider implements LabelProviderContribution {
-    @inject(PreferenceTreeGenerator) protected readonly treeGenerator: PreferenceTreeGenerator;
+
+    @inject(PreferenceLayoutProvider)
+    protected readonly layoutProvider: PreferenceLayoutProvider;
 
     canHandle(element: object): number {
         return TreeNode.is(element) && Preference.TreeNode.is(element) ? 150 : 0;
     }
 
     getName(node: Preference.TreeNode): string {
+        if (Preference.TreeNode.is(node) && node.label) {
+            return node.label;
+        }
         const { id } = Preference.TreeNode.getGroupAndIdFromNodeId(node.id);
-        return this.formatString(this.treeGenerator.getCustomLabelFor(id) ?? id.split('.').pop()!);
+        const labels = id.split('.');
+        const groupName = labels[labels.length - 1];
+        return this.formatString(groupName);
     }
 
     getPrefix(node: Preference.TreeNode, fullPath = false): string | undefined {

@@ -1,4 +1,9 @@
 {
+  "aiConfiguration:open": "Otevřete zobrazení konfigurace AI",
+  "aiHistory:clear": "Historie umělé inteligence: Vymazat historii",
+  "aiHistory:open": "Otevřít zobrazení Historie AI",
+  "aiHistory:sortChronologically": "Historie umělé inteligence: Seřadit chronologicky",
+  "aiHistory:sortReverseChronologically": "Historie umělé inteligence: Řadit zpětně chronologicky",
   "debug.breakpoint.editCondition": "Upravit stav...",
   "notebook.cell.changeToCode": "Změna buňky na kód",
   "notebook.cell.changeToMarkdown": "Změna buňky na Mardown",
@@ -10,6 +15,33 @@
     "callhierarchy": {
       "noCallers": "Nebyl zjištěn žádný volající.",
       "open": "Hierarchie otevřených výzev"
+    },
+    "collaboration": {
+      "collaborate": "Spolupracujte",
+      "collaboration": "Spolupráce",
+      "collaborationWorkspace": "Pracovní prostor pro spolupráci",
+      "connected": "Připojeno",
+      "connectedSession": "Připojení k relaci spolupráce",
+      "copiedInvitation": "Kód pozvánky zkopírovaný do schránky.",
+      "copyAgain": "Znovu kopírovat",
+      "createRoom": "Vytvoření nové relace spolupráce",
+      "creatingRoom": "Vytvoření relace",
+      "end": "Ukončení relace spolupráce",
+      "endDetail": "Ukončit relaci, ukončit sdílení obsahu a zrušit přístup ostatním uživatelům.",
+      "enterCode": "Zadejte kód relace spolupráce",
+      "failedCreate": "Nepodařilo se vytvořit prostor: {0}",
+      "failedJoin": "Nepodařilo se připojit k místnosti: {0}",
+      "invite": "Pozvat ostatní",
+      "inviteDetail": "Zkopírujte si kód pozvánky, abyste ji mohli sdílet s ostatními a připojit se k sezení.",
+      "joinRoom": "Připojte se k zasedání o spolupráci",
+      "joiningRoom": "Připojení k relaci",
+      "leave": "Opustit zasedání pro spolupráci",
+      "leaveDetail": "Odpojte se od aktuální relace spolupráce a zavřete pracovní prostor.",
+      "selectCollaboration": "Vyberte možnost spolupráce",
+      "sharedSession": "Společná relace spolupráce",
+      "startSession": "Zahájení relace spolupráce nebo připojení se k ní",
+      "userWantsToJoin": "Uživatel '{0}' se chce připojit k místnosti pro spolupráci",
+      "whatToDo": "Co byste chtěli dělat s dalšími spolupracovníky?"
     },
     "core": {
       "about": {
@@ -112,7 +144,6 @@
       "editor.accessibilitySupport2": "Předpokládejme, že není připojena čtečka obrazovky",
       "editor.bracketPairColorization.enabled": "Ovládá, zda je obarvení dvojice závorek povoleno, nebo ne. Pro přepsání barev zvýraznění závorek použijte `#workbench.colorCustomizations#`.",
       "editor.codeActionWidget.includeNearbyQuickfixes": "Povolení/zakázání zobrazení nejbližší opravy v rámci řádku, pokud se zrovna neprovádí diagnostika.",
-      "editor.cursorSurroundingLinesStyle": "Řídí, kdy se má vynutit `#cursorSurroundingLines#`.",
       "editor.detectIndentation": "Řídí, zda se při otevření souboru automaticky zjistí `#editor.tabSize#` a `#editor.insertSpaces#` na základě obsahu souboru.",
       "editor.dropIntoEditor.enabled": "Ovládá, zda můžete soubor přetáhnout do textového editoru podržením klávesy `shift` (namísto otevření souboru v editoru).",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Pokusí se formátovat pouze změny (vyžaduje kontrolu zdrojů). Pokud nelze použít kontrolu zdrojů, bude formátován celý soubor.",
@@ -179,6 +210,7 @@
       "prepareDownloadLink": "Připravujeme odkaz ke stažení...",
       "processedOutOf": "Zpracováno {0} z {1}",
       "replaceTitle": "Nahradit soubor",
+      "uploadFailed": "Při nahrávání souboru došlo k chybě. {0}",
       "uploadFiles": "Nahrávání souborů...",
       "uploadedOutOf": "Nahráno {0} z {1}"
     },
@@ -346,12 +378,6 @@
       "reveal": "Odhalení v Průzkumníkovi",
       "toggleHiddenFiles": "Přepínání skrytých souborů"
     },
-    "notebook": {
-      "dragGhostImage": {
-        "codeText": "Vybraná buňka kódu",
-        "markdownText": "Vybraná buňka Mardown"
-      }
-    },
     "output": {
       "clearOutputChannel": "Jasný výstupní kanál...",
       "closeOutputChannel": "Zavřít výstupní kanál...",
@@ -368,6 +394,9 @@
       "alreadyRunning": "Hostovaná instance je již spuštěna.",
       "debugInstance": "Instance ladění",
       "debugMode": "Použití inspect nebo inspect-brk pro ladění Node.js",
+      "debugPorts": {
+        "debugPort": "Port, který se použije pro ladění Node.js tohoto serveru"
+      },
       "devHost": "Vývojový hostitel",
       "failed": "Nepodařilo se spustit hostovanou instanci zásuvného modulu: {0}",
       "hostedPlugin": "Hostovaný plugin",
@@ -398,6 +427,10 @@
       "plugins": "Zásuvné moduly",
       "webviewTrace": "Řídí sledování komunikace s webovými pohledy.",
       "webviewWarnIfUnsecure": "Upozorňuje uživatele, že webové náhledy jsou v současné době nasazeny nezabezpečeně."
+    },
+    "preferences": {
+      "hostedPlugin": "Hostovaný plugin",
+      "toolbar": "Panel nástrojů"
     },
     "preview": {
       "openByDefault": "Ve výchozím nastavení otevřete místo editoru náhled."
@@ -471,6 +504,7 @@
     },
     "test": {
       "cancelAllTestRuns": "Zrušení všech testovacích běhů",
+      "stackFrameAt": "na adrese",
       "testRunDefaultName": "{0} spustit {1}",
       "testRuns": "Testovací běhy"
     },
@@ -533,7 +567,6 @@
       "confirmMessage.uriMultiple": "Opravdu chcete odstranit všechny {0} vybrané soubory?",
       "confirmMessage.uriSingle": "Opravdu chcete odstranit {0}?",
       "duplicate": "Duplikát",
-      "failApply": "Nelze použít změny v novém souboru",
       "failSaveAs": "Nelze spustit \"{0}\" pro aktuální widget.",
       "newFilePlaceholder": "Název souboru",
       "newFolderPlaceholder": "Název složky",

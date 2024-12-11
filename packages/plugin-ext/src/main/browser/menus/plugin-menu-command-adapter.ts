@@ -32,7 +32,6 @@ import { TreeViewWidget } from '../view/tree-view-widget';
 import { CodeEditorWidgetUtil, codeToTheiaMappings, ContributionPoint } from './vscode-theia-menu-mappings';
 import { TAB_BAR_TOOLBAR_CONTEXT_MENU } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { TestItem, TestMessage } from '@theia/test/lib/browser/test-service';
-import { fromLocation } from '../hierarchy/hierarchy-types-converters';
 
 export type ArgumentAdapter = (...args: unknown[]) => unknown[];
 
@@ -108,6 +107,7 @@ export class PluginMenuCommandAdapter implements MenuCommandAdapter {
             ['scm/resourceState/context', toScmArgs],
             ['scm/title', () => [this.toScmArg(this.scmService.selectedRepository)]],
             ['testing/message/context', toTestMessageArgs],
+            ['testing/profiles/context', noArgs],
             ['scm/change/title', (...args) => this.toScmChangeArgs(...args)],
             ['timeline/item/context', (...args) => this.toTimelineArgs(...args)],
             ['view/item/context', (...args) => this.toTreeArgs(...args)],
@@ -168,7 +168,27 @@ export class PluginMenuCommandAdapter implements MenuCommandAdapter {
     }
 
     protected getArgumentAdapterForMenu(menuPath: MenuPath): ArgumentAdapter | undefined {
-        return this.argumentAdapters.get(menuPath.join(this.separator));
+        let result;
+        let length = 0;
+        for (const [key, value] of this.argumentAdapters.entries()) {
+            const candidate = key.split(this.separator);
+            if (this.isPrefixOf(candidate, menuPath) && candidate.length > length) {
+                result = value;
+                length = candidate.length;
+            }
+        }
+        return result;
+    }
+    isPrefixOf(candidate: string[], menuPath: MenuPath): boolean {
+        if (candidate.length > menuPath.length) {
+            return false;
+        }
+        for (let i = 0; i < candidate.length; i++) {
+            if (candidate[i] !== menuPath[i]) {
+                return false;
+            }
+        }
+        return true;
     }
 
     protected addArgumentAdapter(menuPath: MenuPath, adapter: ArgumentAdapter): void {
@@ -294,7 +314,8 @@ export class PluginMenuCommandAdapter implements MenuCommandAdapter {
                 actual: testMessage.actual,
                 expected: testMessage.expected,
                 contextValue: testMessage.contextValue,
-                location: testMessage.location ? fromLocation(testMessage.location) : undefined
+                location: testMessage.location,
+                stackTrace: testMessage.stackTrace
             };
             return [TestMessageArg.create(testItemReference, testMessageDTO)];
         }

@@ -16,7 +16,7 @@
 
 import * as React from '@theia/core/shared/react';
 import { NotebookModel } from '../view-model/notebook-model';
-import { NotebookCellModel } from '../view-model/notebook-cell-model';
+import { NotebookCellModel, NotebookCodeEditorFindMatch } from '../view-model/notebook-cell-model';
 import { SimpleMonacoEditor } from '@theia/monaco/lib/browser/simple-monaco-editor';
 import { MonacoEditor, MonacoEditorServices } from '@theia/monaco/lib/browser/monaco-editor';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
@@ -26,13 +26,19 @@ import { DisposableCollection, OS } from '@theia/core';
 import { NotebookViewportService } from './notebook-viewport-service';
 import { BareFontInfo } from '@theia/monaco-editor-core/esm/vs/editor/common/config/fontInfo';
 import { NOTEBOOK_CELL_CURSOR_FIRST_LINE, NOTEBOOK_CELL_CURSOR_LAST_LINE } from '../contributions/notebook-context-keys';
+import { EditorExtensionsRegistry } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorExtensions';
+import { ModelDecorationOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/model/textModel';
+import { IModelDeltaDecoration, OverviewRulerLane, TrackedRangeStickiness } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
+import { animationFrame } from '@theia/core/lib/browser';
+import { NotebookCellEditorService } from '../service/notebook-cell-editor-service';
 
 interface CellEditorProps {
-    notebookModel: NotebookModel,
-    cell: NotebookCellModel,
-    monacoServices: MonacoEditorServices,
+    notebookModel: NotebookModel;
+    cell: NotebookCellModel;
+    monacoServices: MonacoEditorServices;
     notebookContextManager: NotebookContextManager;
-    notebookViewportService?: NotebookViewportService,
+    notebookCellEditorService: NotebookCellEditorService;
+    notebookViewportService?: NotebookViewportService;
     fontInfo?: BareFontInfo;
 }
 
@@ -47,18 +53,46 @@ const DEFAULT_EDITOR_OPTIONS: MonacoEditor.IOptions = {
     lineDecorationsWidth: 10,
 };
 
+export const CURRENT_FIND_MATCH_DECORATION = ModelDecorationOptions.register({
+    description: 'current-find-match',
+    stickiness: TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges,
+    zIndex: 13,
+    className: 'currentFindMatch',
+    inlineClassName: 'currentFindMatchInline',
+    showIfCollapsed: true,
+    overviewRuler: {
+        color: 'editorOverviewRuler.findMatchForeground',
+        position: OverviewRulerLane.Center
+    }
+});
+
+export const FIND_MATCH_DECORATION = ModelDecorationOptions.register({
+    description: 'find-match',
+    stickiness: TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges,
+    zIndex: 10,
+    className: 'findMatch',
+    inlineClassName: 'findMatchInline',
+    showIfCollapsed: true,
+    overviewRuler: {
+        color: 'editorOverviewRuler.findMatchForeground',
+        position: OverviewRulerLane.Center
+    }
+});
+
 export class CellEditor extends React.Component<CellEditorProps, {}> {
 
     protected editor?: SimpleMonacoEditor;
     protected toDispose = new DisposableCollection();
     protected container?: HTMLDivElement;
+    protected matches: NotebookCodeEditorFindMatch[] = [];
+    protected oldMatchDecorations: string[] = [];
 
     override componentDidMount(): void {
         this.disposeEditor();
         this.toDispose.push(this.props.cell.onWillFocusCellEditor(focusRequest => {
             this.editor?.getControl().focus();
             const lineCount = this.editor?.getControl().getModel()?.getLineCount();
-            if (focusRequest && lineCount) {
+            if (focusRequest && lineCount !== undefined) {
                 this.editor?.getControl().setPosition(focusRequest === 'lastLine' ?
                     { lineNumber: lineCount, column: 1 } :
                     { lineNumber: focusRequest, column: 1 },
@@ -67,8 +101,9 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
             const currentLine = this.editor?.getControl().getPosition()?.lineNumber;
             this.props.notebookContextManager.scopedStore.setContext(NOTEBOOK_CELL_CURSOR_FIRST_LINE, currentLine === 1);
             this.props.notebookContextManager.scopedStore.setContext(NOTEBOOK_CELL_CURSOR_LAST_LINE, currentLine === lineCount);
-
         }));
+
+        this.toDispose.push(this.props.cell.onWillBlurCellEditor(() => this.blurEditor()));
 
         this.toDispose.push(this.props.cell.onDidChangeEditorOptions(options => {
             this.editor?.getControl().updateOptions(options);
@@ -78,9 +113,16 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
             this.editor?.setLanguage(language);
         }));
 
+        this.toDispose.push(this.props.cell.onDidFindMatches(matches => {
+            this.matches = matches;
+            animationFrame().then(() => this.setMatches());
+        }));
+
+        this.toDispose.push(this.props.cell.onDidSelectFindMatch(match => this.centerEditorInView()));
+
         this.toDispose.push(this.props.notebookModel.onDidChangeSelectedCell(e => {
             if (e.cell !== this.props.cell && this.editor?.getControl().hasTextFocus()) {
-                this.props.notebookContextManager.context?.focus();
+                this.blurEditor();
             }
         }));
         if (!this.props.notebookViewportService || (this.container && this.props.notebookViewportService.isElementInViewport(this.container))) {
@@ -94,6 +136,10 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
             });
             this.toDispose.push(disposable);
         }
+
+        this.toDispose.push(this.props.cell.onDidRequestCenterEditor(() => {
+            this.centerEditorInView();
+        }));
     }
 
     override componentWillUnmount(): void {
@@ -101,8 +147,26 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
     }
 
     protected disposeEditor(): void {
+        if (this.editor) {
+            this.props.notebookCellEditorService.editorDisposed(this.editor.uri);
+        }
         this.toDispose.dispose();
         this.toDispose = new DisposableCollection();
+    }
+
+    protected centerEditorInView(): void {
+        const editorDomNode = this.editor?.getControl().getDomNode();
+        if (editorDomNode) {
+            editorDomNode.scrollIntoView({
+                behavior: 'instant',
+                block: 'center'
+            });
+        } else {
+            this.container?.scrollIntoView({
+                behavior: 'instant',
+                block: 'center'
+            });
+        }
     }
 
     protected async initEditor(): Promise<void> {
@@ -117,7 +181,8 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
                 editorNode,
                 monacoServices,
                 { ...DEFAULT_EDITOR_OPTIONS, ...cell.editorOptions },
-                [[IContextKeyService, this.props.notebookContextManager.scopedStore]]);
+                [[IContextKeyService, this.props.notebookContextManager.scopedStore]],
+                { contributions: EditorExtensionsRegistry.getEditorContributions().filter(c => c.id !== 'editor.contrib.findController') });
             this.toDispose.push(this.editor);
             this.editor.setLanguage(cell.language);
             this.toDispose.push(this.editor.getControl().onDidContentSizeChange(() => {
@@ -128,11 +193,23 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
                 notebookModel.cellDirtyChanged(cell, true);
             }));
             this.toDispose.push(this.editor.getControl().onDidFocusEditorText(() => {
-                this.props.notebookContextManager.onDidEditorTextFocus(true);
                 this.props.notebookModel.setSelectedCell(cell, false);
+                this.props.notebookCellEditorService.editorFocusChanged(this.editor);
             }));
             this.toDispose.push(this.editor.getControl().onDidBlurEditorText(() => {
-                this.props.notebookContextManager.onDidEditorTextFocus(false);
+                if (this.props.notebookCellEditorService.getActiveCell()?.uri.toString() === this.props.cell.uri.toString()) {
+                    this.props.notebookCellEditorService.editorFocusChanged(undefined);
+                }
+            }));
+
+            this.toDispose.push(this.editor.getControl().onDidChangeCursorSelection(e => {
+                const selectedText = this.editor!.getControl().getModel()!.getValueInRange(e.selection);
+                // TODO handle secondary selections
+                this.props.cell.selection = {
+                    start: { line: e.selection.startLineNumber - 1, character: e.selection.startColumn - 1 },
+                    end: { line: e.selection.endLineNumber - 1, character: e.selection.endColumn - 1 }
+                };
+                this.props.notebookModel.selectedText = selectedText;
             }));
             this.toDispose.push(this.editor.getControl().onDidChangeCursorPosition(e => {
                 if (e.secondaryPositions.length === 0) {
@@ -144,10 +221,34 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
                     this.props.notebookContextManager.scopedStore.setContext(NOTEBOOK_CELL_CURSOR_LAST_LINE, false);
                 }
             }));
-            if (cell.editing && notebookModel.selectedCell === cell) {
+            this.props.notebookCellEditorService.editorCreated(uri, this.editor);
+            this.setMatches();
+            if (notebookModel.selectedCell === cell) {
                 this.editor.getControl().focus();
             }
         }
+    }
+
+    protected setMatches(): void {
+        if (!this.editor) {
+            return;
+        }
+        const decorations: IModelDeltaDecoration[] = [];
+        for (const match of this.matches) {
+            const decoration = match.selected ? CURRENT_FIND_MATCH_DECORATION : FIND_MATCH_DECORATION;
+            decorations.push({
+                range: {
+                    startLineNumber: match.range.start.line,
+                    startColumn: match.range.start.character,
+                    endLineNumber: match.range.end.line,
+                    endColumn: match.range.end.character
+                },
+                options: decoration
+            });
+        }
+
+        this.oldMatchDecorations = this.editor.getControl()
+            .changeDecorations(accessor => accessor.deltaDecorations(this.oldMatchDecorations, decorations));
     }
 
     protected setContainer(component: HTMLDivElement | null): void {
@@ -167,6 +268,16 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
         return <div className='theia-notebook-cell-editor' onResize={this.handleResize} id={this.props.cell.uri.toString()}
             ref={container => this.setContainer(container)} style={{ height: this.editor ? undefined : this.estimateHeight() }}>
         </div >;
+    }
+
+    protected blurEditor(): void {
+        let parent = this.container?.parentElement;
+        while (parent && !parent.classList.contains('theia-notebook-cell')) {
+            parent = parent.parentElement;
+        }
+        if (parent) {
+            parent.focus();
+        }
     }
 
 }

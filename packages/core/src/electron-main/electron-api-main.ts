@@ -54,7 +54,8 @@ import {
     CHANNEL_SET_BACKGROUND_COLOR,
     CHANNEL_WC_METADATA,
     CHANNEL_ABOUT_TO_CLOSE,
-    CHANNEL_OPEN_WITH_SYSTEM_APP
+    CHANNEL_OPEN_WITH_SYSTEM_APP,
+    CHANNEL_OPEN_URL
 } from '../electron-common/electron-api';
 import { ElectronMainApplication, ElectronMainApplicationContribution } from './electron-main-application';
 import { Disposable, DisposableCollection, isOSX, MaybePromise } from '../common';
@@ -165,8 +166,8 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
             shell.showItemInFolder(fsPath);
         });
 
-        ipcMain.on(CHANNEL_OPEN_WITH_SYSTEM_APP, (event, fsPath) => {
-            shell.openPath(fsPath);
+        ipcMain.on(CHANNEL_OPEN_WITH_SYSTEM_APP, (event, uri) => {
+            shell.openExternal(uri);
         });
 
         ipcMain.handle(CHANNEL_GET_TITLE_STYLE_AT_STARTUP, event => application.getTitleBarStyleAtStartup(event.sender));
@@ -241,9 +242,20 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
         });
     }
 
+    private isASCI(accelerator: string | undefined): boolean {
+        if (typeof accelerator !== 'string') {
+            return false;
+        }
+        for (let i = 0; i < accelerator.length; i++) {
+            if (accelerator.charCodeAt(i) > 127) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     fromMenuDto(sender: WebContents, menuId: number, menuDto: InternalMenuDto[]): MenuItemConstructorOptions[] {
         return menuDto.map(dto => {
-
             const result: MenuItemConstructorOptions = {
                 id: dto.id,
                 label: dto.label,
@@ -252,7 +264,7 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
                 enabled: dto.enabled,
                 visible: dto.visible,
                 role: dto.role,
-                accelerator: dto.accelerator
+                accelerator: this.isASCI(dto.accelerator) ? dto.accelerator : undefined
             };
             if (dto.submenu) {
                 result.submenu = this.fromMenuDto(sender, menuId, dto.submenu);
@@ -272,6 +284,20 @@ let nextReplyChannel: number = 0;
 export namespace TheiaRendererAPI {
     export function sendWindowEvent(wc: WebContents, event: WindowEvent): void {
         wc.send(CHANNEL_ON_WINDOW_EVENT, event);
+    }
+
+    export function openUrl(wc: WebContents, url: string): Promise<boolean> {
+        return new Promise<boolean>(resolve => {
+            const channelNr = nextReplyChannel++;
+            const replyChannel = `openUrl${channelNr}`;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const l = createDisposableListener(ipcMain, replyChannel, (e, args: any[]) => {
+                l.dispose();
+                resolve(args[0]);
+            });
+
+            wc.send(CHANNEL_OPEN_URL, url, replyChannel);
+        });
     }
 
     export function sendAboutToClose(wc: WebContents): Promise<void> {

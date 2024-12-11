@@ -4,9 +4,13 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  publish:
     name: Publish to NPM and GitHub pages
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+
+    # The current approach is silly. We should be smarter and use `actions/upload-artifact` and `actions/download-artifact` instead of rebuilding
+    # everything from scratch again. (git checkout, Node.js install, yarn, etc.) It was not possible to share artifacts on Travis CI without an
+    # external storage (such as S3), so we did rebuild everything before the npm publish. We should overcome this limitation with GH Actions.
 
     steps:
       - name: Checkout
@@ -14,22 +18,16 @@ jobs:
         with:
           fetch-depth: 0 # To fetch all history for all branches and tags. (Will be required for caching with lerna: https://github.com/markuplint/markuplint/pull/111)
 
-      - name: Use Node.js 18.x
+      - name: Use Node.js 20.x
         uses: actions/setup-node@1a4442cacd436585916779262731d5b162bc6ec7 # v3.8.2
         with:
-          node-version: '18.x'
+          node-version: '20.x'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Use Python 3.x
         uses: actions/setup-python@b64ffcaf5b410884ad320a9cfac8866006a109aa # v4.8.0
         with:
           python-version: '3.x'
-
-      - name: Install Dependencies
-        run: yarn install
-
-      - name: Build
-        run: yarn build
 
       - name: Pre-npm-Publish
         run: |

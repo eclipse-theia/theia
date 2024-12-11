@@ -86,10 +86,10 @@ export abstract class Process implements ManagedProcess {
     abstract readonly inputStream: Writable;
 
     constructor(
-        protected readonly processManager: ManagedProcessManager,
-        protected readonly logger: ILogger,
+        @unmanaged() protected readonly processManager: ManagedProcessManager,
+        @unmanaged() protected readonly logger: ILogger,
         @unmanaged() protected readonly type: ProcessType,
-        protected readonly options: ProcessOptions | ForkOptions
+        @unmanaged() protected readonly options: ProcessOptions | ForkOptions
     ) {
         this.id = this.processManager.register(this);
         this.initialCwd = options && options.options && 'cwd' in options.options && options.options['cwd'].toString() || __dirname;

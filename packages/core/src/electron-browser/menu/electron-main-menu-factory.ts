@@ -74,39 +74,45 @@ export type ElectronMenuItemRole = ('undo' | 'redo' | 'cut' | 'copy' | 'paste' |
 @injectable()
 export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
 
-    protected _menu?: MenuDto[];
-    protected _toggledCommands: Set<string> = new Set();
+    protected menu?: MenuDto[];
+    protected toggledCommands: Set<string> = new Set();
 
     @inject(PreferenceService)
     protected preferencesService: PreferenceService;
 
+    setMenuBar = debounce(() => this.doSetMenuBar(), 100);
+
     @postConstruct()
     postConstruct(): void {
-        this.preferencesService.onPreferenceChanged(
-            debounce(e => {
-                if (e.preferenceName === 'window.menuBarVisibility') {
-                    this.setMenuBar();
-                }
-                if (this._menu) {
-                    for (const cmd of this._toggledCommands) {
-                        const menuItem = this.findMenuById(this._menu, cmd);
-                        if (menuItem) {
-                            menuItem.checked = this.commandRegistry.isToggled(cmd);
-                        }
-                    }
-                    window.electronTheiaCore.setMenu(this._menu);
-                }
-            }, 10)
-        );
         this.keybindingRegistry.onKeybindingsChanged(() => {
             this.setMenuBar();
         });
+        this.menuProvider.onDidChange(() => {
+            this.setMenuBar();
+        });
+        this.preferencesService.ready.then(() => {
+            this.preferencesService.onPreferenceChanged(
+                debounce(e => {
+                    if (e.preferenceName === 'window.menuBarVisibility') {
+                        this.doSetMenuBar();
+                    }
+                    if (this.menu) {
+                        for (const cmd of this.toggledCommands) {
+                            const menuItem = this.findMenuById(this.menu, cmd);
+                            if (menuItem && (!!menuItem.checked !== this.commandRegistry.isToggled(cmd))) {
+                                menuItem.checked = !menuItem.checked;
+                            }
+                        }
+                        window.electronTheiaCore.setMenu(this.menu);
+                    }
+                }, 10)
+            );
+        });
     }
 
-    async setMenuBar(): Promise<void> {
-        await this.preferencesService.ready;
-        const createdMenuBar = this.createElectronMenuBar();
-        window.electronTheiaCore.setMenu(createdMenuBar);
+    doSetMenuBar(): void {
+        this.menu = this.createElectronMenuBar();
+        window.electronTheiaCore.setMenu(this.menu);
     }
 
     createElectronMenuBar(): MenuDto[] | undefined {
@@ -114,26 +120,25 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
         const maxWidget = document.getElementsByClassName(MAXIMIZED_CLASS);
         if (preference === 'visible' || (preference === 'classic' && maxWidget.length === 0)) {
             const menuModel = this.menuProvider.getMenu(MAIN_MENU_BAR);
-            this._menu = this.fillMenuTemplate([], menuModel, [], { honorDisabled: false, rootMenuPath: MAIN_MENU_BAR });
+            const menu = this.fillMenuTemplate([], menuModel, [], { honorDisabled: false, rootMenuPath: MAIN_MENU_BAR }, false);
             if (isOSX) {
-                this._menu.unshift(this.createOSXMenu());
+                menu.unshift(this.createOSXMenu());
             }
-            return this._menu;
+            return menu;
         }
-        this._menu = undefined;
-        // eslint-disable-next-line no-null/no-null
         return undefined;
     }
 
     createElectronContextMenu(menuPath: MenuPath, args?: any[], context?: HTMLElement, contextKeyService?: ContextMatcher, skipSingleRootNode?: boolean): MenuDto[] {
         const menuModel = skipSingleRootNode ? this.menuProvider.removeSingleRootNode(this.menuProvider.getMenu(menuPath), menuPath) : this.menuProvider.getMenu(menuPath);
-        return this.fillMenuTemplate([], menuModel, args, { showDisabled: true, context, rootMenuPath: menuPath, contextKeyService });
+        return this.fillMenuTemplate([], menuModel, args, { showDisabled: true, context, rootMenuPath: menuPath, contextKeyService }, true);
     }
 
     protected fillMenuTemplate(parentItems: MenuDto[],
         menu: MenuNode,
         args: unknown[] = [],
-        options: ElectronMenuOptions
+        options: ElectronMenuOptions,
+        skipRoot: boolean
     ): MenuDto[] {
         const showDisabled = options?.showDisabled !== false;
         const honorDisabled = options?.honorDisabled !== false;
@@ -145,13 +150,13 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
             }
             const children = CompoundMenuNode.getFlatChildren(menu.children);
             const myItems: MenuDto[] = [];
-            children.forEach(child => this.fillMenuTemplate(myItems, child, args, options));
+            children.forEach(child => this.fillMenuTemplate(myItems, child, args, options, false));
             if (myItems.length === 0) {
                 return parentItems;
             }
-            if (role === CompoundMenuNodeRole.Submenu) {
+            if (!skipRoot && role === CompoundMenuNodeRole.Submenu) {
                 parentItems.push({ label: menu.label, submenu: myItems });
-            } else if (role === CompoundMenuNodeRole.Group && menu.id !== 'inline') {
+            } else {
                 if (parentItems.length && parentItems[parentItems.length - 1].type !== 'separator') {
                     parentItems.push({ type: 'separator' });
                 }
@@ -204,7 +209,7 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
             parentItems.push(menuItem);
 
             if (this.commandRegistry.getToggledHandler(commandId, ...args)) {
-                this._toggledCommands.add(commandId);
+                this.toggledCommands.add(commandId);
             }
         }
         return parentItems;
@@ -269,11 +274,11 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
             // We need to check if we can execute it.
             if (this.menuCommandExecutor.isEnabled(menuPath, cmd, ...args)) {
                 await this.menuCommandExecutor.executeCommand(menuPath, cmd, ...args);
-                if (this._menu && this.menuCommandExecutor.isVisible(menuPath, cmd, ...args)) {
-                    const item = this.findMenuById(this._menu, cmd);
+                if (this.menu && this.menuCommandExecutor.isVisible(menuPath, cmd, ...args)) {
+                    const item = this.findMenuById(this.menu, cmd);
                     if (item) {
                         item.checked = this.menuCommandExecutor.isToggled(menuPath, cmd, ...args);
-                        window.electronTheiaCore.setMenu(this._menu);
+                        window.electronTheiaCore.setMenu(this.menu);
                     }
                 }
             }

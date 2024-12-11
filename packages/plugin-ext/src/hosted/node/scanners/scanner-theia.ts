@@ -16,7 +16,7 @@
 
 /* eslint-disable @theia/localization-check */
 
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, unmanaged } from '@theia/core/shared/inversify';
 import {
     AutoClosingPair,
     AutoClosingPairConditional,
@@ -100,7 +100,10 @@ export abstract class AbstractPluginScanner implements PluginScanner {
     @inject(PluginUriFactory)
     protected readonly pluginUriFactory: PluginUriFactory;
 
-    constructor(private readonly _apiType: PluginEngine, private readonly _backendInitPath?: string) { }
+    constructor(
+        @unmanaged() private readonly _apiType: PluginEngine,
+        @unmanaged() private readonly _backendInitPath?: string) {
+    }
 
     get apiType(): PluginEngine {
         return this._apiType;
@@ -192,10 +195,22 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
         try {
             if (rawPlugin.contributes.configuration) {
                 const configurations = Array.isArray(rawPlugin.contributes.configuration) ? rawPlugin.contributes.configuration : [rawPlugin.contributes.configuration];
+                const hasMultipleConfigs = configurations.length > 1;
                 contributions.configuration = [];
                 for (const c of configurations) {
                     const config = this.readConfiguration(c, rawPlugin.packagePath);
                     if (config) {
+                        Object.values(config.properties).forEach(property => {
+                            if (hasMultipleConfigs) {
+                                // If there are multiple configuration contributions, we need to distinguish them by their title in the settings UI.
+                                // They are placed directly under the plugin's name in the settings UI.
+                                property.owner = rawPlugin.displayName;
+                                property.group = config.title;
+                            } else {
+                                // If there's only one configuration contribution, we display the title in the settings UI.
+                                property.owner = config.title;
+                            }
+                        });
                         contributions.configuration.push(config);
                     }
                 }
@@ -718,6 +733,7 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
             view: rawViewWelcome.view,
             content: rawViewWelcome.contents,
             when: rawViewWelcome.when,
+            enablement: rawViewWelcome.enablement,
             // if the plugin contributes Welcome view to its own view - it will be ordered first
             order: pluginViewsIds.findIndex(v => v === rawViewWelcome.view) > -1 ? 0 : 1
         };

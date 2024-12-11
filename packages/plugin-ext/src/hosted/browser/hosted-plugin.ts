@@ -26,7 +26,7 @@ import { injectable, inject, postConstruct } from '@theia/core/shared/inversify'
 import { PluginWorker } from './plugin-worker';
 import { getPluginId, DeployedPlugin, HostedPluginServer } from '../../common/plugin-protocol';
 import { HostedPluginWatcher } from './hosted-plugin-watcher';
-import { MAIN_RPC_CONTEXT, PluginManagerExt, UIKind } from '../../common/plugin-api-rpc';
+import { ExtensionKind, MAIN_RPC_CONTEXT, PluginManagerExt, UIKind } from '../../common/plugin-api-rpc';
 import { setUpPluginApi } from '../../main/browser/main-context';
 import { RPCProtocol, RPCProtocolImpl } from '../../common/rpc-protocol';
 import {
@@ -40,10 +40,10 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { PluginContributionHandler } from '../../main/browser/plugin-contribution-handler';
 import { getQueryParameters } from '../../main/browser/env-main';
 import { getPreferences } from '../../main/browser/preference-registry-main';
-import { Deferred } from '@theia/core/lib/common/promise-util';
+import { Deferred, waitForEvent } from '@theia/core/lib/common/promise-util';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
 import { DebugConfigurationManager } from '@theia/debug/lib/browser/debug-configuration-manager';
-import { WaitUntilEvent } from '@theia/core/lib/common/event';
+import { Event, WaitUntilEvent } from '@theia/core/lib/common/event';
 import { FileSearchService } from '@theia/file-search/lib/common/file-search-service';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { PluginViewRegistry } from '../../main/browser/view/plugin-view-registry';
@@ -71,6 +71,7 @@ import {
     AbstractHostedPluginSupport, PluginContributions, PluginHost,
     ALL_ACTIVATION_EVENT, isConnectionScopedBackendPlugin
 } from '../common/hosted-plugin';
+import { isRemote } from '@theia/core/lib/browser/browser';
 
 export type DebugActivationEvent = 'onDebugResolve' | 'onDebugInitialConfigurations' | 'onDebugAdapterProtocolTracker' | 'onDebugDynamicConfigurations';
 
@@ -208,7 +209,8 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
         this.notebookRendererMessagingService.onWillActivateRenderer(rendererId => this.activateByNotebookRenderer(rendererId));
 
         this.widgets.onDidCreateWidget(({ factoryId, widget }) => {
-            if ((factoryId === WebviewWidget.FACTORY_ID || factoryId === CustomEditorWidget.FACTORY_ID) && widget instanceof WebviewWidget) {
+            // note: state restoration of custom editors is handled in `PluginCustomEditorRegistry.init`
+            if (factoryId === WebviewWidget.FACTORY_ID && widget instanceof WebviewWidget) {
                 const storeState = widget.storeState.bind(widget);
                 const restoreState = widget.restoreState.bind(widget);
 
@@ -326,7 +328,8 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
                     uiKind: isElectron ? UIKind.Desktop : UIKind.Web,
                     appName: FrontendApplicationConfigProvider.get().applicationName,
                     appHost: isElectron ? 'desktop' : 'web', // TODO: 'web' could be the embedder's name, e.g. 'github.dev'
-                    appRoot
+                    appRoot,
+                    appUriScheme: FrontendApplicationConfigProvider.get().electron.uriScheme
                 },
                 extApi,
                 webview: {
@@ -334,6 +337,7 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
                     webviewCspSource
                 },
                 jsonValidation,
+                pluginKind: isRemote ? ExtensionKind.Workspace : ExtensionKind.UI,
                 supportedActivationEvents
             });
             if (toDisconnect.disposed) {
@@ -413,6 +417,10 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
         await this.activateByEvent(`onLanguage:${languageId}`);
     }
 
+    async activateByUri(scheme: string, authority: string): Promise<void> {
+        await this.activateByEvent(`onUri:${scheme}://${authority}`);
+    }
+
     async activateByCommand(commandId: string): Promise<void> {
         await this.activateByEvent(`onCommand:${commandId}`);
     }
@@ -446,7 +454,12 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
     }
 
     protected ensureFileSystemActivation(event: FileSystemProviderActivationEvent): void {
-        event.waitUntil(this.activateByFileSystem(event));
+        event.waitUntil(this.activateByFileSystem(event).then(() => {
+            if (!this.fileService.hasProvider(event.scheme)) {
+                return waitForEvent(Event.filter(this.fileService.onDidChangeFileSystemProviderRegistrations,
+                    ({ added, scheme }) => added && scheme === event.scheme), 3000);
+            }
+        }));
     }
 
     protected ensureCommandHandlerRegistration(event: WillExecuteCommandEvent): void {

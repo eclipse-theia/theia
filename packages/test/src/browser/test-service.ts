@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { CancellationToken, ContributionProvider, Disposable, Emitter, Event, QuickPickService, isObject, nls } from '@theia/core/lib/common';
-import { CancellationTokenSource, Location, Range } from '@theia/core/shared/vscode-languageserver-protocol';
+import { CancellationTokenSource, Location, Range, Position, DocumentUri } from '@theia/core/shared/vscode-languageserver-protocol';
 import { CollectionDelta, TreeDelta } from '../common/tree-delta';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import URI from '@theia/core/lib/common/uri';
@@ -35,7 +35,7 @@ export interface TestRunProfile {
     isDefault: boolean;
     readonly canConfigure: boolean;
     readonly tag: string;
-    run(name: string, included: readonly TestItem[], excluded: readonly TestItem[]): void;
+    run(name: string, included: readonly TestItem[], excluded: readonly TestItem[], preserveFocus: boolean): void;
     configure(): void;
 }
 
@@ -56,9 +56,16 @@ export enum TestExecutionState {
 export interface TestMessage {
     readonly expected?: string;
     readonly actual?: string;
-    readonly location: Location;
+    readonly location?: Location;
     readonly message: string | MarkdownString;
     readonly contextValue?: string;
+    readonly stackTrace?: TestMessageStackFrame[];
+}
+
+export interface TestMessageStackFrame {
+    readonly label: string,
+    readonly uri?: DocumentUri,
+    readonly position?: Position,
 }
 
 export namespace TestMessage {
@@ -96,6 +103,7 @@ export interface TestStateChangedEvent {
 
 export interface TestRun {
     cancel(): void;
+    readonly id: string;
     readonly name: string;
     readonly isRunning: boolean;
     readonly controller: TestController;
@@ -189,6 +197,20 @@ export interface TestService {
     cancelRefresh(): void;
     isRefreshing: boolean;
     onDidChangeIsRefreshing: Event<void>;
+}
+
+export namespace TestServices {
+    export function withTestRun(service: TestService, controllerId: string, runId: string): TestRun {
+        const controller = service.getControllers().find(c => c.id === controllerId);
+        if (!controller) {
+            throw new Error(`No test controller with id '${controllerId}' found`);
+        }
+        const run = controller.testRuns.find(r => r.id === runId);
+        if (!run) {
+            throw new Error(`No test run with id '${runId}' found`);
+        }
+        return run;
+    }
 }
 
 export const TestContribution = Symbol('TestContribution');
@@ -287,7 +309,7 @@ export class DefaultTestService implements TestService {
             }
         }
         if (activeProfile) {
-            activeProfile.run(`Test run #${this.testRunCounter++}`, items, []);
+            activeProfile.run(`Test run #${this.testRunCounter++}`, items, [], true);
         }
     }
 
@@ -343,7 +365,7 @@ export class DefaultTestService implements TestService {
             if (controller) {
                 this.pickProfile(controller.testRunProfiles, nls.localizeByDefault('Pick a test profile to use')).then(activeProfile => {
                     if (activeProfile) {
-                        activeProfile.run(`Test run #${this.testRunCounter++}`, items, []);
+                        activeProfile.run(`Test run #${this.testRunCounter++}`, items, [], true);
                     }
                 });
             }
@@ -352,7 +374,7 @@ export class DefaultTestService implements TestService {
 
     selectDefaultProfile(): void {
         this.pickProfileKind().then(kind => {
-           const profiles = this.getControllers().flatMap(c => c.testRunProfiles).filter(profile => profile.kind === kind);
+            const profiles = this.getControllers().flatMap(c => c.testRunProfiles).filter(profile => profile.kind === kind);
             this.pickProfile(profiles, nls.localizeByDefault('Pick a test profile to use')).then(activeProfile => {
                 if (activeProfile) {
                     // only change the default for the controller containing selected profile for default and its profiles with same kind

@@ -186,23 +186,26 @@
   flex-direction: column-reverse;
 }
 
+.p-Widget .theia-sidebar-menu-item {
+    cursor: pointer;
+}
+
 .p-Widget.theia-sidebar-menu i {
   padding: var(--theia-private-sidebar-tab-padding-top-and-bottom)
     var(--theia-private-sidebar-tab-padding-left-and-right);
   display: flex;
   justify-content: center;
   align-items: center;
-  cursor: pointer;
   color: var(--theia-activityBar-inactiveForeground);
   background-color: var(--theia-activityBar-background);
   font-size: var(--theia-private-sidebar-icon-size);
 }
 
-.theia-sidebar-menu i:hover {
+.theia-sidebar-menu .theia-sidebar-menu-item:hover i {
   color: var(--theia-activityBar-foreground);
 }
 
-.theia-sidebar-menu > i.codicon-menu {
+.theia-sidebar-menu i.theia-compact-menu {
   font-size: 16px;
 }
 

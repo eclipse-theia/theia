@@ -14,10 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject, unmanaged } from 'inversify';
 import { Disposable, MaybePromise, CancellationTokenSource, nls } from '../common';
 import { Key } from './keyboard/keys';
-import { Widget, BaseWidget, Message, addKeyListener, codiconArray } from './widgets';
+import { Widget, BaseWidget, Message, addKeyListener, codiconArray } from './widgets/widget';
 import { FrontendApplicationContribution } from './frontend-application-contribution';
 
 @injectable()
@@ -151,8 +151,8 @@ export abstract class AbstractDialog<T> extends BaseWidget {
     protected activeElement: HTMLElement | undefined;
 
     constructor(
-        protected readonly props: DialogProps,
-        options?: Widget.IOptions
+        @unmanaged() protected readonly props: DialogProps,
+        @unmanaged() options?: Widget.IOptions
     ) {
         super(options);
         this.id = 'theia-dialog-shell';
@@ -258,13 +258,15 @@ export abstract class AbstractDialog<T> extends BaseWidget {
         }
     }
 
-    open(): Promise<T | undefined> {
+    open(disposeOnResolve: boolean = true): Promise<T | undefined> {
         if (this.resolve) {
             return Promise.reject(new Error('The dialog is already opened.'));
         }
         this.activeElement = this.node.ownerDocument.activeElement as HTMLElement;
         return new Promise<T | undefined>((resolve, reject) => {
-            this.resolve = resolve;
+            this.resolve = value => {
+                resolve(value);
+            };
             this.reject = reject;
             this.toDisposeOnDetach.push(Disposable.create(() => {
                 this.resolve = undefined;
@@ -273,7 +275,21 @@ export abstract class AbstractDialog<T> extends BaseWidget {
 
             Widget.attach(this, this.node.ownerDocument.body);
             this.activate();
+        }).finally(() => {
+            if (disposeOnResolve) {
+                this.dispose();
+            }
         });
+    }
+
+    protected override onCloseRequest(msg: Message): void {
+        // super.onCloseRequest() would automatically dispose the dialog, which we don't want because we're reusing it
+        if (this.parent) {
+            // eslint-disable-next-line no-null/no-null
+            this.parent = null;
+        } else if (this.isAttached) {
+            Widget.detach(this);
+        }
     }
 
     override close(): void {

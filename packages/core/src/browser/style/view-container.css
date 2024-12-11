@@ -168,13 +168,6 @@
   padding-right: calc(var(--theia-ui-padding) * 2 / 3);
 }
 
-.theia-view-container-part-title .item > div {
-  height: var(--theia-icon-size);
-  width: var(--theia-icon-size);
-  background-size: var(--theia-icon-size);
-  line-height: var(--theia-icon-size);
-}
-
 .theia-view-container-part-title {
   display: none;
 }

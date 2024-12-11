@@ -239,7 +239,8 @@ blockquote {
     -o-user-select: none;
 }
 
-:focus {
+/* Since an iframe has its own focus tracking, we don't show focus on iframes */
+:focus:not(iframe) {
     outline-width: 1px;
     outline-style: solid;
     outline-offset: -1px;
@@ -349,3 +350,4 @@ button.secondary[disabled],
 @import "./progress-bar.css";
 @import "./breadcrumbs.css";
 @import "./tooltip.css";
+@import "./split-widget.css";

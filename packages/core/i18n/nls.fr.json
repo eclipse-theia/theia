@@ -1,4 +1,9 @@
 {
+  "aiConfiguration:open": "Ouvrir la vue Configuration AI",
+  "aiHistory:clear": "Histoire de l'IA : Effacer l'historique",
+  "aiHistory:open": "Ouvrir la vue de l'historique de l'IA",
+  "aiHistory:sortChronologically": "Histoire de l'IA : Classer par ordre chronologique",
+  "aiHistory:sortReverseChronologically": "Histoire de l'IA : Trier par ordre chronologique inverse",
   "debug.breakpoint.editCondition": "Edit Condition...",
   "notebook.cell.changeToCode": "Changer la cellule en code",
   "notebook.cell.changeToMarkdown": "Changer la cellule en Mardown",
@@ -10,6 +15,33 @@
     "callhierarchy": {
       "noCallers": "Aucun appelant n'a été détecté.",
       "open": "Hiérarchie des appels ouverts"
+    },
+    "collaboration": {
+      "collaborate": "Collaborer",
+      "collaboration": "Collaboration",
+      "collaborationWorkspace": "Espace de travail collaboratif",
+      "connected": "Connecté",
+      "connectedSession": "Connecté à une session de collaboration",
+      "copiedInvitation": "Code d'invitation copié dans le presse-papiers.",
+      "copyAgain": "Copier à nouveau",
+      "createRoom": "Créer une nouvelle session de collaboration",
+      "creatingRoom": "Création d'une session",
+      "end": "Fin de la session de collaboration",
+      "endDetail": "Mettre fin à la session, cesser le partage de contenu et révoquer l'accès pour d'autres personnes.",
+      "enterCode": "Enter collaboration session code",
+      "failedCreate": "Échec de la création d'une salle : {0}",
+      "failedJoin": "N'a pas réussi à rejoindre la salle : {0}",
+      "invite": "Inviter d'autres personnes",
+      "inviteDetail": "Copiez le code d'invitation pour le partager avec d'autres personnes afin de participer à la session.",
+      "joinRoom": "Participer à une session de collaboration",
+      "joiningRoom": "Session d'adhésion",
+      "leave": "Quitter la session de collaboration",
+      "leaveDetail": "Se déconnecter de la session de collaboration en cours et fermer l'espace de travail.",
+      "selectCollaboration": "Sélectionner l'option de collaboration",
+      "sharedSession": "Partager une session de collaboration",
+      "startSession": "Démarrer ou rejoindre une session de collaboration",
+      "userWantsToJoin": "User '{0}' wants to join the collaboration room",
+      "whatToDo": "Qu'aimeriez-vous faire avec d'autres collaborateurs ?"
     },
     "core": {
       "about": {
@@ -112,7 +144,6 @@
       "editor.accessibilitySupport2": "Supposons qu'il n'y ait pas de lecteur d'écran",
       "editor.bracketPairColorization.enabled": "Contrôle si la colorisation des paires de crochets est activée ou non. Utilisez `#workbench.colorCustomizations#` pour surcharger les couleurs de mise en évidence des crochets.",
       "editor.codeActionWidget.includeNearbyQuickfixes": "Activer/désactiver l'affichage de la réparation rapide la plus proche dans une ligne lorsqu'il n'y a pas de diagnostic en cours.",
-      "editor.cursorSurroundingLinesStyle": "Contrôle quand `#cursorSurroundingLines#` doit être appliqué.",
       "editor.detectIndentation": "Contrôle si `#editor.tabSize#` et `#editor.insertSpaces#` seront automatiquement détectés lors de l'ouverture d'un fichier en fonction de son contenu.",
       "editor.dropIntoEditor.enabled": "Contrôle si vous pouvez glisser-déposer un fichier dans un éditeur de texte en maintenant la touche \"Maj\" enfoncée (au lieu d'ouvrir le fichier dans un éditeur).",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Tentera de formater uniquement les modifications (nécessite le contrôle de la source). Si le contrôle de la source ne peut pas être utilisé, alors le fichier entier sera formaté.",
@@ -179,6 +210,7 @@
       "prepareDownloadLink": "Préparation du lien de téléchargement...",
       "processedOutOf": "Traitement de {0} sur {1}.",
       "replaceTitle": "Remplacer le fichier",
+      "uploadFailed": "Une erreur s'est produite lors du téléchargement d'un fichier. {0}",
       "uploadFiles": "Télécharger des fichiers...",
       "uploadedOutOf": "Téléchargé {0} sur {1}"
     },
@@ -346,12 +378,6 @@
       "reveal": "Révéler dans Explorer",
       "toggleHiddenFiles": "Basculer les fichiers cachés"
     },
-    "notebook": {
-      "dragGhostImage": {
-        "codeText": "Cellule de code sélectionnée",
-        "markdownText": "Cellule Mardown sélectionnée"
-      }
-    },
     "output": {
       "clearOutputChannel": "Effacer le canal de sortie...",
       "closeOutputChannel": "Fermer le canal de sortie...",
@@ -368,6 +394,9 @@
       "alreadyRunning": "L'instance hébergée est déjà en cours d'exécution.",
       "debugInstance": "Instance de débogage",
       "debugMode": "Utilisation de inspect ou inspect-brk pour le débogage de Node.js",
+      "debugPorts": {
+        "debugPort": "Port à utiliser pour le débogage Node.js de ce serveur"
+      },
       "devHost": "Hôte de développement",
       "failed": "Échec de l'exécution de l'instance du plugin hébergé : {0}",
       "hostedPlugin": "Plugin hébergé",
@@ -398,6 +427,10 @@
       "plugins": "Plugins",
       "webviewTrace": "Contrôle le traçage de la communication avec les webviews.",
       "webviewWarnIfUnsecure": "Avertit les utilisateurs que les webviews sont actuellement déployés de manière non sécurisée."
+    },
+    "preferences": {
+      "hostedPlugin": "Plugin hébergé",
+      "toolbar": "Barre d'outils"
     },
     "preview": {
       "openByDefault": "Ouvrir l'aperçu au lieu de l'éditeur par défaut."
@@ -471,6 +504,7 @@
     },
     "test": {
       "cancelAllTestRuns": "Annuler tous les essais",
+      "stackFrameAt": "à",
       "testRunDefaultName": "{0} courir {1}",
       "testRuns": "Essais"
     },
@@ -533,7 +567,6 @@
       "confirmMessage.uriMultiple": "Voulez-vous vraiment supprimer tous les {0} fichiers sélectionnés?",
       "confirmMessage.uriSingle": "Voulez-vous vraiment supprimer {0}?",
       "duplicate": "Duplicate",
-      "failApply": "Impossible d'appliquer les changements au nouveau fichier",
       "failSaveAs": "Impossible d'exécuter \"{0}\" pour le widget actuel.",
       "newFilePlaceholder": "Nom du fichier",
       "newFolderPlaceholder": "Nom du dossier",

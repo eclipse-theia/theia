@@ -1,21 +1,24 @@
 {
   "private": true,
   "name": "@theia/api-samples",
-  "version": "1.50.0",
+  "version": "1.56.0",
   "description": "Theia - Example code to demonstrate Theia API",
   "dependencies": {
-    "@theia/core": "1.50.0",
-    "@theia/file-search": "1.50.0",
-    "@theia/filesystem": "1.50.0",
-    "@theia/monaco": "1.50.0",
+    "@theia/ai-chat": "1.56.0",
+    "@theia/ai-chat-ui": "1.56.0",
+    "@theia/ai-core": "1.56.0",
+    "@theia/core": "1.56.0",
+    "@theia/file-search": "1.56.0",
+    "@theia/filesystem": "1.56.0",
+    "@theia/monaco": "1.56.0",
     "@theia/monaco-editor-core": "1.83.101",
-    "@theia/output": "1.50.0",
-    "@theia/ovsx-client": "1.50.0",
-    "@theia/search-in-workspace": "1.50.0",
-    "@theia/test": "1.50.0",
-    "@theia/toolbar": "1.50.0",
-    "@theia/vsx-registry": "1.50.0",
-    "@theia/workspace": "1.50.0"
+    "@theia/output": "1.56.0",
+    "@theia/ovsx-client": "1.56.0",
+    "@theia/search-in-workspace": "1.56.0",
+    "@theia/test": "1.56.0",
+    "@theia/toolbar": "1.56.0",
+    "@theia/vsx-registry": "1.56.0",
+    "@theia/workspace": "1.56.0"
   },
   "theiaExtensions": [
     {
@@ -57,6 +60,6 @@
     "clean": "theiaext clean"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.50.0"
+    "@theia/ext-scripts": "1.56.0"
   }
 }

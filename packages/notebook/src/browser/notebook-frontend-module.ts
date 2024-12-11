@@ -16,7 +16,9 @@
 import '../../src/browser/style/index.css';
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { FrontendApplicationContribution, KeybindingContribution, LabelProviderContribution, OpenHandler, PreferenceContribution, WidgetFactory } from '@theia/core/lib/browser';
+import {
+    FrontendApplicationContribution, KeybindingContribution, LabelProviderContribution, OpenHandler, UndoRedoHandler, WidgetFactory, WidgetStatusBarContribution
+} from '@theia/core/lib/browser';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { NotebookOpenHandler } from './notebook-open-handler';
 import { CommandContribution, MenuContribution, ResourceResolver, } from '@theia/core';
@@ -44,8 +46,12 @@ import { NotebookOutlineContribution } from './contributions/notebook-outline-co
 import { NotebookLabelProviderContribution } from './contributions/notebook-label-provider-contribution';
 import { NotebookOutputActionContribution } from './contributions/notebook-output-action-contribution';
 import { NotebookClipboardService } from './service/notebook-clipboard-service';
-import { notebookPreferenceSchema } from './contributions/notebook-preferences';
+import { bindNotebookPreferences } from './contributions/notebook-preferences';
 import { NotebookOptionsService } from './service/notebook-options';
+import { NotebookUndoRedoHandler } from './contributions/notebook-undo-redo-handler';
+import { NotebookStatusBarContribution } from './contributions/notebook-status-bar-contribution';
+import { NotebookCellEditorService } from './service/notebook-cell-editor-service';
+import { NotebookCellStatusBarService } from './service/notebook-cell-status-bar-service';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(NotebookColorContribution).toSelf().inSingletonScope();
@@ -68,6 +74,8 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(NotebookKernelHistoryService).toSelf().inSingletonScope();
     bind(NotebookKernelQuickPickService).toSelf().inSingletonScope();
     bind(NotebookClipboardService).toSelf().inSingletonScope();
+    bind(NotebookCellEditorService).toSelf().inSingletonScope();
+    bind(NotebookCellStatusBarService).toSelf().inSingletonScope();
 
     bind(NotebookCellResourceResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toService(NotebookCellResourceResolver);
@@ -106,6 +114,12 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(NotebookLabelProviderContribution).toSelf().inSingletonScope();
     bind(LabelProviderContribution).toService(NotebookLabelProviderContribution);
 
-    bind(PreferenceContribution).toConstantValue({ schema: notebookPreferenceSchema });
+    bindNotebookPreferences(bind);
     bind(NotebookOptionsService).toSelf().inSingletonScope();
+
+    bind(NotebookUndoRedoHandler).toSelf().inSingletonScope();
+    bind(UndoRedoHandler).toService(NotebookUndoRedoHandler);
+
+    bind(NotebookStatusBarContribution).toSelf().inSingletonScope();
+    bind(WidgetStatusBarContribution).toService(NotebookStatusBarContribution);
 });

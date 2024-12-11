@@ -61,11 +61,13 @@ import { ConfirmDialog, confirmExit, ConfirmSaveDialog, Dialog } from './dialogs
 import { WindowService } from './window/window-service';
 import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
 import { DecorationStyle } from './decoration-style';
-import { isPinned, Title, togglePinned, Widget } from './widgets';
+import { codicon, isPinned, Title, togglePinned, Widget } from './widgets';
 import { SaveableService } from './saveable-service';
 import { UserWorkingDirectoryProvider } from './user-working-directory-provider';
 import { UNTITLED_SCHEME, UntitledResourceResolver } from '../common';
 import { LanguageQuickPickService } from './i18n/language-quick-pick-service';
+import { SidebarMenu } from './shell/sidebar-menu-widget';
+import { UndoRedoHandlerService } from './undo-redo-handler';
 
 export namespace CommonMenus {
 
@@ -442,7 +444,11 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     @inject(UntitledResourceResolver)
     protected readonly untitledResourceResolver: UntitledResourceResolver;
 
+    @inject(UndoRedoHandlerService)
+    protected readonly undoRedoHandlerService: UndoRedoHandlerService;
+
     protected pinnedKey: ContextKey<boolean>;
+    protected inputFocus: ContextKey<boolean>;
 
     async configure(app: FrontendApplication): Promise<void> {
         // FIXME: This request blocks valuable startup time (~200ms).
@@ -457,6 +463,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         this.contextKeyService.createKey<boolean>('isMac', OS.type() === OS.Type.OSX);
         this.contextKeyService.createKey<boolean>('isWindows', OS.type() === OS.Type.Windows);
         this.contextKeyService.createKey<boolean>('isWeb', !this.isElectron());
+        this.inputFocus = this.contextKeyService.createKey<boolean>('inputFocus', false);
+        this.updateInputFocus();
+        browser.onDomEvent(document, 'focusin', () => this.updateInputFocus());
 
         this.pinnedKey = this.contextKeyService.createKey<boolean>('activeEditorIsPinned', false);
         this.updatePinnedKey();
@@ -472,17 +481,18 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
 
         app.shell.leftPanelHandler.addBottomMenu({
             id: 'settings-menu',
-            iconClass: 'codicon codicon-settings-gear',
+            iconClass: codicon('settings-gear'),
             title: nls.localizeByDefault(CommonCommands.MANAGE_CATEGORY),
             menuPath: MANAGE_MENU,
-            order: 1,
+            order: 0,
         });
-        const accountsMenu = {
+        const accountsMenu: SidebarMenu = {
             id: 'accounts-menu',
-            iconClass: 'codicon codicon-person',
+            iconClass: codicon('account'),
             title: nls.localizeByDefault('Accounts'),
             menuPath: ACCOUNTS_MENU,
-            order: 0,
+            order: 1,
+            onDidBadgeChange: this.authenticationService.onDidUpdateSignInCount
         };
         this.authenticationService.onDidRegisterAuthenticationProvider(() => {
             app.shell.leftPanelHandler.addBottomMenu(accountsMenu);
@@ -511,6 +521,15 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         }
     }
 
+    protected updateInputFocus(): void {
+        const activeElement = document.activeElement;
+        if (activeElement) {
+            const isInput = activeElement.tagName?.toLowerCase() === 'input'
+                || activeElement.tagName?.toLowerCase() === 'textarea';
+            this.inputFocus.set(isInput);
+        }
+    }
+
     protected updatePinnedKey(): void {
         const activeTab = this.shell.findTabBar();
         const pinningTarget = activeTab && this.shell.findTitle(activeTab);
@@ -530,7 +549,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 if (newValue === 'compact') {
                     this.shell.leftPanelHandler.addTopMenu({
                         id: mainMenuId,
-                        iconClass: 'codicon codicon-menu',
+                        iconClass: `theia-compact-menu ${codicon('menu')}`,
                         title: nls.localizeByDefault('Application Menu'),
                         menuPath: MAIN_MENU_BAR,
                         order: 0,
@@ -799,10 +818,14 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         }));
 
         commandRegistry.registerCommand(CommonCommands.UNDO, {
-            execute: () => document.execCommand('undo')
+            execute: () => {
+                this.undoRedoHandlerService.undo();
+            }
         });
         commandRegistry.registerCommand(CommonCommands.REDO, {
-            execute: () => document.execCommand('redo')
+            execute: () => {
+                this.undoRedoHandlerService.redo();
+            }
         });
         commandRegistry.registerCommand(CommonCommands.SELECT_ALL, {
             execute: () => document.execCommand('selectAll')
@@ -1065,7 +1088,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             },
             {
                 command: CommonCommands.REDO.id,
-                keybinding: 'ctrlcmd+shift+z'
+                keybinding: isOSX ? 'ctrlcmd+shift+z' : 'ctrlcmd+y'
             },
             {
                 command: CommonCommands.SELECT_ALL.id,
@@ -1176,7 +1199,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     }
 
     protected async openAbout(): Promise<void> {
-        this.aboutDialog.open();
+        this.aboutDialog.open(false);
     }
 
     protected shouldPreventClose = false;
@@ -1895,6 +1918,94 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     hcDark: Color.white,
                     hcLight: Color.white
                 }, description: 'Status bar warning items foreground color. Warning items stand out from other status bar entries to indicate warning conditions. The status bar is shown in the bottom of the window.'
+            },
+
+            // editor find
+
+            {
+                id: 'editor.findMatchBackground',
+                defaults: {
+                    light: '#A8AC94',
+                    dark: '#515C6A',
+                    hcDark: undefined,
+                    hcLight: undefined
+                },
+                description: 'Color of the current search match.'
+            },
+
+            {
+                id: 'editor.findMatchForeground',
+                defaults: {
+                    light: undefined,
+                    dark: undefined,
+                    hcDark: undefined,
+                    hcLight: undefined
+                },
+                description: 'Text color of the current search match.'
+            },
+            {
+                id: 'editor.findMatchHighlightBackground',
+                defaults: {
+                    light: '#EA5C0055',
+                    dark: '#EA5C0055',
+                    hcDark: undefined,
+                    hcLight: undefined
+                },
+                description: 'Color of the other search matches. The color must not be opaque so as not to hide underlying decorations.'
+            },
+
+            {
+                id: 'editor.findMatchHighlightForeground',
+                defaults: {
+                    light: undefined,
+                    dark: undefined,
+                    hcDark: undefined,
+                    hcLight: undefined
+                },
+                description: 'Foreground color of the other search matches.'
+            },
+
+            {
+                id: 'editor.findRangeHighlightBackground',
+                defaults: {
+                    dark: '#3a3d4166',
+                    light: '#b4b4b44d',
+                    hcDark: undefined,
+                    hcLight: undefined
+                },
+                description: 'Color of the range limiting the search. The color must not be opaque so as not to hide underlying decorations.'
+            },
+
+            {
+                id: 'editor.findMatchBorder',
+                defaults: {
+                    light: undefined,
+                    dark: undefined,
+                    hcDark: 'activeContrastBorder',
+                    hcLight: 'activeContrastBorder'
+                },
+                description: 'Border color of the current search match.'
+            },
+            {
+                id: 'editor.findMatchHighlightBorder',
+                defaults: {
+                    light: undefined,
+                    dark: undefined,
+                    hcDark: 'activeContrastBorder',
+                    hcLight: 'activeContrastBorder'
+                },
+                description: 'Border color of the other search matches.'
+            },
+
+            {
+                id: 'editor.findRangeHighlightBorder',
+                defaults: {
+                    dark: undefined,
+                    light: undefined,
+                    hcDark: Color.transparent('activeContrastBorder', 0.4),
+                    hcLight: Color.transparent('activeContrastBorder', 0.4)
+                },
+                description: 'Border color of the range limiting the search. The color must not be opaque so as not to hide underlying decorations.'
             },
 
             // Quickinput colors should be aligned with https://code.visualstudio.com/api/references/theme-color#quick-picker

@@ -28,6 +28,7 @@ import { GENERAL_MAX_FILE_SIZE_MB } from './filesystem-preferences';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { nls } from '@theia/core';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
+import { Mutex } from 'async-mutex';
 
 export interface FileResourceVersion extends ResourceVersion {
     readonly encoding: string;
@@ -69,6 +70,8 @@ export class FileResource implements Resource {
         return this.options.readOnly;
     }
 
+    protected writingLock = new Mutex();
+
     constructor(
         readonly uri: URI,
         protected readonly fileService: FileService,
@@ -97,11 +100,11 @@ export class FileResource implements Resource {
                 this.updateReadOnly();
             }
         }));
-        this.fileService.onDidChangeFileSystemProviderReadOnlyMessage(async e => {
+        this.toDispose.push(this.fileService.onDidChangeFileSystemProviderReadOnlyMessage(async e => {
             if (e.scheme === this.uri.scheme) {
                 this.updateReadOnly();
             }
-        });
+        }));
     }
 
     protected async updateReadOnly(): Promise<void> {
@@ -216,6 +219,8 @@ export class FileResource implements Resource {
         const version = options?.version || this._version;
         const current = FileResourceVersion.is(version) ? version : undefined;
         const etag = current?.etag;
+        const releaseLock = await this.writingLock.acquire();
+
         try {
             const stat = await this.fileService.write(this.uri, content, {
                 encoding: options?.encoding,
@@ -237,6 +242,8 @@ export class FileResource implements Resource {
                 throw ResourceError.OutOfSync({ message, stack, data: { uri: this.uri } });
             }
             throw e;
+        } finally {
+            releaseLock();
         }
     };
 
@@ -263,6 +270,8 @@ export class FileResource implements Resource {
             throw ResourceError.NotFound({ message: 'has not been read yet', data: { uri: this.uri } });
         }
         const etag = current?.etag;
+        const releaseLock = await this.writingLock.acquire();
+
         try {
             const stat = await this.fileService.update(this.uri, changes, {
                 readEncoding: current.encoding,
@@ -286,6 +295,8 @@ export class FileResource implements Resource {
                 throw ResourceError.OutOfSync({ message, stack, data: { uri: this.uri } });
             }
             throw e;
+        } finally {
+            releaseLock();
         }
     };
 
@@ -303,6 +314,7 @@ export class FileResource implements Resource {
     }
     protected async isInSync(): Promise<boolean> {
         try {
+            await this.writingLock.waitForUnlock();
             const stat = await this.fileService.resolve(this.uri, { resolveMetadata: true });
             return !!this.version && this.version.mtime >= stat.mtime;
         } catch {

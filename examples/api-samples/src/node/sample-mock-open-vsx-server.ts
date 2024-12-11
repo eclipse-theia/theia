@@ -69,7 +69,7 @@ export class SampleMockOpenVsxServer implements BackendApplicationContribution {
         app.use(
             this.mockServerPath + '/api',
             express.Router()
-                .get('/-/query', async (req, res) => {
+                .get('/v2/-/query', async (req, res) => {
                     await this.ready;
                     res.json(await this.mockClient.query(this.sanitizeQuery(req.query)));
                 })
@@ -170,6 +170,8 @@ export class SampleMockOpenVsxServer implements BackendApplicationContribution {
                         reviewsUrl: url.extensionReviewsUrl(namespace, name),
                         timestamp: new Date().toISOString(),
                         version,
+                        namespaceDisplayName: name,
+                        preRelease: false
                     }
                 });
             }));

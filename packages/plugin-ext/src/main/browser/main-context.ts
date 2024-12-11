@@ -64,6 +64,7 @@ import { NotebookDocumentsMainImpl } from './notebooks/notebook-documents-main';
 import { NotebookKernelsMainImpl } from './notebooks/notebook-kernels-main';
 import { NotebooksAndEditorsMain } from './notebooks/notebook-documents-and-editors-main';
 import { TestingMainImpl } from './test-main';
+import { UriMainImpl } from './uri-main';
 
 export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container): void {
     const authenticationMain = new AuthenticationMainImpl(rpc, container);
@@ -87,7 +88,10 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
     const preferenceRegistryMain = new PreferenceRegistryMainImpl(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.PREFERENCE_REGISTRY_MAIN, preferenceRegistryMain);
 
-    const editorsAndDocuments = new EditorsAndDocumentsMain(rpc, container);
+    const tabsMain = new TabsMainImpl(rpc, container);
+    rpc.set(PLUGIN_RPC_CONTEXT.TABS_MAIN, tabsMain);
+
+    const editorsAndDocuments = new EditorsAndDocumentsMain(rpc, container, tabsMain);
 
     const notebookDocumentsMain = new NotebookDocumentsMainImpl(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_MAIN, notebookDocumentsMain);
@@ -105,7 +109,7 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
     rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_RENDERERS_MAIN, new NotebookRenderersMainImpl(rpc, container));
     const notebookEditorsMain = new NotebookEditorsMainImpl(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_EDITORS_MAIN, notebookEditorsMain);
-    rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_AND_EDITORS_MAIN, new NotebooksAndEditorsMain(rpc, container, notebookDocumentsMain, notebookEditorsMain));
+    rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_AND_EDITORS_MAIN, new NotebooksAndEditorsMain(rpc, container, tabsMain, notebookDocumentsMain, notebookEditorsMain));
     rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_KERNELS_MAIN, new NotebookKernelsMainImpl(rpc, container));
 
     const editorsMain = new TextEditorsMainImpl(editorsAndDocuments, documentsMain, rpc, container);
@@ -198,9 +202,9 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
     const commentsMain = new CommentsMainImp(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.COMMENTS_MAIN, commentsMain);
 
-    const tabsMain = new TabsMainImpl(rpc, container);
-    rpc.set(PLUGIN_RPC_CONTEXT.TABS_MAIN, tabsMain);
-
     const localizationMain = new LocalizationMainImpl(container);
     rpc.set(PLUGIN_RPC_CONTEXT.LOCALIZATION_MAIN, localizationMain);
+
+    const uriMain = new UriMainImpl(rpc, container);
+    rpc.set(PLUGIN_RPC_CONTEXT.URI_MAIN, uriMain);
 }

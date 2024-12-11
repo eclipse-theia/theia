@@ -16,7 +16,7 @@
 
 import * as theia from '@theia/plugin';
 import * as lstypes from '@theia/core/shared/vscode-languageserver-protocol';
-import { InlineValueEvaluatableExpression, InlineValueText, InlineValueVariableLookup, QuickPickItemKind, URI } from './types-impl';
+import { InlineValueEvaluatableExpression, InlineValueText, InlineValueVariableLookup, QuickPickItemKind, ThemeIcon, URI } from './types-impl';
 import * as rpc from '../common/plugin-api-rpc';
 import {
     DecorationOptions, EditorPosition, Plugin, Position, WorkspaceTextEditDto, WorkspaceFileEditDto, Selection, TaskDto, WorkspaceEditDto
@@ -34,8 +34,8 @@ import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { CellRange, isTextStreamMime } from '@theia/notebook/lib/common';
 import { MarkdownString as MarkdownStringDTO } from '@theia/core/lib/common/markdown-rendering';
 
-import { TestItemDTO, TestMessageDTO } from '../common/test-types';
-import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/base/common/themables';
+import { TestItemDTO, TestMessageDTO, TestMessageStackFrameDTO } from '../common/test-types';
+import { PluginIconPath } from './plugin-icon-path';
 
 const SIDE_GROUP = -2;
 const ACTIVE_GROUP = -1;
@@ -134,12 +134,21 @@ export function fromRange(range: theia.Range | undefined): model.Range | undefin
         endColumn: end.character + 1
     };
 }
-
-export function fromPosition(position: types.Position | theia.Position): Position {
+export function fromPosition(position: types.Position | theia.Position): Position;
+export function fromPosition(position: types.Position | theia.Position | undefined): Position | undefined;
+export function fromPosition(position: types.Position | theia.Position | undefined): Position | undefined {
+    if (!position) {
+        return undefined;
+    }
     return { lineNumber: position.line + 1, column: position.character + 1 };
 }
 
-export function toPosition(position: Position): types.Position {
+export function toPosition(position: Position): types.Position;
+export function toPosition(position: Position | undefined): types.Position | undefined;
+export function toPosition(position: Position | undefined): types.Position | undefined {
+    if (!position) {
+        return undefined;
+    }
     return new types.Position(position.lineNumber - 1, position.column - 1);
 }
 
@@ -474,6 +483,18 @@ export function fromLocation(location: theia.Location | undefined): model.Locati
     };
 }
 
+export function fromLocationToLanguageServerLocation(location: theia.Location): lstypes.Location;
+export function fromLocationToLanguageServerLocation(location: theia.Location | undefined): lstypes.Location | undefined;
+export function fromLocationToLanguageServerLocation(location: theia.Location | undefined): lstypes.Location | undefined {
+    if (!location) {
+        return undefined;
+    }
+    return <lstypes.Location>{
+        uri: location.uri.toString(),
+        range: location.range
+    };
+}
+
 export function fromTextDocumentShowOptions(options: theia.TextDocumentShowOptions): model.TextDocumentShowOptions {
     if (options.selection) {
         return {
@@ -729,6 +750,26 @@ export function toSymbolTag(kind: model.SymbolTag): types.SymbolTag {
     switch (kind) {
         case model.SymbolTag.Deprecated: return types.SymbolTag.Deprecated;
     }
+}
+
+/**
+ * Creates a merged symbol of type theia.SymbolInformation & theia.DocumentSymbol.
+ * Is only used as the result type of the `vscode.executeDocumentSymbolProvider` command.
+ */
+export function toMergedSymbol(uri: UriComponents, symbol: model.DocumentSymbol): theia.SymbolInformation & theia.DocumentSymbol {
+    const uriValue = URI.revive(uri);
+    const location = new types.Location(uriValue, toRange(symbol.range));
+    return {
+        name: symbol.name,
+        containerName: symbol.containerName ?? '',
+        kind: SymbolKind.toSymbolKind(symbol.kind),
+        tags: [],
+        location,
+        detail: symbol.detail,
+        range: location.range,
+        selectionRange: toRange(symbol.selectionRange),
+        children: symbol.children?.map(child => toMergedSymbol(uri, child)) ?? []
+    };
 }
 
 export function isModelLocation(arg: unknown): arg is model.Location {
@@ -1226,7 +1267,7 @@ export function convertIconPath(iconPath: types.URI | { light: types.URI; dark: 
             dark: iconPath.dark.toJSON(),
             light: iconPath.light?.toJSON()
         };
-    } else if (ThemeIcon.isThemeIcon(iconPath)) {
+    } else if (ThemeIcon.is(iconPath)) {
         return {
             id: iconPath.id,
             color: iconPath.color ? { id: iconPath.color.id } : undefined
@@ -1236,19 +1277,19 @@ export function convertIconPath(iconPath: types.URI | { light: types.URI; dark: 
     }
 }
 
-export function convertQuickInputButton(button: theia.QuickInputButton, index: number): rpc.TransferQuickInputButton {
+export function convertQuickInputButton(plugin: Plugin, button: theia.QuickInputButton, index: number): rpc.TransferQuickInputButton {
     const iconPath = convertIconPath(button.iconPath);
     if (!iconPath) {
         throw new Error(`Could not convert icon path: '${button.iconPath}'`);
     }
     return {
         handle: index,
-        iconPath: iconPath,
+        iconUrl: PluginIconPath.toUrl(iconPath, plugin) ?? ThemeIcon.get(iconPath),
         tooltip: button.tooltip
     };
 }
 
-export function convertToTransferQuickPickItems(items: (theia.QuickPickItem | string)[]): rpc.TransferQuickPickItem[] {
+export function convertToTransferQuickPickItems(plugin: Plugin, items: (theia.QuickPickItem | string)[]): rpc.TransferQuickPickItem[] {
     return items.map((item, index) => {
         if (typeof item === 'string') {
             return { kind: 'item', label: item, handle: index };
@@ -1260,11 +1301,11 @@ export function convertToTransferQuickPickItems(items: (theia.QuickPickItem | st
                 kind: 'item',
                 label,
                 description,
-                iconPath: convertIconPath(iconPath),
+                iconUrl: PluginIconPath.toUrl(iconPath, plugin) ?? ThemeIcon.get(iconPath),
                 detail,
                 picked,
                 alwaysShow,
-                buttons: buttons ? buttons.map(convertQuickInputButton) : undefined,
+                buttons: buttons ? buttons.map((button, i) => convertQuickInputButton(plugin, button, i)) : undefined,
                 handle: index,
             };
         }
@@ -1677,12 +1718,23 @@ export namespace TestMessage {
             return message.map(msg => TestMessage.from(msg)[0]);
         }
         return [{
-            location: fromLocation(message.location),
+            location: fromLocationToLanguageServerLocation(message.location),
             message: fromMarkdown(message.message)!,
             expected: message.expectedOutput,
             actual: message.actualOutput,
-            contextValue: message.contextValue
+            contextValue: message.contextValue,
+            stackTrace: message.stackTrace && message.stackTrace.map(frame => TestMessageStackFrame.from(frame))
         }];
+    }
+}
+
+export namespace TestMessageStackFrame {
+    export function from(stackTrace: theia.TestMessageStackFrame): TestMessageStackFrameDTO {
+        return {
+            label: stackTrace.label,
+            position: stackTrace.position,
+            uri: stackTrace?.uri?.toString()
+        };
     }
 }
 

@@ -23,9 +23,10 @@ import {
     MenuAction,
     MenuContribution,
     MenuModelRegistry,
+    MessageService,
     Mutable
 } from '@theia/core';
-import { codicon, DiffUris, Widget } from '@theia/core/lib/browser';
+import { codicon, DiffUris, Widget, open, OpenerService } from '@theia/core/lib/browser';
 import {
     TabBarToolbarContribution,
     TabBarToolbarItem,
@@ -281,6 +282,8 @@ export class GitContribution implements CommandContribution, MenuContribution, T
 
     protected toDispose = new DisposableCollection();
 
+    @inject(OpenerService) protected openerService: OpenerService;
+    @inject(MessageService) protected messageService: MessageService;
     @inject(EditorManager) protected readonly editorManager: EditorManager;
     @inject(GitQuickOpenService) protected readonly quickOpenService: GitQuickOpenService;
     @inject(GitRepositoryTracker) protected readonly repositoryTracker: GitRepositoryTracker;
@@ -562,7 +565,9 @@ export class GitContribution implements CommandContribution, MenuContribution, T
         registry.registerCommand(GIT_COMMANDS.OPEN_CHANGED_FILE, {
             execute: (...arg: ScmResource[]) => {
                 for (const resource of arg) {
-                    this.editorManager.open(resource.sourceUri, { mode: 'reveal' });
+                    open(this.openerService, resource.sourceUri, { mode: 'reveal' }).catch(e => {
+                        this.messageService.error(e.message);
+                    });
                 }
             }
         });
@@ -654,7 +659,7 @@ export class GitContribution implements CommandContribution, MenuContribution, T
             tooltip: GIT_COMMANDS.INIT_REPOSITORY.label
         });
 
-        const registerItem = (item: Mutable<TabBarToolbarItem>) => {
+        const registerItem = (item: Mutable<TabBarToolbarItem & { command: string }>) => {
             const commandId = item.command;
             const id = '__git.tabbar.toolbar.' + commandId;
             const command = this.commands.getCommand(commandId);

@@ -20,6 +20,7 @@ import { ReactWidget } from '../widgets';
 import { ContextMenuRenderer } from '../context-menu-renderer';
 import { MenuPath } from '../../common/menu';
 import { HoverService } from '../hover-service';
+import { Event, Disposable, Emitter, DisposableCollection } from '../../common';
 
 export const SidebarTopMenuWidgetFactory = Symbol('SidebarTopMenuWidgetFactory');
 export const SidebarBottomMenuWidgetFactory = Symbol('SidebarBottomMenuWidgetFactory');
@@ -29,10 +30,46 @@ export interface SidebarMenu {
     iconClass: string;
     title: string;
     menuPath: MenuPath;
+    onDidBadgeChange?: Event<number>;
     /*
      * Used to sort menus. The lower the value the lower they are placed in the sidebar.
      */
     order: number;
+}
+
+export class SidebarMenuItem implements Disposable {
+
+    readonly menu: SidebarMenu;
+    get badge(): string {
+        if (this._badge <= 0) {
+            return '';
+        } else if (this._badge > 99) {
+            return '99+';
+        } else {
+            return this._badge.toString();
+        }
+    };
+    protected readonly onDidBadgeChangeEmitter = new Emitter<number>();
+    readonly onDidBadgeChange: Event<number> = this.onDidBadgeChangeEmitter.event;
+    protected _badge = 0;
+
+    protected readonly toDispose = new DisposableCollection();
+
+    constructor(menu: SidebarMenu) {
+        this.menu = menu;
+        if (menu.onDidBadgeChange) {
+            this.toDispose.push(menu.onDidBadgeChange(value => {
+                this._badge = value;
+                this.onDidBadgeChangeEmitter.fire(value);
+            }));
+        }
+    }
+
+    dispose(): void {
+        this.toDispose.dispose();
+        this.onDidBadgeChangeEmitter.dispose();
+    }
+
 }
 
 /**
@@ -40,7 +77,7 @@ export interface SidebarMenu {
  */
 @injectable()
 export class SidebarMenuWidget extends ReactWidget {
-    protected readonly menus: SidebarMenu[];
+    protected readonly items: SidebarMenuItem[];
     /**
      * The element that had focus when a menu rendered by this widget was activated.
      */
@@ -58,27 +95,27 @@ export class SidebarMenuWidget extends ReactWidget {
 
     constructor() {
         super();
-        this.menus = [];
+        this.items = [];
     }
 
     addMenu(menu: SidebarMenu): void {
-        const exists = this.menus.find(m => m.id === menu.id);
+        const exists = this.items.find(item => item.menu.id === menu.id);
         if (exists) {
             return;
         }
-        this.menus.push(menu);
-        this.menus.sort((a, b) => a.order - b.order);
+        const newItem = new SidebarMenuItem(menu);
+        newItem.onDidBadgeChange(() => this.update());
+        this.items.push(newItem);
+        this.items.sort((a, b) => a.menu.order - b.menu.order);
         this.update();
     }
 
     removeMenu(menuId: string): void {
-        const menu = this.menus.find(m => m.id === menuId);
-        if (menu) {
-            const index = this.menus.indexOf(menu);
-            if (index !== -1) {
-                this.menus.splice(index, 1);
-                this.update();
-            }
+        const index = this.items.findIndex(m => m.menu.id === menuId);
+        if (index !== -1) {
+            this.items[index].dispose();
+            this.items.splice(index, 1);
+            this.update();
         }
     }
 
@@ -127,14 +164,20 @@ export class SidebarMenuWidget extends ReactWidget {
 
     protected render(): React.ReactNode {
         return <React.Fragment>
-            {this.menus.map(menu => <i
-                key={menu.id}
-                className={menu.iconClass}
-                onClick={e => this.onClick(e, menu.menuPath)}
-                onMouseDown={this.onMouseDown}
-                onMouseEnter={e => this.onMouseEnter(e, menu.title)}
-                onMouseLeave={this.onMouseOut}
-            />)}
+            {this.items.map(item => this.renderItem(item))}
         </React.Fragment>;
+    }
+
+    protected renderItem(item: SidebarMenuItem): React.ReactNode {
+        return <div
+            key={item.menu.id}
+            className='theia-sidebar-menu-item'
+            onClick={e => this.onClick(e, item.menu.menuPath)}
+            onMouseDown={this.onMouseDown}
+            onMouseEnter={e => this.onMouseEnter(e, item.menu.title)}
+            onMouseLeave={this.onMouseOut}>
+            <i className={item.menu.iconClass} />
+            {item.badge && <div className='theia-badge-decorator-sidebar'>{item.badge}</div>}
+        </div>;
     }
 }

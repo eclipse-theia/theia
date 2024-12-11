@@ -44,8 +44,8 @@ describe('Menus', function () {
 
     const container = window.theia.container;
     const shell = container.get(ApplicationShell);
+    /** @type {BrowserMenuBarContribution} */
     const menuBarContribution = container.get(BrowserMenuBarContribution);
-    const menuBar = /** @type {import('@theia/core/lib/browser/menu/browser-menu-plugin').MenuBarWidget} */ (menuBarContribution.menuBar);
     const pluginService = container.get(HostedPluginSupport);
     const menus = container.get(MenuModelRegistry);
     const commands = container.get(CommandRegistry);
@@ -54,6 +54,9 @@ describe('Menus', function () {
     before(async function () {
         await pluginService.didStart;
         await pluginService.activateByViewContainer('explorer');
+        // Updating the menu interferes with our ability to programmatically test it
+        // We simply disable the menu updating
+        menus.isReady = false;
     });
 
     const toTearDown = new DisposableCollection();
@@ -73,7 +76,7 @@ describe('Menus', function () {
     ]) {
         it(`should toggle '${contribution.viewLabel}' view`, async () => {
             await contribution.closeView();
-            await menuBar.triggerMenuItem('View', contribution.viewLabel);
+            await menuBarContribution.menuBar.triggerMenuItem('View', contribution.viewLabel);
             await shell.waitForActivation(contribution.viewId);
         });
     }

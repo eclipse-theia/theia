@@ -15,7 +15,11 @@
 // *****************************************************************************
 
 import * as semver from 'semver';
-import { VSXAllVersions, VSXBuiltinNamespaces, VSXExtensionRaw, VSXSearchEntry } from './ovsx-types';
+import { OVSXClient, VSXAllVersions, VSXBuiltinNamespaces, VSXExtensionRaw, VSXQueryOptions, VSXSearchEntry } from './ovsx-types';
+
+export const OVSXApiFilterProvider = Symbol('OVSXApiFilterProvider');
+
+export type OVSXApiFilterProvider = () => Promise<OVSXApiFilter>;
 
 export const OVSXApiFilter = Symbol('OVSXApiFilter');
 /**
@@ -23,6 +27,7 @@ export const OVSXApiFilter = Symbol('OVSXApiFilter');
  */
 export interface OVSXApiFilter {
     supportedApiVersion: string;
+    findLatestCompatibleExtension(query: VSXQueryOptions): Promise<VSXExtensionRaw | undefined>;
     /**
      * Get the latest compatible extension version:
      * - A builtin extension is fetched based on the extension version which matches the API.
@@ -38,14 +43,58 @@ export interface OVSXApiFilter {
 export class OVSXApiFilterImpl implements OVSXApiFilter {
 
     constructor(
+        public client: OVSXClient,
         public supportedApiVersion: string
     ) { }
+
+    async findLatestCompatibleExtension(query: VSXQueryOptions): Promise<VSXExtensionRaw | undefined> {
+        const targetPlatform = query.targetPlatform;
+        if (!targetPlatform) {
+            return this.queryLatestCompatibleExtension(query);
+        }
+        const latestWithTargetPlatform = await this.queryLatestCompatibleExtension(query);
+        let latestUniversal: VSXExtensionRaw | undefined;
+        if (targetPlatform !== 'universal' && targetPlatform !== 'web') {
+            // Additionally query the universal version, as there might be a newer one available
+            latestUniversal = await this.queryLatestCompatibleExtension({ ...query, targetPlatform: 'universal' });
+        }
+        if (latestWithTargetPlatform && latestUniversal) {
+            // Prefer the version with the target platform if it's greater or equal to the universal version
+            return this.versionGreaterThanOrEqualTo(latestWithTargetPlatform.version, latestUniversal.version) ? latestWithTargetPlatform : latestUniversal;
+        }
+        return latestWithTargetPlatform ?? latestUniversal;
+    }
+
+    protected async queryLatestCompatibleExtension(query: VSXQueryOptions): Promise<VSXExtensionRaw | undefined> {
+        let offset = 0;
+        let size = 5;
+        let loop = true;
+        while (loop) {
+            const queryOptions: VSXQueryOptions = {
+                ...query,
+                offset,
+                size // there is a great chance that the newest version will work
+            };
+            const results = await this.client.query(queryOptions);
+            const compatibleExtension = this.getLatestCompatibleExtension(results.extensions);
+            if (compatibleExtension) {
+                return compatibleExtension;
+            }
+            // Adjust offset by the amount of returned extensions
+            offset += results.extensions.length;
+            // Continue querying if there are more extensions available
+            loop = results.totalSize > offset;
+            // Adjust the size to fetch more extensions next time
+            size = Math.min(size * 2, 100);
+        }
+        return undefined;
+    }
 
     getLatestCompatibleExtension(extensions: VSXExtensionRaw[]): VSXExtensionRaw | undefined {
         if (extensions.length === 0) {
             return;
         } else if (this.isBuiltinNamespace(extensions[0].namespace.toLowerCase())) {
-            return extensions.find(extension => this.versionGreaterThanOrEqualTo(extension.version, this.supportedApiVersion));
+            return extensions.find(extension => this.versionGreaterThanOrEqualTo(this.supportedApiVersion, extension.version));
         } else {
             return extensions.find(extension => this.supportedVscodeApiSatisfies(extension.engines?.vscode ?? '*'));
         }
@@ -63,7 +112,7 @@ export class OVSXApiFilterImpl implements OVSXApiFilter {
             }
         }
         if (this.isBuiltinNamespace(searchEntry.namespace)) {
-            return getLatestCompatibleVersion(allVersions => this.versionGreaterThanOrEqualTo(allVersions.version, this.supportedApiVersion));
+            return getLatestCompatibleVersion(allVersions => this.versionGreaterThanOrEqualTo(this.supportedApiVersion, allVersions.version));
         } else {
             return getLatestCompatibleVersion(allVersions => this.supportedVscodeApiSatisfies(allVersions.engines?.vscode ?? '*'));
         }
@@ -82,7 +131,7 @@ export class OVSXApiFilterImpl implements OVSXApiFilter {
         if (!versionA || !versionB) {
             return false;
         }
-        return semver.lte(versionA, versionB);
+        return semver.gte(versionA, versionB);
     }
 
     protected supportedVscodeApiSatisfies(vscodeApiRange: string): boolean {

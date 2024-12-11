@@ -39,7 +39,15 @@ export class EditorVariableContribution implements VariableContribution {
             description: 'The current selected text in the active file',
             resolve: () => {
                 const editor = this.getCurrentEditor();
-                return editor ? editor.document.getText(editor.selection) : undefined;
+                return editor?.document.getText(editor.selection);
+            }
+        });
+        variables.registerVariable({
+            name: 'currentText',
+            description: 'The current text in the active file',
+            resolve: () => {
+                const editor = this.getCurrentEditor();
+                return editor?.document.getText();
             }
         });
     }

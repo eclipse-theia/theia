@@ -13,19 +13,19 @@ on:
 
 jobs:
   build-and-test-playwright:
-    name: Playwright Tests (ubuntu-latest,  Node.js 18.x)
+    name: Playwright Tests (ubuntu-22.04,  Node.js 18.x)
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 60
 
     steps:
       - name: Checkout
         uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
 
-      - name: Use Node.js "18.x"
+      - name: Use Node.js "20.x"
         uses: actions/setup-node@1a4442cacd436585916779262731d5b162bc6ec7 # v3.8.2
         with:
-          node-version: "18.x"
+          node-version: "20.x"
           registry-url: "https://registry.npmjs.org"
 
       - name: Use Python 3.11
@@ -33,11 +33,18 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Install IPython Kernel
+        shell: bash
+        run: |
+          python3 -m pip install ipykernel==6.15.2
+          python3 -m ipykernel install --user
+
       - name: Build Browser
         shell: bash
         run: |
           yarn global add node-gyp
           yarn --skip-integrity-check --network-timeout 100000
+          yarn download:plugins
           yarn browser build
         env:
           NODE_OPTIONS: --max_old_space_size=4096
@@ -51,3 +58,13 @@ jobs:
       - name: Test (playwright)
         shell: bash
         run: yarn --cwd examples/playwright ui-tests-ci
+
+      - name: Archive test results
+        uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 #v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-test-results
+          path: |
+            examples/playwright/test-results/
+            examples/playwright/playwright-report/
+          retention-days: 7

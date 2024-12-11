@@ -22,26 +22,33 @@ import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import {
     NOTEBOOK_CELL_MARKDOWN_EDIT_MODE, NOTEBOOK_CELL_TYPE,
     NotebookContextKeys, NOTEBOOK_CELL_EXECUTING, NOTEBOOK_EDITOR_FOCUSED,
-    NOTEBOOK_CELL_FOCUSED
+    NOTEBOOK_CELL_FOCUSED,
+    NOTEBOOK_CELL_LIST_FOCUSED
 } from './notebook-context-keys';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { NotebookExecutionService } from '../service/notebook-execution-service';
 import { NotebookCellOutputModel } from '../view-model/notebook-cell-output-model';
-import { CellEditType, CellKind } from '../../common';
+import { CellData, CellEditType, CellKind } from '../../common';
 import { NotebookEditorWidgetService } from '../service/notebook-editor-widget-service';
 import { NotebookCommands } from './notebook-actions-contribution';
 import { changeCellType } from './cell-operations';
 import { EditorLanguageQuickPickService } from '@theia/editor/lib/browser/editor-language-quick-pick-service';
+import { NotebookService } from '../service/notebook-service';
+import { Selection } from '@theia/monaco-editor-core/esm/vs/editor/common/core/selection';
+import { Range } from '@theia/core/shared/vscode-languageserver-protocol';
+import { NOTEBOOK_EDITOR_ID_PREFIX } from '../notebook-editor-widget';
 
 export namespace NotebookCellCommands {
     /** Parameters: notebookModel: NotebookModel | undefined, cell: NotebookCellModel */
     export const EDIT_COMMAND = Command.toDefaultLocalizedCommand({
         id: 'notebook.cell.edit',
+        category: 'Notebook',
         iconClass: codicon('edit')
     });
     /** Parameters: notebookModel: NotebookModel | undefined, cell: NotebookCellModel */
     export const STOP_EDIT_COMMAND = Command.toDefaultLocalizedCommand({
         id: 'notebook.cell.stop-edit',
+        category: 'Notebook',
         iconClass: codicon('check')
     });
     /** Parameters: notebookModel: NotebookModel, cell: NotebookCellModel */
@@ -51,17 +58,27 @@ export namespace NotebookCellCommands {
     });
     /** Parameters: notebookModel: NotebookModel, cell: NotebookCellModel */
     export const SPLIT_CELL_COMMAND = Command.toDefaultLocalizedCommand({
-        id: 'notebook.cell.split-cell',
+        id: 'notebook.cell.split',
         iconClass: codicon('split-vertical'),
     });
     /** Parameters: notebookModel: NotebookModel, cell: NotebookCellModel */
     export const EXECUTE_SINGLE_CELL_COMMAND = Command.toDefaultLocalizedCommand({
         id: 'notebook.cell.execute-cell',
+        category: 'Notebook',
+        label: nls.localizeByDefault('Execute Cell'),
         iconClass: codicon('play'),
     });
     /** Parameters: notebookModel: NotebookModel, cell: NotebookCellModel */
     export const EXECUTE_SINGLE_CELL_AND_FOCUS_NEXT_COMMAND = Command.toDefaultLocalizedCommand({
         id: 'notebook.cell.execute-cell-and-focus-next',
+        label: nls.localizeByDefault('Execute Notebook Cell and Select Below'),
+        category: 'Notebook',
+    });
+    /** Parameters: notebookModel: NotebookModel, cell: NotebookCellModel */
+    export const EXECUTE_SINGLE_CELL_AND_INSERT_BELOW_COMMAND = Command.toDefaultLocalizedCommand({
+        id: 'notebook.cell.execute-cell-and-insert-below',
+        label: nls.localizeByDefault('Execute Notebook Cell and Insert Below'),
+        category: 'Notebook',
     });
 
     export const EXECUTE_ABOVE_CELLS_COMMAND = Command.toDefaultLocalizedCommand({
@@ -83,11 +100,13 @@ export namespace NotebookCellCommands {
     /** Parameters: notebookModel: NotebookModel | undefined, cell: NotebookCellModel */
     export const CLEAR_OUTPUTS_COMMAND = Command.toDefaultLocalizedCommand({
         id: 'notebook.cell.clear-outputs',
+        category: 'Notebook',
         label: 'Clear Cell Outputs',
     });
     /** Parameters: notebookModel: NotebookModel | undefined, cell: NotebookCellModel | undefined, output: NotebookCellOutputModel */
     export const CHANGE_OUTPUT_PRESENTATION_COMMAND = Command.toDefaultLocalizedCommand({
         id: 'notebook.cell.change-presentation',
+        category: 'Notebook',
         label: 'Change Presentation',
     });
 
@@ -112,12 +131,14 @@ export namespace NotebookCellCommands {
 
     export const TO_CODE_CELL_COMMAND = Command.toLocalizedCommand({
         id: 'notebook.cell.changeToCode',
+        category: 'Notebook',
         label: 'Change Cell to Code'
     });
 
     export const TO_MARKDOWN_CELL_COMMAND = Command.toLocalizedCommand({
         id: 'notebook.cell.changeToMarkdown',
-        label: 'Change Cell to Mardown'
+        category: 'Notebook',
+        label: 'Change Cell to Markdown'
     });
 
     export const TOGGLE_CELL_OUTPUT = Command.toDefaultLocalizedCommand({
@@ -145,6 +166,9 @@ export class NotebookCellActionContribution implements MenuContribution, Command
 
     @inject(ContextKeyService)
     protected contextKeyService: ContextKeyService;
+
+    @inject(NotebookService)
+    protected notebookService: NotebookService;
 
     @inject(NotebookExecutionService)
     protected notebookExecutionService: NotebookExecutionService;
@@ -192,12 +216,12 @@ export class NotebookCellActionContribution implements MenuContribution, Command
             order: '20'
         });
 
-        // menus.registerMenuAction(NotebookCellActionContribution.ACTION_MENU, {
-        //     commandId: NotebookCellCommands.SPLIT_CELL_COMMAND.id,
-        //     icon: NotebookCellCommands.SPLIT_CELL_COMMAND.iconClass,
-        //     label: nls.localizeByDefault('Split Cell'),
-        //     order: '20'
-        // });
+        menus.registerMenuAction(NotebookCellActionContribution.ACTION_MENU, {
+            commandId: NotebookCellCommands.SPLIT_CELL_COMMAND.id,
+            icon: NotebookCellCommands.SPLIT_CELL_COMMAND.iconClass,
+            label: nls.localizeByDefault('Split Cell'),
+            order: '20'
+        });
 
         menus.registerMenuAction(NotebookCellActionContribution.ACTION_MENU, {
             commandId: NotebookCellCommands.DELETE_COMMAND.id,
@@ -272,7 +296,47 @@ export class NotebookCellActionContribution implements MenuContribution, Command
                 }]
                     , true);
             }));
-        commands.registerCommand(NotebookCellCommands.SPLIT_CELL_COMMAND);
+        commands.registerCommand(NotebookCellCommands.SPLIT_CELL_COMMAND, this.editableCellCommandHandler(
+            async (notebookModel, cell) => {
+                // selection (0,0,0,0) should also be used in !cell.editing mode, but `cell.editing`
+                // is not properly implemented for Code cells.
+                const cellSelection: Range = cell.selection ?? { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } };
+                const textModel = await cell.resolveTextModel();
+
+                // Create new cell with the text after the cursor
+                const splitOffset = textModel.offsetAt({
+                    line: cellSelection.start.line,
+                    character: cellSelection.start.character
+                });
+                const newCell: CellData = {
+                    cellKind: cell.cellKind,
+                    language: cell.language,
+                    outputs: [],
+                    source: textModel.getText().substring(splitOffset),
+                };
+
+                // add new cell below
+                const index = notebookModel.cells.indexOf(cell);
+                notebookModel.applyEdits([{ editType: CellEditType.Replace, index: index + 1, count: 0, cells: [newCell] }], true);
+
+                // update current cell text (undo-able)
+                const selection = new Selection(cellSelection.start.line + 1, cellSelection.start.character + 1, cellSelection.end.line + 1, cellSelection.end.character + 1);
+                const endPosition = textModel.positionAt(textModel.getText().length);
+                const deleteOp = {
+                    range: {
+                        startLineNumber: selection.startLineNumber,
+                        startColumn: selection.startColumn,
+                        endLineNumber: endPosition.line + 1,
+                        endColumn: endPosition.character + 1
+                    },
+                    // eslint-disable-next-line no-null/no-null
+                    text: null
+                };
+                // Create a new undo/redo stack entry
+                textModel.textEditorModel.pushStackElement();
+                textModel.textEditorModel.pushEditOperations([selection], [deleteOp], () => [selection]);
+            })
+        );
 
         commands.registerCommand(NotebookCellCommands.EXECUTE_SINGLE_CELL_COMMAND, this.editableCellCommandHandler(
             (notebookModel, cell) => {
@@ -295,6 +359,23 @@ export class NotebookCellActionContribution implements MenuContribution, Command
                 } else {
                     commands.executeCommand(NotebookCellCommands.INSERT_MARKDOWN_CELL_BELOW_COMMAND.id);
                 }
+            })
+        );
+        commands.registerCommand(NotebookCellCommands.EXECUTE_SINGLE_CELL_AND_INSERT_BELOW_COMMAND, this.editableCellCommandHandler(
+            async (notebookModel, cell) => {
+                if (cell.cellKind === CellKind.Code) {
+                    await commands.executeCommand(NotebookCellCommands.EXECUTE_SINGLE_CELL_COMMAND.id, notebookModel, cell);
+                }
+                await commands.executeCommand(NotebookCellCommands.STOP_EDIT_COMMAND.id, notebookModel, cell);
+
+                if (cell.cellKind === CellKind.Code) {
+                    await commands.executeCommand(NotebookCellCommands.INSERT_NEW_CELL_BELOW_COMMAND.id);
+                } else {
+                    await commands.executeCommand(NotebookCellCommands.INSERT_MARKDOWN_CELL_BELOW_COMMAND.id);
+                }
+
+                const index = notebookModel.cells.indexOf(cell);
+                notebookModel.setSelectedCell(notebookModel.cells[index + 1]);
             })
         );
 
@@ -333,19 +414,21 @@ export class NotebookCellActionContribution implements MenuContribution, Command
             }], true)
         ));
         commands.registerCommand(NotebookCellCommands.CHANGE_OUTPUT_PRESENTATION_COMMAND, this.editableCellCommandHandler(
-            (_, __, output) => output?.requestOutputPresentationUpdate()
+            (notebook, cell, output) => {
+                this.notebookEditorWidgetService.getNotebookEditor(NOTEBOOK_EDITOR_ID_PREFIX + notebook.uri.toString())?.requestOuputPresentationChange(cell.handle, output);
+            }
         ));
 
-        const insertCommand = (type: CellKind, index: number | 'above' | 'below'): CommandHandler => this.editableCellCommandHandler(() =>
-            commands.executeCommand(NotebookCommands.ADD_NEW_CELL_COMMAND.id, undefined, type, index)
+        const insertCommand = (type: CellKind, index: number | 'above' | 'below', focusContainer: boolean): CommandHandler => this.editableCellCommandHandler(() =>
+            commands.executeCommand(NotebookCommands.ADD_NEW_CELL_COMMAND.id, undefined, type, index, focusContainer)
         );
-        commands.registerCommand(NotebookCellCommands.INSERT_NEW_CELL_ABOVE_COMMAND, insertCommand(CellKind.Code, 'above'));
-        commands.registerCommand(NotebookCellCommands.INSERT_NEW_CELL_BELOW_COMMAND, insertCommand(CellKind.Code, 'below'));
-        commands.registerCommand(NotebookCellCommands.INSERT_MARKDOWN_CELL_ABOVE_COMMAND, insertCommand(CellKind.Markup, 'above'));
-        commands.registerCommand(NotebookCellCommands.INSERT_MARKDOWN_CELL_BELOW_COMMAND, insertCommand(CellKind.Markup, 'below'));
+        commands.registerCommand(NotebookCellCommands.INSERT_NEW_CELL_ABOVE_COMMAND, insertCommand(CellKind.Code, 'above', true));
+        commands.registerCommand(NotebookCellCommands.INSERT_NEW_CELL_BELOW_COMMAND, insertCommand(CellKind.Code, 'below', true));
+        commands.registerCommand(NotebookCellCommands.INSERT_MARKDOWN_CELL_ABOVE_COMMAND, insertCommand(CellKind.Markup, 'above', false));
+        commands.registerCommand(NotebookCellCommands.INSERT_MARKDOWN_CELL_BELOW_COMMAND, insertCommand(CellKind.Markup, 'below', false));
 
         commands.registerCommand(NotebookCellCommands.TO_CODE_CELL_COMMAND, this.editableCellCommandHandler((notebookModel, cell) => {
-            changeCellType(notebookModel, cell, CellKind.Code);
+            changeCellType(notebookModel, cell, CellKind.Code, this.notebookService.getCodeCellLanguage(notebookModel));
         }));
         commands.registerCommand(NotebookCellCommands.TO_MARKDOWN_CELL_COMMAND, this.editableCellCommandHandler((notebookModel, cell) => {
             changeCellType(notebookModel, cell, CellKind.Markup);
@@ -365,9 +448,21 @@ export class NotebookCellActionContribution implements MenuContribution, Command
             execute: async (notebook?: NotebookModel, cell?: NotebookCellModel) => {
                 const selectedCell = cell ?? this.notebookEditorWidgetService.focusedEditor?.model?.selectedCell;
                 const activeNotebook = notebook ?? this.notebookEditorWidgetService.focusedEditor?.model;
-                if (selectedCell && activeNotebook) {
-                    const language = await this.languageQuickPickService.pickEditorLanguage(selectedCell.language);
-                    if (language?.value && language.value !== 'autoDetect') {
+                if (!selectedCell || !activeNotebook) {
+                    return;
+                }
+                const language = await this.languageQuickPickService.pickEditorLanguage(selectedCell.language);
+                if (!language?.value || language.value === 'autoDetect' || language.value.id === selectedCell.language) {
+                    return;
+                }
+                const isMarkdownCell = selectedCell.cellKind === CellKind.Markup;
+                const isMarkdownLanguage = language.value.id === 'markdown';
+                if (isMarkdownLanguage) {
+                    changeCellType(activeNotebook, selectedCell, CellKind.Markup, language.value.id);
+                } else {
+                    if (isMarkdownCell) {
+                        changeCellType(activeNotebook, selectedCell, CellKind.Code, language.value.id);
+                    } else {
                         this.notebookEditorWidgetService.focusedEditor?.model?.applyEdits([{
                             editType: CellEditType.CellLanguage,
                             index: activeNotebook.cells.indexOf(selectedCell),
@@ -411,27 +506,32 @@ export class NotebookCellActionContribution implements MenuContribution, Command
             {
                 command: NotebookCellCommands.EDIT_COMMAND.id,
                 keybinding: 'Enter',
-                when: `!editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`,
+                when: `!editorTextFocus && !inputFocus && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`,
             },
             {
                 command: NotebookCellCommands.STOP_EDIT_COMMAND.id,
-                keybinding: KeyCode.createKeyCode({ first: Key.ENTER, modifiers: [KeyModifier.Alt] }).toString(),
-                when: `editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED}`,
+                keybinding: KeyCode.createKeyCode({ first: Key.ENTER, modifiers: [KeyModifier.Alt, KeyModifier.CtrlCmd] }).toString(),
+                when: `editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_TYPE} == 'markdown'`,
             },
             {
                 command: NotebookCellCommands.STOP_EDIT_COMMAND.id,
                 keybinding: 'esc',
-                when: `editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED}`,
+                when: `editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED} && !suggestWidgetVisible`,
             },
             {
                 command: NotebookCellCommands.EXECUTE_SINGLE_CELL_COMMAND.id,
                 keybinding: KeyCode.createKeyCode({ first: Key.ENTER, modifiers: [KeyModifier.CtrlCmd] }).toString(),
-                when: `${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED} && ${NOTEBOOK_CELL_TYPE} == 'code'`,
+                when: `${NOTEBOOK_CELL_LIST_FOCUSED} && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED} && ${NOTEBOOK_CELL_TYPE} == 'code'`,
             },
             {
                 command: NotebookCellCommands.EXECUTE_SINGLE_CELL_AND_FOCUS_NEXT_COMMAND.id,
                 keybinding: KeyCode.createKeyCode({ first: Key.ENTER, modifiers: [KeyModifier.Shift] }).toString(),
-                when: `${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`,
+                when: `${NOTEBOOK_CELL_LIST_FOCUSED} && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`,
+            },
+            {
+                command: NotebookCellCommands.EXECUTE_SINGLE_CELL_AND_INSERT_BELOW_COMMAND.id,
+                keybinding: KeyCode.createKeyCode({ first: Key.ENTER, modifiers: [KeyModifier.Alt] }).toString(),
+                when: `${NOTEBOOK_CELL_LIST_FOCUSED} && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`,
             },
             {
                 command: NotebookCellCommands.CLEAR_OUTPUTS_COMMAND.id,
@@ -453,6 +553,11 @@ export class NotebookCellActionContribution implements MenuContribution, Command
                 keybinding: 'M',
                 when: `!editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED} && ${NOTEBOOK_CELL_TYPE} == 'code'`,
             },
+            {
+                command: NotebookCellCommands.SPLIT_CELL_COMMAND.id,
+                keybinding: KeyCode.createKeyCode({ first: Key.MINUS, modifiers: [KeyModifier.CtrlCmd, KeyModifier.Shift] }).toString(),
+                when: `editorTextFocus && ${NOTEBOOK_EDITOR_FOCUSED} && ${NOTEBOOK_CELL_FOCUSED}`,
+            }
         );
     }
 }

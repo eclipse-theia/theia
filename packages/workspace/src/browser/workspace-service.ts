@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
+import { injectable, inject, postConstruct, named } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { WorkspaceServer, UntitledWorkspaceService, WorkspaceFileService } from '../common';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
@@ -24,7 +24,7 @@ import {
 } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
-import { ILogger, Disposable, DisposableCollection, Emitter, Event, MaybePromise, MessageService, nls } from '@theia/core';
+import { ILogger, Disposable, DisposableCollection, Emitter, Event, MaybePromise, MessageService, nls, ContributionProvider } from '@theia/core';
 import { WorkspacePreferences } from './workspace-preferences';
 import * as jsoncparser from 'jsonc-parser';
 import * as Ajv from '@theia/core/shared/ajv';
@@ -36,11 +36,19 @@ import { workspaceSchema, WorkspaceSchemaUpdater } from './workspace-schema-upda
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import { StopReason } from '@theia/core/lib/common/frontend-application-state';
 
+export const WorkspaceOpenHandlerContribution = Symbol('WorkspaceOpenHandlerContribution');
+
+export interface WorkspaceOpenHandlerContribution {
+    canHandle(uri: URI): MaybePromise<boolean>;
+    openWorkspace(uri: URI, options?: WorkspaceInput): MaybePromise<void>;
+    getWorkspaceLabel?(uri: URI): MaybePromise<string | undefined>;
+}
+
 /**
  * The workspace service.
  */
 @injectable()
-export class WorkspaceService implements FrontendApplicationContribution {
+export class WorkspaceService implements FrontendApplicationContribution, WorkspaceOpenHandlerContribution {
 
     protected _workspace: FileStat | undefined;
 
@@ -91,6 +99,9 @@ export class WorkspaceService implements FrontendApplicationContribution {
 
     @inject(WindowTitleService)
     protected readonly windowTitleService: WindowTitleService;
+
+    @inject(ContributionProvider) @named(WorkspaceOpenHandlerContribution)
+    protected readonly openHandlerContribution: ContributionProvider<WorkspaceOpenHandlerContribution>;
 
     protected _ready = new Deferred<void>();
     get ready(): Promise<void> {
@@ -350,7 +361,21 @@ export class WorkspaceService implements FrontendApplicationContribution {
         this.doOpen(uri, options);
     }
 
-    protected async doOpen(uri: URI, options?: WorkspaceInput): Promise<URI | undefined> {
+    protected async doOpen(uri: URI, options?: WorkspaceInput): Promise<void> {
+        for (const handler of [...this.openHandlerContribution.getContributions(), this]) {
+            if (await handler.canHandle(uri)) {
+                handler.openWorkspace(uri, options);
+                return;
+            }
+        }
+        throw new Error(`Could not find a handler to open the workspace with uri ${uri.toString()}.`);
+    }
+
+    async canHandle(uri: URI): Promise<boolean> {
+        return uri.scheme === 'file';
+    }
+
+    async openWorkspace(uri: URI, options?: WorkspaceInput): Promise<void> {
         const stat = await this.toFileStat(uri);
         if (stat) {
             if (!stat.isDirectory && !this.isWorkspaceFile(stat)) {
@@ -660,7 +685,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
         const rootUris: URI[] = [];
         for (const root of this.tryGetRoots()) {
             const rootUri = root.resource;
-            if (rootUri && rootUri.isEqualOrParent(uri)) {
+            if (rootUri && rootUri.scheme === uri.scheme && rootUri.isEqualOrParent(uri)) {
                 rootUris.push(rootUri);
             }
         }

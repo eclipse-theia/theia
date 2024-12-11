@@ -27,7 +27,7 @@ export class TheiaMonacoEditor extends TheiaPageObject {
         await this.page.waitForSelector(this.selector, { state: 'visible' });
     }
 
-    protected viewElement(): Promise<ElementHandle<SVGElement | HTMLElement> | null> {
+    protected async viewElement(): Promise<ElementHandle<SVGElement | HTMLElement> | null> {
         return this.page.$(this.selector);
     }
 
@@ -72,6 +72,49 @@ export class TheiaMonacoEditor extends TheiaPageObject {
     async lineContainingText(text: string): Promise<ElementHandle<SVGElement | HTMLElement> | undefined> {
         const viewElement = await this.viewElement();
         return viewElement?.waitForSelector(`.view-lines .view-line:has-text("${text}")`);
+    }
+
+    /**
+     * @returns The text content of the editor.
+     */
+    async editorText(): Promise<string | undefined> {
+        const lines: string[] = [];
+        const linesCount = await this.numberOfLines();
+        if (linesCount === undefined) {
+            return undefined;
+        }
+        for (let line = 1; line <= linesCount; line++) {
+            const lineText = await this.textContentOfLineByLineNumber(line);
+            if (lineText === undefined) {
+                break;
+            }
+            lines.push(lineText);
+        }
+        return lines.join('\n');
+    }
+
+    /**
+     * Adds text to the editor.
+     * @param text  The text to add to the editor.
+     * @param lineNumber  The line number where to add the text. Default is 1.
+     */
+    async addEditorText(text: string, lineNumber: number = 1): Promise<void> {
+        const line = await this.lineByLineNumber(lineNumber);
+        await line?.click();
+        await this.page.keyboard.type(text);
+    }
+
+    /**
+     * @returns `true` if the editor is focused, `false` otherwise.
+     */
+    async isFocused(): Promise<boolean> {
+        const viewElement = await this.viewElement();
+        const monacoEditor = await viewElement?.$('div.monaco-editor');
+        if (!monacoEditor) {
+            throw new Error('Couldn\'t retrieve monaco editor element.');
+        }
+        const editorClass = await monacoEditor.getAttribute('class');
+        return editorClass?.includes('focused') ?? false;
     }
 
     protected replaceEditorSymbolsWithSpace(content: string): string | Promise<string | undefined> {

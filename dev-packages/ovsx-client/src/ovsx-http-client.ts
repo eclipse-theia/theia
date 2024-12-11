@@ -16,6 +16,9 @@
 
 import { OVSXClient, VSXQueryOptions, VSXQueryResult, VSXSearchOptions, VSXSearchResult } from './ovsx-types';
 import { RequestContext, RequestService } from '@theia/request';
+import { RateLimiter } from 'limiter';
+
+export const OVSX_RATE_LIMIT = 15;
 
 export class OVSXHttpClient implements OVSXClient {
 
@@ -23,45 +26,46 @@ export class OVSXHttpClient implements OVSXClient {
      * @param requestService
      * @returns factory that will cache clients based on the requested input URL.
      */
-    static createClientFactory(requestService: RequestService): (url: string) => OVSXClient {
+    static createClientFactory(requestService: RequestService, rateLimiter?: RateLimiter): (url: string) => OVSXClient {
         // eslint-disable-next-line no-null/no-null
         const cachedClients: Record<string, OVSXClient> = Object.create(null);
-        return url => cachedClients[url] ??= new this(url, requestService);
+        return url => cachedClients[url] ??= new this(url, requestService, rateLimiter);
     }
 
     constructor(
         protected vsxRegistryUrl: string,
-        protected requestService: RequestService
+        protected requestService: RequestService,
+        protected rateLimiter = new RateLimiter({ tokensPerInterval: OVSX_RATE_LIMIT, interval: 'second' })
     ) { }
 
-    async search(searchOptions?: VSXSearchOptions): Promise<VSXSearchResult> {
-        try {
-            return await this.requestJson(this.buildUrl('api/-/search', searchOptions));
-        } catch (err) {
-            return {
-                error: err?.message || String(err),
-                offset: -1,
-                extensions: []
-            };
-        }
+    search(searchOptions?: VSXSearchOptions): Promise<VSXSearchResult> {
+        return this.requestJson(this.buildUrl('api/-/search', searchOptions));
     }
 
-    async query(queryOptions?: VSXQueryOptions): Promise<VSXQueryResult> {
-        try {
-            return await this.requestJson(this.buildUrl('api/-/query', queryOptions));
-        } catch (error) {
-            console.warn(error);
-            return {
-                extensions: []
-            };
-        }
+    query(queryOptions?: VSXQueryOptions): Promise<VSXQueryResult> {
+        return this.requestJson(this.buildUrl('api/v2/-/query', queryOptions));
     }
 
     protected async requestJson<R>(url: string): Promise<R> {
-        return RequestContext.asJson<R>(await this.requestService.request({
-            url,
-            headers: { 'Accept': 'application/json' }
-        }));
+        const attempts = 5;
+        for (let i = 0; i < attempts; i++) {
+            // Use 1, 2, 4, 8, 16 tokens for each attempt
+            const tokenCount = Math.pow(2, i);
+            await this.rateLimiter.removeTokens(tokenCount);
+            const context = await this.requestService.request({
+                url,
+                headers: { 'Accept': 'application/json' }
+            });
+            if (context.res.statusCode === 429) {
+                console.warn('OVSX rate limit exceeded. Consider reducing the rate limit.');
+                // If there are still more attempts left, retry the request with a higher token count
+                if (i < attempts - 1) {
+                    continue;
+                }
+            }
+            return RequestContext.asJson<R>(context);
+        }
+        throw new Error('Failed to fetch data from OVSX.');
     }
 
     protected buildUrl(url: string, query?: object): string {

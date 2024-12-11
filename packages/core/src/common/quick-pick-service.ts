@@ -18,7 +18,6 @@ import * as fuzzy from 'fuzzy';
 import { Event } from './event';
 import { KeySequence } from './keys';
 import { CancellationToken } from './cancellation';
-import { URI as Uri } from 'vscode-uri';
 
 export const quickPickServicePath = '/services/quickPick';
 export const QuickPickService = Symbol('QuickPickService');
@@ -53,7 +52,6 @@ export interface QuickPickItem {
     description?: string;
     detail?: string;
     keySequence?: KeySequence;
-    iconPath?: { light?: Uri; dark: Uri };
     iconClasses?: string[];
     alwaysShow?: boolean;
     highlights?: QuickPickItemHighlights;
@@ -94,7 +92,6 @@ export interface QuickPickValue<V> extends QuickPickItem {
 }
 
 export interface QuickInputButton {
-    iconPath?: { light?: Uri; dark: Uri };
     iconClass?: string;
     tooltip?: string;
     /**
