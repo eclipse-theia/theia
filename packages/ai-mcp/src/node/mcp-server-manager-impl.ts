@@ -84,7 +84,7 @@ export class MCPServerManagerImpl implements MCPServerManager {
             server.stop();
             this.servers.delete(name);
         } else {
-            console.warn(`Server "${name}" not found.`);
+            console.warn(`MCP server "${name}" not found.`);
         }
     }
 }
