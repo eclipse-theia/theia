@@ -41,7 +41,7 @@ export class MCPServerManagerImpl implements MCPServerManager {
     callTool(serverName: string, toolName: string, arg_string: string): unknown {
         const server = this.servers.get(serverName);
         if (!server) {
-            throw new Error(`Server "${toolName}" not found.`);
+            throw new Error(`MCP server "${toolName}" not found.`);
         }
         return server.callTool(toolName, arg_string);
     }
