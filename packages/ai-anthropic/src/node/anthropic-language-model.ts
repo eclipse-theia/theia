@@ -21,12 +21,11 @@ import {
     LanguageModelResponse,
     LanguageModelStreamResponse,
     LanguageModelStreamResponsePart,
-    LanguageModelTextResponse,
-    ToolRequest
+    LanguageModelTextResponse
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 import { Anthropic } from '@anthropic-ai/sdk';
-import { MessageParam, Tool, ToolChoiceAuto } from '@anthropic-ai/sdk/resources';
+import { MessageParam } from '@anthropic-ai/sdk/resources';
 
 export const AnthropicModelIdentifier = Symbol('AnthropicModelIdentifier');
 
@@ -93,18 +92,12 @@ export class AnthropicModel implements LanguageModel {
         const settings = this.getSettings(request);
         const { messages, systemMessage } = transformToAnthropicParams(request.messages);
 
-        const tools = this.createTools(request.tools);
-
         const params: Anthropic.MessageCreateParams = {
             max_tokens: 2048, // Setting max_tokens is mandatory for Anthropic, settings can override this default
             messages,
             model: this.model,
             ...(systemMessage && { system: systemMessage }),
-            ...settings,
-            ...(tools.length > 0 && {
-                tools,
-                tool_choice: { type: 'auto' } as ToolChoiceAuto,
-            }),
+            ...settings
         };
 
         const stream = anthropic.messages.stream(params);
@@ -121,37 +114,12 @@ export class AnthropicModel implements LanguageModel {
 
                         if (contentBlock.type === 'text') {
                             yield { content: contentBlock.text };
-                        } else if (contentBlock.type === 'tool_use') {
-                            yield {
-                                tool_calls: [
-                                    {
-                                        id: contentBlock.id,
-                                        function: {
-                                            arguments: JSON.stringify(contentBlock.input),
-                                            name: contentBlock.name,
-                                        },
-                                        finished: false,
-                                    },
-                                ],
-                            };
                         }
                     } else if (event.type === 'content_block_delta') {
                         const delta = event.delta;
 
                         if (delta.type === 'text_delta') {
                             yield { content: delta.text };
-                        } else if (delta.type === 'input_json_delta') {
-                            yield {
-                                tool_calls: [
-                                    {
-                                        id: event.index.toString(),
-                                        function: {
-                                            arguments: delta.partial_json,
-                                        },
-                                        finished: false,
-                                    },
-                                ],
-                            };
                         }
                     }
                 }
@@ -201,20 +169,4 @@ export class AnthropicModel implements LanguageModel {
 
         return new Anthropic({ apiKey: apiKey });
     }
-
-    protected createTools(toolRequests: ToolRequest[] | undefined): Tool[] {
-        if (!toolRequests) {
-            return [];
-        }
-        return toolRequests.map(toolRequest => ({
-            name: toolRequest.name,
-            description: toolRequest.description,
-            input_schema: {
-                type: 'object',
-                properties: toolRequest.parameters?.properties || undefined,
-                ...(toolRequest.parameters?.type && { type: toolRequest.parameters.type }),
-            },
-        }));
-    }
-
 }
