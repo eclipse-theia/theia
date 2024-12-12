@@ -1,9 +1,9 @@
 # Model Context Server (MCP) Integration
 
-The AI MCP package provides an integration that allows users to start and use MCP Servers to provide additional tool functions to LLMs, e.g. search or file access (outside of the workspace).
+The AI MCP package provides an integration that allows users to start and use MCP servers to provide additional tool functions to LLMs, e.g. search or file access (outside of the workspace).
 
 ## Features
--   Add MCP Servers via settings.json
+-   Add MCP servers via settings.json
 -   Start and stop MCP servers.
 -   Use tool functions provided by MCP servers in prompt templates
 
@@ -23,15 +23,15 @@ The AI MCP package provides an integration that allows users to start and use MC
 
 ## Usage
 
-1. **Starting a Llamafile Language Server:**
+1. **Starting a MCP Server:**
 
     - Use the command palette to invoke `MCP: Start MCP Server`.
-    - A quick pick menu will appear with a list of configured MCP Servers.
+    - A quick pick menu will appear with a list of configured MCP servers.
     - Select a server to start.
 
-2. **Stopping a Llamafile Language Server:**
+2. **Stopping a MCP Server:**
     - Use the command palette to invoke `MCP: Stop MCP Server`.
-    - A quick pick menu will display a list of currently running MCP Servers.
+    - A quick pick menu will display a list of currently running MCP servers.
     - Select a server to stop.
 
 3. **Using provided tool functions**
@@ -41,7 +41,7 @@ The AI MCP package provides an integration that allows users to start and use MC
 
 ## Configuration
 
-Make sure to configure your MCP Servers properly within the preference settings.
+Make sure to configure your MCP servers properly within the preference settings.
 
 Example Configuration:
 

@@ -46,16 +46,13 @@ export class MCPCommandContribution implements CommandContribution {
     @inject(ToolInvocationRegistry)
     protected readonly toolInvocationRegistry: ToolInvocationRegistry;
 
-    private async getMCPServerSelection(serverNames: String[]): Promise<string | undefined> {
+    private async getMCPServerSelection(serverNames: string[]): Promise<string | undefined> {
         if (!serverNames || serverNames.length === 0) {
             return undefined;
         }
-        const options = serverNames.map(mcpServerName => ({ label: mcpServerName as string }));
+        const options = serverNames.map(mcpServerName => ({ label: mcpServerName }));
         const result = await this.quickInputService.showQuickPick(options);
-        if (!result) {
-            return undefined;
-        }
-        return result.label;
+        return result?.label;
     }
 
     registerCommands(commandRegistry: CommandRegistry): void {

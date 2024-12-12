@@ -41,7 +41,7 @@ export interface ToolInvocationRegistry {
     getFunction(toolId: string): ToolRequest | undefined;
 
     /**
-     * Retrieves multiple `ToolRequest`s configurations from the registry.
+     * Retrieves multiple `ToolRequest`s from the registry.
      *
      * @param toolIds - A list of tool IDs to retrieve.
      * @returns An array of `ToolRequest` objects for the specified tool IDs.
