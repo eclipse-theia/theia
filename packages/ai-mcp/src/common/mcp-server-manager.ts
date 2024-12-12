@@ -26,10 +26,10 @@ export interface MCPServerManager {
     removeServer(name: string): void;
     addOrUpdateServer(description: MCPServerDescription): void;
     getTools(serverName: string): ReturnType<MCPServer['getTools']>
-    getServerNames(): Promise<String[]>;
+    getServerNames(): Promise<string[]>;
     startServer(serverName: string): Promise<void>;
     stopServer(serverName: string): Promise<void>;
-    getStartedServers(): Promise<String[]>;
+    getStartedServers(): Promise<string[]>;
 }
 
 export interface MCPServerDescription {

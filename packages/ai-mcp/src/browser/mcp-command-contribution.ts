@@ -20,6 +20,8 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { MCPServerManager } from '../common/mcp-server-manager';
 import { ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
 
+type MCPTool = Awaited<ReturnType<MCPServerManager['getTools']>>['tools'][number];
+
 export const StartMCPServer = {
     id: 'mcp.startserver',
     label: 'MCP: Start MCP Server',
@@ -97,12 +99,12 @@ export class MCPCommandContribution implements CommandContribution {
                     }
                     this.mcpServerManager.startServer(selection);
                     const { tools } = await this.mcpServerManager.getTools(selection);
-                    const toolRequests: ToolRequest[] = tools.map((tool: any) => this.convertToToolRequest(tool, selection));
+                    const toolRequests: ToolRequest[] = tools.map(tool => this.convertToToolRequest(tool, selection));
 
                     for (const toolRequest of toolRequests) {
                         this.toolInvocationRegistry.registerTool(toolRequest);
                     }
-                    const toolNames = tools.map((tool: any) => tool.name || 'Unnamed Tool').join(', ');
+                    const toolNames = tools.map(tool => tool.name || 'Unnamed Tool').join(', ');
                     this.messageService.info(
                         `MCP server "${selection}" successfully started. Registered tools: ${toolNames || 'No tools available.'}`
                     );
@@ -114,13 +116,14 @@ export class MCPCommandContribution implements CommandContribution {
         }));
     }
 
-    convertToToolRequest(tool: any, serverName: string): ToolRequest {
+    convertToToolRequest(tool: MCPTool, serverName: string): ToolRequest {
         const id = `mcp_${serverName}_${tool.name}`;
+
         return {
             id: id,
             name: id,
             providerName: `mcp_${serverName}`,
-            parameters: tool.inputSchema ? {
+            parameters: ToolRequest.isToolRequestParameters(tool.inputSchema) ? {
                 type: tool.inputSchema.type,
                 properties: tool.inputSchema.properties,
             } : undefined,
