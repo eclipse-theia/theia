@@ -924,7 +924,13 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             execute: () => this.shell.closeTabs('main', title => title.closable)
         });
         commandRegistry.registerCommand(CommonCommands.COLLAPSE_PANEL, new CurrentWidgetCommandAdapter(this.shell, {
-            isEnabled: (_title, tabbar) => Boolean(tabbar && ApplicationShell.isSideArea(this.shell.getAreaFor(tabbar))),
+            isEnabled: (_title, tabbar) => {
+                if (tabbar) {
+                    const area = this.shell.getAreaFor(tabbar);
+                    return ApplicationShell.isSideArea(area) && this.shell.isExpanded(area);
+                }
+                return false;
+            },
             isVisible: (_title, tabbar) => Boolean(tabbar && ApplicationShell.isSideArea(this.shell.getAreaFor(tabbar))),
             execute: (_title, tabbar) => tabbar && this.shell.collapsePanel(this.shell.getAreaFor(tabbar)!)
         }));
