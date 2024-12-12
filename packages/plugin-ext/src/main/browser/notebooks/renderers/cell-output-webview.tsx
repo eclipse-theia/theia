@@ -354,39 +354,48 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
             this.webviewWidget.show();
         }
 
+        const visibleCells = this.notebook.getVisibleCells();
+        const visibleCellHandleLookup = new Set(visibleCells.map(cell => cell.handle));
+
         const updateOutputMessage: OutputChangedMessage = {
             type: 'outputChanged',
-            changes: updates.map(update => ({
-                cellHandle: update.cellHandle,
-                newOutputs: update.newOutputs.map(output => ({
-                    id: output.outputId,
-                    items: output.outputs.map(item => ({ mime: item.mime, data: item.data.buffer })),
-                    metadata: output.metadata
-                })),
-                start: update.start,
-                deleteCount: update.deleteCount
-            }))
+            changes: updates
+                .filter(update => visibleCellHandleLookup.has(update.cellHandle))
+                .map(update => ({
+                    cellHandle: update.cellHandle,
+                    newOutputs: update.newOutputs.map(output => ({
+                        id: output.outputId,
+                        items: output.outputs.map(item => ({ mime: item.mime, data: item.data.buffer })),
+                        metadata: output.metadata
+                    })),
+                    start: this.toVisibleCellIndex(update.start, visibleCells),
+                    deleteCount: update.deleteCount
+                }))
         };
 
-        this.webviewWidget.sendMessage(updateOutputMessage);
+        if (updateOutputMessage.changes.length > 0) {
+            this.webviewWidget.sendMessage(updateOutputMessage);
+        }
     }
 
     cellsChanged(cellEvents: NotebookContentChangedEvent[]): void {
         const changes: Array<CellsMoved | CellsSpliced> = [];
 
+        const visibleCells = this.notebook.getVisibleCells();
+        const visibleCellLookup = new Set(visibleCells);
         for (const event of cellEvents) {
             if (event.kind === NotebookCellsChangeType.Move) {
                 changes.push(...event.cells.map((cell, i) => ({
                     type: 'cellMoved',
                     cellHandle: event.cells[0].handle,
-                    toIndex: event.newIdx + i,
+                    toIndex: event.newIdx,
                 } as CellsMoved)));
             } else if (event.kind === NotebookCellsChangeType.ModelChange) {
                 changes.push(...event.changes.map(change => ({
                     type: 'cellsSpliced',
-                    start: change.start,
+                    start: this.toVisibleCellIndex(change.start, visibleCells),
                     deleteCount: change.deleteCount,
-                    newCells: change.newItems.map(cell => cell.handle)
+                    newCells: change.newItems.filter(cell => visibleCellLookup.has(cell as NotebookCellModel)).map(cell => cell.handle)
                 } as CellsSpliced)));
             }
         }
@@ -395,6 +404,10 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
             type: 'cellsChanged',
             changes: changes.filter(e => e)
         } as CellsChangedMessage);
+    }
+
+    toVisibleCellIndex(index: number, visibleCells: Array<NotebookCellModel>): number {
+        return visibleCells.indexOf(this.notebook.cells[index]);
     }
 
     setCellHeight(cell: NotebookCellModel, height: number): void {
@@ -429,7 +442,7 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
 
         switch (message.type) {
             case 'initialized':
-                this.updateOutputs(this.notebook.cells.map(cell => ({
+                this.updateOutputs(this.notebook.getVisibleCells().map(cell => ({
                     cellHandle: cell.handle,
                     newOutputs: cell.outputs,
                     start: 0,

@@ -5,6 +5,7 @@
   "dependencies": {
     "@theia/core": "1.56.0",
     "@theia/filesystem": "1.56.0",
+    "@theia/userstorage": "1.56.0",
     "archiver": "^5.3.1",
     "decompress": "^4.2.1",
     "decompress-tar": "^4.0.0",

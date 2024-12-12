@@ -29,4 +29,4 @@ Alternatively, the Hugging Face API key can also be provided via the `HUGGINGFAC
 ## Trademark
 
 "Theia" is a trademark of the Eclipse Foundation  
-https://www.eclipse.org/theia
+<https://www.eclipse.org/theia>

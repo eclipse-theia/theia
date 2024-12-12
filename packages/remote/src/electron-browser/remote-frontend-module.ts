@@ -16,7 +16,7 @@
 
 import { bindContributionProvider, CommandContribution } from '@theia/core';
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { bindViewContribution, FrontendApplicationContribution, WidgetFactory } from '@theia/core/lib/browser';
+import { bindViewContribution, FrontendApplicationContribution, isRemote, WidgetFactory } from '@theia/core/lib/browser';
 import { RemoteSSHContribution } from './remote-ssh-contribution';
 import { RemoteSSHConnectionProvider, RemoteSSHConnectionProviderPath } from '../electron-common/remote-ssh-connection-provider';
 import { RemoteFrontendContribution } from './remote-frontend-contribution';
@@ -32,6 +32,11 @@ import { PortForwardingService } from './port-forwarding/port-forwarding-service
 import { RemotePortForwardingProvider, RemoteRemotePortForwardingProviderPath } from '../electron-common/remote-port-forwarding-provider';
 import { ServiceConnectionProvider } from '@theia/core/lib/browser/messaging/service-connection-provider';
 import '../../src/electron-browser/style/port-forwarding-widget.css';
+import { UserStorageContribution } from '@theia/userstorage/lib/browser/user-storage-contribution';
+import { RemoteUserStorageContribution } from './remote-user-storage-provider';
+import { remoteFileSystemPath, RemoteFileSystemProxyFactory, RemoteFileSystemServer } from '@theia/filesystem/lib/common/remote-file-system-provider';
+import { LocalEnvVariablesServer, LocalRemoteFileSystemProvider, LocalRemoteFileSytemServer } from './local-backend-services';
+import { envVariablesPath, EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 
 export default new ContainerModule((bind, _, __, rebind) => {
     bind(RemoteFrontendContribution).toSelf().inSingletonScope();
@@ -65,4 +70,16 @@ export default new ContainerModule((bind, _, __, rebind) => {
     bind(RemotePortForwardingProvider).toDynamicValue(ctx =>
         ServiceConnectionProvider.createLocalProxy<RemotePortForwardingProvider>(ctx.container, RemoteRemotePortForwardingProviderPath)).inSingletonScope();
 
+    bind(LocalRemoteFileSytemServer).toDynamicValue(ctx =>
+        isRemote ?
+            ServiceConnectionProvider.createLocalProxy(ctx.container, remoteFileSystemPath, new RemoteFileSystemProxyFactory()) :
+            ctx.container.get(RemoteFileSystemServer));
+    bind(LocalEnvVariablesServer).toDynamicValue(ctx =>
+        isRemote ?
+            ServiceConnectionProvider.createLocalProxy<EnvVariablesServer>(ctx.container, envVariablesPath) :
+            ctx.container.get(EnvVariablesServer));
+    bind(LocalRemoteFileSystemProvider).toSelf().inSingletonScope();
+    rebind(UserStorageContribution).to(RemoteUserStorageContribution);
+
 });
+

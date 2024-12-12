@@ -120,7 +120,7 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
 
     override render(): React.ReactNode {
         return <ul className='theia-notebook-cell-list' ref={this.cellListRef} onDragStart={e => this.onDragStart(e)}>
-            {this.props.notebookModel.cells
+            {this.props.notebookModel.getVisibleCells()
                 .map((cell, index) =>
                     <React.Fragment key={'cell-' + cell.handle}>
                         <NotebookCellDivider

@@ -4,13 +4,13 @@ This document clarifies rules and expectations of contributing and reviewing pul
 It is structured as a list of rules which can be referenced on a PR to moderate and drive discussions.
 If a rule causes distress during discussions itself, it has to be reviewed on [the dev meeting](https://github.com/eclipse-theia/theia/wiki/Dev-Meetings) and updated.
 
- - [**Opening a Pull Request**](#opening-a-pull-request)
- - [**Requesting a Review**](#requesting-a-review)
- - [**Review Checklist**](#review-checklist)
- - [**Reviewing**](#reviewing)
- - [**Landing**](#landing)
- - [**Reverting**](#reverting)
- - [**Closing**](#closing)
+- [**Opening a Pull Request**](#opening-a-pull-request)
+- [**Requesting a Review**](#requesting-a-review)
+- [**Review Checklist**](#review-checklist)
+- [**Reviewing**](#reviewing)
+- [**Landing**](#landing)
+- [**Reverting**](#reverting)
+- [**Closing**](#closing)
 
 ## Opening a Pull Request
 
@@ -19,16 +19,19 @@ If a rule causes distress during discussions itself, it has to be reviewed on [t
 - [1.](#pr-template) Each PR description has to follow the [PR template](https://github.com/eclipse-theia/theia/blob/master/.github/PULL_REQUEST_TEMPLATE.md)
 
 <a name="design-review"></a>
+
 - [2.](#design-review) A PR can be opened early for the design review before going into the detailed implementation.
   - A request on the design review should be an explicit comment.
   - Such PR should be marked as a draft or with the WIP prefix.
 
 <a name="fixups"></a>
+
 - [3.](#fixups) Changes done _after_ the PR has been opened should be kept in separate commits until the review process is finished. This allows reviewers to re-review only the updated parts of the PR and to determine what needs to be tested again. The "fixup" commits must be squashed before merging in order to keep a clean history.
 
 ## Requesting a Review
 
 <a name="review-reqs"></a>
+
 - [1.](#review-reqs) A review can be requested when:
   - [The PR template](#pr-template) is filled in.
   - Changes are thoroughly tested by an author.
@@ -42,6 +45,7 @@ If a rule causes distress during discussions itself, it has to be reviewed on [t
 ## Review Checklist
 
 <a name="checklist-build-and-test"></a>
+
 - [1.](#checklist-build-and-test) The new code is built and tested according to the `How to test` section of a PR description.
 <a name="checklist-project-org"></a>
 - [2.](#checklist-project-org) The new code is aligned with the [project organization](code-organization.md) and [coding conventions](coding-guidelines.md).
@@ -56,7 +60,7 @@ If a rule causes distress during discussions itself, it has to be reviewed on [t
 <a name="checklist-copyright"></a>
 - [6.](#checklist-copyright) Each new file has proper copyright with the current year and the name of contributing entity (individual or company).
 <a name="checklist-sign-off"></a>
-- [7.](#checklist-sign-off) Commits are signed-off: https://github.com/eclipse-theia/theia/blob/master/CONTRIBUTING.md#sign-your-work.
+- [7.](#checklist-sign-off) Commits are signed-off: <https://github.com/eclipse-theia/theia/blob/master/CONTRIBUTING.md#sign-your-work>.
 <a name="checklist-meaningful-commits"></a>
 - [8.](#checklist-meaningful-commit) Each commit has meaningful title and a body that explains what it does. One can take inspiration from the `What it does` section from the PR.
 <a name="checklist-commit-history"></a>
@@ -66,6 +70,7 @@ If a rule causes distress during discussions itself, it has to be reviewed on [t
 ## Reviewing
 
 <a name="reviewing-template"></a>
+
 - [1.](#reviewing-template) Reviewers should check that a PR has a [proper description](#pr-template).
 <a name="reviewing-fn"></a>
 - [2.](#reviewing-fn) Reviewers should build and verify changes according to the `How to test` section of a PR description.
@@ -79,6 +84,7 @@ If a rule causes distress during discussions itself, it has to be reviewed on [t
 ### Requesting Changes
 
 <a name="changes-review-reqs"></a>
+
 - [1.](#changes-review-reqs) Changes should be requested if an author does not follow the [review requirements](#review-reqs).
 <a name="changes-no-nit"></a>
 - [2.](#changes-no-nit) Changes cannot be requested because of the personal preferences of a reviewer.
@@ -93,6 +99,7 @@ If a rule causes distress during discussions itself, it has to be reviewed on [t
 ### Approving
 
 <a name="justifying-approve"></a>
+
 - [1.](#justifying-approve) Each approval should have supporting comments following these guidelines.
 <a name="dismissing-approve"></a>
 - [2.](#dismissing-approve) An approval without a comment should be dismissed.
@@ -102,6 +109,7 @@ If a rule causes distress during discussions itself, it has to be reviewed on [t
 ### Collaborating
 
 <a name="collaboration-on-pr"></a>
+
 - [1.](#collaboration-on-pr) If a change request is important, but cannot be elaborated by a reviewer,
 then a reviewer should be encouraged to open an alternative PR or collaborate on a current PR.
 <a name="completing-pr"></a>
@@ -116,6 +124,7 @@ provided that the original author accepted the [ECA](https://github.com/eclipse-
 ## Landing
 
 <a name="landing-pr"></a>
+
 - [1.](#landing-pr) A PR can be landed when:
   - CI build has succeeded.
   - The author has accepted the [Eclipse Contributor Agreement](https://github.com/eclipse-theia/theia/blob/master/CONTRIBUTING.md#eclipse-contributor-agreement).
@@ -130,12 +139,14 @@ provided that the original author accepted the [ECA](https://github.com/eclipse-
 ## Reverting
 
 <a name="reverting-pr"></a>
+
 - [1.](#reverting-pr) If a PR causes regressions after landing
 then an author and maintainers have 2 days to resolve them after that a PR has to be reverted.
 
 ## Closing
 
 <a name="closing-pr"></a>
+
 - [1.](#closing-pr) A reviewer cannot close a PR without a reason.
 <a name="closing-pr-reasons"></a>
 - [2.](#closing-pr-reasons) A PR may be closed, for example, because of the following reasons:

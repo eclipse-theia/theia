@@ -16,13 +16,13 @@ The `@theia/plugin-metrics` extension contributes metrics for plugins in the [Pr
 
 ### What Metrics it Detects
 
-1. Detects errors in languages that are registered directly with monaco (E.g. if an error happens here: https://github.com/microsoft/vscode-extension-samples/blob/master/completions-sample/src/extension.ts#L11 it will be reported).
+1. Detects errors in languages that are registered directly with monaco (E.g. if an error happens here: <https://github.com/microsoft/vscode-extension-samples/blob/master/completions-sample/src/extension.ts#L11> it will be reported).
 
 2. Detects errors that are logged directly to the output channel for a specific vscode extension that uses a language server. These errors can only be reported via their id that is registered with the vscode-languageclient library. E.g. "YAML Support", "XML Support", etc
 
 ### Limitations & Drawbacks
 
-Due to the limitations of the vscode-languageclient library (see https://github.com/microsoft/vscode-languageserver-node/issues/517) we are unable to process errors that come from the language server directly, instead we need to use the output channel. The output channel is great because it allows us to work around limitations of the vscode-languageclient library and still get metrics but it still has some drawbacks:
+Due to the limitations of the vscode-languageclient library (see <https://github.com/microsoft/vscode-languageserver-node/issues/517>) we are unable to process errors that come from the language server directly, instead we need to use the output channel. The output channel is great because it allows us to work around limitations of the vscode-languageclient library and still get metrics but it still has some drawbacks:
 
 1. Every time a language server request is resolved it counts as a success. This is because the vscode-languageclient always sends back a resolved promise even when the promise is actually rejected. The only time you can get an error is by extracting data from the output channel using a regex and connecting it back to the successes that were counted earlier. This has a few consequences:
     1. If the errors logged are not matched by the regex we have no way to know where the error occurred and thus we can't link the error back to a language server method. That means that the metric we created will always show that its working 100% correctly, even though it's not.
@@ -59,5 +59,6 @@ Then, when you load up the /metrics endpoint you will see the new language metri
 - [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)
 
 ## Trademark
+
 "Theia" is a trademark of the Eclipse Foundation
-https://www.eclipse.org/theia
+<https://www.eclipse.org/theia>

@@ -14,24 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { MaybePromise } from '@theia/core';
-import { RemoteCliContext, RemoteCliContribution } from '@theia/core/lib/node/remote/remote-cli-contribution';
+import { RpcProxy } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { PluginCliContribution } from './plugin-cli-contribution';
+import { RemoteFileSystemProvider, RemoteFileSystemServer } from '@theia/filesystem/lib/common/remote-file-system-provider';
 
+export const LocalEnvVariablesServer = Symbol('LocalEnviromentVariableServer');
+export const LocalRemoteFileSytemServer = Symbol('LocalRemoteFileSytemServer');
+
+/**
+ * provide file access to local files while connected to a remote workspace or dev container.
+ */
 @injectable()
-export class PluginRemoteCliContribution implements RemoteCliContribution {
-
-    @inject(PluginCliContribution)
-    protected readonly pluginCliContribution: PluginCliContribution;
-
-    enhanceArgs(context: RemoteCliContext): MaybePromise<string[]> {
-        const pluginsFolder = this.pluginCliContribution.localDir();
-        const defaultPlugins = process.env.THEIA_DEFAULT_PLUGINS;
-        if (pluginsFolder || defaultPlugins) {
-            return ['--plugins=local-dir:./plugins'];
-        }
-        return [];
-
-    }
+export class LocalRemoteFileSystemProvider extends RemoteFileSystemProvider {
+    @inject(LocalRemoteFileSytemServer)
+    protected override readonly server: RpcProxy<RemoteFileSystemServer>;
 }

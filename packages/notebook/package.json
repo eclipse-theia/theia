@@ -13,6 +13,7 @@
     "react-perfect-scrollbar": "^1.5.8",
     "tslib": "^2.6.2"
   },
+
   "publishConfig": {
     "access": "public"
   },

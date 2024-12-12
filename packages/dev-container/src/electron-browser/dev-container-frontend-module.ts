@@ -21,10 +21,12 @@ import { ServiceConnectionProvider } from '@theia/core/lib/browser/messaging/ser
 import { ContainerOutputProvider } from './container-output-provider';
 import { ContainerInfoContribution } from './container-info-contribution';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
+import { WorkspaceOpenHandlerContribution } from '@theia/workspace/lib/browser/workspace-service';
 
 export default new ContainerModule(bind => {
     bind(ContainerConnectionContribution).toSelf().inSingletonScope();
     bind(RemoteRegistryContribution).toService(ContainerConnectionContribution);
+    bind(WorkspaceOpenHandlerContribution).toService(ContainerConnectionContribution);
 
     bind(ContainerOutputProvider).toSelf().inSingletonScope();
 
