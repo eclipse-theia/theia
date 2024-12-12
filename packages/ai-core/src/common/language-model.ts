@@ -49,8 +49,9 @@ export interface ToolRequest {
 export namespace ToolRequest {
     export function isToolRequestParametersProperties(obj: unknown): obj is ToolRequestParametersProperties {
         return !!obj && typeof obj === 'object' &&
-            'key' in obj && typeof obj.key === 'string' &&
-            Object.keys(obj).every(key => typeof key === 'string');
+            'type' in obj && typeof obj.type === 'string' &&
+            Object.entries(obj).every(([key, value]) => typeof key === 'string' &&
+                !!value && typeof value === 'object' && 'type' in value && Object.keys(value).every(k => typeof k === 'string'));
     }
     export function isToolRequestParameters(obj: unknown): obj is ToolRequestParameters {
         return !!obj && typeof obj === 'object' &&
