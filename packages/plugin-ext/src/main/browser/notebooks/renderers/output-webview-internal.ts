@@ -613,7 +613,6 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
             }
 
             cell.clearOutputs(cellChange.start, cellChange.deleteCount);
-            console.log(cellChange.newOutputs);
             for (const outputData of cellChange.newOutputs ?? []) {
                 const apiItems: rendererApi.OutputItem[] = outputData.items.map((item, index) => ({
                     id: `${outputData.id}-${index}`,
@@ -633,10 +632,8 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
                     },
 
                 }));
-                console.log('createOutputElement');
                 const output = cell.createOutputElement(cellChange.start, outputData, apiItems);
 
-                console.log('render');
                 await renderers.render(cell, output, undefined, undefined, new AbortController().signal);
 
                 theia.postMessage(<webviewCommunication.OnDidRenderOutput>{
