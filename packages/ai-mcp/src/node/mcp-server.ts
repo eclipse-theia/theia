@@ -35,6 +35,9 @@ export class MCPServer {
     }
 
     async start(): Promise<void> {
+        if (this.started) {
+            return;
+        }
         console.log(`Starting server "${this.name}" with command: ${this.command} and args: ${this.args.join(' ')} and env: ${JSON.stringify(this.env)}`);
         // Filter process.env to exclude undefined values
         const sanitizedEnv: Record<string, string> = Object.fromEntries(
@@ -51,17 +54,17 @@ export class MCPServer {
             env: mergedEnv,
         });
         transport.onerror = error => {
-            console.log('Error: ' + error);
+            console.error('Error: ' + error);
         };
 
         this.client = new Client({
-            name: 'example-client',
+            name: 'theia-client',
             version: '1.0.0',
         }, {
             capabilities: {}
         });
         this.client.onerror = error => {
-            console.log('Error Client: ' + error);
+            console.error('Error in MCP client: ' + error);
         };
 
         await this.client.connect(transport);
@@ -69,7 +72,16 @@ export class MCPServer {
     }
 
     async callTool(toolName: string, arg_string: string): Promise<any> {
-        const args = JSON.parse(arg_string);
+        let args;
+        try {
+            args = JSON.parse(arg_string);
+        } catch (error) {
+            console.error(
+                `Failed to parse arguments for calling tool "${toolName}" in MCP server "${this.name}" with command "${this.command}".
+                Invalid JSON: ${arg_string}`,
+                error
+            );
+        }
         const params = {
             name: toolName,
             arguments: args,
@@ -82,14 +94,16 @@ export class MCPServer {
     }
 
     update(command: string, args: string[], env?: { [key: string]: string }): void {
-        console.log(`Updating server "${this.name}" with new command: ${command} and args: ${args.join(' ')}`);
         this.command = command;
         this.args = args;
         this.env = env;
     }
 
     stop(): void {
-        console.log(`Stopping server "${this.name}"`);
+        if (!this.started || !this.client) {
+            return;
+        }
+        console.log(`Stopping MCP server "${this.name}"`);
         this.client.close();
         this.started = false;
     }

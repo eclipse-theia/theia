@@ -48,7 +48,6 @@ export class MCPCommandContribution implements CommandContribution {
 
     private async getMCPServerSelection(serverNames: String[]): Promise<string | undefined> {
         if (!serverNames || serverNames.length === 0) {
-            this.messageService.error('No MCP servers configured.');
             return undefined;
         }
         const options = serverNames.map(mcpServerName => ({ label: mcpServerName as string }));
@@ -63,7 +62,12 @@ export class MCPCommandContribution implements CommandContribution {
         commandRegistry.registerCommand(StopMCPServer, this.commandHandlerFactory({
             execute: async () => {
                 try {
-                    const selection = await this.getMCPServerSelection(await this.mcpServerManager.getStartedServers());
+                    const startedServers = await this.mcpServerManager.getStartedServers();
+                    if (!startedServers || startedServers.length === 0) {
+                        this.messageService.error('No MCP servers running.');
+                        return;
+                    }
+                    const selection = await this.getMCPServerSelection(startedServers);
                     if (!selection) {
                         return;
                     }
@@ -78,7 +82,19 @@ export class MCPCommandContribution implements CommandContribution {
         commandRegistry.registerCommand(StartMCPServer, this.commandHandlerFactory({
             execute: async () => {
                 try {
-                    const selection = await this.getMCPServerSelection(await this.mcpServerManager.getServerNames());
+                    const servers = await this.mcpServerManager.getServerNames();
+                    const startedServers = await this.mcpServerManager.getStartedServers();
+                    const startableServers = servers.filter(server => !startedServers.includes(server));
+                    if (!startableServers || startableServers.length === 0) {
+                        if (startedServers && startedServers.length > 0) {
+                            this.messageService.error('All MCP servers are already running.');
+                        } else {
+                            this.messageService.error('No MCP servers configured.');
+                        }
+                        return;
+                    }
+
+                    const selection = await this.getMCPServerSelection(servers);
                     if (!selection) {
                         return;
                     }
@@ -89,7 +105,12 @@ export class MCPCommandContribution implements CommandContribution {
                     for (const toolRequest of toolRequests) {
                         this.toolInvocationRegistry.registerTool(toolRequest);
                     }
+                    const toolNames = tools.map((tool: any) => tool.name || 'Unnamed Tool').join(', ');
+                    this.messageService.info(
+                        `MCP server "${selection}" successfully started. Registered tools: ${toolNames || 'No tools available.'}`
+                    );
                 } catch (error) {
+                    this.messageService.error('An error occurred while starting the MCP server.');
                     console.error('Error while starting MCP server:', error);
                 }
             }
@@ -111,7 +132,7 @@ export class MCPCommandContribution implements CommandContribution {
                 try {
                     return await this.mcpServerManager.callTool(serverName, tool.name, arg_string);
                 } catch (error) {
-                    console.error(`Error in tool handler for ${tool.name} on server ${serverName}:`, error);
+                    console.error(`Error in tool handler for ${tool.name} on MCP server ${serverName}:`, error);
                     throw error;
                 }
             },

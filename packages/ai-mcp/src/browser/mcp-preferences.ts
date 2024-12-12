@@ -24,20 +24,30 @@ export const McpServersPreferenceSchema: PreferenceSchema = {
         [MCP_SERVERS_PREF]: {
             type: 'object',
             title: 'MCP Servers Configuration',
-            markdownDescription: 'Configure MCP servers with command and arguments. Each server is identified by a unique key, such as "sqlite" or "filesystem".\
+            markdownDescription: 'Configure MCP servers with command, arguments and optionally environment variables. Each server is identified by a unique key, such as\
+            "brave-search" or "filesystem".\
             To start a server, use the "MCP: Start MCP Server" command, which enables you to select the desired server.\
             To stop a server, use the "MCP: Stop MCP Server" command.\
             \n\
             Example configuration:\n\
             ```\
             {\n\
-              "sqlite": {\n\
-                "command": "uvx",\n\
-                "args": ["mcp-server-sqlite", "--db-path", "/Users/YOUR_USERNAME/test.db"]\n\
+              "brave-search": {\n\
+                "command": "npx",\n\
+                "args": [\n\
+                  "-y",\n\
+                  "@modelcontextprotocol/server-brave-search"\n\
+                ],\n\
+                "env": {\n\
+                  "BRAVE_API_KEY": "YOUR_API_KEY"\n\
+                }\n\
               },\n\
               "filesystem": {\n\
                 "command": "npx",\n\
-                "args": ["-y", "@modelcontextprotocol/server-filesystem", "/Users/YOUR_USERNAME/Desktop"]\n\
+                "args": ["-y", "@modelcontextprotocol/server-filesystem", "/Users/YOUR_USERNAME/Desktop"],\n\
+                "env": {\n\
+                  "CUSTOM_ENV_VAR": "custom-value"\n\
+                }\n\
               }\n\
             }\
             ```',
@@ -54,6 +64,14 @@ export const McpServersPreferenceSchema: PreferenceSchema = {
                         title: 'Arguments for the command',
                         markdownDescription: 'An array of arguments to pass to the command.',
                         items: {
+                            type: 'string'
+                        }
+                    },
+                    env: {
+                        type: 'object',
+                        title: 'Environment variables',
+                        markdownDescription: 'Optional environment variables to set for the server, such as an API key.',
+                        additionalProperties: {
                             type: 'string'
                         }
                     }

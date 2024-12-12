@@ -19,13 +19,16 @@ import { MCPServer } from './mcp-server';
 
 @injectable()
 export class MCPServerManagerImpl implements MCPServerManager {
+
+    protected servers: Map<string, MCPServer> = new Map();
+
     async stopServer(serverName: string): Promise<void> {
         const server = this.servers.get(serverName);
         if (!server) {
-            throw new Error(`Server "${serverName}" not found.`);
+            throw new Error(`MCP server "${serverName}" not found.`);
         }
         server.stop();
-        console.log(`Server "${serverName}" stopped.`);
+        console.log(`MCP server "${serverName}" stopped.`);
     }
 
     async getStartedServers(): Promise<string[]> {
@@ -65,7 +68,7 @@ export class MCPServerManagerImpl implements MCPServerManager {
         return server.getTools();
 
     }
-    private servers: Map<string, MCPServer> = new Map();
+
     addOrUpdateServer(description: MCPServerDescription): void {
         const { name, command, args, env } = description;
         const existingServer = this.servers.get(name);
