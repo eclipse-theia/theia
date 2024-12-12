@@ -72,9 +72,10 @@ export const mockData: any[] = [
         }
       },
       'lifecycle': {
-        'startMethod': 'start',
-        'stopMethod': 'stop',
+        'startMethod': 'activate',
+        'stopMethod': 'deactivate',
         'frontendModuleName': 'vscode_simple_browser',
+        'frontendInitPath': 'plugin-vscode-init-fe.js',
         'backendInitPath': '/Users/robertjandow/Documents/Development/theia/examples/browser/lib/backend/plugin-vscode-init'
       },
       'outOfSync': false,
@@ -83,7 +84,10 @@ export const mockData: any[] = [
     'type': 0,
     "contributes": {
       "activationEvents": [
-        "*"
+        "onCommand:simpleBrowser.api.open",
+        "onOpenExternalUri:http",
+        "onOpenExternalUri:https",
+        "onWebviewPanel:simpleBrowser.view"
       ],
       "commands": [
         {
