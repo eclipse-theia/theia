@@ -93,7 +93,7 @@ export class MCPCommandContribution implements CommandContribution {
                         return;
                     }
 
-                    const selection = await this.getMCPServerSelection(servers);
+                    const selection = await this.getMCPServerSelection(startableServers);
                     if (!selection) {
                         return;
                     }
