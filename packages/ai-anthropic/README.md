@@ -14,7 +14,7 @@
 
 The `@theia/anthropic` integrates Anthropic's models with Theia AI.
 The Anthropic API key and the models to use can be configured via preferences.
-Alternatively the OpenAI API key can also be handed in via the `ANTHROPIC_API_KEY` variable.
+Alternatively the API key can also be handed in via the `ANTHROPIC_API_KEY` environment variable.
 
 ## Additional Information
 
