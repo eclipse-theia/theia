@@ -13,16 +13,25 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+
+import type { Client } from '@modelcontextprotocol/sdk/client/index';
+
+export interface MCPServer {
+    callTool(toolName: string, arg_string: string): ReturnType<Client['callTool']>;
+    getTools(): ReturnType<Client['listTools']>;
+}
+
 export interface MCPServerManager {
-    callTool(serverName: string, toolName: any, arg_string: string): unknown;
-    removeServer(name: string): unknown;
-    addOrUpdateServer(description: MCPServerDescription): unknown;
-    getTools(serverName: string): Promise<any>;
+    callTool(serverName: string, toolName: string, arg_string: string): ReturnType<MCPServer['callTool']>;
+    removeServer(name: string): void;
+    addOrUpdateServer(description: MCPServerDescription): void;
+    getTools(serverName: string): ReturnType<MCPServer['getTools']>
     getServerNames(): Promise<String[]>;
     startServer(serverName: string): Promise<void>;
     stopServer(serverName: string): Promise<void>;
     getStartedServers(): Promise<String[]>;
 }
+
 export interface MCPServerDescription {
     /**
      * The unique name of the MCP server.
@@ -37,7 +46,8 @@ export interface MCPServerDescription {
     /**
      * An array of arguments to pass to the command.
      */
-    args: string[];
+    args?: string[];
+
     /**
      * Optional environment variables to set when starting the server.
      */
@@ -45,5 +55,4 @@ export interface MCPServerDescription {
 }
 
 export const MCPServerManager = Symbol('MCPServerManager');
-
 export const MCPServerManagerPath = '/services/mcpservermanager';

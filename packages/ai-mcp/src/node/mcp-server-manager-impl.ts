@@ -41,7 +41,7 @@ export class MCPServerManagerImpl implements MCPServerManager {
         return startedServers;
     }
 
-    callTool(serverName: string, toolName: string, arg_string: string): unknown {
+    callTool(serverName: string, toolName: string, arg_string: string): ReturnType<MCPServer['callTool']> {
         const server = this.servers.get(serverName);
         if (!server) {
             throw new Error(`MCP server "${toolName}" not found.`);
@@ -60,7 +60,7 @@ export class MCPServerManagerImpl implements MCPServerManager {
         return Array.from(this.servers.keys());
     }
 
-    public async getTools(serverName: string): Promise<any> {
+    public async getTools(serverName: string): ReturnType<MCPServer['getTools']> {
         const server = this.servers.get(serverName);
         if (!server) {
             throw new Error(`MCP server "${serverName}" not found.`);

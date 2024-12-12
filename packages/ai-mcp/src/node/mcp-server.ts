@@ -15,15 +15,16 @@
 // *****************************************************************************
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+
 export class MCPServer {
     private name: string;
     private command: string;
-    private args: string[];
+    private args?: string[];
     private client: Client;
     private env?: { [key: string]: string };
     private started: boolean = false;
 
-    constructor(name: string, command: string, args: string[], env?: Record<string, string>) {
+    constructor(name: string, command: string, args?: string[], env?: Record<string, string>) {
         this.name = name;
         this.command = command;
         this.args = args;
@@ -38,10 +39,10 @@ export class MCPServer {
         if (this.started) {
             return;
         }
-        console.log(`Starting server "${this.name}" with command: ${this.command} and args: ${this.args.join(' ')} and env: ${JSON.stringify(this.env)}`);
+        console.log(`Starting server "${this.name}" with command: ${this.command} and args: ${this.args?.join(' ')} and env: ${JSON.stringify(this.env)}`);
         // Filter process.env to exclude undefined values
         const sanitizedEnv: Record<string, string> = Object.fromEntries(
-            Object.entries(process.env).filter(([_, value]) => value !== undefined) as [string, string][]
+            Object.entries(process.env).filter((entry): entry is [string, string] => entry[1] !== undefined)
         );
 
         const mergedEnv: Record<string, string> = {
@@ -71,7 +72,7 @@ export class MCPServer {
         this.started = true;
     }
 
-    async callTool(toolName: string, arg_string: string): Promise<any> {
+    async callTool(toolName: string, arg_string: string): ReturnType<Client['callTool']> {
         let args;
         try {
             args = JSON.parse(arg_string);
@@ -89,11 +90,11 @@ export class MCPServer {
         return this.client.callTool(params);
     }
 
-    async getTools(): Promise<any> {
+    async getTools(): ReturnType<Client['listTools']> {
         return this.client.listTools();
     }
 
-    update(command: string, args: string[], env?: { [key: string]: string }): void {
+    update(command: string, args?: string[], env?: { [key: string]: string }): void {
         this.command = command;
         this.args = args;
         this.env = env;
