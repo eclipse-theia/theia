@@ -32,7 +32,10 @@ import { WebviewWidget } from '../../webview/webview';
 import { Message, WidgetManager } from '@theia/core/lib/browser';
 import { outputWebviewPreload, PreloadContext } from './output-webview-internal';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser';
-import { CellOutputChange, CellsChangedMessage, CellsMoved, CellsSpliced, ChangePreferredMimetypeMessage, FromWebviewMessage, Output, OutputChangedMessage } from './webview-communication';
+import {
+    CellOutputChange, CellsChangedMessage, CellsMoved, CellsSpliced,
+    ChangePreferredMimetypeMessage, FromWebviewMessage, Output, OutputChangedMessage
+} from './webview-communication';
 import { Disposable, DisposableCollection, Emitter, QuickPickService, nls } from '@theia/core';
 import { NotebookModel } from '@theia/notebook/lib/browser/view-model/notebook-model';
 import { NotebookOptionsService, NotebookOutputOptions } from '@theia/notebook/lib/browser/service/notebook-options';
