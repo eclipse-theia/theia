@@ -613,6 +613,7 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
             }
 
             cell.clearOutputs(cellChange.start, cellChange.deleteCount);
+
             for (const outputData of cellChange.newOutputs ?? []) {
                 const apiItems: rendererApi.OutputItem[] = outputData.items.map((item, index) => ({
                     id: `${outputData.id}-${index}`,
