@@ -91,8 +91,19 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
 
         for (const [name, description] of updatedServers) {
             const oldDescription = oldServers.get(name);
-            // We know that that the descriptions are actual JSONObjects as we construct them ourselves
-            if (!oldDescription || !PreferenceProvider.deepEqual(oldDescription as unknown as JSONObject, description as unknown as JSONObject)) {
+            let diff = false;
+            try {
+                // We know that that the descriptions are actual JSONObjects as we construct them ourselves
+                if (!oldDescription || !PreferenceProvider.deepEqual(oldDescription as unknown as JSONObject, description as unknown as JSONObject)) {
+                    diff = true;
+                }
+            } catch (e) {
+                // In some cases the deepEqual function throws an error, so we fall back to assuming that there is a difference
+                // This seems to happen in cases where the objects are structured differently, e.g. whole sub-objects are missing
+                console.debug('Failed to compare MCP server descriptions, assuming a difference', e);
+                diff = true;
+            }
+            if (diff) {
                 this.manager.addOrUpdateServer(description);
             }
         }

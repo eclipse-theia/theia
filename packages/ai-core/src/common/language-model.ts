@@ -55,8 +55,7 @@ export namespace ToolRequest {
             value &&
             typeof value === 'object' &&
             'type' in value &&
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            typeof (value as any).type === 'string' &&
+            typeof value.type === 'string' &&
             Object.keys(value).every(k => typeof k === 'string')
         );
     }
