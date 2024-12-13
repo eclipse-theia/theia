@@ -18,7 +18,7 @@ import { Key, KeyCode } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { injectable } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
-import * as Long from 'long';
+import Long from 'long';
 import { DebugProtocol } from '@vscode/debugprotocol';
 import { hexStrToUnsignedLong } from '../../common/util';
 import { MemoryOptionsWidget } from '../memory-widget/memory-options-widget';

@@ -1,0 +1,132 @@
+.scanoss-logo {
+  background-image: url("scanoss_logo_dark_theme.svg");
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.vs-light .scanoss-logo,
+.theia-light .scanoss-logo,
+.light-theia .scanoss-logo   {
+  background-image: url("scanoss_logo_light_theme.svg");
+}
+
+/* We need a more detailed selector to override the default button style */
+.theia-CodePartRenderer-actions .scanoss-logo {
+  background-size: 82% auto; /* scale the image to be a bit smaller than the button because the codicon icons are also smaller */
+  transition: filter 0.3s;
+  display: inline-block;
+}
+
+.scanoss-logo.requesting {
+  animation: pulse 1s infinite ease-in-out;
+}
+
+/* Use a rounded background when not hovered  */
+.theia-CodePartRenderer-actions .scanoss-logo:not(:hover) {
+  border-radius: 50%;
+}
+
+.scanoss-logo.clean {
+  background-color: rgba(46, 125, 50, 0.3); /* translucent green */
+}
+
+.scanoss-logo.match {
+  background-color: rgba(249, 215, 116, 0.3); /* translucent yellow */
+}
+
+.scanoss-logo.error {
+  background-color: rgba(210, 72, 72, 0.3); /* translucent red */
+}
+
+.icon-container {
+  position: relative; 
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+}
+
+/* The placeholder is used to align with the remaining actions, however it should not be visible*/
+.scanoss-logo .placeholder {
+  visibility: hidden;
+}
+
+/* The status icon is used to display the result of the scan on the top right */
+.scanoss-logo .status-icon {
+  position: absolute;
+  transform: translate(-4px, -5px);
+}
+
+.scanoss-logo.clean .status-icon {
+    color: green;
+}
+.scanoss-logo.match .status-icon {
+    color: yellow;
+    text-shadow: 0 0 3px rgba(0,0,0,0.9);
+}
+.scanoss-logo.error .status-icon {
+    color: red;
+    text-shadow: 0 0 3px currentColor
+}
+
+/* Disable the button when it's in the clean state */
+.theia-CodePartRenderer-actions .scanoss-logo.clean{
+  pointer-events: none; 
+  cursor: default;
+}
+
+.scanoss-dialog-container .scanoss-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.scanoss-dialog-container .scanoss-logo-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+}
+
+.scanoss-dialog-container .scanoss-logo {
+    width: 40px;
+    height: 40px;
+    background-size: contain;
+}
+
+.scanoss-dialog-container .scanoss-logo-container h2 {
+    font-size: 1.8em;
+    margin: 0;
+}
+
+.scanoss-dialog-container .scanoss-summary {
+    padding: 15px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+}
+
+.scanoss-dialog-container .scanoss-summary h3 {
+    margin-top: 0;
+    font-size: 1.4em;
+    margin-bottom: 10px;
+}
+
+.scanoss-dialog-container .scanoss-details {
+    padding: 15px;
+    border-radius: 4px;
+    border: 1px solid var(--theia-sideBarSectionHeader-border);
+}
+
+.scanoss-dialog-container .scanoss-details h4 {
+    margin-top: 0;
+    font-size: 1.2em;
+    margin-bottom: 10px;
+}
+
+.scanoss-dialog-container .scanoss-details pre {
+    background: var(--theia-editor-background);
+    padding: 10px;
+    border-radius: 4px;
+    overflow: auto;
+    font-size: 0.9em;
+}

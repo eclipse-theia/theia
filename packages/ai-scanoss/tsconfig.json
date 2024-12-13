@@ -3,18 +3,26 @@
   "compilerOptions": {
     "composite": true,
     "rootDir": "src",
-    "outDir": "lib",
-    "esModuleInterop": true
+    "outDir": "lib"
   },
   "include": [
     "src"
   ],
   "references": [
     {
+      "path": "../ai-chat"
+    },
+    {
+      "path": "../ai-chat-ui"
+    },
+    {
+      "path": "../ai-core"
+    },
+    {
       "path": "../core"
     },
     {
-      "path": "../debug"
+      "path": "../scanoss"
     }
   ]
 }

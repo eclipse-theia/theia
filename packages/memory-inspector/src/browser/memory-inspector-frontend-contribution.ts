@@ -25,7 +25,6 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { DebugScope, DebugVariable } from '@theia/debug/lib/browser/console/debug-console-items';
 import { DebugFrontendApplicationContribution } from '@theia/debug/lib/browser/debug-frontend-application-contribution';
 import { DebugVariablesWidget } from '@theia/debug/lib/browser/view/debug-variables-widget';
-import * as Long from 'long';
 import { MemoryEditableTableWidget } from './editable-widget/memory-editable-table-widget';
 import { MemoryProviderService } from './memory-provider/memory-provider-service';
 import { MemoryTableWidget } from './memory-widget/memory-table-widget';
@@ -41,6 +40,7 @@ import { VariableRange } from './utils/memory-widget-variable-utils';
 import { MemoryDockPanel } from './wrapper-widgets/memory-dock-panel';
 import { MemoryLayoutWidget } from './wrapper-widgets/memory-layout-widget';
 import { nls } from '@theia/core/lib/common/nls';
+import Long from 'long';
 
 const ONE_HALF_OPACITY = 0.5;
 

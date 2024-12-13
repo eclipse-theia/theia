@@ -3,8 +3,7 @@
   "compilerOptions": {
     "composite": true,
     "rootDir": "src",
-    "outDir": "lib",
-    "esModuleInterop": true
+    "outDir": "lib"
   },
   "include": [
     "src"
@@ -12,9 +11,6 @@
   "references": [
     {
       "path": "../core"
-    },
-    {
-      "path": "../debug"
     }
   ]
 }
