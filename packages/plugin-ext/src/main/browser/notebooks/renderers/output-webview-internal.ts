@@ -148,6 +148,8 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
         readonly element: HTMLElement;
         readonly outputElements: OutputContainer[] = [];
 
+        private cellHeight: number = 0;
+
         constructor(public cellHandle: number, cellIndex?: number) {
             this.element = document.createElement('div');
             this.element.style.outline = '0';
@@ -183,6 +185,7 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
                 outputContainer = new OutputContainer(output, items, this);
                 this.element.appendChild(outputContainer.containerElement);
                 this.outputElements.splice(index, 0, outputContainer);
+                this.updateCellHeight(this.cellHeight);
             }
 
             return outputContainer;
@@ -206,7 +209,8 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
             this.element.style.visibility = 'hidden';
         }
 
-        public updateCellHeight(cellKind: number, height: number): void {
+        public updateCellHeight(height: number): void {
+            this.cellHeight = height;
             let additionalHeight = 54.5;
             additionalHeight -= cells[0] === this ? 2.5 : 0; // first cell
             additionalHeight -= this.outputElements.length ? 0 : 5.5; // no outputs
@@ -763,7 +767,7 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
                 cellHandle = event.data.cellHandle;
                 const cell = cells.find(c => c.cellHandle === cellHandle);
                 if (cell) {
-                    cell.updateCellHeight(event.data.cellKind, event.data.height);
+                    cell.updateCellHeight(event.data.height);
                 }
                 break;
             case 'outputVisibilityChanged':
