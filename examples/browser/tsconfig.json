@@ -33,6 +33,9 @@
       "path": "../../packages/ai-llamafile"
     },
     {
+      "path": "../../packages/ai-mcp"
+    },
+    {
       "path": "../../packages/ai-ollama"
     },
     {
