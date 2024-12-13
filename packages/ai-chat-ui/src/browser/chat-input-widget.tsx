@@ -22,6 +22,7 @@ import * as React from '@theia/core/shared/react';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { CHAT_VIEW_LANGUAGE_EXTENSION } from './chat-view-language-contribution';
 import { IMouseEvent } from '@theia/monaco-editor-core';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 
 type Query = (query: string) => Promise<void>;
 type Cancel = (requestModel: ChatRequestModel) => void;
@@ -42,6 +43,9 @@ export class AIChatInputWidget extends ReactWidget {
 
     @inject(ContextMenuRenderer)
     protected readonly contextMenuRenderer: ContextMenuRenderer;
+
+    protected editorRef: MonacoEditor | undefined = undefined;
+    private editorReady = new Deferred<void>();
 
     protected isEnabled = false;
 
@@ -65,9 +69,14 @@ export class AIChatInputWidget extends ReactWidget {
         this.title.closable = false;
         this.update();
     }
+
     protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
-        this.node.focus({ preventScroll: true });
+        this.editorReady.promise.then(() => {
+            if (this.editorRef) {
+                this.editorRef.focus();
+            }
+        });
     }
 
     protected getChatAgents(): ChatAgent[] {
@@ -85,6 +94,10 @@ export class AIChatInputWidget extends ReactWidget {
                 untitledResourceResolver={this.untitledResourceResolver}
                 contextMenuCallback={this.handleContextMenu.bind(this)}
                 isEnabled={this.isEnabled}
+                setEditorRef={editor => {
+                    this.editorRef = editor;
+                    this.editorReady.resolve();
+                }}
             />
         );
     }
@@ -113,6 +126,7 @@ interface ChatInputProperties {
     editorProvider: MonacoEditorProvider;
     untitledResourceResolver: UntitledResourceResolver;
     contextMenuCallback: (event: IMouseEvent) => void;
+    setEditorRef: (editor: MonacoEditor | undefined) => void;
 }
 const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInputProperties) => {
 
@@ -171,7 +185,10 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                 editorContainerRef.current.style.height = `${Math.min(contentHeight, maxHeight)}px`;
             }
         };
-        editor.getControl().onDidChangeModelContent(updateEditorHeight);
+        editor.getControl().onDidChangeModelContent(() => {
+            updateEditorHeight();
+            handleOnChange();
+        });
         const resizeObserver = new ResizeObserver(updateEditorHeight);
         if (editorContainerRef.current) {
             resizeObserver.observe(editorContainerRef.current);
@@ -185,11 +202,13 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         );
 
         editorRef.current = editor;
+        props.setEditorRef(editor);
     };
 
     React.useEffect(() => {
         createInputElement();
         return () => {
+            props.setEditorRef(undefined);
             if (editorRef.current) {
                 editorRef.current.dispose();
             }
@@ -224,12 +243,28 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     }, [props.isEnabled]);
 
     const handleInputFocus = () => {
-        placeholderRef.current?.classList.add('hidden');
+        hidePlaceholderIfEditorFilled();
+    };
+
+    const handleOnChange = () => {
+        showPlaceholderIfEditorEmpty();
+        hidePlaceholderIfEditorFilled();
     };
 
     const handleInputBlur = () => {
+        showPlaceholderIfEditorEmpty();
+    };
+
+    const showPlaceholderIfEditorEmpty = () => {
         if (!editorRef.current?.getControl().getValue()) {
             placeholderRef.current?.classList.remove('hidden');
+        }
+    };
+
+    const hidePlaceholderIfEditorFilled = () => {
+        const value = editorRef.current?.getControl().getValue();
+        if (value && value.length > 0) {
+            placeholderRef.current?.classList.add('hidden');
         }
     };
 

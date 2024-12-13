@@ -15,7 +15,7 @@
 // *****************************************************************************
 import { CommandService, deepClone, Emitter, Event, MessageService } from '@theia/core';
 import { ChatRequest, ChatRequestModel, ChatRequestModelImpl, ChatService, ChatSession } from '@theia/ai-chat';
-import { BaseWidget, codicon, ExtractableWidget, PanelLayout, PreferenceService, StatefulWidget } from '@theia/core/lib/browser';
+import { BaseWidget, codicon, ExtractableWidget, Message, PanelLayout, PreferenceService, StatefulWidget } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { AIChatInputWidget } from './chat-input-widget';
@@ -123,6 +123,11 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
                 }
             })
         );
+    }
+
+    protected override onActivateRequest(msg: Message): void {
+        super.onActivateRequest(msg);
+        this.inputWidget.activate();
     }
 
     storeState(): object {
