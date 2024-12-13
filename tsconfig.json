@@ -55,6 +55,9 @@
       "path": "examples/playwright"
     },
     {
+      "path": "packages/ai-anthropic"
+    },
+    {
       "path": "packages/ai-chat"
     },
     {
