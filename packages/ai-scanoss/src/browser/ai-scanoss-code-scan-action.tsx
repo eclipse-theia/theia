@@ -27,8 +27,8 @@ import { ReactNode } from '@theia/core/shared/react';
 import { ResponseNode } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import * as React from '@theia/core/shared/react';
 import { ReactDialog } from '@theia/core/lib/browser/dialogs/react-dialog';
-import { AUTOMATIC_CHECK_PREF } from './ai-scanoss-preferences';
 import { SCAN_OSS_API_KEY_PREF } from '@theia/scanoss/lib/browser/scanoss-preferences';
+import { SCANOSS_MODE_PREF } from './ai-scanoss-preferences';
 
 // cached map of scanOSS results.
 // 'false' is stored when not automatic check is off and it was not (yet) requested deliberately.
@@ -53,6 +53,11 @@ export class ScanOSSScanButtonAction implements CodePartRendererAction {
     protected readonly preferenceService: PreferenceService;
 
     priority = 30;
+
+    canRender(response: CodeChatResponseContent): boolean {
+        return this.preferenceService.get(SCANOSS_MODE_PREF, 'off') !== 'off';
+    }
+
     render(
         response: CodeChatResponseContent,
         parentNode: ResponseNode
@@ -87,10 +92,7 @@ const ScanOSSIntegration = (props: {
     preferenceService: PreferenceService;
 }) => {
     const [automaticCheck] = React.useState(() =>
-        props.preferenceService.get(
-            AUTOMATIC_CHECK_PREF,
-            false
-        )
+        props.preferenceService.get<string>(SCANOSS_MODE_PREF, 'off') === 'automatic'
     );
     const [scanOSSResult, setScanOSSResult] = React.useState<
         ScanOSSResult | 'pending' | undefined | false

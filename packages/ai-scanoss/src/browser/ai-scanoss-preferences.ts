@@ -17,14 +17,22 @@
 import { PreferenceSchema } from '@theia/core/lib/browser/preferences';
 import { AI_CORE_PREFERENCES_TITLE } from '@theia/ai-core/lib/browser/ai-core-preferences';
 
-export const AUTOMATIC_CHECK_PREF = 'ai-features.SCANOSS.enableAutomaticCheck';
+export const SCANOSS_MODE_PREF = 'ai-features.SCANOSS.mode';
 
 export const AIScanOSSPreferencesSchema: PreferenceSchema = {
     type: 'object',
     properties: {
-        [AUTOMATIC_CHECK_PREF]: {
-            type: 'boolean',
-            markdownDescription: 'Enable automatic scan of code snippets in chat views. This will send a hash of suggested code snippets to the ScanOSS service for analysis.',
+        [SCANOSS_MODE_PREF]: {
+            type: 'string',
+            enum: ['off', 'manual', 'automatic'],
+            markdownEnumDescriptions: [
+                'Feature is turned off completely.',
+                'User can manually trigger the scan by clicking the SCANOSS item in the chat view.',
+                'Enable automatic scan of code snippets in chat views.'
+            ],
+            markdownDescription: 'Configure the SCANOSS feature for analyzing code snippets in chat views. This will send a hash of suggested code snippets to the SCANOSS\n\
+            service hosted by the [Software Transparency foundation](https://www.softwaretransparency.org/osskb) for analysis.',
+            default: 'off',
             title: AI_CORE_PREFERENCES_TITLE
         }
     }

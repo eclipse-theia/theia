@@ -41,6 +41,10 @@ export const CodePartRendererAction = Symbol('CodePartRendererAction');
 export interface CodePartRendererAction {
     render(response: CodeChatResponseContent, parentNode: ResponseNode): ReactNode;
     /**
+     * Determines if the action should be rendered for the given response.
+     */
+    canRender?(response: CodeChatResponseContent): boolean;
+    /**
      *  The priority determines the order in which the actions are rendered.
      *  The default priorities are 10 and 20.
      */
@@ -79,6 +83,7 @@ export class CodePartRenderer
                     <div className="theia-CodePartRenderer-left">{this.renderTitle(response)}</div>
                     <div className="theia-CodePartRenderer-right theia-CodePartRenderer-actions">
                         {this.codePartRendererActions.getContributions()
+                            .filter(action => action.canRender ? action.canRender(response) : true)
                             .sort((a, b) => a.priority - b.priority)
                             .map(action => action.render(response, parentNode))}
                     </div>
