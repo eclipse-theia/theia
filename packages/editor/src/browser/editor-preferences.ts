@@ -29,7 +29,7 @@ import { nls } from '@theia/core/lib/common/nls';
 import { environment } from '@theia/core';
 import { editorGeneratedPreferenceProperties, GeneratedEditorPreferences } from './editor-generated-preference-schema';
 
-/* eslint-disable @theia/localization-check,max-len,no-null/no-null */
+/* eslint-disable max-len,no-null/no-null */
 // #region src/vs/workbench/contrib/codeActions/browser/codeActionsContribution.ts
 
 const codeActionsContributionSchema: PreferenceSchema['properties'] = {
@@ -53,7 +53,7 @@ const codeActionsContributionSchema: PreferenceSchema['properties'] = {
             }
         ],
         default: {},
-        description: nls.localizeByDefault('Code action kinds to be run on save.'),
+        markdownDescription: nls.localizeByDefault('Run Code Actions for the editor on save. Code Actions must be specified and the editor must not be shutting down. Example: `"source.organizeImports": "explicit" `'),
         scope: 'language-overridable',
     }
 };
@@ -82,7 +82,7 @@ const fileContributionSchema: PreferenceSchema['properties'] = {
         'enumDescriptions': [
             nls.localizeByDefault('Format the whole file.'),
             nls.localizeByDefault('Format modifications (requires source control).'),
-            nls.localize('theia/editor/editor.formatOnSaveMode.modificationsIfAvailable', "Will attempt to format modifications only (requires source control). If source control can't be used, then the whole file will be formatted."),
+            nls.localizeByDefault("Will attempt to format modifications only (requires source control). If source control can't be used, then the whole file will be formatted."),
         ],
         'markdownDescription': nls.localizeByDefault('Controls if format on save formats the whole file or only modifications. Only applies when `#editor.formatOnSave#` is enabled.'),
         'scope': PreferenceScope.fromString('language-overridable'),
@@ -109,13 +109,13 @@ const fileContributionSchema: PreferenceSchema['properties'] = {
         'type': 'string',
         'enum': ['off', 'afterDelay', 'onFocusChange', 'onWindowChange'],
         'markdownEnumDescriptions': [
-            nls.localize('theia/editor/files.autoSave.off', 'An editor with changes is never automatically saved.'),
-            nls.localize('theia/editor/files.autoSave.afterDelay', 'An editor with changes is automatically saved after the configured `#files.autoSaveDelay#`.'),
-            nls.localize('theia/editor/files.autoSave.onFocusChange', 'An editor with changes is automatically saved when the editor loses focus.'),
-            nls.localize('theia/editor/files.autoSave.onWindowChange', 'An editor with changes is automatically saved when the window loses focus.')
+            nls.localizeByDefault('An editor with changes is never automatically saved.'),
+            nls.localizeByDefault('An editor with changes is automatically saved after the configured `#files.autoSaveDelay#`.'),
+            nls.localizeByDefault('An editor with changes is automatically saved when the editor loses focus.'),
+            nls.localizeByDefault('An editor with changes is automatically saved when the window loses focus.')
         ],
         'default': environment.electron.is() ? 'off' : 'afterDelay',
-        'markdownDescription': nls.localize('theia/editor/files.autoSave', 'Controls [auto save](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save) of editors that have unsaved changes.', 'off', 'afterDelay', 'onFocusChange', 'onWindowChange', 'afterDelay')
+        'markdownDescription': nls.localizeByDefault('Controls [auto save](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save) of editors that have unsaved changes.')
     },
     'files.autoSaveDelay': {
         'type': 'number',
