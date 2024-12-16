@@ -6,7 +6,8 @@
 
 <a name="breaking_changes_1.57.0">[Breaking Changes:](#breaking_changes_1.57.0)</a>
 
-- [remote] use local settings and configuration while connected to remote (rebinds UserStorageProvider) [#14548]https://github.com/eclipse-theia/theia/pull/14548/
+- [remote] use local settings and configuration while connected to remote (rebinds UserStorageProvider) [#14548]<https://github.com/eclipse-theia/theia/pull/14548/>
+- [application-package] bumped API version to 1.96.0 [#14634](https://github.com/eclipse-theia/theia/pull/14634) - Contributed on behalf of STMicroelectronics
 
 ## 1.56.0 - 11/28/2024
 
