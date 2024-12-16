@@ -853,7 +853,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
 
         registry.registerCommand(DebugCommands.JUMP_TO_CURSOR, {
             execute: () => {
-                const model = this.editors.model
+                const model = this.editors.model;
                 if (model && this.manager.currentThread) {
                     this.manager.currentThread.jumpToCursor(
                         model.editor.getResourceUri(),
