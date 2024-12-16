@@ -21,7 +21,7 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import * as React from '@theia/core/shared/react';
 import { DebugSession, DebugState } from '@theia/debug/lib/browser/debug-session';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
-import * as Long from 'long';
+import Long from 'long';
 import { MemoryProviderService } from '../memory-provider/memory-provider-service';
 import { Recents } from '../utils/memory-recents';
 import { MWInput, MWInputWithSelect, MWSelect } from '../utils/memory-widget-components';

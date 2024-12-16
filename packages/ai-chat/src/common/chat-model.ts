@@ -321,18 +321,59 @@ export interface ChatResponse {
     asString(): string;
 }
 
+/**
+ * The ChatResponseModel wraps the actual ChatResponse with additional information like the current state, progress messages, a unique id etc.
+ */
 export interface ChatResponseModel {
+    /**
+     * Use this to be notified for any change in the response model
+     */
     readonly onDidChange: Event<void>;
+    /**
+     * The unique identifier of the response model
+     */
     readonly id: string;
+    /**
+     * The unique identifier of the request model this response is associated with
+     */
     readonly requestId: string;
+    /**
+     * In case there are progress messages, then they will be stored here
+     */
     readonly progressMessages: ChatProgressMessage[];
+    /**
+     * The actual response content
+     */
     readonly response: ChatResponse;
+    /**
+     * Indicates whether this response is complete. No further changes are expected if 'true'.
+     */
     readonly isComplete: boolean;
+    /**
+     * Indicates whether this response is canceled. No further changes are expected if 'true'.
+     */
     readonly isCanceled: boolean;
+    /**
+     * Some agents might need to wait for user input to continue. This flag indicates that.
+     */
     readonly isWaitingForInput: boolean;
+    /**
+     * Indicates whether an error occurred when processing the response. No further changes are expected if 'true'.
+     */
     readonly isError: boolean;
+    /**
+     * The agent who produced the response content, if there is one.
+     */
     readonly agentId?: string
+    /**
+     * An optional error object that caused the response to be in an error state.
+     */
     readonly errorObject?: Error;
+    /**
+     * Some functionality might want to store some data associated with the response.
+     * This can be used to store and retrieve such data.
+     */
+    readonly data: { [key: string]: unknown };
 }
 
 /**********************
@@ -749,6 +790,8 @@ class ChatResponseImpl implements ChatResponse {
 class ChatResponseModelImpl implements ChatResponseModel {
     protected readonly _onDidChangeEmitter = new Emitter<void>();
     onDidChange: Event<void> = this._onDidChangeEmitter.event;
+
+    data = {};
 
     protected _id: string;
     protected _requestId: string;
