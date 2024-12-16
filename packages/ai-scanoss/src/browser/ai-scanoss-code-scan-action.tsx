@@ -22,7 +22,6 @@ import {
     ScanOSSService,
 } from '@theia/scanoss';
 import { Dialog, PreferenceService } from '@theia/core/lib/browser';
-import { MessageService } from '@theia/core';
 import { ReactNode } from '@theia/core/shared/react';
 import { ResponseNode } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import * as React from '@theia/core/shared/react';
@@ -47,27 +46,33 @@ function hasScanOSSResults(data: {
 export class ScanOSSScanButtonAction implements CodePartRendererAction {
     @inject(ScanOSSService)
     protected readonly scanService: ScanOSSService;
-    @inject(MessageService)
-    protected readonly messageService: MessageService;
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
     priority = 30;
 
-    canRender(response: CodeChatResponseContent): boolean {
-        return this.preferenceService.get(SCANOSS_MODE_PREF, 'off') !== 'off';
-    }
-
-    render(
-        response: CodeChatResponseContent,
-        parentNode: ResponseNode
-    ): ReactNode {
+    canRender(response: CodeChatResponseContent, parentNode: ResponseNode): boolean {
         if (!hasScanOSSResults(parentNode.response.data)) {
             parentNode.response.data.scanOSSResults = new Map<
                 string,
                 ScanOSSResult
             >();
         }
+        const results = parentNode.response.data
+            .scanOSSResults as ScanOSSResults;
+        const scanOSSMode = this.preferenceService.get(SCANOSS_MODE_PREF, 'off');
+        // we mark the code for manual scanning in case it was not handled yet and the mode is manual or off.
+        // this prevents a possibly unexpected automatic scan of "old" snippets if automatic scan is later turned on.
+        if (results.get(response.code) === undefined && (scanOSSMode === 'off' || scanOSSMode === 'manual')) {
+            results.set(response.code, false);
+        }
+        return scanOSSMode !== 'off';
+    }
+
+    render(
+        response: CodeChatResponseContent,
+        parentNode: ResponseNode
+    ): ReactNode {
         const scanOSSResults = parentNode.response.data
             .scanOSSResults as ScanOSSResults;
 
@@ -77,18 +82,16 @@ export class ScanOSSScanButtonAction implements CodePartRendererAction {
                 code={response.code}
                 scanService={this.scanService}
                 scanOSSResults={scanOSSResults}
-                messageService={this.messageService}
                 preferenceService={this.preferenceService}
             />
         );
     }
 }
 
-const ScanOSSIntegration = (props: {
+const ScanOSSIntegration = React.memo((props: {
     code: string;
     scanService: ScanOSSService;
     scanOSSResults: ScanOSSResults;
-    messageService: MessageService;
     preferenceService: PreferenceService;
 }) => {
     const [automaticCheck] = React.useState(() =>
@@ -110,6 +113,7 @@ const ScanOSSIntegration = (props: {
             if (automaticCheck) {
                 scanCode();
             } else {
+                // sanity fallback. This codepath should already be handled via "canRender"
                 props.scanOSSResults.set(props.code, false);
             }
         }
@@ -163,7 +167,7 @@ const ScanOSSIntegration = (props: {
             </div>
         </>
     );
-};
+});
 
 export class ScanOSSDialog extends ReactDialog<void> {
     protected readonly okButton: HTMLButtonElement;
