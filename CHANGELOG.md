@@ -4,10 +4,37 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## 1.57.0 - 12/16/2024
+
+- [ai] added initial support for MCP [#14598](https://github.com/eclipse-theia/theia/pull/14598)
+- [ai] added support for Anthropic as an LLM provider [#14614](https://github.com/eclipse-theia/theia/pull/14614)
+- [ai] fixed logic to enable chat input on chat widget activate [#14608](https://github.com/eclipse-theia/theia/pull/14608) - Contributed on behalf of STMicroelectronics
+- [ai] fixed logic to hide "Generating..." while waiting on input [#14559](https://github.com/eclipse-theia/theia/pull/14559) - Contributed on behalf of STMicroelectronics
+- [ai] integrated SCANOSS [#14628](https://github.com/eclipse-theia/theia/pull/14628)
+- [ai] updated logic to invoke OpenerService for markdown links in chat UI [#14602](https://github.com/eclipse-theia/theia/pull/14602) - Contributed on behalf of STMicroelectronics
+- [application-package] bumped API version to 1.96.0 [#14634](https://github.com/eclipse-theia/theia/pull/14634) - Contributed on behalf of STMicroelectronics
+- [core] added logic to cancel pending hover on mouse exit [#14533](https://github.com/eclipse-theia/theia/pull/14533)
+- [core] fixed enablement of "Collapse Side Panel" tab bar context menu item [#14616](https://github.com/eclipse-theia/theia/pull/14616)
+- [core] fixed window maximization when using splash screen [#14219](https://github.com/eclipse-theia/theia/pull/14219)
+- [core] pinned perfect-scrollbar to 1.5.5 [#14592](https://github.com/eclipse-theia/theia/pull/14592) - Contributed on behalf of STMicroelectronics
+- [dev-container] added logic to make DevContainer workspaces openable through recent workspaces [#14567](https://github.com/eclipse-theia/theia/pull/14567)
+- [dev-container] added support for THEIA_DEFAULT_PLUGINS env variable [#14530](https://github.com/eclipse-theia/theia/pull/14530)
+- [dev-container] improved searchForDevontainerJsonFiles to not block server [#14563](https://github.com/eclipse-theia/theia/pull/14563)
+- [dev-container] updated logic to ensure that dev container uses the right workspace [#14557](https://github.com/eclipse-theia/theia/pull/14557)
+- [dev-container] updated logic to include settings and configuration from the local user dir [#14548](https://github.com/eclipse-theia/theia/pull/14548)
+- [dev-container] updated logic to pull amd64 container images on darwin/arm64 [#14552](https://github.com/eclipse-theia/theia/pull/14552)
+- [editor] fixed editor preference localizations [#14018](https://github.com/eclipse-theia/theia/pull/14018)
+- [notebook] added basics to allow for hidden cells [#14573](https://github.com/eclipse-theia/theia/pull/14573)
+- [notebook] added fixes for invisible cells [#14617](https://github.com/eclipse-theia/theia/pull/14617)
+- [notebook] fixed cell height when updating output [#14621](https://github.com/eclipse-theia/theia/pull/14621)
+- [notebook] fixed rendering of output of cells added with already existing output [#14618](https://github.com/eclipse-theia/theia/pull/14618)
+- [plugin] introduced IconPath type [#14590](https://github.com/eclipse-theia/theia/pull/14590) - Contributed on behalf of STMicroelectronics
+- [plugin] stubbed TestRunProfile#loadDetailedCoverageForTest [#14599](https://github.com/eclipse-theia/theia/pull/14599) - Contributed on behalf of STMicroelectronics
+- [plugin] updated builtins to 1.95.3 [#14606](https://github.com/eclipse-theia/theia/pull/14606)
+
 <a name="breaking_changes_1.57.0">[Breaking Changes:](#breaking_changes_1.57.0)</a>
 
 - [remote] use local settings and configuration while connected to remote (rebinds UserStorageProvider) [#14548]<https://github.com/eclipse-theia/theia/pull/14548/>
-- [application-package] bumped API version to 1.96.0 [#14634](https://github.com/eclipse-theia/theia/pull/14634) - Contributed on behalf of STMicroelectronics
 
 ## 1.56.0 - 11/28/2024
 
