@@ -10305,7 +10305,7 @@ export module '@theia/plugin' {
          * @return An array of commands, quick fixes, or refactorings or a thenable of such. The lack of a result can be
          * signaled by returning `undefined`, `null`, or an empty array.
          */
-        provideCodeActions(document: TextDocument, range: Range | Selection, context: CodeActionContext, token: CancellationToken): ProviderResult<(Command | T)[]>;
+        provideCodeActions(document: TextDocument, range: Range | Selection, context: CodeActionContext, token: CancellationToken): ProviderResult<Array<Command | T>>;
 
         /**
          * Given a code action fill in its `edit`-property. Changes to
@@ -13180,7 +13180,7 @@ export module '@theia/plugin' {
          * @param args The command arguments.
          * @param options Optional options for the started the shell.
          */
-        constructor(command: string | ShellQuotedString, args: (string | ShellQuotedString)[], options?: ShellExecutionOptions);
+        constructor(command: string | ShellQuotedString, args: Array<string | ShellQuotedString>, options?: ShellExecutionOptions);
 
         /**
          * The shell command line. Is `undefined` if created with a command and arguments.
@@ -17855,7 +17855,7 @@ export module '@theia/plugin' {
          * @param content The content of the message.
          * @param name The optional name of a user for the message.
          */
-        static User(content: string | (LanguageModelTextPart | LanguageModelToolResultPart)[], name?: string): LanguageModelChatMessage;
+        static User(content: string | Array<LanguageModelTextPart | LanguageModelToolResultPart>, name?: string): LanguageModelChatMessage;
 
         /**
          * Utility to create a new assistant message.
@@ -17863,7 +17863,7 @@ export module '@theia/plugin' {
          * @param content The content of the message.
          * @param name The optional name of a user for the message.
          */
-        static Assistant(content: string | (LanguageModelTextPart | LanguageModelToolCallPart)[], name?: string): LanguageModelChatMessage;
+        static Assistant(content: string | Array<(LanguageModelTextPart | LanguageModelToolCallPart)>, name?: string): LanguageModelChatMessage;
 
         /**
          * The role of this message.
@@ -17874,7 +17874,7 @@ export module '@theia/plugin' {
          * A string or heterogeneous array of things that a message can contain as content. Some parts may be message-type
          * specific for some models.
          */
-        content: (LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart)[];
+        content: Array<(LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart)>;
 
         /**
          * The optional name of a user for this message.
@@ -17888,7 +17888,7 @@ export module '@theia/plugin' {
          * @param content The content of the message.
          * @param name The optional name of a user for the message.
          */
-        constructor(role: LanguageModelChatMessageRole, content: string | (LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart)[], name?: string);
+        constructor(role: LanguageModelChatMessageRole, content: string | Array<LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart>, name?: string);
     }
 
     /**
@@ -18319,13 +18319,13 @@ export module '@theia/plugin' {
         /**
          * The value of the tool result.
          */
-        content: (LanguageModelTextPart | LanguageModelPromptTsxPart | unknown)[];
+        content: Array<LanguageModelTextPart | LanguageModelPromptTsxPart | unknown>;
 
         /**
          * @param callId The ID of the tool call.
          * @param content The content of the tool result.
          */
-        constructor(callId: string, content: (LanguageModelTextPart | LanguageModelPromptTsxPart | unknown)[]);
+        constructor(callId: string, content: Array<(LanguageModelTextPart | LanguageModelPromptTsxPart | unknown)>);
     }
 
     /**
@@ -18373,13 +18373,13 @@ export module '@theia/plugin' {
          * the future.
          * @see {@link lm.invokeTool}.
          */
-        content: (LanguageModelTextPart | LanguageModelPromptTsxPart | unknown)[];
+        content: Array<(LanguageModelTextPart | LanguageModelPromptTsxPart | unknown)>;
 
         /**
          * Create a LanguageModelToolResult
          * @param content A list of tool result content parts
          */
-        constructor(content: (LanguageModelTextPart | LanguageModelPromptTsxPart)[]);
+        constructor(content: Array<(LanguageModelTextPart | LanguageModelPromptTsxPart)>);
     }
 
     /**
@@ -18524,7 +18524,7 @@ export module '@theia/plugin' {
         /**
          * A customized progress message to show while the tool runs.
          */
-        invocationMessage?: string;
+        invocationMessage?: string | MarkdownString;
 
         /**
          * The presence of this property indicates that the user should be asked to confirm before running the tool. The user
