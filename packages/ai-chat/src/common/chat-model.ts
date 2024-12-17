@@ -19,7 +19,7 @@
  *--------------------------------------------------------------------------------------------*/
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatModel.ts
 
-import { Command, Emitter, Event, generateUuid, URI } from '@theia/core';
+import { CancellationToken, CancellationTokenSource, Command, Emitter, Event, generateUuid, URI } from '@theia/core';
 import { MarkdownString, MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { Position } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ChatAgentLocation } from './chat-agents';
@@ -466,6 +466,10 @@ export class ChatRequestModelImpl implements ChatRequestModel {
     get agentId(): string | undefined {
         return this._agentId;
     }
+
+    cancel(): void {
+        this.response.cancel();
+    }
 }
 
 export class ErrorChatResponseContentImpl implements ErrorChatResponseContent {
@@ -798,11 +802,11 @@ class ChatResponseModelImpl implements ChatResponseModel {
     protected _progressMessages: ChatProgressMessage[];
     protected _response: ChatResponseImpl;
     protected _isComplete: boolean;
-    protected _isCanceled: boolean;
     protected _isWaitingForInput: boolean;
     protected _agentId?: string;
     protected _isError: boolean;
     protected _errorObject: Error | undefined;
+    protected _cancellationToken: CancellationTokenSource;
 
     constructor(requestId: string, agentId?: string) {
         // TODO accept serialized data as a parameter to restore a previously saved ChatResponseModel
@@ -813,9 +817,9 @@ class ChatResponseModelImpl implements ChatResponseModel {
         response.onDidChange(() => this._onDidChangeEmitter.fire());
         this._response = response;
         this._isComplete = false;
-        this._isCanceled = false;
         this._isWaitingForInput = false;
         this._agentId = agentId;
+        this._cancellationToken = new CancellationTokenSource();
     }
 
     get id(): string {
@@ -870,7 +874,7 @@ class ChatResponseModelImpl implements ChatResponseModel {
     }
 
     get isCanceled(): boolean {
-        return this._isCanceled;
+        return this._cancellationToken.token.isCancellationRequested;
     }
 
     get isWaitingForInput(): boolean {
@@ -892,10 +896,14 @@ class ChatResponseModelImpl implements ChatResponseModel {
     }
 
     cancel(): void {
+        this._cancellationToken.cancel();
         this._isComplete = true;
-        this._isCanceled = true;
         this._isWaitingForInput = false;
         this._onDidChangeEmitter.fire();
+    }
+
+    get cancellationToken(): CancellationToken {
+        return this._cancellationToken.token;
     }
 
     waitForInput(): void {
@@ -910,7 +918,6 @@ class ChatResponseModelImpl implements ChatResponseModel {
 
     error(error: Error): void {
         this._isComplete = true;
-        this._isCanceled = false;
         this._isWaitingForInput = false;
         this._isError = true;
         this._errorObject = error;

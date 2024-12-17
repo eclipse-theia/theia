@@ -176,9 +176,9 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
     }
 
     protected onCancel(requestModel: ChatRequestModel): void {
-        // TODO we should pass a cancellation token with the request (or retrieve one from the request invocation) so we can cleanly cancel here
-        // For now we cancel manually via casting
-        (requestModel as ChatRequestModelImpl).response.cancel();
+        if (requestModel instanceof ChatRequestModelImpl) {
+            requestModel.cancel();
+        }
     }
 
     lock(): void {
