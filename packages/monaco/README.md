@@ -61,7 +61,7 @@ For initial testing, it's easier to point dependencies to your local VSCode.
 
 > Using `link:` means that if you subsequently make changes on the VSCode side, you only need to rebuild VSCode and then rebuild Theia to see the effects.
 
-3. Delete your `node_modules` and `yarn` and build Theia.
+3. Delete your `node_modules` and `npm install` and build Theia.
 4. Fix any build errors.
 5. Uncomment the `bindMonacoPreferenceExtractor` function in `examples/api-samples/src/browser/monaco-editor-preferences/monaco-editor-preference-extractor.ts` and run the commands there. Fix the `EditorGeneratedPreferenceSchema` as necessary, and add or remove validations from the `MonacoFrontendApplicationContribution` as appropriate.
 6. Look for comments that indicate forced types or other code smells that would prevent a build error from being thrown where it should be thrown and check that the assertion still applies.
