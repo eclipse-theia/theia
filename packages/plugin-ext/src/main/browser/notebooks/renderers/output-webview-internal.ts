@@ -665,8 +665,14 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
                     container.appendChild(cell.element);
                 }
             } else if (change.type === 'cellsSpliced') {
-                const deltedCells = cells.splice(change.start, change.deleteCount, ...change.newCells.map((cellHandle, i) => new OutputCell(cellHandle, change.start + i)));
-                deltedCells.forEach(cell => cell.dispose());
+                // if start index is negative, it means we should find the cell by handle
+                const startCellIndex = cells.findIndex(c => c.cellHandle === change.startCellHandle);
+                if (startCellIndex === -1) {
+                    console.error(`Can't find cell output to splice. Cells: ${cells.length}, startCellHandle: ${change.startCellHandle}`);
+                } else {
+                    const deletedCells = cells.splice(startCellIndex, change.deleteCount, ...change.newCells.map((cellHandle, i) => new OutputCell(cellHandle, startCellIndex + i)));
+                    deletedCells.forEach(cell => cell.dispose());
+                }
             }
         }
     }

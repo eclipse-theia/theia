@@ -126,6 +126,10 @@ export interface NotebookCellTextModelSplice<T> {
     start: number,
     deleteCount: number,
     newItems: T[]
+    /**
+     * In case of e.g. deletion, the handle of the first cell that was deleted.
+     */
+    startHandle: number,
 };
 
 export enum NotebookCellsChangeType {

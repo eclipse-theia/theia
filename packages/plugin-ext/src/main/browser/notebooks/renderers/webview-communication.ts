@@ -83,7 +83,7 @@ export interface CellsMoved {
 
 export interface CellsSpliced {
     type: 'cellsSpliced';
-    start: number;
+    startCellHandle: number;
     deleteCount: number;
     newCells: number[];
 }

@@ -381,22 +381,28 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
         const changes: Array<CellsMoved | CellsSpliced> = [];
         const outputChanges: CellOutputChange[] = [];
 
-        const visibleCells = this.notebook.getVisibleCells();
-        const visibleCellLookup = new Set(visibleCells);
+        const visibleCellLookup = new Set(this.notebook.getVisibleCells());
         for (const event of cellEvents) {
             if (event.kind === NotebookCellsChangeType.Move) {
-                changes.push(...event.cells.map((cell, i) => ({
-                    type: 'cellMoved',
-                    cellHandle: event.cells[0].handle,
-                    toIndex: event.newIdx,
-                } as CellsMoved)));
+                changes.push(...event.cells.map((cell, i) => {
+                    const cellMoved: CellsMoved = {
+                        type: 'cellMoved',
+                        cellHandle: event.cells[0].handle, // TODO check this, ask Jonah
+                        toIndex: event.newIdx,
+                    }
+                    return cellMoved;
+                }));
             } else if (event.kind === NotebookCellsChangeType.ModelChange) {
-                changes.push(...event.changes.map(change => ({
-                    type: 'cellsSpliced',
-                    start: this.toVisibleCellIndex(change.start, visibleCells),
-                    deleteCount: change.deleteCount,
-                    newCells: change.newItems.filter(cell => visibleCellLookup.has(cell as NotebookCellModel)).map(cell => cell.handle)
-                } as CellsSpliced)));
+                changes.push(...event.changes.map(change => {
+                    const cellSpliced: CellsSpliced = {
+                        type: 'cellsSpliced',
+                        startCellHandle: change.startHandle,
+                        deleteCount: change.deleteCount,
+                        newCells: change.newItems.filter(cell => visibleCellLookup.has(cell as NotebookCellModel)).map(cell => cell.handle)
+                    }
+                    return cellSpliced;
+                }
+                ));
                 outputChanges.push(...event.changes
                     .flatMap(change => change.newItems)
                     .filter(cell => visibleCellLookup.has(cell as NotebookCellModel) && cell.outputs.length)
@@ -429,8 +435,21 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
         }));
     }
 
-    protected toVisibleCellIndex(index: number, visibleCells: Array<NotebookCellModel>): number {
-        return visibleCells.indexOf(this.notebook.cells[index]);
+    /**
+     * Currently not used, but could be useful in a subclasses
+     * 
+     * @param index cell index
+     * @param cellHandle cell handle
+     * @param visibleCells  visible cells
+     * @returns visible cell index or -1 if not found
+     */
+    protected toVisibleCellIndex(index: number, cellHandle: number, visibleCells: Array<NotebookCellModel>): number {
+        const cell = this.notebook.cells[index];
+        if (cell.handle === cellHandle) {
+            return visibleCells.indexOf(cell);
+        }
+        // in case of deletion index points to a non-existing cell
+        return -1;
     }
 
     setCellHeight(cell: NotebookCellModel, height: number): void {

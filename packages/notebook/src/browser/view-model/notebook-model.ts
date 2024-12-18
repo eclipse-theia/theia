@@ -394,7 +394,12 @@ export class NotebookModel implements Saveable, Disposable {
         });
         this.addCellOutputListeners(cells);
 
-        const changes: NotebookCellTextModelSplice<NotebookCellModel>[] = [{ start, deleteCount, newItems: cells }];
+        const changes: NotebookCellTextModelSplice<NotebookCellModel>[] = [{
+            start,
+            deleteCount,
+            newItems: cells,
+            startHandle: this.cells[start].handle
+        }];
 
         const deletedCells = this.cells.splice(start, deleteCount, ...cells);
 
