@@ -397,6 +397,10 @@ export class ChatModelImpl implements ChatModel {
         return this._requests;
     }
 
+    getRequest(id: string): ChatRequestModelImpl | undefined {
+        return this._requests.find(request => request.id === id);
+    }
+
     get id(): string {
         return this._id;
     }
