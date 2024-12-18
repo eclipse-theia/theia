@@ -26,8 +26,8 @@ checkPublish().catch(error => {
 });
 
 async function checkPublish() {
-    const workspaces = JSON.parse(cp.execSync('yarn --silent workspaces info').toString());
-    await Promise.all(Object.values(workspaces).map(async workspace => {
+    const workspaces = JSON.parse(cp.execSync('npx lerna ls --json --loglevel=silent').toString());
+    await Promise.all(workspaces.map(async workspace => {
         const packagePath = path.resolve(workspace.location, 'package.json');
         const pck = JSON.parse(await fs.promises.readFile(packagePath, 'utf8'));
         if (!pck.private) {
