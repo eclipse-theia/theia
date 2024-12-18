@@ -670,7 +670,11 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
                 if (startCellIndex === -1) {
                     console.error(`Can't find cell output to splice. Cells: ${cells.length}, startCellHandle: ${change.startCellHandle}`);
                 } else {
-                    const deletedCells = cells.splice(startCellIndex, change.deleteCount, ...change.newCells.map((cellHandle, i) => new OutputCell(cellHandle, startCellIndex + i)));
+                    const deletedCells = cells.splice(
+                        startCellIndex,
+                        change.deleteCount,
+                        ...change.newCells.map((cellHandle, i) => new OutputCell(cellHandle, startCellIndex + i))
+                    );
                     deletedCells.forEach(cell => cell.dispose());
                 }
             }

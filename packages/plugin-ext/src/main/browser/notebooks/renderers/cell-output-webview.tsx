@@ -389,7 +389,7 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
                         type: 'cellMoved',
                         cellHandle: event.cells[0].handle, // TODO check this, ask Jonah
                         toIndex: event.newIdx,
-                    }
+                    };
                     return cellMoved;
                 }));
             } else if (event.kind === NotebookCellsChangeType.ModelChange) {
@@ -399,7 +399,7 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
                         startCellHandle: change.startHandle,
                         deleteCount: change.deleteCount,
                         newCells: change.newItems.filter(cell => visibleCellLookup.has(cell as NotebookCellModel)).map(cell => cell.handle)
-                    }
+                    };
                     return cellSpliced;
                 }
                 ));
@@ -437,7 +437,7 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
 
     /**
      * Currently not used, but could be useful in a subclasses
-     * 
+     *
      * @param index cell index
      * @param cellHandle cell handle
      * @param visibleCells  visible cells
