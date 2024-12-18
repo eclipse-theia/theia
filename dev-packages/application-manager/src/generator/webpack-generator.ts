@@ -466,7 +466,10 @@ const config = {
         minimize: production,
         minimizer: [
             new TerserPlugin({
-                exclude: /^(lib|builtins)\\//
+                exclude: /^(lib|builtins)\\//${this.ifPackage(['@theia/scanoss', '@theia/ai-anthropic', '@theia/ai-openai'], () => `,
+                terserOptions: {
+                    keep_classnames: /AbortSignal/
+                }`)}
             })
         ]
     },
