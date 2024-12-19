@@ -43,7 +43,8 @@ export class ApplicationProcess {
     }
 
     canRun(command: string): boolean {
-        return fs.existsSync(this.resolveBin(command));
+        const binPath = this.resolveBin(this.binProjectPath, command);
+        return !!binPath && fs.existsSync(binPath);
     }
 
     run(command: string, args: string[], options?: cp.SpawnOptions): Promise<void> {
@@ -52,16 +53,29 @@ export class ApplicationProcess {
     }
 
     spawnBin(command: string, args: string[], options?: cp.SpawnOptions): cp.ChildProcess {
-        const binPath = this.resolveBin(command);
+        const binPath = this.resolveBin(this.binProjectPath, command);
+        if (!binPath) {
+            throw new Error(`Could not resolve ${command} relative to ${this.binProjectPath}`);
+        }
         return this.spawn(binPath, args, {
             ...options,
             shell: true
         });
     }
 
-    protected resolveBin(command: string): string {
-        const commandPath = path.resolve(this.binProjectPath, 'node_modules', '.bin', command);
-        return process.platform === 'win32' ? commandPath + '.cmd' : commandPath;
+    protected resolveBin(rootPath: string, command: string): string | undefined {
+        let commandPath = path.resolve(rootPath, 'node_modules', '.bin', command);
+        if (process.platform === 'win32') {
+            commandPath = commandPath + '.cmd';
+        }
+        if (fs.existsSync(commandPath)) {
+            return commandPath;
+        }
+        const parentDir = path.dirname(rootPath);
+        if (parentDir === rootPath) {
+            return undefined;
+        }
+        return this.resolveBin(parentDir, command);
     }
 
     protected promisify(command: string, p: cp.ChildProcess): Promise<void> {

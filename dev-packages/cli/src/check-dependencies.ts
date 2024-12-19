@@ -321,8 +321,8 @@ function printHints(issues: DependencyIssue[]): void {
     if (issues.find(i => i.issueType === 'theia-version-mix')) {
         console.log('⛔ A mix of Theia versions is very likely leading to a broken application.');
     }
-    console.log(`ℹ️  Use ${chalk.bold('yarn why <package-name>')} to find out why those multiple versions of a package are pulled.`);
+    console.log(`ℹ️  Use ${chalk.bold('npm ls <package-name>')} to find out why those multiple versions of a package are pulled.`);
     console.log('ℹ️  Try to resolve those issues by finding package versions along the dependency chain that depend on compatible versions.');
-    console.log(`ℹ️  Use ${chalk.bold('resolutions')} in your root package.json to force specific versions as a last resort.`);
+    console.log(`ℹ️  Use ${chalk.bold('overrides')} in your root package.json to force specific versions as a last resort.`);
     console.log();
 }

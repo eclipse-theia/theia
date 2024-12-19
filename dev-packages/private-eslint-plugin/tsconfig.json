@@ -8,9 +8,6 @@
   ],
   "references": [
     {
-      "path": "../../packages/core"
-    },
-    {
       "path": "../private-re-exports"
     }
   ]
