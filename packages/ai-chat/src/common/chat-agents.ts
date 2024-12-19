@@ -38,7 +38,7 @@ import {
     LanguageModelStreamResponsePart,
     MessageActor,
 } from '@theia/ai-core/lib/common';
-import { CancellationToken, CancellationTokenSource, ContributionProvider, ILogger, isArray } from '@theia/core';
+import { CancellationToken, ContributionProvider, ILogger, isArray } from '@theia/core';
 import { inject, injectable, named, postConstruct, unmanaged } from '@theia/core/shared/inversify';
 import { ChatAgentService } from './chat-agent-service';
 import {
@@ -186,18 +186,11 @@ export abstract class AbstractChatAgent {
             }
             this.getTools(request)?.forEach(tool => tools.set(tool.id, tool));
 
-            const cancellationToken = new CancellationTokenSource();
-            request.response.onDidChange(() => {
-                if (request.response.isCanceled) {
-                    cancellationToken.cancel();
-                }
-            });
-
             const languageModelResponse = await this.callLlm(
                 languageModel,
                 messages,
                 tools.size > 0 ? Array.from(tools.values()) : undefined,
-                cancellationToken.token
+                request.response.cancellationToken
             );
             await this.addContentsToResponse(languageModelResponse, request);
             await this.onResponseComplete(request);

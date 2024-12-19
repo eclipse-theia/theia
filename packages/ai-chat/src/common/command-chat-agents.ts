@@ -315,7 +315,7 @@ export class CommandChatAgent extends AbstractTextToModelParsingChatAgent<Parsed
             const theiaCommand = this.commandRegistry.getCommand(parsedCommand.commandId);
             if (theiaCommand === undefined) {
                 console.error(`No Theia Command with id ${parsedCommand.commandId}`);
-                request.response.cancel();
+                request.cancel();
             }
             const args = parsedCommand.arguments !== undefined &&
                 parsedCommand.arguments.length > 0

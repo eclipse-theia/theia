@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { CommandService, deepClone, Emitter, Event, MessageService } from '@theia/core';
-import { ChatRequest, ChatRequestModel, ChatRequestModelImpl, ChatService, ChatSession } from '@theia/ai-chat';
+import { ChatRequest, ChatRequestModel, ChatService, ChatSession } from '@theia/ai-chat';
 import { BaseWidget, codicon, ExtractableWidget, Message, PanelLayout, PreferenceService, StatefulWidget } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
@@ -165,7 +165,7 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         const requestProgress = await this.chatService.sendRequest(this.chatSession.id, chatRequest);
         requestProgress?.responseCompleted.then(responseModel => {
             if (responseModel.isError) {
-                this.messageService.error(responseModel.errorObject?.message ?? 'An error occurred druring chat service invocation.');
+                this.messageService.error(responseModel.errorObject?.message ?? 'An error occurred during chat service invocation.');
             }
         });
         if (!requestProgress) {
@@ -176,9 +176,7 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
     }
 
     protected onCancel(requestModel: ChatRequestModel): void {
-        // TODO we should pass a cancellation token with the request (or retrieve one from the request invocation) so we can cleanly cancel here
-        // For now we cancel manually via casting
-        (requestModel as ChatRequestModelImpl).response.cancel();
+        this.chatService.cancelRequest(requestModel.session.id, requestModel.id);
     }
 
     lock(): void {
