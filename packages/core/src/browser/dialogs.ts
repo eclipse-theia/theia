@@ -236,8 +236,15 @@ export abstract class AbstractDialog<T> extends BaseWidget {
             this.addAcceptAction(this.acceptButton, 'click');
         }
         this.addCloseAction(this.closeCrossNode, 'click');
+        this.toDisposeOnDetach.push(this.preventTabbingOutsideDialog());
         // TODO: use DI always to create dialog instances
         this.toDisposeOnDetach.push(DialogOverlayService.get().push(this));
+    }
+
+    protected preventTabbingOutsideDialog(): Disposable {
+        const nonInertSiblings = Array.from(this.node.ownerDocument.body.children).filter(child => child !== this.node && !(child.hasAttribute('inert')));
+        nonInertSiblings.forEach(child => child.setAttribute('inert', ''));
+        return Disposable.create(() => nonInertSiblings.forEach(child => child.removeAttribute('inert')));
     }
 
     protected handleEscape(event: KeyboardEvent): boolean | void {
