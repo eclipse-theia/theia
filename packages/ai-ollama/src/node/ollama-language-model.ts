@@ -20,6 +20,7 @@ import {
     LanguageModelRequest,
     LanguageModelRequestMessage,
     LanguageModelResponse,
+    LanguageModelStreamResponse,
     LanguageModelStreamResponsePart,
     ToolRequest
 } from '@theia/ai-core';
@@ -61,51 +62,84 @@ export class OllamaModel implements LanguageModel {
         const settings = this.getSettings(request);
         const ollama = this.initializeOllama();
 
-        if (request.response_format?.type === 'json_schema') {
-            return this.handleStructuredOutputRequest(ollama, request);
-        }
-        const response = await ollama.chat({
+        const ollamaRequest: ExtendedChatRequest = {
             model: this.model,
             ...this.DEFAULT_REQUEST_SETTINGS,
             ...settings,
             messages: request.messages.map(this.toOllamaMessage),
-            stream: true,
-            tools: request.tools?.map(this.toOllamaTool),
-        });
-
-        cancellationToken?.onCancellationRequested(() => {
-            response.abort();
-        });
-
-        async function* wrapAsyncIterator<T>(inputIterable: AsyncIterable<ChatResponse>): AsyncIterable<LanguageModelStreamResponsePart> {
-            for await (const item of inputIterable) {
-                // TODO handle tool calls
-                yield { content: item.message.content };
-            }
-        }
-        return { stream: wrapAsyncIterator(response) };
+            tools: request.tools?.map(this.toOllamaTool)
+        };
+        const structured = request.response_format?.type === 'json_schema';
+        return this.dispatchRequest(ollama, ollamaRequest, structured, cancellationToken);
     }
 
-    protected async handleStructuredOutputRequest(ollama: Ollama, request: LanguageModelRequest): Promise<LanguageModelParsedResponse> {
-        const settings = this.getSettings(request);
-        const result = await ollama.chat({
-            ...settings,
-            ...this.DEFAULT_REQUEST_SETTINGS,
-            model: this.model,
-            messages: request.messages.map(this.toOllamaMessage),
+    protected async dispatchRequest(ollama: Ollama, ollamaRequest: ExtendedChatRequest, structured: boolean, cancellation?: CancellationToken): Promise<LanguageModelResponse> {
+
+        // Handle structured output request
+        if (structured) {
+            return this.handleStructuredOutputRequest(ollama, ollamaRequest);
+        }
+
+        // Handle tool request - response may call tools
+        if (ollamaRequest.tools && ollamaRequest.tools?.length > 0) {
+            return this.handleToolsRequest(ollama, ollamaRequest);
+        }
+
+        // Handle standard chat request
+        const response = await ollama.chat({
+            ...ollamaRequest,
+            stream: true
+        });
+        return this.handleCancellationAndWrapIterator(response, cancellation);
+    }
+
+    protected async handleToolsRequest(ollama: Ollama, chatRequest: ExtendedChatRequest): Promise<LanguageModelResponse> {
+        const response = await ollama.chat({
+            ...chatRequest,
+            stream: false
+        });
+
+        const tools: ToolWithHandler[] = chatRequest.tools ?? [];
+        if (response.message.tool_calls) {
+            for (const toolCall of response.message.tool_calls) {
+                const functionToCall = tools.find(tool => tool.function.name === toolCall.function?.name);
+                if (functionToCall) {
+                    const args = JSON.stringify(toolCall.function?.arguments);
+                    const funcResult = await functionToCall.handler(args);
+                    chatRequest.messages.push(response.message);
+                    chatRequest.messages.push({
+                        role: 'tool',
+                        content: String(funcResult),
+                    });
+                }
+            }
+            // Get final response from model with function outputs
+            const finalResponse = await ollama.chat({ ...chatRequest, stream: false });
+            if (finalResponse.message.tool_calls) {
+                // Recursive tools call
+                return this.handleToolsRequest(ollama, chatRequest);
+            }
+            return { text: finalResponse.message.content };
+        }
+        return { text: response.message.content };
+    }
+
+    protected async handleStructuredOutputRequest(ollama: Ollama, chatRequest: ChatRequest): Promise<LanguageModelParsedResponse> {
+        const response = await ollama.chat({
+            ...chatRequest,
             format: 'json',
             stream: false,
         });
         try {
             return {
-                content: result.message.content,
-                parsed: JSON.parse(result.message.content)
+                content: response.message.content,
+                parsed: JSON.parse(response.message.content)
             };
         } catch (error) {
             // TODO use ILogger
             console.log('Failed to parse structured response from the language model.', error);
             return {
-                content: result.message.content,
+                content: response.message.content,
                 parsed: {}
             };
         }
@@ -119,11 +153,22 @@ export class OllamaModel implements LanguageModel {
         return new Ollama({ host: host });
     }
 
-    protected toOllamaTool(tool: ToolRequest): Tool {
-        const transform = (props: Record<string, {
-            [key: string]: unknown;
-            type: string;
-        }> | undefined) => {
+    protected handleCancellationAndWrapIterator(response: AbortableAsyncIterable<ChatResponse>, token?: CancellationToken): LanguageModelStreamResponse {
+        token?.onCancellationRequested(() => {
+            // maybe it is better to use ollama.abort() as we are using one client per request
+            response.abort();
+        });
+
+        async function* wrapAsyncIterator<T>(inputIterable: AsyncIterable<ChatResponse>): AsyncIterable<LanguageModelStreamResponsePart> {
+            for await (const item of inputIterable) {
+                yield { content: item.message.content };
+            }
+        }
+        return { stream: wrapAsyncIterator(response) };
+    }
+
+    protected toOllamaTool(tool: ToolRequest): ToolWithHandler {
+        const transform = (props: Record<string, { [key: string]: unknown; type: string; }> | undefined) => {
             if (!props) {
                 return undefined;
             }
@@ -148,7 +193,8 @@ export class OllamaModel implements LanguageModel {
                     required: Object.keys(tool.parameters?.properties ?? {}),
                     properties: transform(tool.parameters?.properties) ?? {}
                 },
-            }
+            },
+            handler: tool.handler
         };
     }
 
@@ -165,3 +211,23 @@ export class OllamaModel implements LanguageModel {
         return { role: 'system', content: '' };
     }
 }
+
+/**
+ * Extended Tool containing a handler
+ * @see Tool
+ */
+type ToolWithHandler = Tool & { handler: (arg_string: string) => Promise<unknown> };
+
+/**
+ * Extended chat request with mandatory messages and ToolWithHandler tools
+ *
+ * @see ChatRequest
+ * @see ToolWithHandler
+ */
+type ExtendedChatRequest = ChatRequest & {
+    messages: Message[]
+    tools?: ToolWithHandler[]
+};
+
+// Ollama doesn't export this type, so we have to define it here
+type AbortableAsyncIterable<T> = AsyncIterable<T> & { abort: () => void };
