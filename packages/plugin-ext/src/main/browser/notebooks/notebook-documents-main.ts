@@ -170,7 +170,7 @@ export class NotebookDocumentsMainImpl implements NotebookDocumentsMain {
             if (options.content.cells && options.content.cells.length > 0) {
                 rawEvents.push({
                     kind: NotebookCellsChangeType.ModelChange,
-                    changes: [{ start: 0, deleteCount: 0, newItems: ref.cells.map(NotebookDto.toNotebookCellDto) }]
+                    changes: [{ start: 0, startHandle: 0, deleteCount: 0, newItems: ref.cells.map(NotebookDto.toNotebookCellDto) }]
                 });
             }
             if (options.content.metadata) {
