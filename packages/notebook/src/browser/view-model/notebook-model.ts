@@ -398,7 +398,7 @@ export class NotebookModel implements Saveable, Disposable {
             start,
             deleteCount,
             newItems: cells,
-            startHandle: this.cells[start].handle
+            startHandle: this.cells[start]?.handle ?? -1 // -1 in case of new Cells are added at the end.
         }];
 
         const deletedCells = this.cells.splice(start, deleteCount, ...cells);

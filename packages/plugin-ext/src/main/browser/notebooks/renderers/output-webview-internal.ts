@@ -665,8 +665,8 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
                     container.appendChild(cell.element);
                 }
             } else if (change.type === 'cellsSpliced') {
-                // if start index is negative, it means we should find the cell by handle
-                const startCellIndex = cells.findIndex(c => c.cellHandle === change.startCellHandle);
+                // if startCellHandle is negative, it means we should add a trailing new cell
+                const startCellIndex = change.startCellHandle < 0 ? cells.length : cells.findIndex(c => c.cellHandle === change.startCellHandle);
                 if (startCellIndex === -1) {
                     console.error(`Can't find cell output to splice. Cells: ${cells.length}, startCellHandle: ${change.startCellHandle}`);
                 } else {
