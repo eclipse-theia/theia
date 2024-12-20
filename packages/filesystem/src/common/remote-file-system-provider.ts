@@ -133,6 +133,9 @@ export class RemoteFileSystemProvider implements Required<FileSystemProvider>, D
     private readonly onFileStreamEndEmitter = new Emitter<[number, Error | FileSystemProviderError | undefined]>();
     private readonly onFileStreamEnd = this.onFileStreamEndEmitter.event;
 
+    private readonly onFileStreamStartEmitter = new Emitter<number>();
+    private readonly onFileStreamStart = this.onFileStreamStartEmitter.event;
+
     protected readonly toDispose = new DisposableCollection(
         this.onDidChangeFileEmitter,
         this.onDidChangeCapabilitiesEmitter,
@@ -161,6 +164,8 @@ export class RemoteFileSystemProvider implements Required<FileSystemProvider>, D
 
     protected readonly readyDeferred = new Deferred<void>();
     readonly ready = this.readyDeferred.promise;
+
+    protected readonly streaming = new Set<number>();
 
     /**
      * Wrapped remote filesystem.
@@ -193,6 +198,29 @@ export class RemoteFileSystemProvider implements Required<FileSystemProvider>, D
             // skip reconnection on the first connection
             onInitialized.dispose();
             this.toDispose.push(this.server.onDidOpenConnection(() => this.reconnect()));
+        });
+        // When using long polling, the handle is registered *after* the first events arrive
+        // Therefore, we need to buffer events until the handle is registered
+        // Once the handle is registered, we forward the events in the same order they arrived
+        this.onFileStreamData(([handle, data]) => {
+            if (!this.streaming.has(handle)) {
+                const disposable = this.onFileStreamStart(streamHandle => {
+                    if (streamHandle === handle) {
+                        disposable.dispose();
+                        this.onFileStreamDataEmitter.fire([handle, data]);
+                    }
+                });
+            }
+        });
+        this.onFileStreamEnd(([handle, error]) => {
+            if (!this.streaming.has(handle)) {
+                const disposable = this.onFileStreamStart(streamHandle => {
+                    if (streamHandle === handle) {
+                        disposable.dispose();
+                        this.onFileStreamEndEmitter.fire([handle, error]);
+                    }
+                });
+            }
         });
     }
 
@@ -258,6 +286,7 @@ export class RemoteFileSystemProvider implements Required<FileSystemProvider>, D
                 stream.end(cancelled());
                 return;
             }
+            this.streaming.add(streamHandle);
             const toDispose = new DisposableCollection(
                 token.onCancellationRequested(() => stream.end(cancelled())),
                 this.onFileStreamData(([handle, data]) => {
@@ -277,10 +306,12 @@ export class RemoteFileSystemProvider implements Required<FileSystemProvider>, D
                         } else {
                             stream.end();
                         }
+                        this.streaming.delete(streamHandle);
                     }
                 })
             );
             stream.on('end', () => toDispose.dispose());
+            this.onFileStreamStartEmitter.fire(streamHandle);
         }, error => stream.end(error));
         return stream;
     }
