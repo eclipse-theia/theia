@@ -270,7 +270,7 @@ export class GettingStartedWidget extends ReactWidget {
                     tabIndex={0}
                     onClick={() => this.open(new URI(items[index]))}
                     onKeyDown={(e: React.KeyboardEvent) => this.openEnter(e, new URI(items[index]))}>
-                    {new URI(items[index]).path.base}
+                    {this.labelProvider.getName(new URI(items[index]))}
                 </a>
                 <span className='gs-action-details'>
                     {item}
