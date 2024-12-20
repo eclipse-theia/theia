@@ -76,8 +76,9 @@ export class ContainerInfoContribution implements FrontendApplicationContributio
         return 0;
     }
 
-    getLongName(element: URI): string | undefined {
-        return `${element.path.base} [Dev Container: ${this.containerFilePath}]`;
+    getName(element: URI): string | undefined {
+        const dir = new URI(this.containerFilePath).path.dir.base;
+        return `${element.path.base} [Dev Container${dir && dir !== '.devcontainer' ? `: ${dir}` : ''}]`;
     }
 
 }
