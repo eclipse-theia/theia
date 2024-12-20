@@ -91,7 +91,7 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         this.chatSession = this.chatService.createSession();
 
         this.inputWidget.onQuery = this.onQuery.bind(this);
-        this.inputWidget.onUnpin = this.onUnpin.bind(this)
+        this.inputWidget.onUnpin = this.onUnpin.bind(this);
         this.inputWidget.onCancel = this.onCancel.bind(this);
         this.inputWidget.chatModel = this.chatSession.model;
         this.inputWidget.pinnedAgent = this.chatSession.pinnedAgent;

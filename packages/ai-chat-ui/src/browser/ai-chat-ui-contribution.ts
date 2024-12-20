@@ -17,8 +17,8 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { CommandRegistry, QuickInputButton, QuickInputService, QuickPickItem } from '@theia/core';
 import { Widget } from '@theia/core/lib/browser';
-import { AI_CHAT_NEW_CHAT_WINDOW_COMMAND, AI_CHAT_SHOW_CHATS_COMMAND, ChatCommands } from './chat-view-commands';
-import { ChatAgentLocation, ChatService } from '@theia/ai-chat';
+import { AI_CHAT_NEW_CHAT_WINDOW_COMMAND, AI_CHAT_NEW_CHAT_WINDOW_WITH_PINNED_AGENT_COMMAND, AI_CHAT_SHOW_CHATS_COMMAND, ChatCommands } from './chat-view-commands';
+import { ChatAgent, ChatAgentLocation, ChatService } from '@theia/ai-chat';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { ChatViewWidget } from './chat-view-widget';
@@ -76,6 +76,12 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         });
         registry.registerCommand(AI_CHAT_NEW_CHAT_WINDOW_COMMAND, {
             execute: () => this.chatService.createSession(ChatAgentLocation.Panel, { focus: true }),
+            isEnabled: widget => this.withWidget(widget, () => true),
+            isVisible: widget => this.withWidget(widget, () => true),
+        });
+        registry.registerCommand(AI_CHAT_NEW_CHAT_WINDOW_WITH_PINNED_AGENT_COMMAND, {
+            // TODO - not working if function arg is set to type ChatAgent | undefined ?
+            execute: (...args: unknown[]) => this.chatService.createSession(ChatAgentLocation.Panel, {focus: true}, args[1] as ChatAgent | undefined),
             isEnabled: widget => this.withWidget(widget, () => true),
             isVisible: widget => this.withWidget(widget, () => true),
         });

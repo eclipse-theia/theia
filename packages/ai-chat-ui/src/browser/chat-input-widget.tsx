@@ -249,7 +249,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
 
     const handleUnpin = () => {
         props.onUnpin();
-    }
+    };
 
     return <div className='theia-ChatInput'>
         <div className='theia-ChatInput-Editor-Box'>

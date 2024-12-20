@@ -35,7 +35,7 @@ import { ChatAgent, ChatAgentLocation } from './chat-agents';
 import { ParsedChatRequestAgentPart, ParsedChatRequestVariablePart, ParsedChatRequest } from './parsed-chat-request';
 import { AIVariableService } from '@theia/ai-core';
 import { Event } from '@theia/core/shared/vscode-languageserver-protocol';
-import { OrchestratorChatAgentId } from "./orchestrator-chat-agent";
+import { OrchestratorChatAgentId } from './orchestrator-chat-agent';
 
 export interface ChatRequestInvocation {
     /**
@@ -80,7 +80,7 @@ export interface ChatService {
 
     getSession(id: string): ChatSession | undefined;
     getSessions(): ChatSession[];
-    createSession(location?: ChatAgentLocation, options?: SessionOptions): ChatSession;
+    createSession(location?: ChatAgentLocation, options?: SessionOptions, pinnedAgent?: ChatAgent): ChatSession;
     deleteSession(sessionId: string): void;
     setActiveSession(sessionId: string, options?: SessionOptions): void;
 
@@ -124,13 +124,13 @@ export class ChatServiceImpl implements ChatService {
         return this._sessions.find(session => session.id === id);
     }
 
-    createSession(location = ChatAgentLocation.Panel, options?: SessionOptions): ChatSession {
+    createSession(location = ChatAgentLocation.Panel, options?: SessionOptions, pinnedAgent?: ChatAgent): ChatSession {
         const model = new ChatModelImpl(location);
         const session: ChatSessionInternal = {
             id: model.id,
             model,
             isActive: true,
-            pinnedAgent: undefined
+            pinnedAgent: pinnedAgent
         };
         this._sessions.push(session);
         this.setActiveSession(session.id, options);

@@ -163,10 +163,10 @@ div:last-child>.theia-ChatNode {
   position: relative;
   bottom: -5px;
   right: -2px;
-  padding-top: 7px;
+  padding-top: 9px;
   padding-left: 10px;
   padding-right: 10px;
-  padding-bottom: 9px;
+  padding-bottom: 11px;
   display: flex;
   flex-direction: row;
   align-items: start;
