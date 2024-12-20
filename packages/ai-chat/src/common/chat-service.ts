@@ -86,6 +86,8 @@ export interface ChatService {
         sessionId: string,
         request: ChatRequest
     ): Promise<ChatRequestInvocation | undefined>;
+
+    cancelRequest(sessionId: string, requestId: string): Promise<void>;
 }
 
 interface ChatSessionInternal extends ChatSession {
@@ -217,6 +219,10 @@ export class ChatServiceImpl implements ChatService {
         }
 
         return invocation;
+    }
+
+    async cancelRequest(sessionId: string, requestId: string): Promise<void> {
+        return this.getSession(sessionId)?.model.getRequest(requestId)?.response.cancel();
     }
 
     protected getAgent(parsedRequest: ParsedChatRequest): ChatAgent | undefined {
