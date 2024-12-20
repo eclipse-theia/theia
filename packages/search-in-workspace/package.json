@@ -11,7 +11,7 @@
     "@theia/workspace": "1.57.0",
     "@vscode/ripgrep": "^1.14.2",
     "minimatch": "^5.1.0",
-    "react-autosize-textarea": "^7.0.0",
+    "react-textarea-autosize": "^8.5.5",
     "tslib": "^2.6.2"
   },
   "publishConfig": {

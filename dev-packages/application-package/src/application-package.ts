@@ -33,7 +33,7 @@ export class ApplicationPackageOptions {
     readonly appTarget?: ApplicationProps.Target;
 }
 
-export type ApplicationModuleResolver = (modulePath: string) => string;
+export type ApplicationModuleResolver = (parentPackagePath: string, modulePath: string) => string;
 
 export class ApplicationPackage {
     readonly projectPath: string;
@@ -109,7 +109,7 @@ export class ApplicationPackage {
                 (raw: PublishedNodePackage, options: ExtensionPackageOptions = {}) => this.newExtensionPackage(raw, options),
                 this.resolveModule
             );
-            this._extensionPackages = collector.collect(this.pck);
+            this._extensionPackages = collector.collect(this.packagePath, this.pck);
         }
         return this._extensionPackages;
     }
@@ -315,10 +315,11 @@ export class ApplicationPackage {
      */
     get resolveModule(): ApplicationModuleResolver {
         if (!this._moduleResolver) {
-            const resolutionPaths = this.packagePath || process.cwd();
-            this._moduleResolver = modulePath => {
-                const resolved = resolvePackagePath(modulePath, resolutionPaths);
+
+            this._moduleResolver = (parentPackagePath, modulePath) => {
+                const resolved = resolvePackagePath(modulePath, parentPackagePath);
                 if (!resolved) {
+                    console.error(`cannot resolve ${modulePath} relative to ${parentPackagePath}`);
                     throw new Error('Could not resolve module: ' + modulePath);
                 }
                 return resolved;
@@ -326,9 +327,4 @@ export class ApplicationPackage {
         }
         return this._moduleResolver!;
     }
-
-    resolveModulePath(moduleName: string, ...segments: string[]): string {
-        return paths.resolve(this.resolveModule(moduleName + '/package.json'), '..', ...segments);
-    }
-
 }

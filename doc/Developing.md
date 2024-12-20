@@ -55,7 +55,6 @@ For Windows instructions [click here](#building-on-windows).
 
 - Node.js `>= 18.17.0` and `< 21`.
   - If you are interested in Theia's VS Code Extension support then you should use a Node version at least compatible with the one included in the version of Electron used by [VS Code](https://github.com/microsoft/vscode).
-- [Yarn package manager](https://yarnpkg.com/en/docs/install)  `>= 1.7.0` **AND** `< 2.x.x`.
 - git (If you would like to use the Git-extension too, you will need to have git version 2.11.0 or higher.)
 - Python3 is required for the build due to [`node-gyp@8.4.1`](https://github.com/nodejs/node-gyp/tree/v8.4.1#installation)
 
@@ -91,10 +90,10 @@ To build and run the browser example:
 ```sh
 git clone https://github.com/eclipse-theia/theia \
     && cd theia \
-    && yarn \
-    && yarn download:plugins \
-    && yarn browser build \
-    && yarn browser start
+    && npm install \
+    && npm run build:browser \
+    && npm run download:plugins \
+    && npm run start:browser
 ```
 
 Start your browser on <http://localhost:3000>.
@@ -104,10 +103,10 @@ To build and run the Electron example:
 ```sh
 git clone https://github.com/eclipse-theia/theia \
     && cd theia \
-    && yarn \
-    && yarn download:plugins \
-    && yarn electron build \
-    && yarn electron start
+    && npm install \
+    && npm run build:electron \
+    && npm run download:plugins \
+    && npm run start:electron
 ```
 
 ### Download plugins
@@ -115,7 +114,7 @@ git clone https://github.com/eclipse-theia/theia \
 You can download plugins to use with the examples applications by running:
 
 ```sh
-yarn download:plugins
+npm run download:plugins
 ```
 
 ### Run the browser example with SSL
@@ -125,10 +124,10 @@ To run the browser example using SSL use:
 ```sh
 git clone https://github.com/eclipse-theia/theia \
     && cd theia \
-    && yarn \
-    && yarn browser build \
-    && yarn download:plugins \
-    && yarn browser start --ssl --cert /path/to/cert.crt --certkey /path/to/certkey.key
+    && npm install \
+    && npm run download:plugins \
+    && npm run build:browser \
+    && npm run start:browser --ssl --cert /path/to/cert.crt --certkey /path/to/certkey.key
 ```
 
 Start your browser on <https://localhost:3000>.
@@ -143,7 +142,7 @@ You can start by prefixing any GitHub URL in the Theia repository with `gitpod.i
 - After the build is finished, run from the terminal in Gitpod:
 
 ```sh
-yarn browser start ../.. --hostname 0.0.0.0
+npm run start:browser ../.. --hostname 0.0.0.0
 ```
 
 ## Clone the repository
@@ -179,19 +178,21 @@ installing
 You can download dependencies and build TypeScript packages using:
 
 ```sh
-yarn
+npm install
+npm run compile
 ```
 
-This command downloads dev dependencies, links and builds all TypeScript packages.
+These commands download dependencies, links and builds all TypeScript packages.
 
 To build the example applications:
 
 ```sh
-yarn browser build
-yarn electron build
+npm run build:browser
+npm run build:browser-only
+npm run build:electron
 
-# build both example applications at once:
-yarn build:examples
+# build all example applications at once:
+npm run build:applications
 ```
 
 To learn more and understand precisely what's going on, please look at scripts in [package.json](../package.json).
@@ -199,7 +200,7 @@ To learn more and understand precisely what's going on, please look at scripts i
 ## Build Everything
 
 ```sh
-yarn all
+npm run all
 ```
 
 This will install dependencies, link and build TypeScript packages, lint, and build the example applications.
@@ -209,7 +210,7 @@ This will install dependencies, link and build TypeScript packages, lint, and bu
 Dependencies must be installed before running this command.
 
 ```sh
-yarn compile
+npm run compile
 ```
 
 ## Linting
@@ -217,24 +218,23 @@ yarn compile
 Linting takes a lot of time, this is a limitation from ESLint. We always lint in the GitHub Workflows, but if you want to lint locally you have to do it manually:
 
 ```sh
-yarn # build TypeScript
-yarn lint # lint TypeScript sources
+npm run lint # lint TypeScript sources
 ```
 
-Note that `yarn all` does linting.
+Note that `npm run all` does linting.
 
 ## Build extension packages individually
 
 From the root:
 
 ```sh
-npx run compile @theia/package-name
+npx lerna run compile --scope @theia/core
 ```
 
 From the package:
 
 ```sh
-yarn compile
+npm run compile
 ```
 
 ## Run the browser-based example application
@@ -242,7 +242,7 @@ yarn compile
 We can start the application from the [examples/browser](../examples/browser) directory with:
 
 ```sh
-yarn start
+npm run start
 ```
 
 This command starts the backend application listening on port `3000`. The frontend application should be available on <http://localhost:3000>.
@@ -251,13 +251,13 @@ If you rebuild native Node.js packages for Electron then rollback these changes
 before starting the browser example by running from the root directory:
 
 ```
-yarn browser rebuild
+npm run rebuild:browser
 ```
 
 ## Run the Electron-based example application
 
 ```sh
-yarn electron start
+npm start:electron
 ```
 
 ## Rebuilding
@@ -265,25 +265,17 @@ yarn electron start
 Rebuilds everything: TypeScript and example applications.
 
 ```sh
-yarn build
+npm run build
 ```
 
 ## Watching
-
-### Watch the TypeScript packages
-
-To run TypeScript in watch-mode so that TypeScript files are compiled as you modify them:
-
-```sh
-yarn watch:compile
-```
 
 ### Watch the core and extension packages
 
 To rebuild _everything_ each time a change is detected run:
 
 ```sh
-yarn watch:all
+npm run watch
 ```
 
 ### Watch the examples
@@ -292,10 +284,10 @@ To rebuild each time a change is detected in frontend or backend you can run:
 
 ```sh
 # either
-yarn browser watch
+npm run watch:browser
 
 # or
-yarn electron watch
+npm run watch:electron
 ```
 
 ### Watch a specific package
@@ -303,7 +295,7 @@ yarn electron watch
 You can use `npx` to watch a single package:
 
 ```sh
-npx run watch @theia/the-package-name
+npx lerna run watch --scope @theia/package-name
 ```
 
 ### Watch a specific package and its local upstream dependencies
@@ -320,10 +312,10 @@ In this mode, TypeScript only compiles what changed along with its dependents.
 
 #### Using Theia's `run` utility
 
-Let assume you have to work for instance in the `@theia/navigator` extension. But you might have to apply changes in any of its upstream dependencies such as `@theia/filesystem` or `@theia/core`, you can either do `yarn watch` which could be super expensive, as it watches all the packages. Or you can do `npx run watch @theia/navigator` and `npx run watch @theia/filesystem` and `npx run watch @theia/core` in three individual shells. Or you can do the following single-liner:
+Let assume you have to work for instance in the `@theia/navigator` extension. But you might have to apply changes in any of its upstream dependencies such as `@theia/filesystem` or `@theia/core`, you can either do `npm run watch` which could be super expensive, as it watches all the packages. Or you can do `npx run watch @theia/navigator` and `npx run watch @theia/filesystem` and `npx run watch @theia/core` in three individual shells. Or you can do the following single-liner:
 
 ```sh
-npx run watch @theia/navigator --include-filtered-dependencies --parallel
+npx lerna run watch --scope @theia/navigator --include-filtered-dependencies --parallel
 ```
 
 ## Debugging
@@ -334,7 +326,7 @@ npx run watch @theia/navigator --include-filtered-dependencies --parallel
 
 ### Debug the browser example's frontend
 
-- Start the backend by using `yarn run start`.
+- Start the backend by using `npm run start`.
 - In a browser: Open <http://localhost:3000/> and use the dev tools for debugging.
 - Open the debug view and run the `Launch Browser Frontend` configuration.
 
@@ -351,7 +343,7 @@ npx run watch @theia/navigator --include-filtered-dependencies --parallel
 
 - Start the Electron backend
   - Either open the debug view and run the `Launch Electron Backend` configuration
-  - Or use `yarn run start`.
+  - Or use `npm run start`.
 - Attach to the Electron Frontend
   - Either open the debug view and run the `Attach to Electron Frontend` configuration
   - Or in Electron: Help -> Toggle Electron Developer Tools.
@@ -502,7 +494,7 @@ You can fix it by modifying your `tsconfig.json`:
 
 ## Code coverage
 
-    yarn run test
+    npm run test
 
 By default, this will generate the code coverage for the tests in an HTML
 format, which can be easily viewed with your browser (Chrome/Firefox/Edge/Safari
@@ -513,7 +505,6 @@ etc.) by opening `packages/<package name>/coverage/index.html`.
 - Install [`scoop`](https://github.com/lukesampson/scoop#installation).
 - Install [`nvm`](https://github.com/coreybutler/nvm-windows) with scoop: `scoop install nvm`.
 - Install Node.js with `nvm`: `nvm install lts`, then use it: `nvm use lts`. You can list all available Node.js versions with `nvm list available` if you want to pick another version.
-- Install `yarn`: `scoop install yarn`.
 - If you need to install `windows-build-tools`, see [`Installing Windows Build Tools`](#installing-windows-build-tools).
 - If you run into problems with installing the required build tools, the `node-gyp` documentation offers a useful [guide](https://github.com/nodejs/node-gyp#on-windows) how to install the dependencies manually. The versions required for building Theia are:
   - Python 3.6 to 3.11
@@ -527,9 +518,9 @@ Using Git Bash as administrator:
 ```sh
 git clone https://github.com/eclipse-theia/theia.git \
     && cd theia \
-    && yarn \
-    && yarn browser build \
-    && yarn browser start
+    && npm install \
+    && npm run build:browser \
+    && npm run start:browser
 ```
 
 If you do not have Git Bash installed on your system, [get one](https://gitforwindows.org/), or use `scoop`: `scoop install git`.
@@ -537,7 +528,7 @@ If you do not have Git Bash installed on your system, [get one](https://gitforwi
 ### Installing Windows Build Tools
 
 - Previously, [`windows-build-tools`](https://github.com/felixrieseberg/windows-build-tools) is required to build Native Nodes modules on Windows. The npm package is now [`deprecated`](https://www.npmjs.com/package/windows-build-tools) because NodeJS installer can now install all the required tools that it needs, including Windows Build Tools.
-- In case you need to install the tool manually, after installing `yarn`, run `PowerShell` as _Administrator_ and copy paste the following: `npm --add-python-to-path install --global --production windows-build-tools`.
+- In case you need to install the tool manually, run `PowerShell` as _Administrator_ and copy paste the following: `npm --add-python-to-path install --global --production windows-build-tools`.
 
 ## Troubleshooting
 
@@ -595,4 +586,4 @@ When trying to install with root privileges, you might encounter errors such as
 Several options are available to you:
 
 - Install without root privileges
-- Use the `--unsafe-perm` flag: `yarn --unsafe-perm`
+- Use the `--unsafe-perm` flag: `npm install --unsafe-perm`
