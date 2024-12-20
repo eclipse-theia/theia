@@ -39,6 +39,7 @@
   font-size: var(--theia-ui-font-size1);
   min-width: var(--theia-private-sidebar-tab-width);
   max-width: var(--theia-private-sidebar-tab-width);
+  overflow: hidden;
 }
 
 .lm-TabBar-content {
@@ -365,3 +366,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+
+
