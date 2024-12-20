@@ -158,6 +158,7 @@
 
 .theia-settings-container .preferences-editor-widget {
   grid-area: editor;
+  overflow: hidden;
 }
 
 .theia-settings-container .preferences-editor-widget.full-pane {
