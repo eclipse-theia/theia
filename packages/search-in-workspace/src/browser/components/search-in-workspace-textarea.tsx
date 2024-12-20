@@ -146,6 +146,8 @@ export class SearchInWorkspaceTextArea extends React.Component<TextareaAttribute
                 ref={this.textarea}
                 rows={1}
                 spellCheck={false}
+                onPointerEnterCapture={undefined}
+                onPointerLeaveCapture={undefined}
             >
             </TextareaAutosize>
         );

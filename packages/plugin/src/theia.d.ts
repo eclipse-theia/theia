@@ -2163,7 +2163,7 @@ export module '@theia/plugin' {
         /**
          * The icon path or {@link ThemeIcon} for the QuickPickItem.
          */
-        iconPath?: Uri | { light: Uri; dark: Uri } | ThemeIcon;
+        iconPath?: IconPath;
 
         /**
          * A human-readable string which is rendered less prominent in the same line. Supports rendering of
@@ -2739,6 +2739,21 @@ export module '@theia/plugin' {
          */
         private constructor(id: string, color?: ThemeColor);
     }
+
+    /**
+     * Represents an icon in the UI. This is either an uri, separate uris for the light- and dark-themes,
+     * or a {@link ThemeIcon theme icon}.
+     */
+    export type IconPath = Uri | {
+        /**
+         * The icon path for the light theme.
+         */
+        light: Uri;
+        /**
+         * The icon path for the dark theme.
+         */
+        dark: Uri;
+    } | ThemeIcon;
 
     /**
      * Represents the state of a window.
@@ -3520,7 +3535,7 @@ export module '@theia/plugin' {
         /**
          * The icon path or {@link ThemeIcon} for the terminal.
          */
-        iconPath?: Uri | { light: Uri; dark: Uri } | ThemeIcon;
+        iconPath?: IconPath;
 
         /**
          * The icon {@link ThemeColor} for the terminal.
@@ -3640,7 +3655,7 @@ export module '@theia/plugin' {
         /**
          * The icon path or {@link ThemeIcon} for the terminal.
          */
-        iconPath?: Uri | { light: Uri; dark: Uri } | ThemeIcon;
+        iconPath?: IconPath;
 
         /**
          * The icon {@link ThemeColor} for the terminal.
@@ -6227,7 +6242,7 @@ export module '@theia/plugin' {
         /**
          * Icon for the button.
          */
-        readonly iconPath: Uri | { light: Uri; dark: Uri } | ThemeIcon;
+        readonly iconPath: IconPath;
 
         /**
          * An optional tooltip.
@@ -6841,7 +6856,7 @@ export module '@theia/plugin' {
          * When `falsy`, {@link ThemeIcon.Folder Folder Theme Icon} is assigned, if item is collapsible otherwise {@link ThemeIcon.File File Theme Icon}.
          * When a {@link ThemeIcon ThemeIcon} is specified, icon is derived from the current file icon theme for the specified theme icon using {@link TreeItem.resourceUri resourceUri} (if provided).
          */
-        iconPath?: string | Uri | { light: string | Uri; dark: string | Uri } | ThemeIcon;
+        iconPath?: string | IconPath;
 
         /**
          * A human readable string which is rendered less prominent.
@@ -10290,7 +10305,7 @@ export module '@theia/plugin' {
          * @return An array of commands, quick fixes, or refactorings or a thenable of such. The lack of a result can be
          * signaled by returning `undefined`, `null`, or an empty array.
          */
-        provideCodeActions(document: TextDocument, range: Range | Selection, context: CodeActionContext, token: CancellationToken): ProviderResult<(Command | T)[]>;
+        provideCodeActions(document: TextDocument, range: Range | Selection, context: CodeActionContext, token: CancellationToken): ProviderResult<Array<Command | T>>;
 
         /**
          * Given a code action fill in its `edit`-property. Changes to
@@ -10612,7 +10627,7 @@ export module '@theia/plugin' {
         /**
          * The icon path or {@link ThemeIcon ThemeIcon} for the edit.
          */
-        iconPath?: Uri | { light: Uri; dark: Uri } | ThemeIcon;
+        iconPath?: IconPath;
     }
 
     /**
@@ -13165,7 +13180,7 @@ export module '@theia/plugin' {
          * @param args The command arguments.
          * @param options Optional options for the started the shell.
          */
-        constructor(command: string | ShellQuotedString, args: (string | ShellQuotedString)[], options?: ShellExecutionOptions);
+        constructor(command: string | ShellQuotedString, args: Array<string | ShellQuotedString>, options?: ShellExecutionOptions);
 
         /**
          * The shell command line. Is `undefined` if created with a command and arguments.
@@ -16548,6 +16563,30 @@ export module '@theia/plugin' {
         loadDetailedCoverage?: (testRun: TestRun, fileCoverage: FileCoverage, token: CancellationToken) => Thenable<FileCoverageDetail[]>;
 
         /**
+         * An extension-provided function that provides detailed statement and
+         * function-level coverage for a single test in a file. This is the per-test
+         * sibling of {@link TestRunProfile.loadDetailedCoverage}, called only if
+         * a test item is provided in {@link FileCoverage.includesTests} and only
+         * for files where such data is reported.
+         *
+         * Often {@link TestRunProfile.loadDetailedCoverage} will be called first
+         * when a user opens a file, and then this method will be called if they
+         * drill down into specific per-test coverage information. This method
+         * should then return coverage data only for constructs the given test item
+         * executed during the test run.
+         *
+         * The {@link FileCoverage} object passed to this function is the same
+         * instance emitted on {@link TestRun.addCoverage} calls associated with this profile.
+         *
+         * @param testRun The test run that generated the coverage data.
+         * @param fileCoverage The file coverage object to load detailed coverage for.
+         * @param fromTestItem The test item to request coverage information for.
+         * @param token A cancellation token that indicates the operation should be cancelled.
+         * @stubbed
+         */
+        loadDetailedCoverageForTest?: (testRun: TestRun, fileCoverage: FileCoverage, fromTestItem: TestItem, token: CancellationToken) => Thenable<FileCoverageDetail[]>;
+
+        /**
          * Deletes the run profile.
          */
         dispose(): void;
@@ -17142,6 +17181,13 @@ export module '@theia/plugin' {
         declarationCoverage?: TestCoverageCount;
 
         /**
+         * A list of {@link TestItem test cases} that generated coverage in this
+         * file. If set, then {@link TestRunProfile.loadDetailedCoverageForTest}
+         * should also be defined in order to retrieve detailed coverage information.
+         */
+        includesTests?: TestItem[];
+
+        /**
          * Creates a {@link FileCoverage} instance with counts filled in from
          * the coverage details.
          * @param uri Covered file URI
@@ -17156,12 +17202,14 @@ export module '@theia/plugin' {
          * used to represent line coverage.
          * @param branchCoverage Branch coverage information
          * @param declarationCoverage Declaration coverage information
+         * @param includesTests Test cases included in this coverage report, see {@link includesTests}
          */
         constructor(
             uri: Uri,
             statementCoverage: TestCoverageCount,
             branchCoverage?: TestCoverageCount,
             declarationCoverage?: TestCoverageCount,
+            includesTests?: TestItem[],
         );
     }
 
@@ -17473,16 +17521,7 @@ export module '@theia/plugin' {
         /**
          * An icon for the participant shown in UI.
          */
-        iconPath?: Uri | {
-            /**
-             * The icon path for the light theme.
-             */
-            light: Uri;
-            /**
-             * The icon path for the dark theme.
-             */
-            dark: Uri;
-        } | ThemeIcon;
+        iconPath?: IconPath;
 
         /**
          * The handler for requests to this participant.
@@ -17652,16 +17691,7 @@ export module '@theia/plugin' {
          * @param value A uri or location
          * @param iconPath Icon for the reference shown in UI
          */
-        reference(value: Uri | Location, iconPath?: Uri | ThemeIcon | {
-            /**
-             * The icon path for the light theme.
-             */
-            light: Uri;
-            /**
-             * The icon path for the dark theme.
-             */
-            dark: Uri;
-        }): void;
+        reference(value: Uri | Location, iconPath?: IconPath): void;
 
         /**
          * Pushes a part to this stream.
@@ -17781,32 +17811,14 @@ export module '@theia/plugin' {
         /**
          * The icon for the reference.
          */
-        iconPath?: Uri | ThemeIcon | {
-            /**
-             * The icon path for the light theme.
-             */
-            light: Uri;
-            /**
-             * The icon path for the dark theme.
-             */
-            dark: Uri;
-        };
+        iconPath?: IconPath;
 
         /**
          * Create a new ChatResponseReferencePart.
          * @param value A uri or location
          * @param iconPath Icon for the reference shown in UI
          */
-        constructor(value: Uri | Location, iconPath?: Uri | ThemeIcon | {
-            /**
-             * The icon path for the light theme.
-             */
-            light: Uri;
-            /**
-             * The icon path for the dark theme.
-             */
-            dark: Uri;
-        });
+        constructor(value: Uri | Location, iconPath?: IconPath);
     }
 
     /**
@@ -17876,7 +17888,7 @@ export module '@theia/plugin' {
          * @param content The content of the message.
          * @param name The optional name of a user for the message.
          */
-        static User(content: string | (LanguageModelTextPart | LanguageModelToolResultPart)[], name?: string): LanguageModelChatMessage;
+        static User(content: string | Array<LanguageModelTextPart | LanguageModelToolResultPart>, name?: string): LanguageModelChatMessage;
 
         /**
          * Utility to create a new assistant message.
@@ -17884,7 +17896,7 @@ export module '@theia/plugin' {
          * @param content The content of the message.
          * @param name The optional name of a user for the message.
          */
-        static Assistant(content: string | (LanguageModelTextPart | LanguageModelToolCallPart)[], name?: string): LanguageModelChatMessage;
+        static Assistant(content: string | Array<(LanguageModelTextPart | LanguageModelToolCallPart)>, name?: string): LanguageModelChatMessage;
 
         /**
          * The role of this message.
@@ -17895,7 +17907,7 @@ export module '@theia/plugin' {
          * A string or heterogeneous array of things that a message can contain as content. Some parts may be message-type
          * specific for some models.
          */
-        content: (LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart)[];
+        content: Array<(LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart)>;
 
         /**
          * The optional name of a user for this message.
@@ -17909,7 +17921,7 @@ export module '@theia/plugin' {
          * @param content The content of the message.
          * @param name The optional name of a user for the message.
          */
-        constructor(role: LanguageModelChatMessageRole, content: string | (LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart)[], name?: string);
+        constructor(role: LanguageModelChatMessageRole, content: string | Array<LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart>, name?: string);
     }
 
     /**
@@ -18340,13 +18352,13 @@ export module '@theia/plugin' {
         /**
          * The value of the tool result.
          */
-        content: (LanguageModelTextPart | LanguageModelPromptTsxPart | unknown)[];
+        content: Array<LanguageModelTextPart | LanguageModelPromptTsxPart | unknown>;
 
         /**
          * @param callId The ID of the tool call.
          * @param content The content of the tool result.
          */
-        constructor(callId: string, content: (LanguageModelTextPart | LanguageModelPromptTsxPart | unknown)[]);
+        constructor(callId: string, content: Array<(LanguageModelTextPart | LanguageModelPromptTsxPart | unknown)>);
     }
 
     /**
@@ -18394,13 +18406,13 @@ export module '@theia/plugin' {
          * the future.
          * @see {@link lm.invokeTool}.
          */
-        content: (LanguageModelTextPart | LanguageModelPromptTsxPart | unknown)[];
+        content: Array<(LanguageModelTextPart | LanguageModelPromptTsxPart | unknown)>;
 
         /**
          * Create a LanguageModelToolResult
          * @param content A list of tool result content parts
          */
-        constructor(content: (LanguageModelTextPart | LanguageModelPromptTsxPart)[]);
+        constructor(content: Array<(LanguageModelTextPart | LanguageModelPromptTsxPart)>);
     }
 
     /**
@@ -18545,7 +18557,7 @@ export module '@theia/plugin' {
         /**
          * A customized progress message to show while the tool runs.
          */
-        invocationMessage?: string;
+        invocationMessage?: string | MarkdownString;
 
         /**
          * The presence of this property indicates that the user should be asked to confirm before running the tool. The user

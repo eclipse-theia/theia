@@ -19,15 +19,27 @@ import { bindViewContribution, FrontendApplicationContribution, WidgetFactory } 
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { EditorManager } from '@theia/editor/lib/browser';
-import '../../src/browser/style/index.css';
 import { AIChatContribution } from './ai-chat-ui-contribution';
 import { AIChatInputWidget } from './chat-input-widget';
 import { ChatNodeToolbarActionContribution } from './chat-node-toolbar-action-contribution';
 import { ChatResponsePartRenderer } from './chat-response-part-renderer';
-import { CodePartRenderer, CommandPartRenderer, ErrorPartRenderer, HorizontalLayoutPartRenderer, MarkdownPartRenderer, ToolCallPartRenderer } from './chat-response-renderer';
 import {
-    AIEditorManager, AIEditorSelectionResolver,
-    GitHubSelectionResolver, TextFragmentSelectionResolver, TypeDocSymbolSelectionResolver
+    CodePartRenderer,
+    CodePartRendererAction,
+    CommandPartRenderer,
+    CopyToClipboardButtonAction,
+    ErrorPartRenderer,
+    HorizontalLayoutPartRenderer,
+    InsertCodeAtCursorButtonAction,
+    MarkdownPartRenderer,
+    ToolCallPartRenderer,
+} from './chat-response-renderer';
+import {
+    AIEditorManager,
+    AIEditorSelectionResolver,
+    GitHubSelectionResolver,
+    TextFragmentSelectionResolver,
+    TypeDocSymbolSelectionResolver,
 } from './chat-response-renderer/ai-editor-manager';
 import { createChatViewTreeWidget } from './chat-tree-view';
 import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
@@ -37,6 +49,7 @@ import { ChatViewWidget } from './chat-view-widget';
 import { ChatViewWidgetToolbarContribution } from './chat-view-widget-toolbar-contribution';
 import { EditorPreviewManager } from '@theia/editor-preview/lib/browser/editor-preview-manager';
 import { QuestionPartRenderer } from './chat-response-renderer/question-part-renderer';
+import '../../src/browser/style/index.css';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindViewContribution(bind, AIChatContribution);
@@ -71,6 +84,12 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     [CommandContribution, MenuContribution].forEach(serviceIdentifier =>
         bind(serviceIdentifier).to(ChatViewMenuContribution).inSingletonScope()
     );
+
+    bindContributionProvider(bind, CodePartRendererAction);
+    bind(CopyToClipboardButtonAction).toSelf().inSingletonScope();
+    bind(CodePartRendererAction).toService(CopyToClipboardButtonAction);
+    bind(InsertCodeAtCursorButtonAction).toSelf().inSingletonScope();
+    bind(CodePartRendererAction).toService(InsertCodeAtCursorButtonAction);
 
     bind(AIEditorManager).toSelf().inSingletonScope();
     rebind(EditorManager).toService(AIEditorManager);

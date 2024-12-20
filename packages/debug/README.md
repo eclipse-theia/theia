@@ -19,6 +19,7 @@ In most cases the default behavior of the `DebugSession` is enough. But it is po
 ### Debug Session life-cycle API
 
 `DebugSession` life-cycle is controlled and can be tracked as follows:
+
 * An `onDidPreCreateDebugSession` event indicates that a debug session is going to be created.
 * An `onDidCreateDebugSession` event indicates that a debug session has been created.
 * An `onDidDestroyDebugSession` event indicates that a debug session has terminated.
@@ -40,23 +41,25 @@ At the back-end we start a debug adapter using `DebugAdapterFactory` and then a 
 
 ## Additional Information
 
-- [API documentation for `@theia/debug`](https://eclipse-theia.github.io/theia/docs/next/modules/debug.html)
-- [Theia - GitHub](https://github.com/eclipse-theia/theia)
-- [Theia - Website](https://theia-ide.org/)
-- [Debug Adapter Protocol](https://github.com/Microsoft/vscode-debugadapter-node/blob/master/protocol/src/debugProtocol.ts)
-- [VS Code debug API](https://code.visualstudio.com/docs/extensionAPI/api-debugging)
-- [Debug adapter example for VS Code](https://code.visualstudio.com/docs/extensions/example-debuggers)
+* [API documentation for `@theia/debug`](https://eclipse-theia.github.io/theia/docs/next/modules/debug.html)
+* [Theia - GitHub](https://github.com/eclipse-theia/theia)
+* [Theia - Website](https://theia-ide.org/)
+* [Debug Adapter Protocol](https://github.com/Microsoft/vscode-debugadapter-node/blob/master/protocol/src/debugProtocol.ts)
+* [VS Code debug API](https://code.visualstudio.com/docs/extensionAPI/api-debugging)
+* [Debug adapter example for VS Code](https://code.visualstudio.com/docs/extensions/example-debuggers)
 
 ## Debug adapter implementations for VS Code
+
 * [Node Debugger](https://github.com/microsoft/vscode-node-debug)
 * [Node Debugger 2](https://github.com/microsoft/vscode-node-debug2)
 * [Java Debugger](https://github.com/Microsoft/vscode-java-debug)
 
 ## License
 
-- [Eclipse Public License 2.0](http://www.eclipse.org/legal/epl-2.0/)
-- [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)
+* [Eclipse Public License 2.0](http://www.eclipse.org/legal/epl-2.0/)
+* [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)
 
 ## Trademark
+
 "Theia" is a trademark of the Eclipse Foundation
-https://www.eclipse.org/theia
+<https://www.eclipse.org/theia>

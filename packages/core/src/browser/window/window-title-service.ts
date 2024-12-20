@@ -14,11 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, postConstruct } from 'inversify';
+import { inject, injectable, named, postConstruct } from 'inversify';
 import { escapeRegExpCharacters } from '../../common/strings';
 import { Emitter, Event } from '../../common/event';
 import { CorePreferences } from '../core-preferences';
 import { FrontendApplicationConfigProvider } from '../frontend-application-config-provider';
+import { ContributionProvider } from '../../common';
+
+export const WindowTitleContribution = Symbol('WindowTitleAddOnContribution');
+export interface WindowTitleContribution {
+    enhanceTitle(title: string, parts: Map<string, string | undefined>): string;
+}
 
 export const InitialWindowTitleParts = {
     activeEditorShort: undefined,
@@ -42,6 +48,9 @@ export class WindowTitleService {
 
     @inject(CorePreferences)
     protected readonly preferences: CorePreferences;
+
+    @inject(ContributionProvider) @named(WindowTitleContribution)
+    protected readonly titleContributions: ContributionProvider<WindowTitleContribution>;
 
     protected _title = '';
     protected titleTemplate?: string;
@@ -95,6 +104,10 @@ export class WindowTitleService {
             }
             const separatedTitle = title.split('${separator}').filter(e => e.trim().length > 0);
             this._title = separatedTitle.join(this.separator);
+            const contributions = this.titleContributions.getContributions();
+            for (const contribution of contributions) {
+                this._title = contribution.enhanceTitle(this.title, this.titleParts);
+            }
         }
         const developmentHost = this.titleParts.get('developmentHost');
         if (developmentHost) {

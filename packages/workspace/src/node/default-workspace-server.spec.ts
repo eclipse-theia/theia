@@ -14,16 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Container } from '@theia/core/shared/inversify';
+import { Container, ContainerModule } from '@theia/core/shared/inversify';
 import { MockEnvVariablesServerImpl } from '@theia/core/lib/browser/test/mock-env-variables-server';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node';
 import { WorkspaceFileService, UntitledWorkspaceService } from '../common';
-import { DefaultWorkspaceServer, WorkspaceCliContribution } from './default-workspace-server';
+import { DefaultWorkspaceServer, FileWorkspaceHandlerContribution, WorkspaceCliContribution, WorkspaceHandlerContribution } from './default-workspace-server';
 import { expect } from 'chai';
 import * as temp from 'temp';
 import * as fs from 'fs';
+import { ILogger, bindContributionProvider } from '@theia/core';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 describe('DefaultWorkspaceServer', function (): void {
 
@@ -40,12 +42,21 @@ describe('DefaultWorkspaceServer', function (): void {
 
             // create a container with the necessary bindings for the DefaultWorkspaceServer
             const container = new Container();
-            container.bind(WorkspaceCliContribution).toSelf().inSingletonScope();
-            container.bind(DefaultWorkspaceServer).toSelf().inSingletonScope();
-            container.bind(WorkspaceFileService).toSelf().inSingletonScope();
-            container.bind(UntitledWorkspaceService).toSelf().inSingletonScope();
-            container.bind(EnvVariablesServer).toConstantValue(new MockEnvVariablesServerImpl(tmpConfigDir));
+            const containerModule = new ContainerModule(bind => {
+                /* Mock logger binding*/
+                bind(ILogger).to(MockLogger);
 
+                bindContributionProvider(bind, WorkspaceHandlerContribution);
+                bind(FileWorkspaceHandlerContribution).toSelf().inSingletonScope();
+                bind(WorkspaceHandlerContribution).toService(FileWorkspaceHandlerContribution);
+                bind(WorkspaceCliContribution).toSelf().inSingletonScope();
+                bind(DefaultWorkspaceServer).toSelf().inSingletonScope();
+                bind(WorkspaceFileService).toSelf().inSingletonScope();
+                bind(UntitledWorkspaceService).toSelf().inSingletonScope();
+                bind(EnvVariablesServer).toConstantValue(new MockEnvVariablesServerImpl(tmpConfigDir));
+            });
+
+            container.load(containerModule);
             workspaceServer = container.get(DefaultWorkspaceServer);
         });
 

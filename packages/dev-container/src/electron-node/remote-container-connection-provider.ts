@@ -79,7 +79,7 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
             text: 'Creating container',
         });
         try {
-            const container = await this.containerService.getOrCreateContainer(dockerConnection, options.devcontainerFile, options.lastContainerInfo, this.outputProvider);
+            const container = await this.containerService.getOrCreateContainer(dockerConnection, options, this.outputProvider);
             const devContainerConfig = await this.devContainerFileService.getConfiguration(options.devcontainerFile);
 
             // create actual connection
@@ -121,8 +121,8 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
         }
     }
 
-    getDevContainerFiles(): Promise<DevContainerFile[]> {
-        return this.devContainerFileService.getAvailableFiles();
+    getDevContainerFiles(workspacePath: string): Promise<DevContainerFile[]> {
+        return this.devContainerFileService.getAvailableFiles(workspacePath);
     }
 
     async createContainerConnection(container: Docker.Container, docker: Docker, name?: string): Promise<RemoteDockerContainerConnection> {

@@ -16,7 +16,7 @@
 
 import { DebugScope, DebugVariable } from '@theia/debug/lib/browser/console/debug-console-items';
 import { DebugSession } from '@theia/debug/lib/browser/debug-session';
-import * as Long from 'long';
+import Long from 'long';
 
 export interface VariableRange {
     name: string;

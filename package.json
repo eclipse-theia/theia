@@ -8,7 +8,8 @@
   },
   "resolutions": {
     "**/@types/node": "18",
-    "**/nan": "2.20.0"
+    "**/nan": "2.20.0",
+    "**/perfect-scrollbar": "1.5.5"
   },
   "devDependencies": {
     "@types/chai": "4.3.0",
@@ -52,8 +53,8 @@
     "sinon": "^12.0.0",
     "temp": "^0.9.1",
     "tslint": "^5.12.0",
-    "typedoc": "^0.22.11",
-    "typedoc-plugin-external-module-map": "1.3.2",
+    "typedoc": "0.25.13",
+    "typedoc-plugin-external-module-map": "2.0.1",
     "typescript": "~5.4.5",
     "yargs": "^15.3.1"
   },
@@ -68,7 +69,7 @@
     "compile:clean": "ts-clean dev-packages/* packages/*",
     "compile:references": "node scripts/compile-references.js",
     "compile:tsc": "tsc -b",
-    "docs": "rimraf gh-pages/docs/next && typedoc --tsconfig tsconfig.json --options configs/typedoc.json .",
+    "docs": "rimraf gh-pages/docs/next && typedoc --tsconfig tsconfig.json --plugin typedoc-plugin-external-module-map --options configs/typedoc.json .",
     "download:plugins": "theia download:plugins",
     "electron": "yarn -s --cwd examples/electron",
     "license:check": "node scripts/check_3pp_licenses.js",
@@ -80,6 +81,7 @@
     "postinstall": "theia-patch",
     "prepare": "yarn -s compile:references && lerna run prepare && yarn -s compile",
     "publish:latest": "lerna publish --exact --yes --no-push",
+    "publish:patch": "lerna publish --exact --yes --no-push --dist-tag patch",
     "publish:next": "lerna publish preminor --exact --canary --preid next --dist-tag next --no-git-reset --no-git-tag-version --no-push --yes && yarn -s publish:check",
     "publish:check": "node scripts/check-publish.js",
     "rebuild:clean": "rimraf .browser_modules",
@@ -102,11 +104,11 @@
   ],
   "theiaPluginsDir": "plugins",
   "theiaPlugins": {
-    "eclipse-theia.builtin-extension-pack": "https://open-vsx.org/api/eclipse-theia/builtin-extension-pack/1.88.1/file/eclipse-theia.builtin-extension-pack-1.88.1.vsix",
+    "eclipse-theia.builtin-extension-pack": "https://open-vsx.org/api/eclipse-theia/builtin-extension-pack/1.95.3/file/eclipse-theia.builtin-extension-pack-1.95.3.vsix",
     "EditorConfig.EditorConfig": "https://open-vsx.org/api/EditorConfig/EditorConfig/0.16.6/file/EditorConfig.EditorConfig-0.16.6.vsix",
     "dbaeumer.vscode-eslint": "https://open-vsx.org/api/dbaeumer/vscode-eslint/2.4.2/file/dbaeumer.vscode-eslint-2.4.2.vsix",
-    "ms-toolsai.jupyter": "https://open-vsx.org/api/ms-toolsai/jupyter/2024.6.0/file/ms-toolsai.jupyter-2024.6.0.vsix",
-    "ms-python.python": "https://open-vsx.org/api/ms-python/python/2024.12.3/file/ms-python.python-2024.12.3.vsix"
+    "ms-toolsai.jupyter": "https://open-vsx.org/api/ms-toolsai/jupyter/2024.10.0/file/ms-toolsai.jupyter-2024.10.0.vsix",
+    "ms-python.python": "https://open-vsx.org/api/ms-python/python/2024.20.0/file/ms-python.python-2024.20.0.vsix"
   },
   "theiaPluginsExcludeIds": [
     "ms-vscode.js-debug-companion",

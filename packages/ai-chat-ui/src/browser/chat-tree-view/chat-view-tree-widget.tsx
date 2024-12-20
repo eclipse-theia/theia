@@ -34,6 +34,7 @@ import {
     Key,
     KeyCode,
     NodeProps,
+    OpenerService,
     TreeModel,
     TreeNode,
     TreeProps,
@@ -87,6 +88,9 @@ export class ChatViewTreeWidget extends TreeWidget {
 
     @inject(CommandRegistry)
     private commandRegistry: CommandRegistry;
+
+    @inject(OpenerService)
+    protected readonly openerService: OpenerService;
 
     @inject(HoverService)
     private hoverService: HoverService;
@@ -303,7 +307,7 @@ export class ChatViewTreeWidget extends TreeWidget {
                     }}>
                     {this.getAgentLabel(node)}
                 </h3>
-                {inProgress && <span className='theia-ChatContentInProgress'>Generating</span>}
+                {inProgress && !waitingForInput && <span className='theia-ChatContentInProgress'>Generating</span>}
                 {inProgress && waitingForInput && <span className='theia-ChatContentInProgress'>Waiting for input</span>}
                 <div className='theia-ChatNodeToolbar'>
                     {!inProgress &&
@@ -370,6 +374,7 @@ export class ChatViewTreeWidget extends TreeWidget {
             hoverService={this.hoverService}
             chatAgentService={this.chatAgentService}
             variableService={this.variableService}
+            openerService={this.openerService}
         />;
     }
 
@@ -432,12 +437,13 @@ export class ChatViewTreeWidget extends TreeWidget {
 
 const ChatRequestRender = (
     {
-        node, hoverService, chatAgentService, variableService
+        node, hoverService, chatAgentService, variableService, openerService
     }: {
         node: RequestNode,
         hoverService: HoverService,
         chatAgentService: ChatAgentService,
-        variableService: AIVariableService
+        variableService: AIVariableService,
+        openerService: OpenerService
     }) => {
     const parts = node.request.message.parts;
     return (
@@ -465,7 +471,7 @@ const ChatRequestRender = (
                         );
                     } else {
                         // maintain the leading and trailing spaces with explicit `&nbsp;`, otherwise they would get trimmed by the markdown renderer
-                        const ref = useMarkdownRendering(part.text.replace(/^\s|\s$/g, '&nbsp;'), true);
+                        const ref = useMarkdownRendering(part.text.replace(/^\s|\s$/g, '&nbsp;'), openerService, true);
                         return (
                             <span key={index} ref={ref}></span>
                         );

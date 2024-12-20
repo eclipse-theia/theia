@@ -54,7 +54,6 @@ method of that service allows you to change what kind of widget is instantiated 
 [`MemoryProviderService`](./src/browser/memory-provider/memory-provider-service.ts), which delegates to implementations `MemoryProvider` interface
 that are bound as `MemoryProvider` contributions.
 
-
 ## Additional Information
 
 - [API documentation for `@theia/getting-started`](https://eclipse-theia.github.io/theia/docs/next/modules/getting_started.html)
@@ -67,5 +66,6 @@ that are bound as `MemoryProvider` contributions.
 - [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)
 
 ## Trademark
+
 "Theia" is a trademark of the Eclipse Foundation
-https://www.eclipse.org/theia
+<https://www.eclipse.org/theia>
