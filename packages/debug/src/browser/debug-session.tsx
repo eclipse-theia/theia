@@ -373,11 +373,12 @@ export class DebugSession implements CompositeTreeElement {
             }
             this.breakpoints.setExceptionBreakpoints(exceptionBreakpoints);
         }
+        // mark as initialized, so updated breakpoints are shown in editor
+        this.initialized = true;
         await this.updateBreakpoints({ sourceModified: false });
         if (this.capabilities.supportsConfigurationDoneRequest) {
             await this.sendRequest('configurationDone', {});
         }
-        this.initialized = true;
         await this.updateThreads(undefined);
     }
 
