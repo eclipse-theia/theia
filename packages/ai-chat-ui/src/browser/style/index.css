@@ -136,6 +136,20 @@ div:last-child>.theia-ChatNode {
   font-size: var(--theia-code-font-size);
 }
 
+.theia-RequestNode > p div {
+  display: inline;
+}
+
+.theia-RequestNode .theia-RequestNode-AgentLabel,
+.theia-RequestNode .theia-RequestNode-VariableLabel {
+  padding: calc(var(--theia-ui-padding) * 2 / 3);
+  padding-top: 0px;
+  padding-bottom: 0px;
+  border-radius: calc(var(--theia-ui-padding) * 2 / 3);
+  background: var(--theia-badge-background);
+  color: var(--theia-badge-foreground);
+}
+
 .chat-input-widget {
   align-items: flex-end;
   display: flex;
@@ -254,7 +268,7 @@ div:last-child>.theia-ChatNode {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  border: 1px solid var(--theia-input-border);
+  border: var(--theia-border-width) solid var(--theia-input-border);
   border-radius: 4px;
 }
 
@@ -289,6 +303,33 @@ div:last-child>.theia-ChatNode {
   background-color: var(--theia-input-border);
 }
 
+.theia-QuestionPartRenderer-root {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: var(--theia-border-width) solid
+    var(--theia-sideBarSectionHeader-border);
+  padding: 8px 12px 12px;
+  border-radius: 5px;
+  margin: 0 0 8px 0;
+}
+.theia-QuestionPartRenderer-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.theia-QuestionPartRenderer-option {
+  min-width: 100px;
+  flex: 1 1 auto;
+  margin: 0;
+}
+.theia-QuestionPartRenderer-option.selected:disabled:hover {
+  background-color: var(--theia-button-disabledBackground);
+}
+.theia-QuestionPartRenderer-option:disabled:not(.selected) {
+  background-color: var(--theia-button-secondaryBackground);
+}
+
 .theia-toolCall {
   font-weight: normal;
   color: var(--theia-descriptionForeground);
@@ -311,6 +352,21 @@ div:last-child>.theia-ChatNode {
   padding: 6px;
   background-color: var(--theia-editor-background);
   overflow: auto;
+}
+
+.collapsible-arguments {
+  display: inline-block;
+}
+
+.collapsible-arguments .collapsible-arguments-summary {
+  display: inline-block;
+  white-space: nowrap;
+  text-decoration: underline;
+}
+
+details[open].collapsible-arguments,
+details[open].collapsible-arguments .collapsible-arguments-summary {
+  display: unset;
 }
 
 .theia-ResponseNode-ProgressMessage {

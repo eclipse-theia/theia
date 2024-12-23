@@ -14,12 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject, optional } from '@theia/core/shared/inversify';
+import { injectable, inject, optional, named } from '@theia/core/shared/inversify';
 import { QuickPickItem, LabelProvider, QuickInputService, QuickInputButton, QuickPickSeparator } from '@theia/core/lib/browser';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
-import { WorkspaceService } from './workspace-service';
+import { WorkspaceOpenHandlerContribution, WorkspaceService } from './workspace-service';
 import URI from '@theia/core/lib/common/uri';
-import { nls, Path } from '@theia/core/lib/common';
+import { ContributionProvider, nls, Path } from '@theia/core/lib/common';
 import { UntitledWorkspaceService } from '../common/untitled-workspace-service';
 
 interface RecentlyOpenedPick extends QuickPickItem {
@@ -36,6 +36,9 @@ export class QuickOpenWorkspace {
     @inject(EnvVariablesServer) protected readonly envServer: EnvVariablesServer;
     @inject(UntitledWorkspaceService) protected untitledWorkspaceService: UntitledWorkspaceService;
 
+    @inject(ContributionProvider) @named(WorkspaceOpenHandlerContribution)
+    protected readonly workspaceOpenHandlers: ContributionProvider<WorkspaceOpenHandlerContribution>;
+
     protected readonly removeRecentWorkspaceButton: QuickInputButton = {
         iconClass: 'codicon-remove-close',
         tooltip: nls.localizeByDefault('Remove from Recently Opened')
@@ -51,7 +54,8 @@ export class QuickOpenWorkspace {
 
         for (const workspace of workspaces) {
             const uri = new URI(workspace);
-            const label = uri.path.base;
+            const label = await this.workspaceOpenHandlers.getContributions()
+                .find(handler => handler.getWorkspaceLabel && handler.canHandle(uri))?.getWorkspaceLabel?.(uri) ?? uri.path.base;
             if (!label || this.untitledWorkspaceService.isUntitledWorkspace(uri)) {
                 continue; // skip temporary workspace files & empty workspace names
             }

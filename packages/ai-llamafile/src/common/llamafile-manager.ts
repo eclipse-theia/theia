@@ -17,34 +17,26 @@ export const LlamafileManager = Symbol('LlamafileManager');
 
 export const LlamafileManagerPath = '/services/llamafilemanager';
 
+export interface LlamafileModelDescription {
+    name: string;
+    uri: string;
+    port: number;
+    /**
+     * Default request settings for the Llama model.
+     */
+    defaultRequestSettings?: { [key: string]: unknown };
+}
+
 export interface LlamafileManager {
     startServer(name: string): Promise<void>;
     stopServer(name: string): void;
     getStartedLlamafiles(): Promise<string[]>;
     setClient(client: LlamafileServerManagerClient): void;
-    addLanguageModels(llamaFiles: LlamafileEntry[]): Promise<void>;
+    addLanguageModels(llamaFiles: LlamafileModelDescription[]): Promise<void>;
     removeLanguageModels(modelIds: string[]): void;
+    updateRequestSettings(modelId: string, requestSettings?: { [key: string]: unknown }): void;
 }
 export interface LlamafileServerManagerClient {
     log(llamafileName: string, message: string): void;
     error(llamafileName: string, message: string): void;
-}
-
-export interface LlamafileEntry {
-    name: string;
-    uri: string;
-    port: number;
-}
-
-export namespace LlamafileEntry {
-    export function equals(a: LlamafileEntry, b: LlamafileEntry): boolean {
-        return a.name === b.name && a.uri === b.uri && a.port === b.port;
-    }
-    export function is(entry: unknown): entry is LlamafileEntry {
-        // eslint-disable-next-line no-null/no-null
-        return typeof entry === 'object' && entry !== null
-            && 'name' in entry && typeof entry.name === 'string'
-            && 'uri' in entry && typeof entry.uri === 'string'
-            && 'port' in entry && typeof entry.port === 'number';
-    }
 }

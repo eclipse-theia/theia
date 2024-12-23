@@ -13,15 +13,14 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-
 import {
     ChatResponseContent,
     CodeChatResponseContent,
 } from '@theia/ai-chat/lib/common';
-import { UntitledResourceResolver, URI } from '@theia/core';
+import { ContributionProvider, UntitledResourceResolver, URI } from '@theia/core';
 import { ContextMenuRenderer, TreeNode } from '@theia/core/lib/browser';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
 import { Position } from '@theia/core/shared/vscode-languageserver-protocol';
@@ -33,12 +32,29 @@ import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
 import { ChatViewTreeWidget, ResponseNode } from '../chat-tree-view/chat-view-tree-widget';
 import { IMouseEvent } from '@theia/monaco-editor-core';
 
+export const CodePartRendererAction = Symbol('CodePartRendererAction');
+/**
+ * The CodePartRenderer offers to contribute arbitrary React nodes to the rendered code part.
+ * Technically anything can be rendered, however it is intended to be used for actions, like
+ * "Copy to Clipboard" or "Insert at Cursor".
+ */
+export interface CodePartRendererAction {
+    render(response: CodeChatResponseContent, parentNode: ResponseNode): ReactNode;
+    /**
+     * Determines if the action should be rendered for the given response.
+     */
+    canRender?(response: CodeChatResponseContent, parentNode: ResponseNode): boolean;
+    /**
+     *  The priority determines the order in which the actions are rendered.
+     *  The default priorities are 10 and 20.
+     */
+    priority: number;
+}
+
 @injectable()
 export class CodePartRenderer
     implements ChatResponsePartRenderer<CodeChatResponseContent> {
 
-    @inject(ClipboardService)
-    protected readonly clipboardService: ClipboardService;
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
     @inject(UntitledResourceResolver)
@@ -49,6 +65,8 @@ export class CodePartRenderer
     protected readonly languageService: MonacoLanguages;
     @inject(ContextMenuRenderer)
     protected readonly contextMenuRenderer: ContextMenuRenderer;
+    @inject(ContributionProvider) @named(CodePartRendererAction)
+    protected readonly codePartRendererActions: ContributionProvider<CodePartRendererAction>;
 
     canHandle(response: ChatResponseContent): number {
         if (CodeChatResponseContent.is(response)) {
@@ -59,14 +77,15 @@ export class CodePartRenderer
 
     render(response: CodeChatResponseContent, parentNode: ResponseNode): ReactNode {
         const language = response.language ? this.languageService.getExtension(response.language) : undefined;
-
         return (
             <div className="theia-CodePartRenderer-root">
                 <div className="theia-CodePartRenderer-top">
                     <div className="theia-CodePartRenderer-left">{this.renderTitle(response)}</div>
-                    <div className="theia-CodePartRenderer-right">
-                        <CopyToClipboardButton code={response.code} clipboardService={this.clipboardService} />
-                        <InsertCodeAtCursorButton code={response.code} editorManager={this.editorManager} />
+                    <div className="theia-CodePartRenderer-right theia-CodePartRenderer-actions">
+                        {this.codePartRendererActions.getContributions()
+                            .filter(action => action.canRender ? action.canRender(response, parentNode) : true)
+                            .sort((a, b) => a.priority - b.priority)
+                            .map(action => action.render(response, parentNode))}
                     </div>
                 </div>
                 <div className="theia-CodePartRenderer-separator"></div>
@@ -123,6 +142,16 @@ export class CodePartRenderer
     }
 }
 
+@injectable()
+export class CopyToClipboardButtonAction implements CodePartRendererAction {
+    @inject(ClipboardService)
+    protected readonly clipboardService: ClipboardService;
+    priority = 10;
+    render(response: CodeChatResponseContent): ReactNode {
+        return <CopyToClipboardButton key='copyToClipBoard' code={response.code} clipboardService={this.clipboardService} />;
+    }
+}
+
 const CopyToClipboardButton = (props: { code: string, clipboardService: ClipboardService }) => {
     const { code, clipboardService } = props;
     const copyCodeToClipboard = React.useCallback(() => {
@@ -130,6 +159,16 @@ const CopyToClipboardButton = (props: { code: string, clipboardService: Clipboar
     }, [code, clipboardService]);
     return <div className='button codicon codicon-copy' title='Copy' role='button' onClick={copyCodeToClipboard}></div>;
 };
+
+@injectable()
+export class InsertCodeAtCursorButtonAction implements CodePartRendererAction {
+    @inject(EditorManager)
+    protected readonly editorManager: EditorManager;
+    priority = 20;
+    render(response: CodeChatResponseContent): ReactNode {
+        return <InsertCodeAtCursorButton key='insertCodeAtCursor' code={response.code} editorManager={this.editorManager} />;
+    }
+}
 
 const InsertCodeAtCursorButton = (props: { code: string, editorManager: EditorManager }) => {
     const { code, editorManager } = props;

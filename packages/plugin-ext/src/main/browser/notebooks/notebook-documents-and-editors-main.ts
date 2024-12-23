@@ -31,6 +31,7 @@ import { NotebookEditorsMainImpl } from './notebook-editors-main';
 import { NotebookDocumentsMainImpl } from './notebook-documents-main';
 import { diffMaps, diffSets } from '../../../common/collections';
 import { Mutex } from 'async-mutex';
+import { TabsMainImpl } from '../tabs/tabs-main';
 
 interface NotebookAndEditorDelta {
     removedDocuments: UriComponents[];
@@ -96,6 +97,7 @@ export class NotebooksAndEditorsMain implements NotebookDocumentsAndEditorsMain 
     constructor(
         rpc: RPCProtocol,
         container: interfaces.Container,
+        tabsMain: TabsMainImpl,
         protected readonly notebookDocumentsMain: NotebookDocumentsMainImpl,
         protected readonly notebookEditorsMain: NotebookEditorsMainImpl
     ) {
@@ -113,7 +115,12 @@ export class NotebooksAndEditorsMain implements NotebookDocumentsAndEditorsMain 
         // this.WidgetManager.onActiveEditorChanged(() => this.updateState(), this, this.disposables);
         this.notebookEditorService.onDidAddNotebookEditor(async editor => this.handleEditorAdd(editor), this, this.disposables);
         this.notebookEditorService.onDidRemoveNotebookEditor(async editor => this.handleEditorRemove(editor), this, this.disposables);
-        this.notebookEditorService.onDidChangeCurrentEditor(async editor => this.updateState(editor), this, this.disposables);
+        this.notebookEditorService.onDidChangeCurrentEditor(async editor => {
+            if (editor) {
+                await tabsMain.waitForWidget(editor);
+            }
+            this.updateState(editor);
+        }, this, this.disposables);
     }
 
     dispose(): void {

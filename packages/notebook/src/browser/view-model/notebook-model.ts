@@ -289,6 +289,10 @@ export class NotebookModel implements Saveable, Disposable {
         }
     }
 
+    getVisibleCells(): NotebookCellModel[] {
+        return this.cells;
+    }
+
     applyEdits(rawEdits: CellEditOperation[], computeUndoRedo: boolean): void {
         const editsWithDetails = rawEdits.map((edit, index) => {
             let cellIndex: number = -1;

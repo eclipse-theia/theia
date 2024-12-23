@@ -29,17 +29,46 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
         }
         return -1;
     }
-    render(response: ToolCallChatResponseContent): ReactNode {
-        return <h4 className='theia-toolCall'>
-            {response.finished ?
-                <details>
-                    <summary>Ran {response.name}</summary>
-                    <pre>{this.tryPrettyPrintJson(response)}</pre>
-                </details>
-                : <span><Spinner /> Running [{response.name}]</span>
-            }
-        </h4>;
 
+    render(response: ToolCallChatResponseContent): ReactNode {
+        return (
+            <h4 className='theia-toolCall'>
+                {response.finished ? (
+                    <details>
+                        <summary>Ran {response.name}
+                            ({this.renderCollapsibleArguments(response.arguments)})
+                        </summary>
+                        <pre>{this.tryPrettyPrintJson(response)}</pre>
+                    </details>
+                ) : (
+                    <span>
+                        <Spinner /> Running {response.name}({this.renderCollapsibleArguments(response.arguments)})
+                    </span>
+                )}
+            </h4>
+        );
+    }
+
+    protected renderCollapsibleArguments(args: string | undefined): ReactNode {
+        if (!args || !args.trim() || args.trim() === '{}') {
+            return undefined;
+        }
+
+        return (
+            <details className="collapsible-arguments">
+                <summary className="collapsible-arguments-summary">...</summary>
+                <span>{this.prettyPrintArgs(args)}</span>
+            </details>
+        );
+    }
+
+    private prettyPrintArgs(args: string): string {
+        try {
+            return JSON.stringify(JSON.parse(args), undefined, 2);
+        } catch (e) {
+            // fall through
+            return args;
+        }
     }
 
     private tryPrettyPrintJson(response: ToolCallChatResponseContent): string | undefined {

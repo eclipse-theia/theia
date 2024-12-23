@@ -45,21 +45,28 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                 }
                 return undefined;
             };
+
             if (model) {
                 if (!(model instanceof OpenAiModel)) {
-                    console.warn(`Open AI: model ${modelDescription.id} is not an OpenAI model`);
+                    console.warn(`OpenAI: model ${modelDescription.id} is not an OpenAI model`);
                     continue;
                 }
-                if (!modelDescription.url) {
-                    // This seems to be an official model, but it was already created. This can happen during the initializing of more than one frontend.
-                    console.info(`Open AI: skip creating model ${modelDescription.id} because it already exists`);
-                    continue;
-                }
-                model.url = modelDescription.url;
                 model.model = modelDescription.model;
+                model.enableStreaming = modelDescription.enableStreaming;
+                model.url = modelDescription.url;
                 model.apiKey = apiKeyProvider;
+                model.defaultRequestSettings = modelDescription.defaultRequestSettings;
             } else {
-                this.languageModelRegistry.addLanguageModels([new OpenAiModel(modelDescription.id, modelDescription.model, apiKeyProvider, modelDescription.url)]);
+                this.languageModelRegistry.addLanguageModels([
+                    new OpenAiModel(
+                        modelDescription.id,
+                        modelDescription.model,
+                        modelDescription.enableStreaming,
+                        apiKeyProvider,
+                        modelDescription.url,
+                        modelDescription.defaultRequestSettings
+                    )
+                ]);
             }
         }
     }

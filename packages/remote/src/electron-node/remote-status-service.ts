@@ -38,4 +38,11 @@ export class RemoteStatusServiceImpl implements RemoteStatusService {
             };
         }
     }
+
+    async connectionClosed(localPort: number): Promise<void> {
+        const connection = this.remoteConnectionService.getConnectionFromPort(localPort);
+        if (connection) {
+            connection.dispose();
+        }
+    }
 }

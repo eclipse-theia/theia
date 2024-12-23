@@ -135,6 +135,7 @@
         }
       }
     ],
+    "@theia/annotation-check": "error",
     "@theia/localization-check": "error",
     "@theia/no-src-import": "error",
     "@theia/runtime-import-check": "error",

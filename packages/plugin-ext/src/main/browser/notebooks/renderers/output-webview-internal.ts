@@ -148,6 +148,8 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
         readonly element: HTMLElement;
         readonly outputElements: OutputContainer[] = [];
 
+        private cellHeight: number = 0;
+
         constructor(public cellHandle: number, cellIndex?: number) {
             this.element = document.createElement('div');
             this.element.style.outline = '0';
@@ -174,7 +176,7 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
         }
 
         calcTotalOutputHeight(): number {
-            return this.outputElements.reduce((acc, output) => acc + output.element.clientHeight, 0) + 5;
+            return this.outputElements.reduce((acc, output) => acc + output.element.getBoundingClientRect().height, 0) + 5;
         }
 
         createOutputElement(index: number, output: webviewCommunication.Output, items: rendererApi.OutputItem[]): OutputContainer {
@@ -183,6 +185,7 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
                 outputContainer = new OutputContainer(output, items, this);
                 this.element.appendChild(outputContainer.containerElement);
                 this.outputElements.splice(index, 0, outputContainer);
+                this.updateCellHeight(this.cellHeight);
             }
 
             return outputContainer;
@@ -206,7 +209,8 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
             this.element.style.visibility = 'hidden';
         }
 
-        public updateCellHeight(cellKind: number, height: number): void {
+        public updateCellHeight(height: number): void {
+            this.cellHeight = height;
             let additionalHeight = 54.5;
             additionalHeight -= cells[0] === this ? 2.5 : 0; // first cell
             additionalHeight -= this.outputElements.length ? 0 : 5.5; // no outputs
@@ -216,9 +220,11 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
         public outputVisibilityChanged(visible: boolean): void {
             this.outputElements.forEach(output => {
                 output.element.style.display = visible ? 'initial' : 'none';
+                output.containerElement.style.minHeight = visible ? '20px' : '0px';
             });
             if (visible) {
                 this.element.getElementsByClassName('output-hidden')?.[0].remove();
+                window.requestAnimationFrame(() => this.outputElements.forEach(output => sendDidRenderMessage(this, output)));
             } else {
                 const outputHiddenElement = document.createElement('div');
                 outputHiddenElement.classList.add('output-hidden');
@@ -290,6 +296,7 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
         private createHtmlElement(): void {
             this.containerElement = document.createElement('div');
             this.containerElement.classList.add('output-container');
+            this.containerElement.style.minHeight = '20px';
             this.element = document.createElement('div');
             this.element.id = this.outputId;
             this.element.classList.add('output');
@@ -489,24 +496,14 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
                         img.dataset.waiting = 'true'; // mark to avoid overriding onload a second time
                         return new Promise(resolve => { img.onload = img.onerror = resolve; });
                     })).then(() => {
-                        this.sendDidRenderMessage(cell, output);
-                        new ResizeObserver(() => this.sendDidRenderMessage(cell, output)).observe(cell.element);
+                        sendDidRenderMessage(cell, output);
+                        new ResizeObserver(() => sendDidRenderMessage(cell, output)).observe(cell.element);
                     });
             } else {
-                this.sendDidRenderMessage(cell, output);
-                new ResizeObserver(() => this.sendDidRenderMessage(cell, output)).observe(cell.element);
+                sendDidRenderMessage(cell, output);
+                new ResizeObserver(() => sendDidRenderMessage(cell, output)).observe(cell.element);
             }
 
-        }
-
-        private sendDidRenderMessage(cell: OutputCell, output: OutputContainer): void {
-            theia.postMessage(<webviewCommunication.OnDidRenderOutput>{
-                type: 'didRenderOutput',
-                cellHandle: cell.cellHandle,
-                outputId: output.outputId,
-                outputHeight: cell.calcTotalOutputHeight(),
-                bodyHeight: document.body.clientHeight
-            });
         }
 
         private async doRender(item: rendererApi.OutputItem, element: HTMLElement, renderer: Renderer, signal: AbortSignal): Promise<{ continue: boolean }> {
@@ -564,6 +561,16 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
             element.appendChild(errorContainer);
         }
     }();
+
+    function sendDidRenderMessage(cell: OutputCell, output: OutputContainer): void {
+        theia.postMessage(<webviewCommunication.OnDidRenderOutput>{
+            type: 'didRenderOutput',
+            cellHandle: cell.cellHandle,
+            outputId: output.outputId,
+            outputHeight: cell.calcTotalOutputHeight(),
+            bodyHeight: document.body.clientHeight
+        });
+    }
 
     const kernelPreloads = new class {
         private readonly preloads = new Map<string /* uri */, Promise<unknown>>();
@@ -760,7 +767,7 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
                 cellHandle = event.data.cellHandle;
                 const cell = cells.find(c => c.cellHandle === cellHandle);
                 if (cell) {
-                    cell.updateCellHeight(event.data.cellKind, event.data.height);
+                    cell.updateCellHeight(event.data.height);
                 }
                 break;
             case 'outputVisibilityChanged':

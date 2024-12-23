@@ -30,6 +30,9 @@
       "path": "../../packages/ai-openai"
     },
     {
+      "path": "../../packages/ai-scanoss"
+    },
+    {
       "path": "../../packages/bulk-edit"
     },
     {
@@ -118,6 +121,9 @@
     },
     {
       "path": "../../packages/property-view"
+    },
+    {
+      "path": "../../packages/scanoss"
     },
     {
       "path": "../../packages/scm"

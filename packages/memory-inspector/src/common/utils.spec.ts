@@ -16,7 +16,7 @@
 
 import { hexStrToUnsignedLong } from './util';
 import { expect } from 'chai';
-import * as Long from 'long';
+import Long from 'long';
 
 describe('utils', function (): void {
     it('#hexStrToUnsignedLong', function (): void {

@@ -55,8 +55,18 @@ export class HuggingFaceModel implements LanguageModel {
      * @param model the model id as it is used by the Hugging Face API
      * @param apiKey function to retrieve the API key for Hugging Face
      */
-    constructor(public readonly id: string, public model: string, public apiKey: () => string | undefined) {
-    }
+    constructor(
+        public readonly id: string,
+        public model: string,
+        public apiKey: () => string | undefined,
+        public readonly name?: string,
+        public readonly vendor?: string,
+        public readonly version?: string,
+        public readonly family?: string,
+        public readonly maxInputTokens?: number,
+        public readonly maxOutputTokens?: number,
+        public defaultRequestSettings?: Record<string, unknown>
+    ) { }
 
     async request(request: LanguageModelRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
         const hfInference = this.initializeHfInference();
@@ -67,50 +77,77 @@ export class HuggingFaceModel implements LanguageModel {
         }
     }
 
+    protected getSettings(request: LanguageModelRequest): Record<string, unknown> {
+        const settings = request.settings ? request.settings : this.defaultRequestSettings;
+        if (!settings) {
+            return {};
+        }
+        return settings;
+    }
+
     protected async handleNonStreamingRequest(hfInference: HfInference, request: LanguageModelRequest): Promise<LanguageModelTextResponse> {
+        const settings = this.getSettings(request);
+
         const response = await hfInference.textGeneration({
             model: this.model,
             inputs: toHuggingFacePrompt(request.messages),
             parameters: {
-                temperature: 0.1,          // Controls randomness, 0.1 for consistent outputs
-                max_new_tokens: 200,       // Limits response length
-                return_full_text: false,   // Ensures only the generated part is returned, not the prompt
-                do_sample: true,           // Enables sampling for more varied responses
-                stop: ['<|endoftext|>']    // Stop generation at this token
+                ...settings
             }
         });
 
-        const cleanText = response.generated_text.replace(/<\|endoftext\|>/g, '');
+        const stopWords = Array.isArray(settings.stop) ? settings.stop : [];
+        let cleanText = response.generated_text;
+
+        stopWords.forEach(stopWord => {
+            if (cleanText.endsWith(stopWord)) {
+                cleanText = cleanText.slice(0, -stopWord.length).trim();
+            }
+        });
 
         return {
             text: cleanText
         };
     }
 
-    protected async handleStreamingRequest(hfInference: HfInference, request: LanguageModelRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
+    protected async handleStreamingRequest(
+        hfInference: HfInference,
+        request: LanguageModelRequest,
+        cancellationToken?: CancellationToken
+    ): Promise<LanguageModelResponse> {
+
+        const settings = this.getSettings(request);
+
         const stream = hfInference.textGenerationStream({
             model: this.model,
             inputs: toHuggingFacePrompt(request.messages),
             parameters: {
-                temperature: 0.1,
-                max_new_tokens: 200,
-                return_full_text: false,
-                do_sample: true,
-                stop: ['<|endoftext|>']
+                ...settings
             }
         });
+
+        const stopWords = Array.isArray(settings.stop) ? settings.stop : [];
 
         const asyncIterator = {
             async *[Symbol.asyncIterator](): AsyncIterator<LanguageModelStreamResponsePart> {
                 for await (const chunk of stream) {
-                    const content = chunk.token.text.replace(/<\|endoftext\|>/g, '');
+                    let content = chunk.token.text;
+
+                    stopWords.forEach(stopWord => {
+                        if (content.endsWith(stopWord)) {
+                            content = content.slice(0, -stopWord.length).trim();
+                        }
+                    });
+
                     yield { content };
+
                     if (cancellationToken?.isCancellationRequested) {
                         break;
                     }
                 }
             }
         };
+
         return { stream: asyncIterator };
     }
 

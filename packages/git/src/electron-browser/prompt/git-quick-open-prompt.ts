@@ -16,7 +16,7 @@
 
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import { QuickInputService } from '@theia/core/lib/browser';
-import * as PQueue from 'p-queue';
+import PQueue from 'p-queue';
 import { GitPrompt } from '../../common/git-prompt';
 
 @injectable()

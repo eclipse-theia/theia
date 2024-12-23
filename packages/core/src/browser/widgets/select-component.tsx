@@ -325,7 +325,7 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
 
         return <div key="dropdown" className="theia-select-component-dropdown" style={{
             top: invert ? 'none' : this.state.dimensions.bottom,
-            bottom: invert ? shellArea.top + shellArea.height - this.state.dimensions.top : 'none',
+            bottom: invert ? shellArea.top - this.state.dimensions.top : 'none',
             left: this.alignLeft ? this.state.dimensions.left : 'none',
             right: this.alignLeft ? 'none' : shellArea.width - this.state.dimensions.right,
             width: Math.min(Math.max(this.state.dimensions.width, this.optimalWidth), maxWidth),

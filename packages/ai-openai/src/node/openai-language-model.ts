@@ -54,11 +54,30 @@ export class OpenAiModel implements LanguageModel {
     /**
      * @param id the unique id for this language model. It will be used to identify the model in the UI.
      * @param model the model id as it is used by the OpenAI API
-     * @param openAIInitializer initializer for the OpenAI client, used for each request.
+     * @param enableStreaming whether the streaming API shall be used
+     * @param apiKey a function that returns the API key to use for this model, called on each request
+     * @param url the OpenAI API compatible endpoint where the model is hosted. If not provided the default OpenAI endpoint will be used.
+     * @param defaultRequestSettings optional default settings for requests made using this model.
      */
-    constructor(public readonly id: string, public model: string, public apiKey: () => string | undefined, public url: string | undefined) { }
+    constructor(
+        public readonly id: string,
+        public model: string,
+        public enableStreaming: boolean,
+        public apiKey: () => string | undefined,
+        public url: string | undefined,
+        public defaultRequestSettings?: { [key: string]: unknown }
+    ) { }
+
+    protected getSettings(request: LanguageModelRequest): Record<string, unknown> {
+        const settings = request.settings ? request.settings : this.defaultRequestSettings;
+        if (!settings) {
+            return {};
+        }
+        return settings;
+    }
 
     async request(request: LanguageModelRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
+        const settings = this.getSettings(request);
         const openai = this.initializeOpenAi();
 
         if (this.isNonStreamingModel(this.model)) {
@@ -78,14 +97,14 @@ export class OpenAiModel implements LanguageModel {
                 stream: true,
                 tools: tools,
                 tool_choice: 'auto',
-                ...request.settings
+                ...settings
             });
         } else {
             runner = openai.beta.chat.completions.stream({
                 model: this.model,
                 messages: request.messages.map(toOpenAIMessage),
                 stream: true,
-                ...request.settings
+                ...settings
             });
         }
         cancellationToken?.onCancellationRequested(() => {
@@ -139,10 +158,11 @@ export class OpenAiModel implements LanguageModel {
     }
 
     protected async handleNonStreamingRequest(openai: OpenAI, request: LanguageModelRequest): Promise<LanguageModelTextResponse> {
+        const settings = this.getSettings(request);
         const response = await openai.chat.completions.create({
             model: this.model,
             messages: request.messages.map(toOpenAIMessage),
-            ...request.settings
+            ...settings
         });
 
         const message = response.choices[0].message;
@@ -152,8 +172,8 @@ export class OpenAiModel implements LanguageModel {
         };
     }
 
-    protected isNonStreamingModel(model: string): boolean {
-        return ['o1-preview'].includes(model);
+    protected isNonStreamingModel(_model: string): boolean {
+        return !this.enableStreaming;
     }
 
     protected supportsStructuredOutput(): boolean {
@@ -166,12 +186,13 @@ export class OpenAiModel implements LanguageModel {
     }
 
     protected async handleStructuredOutputRequest(openai: OpenAI, request: LanguageModelRequest): Promise<LanguageModelParsedResponse> {
+        const settings = this.getSettings(request);
         // TODO implement tool support for structured output (parse() seems to require different tool format)
         const result = await openai.beta.chat.completions.parse({
             model: this.model,
             messages: request.messages.map(toOpenAIMessage),
             response_format: request.response_format,
-            ...request.settings
+            ...settings
         });
         const message = result.choices[0].message;
         if (message.refusal || message.parsed === undefined) {

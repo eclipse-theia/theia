@@ -17,6 +17,7 @@ The `@theia/dev-container` extension provides functionality to create, start and
 
 The full devcontainer.json Schema can be found [here](https://containers.dev/implementors/json_reference/).
 Currently only a small number of configuration file properties are implemented. Those include the following:
+
 - name
 - Image
 - dockerfile/build.dockerfile
@@ -25,8 +26,7 @@ Currently only a small number of configuration file properties are implemented. 
 - forwardPorts
 - mounts
 
-see `main-container-creation-contributions.ts` for how to implementations or how to implement additional ones. 
-
+see `main-container-creation-contributions.ts` for how to implementations or how to implement additional ones.
 
 ## Additional Information
 
@@ -39,5 +39,6 @@ see `main-container-creation-contributions.ts` for how to implementations or how
 - [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)
 
 ## Trademark
+
 "Theia" is a trademark of the Eclipse Foundation
-https://www.eclipse.org/theia
+<https://www.eclipse.org/theia>

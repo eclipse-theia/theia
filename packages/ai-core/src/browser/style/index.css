@@ -14,12 +14,44 @@
   margin-left: var(--theia-ui-padding);
 }
 
+.theia-settings-container .settings-section-subcategory-title.ai-settings-section-subcategory-title {
+  padding-left: 0;
+}
+
 .ai-templates {
-  display: grid;
-  /** Display content in 3 columns */
-  grid-template-columns: 1fr auto auto;
-  /** add a 3px gap between rows */
-  row-gap: 3px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.template-renderer {
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+}
+
+.template-header {
+  margin-bottom: 8px;
+}
+
+.template-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.template-select-label {
+  margin-right: 5px;
+}
+
+.template-variant-selector {
+  min-width: 120px;
+}
+
+.template-variant-selector.error {
+  border-color: var(--theia-errorForeground);
+  background-color: var(--theia-errorBackground, rgba(255, 0, 0, 0.1));
+  color: var(--theia-errorForeground);
 }
 
 #ai-variable-configuration-container-widget,

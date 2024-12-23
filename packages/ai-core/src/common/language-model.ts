@@ -32,13 +32,40 @@ export const isLanguageModelRequestMessage = (obj: unknown): obj is LanguageMode
         'query' in obj &&
         typeof (obj as { query: unknown }).query === 'string'
     );
+export type ToolRequestParametersProperties = Record<string, { type: string, [key: string]: unknown }>;
+export interface ToolRequestParameters {
+    type?: 'object';
+    properties: ToolRequestParametersProperties
+}
 export interface ToolRequest {
     id: string;
     name: string;
-    parameters?: { type?: 'object', properties: Record<string, { type: string, [key: string]: unknown }> };
+    parameters?: ToolRequestParameters
     description?: string;
     handler: (arg_string: string) => Promise<unknown>;
+    providerName?: string;
 }
+
+export namespace ToolRequest {
+    export function isToolRequestParametersProperties(obj: unknown): obj is ToolRequestParametersProperties {
+        if (!obj || typeof obj !== 'object') { return false; };
+
+        return Object.entries(obj).every(([key, value]) =>
+            typeof key === 'string' &&
+            value &&
+            typeof value === 'object' &&
+            'type' in value &&
+            typeof value.type === 'string' &&
+            Object.keys(value).every(k => typeof k === 'string')
+        );
+    }
+    export function isToolRequestParameters(obj: unknown): obj is ToolRequestParameters {
+        return !!obj && typeof obj === 'object' &&
+            (!('type' in obj) || obj.type === 'object') &&
+            'properties' in obj && isToolRequestParametersProperties(obj.properties);
+    }
+}
+
 export interface LanguageModelRequest {
     messages: LanguageModelRequestMessage[],
     tools?: ToolRequest[];
@@ -107,6 +134,11 @@ export interface LanguageModelMetaData {
     readonly family?: string;
     readonly maxInputTokens?: number;
     readonly maxOutputTokens?: number;
+    /**
+     * Default request settings for the language model. These settings can be set by a user preferences.
+     * Settings in a request will override these default settings.
+     */
+    readonly defaultRequestSettings?: { [key: string]: unknown };
 }
 
 export namespace LanguageModelMetaData {

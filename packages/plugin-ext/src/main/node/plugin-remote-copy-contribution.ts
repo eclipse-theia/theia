@@ -27,10 +27,13 @@ export class PluginRemoteCopyContribution implements RemoteCopyContribution {
 
     async copy(registry: RemoteCopyRegistry): Promise<void> {
         const localDir = this.pluginCliContribution.localDir();
-        if (localDir) {
-            const fsPath = FileUri.fsPath(localDir);
-            await registry.directory(fsPath, 'plugins');
-        }
+        const defaultPlugins = process.env.THEIA_DEFAULT_PLUGINS?.split(',') ?? [];
 
+        await Promise.all([localDir, ...defaultPlugins]
+            .filter(pluginDir => pluginDir && pluginDir.startsWith('local-dir:'))
+            .map(async (pluginDir: string) => {
+                const fsPath = FileUri.fsPath(pluginDir);
+                await registry.directory(fsPath, 'plugins');
+            }));
     }
 }

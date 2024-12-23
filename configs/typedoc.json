@@ -1,5 +1,4 @@
 {
-  "emit": false,
   "exclude": [
     "../+(dev-packages|examples|typings|scripts)/**",
     "../packages/*/lib/**",

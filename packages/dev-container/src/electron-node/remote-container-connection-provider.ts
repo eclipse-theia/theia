@@ -31,7 +31,7 @@ import { DockerContainerService } from './docker-container-service';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { WriteStream } from 'tty';
 import { PassThrough } from 'stream';
-import { exec } from 'child_process';
+import { exec, execSync } from 'child_process';
 import { DevContainerFileService } from './dev-container-file-service';
 import { ContainerOutputProvider } from '../electron-common/container-output-provider';
 
@@ -79,7 +79,7 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
             text: 'Creating container',
         });
         try {
-            const container = await this.containerService.getOrCreateContainer(dockerConnection, options.devcontainerFile, options.lastContainerInfo, this.outputProvider);
+            const container = await this.containerService.getOrCreateContainer(dockerConnection, options, this.outputProvider);
             const devContainerConfig = await this.devContainerFileService.getConfiguration(options.devcontainerFile);
 
             // create actual connection
@@ -121,8 +121,8 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
         }
     }
 
-    getDevContainerFiles(): Promise<DevContainerFile[]> {
-        return this.devContainerFileService.getAvailableFiles();
+    getDevContainerFiles(workspacePath: string): Promise<DevContainerFile[]> {
+        return this.devContainerFileService.getAvailableFiles(workspacePath);
     }
 
     async createContainerConnection(container: Docker.Container, docker: Docker, name?: string): Promise<RemoteDockerContainerConnection> {
@@ -303,9 +303,13 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
         return deferred.promise;
     }
 
-    async dispose(): Promise<void> {
+    disposeSync(): void {
         // cant use dockerrode here since this needs to happen on one tick
-        exec(`docker stop ${this.container.id}`);
+        execSync(`docker stop ${this.container.id}`);
+    }
+
+    async dispose(): Promise<void> {
+        return this.container.stop();
     }
 
 }

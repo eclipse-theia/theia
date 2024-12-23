@@ -30,4 +30,9 @@ export type AISettings = Record<string, AgentSettings>;
 export interface AgentSettings {
     languageModelRequirements?: LanguageModelRequirement[];
     enable?: boolean;
+    /**
+     * A mapping of main template IDs to their selected variant IDs.
+     * If a main template is not present in this mapping, it means the main template is used.
+     */
+    selectedVariants?: Record<string, string>;
 }

@@ -19,6 +19,7 @@ import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import type { ContainerInspectInfo } from 'dockerode';
 import { RemoteContainerConnectionProvider } from '../electron-common/remote-container-connection-provider';
 import { PortForwardingService } from '@theia/remote/lib/electron-browser/port-forwarding/port-forwarding-service';
+import { getCurrentPort } from '@theia/core/lib/electron-browser/messaging/electron-local-ws-connection-source';
 
 @injectable()
 export class ContainerInfoContribution implements FrontendApplicationContribution {
@@ -32,7 +33,7 @@ export class ContainerInfoContribution implements FrontendApplicationContributio
     containerInfo: ContainerInspectInfo | undefined;
 
     async onStart(): Promise<void> {
-        this.containerInfo = await this.connectionProvider.getCurrentContainerInfo(parseInt(new URLSearchParams(location.search).get('port') ?? '0'));
+        this.containerInfo = await this.connectionProvider.getCurrentContainerInfo(parseInt(getCurrentPort() ?? '0'));
 
         this.portForwardingService.forwardedPorts = Object.entries(this.containerInfo?.NetworkSettings.Ports ?? {}).flatMap(([_, ports]) => (
             ports.map(port => ({

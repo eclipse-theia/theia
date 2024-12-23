@@ -18,7 +18,9 @@ import { FrontendApplicationContribution, PreferenceService } from '@theia/core/
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { HuggingFaceLanguageModelsManager, HuggingFaceModelDescription } from '../common';
 import { API_KEY_PREF, MODELS_PREF } from './huggingface-preferences';
+import { PREFERENCE_NAME_REQUEST_SETTINGS, RequestSetting } from '@theia/ai-core/lib/browser/ai-core-preferences';
 
+const HUGGINGFACE_PROVIDER_ID = 'huggingface';
 @injectable()
 export class HuggingFaceFrontendApplicationContribution implements FrontendApplicationContribution {
 
@@ -36,31 +38,58 @@ export class HuggingFaceFrontendApplicationContribution implements FrontendAppli
             this.manager.setApiKey(apiKey);
 
             const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
-            this.manager.createOrUpdateLanguageModels(...models.map(createHuggingFaceModelDescription));
+            const requestSettings = this.preferenceService.get<RequestSetting[]>(PREFERENCE_NAME_REQUEST_SETTINGS, []);
+            this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createHuggingFaceModelDescription(modelId, requestSettings)));
             this.prevModels = [...models];
 
             this.preferenceService.onPreferenceChanged(event => {
                 if (event.preferenceName === API_KEY_PREF) {
                     this.manager.setApiKey(event.newValue);
                 } else if (event.preferenceName === MODELS_PREF) {
-                    const oldModels = new Set(this.prevModels);
-                    const newModels = new Set(event.newValue as string[]);
-
-                    const modelsToRemove = [...oldModels].filter(model => !newModels.has(model));
-                    const modelsToAdd = [...newModels].filter(model => !oldModels.has(model));
-
-                    this.manager.removeLanguageModels(...modelsToRemove.map(model => `huggingface/${model}`));
-                    this.manager.createOrUpdateLanguageModels(...modelsToAdd.map(createHuggingFaceModelDescription));
-                    this.prevModels = [...event.newValue];
+                    this.handleModelChanges(event.newValue as string[]);
+                } else if (event.preferenceName === PREFERENCE_NAME_REQUEST_SETTINGS) {
+                    this.handleRequestSettingsChanges(event.newValue as RequestSetting[]);
                 }
             });
         });
     }
-}
 
-function createHuggingFaceModelDescription(modelId: string): HuggingFaceModelDescription {
-    return {
-        id: `huggingface/${modelId}`,
-        model: modelId
-    };
+    protected handleModelChanges(newModels: string[]): void {
+        const oldModels = new Set(this.prevModels);
+        const updatedModels = new Set(newModels);
+
+        const modelsToRemove = [...oldModels].filter(model => !updatedModels.has(model));
+        const modelsToAdd = [...updatedModels].filter(model => !oldModels.has(model));
+
+        this.manager.removeLanguageModels(...modelsToRemove.map(model => `${HUGGINGFACE_PROVIDER_ID}/${model}`));
+        const requestSettings = this.preferenceService.get<RequestSetting[]>(PREFERENCE_NAME_REQUEST_SETTINGS, []);
+        this.manager.createOrUpdateLanguageModels(...modelsToAdd.map(modelId => this.createHuggingFaceModelDescription(modelId, requestSettings)));
+        this.prevModels = newModels;
+    }
+
+    protected handleRequestSettingsChanges(newSettings: RequestSetting[]): void {
+        const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
+        this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createHuggingFaceModelDescription(modelId, newSettings)));
+    }
+
+    protected createHuggingFaceModelDescription(
+        modelId: string,
+        requestSettings: RequestSetting[]
+    ): HuggingFaceModelDescription {
+        const id = `${HUGGINGFACE_PROVIDER_ID}/${modelId}`;
+        const matchingSettings = requestSettings.filter(
+            setting => (!setting.providerId || setting.providerId === HUGGINGFACE_PROVIDER_ID) && setting.modelId === modelId
+        );
+        if (matchingSettings.length > 1) {
+            console.warn(
+                `Multiple entries found for modelId "${modelId}". Using the first match and ignoring the rest.`
+            );
+        }
+        const modelRequestSetting = matchingSettings[0];
+        return {
+            id: id,
+            model: modelId,
+            defaultRequestSettings: modelRequestSetting?.requestSettings
+        };
+    }
 }
