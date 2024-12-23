@@ -31,11 +31,6 @@ import { ApplicationShell } from '../shell';
 import { CorePreferences } from '../core-preferences';
 import { PreferenceService } from '../preferences/preference-service';
 
-/**
- * Enable/Disable the new focus adaptations
- */
-const ENABLE_FOCUS_ADAPTATIONS = true;
-
 export abstract class MenuBarWidget extends MenuBar {
     abstract activateMenu(label: string, ...labels: string[]): Promise<MenuWidget>;
     abstract triggerMenuItem(label: string, ...labels: string[]): Promise<MenuWidget.IItem>;
@@ -161,6 +156,10 @@ export class BrowserMainMenuFactory implements MenuWidgetFactory {
 
 }
 
+export function isMenuElement(element: HTMLElement | null): boolean {
+    return !!element && (element.classList.contains('lm-Menu') || element.classList.contains('lm-MenuBar-item') || element.classList.contains('lm-Menu-item'));
+}
+
 export class DynamicMenuBarWidget extends MenuBarWidget {
 
     /**
@@ -178,14 +177,9 @@ export class DynamicMenuBarWidget extends MenuBarWidget {
                 // We want to save the focus object for the former case only.
                 if (!this.childMenu) {
                     const { activeElement } = document;
-                    if (activeElement instanceof HTMLElement &&
-                        (!ENABLE_FOCUS_ADAPTATIONS || // Do not save focus if the previous element is a menu
-                            !activeElement.classList.contains('lm-Menu') &&
-                            !activeElement.classList.contains('lm-MenuBar-item') &&
-                            !activeElement.classList.contains('lm-Menu-item'))) {
+                    // we do not want to restore focus to menus
+                    if (activeElement instanceof HTMLElement && !isMenuElement(activeElement)) {
                         this.previousFocusedElement = activeElement;
-                    } else {
-                        this.previousFocusedElement = undefined;
                     }
                 }
                 this.activeMenu.aboutToShow({ previousFocusedElement: this.previousFocusedElement });
@@ -350,7 +344,7 @@ export class DynamicMenuWidget extends MenuWidget {
     }
 
     protected preserveFocusedElement(previousFocusedElement: Element | null = document.activeElement): boolean {
-        if (!this.previousFocusedElement && previousFocusedElement instanceof HTMLElement) {
+        if (!this.previousFocusedElement && previousFocusedElement instanceof HTMLElement && !isMenuElement(previousFocusedElement)) {
             this.previousFocusedElement = previousFocusedElement;
             return true;
         }
@@ -359,14 +353,7 @@ export class DynamicMenuWidget extends MenuWidget {
 
     protected restoreFocusedElement(): boolean {
         if (this.previousFocusedElement) {
-            const { activeElement } = document;
-            if ((!ENABLE_FOCUS_ADAPTATIONS || // Do not restore focus if the active element is a menu
-                activeElement &&
-                !activeElement.classList.contains('lm-Menu') &&
-                !activeElement.classList.contains('lm-MenuBar-item') &&
-                !activeElement.classList.contains('lm-Menu-item'))) {
-                this.previousFocusedElement.focus({ preventScroll: true });
-            }
+            this.previousFocusedElement.focus({ preventScroll: true });
             this.previousFocusedElement = undefined;
             return true;
         }
@@ -380,17 +367,12 @@ export class DynamicMenuWidget extends MenuWidget {
             activeElement instanceof HTMLElement &&
             this.previousFocusedElement !== activeElement) {
             focusToRestore = activeElement;
-            // Do not take away focus if the active element is a menu
-            if (!ENABLE_FOCUS_ADAPTATIONS || !activeElement.classList.contains('lm-Menu') &&
-                !activeElement.classList.contains('lm-MenuBar-item') &&
-                !activeElement.classList.contains('lm-Menu-item')) {
-                this.previousFocusedElement.focus({ preventScroll: true });
-            }
+            this.previousFocusedElement.focus({ preventScroll: true });
         }
         try {
             what();
         } finally {
-            if (focusToRestore) {
+            if (focusToRestore && !isMenuElement(focusToRestore)) {
                 focusToRestore.focus({ preventScroll: true });
             }
         }
