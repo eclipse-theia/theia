@@ -34,27 +34,6 @@ import { PreferenceService } from '../preferences/preference-service';
 export abstract class MenuBarWidget extends MenuBar {
     abstract activateMenu(label: string, ...labels: string[]): Promise<MenuWidget>;
     abstract triggerMenuItem(label: string, ...labels: string[]): Promise<MenuWidget.IItem>;
-    /*
-     * We override the activeIndex setter to avoid the menu items check
-     * See https://github.com/jupyterlab/lumino/issues/729
-     */
-    override set activeIndex(value: number) {
-        // Adjust the value for an out of range index.
-        if (value < 0 || value >= Reflect.get(this, '_menus').length) {
-            value = -1;
-        }
-
-        // Bail early if the index will not change.
-        if (Reflect.get(this, '_activeIndex') === value) {
-            return;
-        }
-
-        // Update the active index.
-        Reflect.set(this, '_activeIndex', value);
-
-        // Schedule an update of the items.
-        this.update();
-    }
 }
 
 export interface BrowserMenuOptions extends MenuWidget.IOptions {
@@ -307,6 +286,13 @@ export class DynamicMenuWidget extends MenuWidget {
         const items = this.buildSubMenus([], menu, commands);
         while (items[items.length - 1]?.type === 'separator') {
             items.pop();
+        }
+        // Add at least one entry to avoid empty menus.
+        // This is needed as Lumino does all kind of checks whether a menu is empty and for example prevents activating it
+        // This item will be cleared once the menu is opened via the next update as we don't have empty main menus
+        // See https://github.com/jupyterlab/lumino/issues/729
+        if (items.length === 0) {
+            items.push({ type: 'separator' });
         }
         for (const item of items) {
             parent.addItem(item);
