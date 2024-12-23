@@ -8,5 +8,9 @@
   "include": [
     "src"
   ],
-  "references": []
+  "references": [
+    {
+      "path": "../../dev-packages/cli"
+    }
+  ]
 }

@@ -23,7 +23,7 @@ const electron = require('electron');
  * Generate keyboard layouts for using Theia as web application.
  *
  * Usage:
- *     yarn generate-layout [--info] [--all] [--pretty] [--output file]
+ *     npm run generate-layout [--info] [--all] [--pretty] [--output file]
  *
  * --info          Print the keyboard layout information; if omitted, the full
  *                 keyboard layout with info and mapping is printed.
