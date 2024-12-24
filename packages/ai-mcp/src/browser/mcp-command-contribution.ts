@@ -126,6 +126,7 @@ export class MCPCommandContribution implements CommandContribution {
             parameters: ToolRequest.isToolRequestParameters(tool.inputSchema) ? {
                 type: tool.inputSchema.type,
                 properties: tool.inputSchema.properties,
+                required: tool.inputSchema.required
             } : undefined,
             description: tool.description,
             handler: async (arg_string: string) => {
