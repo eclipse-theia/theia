@@ -13,6 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { ChatAgent } from '@theia/ai-chat/lib/common';
 import { Agent, ToolProvider } from '@theia/ai-core/lib/common';
@@ -20,6 +21,18 @@ import { WorkspaceAgent } from './workspace-agent';
 import { FileContentFunction, GetWorkspaceDirectoryStructure, GetWorkspaceFileList, WorkspaceFunctionScope } from './functions';
 import { PreferenceContribution } from '@theia/core/lib/browser';
 import { WorkspacePreferencesSchema } from './workspace-preferences';
+
+// Import tool functions from changeset-functions.ts
+import {
+    InitializeChangeSetProvider,
+    AddFileChangeProvider,
+    UpdateFileChangeProvider,
+    RemoveFileChangeProvider,
+    GetChangeSetProvider,
+    ListChangedFilesProvider,
+    GetFileDiffProvider,
+    ChangeSetService
+} from './changeset-functions';
 
 export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: WorkspacePreferencesSchema });
@@ -30,4 +43,13 @@ export default new ContainerModule(bind => {
     bind(ToolProvider).to(FileContentFunction);
     bind(ToolProvider).to(GetWorkspaceDirectoryStructure);
     bind(WorkspaceFunctionScope).toSelf().inSingletonScope();
+
+    bind(ChangeSetService).toSelf().inSingletonScope();
+    bind(ToolProvider).to(InitializeChangeSetProvider);
+    bind(ToolProvider).to(AddFileChangeProvider);
+    bind(ToolProvider).to(UpdateFileChangeProvider);
+    bind(ToolProvider).to(RemoveFileChangeProvider);
+    bind(ToolProvider).to(GetChangeSetProvider);
+    bind(ToolProvider).to(ListChangedFilesProvider);
+    bind(ToolProvider).to(GetFileDiffProvider);
 });
