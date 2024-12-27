@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2024 EclipseSource GmbH.
+// Copyright (C) 2025 EclipseSource GmbH.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,13 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { AbstractStreamParsingChatAgent, ChatAgent, SystemMessageDescription } from '@theia/ai-chat/lib/common';
-import { AgentSpecificVariables, PromptTemplate, ToolInvocationRegistry } from '@theia/ai-core';
-import { inject, injectable } from '@theia/core/shared/inversify';
-import { workspaceTemplate } from '../common/workspace-template';
-import { FILE_CONTENT_FUNCTION_ID, GET_WORKSPACE_FILE_LIST_FUNCTION_ID } from '../common/workspace-functions';
+import { AgentSpecificVariables, PromptTemplate } from '@theia/ai-core';
+import { injectable } from '@theia/core/shared/inversify';
+import { FILE_CONTENT_FUNCTION_ID, GET_WORKSPACE_FILE_LIST_FUNCTION_ID, GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID } from '../common/workspace-functions';
+import { coderReplaceTemplate } from '../common/coder-replace-template';
 
 @injectable()
-export class WorkspaceAgent extends AbstractStreamParsingChatAgent implements ChatAgent {
+export class CoderAgent extends AbstractStreamParsingChatAgent implements ChatAgent {
     name: string;
     description: string;
     promptTemplates: PromptTemplate[];
@@ -28,26 +28,22 @@ export class WorkspaceAgent extends AbstractStreamParsingChatAgent implements Ch
     readonly agentSpecificVariables: AgentSpecificVariables[];
     readonly functions: string[];
 
-    @inject(ToolInvocationRegistry)
-    protected toolInvocationRegistry: ToolInvocationRegistry;
-
     constructor() {
-        super('Workspace', [{
+        super('Coder', [{
             purpose: 'chat',
             identifier: 'openai/gpt-4o',
         }], 'chat');
-        this.name = 'Workspace';
-        this.description = 'This agent can access the users workspace, it can get a list of all available files and retrieve their content. \
-    It can therefore answer questions about the current project, project files and source code in the workspace, such as how to build the project, \
-    where to put source code, where to find specific code or configurations, etc.';
-        this.promptTemplates = [workspaceTemplate];
+        this.name = 'Coder';
+        this.description = 'An AI assistant integrated into Theia IDE, designed to assist software developers with code tasks.';
+        this.promptTemplates = [coderReplaceTemplate];
         this.variables = [];
         this.agentSpecificVariables = [];
-        this.functions = [GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID];
+        this.functions = [GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID, GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID];
     }
 
     protected override async getSystemMessageDescription(): Promise<SystemMessageDescription | undefined> {
-        const resolvedPrompt = await this.promptService.getPrompt(workspaceTemplate.id);
+        const resolvedPrompt = await this.promptService.getPrompt(coderReplaceTemplate.id);
         return resolvedPrompt ? SystemMessageDescription.fromResolvedPromptTemplate(resolvedPrompt) : undefined;
     }
+
 }
