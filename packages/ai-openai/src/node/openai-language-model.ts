@@ -31,24 +31,6 @@ import { ChatCompletionMessageParam } from 'openai/resources';
 
 export const OpenAiModelIdentifier = Symbol('OpenAiModelIdentifier');
 
-function toOpenAIMessage(message: LanguageModelRequestMessage): ChatCompletionMessageParam {
-    return {
-        role: toOpenAiRole(message),
-        content: message.query || ''
-    };
-}
-
-function toOpenAiRole(message: LanguageModelRequestMessage): 'system' | 'user' | 'assistant' {
-    switch (message.actor) {
-        case 'system':
-            return 'system';
-        case 'ai':
-            return 'assistant';
-        default:
-            return 'user';
-    }
-}
-
 export class OpenAiModel implements LanguageModel {
 
     /**
@@ -93,7 +75,7 @@ export class OpenAiModel implements LanguageModel {
         if (tools) {
             runner = openai.beta.chat.completions.runTools({
                 model: this.model,
-                messages: request.messages.map(toOpenAIMessage),
+                messages: request.messages.map(this.toOpenAIMessage.bind(this)),
                 stream: true,
                 tools: tools,
                 tool_choice: 'auto',
@@ -102,7 +84,7 @@ export class OpenAiModel implements LanguageModel {
         } else {
             runner = openai.beta.chat.completions.stream({
                 model: this.model,
-                messages: request.messages.map(toOpenAIMessage),
+                messages: request.messages.map(this.toOpenAIMessage.bind(this)),
                 stream: true,
                 ...settings
             });
@@ -161,7 +143,7 @@ export class OpenAiModel implements LanguageModel {
         const settings = this.getSettings(request);
         const response = await openai.chat.completions.create({
             model: this.model,
-            messages: request.messages.map(toOpenAIMessage),
+            messages: request.messages.map(this.toOpenAIMessage.bind(this)),
             ...settings
         });
 
@@ -170,6 +152,24 @@ export class OpenAiModel implements LanguageModel {
         return {
             text: message.content ?? ''
         };
+    }
+
+    protected toOpenAIMessage(message: LanguageModelRequestMessage): ChatCompletionMessageParam {
+        return {
+            role: this.toOpenAiRole(message),
+            content: message.query || ''
+        };
+    }
+
+    protected toOpenAiRole(message: LanguageModelRequestMessage): 'developer' | 'user' | 'assistant' {
+        switch (message.actor) {
+            case 'system':
+                return this.supportsDeveloperMessage() ? 'developer' : 'user';
+            case 'ai':
+                return 'assistant';
+            default:
+                return 'user';
+        }
     }
 
     protected isNonStreamingModel(_model: string): boolean {
@@ -185,12 +185,19 @@ export class OpenAiModel implements LanguageModel {
         ].includes(this.model);
     }
 
+    protected supportsDeveloperMessage(): boolean {
+        return ![
+            'o1-preview',
+            'o1-mini'
+        ].includes(this.model);
+    }
+
     protected async handleStructuredOutputRequest(openai: OpenAI, request: LanguageModelRequest): Promise<LanguageModelParsedResponse> {
         const settings = this.getSettings(request);
         // TODO implement tool support for structured output (parse() seems to require different tool format)
         const result = await openai.beta.chat.completions.parse({
             model: this.model,
-            messages: request.messages.map(toOpenAIMessage),
+            messages: request.messages.map(this.toOpenAIMessage.bind(this)),
             response_format: request.response_format,
             ...settings
         });
