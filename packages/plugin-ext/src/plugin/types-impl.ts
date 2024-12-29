@@ -1647,6 +1647,7 @@ export class DocumentLink {
 @es5ClassCompat
 export class DocumentDropOrPasteEditKind {
     static readonly Empty: DocumentDropOrPasteEditKind = new DocumentDropOrPasteEditKind('');
+    static readonly Text: DocumentDropOrPasteEditKind = new DocumentDropOrPasteEditKind('text');
 
     private static sep = '.';
 
