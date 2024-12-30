@@ -30,8 +30,9 @@ import {
     RemoveFileChangeProvider,
     GetChangeSetProvider,
     ListChangedFilesProvider,
-    GetFileDiffProvider,
-    ChangeSetService
+    ChangeSetService,
+    GetFileChangesProvider,
+    ApplyChangeSetProvider
 } from './changeset-functions';
 
 export default new ContainerModule(bind => {
@@ -51,5 +52,6 @@ export default new ContainerModule(bind => {
     bind(ToolProvider).to(RemoveFileChangeProvider);
     bind(ToolProvider).to(GetChangeSetProvider);
     bind(ToolProvider).to(ListChangedFilesProvider);
-    bind(ToolProvider).to(GetFileDiffProvider);
+    bind(ToolProvider).to(GetFileChangesProvider);
+    bind(ToolProvider).to(ApplyChangeSetProvider);
 });
