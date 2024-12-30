@@ -122,35 +122,45 @@ export class ChangeSetService {
             const fileUri = workspaceRoot.resolve(file);
             this.workspaceScope.ensureWithinWorkspace(fileUri, workspaceRoot);
             let fileContent;
-
             try {
                 fileContent = await this.fileService.read(fileUri);
             } catch (error) {
-                throw new Error(`Failed to read file: ${fileChange.file}`);
+                // Handle file read failure, but allow for operations like create_file.
+                if (!fileChange.changes.some(operation => operation.operation === 'create_file')) {
+                    throw new Error(`Failed to read file: ${fileChange.file}`);
+                }
             }
 
-            let updatedContent = fileContent.value;
+            let updatedContent = fileContent?.value || '';
 
             for (const operation of fileChange.changes) {
                 switch (operation.operation) {
                     case 'replace':
                         if (operation.find) {
-                            updatedContent = updatedContent.replace(operation.find, operation.replaceWith || '');
+                            const regex = new RegExp(operation.find, 'g');
+                            updatedContent = updatedContent.replace(regex, operation.replaceWith || '');
                         }
                         break;
                     case 'insert_after':
-                        if (operation.insertAfter) {
-                            updatedContent = updatedContent.replace(operation.insertAfter, operation.insertAfter + (operation.replaceWith || ''));
+                        if (operation.find) {
+                            updatedContent = updatedContent.replace(
+                                new RegExp(`(${operation.find})`, 'g'),
+                                `$1${operation.insertAfter || ''}`
+                            );
                         }
                         break;
                     case 'insert_before':
-                        if (operation.insertBefore) {
-                            updatedContent = updatedContent.replace(operation.insertBefore, (operation.replaceWith || '') + operation.insertBefore);
+                        if (operation.find) {
+                            updatedContent = updatedContent.replace(
+                                new RegExp(`(${operation.find})`, 'g'),
+                                `${operation.insertBefore || ''}$1`
+                            );
                         }
                         break;
                     case 'delete':
                         if (operation.find) {
-                            updatedContent = updatedContent.replace(operation.find, '');
+                            const regex = new RegExp(operation.find, 'g');
+                            updatedContent = updatedContent.replace(regex, '');
                         }
                         break;
                     case 'replace_entire_file':
@@ -164,7 +174,10 @@ export class ChangeSetService {
                         }
                         break;
                     case 'create_file':
-                        updatedContent = operation.newContent || '';
+                        // Here, ensure you're not overwriting an existing file unintentionally
+                        if (!fileContent) {
+                            updatedContent = operation.newContent || '';
+                        }
                         break;
                     case 'delete_file':
                         await this.fileService.delete(fileUri);
