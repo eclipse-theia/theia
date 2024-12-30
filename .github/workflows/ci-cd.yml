@@ -58,7 +58,7 @@ jobs:
     timeout-minutes: 60
 
     steps:
-      - name Clean
+      - name: Clean
         shell: bash
         run: |
           rm -rf ~/.node-gyp
