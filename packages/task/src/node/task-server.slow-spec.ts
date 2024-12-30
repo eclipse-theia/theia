@@ -199,7 +199,7 @@ describe('Task server / back-end', function (): void {
         // possible on what node's child_process module does.
         if (isWindows) {
             // On Windows, node-pty just reports an exit code of 0.
-            expect(exitStatus).equals(0);
+            expect(exitStatus).equals(1);
         } else {
             // On Linux/macOS, node-pty sends SIGHUP by default, for some reason.
             expect(exitStatus).equals('SIGHUP');
@@ -218,8 +218,8 @@ describe('Task server / back-end', function (): void {
         // currently.  Ideally, its behavior should be aligned as much as
         // possible on what node's child_process module does.
         if (isWindows) {
-            // On Windows, node-pty just reports an exit code of 0.
-            expect(exitStatus).equals(0);
+            // On Windows, node-pty just reports an exit code of 1.
+            expect(exitStatus).equals(1);
         } else {
             // On Linux/macOS, node-pty sends SIGHUP by default, for some reason.
             expect(exitStatus).equals('SIGHUP');
