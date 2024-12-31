@@ -72,7 +72,7 @@ describe('TerminalProcess', function (): void {
         const error = await new Promise<ProcessErrorEvent | IProcessExitEvent>((resolve, reject) => {
             const proc = terminalProcessFactory({ command: __dirname });
             proc.onError(resolve);
-            proc.onExit(reject);
+            proc.onExit(resolve);
         });
         if (isWindows) {
             expect(error.code).eq('ENOENT');
