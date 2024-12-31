@@ -17,16 +17,7 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import { ToolProvider, ToolRequest } from '@theia/ai-core';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceFunctionScope } from './functions';
-
-interface ChangeOperation {
-    operation: 'replace' | 'insert_after' | 'insert_before' | 'delete' | 'replace_entire_file' | 'insert_at' | 'create_file' | 'delete_file';
-    find?: string; // Optional for operations like 'replace', 'insert_after', 'insert_before', 'delete'.
-    replaceWith?: string; // Required for 'replace'.
-    insertAfter?: string; // Required for 'insert_after'.
-    insertBefore?: string; // Required for 'insert_before'.
-    newContent?: string; // Required for 'replace_entire_file' or 'insert_at'/'create_file'.
-    position?: 'start_of_file' | 'end_of_file'; // Required for 'insert_at'.
-}
+import { ContentChangeApplier, ChangeOperation } from './content-change-applier';
 
 interface FileChange {
     file: string; // The relative or absolute path to the file.
@@ -39,15 +30,17 @@ interface ChangeSet {
     fileChanges: Map<string, FileChange>; // A map of file paths to file changes.
 }
 
+// Updated ChangeSetService class
 @injectable()
 export class ChangeSetService {
-    @inject(FileService)
+        @inject(FileService)
     fileService: FileService;
 
     @inject(WorkspaceFunctionScope)
     workspaceScope: WorkspaceFunctionScope;
 
     private changeSets: Map<string, ChangeSet> = new Map();
+    private contentChangeApplier: ContentChangeApplier = new ContentChangeApplier();
 
     initializeChangeSet(uuid: string, description: string): void {
         this.changeSets.set(uuid, { uuid, description, fileChanges: new Map() });
@@ -125,65 +118,13 @@ export class ChangeSetService {
             try {
                 fileContent = await this.fileService.read(fileUri);
             } catch (error) {
-                // Handle file read failure, but allow for operations like create_file.
                 if (!fileChange.changes.some(operation => operation.operation === 'create_file')) {
                     throw new Error(`Failed to read file: ${fileChange.file}`);
                 }
             }
 
-            let updatedContent = fileContent?.value || '';
-
-            for (const operation of fileChange.changes) {
-                switch (operation.operation) {
-                    case 'replace':
-                        if (operation.find) {
-                            const regex = new RegExp(operation.find, 'g');
-                            updatedContent = updatedContent.replace(regex, operation.replaceWith || '');
-                        }
-                        break;
-                    case 'insert_after':
-                        if (operation.find) {
-                            updatedContent = updatedContent.replace(
-                                new RegExp(`(${operation.find})`, 'g'),
-                                `$1${operation.insertAfter || ''}`
-                            );
-                        }
-                        break;
-                    case 'insert_before':
-                        if (operation.find) {
-                            updatedContent = updatedContent.replace(
-                                new RegExp(`(${operation.find})`, 'g'),
-                                `${operation.insertBefore || ''}$1`
-                            );
-                        }
-                        break;
-                    case 'delete':
-                        if (operation.find) {
-                            const regex = new RegExp(operation.find, 'g');
-                            updatedContent = updatedContent.replace(regex, '');
-                        }
-                        break;
-                    case 'replace_entire_file':
-                        updatedContent = operation.newContent || '';
-                        break;
-                    case 'insert_at':
-                        if (operation.position === 'start_of_file') {
-                            updatedContent = (operation.newContent || '') + updatedContent;
-                        } else if (operation.position === 'end_of_file') {
-                            updatedContent = updatedContent + (operation.newContent || '');
-                        }
-                        break;
-                    case 'create_file':
-                        // Here, ensure you're not overwriting an existing file unintentionally
-                        if (!fileContent) {
-                            updatedContent = operation.newContent || '';
-                        }
-                        break;
-                    case 'delete_file':
-                        await this.fileService.delete(fileUri);
-                        continue; // Skip writing the deleted file
-                }
-            }
+            const initialContent = fileContent?.value || '';
+            const updatedContent = this.contentChangeApplier.applyChangesToContent(initialContent, fileChange.changes);
 
             try {
                 await this.fileService.write(fileUri, updatedContent);
