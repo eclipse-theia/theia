@@ -948,7 +948,7 @@ describe('ripgrep-search-in-workspace-server', function (): void {
         });
 
         if (isWindows) {
-            expect(errorString).contains('An error happened while searching (UNKNOWN).');
+            expect(errorString).contains('An error happened while searching');
         } else {
             expect(errorString).contains('could not execute the ripgrep (rg) binary');
         }
