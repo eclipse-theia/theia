@@ -30,18 +30,22 @@ export class ContentChangeApplier {
                     if (!operation.anchor) {
                         throw new Error('Anchor is required for replace operation.');
                     }
-                    const replaceRegex = new RegExp(operation.anchor, 'g');
-                    updatedContent = updatedContent.replace(replaceRegex, operation.newContent);
+                    const replaceIndex = updatedContent.indexOf(operation.anchor);
+                    if (replaceIndex === -1) {
+                        throw new Error(`Anchor not found: "${operation.anchor}"`);
+                    }
+                    updatedContent = updatedContent.replace(operation.anchor, operation.newContent);
                     break;
 
                 case 'insertBefore':
                     if (!operation.anchor) {
                         throw new Error('Anchor is required for insertBefore operation.');
                     }
-                    updatedContent = updatedContent.replace(
-                        new RegExp(`(${operation.anchor})`, 'g'),
-                        `${operation.newContent}$1`
-                    );
+                    const insertIndex = updatedContent.indexOf(operation.anchor);
+                    if (insertIndex === -1) {
+                        throw new Error(`Anchor not found: "${operation.anchor}"`);
+                    }
+                    updatedContent = updatedContent.replace(operation.anchor, `${operation.newContent}${operation.anchor}`);
                     break;
 
                 case 'insertAtEndOfFile':
