@@ -18,6 +18,7 @@ import { ContainerModule } from '@theia/core/shared/inversify';
 import { ChatAgent } from '@theia/ai-chat/lib/common';
 import { Agent, ToolProvider } from '@theia/ai-core/lib/common';
 import { WorkspaceAgent } from './workspace-agent';
+import { CodheiaAgent } from './codheia-agent';
 import { FileContentFunction, GetWorkspaceDirectoryStructure, GetWorkspaceFileList, WorkspaceFunctionScope } from './functions';
 import { PreferenceContribution } from '@theia/core/lib/browser';
 import { WorkspacePreferencesSchema } from './workspace-preferences';
@@ -40,6 +41,9 @@ export default new ContainerModule(bind => {
     bind(WorkspaceAgent).toSelf().inSingletonScope();
     bind(Agent).toService(WorkspaceAgent);
     bind(ChatAgent).toService(WorkspaceAgent);
+    bind(CodheiaAgent).toSelf().inSingletonScope();
+    bind(Agent).toService(CodheiaAgent);
+    bind(ChatAgent).toService(CodheiaAgent);
     bind(ToolProvider).to(GetWorkspaceFileList);
     bind(ToolProvider).to(FileContentFunction);
     bind(ToolProvider).to(GetWorkspaceDirectoryStructure);
