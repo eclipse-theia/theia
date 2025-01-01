@@ -44,7 +44,7 @@ describe('ContentChangeApplier', () => {
         it('should replace text correctly', () => {
             const content = 'Hello world!';
             const changes: ChangeOperation[] = [
-                { operation: 'replace', find: 'world', replaceWith: 'there' }
+                { operation: 'replace', anchor: 'world', newContent: 'there' }
             ];
             const updatedContent = contentChangeApplier.applyChangesToContent(content, changes);
             expect(updatedContent).to.equal('Hello there!');
@@ -53,52 +53,16 @@ describe('ContentChangeApplier', () => {
         it('should insert after text correctly', () => {
             const content = 'Hello world!';
             const changes: ChangeOperation[] = [
-                { operation: 'insert_after', find: 'Hello', insertAfter: ' amazing' }
+                { operation: 'insertAfter', anchor: 'Hello', newContent: ' amazing' }
             ];
             const updatedContent = contentChangeApplier.applyChangesToContent(content, changes);
             expect(updatedContent).to.equal('Hello amazing world!');
         });
 
-        it('should insert before text correctly', () => {
-            const content = 'Hello world!';
-            const changes: ChangeOperation[] = [
-                { operation: 'insert_before', find: 'world', insertBefore: 'brave ' }
-            ];
-            const updatedContent = contentChangeApplier.applyChangesToContent(content, changes);
-            expect(updatedContent).to.equal('Hello brave world!');
-        });
-
-        it('should delete text correctly', () => {
-            const content = 'Hello brave new world!';
-            const changes: ChangeOperation[] = [
-                { operation: 'delete', find: 'brave ' }
-            ];
-            const updatedContent = contentChangeApplier.applyChangesToContent(content, changes);
-            expect(updatedContent).to.equal('Hello new world!');
-        });
-
-        it('should replace entire content', () => {
-            const content = 'Hello world!';
-            const changes: ChangeOperation[] = [
-                { operation: 'replace_entire_file', newContent: 'Goodbye everyone.' }
-            ];
-            const updatedContent = contentChangeApplier.applyChangesToContent(content, changes);
-            expect(updatedContent).to.equal('Goodbye everyone.');
-        });
-
-        it('should insert at the start of the file', () => {
-            const content = 'quick brown fox';
-            const changes: ChangeOperation[] = [
-                { operation: 'insert_at', position: 'start_of_file', newContent: 'The ' }
-            ];
-            const updatedContent = contentChangeApplier.applyChangesToContent(content, changes);
-            expect(updatedContent).to.equal('The quick brown fox');
-        });
-
         it('should insert at the end of the file', () => {
             const content = 'The quick brown fox';
             const changes: ChangeOperation[] = [
-                { operation: 'insert_at', position: 'end_of_file', newContent: ' jumps over the lazy dog.' }
+                { operation: 'insertAtEndOfFile', newContent: ' jumps over the lazy dog.' }
             ];
             const updatedContent = contentChangeApplier.applyChangesToContent(content, changes);
             expect(updatedContent).to.equal('The quick brown fox jumps over the lazy dog.');
@@ -112,5 +76,36 @@ describe('ContentChangeApplier', () => {
             const updatedContent = contentChangeApplier.applyChangesToContent(content, changes);
             expect(updatedContent).to.equal('Hello from a new file.');
         });
+
+        it('should throw an error when create_file is applied to a non-empty file', () => {
+            const content = 'Existing content';
+            const changes: ChangeOperation[] = [
+                { operation: 'create_file', newContent: 'Hello from a new file.' }
+            ];
+            expect(() => contentChangeApplier.applyChangesToContent(content, changes)).to.throw(
+                'Cannot perform create_file operation on an existing file. Ensure the file is empty or does not exist.'
+            );
+        });
+
+        it('should throw an error if anchor is missing for replace', () => {
+            const content = 'Hello world!';
+            const changes: ChangeOperation[] = [
+                { operation: 'replace', anchor: '', newContent: 'there' }
+            ];
+            expect(() => contentChangeApplier.applyChangesToContent(content, changes)).to.throw(
+                'Anchor is required for replace operation.'
+            );
+        });
+
+        it('should throw an error if anchor is missing for insertAfter', () => {
+            const content = 'Hello world!';
+            const changes: ChangeOperation[] = [
+                { operation: 'insertAfter', anchor: '', newContent: ' amazing' }
+            ];
+            expect(() => contentChangeApplier.applyChangesToContent(content, changes)).to.throw(
+                'Anchor is required for insertAfter operation.'
+            );
+        });
+
     });
 });

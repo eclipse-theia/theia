@@ -33,7 +33,7 @@ interface ChangeSet {
 // Updated ChangeSetService class
 @injectable()
 export class ChangeSetService {
-        @inject(FileService)
+    @inject(FileService)
     fileService: FileService;
 
     @inject(WorkspaceFunctionScope)
@@ -164,6 +164,39 @@ export class InitializeChangeSetProvider implements ToolProvider {
     }
 }
 
+const FileChangeParameters: ToolRequest['parameters'] = {
+    type: 'object',
+    properties: {
+        uuid: { type: 'string', description: 'Unique identifier for the change set.' },
+        filePath: { type: 'string', description: 'Path to the file.' },
+        changes: {
+            type: 'array',
+            items: {
+                type: 'object',
+                properties: {
+                    operation: {
+                        type: 'string',
+                        enum: ['replace', 'insertAfter', 'insertAtEndOfFile', 'create_file'],
+                        description: 'The type of operation to perform.'
+                    },
+                    anchor: {
+                        type: 'string',
+                        nullable: true,
+                        description: 'Text to find as the anchor for the operation. Required for `replace` and `insertAfter`.'
+                    },
+                    newContent: {
+                        type: 'string',
+                        nullable: false,
+                        description: 'The new content to insert or write to the file.'
+                    }
+                },
+                required: ['operation', 'newContent']
+            }
+        }
+    },
+    required: ['uuid', 'filePath', 'changes']
+};
+
 @injectable()
 export class AddFileChangeProvider implements ToolProvider {
     static ID = 'changeSet_addFileChange';
@@ -176,30 +209,7 @@ export class AddFileChangeProvider implements ToolProvider {
             id: AddFileChangeProvider.ID,
             name: AddFileChangeProvider.ID,
             description: 'Adds a file change to a change set.',
-            parameters: {
-                type: 'object',
-                properties: {
-                    uuid: { type: 'string', description: 'Unique identifier for the change set.' },
-                    filePath: { type: 'string', description: 'Path to the file.' },
-                    changes: {
-                        type: 'array',
-                        items: {
-                            type: 'object',
-                            properties: {
-                                operation: { type: 'string', description: 'Type of operation (e.g., replace, delete, etc.).' },
-                                find: { type: 'string', nullable: true },
-                                replaceWith: { type: 'string', nullable: true },
-                                insertAfter: { type: 'string', nullable: true },
-                                insertBefore: { type: 'string', nullable: true },
-                                newContent: { type: 'string', nullable: true },
-                                position: { type: 'string', enum: ['start_of_file', 'end_of_file'], nullable: true }
-                            },
-                            required: ['operation']
-                        }
-                    }
-                },
-                required: ['uuid', 'filePath', 'changes']
-            },
+            parameters: FileChangeParameters,
             handler: async (args: string): Promise<string> => {
                 const { uuid, filePath, changes } = JSON.parse(args);
                 this.changeSetService.addFileChange(uuid, filePath, changes);
@@ -221,30 +231,7 @@ export class UpdateFileChangeProvider implements ToolProvider {
             id: UpdateFileChangeProvider.ID,
             name: UpdateFileChangeProvider.ID,
             description: 'Updates the operations of a file in the specified change set.',
-            parameters: {
-                type: 'object',
-                properties: {
-                    uuid: { type: 'string', description: 'Unique identifier for the change set.' },
-                    filePath: { type: 'string', description: 'Path to the file.' },
-                    changes: {
-                        type: 'array',
-                        items: {
-                            type: 'object',
-                            properties: {
-                                operation: { type: 'string', description: 'Type of operation (e.g., replace, delete, etc.).' },
-                                find: { type: 'string', nullable: true },
-                                replaceWith: { type: 'string', nullable: true },
-                                insertAfter: { type: 'string', nullable: true },
-                                insertBefore: { type: 'string', nullable: true },
-                                newContent: { type: 'string', nullable: true },
-                                position: { type: 'string', enum: ['start_of_file', 'end_of_file'], nullable: true }
-                            },
-                            required: ['operation']
-                        }
-                    }
-                },
-                required: ['uuid', 'filePath', 'changes']
-            },
+            parameters: FileChangeParameters,
             handler: async (args: string): Promise<string> => {
                 const { uuid, filePath, changes } = JSON.parse(args);
                 this.changeSetService.updateFileChange(uuid, filePath, changes);

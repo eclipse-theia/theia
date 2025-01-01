@@ -13,14 +13,11 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+
 export interface ChangeOperation {
-    operation: 'replace' | 'insert_after' | 'insert_before' | 'delete' | 'replace_entire_file' | 'insert_at' | 'create_file';
-    find?: string;
-    replaceWith?: string;
-    insertAfter?: string;
-    insertBefore?: string;
-    newContent?: string;
-    position?: 'start_of_file' | 'end_of_file';
+    operation: 'replace' | 'insertAfter' | 'insertAtEndOfFile' | 'create_file'; // Valid operations
+    anchor?: string; // Text to find as the anchor for the operation (used in replace/insertAfter)
+    newContent: string; // Content to insert, replace, or write for create_file
 }
 
 export class ContentChangeApplier {
@@ -30,48 +27,38 @@ export class ContentChangeApplier {
         for (const operation of changes) {
             switch (operation.operation) {
                 case 'replace':
-                    if (operation.find) {
-                        const regex = new RegExp(operation.find, 'g');
-                        updatedContent = updatedContent.replace(regex, operation.replaceWith || '');
+                    if (!operation.anchor) {
+                        throw new Error('Anchor is required for replace operation.');
                     }
+                    const replaceRegex = new RegExp(operation.anchor, 'g');
+                    updatedContent = updatedContent.replace(replaceRegex, operation.newContent);
                     break;
-                case 'insert_after':
-                    if (operation.find) {
-                        updatedContent = updatedContent.replace(
-                            new RegExp(`(${operation.find})`, 'g'),
-                            `$1${operation.insertAfter || ''}`
-                        );
+
+                case 'insertAfter':
+                    if (!operation.anchor) {
+                        throw new Error('Anchor is required for insertAfter operation.');
                     }
+                    updatedContent = updatedContent.replace(
+                        new RegExp(`(${operation.anchor})`, 'g'),
+                        `$1${operation.newContent}`
+                    );
                     break;
-                case 'insert_before':
-                    if (operation.find) {
-                        updatedContent = updatedContent.replace(
-                            new RegExp(`(${operation.find})`, 'g'),
-                            `${operation.insertBefore || ''}$1`
-                        );
-                    }
+
+                case 'insertAtEndOfFile':
+                    updatedContent += operation.newContent;
                     break;
-                case 'delete':
-                    if (operation.find) {
-                        const regex = new RegExp(operation.find, 'g');
-                        updatedContent = updatedContent.replace(regex, '');
-                    }
-                    break;
-                case 'replace_entire_file':
-                    updatedContent = operation.newContent || '';
-                    break;
-                case 'insert_at':
-                    if (operation.position === 'start_of_file') {
-                        updatedContent = (operation.newContent || '') + updatedContent;
-                    } else if (operation.position === 'end_of_file') {
-                        updatedContent = updatedContent + (operation.newContent || '');
-                    }
-                    break;
+
                 case 'create_file':
-                    if (!content) {
-                        updatedContent = operation.newContent || '';
+                    if (content) {
+                        throw new Error(
+                            'Cannot perform create_file operation on an existing file. Ensure the file is empty or does not exist.'
+                        );
                     }
+                    updatedContent = operation.newContent;
                     break;
+
+                default:
+                    throw new Error(`Unsupported operation: ${operation.operation}`);
             }
         }
 
