@@ -43,7 +43,12 @@ export function enableJSDOM(): () => void {
     });
     (global as any)['document'] = dom.window.document;
     (global as any)['window'] = dom.window;
-    (global as any)['navigator'] = { userAgent: 'node.js', platform: 'Mac' };
+    try {
+        (global as any)['navigator'] = { userAgent: 'node.js', platform: 'Mac' };
+
+    } catch (e) {
+        // node 21+ already has a navigator object
+    }
 
     const toCleanup: string[] = [];
     Object.getOwnPropertyNames((dom.window as any)).forEach(property => {

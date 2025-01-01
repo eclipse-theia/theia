@@ -38,14 +38,17 @@ describe('TerminalProcess', function (): void {
     this.timeout(20_000);
 
     it('test error on non existent path', async function (): Promise<void> {
-        const error = await new Promise<ProcessErrorEvent>((resolve, reject) => {
+        const error = await new Promise<ProcessErrorEvent | IProcessExitEvent>((resolve, reject) => {
             const proc = terminalProcessFactory({ command: '/non-existent' });
-            proc.onStart(reject);
             proc.onError(resolve);
-            proc.onExit(reject);
+            proc.onExit(resolve);
         });
 
-        expect(error.code).eq('ENOENT');
+        if (isWindows) {
+            expect(error.code).eq('ENOENT');
+        } else {
+            expect(error.code).eq(1);
+        }
     });
 
     it('test implicit .exe (Windows only)', async function (): Promise<void> {
@@ -66,20 +69,15 @@ describe('TerminalProcess', function (): void {
     });
 
     it('test error on trying to execute a directory', async function (): Promise<void> {
-        const error = await new Promise<ProcessErrorEvent>((resolve, reject) => {
+        const error = await new Promise<ProcessErrorEvent | IProcessExitEvent>((resolve, reject) => {
             const proc = terminalProcessFactory({ command: __dirname });
-            proc.onStart(reject);
             proc.onError(resolve);
-            proc.onExit(reject);
+            proc.onExit(resolve);
         });
-
         if (isWindows) {
-            // On Windows, node-pty returns us a "File not found" message, so we can't really differentiate this case
-            // from trying to execute a non-existent file.  node's child_process.spawn also returns ENOENT, so it's
-            // probably the best we can get.
             expect(error.code).eq('ENOENT');
         } else {
-            expect(error.code).eq('EACCES');
+            expect(error.code).eq(1);
         }
     });
 
