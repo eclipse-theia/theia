@@ -50,10 +50,10 @@ describe('ContentChangeApplier', () => {
             expect(updatedContent).to.equal('Hello there!');
         });
 
-        it('should insert after text correctly', () => {
+        it('should insert before text correctly', () => {
             const content = 'Hello world!';
             const changes: ChangeOperation[] = [
-                { operation: 'insertAfter', anchor: 'Hello', newContent: ' amazing' }
+                { operation: 'insertBefore', anchor: 'world!', newContent: 'amazing ' }
             ];
             const updatedContent = contentChangeApplier.applyChangesToContent(content, changes);
             expect(updatedContent).to.equal('Hello amazing world!');
@@ -97,13 +97,13 @@ describe('ContentChangeApplier', () => {
             );
         });
 
-        it('should throw an error if anchor is missing for insertAfter', () => {
+        it('should throw an error if anchor is missing for insertBefore', () => {
             const content = 'Hello world!';
             const changes: ChangeOperation[] = [
-                { operation: 'insertAfter', anchor: '', newContent: ' amazing' }
+                { operation: 'insertBefore', anchor: '', newContent: 'amazing ' }
             ];
             expect(() => contentChangeApplier.applyChangesToContent(content, changes)).to.throw(
-                'Anchor is required for insertAfter operation.'
+                'Anchor is required for insertBefore operation.'
             );
         });
 

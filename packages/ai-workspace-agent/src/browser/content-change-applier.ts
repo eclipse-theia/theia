@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 export interface ChangeOperation {
-    operation: 'replace' | 'insertAfter' | 'insertAtEndOfFile' | 'create_file'; // Valid operations
-    anchor?: string; // Text to find as the anchor for the operation (used in replace/insertAfter)
+    operation: 'replace' | 'insertBefore' | 'insertAtEndOfFile' | 'create_file'; // Valid operations
+    anchor?: string; // Text to find as the anchor for the operation (used in replace/insertBefore)
     newContent: string; // Content to insert, replace, or write for create_file
 }
 
@@ -34,13 +34,13 @@ export class ContentChangeApplier {
                     updatedContent = updatedContent.replace(replaceRegex, operation.newContent);
                     break;
 
-                case 'insertAfter':
+                case 'insertBefore':
                     if (!operation.anchor) {
-                        throw new Error('Anchor is required for insertAfter operation.');
+                        throw new Error('Anchor is required for insertBefore operation.');
                     }
                     updatedContent = updatedContent.replace(
                         new RegExp(`(${operation.anchor})`, 'g'),
-                        `$1${operation.newContent}`
+                        `${operation.newContent}$1`
                     );
                     break;
 
