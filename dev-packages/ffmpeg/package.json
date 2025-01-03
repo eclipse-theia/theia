@@ -22,6 +22,7 @@
     "src"
   ],
   "scripts": {
+    "compile": "theiaext compile",
     "lint": "theiaext lint",
     "build": "theiaext build",
     "watch": "theiaext watch",

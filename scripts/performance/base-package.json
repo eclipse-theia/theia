@@ -25,7 +25,7 @@
   },
   "scripts": {
     "clean": "theia clean",
-    "build": "yarn -s compile && yarn -s bundle",
+    "build": "npm run -s compile && npm run -s bundle",
     "bundle": "theia build --mode development",
     "compile": "tsc -b",
     "rebuild": "theia rebuild:{{app}} --cacheRoot ../..",

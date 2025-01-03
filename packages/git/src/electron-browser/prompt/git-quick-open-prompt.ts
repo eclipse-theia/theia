@@ -38,6 +38,11 @@ export class GitQuickOpenPrompt extends GitPrompt {
                 });
                 resolve(GitPrompt.Success.create(result!));
             });
+        }).then((answer: GitPrompt.Answer | void) => {
+            if (!answer) {
+                return { type: GitPrompt.Answer.Type.CANCEL };
+            }
+            return answer;
         });
     }
     override dispose(): void {
