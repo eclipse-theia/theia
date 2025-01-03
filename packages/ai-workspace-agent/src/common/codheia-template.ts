@@ -17,8 +17,8 @@ import { PromptTemplate } from '@theia/ai-core/lib/common';
 import { GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID, GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID } from './functions';
 
 export const codheiaTemplate = <PromptTemplate>{
-  id: 'codheia-system',
-  template: `
+    id: 'codheia-system',
+    template: `
 {{!-- Made improvements or adaptations to this prompt template? Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
 You are an AI assistant integrated into Theia IDE, designed to assist software developers with code tasks. You can interact with the code base and suggest changes.
@@ -135,5 +135,16 @@ Follow these guidelines to ensure your proposed changes are structured, actionab
 
 If the user explicitly requests you to apply code changes, you can apply a created change set using the following function:
 ~{changeSet_applyChangeSet}
+
+## Append Change Set UUID
+At the end of each response, please include the current change set UUID in the following format:
+
+--- Change Set Information ---
+{
+  "changeSetUUID": "your-uuid-goes-here"
+}
+
+This information helps maintain a consistent reference to the change set being used for any operations or changes you propose.
+
 `
 };

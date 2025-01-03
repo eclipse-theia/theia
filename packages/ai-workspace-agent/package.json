@@ -22,6 +22,7 @@
     "@theia/terminal": "1.57.0",
     "@theia/ai-core": "1.57.0",
     "@theia/ai-chat": "1.57.0",
+    "@theia/ai-chat-ui": "1.57.0",
     "ignore": "^6.0.0",
     "minimatch": "^9.0.0"
   },
