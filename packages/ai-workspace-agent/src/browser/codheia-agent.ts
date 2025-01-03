@@ -15,7 +15,7 @@
 // *****************************************************************************
 import { AbstractStreamParsingChatAgent, ChatAgent, ChatResponseContent, SystemMessageDescription } from '@theia/ai-chat/lib/common';
 import { AgentSpecificVariables, PromptTemplate, ToolInvocationRegistry } from '@theia/ai-core';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { codheiaTemplate } from '../common/codheia-template';
 import { FILE_CONTENT_FUNCTION_ID, GET_WORKSPACE_FILE_LIST_FUNCTION_ID, GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID } from '../common/functions';
 
@@ -53,16 +53,19 @@ export class CodheiaAgent extends AbstractStreamParsingChatAgent implements Chat
         const resolvedPrompt = await this.promptService.getPrompt(codheiaTemplate.id);
         return resolvedPrompt ? SystemMessageDescription.fromResolvedPromptTemplate(resolvedPrompt) : undefined;
     }
-    // Parsing responses to extract change set UUID
-    protected async parseChangeSetUUID(text: string): Promise<{ changeSetUUID: string }> {
-        const uuidMatch = text.match(/"changeSetUUID":\s*"(.*?)"/);
-        const changeSetUUID = uuidMatch ? uuidMatch[1] : '';
-        return { changeSetUUID };
-    }
-
-    // Create ChangeSetResponseContent
-    protected createChangeSetResponseContent(parsedChangeSet: { changeSetUUID: string }): ChangeSetResponseContent {
-        return new ChangeSetResponseContent(parsedChangeSet.changeSetUUID);
+    @postConstruct()
+    addContentMatchers(): void {
+        this.contentMatchers.push({
+            start: /^\\\"changeSetUUID\\\": \\\".*$/m,
+            end: /^.*\\\"$/m,
+            contentFactory: (content: string, request) => {
+                const uuidMatch = content.match(/\"changeSetUUID\":\\s*\"(.*?)\"/);
+                if (!uuidMatch) {
+                    throw new Error('Invalid change set UUID format');
+                }
+                const changeSetUUID = uuidMatch[1];
+                return new ChangeSetResponseContent(changeSetUUID);
+            }
+        });
     }
 }
-

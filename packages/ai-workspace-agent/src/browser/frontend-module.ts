@@ -35,6 +35,8 @@ import {
     GetFileChangesProvider,
     ApplyChangeSetProvider
 } from './changeset-functions';
+import { ChatResponsePartRenderer } from '@theia/ai-chat-ui/lib/browser/chat-response-part-renderer';
+import { ChangeSetPartRenderer } from './changeset-part-renderer';
 
 export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: WorkspacePreferencesSchema });
@@ -58,4 +60,6 @@ export default new ContainerModule(bind => {
     bind(ToolProvider).to(ListChangedFilesProvider);
     bind(ToolProvider).to(GetFileChangesProvider);
     bind(ToolProvider).to(ApplyChangeSetProvider);
+
+    bind(ChatResponsePartRenderer).to(ChangeSetPartRenderer);
 });
