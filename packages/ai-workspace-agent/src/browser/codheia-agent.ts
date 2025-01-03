@@ -56,15 +56,12 @@ export class CodheiaAgent extends AbstractStreamParsingChatAgent implements Chat
     @postConstruct()
     addContentMatchers(): void {
         this.contentMatchers.push({
-            start: /^\\\"changeSetUUID\\\": \\\".*$/m,
-            end: /^.*\\\"$/m,
+            start: /^<changeset>.*$/m,
+            end: /^<\/changeset>$/m,
             contentFactory: (content: string, request) => {
-                const uuidMatch = content.match(/\"changeSetUUID\":\\s*\"(.*?)\"/);
-                if (!uuidMatch) {
-                    throw new Error('Invalid change set UUID format');
-                }
-                const changeSetUUID = uuidMatch[1];
-                return new ChangeSetResponseContent(changeSetUUID);
+                const changeset = content.replace(/^<changeset>\n|<\/changeset>$/g, '');
+                const parsedChangeset = JSON.parse(changeset);
+                return new ChangeSetResponseContent(parsedChangeset.uuid);
             }
         });
     }
