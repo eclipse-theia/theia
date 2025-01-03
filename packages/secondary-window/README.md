@@ -12,12 +12,18 @@
 
 ## Description
 
-The `@theia/secondary-window` extension contributes UI integration that allows moving widgets to secondary windows.
+The `@theia/secondary-window` extension contributes the extract command and toolbar item to move extractable widgets to secondary windows.
+
+To mark a widget to be extractable, implement the `ExtractableWidget` interface from `@theia/core`.
 
 ### Limitations
 
-- **The extension is currently only suitable for use in browser applications** because there are some unresolved issues with *Electron*.
-- Currently, only webview widgets can be moved to secondary windows.
+For the extraction to work we require changes in upstream libraries.
+Theia offers the `theia-patch` CLI command to apply these patches.
+
+Recommendation: Execute `theia-patch` in the `postinstall` script of your root npm package to automatically apply the patches.
+
+If the patches are not applied, the secondary window will show empty.
 
 ## Additional Information
 
