@@ -102,35 +102,42 @@ export class ChangeSetService {
         return fileChange.changes;
     }
 
+    async applyFileChange(fileChange: FileChange, filePath: string): Promise<void> {
+
+        const workspaceRoot = await this.workspaceScope.getWorkspaceRoot();
+        const fileUri = workspaceRoot.resolve(fileChange.file);
+        this.workspaceScope.ensureWithinWorkspace(fileUri, workspaceRoot);
+        let fileContent: { value: string; } | undefined;
+        try {
+            fileContent = await this.fileService.read(fileUri);
+        } catch (error) {
+            if (!fileChange.changes.some(operation => operation.operation === 'create_file')) {
+                throw new Error(`Failed to read file: ${fileChange.file}`);
+            }
+        }
+
+        const initialContent = fileContent?.value || '';
+        const updatedContent = this.contentChangeApplier.applyChangesToContent(initialContent, fileChange.changes);
+
+        try {
+            await this.fileService.write(fileUri, updatedContent);
+        } catch (error) {
+            throw new Error(`Failed to write file: ${fileChange.file}`);
+        }
+    }
+
     async applyChangeSet(uuid: string): Promise<void> {
         const changeSet = this.changeSets.get(uuid);
         if (!changeSet) {
             throw new Error(`Change set ${uuid} does not exist.`);
         }
 
-        const workspaceRoot = await this.workspaceScope.getWorkspaceRoot();
-
-        for (const fileChange of changeSet.fileChanges.values()) {
-            const file = fileChange.file;
-            const fileUri = workspaceRoot.resolve(file);
-            this.workspaceScope.ensureWithinWorkspace(fileUri, workspaceRoot);
-            let fileContent;
-            try {
-                fileContent = await this.fileService.read(fileUri);
-            } catch (error) {
-                if (!fileChange.changes.some(operation => operation.operation === 'create_file')) {
-                    throw new Error(`Failed to read file: ${fileChange.file}`);
-                }
+        for (const filePath of changeSet.fileChanges.keys()) {
+            const fileChange = changeSet.fileChanges.get(filePath);
+            if (!fileChange) {
+                throw new Error(`File ${filePath} not found in change set ${uuid}.`);
             }
-
-            const initialContent = fileContent?.value || '';
-            const updatedContent = this.contentChangeApplier.applyChangesToContent(initialContent, fileChange.changes);
-
-            try {
-                await this.fileService.write(fileUri, updatedContent);
-            } catch (error) {
-                throw new Error(`Failed to write file: ${fileChange.file}`);
-            }
+            await this.applyFileChange(fileChange, filePath);
         }
     }
 }

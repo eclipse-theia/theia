@@ -53,7 +53,7 @@ The format for code changes is declarative and operates on structured ChangeOper
 - **Operation Types**:
   - insertBefore: Insert text immediately before a specified match.
   - insertAtEndOfFile: Append content to the end of a file. Only use this, if the new content is really at the very end of a file!
-  - replace: Replace a specific text. Only use this if existing content is modified
+  - replace: Replace a specific text. Only use this if existing content is modified.
   - create_file: Create a new file with the specified content.
 
 ### Preference for Full-Line Operations
@@ -71,9 +71,14 @@ The format for code changes is declarative and operates on structured ChangeOper
 
 ### Accurate Placement for Operations
 
-- **replace and insertBefore**:
-  - Use an explicit anchor (full line of text) to define the exact location for the operation.
-  - Ensure the anchor is unambiguous and matches the intended target.
+- **replace**
+  - Always use the **entire content block** that needs to be replaced as the anchor, even if it spans multiple lines.
+  - Avoid partial text matches or relying solely on the first line, as this can lead to errors in applying changes.
+  - Retrieve the full block using workspace functions (e.g., getFileContent) to ensure the anchor string precisely matches the target section.
+
+- **insertBefore**:
+  - Use a clearly defined anchor that can consist of one or more lines to specify the exact location for the insertion.
+  - Ensure the chosen anchor provides sufficient context for unambiguous placement of the new content.
 
 - **insertAtEndOfFile**:
   - Only use this operation to append content to the end of a file. No anchor is required.
