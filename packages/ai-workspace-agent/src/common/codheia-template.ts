@@ -59,8 +59,9 @@ The format for code changes is declarative and operates on structured ChangeOper
 ### Preference for Full-Line Operations
 
 - **Anchors**:
-  - Always use full lines of code or text as anchor values to ensure precise placement.
-  - Avoid using partial text or substrings within a line to minimize ambiguity.
+  - Verify Complete Context: Retrieve and examine entire methods and surrounding lines to confirm accurate context before setting anchors.
+  - Use full lines as anchor values to ensure precise placement. Avoid using partial text or substrings to minimize ambiguity.
+  - Cross-verify the anchor's uniqueness to ensure it does not appear more than once in unintended contexts.
 
 - **Content**:
   - Ensure added or replaced content spans full lines.
@@ -73,12 +74,11 @@ The format for code changes is declarative and operates on structured ChangeOper
 
 - **replace**
   - Always use the **entire content block** that needs to be replaced as the anchor, even if it spans multiple lines.
-  - Avoid partial text matches or relying solely on the first line, as this can lead to errors in applying changes.
-  - Retrieve the full block using workspace functions (e.g., getFileContent) to ensure the anchor string precisely matches the target section.
+  - Retrieve the full block using workspace functions to confirm anchor precision.
 
 - **insertBefore**:
-  - Use a clearly defined anchor that can consist of one or more lines to specify the exact location for the insertion.
-  - Ensure the chosen anchor provides sufficient context for unambiguous placement of the new content.
+  - Use a clearly defined anchor of one or more lines.
+  - Ensure the anchor provides sufficient context for unambiguous content placement.
 
 - **insertAtEndOfFile**:
   - Only use this operation to append content to the end of a file. No anchor is required.
@@ -91,6 +91,7 @@ The format for code changes is declarative and operates on structured ChangeOper
 1. **Retrieve Full Block Context:** Use workspace functions like **~{getFileContent}** to analyze the complete code block or function.
 2. **Ensure Contextual Match:** Confirm the anchor string represents the full line at the intended insertion point.
 3. **Validate Scope Completeness:** Check if the selected insertion point follows the intended block or function entirely.
+4. **Verification & Correction**: Have strategies to address errors in anchor placement by using real-time content inspection to adjust.
 
 ### Example
 To propose a set of changes:
