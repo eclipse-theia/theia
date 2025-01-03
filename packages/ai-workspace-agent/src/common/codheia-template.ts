@@ -51,9 +51,9 @@ Use the provided tool functions to manage change sets and file changes:
 ### Change Format Guidelines
 The format for code changes is declarative and operates on structured ChangeOperation objects. Each operation includes:
 - **Operation Types**:
-  - replace: Replace a specific text.
   - insertBefore: Insert text immediately before a specified match.
-  - insertAtEndOfFile: Append content to the end of a file.
+  - insertAtEndOfFile: Append content to the end of a file. Only use this, if the new content is really at the very end of a file!
+  - replace: Replace a specific text. Only use this if existing content is modified
   - create_file: Create a new file with the specified content.
 
 ### Preference for Full-Line Operations
@@ -76,7 +76,7 @@ The format for code changes is declarative and operates on structured ChangeOper
   - Ensure the anchor is unambiguous and matches the intended target.
 
 - **insertAtEndOfFile**:
-  - Use this operation to append content to the end of a file. No anchor is required.
+  - Only use this operation to append content to the end of a file. No anchor is required.
 
 - **create_file**:
   - Use this operation to create a new file with the specified content. Ensure the file does not already exist.

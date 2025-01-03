@@ -41,6 +41,7 @@ export class ChangeSetPartRenderer implements ChatResponsePartRenderer<ChangeSet
                 return {
                     filePath: file,
                     changes: retrievedChanges.map(change => ({
+                        operation: change.operation,
                         anchor: change.anchor,
                         newContent: change.newContent
                     }))
@@ -59,6 +60,7 @@ export class ChangeSetPartRenderer implements ChatResponsePartRenderer<ChangeSet
                         <ul>
                             {fileChange.changes.map((change, index) => (
                                 <li key={index}>
+                                    <strong>Operation:</strong> {change.operation}<br />
                                     <strong>Anchor:</strong> {change.anchor ?? 'No Anchor'}<br />
                                     <strong>New Content:</strong> {change.newContent}
                                 </li>
