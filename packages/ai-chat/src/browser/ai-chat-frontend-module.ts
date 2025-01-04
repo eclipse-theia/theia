@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { Agent, AgentService, AIVariableContribution } from '@theia/ai-core/lib/common';
-import { bindContributionProvider } from '@theia/core';
+import { bindContributionProvider, ResourceResolver } from '@theia/core';
 import { FrontendApplicationContribution, PreferenceContribution } from '@theia/core/lib/browser';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import {
@@ -34,10 +34,12 @@ import { OrchestratorChatAgent, OrchestratorChatAgentId } from '../common/orches
 import { DefaultResponseContentFactory, DefaultResponseContentMatcherProvider, ResponseContentMatcherProvider } from '../common/response-content-matcher';
 import { UniversalChatAgent } from '../common/universal-chat-agent';
 import { aiChatPreferences } from './ai-chat-preferences';
+import { ChangeSetElementArgs, ChangeSetFileElement, ChangeSetFileElementFactory } from './change-set-file-element';
 import { AICustomAgentsFrontendApplicationContribution } from './custom-agent-frontend-application-contribution';
 import { FrontendChatServiceImpl } from './frontend-chat-service';
 import { CustomAgentFactory } from './custom-agent-factory';
 import { ChatToolRequestService } from '../common/chat-tool-request-service';
+import { ChangeSetFileResourceResolver } from './change-set-file-resource';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, Agent);
@@ -93,4 +95,13 @@ export default new ContainerModule(bind => {
             return agent;
         });
     bind(FrontendApplicationContribution).to(AICustomAgentsFrontendApplicationContribution).inSingletonScope();
+
+    bind(ChangeSetFileElementFactory).toFactory(ctx => (args: ChangeSetElementArgs) => {
+        const container = ctx.container.createChild();
+        container.bind(ChangeSetElementArgs).toConstantValue(args);
+        container.bind(ChangeSetFileElement).toSelf().inSingletonScope();
+        return container.get(ChangeSetFileElement);
+    });
+    bind(ChangeSetFileResourceResolver).toSelf().inSingletonScope();
+    bind(ResourceResolver).toService(ChangeSetFileResourceResolver);
 });

@@ -22,6 +22,9 @@
       "path": "../filesystem"
     },
     {
+      "path": "../monaco"
+    },
+    {
       "path": "../workspace"
     }
   ]
