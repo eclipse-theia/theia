@@ -39,7 +39,7 @@ export class ChangeSetPartRenderer implements ChatResponsePartRenderer<ChangeSet
             fileChanges = files.map(file => {
                 const retrievedChanges = this.changeSetService.getFileChanges(changeSetUUID, file);
                 return {
-                    filePath: file,
+                    file: file, // Ensure the property name matches the FileChange interface
                     changes: retrievedChanges.map(change => ({
                         operation: change.operation,
                         anchor: change.anchor,
@@ -55,15 +55,27 @@ export class ChangeSetPartRenderer implements ChatResponsePartRenderer<ChangeSet
         return (
             <div className="changeset-part-renderer">
                 {fileChanges.map(fileChange => (
-                    <div key={fileChange.filePath}>
-                        <h3>{fileChange.filePath}</h3>
+                    <div key={fileChange.file}>
+                        <h3>{fileChange.file}</h3>
                         <ul>
                             {fileChange.changes.map((change, index) => (
-                                <li key={index}>
-                                    <strong>Operation:</strong> {change.operation}<br />
-                                    <strong>Anchor:</strong> {change.anchor ?? 'No Anchor'}<br />
-                                    <strong>New Content:</strong> {change.newContent}
-                                </li>
+                                <div key={index}>
+                                    <button onClick={async () => {
+                                        try {
+                                            await this.changeSetService.applyFileChange(fileChange, fileChange.file); // Fixed property
+                                            alert('File change applied successfully.');
+                                        } catch (error) {
+                                            console.error('Failed to apply file change:', error);
+                                            alert('Failed to apply file change.');
+                                        }
+                                    }}>Apply Change</button>
+
+                                    <li>
+                                        <strong>Operation:</strong> {change.operation}<br />
+                                        <strong>Anchor:</strong> {change.anchor ?? 'No Anchor'}<br />
+                                        <strong>New Content:</strong> {change.newContent}
+                                    </li>
+                                </div>
                             ))}
                         </ul>
                     </div>
@@ -71,4 +83,5 @@ export class ChangeSetPartRenderer implements ChatResponsePartRenderer<ChangeSet
             </div>
         );
     }
+
 }

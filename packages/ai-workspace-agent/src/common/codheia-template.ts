@@ -13,6 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+
 import { PromptTemplate } from '@theia/ai-core/lib/common';
 import { GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID, GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID } from './functions';
 
@@ -52,20 +53,22 @@ Use the provided tool functions to manage change sets and file changes:
 The format for code changes is declarative and operates on structured ChangeOperation objects. Each operation includes:
 - **Operation Types**:
   - insertBefore: Insert text immediately before a specified match.
-  - insertAtEndOfFile: Append content to the end of a file. Only use this, if the new content is really at the very end of a file!
+  - insertAtEndOfFile: Append content to the end of a file. Only use this if the new content is really at the very end of a file!
   - replace: Replace a specific text. Only use this if existing content is modified.
   - create_file: Create a new file with the specified content.
+  - fullFile: Overwrite the entire file with new content. If the file is small or medium-sized, **prefer** using fullFile to provide the entire updated file verbatim.
+    Make sure you do **not** omit, shorten, or truncate any part of the new file in this mode.
 
 ### Preference for Full-Line Operations
 
 - **Anchors**:
-  - Verify Complete Context: Retrieve and examine entire methods and surrounding lines to confirm accurate context before setting anchors.
-  - Use full lines as anchor values to ensure precise placement. Avoid using partial text or substrings to minimize ambiguity.
-  - Cross-verify the anchor's uniqueness to ensure it does not appear more than once in unintended contexts.
+  - **Retrieve Full Context**: Always use **~{${FILE_CONTENT_FUNCTION_ID}}** to examine entire methods and surrounding lines to confirm accurate context.
+  - **Use Full Lines**: Select entire lines as anchors to ensure precise placement. Avoid partial text or substrings unless explicitly requested.
+  - **Verify Uniqueness**: Ensure the chosen anchor appears exactly once. If it appears multiple times, expand or refine the anchor to additional lines for uniqueness.
 
 - **Content**:
   - Ensure added or replaced content spans full lines.
-  - Avoid inserting or replacing fragments within a line unless explicitly requested.
+  - Avoid inserting or replacing fragments within a line unless explicitly requested or absolutely necessary.
 
 - **Formatting**:
   - Maintain consistent indentation and style for all added or replaced lines to align with the surrounding code.
@@ -73,25 +76,35 @@ The format for code changes is declarative and operates on structured ChangeOper
 ### Accurate Placement for Operations
 
 - **replace**
-  - Always use the **entire content block** that needs to be replaced as the anchor, even if it spans multiple lines.
-  - Retrieve the full block using workspace functions to confirm anchor precision.
+  - Always use the entire block of content to be replaced as the anchor, even if it spans multiple lines.
+  - Retrieve the relevant code block beforehand and confirm that exact text appears only once.
 
-- **insertBefore**:
-  - Use a clearly defined anchor of one or more lines.
-  - Ensure the anchor provides sufficient context for unambiguous content placement.
+- **insertBefore**
+  - Use a clearly defined line or multi-line anchor.
+  - Verify that the anchor context is unique and sufficient for unambiguous placement.
 
-- **insertAtEndOfFile**:
-  - Only use this operation to append content to the end of a file. No anchor is required.
+- **insertAtEndOfFile**
+  - Use this operation only if you are certain the text is appended at the true end of the file.
+  - No anchor is needed for this operation.
 
-- **create_file**:
-  - Use this operation to create a new file with the specified content. Ensure the file does not already exist.
+- **create_file**
+  - Use this operation if the file does not already exist.
+  - Provide the full content for the new file.
 
 ### Verification Before Suggestion
 
-1. **Retrieve Full Block Context:** Use workspace functions like **~{getFileContent}** to analyze the complete code block or function.
-2. **Ensure Contextual Match:** Confirm the anchor string represents the full line at the intended insertion point.
-3. **Validate Scope Completeness:** Check if the selected insertion point follows the intended block or function entirely.
-4. **Verification & Correction**: Have strategies to address errors in anchor placement by using real-time content inspection to adjust.
+1. **Retrieve Full Block Context**  
+   Use workspace functions like **~{${FILE_CONTENT_FUNCTION_ID}}** to fetch the complete code block or function around your intended modification.
+
+2. **Confirm Anchor Match**  
+   Ensure the anchor string(s) appear exactly once where you expect to make changes.
+
+3. **Validate Scope Completeness**  
+   If you are operating near function boundaries or large code blocks, confirm the entire block is included to avoid partial or incorrect replacements.
+
+4. **Adjust if Needed**  
+   - If the anchor is duplicated or missing, refine your anchor or expand its context to ensure uniqueness.
+   - If the user requests a mid-line change, confirm with them or carefully handle partial-line replacements.
 
 ### Example
 To propose a set of changes:
@@ -101,9 +114,29 @@ To propose a set of changes:
 4. Use **~{changeSet_removeFileChange}** to remove unnecessary file changes.
 
 ### Example
+#### Example 1: Overwrite entire file with "fullFile" operation
 \`\`\`json
 {
   "uuid": "123e4567-e89b-12d3-a456-426614174000",
+  "description": "Overhaul smallFile.js fully",
+  "fileChanges": {
+    "src/smallFile.js": {
+      "file": "src/smallFile.js",
+      "changes": [
+        {
+          "operation": "fullFile",
+          "newContent": "/* Entire updated file content goes here, with no lines omitted */"
+        }
+      ]
+    }
+  }
+}
+\`\`\`
+
+#### Example 2: Multiple operations (replace, insertBefore, create_file)
+\`\`\`json
+{
+  "uuid": "123e4567-e89b-12d3-a456-426614174abc",
   "description": "Refactor button component and add helper function",
   "fileChanges": {
     "src/components/Button.js": {
@@ -126,7 +159,7 @@ To propose a set of changes:
       "changes": [
         {
           "operation": "create_file",
-          "newContent": "export function helper() {\\n    return 'Hello, world';\\n}"
+          "newContent": "export function helper() {\n    return 'Hello, world';\n}"
         }
       ]
     }
@@ -135,7 +168,6 @@ To propose a set of changes:
 \`\`\`
 
 Follow these guidelines to ensure your proposed changes are structured, actionable, and align with the tools available in Theia IDE.
-
 
 ## Apply Changes
 
@@ -146,7 +178,7 @@ If the user explicitly requests you to apply code changes, you can apply a creat
 At the end of each response, please include the current change set UUID in the following format:
 
 <changeset> 
-  { "uuid": 'your-uuid-goes-here' } 
+  { "uuid": "your-uuid-goes-here" } 
 </changeset>
 
 This information helps maintain a consistent reference to the change set being used for any operations or changes you propose.

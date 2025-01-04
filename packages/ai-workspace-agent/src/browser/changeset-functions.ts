@@ -183,7 +183,7 @@ const FileChangeParameters: ToolRequest['parameters'] = {
                 properties: {
                     operation: {
                         type: 'string',
-                        enum: ['replace', 'insertBefore', 'insertAtEndOfFile', 'create_file'],
+                        enum: ['replace', 'insertBefore', 'insertAtEndOfFile', 'create_file', 'fullFile'],
                         description: 'The type of operation to perform.'
                     },
                     anchor: {
