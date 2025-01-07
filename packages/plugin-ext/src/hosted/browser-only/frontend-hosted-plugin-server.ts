@@ -42,7 +42,7 @@ export class FrontendHostedPluginServer implements HostedPluginServer, RpcConnec
     }
     async getDeployedPlugins(params: GetDeployedPluginsParams): Promise<DeployedPlugin[]> {
         console.log('getDeployedPlugins');
-        return this.options.pluginMetadata;
+        return this.options.pluginMetadata.filter(p => params.pluginIds.includes(p.metadata.model.id + '@' + p.metadata.model.version as `${string}.${string}@${string}`));
     }
 
     async getExtPluginAPI(): Promise<ExtPluginApi[]> {
