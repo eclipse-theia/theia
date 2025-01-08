@@ -155,7 +155,7 @@ Commands below should be executed from `examples/browser`.
 
 To run tests once:
 
-    yarn test
+    npm run test
 
 This command starts the browser example application and runs tests from `examples/api-tests` against it.
 
@@ -163,7 +163,7 @@ This command starts the browser example application and runs tests from `example
 
 To inspect tests:
 
-    yarn test:debug
+    npm run test:debug
 
 This command runs tests but as well
 opens the Chrome devtools that you can debug the frontend code and test files.
@@ -173,7 +173,7 @@ After doing changes to source code or tests, reload the page to run new code and
 
 To inspect tests and backend code:
 
-    yarn test:debug --inspect
+    npm run test:debug --inspect
 
 Use the debug view to attach to the backend server for debugging as usual.
 

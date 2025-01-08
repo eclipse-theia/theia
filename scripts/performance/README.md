@@ -8,12 +8,12 @@ The frontend's start-up time is measured using the timestamp of the last recorde
 
 ### Quick Start
 
-Execute `yarn run performance:startup:browser` in the root directory to startup the backend and execute the script.
+Execute `npm run performance:startup:browser` in the root directory to startup the backend and execute the script.
 
 ### Prerequisites
 
 To run the script the Theia backend needs to be started.
-This can either be done with the `Launch Browser Backend` launch config or by running `yarn start` in the `examples/browser-app` directory.
+This can either be done with the `Launch Browser Backend` launch config or by running `npm run start` in the `examples/browser-app` directory.
 
 ### Executing the script
 
@@ -40,8 +40,8 @@ Execute `yarn run performance:startup:electron` in the root directory to execute
 To run the script the Theia Electron example needs to be built. In the root directory:
 
 ```console
-yarn
-yarn electron build
+npm install
+npm run build:electron
 ```
 
 ### Executing the script
@@ -94,7 +94,7 @@ The following parameters are available:
 
     _For example: `--extensions @theia/git:1.19.0 @theia/keymaps:1.19.0`_
 
-- `--yarn`: Flag to trigger a full yarn at script startup (e.g. to build changes to extensions)
+- `--yarn`: Flag to trigger a full build at script startup (e.g. to build changes to extensions)
 - `--url`: Specify a URL that Theia should be launched with (can be used to specify the workspace to be opened). _Applies only to the `browser` app_ (default: `http://localhost:3000/#/<GIT_ROOT>/scripts/performance/workspace`)
 - `--workspace`: Specify a workspace on which to launch Theia. _Applies only to the `electron` app_ (default: `/<GIT_ROOT>/scripts/performance/workspace`)
 - `--file`: Relative path to the output file (default: `./script.csv`)

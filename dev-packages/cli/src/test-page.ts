@@ -17,7 +17,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import * as puppeteer from 'puppeteer-core';
-const collectFiles: (options: TestFileOptions) => string[] = require('mocha/lib/cli/collect-files');
+const collectFiles: (options: TestFileOptions) => { files: string[] } = require('mocha/lib/cli/collect-files');
 
 export interface TestFileOptions {
     ignore: string[]
@@ -122,7 +122,7 @@ export default async function newTestPage(options: TestPageOptions): Promise<pup
             await onWillRun();
         }
 
-        for (const file of files) {
+        for (const file of files.files) {
             await page.addScriptTag({ path: file });
         }
 

@@ -5,7 +5,7 @@ This guide details the steps for maintainers to release Eclipse Theia, including
 ## Table of Contents
 
 1. [Pre-Release Steps](#1-pre-release-steps)
-   - [1.1 Yarn Upgrade](#11-yarn-upgrade)
+   - [1.1 NPM Upgrade](#11-npm-upgrade)
    - [1.2 Announce Release](#12-announce-release)
    - [1.3 Localization](#13-localization)
    - [1.4 Prepare Release Branch](#14-prepare-release-branch)
@@ -24,9 +24,9 @@ This guide details the steps for maintainers to release Eclipse Theia, including
 
 ## 1. Pre-Release Steps
 
-### 1.1 Yarn Upgrade
+### 1.1 NPM Upgrade
 
-Perform a `yarn upgrade` on the repository prior to a release to update the `yarn.lock`. The upgrade helps to:
+Perform a `npm upgrade` on the repository prior to a release to update the `package-lock.json`. The upgrade helps to:
 
 - Better represent what adopters will pull during a release.
 - Validate dependencies with our declared version ranges.
@@ -34,7 +34,7 @@ Perform a `yarn upgrade` on the repository prior to a release to update the `yar
 
 To perform the upgrade:
 
-- Run `yarn upgrade` at the root of the repository.
+- Run `npm upgrade` at the root of the repository.
 - Fix any compilation errors, typing errors, and failing tests.
 - Open a PR with the changes ([example](https://github.com/eclipse-theia/theia/pull/13423)).
 - Confirm licenses and wait for the "IP Check" to complete ([example](https://gitlab.eclipse.org/eclipsefdn/emo-team/iplab/-/issues/9377)).
@@ -121,7 +121,7 @@ Format:
 - Build the changes:
 
   ```bash
-  yarn
+  npm install && npm build
   ```
 
 - Confirm the changes are built (ensure `@theia` extensions have their `lib/` folders).
@@ -144,7 +144,7 @@ Format:
 - Perform the release:
 
   ```bash
-  yarn publish:latest
+  npm run publish:latest
   ```
 
   Select the appropriate version.
@@ -152,7 +152,7 @@ Format:
   _NOTE:_ For a patch release on an earlier version (e.g., 1.55.1 when 1.56.0 exists), use:
 
   ```bash
-  yarn publish:patch
+  npm run publish:patch
   ```
 
 - Verify the packages are published on npm.

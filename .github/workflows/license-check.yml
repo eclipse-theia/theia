@@ -48,4 +48,4 @@ jobs:
         if: matrix.tests != 'skip'
         shell: bash
         run: |
-          yarn license:check
+          npm run license:check
