@@ -15,7 +15,7 @@
 // ****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { DeployedPlugin, ExtPluginApi, GetDeployedPluginsParams, HostedPluginClient, HostedPluginServer } from '../../common';
+import { DeployedPlugin, ExtPluginApi, GetDeployedPluginsParams, HostedPluginClient, HostedPluginServer, PluginIdentifiers } from '../../common';
 import { Event, RpcConnectionEventEmitter } from '@theia/core';
 
 export const PluginLocalOptions = Symbol('PluginLocalOptions');
@@ -31,18 +31,18 @@ export class FrontendHostedPluginServer implements HostedPluginServer, RpcConnec
     @inject(PluginLocalOptions)
     protected readonly options: PluginLocalOptions;
 
-    async getDeployedPluginIds(): Promise<`${string}.${string}@${string}`[]> {
+    async getDeployedPluginIds(): Promise<PluginIdentifiers.VersionedId[]> {
         console.log('getDeployedPluginIds');
         // Use the plugin metadata to build the correct plugin id
-        return this.options.pluginMetadata.map(p => p.metadata.model.id + '@' + p.metadata.model.version as `${string}.${string}@${string}`);
+        return this.options.pluginMetadata.map(p => PluginIdentifiers.componentsToVersionedId(p.metadata.model));
     }
-    async getUninstalledPluginIds(): Promise<readonly `${string}.${string}@${string}`[]> {
+    async getUninstalledPluginIds(): Promise<readonly PluginIdentifiers.VersionedId[]> {
         return [];
 
     }
     async getDeployedPlugins(params: GetDeployedPluginsParams): Promise<DeployedPlugin[]> {
         console.log('getDeployedPlugins');
-        return this.options.pluginMetadata.filter(p => params.pluginIds.includes(p.metadata.model.id + '@' + p.metadata.model.version as `${string}.${string}@${string}`));
+        return this.options.pluginMetadata.filter(p => params.pluginIds.includes(PluginIdentifiers.componentsToVersionedId(p.metadata.model)));
     }
 
     async getExtPluginAPI(): Promise<ExtPluginApi[]> {
