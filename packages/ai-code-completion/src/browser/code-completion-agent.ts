@@ -109,7 +109,6 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
                 this.logger.error('No prompt found for code-completion-agent');
                 return undefined;
             }
-
             // since we do not actually hold complete conversions, the request/response pair is considered a session
             const sessionId = generateUuid();
             const requestId = generateUuid();
@@ -144,7 +143,12 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
                 items: [{ insertText: completionText }],
                 enableForwardStability: true,
             };
-        } finally {
+        } catch (e) {
+            if (!token.isCancellationRequested) {
+                console.error(e.message, e);
+            }
+        }
+        finally {
             progress.cancel();
         }
     }
