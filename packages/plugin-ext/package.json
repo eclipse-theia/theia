@@ -44,6 +44,7 @@
     "lodash.clonedeep": "^4.5.0",
     "macaddress": "^0.5.3",
     "mime": "^2.4.4",
+    "node-pty": "1.1.0-beta27",
     "ps-tree": "^1.2.0",
     "semver": "^7.5.4",
     "tslib": "^2.6.2",
