@@ -24,7 +24,7 @@ import {
     LanguageModelTextResponse
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
-import OpenAI from 'openai';
+import { OpenAI, AzureOpenAI } from 'openai';
 import { ChatCompletionStream } from 'openai/lib/ChatCompletionStream';
 import { RunnableToolFunctionWithoutParse } from 'openai/lib/RunnableFunction';
 import { ChatCompletionMessageParam } from 'openai/resources';
@@ -38,6 +38,8 @@ export class OpenAiModel implements LanguageModel {
      * @param model the model id as it is used by the OpenAI API
      * @param enableStreaming whether the streaming API shall be used
      * @param apiKey a function that returns the API key to use for this model, called on each request
+     * @param apiVersion a function that returns the OpenAPI version to use for this model, called on each request
+     * @param supportsDeveloperMessage whether the model supports the `developer` role
      * @param url the OpenAI API compatible endpoint where the model is hosted. If not provided the default OpenAI endpoint will be used.
      * @param defaultRequestSettings optional default settings for requests made using this model.
      */
@@ -46,6 +48,8 @@ export class OpenAiModel implements LanguageModel {
         public model: string,
         public enableStreaming: boolean,
         public apiKey: () => string | undefined,
+        public apiVersion: () => string | undefined,
+        public supportsDeveloperMessage: boolean,
         public url: string | undefined,
         public defaultRequestSettings?: { [key: string]: unknown }
     ) { }
@@ -164,7 +168,7 @@ export class OpenAiModel implements LanguageModel {
     protected toOpenAiRole(message: LanguageModelRequestMessage): 'developer' | 'user' | 'assistant' {
         switch (message.actor) {
             case 'system':
-                return this.supportsDeveloperMessage() ? 'developer' : 'user';
+                return this.supportsDeveloperMessage ? 'developer' : 'user';
             case 'ai':
                 return 'assistant';
             default:
@@ -182,13 +186,6 @@ export class OpenAiModel implements LanguageModel {
             'gpt-4o',
             'gpt-4o-2024-08-06',
             'gpt-4o-mini'
-        ].includes(this.model);
-    }
-
-    protected supportsDeveloperMessage(): boolean {
-        return ![
-            'o1-preview',
-            'o1-mini'
         ].includes(this.model);
     }
 
@@ -235,7 +232,14 @@ export class OpenAiModel implements LanguageModel {
         if (!apiKey && !(this.url)) {
             throw new Error('Please provide OPENAI_API_KEY in preferences or via environment variable');
         }
-        // We need to hand over "some" key, even if a custom url is not key protected as otherwise the OpenAI client will throw an error
-        return new OpenAI({ apiKey: apiKey ?? 'no-key', baseURL: this.url });
+
+        const apiVersion = this.apiVersion();
+        if (apiVersion) {
+            // We need to hand over "some" key, even if a custom url is not key protected as otherwise the OpenAI client will throw an error
+            return new AzureOpenAI({ apiKey: apiKey ?? 'no-key', baseURL: this.url, apiVersion: apiVersion });
+        } else {
+            // We need to hand over "some" key, even if a custom url is not key protected as otherwise the OpenAI client will throw an error
+            return new OpenAI({ apiKey: apiKey ?? 'no-key', baseURL: this.url });
+        }
     }
 }

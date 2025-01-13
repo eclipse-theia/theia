@@ -91,6 +91,8 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                 model.model === newModel.model &&
                 model.url === newModel.url &&
                 model.apiKey === newModel.apiKey &&
+                model.apiVersion === newModel.apiVersion &&
+                model.supportsDeveloperMessage === newModel.supportsDeveloperMessage &&
                 model.enableStreaming === newModel.enableStreaming));
 
         this.manager.removeLanguageModels(...modelsToRemove.map(model => model.id));
@@ -113,6 +115,8 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
             id: id,
             model: modelId,
             apiKey: true,
+            apiVersion: true,
+            supportsDeveloperMessage: !openAIModelsSupportingDeveloperMessages.includes(modelId),
             enableStreaming: !openAIModelsWithDisabledStreaming.includes(modelId),
             defaultRequestSettings: modelRequestSetting?.requestSettings
         };
@@ -136,6 +140,8 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                     model: pref.model,
                     url: pref.url,
                     apiKey: typeof pref.apiKey === 'string' || pref.apiKey === true ? pref.apiKey : undefined,
+                    apiVersion: typeof pref.apiVersion === 'string' || pref.apiVersion === true ? pref.apiVersion : undefined,
+                    supportsDeveloperMessage: pref.supportsDeveloperMessage ?? true,
                     enableStreaming: pref.enableStreaming ?? true,
                     defaultRequestSettings: modelRequestSetting?.requestSettings
                 }
@@ -160,3 +166,4 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
 }
 
 const openAIModelsWithDisabledStreaming = ['o1-preview', 'o1-mini'];
+const openAIModelsSupportingDeveloperMessages = ['o1-preview', 'o1-mini'];
