@@ -7,8 +7,7 @@
     "@theia/editor": "1.57.0",
     "@theia/monaco": "1.57.0",
     "@theia/monaco-editor-core": "1.83.101",
-    "@types/p-queue": "^2.3.1",
-    "p-queue": "^2.4.2",
+    "p-queue": "^8.0.1",
     "tslib": "^2.6.2"
   },
   "publishConfig": {

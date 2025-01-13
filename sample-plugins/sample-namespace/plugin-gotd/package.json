@@ -18,8 +18,7 @@
     "@theia/api-provider-sample": "1.57.0"
   },
   "scripts": {
-    "prepare": "yarn -s package",
-    "package": "yarn pack"
+    "build": "npm pack"
   },
   "theiaPlugin": {
     "headless": "headless"

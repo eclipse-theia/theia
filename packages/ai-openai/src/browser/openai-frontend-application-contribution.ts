@@ -159,4 +159,4 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
     }
 }
 
-const openAIModelsWithDisabledStreaming = ['o1-preview'];
+const openAIModelsWithDisabledStreaming = ['o1-preview', 'o1-mini'];

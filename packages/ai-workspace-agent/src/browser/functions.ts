@@ -186,7 +186,8 @@ export class FileContentFunction implements ToolProvider {
                         description: `Return the content of a specified file within the workspace. The file path must be provided relative to the workspace root. Only files within
                          workspace boundaries are accessible; attempting to access files outside the workspace will return an error.`,
                     }
-                }
+                },
+                required: ['file']
             },
             handler: (arg_string: string) => {
                 const file = this.parseArg(arg_string);
@@ -249,7 +250,8 @@ export class GetWorkspaceFileList implements ToolProvider {
                         description: `Optional relative path to a directory within the workspace. If no path is specified, the function lists contents directly in the workspace
                          root. Paths are resolved within workspace boundaries only; paths outside the workspace or unvalidated paths will result in an error.`
                     }
-                }
+                },
+                required: ['path']
             },
             description: `List files and directories within a specified workspace directory. Paths are relative to the workspace root, and only workspace-contained paths are
              allowed. If no path is provided, the root contents are listed. Paths outside the workspace will result in an error.`,

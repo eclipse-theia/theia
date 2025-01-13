@@ -27,7 +27,7 @@ jobs:
       - name: Install and Build
         shell: bash
         run: |
-          yarn --skip-integrity-check --network-timeout 100000
+          npm ci
         env:
           NODE_OPTIONS: --max_old_space_size=4096
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9
@@ -35,13 +35,13 @@ jobs:
       - name: Build Browser App
         shell: bash
         run: |
-          yarn browser build
+          npm run build:browser
         env:
           NODE_OPTIONS: --max_old_space_size=4096
 
       - name: Zip Native Dependencies
         shell: bash
-        run: yarn zip:native:dependencies
+        run: npm run zip:native:dependencies
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3 

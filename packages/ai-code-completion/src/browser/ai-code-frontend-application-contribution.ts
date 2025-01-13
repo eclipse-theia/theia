@@ -65,7 +65,7 @@ export class AIFrontendApplicationContribution implements FrontendApplicationCon
     registerKeybindings(keybindings: KeybindingRegistry): void {
         keybindings.registerKeybinding({
             command: 'editor.action.inlineSuggest.trigger',
-            keybinding: 'Shift+Space',
+            keybinding: 'Ctrl+Alt+Space',
             when: '!editorReadonly && editorTextFocus'
         });
     }

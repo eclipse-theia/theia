@@ -21,11 +21,11 @@
     "patches"
   ],
   "bin": {
-    "theia": "./bin/theia",
+    "theia": "./bin/theia.js",
     "theia-patch": "./bin/theia-patch.js"
   },
   "scripts": {
-    "prepare": "tsc -b",
+    "compile": "theiaext compile",
     "lint": "theiaext lint",
     "build": "theiaext build",
     "watch": "theiaext watch",

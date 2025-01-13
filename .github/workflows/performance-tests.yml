@@ -28,20 +28,20 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          yarn global add node-gyp
-          yarn --skip-integrity-check --network-timeout 100000 --ignore-engines
-          yarn build:examples
+          npm install -g  node-gyp
+          npm ci
+          npm run build
         env:
           NODE_OPTIONS: --max_old_space_size=4096
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9
 
       - name: Performance (browser)
         shell: bash
-        run: yarn performance:startup:browser
+        run: npm run performance:startup:browser
 
       - name: Performance (Electron)
         shell: bash
-        run: xvfb-run yarn performance:startup:electron
+        run: xvfb-run npm run performance:startup:electron
 
       - name: Analyze performance results
         uses: benchmark-action/github-action-benchmark@fd31771ce86cc65eab85653da103f71ab1b4479c # v1.9.0

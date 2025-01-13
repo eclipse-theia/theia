@@ -24,6 +24,7 @@ import { DebugEditorModel, DebugEditorModelFactory } from './debug-editor-model'
 import { BreakpointManager, SourceBreakpointsChangeEvent } from '../breakpoint/breakpoint-manager';
 import { DebugSourceBreakpoint } from '../model/debug-source-breakpoint';
 import { DebugBreakpointWidget } from './debug-breakpoint-widget';
+import URI from '@theia/core/lib/common/uri';
 
 @injectable()
 export class DebugEditorService {
@@ -69,6 +70,11 @@ export class DebugEditorService {
         const { currentEditor } = this.editors;
         const uri = currentEditor && currentEditor.getResourceUri();
         return uri && this.models.get(uri.toString());
+    }
+
+    get currentUri(): URI | undefined {
+        const { currentEditor } = this.editors;
+        return currentEditor && currentEditor.getResourceUri();
     }
 
     getLogpoint(position: monaco.Position): DebugSourceBreakpoint | undefined {

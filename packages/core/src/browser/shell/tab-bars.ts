@@ -924,7 +924,7 @@ export class ScrollableTabBar extends TabBar<Widget> {
     }
 
     /**
-     * Overrides the `contentNode` property getter in PhosphorJS' TabBar.
+     * Overrides the `contentNode` property getter in LuminoJS' TabBar.
      */
     // @ts-expect-error TS2611 `TabBar<T>.contentNode` is declared as `readonly contentNode` but is implemented as a getter.
     get contentNode(): HTMLUListElement {

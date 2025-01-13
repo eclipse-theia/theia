@@ -29,7 +29,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "theiaExtensions": [],
+  "theiaExtensions": [ ],
   "keywords": [
     "theia-extension"
   ],
@@ -48,14 +48,8 @@
     "shared"
   ],
   "scripts": {
-    "generate-theia-re-exports": "theia-re-exports generate && theia-re-exports template README_TEMPLATE.md > README.md",
-    "prepare": "yarn -s generate-theia-re-exports",
-    "lint": "echo skip || theiaext lint",
-    "build": "echo skip || theiaext build",
-    "watch": "echo skip || theiaext watch",
-    "clean": "echo skip || theiaext clean",
-    "test": "echo skip || theiaext test",
-    "version": "yarn -s generate-theia-re-exports"
+    "afterInstall": "npm run generate-theia-re-exports",
+    "generate-theia-re-exports": "theia-re-exports generate && theia-re-exports template README_TEMPLATE.md > README.md"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

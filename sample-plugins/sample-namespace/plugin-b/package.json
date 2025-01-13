@@ -19,8 +19,7 @@
     "@types/vscode": "^1.50.0"
   },
   "scripts": {
-    "prepare": "yarn -s package",
-    "package": "vsce package --yarn"
+    "build": "vsce package --npm"
   },
   "contributes": {
     "commands": [

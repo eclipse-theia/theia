@@ -37,7 +37,6 @@ import { aiChatPreferences } from './ai-chat-preferences';
 import { AICustomAgentsFrontendApplicationContribution } from './custom-agent-frontend-application-contribution';
 import { FrontendChatServiceImpl } from './frontend-chat-service';
 import { CustomAgentFactory } from './custom-agent-factory';
-import { O1ChatAgent } from '../common/o1-chat-agent';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, Agent);
@@ -63,10 +62,6 @@ export default new ContainerModule(bind => {
     bind(OrchestratorChatAgent).toSelf().inSingletonScope();
     bind(Agent).toService(OrchestratorChatAgent);
     bind(ChatAgent).toService(OrchestratorChatAgent);
-
-    bind(O1ChatAgent).toSelf().inSingletonScope();
-    bind(Agent).toService(O1ChatAgent);
-    bind(ChatAgent).toService(O1ChatAgent);
 
     bind(UniversalChatAgent).toSelf().inSingletonScope();
     bind(Agent).toService(UniversalChatAgent);
