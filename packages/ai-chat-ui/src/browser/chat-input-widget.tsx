@@ -281,7 +281,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             placeholderRef.current?.classList.add('hidden');
         }
     };
-    
+
     const handleUnpin = () => {
         props.onUnpin();
     };
