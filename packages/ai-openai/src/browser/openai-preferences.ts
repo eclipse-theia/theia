@@ -50,6 +50,10 @@ export const OpenAiPreferencesSchema: PreferenceSchema = {
             \n\
             - provide an `apiKey` to access the API served at the given url. Use `true` to indicate the use of the global OpenAI API key.\
             \n\
+            - provide an `apiVersion` to access the API served at the given url in Azure. Use `true` to indicate the use of the global OpenAI API version.\
+            \n\
+            - specify `supportsDeveloperMessage: false` to indicate that the developer role shall not be used.\
+            \n\
             - specify `enableStreaming: false` to indicate that streaming shall not be used.\
             \n\
             Refer to [our documentation](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm) for more information.',
@@ -72,6 +76,14 @@ export const OpenAiPreferencesSchema: PreferenceSchema = {
                     apiKey: {
                         type: ['string', 'boolean'],
                         title: 'Either the key to access the API served at the given url or `true` to use the global OpenAI API key',
+                    },
+                    apiVersion: {
+                        type: ['string', 'boolean'],
+                        title: 'Either the version to access the API served at the given url in Azure or `true` to use the global OpenAI API version',
+                    },
+                    supportsDeveloperMessage: {
+                        type: 'boolean',
+                        title: 'Indicates whether the model supports the `developer` role. `true` by default.',
                     },
                     enableStreaming: {
                         type: 'boolean',
