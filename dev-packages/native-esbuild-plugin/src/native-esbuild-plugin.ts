@@ -90,7 +90,7 @@ class PluginImpl implements Plugin {
         if (!outdir) {
             throw new Error('The `outdir` option is required.');
         }
-        build.onResolve({ filter: /^@vscode\/windows-ca-certs$/ }, args => {
+        build.onResolve({ filter: /^@vscode\/windows-ca-certs$/ }, () => {
             const windows = process.platform === 'win32';
             return {
                 path: windows
@@ -101,9 +101,10 @@ class PluginImpl implements Plugin {
             };
         });
         build.onResolve({ filter: /\.\/build\/Release\/keymapping$/ }, () => ({
-            path: join(resolveModulePath('native-keymap'), 'build', 'Release', 'keymapping.node')
+            path: join(resolveModulePath('native-keymap'), 'build', 'Release', 'keymapping.node'),
+            namespace: 'node-file'
         }));
-        build.onResolve({ filter: /\.\/build\/Release\/watcher\.node$/ }, args => {
+        build.onResolve({ filter: /\.\/build\/Release\/watcher\.node$/ }, () => {
             let name = `@parcel/watcher-${process.platform}-${process.arch}`;
             if (process.platform === 'linux') {
                 const { MUSL, family } = require('detect-libc');
@@ -163,7 +164,7 @@ class PluginImpl implements Plugin {
             contents: `
               import path from ${JSON.stringify(args.path)}
               try { module.exports = require(path) }
-              catch { throw new Error('Could not load native module from "${args.path}"') }
+              catch { throw new Error('Could not load native module from "${path.basename(args.path)}"') }
             `,
         }));
         build.onResolve({ filter: /\.node$/, namespace: 'node-file' }, args => ({
@@ -190,7 +191,7 @@ async function copyNodePtySpawnHelper(outdir: string): Promise<void> {
         const dllFile = join(resolveModulePath('node-pty'), 'build', 'Release', 'winpty.dll');
         const targetDllFile = path.join(targetDirectory, 'winpty.dll');
         await copyExecutable(dllFile, targetDllFile);
-    } else {
+    } else if (process.platform === 'darwin') {
         const sourceFile = join(resolveModulePath('node-pty'), 'build', 'Release', 'spawn-helper');
         const targetFile = path.join(targetDirectory, 'spawn-helper');
         await copyExecutable(sourceFile, targetFile);

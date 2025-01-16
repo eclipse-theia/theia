@@ -1,6 +1,6 @@
 {
   "name": "@theia/native-esbuild-plugin",
-  "version": "1.55.0",
+  "version": "1.57.0",
   "description": "ESBuild Plugin for native dependencies of Theia.",
   "publishConfig": {
     "access": "public"
