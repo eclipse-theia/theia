@@ -24,8 +24,8 @@ export const McpServersPreferenceSchema: PreferenceSchema = {
         [MCP_SERVERS_PREF]: {
             type: 'object',
             title: 'MCP Servers Configuration',
-            markdownDescription: 'Configure MCP servers with command, arguments and optionally environment variables. Each server is identified by a unique key, such as\
-            "brave-search" or "filesystem".\
+            markdownDescription: 'Configure MCP servers with command, arguments, optionally environment variables, and autostart.\
+            Each server is identified by a unique key, such as "brave-search" or "filesystem".\
             To start a server, use the "MCP: Start MCP Server" command, which enables you to select the desired server.\
             To stop a server, use the "MCP: Stop MCP Server" command.\
             \n\
@@ -40,17 +40,18 @@ export const McpServersPreferenceSchema: PreferenceSchema = {
                 ],\n\
                 "env": {\n\
                   "BRAVE_API_KEY": "YOUR_API_KEY"\n\
-                }\n\
+                },\n\
+                "autostart": true\n\
               },\n\
               "filesystem": {\n\
                 "command": "npx",\n\
                 "args": ["-y", "@modelcontextprotocol/server-filesystem", "/Users/YOUR_USERNAME/Desktop"],\n\
                 "env": {\n\
                   "CUSTOM_ENV_VAR": "custom-value"\n\
-                }\n\
+                },\n\
+                "autostart": false\n\
               }\n\
-            }\
-            ```',
+            }\n            ```',
             additionalProperties: {
                 type: 'object',
                 properties: {
@@ -74,6 +75,12 @@ export const McpServersPreferenceSchema: PreferenceSchema = {
                         additionalProperties: {
                             type: 'string'
                         }
+                    },
+                    autostart: {
+                        type: 'boolean',
+                        title: 'Autostart',
+                        markdownDescription: 'Automatically start this server when the frontend starts. Newly added servers are not immediatly auto stated.',
+                        default: false
                     }
                 },
                 required: ['command', 'args']
