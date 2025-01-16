@@ -25,7 +25,6 @@ import { GitScmProvider } from '../git-scm-provider';
 import { createScmTreeContainer } from '@theia/scm/lib/browser/scm-frontend-module';
 import { GitResourceOpener } from '../diff/git-resource-opener';
 import { GitOpenerInSecondaryArea } from './git-opener-in-secondary-area';
-import '../../../src/browser/style/git-icons.css';
 
 export function bindGitHistoryModule(bind: interfaces.Bind): void {
 
