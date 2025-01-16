@@ -18,6 +18,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { MCPServerDescription, MCPServerManager } from '../common';
 import { MCP_SERVERS_PREF } from './mcp-preferences';
 import { JSONObject } from '@theia/core/shared/@phosphor/coreutils';
+import { MCPFrontendService } from './mcp-frontend-service';
 
 interface MCPServersPreferenceValue {
     command: string;
@@ -60,6 +61,9 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
     @inject(MCPServerManager)
     protected manager: MCPServerManager;
 
+    @inject(MCPFrontendService)
+    protected frontendMCPService: MCPFrontendService;
+
     protected prevServers: Map<string, MCPServerDescription> = new Map();
 
     onStart(): void {
@@ -77,6 +81,7 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
                 }
             });
         });
+        this.frontendMCPService.registerToolsForAllStartedServers();
     }
 
     protected handleServerChanges(newServers: MCPServersPreference): void {
