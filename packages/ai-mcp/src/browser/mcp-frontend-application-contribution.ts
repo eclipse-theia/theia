@@ -87,11 +87,10 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
         });
         this.frontendMCPService.registerToolsForAllStartedServers();
     }
+
     protected async autoStartServers(servers: Map<string, MCPServerDescription>): Promise<void> {
-        const serverNames = servers.keys();
         const startedServers = await this.frontendMCPService.getStartedServers();
-        for (const name of serverNames) {
-            const serverDesc = servers.get(name);
+        for (const [name, serverDesc] of servers) {
             if (serverDesc && serverDesc.autostart) {
                 if (!startedServers.includes(name)) {
                     await this.frontendMCPService.startServer(name);
