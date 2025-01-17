@@ -118,7 +118,7 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
 
                     const extIndex = this.secondaryWindows.indexOf(newWindow);
                     if (extIndex > -1) {
-                        this.onWindowClosedEmitter.fire(newWindow)
+                        this.onWindowClosedEmitter.fire(newWindow);
                         this.secondaryWindows.splice(extIndex, 1);
                     };
                 });
