@@ -59,8 +59,7 @@ export const ContentChangeApplier = Symbol('ContentChangeApplier');
 @injectable()
 export class ContentChangeApplierService {
 
-    @inject(ContributionProvider)
-    @named(ContentChangeApplier)
+    @inject(ContributionProvider) @named(ContentChangeApplier)
     public providers: ContributionProvider<ContentChangeApplier<ChangeOperation>>;
 
     private readonly applierMap = new Map<string, ContentChangeApplier<ChangeOperation>>();
