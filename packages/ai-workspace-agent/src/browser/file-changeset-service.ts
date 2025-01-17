@@ -52,6 +52,7 @@ interface ChangeSet {
      */
     fileChanges: Map<string, FileChange>;
 }
+
 /**
  * Service responsible for managing and applying sets of content changes across files.
  *
