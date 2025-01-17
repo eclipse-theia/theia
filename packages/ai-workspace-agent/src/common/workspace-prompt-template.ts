@@ -16,7 +16,7 @@
 import { PromptTemplate } from '@theia/ai-core/lib/common';
 import { GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID, GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID } from './workspace-functions';
 
-export const workspaceTemplate = <PromptTemplate>{
+export const workspacePromptTemplate = <PromptTemplate>{
    id: 'workspace-system',
    template: `{{!-- Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}

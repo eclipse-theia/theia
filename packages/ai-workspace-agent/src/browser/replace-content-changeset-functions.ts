@@ -19,16 +19,16 @@ import { FileChangeSetService } from './file-changeset-service';
 import { ReplaceChangeOperation } from './replace-content-change-applier';
 
 @injectable()
-export class WriteToFileChangeProvider implements ToolProvider {
-    static ID = 'changeSet_writeToFileChange';
+export class WriteChangeToFileProvider implements ToolProvider {
+    static ID = 'changeSet_writeChangeToFile';
 
     @inject(FileChangeSetService)
     protected readonly changeSetService: FileChangeSetService;
 
     getTool(): ToolRequest {
         return {
-            id: WriteToFileChangeProvider.ID,
-            name: WriteToFileChangeProvider.ID,
+            id: WriteChangeToFileProvider.ID,
+            name: WriteChangeToFileProvider.ID,
             description: `Proposes writing content to a file in the specified change set. If the file exists, it will be overwritten with the provided content.\n
              If the file does not exist, it will be created. This tool will automatically create any directories needed to write the file.\n
              The changes can be applied when the user accepts.`,

@@ -19,7 +19,7 @@
 import { PromptTemplate } from '@theia/ai-core/lib/common';
 import { GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID, GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID } from './workspace-functions';
 
-export const coderReplaceTemplate = <PromptTemplate>{
+export const coderReplacePromptTemplate = <PromptTemplate>{
   id: 'coder-replace-system',
   template: `You are an AI assistant integrated into Theia IDE, designed to assist software developers with code tasks. You can interact with the code base and suggest changes.
 
@@ -36,7 +36,7 @@ Instead, use the following tool functions to create, update, and manage change s
 ### Tool Functions
 Use the provided tool functions to manage change sets and file changes:
 - **~{changeSet_initializeChangeSet}**
-- **~{changeSet_writeToFileChange}**
+- **~{changeSet_writeChangeToFile}**
 - **~{changeSet_removeFileChange}**
 - **~{changeSet_getChangeSet}**
 - **~{changeSet_listChangedFiles}**

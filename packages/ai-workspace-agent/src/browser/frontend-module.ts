@@ -32,7 +32,7 @@ import {
     ApplyChangeSetProvider
 } from './file-changeset-functions';
 import { FileChangeSetService } from './file-changeset-service';
-import { WriteToFileChangeProvider } from './replace-changeset-functions';
+import { WriteChangeToFileProvider } from './replace-content-changeset-functions';
 import { ContentChangeApplier, ContentChangeApplierService } from './content-change-applier-service';
 import { bindContributionProvider } from '@theia/core';
 import { ReplaceContentChangeApplier } from './replace-content-change-applier';
@@ -60,5 +60,5 @@ export default new ContainerModule(bind => {
     bind(ToolProvider).to(ListChangedFilesProvider);
     bind(ToolProvider).to(GetFileChangesProvider);
     bind(ToolProvider).to(ApplyChangeSetProvider);
-    bind(ToolProvider).to(WriteToFileChangeProvider);
+    bind(ToolProvider).to(WriteChangeToFileProvider);
 });
