@@ -292,9 +292,14 @@ export class FrontendLanguageModelRegistryImpl
         throw new Error(`Could not find a tool for ${toolId}!`);
     }
 
+    // called by backend via the "delegate client" with the error to use for rejection
     error(id: string, error: Error): void {
         if (!this.streams.has(id)) {
-            throw new Error('Somehow we got a callback for a non existing stream!');
+            const newStreamState = {
+                id,
+                tokens: [],
+            };
+            this.streams.set(id, newStreamState);
         }
         const streamState = this.streams.get(id)!;
         streamState.reject?.(error);
