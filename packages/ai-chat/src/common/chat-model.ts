@@ -76,6 +76,21 @@ export interface ChatRequestModel {
     readonly data?: { [key: string]: unknown };
 }
 
+export namespace ChatRequestModel {
+    export function is(request: unknown): request is ChatRequestModel {
+        return !!(
+            request &&
+            typeof request === 'object' &&
+            'id' in request &&
+            typeof (request as { id: unknown }).id === 'string' &&
+            'session' in request &&
+            'request' in request &&
+            'response' in request &&
+            'message' in request
+        );
+    }
+}
+
 export interface ChatProgressMessage {
     kind: 'progressMessage';
     id: string;

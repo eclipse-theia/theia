@@ -37,10 +37,13 @@ import { aiChatPreferences } from './ai-chat-preferences';
 import { AICustomAgentsFrontendApplicationContribution } from './custom-agent-frontend-application-contribution';
 import { FrontendChatServiceImpl } from './frontend-chat-service';
 import { CustomAgentFactory } from './custom-agent-factory';
+import { ChatToolRequestService } from '../common/chat-tool-request-service';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, Agent);
     bindContributionProvider(bind, ChatAgent);
+
+    bind(ChatToolRequestService).toSelf().inSingletonScope();
 
     bind(ChatAgentServiceImpl).toSelf().inSingletonScope();
     bind(ChatAgentService).toService(ChatAgentServiceImpl);
