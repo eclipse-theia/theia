@@ -43,7 +43,6 @@ import { inject, injectable, named, postConstruct, unmanaged } from '@theia/core
 import { ChatAgentService } from './chat-agent-service';
 import {
     ChatModel,
-    ChatRequestModel,
     ChatRequestModelImpl,
     ChatResponseContent,
     ErrorChatResponseContentImpl,
@@ -53,6 +52,7 @@ import {
 import { findFirstMatch, parseContents } from './parse-contents';
 import { DefaultResponseContentFactory, ResponseContentMatcher, ResponseContentMatcherProvider } from './response-content-matcher';
 import { ChatHistoryEntry } from './chat-history-entry';
+import { ChatToolRequestService } from './chat-tool-request-service';
 
 /**
  * A conversation consists of a sequence of ChatMessages.
@@ -123,10 +123,12 @@ export abstract class AbstractChatAgent {
     @inject(LanguageModelRegistry) protected languageModelRegistry: LanguageModelRegistry;
     @inject(ILogger) protected logger: ILogger;
     @inject(CommunicationRecordingService) protected recordingService: CommunicationRecordingService;
+    @inject(ChatToolRequestService) protected chatToolRequestService: ChatToolRequestService;
     @inject(PromptService) protected promptService: PromptService;
 
     @inject(ContributionProvider) @named(ResponseContentMatcherProvider)
     protected contentMatcherProviders: ContributionProvider<ResponseContentMatcherProvider>;
+    protected additionalToolRequests: ToolRequest[] = [];
     protected contentMatchers: ResponseContentMatcher[] = [];
 
     @inject(DefaultResponseContentFactory)
@@ -171,7 +173,6 @@ export abstract class AbstractChatAgent {
                 );
             }
 
-            const tools: Map<string, ToolRequest> = new Map();
             if (systemMessageDescription) {
                 const systemMsg: ChatMessage = {
                     actor: 'system',
@@ -180,16 +181,19 @@ export abstract class AbstractChatAgent {
                 };
                 // insert system message at the beginning of the request messages
                 messages.unshift(systemMsg);
-                systemMessageDescription.functionDescriptions?.forEach((tool, id) => {
-                    tools.set(id, tool);
-                });
             }
-            this.getTools(request)?.forEach(tool => tools.set(tool.id, tool));
+
+            const systemMessageToolRequests = systemMessageDescription?.functionDescriptions?.values();
+            const tools = [
+                ...this.chatToolRequestService.getChatToolRequests(request),
+                ...this.chatToolRequestService.toChatToolRequests(systemMessageToolRequests ? Array.from(systemMessageToolRequests) : [], request),
+                ...this.chatToolRequestService.toChatToolRequests(this.additionalToolRequests, request)
+            ];
 
             const languageModelResponse = await this.callLlm(
                 languageModel,
                 messages,
-                tools.size > 0 ? Array.from(tools.values()) : undefined,
+                tools.length > 0 ? tools : undefined,
                 request.response.cancellationToken
             );
             await this.addContentsToResponse(languageModelResponse, request);
@@ -256,15 +260,6 @@ export abstract class AbstractChatAgent {
         });
 
         return requestMessages;
-    }
-
-    /**
-     * @returns the list of tools used by this agent, or undefined if none is needed.
-     */
-    protected getTools(request: ChatRequestModel): ToolRequest[] | undefined {
-        return request.message.toolRequests.size > 0
-            ? [...request.message.toolRequests.values()]
-            : undefined;
     }
 
     protected async callLlm(
