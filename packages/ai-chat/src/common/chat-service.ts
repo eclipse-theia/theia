@@ -35,7 +35,6 @@ import { ChatAgent, ChatAgentLocation } from './chat-agents';
 import { ParsedChatRequestAgentPart, ParsedChatRequestVariablePart, ParsedChatRequest } from './parsed-chat-request';
 import { AIVariableService } from '@theia/ai-core';
 import { Event } from '@theia/core/shared/vscode-languageserver-protocol';
-import { OrchestratorChatAgentId } from './orchestrator-chat-agent';
 
 export interface ChatRequestInvocation {
     /**
@@ -165,7 +164,7 @@ export class ChatServiceImpl implements ChatService {
         const parsedRequest = this.chatRequestParser.parseChatRequest(request, session.model.location);
         let agent = this.getAgent(parsedRequest);
 
-        if (!session.pinnedAgent && agent && agent.id !== OrchestratorChatAgentId) {
+        if (!session.pinnedAgent && agent && agent.id !== this.defaultChatAgentId?.id) {
             session.pinnedAgent = agent;
         } else if (session.pinnedAgent && this.getMentionedAgent(parsedRequest) === undefined) {
             agent = session.pinnedAgent;
