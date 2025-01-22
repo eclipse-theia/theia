@@ -950,14 +950,19 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         context: monaco.languages.CodeActionContext,
         token: monaco.CancellationToken
     ): Promise<monaco.languages.CodeActionList | undefined> {
-        const actions = await this.proxy.$provideCodeActions(handle, model.uri, rangeOrSelection, this.toModelCodeActionContext(context), token);
-        if (!actions) {
+        try {
+            const actions = await this.proxy.$provideCodeActions(handle, model.uri, rangeOrSelection, this.toModelCodeActionContext(context), token);
+            if (!actions) {
+                return undefined;
+            }
+            return {
+                actions: actions.map(a => toMonacoAction(a)),
+                dispose: () => this.proxy.$releaseCodeActions(handle, actions.map(a => a.cacheId))
+            };
+        } catch (e) {
+            console.error(e);
             return undefined;
         }
-        return {
-            actions: actions.map(a => toMonacoAction(a)),
-            dispose: () => this.proxy.$releaseCodeActions(handle, actions.map(a => a.cacheId))
-        };
     }
 
     protected toModelCodeActionContext(context: monaco.languages.CodeActionContext): CodeActionContext {
