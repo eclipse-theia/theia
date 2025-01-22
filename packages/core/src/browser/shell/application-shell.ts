@@ -574,13 +574,7 @@ export class ApplicationShell extends Widget {
                     // the files were dragged from the outside the workspace
                     Array.from(event.dataTransfer.files).forEach(file => {
                         if (file.path) {
-                            const fileUri = URI.fromComponents({
-                                scheme: 'file',
-                                path: file.path,
-                                authority: '',
-                                query: '',
-                                fragment: ''
-                            });
+                            const fileUri = URI.fromFilePath(file.path);
                             openUri(fileUri);
                         }
                     });
