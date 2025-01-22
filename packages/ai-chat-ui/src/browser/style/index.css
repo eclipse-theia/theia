@@ -23,7 +23,7 @@
   overflow-wrap: break-word;
 }
 
-div:last-child >. theia-ChatNode {
+div:last-child > .theia-ChatNode {
   border: none;
 }
 
