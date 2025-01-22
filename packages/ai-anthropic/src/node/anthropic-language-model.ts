@@ -23,11 +23,13 @@ import {
     LanguageModelStreamResponsePart,
     LanguageModelTextResponse
 } from '@theia/ai-core';
-import { CancellationToken } from '@theia/core';
+import { CancellationToken, isArray } from '@theia/core';
 import { Anthropic } from '@anthropic-ai/sdk';
 import { MessageParam } from '@anthropic-ai/sdk/resources';
 
 export const AnthropicModelIdentifier = Symbol('AnthropicModelIdentifier');
+
+interface ToolCallback { name: string, args: string, id: string, index: number }
 
 function transformToAnthropicParams(
     messages: LanguageModelRequestMessage[]
@@ -87,14 +89,16 @@ export class AnthropicModel implements LanguageModel {
     protected async handleStreamingRequest(
         anthropic: Anthropic,
         request: LanguageModelRequest,
-        cancellationToken?: CancellationToken
+        cancellationToken?: CancellationToken,
+        toolMessages?: Anthropic.Messages.MessageParam[]
     ): Promise<LanguageModelStreamResponse> {
         const settings = this.getSettings(request);
         const { messages, systemMessage } = transformToAnthropicParams(request.messages);
-
+        const tools = this.createTools(request);
         const params: Anthropic.MessageCreateParams = {
             max_tokens: 2048, // Setting max_tokens is mandatory for Anthropic, settings can override this default
-            messages,
+            messages: [...messages, ...(toolMessages ?? [])],
+            tools,
             model: this.model,
             ...(systemMessage && { system: systemMessage }),
             ...settings
@@ -105,9 +109,14 @@ export class AnthropicModel implements LanguageModel {
         cancellationToken?.onCancellationRequested(() => {
             stream.abort();
         });
+        const that = this;
 
         const asyncIterator = {
             async *[Symbol.asyncIterator](): AsyncIterator<LanguageModelStreamResponsePart> {
+
+                const toolCalls: ToolCallback[] = [];
+                let toolCall: ToolCallback | undefined;
+
                 for await (const event of stream) {
                     if (event.type === 'content_block_start') {
                         const contentBlock = event.content_block;
@@ -115,12 +124,57 @@ export class AnthropicModel implements LanguageModel {
                         if (contentBlock.type === 'text') {
                             yield { content: contentBlock.text };
                         }
+                        if (contentBlock.type === 'tool_use') {
+                            toolCall = { name: contentBlock.name!, args: '', id: contentBlock.id!, index: event.index };
+                        }
                     } else if (event.type === 'content_block_delta') {
                         const delta = event.delta;
 
                         if (delta.type === 'text_delta') {
                             yield { content: delta.text };
                         }
+                        if (toolCall && delta.type === 'input_json_delta') {
+                            toolCall.args += delta.partial_json;
+                        }
+                    } else if (event.type === 'content_block_stop') {
+                        if (toolCall && toolCall.index === event.index) {
+                            toolCalls.push(toolCall);
+                            yield { tool_calls: [{ finished: false, id: toolCall.id, function: { name: toolCall.name, arguments: toolCall.args } }] };
+                            toolCall = undefined;
+                        }
+                    }
+                }
+                if (toolCalls.length > 0) {
+                    const toolResult = await Promise.all(toolCalls.map(async tc => {
+                        const tool = request.tools?.find(t => t.name === tc.name);
+                        return { name: tc.name, result: (await tool?.handler(tc.args)) as string, id: tc.id };
+
+                    }));
+                    const calls = toolResult.map(tr => ({ finished: true, id: tr.id, result: tr.result as string }));
+                    yield { tool_calls: calls };
+
+                    const toolRequestMessage: Anthropic.Messages.MessageParam = {
+                        role: 'assistant',
+                        content: toolCalls.map(call => ({
+
+                            type: 'tool_use',
+                            id: call.id,
+                            name: call.name,
+                            input: JSON.parse(call.args)
+                        }))
+                    };
+
+                    const toolResponseMessage: Anthropic.Messages.MessageParam = {
+                        role: 'user',
+                        content: toolResult.map(call => ({
+                            type: 'tool_result',
+                            tool_use_id: call.id!,
+                            content: isArray(call.result!) ? call.result.map(r => ({ type: 'text', text: r as string })) : call.result
+                        }))
+                    };
+                    const result = await that.handleStreamingRequest(anthropic, request, cancellationToken, [toolRequestMessage, toolResponseMessage]);
+                    for await (const nestedEvent of result.stream) {
+                        yield nestedEvent;
                     }
                 }
             },
@@ -131,6 +185,13 @@ export class AnthropicModel implements LanguageModel {
         });
 
         return { stream: asyncIterator };
+    }
+    private createTools(request: LanguageModelRequest): Anthropic.Messages.Tool[] | undefined {
+        return request.tools?.map(tool => ({
+            name: tool.name,
+            description: tool.description,
+            input_schema: tool.parameters
+        } as Anthropic.Messages.Tool));
     }
 
     protected async handleNonStreamingRequest(
