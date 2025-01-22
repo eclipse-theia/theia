@@ -68,6 +68,7 @@ import { UNTITLED_SCHEME, UntitledResourceResolver } from '../common';
 import { LanguageQuickPickService } from './i18n/language-quick-pick-service';
 import { SidebarMenu } from './shell/sidebar-menu-widget';
 import { UndoRedoHandlerService } from './undo-redo-handler';
+import { timeout } from '../common/promise-util';
 
 export namespace CommonMenus {
 
@@ -291,13 +292,16 @@ export namespace CommonCommands {
         id: 'workbench.action.files.newFile',
         category: FILE_CATEGORY
     });
+    // This command immediately opens a new untitled text file
+    // Some VS Code extensions use this command to create new files
     export const NEW_UNTITLED_TEXT_FILE = Command.toDefaultLocalizedCommand({
-        id: 'workbench.action.files.newUntitledTextFile',
+        id: 'workbench.action.files.newUntitledFile',
         category: FILE_CATEGORY,
         label: 'New Untitled Text File'
     });
-    export const NEW_UNTITLED_FILE = Command.toDefaultLocalizedCommand({
-        id: 'workbench.action.files.newUntitledFile',
+    // This command opens a quick pick to select a file type to create
+    export const PICK_NEW_FILE = Command.toDefaultLocalizedCommand({
+        id: 'workbench.action.files.pickNewFile',
         category: CREATE_CATEGORY,
         label: 'New File...'
     });
@@ -766,7 +770,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         });
 
         registry.registerMenuAction(CommonMenus.FILE_NEW_TEXT, {
-            commandId: CommonCommands.NEW_UNTITLED_FILE.id,
+            commandId: CommonCommands.PICK_NEW_FILE.id,
             label: nls.localizeByDefault('New File...'),
             order: 'a1'
         });
@@ -1027,10 +1031,15 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             execute: async () => {
                 const untitledUri = this.untitledResourceResolver.createUntitledURI('', await this.workingDirProvider.getUserWorkingDir());
                 this.untitledResourceResolver.resolve(untitledUri);
-                return open(this.openerService, untitledUri);
+                const editor = await open(this.openerService, untitledUri);
+                // Wait for all of the listeners of the `onDidOpen` event to be notified
+                await timeout(50);
+                // Afterwards, we can return from the command with the newly created editor
+                // If we don't wait, we return from the command before the plugin API has been notified of the new editor
+                return editor;
             }
         });
-        commandRegistry.registerCommand(CommonCommands.NEW_UNTITLED_FILE, {
+        commandRegistry.registerCommand(CommonCommands.PICK_NEW_FILE, {
             execute: async () => this.showNewFilePicker()
         });
 
@@ -1187,7 +1196,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 keybinding: this.isElectron() ? 'ctrlcmd+n' : 'alt+n',
             },
             {
-                command: CommonCommands.NEW_UNTITLED_FILE.id,
+                command: CommonCommands.PICK_NEW_FILE.id,
                 keybinding: 'ctrlcmd+alt+n'
             }
         );
