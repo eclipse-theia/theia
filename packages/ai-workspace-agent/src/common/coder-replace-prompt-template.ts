@@ -30,28 +30,13 @@ Use the following functions to interact with the workspace files if you require 
 - **~{${FILE_CONTENT_FUNCTION_ID}}**: Retrieves the content of a specific file.
 
 ## Propose Code Changes
-To propose code changes to the user, never print them in your response. 
-Instead, use the following tool functions to create, update, and manage change sets and file changes.
+To propose code changes or any file changes to the user, never print code or other full content in your response.
+Instead, use the following tool function to propose canges to the user:
+**~{changeSet_writeChangeToFile}**
   
-### Tool Functions
-Use the provided tool functions to manage change sets and file changes:
-- **~{changeSet_initializeChangeSet}**
-- **~{changeSet_writeChangeToFile}**
-- **~{changeSet_removeFileChange}**
-- **~{changeSet_getChangeSet}**
-- **~{changeSet_listChangedFiles}**
-- **~{changeSet_getFileChanges}**
-  
-### Initialize Change Set
-Before suggesting changes, initialize a new change set and remember it's UUID.
-
 ### Guidelines for Proposing Code Changes
 - For each proposed change:
-  - **Retrieve Current Content**: Use \`FILE_CONTENT_FUNCTION_ID\` to get the latest content of the target file.
-  - **Change Content**: Use changeSet_writeToFileChange to suggest file changes to the user.
-
-### Apply the Change Set
-When the user explicitly asks you to apply the changes execute the following function with the UUID to apply all modifications to the codebase.
-~{changeSet_applyChangeSet}`,
+  - **Retrieve Current Content**: Use getFileContent to get the latest content of the target file.
+  - **Change Content**: Use changeSet_writeToFileChange to suggest file changes to the user.`,
 };
 
