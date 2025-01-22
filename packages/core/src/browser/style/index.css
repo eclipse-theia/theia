@@ -14,8 +14,33 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
-@import url("~@phosphor/widgets/style/index.css");
-@import url("~font-awesome/css/font-awesome.min.css");
+/*-----------------------------------------------------------------------------
+| Import children style files
+|----------------------------------------------------------------------------*/
+
+@import "./os.css";
+@import "./dockpanel.css";
+@import "./dialog.css";
+@import "./menus.css";
+@import "./sidepanel.css";
+@import "./tabs.css";
+@import "./scrollbars.css";
+@import "./tree.css";
+@import "./status-bar.css";
+@import "./tree-decorators.css";
+@import "./about.css";
+@import "./search-box.css";
+@import "./ansi.css";
+@import "./view-container.css";
+@import "./notification.css";
+@import "./alert-messages.css";
+@import "./icons.css";
+@import "./widget.css";
+@import "./quick-title-bar.css";
+@import "./progress-bar.css";
+@import "./breadcrumbs.css";
+@import "./tooltip.css";
+@import "./split-widget.css";
 
 /*-----------------------------------------------------------------------------
 | General
@@ -161,6 +186,7 @@ blockquote {
     right: 0;
     bottom: 0;
     background: var(--theia-editor-background);
+    height: 100%;
 }
 
 .theia-preload {
@@ -323,31 +349,3 @@ button.secondary[disabled],
 .theia-cursor-no-drop:active {
     cursor: no-drop;
 }
-
-/*-----------------------------------------------------------------------------
-| Import children style files
-|----------------------------------------------------------------------------*/
-
-@import "./os.css";
-@import "./dockpanel.css";
-@import "./dialog.css";
-@import "./menus.css";
-@import "./sidepanel.css";
-@import "./tabs.css";
-@import "./scrollbars.css";
-@import "./tree.css";
-@import "./status-bar.css";
-@import "./tree-decorators.css";
-@import "./about.css";
-@import "./search-box.css";
-@import "./ansi.css";
-@import "./view-container.css";
-@import "./notification.css";
-@import "./alert-messages.css";
-@import "./icons.css";
-@import "./widget.css";
-@import "./quick-title-bar.css";
-@import "./progress-bar.css";
-@import "./breadcrumbs.css";
-@import "./tooltip.css";
-@import "./split-widget.css";

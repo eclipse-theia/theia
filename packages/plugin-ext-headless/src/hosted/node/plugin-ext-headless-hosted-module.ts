@@ -52,10 +52,10 @@ export function bindHeadlessHosted(bind: interfaces.Bind): void {
     bind(PluginScanner).toService(TheiaHeadlessPluginScanner);
     bind(SupportedHeadlessActivationEvents).toConstantValue(['*', 'onStartupFinished']);
 
-    bind(BackendApplicationContribution).toDynamicValue(({container}) => {
+    bind(BackendApplicationContribution).toDynamicValue(({ container }) => {
         let hostedPluginSupport: HeadlessHostedPluginSupport | undefined;
 
-        return {
+        return new class HeadlessHostedPluginBackendContribution implements BackendApplicationContribution {
             onStart(): MaybePromise<void> {
                 // Create a child container to isolate the Headless Plugin hosting stack
                 // from all connection-scoped frontend/backend plugin hosts and
@@ -66,11 +66,10 @@ export function bindHeadlessHosted(bind: interfaces.Bind): void {
 
                 hostedPluginSupport = headlessPluginsContainer.get(HeadlessHostedPluginSupport);
                 hostedPluginSupport.onStart(headlessPluginsContainer);
-            },
-
+            }
             onStop(): void {
                 hostedPluginSupport?.shutDown();
             }
-        };
+        }();
     });
 }

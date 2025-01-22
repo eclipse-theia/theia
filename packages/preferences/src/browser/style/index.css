@@ -14,6 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
+@import url("./preference-context-menu.css");
+@import url("./preference-array.css");
+@import url("./preference-file.css");
+@import url("./preference-object.css");
+@import url("./search-input.css");
+
 #preferences_container_widget .p-SplitPanel-handle {
   border-right: var(--theia-border-width) solid var(--theia-editorGroup-border);
 }
@@ -25,12 +31,6 @@
 }
 
 /* UI View */
-
-@import url("./preference-context-menu.css");
-@import url("./preference-array.css");
-@import url("./preference-file.css");
-@import url("./preference-object.css");
-@import url("./search-input.css");
 
 .theia-settings-container {
   max-width: 1000px;
