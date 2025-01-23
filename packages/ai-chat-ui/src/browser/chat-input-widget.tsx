@@ -131,6 +131,7 @@ interface ChatInputProperties {
 const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInputProperties) => {
 
     const [inProgress, setInProgress] = React.useState(false);
+const [isMessageEmpty, setIsMessageEmpty] = React.useState(true);
     // eslint-disable-next-line no-null/no-null
     const editorContainerRef = React.useRef<HTMLDivElement | null>(null);
     // eslint-disable-next-line no-null/no-null
@@ -225,6 +226,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     }, [lastRequest]);
 
     function submit(value: string): void {
+        if (value.trim() === '') { return; };
         setInProgress(true);
         props.onQuery(value);
         if (editorRef.current) {
@@ -239,7 +241,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         if (event.key === 'Enter' && !event.shiftKey) {
             event.preventDefault();
             submit(editorRef.current?.document.textEditorModel.getValue() || '');
-        }
+                    }
     }, [props.isEnabled]);
 
     const handleInputFocus = () => {
@@ -247,6 +249,8 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     };
 
     const handleOnChange = () => {
+const value = editorRef.current?.getControl().getValue() || '';
+        setIsMessageEmpty(value.trim().length === 0);
         showPlaceholderIfEditorEmpty();
         hidePlaceholderIfEditorFilled();
     };
@@ -288,8 +292,8 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                     <span
                         className="codicon codicon-send option"
                         title="Send (Enter)"
-                        onClick={!props.isEnabled ? undefined : () => submit(editorRef.current?.document.textEditorModel.getValue() || '')}
-                        style={{ cursor: !props.isEnabled ? 'default' : 'pointer', opacity: !props.isEnabled ? 0.5 : 1 }}
+                        onClick={!props.isEnabled || isMessageEmpty ? undefined : () => submit(editorRef.current?.document.textEditorModel.getValue() || '')}
+                        style={{ cursor: !props.isEnabled || isMessageEmpty ? 'default' : 'pointer', opacity: !props.isEnabled || isMessageEmpty ? 0.5 : 1 }}
                     />
             }
         </div>
