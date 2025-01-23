@@ -151,7 +151,7 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
         const combinedOptions = {
             ...options,
             lightbulb: { enabled: true },
-            fixedOverflowWidgets: true,
+            fixedOverflowWidgets: false,
             scrollbar: {
                 useShadows: false,
                 verticalHasArrows: false,
