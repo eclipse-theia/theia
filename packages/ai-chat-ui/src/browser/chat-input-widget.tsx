@@ -219,7 +219,6 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         };
     }, []);
 
-    const latestRequest = React.useRef<ChatRequestModel>();
     const responseListenerRef = React.useRef<Disposable>();
     // track chat model updates to keep our UI in sync
     // - keep "inProgress" in sync with the request state
@@ -227,7 +226,6 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     React.useEffect(() => {
         const listener = props.chatModel.onDidChange(event => {
             if (event.kind === 'addRequest') {
-                latestRequest.current = event.request;
                 if (event.request) {
                     setInProgress(ChatRequestModel.isInProgress(event.request));
                 }
@@ -296,12 +294,14 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         className: 'codicon-add'
     }] : [];
 
+    const allRequests = props.chatModel.getRequests();
+    const latestRequest = allRequests.length > 0 ? allRequests[allRequests.length - 1] : undefined;
     const rightOptions = inProgress
         ? [{
             title: 'Cancel (Esc)',
             handler: () => {
-                if (latestRequest.current) {
-                    props.onCancel(latestRequest.current);
+                if (latestRequest) {
+                    props.onCancel(latestRequest);
                 }
                 setInProgress(false);
             },
