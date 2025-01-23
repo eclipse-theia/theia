@@ -15,11 +15,8 @@
 // *****************************************************************************
 
 import { Page, PlaywrightWorkerArgs, _electron as electron } from '@playwright/test';
-import * as path from 'path';
-import * as fs from 'fs';
 import { TheiaApp } from './theia-app';
 import { TheiaWorkspace } from './theia-workspace';
-import { OSUtil } from './util';
 
 export interface TheiaAppFactory<T extends TheiaApp> {
     new(page: Page, initialWorkspace: TheiaWorkspace, isElectron?: boolean): T;
@@ -122,14 +119,10 @@ namespace TheiaElectronAppLoader {
     export function toPlaywrightOptions(
         electronLaunchOptions: { additionalArgs: string[], electronAppPath: string, pluginsPath?: string } | object,
         workspace?: TheiaWorkspace
-    ): { executablePath: string, args: string[] } | object {
+    ): {
+        args: string[], env: { [key: string]: string };
+    } | object {
         if ('additionalArgs' in electronLaunchOptions && 'electronAppPath' in electronLaunchOptions) {
-            const executablePath = path.normalize(path.join(electronLaunchOptions.electronAppPath, 'node_modules/.bin/electron')) + (OSUtil.isWindows ? '.cmd' : '');
-            if (!fs.existsSync(executablePath)) {
-                const errorMsg = `executablePath: ${executablePath} does not exist`;
-                console.log(errorMsg);
-                throw new Error(errorMsg);
-            }
             const args = [
                 electronLaunchOptions.electronAppPath,
                 ...electronLaunchOptions.additionalArgs,
@@ -142,7 +135,11 @@ namespace TheiaElectronAppLoader {
                 args.push(workspace.path);
             }
 
-            return { executablePath: executablePath, args: args };
+            return {
+                args: args, env: {
+                    'THEIA_NO_SPLASH': 'true'
+                }
+            };
         }
         return electronLaunchOptions;
     }
