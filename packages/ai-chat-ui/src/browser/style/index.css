@@ -280,6 +280,18 @@ div:last-child > .theia-ChatNode {
   text-overflow: ellipsis;
 }
 
+.theia-ChatInput-ChangeSet-Header-Actions .codicon.action {
+  font-size: 18px;
+  height: 20px;
+  vertical-align: middle;
+  margin-left: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.theia-ChatInput-ChangeSet-Header-Actions .codicon.action:hover {
+  background-color: var(--theia-toolbar-hoverBackground);
+}
+
 .theia-ChatInput-ChangeSet-title.rejected {
   text-decoration: line-through;
 }

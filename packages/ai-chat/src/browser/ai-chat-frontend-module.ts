@@ -40,6 +40,7 @@ import { FrontendChatServiceImpl } from './frontend-chat-service';
 import { CustomAgentFactory } from './custom-agent-factory';
 import { ChatToolRequestService } from '../common/chat-tool-request-service';
 import { ChangeSetFileResourceResolver } from './change-set-file-resource';
+import { ChangeSetFileService } from './change-set-file-service';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, Agent);
@@ -96,6 +97,7 @@ export default new ContainerModule(bind => {
         });
     bind(FrontendApplicationContribution).to(AICustomAgentsFrontendApplicationContribution).inSingletonScope();
 
+    bind(ChangeSetFileService).toSelf().inSingletonScope();
     bind(ChangeSetFileElementFactory).toFactory(ctx => (args: ChangeSetElementArgs) => {
         const container = ctx.container.createChild();
         container.bind(ChangeSetElementArgs).toConstantValue(args);

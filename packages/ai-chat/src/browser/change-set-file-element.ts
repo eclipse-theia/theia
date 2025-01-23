@@ -14,15 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ILogger, UNTITLED_SCHEME, URI } from '@theia/core';
-import { DiffUris, LabelProvider, OpenerService, open } from '@theia/core/lib/browser';
+import { ILogger, URI } from '@theia/core';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { EditorManager } from '@theia/editor/lib/browser';
-import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
-import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { ChangeSetElement, ChangeSetImpl } from '../common';
 import { createChangeSetFileUri } from './change-set-file-resource';
+import { ChangeSetFileService } from './change-set-file-service';
 
 export const ChangeSetFileElementFactory = Symbol('ChangeSetFileElementFactory');
 export type ChangeSetFileElementFactory = (elementProps: ChangeSetElementArgs) => ChangeSetFileElement;
@@ -51,25 +47,10 @@ export class ChangeSetFileElement implements ChangeSetElement {
     @inject(ChangeSetElementArgs)
     protected readonly elementProps: ChangeSetElementArgs;
 
-    @inject(WorkspaceService)
-    protected readonly wsService: WorkspaceService;
+    @inject(ChangeSetFileService)
+    protected readonly changeSetFileService: ChangeSetFileService;
 
-    @inject(LabelProvider)
-    protected readonly labelProvider: LabelProvider;
-
-    @inject(OpenerService)
-    protected readonly openerService: OpenerService;
-
-    @inject(EditorManager)
-    protected readonly editorManager: EditorManager;
-
-    @inject(MonacoWorkspace)
-    protected readonly monacoWorkspace: MonacoWorkspace;
-
-    @inject(FileService)
-    protected readonly fileService: FileService;
-
-    protected _state: 'pending' | 'applied' | 'rejected' | undefined;
+    protected _state: 'pending' | 'applied' | 'discarded' | undefined;
 
     protected originalContent: string | undefined;
 
@@ -79,21 +60,7 @@ export class ChangeSetFileElement implements ChangeSetElement {
     }
 
     protected async obtainOriginalContent(): Promise<void> {
-        const exists = await this.fileService.exists(this.uri);
-        if (this.type === 'add' && !exists) {
-            // no need to track original state
-            return;
-        }
-        try {
-            const document = this.monacoWorkspace.getTextDocument(this.uri.toString());
-            if (document) {
-                this.originalContent = document.getText();
-            } else {
-                this.originalContent = (await this.fileService.readFile(this.uri)).value.toString();
-            }
-        } catch (error) {
-            this.logger.error('Failed to read original content of change set file element.', error);
-        }
+        this.originalContent = await this.changeSetFileService.read(this.uri);
     }
 
     get uri(): URI {
@@ -101,30 +68,22 @@ export class ChangeSetFileElement implements ChangeSetElement {
     }
 
     get name(): string {
-        return this.elementProps.name ?? this.labelProvider.getName(this.uri);
+        return this.elementProps.name ?? this.changeSetFileService.getName(this.uri);
     }
 
     get icon(): string | undefined {
-        return this.elementProps.icon ?? this.labelProvider.getIcon(this.uri);
+        return this.elementProps.icon ?? this.changeSetFileService.getIcon(this.uri);
     }
 
     get additionalInfo(): string | undefined {
-        const wsUri = this.wsService.getWorkspaceRootUri(this.uri);
-        if (wsUri) {
-            const wsRelative = wsUri.relative(this.uri);
-            if (wsRelative?.hasDir) {
-                return `${wsRelative.dir.toString()}`;
-            }
-            return '';
-        }
-        return this.labelProvider.getLongName(this.uri.parent);
+        return this.changeSetFileService.getAdditionalInfo(this.uri);
     }
 
-    get state(): 'pending' | 'applied' | 'rejected' | undefined {
+    get state(): 'pending' | 'applied' | 'discarded' | undefined {
         return this._state ?? this.elementProps.state;
     }
 
-    protected set state(value: 'pending' | 'applied' | 'rejected' | undefined) {
+    protected set state(value: 'pending' | 'applied' | 'discarded' | undefined) {
         this._state = value;
         this.elementProps.changeSet.notifyChange();
     }
@@ -142,82 +101,35 @@ export class ChangeSetFileElement implements ChangeSetElement {
     }
 
     async open(): Promise<void> {
-        const exists = await this.fileService.exists(this.uri);
-        if (exists) {
-            open(this.openerService, this.uri);
-            return;
-        }
-        const editor = await this.editorManager.open(this.uri.withScheme(UNTITLED_SCHEME), {
-            mode: 'reveal'
-        });
-        editor.editor.executeEdits([{
-            newText: this.targetState,
-            range: {
-                start: {
-                    character: 1,
-                    line: 1,
-                },
-                end: {
-                    character: 1,
-                    line: 1,
-                },
-            }
-        }]);
+        this.changeSetFileService.open(this.uri, this.targetState);
     }
 
     async openChange(): Promise<void> {
-        const exists = await this.fileService.exists(this.uri);
-        const openedUri = exists ? this.uri : this.uri.withScheme(UNTITLED_SCHEME);
-        // Currently we don't have a great way to show the suggestions in a diff editor with accept/reject buttons
-        // So we just use plain diffs with the suggestions as original and the current state as modified, so users can apply changes in their current state
-        // But this leads to wrong colors and wrong label (revert change instead of accept change)
-        const diffUri = DiffUris.encode(
-            createChangeSetFileUri(this.elementProps.chatSessionId, this.uri),
-            openedUri,
-            `AI Changes: ${this.labelProvider.getName(this.uri)}`,
+        this.changeSetFileService.openDiff(
+            this.uri,
+            createChangeSetFileUri(this.elementProps.chatSessionId, this.uri)
         );
-        open(this.openerService, diffUri);
     }
 
     async accept(): Promise<void> {
         this.state = 'applied';
         if (this.type === 'delete') {
-            await this.fileService.delete(this.uri);
+            await this.changeSetFileService.delete(this.uri);
             this.state = 'applied';
             return;
         }
 
-        const exists = await this.fileService.exists(this.uri);
-        if (!exists) {
-            await this.fileService.create(this.uri, this.targetState);
-        }
-        await this.write(this.targetState);
+        await this.changeSetFileService.write(this.uri, this.targetState);
     }
 
-    protected async write(text: string): Promise<void> {
-        const document = this.monacoWorkspace.getTextDocument(this.uri.toString());
-        if (document) {
-            this.monacoWorkspace.applyBackgroundEdit(document, [{
-                range: document.textEditorModel.getFullModelRange(),
-                text
-            }], true);
-        } else {
-            await this.fileService.write(this.uri, text);
-        }
-    }
-
-    async reject(): Promise<void> {
-        this.state = 'rejected';
-        const exists = await this.fileService.exists(this.uri);
-        if (this.type === 'add' && exists) {
-            await this.fileService.delete(this.uri);
+    async discard(): Promise<void> {
+        this.state = 'discarded';
+        if (this.type === 'add') {
+            await this.changeSetFileService.delete(this.uri);
             return;
         }
-        if (this.type === 'delete' && !exists && this.originalContent) {
-            await this.fileService.createFile(this.uri);
-        }
-        if (this.originalContent) {
-            await this.write(this.originalContent);
+        if (this.type === 'delete' && this.originalContent) {
+            await this.changeSetFileService.write(this.uri, this.targetState);
         }
     }
 

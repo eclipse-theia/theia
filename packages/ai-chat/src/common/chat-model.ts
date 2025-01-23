@@ -19,7 +19,7 @@
  *--------------------------------------------------------------------------------------------*/
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatModel.ts
 
-import { CancellationToken, CancellationTokenSource, Command, Emitter, Event, generateUuid, URI } from '@theia/core';
+import { CancellationToken, CancellationTokenSource, Command, Disposable, Emitter, Event, generateUuid, URI } from '@theia/core';
 import { MarkdownString, MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { Position } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ChatAgentLocation } from './chat-agents';
@@ -35,6 +35,7 @@ export type ChatChangeEvent =
     | ChatAddResponseEvent
     | ChatRemoveRequestEvent
     | ChatSetChangeSetEvent
+    | ChatSetChangeDeleteEvent
     | ChatUpdateChangeSetEvent
     | ChatRemoveChangeSetEvent;
 
@@ -53,6 +54,10 @@ export interface ChatSetChangeSetEvent {
     changeSet: ChangeSet;
 }
 
+export interface ChatSetChangeDeleteEvent {
+    kind: 'deleteChangeSet';
+}
+
 export interface ChatUpdateChangeSetEvent {
     kind: 'updateChangeSet';
     changeSet: ChangeSet;
@@ -65,7 +70,7 @@ export interface ChatRemoveChangeSetEvent {
 
 export namespace ChatChangeEvent {
     export function isChangeSetEvent(event: ChatChangeEvent): event is ChatSetChangeSetEvent | ChatUpdateChangeSetEvent | ChatRemoveChangeSetEvent {
-        return event.kind === 'setChangeSet' || event.kind === 'removeChangeSet' || event.kind === 'updateChangeSet';
+        return event.kind === 'setChangeSet' || event.kind === 'deleteChangeSet' || event.kind === 'removeChangeSet' || event.kind === 'updateChangeSet';
     }
 }
 
@@ -99,14 +104,14 @@ export interface ChangeSetElement {
     readonly icon?: string;
     readonly additionalInfo?: string;
 
-    readonly state?: 'pending' | 'applied' | 'rejected';
+    readonly state?: 'pending' | 'applied' | 'discarded';
     readonly type?: 'add' | 'modify' | 'delete';
     readonly data?: { [key: string]: unknown };
 
     open?(): Promise<void>;
     openChange?(): Promise<void>;
     accept?(): Promise<void>;
-    reject?(): Promise<void>;
+    discard?(): Promise<void>;
 }
 
 export interface ChatRequest {
@@ -460,6 +465,7 @@ export class ChatModelImpl implements ChatModel {
 
     protected _requests: ChatRequestModelImpl[];
     protected _id: string;
+    protected _changeSetListener?: Disposable;
     protected _changeSet?: ChangeSetImpl;
 
     constructor(public readonly location = ChatAgentLocation.Panel) {
@@ -484,13 +490,20 @@ export class ChatModelImpl implements ChatModel {
         return this._changeSet;
     }
 
-    setChangeSet(changeSet: ChangeSetImpl): void {
+    setChangeSet(changeSet: ChangeSetImpl | undefined): void {
         this._changeSet = changeSet;
+        if (this._changeSet === undefined) {
+            this._changeSetListener?.dispose();
+            this._onDidChangeEmitter.fire({
+                kind: 'deleteChangeSet',
+            });
+            return;
+        }
         this._onDidChangeEmitter.fire({
             kind: 'setChangeSet',
             changeSet: this._changeSet,
         });
-        this._changeSet.onDidChange(() => {
+        this._changeSetListener = this._changeSet.onDidChange(() => {
             this._onDidChangeEmitter.fire({
                 kind: 'updateChangeSet',
                 changeSet: this._changeSet!,

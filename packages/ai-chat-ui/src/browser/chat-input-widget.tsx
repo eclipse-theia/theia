@@ -26,6 +26,8 @@ import { CHAT_VIEW_LANGUAGE_EXTENSION } from './chat-view-language-contribution'
 
 type Query = (query: string) => Promise<void>;
 type Cancel = (requestModel: ChatRequestModel) => void;
+type DeleteChangeSet = (requestModel: ChatRequestModel) => void;
+type DeleteChangeSetElement = (requestModel: ChatRequestModel, index: number) => void;
 
 export const AIChatInputConfiguration = Symbol('AIChatInputConfiguration');
 export interface AIChatInputConfiguration {
@@ -65,6 +67,14 @@ export class AIChatInputWidget extends ReactWidget {
     set onCancel(cancel: Cancel) {
         this._onCancel = cancel;
     }
+    private _onDeleteChangeSet: DeleteChangeSet;
+    set onDeleteChangeSet(deleteChangeSet: DeleteChangeSet) {
+        this._onDeleteChangeSet = deleteChangeSet;
+    }
+    private _onDeleteChangeSetElement: DeleteChangeSetElement;
+    set onDeleteChangeSetElement(deleteChangeSetElement: DeleteChangeSetElement) {
+        this._onDeleteChangeSetElement = deleteChangeSetElement;
+    }
     private _chatModel: ChatModel;
     set chatModel(chatModel: ChatModel) {
         this._chatModel = chatModel;
@@ -92,6 +102,8 @@ export class AIChatInputWidget extends ReactWidget {
             <ChatInput
                 onQuery={this._onQuery.bind(this)}
                 onCancel={this._onCancel.bind(this)}
+                onDeleteChangeSet={this._onDeleteChangeSet.bind(this)}
+                onDeleteChangeSetElement={this._onDeleteChangeSetElement.bind(this)}
                 chatModel={this._chatModel}
                 editorProvider={this.editorProvider}
                 untitledResourceResolver={this.untitledResourceResolver}
@@ -125,6 +137,8 @@ export class AIChatInputWidget extends ReactWidget {
 interface ChatInputProperties {
     onCancel: (requestModel: ChatRequestModel) => void;
     onQuery: (query: string) => void;
+    onDeleteChangeSet: (requestModel: ChatRequestModel) => void;
+    onDeleteChangeSetElement: (requestModel: ChatRequestModel, index: number) => void;
     isEnabled?: boolean;
     chatModel: ChatModel;
     editorProvider: MonacoEditorProvider;
@@ -137,7 +151,9 @@ interface ChatInputProperties {
 
 const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInputProperties) => {
     const [inProgress, setInProgress] = React.useState(false);
-    const [changeSetUI, setChangeSetUI] = React.useState(() => props.chatModel.changeSet ? buildChangeSetUI(props.chatModel.changeSet, props.labelProvider) : undefined);
+    const [changeSetUI, setChangeSetUI] = React.useState(
+        () => props.chatModel.changeSet ? buildChangeSetUI(props.chatModel.changeSet, props.labelProvider, onDeleteChangeSet, onDeleteChangeSetElement) : undefined
+    );
     // eslint-disable-next-line no-null/no-null
     const editorContainerRef = React.useRef<HTMLDivElement | null>(null);
     // eslint-disable-next-line no-null/no-null
@@ -219,6 +235,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         };
     }, []);
 
+    const latestRequest = React.useRef<ChatRequestModel>();
     const responseListenerRef = React.useRef<Disposable>();
     // track chat model updates to keep our UI in sync
     // - keep "inProgress" in sync with the request state
@@ -226,6 +243,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     React.useEffect(() => {
         const listener = props.chatModel.onDidChange(event => {
             if (event.kind === 'addRequest') {
+                latestRequest.current = event.request;
                 if (event.request) {
                     setInProgress(ChatRequestModel.isInProgress(event.request));
                 }
@@ -234,7 +252,11 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                     setInProgress(ChatRequestModel.isInProgress(event.request))
                 );
             } else if (ChatChangeEvent.isChangeSetEvent(event)) {
-                setChangeSetUI(buildChangeSetUI(event.changeSet, props.labelProvider));
+                if (event.changeSet) {
+                    setChangeSetUI(buildChangeSetUI(event.changeSet, props.labelProvider, onDeleteChangeSet, onDeleteChangeSetElement));
+                } else {
+                    setChangeSetUI(undefined);
+                }
             }
         });
         return () => {
@@ -294,14 +316,15 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         className: 'codicon-add'
     }] : [];
 
-    const allRequests = props.chatModel.getRequests();
-    const latestRequest = allRequests.length > 0 ? allRequests[allRequests.length - 1] : undefined;
+    const onDeleteChangeSet = () => latestRequest.current ? props.onDeleteChangeSet(latestRequest.current) : undefined;
+    const onDeleteChangeSetElement = (index: number) => latestRequest.current ? props.onDeleteChangeSetElement(latestRequest.current, index) : undefined;
+
     const rightOptions = inProgress
         ? [{
             title: 'Cancel (Esc)',
             handler: () => {
-                if (latestRequest) {
-                    props.onCancel(latestRequest);
+                if (latestRequest.current) {
+                    props.onCancel(latestRequest.current);
                 }
                 setInProgress(false);
             },
@@ -335,10 +358,11 @@ const noPropagation = (handler: () => void) => (e: React.MouseEvent) => {
     e.stopPropagation();
 };
 
-const buildChangeSetUI = (changeSet: ChangeSet, labelProvider: LabelProvider): ChangeSetUI => ({
+const buildChangeSetUI = (changeSet: ChangeSet, labelProvider: LabelProvider, onDeleteChangeSet: () => void, onDeleteChangeSetElement: (index: number) => void): ChangeSetUI => ({
     title: changeSet.title,
     disabled: !hasPendingElementsToAccept(changeSet),
     acceptAllPendingElements: () => acceptAllPendingElements(changeSet),
+    delete: () => onDeleteChangeSet(),
     elements: changeSet.getElements().map(element => ({
         open: element?.open?.bind(element),
         iconClass: element.icon ?? labelProvider.getIcon(element.uri) ?? labelProvider.fileIcon,
@@ -347,7 +371,8 @@ const buildChangeSetUI = (changeSet: ChangeSet, labelProvider: LabelProvider): C
         additionalInfo: element.additionalInfo ?? labelProvider.getDetails(element.uri),
         openChange: element?.openChange?.bind(element),
         accept: element?.accept?.bind(element),
-        reject: element?.reject?.bind(element)
+        discard: element.state === 'applied' ? element?.discard?.bind(element) : undefined,
+        delete: () => onDeleteChangeSetElement(changeSet.getElements().indexOf(element))
     }))
 });
 
@@ -359,13 +384,15 @@ interface ChangeSetUIElement {
     open?: () => void;
     openChange?: () => void;
     accept?: () => void;
-    reject?: () => void;
+    discard?: () => void;
+    delete: () => void;
 }
 
 interface ChangeSetUI {
     title: string;
     disabled: boolean;
     acceptAllPendingElements: () => void;
+    delete: () => void;
     elements: ChangeSetUIElement[];
 }
 
@@ -382,6 +409,7 @@ const ChangeSetBox: React.FunctionComponent<{ changeSet: ChangeSetUI }> = ({ cha
                 >
                     Accept
                 </button>
+                <span className='codicon codicon-close action' title='Delete Change Set' onClick={() => changeSet.delete()} />
             </div>
         </div>
         <div className='theia-ChatInput-ChangeSet-List'>
@@ -397,8 +425,9 @@ const ChangeSetBox: React.FunctionComponent<{ changeSet: ChangeSetUI }> = ({ cha
                         </span>
                         <div className='theia-ChatInput-ChangeSet-Actions'>
                             {element.openChange && (<span className='codicon codicon-diff-single action' title='Open Diff' onClick={noPropagation(() => element.openChange!())} />)}
-                            {element.reject && (<span className='codicon codicon-discard action' title='Reject' onClick={noPropagation(() => element.reject!())} />)}
+                            {element.discard && (<span className='codicon codicon-discard action' title='Undo' onClick={noPropagation(() => element.discard!())} />)}
                             {element.accept && (<span className='codicon codicon-check action' title='Accept' onClick={noPropagation(() => element.accept!())} />)}
+                            <span className='codicon codicon-close action' title='Delete' onClick={noPropagation(() => element.delete())} />
                         </div>
                     </li>
                 ))}
