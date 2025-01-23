@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { ChangeSet, ChangeSetElement, ChatChangeEvent, ChatModel, ChatRequestModel } from '@theia/ai-chat';
-import { UntitledResourceResolver } from '@theia/core';
+import { Disposable, UntitledResourceResolver } from '@theia/core';
 import { ContextMenuRenderer, LabelProvider, Message, ReactWidget } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
@@ -136,83 +136,80 @@ interface ChatInputProperties {
 }
 
 const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInputProperties) => {
-
     const [inProgress, setInProgress] = React.useState(false);
-    const [, forceUpdate] = React.useReducer(x => x + 1, 0);
-    const [lastRequest, onAddedRequest] = React.useState<ChatRequestModel | undefined>(undefined);
+    const [changeSetUI, setChangeSetUI] = React.useState(() => props.chatModel.changeSet ? buildChangeSetUI(props.chatModel.changeSet, props.labelProvider) : undefined);
     // eslint-disable-next-line no-null/no-null
     const editorContainerRef = React.useRef<HTMLDivElement | null>(null);
     // eslint-disable-next-line no-null/no-null
     const placeholderRef = React.useRef<HTMLDivElement | null>(null);
     const editorRef = React.useRef<MonacoEditor | undefined>(undefined);
 
-    const createInputElement = async () => {
-        const paddingTop = 6;
-        const lineHeight = 20;
-        const maxHeight = 240;
-        const resource = await props.untitledResourceResolver.createUntitledResource('', CHAT_VIEW_LANGUAGE_EXTENSION);
-        const editor = await props.editorProvider.createInline(resource.uri, editorContainerRef.current!, {
-            language: CHAT_VIEW_LANGUAGE_EXTENSION,
-            // Disable code lens, inlay hints and hover support to avoid console errors from other contributions
-            codeLens: false,
-            inlayHints: { enabled: 'off' },
-            hover: { enabled: false },
-            autoSizing: false, // we handle the sizing ourselves
-            scrollBeyondLastLine: false,
-            scrollBeyondLastColumn: 0,
-            minHeight: 1,
-            fontFamily: 'var(--theia-ui-font-family)',
-            fontSize: 13,
-            cursorWidth: 1,
-            maxHeight: -1,
-            scrollbar: { horizontal: 'hidden' },
-            automaticLayout: true,
-            lineNumbers: 'off',
-            lineHeight,
-            padding: { top: paddingTop },
-            suggest: {
-                showIcons: true,
-                showSnippets: false,
-                showWords: false,
-                showStatusBar: false,
-                insertMode: 'replace',
-            },
-            bracketPairColorization: { enabled: false },
-            wrappingStrategy: 'advanced',
-            stickyScroll: { enabled: false },
-        });
-
-        if (editorContainerRef.current) {
-            editorContainerRef.current.style.height = (lineHeight + (2 * paddingTop)) + 'px';
-        }
-
-        const updateEditorHeight = () => {
-            if (editorContainerRef.current) {
-                const contentHeight = editor.getControl().getContentHeight() + paddingTop;
-                editorContainerRef.current.style.height = `${Math.min(contentHeight, maxHeight)}px`;
-            }
-        };
-        editor.getControl().onDidChangeModelContent(() => {
-            updateEditorHeight();
-            handleOnChange();
-        });
-        const resizeObserver = new ResizeObserver(updateEditorHeight);
-        if (editorContainerRef.current) {
-            resizeObserver.observe(editorContainerRef.current);
-        }
-        editor.getControl().onDidDispose(() => {
-            resizeObserver.disconnect();
-        });
-
-        editor.getControl().onContextMenu(e =>
-            props.contextMenuCallback(e.event)
-        );
-
-        editorRef.current = editor;
-        props.setEditorRef(editor);
-    };
-
     React.useEffect(() => {
+        const createInputElement = async () => {
+            const paddingTop = 6;
+            const lineHeight = 20;
+            const maxHeight = 240;
+            const resource = await props.untitledResourceResolver.createUntitledResource('', CHAT_VIEW_LANGUAGE_EXTENSION);
+            const editor = await props.editorProvider.createInline(resource.uri, editorContainerRef.current!, {
+                language: CHAT_VIEW_LANGUAGE_EXTENSION,
+                // Disable code lens, inlay hints and hover support to avoid console errors from other contributions
+                codeLens: false,
+                inlayHints: { enabled: 'off' },
+                hover: { enabled: false },
+                autoSizing: false, // we handle the sizing ourselves
+                scrollBeyondLastLine: false,
+                scrollBeyondLastColumn: 0,
+                minHeight: 1,
+                fontFamily: 'var(--theia-ui-font-family)',
+                fontSize: 13,
+                cursorWidth: 1,
+                maxHeight: -1,
+                scrollbar: { horizontal: 'hidden' },
+                automaticLayout: true,
+                lineNumbers: 'off',
+                lineHeight,
+                padding: { top: paddingTop },
+                suggest: {
+                    showIcons: true,
+                    showSnippets: false,
+                    showWords: false,
+                    showStatusBar: false,
+                    insertMode: 'replace',
+                },
+                bracketPairColorization: { enabled: false },
+                wrappingStrategy: 'advanced',
+                stickyScroll: { enabled: false },
+            });
+
+            if (editorContainerRef.current) {
+                editorContainerRef.current.style.height = (lineHeight + (2 * paddingTop)) + 'px';
+            }
+
+            const updateEditorHeight = () => {
+                if (editorContainerRef.current) {
+                    const contentHeight = editor.getControl().getContentHeight() + paddingTop;
+                    editorContainerRef.current.style.height = `${Math.min(contentHeight, maxHeight)}px`;
+                }
+            };
+            editor.getControl().onDidChangeModelContent(() => {
+                updateEditorHeight();
+                handleOnChange();
+            });
+            const resizeObserver = new ResizeObserver(updateEditorHeight);
+            if (editorContainerRef.current) {
+                resizeObserver.observe(editorContainerRef.current);
+            }
+            editor.getControl().onDidDispose(() => {
+                resizeObserver.disconnect();
+            });
+
+            editor.getControl().onContextMenu(e =>
+                props.contextMenuCallback(e.event)
+            );
+
+            editorRef.current = editor;
+            props.setEditorRef(editor);
+        };
         createInputElement();
         return () => {
             props.setEditorRef(undefined);
@@ -222,39 +219,32 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         };
     }, []);
 
-    // track added requests
+    const latestRequest = React.useRef<ChatRequestModel>();
+    const responseListenerRef = React.useRef<Disposable>();
+    // track chat model updates to keep our UI in sync
+    // - keep "inProgress" in sync with the request state
+    // - keep "changeSetUI" in sync with the change set
     React.useEffect(() => {
-        const onChatModelUpdate = (event: ChatChangeEvent) => {
+        const listener = props.chatModel.onDidChange(event => {
             if (event.kind === 'addRequest') {
-                onAddedRequest(() => event.request);
+                latestRequest.current = event.request;
+                if (event.request) {
+                    setInProgress(ChatRequestModel.isInProgress(event.request));
+                }
+                responseListenerRef.current?.dispose();
+                responseListenerRef.current = event.request.response.onDidChange(() =>
+                    setInProgress(ChatRequestModel.isInProgress(event.request))
+                );
+            } else if (ChatChangeEvent.isChangeSetEvent(event)) {
+                setChangeSetUI(buildChangeSetUI(event.changeSet, props.labelProvider));
             }
+        });
+        return () => {
+            listener?.dispose();
+            responseListenerRef.current?.dispose();
+            responseListenerRef.current = undefined;
         };
-        const listener = props.chatModel.onDidChange(onChatModelUpdate);
-        return () => listener?.dispose();
-    }, []);
-
-    // remember last requests
-    React.useEffect(() => {
-        if (lastRequest) {
-            setInProgress(ChatRequestModel.isInProgress(lastRequest));
-        }
-        const onResponseUpdate = () => {
-            setInProgress(ChatRequestModel.isInProgress(lastRequest));
-        };
-        const listener = lastRequest?.response.onDidChange(onResponseUpdate);
-        return () => listener?.dispose();
-    }, [lastRequest]);
-
-    // track change set updates
-    React.useEffect(() => {
-        const onChatModelUpdate = (event: ChatChangeEvent) => {
-            if (ChatChangeEvent.isChangeSetEvent(event)) {
-                forceUpdate();
-            }
-        };
-        const listener = props.chatModel.onDidChange(onChatModelUpdate);
-        return () => listener?.dispose();
-    }, [props.chatModel.changeSet]);
+    }, [props.chatModel]);
 
     function submit(value: string): void {
         setInProgress(true);
@@ -300,40 +290,36 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         }
     };
 
-    const leftOptions = React.useMemo<Option[]>(() => (
-        props.showContext ? [{
-            title: 'Attach elements to context',
-            handler: () => { /* TODO */ },
-            className: 'codicon-add'
-        }] : []
-    ), [props.showContext]);
+    const leftOptions = props.showContext ? [{
+        title: 'Attach elements to context',
+        handler: () => { /* TODO */ },
+        className: 'codicon-add'
+    }] : [];
 
-    const rightOptions = React.useMemo<Option[]>(() => (
-        inProgress
-            ? [{
-                title: 'Cancel (Esc)',
-                handler: () => {
-                    if (lastRequest) {
-                        props.onCancel(lastRequest);
-                    }
-                    setInProgress(false);
-                },
-                className: 'codicon-stop-circle'
-            }]
-            : [{
-                title: 'Send (Enter)',
-                handler: () => {
-                    if (props.isEnabled) {
-                        submit(editorRef.current?.document.textEditorModel.getValue() || '');
-                    }
-                },
-                className: 'codicon-send'
-            }]
-    ), [inProgress, props.isEnabled, lastRequest]);
+    const rightOptions = inProgress
+        ? [{
+            title: 'Cancel (Esc)',
+            handler: () => {
+                if (latestRequest.current) {
+                    props.onCancel(latestRequest.current);
+                }
+                setInProgress(false);
+            },
+            className: 'codicon-stop-circle'
+        }]
+        : [{
+            title: 'Send (Enter)',
+            handler: () => {
+                if (props.isEnabled) {
+                    submit(editorRef.current?.document.textEditorModel.getValue() || '');
+                }
+            },
+            className: 'codicon-send'
+        }];
 
     return <div className='theia-ChatInput'>
-        {props.chatModel.changeSet && props.chatModel.changeSet.getElements() &&
-            <ChangeSetBox changeSet={props.chatModel.changeSet} labelProvider={props.labelProvider} />
+        {changeSetUI?.elements &&
+            <ChangeSetBox changeSet={changeSetUI} />
         }
         <div className='theia-ChatInput-Editor-Box'>
             <div className='theia-ChatInput-Editor' ref={editorContainerRef} onKeyDown={onKeyDown} onFocus={handleInputFocus} onBlur={handleInputBlur}>
@@ -344,26 +330,55 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     </div>;
 };
 
-interface ChangeSetBoxProps {
-    changeSet: ChangeSet;
-    labelProvider: LabelProvider;
-}
-
 const noPropagation = (handler: () => void) => (e: React.MouseEvent) => {
     handler();
     e.stopPropagation();
 };
 
-const ChangeSetBox: React.FunctionComponent<ChangeSetBoxProps> = ({ changeSet, labelProvider }) => (
+const buildChangeSetUI = (changeSet: ChangeSet, labelProvider: LabelProvider): ChangeSetUI => ({
+    title: changeSet.title,
+    disabled: !hasPendingElementsToAccept(changeSet),
+    acceptAllPendingElements: () => acceptAllPendingElements(changeSet),
+    elements: changeSet.getElements().map(element => ({
+        open: element?.open?.bind(element),
+        iconClass: element.icon ?? labelProvider.getIcon(element.uri) ?? labelProvider.fileIcon,
+        nameClass: `${element.type} ${element.state}`,
+        name: element.name ?? labelProvider.getName(element.uri),
+        additionalInfo: element.additionalInfo ?? labelProvider.getDetails(element.uri),
+        openChange: element?.openChange?.bind(element),
+        accept: element?.accept?.bind(element),
+        reject: element?.reject?.bind(element)
+    }))
+});
+
+interface ChangeSetUIElement {
+    name: string;
+    iconClass: string;
+    nameClass: string;
+    additionalInfo: string;
+    open?: () => void;
+    openChange?: () => void;
+    accept?: () => void;
+    reject?: () => void;
+}
+
+interface ChangeSetUI {
+    title: string;
+    disabled: boolean;
+    acceptAllPendingElements: () => void;
+    elements: ChangeSetUIElement[];
+}
+
+const ChangeSetBox: React.FunctionComponent<{ changeSet: ChangeSetUI }> = ({ changeSet }) => (
     <div className='theia-ChatInput-ChangeSet-Box'>
         <div className='theia-ChatInput-ChangeSet-Header'>
             <h3>{changeSet.title}</h3>
             <div className='theia-ChatInput-ChangeSet-Header-Actions'>
                 <button
                     className='theia-button'
-                    disabled={!hasPendingElementsToAccept(changeSet)}
+                    disabled={changeSet.disabled}
                     title='Accept all pending changes'
-                    onClick={() => acceptAllPendingElements(changeSet)}
+                    onClick={() => changeSet.acceptAllPendingElements()}
                 >
                     Accept
                 </button>
@@ -371,14 +386,14 @@ const ChangeSetBox: React.FunctionComponent<ChangeSetBoxProps> = ({ changeSet, l
         </div>
         <div className='theia-ChatInput-ChangeSet-List'>
             <ul>
-                {changeSet.getElements().map((element, index) => (
-                    <li key={index} onClick={() => element.open ? element.open() : undefined}>
-                        <div className={`theia-ChatInput-ChangeSet-Icon ${element.icon ?? labelProvider.getIcon(element.uri) ?? labelProvider.fileIcon}`} />
-                        <span className={`theia-ChatInput-ChangeSet-title ${element.type} ${element.state}`}>
-                            {element.name ?? labelProvider.getName(element.uri)}
+                {changeSet.elements.map((element, index) => (
+                    <li key={index} onClick={() => element.open?.()}>
+                        <div className={`theia-ChatInput-ChangeSet-Icon ${element.iconClass}`} />
+                        <span className={`theia-ChatInput-ChangeSet-title ${element.nameClass}`}>
+                            {element.name}
                         </span>
                         <span className='theia-ChatInput-ChangeSet-additionalInfo'>
-                            {element.additionalInfo ?? labelProvider.getDetails(element.uri)}
+                            {element.additionalInfo}
                         </span>
                         <div className='theia-ChatInput-ChangeSet-Actions'>
                             {element.openChange && (<span className='codicon codicon-diff-single action' title='Open Diff' onClick={noPropagation(() => element.openChange!())} />)}
