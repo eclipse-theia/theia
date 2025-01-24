@@ -114,6 +114,9 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
             const requestId = generateUuid();
             const request: LanguageModelRequest = {
                 messages: [{ type: 'text', actor: 'user', query: prompt }],
+                settings: {
+                    stream: false
+                }
             };
             if (token.isCancellationRequested) {
                 return undefined;
