@@ -176,7 +176,7 @@ export class AnthropicModel implements LanguageModel {
                             content: isArray(call.result!) ? call.result.map(r => ({ type: 'text', text: r as string })) : call.result
                         }))
                     };
-                    const result = await that.handleStreamingRequest(anthropic, request, cancellationToken, [toolRequestMessage, toolResponseMessage]);
+                    const result = await that.handleStreamingRequest(anthropic, request, cancellationToken, [...(toolMessages ?? []), toolRequestMessage, toolResponseMessage]);
                     for await (const nestedEvent of result.stream) {
                         yield nestedEvent;
                     }
