@@ -181,12 +181,12 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         this.chatService.cancelRequest(requestModel.session.id, requestModel.id);
     }
 
-    protected onDeleteChangeSet(requestModel: ChatRequestModel): void {
-        this.chatService.deleteChangeSet(requestModel.session.id);
+    protected onDeleteChangeSet(sessionId: string): void {
+        this.chatService.deleteChangeSet(sessionId);
     }
 
-    protected onDeleteChangeSetElement(requestModel: ChatRequestModel, index: number): void {
-        this.chatService.deleteChangeSetElement(requestModel.session.id, index);
+    protected onDeleteChangeSetElement(sessionId: string, index: number): void {
+        this.chatService.deleteChangeSetElement(sessionId, index);
     }
 
     lock(): void {

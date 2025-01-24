@@ -137,8 +137,8 @@ export class AIChatInputWidget extends ReactWidget {
 interface ChatInputProperties {
     onCancel: (requestModel: ChatRequestModel) => void;
     onQuery: (query: string) => void;
-    onDeleteChangeSet: (requestModel: ChatRequestModel) => void;
-    onDeleteChangeSetElement: (requestModel: ChatRequestModel, index: number) => void;
+    onDeleteChangeSet: (sessionId: string) => void;
+    onDeleteChangeSetElement: (sessionId: string, index: number) => void;
     isEnabled?: boolean;
     chatModel: ChatModel;
     editorProvider: MonacoEditorProvider;
@@ -150,10 +150,14 @@ interface ChatInputProperties {
 }
 
 const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInputProperties) => {
+    const onDeleteChangeSet = () => props.onDeleteChangeSet(props.chatModel.id);
+    const onDeleteChangeSetElement = (index: number) => props.onDeleteChangeSetElement(props.chatModel.id, index);
+
     const [inProgress, setInProgress] = React.useState(false);
     const [changeSetUI, setChangeSetUI] = React.useState(
         () => props.chatModel.changeSet ? buildChangeSetUI(props.chatModel.changeSet, props.labelProvider, onDeleteChangeSet, onDeleteChangeSetElement) : undefined
     );
+
     // eslint-disable-next-line no-null/no-null
     const editorContainerRef = React.useRef<HTMLDivElement | null>(null);
     // eslint-disable-next-line no-null/no-null
@@ -235,7 +239,6 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         };
     }, []);
 
-    const latestRequest = React.useRef<ChatRequestModel>();
     const responseListenerRef = React.useRef<Disposable>();
     // track chat model updates to keep our UI in sync
     // - keep "inProgress" in sync with the request state
@@ -243,7 +246,6 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     React.useEffect(() => {
         const listener = props.chatModel.onDidChange(event => {
             if (event.kind === 'addRequest') {
-                latestRequest.current = event.request;
                 if (event.request) {
                     setInProgress(ChatRequestModel.isInProgress(event.request));
                 }
@@ -259,6 +261,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                 }
             }
         });
+        setChangeSetUI(props.chatModel.changeSet ? buildChangeSetUI(props.chatModel.changeSet, props.labelProvider, onDeleteChangeSet, onDeleteChangeSetElement) : undefined);
         return () => {
             listener?.dispose();
             responseListenerRef.current?.dispose();
@@ -316,15 +319,13 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         className: 'codicon-add'
     }] : [];
 
-    const onDeleteChangeSet = () => latestRequest.current ? props.onDeleteChangeSet(latestRequest.current) : undefined;
-    const onDeleteChangeSetElement = (index: number) => latestRequest.current ? props.onDeleteChangeSetElement(latestRequest.current, index) : undefined;
-
     const rightOptions = inProgress
         ? [{
             title: 'Cancel (Esc)',
             handler: () => {
-                if (latestRequest.current) {
-                    props.onCancel(latestRequest.current);
+                const latestRequest = getLatestRequest(props.chatModel);
+                if (latestRequest) {
+                    props.onCancel(latestRequest);
                 }
                 setInProgress(false);
             },
@@ -484,3 +485,7 @@ function acceptablePendingElements(changeSet: ChangeSet): ChangeSetElement[] {
     return changeSet.getElements().filter(e => e.accept && (e.state === undefined || e.state === 'pending'));
 }
 
+function getLatestRequest(chatModel: ChatModel): ChatRequestModel | undefined {
+    const requests = chatModel.getRequests();
+    return requests.length > 0 ? requests[requests.length - 1] : undefined;
+}
