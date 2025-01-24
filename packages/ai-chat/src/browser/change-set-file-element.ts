@@ -128,8 +128,8 @@ export class ChangeSetFileElement implements ChangeSetElement {
             await this.changeSetFileService.delete(this.uri);
             return;
         }
-        if (this.type === 'delete' && this.originalContent) {
-            await this.changeSetFileService.write(this.uri, this.targetState);
+        if (this.originalContent) {
+            await this.changeSetFileService.write(this.uri, this.originalContent);
         }
     }
 

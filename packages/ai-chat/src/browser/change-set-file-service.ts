@@ -136,7 +136,7 @@ export class ChangeSetFileService {
     protected async doWrite(uri: URI, text: string): Promise<void> {
         const document = this.monacoWorkspace.getTextDocument(uri.toString());
         if (document) {
-            this.monacoWorkspace.applyBackgroundEdit(document, [{
+            await this.monacoWorkspace.applyBackgroundEdit(document, [{
                 range: document.textEditorModel.getFullModelRange(),
                 text
             }], true);

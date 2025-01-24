@@ -370,7 +370,7 @@ const buildChangeSetUI = (changeSet: ChangeSet, labelProvider: LabelProvider, on
         name: element.name ?? labelProvider.getName(element.uri),
         additionalInfo: element.additionalInfo ?? labelProvider.getDetails(element.uri),
         openChange: element?.openChange?.bind(element),
-        accept: element?.accept?.bind(element),
+        accept: element.state !== 'applied' ? element?.accept?.bind(element) : undefined,
         discard: element.state === 'applied' ? element?.discard?.bind(element) : undefined,
         delete: () => onDeleteChangeSetElement(changeSet.getElements().indexOf(element))
     }))
