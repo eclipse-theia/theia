@@ -394,6 +394,12 @@ div:last-child > .theia-ChatNode {
   cursor: pointer;
 }
 
+.theia-ChatInputOptions .option.disabled {
+  cursor: default;
+  opacity: var(--theia-mod-disabled-opacity);
+  pointer-events: none;
+}
+
 .theia-ChatInputOptions .option:hover {
   opacity: 1;
   background-color: var(--theia-toolbar-hoverBackground);
