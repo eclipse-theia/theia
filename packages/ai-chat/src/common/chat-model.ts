@@ -19,11 +19,12 @@
  *--------------------------------------------------------------------------------------------*/
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatModel.ts
 
-import { CancellationToken, CancellationTokenSource, Command, Emitter, Event, generateUuid, URI } from '@theia/core';
+import { CancellationToken, CancellationTokenSource, Command, Disposable, Emitter, Event, generateUuid, URI } from '@theia/core';
 import { MarkdownString, MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { Position } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ChatAgentLocation } from './chat-agents';
-import { ParsedChatRequest } from './parsed-chat-request';
+import { ParsedChatRequest, ParsedChatRequestVariablePart } from './parsed-chat-request';
+import { ResolvedAIVariable } from '@theia/ai-core';
 
 /**********************
  * INTERFACES AND TYPE GUARDS
@@ -32,7 +33,11 @@ import { ParsedChatRequest } from './parsed-chat-request';
 export type ChatChangeEvent =
     | ChatAddRequestEvent
     | ChatAddResponseEvent
-    | ChatRemoveRequestEvent;
+    | ChatRemoveRequestEvent
+    | ChatSetChangeSetEvent
+    | ChatSetChangeDeleteEvent
+    | ChatUpdateChangeSetEvent
+    | ChatRemoveChangeSetEvent;
 
 export interface ChatAddRequestEvent {
     kind: 'addRequest';
@@ -42,6 +47,31 @@ export interface ChatAddRequestEvent {
 export interface ChatAddResponseEvent {
     kind: 'addResponse';
     response: ChatResponseModel;
+}
+
+export interface ChatSetChangeSetEvent {
+    kind: 'setChangeSet';
+    changeSet: ChangeSet;
+}
+
+export interface ChatSetChangeDeleteEvent {
+    kind: 'deleteChangeSet';
+}
+
+export interface ChatUpdateChangeSetEvent {
+    kind: 'updateChangeSet';
+    changeSet: ChangeSet;
+}
+
+export interface ChatRemoveChangeSetEvent {
+    kind: 'removeChangeSet';
+    changeSet: ChangeSet;
+}
+
+export namespace ChatChangeEvent {
+    export function isChangeSetEvent(event: ChatChangeEvent): event is ChatSetChangeSetEvent | ChatUpdateChangeSetEvent | ChatRemoveChangeSetEvent {
+        return event.kind === 'setChangeSet' || event.kind === 'deleteChangeSet' || event.kind === 'removeChangeSet' || event.kind === 'updateChangeSet';
+    }
 }
 
 export type ChatRequestRemovalReason = 'removal' | 'resend' | 'adoption';
@@ -57,8 +87,31 @@ export interface ChatModel {
     readonly onDidChange: Event<ChatChangeEvent>;
     readonly id: string;
     readonly location: ChatAgentLocation;
+    readonly changeSet?: ChangeSet;
     getRequests(): ChatRequestModel[];
     isEmpty(): boolean;
+}
+
+export interface ChangeSet {
+    readonly title: string;
+    getElements(): ChangeSetElement[];
+}
+
+export interface ChangeSetElement {
+    readonly uri: URI;
+
+    readonly name?: string;
+    readonly icon?: string;
+    readonly additionalInfo?: string;
+
+    readonly state?: 'pending' | 'applied' | 'discarded';
+    readonly type?: 'add' | 'modify' | 'delete';
+    readonly data?: { [key: string]: unknown };
+
+    open?(): Promise<void>;
+    openChange?(): Promise<void>;
+    accept?(): Promise<void>;
+    discard?(): Promise<void>;
 }
 
 export interface ChatRequest {
@@ -87,6 +140,17 @@ export namespace ChatRequestModel {
             'request' in request &&
             'response' in request &&
             'message' in request
+        );
+    }
+    export function isInProgress(request: ChatRequestModel | undefined): boolean {
+        if (!request) {
+            return false;
+        }
+        const response = request.response;
+        return !(
+            response.isComplete ||
+            response.isCanceled ||
+            response.isError
         );
     }
 }
@@ -401,6 +465,8 @@ export class ChatModelImpl implements ChatModel {
 
     protected _requests: ChatRequestModelImpl[];
     protected _id: string;
+    protected _changeSetListener?: Disposable;
+    protected _changeSet?: ChangeSetImpl;
 
     constructor(public readonly location = ChatAgentLocation.Panel) {
         // TODO accept serialized data as a parameter to restore a previously saved ChatModel
@@ -420,8 +486,44 @@ export class ChatModelImpl implements ChatModel {
         return this._id;
     }
 
-    addRequest(parsedChatRequest: ParsedChatRequest, agentId?: string): ChatRequestModelImpl {
-        const requestModel = new ChatRequestModelImpl(this, parsedChatRequest, agentId);
+    get changeSet(): ChangeSetImpl | undefined {
+        return this._changeSet;
+    }
+
+    setChangeSet(changeSet: ChangeSetImpl | undefined): void {
+        this._changeSet = changeSet;
+        if (this._changeSet === undefined) {
+            this._changeSetListener?.dispose();
+            this._onDidChangeEmitter.fire({
+                kind: 'deleteChangeSet',
+            });
+            return;
+        }
+        this._onDidChangeEmitter.fire({
+            kind: 'setChangeSet',
+            changeSet: this._changeSet,
+        });
+        this._changeSetListener = this._changeSet.onDidChange(() => {
+            this._onDidChangeEmitter.fire({
+                kind: 'updateChangeSet',
+                changeSet: this._changeSet!,
+            });
+        });
+    }
+
+    removeChangeSet(): void {
+        if (this._changeSet) {
+            const oldChangeSet = this._changeSet;
+            this._changeSet = undefined;
+            this._onDidChangeEmitter.fire({
+                kind: 'removeChangeSet',
+                changeSet: oldChangeSet,
+            });
+        }
+    }
+
+    addRequest(parsedChatRequest: ParsedChatRequest, agentId?: string, context: ResolvedAIVariable[] = []): ChatRequestModelImpl {
+        const requestModel = new ChatRequestModelImpl(this, parsedChatRequest, agentId, context);
         this._requests.push(requestModel);
         this._onDidChangeEmitter.fire({
             kind: 'addRequest',
@@ -435,21 +537,66 @@ export class ChatModelImpl implements ChatModel {
     }
 }
 
+export class ChangeSetImpl implements ChangeSet {
+    protected readonly _onDidChangeEmitter = new Emitter<void>();
+    onDidChange: Event<void> = this._onDidChangeEmitter.event;
+
+    protected _elements: ChangeSetElement[] = [];
+
+    constructor(public readonly title: string, elements: ChangeSetElement[] = []) {
+        this.addElements(elements);
+    }
+
+    getElements(): ChangeSetElement[] {
+        return this._elements;
+    }
+
+    addElement(element: ChangeSetElement): void {
+        this.addElements([element]);
+    }
+
+    addElements(elements: ChangeSetElement[]): void {
+        this._elements.push(...elements);
+        this.notifyChange();
+    }
+
+    replaceElement(element: ChangeSetElement): boolean {
+        const index = this._elements.findIndex(e => e.uri.toString() === element.uri.toString());
+        if (index < 0) {
+            return false;
+        }
+        this._elements[index] = element;
+        this.notifyChange();
+        return true;
+    }
+
+    removeElement(index: number): void {
+        this._elements.splice(index, 1);
+        this.notifyChange();
+    }
+
+    notifyChange(): void {
+        this._onDidChangeEmitter.fire();
+    }
+}
+
 export class ChatRequestModelImpl implements ChatRequestModel {
     protected readonly _id: string;
-    protected _session: ChatModel;
+    protected _session: ChatModelImpl;
     protected _request: ChatRequest;
     protected _response: ChatResponseModelImpl;
+    protected _context: ResolvedAIVariable[];
     protected _agentId?: string;
     protected _data: { [key: string]: unknown };
 
-    constructor(session: ChatModel, public readonly message: ParsedChatRequest, agentId?: string,
-        data: { [key: string]: unknown } = {}) {
+    constructor(session: ChatModelImpl, public readonly message: ParsedChatRequest, agentId?: string,
+        context: ResolvedAIVariable[] = [], data: { [key: string]: unknown } = {}) {
         // TODO accept serialized data as a parameter to restore a previously saved ChatRequestModel
         this._request = message.request;
         this._id = generateUuid();
         this._session = session;
         this._response = new ChatResponseModelImpl(this._id, agentId);
+        this._context = context.concat(message.parts.filter(part => part.kind === 'var').map(part => (part as ParsedChatRequestVariablePart).resolution));
         this._agentId = agentId;
         this._data = data;
     }
@@ -470,7 +617,7 @@ export class ChatRequestModelImpl implements ChatRequestModel {
         return this._id;
     }
 
-    get session(): ChatModel {
+    get session(): ChatModelImpl {
         return this._session;
     }
 

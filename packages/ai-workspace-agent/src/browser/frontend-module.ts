@@ -24,18 +24,8 @@ import { PreferenceContribution } from '@theia/core/lib/browser';
 import { WorkspacePreferencesSchema } from './workspace-preferences';
 
 import {
-    InitializeChangeSetProvider,
-    RemoveFileChangeProvider,
-    GetChangeSetProvider,
-    ListChangedFilesProvider,
-    GetFileChangesProvider,
-    ApplyChangeSetProvider
+    WriteChangeToFileProvider
 } from './file-changeset-functions';
-import { FileChangeSetService } from './file-changeset-service';
-import { WriteChangeToFileProvider } from './replace-content-changeset-functions';
-import { ContentChangeApplier, ContentChangeApplierService } from './content-change-applier-service';
-import { bindContributionProvider } from '@theia/core';
-import { ReplaceContentChangeApplier } from './replace-content-change-applier';
 
 export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: WorkspacePreferencesSchema });
@@ -50,15 +40,5 @@ export default new ContainerModule(bind => {
     bind(ToolProvider).to(GetWorkspaceDirectoryStructure);
     bind(WorkspaceFunctionScope).toSelf().inSingletonScope();
 
-    bindContributionProvider(bind, ContentChangeApplier);
-    bind(ContentChangeApplier).to(ReplaceContentChangeApplier);
-    bind(ContentChangeApplierService).toSelf().inSingletonScope();
-    bind(FileChangeSetService).toSelf().inSingletonScope();
-    bind(ToolProvider).to(InitializeChangeSetProvider);
-    bind(ToolProvider).to(RemoveFileChangeProvider);
-    bind(ToolProvider).to(GetChangeSetProvider);
-    bind(ToolProvider).to(ListChangedFilesProvider);
-    bind(ToolProvider).to(GetFileChangesProvider);
-    bind(ToolProvider).to(ApplyChangeSetProvider);
     bind(ToolProvider).to(WriteChangeToFileProvider);
 });

@@ -55,6 +55,11 @@ export class WorkspaceFunctionScope {
         }
     }
 
+    async resolveRelativePath(relativePath: string): Promise<URI> {
+        const workspaceRoot = await this.getWorkspaceRoot();
+        return workspaceRoot.resolve(relativePath);
+    }
+
     private async initializeGitignoreWatcher(workspaceRoot: URI): Promise<void> {
         if (this.gitignoreWatcherInitialized) {
             return;

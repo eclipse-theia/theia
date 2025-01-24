@@ -15,198 +15,77 @@
 // *****************************************************************************
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { ToolProvider, ToolRequest } from '@theia/ai-core';
-import { FileChangeSetService } from './file-changeset-service';
+import { WorkspaceFunctionScope } from './workspace-functions';
+import { ChangeSetFileElementFactory } from '@theia/ai-chat/lib/browser/change-set-file-element';
+import { ChangeSetImpl, ChatRequestModelImpl } from '@theia/ai-chat';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
 
 @injectable()
-export class InitializeChangeSetProvider implements ToolProvider {
-    static ID = 'changeSet_initializeChangeSet';
+export class WriteChangeToFileProvider implements ToolProvider {
+    static ID = 'changeSet_writeChangeToFile';
 
-    @inject(FileChangeSetService)
-    protected readonly changeSetService: FileChangeSetService;
+    @inject(WorkspaceFunctionScope)
+    protected readonly workspaceFunctionScope: WorkspaceFunctionScope;
+
+    @inject(FileService)
+    fileService: FileService;
+
+    @inject(ChangeSetFileElementFactory)
+    protected readonly fileChangeFactory: ChangeSetFileElementFactory;
 
     getTool(): ToolRequest {
         return {
-            id: InitializeChangeSetProvider.ID,
-            name: InitializeChangeSetProvider.ID,
-            description: 'Creates a new change set with a unique UUID and description.',
+            id: WriteChangeToFileProvider.ID,
+            name: WriteChangeToFileProvider.ID,
+            description: `Proposes writing content to a file. If the file exists, it will be overwritten with the provided content.\n
+             If the file does not exist, it will be created. This tool will automatically create any directories needed to write the file.\n
+             If the new content is empty, the file will be deleted. To move a file, delete it and re-create it at the new location.\n
+             The proposed changes will be applied when the user accepts.`,
             parameters: {
                 type: 'object',
                 properties: {
-                    uuid: { type: 'string', description: 'Unique identifier for the change set.' },
-                    description: { type: 'string', description: 'High-level description of the change set.' }
+                    path: {
+                        type: 'string',
+                        description: 'The path of the file to write to.'
+                    },
+                    content: {
+                        type: 'string',
+                        description: `The content to write to the file. ALWAYS provide the COMPLETE intended content of the file, without any truncation or omissions.\n
+                         You MUST include ALL parts of the file, even if they haven\'t been modified.`
+                    }
                 },
-                required: ['uuid', 'description']
+                required: ['path', 'content']
             },
-            handler: async (args: string): Promise<string> => {
-                try {
-                    const { uuid, description } = JSON.parse(args);
-                    this.changeSetService.initializeChangeSet(uuid, description);
-                    return `Change set ${uuid} initialized successfully.`;
-                } catch (error) {
-                    return JSON.stringify({ error: error.message });
+            handler: async (args: string, ctx: ChatRequestModelImpl): Promise<string> => {
+                const { path, content } = JSON.parse(args);
+                const chatSessionId = ctx.session.id;
+                let changeSet = ctx.session.changeSet;
+                if (!changeSet) {
+                    changeSet = new ChangeSetImpl('Changes proposed by Coder');
+                    ctx.session.setChangeSet(changeSet);
                 }
-            }
-        };
-    }
-}
-
-@injectable()
-export class RemoveFileChangeProvider implements ToolProvider {
-    static ID = 'changeSet_removeFileChange';
-
-    @inject(FileChangeSetService)
-    protected readonly changeSetService: FileChangeSetService;
-
-    getTool(): ToolRequest {
-        return {
-            id: RemoveFileChangeProvider.ID,
-            name: RemoveFileChangeProvider.ID,
-            description: 'Removes a file and all related changes from the specified change set.',
-            parameters: {
-                type: 'object',
-                properties: {
-                    uuid: { type: 'string', description: 'Unique identifier for the change set.' },
-                    filePath: { type: 'string', description: 'Path to the file.' }
-                },
-                required: ['uuid', 'filePath']
-            },
-            handler: async (args: string): Promise<string> => {
-                try {
-                    const { uuid, filePath } = JSON.parse(args);
-                    this.changeSetService.removeFileChange(uuid, filePath);
-                    return `File ${filePath} removed from change set ${uuid}.`;
-                } catch (error) {
-                    return JSON.stringify({ error: error.message });
+                const uri = await this.workspaceFunctionScope.resolveRelativePath(path);
+                let type = 'modify';
+                if (content === '') {
+                    type = 'delete';
                 }
-            }
-        };
-    }
-}
-
-@injectable()
-export class ListChangedFilesProvider implements ToolProvider {
-    static ID = 'changeSet_listChangedFiles';
-
-    @inject(FileChangeSetService)
-    protected readonly changeSetService: FileChangeSetService;
-
-    getTool(): ToolRequest {
-        return {
-            id: ListChangedFilesProvider.ID,
-            name: ListChangedFilesProvider.ID,
-            description: 'Lists all files included in a specific change set.',
-            parameters: {
-                type: 'object',
-                properties: {
-                    uuid: { type: 'string', description: 'Unique identifier for the change set.' }
-                },
-                required: ['uuid']
-            },
-            handler: async (args: string): Promise<string> => {
+                // In case the file does not exist and the content is empty, we consider that the AI wants to add an empty file.
                 try {
-                    const { uuid } = JSON.parse(args);
-                    const files = this.changeSetService.listChangedFiles(uuid);
-                    return JSON.stringify(files);
+                    await this.fileService.read(uri);
                 } catch (error) {
-                    return JSON.stringify({ error: error.message });
+                    type = 'add';
                 }
-            }
-        };
-    }
-}
-
-@injectable()
-export class GetFileChangesProvider implements ToolProvider {
-    static ID = 'changeSet_getFileChanges';
-
-    @inject(FileChangeSetService)
-    protected readonly changeSetService: FileChangeSetService;
-
-    getTool(): ToolRequest {
-        return {
-            id: GetFileChangesProvider.ID,
-            name: GetFileChangesProvider.ID,
-            description: 'Fetches the operations of a specific file in a change set.',
-            parameters: {
-                type: 'object',
-                properties: {
-                    uuid: { type: 'string', description: 'Unique identifier for the change set.' },
-                    filePath: { type: 'string', description: 'Path to the file.' }
-                },
-                required: ['uuid', 'filePath']
-            },
-            handler: async (args: string): Promise<string> => {
-                try {
-                    const { uuid, filePath } = JSON.parse(args);
-                    const changes = this.changeSetService.getFileChanges(uuid, filePath);
-                    return JSON.stringify(changes);
-                } catch (error) {
-                    return JSON.stringify({ error: error.message });
-                }
-            }
-        };
-    }
-}
-
-@injectable()
-export class GetChangeSetProvider implements ToolProvider {
-    static ID = 'changeSet_getChangeSet';
-
-    @inject(FileChangeSetService)
-    protected readonly changeSetService: FileChangeSetService;
-
-    getTool(): ToolRequest {
-        return {
-            id: GetChangeSetProvider.ID,
-            name: GetChangeSetProvider.ID,
-            description: 'Fetches the details of a specific change set.',
-            parameters: {
-                type: 'object',
-                properties: {
-                    uuid: { type: 'string', description: 'Unique identifier for the change set.' }
-                },
-                required: ['uuid']
-            },
-            handler: async (args: string): Promise<string> => {
-                try {
-                    const { uuid } = JSON.parse(args);
-                    const changeSet = this.changeSetService.getChangeSet(uuid);
-                    return JSON.stringify(changeSet);
-                } catch (error) {
-                    return JSON.stringify({ error: error.message });
-                }
-            }
-        };
-    }
-}
-
-@injectable()
-export class ApplyChangeSetProvider implements ToolProvider {
-    static ID = 'changeSet_applyChangeSet';
-
-    @inject(FileChangeSetService)
-    protected readonly changeSetService: FileChangeSetService;
-
-    getTool(): ToolRequest {
-        return {
-            id: ApplyChangeSetProvider.ID,
-            name: ApplyChangeSetProvider.ID,
-            description: 'Applies the specified change set by UUID, executing all file modifications described within.',
-            parameters: {
-                type: 'object',
-                properties: {
-                    uuid: { type: 'string', description: 'Unique identifier for the change set to apply.' }
-                },
-                required: ['uuid']
-            },
-            handler: async (args: string): Promise<string> => {
-                try {
-                    const { uuid } = JSON.parse(args);
-                    await this.changeSetService.applyChangeSet(uuid);
-                    return `Change set ${uuid} applied successfully.`;
-                } catch (error) {
-                    return JSON.stringify({ error: error.message });
-                }
+                changeSet.addElement(
+                    this.fileChangeFactory({
+                        uri: uri,
+                        type: type as 'modify' | 'add' | 'delete',
+                        state: 'pending',
+                        targetState: content,
+                        changeSet,
+                        chatSessionId
+                    })
+                );
+                return `Proposed writing to file ${path}. The user will review and potentially apply the changes`;
             }
         };
     }
