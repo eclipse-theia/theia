@@ -27,8 +27,11 @@ import { CancellationToken, isArray } from '@theia/core';
 import { Anthropic } from '@anthropic-ai/sdk';
 import { MessageParam } from '@anthropic-ai/sdk/resources';
 
-export const AnthropicModelIdentifier = Symbol('AnthropicModelIdentifier');
-
+const emptyInputSchema = {
+    type: 'object',
+    properties: {},
+    required: []
+};
 interface ToolCallback { name: string, args: string, id: string, index: number }
 
 function transformToAnthropicParams(
@@ -51,6 +54,7 @@ function transformToAnthropicParams(
     };
 }
 
+export const AnthropicModelIdentifier = Symbol('AnthropicModelIdentifier');
 function toAnthropicRole(message: LanguageModelRequestMessage): 'user' | 'assistant' {
     switch (message.actor) {
         case 'ai':
@@ -186,11 +190,12 @@ export class AnthropicModel implements LanguageModel {
 
         return { stream: asyncIterator };
     }
+
     private createTools(request: LanguageModelRequest): Anthropic.Messages.Tool[] | undefined {
         return request.tools?.map(tool => ({
             name: tool.name,
             description: tool.description,
-            input_schema: tool.parameters
+            input_schema: tool.parameters ?? emptyInputSchema
         } as Anthropic.Messages.Tool));
     }
 
