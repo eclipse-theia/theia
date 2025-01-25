@@ -56,11 +56,15 @@ metadata: {
         'entryPoint': {
             'frontend': 'dist/web/extension.js' // specified by the 'browser' field in the 'package.json' file for VScode web extensions or 'frontend' field for Theia plugins
         }
+        iconUrl: 'hostedPlugin/theia_helloworld_web_sample/media%2Ficon.png', // optional: the path to the extension's icon; prefixed with 'hostedPlugin' and URL encoded
+        l10n: undefined,
+        readmeUrl: 'hostedPlugin/theia_helloworld_web_sample/.%2FREADME.md', // optional: the path to the extension's README file; prefixed with 'hostedPlugin' and URL encoded
+        licenseUrl: 'hostedPlugin/theia_helloworld_web_sample/.%2FLICENSE', // optional: the path to the extension's LICENSE file; prefixed with 'hostedPlugin' and URL encoded
     },
     'lifecycle': {
         'startMethod': 'activate', // the method to call when the extension is activated; typically 'activate' for VS Code extensions and 'start' for Theia plugins
         'stopMethod': 'deactivate', // the method to call when the extension is deactivated; typically 'deactivate' for VS Code extensions and 'stop' for Theia plugins
-        'frontendModuleName': 'theia_helloworld_web_sample', // the id specified above but with underscores instead of dots and dashes
+        'frontendModuleName': 'theia_helloworld_web_sample', // the id specified above but with underscores instead of dots and dashes similar to iconUrl, readmeUrl, and licenseUrl
         'frontendInitPath': 'plugin-vscode-init-fe.js', // the path to the frontend initialization script; only required for VS Code extensions
         'backendInitPath': '/Users/user/theia/examples/browser/lib/backend/plugin-vscode-init' // the path to the backend initialization script; for Theia plugins, this path ends with 'backend-init-theia'
     },

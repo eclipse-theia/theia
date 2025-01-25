@@ -15,7 +15,10 @@
     }
   },
   "theiaPluginsDir": "plugins",
-  "theiaPlugins": {},
+  "theiaPlugins": {
+    "vscode.typescript": "https://open-vsx.org/api/vscode/typescript/1.95.3/file/vscode.typescript-1.95.3.vsix",
+    "vscode.typescript-language-features": "https://open-vsx.org/api/vscode/typescript-language-features/1.95.3/file/vscode.typescript-language-features-1.95.3.vsix"
+  },
   "dependencies": {
     "@theia/ai-chat": "1.54.0",
     "@theia/ai-chat-ui": "1.54.0",
