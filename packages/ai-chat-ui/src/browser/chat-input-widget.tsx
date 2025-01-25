@@ -154,6 +154,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     const onDeleteChangeSetElement = (index: number) => props.onDeleteChangeSetElement(props.chatModel.id, index);
 
     const [inProgress, setInProgress] = React.useState(false);
+    const [isInputEmpty, setIsInputEmpty] = React.useState(true);
     const [changeSetUI, setChangeSetUI] = React.useState(
         () => props.chatModel.changeSet ? buildChangeSetUI(props.chatModel.changeSet, props.labelProvider, onDeleteChangeSet, onDeleteChangeSetElement) : undefined
     );
@@ -212,6 +213,8 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                 }
             };
             editor.getControl().onDidChangeModelContent(() => {
+                const value = editor.getControl().getValue();
+                setIsInputEmpty(!value || value.length === 0);
                 updateEditorHeight();
                 handleOnChange();
             });
@@ -270,6 +273,9 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     }, [props.chatModel]);
 
     function submit(value: string): void {
+        if (!value || value.trim().length === 0) {
+            return;
+        }
         setInProgress(true);
         props.onQuery(value);
         if (editorRef.current) {
@@ -338,7 +344,8 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                     submit(editorRef.current?.document.textEditorModel.getValue() || '');
                 }
             },
-            className: 'codicon-send'
+            className: 'codicon-send',
+            disabled: isInputEmpty || !props.isEnabled
         }];
 
     return <div className='theia-ChatInput'>
@@ -446,6 +453,7 @@ interface Option {
     title: string;
     handler: () => void;
     className: string;
+    disabled?: boolean;
 }
 
 const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({ leftOptions, rightOptions }) => (
@@ -454,7 +462,7 @@ const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({ left
             {leftOptions.map((option, index) => (
                 <span
                     key={index}
-                    className={`codicon ${option.className} option`}
+                    className={`codicon ${option.className} option ${option.disabled ? 'disabled' : ''}`}
                     title={option.title}
                     onClick={option.handler}
                 />
@@ -464,7 +472,7 @@ const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({ left
             {rightOptions.map((option, index) => (
                 <span
                     key={index}
-                    className={`codicon ${option.className} option`}
+                    className={`codicon ${option.className} option ${option.disabled ? 'disabled' : ''}`}
                     title={option.title}
                     onClick={option.handler}
                 />
