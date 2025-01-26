@@ -17,7 +17,7 @@ import { AbstractStreamParsingChatAgent, ChatAgent, SystemMessageDescription } f
 import { AgentSpecificVariables, PromptTemplate } from '@theia/ai-core';
 import { injectable } from '@theia/core/shared/inversify';
 import { FILE_CONTENT_FUNCTION_ID, GET_WORKSPACE_FILE_LIST_FUNCTION_ID, GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID } from '../common/workspace-functions';
-import { coderReplacePromptTemplate } from '../common/coder-replace-prompt-template';
+import { CODER_DEFAULT_PROMPT_TEMPLATE_ID, getCoderReplacePromptTemplate } from '../common/coder-replace-prompt-template';
 import { WriteChangeToFileProvider } from './file-changeset-functions';
 
 @injectable()
@@ -36,14 +36,14 @@ export class CoderAgent extends AbstractStreamParsingChatAgent implements ChatAg
         }], 'chat');
         this.name = 'Coder';
         this.description = 'An AI assistant integrated into Theia IDE, designed to assist software developers with code tasks.';
-        this.promptTemplates = [coderReplacePromptTemplate];
+        this.promptTemplates = [getCoderReplacePromptTemplate(false), getCoderReplacePromptTemplate(true)];
         this.variables = [];
         this.agentSpecificVariables = [];
         this.functions = [GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID, GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID, WriteChangeToFileProvider.ID];
     }
 
     protected override async getSystemMessageDescription(): Promise<SystemMessageDescription | undefined> {
-        const resolvedPrompt = await this.promptService.getPrompt(coderReplacePromptTemplate.id);
+        const resolvedPrompt = await this.promptService.getPrompt(CODER_DEFAULT_PROMPT_TEMPLATE_ID);
         return resolvedPrompt ? SystemMessageDescription.fromResolvedPromptTemplate(resolvedPrompt) : undefined;
     }
 
