@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ILogger, URI } from '@theia/core';
+import { URI } from '@theia/core';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { ChangeSetElement, ChangeSetImpl } from '../common';
 import { createChangeSetFileUri } from './change-set-file-resource';
@@ -40,9 +40,6 @@ export interface ChangeSetElementArgs extends Partial<ChangeSetElement> {
 
 @injectable()
 export class ChangeSetFileElement implements ChangeSetElement {
-
-    @inject(ILogger)
-    protected readonly logger: ILogger;
 
     @inject(ChangeSetElementArgs)
     protected readonly elementProps: ChangeSetElementArgs;
