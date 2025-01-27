@@ -272,6 +272,7 @@ export class ElectronMainApplication {
     }
 
     setBackgroundColor(webContents: WebContents, backgroundColor: string): void {
+        BrowserWindow.fromWebContents(webContents)?.setBackgroundColor(backgroundColor);
         this.customBackgroundColor = backgroundColor;
         this.saveState(webContents);
     }
@@ -628,7 +629,7 @@ export class ElectronMainApplication {
                 y: bounds.y,
                 frame: this.useNativeWindowFrame,
                 screenLayout: this.getCurrentScreenLayout(),
-                backgroundColor: this.customBackgroundColor
+                backgroundColor: this.customBackgroundColor ?? electronWindow.getBackgroundColor()
             };
             this.electronStore.set('windowstate', options);
         } catch (e) {

@@ -8,12 +8,12 @@ The frontend's start-up time is measured using the timestamp of the last recorde
 
 ### Quick Start
 
-Execute `yarn run performance:startup:browser` in the root directory to startup the backend and execute the script.
+Execute `npm run performance:startup:browser` in the root directory to startup the backend and execute the script.
 
 ### Prerequisites
 
 To run the script the Theia backend needs to be started.
-This can either be done with the `Launch Browser Backend` launch config or by running `yarn start` in the `examples/browser-app` directory.
+This can either be done with the `Launch Browser Backend` launch config or by running `npm run start` in the `examples/browser-app` directory.
 
 ### Executing the script
 
@@ -21,11 +21,11 @@ The script can be executed using `node browser-performance.js` in this directory
 
 The script accepts the following optional parameters:
 
--   `--name`: Specify a name for the current measurement (default: `Browser Frontend Startup`)
--   `--url`: Point Theia to a url for example for specifying a specific workspace (default: `http://localhost:3000/#/<pathToMeasurementScript>/workspace`)
--   `--folder`: Folder name for the generated tracing files in the `profiles` folder (default: `browser`)
--   `--runs`: Number of runs for the measurement (default: `10`)
--   `--headless`: Boolean, if the tests should be run in headless mode (default: `true`)
+- `--name`: Specify a name for the current measurement (default: `Browser Frontend Startup`)
+- `--url`: Point Theia to a url for example for specifying a specific workspace (default: `http://localhost:3000/#/<pathToMeasurementScript>/workspace`)
+- `--folder`: Folder name for the generated tracing files in the `profiles` folder (default: `browser`)
+- `--runs`: Number of runs for the measurement (default: `10`)
+- `--headless`: Boolean, if the tests should be run in headless mode (default: `true`)
 
 _**Note**: When multiple runs are specified the script will calculate the mean and the standard deviation of all values._
 
@@ -40,8 +40,8 @@ Execute `yarn run performance:startup:electron` in the root directory to execute
 To run the script the Theia Electron example needs to be built. In the root directory:
 
 ```console
-$ yarn
-$ yarn electron build
+npm install
+npm run build:electron
 ```
 
 ### Executing the script
@@ -50,11 +50,11 @@ The script can be executed using `node electron-performance.js` in this director
 
 The script accepts the following optional parameters:
 
--   `--name`: Specify a name for the current measurement (default: `Electron Frontend Startup`)
--   `--folder`: Folder name for the generated tracing files in the `profiles` folder (default: `electron`)
--   `--workspace`: Absolute path to a Theia workspace to open (default: an empty workspace folder)
--   `--runs`: Number of runs for the measurement (default: `10`)
--   `--debug`: Whether to log debug information to the console. Currently, this is only the standard error of the Electron app, which ordinarily is suppressed because the child process is detached
+- `--name`: Specify a name for the current measurement (default: `Electron Frontend Startup`)
+- `--folder`: Folder name for the generated tracing files in the `profiles` folder (default: `electron`)
+- `--workspace`: Absolute path to a Theia workspace to open (default: an empty workspace folder)
+- `--runs`: Number of runs for the measurement (default: `10`)
+- `--debug`: Whether to log debug information to the console. Currently, this is only the standard error of the Electron app, which ordinarily is suppressed because the child process is detached
 
 _**Note**: When multiple runs are specified the script will calculate the mean and the standard deviation of all values, except for any runs that failed to capture a measurement due to an exception._
 
@@ -81,22 +81,22 @@ The script can be executed by running `node extension-impact.js` in this directo
 
 The following parameters are available:
 
--   `--app`: The example app in which to measure performance, either `browser` or `electron` (default: `browser`)
--   `--runs`: Specify the number of measurements for each extension (default: `10`)
--   `--base-time`: Provide an existing measurement (mean) for the base Theia application. If none is provided it will be measured.
--   `--extensions`: Provide a list of extensions (need to be locally installed) that shall be tested (default: all extensions in packages folder)
+- `--app`: The example app in which to measure performance, either `browser` or `electron` (default: `browser`)
+- `--runs`: Specify the number of measurements for each extension (default: `10`)
+- `--base-time`: Provide an existing measurement (mean) for the base Theia application. If none is provided it will be measured.
+- `--extensions`: Provide a list of extensions (need to be locally installed) that shall be tested (default: all extensions in packages folder)
 
     _**Note**: Each entry should:_
 
-    -   _have the format {name}:{version}_
-    -   _not contain whitespaces_
-    -   _and be separated by whitespaces_
+  - _have the format {name}:{version}_
+  - _not contain whitespaces_
+  - _and be separated by whitespaces_
 
     _For example: `--extensions @theia/git:1.19.0 @theia/keymaps:1.19.0`_
 
--   `--yarn`: Flag to trigger a full yarn at script startup (e.g. to build changes to extensions)
--   `--url`: Specify a URL that Theia should be launched with (can be used to specify the workspace to be opened). _Applies only to the `browser` app_ (default: `http://localhost:3000/#/<GIT_ROOT>/scripts/performance/workspace`)
--   `--workspace`: Specify a workspace on which to launch Theia. _Applies only to the `electron` app_ (default: `/<GIT_ROOT>/scripts/performance/workspace`)
--   `--file`: Relative path to the output file (default: `./script.csv`)
+- `--yarn`: Flag to trigger a full build at script startup (e.g. to build changes to extensions)
+- `--url`: Specify a URL that Theia should be launched with (can be used to specify the workspace to be opened). _Applies only to the `browser` app_ (default: `http://localhost:3000/#/<GIT_ROOT>/scripts/performance/workspace`)
+- `--workspace`: Specify a workspace on which to launch Theia. _Applies only to the `electron` app_ (default: `/<GIT_ROOT>/scripts/performance/workspace`)
+- `--file`: Relative path to the output file (default: `./script.csv`)
 
 _**Note**: If no extensions are provided all extensions from the `packages` folder will be measured._

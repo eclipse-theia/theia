@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject, interfaces, optional } from 'inversify';
+import { injectable, inject, interfaces, optional, unmanaged } from 'inversify';
 import { Widget } from '@phosphor/widgets';
 import {
     MenuModelRegistry, Command, CommandContribution,
@@ -64,7 +64,7 @@ export abstract class AbstractViewContribution<T extends Widget> implements Comm
     readonly toggleCommand?: Command;
 
     constructor(
-        protected readonly options: ViewContributionOptions
+        @unmanaged() protected readonly options: ViewContributionOptions
     ) {
         if (options.toggleCommandId) {
             this.toggleCommand = {

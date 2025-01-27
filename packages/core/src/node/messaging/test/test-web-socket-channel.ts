@@ -47,7 +47,12 @@ export class TestWebSocketChannelSetup {
         path: string
     }) {
         const address = (server.address() as AddressInfo);
-        const url = `ws://${address.address}:${address.port}${servicesPath}`;
+        let url;
+        if (address.family === 'IPv6') {
+            url = `ws://[${address.address}]:${address.port}${servicesPath}`;
+        } else {
+            url = `ws://${address.address}:${address.port}${servicesPath}`;
+        }
         this.connectionProvider = this.createConnectionProvider(url);
     }
 

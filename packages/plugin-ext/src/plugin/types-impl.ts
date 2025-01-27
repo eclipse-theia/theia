@@ -725,7 +725,7 @@ export class SnippetString {
 
 @es5ClassCompat
 export class ThemeColor {
-    constructor(public id: string) { }
+    constructor(public readonly id: string) { }
 }
 
 @es5ClassCompat
@@ -3417,6 +3417,7 @@ export class FileCoverage {
         public statementCoverage: TestCoverageCount,
         public branchCoverage?: TestCoverageCount,
         public declarationCoverage?: TestCoverageCount,
+        public includesTests?: theia.TestItem[],
     ) { }
 }
 
@@ -3868,19 +3869,29 @@ export class TerminalQuickFixOpener {
 }
 
 // #region Chat
+
+/**
+ * @stubbed
+ */
 export class ChatRequestTurn {
     readonly prompt: string;
     readonly participant: string;
     readonly command?: string;
     readonly references: theia.ChatPromptReference[];
-    private constructor(prompt: string, command: string | undefined, references: theia.ChatPromptReference[], participant: string) {
+    readonly toolReferences: readonly theia.ChatLanguageModelToolReference[];
+    private constructor(prompt: string, command: string | undefined, references: theia.ChatPromptReference[], participant: string,
+        toolReferences: theia.ChatLanguageModelToolReference[]) {
         this.prompt = prompt;
         this.command = command;
         this.participant = participant;
         this.references = references;
+        this.toolReferences = toolReferences;
     };
 }
 
+/**
+ * @stubbed
+ */
 export class ChatResponseTurn {
     readonly command?: string;
 
@@ -3888,6 +3899,9 @@ export class ChatResponseTurn {
         | theia.ChatResponseCommandButtonPart>, readonly result: theia.ChatResult, readonly participant: string) { }
 }
 
+/**
+ * @stubbed
+ */
 export class ChatResponseAnchorPart {
     value: URI | Location;
     title?: string;
@@ -3895,12 +3909,18 @@ export class ChatResponseAnchorPart {
     constructor(value: URI | Location, title?: string) { }
 }
 
+/**
+ * @stubbed
+ */
 export class ChatResponseProgressPart {
     value: string;
 
     constructor(value: string) { }
 }
 
+/**
+ * @stubbed
+ */
 export class ChatResponseReferencePart {
     value: URI | Location;
     iconPath?: URI | ThemeIcon | { light: URI; dark: URI; };
@@ -3910,12 +3930,19 @@ export class ChatResponseReferencePart {
         dark: URI;
     }) { }
 }
+
+/**
+ * @stubbed
+ */
 export class ChatResponseCommandButtonPart {
     value: theia.Command;
 
     constructor(value: theia.Command) { }
 }
 
+/**
+ * @stubbed
+ */
 export class ChatResponseMarkdownPart {
     value: theia.MarkdownString;
 
@@ -3923,6 +3950,9 @@ export class ChatResponseMarkdownPart {
     }
 }
 
+/**
+ * @stubbed
+ */
 export class ChatResponseFileTreePart {
     value: theia.ChatResponseFileTree[];
     baseUri: URI;
@@ -3943,17 +3973,20 @@ export enum LanguageModelChatMessageRole {
     Assistant = 2
 }
 
+/**
+ * @stubbed
+ */
 export class LanguageModelChatMessage {
-
-    static User(content: string, name?: string): LanguageModelChatMessage {
+    static User(content: string | (LanguageModelTextPart | LanguageModelToolResultPart)[], name?: string): LanguageModelChatMessage {
         return new LanguageModelChatMessage(LanguageModelChatMessageRole.User, content, name);
     }
 
-    static Assistant(content: string, name?: string): LanguageModelChatMessage {
+    static Assistant(content: string | (LanguageModelTextPart | LanguageModelToolResultPart)[], name?: string): LanguageModelChatMessage {
         return new LanguageModelChatMessage(LanguageModelChatMessageRole.Assistant, content, name);
     }
 
-    constructor(public role: LanguageModelChatMessageRole, public content: string, public name?: string) { }
+    constructor(public role: LanguageModelChatMessageRole, public content: string | (LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart)[],
+        public name?: string) { }
 }
 
 export class LanguageModelError extends Error {
@@ -3977,6 +4010,58 @@ export class LanguageModelError extends Error {
         this.name = 'LanguageModelError';
         this.code = code ?? '';
     }
+}
+
+export enum LanguageModelChatToolMode {
+    Auto = 1,
+    Required = 2
+}
+
+/**
+ * @stubbed
+ */
+export class LanguageModelToolCallPart {
+    callId: string;
+    name: string;
+    input: object;
+
+    constructor(callId: string, name: string, input: object) { }
+}
+
+/**
+ * @stubbed
+ */
+export class LanguageModelToolResultPart {
+    callId: string;
+    content: (theia.LanguageModelTextPart | theia.LanguageModelPromptTsxPart | unknown)[];
+
+    constructor(callId: string, content: (theia.LanguageModelTextPart | theia.LanguageModelPromptTsxPart | unknown)[]) { }
+}
+
+/**
+ * @stubbed
+ */
+export class LanguageModelTextPart {
+    value: string;
+    constructor(value: string) { }
+}
+
+/**
+ * @stubbed
+ */
+export class LanguageModelToolResult {
+    content: (theia.LanguageModelTextPart | theia.LanguageModelPromptTsxPart | unknown)[];
+
+    constructor(content: (theia.LanguageModelTextPart | theia.LanguageModelPromptTsxPart)[]) { }
+}
+
+/**
+ * @stubbed
+ */
+export class LanguageModelPromptTsxPart {
+    value: unknown;
+
+    constructor(value: unknown) { }
 }
 // #endregion
 

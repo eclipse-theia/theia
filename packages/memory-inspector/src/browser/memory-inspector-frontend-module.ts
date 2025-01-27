@@ -113,6 +113,6 @@ export default new ContainerModule(bind => {
                 RegisterTableWidget,
                 RegisterWidgetOptions,
                 options,
-            ).get(MemoryWidget),
+            ).get<RegisterWidget>(MemoryWidget),
     }));
 });

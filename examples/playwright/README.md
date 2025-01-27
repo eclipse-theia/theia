@@ -51,4 +51,4 @@ It is [extensible](./docs/EXTENSIBILITY.md) so you can add dedicated page object
 ## Trademark
 
 "Theia" is a trademark of the Eclipse Foundation
-https://www.eclipse.org/theia
+<https://www.eclipse.org/theia>

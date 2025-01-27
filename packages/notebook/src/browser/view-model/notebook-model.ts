@@ -289,6 +289,10 @@ export class NotebookModel implements Saveable, Disposable {
         }
     }
 
+    getVisibleCells(): NotebookCellModel[] {
+        return this.cells;
+    }
+
     applyEdits(rawEdits: CellEditOperation[], computeUndoRedo: boolean): void {
         const editsWithDetails = rawEdits.map((edit, index) => {
             let cellIndex: number = -1;
@@ -390,7 +394,12 @@ export class NotebookModel implements Saveable, Disposable {
         });
         this.addCellOutputListeners(cells);
 
-        const changes: NotebookCellTextModelSplice<NotebookCellModel>[] = [{ start, deleteCount, newItems: cells }];
+        const changes: NotebookCellTextModelSplice<NotebookCellModel>[] = [{
+            start,
+            deleteCount,
+            newItems: cells,
+            startHandle: this.cells[start]?.handle ?? -1 // -1 in case of new Cells are added at the end.
+        }];
 
         const deletedCells = this.cells.splice(start, deleteCount, ...cells);
 
@@ -509,8 +518,12 @@ export class NotebookModel implements Saveable, Disposable {
         return true;
     }
 
-    protected getCellIndexByHandle(handle: number): number {
+    getCellIndexByHandle(handle: number): number {
         return this.cells.findIndex(c => c.handle === handle);
+    }
+
+    getCellByHandle(handle: number): NotebookCellModel | undefined {
+        return this.cells.find(c => c.handle === handle);
     }
 
     protected isCellMetadataChanged(a: NotebookCellMetadata, b: NotebookCellMetadata): boolean {

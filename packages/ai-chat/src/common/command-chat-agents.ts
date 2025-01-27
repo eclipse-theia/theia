@@ -36,7 +36,9 @@ import {
 
 export const commandTemplate: PromptTemplate = {
     id: 'command-system',
-    template: `# System Prompt
+    template: `{{!-- Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
+https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
+# System Prompt
 
 You are a service that helps users find commands to execute in an IDE.
 You reply with stringified JSON Objects that tell the user which command to execute and its arguments, if any. 
@@ -313,7 +315,7 @@ export class CommandChatAgent extends AbstractTextToModelParsingChatAgent<Parsed
             const theiaCommand = this.commandRegistry.getCommand(parsedCommand.commandId);
             if (theiaCommand === undefined) {
                 console.error(`No Theia Command with id ${parsedCommand.commandId}`);
-                request.response.cancel();
+                request.cancel();
             }
             const args = parsedCommand.arguments !== undefined &&
                 parsedCommand.arguments.length > 0

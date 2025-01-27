@@ -20,7 +20,7 @@ import {
 import { injectable, inject } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
 import { MenuModelRegistry, CommandRegistry, MAIN_MENU_BAR, Command, Emitter, Mutable, CompoundMenuNodeRole } from '@theia/core/lib/common';
-import { EDITOR_LINENUMBER_CONTEXT_MENU, EditorManager } from '@theia/editor/lib/browser';
+import { EDITOR_CONTEXT_MENU, EDITOR_LINENUMBER_CONTEXT_MENU, EditorManager } from '@theia/editor/lib/browser';
 import { DebugSessionManager } from './debug-session-manager';
 import { DebugWidget } from './view/debug-widget';
 import { FunctionBreakpoint } from './breakpoint/breakpoint-marker';
@@ -241,6 +241,11 @@ export namespace DebugCommands {
         id: 'editor.debug.action.showDebugHover',
         label: 'Debug: Show Hover'
     });
+    export const JUMP_TO_CURSOR = Command.toDefaultLocalizedCommand({
+        id: 'editor.debug.action.jumpToCursor',
+        category: DEBUG_CATEGORY,
+        label: 'Jump to Cursor'
+    });
 
     export const RESTART_FRAME = Command.toDefaultLocalizedCommand({
         id: 'debug.frame.restart',
@@ -375,6 +380,9 @@ export namespace DebugEditorContextCommands {
     };
     export const DISABLE_LOGPOINT = {
         id: 'debug.editor.context.logpoint.disable'
+    };
+    export const JUMP_TO_CURSOR = {
+        id: 'debug.editor.context.jumpToCursor'
     };
 }
 export namespace DebugBreakpointWidgetCommands {
@@ -613,6 +621,11 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             DebugCommands.DISABLE_ALL_BREAKPOINTS
         );
 
+        const DEBUG_EDITOR_CONTEXT_MENU_GROUP = [...EDITOR_CONTEXT_MENU, '2_debug'];
+        registerMenuActions(DEBUG_EDITOR_CONTEXT_MENU_GROUP,
+            DebugCommands.JUMP_TO_CURSOR
+        );
+
         registerMenuActions(DebugEditorModel.CONTEXT_MENU,
             { ...DebugEditorContextCommands.ADD_BREAKPOINT, label: nls.localizeByDefault('Add Breakpoint') },
             { ...DebugEditorContextCommands.ADD_CONDITIONAL_BREAKPOINT, label: DebugCommands.ADD_CONDITIONAL_BREAKPOINT.label },
@@ -624,7 +637,8 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             { ...DebugEditorContextCommands.REMOVE_LOGPOINT, label: DebugCommands.REMOVE_LOGPOINT.label },
             { ...DebugEditorContextCommands.EDIT_LOGPOINT, label: DebugCommands.EDIT_LOGPOINT.label },
             { ...DebugEditorContextCommands.ENABLE_LOGPOINT, label: nlsEnableBreakpoint('Logpoint') },
-            { ...DebugEditorContextCommands.DISABLE_LOGPOINT, label: nlsDisableBreakpoint('Logpoint') }
+            { ...DebugEditorContextCommands.DISABLE_LOGPOINT, label: nlsDisableBreakpoint('Logpoint') },
+            { ...DebugEditorContextCommands.JUMP_TO_CURSOR, label: nls.localizeByDefault('Jump to Cursor') }
         );
         menus.linkSubmenu(EDITOR_LINENUMBER_CONTEXT_MENU, DebugEditorModel.CONTEXT_MENU, { role: CompoundMenuNodeRole.Group });
     }
@@ -837,6 +851,20 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             isEnabled: () => this.editors.canShowHover()
         });
 
+        registry.registerCommand(DebugCommands.JUMP_TO_CURSOR, {
+            execute: () => {
+                const model = this.editors.model;
+                if (model && this.manager.currentThread) {
+                    this.manager.currentThread.jumpToCursor(
+                        model.editor.getResourceUri(),
+                        model.position
+                    );
+                }
+            },
+            isEnabled: () => !!this.manager.currentThread && this.manager.currentThread.supportsGoto,
+            isVisible: () => !!this.manager.currentThread && this.manager.currentThread.supportsGoto
+        });
+
         registry.registerCommand(DebugCommands.RESTART_FRAME, {
             execute: () => this.selectedFrame && this.selectedFrame.restart(),
             isEnabled: () => !!this.selectedFrame
@@ -856,7 +884,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
 
         registry.registerCommand(DebugCommands.SET_VARIABLE_VALUE, {
             execute: () => this.selectedVariable && this.selectedVariable.open(),
-            isEnabled: () => !!this.selectedVariable && this.selectedVariable.supportSetVariable,
+            isEnabled: () => !!this.selectedVariable && this.selectedVariable.supportSetVariable && !this.selectedVariable.readOnly,
             isVisible: () => !!this.selectedVariable && this.selectedVariable.supportSetVariable
         });
         registry.registerCommand(DebugCommands.COPY_VARIABLE_VALUE, {
@@ -935,6 +963,15 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             execute: position => this.isPosition(position) && this.editors.setBreakpointEnabled(this.asPosition(position), false),
             isEnabled: position => this.isPosition(position) && !!this.editors.getLogpointEnabled(this.asPosition(position)),
             isVisible: position => this.isPosition(position) && !!this.editors.getLogpointEnabled(this.asPosition(position))
+        });
+        registry.registerCommand(DebugEditorContextCommands.JUMP_TO_CURSOR, {
+            execute: position => {
+                if (this.isPosition(position) && this.editors.currentUri && this.manager.currentThread) {
+                    this.manager.currentThread.jumpToCursor(this.editors.currentUri, this.asPosition(position));
+                }
+            },
+            isEnabled: () => !!this.manager.currentThread && this.manager.currentThread.supportsGoto,
+            isVisible: () => !!this.manager.currentThread && this.manager.currentThread.supportsGoto
         });
 
         registry.registerCommand(DebugBreakpointWidgetCommands.ACCEPT, {

@@ -50,7 +50,11 @@ export class RemoteConnectionService implements BackendApplicationContribution {
 
     onStop(): void {
         for (const connection of this.connections.values()) {
-            connection.dispose();
+            if (connection.disposeSync) {
+                connection.disposeSync();
+            } else {
+                connection.dispose();
+            };
         }
     }
 }

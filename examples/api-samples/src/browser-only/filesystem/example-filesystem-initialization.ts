@@ -28,18 +28,16 @@ export class ExampleOPFSInitialization extends DefaultOPFSInitialization {
 
     override async initializeFS(provider: OPFSFileSystemProvider): Promise<void> {
         // Check whether the directory exists
-        try {
+        if (await provider.exists(new URI('/home/workspace'))) {
             await provider.readdir(new URI('/home/workspace'));
-        } catch (e) {
-            console.error('An error occurred while reading the demo workspaces', e);
+        } else {
             await provider.mkdir(new URI('/home/workspace'));
             await provider.writeFile(new URI('/home/workspace/my-file.txt'), this.encodingService.encode('foo').buffer, { create: true, overwrite: false });
         }
 
-        try {
+        if (await provider.exists(new URI('/home/workspace2'))) {
             await provider.readdir(new URI('/home/workspace2'));
-        } catch (e) {
-            console.error('An error occurred while reading the demo workspaces', e);
+        } else {
             await provider.mkdir(new URI('/home/workspace2'));
             await provider.writeFile(new URI('/home/workspace2/my-file.json'), this.encodingService.encode('{ foo: true }').buffer, { create: true, overwrite: false });
         }

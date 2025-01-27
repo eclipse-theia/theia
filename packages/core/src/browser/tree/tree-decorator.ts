@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from 'inversify';
+import { injectable, unmanaged } from 'inversify';
 import { Tree, TreeNode } from './tree';
 import { Event, Emitter, Disposable, DisposableCollection, MaybePromise } from '../../common';
 import { WidgetDecoration } from '../widget-decoration';
@@ -170,7 +170,7 @@ export abstract class AbstractTreeDecoratorService implements TreeDecoratorServi
 
     protected readonly toDispose = new DisposableCollection();
 
-    constructor(protected readonly decorators: ReadonlyArray<TreeDecorator>) {
+    constructor(@unmanaged() protected readonly decorators: ReadonlyArray<TreeDecorator>) {
         this.toDispose.push(this.onDidChangeDecorationsEmitter);
         this.toDispose.pushAll(this.decorators.map(decorator =>
             decorator.onDidChangeDecorations(data =>

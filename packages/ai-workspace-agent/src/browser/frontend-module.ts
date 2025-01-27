@@ -13,16 +13,32 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { ChatAgent } from '@theia/ai-chat/lib/common';
 import { Agent, ToolProvider } from '@theia/ai-core/lib/common';
 import { WorkspaceAgent } from './workspace-agent';
-import { FileContentFunction, GetWorkspaceFileList } from './functions';
+import { CoderAgent } from './coder-agent';
+import { FileContentFunction, GetWorkspaceDirectoryStructure, GetWorkspaceFileList, WorkspaceFunctionScope } from './workspace-functions';
+import { PreferenceContribution } from '@theia/core/lib/browser';
+import { WorkspacePreferencesSchema } from './workspace-preferences';
+
+import {
+    WriteChangeToFileProvider
+} from './file-changeset-functions';
 
 export default new ContainerModule(bind => {
+    bind(PreferenceContribution).toConstantValue({ schema: WorkspacePreferencesSchema });
     bind(WorkspaceAgent).toSelf().inSingletonScope();
     bind(Agent).toService(WorkspaceAgent);
     bind(ChatAgent).toService(WorkspaceAgent);
+    bind(CoderAgent).toSelf().inSingletonScope();
+    bind(Agent).toService(CoderAgent);
+    bind(ChatAgent).toService(CoderAgent);
     bind(ToolProvider).to(GetWorkspaceFileList);
     bind(ToolProvider).to(FileContentFunction);
+    bind(ToolProvider).to(GetWorkspaceDirectoryStructure);
+    bind(WorkspaceFunctionScope).toSelf().inSingletonScope();
+
+    bind(ToolProvider).to(WriteChangeToFileProvider);
 });

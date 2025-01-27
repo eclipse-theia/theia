@@ -17,7 +17,7 @@
 import { LanguageModelRegistry } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { OllamaModel } from './ollama-language-model';
-import { OllamaLanguageModelsManager } from '../common';
+import { OllamaLanguageModelsManager, OllamaModelDescription } from '../common';
 
 @injectable()
 export class OllamaLanguageModelsManagerImpl implements OllamaLanguageModelsManager {
@@ -33,13 +33,26 @@ export class OllamaLanguageModelsManagerImpl implements OllamaLanguageModelsMana
 
     // Triggered from frontend. In case you want to use the models on the backend
     // without a frontend then call this yourself
-    async createLanguageModels(...modelIds: string[]): Promise<void> {
-        for (const id of modelIds) {
-            // TODO check that the model exists in Ollama using `list`. Ask and trigger download if not.
-            if (!(await this.languageModelRegistry.getLanguageModel(`ollama/${id}`))) {
-                this.languageModelRegistry.addLanguageModels([new OllamaModel(id, () => this.host)]);
+    async createOrUpdateLanguageModels(...models: OllamaModelDescription[]): Promise<void> {
+        for (const modelDescription of models) {
+            const existingModel = await this.languageModelRegistry.getLanguageModel(modelDescription.id);
+            const hostProvider = () => this.host;
+
+            if (existingModel) {
+                if (!(existingModel instanceof OllamaModel)) {
+                    console.warn(`Ollama: model ${modelDescription.id} is not an Ollama model`);
+                    continue;
+                }
+                existingModel.defaultRequestSettings = modelDescription.defaultRequestSettings;
             } else {
-                console.info(`Ollama: skip creating model ${id} because it already exists`);
+                this.languageModelRegistry.addLanguageModels([
+                    new OllamaModel(
+                        modelDescription.id,
+                        modelDescription.model,
+                        hostProvider,
+                        modelDescription.defaultRequestSettings
+                    )
+                ]);
             }
         }
     }
@@ -49,10 +62,6 @@ export class OllamaLanguageModelsManagerImpl implements OllamaLanguageModelsMana
     }
 
     setHost(host: string | undefined): void {
-        if (host) {
-            this._host = host;
-        } else {
-            this._host = undefined;
-        }
+        this._host = host || undefined;
     }
 }

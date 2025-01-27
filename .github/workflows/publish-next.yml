@@ -8,7 +8,7 @@ on: workflow_dispatch
 jobs:
   publish:
     name: Perform Publishing
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 60
     steps:
       - name: Checkout
@@ -32,8 +32,9 @@ jobs:
       - name: Install
         shell: bash
         run: |
-          yarn global add node-gyp
-          yarn --skip-integrity-check --network-timeout 100000
+          npm install -g node-gyp
+          npm ci
+          npm run build
         env:
           NODE_OPTIONS: --max_old_space_size=4096
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9
@@ -41,7 +42,7 @@ jobs:
       - name: Publish NPM
         shell: bash
         run: |
-          yarn publish:next
+          npm run publish:next
         env:
           NPM_CONFIG_PROVENANCE: "true"
           NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}

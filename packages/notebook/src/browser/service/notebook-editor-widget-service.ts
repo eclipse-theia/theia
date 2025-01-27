@@ -45,12 +45,22 @@ export class NotebookEditorWidgetService {
     protected readonly onDidChangeFocusedEditorEmitter = new Emitter<NotebookEditorWidget | undefined>();
     readonly onDidChangeFocusedEditor = this.onDidChangeFocusedEditorEmitter.event;
 
+    protected readonly onDidChangeCurrentEditorEmitter = new Emitter<NotebookEditorWidget | undefined>();
+    readonly onDidChangeCurrentEditor = this.onDidChangeCurrentEditorEmitter.event;
+
     focusedEditor?: NotebookEditorWidget = undefined;
+
+    currentEditor?: NotebookEditorWidget = undefined;
 
     @postConstruct()
     protected init(): void {
         this.applicationShell.onDidChangeActiveWidget(event => {
             this.notebookEditorFocusChanged(event.newValue as NotebookEditorWidget, event.newValue instanceof NotebookEditorWidget);
+        });
+        this.applicationShell.onDidChangeCurrentWidget(event => {
+            if (event.newValue instanceof NotebookEditorWidget || event.oldValue instanceof NotebookEditorWidget) {
+                this.currentNotebookEditorChanged(event.newValue);
+            }
         });
     }
 
@@ -95,6 +105,16 @@ export class NotebookEditorWidgetService {
             this.focusedEditor = undefined;
             this.contextKeyService.setContext(NOTEBOOK_EDITOR_FOCUSED, false);
             this.onDidChangeFocusedEditorEmitter.fire(undefined);
+        }
+    }
+
+    currentNotebookEditorChanged(newEditor: unknown): void {
+        if (newEditor instanceof NotebookEditorWidget) {
+            this.currentEditor = newEditor;
+            this.onDidChangeCurrentEditorEmitter.fire(newEditor);
+        } else if (this.currentEditor?.isDisposed || !this.currentEditor?.isVisible) {
+            this.currentEditor = undefined;
+            this.onDidChangeCurrentEditorEmitter.fire(undefined);
         }
     }
 

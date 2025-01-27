@@ -38,12 +38,11 @@ import {
     LanguageModelStreamResponsePart,
     MessageActor,
 } from '@theia/ai-core/lib/common';
-import { CancellationToken, CancellationTokenSource, ContributionProvider, ILogger, isArray } from '@theia/core';
-import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
+import { CancellationToken, ContributionProvider, ILogger, isArray } from '@theia/core';
+import { inject, injectable, named, postConstruct, unmanaged } from '@theia/core/shared/inversify';
 import { ChatAgentService } from './chat-agent-service';
 import {
     ChatModel,
-    ChatRequestModel,
     ChatRequestModelImpl,
     ChatResponseContent,
     ErrorChatResponseContentImpl,
@@ -52,6 +51,8 @@ import {
 } from './chat-model';
 import { findFirstMatch, parseContents } from './parse-contents';
 import { DefaultResponseContentFactory, ResponseContentMatcher, ResponseContentMatcherProvider } from './response-content-matcher';
+import { ChatHistoryEntry } from './chat-history-entry';
+import { ChatToolRequestService } from './chat-tool-request-service';
 
 /**
  * A conversation consists of a sequence of ChatMessages.
@@ -122,27 +123,35 @@ export abstract class AbstractChatAgent {
     @inject(LanguageModelRegistry) protected languageModelRegistry: LanguageModelRegistry;
     @inject(ILogger) protected logger: ILogger;
     @inject(CommunicationRecordingService) protected recordingService: CommunicationRecordingService;
+    @inject(ChatToolRequestService) protected chatToolRequestService: ChatToolRequestService;
     @inject(PromptService) protected promptService: PromptService;
 
     @inject(ContributionProvider) @named(ResponseContentMatcherProvider)
     protected contentMatcherProviders: ContributionProvider<ResponseContentMatcherProvider>;
+    protected additionalToolRequests: ToolRequest[] = [];
     protected contentMatchers: ResponseContentMatcher[] = [];
 
     @inject(DefaultResponseContentFactory)
     protected defaultContentFactory: DefaultResponseContentFactory;
 
     constructor(
-        public id: string,
-        public languageModelRequirements: LanguageModelRequirement[],
-        protected defaultLanguageModelPurpose: string,
-        public iconClass: string = 'codicon codicon-copilot',
-        public locations: ChatAgentLocation[] = ChatAgentLocation.ALL,
-        public tags: String[] = ['Chat']) {
+        @unmanaged() public id: string,
+        @unmanaged() public languageModelRequirements: LanguageModelRequirement[],
+        @unmanaged() protected defaultLanguageModelPurpose: string,
+        @unmanaged() public iconClass: string = 'codicon codicon-copilot',
+        @unmanaged() public locations: ChatAgentLocation[] = ChatAgentLocation.ALL,
+        @unmanaged() public tags: string[] = ['Chat'],
+        @unmanaged() public defaultLogging: boolean = true) {
     }
 
     @postConstruct()
     init(): void {
-        this.contentMatchers = this.contentMatcherProviders.getContributions().flatMap(provider => provider.matchers);
+        this.initializeContentMatchers();
+    }
+
+    protected initializeContentMatchers(): void {
+        const contributedContentMatchers = this.contentMatcherProviders.getContributions().flatMap(provider => provider.matchers);
+        this.contentMatchers.push(...contributedContentMatchers);
     }
 
     async invoke(request: ChatRequestModelImpl): Promise<void> {
@@ -151,18 +160,19 @@ export abstract class AbstractChatAgent {
             if (!languageModel) {
                 throw new Error('Couldn\'t find a matching language model. Please check your setup!');
             }
-            const messages = await this.getMessages(request.session);
-            this.recordingService.recordRequest({
-                agentId: this.id,
-                sessionId: request.session.id,
-                timestamp: Date.now(),
-                requestId: request.id,
-                request: request.request.text,
-                messages
-            });
 
             const systemMessageDescription = await this.getSystemMessageDescription();
-            const tools: Map<string, ToolRequest> = new Map();
+            const messages = await this.getMessages(request.session);
+            if (this.defaultLogging) {
+                this.recordingService.recordRequest(
+                    ChatHistoryEntry.fromRequest(
+                        this.id, request, {
+                        messages,
+                        systemMessage: systemMessageDescription?.text
+                    })
+                );
+            }
+
             if (systemMessageDescription) {
                 const systemMsg: ChatMessage = {
                     actor: 'system',
@@ -171,42 +181,35 @@ export abstract class AbstractChatAgent {
                 };
                 // insert system message at the beginning of the request messages
                 messages.unshift(systemMsg);
-                systemMessageDescription.functionDescriptions?.forEach((tool, id) => {
-                    tools.set(id, tool);
-                });
             }
-            this.getTools(request)?.forEach(tool => tools.set(tool.id, tool));
 
-            const cancellationToken = new CancellationTokenSource();
-            request.response.onDidChange(() => {
-                if (request.response.isCanceled) {
-                    cancellationToken.cancel();
-                }
-            });
+            const systemMessageToolRequests = systemMessageDescription?.functionDescriptions?.values();
+            const tools = [
+                ...this.chatToolRequestService.getChatToolRequests(request),
+                ...this.chatToolRequestService.toChatToolRequests(systemMessageToolRequests ? Array.from(systemMessageToolRequests) : [], request),
+                ...this.chatToolRequestService.toChatToolRequests(this.additionalToolRequests, request)
+            ];
 
             const languageModelResponse = await this.callLlm(
                 languageModel,
                 messages,
-                tools.size > 0 ? Array.from(tools.values()) : undefined,
-                cancellationToken.token
+                tools.length > 0 ? tools : undefined,
+                request.response.cancellationToken
             );
             await this.addContentsToResponse(languageModelResponse, request);
-            request.response.complete();
-            this.recordingService.recordResponse({
-                agentId: this.id,
-                sessionId: request.session.id,
-                timestamp: Date.now(),
-                requestId: request.response.requestId,
-                response: request.response.response.asString()
-            });
+            await this.onResponseComplete(request);
+            if (this.defaultLogging) {
+                this.recordingService.recordResponse(ChatHistoryEntry.fromResponse(this.id, request));
+            }
         } catch (e) {
             this.handleError(request, e);
         }
     }
 
-    protected parseContents(text: string): ChatResponseContent[] {
+    protected parseContents(text: string, request: ChatRequestModelImpl): ChatResponseContent[] {
         return parseContents(
             text,
+            request,
             this.contentMatchers,
             this.defaultContentFactory?.create.bind(this.defaultContentFactory)
         );
@@ -259,26 +262,36 @@ export abstract class AbstractChatAgent {
         return requestMessages;
     }
 
-    /**
-     * @returns the list of tools used by this agent, or undefined if none is needed.
-     */
-    protected getTools(request: ChatRequestModel): ToolRequest[] | undefined {
-        return request.message.toolRequests.size > 0
-            ? [...request.message.toolRequests.values()]
-            : undefined;
-    }
-
     protected async callLlm(
         languageModel: LanguageModel,
         messages: ChatMessage[],
         tools: ToolRequest[] | undefined,
         token: CancellationToken
     ): Promise<LanguageModelResponse> {
+        const settings = this.getLlmSettings();
         const languageModelResponse = languageModel.request({
             messages,
             tools,
+            settings,
         }, token);
         return languageModelResponse;
+    }
+
+    /**
+     * @returns the settings, such as `temperature`, to be used in all language model requests. Returns `undefined` by default.
+     */
+    protected getLlmSettings(): { [key: string]: unknown; } | undefined {
+        return undefined;
+    }
+
+    /**
+     * Invoked after the response by the LLM completed successfully.
+     *
+     * The default implementation sets the state of the response to `complete`.
+     * Subclasses may override this method to perform additional actions or keep the response open for processing further requests.
+     */
+    protected async onResponseComplete(request: ChatRequestModelImpl): Promise<void> {
+        return request.response.complete();
     }
 
     protected abstract addContentsToResponse(languageModelResponse: LanguageModelResponse, request: ChatRequestModelImpl): Promise<void>;
@@ -304,28 +317,12 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
 
     protected override async addContentsToResponse(languageModelResponse: LanguageModelResponse, request: ChatRequestModelImpl): Promise<void> {
         if (isLanguageModelTextResponse(languageModelResponse)) {
-            const contents = this.parseContents(languageModelResponse.text);
+            const contents = this.parseContents(languageModelResponse.text, request);
             request.response.response.addContents(contents);
-            request.response.complete();
-            this.recordingService.recordResponse({
-                agentId: this.id,
-                sessionId: request.session.id,
-                timestamp: Date.now(),
-                requestId: request.response.requestId,
-                response: request.response.response.asString()
-            });
             return;
         }
         if (isLanguageModelStreamResponse(languageModelResponse)) {
             await this.addStreamResponse(languageModelResponse, request);
-            request.response.complete();
-            this.recordingService.recordResponse({
-                agentId: this.id,
-                sessionId: request.session.id,
-                timestamp: Date.now(),
-                requestId: request.response.requestId,
-                response: request.response.response.asString()
-            });
             return;
         }
         this.logger.error(
@@ -340,7 +337,7 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
 
     protected async addStreamResponse(languageModelResponse: LanguageModelStreamResponse, request: ChatRequestModelImpl): Promise<void> {
         for await (const token of languageModelResponse.stream) {
-            const newContents = this.parse(token, request.response.response.content);
+            const newContents = this.parse(token, request);
             if (isArray(newContents)) {
                 request.response.response.addContents(newContents);
             } else {
@@ -356,7 +353,7 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
                 return;
             }
 
-            const result: ChatResponseContent[] = findFirstMatch(this.contentMatchers, text) ? this.parseContents(text) : [];
+            const result: ChatResponseContent[] = findFirstMatch(this.contentMatchers, text) ? this.parseContents(text, request) : [];
             if (result.length > 0) {
                 request.response.response.addContents(result);
             } else {
@@ -365,11 +362,11 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
         }
     }
 
-    protected parse(token: LanguageModelStreamResponsePart, previousContent: ChatResponseContent[]): ChatResponseContent | ChatResponseContent[] {
+    protected parse(token: LanguageModelStreamResponsePart, request: ChatRequestModelImpl): ChatResponseContent | ChatResponseContent[] {
         const content = token.content;
         // eslint-disable-next-line no-null/no-null
         if (content !== undefined && content !== null) {
-            return this.defaultContentFactory.create(content);
+            return this.defaultContentFactory.create(content, request);
         }
         const toolCalls = token.tool_calls;
         if (toolCalls !== undefined) {
@@ -377,7 +374,7 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
                 new ToolCallChatResponseContentImpl(toolCall.id, toolCall.function?.name, toolCall.function?.arguments, toolCall.finished, toolCall.result));
             return toolCallContents;
         }
-        return this.defaultContentFactory.create('');
+        return this.defaultContentFactory.create('', request);
     }
 
 }

@@ -25,12 +25,12 @@ import { RateLimiter } from 'limiter';
 
 export default new ContainerModule(bind => {
     bind(OVSXUrlResolver)
-        .toFunction(url => url);
+        .toFunction((url: string) => url);
     bind(OVSXClientProvider)
         .toDynamicValue(ctx => {
             const vsxEnvironment = ctx.container.get<VSXEnvironment>(VSXEnvironment);
             const requestService = ctx.container.get<RequestService>(RequestService);
-            const urlResolver = ctx.container.get(OVSXUrlResolver);
+            const urlResolver = ctx.container.get<OVSXUrlResolver>(OVSXUrlResolver);
             const clientPromise = Promise
                 .all([
                     vsxEnvironment.getRegistryApiUri(),

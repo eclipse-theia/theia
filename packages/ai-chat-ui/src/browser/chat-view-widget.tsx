@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { CommandService, deepClone, Emitter, Event, MessageService } from '@theia/core';
-import { ChatRequest, ChatRequestModel, ChatRequestModelImpl, ChatService, ChatSession } from '@theia/ai-chat';
-import { BaseWidget, codicon, ExtractableWidget, PanelLayout, PreferenceService, StatefulWidget } from '@theia/core/lib/browser';
+import { ChatRequest, ChatRequestModel, ChatService, ChatSession } from '@theia/ai-chat';
+import { BaseWidget, codicon, ExtractableWidget, Message, PanelLayout, PreferenceService, StatefulWidget } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { AIChatInputWidget } from './chat-input-widget';
@@ -93,6 +93,8 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         this.inputWidget.onQuery = this.onQuery.bind(this);
         this.inputWidget.onCancel = this.onCancel.bind(this);
         this.inputWidget.chatModel = this.chatSession.model;
+        this.inputWidget.onDeleteChangeSet = this.onDeleteChangeSet.bind(this);
+        this.inputWidget.onDeleteChangeSetElement = this.onDeleteChangeSetElement.bind(this);
         this.treeWidget.trackChatModel(this.chatSession.model);
 
         this.initListeners();
@@ -123,6 +125,11 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
                 }
             })
         );
+    }
+
+    protected override onActivateRequest(msg: Message): void {
+        super.onActivateRequest(msg);
+        this.inputWidget.activate();
     }
 
     storeState(): object {
@@ -160,7 +167,7 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         const requestProgress = await this.chatService.sendRequest(this.chatSession.id, chatRequest);
         requestProgress?.responseCompleted.then(responseModel => {
             if (responseModel.isError) {
-                this.messageService.error(responseModel.errorObject?.message ?? 'An error occurred druring chat service invocation.');
+                this.messageService.error(responseModel.errorObject?.message ?? 'An error occurred during chat service invocation.');
             }
         });
         if (!requestProgress) {
@@ -171,9 +178,15 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
     }
 
     protected onCancel(requestModel: ChatRequestModel): void {
-        // TODO we should pass a cancellation token with the request (or retrieve one from the request invocation) so we can cleanly cancel here
-        // For now we cancel manually via casting
-        (requestModel as ChatRequestModelImpl).response.cancel();
+        this.chatService.cancelRequest(requestModel.session.id, requestModel.id);
+    }
+
+    protected onDeleteChangeSet(sessionId: string): void {
+        this.chatService.deleteChangeSet(sessionId);
+    }
+
+    protected onDeleteChangeSetElement(sessionId: string, index: number): void {
+        this.chatService.deleteChangeSetElement(sessionId, index);
     }
 
     lock(): void {

@@ -244,7 +244,7 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
         const processArguments = process.argv;
         let command: string[];
         if (environment.electron.is()) {
-            command = ['yarn', 'theia', 'start'];
+            command = ['npm', 'run', 'theia', 'start'];
         } else {
             command = processArguments.filter((arg, index, args) => {
                 // remove --port=X and --port X arguments if set

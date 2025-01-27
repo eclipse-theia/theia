@@ -1,9 +1,10 @@
 {
   "private": true,
   "name": "plugin-a",
-  "version": "1.54.0",
+  "version": "1.57.0",
   "main": "extension.js",
   "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
+  "publisher": "sample-publisher",
   "repository": {
     "type": "git",
     "url": "https://github.com/eclipse-theia/theia.git"
@@ -18,8 +19,7 @@
     "@types/vscode": "^1.50.0"
   },
   "scripts": {
-    "prepare": "yarn -s package",
-    "package": "vsce package --yarn"
+    "build": "vsce package --npm"
   },
   "contributes": {
     "commands": [

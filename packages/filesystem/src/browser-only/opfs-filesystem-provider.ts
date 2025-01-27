@@ -47,7 +47,6 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
     private directoryHandle: FileSystemDirectoryHandle;
     private initialized: Promise<true>;
 
-    // MARK: constructor
     @postConstruct()
     protected init(): void {
         const setup = async (): Promise<true> => {
@@ -68,7 +67,17 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
     watch(_resource: URI, _opts: WatchOptions): Disposable {
         return Disposable.NULL;
     }
-    // MARK: stat
+
+    async exists(resource: URI): Promise<boolean> {
+        try {
+            await this.initialized;
+            await this.toFileSystemHandle(resource);
+            return true;
+        } catch (error) {
+            return false;
+        }
+    }
+
     async stat(resource: URI): Promise<Stat> {
         try {
             await this.initialized;
@@ -93,13 +102,13 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
                 };
             }
 
-            throw createFileSystemProviderError('File does not exist', FileSystemProviderErrorCode.FileNotFound);
+            throw createFileSystemProviderError('Unknown file handle error', FileSystemProviderErrorCode.Unknown);
 
         } catch (error) {
-            throw createFileSystemProviderError('File does not exist', FileSystemProviderErrorCode.FileNotFound);
+            throw createFileSystemProviderError(`Error while accessing resource ${resource.toString()}`, FileSystemProviderErrorCode.Unknown);
         }
     }
-    // MARK: mkdir
+
     async mkdir(resource: URI): Promise<void> {
         await this.initialized;
         try {
@@ -110,7 +119,6 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
         }
     }
 
-    // MARK: readdir
     async readdir(resource: URI): Promise<[string, FileType][]> {
         await this.initialized;
 
@@ -122,16 +130,11 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
 
             // Iterate through the entries in the directory (files and subdirectories)
             for await (const [name, handle] of directoryHandle.entries()) {
-                try {
-                    // Determine the type of the entry (file or directory)
-                    if (handle.kind === 'file') {
-                        result.push([name, FileType.File]);
-                    } else if (handle.kind === 'directory') {
-                        result.push([name, FileType.Directory]);
-                    }
-                } catch (error) {
-                    // Ignore errors for individual entries, log them and continue
-                    // console.error(error);
+                // Determine the type of the entry (file or directory)
+                if (handle.kind === 'file') {
+                    result.push([name, FileType.File]);
+                } else if (handle.kind === 'directory') {
+                    result.push([name, FileType.Directory]);
                 }
             }
 
@@ -140,7 +143,6 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
             throw toFileSystemProviderError(error, true);
         }
     }
-    // MARK: delete
     async delete(resource: URI, _opts: FileDeleteOptions): Promise<void> {
         await this.initialized;
         try {
@@ -157,7 +159,6 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
             this.onDidChangeFileEmitter.fire([{ resource, type: FileChangeType.DELETED }]);
         }
     }
-    // MARK: rename
     async rename(from: URI, to: URI, opts: FileOverwriteOptions): Promise<void> {
         await this.initialized;
 
@@ -183,7 +184,6 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
             throw toFileSystemProviderError(error);
         }
     }
-    // MARK: readFile
     async readFile(resource: URI): Promise<Uint8Array> {
         await this.initialized;
 
@@ -201,7 +201,6 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
             throw toFileSystemProviderError(error, false);
         }
     }
-    // MARK: writeFile
     async writeFile(resource: URI, content: Uint8Array, opts: FileWriteOptions): Promise<void> {
         await this.initialized;
         let writeableHandle: FileSystemWritableFileStream | undefined = undefined;
@@ -244,7 +243,6 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
      * @param options Options for the creation of the handle while traversing the path
      * @returns FileSystemHandle for the given resource
      */
-    // MARK: copy
     private async toFileSystemHandle(resource: URI, options?: CreateFileSystemHandleOptions): Promise<FileSystemHandle> {
         const pathParts = resource.path.toString().split(Path.separator).filter(Boolean);
 

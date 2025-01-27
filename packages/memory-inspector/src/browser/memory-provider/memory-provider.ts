@@ -20,7 +20,7 @@ import { DebugSession } from '@theia/debug/lib/browser/debug-session';
 import { DebugProtocol } from '@vscode/debugprotocol';
 import { Interfaces } from '../utils/memory-widget-utils';
 import { VariableRange } from '../utils/memory-widget-variable-utils';
-import Long = require('long');
+import Long from 'long';
 
 export const MemoryProvider = Symbol('MemoryProvider');
 /**

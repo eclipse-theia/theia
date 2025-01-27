@@ -17,7 +17,7 @@
 import { Key, KeyCode, Message, ReactWidget } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
-import * as Long from 'long';
+import Long from 'long';
 import { MemoryWidget } from '../memory-widget/memory-widget';
 import { RegisterWidget } from '../register-widget/register-widget-types';
 import { MWSelect } from '../utils/memory-widget-components';

@@ -31,7 +31,7 @@
   "lcov.watch": [
     {
       "pattern": "**/*.spec.ts",
-      "command": "yarn test:theia"
+      "command": "npm run test:theia"
     }
   ],
   "editor.insertSpaces": true,
@@ -51,6 +51,9 @@
     "editor.tabSize": 2,
     "editor.defaultFormatter": "vscode.json-language-features",
   },
+  "[markdown]": {
+    "editor.defaultFormatter": "DavidAnson.vscode-markdownlint"
+  },
   "typescript.tsdk": "node_modules/typescript/lib",
   "files.insertFinalNewline": true,
   "clang-format.language.typescript.enable": false,
@@ -63,5 +66,10 @@
     "editor.defaultFormatter": "vscode.typescript-language-features",
     "typescript.preferences.quoteStyle": "single",
     "editor.tabSize": 4,
-  }
+  },
+  "markdownlint.config": {
+    "MD032": false, // don't require blank line around lists 
+    "MD033": false, // allow inline html
+    "MD041": false // don't require h1 in first line
+  },
 }

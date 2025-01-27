@@ -5,7 +5,7 @@ on: workflow_dispatch
 jobs:
   translation:
     name: Translation Update
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 60
 
     steps:
@@ -26,8 +26,9 @@ jobs:
       - name: Install and Build
         shell: bash
         run: |
-          yarn global add node-gyp
-          yarn --skip-integrity-check --network-timeout 100000
+          npm install -g node-gyp
+          npm ci
+          npm run build
         env:
           NODE_OPTIONS: --max_old_space_size=4096
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9

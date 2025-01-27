@@ -22,9 +22,9 @@ export function rebindOVSXClientFactory(rebind: interfaces.Rebind): void {
     // rebind the OVSX client factory so that we can replace patterns like "${self}" in the configs:
     rebind(OVSXUrlResolver)
         .toDynamicValue(ctx => {
-            const appInfo = ctx.container.get(SampleAppInfo);
+            const appInfo = ctx.container.get<SampleAppInfo>(SampleAppInfo);
             const selfOrigin = appInfo.getSelfOrigin();
-            return async url => url.replace('${self}', await selfOrigin);
+            return async (url: string) => url.replace('${self}', await selfOrigin);
         })
         .inSingletonScope();
 }

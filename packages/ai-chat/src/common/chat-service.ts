@@ -86,6 +86,11 @@ export interface ChatService {
         sessionId: string,
         request: ChatRequest
     ): Promise<ChatRequestInvocation | undefined>;
+
+    deleteChangeSet(sessionId: string): void;
+    deleteChangeSetElement(sessionId: string, index: number): void;
+
+    cancelRequest(sessionId: string, requestId: string): Promise<void>;
 }
 
 interface ChatSessionInternal extends ChatSession {
@@ -219,6 +224,10 @@ export class ChatServiceImpl implements ChatService {
         return invocation;
     }
 
+    async cancelRequest(sessionId: string, requestId: string): Promise<void> {
+        return this.getSession(sessionId)?.model.getRequest(requestId)?.response.cancel();
+    }
+
     protected getAgent(parsedRequest: ParsedChatRequest): ChatAgent | undefined {
         const agentPart = this.getMentionedAgent(parsedRequest);
         if (agentPart) {
@@ -232,5 +241,13 @@ export class ChatServiceImpl implements ChatService {
 
     protected getMentionedAgent(parsedRequest: ParsedChatRequest): ParsedChatRequestAgentPart | undefined {
         return parsedRequest.parts.find(p => p instanceof ParsedChatRequestAgentPart) as ParsedChatRequestAgentPart | undefined;
+    }
+
+    deleteChangeSet(sessionId: string): void {
+        this.getSession(sessionId)?.model.setChangeSet(undefined);
+    }
+
+    deleteChangeSetElement(sessionId: string, index: number): void {
+        this.getSession(sessionId)?.model.changeSet?.removeElement(index);
     }
 }

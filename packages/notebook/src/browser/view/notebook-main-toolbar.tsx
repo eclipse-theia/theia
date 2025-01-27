@@ -152,17 +152,17 @@ export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProp
 
     override render(): React.ReactNode {
         const menuItems = this.getMenuItems();
-        return <div className='theia-notebook-main-toolbar'>
+        return <div className='theia-notebook-main-toolbar' id='notebook-main-toolbar'>
             {menuItems.slice(0, menuItems.length - this.calculateNumberOfHiddenItems(menuItems)).map(item => this.renderMenuItem(item))}
             {
                 this.state.numberOfHiddenItems > 0 &&
                 <span className={`${codicon('ellipsis')} action-label theia-notebook-main-toolbar-item`} onClick={e => this.renderContextMenu(e.nativeEvent, menuItems)} />
             }
             <div ref={element => this.gapElementChanged(element)} style={{ flexGrow: 1 }}></div>
-            <div className='theia-notebook-main-toolbar-item action-label'
+            <div className='theia-notebook-main-toolbar-item action-label' id={NotebookCommands.SELECT_KERNEL_COMMAND.id}
                 onClick={() => this.props.commandRegistry.executeCommand(NotebookCommands.SELECT_KERNEL_COMMAND.id, this.props.notebookModel)}>
                 <span className={codicon('server-environment')} />
-                <span className=' theia-notebook-main-toolbar-item-text'>
+                <span className=' theia-notebook-main-toolbar-item-text' id='kernel-text'>
                     {this.state.selectedKernelLabel ?? nls.localizeByDefault('Select Kernel')}
                 </span>
             </div>
@@ -195,7 +195,7 @@ export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProp
             const command = this.props.commandRegistry.getCommand(item.command ?? '') as NotebookCommand | undefined;
             const label = command?.shortTitle ?? item.label;
             const title = command?.tooltip ?? item.label;
-            return <div key={item.id} title={title} className={`theia-notebook-main-toolbar-item action-label${this.getAdditionalClasses(item)}`}
+            return <div key={item.id} id={item.id} title={title} className={`theia-notebook-main-toolbar-item action-label${this.getAdditionalClasses(item)}`}
                 onClick={() => {
                     if (item.command && (!item.when || this.props.contextKeyService.match(item.when, this.props.editorNode))) {
                         this.props.commandRegistry.executeCommand(item.command, this.props.notebookModel.uri);

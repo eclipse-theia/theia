@@ -23,6 +23,7 @@
 
 import './theia-extra';
 import './theia.proposed.canonicalUriProvider';
+import './theia.proposed.createFileSystemWatcher';
 import './theia.proposed.customEditorMove';
 import './theia.proposed.debugVisualization';
 import './theia.proposed.diffCommand';
@@ -2162,7 +2163,7 @@ export module '@theia/plugin' {
         /**
          * The icon path or {@link ThemeIcon} for the QuickPickItem.
          */
-        iconPath?: Uri | { light: Uri; dark: Uri } | ThemeIcon;
+        iconPath?: IconPath;
 
         /**
          * A human-readable string which is rendered less prominent in the same line. Supports rendering of
@@ -2696,6 +2697,11 @@ export module '@theia/plugin' {
      */
     export class ThemeColor {
         /**
+         * The id of this color.
+         */
+        readonly id: string;
+
+        /**
          * Creates a reference to a theme color.
          */
         constructor(id: string);
@@ -2733,6 +2739,21 @@ export module '@theia/plugin' {
          */
         private constructor(id: string, color?: ThemeColor);
     }
+
+    /**
+     * Represents an icon in the UI. This is either an uri, separate uris for the light- and dark-themes,
+     * or a {@link ThemeIcon theme icon}.
+     */
+    export type IconPath = Uri | {
+        /**
+         * The icon path for the light theme.
+         */
+        light: Uri;
+        /**
+         * The icon path for the dark theme.
+         */
+        dark: Uri;
+    } | ThemeIcon;
 
     /**
      * Represents the state of a window.
@@ -3514,7 +3535,7 @@ export module '@theia/plugin' {
         /**
          * The icon path or {@link ThemeIcon} for the terminal.
          */
-        iconPath?: Uri | { light: Uri; dark: Uri } | ThemeIcon;
+        iconPath?: IconPath;
 
         /**
          * The icon {@link ThemeColor} for the terminal.
@@ -3634,7 +3655,7 @@ export module '@theia/plugin' {
         /**
          * The icon path or {@link ThemeIcon} for the terminal.
          */
-        iconPath?: Uri | { light: Uri; dark: Uri } | ThemeIcon;
+        iconPath?: IconPath;
 
         /**
          * The icon {@link ThemeColor} for the terminal.
@@ -6221,7 +6242,7 @@ export module '@theia/plugin' {
         /**
          * Icon for the button.
          */
-        readonly iconPath: Uri | { light: Uri; dark: Uri } | ThemeIcon;
+        readonly iconPath: IconPath;
 
         /**
          * An optional tooltip.
@@ -6835,7 +6856,7 @@ export module '@theia/plugin' {
          * When `falsy`, {@link ThemeIcon.Folder Folder Theme Icon} is assigned, if item is collapsible otherwise {@link ThemeIcon.File File Theme Icon}.
          * When a {@link ThemeIcon ThemeIcon} is specified, icon is derived from the current file icon theme for the specified theme icon using {@link TreeItem.resourceUri resourceUri} (if provided).
          */
-        iconPath?: string | Uri | { light: string | Uri; dark: string | Uri } | ThemeIcon;
+        iconPath?: string | IconPath;
 
         /**
          * A human readable string which is rendered less prominent.
@@ -10284,7 +10305,7 @@ export module '@theia/plugin' {
          * @return An array of commands, quick fixes, or refactorings or a thenable of such. The lack of a result can be
          * signaled by returning `undefined`, `null`, or an empty array.
          */
-        provideCodeActions(document: TextDocument, range: Range | Selection, context: CodeActionContext, token: CancellationToken): ProviderResult<(Command | T)[]>;
+        provideCodeActions(document: TextDocument, range: Range | Selection, context: CodeActionContext, token: CancellationToken): ProviderResult<Array<Command | T>>;
 
         /**
          * Given a code action fill in its `edit`-property. Changes to
@@ -10606,7 +10627,7 @@ export module '@theia/plugin' {
         /**
          * The icon path or {@link ThemeIcon ThemeIcon} for the edit.
          */
-        iconPath?: Uri | { light: Uri; dark: Uri } | ThemeIcon;
+        iconPath?: IconPath;
     }
 
     /**
@@ -13159,7 +13180,7 @@ export module '@theia/plugin' {
          * @param args The command arguments.
          * @param options Optional options for the started the shell.
          */
-        constructor(command: string | ShellQuotedString, args: (string | ShellQuotedString)[], options?: ShellExecutionOptions);
+        constructor(command: string | ShellQuotedString, args: Array<string | ShellQuotedString>, options?: ShellExecutionOptions);
 
         /**
          * The shell command line. Is `undefined` if created with a command and arguments.
@@ -16542,6 +16563,30 @@ export module '@theia/plugin' {
         loadDetailedCoverage?: (testRun: TestRun, fileCoverage: FileCoverage, token: CancellationToken) => Thenable<FileCoverageDetail[]>;
 
         /**
+         * An extension-provided function that provides detailed statement and
+         * function-level coverage for a single test in a file. This is the per-test
+         * sibling of {@link TestRunProfile.loadDetailedCoverage}, called only if
+         * a test item is provided in {@link FileCoverage.includesTests} and only
+         * for files where such data is reported.
+         *
+         * Often {@link TestRunProfile.loadDetailedCoverage} will be called first
+         * when a user opens a file, and then this method will be called if they
+         * drill down into specific per-test coverage information. This method
+         * should then return coverage data only for constructs the given test item
+         * executed during the test run.
+         *
+         * The {@link FileCoverage} object passed to this function is the same
+         * instance emitted on {@link TestRun.addCoverage} calls associated with this profile.
+         *
+         * @param testRun The test run that generated the coverage data.
+         * @param fileCoverage The file coverage object to load detailed coverage for.
+         * @param fromTestItem The test item to request coverage information for.
+         * @param token A cancellation token that indicates the operation should be cancelled.
+         * @stubbed
+         */
+        loadDetailedCoverageForTest?: (testRun: TestRun, fileCoverage: FileCoverage, fromTestItem: TestItem, token: CancellationToken) => Thenable<FileCoverageDetail[]>;
+
+        /**
          * Deletes the run profile.
          */
         dispose(): void;
@@ -17136,6 +17181,13 @@ export module '@theia/plugin' {
         declarationCoverage?: TestCoverageCount;
 
         /**
+         * A list of {@link TestItem test cases} that generated coverage in this
+         * file. If set, then {@link TestRunProfile.loadDetailedCoverageForTest}
+         * should also be defined in order to retrieve detailed coverage information.
+         */
+        includesTests?: TestItem[];
+
+        /**
          * Creates a {@link FileCoverage} instance with counts filled in from
          * the coverage details.
          * @param uri Covered file URI
@@ -17150,12 +17202,14 @@ export module '@theia/plugin' {
          * used to represent line coverage.
          * @param branchCoverage Branch coverage information
          * @param declarationCoverage Declaration coverage information
+         * @param includesTests Test cases included in this coverage report, see {@link includesTests}
          */
         constructor(
             uri: Uri,
             statementCoverage: TestCoverageCount,
             branchCoverage?: TestCoverageCount,
             declarationCoverage?: TestCoverageCount,
+            includesTests?: TestItem[],
         );
     }
 
@@ -17261,6 +17315,7 @@ export module '@theia/plugin' {
 
     /**
      * Represents a user request in chat history.
+     * @stubbed
      */
     export class ChatRequestTurn {
         /**
@@ -17270,51 +17325,67 @@ export module '@theia/plugin' {
          *
          * *Note* that the {@link ChatParticipant.name name} of the participant and the {@link ChatCommand.name command}
          * are not part of the prompt.
+         * @stubbed
          */
         readonly prompt: string;
 
         /**
          * The id of the chat participant to which this request was directed.
+         * @stubbed
          */
         readonly participant: string;
 
         /**
          * The name of the {@link ChatCommand command} that was selected for this request.
+         * @stubbed
          */
         readonly command?: string;
 
         /**
          * The references that were used in this message.
+         * @stubbed
          */
         readonly references: ChatPromptReference[];
 
         /**
-         * @hidden
+         * The list of tools were attached to this request.
+         * @stubbed
          */
-        private constructor(prompt: string, command: string | undefined, references: ChatPromptReference[], participant: string);
+        readonly toolReferences: readonly ChatLanguageModelToolReference[];
+
+        /**
+         * @hidden
+         * @stubbed
+         */
+        private constructor(prompt: string, command: string | undefined, references: ChatPromptReference[], participant: string, toolReferences: ChatLanguageModelToolReference[]);
     }
 
     /**
      * Represents a chat participant's response in chat history.
+     * @stubbed
      */
     export class ChatResponseTurn {
         /**
          * The content that was received from the chat participant. Only the stream parts that represent actual content (not metadata) are represented.
+         * @stubbed
          */
         readonly response: ReadonlyArray<ChatResponseMarkdownPart | ChatResponseFileTreePart | ChatResponseAnchorPart | ChatResponseCommandButtonPart>;
 
         /**
          * The result that was received from the chat participant.
+         * @stubbed
          */
         readonly result: ChatResult;
 
         /**
          * The id of the chat participant that this response came from.
+         * @stubbed
          */
         readonly participant: string;
 
         /**
          * The name of the command that this response came from.
+         * @stubbed
          */
         readonly command?: string;
 
@@ -17326,40 +17397,48 @@ export module '@theia/plugin' {
 
     /**
      * Extra context passed to a participant.
+     * @stubbed
      */
     export interface ChatContext {
         /**
          * All of the chat messages so far in the current chat session. Currently, only chat messages for the current participant are included.
+         * @stubbed
          */
         readonly history: ReadonlyArray<ChatRequestTurn | ChatResponseTurn>;
     }
 
     /**
      * Represents an error result from a chat request.
+     * @stubbed
      */
     export interface ChatErrorDetails {
         /**
          * An error message that is shown to the user.
+         * @stubbed
          */
         message: string;
 
         /**
          * If set to true, the response will be partly blurred out.
+         * @stubbed
          */
         responseIsFiltered?: boolean;
     }
 
     /**
      * The result of a chat request.
+     * @stubbed
      */
     export interface ChatResult {
         /**
          * If the request resulted in an error, this property defines the error details.
+         * @stubbed
          */
         errorDetails?: ChatErrorDetails;
 
         /**
          * Arbitrary metadata for this result. Can be anything, but must be JSON-stringifyable.
+         * @stubbed
          */
         readonly metadata?: { readonly [key: string]: any };
     }
@@ -17381,53 +17460,63 @@ export module '@theia/plugin' {
 
     /**
      * Represents user feedback for a result.
+     * @stubbed
      */
     export interface ChatResultFeedback {
         /**
          * The ChatResult for which the user is providing feedback.
          * This object has the same properties as the result returned from the participant callback, including `metadata`, but is not the same instance.
+         * @stubbed
          */
         readonly result: ChatResult;
 
         /**
          * The kind of feedback that was received.
+         * @stubbed
          */
         readonly kind: ChatResultFeedbackKind;
     }
 
     /**
      * A followup question suggested by the participant.
+     * @stubbed
      */
     export interface ChatFollowup {
         /**
          * The message to send to the chat.
+         * @stubbed
          */
         prompt: string;
 
         /**
          * A title to show the user. The prompt will be shown by default, when this is unspecified.
+         * @stubbed
          */
         label?: string;
 
         /**
          * By default, the followup goes to the same participant/command. But this property can be set to invoke a different participant by ID.
          * Followups can only invoke a participant that was contributed by the same extension.
+         * @stubbed
          */
         participant?: string;
 
         /**
          * By default, the followup goes to the same participant/command. But this property can be set to invoke a different command.
+         * @stubbed
          */
         command?: string;
     }
 
     /**
      * Will be invoked once after each request to get suggested followup questions to show the user. The user can click the followup to send it to the chat.
+     * @stubbed
      */
     export interface ChatFollowupProvider {
         /**
          * Provide followups for the given result.
          * @param result This object has the same properties as the result returned from the participant callback, including `metadata`, but is not the same instance.
+         * @param context Extra context passed to a participant.
          * @param token A cancellation token.
          */
         provideFollowups(result: ChatResult, context: ChatContext, token: CancellationToken): ProviderResult<ChatFollowup[]>;
@@ -17435,40 +17524,37 @@ export module '@theia/plugin' {
 
     /**
      * A chat request handler is a callback that will be invoked when a request is made to a chat participant.
+     * @stubbed
      */
     export type ChatRequestHandler = (request: ChatRequest, context: ChatContext, response: ChatResponseStream, token: CancellationToken) => ProviderResult<ChatResult | void>;
 
     /**
      * A chat participant can be invoked by the user in a chat session, using the `@` prefix. When it is invoked, it handles the chat request and is solely
      * responsible for providing a response to the user. A ChatParticipant is created using {@link chat.createChatParticipant}.
+     * @stubbed
      */
     export interface ChatParticipant {
         /**
          * A unique ID for this participant.
+         * @stubbed
          */
         readonly id: string;
 
         /**
          * An icon for the participant shown in UI.
+         * @stubbed
          */
-        iconPath?: Uri | {
-            /**
-             * The icon path for the light theme.
-             */
-            light: Uri;
-            /**
-             * The icon path for the dark theme.
-             */
-            dark: Uri;
-        } | ThemeIcon;
+        iconPath?: IconPath;
 
         /**
          * The handler for requests to this participant.
+         * @stubbed
          */
         requestHandler: ChatRequestHandler;
 
         /**
          * This provider will be called once after each request to retrieve suggested followup questions.
+         * @stubbed
          */
         followupProvider?: ChatFollowupProvider;
 
@@ -17478,21 +17564,25 @@ export module '@theia/plugin' {
          *
          * The passed {@link ChatResultFeedback.result result} is guaranteed to be the same instance that was
          * previously returned from this chat participant.
+         * @stubbed
          */
         onDidReceiveFeedback: Event<ChatResultFeedback>;
 
         /**
          * Dispose this participant and free resources.
+         * @stubbed
          */
         dispose(): void;
     }
 
     /**
      * A reference to a value that the user added to their chat request.
+     * @stubbed
      */
     export interface ChatPromptReference {
         /**
          * A unique identifier for this kind of reference.
+         * @stubbed
          */
         readonly id: string;
 
@@ -17501,22 +17591,26 @@ export module '@theia/plugin' {
          *
          * *Note* that the indices take the leading `#`-character into account which means they can
          * used to modify the prompt as-is.
+         * @stubbed
          */
         readonly range?: [start: number, end: number];
 
         /**
          * A description of this value that could be used in an LLM prompt.
+         * @stubbed
          */
         readonly modelDescription?: string;
 
         /**
          * The value of this reference. The `string | Uri | Location` types are used today, but this could expand in the future.
+         * @stubbed
          */
         readonly value: string | Uri | Location | unknown;
     }
 
     /**
      * A request to a chat participant.
+     * @stubbed
      */
     export interface ChatRequest {
         /**
@@ -17526,11 +17620,13 @@ export module '@theia/plugin' {
          *
          * *Note* that the {@link ChatParticipant.name name} of the participant and the {@link ChatCommand.name command}
          * are not part of the prompt.
+         * @stubbed
          */
         readonly prompt: string;
 
         /**
          * The name of the {@link ChatCommand command} that was selected for this request.
+         * @stubbed
          */
         readonly command: string | undefined;
 
@@ -17542,14 +17638,41 @@ export module '@theia/plugin' {
          * headings which contain the resolved values. References are sorted in reverse by their range
          * in the prompt. That means the last reference in the prompt is the first in this list. This simplifies
          * string-manipulation of the prompt.
+         * @stubbed
          */
         readonly references: readonly ChatPromptReference[];
+
+        /**
+         * The list of tools that the user attached to their request.
+         *
+         * When a tool reference is present, the chat participant should make a chat request using
+         * {@link LanguageModelChatToolMode.Required} to force the language model to generate input for the tool. Then, the
+         * participant can use {@link lm.invokeTool} to use the tool attach the result to its request for the user's prompt. The
+         * tool may contribute useful extra context for the user's request.
+         * @stubbed
+         */
+        readonly toolReferences: readonly ChatLanguageModelToolReference[];
+
+        /**
+         * A token that can be passed to {@link lm.invokeTool} when invoking a tool inside the context of handling a chat request.
+         * This associates the tool invocation to a chat session.
+         * @stubbed
+         */
+        readonly toolInvocationToken: ChatParticipantToolToken;
+
+        /**
+         * This is the model that is currently selected in the UI. Extensions can use this or use {@link chat.selectChatModels} to
+         * pick another model. Don't hold onto this past the lifetime of the request.
+         * @stubbed
+         */
+        readonly model: LanguageModelChat;
     }
 
     /**
      * The ChatResponseStream is how a participant is able to return content to the chat view. It provides several methods for streaming different types of content
      * which will be rendered in an appropriate way in the chat view. A participant can use the helper method for the type of content it wants to return, or it
      * can instantiate a {@link ChatResponsePart} and use the generic {@link ChatResponseStream.push} method to return it.
+     * @stubbed
      */
     export interface ChatResponseStream {
         /**
@@ -17558,6 +17681,7 @@ export module '@theia/plugin' {
          *
          * @see {@link ChatResponseStream.push}
          * @param value A markdown string or a string that should be interpreted as markdown. The boolean form of {@link MarkdownString.isTrusted} is NOT supported.
+         * @stubbed
          */
         markdown(value: string | MarkdownString): void;
 
@@ -17566,8 +17690,9 @@ export module '@theia/plugin' {
          * `push(new ChatResponseAnchorPart(value, title))`.
          * An anchor is an inline reference to some type of resource.
          *
-         * @param value A uri, location, or symbol information.
+         * @param value A uri or location.
          * @param title An optional title that is rendered with value.
+         * @stubbed
          */
         anchor(value: Uri | Location, title?: string): void;
 
@@ -17576,6 +17701,7 @@ export module '@theia/plugin' {
          * `push(new ChatResponseCommandButtonPart(value, title))`.
          *
          * @param command A Command that will be executed when the button is clicked.
+         * @stubbed
          */
         button(command: Command): void;
 
@@ -17585,6 +17711,7 @@ export module '@theia/plugin' {
          *
          * @param value File tree data.
          * @param baseUri The base uri to which this file tree is relative.
+         * @stubbed
          */
         filetree(value: ChatResponseFileTree[], baseUri: Uri): void;
 
@@ -17593,6 +17720,7 @@ export module '@theia/plugin' {
          * `push(new ChatResponseProgressPart(value))`.
          *
          * @param value A progress message
+         * @stubbed
          */
         progress(value: string): void;
 
@@ -17604,32 +17732,27 @@ export module '@theia/plugin' {
          *
          * @param value A uri or location
          * @param iconPath Icon for the reference shown in UI
+         * @stubbed
          */
-        reference(value: Uri | Location, iconPath?: Uri | ThemeIcon | {
-            /**
-             * The icon path for the light theme.
-             */
-            light: Uri;
-            /**
-             * The icon path for the dark theme.
-             */
-            dark: Uri;
-        }): void;
+        reference(value: Uri | Location, iconPath?: IconPath): void;
 
         /**
          * Pushes a part to this stream.
          *
          * @param part A response part, rendered or metadata
+         * @stubbed
          */
         push(part: ChatResponsePart): void;
     }
 
     /**
      * Represents a part of a chat response that is formatted as Markdown.
+     * @stubbed
      */
     export class ChatResponseMarkdownPart {
         /**
          * A markdown string or a string that should be interpreted as markdown.
+         * @stubbed
          */
         value: MarkdownString;
 
@@ -17637,36 +17760,43 @@ export module '@theia/plugin' {
          * Create a new ChatResponseMarkdownPart.
          *
          * @param value A markdown string or a string that should be interpreted as markdown. The boolean form of {@link MarkdownString.isTrusted} is NOT supported.
+         * @stubbed
          */
         constructor(value: string | MarkdownString);
     }
 
     /**
      * Represents a file tree structure in a chat response.
+     * @stubbed
      */
     export interface ChatResponseFileTree {
         /**
          * The name of the file or directory.
+         * @stubbed
          */
         name: string;
 
         /**
          * An array of child file trees, if the current file tree is a directory.
+         * @stubbed
          */
         children?: ChatResponseFileTree[];
     }
 
     /**
      * Represents a part of a chat response that is a file tree.
+     * @stubbed
      */
     export class ChatResponseFileTreePart {
         /**
          * File tree data.
+         * @stubbed
          */
         value: ChatResponseFileTree[];
 
         /**
          * The base uri to which this file tree is relative
+         * @stubbed
          */
         baseUri: Uri;
 
@@ -17674,21 +17804,25 @@ export module '@theia/plugin' {
          * Create a new ChatResponseFileTreePart.
          * @param value File tree data.
          * @param baseUri The base uri to which this file tree is relative.
+         * @stubbed
          */
         constructor(value: ChatResponseFileTree[], baseUri: Uri);
     }
 
     /**
      * Represents a part of a chat response that is an anchor, that is rendered as a link to a target.
+     * @stubbed
      */
     export class ChatResponseAnchorPart {
         /**
          * The target of this anchor.
+         * @stubbed
          */
         value: Uri | Location;
 
         /**
          * An optional title that is rendered with value.
+         * @stubbed
          */
         title?: string;
 
@@ -17696,78 +17830,71 @@ export module '@theia/plugin' {
          * Create a new ChatResponseAnchorPart.
          * @param value A uri or location.
          * @param title An optional title that is rendered with value.
+         * @stubbed
          */
         constructor(value: Uri | Location, title?: string);
     }
 
     /**
      * Represents a part of a chat response that is a progress message.
+     * @stubbed
      */
     export class ChatResponseProgressPart {
         /**
          * The progress message
+         * @stubbed
          */
         value: string;
 
         /**
          * Create a new ChatResponseProgressPart.
          * @param value A progress message
+         * @stubbed
          */
         constructor(value: string);
     }
 
     /**
      * Represents a part of a chat response that is a reference, rendered separately from the content.
+     * @stubbed
      */
     export class ChatResponseReferencePart {
         /**
          * The reference target.
+         * @stubbed
          */
         value: Uri | Location;
 
         /**
          * The icon for the reference.
+         * @stubbed
          */
-        iconPath?: Uri | ThemeIcon | {
-            /**
-             * The icon path for the light theme.
-             */
-            light: Uri;
-            /**
-             * The icon path for the dark theme.
-             */
-            dark: Uri;
-        };
+        iconPath?: IconPath;
 
         /**
          * Create a new ChatResponseReferencePart.
          * @param value A uri or location
          * @param iconPath Icon for the reference shown in UI
+         * @stubbed
          */
-        constructor(value: Uri | Location, iconPath?: Uri | ThemeIcon | {
-            /**
-             * The icon path for the light theme.
-             */
-            light: Uri;
-            /**
-             * The icon path for the dark theme.
-             */
-            dark: Uri;
-        });
+        constructor(value: Uri | Location, iconPath?: IconPath);
     }
 
     /**
      * Represents a part of a chat response that is a button that executes a command.
+     * @stubbed
      */
     export class ChatResponseCommandButtonPart {
         /**
          * The command that will be executed when the button is clicked.
+         * @stubbed
          */
         value: Command;
 
         /**
          * Create a new ChatResponseCommandButtonPart.
          * @param value A Command that will be executed when the button is clicked.
+         * @stubbed
          */
         constructor(value: Command);
     }
@@ -17812,6 +17939,7 @@ export module '@theia/plugin' {
 
     /**
      * Represents a message in a chat. Can assume different roles, like user or assistant.
+     * @stubbed
      */
     export class LanguageModelChatMessage {
 
@@ -17820,64 +17948,80 @@ export module '@theia/plugin' {
          *
          * @param content The content of the message.
          * @param name The optional name of a user for the message.
+         * @stubbed
          */
-        static User(content: string, name?: string): LanguageModelChatMessage;
+        static User(content: string | Array<LanguageModelTextPart | LanguageModelToolResultPart>, name?: string): LanguageModelChatMessage;
 
         /**
          * Utility to create a new assistant message.
          *
          * @param content The content of the message.
          * @param name The optional name of a user for the message.
+         * @stubbed
          */
-        static Assistant(content: string, name?: string): LanguageModelChatMessage;
+        static Assistant(content: string | Array<(LanguageModelTextPart | LanguageModelToolCallPart)>, name?: string): LanguageModelChatMessage;
 
         /**
          * The role of this message.
+         * @stubbed
          */
         role: LanguageModelChatMessageRole;
 
         /**
-         * The content of this message.
+         * A string or heterogeneous array of things that a message can contain as content. Some parts may be message-type
+         * specific for some models.
+         * @stubbed
          */
-        content: string;
+        content: Array<(LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart)>;
 
         /**
          * The optional name of a user for this message.
+         * @stubbed
          */
         name: string | undefined;
 
         /**
          * Create a new user message.
+         * @stubbed
          *
          * @param role The role of the message.
          * @param content The content of the message.
          * @param name The optional name of a user for the message.
          */
-        constructor(role: LanguageModelChatMessageRole, content: string, name?: string);
+        constructor(role: LanguageModelChatMessageRole, content: string | Array<LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart>, name?: string);
     }
 
     /**
      * Represents a language model response.
      *
      * @see {@link LanguageModelAccess.chatRequest}
+     * @stubbed
      */
     export interface LanguageModelChatResponse {
 
         /**
-         * An async iterable that is a stream of text chunks forming the overall response.
+         * An async iterable that is a stream of text and tool-call parts forming the overall response. A
+         * {@link LanguageModelTextPart} is part of the assistant's response to be shown to the user. A
+         * {@link LanguageModelToolCallPart} is a request from the language model to call a tool. The latter will
+         * only be returned if tools were passed in the request via {@link LanguageModelChatRequestOptions.tools}. The
+         * `unknown`-type is used as a placeholder for future parts, like image data parts.
          *
-         * *Note* that this stream will error when during data receiving an error occurs. Consumers of
-         * the stream should handle the errors accordingly.
+         * *Note* that this stream will error when during data receiving an error occurs. Consumers of the stream should handle
+         * the errors accordingly.
          *
-         * To cancel the stream, the consumer can {@link CancellationTokenSource.cancel cancel} the token that was used to make the request
-         * or break from the for-loop.
+         * To cancel the stream, the consumer can {@link CancellationTokenSource.cancel cancel} the token that was used to make
+         * the request or break from the for-loop.
          *
          * @example
          * ```ts
          * try {
          *   // consume stream
-         *   for await (const chunk of response.text) {
-         *    console.log(chunk);
+         *   for await (const chunk of response.stream) {
+         *      if (chunk instanceof LanguageModelTextPart) {
+         *        console.log("TEXT", chunk);
+         *      } else if (chunk instanceof LanguageModelToolCallPart) {
+         *        console.log("TOOL CALL", chunk);
+         *      }
          *   }
          *
          * } catch(e) {
@@ -17885,6 +18029,15 @@ export module '@theia/plugin' {
          *   console.error(e);
          * }
          * ```
+         * @stubbed
+         */
+        stream: AsyncIterable<LanguageModelTextPart | LanguageModelToolCallPart | unknown>;
+
+        /**
+         * This is equivalent to filtering everything except for text parts from a {@link LanguageModelChatResponse.stream}.
+         *
+         * @see {@link LanguageModelChatResponse.stream}
+         * @stubbed
          */
         text: AsyncIterable<string>;
     }
@@ -17893,39 +18046,46 @@ export module '@theia/plugin' {
      * Represents a language model for making chat requests.
      *
      * @see {@link lm.selectChatModels}
+     * @stubbed
      */
     export interface LanguageModelChat {
 
         /**
          * Human-readable name of the language model.
+         * @stubbed
          */
         readonly name: string;
 
         /**
          * Opaque identifier of the language model.
+         * @stubbed
          */
         readonly id: string;
 
         /**
          * A well-known identifier of the vendor of the language model. An example is `copilot`, but
          * values are defined by extensions contributing chat models and need to be looked up with them.
+         * @stubbed
          */
         readonly vendor: string;
 
         /**
          * Opaque family-name of the language model. Values might be `gpt-3.5-turbo`, `gpt4`, `phi2`, or `llama`
          * but they are defined by extensions contributing languages and subject to change.
+         * @stubbed
          */
         readonly family: string;
 
         /**
          * Opaque version string of the model. This is defined by the extension contributing the language model
          * and subject to change.
+         * @stubbed
          */
         readonly version: string;
 
         /**
          * The maximum number of tokens that can be sent to the model in a single request.
+         * @stubbed
          */
         readonly maxInputTokens: number;
 
@@ -17933,8 +18093,8 @@ export module '@theia/plugin' {
          * Make a chat request using a language model.
          *
          * *Note* that language model use may be subject to access restrictions and user consent. Calling this function
-         * for the first time (for a extension) will show a consent dialog to the user and because of that this function
-         * must _only be called in response to a user action!_ Extension can use {@link LanguageModelAccessInformation.canSendRequest}
+         * for the first time (for an extension) will show a consent dialog to the user and because of that this function
+         * must _only be called in response to a user action!_ Extensions can use {@link LanguageModelAccessInformation.canSendRequest}
          * to check if they have the necessary permissions to make a request.
          *
          * This function will return a rejected promise if making a request to the language model is not
@@ -17945,10 +18105,15 @@ export module '@theia/plugin' {
          * - quota limits exceeded, see {@link LanguageModelError.Blocked `Blocked`}
          * - other issues in which case extension must check {@link LanguageModelError.cause `LanguageModelError.cause`}
          *
+         * An extension can make use of language model tool calling by passing a set of tools to
+         * {@link LanguageModelChatRequestOptions.tools}. The language model will return a {@link LanguageModelToolCallPart} and
+         * the extension can invoke the tool and make another request with the result.
+         *
          * @param messages An array of message instances.
          * @param options Options that control the request.
          * @param token A cancellation token which controls the request. See {@link CancellationTokenSource} for how to create one.
          * @returns A thenable that resolves to a {@link LanguageModelChatResponse}. The promise will reject when the request couldn't be made.
+         * @stubbed
          */
         sendRequest(messages: LanguageModelChatMessage[], options?: LanguageModelChatRequestOptions, token?: CancellationToken): Thenable<LanguageModelChatResponse>;
 
@@ -17957,6 +18122,7 @@ export module '@theia/plugin' {
          * @param text A string or a message instance.
          * @param token Optional cancellation token.  See {@link CancellationTokenSource} for how to create one.
          * @returns A thenable that resolves to the number of tokens.
+         * @stubbed
          */
         countTokens(text: string | LanguageModelChatMessage, token?: CancellationToken): Thenable<number>;
     }
@@ -17965,30 +18131,35 @@ export module '@theia/plugin' {
      * Describes how to select language models for chat requests.
      *
      * @see {@link lm.selectChatModels}
+     * @stubbed
      */
     export interface LanguageModelChatSelector {
 
         /**
          * A vendor of language models.
          * @see {@link LanguageModelChat.vendor}
+         * @stubbed
          */
         vendor?: string;
 
         /**
          * A family of language models.
          * @see {@link LanguageModelChat.family}
+         * @stubbed
          */
         family?: string;
 
         /**
          * The version of a language model.
          * @see {@link LanguageModelChat.version}
+         * @stubbed
          */
         version?: string;
 
         /**
          * The identifier of a language model.
          * @see {@link LanguageModelChat.id}
+         * @stubbed
          */
         id?: string;
     }
@@ -18000,22 +18171,26 @@ export module '@theia/plugin' {
      * failure causes, like `if(someError.code === vscode.LanguageModelError.NotFound.name) {...}`
      * for the case of referring to an unknown language model. For unspecified errors the `cause`-property
      * will contain the actual error.
+     * @stubbed
      */
     export class LanguageModelError extends Error {
 
         /**
          * The requestor does not have permissions to use this
          * language model
+         * @stubbed
          */
         static NoPermissions(message?: string): LanguageModelError;
 
         /**
          * The requestor is blocked from using this language model.
+         * @stubbed
          */
         static Blocked(message?: string): LanguageModelError;
 
         /**
          * The language model does not exist.
+         * @stubbed
          */
         static NotFound(message?: string): LanguageModelError;
 
@@ -18025,6 +18200,7 @@ export module '@theia/plugin' {
          * Possible values are names of errors, like {@linkcode LanguageModelError.NotFound NotFound},
          * or `Unknown` for unspecified errors from the language model itself. In the latter case the
          * `cause`-property will contain the actual error.
+         * @stubbed
          */
         readonly code: string;
     }
@@ -18033,19 +18209,42 @@ export module '@theia/plugin' {
      * Options for making a chat request using a language model.
      *
      * @see {@link LanguageModelChat.sendRequest}
+     * @stubbed
      */
     export interface LanguageModelChatRequestOptions {
 
         /**
          * A human-readable message that explains why access to a language model is needed and what feature is enabled by it.
+         * @stubbed
          */
         justification?: string;
 
         /**
          * A set of options that control the behavior of the language model. These options are specific to the language model
          * and need to be lookup in the respective documentation.
+         * @stubbed
          */
         modelOptions?: { [name: string]: any };
+
+        /**
+         * An optional list of tools that are available to the language model. These could be registered tools available via
+         * {@link lm.tools}, or private tools that are just implemented within the calling extension.
+         *
+         * If the LLM requests to call one of these tools, it will return a {@link LanguageModelToolCallPart} in
+         * {@link LanguageModelChatResponse.stream}. It's the caller's responsibility to invoke the tool. If it's a tool
+         * registered in {@link lm.tools}, that means calling {@link lm.invokeTool}.
+         *
+         * Then, the tool result can be provided to the LLM by creating an Assistant-type {@link LanguageModelChatMessage} with a
+         * {@link LanguageModelToolCallPart}, followed by a User-type message with a {@link LanguageModelToolResultPart}.
+         * @stubbed
+         */
+        tools?: LanguageModelChatTool[];
+
+        /**
+         * The tool-selecting mode to use. {@link LanguageModelChatToolMode.Auto} by default.
+         * @stubbed
+         */
+        toolMode?: LanguageModelChatToolMode;
     }
 
     /**
@@ -18086,15 +18285,62 @@ export module '@theia/plugin' {
          * @stubbed
          */
         export function selectChatModels(selector?: LanguageModelChatSelector): Thenable<LanguageModelChat[]>;
+
+        /**
+         * Register a LanguageModelTool. The tool must also be registered in the package.json `languageModelTools` contribution
+         * point. A registered tool is available in the {@link lm.tools} list for any extension to see. But in order for it to
+         * be seen by a language model, it must be passed in the list of available tools in {@link LanguageModelChatRequestOptions.tools}.
+         * @returns A {@link Disposable} that unregisters the tool when disposed.
+         * @stubbed
+         */
+        export function registerTool<T>(name: string, tool: LanguageModelTool<T>): Disposable;
+
+        /**
+         * A list of all available tools that were registered by all extensions using {@link lm.registerTool}. They can be called
+         * with {@link lm.invokeTool} with input that match their declared `inputSchema`.
+         * @stubbed
+         */
+        export const tools: readonly LanguageModelToolInformation[];
+
+        /**
+         * Invoke a tool listed in {@link lm.tools} by name with the given input. The input will be validated against
+         * the schema declared by the tool
+         *
+         * A tool can be invoked by a chat participant, in the context of handling a chat request, or globally by any extension in
+         * any custom flow.
+         *
+         * In the former case, the caller shall pass the
+         * {@link LanguageModelToolInvocationOptions.toolInvocationToken toolInvocationToken}, which comes with the a
+         * {@link ChatRequest.toolInvocationToken chat request}. This makes sure the chat UI shows the tool invocation for the
+         * correct conversation.
+         *
+         * A tool {@link LanguageModelToolResult result} is an array of {@link LanguageModelTextPart text-} and
+         * {@link LanguageModelPromptTsxPart prompt-tsx}-parts. If the tool caller is using `@vscode/prompt-tsx`, it can
+         * incorporate the response parts into its prompt using a `ToolResult`. If not, the parts can be passed along to the
+         * {@link LanguageModelChat} via a user message with a {@link LanguageModelToolResultPart}.
+         *
+         * If a chat participant wants to preserve tool results for requests across multiple turns, it can store tool results in
+         * the {@link ChatResult.metadata} returned from the handler and retrieve them on the next turn from
+         * {@link ChatResponseTurn.result}.
+         *
+         * @param name The name of the tool to call.
+         * @param options The options to use when invoking the tool.
+         * @param token A cancellation token. See {@link CancellationTokenSource} for how to create one.
+         * @returns The result of the tool invocation.
+         * @stubbed
+         */
+        export function invokeTool(name: string, options: LanguageModelToolInvocationOptions<object>, token?: CancellationToken): Thenable<LanguageModelToolResult>;
     }
 
     /**
      * Represents extension specific information about the access to language models.
+     * @stubbed
      */
     export interface LanguageModelAccessInformation {
 
         /**
          * An event that fires when access information changes.
+         * @stubbed
          */
         onDidChange: Event<void>;
 
@@ -18106,8 +18352,364 @@ export module '@theia/plugin' {
          * @param chat A language model chat object.
          * @return `true` if a request can be made, `false` if not, `undefined` if the language
          * model does not exist or consent hasn't been asked for.
+         * @stubbed
          */
         canSendRequest(chat: LanguageModelChat): boolean | undefined;
+
+    }
+
+    /**
+     * A tool that is available to the language model via {@link LanguageModelChatRequestOptions}. A language model uses all the
+     * properties of this interface to decide which tool to call, and how to call it.
+     * @stubbed
+     */
+    export interface LanguageModelChatTool {
+        /**
+         * The name of the tool.
+         * @stubbed
+         */
+        name: string;
+
+        /**
+         * The description of the tool.
+         * @stubbed
+         */
+        description: string;
+
+        /**
+         * A JSON schema for the input this tool accepts.
+         * @stubbed
+         */
+        inputSchema?: object;
+    }
+
+    /**
+     * A tool-calling mode for the language model to use.
+     */
+    export enum LanguageModelChatToolMode {
+        /**
+         * The language model can choose to call a tool or generate a message. Is the default.
+         */
+        Auto = 1,
+
+        /**
+         * The language model must call one of the provided tools. Note- some models only support a single tool when using this
+         * mode.
+         */
+        Required = 2
+    }
+
+    /**
+     * A language model response part indicating a tool call, returned from a {@link LanguageModelChatResponse}, and also can be
+     * included as a content part on a {@link LanguageModelChatMessage}, to represent a previous tool call in a chat request.
+     * @stubbed
+     */
+    export class LanguageModelToolCallPart {
+        /**
+         * The ID of the tool call. This is a unique identifier for the tool call within the chat request.
+         * @stubbed
+         */
+        callId: string;
+
+        /**
+         * The name of the tool to call.
+         * @stubbed
+         */
+        name: string;
+
+        /**
+         * The input with which to call the tool.
+         * @stubbed
+         */
+        input: object;
+
+        /**
+         * Create a new LanguageModelToolCallPart.
+         *
+         * @param callId The ID of the tool call.
+         * @param name The name of the tool to call.
+         * @param input The input with which to call the tool.
+         * @stubbed
+         */
+        constructor(callId: string, name: string, input: object);
+    }
+
+    /**
+     * The result of a tool call. This is the counterpart of a {@link LanguageModelToolCallPart tool call} and
+     * it can only be included in the content of a User message
+     * @stubbed
+     */
+    export class LanguageModelToolResultPart {
+        /**
+         * The ID of the tool call.
+         *
+         * *Note* that this should match the {@link LanguageModelToolCallPart.callId callId} of a tool call part.
+         * @stubbed
+         */
+        callId: string;
+
+        /**
+         * The value of the tool result.
+         * @stubbed
+         */
+        content: Array<LanguageModelTextPart | LanguageModelPromptTsxPart | unknown>;
+
+        /**
+         * @param callId The ID of the tool call.
+         * @param content The content of the tool result.
+         * @stubbed
+         */
+        constructor(callId: string, content: Array<(LanguageModelTextPart | LanguageModelPromptTsxPart | unknown)>);
+    }
+
+    /**
+     * A language model response part containing a piece of text, returned from a {@link LanguageModelChatResponse}.
+     * @stubbed
+     */
+    export class LanguageModelTextPart {
+        /**
+         * The text content of the part.
+         * @stubbed
+         */
+        value: string;
+
+        /**
+         * Construct a text part with the given content.
+         * @param value The text content of the part.
+         * @stubbed
+         */
+        constructor(value: string);
+    }
+
+    /**
+     * A language model response part containing a PromptElementJSON from `@vscode/prompt-tsx`.
+     * @see {@link LanguageModelToolResult}
+     * @stubbed
+     */
+    export class LanguageModelPromptTsxPart {
+        /**
+         * The value of the part.
+         * @stubbed
+         */
+        value: unknown;
+
+        /**
+         * Construct a prompt-tsx part with the given content.
+         * @param value The value of the part, the result of `renderPromptElementJSON` from `@vscode/prompt-tsx`.
+         * @stubbed
+         */
+        constructor(value: unknown);
+    }
+
+    /**
+     * A result returned from a tool invocation. If using `@vscode/prompt-tsx`, this result may be rendered using a `ToolResult`.
+     * @stubbed
+     */
+    export class LanguageModelToolResult {
+        /**
+         * A list of tool result content parts. Includes `unknown` becauses this list may be extended with new content types in
+         * the future.
+         * @see {@link lm.invokeTool}.
+         * @stubbed
+         */
+        content: Array<(LanguageModelTextPart | LanguageModelPromptTsxPart | unknown)>;
+
+        /**
+         * Create a LanguageModelToolResult
+         * @param content A list of tool result content parts
+         * @stubbed
+         */
+        constructor(content: Array<(LanguageModelTextPart | LanguageModelPromptTsxPart)>);
+    }
+
+    /**
+     * A token that can be passed to {@link lm.invokeTool} when invoking a tool inside the context of handling a chat request.
+     */
+    export type ChatParticipantToolToken = never;
+
+    /**
+     * Options provided for tool invocation.
+     * @stubbed
+     */
+    export interface LanguageModelToolInvocationOptions<T> {
+        /**
+         * An opaque object that ties a tool invocation to a chat request from a {@link ChatParticipant chat participant}.
+         *
+         * The _only_ way to get a valid tool invocation token is using the provided {@link ChatRequest.toolInvocationToken toolInvocationToken}
+         * from a chat request. In that case, a progress bar will be automatically shown for the tool invocation in the chat response view, and if
+         * the tool requires user confirmation, it will show up inline in the chat view.
+         *
+         * If the tool is being invoked outside of a chat request, `undefined` should be passed instead, and no special UI except for
+         * confirmations will be shown.
+         *
+         * *Note* that a tool that invokes another tool during its invocation, can pass along the `toolInvocationToken` that it received.
+         * @stubbed
+         */
+        toolInvocationToken: ChatParticipantToolToken | undefined;
+
+        /**
+         * The input with which to invoke the tool. The input must match the schema defined in
+         * {@link LanguageModelToolInformation.inputSchema}
+         * @stubbed
+         */
+        input: T;
+
+        /**
+         * Options to hint at how many tokens the tool should return in its response, and enable the tool to count tokens
+         * accurately.
+         * @stubbed
+         */
+        tokenizationOptions?: LanguageModelToolTokenizationOptions;
+    }
+
+    /**
+     * Options related to tokenization for a tool invocation.
+     * @stubbed
+     */
+    export interface LanguageModelToolTokenizationOptions {
+        /**
+         * If known, the maximum number of tokens the tool should emit in its result.
+         * @stubbed
+         */
+        tokenBudget: number;
+
+        /**
+         * Count the number of tokens in a message using the model specific tokenizer-logic.
+         * @param text A string.
+         * @param token Optional cancellation token.  See {@link CancellationTokenSource} for how to create one.
+         * @returns A thenable that resolves to the number of tokens.
+         * @stubbed
+         */
+        countTokens(text: string, token?: CancellationToken): Thenable<number>;
+    }
+
+    /**
+     * Information about a registered tool available in {@link lm.tools}.
+     * @stubbed
+     */
+    export interface LanguageModelToolInformation {
+        /**
+         * A unique name for the tool.
+         * @stubbed
+         */
+        readonly name: string;
+
+        /**
+         * A description of this tool that may be passed to a language model.
+         * @stubbed
+         */
+        readonly description: string;
+
+        /**
+         * A JSON schema for the input this tool accepts.
+         * @stubbed
+         */
+        readonly inputSchema: object | undefined;
+
+        /**
+         * A set of tags, declared by the tool, that roughly describe the tool's capabilities. A tool user may use these to filter
+         * the set of tools to just ones that are relevant for the task at hand.
+         * @stubbed
+         */
+        readonly tags: readonly string[];
+    }
+
+    /**
+     * Options for {@link LanguageModelTool.prepareInvocation}.
+     * @stubbed
+     */
+    export interface LanguageModelToolInvocationPrepareOptions<T> {
+        /**
+         * The input that the tool is being invoked with.
+         * @stubbed
+         */
+        input: T;
+    }
+
+    /**
+     * A tool that can be invoked by a call to a {@link LanguageModelChat}.
+     * @stubbed
+     */
+    export interface LanguageModelTool<T> {
+        /**
+         * Invoke the tool with the given input and return a result.
+         *
+         * The provided {@link LanguageModelToolInvocationOptions.input} has been validated against the declared schema.
+         * @stubbed
+         */
+        invoke(options: LanguageModelToolInvocationOptions<T>, token: CancellationToken): ProviderResult<LanguageModelToolResult>;
+
+        /**
+         * Called once before a tool is invoked. It's recommended to implement this to customize the progress message that appears
+         * while the tool is running, and to provide a more useful message with context from the invocation input. Can also
+         * signal that a tool needs user confirmation before running, if appropriate.
+         *
+         * * *Note 1:* Must be free of side-effects.
+         * * *Note 2:* A call to `prepareInvocation` is not necessarily followed by a call to `invoke`.
+         * @stubbed
+         */
+        prepareInvocation?(options: LanguageModelToolInvocationPrepareOptions<T>, token: CancellationToken): ProviderResult<PreparedToolInvocation>;
+    }
+
+    /**
+     * When this is returned in {@link PreparedToolInvocation}, the user will be asked to confirm before running the tool. These
+     * messages will be shown with buttons that say "Continue" and "Cancel".
+     * @stubbed
+     */
+    export interface LanguageModelToolConfirmationMessages {
+        /**
+         * The title of the confirmation message.
+         * @stubbed
+         */
+        title: string;
+
+        /**
+         * The body of the confirmation message.
+         * @stubbed
+         */
+        message: string | MarkdownString;
+    }
+
+    /**
+     * The result of a call to {@link LanguageModelTool.prepareInvocation}.
+     * @stubbed
+     */
+    export interface PreparedToolInvocation {
+        /**
+         * A customized progress message to show while the tool runs.
+         * @stubbed
+         */
+        invocationMessage?: string | MarkdownString;
+
+        /**
+         * The presence of this property indicates that the user should be asked to confirm before running the tool. The user
+         * should be asked for confirmation for any tool that has a side-effect or may potentially be dangerous.
+         * @stubbed
+         */
+        confirmationMessages?: LanguageModelToolConfirmationMessages;
+    }
+
+    /**
+     * A reference to a tool that the user manually attached to their request, either using the `#`-syntax inline, or as an
+     * attachment via the paperclip button.
+     * @stubbed
+     */
+    export interface ChatLanguageModelToolReference {
+        /**
+         * The tool name. Refers to a tool listed in {@link lm.tools}.
+         * @stubbed
+         */
+        readonly name: string;
+
+        /**
+         * The start and end index of the reference in the {@link ChatRequest.prompt prompt}. When undefined, the reference was
+         * not part of the prompt text.
+         *
+         * *Note* that the indices take the leading `#`-character into account which means they can be used to modify the prompt
+         * as-is.
+         * @stubbed
+         */
+        readonly range?: [start: number, end: number];
     }
 
     /**

@@ -11,9 +11,9 @@ on:
 
 jobs:
   build-and-test-playwright:
-    name: Smoke Test for Browser Example Production Build on ubuntu-latest with Node.js 18.x
+    name: Smoke Test for Browser Example Production Build on ubuntu-22.04 with Node.js 18.x
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 60
 
     steps:
@@ -34,9 +34,9 @@ jobs:
       - name: Build Browser Example Application for Production
         shell: bash
         run: |
-          yarn global add node-gyp
-          yarn --skip-integrity-check --network-timeout 100000
-          yarn browser build:production
+          npm install -g node-gyp
+          npm ci
+          cd examples/browser && npm run build:production
         env:
           NODE_OPTIONS: --max_old_space_size=4096
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9
@@ -44,8 +44,8 @@ jobs:
       - name: Build Playwright
         shell: bash
         run: |
-          yarn --cwd examples/playwright build
+          cd examples/playwright && npm run build
 
       - name: Run Smoke Test (examples/playwright/src/tests/theia-app)
         shell: bash
-        run: yarn test:playwright theia-app
+        run: npm run test:playwright -- theia-app

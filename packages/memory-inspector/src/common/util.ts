@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as Long from 'long';
+import Long from 'long';
 
 /**
  * Parse `hexStr` as an hexadecimal string (with or without the leading 0x)

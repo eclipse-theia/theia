@@ -61,4 +61,9 @@ export interface RemoteConnection extends Disposable {
      * copy files from local to remote
      */
     copy(localPath: string | Buffer | NodeJS.ReadableStream, remotePath: string): Promise<void>;
+
+    /**
+     * used for disposing when theia is shutting down
+     */
+    disposeSync?(): void;
 }

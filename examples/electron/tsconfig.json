@@ -12,6 +12,9 @@
       "path": "../../dev-packages/cli"
     },
     {
+      "path": "../../packages/ai-anthropic"
+    },
+    {
       "path": "../../packages/ai-chat"
     },
     {
@@ -27,10 +30,22 @@
       "path": "../../packages/ai-history"
     },
     {
+      "path": "../../packages/ai-hugging-face"
+    },
+    {
+      "path": "../../packages/ai-llamafile"
+    },
+    {
+      "path": "../../packages/ai-mcp"
+    },
+    {
       "path": "../../packages/ai-ollama"
     },
     {
       "path": "../../packages/ai-openai"
+    },
+    {
+      "path": "../../packages/ai-scanoss"
     },
     {
       "path": "../../packages/ai-terminal"
@@ -133,6 +148,9 @@
     },
     {
       "path": "../../packages/remote"
+    },
+    {
+      "path": "../../packages/scanoss"
     },
     {
       "path": "../../packages/scm"

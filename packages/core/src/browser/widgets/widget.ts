@@ -24,6 +24,7 @@ import { KeyCode, KeysOrKeyCodes } from '../keyboard/keys';
 
 import PerfectScrollbar from 'perfect-scrollbar';
 import { PreviewableWidget } from '../widgets/previewable-widget';
+import { Slot } from '@phosphor/signaling';
 
 decorate(injectable(), Widget);
 decorate(unmanaged(), Widget, 0);
@@ -116,7 +117,7 @@ export class BaseWidget extends Widget implements PreviewableWidget {
     protected scrollBar?: PerfectScrollbar;
     protected scrollOptions?: PerfectScrollbar.Options;
 
-    constructor(options?: Widget.IOptions) {
+    constructor(@unmanaged() options?: Widget.IOptions) {
         super(options);
     }
 
@@ -364,21 +365,35 @@ function waitForVisible(widget: Widget, visible: boolean, attached?: boolean): P
     });
 }
 
+const pinnedTitles = new Map<Title<Widget>, [boolean, Slot<Widget, void>]>();
+
 export function isPinned(title: Title<Widget>): boolean {
     const pinnedState = !title.closable && title.className.includes(PINNED_CLASS);
     return pinnedState;
 }
 
-export function unpin(title: Title<Widget>): void {
-    title.closable = true;
-    title.className = title.className.replace(PINNED_CLASS, '').trim();
-}
-
 export function pin(title: Title<Widget>): void {
+    const l = () => {
+        pinnedTitles.delete(title);
+    };
+    pinnedTitles.set(title, [title.closable, l]);
+    title.owner.disposed.connect(l);
     title.closable = false;
     if (!title.className.includes(PINNED_CLASS)) {
         title.className += ` ${PINNED_CLASS}`;
     }
+}
+
+export function unpin(title: Title<Widget>): void {
+    const entry = pinnedTitles.get(title);
+    if (entry) {
+        title.owner.disposed.disconnect(entry[1]);
+        title.closable = entry[0];
+        pinnedTitles.delete(title);
+    } else {
+        title.closable = true;
+    }
+    title.className = title.className.replace(PINNED_CLASS, '').trim();
 }
 
 export function isLocked(title: Title<Widget>): boolean {

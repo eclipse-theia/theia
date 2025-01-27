@@ -155,6 +155,10 @@ export class TerminalProcess extends Process {
         // node-pty actually wait for the underlying streams to be closed before emitting exit.
         // We should emulate the `exit` and `close` sequence.
         terminal.onExit(({ exitCode, signal }) => {
+            // see https://github.com/microsoft/node-pty/issues/751
+            if (exitCode === undefined) {
+                exitCode = 0;
+            }
             // Make sure to only pass either code or signal as !undefined, not
             // both.
             //

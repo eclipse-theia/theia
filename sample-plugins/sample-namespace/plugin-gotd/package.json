@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "plugin-gotd",
-  "version": "1.54.0",
+  "version": "1.57.0",
   "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
   "repository": {
     "type": "git",
@@ -15,11 +15,10 @@
     "*"
   ],
   "devDependencies": {
-    "@theia/api-provider-sample": "1.54.0"
+    "@theia/api-provider-sample": "1.57.0"
   },
   "scripts": {
-    "prepare": "yarn -s package",
-    "package": "yarn pack"
+    "build": "npm pack"
   },
   "theiaPlugin": {
     "headless": "headless"

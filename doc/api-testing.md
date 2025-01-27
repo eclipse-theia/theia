@@ -17,12 +17,14 @@ miss actual issues.
 
 Theia comes with own integration testing framework which is designed
 to overcome the shortcomings of the conventional approach:
+
 - tests are written against the application APIs
 ensuring that completeness and timing of APIs are tested;
 - tests are executed within the application process
 ensuring their speed and robustness.
 
 ## Testing principles
+
 - **Information Hiding**: API should provide the application object model
 hiding DOM/CSS implementation details behind.
 Test against the application API, not implementation details, like DOM/CSS.
@@ -98,6 +100,7 @@ describe('Editors', function () {
 ### Writing a test
 
 An example of the complete test suite can be found below. You can see how it follows design principles:
+
 - **Information Hiding**: the object model (EditorManager) is provided to access editors, no DOM/CSS are used.
 - **Completeness**: API provides a way to access existing editors and open new editors,
 there are also events notifying when a new editor get created or closed. More tests can be added to test it.
@@ -152,7 +155,7 @@ Commands below should be executed from `examples/browser`.
 
 To run tests once:
 
-    yarn test
+    npm run test
 
 This command starts the browser example application and runs tests from `examples/api-tests` against it.
 
@@ -160,7 +163,7 @@ This command starts the browser example application and runs tests from `example
 
 To inspect tests:
 
-    yarn test:debug
+    npm run test:debug
 
 This command runs tests but as well
 opens the Chrome devtools that you can debug the frontend code and test files.
@@ -170,7 +173,7 @@ After doing changes to source code or tests, reload the page to run new code and
 
 To inspect tests and backend code:
 
-    yarn test:debug --inspect
+    npm run test:debug --inspect
 
 Use the debug view to attach to the backend server for debugging as usual.
 

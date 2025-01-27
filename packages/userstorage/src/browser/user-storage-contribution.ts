@@ -22,6 +22,7 @@ import { FileSystemProvider } from '@theia/filesystem/lib/common/files';
 import { FileService, FileServiceContribution } from '@theia/filesystem/lib/browser/file-service';
 import { DelegatingFileSystemProvider } from '@theia/filesystem/lib/common/delegating-file-system-provider';
 import { UserStorageUri } from './user-storage-uri';
+import { MaybePromise } from '@theia/core';
 
 @injectable()
 export class UserStorageContribution implements FileServiceContribution {
@@ -40,9 +41,17 @@ export class UserStorageContribution implements FileServiceContribution {
         });
     }
 
+    protected getDelegate(service: FileService): MaybePromise<FileSystemProvider> {
+        return service.activateProvider('file');
+    }
+
+    protected async getCongigDirUri(): Promise<URI> {
+        return new URI(await this.environments.getConfigDirUri());
+    }
+
     protected async createProvider(service: FileService): Promise<FileSystemProvider> {
-        const delegate = await service.activateProvider('file');
-        const configDirUri = new URI(await this.environments.getConfigDirUri());
+        const delegate = await this.getDelegate(service);
+        const configDirUri = await this.getCongigDirUri();
         return new DelegatingFileSystemProvider(delegate, {
             uriConverter: {
                 to: resource => {

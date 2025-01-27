@@ -1,6 +1,6 @@
 {
   "name": "@theia/native-webpack-plugin",
-  "version": "1.54.0",
+  "version": "1.57.0",
   "description": "Webpack Plugin for native dependencies of Theia.",
   "publishConfig": {
     "access": "public"
@@ -29,6 +29,7 @@
     "watch": "theiaext watch"
   },
   "dependencies": {
+    "detect-libc": "^2.0.2",
     "tslib": "^2.6.2",
     "webpack": "^5.76.0"
   }
