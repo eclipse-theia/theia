@@ -16,7 +16,7 @@
 
 import * as theia from '@theia/plugin';
 import { interfaces, injectable } from '@theia/core/shared/inversify';
-import { WorkspaceExt, StorageExt, MAIN_RPC_CONTEXT, WorkspaceMain, WorkspaceFolderPickOptionsMain } from '../../common/plugin-api-rpc';
+import { WorkspaceExt, StorageExt, MAIN_RPC_CONTEXT, WorkspaceMain, WorkspaceFolderPickOptionsMain, FindFilesOptions } from '../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { URI as Uri } from '@theia/core/shared/vscode-uri';
 import { UriComponents } from '../../common/uri-components';
@@ -169,8 +169,7 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
         });
     }
 
-    async $startFileSearch(includePattern: string, includeFolderUri: string | undefined, excludePatternOrDisregardExcludes?: string | false,
-        maxResults?: number): Promise<UriComponents[]> {
+    async $startFileSearch(includePattern: string, includeFolderUri: string | undefined, options: FindFilesOptions): Promise<UriComponents[]> {
         const roots: FileSearchService.RootOptions = {};
         const rootUris = includeFolderUri ? [includeFolderUri] : this.roots;
         for (const rootUri of rootUris) {
@@ -178,15 +177,16 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
         }
         const opts: FileSearchService.Options = {
             rootOptions: roots,
-            useGitIgnore: excludePatternOrDisregardExcludes !== false
+            fuzzyMatch: options.fuzzy,
+            useGitIgnore: options.useIgnoreFiles
         };
         if (includePattern) {
             opts.includePatterns = [includePattern];
         }
-        if (typeof excludePatternOrDisregardExcludes === 'string') {
-            opts.excludePatterns = [excludePatternOrDisregardExcludes];
+        if (options.exclude) {
+            opts.excludePatterns = [options.exclude];
         }
-        if (excludePatternOrDisregardExcludes !== false) {
+        if (options.useDefaultExcludes) {
             for (const rootUri of rootUris) {
                 const filesExclude = this.fsPreferences.get('files.exclude', undefined, rootUri);
                 if (filesExclude) {
@@ -201,8 +201,8 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
                 }
             }
         }
-        if (typeof maxResults === 'number') {
-            opts.limit = maxResults;
+        if (typeof options.maxResults === 'number') {
+            opts.limit = options.maxResults;
         }
         const uriStrs = await this.fileSearchService.find('', opts);
         return uriStrs.map(uriStr => Uri.parse(uriStr));
