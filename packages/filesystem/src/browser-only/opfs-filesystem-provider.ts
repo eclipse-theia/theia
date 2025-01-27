@@ -143,6 +143,7 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
             throw toFileSystemProviderError(error, true);
         }
     }
+
     async delete(resource: URI, _opts: FileDeleteOptions): Promise<void> {
         await this.initialized;
         try {
@@ -159,6 +160,7 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
             this.onDidChangeFileEmitter.fire([{ resource, type: FileChangeType.DELETED }]);
         }
     }
+
     async rename(from: URI, to: URI, opts: FileOverwriteOptions): Promise<void> {
         await this.initialized;
 
@@ -184,6 +186,7 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
             throw toFileSystemProviderError(error);
         }
     }
+
     async readFile(resource: URI): Promise<Uint8Array> {
         await this.initialized;
 
@@ -201,6 +204,7 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
             throw toFileSystemProviderError(error, false);
         }
     }
+
     async writeFile(resource: URI, content: Uint8Array, opts: FileWriteOptions): Promise<void> {
         await this.initialized;
         let writeableHandle: FileSystemWritableFileStream | undefined = undefined;

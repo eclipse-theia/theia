@@ -32,7 +32,6 @@ export class FrontendHostedPluginServer implements HostedPluginServer, RpcConnec
     protected readonly options: PluginLocalOptions;
 
     async getDeployedPluginIds(): Promise<PluginIdentifiers.VersionedId[]> {
-        console.log('getDeployedPluginIds');
         // Use the plugin metadata to build the correct plugin id
         return this.options.pluginMetadata.map(p => PluginIdentifiers.componentsToVersionedId(p.metadata.model));
     }
@@ -41,7 +40,6 @@ export class FrontendHostedPluginServer implements HostedPluginServer, RpcConnec
 
     }
     async getDeployedPlugins(params: GetDeployedPluginsParams): Promise<DeployedPlugin[]> {
-        console.log('getDeployedPlugins');
         return this.options.pluginMetadata.filter(p => params.pluginIds.includes(PluginIdentifiers.componentsToVersionedId(p.metadata.model)));
     }
 
