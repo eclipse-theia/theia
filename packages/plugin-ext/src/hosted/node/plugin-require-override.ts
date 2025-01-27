@@ -35,11 +35,19 @@ export function overridePluginDependencies(): void {
     const node_module = require('module');
     const original = node_module._load;
     node_module._load = function (request: string): unknown {
-        for (const filter of overrides) {
-            if (request === filter.package || request.endsWith(`node_modules/${filter.package}`) || request.endsWith(`node_modules\\${filter.package}`)) {
-                return filter.module;
+        try {
+            // Attempt to load the original module
+            // In some cases VS Code extensions will come with their own `node_modules` folder
+            return original.apply(this, arguments);
+        } catch (e) {
+            // If the `require` call failed, attempt to load the module from the overrides
+            for (const filter of overrides) {
+                if (request === filter.package || request.endsWith(`node_modules/${filter.package}`) || request.endsWith(`node_modules\\${filter.package}`)) {
+                    return filter.module;
+                }
             }
+            // If no override was found, rethrow the error
+            throw e;
         }
-        return original.apply(this, arguments);
     };
 }
