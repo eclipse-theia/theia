@@ -17,7 +17,7 @@
 import { injectable } from '@theia/core/shared/inversify';
 import { TerminalService } from '../browser/base/terminal-service';
 import { Event, Emitter } from '@theia/core';
-import { WidgetOpenerOptions } from '@theia/core/src/browser';
+import { WidgetOpenerOptions } from '@theia/core/lib/browser';
 import { TerminalWidgetOptions, TerminalWidget } from '../browser/base/terminal-widget';
 
 @injectable()
@@ -52,11 +52,11 @@ export class TerminalFrontendOnlyContribution implements TerminalService {
     }
 
     getById(id: string): TerminalWidget | undefined {
-        return undefined
+        return undefined;
     }
 
     getByTerminalId(terminalId: number): TerminalWidget | undefined {
-        return undefined
+        return undefined;
     }
 
     async getDefaultShell(): Promise<string> {
