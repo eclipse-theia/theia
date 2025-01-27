@@ -366,7 +366,7 @@ const languageModelOutputHandler = (
                     'Sending request:'
                 );
                 const formattedRequest = formatJsonWithIndentation(args[0]);
-                formattedRequest.forEach(line => outputChannel.appendLine(line));
+                outputChannel.append(formattedRequest.join('\n'));
                 if (args[1]) {
                     args[1] = new Proxy(args[1], {
                         get<CK extends keyof CancellationToken>(

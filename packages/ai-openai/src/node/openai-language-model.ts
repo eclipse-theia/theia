@@ -66,7 +66,7 @@ export class OpenAiModel implements LanguageModel {
         const settings = this.getSettings(request);
         const openai = this.initializeOpenAi();
 
-        if (this.isNonStreamingModel(this.model)) {
+        if (this.isNonStreamingModel(this.model) || (typeof settings.stream === 'boolean' && !settings.stream)) {
             return this.handleNonStreamingRequest(openai, request);
         }
 
