@@ -77,7 +77,7 @@
   "scripts": {
     "prepare:no-native": "lerna run prepare --scope=\"@theia/re-exports\" && lerna run generate-theia-re-exports --scope=\"@theia/core\"",
     "clean": "theia clean",
-    "build": "theiaext build && yarn package:plugins && npm run -s bundle",
+    "build": "theiaext build && npm run package:plugins && npm run -s bundle",
     "bundle": "theia build --mode development",
     "download:plugins": "theia download:plugins",
     "package:plugins": "node ./prepare-plugins.js",
