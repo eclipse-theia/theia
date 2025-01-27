@@ -22,6 +22,7 @@ import { FrontendApplicationContribution, KeybindingContribution, PreferenceCont
 import { Agent } from '@theia/ai-core';
 import { AICodeCompletionPreferencesSchema } from './ai-code-completion-preference';
 import { AICodeInlineCompletionsProvider } from './ai-code-inline-completion-provider';
+import { CodeCompletionPostProcessor, DefaultCodeCompletionPostProcessor } from './code-completion-postprocessor';
 
 export default new ContainerModule(bind => {
     bind(ILogger).toDynamicValue(ctx => {
@@ -36,4 +37,5 @@ export default new ContainerModule(bind => {
     bind(FrontendApplicationContribution).to(AIFrontendApplicationContribution);
     bind(KeybindingContribution).toService(AIFrontendApplicationContribution);
     bind(PreferenceContribution).toConstantValue({ schema: AICodeCompletionPreferencesSchema });
+    bind(CodeCompletionPostProcessor).to(DefaultCodeCompletionPostProcessor).inSingletonScope();
 });

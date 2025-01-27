@@ -23,6 +23,7 @@ import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
 import { PREF_AI_INLINE_COMPLETION_MAX_CONTEXT_LINES } from './ai-code-completion-preference';
 import { PreferenceService } from '@theia/core/lib/browser';
+import { CodeCompletionPostProcessor } from './code-completion-postprocessor';
 
 export const CodeCompletionAgent = Symbol('CodeCompletionAgent');
 export interface CodeCompletionAgent extends Agent {
@@ -142,8 +143,10 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
                 response: completionText,
             });
 
+            const postProcessedCompletionText = this.postProcessor.postProcess(completionText);
+
             return {
-                items: [{ insertText: completionText }],
+                items: [{ insertText: postProcessedCompletionText }],
                 enableForwardStability: true,
             };
         } catch (e) {
@@ -175,6 +178,9 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
     @inject(PreferenceService)
     protected preferences: PreferenceService;
 
+    @inject(CodeCompletionPostProcessor)
+    protected postProcessor: CodeCompletionPostProcessor;
+
     id = 'Code Completion';
     name = 'Code Completion';
     description =
@@ -190,7 +196,23 @@ Finish the following code snippet.
 
 {{prefix}}[[MARKER]]{{suffix}}
 
-Only return the exact replacement for [[MARKER]] to complete the snippet.`,
+Only return the exact replacement for [[MARKER]] to complete the snippet.`
+        },
+        {
+            id: 'code-completion-prompt-next',
+            variantOf: 'code-completion-prompt',
+            template: `{{!-- Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
+https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
+## Code snippet
+\`\`\`
+{{ prefix }}[[MARKER]]{{ suffix }}
+\`\`\`
+
+## Meta Data
+- File: {{file}}
+- Language: {{language}}
+
+Replace [[MARKER]] with the exact code to complete the code snippet. Return only the replacement of [[MAKRER]] as plain text.`,
         },
     ];
     languageModelRequirements: LanguageModelRequirement[] = [
