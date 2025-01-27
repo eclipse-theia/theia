@@ -3,7 +3,7 @@ module.exports = {
     extends: [
         '../../configs/build.eslintrc.json'
     ],
-    ignores: [
+    ignorePatterns: [
         "./src/browser-only/plugin-sample/example-static-plugin-metadata.ts" // Ignoring this file as it only contains static metadata
     ],
     parserOptions: {
