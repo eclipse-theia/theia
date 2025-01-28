@@ -423,7 +423,7 @@ const ChangeSetBox: React.FunctionComponent<{ changeSet: ChangeSetUI }> = ({ cha
         <div className='theia-ChatInput-ChangeSet-List'>
             <ul>
                 {changeSet.elements.map((element, index) => (
-                    <li key={index} onClick={() => element.open?.()}>
+                    <li key={index} title='Open Diff' onClick={() => element.openChange?.()}>
                         <div className={`theia-ChatInput-ChangeSet-Icon ${element.iconClass}`} />
                         <span className={`theia-ChatInput-ChangeSet-title ${element.nameClass}`}>
                             {element.name}
@@ -432,7 +432,7 @@ const ChangeSetBox: React.FunctionComponent<{ changeSet: ChangeSetUI }> = ({ cha
                             {element.additionalInfo}
                         </span>
                         <div className='theia-ChatInput-ChangeSet-Actions'>
-                            {element.openChange && (<span className='codicon codicon-diff-single action' title='Open Diff' onClick={noPropagation(() => element.openChange!())} />)}
+                            {element.open && (<span className='codicon codicon-file action' title='Open Original File' onClick={noPropagation(() => element.open!())} />)}
                             {element.discard && (<span className='codicon codicon-discard action' title='Undo' onClick={noPropagation(() => element.discard!())} />)}
                             {element.accept && (<span className='codicon codicon-check action' title='Accept' onClick={noPropagation(() => element.accept!())} />)}
                             <span className='codicon codicon-close action' title='Delete' onClick={noPropagation(() => element.delete())} />
