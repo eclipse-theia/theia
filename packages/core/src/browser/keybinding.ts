@@ -267,6 +267,8 @@ export class KeybindingRegistry {
      */
     resolveKeybinding(binding: ResolvedKeybinding): KeyCode[] {
         if (!binding.resolved) {
+            console.log(`JF: resolveKeybinding: binding.command: ${binding.command}`);
+            console.log(`JF: resolveKeybinding: binding: ${JSON.stringify(binding)}`);
             const sequence = KeySequence.parse(binding.keybinding);
             binding.resolved = sequence.map(code => this.keyboardLayoutService.resolveKeyCode(code));
         }
@@ -590,6 +592,17 @@ export class KeybindingRegistry {
             return;
         }
 
+        console.log(`JF: keybindings#run: event: ${JSON.stringify({
+            key: event.key,
+            code: event.code,
+            altKey: event.altKey,
+            ctrlKey: event.ctrlKey,
+            shiftKey: event.shiftKey,
+            metaKey: event.metaKey,
+            altGraph: event.getModifierState && event.getModifierState('AltGraph'),
+            location: event.location // 1 = left, 2 = right, etc.
+        })}`);
+        console.log(`JF: keybindings#run: keyCode: ${JSON.stringify(keyCode)}`);
         this.keyboardLayoutService.validateKeyCode(keyCode);
         this.keySequence.push(keyCode);
         const match = this.matchKeybinding(this.keySequence, event);
@@ -606,6 +619,7 @@ export class KeybindingRegistry {
             });
         } else {
             if (match && match.kind === 'full') {
+                console.log(`JF: keybindings#run: execute ${match.binding.command}`);
                 this.executeKeyBinding(match.binding, event);
             }
             this.keySequence = [];
@@ -640,6 +654,11 @@ export class KeybindingRegistry {
         for (let scope = KeybindingScope.END; --scope >= KeybindingScope.DEFAULT;) {
             for (const binding of this.keymaps[scope]) {
                 const resolved = this.resolveKeybinding(binding);
+                if (binding.command === 'workbench.action.showCommands') {
+                    for (let i = 0; i < resolved.length; i++) {
+                        console.log(`JF: matchKeybinding: showCommands: resolved[${i}]: ${JSON.stringify(resolved[i])}`);
+                    }
+                }
                 const compareResult = KeySequence.compare(keySequence, resolved);
                 if (compareResult === KeySequence.CompareResult.FULL && isEnabled(binding)) {
                     return { kind: 'full', binding };

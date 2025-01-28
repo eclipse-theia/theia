@@ -75,13 +75,17 @@ export class KeyboardLayoutService {
      * key used in the KeyCode, the KeyCode is returned unchanged.
      */
     resolveKeyCode(inCode: KeyCode): KeyCode {
+        console.log('JF: ~~~');
+        console.log(`JF: resolveKeyCode: inCode: ${JSON.stringify(inCode)}`);
         const layout = this.currentLayout;
         if (layout && inCode.key) {
             for (let shift = 0; shift <= 1; shift++) {
                 const index = this.getCharacterIndex(inCode.key, !!shift);
                 const mappedCode = layout.key2KeyCode[index];
+                console.log(`JF: resolveKeyCode: mappedCode: ${mappedCode ? JSON.stringify(mappedCode) : 'undefined'}`);
                 if (mappedCode) {
                     const transformed = this.transformKeyCode(inCode, mappedCode, !!shift);
+                    console.log(`JF: resolveKeyCode: transformed: ${transformed ? JSON.stringify(transformed) : 'undefined'}`);
                     if (transformed) {
                         return transformed;
                     }

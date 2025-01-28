@@ -256,6 +256,9 @@ export class KeyCode {
      * @param keybinding String representation of a keybinding
      */
     public static parse(keybinding: string): KeyCode {
+        if (keybinding === '[') {
+            console.log('JF');
+        }
         if (KeyCode.keybindings[keybinding]) {
             return KeyCode.keybindings[keybinding];
         }
