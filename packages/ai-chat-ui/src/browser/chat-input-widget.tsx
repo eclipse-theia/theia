@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { ChangeSet, ChangeSetElement, ChatChangeEvent, ChatModel, ChatRequestModel } from '@theia/ai-chat';
+import { ChangeSet, ChangeSetElement, ChatAgent, ChatChangeEvent, ChatModel, ChatRequestModel } from '@theia/ai-chat';
 import { Disposable, UntitledResourceResolver } from '@theia/core';
 import { ContextMenuRenderer, LabelProvider, Message, ReactWidget } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -149,11 +149,11 @@ export class AIChatInputWidget extends ReactWidget {
 interface ChatInputProperties {
     onCancel: (requestModel: ChatRequestModel) => void;
     onQuery: (query: string) => void;
-    onUnpin: () => void;  
+    onUnpin: () => void;
     onDeleteChangeSet: (sessionId: string) => void;
     onDeleteChangeSetElement: (sessionId: string, index: number) => void;
     isEnabled?: boolean;
-    chatModel: ChatModel;  
+    chatModel: ChatModel;
     pinnedAgent?: ChatAgent;
     editorProvider: MonacoEditorProvider;
     untitledResourceResolver: UntitledResourceResolver;
@@ -336,7 +336,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     const handleUnpin = () => {
         props.onUnpin();
     };
- 
+
     const leftOptions = props.showContext ? [{
         title: 'Attach elements to context',
         handler: () => { /* TODO */ },
