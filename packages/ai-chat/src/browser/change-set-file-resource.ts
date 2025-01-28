@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Resource, ResourceResolver, URI } from '@theia/core';
+import { Resource, ResourceResolver, ResourceSaveOptions, URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatService } from '../common';
 import { ChangeSetFileElement } from './change-set-file-element';
@@ -60,8 +60,12 @@ export class ChangeSetFileResourceResolver implements ResourceResolver {
 
         return {
             uri,
-            readOnly: true,
+            readOnly: false,
+            initiallyDirty: true,
             readContents: async () => element.targetState ?? '',
+            saveContents: async (content: string, options?: ResourceSaveOptions): Promise<void> => {
+                element.accept();
+            },
             dispose: () => { }
         };
     }

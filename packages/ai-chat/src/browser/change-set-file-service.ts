@@ -112,7 +112,7 @@ export class ChangeSetFileService {
         // Currently we don't have a great way to show the suggestions in a diff editor with accept/reject buttons
         // So we just use plain diffs with the suggestions as original and the current state as modified, so users can apply changes in their current state
         // But this leads to wrong colors and wrong label (revert change instead of accept change)
-        const diffUri = DiffUris.encode(suggestedUri, openedUri,
+        const diffUri = DiffUris.encode(openedUri, suggestedUri,
             `AI Changes: ${this.labelProvider.getName(originalUri)}`,
         );
         open(this.openerService, diffUri);
@@ -139,7 +139,7 @@ export class ChangeSetFileService {
             await this.monacoWorkspace.applyBackgroundEdit(document, [{
                 range: document.textEditorModel.getFullModelRange(),
                 text
-            }], true);
+            }], (editor, wasDirty) => editor === undefined || !wasDirty);
         } else {
             await this.fileService.write(uri, text);
         }
