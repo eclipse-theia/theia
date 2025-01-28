@@ -19,7 +19,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { FILE_CONTENT_FUNCTION_ID, GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID, GET_WORKSPACE_FILE_LIST_FUNCTION_ID } from '../common/functions';
+import { FILE_CONTENT_FUNCTION_ID, GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID, GET_WORKSPACE_FILE_LIST_FUNCTION_ID } from '../common/workspace-functions';
 import ignore from 'ignore';
 import { Minimatch } from 'minimatch';
 import { PreferenceService } from '@theia/core/lib/browser';
@@ -53,6 +53,11 @@ export class WorkspaceFunctionScope {
         if (!targetUri.toString().startsWith(workspaceRootUri.toString())) {
             throw new Error('Access outside of the workspace is not allowed');
         }
+    }
+
+    async resolveRelativePath(relativePath: string): Promise<URI> {
+        const workspaceRoot = await this.getWorkspaceRoot();
+        return workspaceRoot.resolve(relativePath);
     }
 
     private async initializeGitignoreWatcher(workspaceRoot: URI): Promise<void> {
@@ -186,7 +191,8 @@ export class FileContentFunction implements ToolProvider {
                         description: `Return the content of a specified file within the workspace. The file path must be provided relative to the workspace root. Only files within
                          workspace boundaries are accessible; attempting to access files outside the workspace will return an error.`,
                     }
-                }
+                },
+                required: ['file']
             },
             handler: (arg_string: string) => {
                 const file = this.parseArg(arg_string);
@@ -249,7 +255,8 @@ export class GetWorkspaceFileList implements ToolProvider {
                         description: `Optional relative path to a directory within the workspace. If no path is specified, the function lists contents directly in the workspace
                          root. Paths are resolved within workspace boundaries only; paths outside the workspace or unvalidated paths will result in an error.`
                     }
-                }
+                },
+                required: ['path']
             },
             description: `List files and directories within a specified workspace directory. Paths are relative to the workspace root, and only workspace-contained paths are
              allowed. If no path is provided, the root contents are listed. Paths outside the workspace will result in an error.`,

@@ -24,30 +24,12 @@ import {
     LanguageModelTextResponse
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
-import OpenAI from 'openai';
+import { OpenAI, AzureOpenAI } from 'openai';
 import { ChatCompletionStream } from 'openai/lib/ChatCompletionStream';
 import { RunnableToolFunctionWithoutParse } from 'openai/lib/RunnableFunction';
 import { ChatCompletionMessageParam } from 'openai/resources';
 
 export const OpenAiModelIdentifier = Symbol('OpenAiModelIdentifier');
-
-function toOpenAIMessage(message: LanguageModelRequestMessage): ChatCompletionMessageParam {
-    return {
-        role: toOpenAiRole(message),
-        content: message.query || ''
-    };
-}
-
-function toOpenAiRole(message: LanguageModelRequestMessage): 'system' | 'user' | 'assistant' {
-    switch (message.actor) {
-        case 'system':
-            return 'system';
-        case 'ai':
-            return 'assistant';
-        default:
-            return 'user';
-    }
-}
 
 export class OpenAiModel implements LanguageModel {
 
@@ -56,6 +38,8 @@ export class OpenAiModel implements LanguageModel {
      * @param model the model id as it is used by the OpenAI API
      * @param enableStreaming whether the streaming API shall be used
      * @param apiKey a function that returns the API key to use for this model, called on each request
+     * @param apiVersion a function that returns the OpenAPI version to use for this model, called on each request
+     * @param supportsDeveloperMessage whether the model supports the `developer` role
      * @param url the OpenAI API compatible endpoint where the model is hosted. If not provided the default OpenAI endpoint will be used.
      * @param defaultRequestSettings optional default settings for requests made using this model.
      */
@@ -64,6 +48,8 @@ export class OpenAiModel implements LanguageModel {
         public model: string,
         public enableStreaming: boolean,
         public apiKey: () => string | undefined,
+        public apiVersion: () => string | undefined,
+        public supportsDeveloperMessage: boolean,
         public url: string | undefined,
         public defaultRequestSettings?: { [key: string]: unknown }
     ) { }
@@ -80,12 +66,15 @@ export class OpenAiModel implements LanguageModel {
         const settings = this.getSettings(request);
         const openai = this.initializeOpenAi();
 
-        if (this.isNonStreamingModel(this.model)) {
+        if (this.isNonStreamingModel(this.model) || (typeof settings.stream === 'boolean' && !settings.stream)) {
             return this.handleNonStreamingRequest(openai, request);
         }
 
         if (request.response_format?.type === 'json_schema' && this.supportsStructuredOutput()) {
             return this.handleStructuredOutputRequest(openai, request);
+        }
+        if (cancellationToken?.isCancellationRequested) {
+            return { text: '' };
         }
 
         let runner: ChatCompletionStream;
@@ -93,7 +82,7 @@ export class OpenAiModel implements LanguageModel {
         if (tools) {
             runner = openai.beta.chat.completions.runTools({
                 model: this.model,
-                messages: request.messages.map(toOpenAIMessage),
+                messages: request.messages.map(this.toOpenAIMessage.bind(this)),
                 stream: true,
                 tools: tools,
                 tool_choice: 'auto',
@@ -102,7 +91,7 @@ export class OpenAiModel implements LanguageModel {
         } else {
             runner = openai.beta.chat.completions.stream({
                 model: this.model,
-                messages: request.messages.map(toOpenAIMessage),
+                messages: request.messages.map(this.toOpenAIMessage.bind(this)),
                 stream: true,
                 ...settings
             });
@@ -113,42 +102,57 @@ export class OpenAiModel implements LanguageModel {
 
         let runnerEnd = false;
 
-        let resolve: (part: LanguageModelStreamResponsePart) => void;
+        let resolve: ((part: LanguageModelStreamResponsePart) => void) | undefined;
         runner.on('error', error => {
             console.error('Error in OpenAI chat completion stream:', error);
             runnerEnd = true;
-            resolve({ content: error.message });
+            resolve?.({ content: error.message });
         });
         // we need to also listen for the emitted errors, as otherwise any error actually thrown by the API will not be caught
         runner.emitted('error').then(error => {
             console.error('Error in OpenAI chat completion stream:', error);
             runnerEnd = true;
-            resolve({ content: error.message });
+            resolve?.({ content: error.message });
         });
         runner.emitted('abort').then(() => {
-            // do nothing, as the abort event is only emitted when the runner is aborted by us
+            // cancel async iterator
+            runnerEnd = true;
         });
         runner.on('message', message => {
             if (message.role === 'tool') {
-                resolve({ tool_calls: [{ id: message.tool_call_id, finished: true, result: this.getCompletionContent(message) }] });
+                resolve?.({ tool_calls: [{ id: message.tool_call_id, finished: true, result: this.getCompletionContent(message) }] });
             }
             console.debug('Received Open AI message', JSON.stringify(message));
         });
         runner.once('end', () => {
             runnerEnd = true;
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            resolve(runner.finalChatCompletion as any);
+            resolve?.(runner.finalChatCompletion as any);
         });
+        if (cancellationToken?.isCancellationRequested) {
+            return { text: '' };
+        }
         const asyncIterator = {
             async *[Symbol.asyncIterator](): AsyncIterator<LanguageModelStreamResponsePart> {
                 runner.on('chunk', chunk => {
-                    if (chunk.choices[0]?.delta) {
+                    if (cancellationToken?.isCancellationRequested) {
+                        resolve = undefined;
+                        return;
+                    }
+                    if (resolve && chunk.choices[0]?.delta) {
                         resolve({ ...chunk.choices[0]?.delta });
                     }
                 });
                 while (!runnerEnd) {
+                    if (cancellationToken?.isCancellationRequested) {
+                        throw new Error('Iterator canceled');
+                    }
                     const promise = new Promise<LanguageModelStreamResponsePart>((res, rej) => {
                         resolve = res;
+                        cancellationToken?.onCancellationRequested(() => {
+                            rej(new Error('Canceled'));
+                            runnerEnd = true; // Stop the iterator
+                        });
                     });
                     yield promise;
                 }
@@ -161,7 +165,7 @@ export class OpenAiModel implements LanguageModel {
         const settings = this.getSettings(request);
         const response = await openai.chat.completions.create({
             model: this.model,
-            messages: request.messages.map(toOpenAIMessage),
+            messages: request.messages.map(this.toOpenAIMessage.bind(this)),
             ...settings
         });
 
@@ -170,6 +174,24 @@ export class OpenAiModel implements LanguageModel {
         return {
             text: message.content ?? ''
         };
+    }
+
+    protected toOpenAIMessage(message: LanguageModelRequestMessage): ChatCompletionMessageParam {
+        return {
+            role: this.toOpenAiRole(message),
+            content: message.query || ''
+        };
+    }
+
+    protected toOpenAiRole(message: LanguageModelRequestMessage): 'developer' | 'user' | 'assistant' {
+        switch (message.actor) {
+            case 'system':
+                return this.supportsDeveloperMessage ? 'developer' : 'user';
+            case 'ai':
+                return 'assistant';
+            default:
+                return 'user';
+        }
     }
 
     protected isNonStreamingModel(_model: string): boolean {
@@ -190,7 +212,7 @@ export class OpenAiModel implements LanguageModel {
         // TODO implement tool support for structured output (parse() seems to require different tool format)
         const result = await openai.beta.chat.completions.parse({
             model: this.model,
-            messages: request.messages.map(toOpenAIMessage),
+            messages: request.messages.map(this.toOpenAIMessage.bind(this)),
             response_format: request.response_format,
             ...settings
         });
@@ -228,7 +250,14 @@ export class OpenAiModel implements LanguageModel {
         if (!apiKey && !(this.url)) {
             throw new Error('Please provide OPENAI_API_KEY in preferences or via environment variable');
         }
-        // We need to hand over "some" key, even if a custom url is not key protected as otherwise the OpenAI client will throw an error
-        return new OpenAI({ apiKey: apiKey ?? 'no-key', baseURL: this.url });
+
+        const apiVersion = this.apiVersion();
+        if (apiVersion) {
+            // We need to hand over "some" key, even if a custom url is not key protected as otherwise the OpenAI client will throw an error
+            return new AzureOpenAI({ apiKey: apiKey ?? 'no-key', baseURL: this.url, apiVersion: apiVersion });
+        } else {
+            // We need to hand over "some" key, even if a custom url is not key protected as otherwise the OpenAI client will throw an error
+            return new OpenAI({ apiKey: apiKey ?? 'no-key', baseURL: this.url });
+        }
     }
 }

@@ -8,7 +8,7 @@
     "@theia/workspace": "1.57.0",
     "minimatch": "^5.1.0",
     "tslib": "^2.6.2",
-    "openai": "^4.55.7",
+    "openai": "^4.77.0",
     "@theia/ai-core": "1.57.0"
   },
   "publishConfig": {

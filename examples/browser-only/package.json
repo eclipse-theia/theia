@@ -72,13 +72,13 @@
   "scripts": {
     "prepare:no-native": "lerna run prepare --scope=\"@theia/re-exports\" && lerna run generate-theia-re-exports --scope=\"@theia/core\"",
     "clean": "theia clean",
-    "build": "yarn -s compile && yarn -s bundle",
+    "build": "theiaext build && npm run -s bundle",
     "bundle": "theia build --mode development",
-    "compile": "tsc -b",
+    "compile": "theiaext compile",
     "start": "theia start",
-    "start:debug": "yarn -s start --log-level=debug",
-    "start:watch": "concurrently --kill-others -n tsc,bundle,run -c red,yellow,green \"tsc -b -w --preserveWatchOutput\" \"yarn -s watch:bundle\" \"yarn -s start\"",
-    "watch": "concurrently --kill-others -n tsc,bundle -c red,yellow \"tsc -b -w --preserveWatchOutput\" \"yarn -s watch:bundle\"",
+    "start:debug": "npm run -s start --log-level=debug",
+    "start:watch": "concurrently --kill-others -n tsc,bundle,run -c red,yellow,green \"tsc -b -w --preserveWatchOutput\" \"npm run -s watch:bundle\" \"npm run -s start\"",
+    "watch": "concurrently --kill-others -n tsc,bundle -c red,yellow \"tsc -b -w --preserveWatchOutput\" \"npm run -s watch:bundle\"",
     "watch:bundle": "theia build --watch --mode development",
     "watch:compile": "tsc -b -w"
   },

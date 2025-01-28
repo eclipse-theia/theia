@@ -93,8 +93,20 @@ export class ScanOSSServiceImpl implements ScanOSSService {
         // eslint-disable-next-line no-null/no-null
         console.log('SCANOSS results', JSON.stringify(results, null, 2));
 
+        let contentScanning: ScannerComponent[] | undefined = results['/content_scanning'];
+        if (!contentScanning) {
+            // #14648: The scanoss library prefixes the property with the path of a temporary file on Windows, so we need to search for it
+            contentScanning = Object.entries(results).find(([key]) => key.endsWith('content_scanning'))?.[1];
+        }
+        if (!contentScanning || contentScanning.length === 0) {
+            return {
+                type: 'error',
+                message: 'Scan request unsuccessful'
+            };
+        }
+
         // first result is the best result
-        const firstEntry = results['/content_scanning'][0];
+        const firstEntry = contentScanning[0];
         if (firstEntry.id === 'none') {
             return {
                 type: 'clean'

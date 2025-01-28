@@ -17,10 +17,7 @@ import { AICommandHandlerFactory } from '@theia/ai-core/lib/browser/ai-command-h
 import { CommandContribution, CommandRegistry, MessageService } from '@theia/core';
 import { QuickInputService } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { MCPServerManager } from '../common/mcp-server-manager';
-import { ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
-
-type MCPTool = Awaited<ReturnType<MCPServerManager['getTools']>>['tools'][number];
+import { MCPFrontendService } from './mcp-frontend-service';
 
 export const StartMCPServer = {
     id: 'mcp.startserver',
@@ -42,11 +39,8 @@ export class MCPCommandContribution implements CommandContribution {
     @inject(MessageService)
     protected messageService: MessageService;
 
-    @inject(MCPServerManager)
-    protected readonly mcpServerManager: MCPServerManager;
-
-    @inject(ToolInvocationRegistry)
-    protected readonly toolInvocationRegistry: ToolInvocationRegistry;
+    @inject(MCPFrontendService)
+    protected readonly mcpFrontendService: MCPFrontendService;
 
     private async getMCPServerSelection(serverNames: string[]): Promise<string | undefined> {
         if (!serverNames || serverNames.length === 0) {
@@ -61,7 +55,7 @@ export class MCPCommandContribution implements CommandContribution {
         commandRegistry.registerCommand(StopMCPServer, this.commandHandlerFactory({
             execute: async () => {
                 try {
-                    const startedServers = await this.mcpServerManager.getStartedServers();
+                    const startedServers = await this.mcpFrontendService.getStartedServers();
                     if (!startedServers || startedServers.length === 0) {
                         this.messageService.error('No MCP servers running.');
                         return;
@@ -70,8 +64,7 @@ export class MCPCommandContribution implements CommandContribution {
                     if (!selection) {
                         return;
                     }
-                    this.toolInvocationRegistry.unregisterAllTools(`mcp_${selection}`);
-                    this.mcpServerManager.stopServer(selection);
+                    await this.mcpFrontendService.stopServer(selection);
                 } catch (error) {
                     console.error('Error while stopping MCP server:', error);
                 }
@@ -81,8 +74,8 @@ export class MCPCommandContribution implements CommandContribution {
         commandRegistry.registerCommand(StartMCPServer, this.commandHandlerFactory({
             execute: async () => {
                 try {
-                    const servers = await this.mcpServerManager.getServerNames();
-                    const startedServers = await this.mcpServerManager.getStartedServers();
+                    const servers = await this.mcpFrontendService.getServerNames();
+                    const startedServers = await this.mcpFrontendService.getStartedServers();
                     const startableServers = servers.filter(server => !startedServers.includes(server));
                     if (!startableServers || startableServers.length === 0) {
                         if (startedServers && startedServers.length > 0) {
@@ -97,13 +90,8 @@ export class MCPCommandContribution implements CommandContribution {
                     if (!selection) {
                         return;
                     }
-                    this.mcpServerManager.startServer(selection);
-                    const { tools } = await this.mcpServerManager.getTools(selection);
-                    const toolRequests: ToolRequest[] = tools.map(tool => this.convertToToolRequest(tool, selection));
-
-                    for (const toolRequest of toolRequests) {
-                        this.toolInvocationRegistry.registerTool(toolRequest);
-                    }
+                    await this.mcpFrontendService.startServer(selection);
+                    const { tools } = await this.mcpFrontendService.getTools(selection);
                     const toolNames = tools.map(tool => tool.name || 'Unnamed Tool').join(', ');
                     this.messageService.info(
                         `MCP server "${selection}" successfully started. Registered tools: ${toolNames || 'No tools available.'}`
@@ -115,28 +103,4 @@ export class MCPCommandContribution implements CommandContribution {
             }
         }));
     }
-
-    convertToToolRequest(tool: MCPTool, serverName: string): ToolRequest {
-        const id = `mcp_${serverName}_${tool.name}`;
-
-        return {
-            id: id,
-            name: id,
-            providerName: `mcp_${serverName}`,
-            parameters: ToolRequest.isToolRequestParameters(tool.inputSchema) ? {
-                type: tool.inputSchema.type,
-                properties: tool.inputSchema.properties,
-            } : undefined,
-            description: tool.description,
-            handler: async (arg_string: string) => {
-                try {
-                    return await this.mcpServerManager.callTool(serverName, tool.name, arg_string);
-                } catch (error) {
-                    console.error(`Error in tool handler for ${tool.name} on MCP server ${serverName}:`, error);
-                    throw error;
-                }
-            },
-        };
-    }
-
 }

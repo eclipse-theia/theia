@@ -22,6 +22,7 @@ import { ContainerOutputProvider } from './container-output-provider';
 import { ContainerInfoContribution } from './container-info-contribution';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { WorkspaceOpenHandlerContribution } from '@theia/workspace/lib/browser/workspace-service';
+import { WindowTitleContribution } from '@theia/core/lib/browser/window/window-title-service';
 
 export default new ContainerModule(bind => {
     bind(ContainerConnectionContribution).toSelf().inSingletonScope();
@@ -37,4 +38,5 @@ export default new ContainerModule(bind => {
 
     bind(ContainerInfoContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(ContainerInfoContribution);
+    bind(WindowTitleContribution).toService(ContainerInfoContribution);
 });

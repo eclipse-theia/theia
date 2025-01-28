@@ -21,6 +21,7 @@ import { FrontendApplicationContribution, PreferenceContribution, RemoteConnecti
 import { MCPServerManager, MCPServerManagerPath } from '../common/mcp-server-manager';
 import { McpServersPreferenceSchema } from './mcp-preferences';
 import { McpFrontendApplicationContribution } from './mcp-frontend-application-contribution';
+import { MCPFrontendService } from './mcp-frontend-service';
 
 export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: McpServersPreferenceSchema });
@@ -30,4 +31,5 @@ export default new ContainerModule(bind => {
         const connection = ctx.container.get<ServiceConnectionProvider>(RemoteConnectionProvider);
         return connection.createProxy<MCPServerManager>(MCPServerManagerPath);
     }).inSingletonScope();
+    bind(MCPFrontendService).toSelf().inSingletonScope();
 });

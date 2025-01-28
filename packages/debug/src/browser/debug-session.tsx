@@ -312,6 +312,16 @@ export class DebugSession implements CompositeTreeElement {
         return currentFrame ? currentFrame.getScopes() : [];
     }
 
+    showMessage(messageType: MessageType, message: string): void {
+        this.messages.showMessage({
+            type: messageType,
+            text: message,
+            options: {
+                timeout: 10000
+            }
+        });
+    }
+
     async start(): Promise<void> {
         await this.initialize();
         await this.launchOrAttach();
@@ -343,13 +353,7 @@ export class DebugSession implements CompositeTreeElement {
         try {
             await this.sendRequest((this.configuration.request as keyof DebugRequestTypes), this.configuration);
         } catch (reason) {
-            this.messages.showMessage({
-                type: MessageType.Error,
-                text: reason.message || 'Debug session initialization failed. See console for details.',
-                options: {
-                    timeout: 10000
-                }
-            });
+            this.showMessage(MessageType.Error, reason.message || 'Debug session initialization failed. See console for details.');
             throw reason;
         }
     }
@@ -373,11 +377,12 @@ export class DebugSession implements CompositeTreeElement {
             }
             this.breakpoints.setExceptionBreakpoints(exceptionBreakpoints);
         }
+        // mark as initialized, so updated breakpoints are shown in editor
+        this.initialized = true;
         await this.updateBreakpoints({ sourceModified: false });
         if (this.capabilities.supportsConfigurationDoneRequest) {
             await this.sendRequest('configurationDone', {});
         }
-        this.initialized = true;
         await this.updateThreads(undefined);
     }
 

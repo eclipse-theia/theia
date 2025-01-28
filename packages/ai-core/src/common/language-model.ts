@@ -35,14 +35,15 @@ export const isLanguageModelRequestMessage = (obj: unknown): obj is LanguageMode
 export type ToolRequestParametersProperties = Record<string, { type: string, [key: string]: unknown }>;
 export interface ToolRequestParameters {
     type?: 'object';
-    properties: ToolRequestParametersProperties
+    properties: ToolRequestParametersProperties;
+    required?: string[];
 }
 export interface ToolRequest {
     id: string;
     name: string;
     parameters?: ToolRequestParameters
     description?: string;
-    handler: (arg_string: string) => Promise<unknown>;
+    handler: (arg_string: string, ctx?: unknown) => Promise<unknown>;
     providerName?: string;
 }
 
@@ -62,7 +63,8 @@ export namespace ToolRequest {
     export function isToolRequestParameters(obj: unknown): obj is ToolRequestParameters {
         return !!obj && typeof obj === 'object' &&
             (!('type' in obj) || obj.type === 'object') &&
-            'properties' in obj && isToolRequestParametersProperties(obj.properties);
+            'properties' in obj && isToolRequestParametersProperties(obj.properties) &&
+            (!('required' in obj) || (Array.isArray(obj.required) && obj.required.every(prop => typeof prop === 'string')));
     }
 }
 

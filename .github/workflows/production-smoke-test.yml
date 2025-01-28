@@ -34,9 +34,9 @@ jobs:
       - name: Build Browser Example Application for Production
         shell: bash
         run: |
-          yarn global add node-gyp
-          yarn --skip-integrity-check --network-timeout 100000
-          yarn browser build:production
+          npm install -g node-gyp
+          npm ci
+          cd examples/browser && npm run build:production
         env:
           NODE_OPTIONS: --max_old_space_size=4096
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9
@@ -44,8 +44,8 @@ jobs:
       - name: Build Playwright
         shell: bash
         run: |
-          yarn --cwd examples/playwright build
+          cd examples/playwright && npm run build
 
       - name: Run Smoke Test (examples/playwright/src/tests/theia-app)
         shell: bash
-        run: yarn test:playwright theia-app
+        run: npm run test:playwright -- theia-app
