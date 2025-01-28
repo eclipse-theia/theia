@@ -190,13 +190,14 @@ export class KeyCode {
             }
             return KeyCode.createKeyCode({ modifiers: parts as KeyModifier[] });
         } else if (KeyCode.isKeyboardEvent(input)) {
+            const altGr = input.getModifierState && input.getModifierState('AltGraph');
             const key = KeyCode.toKey(input, eventDispatch);
             return new KeyCode({
                 key: Key.isModifier(key.code) ? undefined : key,
                 meta: isOSX && input.metaKey,
                 shift: input.shiftKey,
-                alt: input.altKey,
-                ctrl: input.ctrlKey,
+                alt: altGr ? true : input.altKey,
+                ctrl: altGr ? true : input.ctrlKey,
                 character: KeyCode.toCharacter(input)
             });
         } else if ((input as Keystroke).first || (input as Keystroke).modifiers) {

@@ -190,7 +190,7 @@ export class KeyboardLayoutService {
         return !code.startsWith('Numpad');
     }
 
-    private addKeyMapping(key2KeyCode: KeyCode[], mappedKey: Key, value: string, shift: boolean, alt: boolean): void {
+    private addKeyMapping(key2KeyCode: KeyCode[], mappedKey: Key, value: string, shift: boolean, altGraph: boolean): void {
         const key = VALUE_TO_KEY[value];
         if (key) {
             const index = this.getCharacterIndex(key.key, key.shift);
@@ -198,8 +198,9 @@ export class KeyboardLayoutService {
                 key2KeyCode[index] = new KeyCode({
                     key: mappedKey,
                     shift,
-                    alt,
-                    character: value
+                    alt: altGraph,
+                    character: value,
+                    ctrl: altGraph
                 });
             }
         }
