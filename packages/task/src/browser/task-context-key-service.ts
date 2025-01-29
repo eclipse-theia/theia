@@ -27,6 +27,8 @@ export class TaskContextKeyService {
     @inject(ApplicationServer)
     protected readonly applicationServer: ApplicationServer;
 
+    // The context keys are supposed to be aligned with VS Code. See also:
+    // https://github.com/microsoft/vscode/blob/e6125a356ff6ebe7214b183ee1b5fb009a2b8d31/src/vs/workbench/contrib/tasks/common/taskService.ts#L20-L24
     protected customExecutionSupported: ContextKey<boolean>;
     protected shellExecutionSupported: ContextKey<boolean>;
     protected processExecutionSupported: ContextKey<boolean>;
