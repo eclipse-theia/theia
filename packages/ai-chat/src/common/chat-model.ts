@@ -573,7 +573,6 @@ export class ChangeSetImpl implements ChangeSet {
     addOrReplaceElement(element: ChangeSetElement): void {
         if (!this.replaceElement(element)) {
             this.addElement(element);
-            this.notifyChange();
         }
     }
 
