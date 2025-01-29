@@ -571,13 +571,10 @@ export class ChangeSetImpl implements ChangeSet {
     }
 
     addOrReplaceElement(element: ChangeSetElement): void {
-        const index = this._elements.findIndex(e => e.uri.toString() === element.uri.toString());
-        if (index >= 0) {
-            this._elements[index] = element;
-        } else {
-            this._elements.push(element);
+        if (!this.replaceElement(element)) {
+            this.addElement(element);
+            this.notifyChange();
         }
-        this.notifyChange();
     }
 
     removeElement(index: number): void {
