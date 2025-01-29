@@ -75,7 +75,11 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
         let responseContent = response.result;
         try {
             if (response.result) {
-                responseContent = JSON.stringify(JSON.parse(response.result), undefined, 2);
+                let resultObject = response.result;
+                if (typeof resultObject === 'string') {
+                    resultObject = JSON.parse(resultObject);
+                }
+                responseContent = JSON.stringify(resultObject, undefined, 2);
             }
         } catch (e) {
             // fall through
