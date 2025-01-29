@@ -3,11 +3,8 @@
  * To reset delete this file and rerun theia build again.
  */
 // @ts-check
-const webpack = require('webpack');
 const configs = require('./gen-webpack.config.js');
 const nodeConfig = require('./gen-webpack.node.config.js');
-
-const { MonacoWebpackPlugin } = require('@theia/native-webpack-plugin/lib/monaco-webpack-plugins.js');
 
 /**
  * Expose bundled modules on window.theia.moduleName namespace, e.g.
