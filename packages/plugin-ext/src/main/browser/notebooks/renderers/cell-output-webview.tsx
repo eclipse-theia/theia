@@ -243,7 +243,7 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
     protected element?: HTMLDivElement; // React.createRef<HTMLDivElement>();
 
     protected webviewWidget: WebviewWidget;
-    protected webiviewWidgetInitialized = new Deferred();
+    protected webviewWidgetInitialized = new Deferred();
 
     protected toDispose = new DisposableCollection();
 
@@ -260,7 +260,7 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
 
         this.webviewWidget = await this.widgetManager.getOrCreateWidget(WebviewWidget.FACTORY_ID, { id: this.id });
 
-        this.webiviewWidgetInitialized.resolve();
+        this.webviewWidgetInitialized.resolve();
 
         // this.webviewWidget.parent = this.editor ?? null;
         this.webviewWidget.setContentOptions({
@@ -339,7 +339,7 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
         return <div className='theia-notebook-cell-output-webview' ref={async element => {
             if (element) {
                 this.element = element;
-                await this.webiviewWidgetInitialized.promise;
+                await this.webviewWidgetInitialized.promise;
                 this.attachWebview();
             }
         }}></div>;
