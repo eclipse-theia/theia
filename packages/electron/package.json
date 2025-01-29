@@ -4,7 +4,7 @@
   "description": "Theia - Electron utility package",
   "dependencies": {
     "electron-store": "^8.0.0",
-    "fix-path": "^3.0.0",
+    "fix-path": "^4.0.0",
     "native-keymap": "^2.2.1"
   },
   "devDependencies": {
