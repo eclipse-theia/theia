@@ -388,6 +388,15 @@ const nativePlugin = new NativeWebpackPlugin({
     }
 });
 
+${this.ifPackage('@theia/process', () => `// Ensure that node-pty is correctly hoisted
+try {
+    require.resolve('node-pty');
+} catch {
+    console.error('"node-pty" dependency is not installed correctly. Ensure that it is available in the root node_modules directory.');
+    console.error('Exiting webpack build process.');
+    process.exit(1);
+}`)}
+
 /** @type {import('webpack').Configuration} */
 const config = {
     mode,
@@ -472,6 +481,8 @@ const config = {
     ignoreWarnings: [
         // Some packages do not have source maps, that's ok
         /Failed to parse source map/,
+        // require with expressions are not supported
+        /the request of a dependency is an expression/,
         // Some packages use dynamic requires, we can safely ignore them (they are handled by the native webpack plugin)
         /require function is used in a way in which dependencies cannot be statically extracted/, {
             module: /yargs/

@@ -52,7 +52,10 @@ export class NativeWebpackPlugin {
     }
 
     apply(compiler: Compiler): void {
-        let replacements: Record<string, string> = {};
+        let replacements: Record<string, (issuer: string) => Promise<string>> = {};
+        let nodePtyIssuer: string | undefined;
+        let trashHelperIssuer: string | undefined;
+        let ripgrepIssuer: string | undefined;
         compiler.hooks.initialize.tap(NativeWebpackPlugin.name, async () => {
             const directory = path.resolve(compiler.outputPath, 'native-webpack-plugin');
             if (fs.existsSync(directory)) {
@@ -64,83 +67,90 @@ export class NativeWebpackPlugin {
             await fs.promises.mkdir(directory, {
                 recursive: true
             });
-            const bindingsFile = await buildFile(directory, 'bindings.js', bindingsReplacement(Array.from(this.bindings.entries())));
-            const ripgrepFile = await buildFile(directory, 'ripgrep.js', ripgrepReplacement(this.options.out));
-            const keymappingFile = './build/Release/keymapping.node';
-            const windowsCaCertsFile = '@vscode/windows-ca-certs/build/Release/crypt32.node';
+            const bindingsFile = (issuer: string) => buildFile(directory, 'bindings.js', bindingsReplacement(issuer, Array.from(this.bindings.entries())));
+            const ripgrepFile = () => buildFile(directory, 'ripgrep.js', ripgrepReplacement(this.options.out));
+            const keymappingFile = () => Promise.resolve('./build/Release/keymapping.node');
+            const windowsCaCertsFile = () => Promise.resolve('@vscode/windows-ca-certs/build/Release/crypt32.node');
             replacements = {
                 ...(this.options.replacements ?? {}),
                 [REQUIRE_RIPGREP]: ripgrepFile,
                 [REQUIRE_BINDINGS]: bindingsFile,
                 [REQUIRE_KEYMAPPING]: keymappingFile,
                 [REQUIRE_VSCODE_WINDOWS_CA_CERTS]: windowsCaCertsFile,
-                [REQUIRE_PARCEL_WATCHER]: findNativeWatcherFile()
+                [REQUIRE_PARCEL_WATCHER]: issuer => Promise.resolve(findNativeWatcherFile(issuer))
             };
         });
         compiler.hooks.normalModuleFactory.tap(
             NativeWebpackPlugin.name,
             nmf => {
-                nmf.hooks.beforeResolve.tap(NativeWebpackPlugin.name, result => {
+                nmf.hooks.beforeResolve.tapPromise(NativeWebpackPlugin.name, async result => {
+                    if (result.request === REQUIRE_RIPGREP) {
+                        ripgrepIssuer = result.contextInfo.issuer;
+                    } else if (result.request === 'node-pty') {
+                        nodePtyIssuer = result.contextInfo.issuer;
+                    } else if (result.request === 'trash') {
+                        trashHelperIssuer = result.contextInfo.issuer;
+                    }
                     for (const [file, replacement] of Object.entries(replacements)) {
                         if (result.request === file) {
-                            result.request = replacement;
+                            result.request = await replacement(result.contextInfo.issuer);
                         }
                     }
                 });
-                nmf.hooks.afterResolve.tap(NativeWebpackPlugin.name, result => {
+                nmf.hooks.afterResolve.tapPromise(NativeWebpackPlugin.name, async result => {
                     const createData = result.createData;
                     for (const [file, replacement] of Object.entries(replacements)) {
                         if (createData.resource === file) {
-                            createData.resource = replacement;
+                            createData.resource = await replacement(result.contextInfo.issuer);
                         }
                     }
                 });
             }
         );
         compiler.hooks.afterEmit.tapPromise(NativeWebpackPlugin.name, async () => {
-            if (this.options.trash) {
-                await this.copyTrashHelper(compiler);
+            if (this.options.trash && trashHelperIssuer) {
+                await this.copyTrashHelper(trashHelperIssuer, compiler);
             }
-            if (this.options.ripgrep) {
-                await this.copyRipgrep(compiler);
+            if (this.options.ripgrep && ripgrepIssuer) {
+                await this.copyRipgrep(ripgrepIssuer, compiler);
             }
-            if (this.options.pty) {
-                await this.copyNodePtySpawnHelper(compiler);
+            if (this.options.pty && nodePtyIssuer) {
+                await this.copyNodePtySpawnHelper(nodePtyIssuer, compiler);
             }
         });
     }
 
-    protected async copyRipgrep(compiler: Compiler): Promise<void> {
+    protected async copyRipgrep(issuer: string, compiler: Compiler): Promise<void> {
         const suffix = process.platform === 'win32' ? '.exe' : '';
-        const sourceFile = require.resolve(`@vscode/ripgrep/bin/rg${suffix}`);
+        const sourceFile = require.resolve(`@vscode/ripgrep/bin/rg${suffix}`, { paths: [issuer] });
         const targetFile = path.join(compiler.outputPath, this.options.out, `rg${suffix}`);
         await this.copyExecutable(sourceFile, targetFile);
     }
 
-    protected async copyNodePtySpawnHelper(compiler: Compiler): Promise<void> {
+    protected async copyNodePtySpawnHelper(issuer: string, compiler: Compiler): Promise<void> {
         const targetDirectory = path.resolve(compiler.outputPath, '..', 'build', 'Release');
         if (process.platform === 'win32') {
-            const agentFile = require.resolve('node-pty/build/Release/winpty-agent.exe');
+            const agentFile = require.resolve('node-pty/build/Release/winpty-agent.exe', { paths: [issuer] });
             const targetAgentFile = path.join(targetDirectory, 'winpty-agent.exe');
             await this.copyExecutable(agentFile, targetAgentFile);
-            const dllFile = require.resolve('node-pty/build/Release/winpty.dll');
+            const dllFile = require.resolve('node-pty/build/Release/winpty.dll', { paths: [issuer] });
             const targetDllFile = path.join(targetDirectory, 'winpty.dll');
             await this.copyExecutable(dllFile, targetDllFile);
         } else if (process.platform === 'darwin') {
-            const sourceFile = require.resolve('node-pty/build/Release/spawn-helper');
+            const sourceFile = require.resolve('node-pty/build/Release/spawn-helper', { paths: [issuer] });
             const targetFile = path.join(targetDirectory, 'spawn-helper');
             await this.copyExecutable(sourceFile, targetFile);
         }
     }
 
-    protected async copyTrashHelper(compiler: Compiler): Promise<void> {
+    protected async copyTrashHelper(issuer: string, compiler: Compiler): Promise<void> {
         let sourceFile: string | undefined;
         let targetFile: string | undefined;
         if (process.platform === 'win32') {
-            sourceFile = require.resolve('trash/lib/windows-trash.exe');
+            sourceFile = require.resolve('trash/lib/windows-trash.exe', { paths: [issuer] });
             targetFile = path.join(compiler.outputPath, 'windows-trash.exe');
         } else if (process.platform === 'darwin') {
-            sourceFile = require.resolve('trash/lib/macos-trash');
+            sourceFile = require.resolve('trash/lib/macos-trash', { paths: [issuer] });
             targetFile = path.join(compiler.outputPath, 'macos-trash');
         }
         if (sourceFile && targetFile) {
@@ -156,7 +166,7 @@ export class NativeWebpackPlugin {
     }
 }
 
-function findNativeWatcherFile(): string {
+function findNativeWatcherFile(issuer: string): string {
     let name = `@parcel/watcher-${process.platform}-${process.arch}`;
     if (process.platform === 'linux') {
         const { MUSL, family } = require('detect-libc');
@@ -166,7 +176,9 @@ function findNativeWatcherFile(): string {
             name += '-glibc';
         }
     }
-    return require.resolve(name);
+    return require.resolve(name, {
+        paths: [issuer]
+    });
 }
 
 async function buildFile(root: string, name: string, content: string): Promise<string> {
@@ -181,11 +193,14 @@ const path = require('path');
 exports.rgPath = path.join(__dirname, \`./${nativePath}/rg\${process.platform === 'win32' ? '.exe' : ''}\`);
 `;
 
-const bindingsReplacement = (entries: [string, string][]): string => {
+const bindingsReplacement = (issuer: string, entries: [string, string][]): string => {
     const cases: string[] = [];
 
     for (const [module, node] of entries) {
-        cases.push(`${' '.repeat(8)}case '${module}': return require('${node}');`);
+        const modulePath = require.resolve(node, {
+            paths: [issuer]
+        });
+        cases.push(`${' '.repeat(8)}case '${module}': return require('${modulePath.replace(/\\/g, '/')}');`);
     }
 
     return `
