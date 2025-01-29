@@ -323,6 +323,7 @@ export class ApplicationShell extends Widget {
 
     protected initializeShell(): void {
         this.addClass(APPLICATION_SHELL_CLASS);
+        this.addClass('monaco-workbench'); // needed for compatility with VSCode styles
         this.id = 'theia-app-shell';
 
         this.mainPanel = this.createMainPanel();
