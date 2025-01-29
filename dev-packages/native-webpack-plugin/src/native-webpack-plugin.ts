@@ -77,7 +77,7 @@ export class NativeWebpackPlugin {
                 [REQUIRE_BINDINGS]: bindingsFile,
                 [REQUIRE_KEYMAPPING]: keymappingFile,
                 [REQUIRE_VSCODE_WINDOWS_CA_CERTS]: windowsCaCertsFile,
-                [REQUIRE_PARCEL_WATCHER]: (issuer) => Promise.resolve(findNativeWatcherFile(issuer))
+                [REQUIRE_PARCEL_WATCHER]: issuer => Promise.resolve(findNativeWatcherFile(issuer))
             };
         });
         compiler.hooks.normalModuleFactory.tap(
