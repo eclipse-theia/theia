@@ -51,7 +51,7 @@ describe('CodeCompletionAgentImpl', () => {
         });
 
         it('should remove all text after second occurrence of backticks', () => {
-            const input = '```js\nlet x = 10;\n```\nTrailing text should be removed```';
+            const input = '```js\nlet x = 10;\n```\nTrailing text should be removed';
             const output = codeCompletionProcessor.stripBackticks(input);
             expect(output).to.equal('let x = 10;');
         });
@@ -72,6 +72,12 @@ describe('CodeCompletionAgentImpl', () => {
             const input = '```python\nprint(\"Hello, World!\")';
             const output = codeCompletionProcessor.stripBackticks(input);
             expect(output).to.equal('print("Hello, World!")');
+        });
+
+        it('should handle multiple internal backticks correctly', () => {
+            const input = '```\nFoo```Bar```FooBar```';
+            const output = codeCompletionProcessor.stripBackticks(input);
+            expect(output).to.equal('Foo```Bar```FooBar');
         });
 
     });

@@ -40,8 +40,8 @@ export class DefaultCodeCompletionPostProcessor {
         if (text.startsWith('```')) {
             // Remove the first backticks and any language identifier
             const startRemoved = text.slice(3).replace(/^\w*\n/, '');
-            const secondBacktickIndex = startRemoved.indexOf('```');
-            return secondBacktickIndex !== -1 ? startRemoved.slice(0, secondBacktickIndex).trim() : startRemoved.trim();
+            const lastBacktickIndex = startRemoved.lastIndexOf('```');
+            return lastBacktickIndex !== -1 ? startRemoved.slice(0, lastBacktickIndex).trim() : startRemoved.trim();
         }
         return text;
     }
