@@ -570,6 +570,16 @@ export class ChangeSetImpl implements ChangeSet {
         return true;
     }
 
+    addOrReplaceElement(element: ChangeSetElement): void {
+        const index = this._elements.findIndex(e => e.uri.toString() === element.uri.toString());
+        if (index >= 0) {
+            this._elements[index] = element;
+        } else {
+            this._elements.push(element);
+        }
+        this.notifyChange();
+    }
+
     removeElement(index: number): void {
         this._elements.splice(index, 1);
         this.notifyChange();
