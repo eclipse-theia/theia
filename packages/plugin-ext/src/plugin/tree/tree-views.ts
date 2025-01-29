@@ -258,11 +258,13 @@ class TreeViewExtImpl<T> implements Disposable {
             if (!Array.isArray(elements)) {
                 elements = [elements];
             }
+            const set = new Set<T>();
             for (const element of elements) {
-                for (const node of this.nodes.values()) {
-                    if (node.value === element) {
-                        ids.push(node.id);
-                    }
+                set.add(element);
+            }
+            for (const node of this.nodes.values()) {
+                if (node.value && set.has(node.value)) {
+                    ids.push(node.id);
                 }
             }
             this.pendingRefresh = proxy.$refresh(treeViewId, ids);
