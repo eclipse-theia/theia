@@ -318,7 +318,7 @@ export class QuickFileOpenService implements QuickAccessProvider {
     }
 
     private getItemIconClasses(uri: URI): string[] | undefined {
-        const icon = this.labelProvider.getIcon(uri).split(' ');
+        const icon = this.labelProvider.getIcon(uri).split(' ').filter(v => v.length > 0);
         if (icon.length > 0) {
             icon.push('file-icon');
         }

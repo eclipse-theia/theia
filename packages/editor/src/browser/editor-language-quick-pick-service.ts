@@ -42,7 +42,7 @@ export class EditorLanguageQuickPickService {
 
     protected toQuickPickLanguage(value: Language, current: string): QuickPickValue<Language> {
         const languageUri = this.toLanguageUri(value);
-        const iconClasses = this.labelProvider.getIcon(languageUri).split(' ');
+        const iconClasses = this.labelProvider.getIcon(languageUri).split(' ').filter(v => v.length > 0);
         if (iconClasses.length > 0) {
             iconClasses.push('file-icon');
         }
