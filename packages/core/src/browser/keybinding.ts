@@ -356,6 +356,9 @@ export class KeybindingRegistry {
         if (keyCode.shift) {
             keyCodeResult.push(useSymbols ? '⇧' : 'Shift');
         }
+        if (keyCode.altGraph) {
+            keyCodeResult.push(useSymbols ? '⌥' : 'AltGr');
+        }
         if (keyCode.key) {
             keyCodeResult.push(this.acceleratorForKey(keyCode.key, asciiOnly));
         }

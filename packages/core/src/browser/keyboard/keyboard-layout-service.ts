@@ -16,7 +16,7 @@
 
 import { injectable, inject, optional } from 'inversify';
 import type { IWindowsKeyMapping } from 'native-keymap';
-import { isWindows } from '../../common/os';
+import { isOSX, isWindows } from '../../common/os';
 import {
     NativeKeyboardLayout, KeyboardLayoutProvider, KeyboardLayoutChangeNotifier, KeyValidator
 } from '../../common/keyboard/keyboard-layout-provider';
@@ -136,15 +136,21 @@ export class KeyboardLayoutService {
         if (!inCode.shift && keyNeedsShift) {
             return undefined;
         }
-        if (mappedCode.alt && (inCode.alt || inCode.ctrl || inCode.shift && !keyNeedsShift)) {
-            return undefined;
+        if (mappedCode.altGraph && !inCode.altGraph) {
+            if (isOSX && inCode.alt) {
+                return undefined;
+            }
+            if (isWindows && inCode.alt && inCode.ctrl) {
+                return undefined;
+            }
         }
         return new KeyCode({
             key: mappedCode.key,
             meta: inCode.meta,
-            ctrl: inCode.ctrl || mappedCode.alt,
+            ctrl: inCode.ctrl,
             shift: inCode.shift && !keyNeedsShift || mappedCode.shift,
-            alt: inCode.alt || mappedCode.alt
+            alt: inCode.alt,
+            altGraph: mappedCode.altGraph,
         });
     }
 
@@ -158,7 +164,17 @@ export class KeyboardLayoutService {
                 const mappedKey = Key.getKey(code);
                 if (mappedKey && this.shouldIncludeKey(code)) {
                     if (isWindows) {
-                        this.addWindowsKeyMapping(key2KeyCode, mappedKey, (keyMapping as IWindowsKeyMapping).vkey, keyMapping.value);
+                        let altGr = false;
+                        if (keyMapping.withAltGr || keyMapping.withShiftAltGr) {
+                            altGr = true;
+                        }
+                        this.addWindowsKeyMapping(
+                            key2KeyCode,
+                            mappedKey,
+                            (keyMapping as IWindowsKeyMapping).vkey,
+                            keyMapping.value,
+                            altGr
+                        );
                     } else {
                         if (keyMapping.value) {
                             this.addKeyMapping(key2KeyCode, mappedKey, keyMapping.value, false, false);
@@ -198,22 +214,22 @@ export class KeyboardLayoutService {
                 key2KeyCode[index] = new KeyCode({
                     key: mappedKey,
                     shift,
-                    alt: altGraph,
                     character: value,
-                    ctrl: altGraph
+                    altGraph
                 });
             }
         }
     }
 
-    private addWindowsKeyMapping(key2KeyCode: KeyCode[], mappedKey: Key, vkey: string, value: string): void {
+    private addWindowsKeyMapping(key2KeyCode: KeyCode[], mappedKey: Key, vkey: string, value: string, altGraph: boolean): void {
         const key = VKEY_TO_KEY[vkey];
         if (key) {
             const index = this.getCharacterIndex(key);
             if (key2KeyCode[index] === undefined) {
                 key2KeyCode[index] = new KeyCode({
                     key: mappedKey,
-                    character: value
+                    character: value,
+                    altGraph
                 });
             }
         }

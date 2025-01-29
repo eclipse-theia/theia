@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { nls } from './nls';
-import { isOSX } from './os';
+import { isOSX, isWindows } from './os';
 import { isObject } from './types';
 
 export type KeySequence = KeyCode[];
@@ -103,6 +103,7 @@ export interface KeyCodeSchema {
     shift?: boolean;
     alt?: boolean;
     meta?: boolean;
+    altGraph?: boolean;
     character?: string;
 }
 
@@ -116,6 +117,7 @@ export class KeyCode {
     public readonly shift: boolean;
     public readonly alt: boolean;
     public readonly meta: boolean;
+    public readonly altGraph: boolean;
     public readonly character: string | undefined;
 
     public constructor(schema: KeyCodeSchema) {
@@ -133,6 +135,7 @@ export class KeyCode {
         this.shift = !!schema.shift;
         this.alt = !!schema.alt;
         this.meta = !!schema.meta;
+        this.altGraph = !!schema.altGraph;
         this.character = schema.character;
     }
 
@@ -150,7 +153,11 @@ export class KeyCode {
         if (this.key && (!other.key || this.key.code !== other.key.code) || !this.key && other.key) {
             return false;
         }
-        return this.ctrl === other.ctrl && this.alt === other.alt && this.shift === other.shift && this.meta === other.meta;
+        return this.ctrl === other.ctrl
+            && this.alt === other.alt
+            && this.altGraph === other.altGraph
+            && this.shift === other.shift
+            && this.meta === other.meta;
     }
 
     /*
@@ -166,6 +173,8 @@ export class KeyCode {
         }
         if (this.alt) {
             result.push(Key.ALT_LEFT.easyString);
+        } else if (this.altGraph) {
+            result.push(Key.ALT_RIGHT.easyString);
         }
         if (this.ctrl) {
             result.push(Key.CONTROL_LEFT.easyString);
@@ -190,14 +199,14 @@ export class KeyCode {
             }
             return KeyCode.createKeyCode({ modifiers: parts as KeyModifier[] });
         } else if (KeyCode.isKeyboardEvent(input)) {
-            const altGr = input.getModifierState && input.getModifierState('AltGraph');
             const key = KeyCode.toKey(input, eventDispatch);
             return new KeyCode({
                 key: Key.isModifier(key.code) ? undefined : key,
                 meta: isOSX && input.metaKey,
                 shift: input.shiftKey,
-                alt: altGr ? true : input.altKey,
-                ctrl: altGr ? true : input.ctrlKey,
+                alt: input.altKey,
+                ctrl: input.ctrlKey,
+                altGraph: KeyCode.toAltGr(input),
                 character: KeyCode.toCharacter(input)
             });
         } else if ((input as Keystroke).first || (input as Keystroke).modifiers) {
@@ -220,6 +229,19 @@ export class KeyCode {
         } else {
             return new KeyCode(input as KeyCodeSchema);
         }
+    }
+
+    private static toAltGr(input: KeyboardEvent): boolean {
+        if (input.getModifierState && input.getModifierState('AltGraph')) {
+            return true;
+        }
+        if (isOSX && input.altKey) {
+            return true;
+        }
+        if (isWindows && input.altKey && input.ctrlKey) {
+            return true;
+        }
+        return false;
     }
 
     private static keybindings: { [key: string]: KeyCode } = {};
@@ -303,7 +325,7 @@ export class KeyCode {
 export namespace KeyCode {
 
     /**
-     * Determines a `true` of `false` value for the key code argument.
+     * Determines a `true` or `false` value for the key code argument.
      */
     export type Predicate = (keyCode: KeyCode) => boolean;
 
