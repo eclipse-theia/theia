@@ -22,7 +22,7 @@ import {
 } from '@phosphor/widgets';
 import { Message } from '@phosphor/messaging';
 import { IDragEvent } from '@phosphor/dragdrop';
-import { RecursivePartial, Event as CommonEvent, DisposableCollection, Disposable, environment, isObject } from '../../common';
+import { RecursivePartial, Event as CommonEvent, DisposableCollection, Disposable, environment, isObject, UntitledResourceResolver, UNTITLED_SCHEME } from '../../common';
 import { animationFrame } from '../browser';
 import { Saveable, SaveableWidget, SaveOptions } from '../saveable';
 import { StatusBarImpl, StatusBarEntry, StatusBarAlignment } from '../status-bar/status-bar';
@@ -231,6 +231,9 @@ export class ApplicationShell extends Widget {
 
     @inject(OpenerService)
     protected readonly openerService: OpenerService;
+
+    @inject(UntitledResourceResolver)
+    protected readonly untitledResourceResolver: UntitledResourceResolver;
 
     protected readonly onDidAddWidgetEmitter = new Emitter<Widget>();
     readonly onDidAddWidget = this.onDidAddWidgetEmitter.event;
@@ -573,10 +576,28 @@ export class ApplicationShell extends Widget {
                     uris.forEach(openUri);
                 } else if (event.dataTransfer.files?.length > 0) {
                     // the files were dragged from the outside the workspace
-                    Array.from(event.dataTransfer.files).forEach(file => {
-                        if (file.path) {
-                            const fileUri = URI.fromFilePath(file.path);
-                            openUri(fileUri);
+                    Array.from(event.dataTransfer.files).forEach(async file => {
+                        if (environment.electron.is()) {
+                            if (file.path) {
+                                const fileUri = URI.fromFilePath(file.path);
+                                openUri(fileUri);
+                            }
+                        } else {
+                            const fileContent = await file.text();
+                            const fileName = file.name;
+                            const uri = new URI(`${UNTITLED_SCHEME}:/${fileName}`);
+                            // Only create a new untitled resource if it doesn't already exist.
+                            // VS Code does the same thing, and there's not really a better solution,
+                            // since we want to keep the original name of the file,
+                            // but also to prevent duplicates of the same file.
+                            if (!this.untitledResourceResolver.has(uri)) {
+                                const untitledResource = await this.untitledResourceResolver.createUntitledResource(
+                                    fileContent,
+                                    undefined,
+                                    new URI(`${UNTITLED_SCHEME}:/${fileName}`)
+                                );
+                                openUri(untitledResource.uri);
+                            }
                         }
                     });
                 }
