@@ -64,6 +64,10 @@ export class ChangeSetFileElement implements ChangeSetElement {
         return this.elementProps.uri;
     }
 
+    get changedUri(): URI {
+        return createChangeSetFileUri(this.elementProps.chatSessionId, this.uri);
+    }
+
     get name(): string {
         return this.elementProps.name ?? this.changeSetFileService.getName(this.uri);
     }
@@ -98,17 +102,17 @@ export class ChangeSetFileElement implements ChangeSetElement {
     }
 
     async open(): Promise<void> {
-        this.changeSetFileService.open(this.uri, this.targetState);
+        this.changeSetFileService.open(this);
     }
 
     async openChange(): Promise<void> {
         this.changeSetFileService.openDiff(
             this.uri,
-            createChangeSetFileUri(this.elementProps.chatSessionId, this.uri)
+            this.changedUri
         );
     }
 
-    async accept(): Promise<void> {
+    async accept(contents?: string): Promise<void> {
         this.state = 'applied';
         if (this.type === 'delete') {
             await this.changeSetFileService.delete(this.uri);
@@ -116,7 +120,7 @@ export class ChangeSetFileElement implements ChangeSetElement {
             return;
         }
 
-        await this.changeSetFileService.write(this.uri, this.targetState);
+        await this.changeSetFileService.write(this.uri, contents !== undefined ? contents : this.targetState);
     }
 
     async discard(): Promise<void> {

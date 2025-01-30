@@ -60,6 +60,8 @@ export interface Resource extends Disposable {
     readonly onDidChangeReadOnly?: Event<boolean | MarkdownString>;
 
     readonly readOnly?: boolean | MarkdownString;
+
+    readonly initiallyDirty?: boolean;
     /**
      * Reads latest content of this resource.
      *
@@ -378,11 +380,13 @@ export class UntitledResourceResolver implements ResourceResolver {
 export class UntitledResource implements Resource {
 
     protected readonly onDidChangeContentsEmitter = new Emitter<void>();
+    initiallyDirty: boolean;
     get onDidChangeContents(): Event<void> {
         return this.onDidChangeContentsEmitter.event;
     }
 
     constructor(private resources: Map<string, UntitledResource>, public uri: URI, private content?: string) {
+        this.initiallyDirty = (content !== undefined && content.length > 0);
         this.resources.set(this.uri.toString(), this);
     }
 

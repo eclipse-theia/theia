@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Resource, ResourceResolver, URI } from '@theia/core';
+import { Resource, ResourceResolver, ResourceSaveOptions, URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatService } from '../common';
 import { ChangeSetFileElement } from './change-set-file-element';
@@ -23,7 +23,7 @@ export const CHANGE_SET_FILE_RESOURCE_SCHEME = 'changeset-file';
 const QUERY = 'uri=';
 
 export function createChangeSetFileUri(chatSessionId: string, elementUri: URI): URI {
-    return new URI(CHANGE_SET_FILE_RESOURCE_SCHEME + ':/' + chatSessionId).withQuery(QUERY + encodeURIComponent(elementUri.path.toString()));
+    return new URI(CHANGE_SET_FILE_RESOURCE_SCHEME + '://' + chatSessionId + '/' + elementUri.path).withQuery(QUERY + encodeURIComponent(elementUri.path.toString()));
 }
 
 /**
@@ -41,7 +41,7 @@ export class ChangeSetFileResourceResolver implements ResourceResolver {
             throw new Error('The given uri is not a change set file uri: ' + uri);
         }
 
-        const chatSessionId = uri.path.name;
+        const chatSessionId = uri.authority;
         const session = this.chatService.getSession(chatSessionId);
         if (!session) {
             throw new Error('Chat session not found: ' + chatSessionId);
@@ -60,8 +60,12 @@ export class ChangeSetFileResourceResolver implements ResourceResolver {
 
         return {
             uri,
-            readOnly: true,
+            readOnly: false,
+            initiallyDirty: true,
             readContents: async () => element.targetState ?? '',
+            saveContents: async (content: string, options?: ResourceSaveOptions): Promise<void> => {
+                element.accept(content);
+            },
             dispose: () => { }
         };
     }
