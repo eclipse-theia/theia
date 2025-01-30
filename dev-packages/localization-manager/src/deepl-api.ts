@@ -54,7 +54,7 @@ export async function deepl(
 
 async function postWithRetry(url: string, buffer: Buffer, attempt: number): Promise<DeeplResponse> {
     try {
-        await rateLimiter.removeTokens(attempt);
+        await rateLimiter.removeTokens(Math.min(attempt, 10));
         const response = await post(url, buffer, {
             'Content-Type': 'application/x-www-form-urlencoded',
             'User-Agent': 'Theia-Localization-Manager'
