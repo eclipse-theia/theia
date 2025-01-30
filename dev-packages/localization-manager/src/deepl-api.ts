@@ -15,10 +15,16 @@
 // *****************************************************************************
 
 import * as bent from 'bent';
+import { RateLimiter } from 'limiter';
 
 const post = bent('POST', 'json', 200);
 // 50 is the maximum amount of translations per request
 const deeplLimit = 50;
+const rateLimiter = new RateLimiter({
+    tokensPerInterval: 10,
+    interval: 'second',
+    fireImmediately: true
+});
 
 export async function deepl(
     parameters: DeeplParameters
@@ -30,12 +36,11 @@ export async function deepl(
     while (textArray.length > 0) {
         textChunks.push(textArray.splice(0, deeplLimit));
     }
-    const responses: DeeplResponse[] = await Promise.all(textChunks.map(chunk => {
+    const responses: DeeplResponse[] = await Promise.all(textChunks.map(async chunk => {
         const parameterCopy: DeeplParameters = { ...parameters, text: chunk };
-        return post(`https://${sub_domain}.deepl.com/v2/translate`, Buffer.from(toFormData(parameterCopy)), {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'User-Agent': 'Theia-Localization-Manager'
-        });
+        const url = `https://${sub_domain}.deepl.com/v2/translate`;
+        const buffer = Buffer.from(toFormData(parameterCopy));
+        return postWithRetry(url, buffer, 1);
     }));
     const mergedResponse: DeeplResponse = { translations: [] };
     for (const response of responses) {
@@ -45,6 +50,22 @@ export async function deepl(
         translation.text = coerceTranslation(translation.text);
     }
     return mergedResponse;
+}
+
+async function postWithRetry(url: string, buffer: Buffer, attempt: number): Promise<DeeplResponse> {
+    try {
+        await rateLimiter.removeTokens(Math.min(attempt, 10));
+        const response = await post(url, buffer, {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'User-Agent': 'Theia-Localization-Manager'
+        });
+        return response;
+    } catch (e) {
+        if ('message' in e && typeof e.message === 'string' && e.message.includes('Too Many Requests')) {
+            return postWithRetry(url, buffer, attempt + 1);
+        }
+        throw e;
+    }
 }
 
 /**
