@@ -64,7 +64,7 @@ export class ChangeSetFileResourceResolver implements ResourceResolver {
             initiallyDirty: true,
             readContents: async () => element.targetState ?? '',
             saveContents: async (content: string, options?: ResourceSaveOptions): Promise<void> => {
-                element.accept();
+                element.accept(content);
             },
             dispose: () => { }
         };

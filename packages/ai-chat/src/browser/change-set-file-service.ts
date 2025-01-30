@@ -21,6 +21,7 @@ import { EditorManager } from '@theia/editor/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import { ChangeSetFileElement } from './change-set-file-element';
 
 @injectable()
 export class ChangeSetFileService {
@@ -82,28 +83,15 @@ export class ChangeSetFileService {
         return this.labelProvider.getLongName(uri.parent);
     }
 
-    async open(uri: URI, targetState: string): Promise<void> {
-        const exists = await this.fileService.exists(uri);
+    async open(element: ChangeSetFileElement): Promise<void> {
+        const exists = await this.fileService.exists(element.uri);
         if (exists) {
-            open(this.openerService, uri);
+            await open(this.openerService, element.uri);
             return;
         }
-        const editor = await this.editorManager.open(uri.withScheme(UNTITLED_SCHEME), {
+        await this.editorManager.open(element.changedUri, {
             mode: 'reveal'
         });
-        editor.editor.executeEdits([{
-            newText: targetState,
-            range: {
-                start: {
-                    character: 1,
-                    line: 1,
-                },
-                end: {
-                    character: 1,
-                    line: 1,
-                },
-            }
-        }]);
     }
 
     async openDiff(originalUri: URI, suggestedUri: URI): Promise<void> {

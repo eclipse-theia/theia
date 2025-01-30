@@ -553,7 +553,7 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
         }
 
         const changes = [...this.contentChanges];
-        if (changes.length === 0 && !overwriteEncoding && reason !== TextDocumentSaveReason.Manual) {
+        if ((changes.length === 0 && !this.resource.initiallyDirty) && !overwriteEncoding && reason !== TextDocumentSaveReason.Manual) {
             return;
         }
 
