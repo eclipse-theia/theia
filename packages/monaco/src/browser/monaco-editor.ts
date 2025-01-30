@@ -51,7 +51,7 @@ import { ICodeEditor, IMouseTargetMargin } from '@theia/monaco-editor-core/esm/v
 import { IStandaloneEditorConstructionOptions, StandaloneCodeEditor, StandaloneEditor } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
 import { ServiceCollection } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/serviceCollection';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
-import { ConfigurationChangedEvent, IEditorOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
+import { ConfigurationChangedEvent, IEditorOptions, ShowLightbulbIconMode } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
 import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';
 import { ICommandService } from '@theia/monaco-editor-core/esm/vs/platform/commands/common/commands';
 import { IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
@@ -63,6 +63,7 @@ import { ILanguageConfigurationService } from '@theia/monaco-editor-core/esm/vs/
 import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures';
 import * as objects from '@theia/monaco-editor-core/esm/vs/base/common/objects';
 import { Selection } from '@theia/editor/lib/browser/editor';
+import { IHoverService } from '@theia/monaco-editor-core/esm/vs/platform/hover/browser/hover';
 
 export type ServicePair<T> = [ServiceIdentifier<T>, T];
 
@@ -150,7 +151,7 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
     protected create(options?: monaco.editor.IStandaloneEditorConstructionOptions | IStandaloneEditorConstructionOptions, override?: EditorServiceOverrides): Disposable {
         const combinedOptions = {
             ...options,
-            lightbulb: { enabled: true },
+            lightbulb: { enabled: ShowLightbulbIconMode.On },
             fixedOverflowWidgets: true,
             scrollbar: {
                 useShadows: false,
@@ -704,9 +705,21 @@ class EmbeddedCodeEditor extends StandaloneCodeEditor {
         @IAccessibilityService accessibilityService: IAccessibilityService,
         @ILanguageConfigurationService languageConfigurationService: ILanguageConfigurationService,
         @ILanguageFeaturesService languageFeaturesService: ILanguageFeaturesService,
+        @IHoverService hoverService: IHoverService
     ) {
-        super(domElement, { ...parentEditor.getRawOptions(), overflowWidgetsDomNode: parentEditor.getOverflowWidgetsDomNode() }, instantiationService, codeEditorService,
-            commandService, contextKeyService, keybindingService, themeService, notificationService, accessibilityService, languageConfigurationService, languageFeaturesService);
+        super(domElement,
+            { ...parentEditor.getRawOptions(), overflowWidgetsDomNode: parentEditor.getOverflowWidgetsDomNode() },
+            instantiationService,
+            codeEditorService,
+            commandService,
+            contextKeyService,
+            hoverService,
+            keybindingService,
+            themeService,
+            notificationService,
+            accessibilityService,
+            languageConfigurationService,
+            languageFeaturesService);
 
         this._parentEditor = parentEditor;
         this._overwriteOptions = options;

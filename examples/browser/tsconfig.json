@@ -1,12 +1,15 @@
 {
   "extends": "../../configs/base.tsconfig",
-  "include": [],
+  "include": [ ],
   "compilerOptions": {
     "composite": true
   },
   "references": [
     {
       "path": "../../dev-packages/cli"
+    },
+    {
+      "path": "../../dev-packages/native-webpack-plugin"
     },
     {
       "path": "../../packages/ai-anthropic"

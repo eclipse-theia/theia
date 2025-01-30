@@ -31,17 +31,18 @@ import { MonacoResolvedKeybinding } from './monaco-resolved-keybinding';
 import { IQuickAccessController } from '@theia/monaco-editor-core/esm/vs/platform/quickinput/common/quickAccess';
 import { QuickAccessController } from '@theia/monaco-editor-core/esm/vs/platform/quickinput/browser/quickAccess';
 import { IContextKey, IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
-import { IListOptions, List } from '@theia/monaco-editor-core/esm/vs/base/browser/ui/list/listWidget';
 import * as monaco from '@theia/monaco-editor-core';
 import { ResolvedKeybinding } from '@theia/monaco-editor-core/esm/vs/base/common/keybindings';
 import { IInstantiationService } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { IMatch } from '@theia/monaco-editor-core/esm/vs/base/common/filters';
-import { IListRenderer, IListVirtualDelegate } from '@theia/monaco-editor-core/esm/vs/base/browser/ui/list/list';
 import { CancellationToken, Event } from '@theia/core';
 import { MonacoColorRegistry } from './monaco-color-registry';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { IStandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
+import { ILayoutService } from '@theia/monaco-editor-core/esm/vs/platform/layout/browser/layoutService';
+import { IHoverDelegate, IHoverDelegateOptions } from '@theia/monaco-editor-core/esm/vs/base/browser/ui/hover/hoverDelegate';
+import { IHoverWidget } from '@theia/monaco-editor-core/esm/vs/base/browser/ui/hover/hover';
 
 // Copied from @vscode/src/vs/base/parts/quickInput/browser/quickInputList.ts
 export interface IListElement {
@@ -59,8 +60,21 @@ export interface IListElement {
     readonly fireButtonTriggered: (event: IQuickPickItemButtonEvent<IQuickPickItem>) => void;
 }
 
+class HoverDelegate implements IHoverDelegate {
+    showHover(options: IHoverDelegateOptions, focus?: boolean | undefined): IHoverWidget | undefined {
+        return undefined;
+    }
+    onDidHideHover?: (() => void) | undefined;
+    delay: number;
+    placement?: 'mouse' | 'element' | undefined;
+    showNativeHover?: boolean | undefined;
+
+}
 @injectable()
 export class MonacoQuickInputImplementation implements IQuickInputService {
+    get currentQuickInput(): IQuickInput | undefined {
+        return this.controller.currentQuickInput;
+    }
 
     declare readonly _serviceBrand: undefined;
 
@@ -77,7 +91,6 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
     protected readonly themeService: ThemeService;
 
     protected container: HTMLElement;
-    private quickInputList: List<unknown>;
 
     protected inQuickOpen: IContextKey<boolean>;
 
@@ -113,19 +126,19 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
         return this.controller.createQuickWidget();
     }
 
-    createQuickPick<T extends IQuickPickItem>(): IQuickPick<T> {
-        return this.controller.createQuickPick<T>();
+    createQuickPick<T extends IQuickPickItem>(options: { useSeparators: true; }): IQuickPick<T, { useSeparators: true; }>;
+    createQuickPick<T extends IQuickPickItem>(options: { useSeparators: false; }): IQuickPick<T, { useSeparators: false; }>;
+    createQuickPick<T extends IQuickPickItem>(options: { useSeparators: boolean }): IQuickPick<T, { useSeparators: true; }> | IQuickPick<T, { useSeparators: false; }> {
+        return this.controller.createQuickPick({
+            useSeparators: options.useSeparators
+        });
     }
-
     createInputBox(): IInputBox {
         return this.controller.createInputBox();
     }
 
     open(filter: string): void {
         this.quickAccess.show(filter);
-        setTimeout(() => {
-            this.quickInputList.focusNth(0);
-        }, 300);
     }
 
     input(options?: IInputOptions, token?: monaco.CancellationToken): Promise<string | undefined> {
@@ -185,7 +198,24 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
     }
 
     private initController(): void {
-        this.controller = new QuickInputController(this.getOptions(), StandaloneServices.get(IStandaloneThemeService));
+        const contextKeyService = StandaloneServices.get(IContextKeyService);
+        const instantiationService = StandaloneServices.get(IInstantiationService);
+        const layoutService = StandaloneServices.get(ILayoutService);
+
+        const options: IQuickInputOptions = {
+            idPrefix: 'quickInput_',
+            container: this.container,
+            styles: this.computeStyles(),
+            ignoreFocusOut: () => false,
+            backKeybindingLabel: () => undefined,
+            setContextKey: (id?: string) => this.setContextKey(id),
+            returnFocus: () => this.container.focus(),
+            hoverDelegate: new HoverDelegate(),
+            linkOpenerDelegate: () => {
+                // @monaco-uplift: not sure what to do here
+            }
+        };
+        this.controller = new QuickInputController(options, layoutService, instantiationService, contextKeyService);
         this.updateLayout();
     }
 
@@ -197,25 +227,6 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
 
     private getClientDimension(): monaco.editor.IDimension {
         return { width: window.innerWidth, height: window.innerHeight };
-    }
-
-    private getOptions(): IQuickInputOptions {
-        const options: IQuickInputOptions = {
-            idPrefix: 'quickInput_',
-            container: this.container,
-            styles: this.computeStyles(),
-            ignoreFocusOut: () => false,
-            backKeybindingLabel: () => undefined,
-            setContextKey: (id?: string) => this.setContextKey(id),
-            returnFocus: () => this.container.focus(),
-            createList: <T>(
-                user: string, container: HTMLElement, delegate: IListVirtualDelegate<T>, renderers: IListRenderer<T, unknown>[], listOptions: IListOptions<T>
-            ): List<T> => this.quickInputList = new List(user, container, delegate, renderers, listOptions),
-            linkOpenerDelegate: () => {
-                // @monaco-uplift: not sure what to do here
-            }
-        };
-        return options;
     }
 
     // @monaco-uplift
@@ -258,13 +269,18 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
                 listInactiveSelectionForeground: this.colorRegistry.toCssVariableName('list.InactiveSelectionForeground'),
                 listHoverBackground: this.colorRegistry.toCssVariableName('list.HoverBackground'),
                 listHoverForeground: this.colorRegistry.toCssVariableName('list.HoverForeground'),
-                listDropBackground: this.colorRegistry.toCssVariableName('list.DropBackground'),
+                listDropOverBackground: this.colorRegistry.toCssVariableName('list.DropOverBackground'),
+                listDropBetweenBackground: this.colorRegistry.toCssVariableName('list.DropBetweenBackground'),
                 listSelectionOutline: this.colorRegistry.toCssVariableName('activeContrastBorder'),
                 listHoverOutline: this.colorRegistry.toCssVariableName('activeContrastBorder'),
                 treeIndentGuidesStroke: this.colorRegistry.toCssVariableName('tree.indentGuidesStroke'),
                 treeInactiveIndentGuidesStroke: this.colorRegistry.toCssVariableName('tree.inactiveIndentGuidesStroke'),
+                treeStickyScrollBackground: this.colorRegistry.toCssVariableName('tree.StickyScrollBackground'),
+                treeStickyScrollBorder: this.colorRegistry.toCssVariableName('tree.tickyScrollBorde'),
+                treeStickyScrollShadow: this.colorRegistry.toCssVariableName('tree.StickyScrollShadow'),
                 tableColumnsBorder: this.colorRegistry.toCssVariableName('tree.tableColumnsBorder'),
                 tableOddRowsBackgroundColor: this.colorRegistry.toCssVariableName('tree.tableOddRowsBackground'),
+
             },
             inputBox: {
                 inputForeground: this.colorRegistry.toCssVariableName('inputForeground'),
@@ -434,11 +450,11 @@ export class MonacoQuickInputService implements QuickInputService {
     }
 
     createQuickPick<T extends QuickPickItem>(): QuickPick<T> {
-        const quickPick = this.monacoService.createQuickPick<MonacoQuickPickItem<T>>();
+        const quickPick = this.monacoService.createQuickPick<MonacoQuickPickItem<T>>({ useSeparators: true });
         return this.wrapQuickPick(quickPick);
     }
 
-    wrapQuickPick<T extends QuickPickItem>(wrapped: IQuickPick<MonacoQuickPickItem<T>>): QuickPick<T> {
+    wrapQuickPick<T extends QuickPickItem>(wrapped: IQuickPick<MonacoQuickPickItem<T>, { useSeparators: true }>): QuickPick<T> {
         return new MonacoQuickPick(wrapped, this.keybindingRegistry);
     }
 
@@ -532,7 +548,7 @@ class MonacoQuickInput {
 }
 
 class MonacoQuickPick<T extends QuickPickItem> extends MonacoQuickInput implements QuickPick<T> {
-    constructor(protected override readonly wrapped: IQuickPick<MonacoQuickPickItem<T>>, protected readonly keybindingRegistry: KeybindingRegistry) {
+    constructor(protected override readonly wrapped: IQuickPick<MonacoQuickPickItem<T>, { useSeparators: true }>, protected readonly keybindingRegistry: KeybindingRegistry) {
         super(wrapped);
     }
 

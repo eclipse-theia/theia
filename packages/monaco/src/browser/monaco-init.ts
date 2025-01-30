@@ -23,26 +23,11 @@
  * might call `initialize()` while being constructed.
  * The service descriptors require a constructor function, so we declare dummy class for each Monaco service we override. But instead of returning an instance of the dummy class,
  * we fetch the implementation of the monaco service from the inversify container.
- * The inversify-constructed services must not call StandaloneServices.get() or StandaloneServices.initialize() from their constructors. Calling `get`()` in postConstruct mehtods
+ * The inversify-constructed services must not call StandaloneServices.get() or StandaloneServices.initialize() from their constructors. Calling `get`()` in postConstruct methods
  * is allowed.
  */
 
 // Before importing anything from monaco we need to override its localization function
-import * as MonacoNls from '@theia/monaco-editor-core/esm/vs/nls';
-import { nls } from '@theia/core/lib/common/nls';
-import { FormatType, Localization } from '@theia/core/lib/common/i18n/localization';
-
-Object.assign(MonacoNls, {
-    localize(_key: string, label: string, ...args: FormatType[]): string {
-        if (nls.locale) {
-            const defaultKey = nls.getDefaultKey(label);
-            if (defaultKey) {
-                return nls.localize(defaultKey, label, ...args);
-            }
-        }
-        return Localization.format(label, args);
-    }
-});
 
 import { Container } from '@theia/core/shared/inversify';
 import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';
@@ -118,6 +103,12 @@ class MonacoQuickInputImplementationConstructor {
     }
 }
 
+class MonacoStandaloneThemeServiceConstructor {
+    constructor(container: Container) {
+        return new MonacoStandaloneThemeService();
+    }
+}
+
 export namespace MonacoInit {
     export function init(container: Container): void {
         StandaloneServices.initialize({
@@ -128,7 +119,7 @@ export namespace MonacoInit {
             [IBulkEditService.toString()]: new SyncDescriptor(MonacoBulkEditServiceConstructor, [container]),
             [ICommandService.toString()]: new SyncDescriptor(MonacoCommandServiceConstructor, [container]),
             [IQuickInputService.toString()]: new SyncDescriptor(MonacoQuickInputImplementationConstructor, [container]),
-            [IStandaloneThemeService.toString()]: new MonacoStandaloneThemeService()
+            [IStandaloneThemeService.toString()]: new SyncDescriptor(MonacoStandaloneThemeServiceConstructor, [])
         });
     }
 }

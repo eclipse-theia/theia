@@ -73,8 +73,8 @@ import { EditorLanguageStatusService, LanguageStatus as EditorLanguageStatus } f
 import { LanguageSelector, RelativePattern } from '@theia/editor/lib/common/language-selector';
 import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures';
 import {
-    DocumentOnDropEdit,
-    DocumentOnDropEditProvider,
+    DocumentDropEditProvider,
+    DocumentDropEditsSession,
     EvaluatableExpression,
     EvaluatableExpressionProvider,
     InlineValue,
@@ -82,8 +82,7 @@ import {
     InlineValuesProvider
 } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
 import { ITextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
-import { CodeActionTriggerKind, SnippetString } from '../../plugin/types-impl';
-import { DataTransfer } from './data-transfer/data-transfer-type-converters';
+import { CodeActionTriggerKind } from '../../plugin/types-impl';
 import { IReadonlyVSDataTransfer } from '@theia/monaco-editor-core/esm/vs/base/common/dataTransfer';
 import { FileUploadService } from '@theia/filesystem/lib/browser/file-upload-service';
 
@@ -736,36 +735,24 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
             handle,
             StandaloneServices
                 .get(ILanguageFeaturesService)
-                .documentOnDropEditProvider
+                .documentDropEditProvider
                 .register(selector, this.createDocumentDropEditProvider(handle, metadata))
         );
     }
 
-    createDocumentDropEditProvider(handle: number, _metadata?: DocumentDropEditProviderMetadata): DocumentOnDropEditProvider {
+    createDocumentDropEditProvider(handle: number, _metadata?: DocumentDropEditProviderMetadata): DocumentDropEditProvider {
         return {
             // @monaco-uplift id and dropMimeTypes should be supported by the monaco drop editor provider after 1.82.0
             // id?: string;
             // dropMimeTypes: metadata?.dropMimeTypes ?? ['*/*'],
-            provideDocumentOnDropEdits: async (model, position, dataTransfer, token) => this.provideDocumentDropEdits(handle, model, position, dataTransfer, token)
+            provideDocumentDropEdits: async (model, position, dataTransfer, token) => this.provideDocumentDropEdits(handle, model, position, dataTransfer, token)
         };
     }
 
     protected async provideDocumentDropEdits(handle: number, model: ITextModel, position: monaco.IPosition,
-        dataTransfer: IReadonlyVSDataTransfer, token: CancellationToken): Promise<DocumentOnDropEdit | undefined> {
+        dataTransfer: IReadonlyVSDataTransfer, token: CancellationToken): Promise<DocumentDropEditsSession | undefined> {
         await this.fileUploadService.upload(new URI(), { source: dataTransfer, leaveInTemp: true });
-        const edit = await this.proxy.$provideDocumentDropEdits(handle, model.uri, position, await DataTransfer.toDataTransferDTO(dataTransfer), token);
-        if (edit) {
-            return {
-                // @monaco-uplift label and yieldTo should be supported by monaco after 1.82.0. The implementation relies on a copy of the plugin data
-                // label: label: edit.label ?? localize('defaultDropLabel', "Drop using '{0}' extension", this._extension.displayName || this._extension.name),,
-                // yieldTo: edit.yieldTo?.map(yTo => {
-                //      return 'mimeType' in yTo ? yTo : { providerId: DocumentOnDropEditAdapter.toInternalProviderId(yTo.extensionId, yTo.providerId) };
-                // }),
-                label: 'no label',
-                insertText: edit.insertText instanceof SnippetString ? { snippet: edit.insertText.value } : edit.insertText,
-                additionalEdit: toMonacoWorkspaceEdit(edit?.additionalEdit)
-            };
-        }
+        return undefined;
     }
 
     $registerFoldingRangeProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], eventHandle: number | undefined): void {
@@ -963,14 +950,19 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         context: monaco.languages.CodeActionContext,
         token: monaco.CancellationToken
     ): Promise<monaco.languages.CodeActionList | undefined> {
-        const actions = await this.proxy.$provideCodeActions(handle, model.uri, rangeOrSelection, this.toModelCodeActionContext(context), token);
-        if (!actions) {
+        try {
+            const actions = await this.proxy.$provideCodeActions(handle, model.uri, rangeOrSelection, this.toModelCodeActionContext(context), token);
+            if (!actions) {
+                return undefined;
+            }
+            return {
+                actions: actions.map(a => toMonacoAction(a)),
+                dispose: () => this.proxy.$releaseCodeActions(handle, actions.map(a => a.cacheId))
+            };
+        } catch (e) {
+            console.error(e);
             return undefined;
         }
-        return {
-            actions: actions.map(a => toMonacoAction(a)),
-            dispose: () => this.proxy.$releaseCodeActions(handle, actions.map(a => a.cacheId))
-        };
     }
 
     protected toModelCodeActionContext(context: monaco.languages.CodeActionContext): CodeActionContext {

@@ -16,6 +16,7 @@ configs[0].module.rules.push({
     loader: require.resolve('@theia/application-manager/lib/expose-loader')
 });
 
+
 module.exports = [
     ...configs,
     nodeConfig.config
