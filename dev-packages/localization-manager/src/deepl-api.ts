@@ -40,7 +40,7 @@ export async function deepl(
         const parameterCopy: DeeplParameters = { ...parameters, text: chunk };
         const url = `https://${sub_domain}.deepl.com/v2/translate`;
         const buffer = Buffer.from(toFormData(parameterCopy));
-        return postWithRetry(url, buffer);
+        return postWithRetry(url, buffer, 1);
     }));
     const mergedResponse: DeeplResponse = { translations: [] };
     for (const response of responses) {
@@ -52,9 +52,9 @@ export async function deepl(
     return mergedResponse;
 }
 
-async function postWithRetry(url: string, buffer: Buffer): Promise<DeeplResponse> {
+async function postWithRetry(url: string, buffer: Buffer, attempt: number): Promise<DeeplResponse> {
     try {
-        await rateLimiter.removeTokens(1);
+        await rateLimiter.removeTokens(attempt);
         const response = await post(url, buffer, {
             'Content-Type': 'application/x-www-form-urlencoded',
             'User-Agent': 'Theia-Localization-Manager'
@@ -62,7 +62,7 @@ async function postWithRetry(url: string, buffer: Buffer): Promise<DeeplResponse
         return response;
     } catch (e) {
         if ('message' in e && typeof e.message === 'string' && e.message.includes('Too Many Requests')) {
-            return postWithRetry(url, buffer);
+            return postWithRetry(url, buffer, attempt + 1);
         }
         throw e;
     }
