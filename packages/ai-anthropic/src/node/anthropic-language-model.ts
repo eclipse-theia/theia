@@ -209,17 +209,21 @@ export class AnthropicModel implements LanguageModel {
                         return { name: tc.name, result: (await tool?.handler(argsObject)), id: tc.id, arguments: argsObject };
 
                     }));
-                    const calls = toolResult.map(tr => ({ finished: true, id: tr.id, result: tr.result as string, function: { name: tr.name, arguments: tr.arguments } }));
+
+                    const calls = toolResult.map(tr => {
+                        const resultAsString = typeof tr.result === 'string' ? tr.result : JSON.stringify(tr.result);
+                        return { finished: true, id: tr.id, result: resultAsString, function: { name: tr.name, arguments: tr.arguments } };
+                    });
                     yield { tool_calls: calls };
 
                     const toolRequestMessage: Anthropic.Messages.MessageParam = {
                         role: 'assistant',
-                        content: calls.map(call => ({
+                        content: toolResult.map(call => ({
 
                             type: 'tool_use',
                             id: call.id,
-                            name: call.function.name,
-                            input: JSON.parse(call.function.arguments)
+                            name: call.name,
+                            input: JSON.parse(call.arguments)
                         }))
                     };
 
