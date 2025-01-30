@@ -570,6 +570,12 @@ export class ChangeSetImpl implements ChangeSet {
         return true;
     }
 
+    addOrReplaceElement(element: ChangeSetElement): void {
+        if (!this.replaceElement(element)) {
+            this.addElement(element);
+        }
+    }
+
     removeElement(index: number): void {
         this._elements.splice(index, 1);
         this.notifyChange();
