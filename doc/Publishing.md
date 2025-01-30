@@ -121,7 +121,7 @@ Format:
 - Build the changes:
 
   ```bash
-  npm install && npm build
+  npm install && npm run build
   ```
 
 - Confirm the changes are built (ensure `@theia` extensions have their `lib/` folders).
