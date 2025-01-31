@@ -34,7 +34,12 @@ async function run() {
         const pluginName = path.basename(path.dirname(pluginExtensionPath)).replace(/[.\-]/g, '_');
         const targetDir = path.join('lib', 'frontend', 'hostedPlugin', pluginName);
 
-        // Ensure the target directory exists.
+        // When the directory exists, skip it
+        if (fs.existsSync(targetDir)) {
+            console.log(`Plugin ${pluginName} already prepared. Skipping.`);
+            continue;
+        }
+        // Ensure the target directory exists when not already present.
         await fs.mkdir(targetDir, { recursive: true });
 
         // Copy the content of the `extension` folder to the target directory.
