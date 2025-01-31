@@ -13,7 +13,13 @@ There are two ways to retrieve extensions:
 2. Open VSX Link: Specify a list of `id:link` mappings in the `package.json` file by the `theiaPlugins` property (e.g. `"theiaPlugins": { "vscodevim.vim": "https://open-vsx.org/api/vscodevim/vim/1.29.0/file/vscodevim.vim-1.29.0.vsix" }`). Extensions can be found on the [Open VSX Registry](https://open-vsx.org/) by searching for the extension and copying the link linked to the Download button.
 When using the Theia CLI command `theia download:plugins`, the Theia CLI will download the `.vsix` files from the specified links and install them in the directory specified by the `theiaPluginsDir` property.
 
-After the extensions are downloaded, they need to be packaged into the Theia Browser-Only application. To do this, run the command `npm run package:plugins` which in turn will run the [script](examples/browser-only/prepare-plugins.js) to unpack the `.vsix` files and copy the contents to the `lib/frontend/hostedPlugin` directory. 
+After the extensions are downloaded, they need to be unpacked and placed in the **`lib/frontend/hostedPlugin`** directory so that they can be used by Theia Browser-Only.
+
+To achieve this, the `.vsix` files must be extracted, and their contents copied into the correct directory structure. This process involves:
+1. Unpacking the `.vsix` files.
+2. Copying the extracted contents into the **`lib/frontend/hostedPlugin`** directory. Make sure to copy the `extension` folder from the VSIX file and name it according to the extension's id (typically the publisher name and the extension name separated by a dot).
+
+This process can be automated using a script. For an example implementation, you can refer to the [prepare-plugins.js script](examples/browser-only/prepare-plugins.js), which demonstrates how to extract and place the `.vsix` files in the appropriate location.
 
 As Theia need to know which extensions are available, the `pluginMetadata` inside the `PluginLocalOptions` needs to be updated with the metadata of the extensions. This can be achieved by specifying the metadata and binding it to `PluginLocalOptions` (see this [example initialization](examples/api-samples/src/browser-only/plugin-sample/example-plugin-initialization.ts)).
 
