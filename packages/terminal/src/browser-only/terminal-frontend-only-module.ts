@@ -14,8 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import '../../src/browser/style/terminal.css';
-import 'xterm/css/xterm.css';
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { TerminalFrontendOnlyContribution } from './terminal-frontend-only-contribution';
