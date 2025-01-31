@@ -66,7 +66,6 @@ metadata: {
         'stopMethod': 'deactivate', // the method to call when the extension is deactivated; typically 'deactivate' for VS Code extensions and 'stop' for Theia plugins
         'frontendModuleName': 'theia_helloworld_web_sample', // the id specified above but with underscores instead of dots and dashes similar to iconUrl, readmeUrl, and licenseUrl
         'frontendInitPath': 'plugin-vscode-init-fe.js', // the path to the frontend initialization script; only required for VS Code extensions
-        'backendInitPath': '/Users/user/theia/examples/browser/lib/backend/plugin-vscode-init' // the path to the backend initialization script; for Theia plugins, this path ends with 'backend-init-theia'
     },
     'outOfSync': false, // should always be set to false
     'isUnderDevelopment': false // should always be set to false
