@@ -11,9 +11,9 @@ When it comes to extension support, there are some restrictions to consider:
 There are two ways to retrieve extensions:
 1. VSIX packages: Copy the `.vsix` files to the directory specified in the `package.json` file by the `theiaPluginsDir` property. (e.g. `"theiaPluginsDir": "plugins"`)
 2. Open VSX Link: Specify a list of `id:link` mappings in the `package.json` file by the `theiaPlugins` property (e.g. `"theiaPlugins": { "vscodevim.vim": "https://open-vsx.org/api/vscodevim/vim/1.29.0/file/vscodevim.vim-1.29.0.vsix" }`). Extensions can be found on the [Open VSX Registry](https://open-vsx.org/) by searching for the extension and copying the link linked to the Download button.
-When using the command `npm run download:plugins`, Theia will download the `.vsix` files from the specified links and install them in the directory specified by the `theiaPluginsDir` property.
+When using the Theia CLI command `theia download:plugins`, the Theia CLI will download the `.vsix` files from the specified links and install them in the directory specified by the `theiaPluginsDir` property.
 
-After the extensions are downloaded, they need be packaged into the Theia Browser-Only application. To do this, run the command `npm run package:plugins` which in turn will run the [script](examples/browser-only/prepare-plugins.js) to unpack the `.vsix` files and copy the contents to the `lib/frontend/hostedPlugin` directory. 
+After the extensions are downloaded, they need to be packaged into the Theia Browser-Only application. To do this, run the command `npm run package:plugins` which in turn will run the [script](examples/browser-only/prepare-plugins.js) to unpack the `.vsix` files and copy the contents to the `lib/frontend/hostedPlugin` directory. 
 
 As Theia need to know which extensions are available, the `pluginMetadata` inside the `PluginLocalOptions` needs to be updated with the metadata of the extensions. This can be achieved by specifying the metadata and binding it to `PluginLocalOptions` (see this [example initialization](examples/api-samples/src/browser-only/plugin-sample/example-plugin-initialization.ts)).
 
