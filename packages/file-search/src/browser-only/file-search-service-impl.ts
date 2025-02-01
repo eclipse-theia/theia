@@ -104,14 +104,14 @@ export class FileSearchServiceImpl implements FileSearchService {
             const queue: URI[] = [rootUri];
 
             while (queue.length > 0) {
-                if (token.isCancellationRequested) return;
+                if (token.isCancellationRequested) { return; }
 
                 const currentUri = queue.shift()!;
                 try {
                     const entries = await this.fileSystemProvider.readdir(currentUri);
 
                     for (const [name, type] of entries) {
-                        if (token.isCancellationRequested) return;
+                        if (token.isCancellationRequested) { return; }
 
                         const entryUri = currentUri.resolve(name);
                         if (type === FileType.Directory) {
