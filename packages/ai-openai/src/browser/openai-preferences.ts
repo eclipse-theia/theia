@@ -54,6 +54,8 @@ export const OpenAiPreferencesSchema: PreferenceSchema = {
             \n\
             - specify `supportsDeveloperMessage: false` to indicate that the developer role shall not be used.\
             \n\
+            - specify `supportsStructuredOutput: false` to indicate that structured output shall not be used.\
+            \n\
             - specify `enableStreaming: false` to indicate that streaming shall not be used.\
             \n\
             Refer to [our documentation](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm) for more information.',
@@ -84,6 +86,10 @@ export const OpenAiPreferencesSchema: PreferenceSchema = {
                     supportsDeveloperMessage: {
                         type: 'boolean',
                         title: 'Indicates whether the model supports the `developer` role. `true` by default.',
+                    },
+                    supportsStructuredOutput: {
+                        type: 'boolean',
+                        title: 'Indicates whether the model supports structured output. `true` by default.',
                     },
                     enableStreaming: {
                         type: 'boolean',
