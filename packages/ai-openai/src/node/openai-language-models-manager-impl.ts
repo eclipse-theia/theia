@@ -71,6 +71,7 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                 model.apiKey = apiKeyProvider;
                 model.apiVersion = apiVersionProvider;
                 model.supportsDeveloperMessage = modelDescription.supportsDeveloperMessage;
+                model.supportsStructuredOutput = modelDescription.supportsStructuredOutput;
                 model.defaultRequestSettings = modelDescription.defaultRequestSettings;
             } else {
                 this.languageModelRegistry.addLanguageModels([
@@ -81,6 +82,7 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                         apiKeyProvider,
                         apiVersionProvider,
                         modelDescription.supportsDeveloperMessage,
+                        modelDescription.supportsStructuredOutput,
                         modelDescription.url,
                         modelDescription.defaultRequestSettings
                     )
