@@ -396,7 +396,7 @@ export class ElectronMainApplication {
     }
 
     protected isShowSplashScreen(): boolean {
-        return typeof this.config.electron.splashScreenOptions === 'object' && !!this.config.electron.splashScreenOptions.content;
+        return !process.env.THEIA_NO_SPLASH && typeof this.config.electron.splashScreenOptions === 'object' && !!this.config.electron.splashScreenOptions.content;
     }
 
     protected getSplashScreenOptions(): ElectronFrontendApplicationConfig.SplashScreenOptions | undefined {
@@ -522,21 +522,21 @@ export class ElectronMainApplication {
     }
 
     protected async handleMainCommand(options: ElectronMainCommandOptions): Promise<void> {
-        if (options.secondInstance === false) {
-            await this.openWindowWithWorkspace(''); // restore previous workspace.
-        } else if (options.file === undefined) {
-            await this.openDefaultWindow();
-        } else {
-            let workspacePath: string | undefined;
+        let workspacePath: string | undefined;
+        if (options.file) {
             try {
                 workspacePath = await fs.realpath(path.resolve(options.cwd, options.file));
             } catch {
                 console.error(`Could not resolve the workspace path. "${options.file}" is not a valid 'file' option. Falling back to the default workspace location.`);
             }
-            if (workspacePath === undefined) {
+        }
+        if (workspacePath !== undefined) {
+            await this.openWindowWithWorkspace(workspacePath);
+        } else {
+            if (options.secondInstance === false) {
+                await this.openWindowWithWorkspace(''); // restore previous workspace.
+            } else if (options.file === undefined) {
                 await this.openDefaultWindow();
-            } else {
-                await this.openWindowWithWorkspace(workspacePath);
             }
         }
     }
