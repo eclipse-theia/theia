@@ -170,4 +170,4 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
 
 const openAIModelsWithDisabledStreaming = ['o1-preview', 'o1-mini'];
 const openAIModelsSupportingDeveloperMessages = ['o1-preview', 'o1-mini'];
-const openAIModelsWithoutStructuredOutput = ['o1-preview', 'gpt-4-turbo', 'gtp-4', 'gpt-3.5-turbo'];
+const openAIModelsWithoutStructuredOutput = ['o1-preview', 'gpt-4-turbo', 'gpt-4', 'gpt-3.5-turbo', 'o1-mini', 'gpt-4o-2024-05-13'];
