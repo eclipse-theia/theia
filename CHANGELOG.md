@@ -65,7 +65,7 @@
 
 <a name="breaking_changes_1.58.1">[Breaking Changes:](#breaking_changes_1.58.1)</a>
 
-- [electron] Electron applications now need to be bundled due to an updated dependency that is now an ESM library [#14781](https://github.com/eclipse-theia/theia/pull/14781) [#14812](https://github.com/eclipse-theia/theia/pull/14812)
+- [electron] It is now mandatory to bundle the Theia backend in Electron applications due to an updated dependency [#14781](https://github.com/eclipse-theia/theia/pull/14781) [#14812](https://github.com/eclipse-theia/theia/pull/14812). In case you are still using the non-bundled variant: Regenerate your webpack.config.js and adjust the entry point in the package.json of your Electron application. See [here](#breaking_changes_1.39.0) for more information.
 
 ## 1.57.0 - 12/16/2024
 
