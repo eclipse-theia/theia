@@ -333,15 +333,26 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         }
     };
 
-    const handleUnpin = () => {
-        props.onUnpin();
-    };
-
-    const leftOptions = props.showContext ? [{
-        title: 'Attach elements to context',
-        handler: () => { /* TODO */ },
-        className: 'codicon-add'
-    }] : [];
+    const leftOptions = [
+        ...(props.showContext
+            ? [{
+                title: 'Attach elements to context',
+                handler: () => { /* TODO */ },
+                className: 'codicon-add'
+            }]
+            : []),
+        ...(props.pinnedAgent
+            ? [{
+                title: 'Unpin Agent',
+                handler: props.onUnpin,
+                className: 'at-icon',
+                text: {
+                    align: 'right',
+                    content: props.pinnedAgent.name
+                },
+            }]
+            : []),
+    ] as Option[];
 
     const rightOptions = inProgress
         ? [{
@@ -371,12 +382,6 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             <ChangeSetBox changeSet={changeSetUI} />
         }
         <div className='theia-ChatInput-Editor-Box'>
-            {props.pinnedAgent !== undefined &&
-                <div className='theia-ChatInput-Popup'>
-                    <span>@{props.pinnedAgent.name}</span>
-                    <span className="codicon codicon-remove-close option" title="unpin" onClick={handleUnpin} />
-                </div>
-            }
             <div className='theia-ChatInput-Editor' ref={editorContainerRef} onKeyDown={onKeyDown} onFocus={handleInputFocus} onBlur={handleInputBlur}>
                 <div ref={placeholderRef} className='theia-ChatInput-Editor-Placeholder'>Ask a question</div>
             </div>
@@ -478,6 +483,10 @@ interface Option {
     handler: () => void;
     className: string;
     disabled?: boolean;
+    text?: {
+        align?: 'left' | 'right';
+        content: string;
+    };
 }
 
 const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({ leftOptions, rightOptions }) => (
@@ -486,20 +495,26 @@ const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({ left
             {leftOptions.map((option, index) => (
                 <span
                     key={index}
-                    className={`codicon ${option.className} option ${option.disabled ? 'disabled' : ''}`}
+                    className={`option ${option.disabled ? 'disabled' : ''} ${option.text?.align === 'right' ? 'reverse' : ''}`}
                     title={option.title}
                     onClick={option.handler}
-                />
+                >
+                    <span>{option.text?.content}</span>
+                    <span className={`codicon ${option.className}`} />
+                </span>
             ))}
         </div>
         <div className="theia-ChatInputOptions-right">
             {rightOptions.map((option, index) => (
                 <span
                     key={index}
-                    className={`codicon ${option.className} option ${option.disabled ? 'disabled' : ''}`}
+                    className={`option ${option.disabled ? 'disabled' : ''} ${option.text?.align === 'right' ? 'reverse' : ''}`}
                     title={option.title}
                     onClick={option.handler}
-                />
+                >
+                    <span>{option.text?.content}</span>
+                    <span className={`codicon ${option.className}`}/>
+                </span>
             ))}
         </div>
     </div>
