@@ -63,6 +63,10 @@
 - [task] added task related context keys [#14757](https://github.com/eclipse-theia/theia/pull/14757)
 - [vsx-registry] added logic to load plugin readme from file system [#14699](https://github.com/eclipse-theia/theia/pull/14699)
 
+<a name="breaking_changes_1.58.1">[Breaking Changes:](#breaking_changes_1.58.1)</a>
+
+- [electron] Electron applications now need to be bundled due to an updated dependency that is now an ESM library [#14781](https://github.com/eclipse-theia/theia/pull/14781) [#14812](https://github.com/eclipse-theia/theia/pull/14812)
+
 ## 1.57.0 - 12/16/2024
 
 - [ai] added initial support for MCP [#14598](https://github.com/eclipse-theia/theia/pull/14598)
