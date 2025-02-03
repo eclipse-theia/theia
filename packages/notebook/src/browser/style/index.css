@@ -31,7 +31,6 @@
   pointer-events: none;
 }
 
-
 .theia-notebook-cell-output-webview {
   padding: 5px 0px;
   margin: 0px 15px 0px 50px;
@@ -77,7 +76,8 @@
 
 .theia-notebook-cell-content {
   flex: 1;
-  width: calc(100% - 15px);
+  /* needs this set width because of monaco. 56px is sidebar + gap to sidebar  */
+  width: calc(100% - 56px);
 }
 
 /* Rendered Markdown Content */
@@ -88,16 +88,16 @@
   font-size: var(--theia-notebook-markdown-size);
 }
 
-.theia-notebook-markdown-content>* {
+.theia-notebook-markdown-content > * {
   font-weight: 400;
 }
 
-.theia-notebook-markdown-content>*:first-child {
+.theia-notebook-markdown-content > *:first-child {
   margin-top: 0;
   padding-top: 0;
 }
 
-.theia-notebook-markdown-content>*:last-child {
+.theia-notebook-markdown-content > *:last-child {
   margin-bottom: 0;
   padding-bottom: 0;
 }
@@ -107,14 +107,19 @@
 }
 
 /* Markdown cell edit mode */
-.theia-notebook-cell-content:has(.theia-notebook-markdown-editor-container>.theia-notebook-cell-editor) {
+.theia-notebook-cell-content:has(
+    .theia-notebook-markdown-editor-container > .theia-notebook-cell-editor
+  ) {
   pointer-events: all;
   margin-right: var(--theia-notebook-cell-editor-margin-right);
   outline: 1px solid var(--theia-notebook-cellBorderColor);
 }
 
 /* Markdown cell edit mode focused */
-.theia-notebook-cell.focused .theia-notebook-cell-content:has(.theia-notebook-markdown-editor-container>.theia-notebook-cell-editor) {
+.theia-notebook-cell.focused
+  .theia-notebook-cell-content:has(
+    .theia-notebook-markdown-editor-container > .theia-notebook-cell-editor
+  ) {
   outline-color: var(--theia-notebook-focusedEditorBorder);
 }
 
@@ -124,6 +129,10 @@
 
 .theia-notebook-cell-editor {
   padding: 10px 10px 0 10px;
+}
+
+.theia-notebook-cell-editor .monaco-editor {
+  outline: none;
 }
 
 .theia-notebook-cell-editor-container {
@@ -242,7 +251,8 @@
 
 .theia-notebook-main-container .theia-notebook-main-loading-indicator {
   /* `progress-animation` is defined in `packages/core/src/browser/style/progress-bar.css` */
-  animation: progress-animation 1.8s 0s infinite cubic-bezier(0.645, 0.045, 0.355, 1);
+  animation: progress-animation 1.8s 0s infinite
+    cubic-bezier(0.645, 0.045, 0.355, 1);
   background-color: var(--theia-progressBar-background);
   height: 2px;
 }
@@ -317,7 +327,7 @@
   background-color: var(--theia-toolbar-active);
 }
 
-.theia-notebook-add-cell-button>* {
+.theia-notebook-add-cell-button > * {
   vertical-align: middle;
 }
 
@@ -393,7 +403,7 @@
   transform: translateY(calc(-100% - 10px));
 }
 
-.theia-notebook-find-widget.search-mode>*>*:nth-child(2) {
+.theia-notebook-find-widget.search-mode > * > *:nth-child(2) {
   display: none;
 }
 
@@ -422,8 +432,8 @@
   align-items: center;
 }
 
-.theia-notebook-find-widget-buttons-first>div,
-.theia-notebook-find-widget-buttons-second>div {
+.theia-notebook-find-widget-buttons-first > div,
+.theia-notebook-find-widget-buttons-second > div {
   margin-right: 4px;
 }
 
@@ -481,7 +491,8 @@
   margin: 2px;
 }
 
-.theia-notebook-find-widget-input-wrapper .theia-notebook-find-widget-input:focus {
+.theia-notebook-find-widget-input-wrapper
+  .theia-notebook-find-widget-input:focus {
   border: none;
   outline: none;
 }

@@ -4,6 +4,65 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## 1.58.0 - 01/30/2025
+
+- [ai] added 'required' property to tool call parameters [#14673](https://github.com/eclipse-theia/theia/pull/14673)
+- [ai] added change set support in chat input and chat model [#14750](https://github.com/eclipse-theia/theia/pull/14750)
+- [ai] added logic to allow passing context to tool calls [#14751](https://github.com/eclipse-theia/theia/pull/14751)
+- [ai] added logic to allow to auto-start MCP servers on frontend start-up [#14736](https://github.com/eclipse-theia/theia/pull/14736)
+- [ai] added logic to override change elements on additional changes [#14792](https://github.com/eclipse-theia/theia/pull/14792)
+- [ai] added Ollama LLM provider tools support [#14623](https://github.com/eclipse-theia/theia/pull/14623)
+- [ai] added search and replace function to coder [#14774](https://github.com/eclipse-theia/theia/pull/14774)
+- [ai] added support for Azure OpenAI [#14722](https://github.com/eclipse-theia/theia/pull/14722)
+- [ai] added support for change sets via tool functions [#14715](https://github.com/eclipse-theia/theia/pull/14715)
+- [ai] added tool support for anthropic streaming [#14758](https://github.com/eclipse-theia/theia/pull/14758)
+- [ai] changed trigger of inline suggestion keybinding to Ctrl+Alt+Space [#14669](https://github.com/eclipse-theia/theia/pull/14669)
+- [ai] improved behavior of AI Changeset diff editor [#14786](https://github.com/eclipse-theia/theia/pull/14786) - Contributed on behalf of STMicroelectronics
+- [ai] improved cancel logic in openAi model [#14713](https://github.com/eclipse-theia/theia/pull/14713)
+- [ai] improved cancellation token handling in chat model [#14644](https://github.com/eclipse-theia/theia/pull/14644)
+- [ai] improved performance in AI request logging [#14769](https://github.com/eclipse-theia/theia/pull/14769)
+- [ai] updated logic to allow filerting backticks in AI code completion [#14777](https://github.com/eclipse-theia/theia/pull/14777)
+- [ai] updated logic to consistently handle OpenAI models not supporting system messages instead of using dedicated O1 chat agent [#14681](https://github.com/eclipse-theia/theia/pull/14681)
+- [ai] updated logic to manage AI bindings separately per connection [#14760](https://github.com/eclipse-theia/theia/pull/14760)
+- [ai] updated logic to not let ai chat submit empty messages [#14771](https://github.com/eclipse-theia/theia/pull/14771)
+- [ai] updated logic to register tool functions of mcp servers again after restart of the frontend [#14723](https://github.com/eclipse-theia/theia/pull/14723)
+- [ai] updated logic to show diff on click in ChangeSets [#14784](https://github.com/eclipse-theia/theia/pull/14784)
+- [application-manager] fixed error caused by bundling scanoss [#14650](https://github.com/eclipse-theia/theia/pull/14650)
+- [application-manager] improved bundling for hoisted dependencies [#14708](https://github.com/eclipse-theia/theia/pull/14708)
+- [console] fixed console scrolling [#14748](https://github.com/eclipse-theia/theia/pull/14748)
+- [core] added support for dragging files in browser [#14756](https://github.com/eclipse-theia/theia/pull/14756)
+- [core] fixed dragging file from outside the workspace [#14746](https://github.com/eclipse-theia/theia/pull/14746)
+- [core] fixed override of default key bindings [#14668](https://github.com/eclipse-theia/theia/pull/14668)
+- [core] fixed workbench.action.files.newUntitledFile [#0](https://github.com/eclipse-theia/theia/pull/0)
+- [core] fixed z-index overlay issue in dock panels [#14695](https://github.com/eclipse-theia/theia/pull/14695)
+- [core] updated build scripts to use npm instead of yarn to build Theia [#14481](https://github.com/eclipse-theia/theia/pull/14481) - Contributed on behalf of STMicroelectronics
+- [core] updated keytar and drivelist [#14306](https://github.com/eclipse-theia/theia/pull/14306)
+- [core] updated logic to prevent tabbing outside of dialog overlay [#14647](https://github.com/eclipse-theia/theia/pull/14647)
+- [debug] added jump to cursor option to context menu [#14594](https://github.com/eclipse-theia/theia/pull/14594) - Contributed by MVTec Software GmbH
+- [debug] fixed updating breakpoints when debugging starts [#14645](https://github.com/eclipse-theia/theia/pull/14645) - Contributed by MVTec Software GmbH
+- [dev-container] updated logic to show more dev container info in title bar [#14571](https://github.com/eclipse-theia/theia/pull/14571)
+- [electron] bumped fix-path to ^4.0.0 to avoid cross-env <6.0.6 [#14781](https://github.com/eclipse-theia/theia/pull/14781) - Contributed on behalf of STMicroelectronics
+- [filesystem] added support for vscode file system provider scheme [#14778](https://github.com/eclipse-theia/theia/pull/14778)
+- [filesystem] fixed error handling in OPFSFileSystemProvider [#14790](https://github.com/eclipse-theia/theia/pull/14790)
+- [filesystem] fixed file data streaming for http polling [#14659](https://github.com/eclipse-theia/theia/pull/14659)
+- [getting-started] updated labels to mark DevContainers in recent workspaces [#14595](https://github.com/eclipse-theia/theia/pull/14595)
+- [git] added deprecation warning to theia/git readme [#14646](https://github.com/eclipse-theia/theia/pull/14646)
+- [monaco] updated monaco-editor-core to 1.96.3 [#14737](https://github.com/eclipse-theia/theia/pull/14737) - Contributed on behalf of STMicroelectronics
+- [notebook] fixed execute cell and below for last cell [#14795](https://github.com/eclipse-theia/theia/pull/14795)
+- [notebook] fixed issue with deleted cells when talking to output webview [#14649](https://github.com/eclipse-theia/theia/pull/14649)
+- [notebook] fixed race condition for outputs [#14789](https://github.com/eclipse-theia/theia/pull/14789)
+- [plugin] added support for property Text in DocumentDropOrPasteEditKind [#14605](https://github.com/eclipse-theia/theia/pull/14605) - Contributed on behalf of STMicroelectronics
+- [plugin] stubbed TerminalCompletionProvider proposed API [#14719](https://github.com/eclipse-theia/theia/pull/14719) - Contributed on behalf of STMicroelectronics
+- [plugin] updated code to properly mark chat and language model APIs as stubbed [#14734](https://github.com/eclipse-theia/theia/pull/14734) - Contributed on behalf of STMicroelectronics
+- [plugin] updated code to provide node-pty package for plugins [#14720](https://github.com/eclipse-theia/theia/pull/14720)
+- [plugin] updated logic to include ignored files in vscode.workspace.findFiles [#14365](https://github.com/eclipse-theia/theia/pull/14365)
+- [plugin] updated logic to only call refresh on given elements given by plugin [#14697](https://github.com/eclipse-theia/theia/pull/14697) - Contributed on behalf of STMicroelectronics
+- [process] updated node-pty to 1.1.0-beta27 [#14677](https://github.com/eclipse-theia/theia/pull/14677) - Contributed on behalf of STMicroelectronics
+- [scanoss] fixed scanoss error on Windows [#14653](https://github.com/eclipse-theia/theia/pull/14653)
+- [secondary-window] improved README of secondary window package [#14691](https://github.com/eclipse-theia/theia/pull/14691) - Contributed on behalf of STMicroelectronics
+- [task] added task related context keys [#14757](https://github.com/eclipse-theia/theia/pull/14757)
+- [vsx-registry] added logic to load plugin readme from file system [#14699](https://github.com/eclipse-theia/theia/pull/14699)
+
 ## 1.57.0 - 12/16/2024
 
 - [ai] added initial support for MCP [#14598](https://github.com/eclipse-theia/theia/pull/14598)
