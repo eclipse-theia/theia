@@ -187,8 +187,10 @@ export class PostCreateCommandContribution implements ContainerCreationContribut
 export class ContainerEnvContribution implements ContainerCreationContribution {
     async handleContainerCreation(createOptions: Docker.ContainerCreateOptions, containerConfig: DevContainerConfiguration): Promise<void> {
         if (containerConfig.containerEnv) {
-            if(createOptions.Env === undefined) createOptions.Env = [];
-            for(const [key, value] of Object.entries(containerConfig.containerEnv)) {
+            if (createOptions.Env === undefined) {
+                createOptions.Env = [];
+            }
+            for (const [key, value] of Object.entries(containerConfig.containerEnv)) {
                 createOptions.Env.push(`${key}=${value}`);
             }
         }
