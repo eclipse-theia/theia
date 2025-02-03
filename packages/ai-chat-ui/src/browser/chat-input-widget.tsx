@@ -23,8 +23,10 @@ import { IMouseEvent } from '@theia/monaco-editor-core';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { CHAT_VIEW_LANGUAGE_EXTENSION } from './chat-view-language-contribution';
+import { AIVariableResolutionRequest } from '@theia/ai-core';
+import { ContextVariablePicker } from './context-variable-picker';
 
-type Query = (query: string) => Promise<void>;
+type Query = (query: string, context?: AIVariableResolutionRequest[]) => Promise<void>;
 type Cancel = (requestModel: ChatRequestModel) => void;
 type DeleteChangeSet = (requestModel: ChatRequestModel) => void;
 type DeleteChangeSetElement = (requestModel: ChatRequestModel, index: number) => void;
@@ -54,10 +56,15 @@ export class AIChatInputWidget extends ReactWidget {
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
 
+    @inject(ContextVariablePicker)
+    protected readonly contextVariablePicker: ContextVariablePicker;
+
     protected editorRef: MonacoEditor | undefined = undefined;
     private editorReady = new Deferred<void>();
 
     protected isEnabled = false;
+
+    protected context: AIVariableResolutionRequest[] = [];
 
     private _onQuery: Query;
     set onQuery(query: Query) {
@@ -75,6 +82,7 @@ export class AIChatInputWidget extends ReactWidget {
     set onDeleteChangeSetElement(deleteChangeSetElement: DeleteChangeSetElement) {
         this._onDeleteChangeSetElement = deleteChangeSetElement;
     }
+
     private _chatModel: ChatModel;
     set chatModel(chatModel: ChatModel) {
         this._chatModel = chatModel;
@@ -104,6 +112,9 @@ export class AIChatInputWidget extends ReactWidget {
                 onCancel={this._onCancel.bind(this)}
                 onDeleteChangeSet={this._onDeleteChangeSet.bind(this)}
                 onDeleteChangeSetElement={this._onDeleteChangeSetElement.bind(this)}
+                onAddContextElement={this.addContextElement.bind(this)}
+                onDeleteContextElement={this.deleteContextElement.bind(this)}
+                context={this.context}
                 chatModel={this._chatModel}
                 editorProvider={this.editorProvider}
                 untitledResourceResolver={this.untitledResourceResolver}
@@ -124,6 +135,20 @@ export class AIChatInputWidget extends ReactWidget {
         this.update();
     }
 
+    protected addContextElement(): void {
+        this.contextVariablePicker.pickContextVariable().then(contextElement => {
+            if (contextElement) {
+                this.context.push(contextElement);
+                this.update();
+            }
+        });
+    }
+
+    protected deleteContextElement(index: number): void {
+        this.context.splice(index, 1);
+        this.update();
+    }
+
     protected handleContextMenu(event: IMouseEvent): void {
         this.contextMenuRenderer.render({
             menuPath: AIChatInputWidget.CONTEXT_MENU,
@@ -132,13 +157,20 @@ export class AIChatInputWidget extends ReactWidget {
         event.preventDefault();
     }
 
+    addContext(variable: AIVariableResolutionRequest): void {
+        this.context.push(variable);
+        this.update();
+    }
 }
 
 interface ChatInputProperties {
     onCancel: (requestModel: ChatRequestModel) => void;
-    onQuery: (query: string) => void;
+    onQuery: (query: string, context?: AIVariableResolutionRequest[]) => void;
     onDeleteChangeSet: (sessionId: string) => void;
     onDeleteChangeSetElement: (sessionId: string, index: number) => void;
+    onAddContextElement: () => void;
+    onDeleteContextElement: (index: number) => void;
+    context?: AIVariableResolutionRequest[];
     isEnabled?: boolean;
     chatModel: ChatModel;
     editorProvider: MonacoEditorProvider;
@@ -234,6 +266,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             props.setEditorRef(editor);
         };
         createInputElement();
+
         return () => {
             props.setEditorRef(undefined);
             if (editorRef.current) {
@@ -277,7 +310,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             return;
         }
         setInProgress(true);
-        props.onQuery(value);
+        props.onQuery(value, props.context);
         if (editorRef.current) {
             editorRef.current.document.textEditorModel.setValue('');
         }
@@ -321,7 +354,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
 
     const leftOptions = props.showContext ? [{
         title: 'Attach elements to context',
-        handler: () => { /* TODO */ },
+        handler: () => props.onAddContextElement(),
         className: 'codicon-add'
     }] : [];
 
@@ -348,6 +381,8 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             disabled: isInputEmpty || !props.isEnabled
         }];
 
+    const contextUI = buildContextUI(props.context, props.labelProvider, props.onDeleteContextElement);
+
     return <div className='theia-ChatInput'>
         {changeSetUI?.elements &&
             <ChangeSetBox changeSet={changeSetUI} />
@@ -356,6 +391,9 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             <div className='theia-ChatInput-Editor' ref={editorContainerRef} onKeyDown={onKeyDown} onFocus={handleInputFocus} onBlur={handleInputBlur}>
                 <div ref={placeholderRef} className='theia-ChatInput-Editor-Placeholder'>Ask a question</div>
             </div>
+            {props.context && props.context.length > 0 &&
+                <ChatContext context={contextUI.context} />
+            }
             <ChatInputOptions leftOptions={leftOptions} rightOptions={rightOptions} />
         </div>
     </div>;
@@ -497,3 +535,50 @@ function getLatestRequest(chatModel: ChatModel): ChatRequestModel | undefined {
     const requests = chatModel.getRequests();
     return requests.length > 0 ? requests[requests.length - 1] : undefined;
 }
+
+function buildContextUI(context: AIVariableResolutionRequest[] | undefined, labelProvider: LabelProvider, onDeleteContextElement: (index: number) => void): ChatContextUI {
+    if (!context) {
+        return { context: [] };
+    }
+    return {
+        context: context.map((element, index) => ({
+            name: labelProvider.getName(element),
+            iconClass: labelProvider.getIcon(element),
+            nameClass: element.variable.name,
+            additionalInfo: labelProvider.getDetails(element),
+            details: labelProvider.getLongName(element),
+            delete: () => onDeleteContextElement(index),
+        }))
+    };
+}
+
+interface ChatContextUI {
+    context: {
+        name: string;
+        iconClass: string;
+        nameClass: string;
+        additionalInfo?: string;
+        details?: string;
+        delete: () => void;
+        open?: () => void;
+    }[];
+}
+
+const ChatContext: React.FunctionComponent<ChatContextUI> = ({ context }) => (
+    <div className="theia-ChatInput-ChatContext">
+        <ul>
+            {context.map((element, index) => (
+                <li key={index} className="theia-ChatInput-ChatContext-Element" title={element.details} onClick={() => element.open?.()}>
+                    <div className={`theia-ChatInput-ChatContext-Icon ${element.iconClass}`} />
+                    <span className={`theia-ChatInput-ChatContext-title ${element.nameClass}`}>
+                        {element.name}
+                    </span>
+                    <span className='theia-ChatInput-ChatContext-additionalInfo'>
+                        {element.additionalInfo}
+                    </span>
+                    <span className="codicon codicon-close action" title="Delete" onClick={() => element.delete()} />
+                </li>
+            ))}
+        </ul>
+    </div>
+);

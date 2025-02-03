@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Agent, AgentService, AIVariableContribution } from '@theia/ai-core/lib/common';
+import { Agent, AgentService, AIVariableContribution, ToolProvider } from '@theia/ai-core/lib/common';
 import { bindContributionProvider, ResourceResolver } from '@theia/core';
-import { FrontendApplicationContribution, PreferenceContribution } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, LabelProviderContribution, PreferenceContribution } from '@theia/core/lib/browser';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import {
     ChatAgent,
@@ -41,6 +41,10 @@ import { CustomAgentFactory } from './custom-agent-factory';
 import { ChatToolRequestService } from '../common/chat-tool-request-service';
 import { ChangeSetFileResourceResolver } from './change-set-file-resource';
 import { ChangeSetFileService } from './change-set-file-service';
+import { ContextVariableLabelProvider } from './context-variable-label-provider';
+import { ContextFileVariableLabelProvider } from './context-file-variable-label-provider';
+import { ListChatContext, ResolveChatContext } from './context-tool-provider';
+import { FileChatVariableContribution } from './file-chat-variable-contribution';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, Agent);
@@ -77,6 +81,9 @@ export default new ContainerModule(bind => {
     bind(Agent).toService(CommandChatAgent);
     bind(ChatAgent).toService(CommandChatAgent);
 
+    bind(ToolProvider).to(ListChatContext);
+    bind(ToolProvider).to(ResolveChatContext);
+
     bind(PreferenceContribution).toConstantValue({ schema: aiChatPreferences });
 
     bind(CustomChatAgent).toSelf();
@@ -97,6 +104,11 @@ export default new ContainerModule(bind => {
         });
     bind(FrontendApplicationContribution).to(AICustomAgentsFrontendApplicationContribution).inSingletonScope();
 
+    bind(ContextVariableLabelProvider).toSelf().inSingletonScope();
+    bind(LabelProviderContribution).toService(ContextVariableLabelProvider);
+    bind(ContextFileVariableLabelProvider).toSelf().inSingletonScope();
+    bind(LabelProviderContribution).toService(ContextFileVariableLabelProvider);
+
     bind(ChangeSetFileService).toSelf().inSingletonScope();
     bind(ChangeSetFileElementFactory).toFactory(ctx => (args: ChangeSetElementArgs) => {
         const container = ctx.container.createChild();
@@ -106,4 +118,6 @@ export default new ContainerModule(bind => {
     });
     bind(ChangeSetFileResourceResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toService(ChangeSetFileResourceResolver);
+
+    bind(AIVariableContribution).to(FileChatVariableContribution).inSingletonScope();
 });
