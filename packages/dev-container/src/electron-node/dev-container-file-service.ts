@@ -14,13 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { WorkspaceServer } from '@theia/workspace/lib/common';
 import { DevContainerFile } from '../electron-common/remote-container-connection-provider';
 import { DevContainerConfiguration } from './devcontainer-file';
 import { parse } from 'jsonc-parser';
 import * as fs from '@theia/core/shared/fs-extra';
-import { Path, URI } from '@theia/core';
+import { ContributionProvider, Path, URI } from '@theia/core';
+import { VariableResolverContribution } from './devcontainer-contributions/variable-resolver-contribution';
+
+const VARIABLE_REGEX = /^\$\{(.+?)(?::(.+))?\}$/;
 
 @injectable()
 export class DevContainerFileService {
@@ -28,27 +31,33 @@ export class DevContainerFileService {
     @inject(WorkspaceServer)
     protected readonly workspaceServer: WorkspaceServer;
 
-    private resolveLocalEnv(value: string): string {
-        const localEnvRegex = /^\$\{localEnv:(.+)\}$/;
-        const match = value.match(localEnvRegex);
+    @inject(ContributionProvider) @named(VariableResolverContribution)
+    protected readonly variableResolverContributions: ContributionProvider<VariableResolverContribution>;
+
+    protected resolveVariable(value: string): string {
+        const match = value.match(VARIABLE_REGEX);
         if (match) {
-            const envVarName = match[1];
-            return process.env[envVarName] || '';
+            const [, type, variable] = match;
+            for (const contribution of this.variableResolverContributions.getContributions()) {
+                if (contribution.canResolve(type)) {
+                    return contribution.resolve(variable ?? type);
+                }
+            }
         }
         return value;
     }
 
-    private resolveLocalEnvRecursively(obj: any): any {
+    protected resolveVariablesRecursively<T>(obj: T): T {
         if (typeof obj === 'string') {
-            return this.resolveLocalEnv(obj);
+            return this.resolveVariable(obj) as T;
         } else if (Array.isArray(obj)) {
-            return obj.map(item => this.resolveLocalEnvRecursively(item));
-        } else if (typeof obj === 'object' && obj !== null) {
-            const newObj: any = {};
+            return obj.map(item => this.resolveVariablesRecursively(item)) as T;
+        } else if (obj && typeof obj === 'object') {
+            const newObj: Record<string, unknown> = {};
             for (const [key, value] of Object.entries(obj)) {
-                newObj[key] = this.resolveLocalEnvRecursively(value);
+                newObj[key] = this.resolveVariablesRecursively(value);
             }
-            return newObj;
+            return newObj as T;
         }
         return obj;
     }
@@ -59,7 +68,7 @@ export class DevContainerFileService {
             throw new Error(`devcontainer file ${path} could not be parsed`);
         }
 
-        configuration = this.resolveLocalEnvRecursively(configuration);
+        configuration = this.resolveVariablesRecursively(configuration);
         configuration.location = path;
         return configuration;
     }
