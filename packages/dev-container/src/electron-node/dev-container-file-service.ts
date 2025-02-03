@@ -28,12 +28,38 @@ export class DevContainerFileService {
     @inject(WorkspaceServer)
     protected readonly workspaceServer: WorkspaceServer;
 
+    private resolveLocalEnv(value: string): string {
+        const localEnvRegex = /^\$\{localEnv:(.+)\}$/;
+        const match = value.match(localEnvRegex);
+        if (match) {
+            const envVarName = match[1];
+            return process.env[envVarName] || '';
+        }
+        return value;
+    }
+
+    private resolveLocalEnvRecursively(obj: any): any {
+        if (typeof obj === 'string') {
+            return this.resolveLocalEnv(obj);
+        } else if (Array.isArray(obj)) {
+            return obj.map(item => this.resolveLocalEnvRecursively(item));
+        } else if (typeof obj === 'object' && obj !== null) {
+            const newObj: any = {};
+            for (const [key, value] of Object.entries(obj)) {
+                newObj[key] = this.resolveLocalEnvRecursively(value);
+            }
+            return newObj;
+        }
+        return obj;
+    }
+
     async getConfiguration(path: string): Promise<DevContainerConfiguration> {
-        const configuration: DevContainerConfiguration = parse(await fs.readFile(path, 'utf-8').catch(() => '0')) as DevContainerConfiguration;
+        let configuration: DevContainerConfiguration = parse(await fs.readFile(path, 'utf-8').catch(() => '0')) as DevContainerConfiguration;
         if (!configuration) {
             throw new Error(`devcontainer file ${path} could not be parsed`);
         }
 
+        configuration = this.resolveLocalEnvRecursively(configuration);
         configuration.location = path;
         return configuration;
     }
