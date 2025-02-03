@@ -101,7 +101,7 @@ namespace TheiaElectronAppLoader {
         const appPath = electronConfig.electronAppPath!;
         const pluginsPath = electronConfig.pluginsPath;
         const launchOptions = electronConfig.launchOptions ?? {
-            additionalArgs: ['--no-cluster'],
+            additionalArgs: ['--no-sandbox', '--no-cluster'],
             electronAppPath: appPath,
             pluginsPath: pluginsPath
         };
@@ -120,7 +120,7 @@ namespace TheiaElectronAppLoader {
         electronLaunchOptions: { additionalArgs: string[], electronAppPath: string, pluginsPath?: string } | object,
         workspace?: TheiaWorkspace
     ): {
-        args: string[], env: { [key: string]: string };
+        args: string[]
     } | object {
         if ('additionalArgs' in electronLaunchOptions && 'electronAppPath' in electronLaunchOptions) {
             const args = [
@@ -136,9 +136,7 @@ namespace TheiaElectronAppLoader {
             }
 
             return {
-                args: args, env: {
-                    'THEIA_NO_SPLASH': 'true'
-                }
+                args: args
             };
         }
         return electronLaunchOptions;
@@ -156,6 +154,7 @@ export namespace TheiaAppLoader {
             // disable native elements and early window to avoid issues with the electron app
             process.env.THEIA_ELECTRON_DISABLE_NATIVE_ELEMENTS = '1';
             process.env.THEIA_ELECTRON_NO_EARLY_WINDOW = '1';
+            process.env.THEIA_NO_SPLASH = 'true';
             return TheiaElectronAppLoader.load(args, initialWorkspace, factory);
         }
         const page = await args.browser.newPage();
