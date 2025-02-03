@@ -117,7 +117,7 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
             model: modelId,
             apiKey: true,
             apiVersion: true,
-            supportsDeveloperMessage: !openAIModelsSupportingDeveloperMessages.includes(modelId),
+            supportsDeveloperMessage: !openAIModelsNotSupportingDeveloperMessages.includes(modelId),
             enableStreaming: !openAIModelsWithDisabledStreaming.includes(modelId),
             supportsStructuredOutput: !openAIModelsWithoutStructuredOutput.includes(modelId),
             defaultRequestSettings: modelRequestSetting?.requestSettings
@@ -168,6 +168,6 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
     }
 }
 
-const openAIModelsWithDisabledStreaming = ['o1-preview', 'o1-mini'];
-const openAIModelsSupportingDeveloperMessages = ['o1-preview', 'o1-mini'];
+const openAIModelsWithDisabledStreaming = ['o1'];
+const openAIModelsNotSupportingDeveloperMessages = ['o1-preview', 'o1-mini'];
 const openAIModelsWithoutStructuredOutput = ['o1-preview', 'gpt-4-turbo', 'gpt-4', 'gpt-3.5-turbo', 'o1-mini', 'gpt-4o-2024-05-13'];
