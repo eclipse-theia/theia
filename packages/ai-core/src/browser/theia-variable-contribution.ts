@@ -18,6 +18,9 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { VariableRegistry, VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { AIVariableContribution, AIVariableResolver, AIVariableService, AIVariableResolutionRequest, AIVariableContext, ResolvedAIVariable } from '../common';
 
+/**
+ * Integrates the Theia VariableRegistry with the Theia AI VariableService when running in the browser.
+ */
 @injectable()
 export class TheiaVariableContribution implements AIVariableContribution, AIVariableResolver {
     @inject(VariableResolverService)
