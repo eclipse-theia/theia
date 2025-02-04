@@ -187,7 +187,8 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
         'This agent provides inline code completion in the code editor in the Theia IDE.';
     promptTemplates: PromptTemplate[] = [
         {
-            id: 'code-completion-prompt',
+            id: 'code-completion-prompt-previous',
+            variantOf: 'code-completion-prompt',
             template: `{{!-- Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
 You are a code completion agent. The current file you have to complete is named {{file}}.
@@ -199,8 +200,7 @@ Finish the following code snippet.
 Only return the exact replacement for [[MARKER]] to complete the snippet.`
         },
         {
-            id: 'code-completion-prompt-next',
-            variantOf: 'code-completion-prompt',
+            id: 'code-completion-prompt',
             template: `{{!-- Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
 ## Code snippet
