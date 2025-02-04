@@ -16,8 +16,8 @@
 
 /*
  * The code in this file is responsible for overriding service implementations in the Monaco editor with our own Theia-based implementations.
- * Since we only get a single chance to call `StandaloneServies.initialize()` with our overrides, we need to make sure that intialize is called before the first call to
- * `StandaloneServices.get()` or `StandaloneServies.initialize()`. As we do not control the mechanics of Inversify instance constructions, the approach here is to call
+ * Since we only get a single chance to call `StandaloneServices.initialize()` with our overrides, we need to make sure that initialize is called before the first call to
+ * `StandaloneServices.get()` or `StandaloneServices.initialize()`. As we do not control the mechanics of Inversify instance constructions, the approach here is to call
  * `MonacoInit.init()` from the `index.js` file after all container modules are loaded, but before the first object is fetched from it.
  * `StandaloneServices.initialize()` is called with service descriptors, not service instances. This lets us finish all overrides before any inversify object is constructed and
  * might call `initialize()` while being constructed.
@@ -50,6 +50,41 @@ import { MonacoQuickInputImplementation } from './monaco-quick-input-service';
 import { IQuickInputService } from '@theia/monaco-editor-core/esm/vs/platform/quickinput/common/quickInput';
 import { IStandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
 import { MonacoStandaloneThemeService } from './monaco-standalone-theme-service';
+import { ContentHoverWidget } from '@theia/monaco-editor-core/esm/vs/editor/contrib/hover/browser/contentHoverWidget';
+import { IPosition } from '@theia/monaco-editor-core/esm/vs/editor/common/core/position';
+
+// VS Code uses 30 pixel for top height, and 24 pixels for bottom height, but Theia uses 32 pixel for the top and 22 for the bottom.
+// https://github.com/microsoft/vscode/blob/1430e1845cbf5ec29a2fc265f12c7fb5c3d685c3/src/vs/editor/contrib/hover/browser/resizableContentWidget.ts#L13-L14
+// https://github.com/eclipse-theia/theia/blob/b752ea690bdc4e7c5d9ab98a138504ead05be0d1/packages/core/src/browser/style/menus.css#L22
+// https://github.com/eclipse-theia/theia/blob/b752ea690bdc4e7c5d9ab98a138504ead05be0d1/packages/core/src/browser/style/status-bar.css#L18
+// https://github.com/eclipse-theia/theia/issues/14826
+function patchContentHoverWidget(actualTopHeight = 32): { setActualTopHeightForContentHoverWidget: (value: number) => void } {
+    const vscodeTopHeight = 30;
+    let _actualTopHeight = actualTopHeight;
+    function topHeightDiff(): number {
+        return _actualTopHeight - vscodeTopHeight;
+    }
+
+    const originalAvailableVerticalSpaceAbove = ContentHoverWidget.prototype['_availableVerticalSpaceAbove'];
+    ContentHoverWidget.prototype['_availableVerticalSpaceAbove'] = function (position: IPosition): number | undefined {
+        const value = originalAvailableVerticalSpaceAbove.call(this, position);
+        return typeof value === 'number' ? value - topHeightDiff() : undefined;
+    };
+
+    const originalAvailableVerticalSpaceBelow = ContentHoverWidget.prototype['_availableVerticalSpaceBelow'];
+    ContentHoverWidget.prototype['_availableVerticalSpaceBelow'] = function (position: IPosition): number | undefined {
+        const value = originalAvailableVerticalSpaceBelow.call(this, position);
+        return typeof value === 'number' ? value + 2 : undefined;
+    };
+
+    return {
+        setActualTopHeightForContentHoverWidget: (value: number) => {
+            _actualTopHeight = value;
+        }
+    };
+}
+
+export const { setActualTopHeightForContentHoverWidget } = patchContentHoverWidget();
 
 class MonacoEditorServiceConstructor {
     /**
