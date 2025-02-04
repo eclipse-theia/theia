@@ -19,7 +19,7 @@ import { VariableRegistry, VariableResolverService } from '@theia/variable-resol
 import { AIVariableContribution, AIVariableResolver, AIVariableService, AIVariableResolutionRequest, AIVariableContext, ResolvedAIVariable } from '../common';
 
 /**
- * Integrates the Theia VariableRegistry with the Theia AI VariableService when running in the browser.
+ * Integrates the Theia VariableRegistry with the Theia AI VariableService
  */
 @injectable()
 export class TheiaVariableContribution implements AIVariableContribution, AIVariableResolver {
