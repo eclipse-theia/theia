@@ -203,7 +203,7 @@ export class GettingStartedWidget extends ReactWidget {
                 tabIndex={0}
                 onClick={this.doCreateFile}
                 onKeyDown={this.doCreateFileEnter}>
-                {CommonCommands.NEW_UNTITLED_FILE.label ?? nls.localizeByDefault('New File...')}
+                {nls.localizeByDefault('New File...')}
             </a>
         </div>;
 
@@ -270,7 +270,7 @@ export class GettingStartedWidget extends ReactWidget {
                     tabIndex={0}
                     onClick={() => this.open(new URI(items[index]))}
                     onKeyDown={(e: React.KeyboardEvent) => this.openEnter(e, new URI(items[index]))}>
-                    {new URI(items[index]).path.base}
+                    {this.labelProvider.getName(new URI(items[index]))}
                 </a>
                 <span className='gs-action-details'>
                     {item}
@@ -481,7 +481,7 @@ export class GettingStartedWidget extends ReactWidget {
     /**
      * Trigger the create file command.
      */
-    protected doCreateFile = () => this.commandRegistry.executeCommand(CommonCommands.NEW_UNTITLED_FILE.id);
+    protected doCreateFile = () => this.commandRegistry.executeCommand(CommonCommands.PICK_NEW_FILE.id);
     protected doCreateFileEnter = (e: React.KeyboardEvent) => {
         if (this.isEnterKey(e)) {
             this.doCreateFile();

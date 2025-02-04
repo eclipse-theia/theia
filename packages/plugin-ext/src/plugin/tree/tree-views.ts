@@ -252,8 +252,22 @@ class TreeViewExtImpl<T> implements Disposable {
             dragMimeTypes, dropMimeTypes
         });
         this.toDispose.push(Disposable.create(() => this.proxy.$unregisterTreeDataProvider(treeViewId)));
-        options.treeDataProvider.onDidChangeTreeData?.(() => {
-            this.pendingRefresh = proxy.$refresh(treeViewId);
+        options.treeDataProvider.onDidChangeTreeData?.(elements => {
+            const ids = [];
+            elements = elements || [];
+            if (!Array.isArray(elements)) {
+                elements = [elements];
+            }
+            const set = new Set<T>();
+            for (const element of elements) {
+                set.add(element);
+            }
+            for (const node of this.nodes.values()) {
+                if (node.value && set.has(node.value)) {
+                    ids.push(node.id);
+                }
+            }
+            this.pendingRefresh = proxy.$refresh(treeViewId, ids);
         });
     }
 
@@ -378,7 +392,7 @@ class TreeViewExtImpl<T> implements Disposable {
         let counter = 0;
         do {
             id = `${prefix}/${counter}:${elementId}`;
-            if (!mustReturnNew || !this.nodes.has(id) || this.nodes.get(id) === item) {
+            if (!mustReturnNew || !this.nodes.has(id) || this.nodes.get(id)?.pluginTreeItem === item) {
                 // Return first if asked for or
                 // Return if handle does not exist or
                 // Return if handle is being reused

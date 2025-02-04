@@ -61,6 +61,10 @@ export class LanguageModelDelegateClientImpl
         return this.receiver.toolCall(requestId, toolId, args_string);
     }
 
+    error(id: string, error: Error): void {
+        this.receiver.error(id, error);
+    }
+
     languageModelAdded(metadata: LanguageModelMetaData): void {
         this.receiver.languageModelAdded(metadata);
     }
@@ -74,6 +78,7 @@ interface StreamState {
     id: string;
     tokens: (LanguageModelStreamResponsePart | undefined)[];
     resolve?: (_: unknown) => void;
+    reject?: (_: unknown) => void;
 }
 
 @injectable()
@@ -249,8 +254,9 @@ export class FrontendLanguageModelRegistryImpl
                     yield token;
                 }
             } else {
-                await new Promise(resolve => {
+                await new Promise((resolve, reject) => {
                     state.resolve = resolve;
+                    state.reject = reject;
                 });
             }
         }
@@ -284,6 +290,19 @@ export class FrontendLanguageModelRegistryImpl
             return tool.handler(arg_string);
         }
         throw new Error(`Could not find a tool for ${toolId}!`);
+    }
+
+    // called by backend via the "delegate client" with the error to use for rejection
+    error(id: string, error: Error): void {
+        if (!this.streams.has(id)) {
+            const newStreamState = {
+                id,
+                tokens: [],
+            };
+            this.streams.set(id, newStreamState);
+        }
+        const streamState = this.streams.get(id)!;
+        streamState.reject?.(error);
     }
 
     override async selectLanguageModels(request: LanguageModelSelector): Promise<LanguageModel[]> {
@@ -347,7 +366,7 @@ const languageModelOutputHandler = (
                     'Sending request:'
                 );
                 const formattedRequest = formatJsonWithIndentation(args[0]);
-                formattedRequest.forEach(line => outputChannel.appendLine(line));
+                outputChannel.append(formattedRequest.join('\n'));
                 if (args[1]) {
                     args[1] = new Proxy(args[1], {
                         get<CK extends keyof CancellationToken>(

@@ -1647,6 +1647,7 @@ export class DocumentLink {
 @es5ClassCompat
 export class DocumentDropOrPasteEditKind {
     static readonly Empty: DocumentDropOrPasteEditKind = new DocumentDropOrPasteEditKind('');
+    static readonly Text: DocumentDropOrPasteEditKind = new DocumentDropOrPasteEditKind('text');
 
     private static sep = '.';
 
@@ -3839,6 +3840,33 @@ export enum EditSessionIdentityMatch {
     Complete = 100,
     Partial = 50,
     None = 0
+}
+// #endregion
+
+// #region terminalCompletionProvider
+export class TerminalCompletionList<T extends theia.TerminalCompletionItem> {
+
+    resourceRequestConfig?: theia.TerminalResourceRequestConfig;
+
+    items: T[];
+
+    /**
+     * Creates a new completion list.
+     *
+     * @param items The completion items.
+     * @param resourceRequestConfig Indicates which resources should be shown as completions for the cwd of the terminal.
+     * @stubbed
+     */
+    constructor(items?: T[], resourceRequestConfig?: theia.TerminalResourceRequestConfig) {
+    }
+}
+
+export enum TerminalCompletionItemKind {
+    File = 0,
+    Folder = 1,
+    Flag = 2,
+    Method = 3,
+    Argument = 4
 }
 // #endregion
 

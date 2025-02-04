@@ -23,12 +23,17 @@ import { OpenAiLanguageModelsManager, OpenAiModelDescription } from '../common';
 export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsManager {
 
     protected _apiKey: string | undefined;
+    protected _apiVersion: string | undefined;
 
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: LanguageModelRegistry;
 
     get apiKey(): string | undefined {
         return this._apiKey ?? process.env.OPENAI_API_KEY;
+    }
+
+    get apiVersion(): string | undefined {
+        return this._apiVersion ?? process.env.OPENAI_API_VERSION;
     }
 
     // Triggered from frontend. In case you want to use the models on the backend
@@ -45,6 +50,15 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                 }
                 return undefined;
             };
+            const apiVersionProvider = () => {
+                if (modelDescription.apiVersion === true) {
+                    return this.apiVersion;
+                }
+                if (modelDescription.apiVersion) {
+                    return modelDescription.apiVersion;
+                }
+                return undefined;
+            };
 
             if (model) {
                 if (!(model instanceof OpenAiModel)) {
@@ -55,6 +69,9 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                 model.enableStreaming = modelDescription.enableStreaming;
                 model.url = modelDescription.url;
                 model.apiKey = apiKeyProvider;
+                model.apiVersion = apiVersionProvider;
+                model.supportsDeveloperMessage = modelDescription.supportsDeveloperMessage;
+                model.supportsStructuredOutput = modelDescription.supportsStructuredOutput;
                 model.defaultRequestSettings = modelDescription.defaultRequestSettings;
             } else {
                 this.languageModelRegistry.addLanguageModels([
@@ -63,6 +80,9 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                         modelDescription.model,
                         modelDescription.enableStreaming,
                         apiKeyProvider,
+                        apiVersionProvider,
+                        modelDescription.supportsDeveloperMessage,
+                        modelDescription.supportsStructuredOutput,
                         modelDescription.url,
                         modelDescription.defaultRequestSettings
                     )
@@ -80,6 +100,14 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
             this._apiKey = apiKey;
         } else {
             this._apiKey = undefined;
+        }
+    }
+
+    setApiVersion(apiVersion: string | undefined): void {
+        if (apiVersion) {
+            this._apiVersion = apiVersion;
+        } else {
+            this._apiVersion = undefined;
         }
     }
 }

@@ -236,7 +236,9 @@ import {
     PortAutoForwardAction,
     PortAttributes,
     DebugVisualization,
-    TerminalShellExecutionCommandLineConfidence
+    TerminalShellExecutionCommandLineConfidence,
+    TerminalCompletionItemKind,
+    TerminalCompletionList
 } from './types-impl';
 import { AuthenticationExtImpl } from './authentication-ext';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
@@ -654,6 +656,13 @@ export function createAPIFactory(
             },
             /** @stubbed ProfileContentHandler */
             registerProfileContentHandler(id: string, profileContentHandler: theia.ProfileContentHandler): theia.Disposable {
+                return Disposable.NULL;
+            },
+            /** @stubbed TerminalCompletionProvider */
+            registerTerminalCompletionProvider<T extends theia.TerminalCompletionItem>(
+                provider: theia.TerminalCompletionProvider<T>,
+                ...triggerCharacters: string[]
+            ): theia.Disposable {
                 return Disposable.NULL;
             },
             /** @stubbed TerminalQuickFixProvider */
@@ -1570,7 +1579,9 @@ export function createAPIFactory(
             PortAutoForwardAction,
             PortAttributes,
             DebugVisualization,
-            TerminalShellExecutionCommandLineConfidence
+            TerminalShellExecutionCommandLineConfidence,
+            TerminalCompletionItemKind,
+            TerminalCompletionList
         };
     };
 }

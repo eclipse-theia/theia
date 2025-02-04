@@ -47,12 +47,14 @@ export class TheiaWorkspace {
 
     get path(): string {
         let workspacePath = this.workspacePath;
-        if (!OSUtil.osStartsWithFileSeparator(this.workspacePath)) {
-            workspacePath = `${OSUtil.fileSeparator}${workspacePath}`;
-        }
+
         if (OSUtil.isWindows) {
             // Drive letters in windows paths have to be lower case
             workspacePath = workspacePath.replace(/.:/, matchedChar => matchedChar.toLowerCase());
+        } else {
+            if (!OSUtil.osStartsWithFileSeparator(this.workspacePath)) {
+                workspacePath = `${OSUtil.fileSeparator}${workspacePath}`;
+            }
         }
         return workspacePath;
     }

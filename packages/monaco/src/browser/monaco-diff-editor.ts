@@ -26,7 +26,7 @@ import { ICodeEditor, IDiffEditorConstructionOptions } from '@theia/monaco-edito
 import { IActionDescriptor, IStandaloneCodeEditor, IStandaloneDiffEditor, StandaloneCodeEditor, StandaloneDiffEditor2 }
     from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
 import { IEditorConstructionOptions } from '@theia/monaco-editor-core/esm/vs/editor/browser/config/editorConfiguration';
-import { EmbeddedDiffEditorWidget } from '@theia/monaco-editor-core/esm/vs/editor/browser/widget/embeddedCodeEditorWidget';
+import { EmbeddedDiffEditorWidget } from '@theia/monaco-editor-core/esm/vs/editor/browser/widget/diffEditor/embeddedDiffEditorWidget';
 import { IInstantiationService } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation';
 import { ContextKeyValue, IContextKey } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
 import { IDisposable } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';

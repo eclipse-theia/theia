@@ -93,6 +93,8 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         this.inputWidget.onQuery = this.onQuery.bind(this);
         this.inputWidget.onCancel = this.onCancel.bind(this);
         this.inputWidget.chatModel = this.chatSession.model;
+        this.inputWidget.onDeleteChangeSet = this.onDeleteChangeSet.bind(this);
+        this.inputWidget.onDeleteChangeSetElement = this.onDeleteChangeSetElement.bind(this);
         this.treeWidget.trackChatModel(this.chatSession.model);
 
         this.initListeners();
@@ -177,6 +179,14 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
 
     protected onCancel(requestModel: ChatRequestModel): void {
         this.chatService.cancelRequest(requestModel.session.id, requestModel.id);
+    }
+
+    protected onDeleteChangeSet(sessionId: string): void {
+        this.chatService.deleteChangeSet(sessionId);
+    }
+
+    protected onDeleteChangeSetElement(sessionId: string, index: number): void {
+        this.chatService.deleteChangeSetElement(sessionId, index);
     }
 
     lock(): void {

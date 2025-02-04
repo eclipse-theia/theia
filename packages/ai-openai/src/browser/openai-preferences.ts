@@ -34,7 +34,7 @@ export const OpenAiPreferencesSchema: PreferenceSchema = {
             type: 'array',
             description: 'Official OpenAI models to use',
             title: AI_CORE_PREFERENCES_TITLE,
-            default: ['gpt-4o', 'gpt-4o-2024-08-06', 'gpt-4o-2024-05-13', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-4', 'gpt-3.5-turbo', 'o1-preview', 'o1-mini'],
+            default: ['gpt-4o', 'gpt-4o-2024-11-20', 'gpt-4o-2024-08-06', 'gpt-4o-mini', 'o1', 'o1-mini', 'o3-mini'],
             items: {
                 type: 'string'
             }
@@ -49,6 +49,12 @@ export const OpenAiPreferencesSchema: PreferenceSchema = {
             - specify a unique `id` to identify the custom model in the UI. If none is given `model` will be used as `id`.\
             \n\
             - provide an `apiKey` to access the API served at the given url. Use `true` to indicate the use of the global OpenAI API key.\
+            \n\
+            - provide an `apiVersion` to access the API served at the given url in Azure. Use `true` to indicate the use of the global OpenAI API version.\
+            \n\
+            - specify `supportsDeveloperMessage: false` to indicate that the developer role shall not be used.\
+            \n\
+            - specify `supportsStructuredOutput: false` to indicate that structured output shall not be used.\
             \n\
             - specify `enableStreaming: false` to indicate that streaming shall not be used.\
             \n\
@@ -72,6 +78,18 @@ export const OpenAiPreferencesSchema: PreferenceSchema = {
                     apiKey: {
                         type: ['string', 'boolean'],
                         title: 'Either the key to access the API served at the given url or `true` to use the global OpenAI API key',
+                    },
+                    apiVersion: {
+                        type: ['string', 'boolean'],
+                        title: 'Either the version to access the API served at the given url in Azure or `true` to use the global OpenAI API version',
+                    },
+                    supportsDeveloperMessage: {
+                        type: 'boolean',
+                        title: 'Indicates whether the model supports the `developer` role. `true` by default.',
+                    },
+                    supportsStructuredOutput: {
+                        type: 'boolean',
+                        title: 'Indicates whether the model supports structured output. `true` by default.',
                     },
                     enableStreaming: {
                         type: 'boolean',

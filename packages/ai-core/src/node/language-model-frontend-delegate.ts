@@ -95,7 +95,7 @@ export class LanguageModelFrontendDelegateImpl implements LanguageModelFrontendD
             const delegate = {
                 streamId: generateUuid(),
             };
-            this.sendTokens(delegate.streamId, response.stream);
+            this.sendTokens(delegate.streamId, response.stream, cancellationToken);
             return delegate;
         }
         this.logger.error(
@@ -105,12 +105,19 @@ export class LanguageModelFrontendDelegateImpl implements LanguageModelFrontendD
         return response;
     }
 
-    protected sendTokens(id: string, stream: AsyncIterable<LanguageModelStreamResponsePart>): void {
+    protected sendTokens(id: string, stream: AsyncIterable<LanguageModelStreamResponsePart>, cancellationToken?: CancellationToken): void {
         (async () => {
-            for await (const token of stream) {
-                this.frontendDelegateClient.send(id, token);
+            try {
+                for await (const token of stream) {
+                    this.frontendDelegateClient.send(id, token);
+                }
+            } catch (e) {
+                if (!cancellationToken?.isCancellationRequested) {
+                    this.frontendDelegateClient.error(id, e);
+                }
+            } finally {
+                this.frontendDelegateClient.send(id, undefined);
             }
-            this.frontendDelegateClient.send(id, undefined);
         })();
     }
 }

@@ -391,7 +391,7 @@ export class NotebookCellActionContribution implements MenuContribution, Command
         commands.registerCommand(NotebookCellCommands.EXECUTE_CELL_AND_BELOW_COMMAND, this.editableCellCommandHandler(
             (notebookModel, cell) => {
                 const index = notebookModel.cells.indexOf(cell);
-                if (index < notebookModel.cells.length - 1) {
+                if (index >= 0) {
                     this.notebookExecutionService.executeNotebookCells(notebookModel, notebookModel.cells.slice(index).filter(c => c.cellKind === CellKind.Code));
                 }
             })

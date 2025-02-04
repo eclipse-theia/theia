@@ -33,9 +33,21 @@ export interface OpenAiModelDescription {
      */
     apiKey: string | true | undefined;
     /**
+     * The version for the api. If 'true' is provided the global OpenAI version will be used.
+     */
+    apiVersion: string | true | undefined;
+    /**
      * Indicate whether the streaming API shall be used.
      */
     enableStreaming: boolean;
+    /**
+     * Flag to configure whether the OpenAPI model supports the `developer` role. Default is `true`.
+     */
+    supportsDeveloperMessage: boolean;
+    /**
+     * Flag to configure whether the OpenAPI model supports structured output. Default is `true`.
+     */
+    supportsStructuredOutput: boolean;
     /**
      * Default request settings for the OpenAI model.
      */
@@ -44,6 +56,7 @@ export interface OpenAiModelDescription {
 export interface OpenAiLanguageModelsManager {
     apiKey: string | undefined;
     setApiKey(key: string | undefined): void;
+    setApiVersion(version: string | undefined): void;
     createOrUpdateLanguageModels(...models: OpenAiModelDescription[]): Promise<void>;
     removeLanguageModels(...modelIds: string[]): void
 }

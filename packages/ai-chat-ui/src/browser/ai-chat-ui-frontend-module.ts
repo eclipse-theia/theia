@@ -20,7 +20,7 @@ import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { AIChatContribution } from './ai-chat-ui-contribution';
-import { AIChatInputWidget } from './chat-input-widget';
+import { AIChatInputConfiguration, AIChatInputWidget } from './chat-input-widget';
 import { ChatNodeToolbarActionContribution } from './chat-node-toolbar-action-contribution';
 import { ChatResponsePartRenderer } from './chat-response-part-renderer';
 import {
@@ -60,6 +60,9 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindChatViewWidget(bind);
 
     bind(AIChatInputWidget).toSelf();
+    bind(AIChatInputConfiguration).toConstantValue({
+        showContext: false
+    });
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
         id: AIChatInputWidget.ID,
         createWidget: () => container.get(AIChatInputWidget)

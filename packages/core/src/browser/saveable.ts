@@ -392,4 +392,7 @@ export class ShouldSaveDialog extends AbstractDialog<boolean> {
         return this.shouldSave;
     }
 
+    override async open(disposeOnResolve?: boolean): Promise<boolean | undefined> {
+        return super.open(disposeOnResolve);
+    }
 }

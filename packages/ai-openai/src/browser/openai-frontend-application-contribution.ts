@@ -91,6 +91,9 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                 model.model === newModel.model &&
                 model.url === newModel.url &&
                 model.apiKey === newModel.apiKey &&
+                model.apiVersion === newModel.apiVersion &&
+                model.supportsDeveloperMessage === newModel.supportsDeveloperMessage &&
+                model.supportsStructuredOutput === newModel.supportsStructuredOutput &&
                 model.enableStreaming === newModel.enableStreaming));
 
         this.manager.removeLanguageModels(...modelsToRemove.map(model => model.id));
@@ -113,7 +116,10 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
             id: id,
             model: modelId,
             apiKey: true,
+            apiVersion: true,
+            supportsDeveloperMessage: !openAIModelsNotSupportingDeveloperMessages.includes(modelId),
             enableStreaming: !openAIModelsWithDisabledStreaming.includes(modelId),
+            supportsStructuredOutput: !openAIModelsWithoutStructuredOutput.includes(modelId),
             defaultRequestSettings: modelRequestSetting?.requestSettings
         };
     }
@@ -136,6 +142,9 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                     model: pref.model,
                     url: pref.url,
                     apiKey: typeof pref.apiKey === 'string' || pref.apiKey === true ? pref.apiKey : undefined,
+                    apiVersion: typeof pref.apiVersion === 'string' || pref.apiVersion === true ? pref.apiVersion : undefined,
+                    supportsDeveloperMessage: pref.supportsDeveloperMessage ?? true,
+                    supportsStructuredOutput: pref.supportsStructuredOutput ?? true,
                     enableStreaming: pref.enableStreaming ?? true,
                     defaultRequestSettings: modelRequestSetting?.requestSettings
                 }
@@ -159,4 +168,6 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
     }
 }
 
-const openAIModelsWithDisabledStreaming = ['o1-preview', 'o1-mini'];
+const openAIModelsWithDisabledStreaming = ['o1'];
+const openAIModelsNotSupportingDeveloperMessages = ['o1-preview', 'o1-mini'];
+const openAIModelsWithoutStructuredOutput = ['o1-preview', 'gpt-4-turbo', 'gpt-4', 'gpt-3.5-turbo', 'o1-mini', 'gpt-4o-2024-05-13'];

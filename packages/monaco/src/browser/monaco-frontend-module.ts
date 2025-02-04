@@ -66,16 +66,17 @@ import { GotoLineQuickAccessContribution } from './monaco-gotoline-quick-access'
 import { GotoSymbolQuickAccessContribution } from './monaco-gotosymbol-quick-access';
 import { QuickAccessContribution, QuickAccessRegistry } from '@theia/core/lib/browser/quick-input/quick-access';
 import { MonacoQuickAccessRegistry } from './monaco-quick-access-registry';
-import { ConfigurationTarget, IConfigurationChangeEvent, IConfigurationService } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configuration';
-import { StandaloneConfigurationService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { Configuration } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configurationModels';
+import { ConfigurationTarget, IConfigurationChangeEvent, IConfigurationService } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configuration.js';
+import { StandaloneConfigurationService, StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { Configuration } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configurationModels.js';
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { MonacoMarkdownRenderer } from './markdown-renderer/monaco-markdown-renderer';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { ThemeServiceWithDB } from './monaco-indexed-db';
-import { IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
-import { IThemeService } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
+import { IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey.js';
+import { IThemeService } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService.js';
 import { ActiveMonacoUndoRedoHandler, FocusedMonacoUndoRedoHandler } from './monaco-undo-redo-handler';
+import { ILogService } from '@theia/monaco-editor-core/esm/vs/platform/log/common/log';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(MonacoThemingService).toSelf().inSingletonScope();
@@ -189,7 +190,7 @@ export const MonacoConfigurationService = Symbol('MonacoConfigurationService');
 export function createMonacoConfigurationService(container: interfaces.Container): IConfigurationService {
     const preferences = container.get<PreferenceService>(PreferenceService);
     const preferenceSchemaProvider = container.get<PreferenceSchemaProvider>(PreferenceSchemaProvider);
-    const service = new StandaloneConfigurationService();
+    const service = new StandaloneConfigurationService(StandaloneServices.get(ILogService));
     const _configuration: Configuration = service['_configuration'];
 
     _configuration.getValue = (section, overrides) => {

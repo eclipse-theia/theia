@@ -428,6 +428,18 @@ export class PluginTreeModel extends TreeModelImpl {
 
 @injectable()
 export class TreeViewWidget extends TreeViewWelcomeWidget {
+    async refresh(items?: string[]): Promise<void> {
+        if (items) {
+            for (const id of items) {
+                const node = this.model.getNode(id);
+                if (CompositeTreeNode.is(node)) {
+                    await this.model.refresh(node);
+                }
+            };
+        } else {
+            this.model.refresh();
+        }
+    }
 
     protected _contextSelection = false;
 
