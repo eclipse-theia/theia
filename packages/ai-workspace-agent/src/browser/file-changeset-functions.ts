@@ -70,10 +70,7 @@ export class WriteChangeToFileProvider implements ToolProvider {
                 if (content === '') {
                     type = 'delete';
                 }
-                // In case the file does not exist and the content is empty, we consider that the AI wants to add an empty file.
-                try {
-                    await this.fileService.read(uri);
-                } catch (error) {
+                if (!await this.fileService.exists(uri)) {
                     type = 'add';
                 }
                 changeSet.addOrReplaceElement(
