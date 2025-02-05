@@ -122,10 +122,16 @@ export namespace AIVariableResolutionRequest {
 export interface AIVariableContext {
 }
 
+export interface AIVariableDropResult {
+    variables: AIVariableResolutionRequest[],
+    text?: string
+};
+
 export type AIVariableArg = string | { variable: string, arg?: string } | AIVariableResolutionRequest;
 
 export type AIVariableArgPicker = (context: AIVariableContext) => MaybePromise<string | undefined>;
 export type AIVariableArgCompletionProvider = (model: monaco.editor.ITextModel, position: monaco.Position) => MaybePromise<monaco.languages.CompletionItem[] | undefined>;
+export type AIVariableDropHandler = (event: DragEvent, context: AIVariableContext) => Promise<AIVariableDropResult | undefined>;
 
 export interface AIVariableResolver {
     canResolve(request: AIVariableResolutionRequest, context: AIVariableContext): MaybePromise<number>,
@@ -151,7 +157,11 @@ export interface AIVariableService {
 
     registerArgumentCompletionProvider(variable: AIVariable, argPicker: AIVariableArgCompletionProvider): Disposable;
     unregisterArgumentCompletionProvider(variable: AIVariable, argPicker: AIVariableArgCompletionProvider): void;
-    getArgumentCompletionProvider(name: string, context: AIVariableContext): Promise<AIVariableArgCompletionProvider | undefined>;
+    getArgumentCompletionProvider(name: string): Promise<AIVariableArgCompletionProvider | undefined>;
+
+    registerDropHandler(handler: AIVariableDropHandler): Disposable;
+    unregisterDropHandler(handler: AIVariableDropHandler): void;
+    getDropResult(event: DragEvent, context: AIVariableContext): Promise<AIVariableDropResult>;
 
     resolveVariable(variable: AIVariableArg, context: AIVariableContext): Promise<ResolvedAIVariable | undefined>;
 }
@@ -167,6 +177,7 @@ export class DefaultAIVariableService implements AIVariableService {
     protected resolvers = new Map<string, AIVariableResolver[]>();
     protected argPickers = new Map<string, AIVariableArgPicker>();
     protected argCompletionProviders = new Map<string, AIVariableArgCompletionProvider>();
+    protected dropHandlers = new Set<AIVariableDropHandler>();
 
     protected readonly onDidChangeVariablesEmitter = new Emitter<void>();
     readonly onDidChangeVariables: Event<void> = this.onDidChangeVariablesEmitter.event;
@@ -286,8 +297,32 @@ export class DefaultAIVariableService implements AIVariableService {
         }
     }
 
-    async getArgumentCompletionProvider(name: string, context: AIVariableContext): Promise<AIVariableArgCompletionProvider | undefined> {
+    async getArgumentCompletionProvider(name: string): Promise<AIVariableArgCompletionProvider | undefined> {
         return this.argCompletionProviders.get(this.getKey(name)) ?? undefined;
+    }
+
+    registerDropHandler(handler: AIVariableDropHandler): Disposable {
+        this.dropHandlers.add(handler);
+        return Disposable.create(() => this.unregisterDropHandler(handler));
+    }
+
+    unregisterDropHandler(handler: AIVariableDropHandler): void {
+        this.dropHandlers.delete(handler);
+    }
+
+    async getDropResult(event: DragEvent, context: AIVariableContext): Promise<AIVariableDropResult> {
+        let text: string | undefined = undefined;
+        const variables: AIVariableResolutionRequest[] = [];
+        for (const handler of this.dropHandlers) {
+            const result = await handler(event, context);
+            if (result) {
+                variables.push(...result.variables);
+                if (text === undefined) {
+                    text = result.text;
+                }
+            }
+        }
+        return { variables, text };
     }
 
     async resolveVariable(request: AIVariableArg, context: AIVariableContext): Promise<ResolvedAIVariable | undefined> {

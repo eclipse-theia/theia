@@ -151,7 +151,7 @@ export class ChatViewLanguageContribution implements FrontendApplicationContribu
         const variables = this.variableService.getVariables();
         const suggestions: monaco.languages.CompletionItem[] = [];
         for (const variable of variables) {
-            const provider = await this.variableService.getArgumentCompletionProvider(variable.name, VARIABLE_RESOLUTION_CONTEXT);
+            const provider = await this.variableService.getArgumentCompletionProvider(variable.name);
             if (provider) {
                 const items = await provider(model, position);
                 if (items) {
