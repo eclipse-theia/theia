@@ -58,7 +58,7 @@ import { IPosition } from '@theia/monaco-editor-core/esm/vs/editor/common/core/p
 // https://github.com/eclipse-theia/theia/blob/b752ea690bdc4e7c5d9ab98a138504ead05be0d1/packages/core/src/browser/style/menus.css#L22
 // https://github.com/eclipse-theia/theia/blob/b752ea690bdc4e7c5d9ab98a138504ead05be0d1/packages/core/src/browser/style/status-bar.css#L18
 // https://github.com/eclipse-theia/theia/issues/14826
-function patchContentHoverWidget(actualTopHeight = 32): { setActualTopHeightForContentHoverWidget: (value: number) => void } {
+function patchContentHoverWidget(actualTopHeight = 32): { adjustActualTopHeightForContentHoverWidget: (value: number) => void } {
     const vscodeTopHeight = 30;
     let _actualTopHeight = actualTopHeight;
     function topHeightDiff(): number {
@@ -78,13 +78,13 @@ function patchContentHoverWidget(actualTopHeight = 32): { setActualTopHeightForC
     };
 
     return {
-        setActualTopHeightForContentHoverWidget: (value: number) => {
-            _actualTopHeight = value;
+        adjustActualTopHeightForContentHoverWidget: (pixelsToAdjustWith: number) => {
+            _actualTopHeight += pixelsToAdjustWith;
         }
     };
 }
 
-export const { setActualTopHeightForContentHoverWidget } = patchContentHoverWidget();
+export const { adjustActualTopHeightForContentHoverWidget } = patchContentHoverWidget();
 
 class MonacoEditorServiceConstructor {
     /**
