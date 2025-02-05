@@ -19,11 +19,11 @@ import {
     PromptTemplate
 } from '@theia/ai-core/lib/common';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { ChatAgentService } from './chat-agent-service';
-import { AbstractStreamParsingChatAgent, ChatAgent, SystemMessageDescription } from './chat-agents';
-import { ChatRequestModelImpl, InformationalChatResponseContentImpl } from './chat-model';
+import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
+import { AbstractStreamParsingChatAgent, ChatAgent, SystemMessageDescription } from '@theia/ai-chat/lib/common/chat-agents';
+import { ChatRequestModelImpl, InformationalChatResponseContentImpl } from '@theia/ai-chat/lib/common/chat-model';
 import { generateUuid } from '@theia/core';
-import { ChatHistoryEntry } from './chat-history-entry';
+import { ChatHistoryEntry } from '@theia/ai-chat/lib/common/chat-history-entry';
 
 export const orchestratorTemplate: PromptTemplate = {
     id: 'orchestrator-system',

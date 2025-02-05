@@ -15,27 +15,47 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { ChatAgent } from '@theia/ai-chat/lib/common';
+import { ChatAgent, DefaultChatAgentId, FallbackChatAgentId } from '@theia/ai-chat/lib/common';
 import { Agent, ToolProvider } from '@theia/ai-core/lib/common';
 import { WorkspaceAgent } from './workspace-agent';
 import { CoderAgent } from './coder-agent';
 import { FileContentFunction, GetWorkspaceDirectoryStructure, GetWorkspaceFileList, WorkspaceFunctionScope } from './workspace-functions';
 import { PreferenceContribution } from '@theia/core/lib/browser';
 import { WorkspacePreferencesSchema } from './workspace-preferences';
-
 import {
     ReplaceContentInFileProvider,
     WriteChangeToFileProvider
 } from './file-changeset-functions';
+import { OrchestratorChatAgent, OrchestratorChatAgentId } from '../common/orchestrator-chat-agent';
+import { UniversalChatAgent, UniversalChatAgentId } from '../common/universal-chat-agent';
+import { CommandChatAgent } from '../common/command-chat-agents';
 
 export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: WorkspacePreferencesSchema });
+
     bind(WorkspaceAgent).toSelf().inSingletonScope();
     bind(Agent).toService(WorkspaceAgent);
     bind(ChatAgent).toService(WorkspaceAgent);
+
     bind(CoderAgent).toSelf().inSingletonScope();
     bind(Agent).toService(CoderAgent);
     bind(ChatAgent).toService(CoderAgent);
+
+    bind(OrchestratorChatAgent).toSelf().inSingletonScope();
+    bind(Agent).toService(OrchestratorChatAgent);
+    bind(ChatAgent).toService(OrchestratorChatAgent);
+
+    bind(UniversalChatAgent).toSelf().inSingletonScope();
+    bind(Agent).toService(UniversalChatAgent);
+    bind(ChatAgent).toService(UniversalChatAgent);
+
+    bind(CommandChatAgent).toSelf().inSingletonScope();
+    bind(Agent).toService(CommandChatAgent);
+    bind(ChatAgent).toService(CommandChatAgent);
+
+    bind(DefaultChatAgentId).toConstantValue({ id: OrchestratorChatAgentId });
+    bind(FallbackChatAgentId).toConstantValue({ id: UniversalChatAgentId });
+
     bind(ToolProvider).to(GetWorkspaceFileList);
     bind(ToolProvider).to(FileContentFunction);
     bind(ToolProvider).to(GetWorkspaceDirectoryStructure);

@@ -35,7 +35,7 @@
     "@theia/ai-openai": "1.58.0",
     "@theia/ai-scanoss": "1.58.0",
     "@theia/ai-terminal": "1.58.0",
-    "@theia/ai-workspace-agent": "1.58.0",
+    "@theia/ai-ide-agents": "1.58.0",
     "@theia/api-provider-sample": "1.58.0",
     "@theia/api-samples": "1.58.0",
     "@theia/bulk-edit": "1.58.0",
