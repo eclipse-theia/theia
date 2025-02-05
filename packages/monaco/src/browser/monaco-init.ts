@@ -68,12 +68,20 @@ function patchContentHoverWidget(actualTopHeight = 32): { adjustActualTopHeightF
     const originalAvailableVerticalSpaceAbove = ContentHoverWidget.prototype['_availableVerticalSpaceAbove'];
     ContentHoverWidget.prototype['_availableVerticalSpaceAbove'] = function (position: IPosition): number | undefined {
         const value = originalAvailableVerticalSpaceAbove.call(this, position);
+        // The original implementation deducts the height of the top panel from the total available space.
+        // https://github.com/microsoft/vscode/blob/1430e1845cbf5ec29a2fc265f12c7fb5c3d685c3/src/vs/editor/contrib/hover/browser/resizableContentWidget.ts#L71
+        // However, in Theia, the top panel is generally 2 pixels taller (or more, depending on the visibility of the toolbar).
+        // This additional height must be further subtracted from the computed height for accurate positioning.
         return typeof value === 'number' ? value - topHeightDiff() : undefined;
     };
 
     const originalAvailableVerticalSpaceBelow = ContentHoverWidget.prototype['_availableVerticalSpaceBelow'];
     ContentHoverWidget.prototype['_availableVerticalSpaceBelow'] = function (position: IPosition): number | undefined {
         const value = originalAvailableVerticalSpaceBelow.call(this, position);
+        // The original method subtracts the height of the bottom panel from the overall available height.
+        // https://github.com/microsoft/vscode/blob/1430e1845cbf5ec29a2fc265f12c7fb5c3d685c3/src/vs/editor/contrib/hover/browser/resizableContentWidget.ts#L83
+        // In Theia, the status bar is 2 pixels shorter than in VS Code, which means this difference
+        // should be added back to ensure the calculated available space is accurate.
         return typeof value === 'number' ? value + 2 : undefined;
     };
 
