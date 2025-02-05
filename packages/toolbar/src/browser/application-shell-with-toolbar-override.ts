@@ -26,9 +26,6 @@ import { adjustActualTopHeightForContentHoverWidget } from '@theia/monaco/lib/br
 import { Toolbar, ToolbarFactory } from './toolbar-interfaces';
 import { ToolbarPreferences, TOOLBAR_ENABLE_PREFERENCE_ID } from './toolbar-preference-contribution';
 
-// The toolbar is 2px shorter than the height of the top panel.
-// https://github.com/eclipse-theia/theia/blob/451464e6ea3d4aaf9cdbffd3d17dbb117787fc4e/packages/toolbar/src/browser/style/toolbar.css#L18
-const TOOLBAR_HEIGHT_PX = 30;
 
 @injectable()
 export class ApplicationShellWithToolbarOverride extends ApplicationShell {
@@ -71,7 +68,8 @@ export class ApplicationShellWithToolbarOverride extends ApplicationShell {
         } else {
             this.toolbar.hide();
         }
-        adjustActualTopHeightForContentHoverWidget(show ? TOOLBAR_HEIGHT_PX : -TOOLBAR_HEIGHT_PX);
+        const toolbarHeight = this.toolbar.node.getBoundingClientRect().height;
+        adjustActualTopHeightForContentHoverWidget(show ? toolbarHeight : -toolbarHeight);
         return show;
     }
 
