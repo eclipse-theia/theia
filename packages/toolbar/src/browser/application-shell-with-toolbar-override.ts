@@ -22,7 +22,6 @@ import {
 } from '@theia/core/lib/browser';
 import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
 import { MAXIMIZED_CLASS } from '@theia/core/lib/browser/shell/theia-dock-panel';
-import { setActualTopHeightForContentHoverWidget } from '@theia/monaco/lib/browser/monaco-init';
 import { Toolbar, ToolbarFactory } from './toolbar-interfaces';
 import { ToolbarPreferences, TOOLBAR_ENABLE_PREFERENCE_ID } from './toolbar-preference-contribution';
 
@@ -61,16 +60,12 @@ export class ApplicationShellWithToolbarOverride extends ApplicationShell {
     protected tryShowToolbar(): boolean {
         const doShowToolbarFromPreference = this.toolbarPreferences[TOOLBAR_ENABLE_PREFERENCE_ID];
         const isShellMaximized = this.mainPanel.hasClass(MAXIMIZED_CLASS) || this.bottomPanel.hasClass(MAXIMIZED_CLASS);
-        const show = doShowToolbarFromPreference && !isShellMaximized;
-        if (show) {
+        if (doShowToolbarFromPreference && !isShellMaximized) {
             this.toolbar.show();
-        } else {
-            this.toolbar.hide();
+            return true
         }
-        const topPanelHeight = this.topPanel.node.getBoundingClientRect().height;
-        const toolbarHeight = this.toolbar.node.getBoundingClientRect().height; // 0 if hidden
-        setActualTopHeightForContentHoverWidget(topPanelHeight + toolbarHeight);
-        return show;
+        this.toolbar.hide();
+        return false
     }
 
     protected override createLayout(): Layout {
