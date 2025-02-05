@@ -62,10 +62,10 @@ export class ApplicationShellWithToolbarOverride extends ApplicationShell {
         const isShellMaximized = this.mainPanel.hasClass(MAXIMIZED_CLASS) || this.bottomPanel.hasClass(MAXIMIZED_CLASS);
         if (doShowToolbarFromPreference && !isShellMaximized) {
             this.toolbar.show();
-            return true
+            return true;
         }
         this.toolbar.hide();
-        return false
+        return false;
     }
 
     protected override createLayout(): Layout {
