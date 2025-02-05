@@ -53,26 +53,32 @@ import { MonacoStandaloneThemeService } from './monaco-standalone-theme-service'
 import { ContentHoverWidget } from '@theia/monaco-editor-core/esm/vs/editor/contrib/hover/browser/contentHoverWidget';
 import { IPosition } from '@theia/monaco-editor-core/esm/vs/editor/common/core/position';
 
-// VS Code uses 30 pixel for top height, and 24 pixels for bottom height, but Theia uses 32 pixel for the top and 22 for the bottom.
 // https://github.com/microsoft/vscode/blob/1430e1845cbf5ec29a2fc265f12c7fb5c3d685c3/src/vs/editor/contrib/hover/browser/resizableContentWidget.ts#L13-L14
+const VSCODE_TOP_HEIGHT = 30;
+const VSCODE_BOTTOM_HEIGHT = 24;
+
+// VS Code uses 30 pixel for top height, and 24 pixels for bottom height, but Theia uses 32 pixel for the top and 22 for the bottom.
 // https://github.com/eclipse-theia/theia/blob/b752ea690bdc4e7c5d9ab98a138504ead05be0d1/packages/core/src/browser/style/menus.css#L22
 // https://github.com/eclipse-theia/theia/blob/b752ea690bdc4e7c5d9ab98a138504ead05be0d1/packages/core/src/browser/style/status-bar.css#L18
 // https://github.com/eclipse-theia/theia/issues/14826
-function patchContentHoverWidget(actualTopHeight = 32): { adjustActualTopHeightForContentHoverWidget: (value: number) => void } {
-    const vscodeTopHeight = 30;
-    let _actualTopHeight = actualTopHeight;
-    function topHeightDiff(): number {
-        return _actualTopHeight - vscodeTopHeight;
+function patchContentHoverWidget(topPanelHeight = 32): { setActualTopHeightForContentHoverWidget: (value: number) => void } {
+    let _actualTopHeight = topPanelHeight;
+    function getTopHeightDiff(): number {
+        return _actualTopHeight - VSCODE_TOP_HEIGHT;
     }
+
+    const actualBottomHeight = 22; // Theia's status bar height
+    const bottomHeightDiff = actualBottomHeight - VSCODE_BOTTOM_HEIGHT;
 
     const originalAvailableVerticalSpaceAbove = ContentHoverWidget.prototype['_availableVerticalSpaceAbove'];
     ContentHoverWidget.prototype['_availableVerticalSpaceAbove'] = function (position: IPosition): number | undefined {
         const value = originalAvailableVerticalSpaceAbove.call(this, position);
         // The original implementation deducts the height of the top panel from the total available space.
         // https://github.com/microsoft/vscode/blob/1430e1845cbf5ec29a2fc265f12c7fb5c3d685c3/src/vs/editor/contrib/hover/browser/resizableContentWidget.ts#L71
-        // However, in Theia, the top panel is generally 2 pixels taller (or more, depending on the visibility of the toolbar).
+        // However, in Theia, the top panel has generally different size (especially when the toolbar is visible).
         // This additional height must be further subtracted from the computed height for accurate positioning.
-        return typeof value === 'number' ? value - topHeightDiff() : undefined;
+        const topHeightDiff = getTopHeightDiff();
+        return typeof value === 'number' ? value - topHeightDiff : undefined;
     };
 
     const originalAvailableVerticalSpaceBelow = ContentHoverWidget.prototype['_availableVerticalSpaceBelow'];
@@ -80,19 +86,20 @@ function patchContentHoverWidget(actualTopHeight = 32): { adjustActualTopHeightF
         const value = originalAvailableVerticalSpaceBelow.call(this, position);
         // The original method subtracts the height of the bottom panel from the overall available height.
         // https://github.com/microsoft/vscode/blob/1430e1845cbf5ec29a2fc265f12c7fb5c3d685c3/src/vs/editor/contrib/hover/browser/resizableContentWidget.ts#L83
-        // In Theia, the status bar is 2 pixels shorter than in VS Code, which means this difference
-        // should be added back to ensure the calculated available space is accurate.
-        return typeof value === 'number' ? value + 2 : undefined;
+        // In Theia, the status bar has different height than in VS Code, which means this difference
+        // should be also removed to ensure the calculated available space is accurate.
+        // Note that removing negative value will increase the available space.
+        return typeof value === 'number' ? value - bottomHeightDiff : undefined;
     };
 
     return {
-        adjustActualTopHeightForContentHoverWidget: (pixelsToAdjustWith: number) => {
-            _actualTopHeight += pixelsToAdjustWith;
+        setActualTopHeightForContentHoverWidget: (value: number) => {
+            _actualTopHeight = value;
         }
     };
 }
 
-export const { adjustActualTopHeightForContentHoverWidget } = patchContentHoverWidget();
+export const { setActualTopHeightForContentHoverWidget } = patchContentHoverWidget();
 
 class MonacoEditorServiceConstructor {
     /**
