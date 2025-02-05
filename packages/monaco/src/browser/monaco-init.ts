@@ -16,8 +16,8 @@
 
 /*
  * The code in this file is responsible for overriding service implementations in the Monaco editor with our own Theia-based implementations.
- * Since we only get a single chance to call `StandaloneServies.initialize()` with our overrides, we need to make sure that intialize is called before the first call to
- * `StandaloneServices.get()` or `StandaloneServies.initialize()`. As we do not control the mechanics of Inversify instance constructions, the approach here is to call
+ * Since we only get a single chance to call `StandaloneServices.initialize()` with our overrides, we need to make sure that initialize is called before the first call to
+ * `StandaloneServices.get()` or `StandaloneServices.initialize()`. As we do not control the mechanics of Inversify instance constructions, the approach here is to call
  * `MonacoInit.init()` from the `index.js` file after all container modules are loaded, but before the first object is fetched from it.
  * `StandaloneServices.initialize()` is called with service descriptors, not service instances. This lets us finish all overrides before any inversify object is constructed and
  * might call `initialize()` while being constructed.
@@ -50,6 +50,9 @@ import { MonacoQuickInputImplementation } from './monaco-quick-input-service';
 import { IQuickInputService } from '@theia/monaco-editor-core/esm/vs/platform/quickinput/common/quickInput';
 import { IStandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
 import { MonacoStandaloneThemeService } from './monaco-standalone-theme-service';
+import { createContentHoverWidgetPatcher } from './content-hover-widget-patcher';
+
+export const contentHoverWidgetPatcher = createContentHoverWidgetPatcher();
 
 class MonacoEditorServiceConstructor {
     /**
