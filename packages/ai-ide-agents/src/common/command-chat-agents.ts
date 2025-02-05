@@ -15,11 +15,8 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { AbstractTextToModelParsingChatAgent, ChatAgent, SystemMessageDescription } from '@theia/ai-chat/lib/common/chat-agents';
-import {
-    PromptTemplate,
-    AgentSpecificVariables
-} from '@theia/ai-core';
+import { AbstractTextToModelParsingChatAgent, SystemMessageDescription } from '@theia/ai-chat/lib/common/chat-agents';
+import { LanguageModelRequirement, PromptTemplate } from '@theia/ai-core';
 import {
     ChatRequestModelImpl,
     ChatResponseContent,
@@ -250,38 +247,30 @@ interface ParsedCommand {
 }
 
 @injectable()
-export class CommandChatAgent extends AbstractTextToModelParsingChatAgent<ParsedCommand> implements ChatAgent {
+export class CommandChatAgent extends AbstractTextToModelParsingChatAgent<ParsedCommand> {
     @inject(CommandRegistry)
     protected commandRegistry: CommandRegistry;
     @inject(MessageService)
     protected messageService: MessageService;
-    readonly name: string;
-    readonly description: string;
-    readonly variables: string[];
-    readonly promptTemplates: PromptTemplate[];
-    readonly functions: string[];
-    readonly agentSpecificVariables: AgentSpecificVariables[];
 
-    constructor(
-    ) {
-        super('Command', [{
-            purpose: 'command',
-            identifier: 'openai/gpt-4o',
-        }], 'command');
-        this.name = 'Command';
-        this.description = 'This agent is aware of all commands that the user can execute within the Theia IDE, the tool that the user is currently working with. \
-        Based on the user request, it can find the right command and then let the user execute it.';
-        this.variables = [];
-        this.promptTemplates = [commandTemplate];
-        this.functions = [];
-        this.agentSpecificVariables = [{
-            name: 'command-ids',
-            description: 'The list of available commands in Theia.',
-            usedInPrompt: true
-        }];
-    }
+    id: string = 'Command';
+    name = 'Command';
+    languageModelRequirements: LanguageModelRequirement[] = [{
+        purpose: 'command',
+        identifier: 'openai/gpt-4o',
+    }];
+    protected defaultLanguageModelPurpose: string = 'command';
 
-    protected async getSystemMessageDescription(): Promise<SystemMessageDescription | undefined> {
+    override description = 'This agent is aware of all commands that the user can execute within the Theia IDE, the tool that the user is currently working with. \
+    Based on the user request, it can find the right command and then let the user execute it.';
+    override promptTemplates = [commandTemplate];
+    override agentSpecificVariables = [{
+        name: 'command-ids',
+        description: 'The list of available commands in Theia.',
+        usedInPrompt: true
+    }];
+
+    protected override async getSystemMessageDescription(): Promise<SystemMessageDescription | undefined> {
         const knownCommands: string[] = [];
         for (const command of this.commandRegistry.getAllCommands()) {
             knownCommands.push(`${command.id}: ${command.label}`);

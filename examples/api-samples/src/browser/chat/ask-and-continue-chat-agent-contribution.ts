@@ -22,7 +22,6 @@ import {
     ChatRequestModelImpl,
     lastProgressMessage,
     QuestionResponseContentImpl,
-    SystemMessageDescription,
     unansweredQuestions
 } from '@theia/ai-chat';
 import { Agent, PromptTemplate } from '@theia/ai-core';
@@ -109,14 +108,19 @@ Do not ask further questions once the text contains 5 or more "Question/Answer" 
  * This is a very simple example agent that asks questions and continues the conversation based on the user's answers.
  */
 @injectable()
-export class AskAndContinueChatAgent extends AbstractStreamParsingChatAgent implements ChatAgent {
-    override id = 'AskAndContinue';
-    readonly name = 'AskAndContinue';
-    override defaultLanguageModelPurpose = 'chat';
-    readonly description = 'This chat will ask questions related to the input and continues after that.';
-    readonly variables = [];
-    readonly agentSpecificVariables = [];
-    readonly functions = [];
+export class AskAndContinueChatAgent extends AbstractStreamParsingChatAgent {
+    id = 'AskAndContinue';
+    name = 'AskAndContinue';
+    override description = 'This chat will ask questions related to the input and continues after that.';
+    protected defaultLanguageModelPurpose = 'chat';
+    override languageModelRequirements = [
+        {
+            purpose: 'chat',
+            identifier: 'openai/gpt-4o',
+        }
+    ];
+    override promptTemplates = [systemPrompt];
+    protected override systemPromptId: string | undefined = systemPrompt.id;
 
     @postConstruct()
     addContentMatchers(): void {
@@ -131,20 +135,6 @@ export class AskAndContinueChatAgent extends AbstractStreamParsingChatAgent impl
                 });
             }
         });
-    }
-
-    override languageModelRequirements = [
-        {
-            purpose: 'chat',
-            identifier: 'openai/gpt-4o',
-        }
-    ];
-
-    readonly promptTemplates = [systemPrompt];
-
-    protected override async getSystemMessageDescription(): Promise<SystemMessageDescription | undefined> {
-        const resolvedPrompt = await this.promptService.getPrompt(systemPrompt.id);
-        return resolvedPrompt ? SystemMessageDescription.fromResolvedPromptTemplate(resolvedPrompt) : undefined;
     }
 
     protected override async onResponseComplete(request: ChatRequestModelImpl): Promise<void> {
