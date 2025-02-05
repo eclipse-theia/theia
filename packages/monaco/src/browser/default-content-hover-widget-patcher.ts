@@ -16,8 +16,8 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { ApplicationShell, FrontendApplication, FrontendApplicationContribution } from '@theia/core/src/browser';
-import { setActualHeightForContentHoverWidget } from './monaco-init';
 import { SetActualHeightForContentHoverWidgetParams } from './content-hover-widget-patcher';
+import { contentHoverWidgetPatcher } from './monaco-init';
 
 @injectable()
 export class DefaultContentHoverWidgetPatcher implements FrontendApplicationContribution {
@@ -37,7 +37,7 @@ export class DefaultContentHoverWidgetPatcher implements FrontendApplicationCont
     }
 
     protected updateContentHoverWidgetHeight(params: SetActualHeightForContentHoverWidgetParams): void {
-        setActualHeightForContentHoverWidget(params);
+        contentHoverWidgetPatcher.setActualHeightForContentHoverWidget(params);
     }
 
     protected getTopPanelHeight(shell: ApplicationShell): number {

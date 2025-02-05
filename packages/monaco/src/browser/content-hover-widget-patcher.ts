@@ -30,7 +30,7 @@ export interface ContentHoverWidgetPatcher {
     setActualHeightForContentHoverWidget(params: SetActualHeightForContentHoverWidgetParams): void;
 }
 
-export function createContentWidgetPatcher(): ContentHoverWidgetPatcher {
+export function createContentHoverWidgetPatcher(): ContentHoverWidgetPatcher {
     let actualTopDiff: number | undefined;
     let actualBottomDiff: number | undefined;
 

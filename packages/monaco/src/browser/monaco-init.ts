@@ -50,9 +50,9 @@ import { MonacoQuickInputImplementation } from './monaco-quick-input-service';
 import { IQuickInputService } from '@theia/monaco-editor-core/esm/vs/platform/quickinput/common/quickInput';
 import { IStandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
 import { MonacoStandaloneThemeService } from './monaco-standalone-theme-service';
-import { createContentWidgetPatcher } from './content-hover-widget-patcher';
+import { createContentHoverWidgetPatcher } from './content-hover-widget-patcher';
 
-export const { setActualHeightForContentHoverWidget } = createContentWidgetPatcher();
+export const contentHoverWidgetPatcher = createContentHoverWidgetPatcher();
 
 class MonacoEditorServiceConstructor {
     /**
