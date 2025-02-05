@@ -26,7 +26,6 @@ import { setActualTopHeightForContentHoverWidget } from '@theia/monaco/lib/brows
 import { Toolbar, ToolbarFactory } from './toolbar-interfaces';
 import { ToolbarPreferences, TOOLBAR_ENABLE_PREFERENCE_ID } from './toolbar-preference-contribution';
 
-
 @injectable()
 export class ApplicationShellWithToolbarOverride extends ApplicationShell {
     @inject(ToolbarPreferences) protected toolbarPreferences: ToolbarPreferences;
