@@ -20,6 +20,7 @@
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatAgents.ts
 
 import {
+    AgentSpecificVariables,
     CommunicationRecordingService,
     getTextOfResponse,
     LanguageModel,
@@ -27,6 +28,7 @@ import {
     LanguageModelResponse,
     LanguageModelStreamResponse,
     PromptService,
+    PromptTemplate,
     ResolvedPromptTemplate,
     ToolRequest,
 } from '@theia/ai-core';
@@ -39,7 +41,7 @@ import {
     MessageActor,
 } from '@theia/ai-core/lib/common';
 import { CancellationToken, ContributionProvider, ILogger, isArray } from '@theia/core';
-import { inject, injectable, named, postConstruct, unmanaged } from '@theia/core/shared/inversify';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { ChatAgentService } from './chat-agent-service';
 import {
     ChatModel,
@@ -119,7 +121,7 @@ export interface ChatAgent extends Agent {
 }
 
 @injectable()
-export abstract class AbstractChatAgent {
+export abstract class AbstractChatAgent implements ChatAgent {
     @inject(LanguageModelRegistry) protected languageModelRegistry: LanguageModelRegistry;
     @inject(ILogger) protected logger: ILogger;
     @inject(CommunicationRecordingService) protected recordingService: CommunicationRecordingService;
@@ -128,21 +130,26 @@ export abstract class AbstractChatAgent {
 
     @inject(ContributionProvider) @named(ResponseContentMatcherProvider)
     protected contentMatcherProviders: ContributionProvider<ResponseContentMatcherProvider>;
-    protected additionalToolRequests: ToolRequest[] = [];
-    protected contentMatchers: ResponseContentMatcher[] = [];
 
     @inject(DefaultResponseContentFactory)
     protected defaultContentFactory: DefaultResponseContentFactory;
 
-    constructor(
-        @unmanaged() public id: string,
-        @unmanaged() public languageModelRequirements: LanguageModelRequirement[],
-        @unmanaged() protected defaultLanguageModelPurpose: string,
-        @unmanaged() public iconClass: string = 'codicon codicon-copilot',
-        @unmanaged() public locations: ChatAgentLocation[] = ChatAgentLocation.ALL,
-        @unmanaged() public tags: string[] = ['Chat'],
-        @unmanaged() public defaultLogging: boolean = true) {
-    }
+    readonly abstract id: string;
+    readonly abstract name: string;
+    readonly abstract languageModelRequirements: LanguageModelRequirement[];
+    iconClass: string = 'codicon codicon-copilot';
+    locations: ChatAgentLocation[] = ChatAgentLocation.ALL;
+    tags: string[] = ['Chat'];
+    description: string = '';
+    variables: string[] = [];
+    promptTemplates: PromptTemplate[] = [];
+    agentSpecificVariables: AgentSpecificVariables[] = [];
+    functions: string[] = [];
+    protected readonly abstract defaultLanguageModelPurpose: string;
+    protected defaultLogging: boolean = true;
+    protected systemPromptId: string | undefined = undefined;
+    protected additionalToolRequests: ToolRequest[] = [];
+    protected contentMatchers: ResponseContentMatcher[] = [];
 
     @postConstruct()
     init(): void {
@@ -236,7 +243,13 @@ export abstract class AbstractChatAgent {
         return languageModel;
     }
 
-    protected abstract getSystemMessageDescription(): Promise<SystemMessageDescription | undefined>;
+    protected async getSystemMessageDescription(): Promise<SystemMessageDescription | undefined> {
+        if (this.systemPromptId === undefined) {
+            return undefined;
+        }
+        const resolvedPrompt = await this.promptService.getPrompt(this.systemPromptId);
+        return resolvedPrompt ? SystemMessageDescription.fromResolvedPromptTemplate(resolvedPrompt) : undefined;
+    }
 
     protected async getMessages(
         model: ChatModel, includeResponseInProgress = false

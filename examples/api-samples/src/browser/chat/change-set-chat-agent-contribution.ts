@@ -23,7 +23,7 @@ import {
     SystemMessageDescription
 } from '@theia/ai-chat';
 import { ChangeSetFileElementFactory } from '@theia/ai-chat/lib/browser/change-set-file-element';
-import { Agent, PromptTemplate } from '@theia/ai-core';
+import { Agent, LanguageModelRequirement } from '@theia/ai-core';
 import { URI } from '@theia/core';
 import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -39,16 +39,12 @@ export function bindChangeSetChatAgentContribution(bind: interfaces.Bind): void 
  * This is a test agent demonstrating how to create change sets in AI chats.
  */
 @injectable()
-export class ChangeSetChatAgent extends AbstractStreamParsingChatAgent implements ChatAgent {
-    override id = 'ChangeSet';
+export class ChangeSetChatAgent extends AbstractStreamParsingChatAgent {
+    readonly id = 'ChangeSet';
     readonly name = 'ChangeSet';
-    override defaultLanguageModelPurpose = 'chat';
-    readonly description = 'This chat will create and modify a change set.';
-    readonly variables = [];
-    readonly agentSpecificVariables = [];
-    readonly functions = [];
-    override languageModelRequirements = [];
-    promptTemplates: PromptTemplate[] = [];
+    readonly defaultLanguageModelPurpose = 'chat';
+    override readonly description = 'This chat will create and modify a change set.';
+    override languageModelRequirements: LanguageModelRequirement[] = [];
 
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
