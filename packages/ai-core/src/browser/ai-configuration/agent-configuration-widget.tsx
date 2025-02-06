@@ -33,6 +33,7 @@ import { TemplateRenderer } from './template-settings-renderer';
 import { AIConfigurationSelectionService } from './ai-configuration-service';
 import { AIVariableConfigurationWidget } from './variable-configuration-widget';
 import { AgentService } from '../../common/agent-service';
+import { nls } from '@theia/core';
 
 interface ParsedPrompt {
     functions: string[];
@@ -44,7 +45,7 @@ interface ParsedPrompt {
 export class AIAgentConfigurationWidget extends ReactWidget {
 
     static readonly ID = 'ai-agent-configuration-container-widget';
-    static readonly LABEL = 'Agents';
+    static readonly LABEL = nls.localize('theia/ai/core/agentConfiguration/label', 'Agents');
 
     @inject(AgentService)
     protected readonly agentService: AgentService;
@@ -102,7 +103,12 @@ export class AIAgentConfigurationWidget extends ReactWidget {
                     )}
                 </ul>
                 <div className='configuration-agents-add'>
-                    <button style={{ marginLeft: 0 }} className='theia-button main' onClick={() => this.addCustomAgent()}>Add Custom Agent</button>
+                    <button
+                        style={{ marginLeft: 0 }}
+                        className='theia-button main'
+                        onClick={() => this.addCustomAgent()}>
+                        {nls.localize('theia/ai/core/agentConfiguration/addCustomAgent', 'Add Custom Agent')}
+                    </button>
                 </div>
             </div>
             <div className='configuration-agent-panel preferences-editor-widget'>
@@ -119,7 +125,7 @@ export class AIAgentConfigurationWidget extends ReactWidget {
     private renderAgentDetails(): React.ReactNode {
         const agent = this.aiConfigurationSelectionService.getActiveAgent();
         if (!agent) {
-            return <div>Please select an Agent first!</div>;
+            return <div>{nls.localize('theia/ai/core/agentConfiguration/selectAgentMessage', 'Please select an Agent first!')}</div>;
         }
 
         const enabled = this.agentService.isEnabled(agent.id);
@@ -134,11 +140,11 @@ export class AIAgentConfigurationWidget extends ReactWidget {
             <div style={{ paddingBottom: 10 }}>
                 <label>
                     <input type="checkbox" checked={enabled} onChange={this.toggleAgentEnabled} />
-                    Enable Agent
+                    {nls.localize('theia/ai/core/agentConfiguration/enableAgent', 'Enable Agent')}
                 </label>
             </div>
             <div className="settings-section-subcategory-title ai-settings-section-subcategory-title">
-                Prompt Templates
+                {nls.localize('theia/ai/core/agentConfiguration/promptTemplates', 'Prompt Templates')}
             </div>
             <div className="ai-templates">
                 {(() => {
@@ -157,7 +163,7 @@ export class AIAgentConfigurationWidget extends ReactWidget {
                             </div>
                         ))
                     ) : (
-                        <div>No default template available</div>
+                        <div>{nls.localize('theia/ai/core/agentConfiguration/noDefaultTemplate', 'No default template available')}</div>
                     );
                 })()}
             </div>
@@ -256,7 +262,7 @@ interface AgentGlobalVariablesProps {
 }
 const AgentGlobalVariables = ({ variables: globalVariables, showVariableConfigurationTab }: AgentGlobalVariablesProps) => {
     if (globalVariables.length === 0) {
-        return <>None</>;
+        return <>{nls.localizeByDefault('None')}</>;
     }
     return <>
         {globalVariables.map(variableId => <li key={variableId} className='theia-TreeNode theia-CompositeTreeNode theia-ExpandableTreeNode theia-mod-selected'>
@@ -273,7 +279,7 @@ interface AgentFunctionsProps {
 }
 const AgentFunctions = ({ functions }: AgentFunctionsProps) => {
     if (functions.length === 0) {
-        return <>None</>;
+        return <>{nls.localizeByDefault('None')}</>;
     }
     return <>
         {functions.map(functionId => <li key={functionId} className='variable-reference'>
@@ -290,7 +296,7 @@ const AgentSpecificVariables = ({ promptVariables, agent }: AgentSpecificVariabl
     const agentDefinedVariablesName = agent.agentSpecificVariables.map(v => v.name);
     const variables = Array.from(new Set([...promptVariables, ...agentDefinedVariablesName]));
     if (variables.length === 0) {
-        return <>None</>;
+        return <>{nls.localizeByDefault('None')}</>;
     }
     return <>
         {variables.map(variableId =>
@@ -313,11 +319,11 @@ const AgentSpecifcVariable = ({ variableId, agent, promptVariables }: AgentSpeci
     const undeclared = agentDefinedVariable === undefined;
     const notUsed = !promptVariables.includes(variableId) && agentDefinedVariable?.usedInPrompt === true;
     return <li key={variableId}>
-        <div><span>Name:</span> <span>{variableId}</span></div>
-        {undeclared ? <div><span>Undeclared</span></div> :
+        <div><span>{nls.localize('theia/ai/core/agentConfiguration/name', 'Name:')}</span> <span>{variableId}</span></div>
+        {undeclared ? <div><span>{nls.localize('theia/ai/core/agentConfiguration/undeclared', 'Undeclared')}</span></div> :
             (<>
-                <div><span>Description:</span> <span>{agentDefinedVariable.description}</span></div>
-                {notUsed && <div>Not used in prompt</div>}
+                <div><span>{nls.localize('theia/ai/core/agentConfiguration/description', 'Description:')}</span> <span>{agentDefinedVariable.description}</span></div>
+                {notUsed && <div>{nls.localize('theia/ai/core/agentConfiguration/notUsedInPrompt', 'Not used in prompt')}</div>}
             </>)}
         <hr />
     </li>;

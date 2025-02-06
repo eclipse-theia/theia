@@ -21,12 +21,13 @@ import '../../../src/browser/style/index.css';
 import { AIAgentConfigurationWidget } from './agent-configuration-widget';
 import { AIVariableConfigurationWidget } from './variable-configuration-widget';
 import { AIConfigurationSelectionService } from './ai-configuration-service';
+import { nls } from '@theia/core';
 
 @injectable()
 export class AIConfigurationContainerWidget extends BaseWidget {
 
     static readonly ID = 'ai-configuration';
-    static readonly LABEL = '✨ AI Configuration [Experimental]';
+    static readonly LABEL = nls.localize('theia/ai/core/aiConfiguration/label', '✨ AI Configuration [Experimental]');
     protected dockpanel: DockPanel;
 
     @inject(TheiaDockPanel.Factory)

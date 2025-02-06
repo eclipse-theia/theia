@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { ChangeSet, ChangeSetElement, ChatChangeEvent, ChatModel, ChatRequestModel } from '@theia/ai-chat';
-import { Disposable, UntitledResourceResolver } from '@theia/core';
+import { Disposable, nls, UntitledResourceResolver } from '@theia/core';
 import { ContextMenuRenderer, LabelProvider, Message, ReactWidget } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
@@ -320,14 +320,14 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     };
 
     const leftOptions = props.showContext ? [{
-        title: 'Attach elements to context',
+        title: nls.localize('theia/ai/chat-ui/attachToContext', 'Attach elements to context'),
         handler: () => { /* TODO */ },
         className: 'codicon-add'
     }] : [];
 
     const rightOptions = inProgress
         ? [{
-            title: 'Cancel (Esc)',
+            title: nls.localize('theia/ai/chat-ui/cancel', 'Cancel (Esc)'),
             handler: () => {
                 const latestRequest = getLatestRequest(props.chatModel);
                 if (latestRequest) {
@@ -338,7 +338,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             className: 'codicon-stop-circle'
         }]
         : [{
-            title: 'Send (Enter)',
+            title: nls.localize('theia/ai/chat-ui/send', 'Send (Enter)'),
             handler: () => {
                 if (props.isEnabled) {
                     submit(editorRef.current?.document.textEditorModel.getValue() || '');
@@ -354,7 +354,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         }
         <div className='theia-ChatInput-Editor-Box'>
             <div className='theia-ChatInput-Editor' ref={editorContainerRef} onKeyDown={onKeyDown} onFocus={handleInputFocus} onBlur={handleInputBlur}>
-                <div ref={placeholderRef} className='theia-ChatInput-Editor-Placeholder'>Ask a question</div>
+                <div ref={placeholderRef} className='theia-ChatInput-Editor-Placeholder'>{nls.localizeByDefault('Ask a question')}</div>
             </div>
             <ChatInputOptions leftOptions={leftOptions} rightOptions={rightOptions} />
         </div>
@@ -412,18 +412,18 @@ const ChangeSetBox: React.FunctionComponent<{ changeSet: ChangeSetUI }> = ({ cha
                 <button
                     className='theia-button'
                     disabled={changeSet.disabled}
-                    title='Accept all pending changes'
+                    title={nls.localize('theia/ai/chat-ui/acceptAll', 'Accept all pending changes')}
                     onClick={() => changeSet.acceptAllPendingElements()}
                 >
                     Accept
                 </button>
-                <span className='codicon codicon-close action' title='Delete Change Set' onClick={() => changeSet.delete()} />
+                <span className='codicon codicon-close action' title={nls.localize('theia/ai/chat-ui/deleteChangeSet', 'Delete Change Set')} onClick={() => changeSet.delete()} />
             </div>
         </div>
         <div className='theia-ChatInput-ChangeSet-List'>
             <ul>
                 {changeSet.elements.map((element, index) => (
-                    <li key={index} title='Open Diff' onClick={() => element.openChange?.()}>
+                    <li key={index} title={nls.localize('theia/ai/chat-ui/openDiff', 'Open Diff')} onClick={() => element.openChange?.()}>
                         <div className={`theia-ChatInput-ChangeSet-Icon ${element.iconClass}`} />
                         <span className='theia-ChatInput-ChangeSet-labelParts'>
                             <span className={`theia-ChatInput-ChangeSet-title ${element.nameClass}`}>
@@ -434,10 +434,25 @@ const ChangeSetBox: React.FunctionComponent<{ changeSet: ChangeSetUI }> = ({ cha
                             </span>
                         </span>
                         <div className='theia-ChatInput-ChangeSet-Actions'>
-                            {element.open && (<span className='codicon codicon-file action' title='Open Original File' onClick={noPropagation(() => element.open!())} />)}
-                            {element.discard && (<span className='codicon codicon-discard action' title='Undo' onClick={noPropagation(() => element.discard!())} />)}
-                            {element.accept && (<span className='codicon codicon-check action' title='Accept' onClick={noPropagation(() => element.accept!())} />)}
-                            <span className='codicon codicon-close action' title='Delete' onClick={noPropagation(() => element.delete())} />
+                            {element.open && (
+                                <span
+                                    className='codicon codicon-file action'
+                                    title={nls.localize('theia/ai/chat-ui/openOriginalFile', 'Open Original File')}
+                                    onClick={noPropagation(() => element.open!())}
+                                />)}
+                            {element.discard && (
+                                <span
+                                    className='codicon codicon-discard action'
+                                    title={nls.localizeByDefault('Undo')}
+                                    onClick={noPropagation(() => element.discard!())}
+                                />)}
+                            {element.accept && (
+                                <span
+                                    className='codicon codicon-check action'
+                                    title={nls.localizeByDefault('Accept')}
+                                    onClick={noPropagation(() => element.accept!())}
+                                />)}
+                            <span className='codicon codicon-close action' title={nls.localizeByDefault('Delete')} onClick={noPropagation(() => element.delete())} />
                         </div>
                     </li>
                 ))}
