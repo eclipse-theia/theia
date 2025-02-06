@@ -129,7 +129,6 @@
       "instruction-breakpoint": "Instruction Breakpoint",
       "instructionBreakpoint": "instruction breakpoint",
       "missingConfiguration": "Dynamic configuration '{0}:{1}' is missing or not applicable",
-      "multipleSession": "'{0}' is already running. Do you want to start another instance?",
       "pause": "pause",
       "pauseAll": "Pause All",
       "reveal": "Reveal",

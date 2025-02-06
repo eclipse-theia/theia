@@ -34,15 +34,11 @@ export class DebugSessionLabelProvider {
         let { name, workspaceFolderUri } = params;
         const includeRoot = this.workspaceService.tryGetRoots.length > 1;
         if (includeRoot && workspaceFolderUri) {
-            const basenameOrAuthority = this.getBasenameOrAuthority(workspaceFolderUri);
+            const uri = new URI(workspaceFolderUri);
+            const path = uri.path;
+            const basenameOrAuthority = path.name || uri.authority;
             name += ` (${basenameOrAuthority})`;
         }
         return name;
-    }
-
-    protected getBasenameOrAuthority(workspaceFolderUri: string): string {
-        const uri = new URI(workspaceFolderUri);
-        const path = uri.path;
-        return path.name || uri.authority;
     }
 }

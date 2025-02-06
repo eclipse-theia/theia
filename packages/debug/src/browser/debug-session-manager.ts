@@ -235,8 +235,9 @@ export class DebugSessionManager {
 
                 const sessionLabel = this.sessionLabelProvider.getLabel(resolved);
                 if (options?.startedByUser
+                    && options.configuration.suppressMultipleSessionWarning !== true
                     && this.sessions.some(s => this.sessionLabelProvider.getLabel(s.options) === sessionLabel)
-                    && options.configuration.suppressMultipleSessionWarning !== true) {
+                ) {
                     const yes = await new ConfirmDialog({
                         title: DebugWidget.LABEL,
                         msg: nls.localizeByDefault("'{0}' is already running. Do you want to start another instance?", sessionLabel)
@@ -400,12 +401,11 @@ export class DebugSessionManager {
         return this.debug.resolveDebugConfigurationWithSubstitutedVariables(configuration, workspaceFolderUri);
     }
 
-    protected async doStart(sessionId: string, options: DebugConfigurationSessionOptions): Promise<DebugSession | undefined> {
+    protected async doStart(sessionId: string, options: DebugConfigurationSessionOptions): Promise<DebugSession> {
         const parentSession = options.configuration.parentSessionId ? this._sessions.get(options.configuration.parentSessionId) : undefined;
         const contrib = this.sessionContributionRegistry.get(options.configuration.type);
         const sessionFactory = contrib ? contrib.debugSessionFactory() : this.debugSessionFactory;
         const session = sessionFactory.get(this, sessionId, options, parentSession);
-
         this._sessions.set(sessionId, session);
 
         this.debugTypeKey.set(session.configuration.type);
