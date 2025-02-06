@@ -392,10 +392,10 @@ export class DebugSessionManager {
         if (options?.startedByUser && this.sessions.some(s => s.getLabel() === session.getLabel()) && options.configuration.suppressMultipleSessionWarning !== true) {
             const yes = await new ConfirmDialog({
                 title: DebugWidget.LABEL,
-                msg: nls.localize('theia/debug/multipleSession', "'{0}' is already running. Do you want to start another instance?", session.getLabel())
+                msg: nls.localizeByDefault("'{0}' is already running. Do you want to start another instance?", session.getLabel())
             }).open();
             if (!yes) {
-                return undefined
+                return undefined;
             }
         }
 

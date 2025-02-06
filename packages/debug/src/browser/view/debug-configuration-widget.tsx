@@ -112,7 +112,7 @@ export class DebugConfigurationWidget extends ReactWidget {
         }
 
         if (DebugSessionOptions.isConfiguration(configuration)) {
-            configuration.startedByUser = true
+            configuration.startedByUser = true;
         }
 
         this.commandRegistry.executeCommand(DebugCommands.START.id, configuration);
