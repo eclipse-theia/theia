@@ -139,19 +139,30 @@ export class AIChatInputWidget extends ReactWidget {
         event.preventDefault();
         event.stopPropagation();
         this.node.classList.add('drag-over');
-        event.dataTransfer!.dropEffect = 'link';
+        if (event.dataTransfer?.types.includes('text/plain')) {
+            event.dataTransfer!.dropEffect = 'copy';
+        } else {
+            event.dataTransfer!.dropEffect = 'link';
+        }
     }
 
     protected onDrop(event: React.DragEvent): void {
+        event.preventDefault();
+        event.stopPropagation();
         this.node.classList.remove('drag-over');
-        const dataTransferText = event.dataTransfer?.getData('text');
+        const dataTransferText = event.dataTransfer?.getData('text/plain');
         const position = this.editorRef?.getControl().getTargetAtClientPoint(event.clientX, event.clientY)?.position;
         this.variableService.getDropResult(event.nativeEvent, { type: 'ai-chat-input-widget' }).then(result => {
             result.variables.forEach(variable => this.addContext(variable));
             const text = result.text ?? dataTransferText;
             if (position && text) {
                 this.editorRef?.getControl().executeEdits('drag-and-drop', [{
-                    range: { startLineNumber: position.lineNumber, startColumn: position.column, endLineNumber: position.lineNumber, endColumn: position.column },
+                    range: {
+                        startLineNumber: position.lineNumber,
+                        startColumn: position.column,
+                        endLineNumber: position.lineNumber,
+                        endColumn: position.column
+                    },
                     text
                 }]);
             }
