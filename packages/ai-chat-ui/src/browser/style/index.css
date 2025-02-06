@@ -160,6 +160,50 @@ div:last-child > .theia-ChatNode {
   gap: 4px;
 }
 
+.theia-ChatInput-ChatContext ul {
+  list-style-type: none;
+  padding: 0px 4px 8px 8px;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.theia-ChatInput-ChatContext-Element {
+  display: flex;
+  align-items: center;
+  border-radius: calc(var(--theia-ui-padding) * 2 / 3);
+  border: var(--theia-border-width) solid var(--theia-dropdown-border);
+  padding: 2px 4px 2px 6px;
+  height: 18px;
+  line-height: 16px;
+}
+
+.theia-ChatInput-ChatContext-additionalInfo {
+  color: var(--theia-disabledForeground);
+  font-size: calc(var(--theia-content-font-size) * 0.8);
+  margin-left: 4px;
+  line-height: 18px;
+}
+
+.theia-ChatInput-ChatContext-Element .action {
+  cursor: pointer;
+  margin-left: 4px;
+  border-radius: 4px;
+}
+.theia-ChatInput-ChatContext-Element .action:hover {
+  background-color: var(--theia-toolbar-hoverBackground);
+}
+
+.theia-ChatInput-ChatContext-Icon {
+  display: inline;
+  line-height: 18px;
+}
+
+.theia-ChatInput-ChatContext-Icon.codicon {
+  margin-right: 6px;
+}
+
 .theia-ChatInput-ChangeSet-Box {
   margin: 0 16px -5px 16px;
   padding: 2px;
