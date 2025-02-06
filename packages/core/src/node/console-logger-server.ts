@@ -20,7 +20,7 @@ import { LogLevelCliContribution } from './logger-cli-contribution';
 import { ILoggerServer, ILoggerClient, ConsoleLogger, rootLoggerName } from '../common/logger-protocol';
 import { format } from 'util';
 import { EOL } from 'os';
-import * as fs from 'fs/promises';
+import * as fs from 'fs';
 
 @injectable()
 export class ConsoleLoggerServer implements ILoggerServer {
@@ -33,7 +33,7 @@ export class ConsoleLoggerServer implements ILoggerServer {
     @inject(LogLevelCliContribution)
     protected cli: LogLevelCliContribution;
 
-    protected failedLogFileWrite = false;
+    protected logFileStream?: fs.WriteStream;
 
     @postConstruct()
     protected init(): void {
@@ -65,22 +65,21 @@ export class ConsoleLoggerServer implements ILoggerServer {
         const configuredLogLevel = await this.getLogLevel(name);
         if (logLevel >= configuredLogLevel) {
             const fullMessage = ConsoleLogger.log(name, logLevel, message, params);
-            await this.logToFile(fullMessage, params);
+            this.logToFile(fullMessage, params);
         }
     }
 
-    protected async logToFile(message: string, params: any[]): Promise<void> {
-        if (this.cli.logFile) {
-            try {
-                const formatted = format(message, ...params) + EOL;
-                await fs.appendFile(this.cli.logFile, formatted);
-            } catch (error) {
-                // Avoid spamming the console with errors in case the log file is not writable
-                if (!this.failedLogFileWrite) {
-                    console.error(`Failed to write to log file: ${error}`);
-                    this.failedLogFileWrite = true;
-                }
-            }
+    protected logToFile(message: string, params: any[]): void {
+        if (this.cli.logFile && !this.logFileStream) {
+            this.logFileStream = fs.createWriteStream(this.cli.logFile, { flags: 'a' });
+            // Only log errors once to avoid spamming the console
+            this.logFileStream.once('error', error => {
+                console.error(`Error writing to log file ${this.cli.logFile}`, error);
+            });
+        }
+        if (this.logFileStream) {
+            const formatted = format(message, ...params) + EOL;
+            this.logFileStream.write(formatted);
         }
     }
 
