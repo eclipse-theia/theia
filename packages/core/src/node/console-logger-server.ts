@@ -18,17 +18,22 @@ import { inject, injectable, postConstruct } from 'inversify';
 import { LoggerWatcher } from '../common/logger-watcher';
 import { LogLevelCliContribution } from './logger-cli-contribution';
 import { ILoggerServer, ILoggerClient, ConsoleLogger, rootLoggerName } from '../common/logger-protocol';
+import { format } from 'util';
+import { EOL } from 'os';
+import * as fs from 'fs/promises';
 
 @injectable()
 export class ConsoleLoggerServer implements ILoggerServer {
 
-    protected client: ILoggerClient | undefined = undefined;
+    protected client?: ILoggerClient;
 
     @inject(LoggerWatcher)
     protected watcher: LoggerWatcher;
 
     @inject(LogLevelCliContribution)
     protected cli: LogLevelCliContribution;
+
+    protected failedLogFileWrite = false;
 
     @postConstruct()
     protected init(): void {
@@ -59,7 +64,23 @@ export class ConsoleLoggerServer implements ILoggerServer {
     async log(name: string, logLevel: number, message: string, params: any[]): Promise<void> {
         const configuredLogLevel = await this.getLogLevel(name);
         if (logLevel >= configuredLogLevel) {
-            ConsoleLogger.log(name, logLevel, message, params);
+            const fullMessage = ConsoleLogger.log(name, logLevel, message, params);
+            await this.logToFile(fullMessage, params);
+        }
+    }
+
+    protected async logToFile(message: string, params: any[]): Promise<void> {
+        if (this.cli.logFile) {
+            try {
+                const formatted = format(message, ...params) + EOL;
+                await fs.appendFile(this.cli.logFile, formatted);
+            } catch (error) {
+                // Avoid spamming the console with errors in case the log file is not writable
+                if (!this.failedLogFileWrite) {
+                    console.error(`Failed to write to log file: ${error}`);
+                    this.failedLogFileWrite = true;
+                }
+            }
         }
     }
 

@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2018 Ericsson and others.
+// Copyright (C) 2025 TypeFox and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,17 +14,21 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { interfaces } from '@theia/core/shared/inversify';
-import { ILogger } from '@theia/core';
+import { interfaces } from 'inversify';
+import { ILogger, Logger, LoggerName, rootLoggerName } from './logger';
+import { LoggerWatcher } from './logger-watcher';
 
-/**
- * Create the bindings common to node and browser.
- *
- * @param bind The bind function from inversify.
- */
-export function createCommonBindings(bind: interfaces.Bind): void {
+export function bindCommonLogger(bind: interfaces.Bind): void {
+    bind(LoggerName).toConstantValue(rootLoggerName);
+    bind(ILogger).to(Logger).inSingletonScope().when(request => getName(request) === undefined);
     bind(ILogger).toDynamicValue(ctx => {
         const logger = ctx.container.get<ILogger>(ILogger);
-        return logger.child('terminal');
-    }).inSingletonScope().whenTargetNamed('terminal');
+        return logger.child(getName(ctx.currentRequest)!);
+    }).when(request => getName(request) !== undefined);
+    bind(LoggerWatcher).toSelf().inSingletonScope();
+}
+
+function getName(request: interfaces.Request): string | undefined {
+    const named = request.target.metadata.find(e => e.key === 'named');
+    return named ? named.value?.toString() : undefined;
 }
