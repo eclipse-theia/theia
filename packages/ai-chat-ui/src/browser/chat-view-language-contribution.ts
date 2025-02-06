@@ -35,7 +35,7 @@ export class ChatViewLanguageContribution implements FrontendApplicationContribu
     protected readonly variableService: AIVariableService;
 
     @inject(ToolInvocationRegistry)
-    private readonly toolInvocationRegistry: ToolInvocationRegistry;
+    protected readonly toolInvocationRegistry: ToolInvocationRegistry;
 
     onStart(_app: FrontendApplication): MaybePromise<void> {
         monaco.languages.register({ id: CHAT_VIEW_LANGUAGE_ID, extensions: [CHAT_VIEW_LANGUAGE_EXTENSION] });
