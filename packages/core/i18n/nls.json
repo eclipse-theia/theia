@@ -129,6 +129,7 @@
       "instruction-breakpoint": "Instruction Breakpoint",
       "instructionBreakpoint": "instruction breakpoint",
       "missingConfiguration": "Dynamic configuration '{0}:{1}' is missing or not applicable",
+      "multipleSession": "'{0}' is already running. Do you want to start another instance?",
       "pause": "pause",
       "pauseAll": "Pause All",
       "reveal": "Reveal",
@@ -540,7 +541,7 @@
     },
     "vsx-registry": {
       "confirmDialogMessage": "The extension \"{0}\" is unverified and might pose a security risk.",
-      "confirmDialogTitle": "Are you sure you want to proceed with the installation ?",
+      "confirmDialogTitle": "Are you sure you want to proceed with the installation?",
       "downloadCount": "Download count: {0}",
       "errorFetching": "Error fetching extensions.",
       "errorFetchingConfigurationHint": "This could be caused by network configuration issues.",

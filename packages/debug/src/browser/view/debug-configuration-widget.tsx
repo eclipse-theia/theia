@@ -27,6 +27,7 @@ import { DebugAction } from './debug-action';
 import { DebugConfigurationSelect } from './debug-configuration-select';
 import { DebugViewModel } from './debug-view-model';
 import { nls } from '@theia/core/lib/common/nls';
+import { DebugSessionOptions } from '../debug-session-options';
 
 @injectable()
 export class DebugConfigurationWidget extends ReactWidget {
@@ -108,6 +109,10 @@ export class DebugConfigurationWidget extends ReactWidget {
         } catch (e) {
             this.messageService.error(e.message);
             return;
+        }
+
+        if (DebugSessionOptions.isConfiguration(configuration)) {
+            configuration.startedByUser = true
         }
 
         this.commandRegistry.executeCommand(DebugCommands.START.id, configuration);

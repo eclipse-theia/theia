@@ -27,6 +27,7 @@ import { DebugWatchExpression } from './debug-watch-expression';
 import { DebugWatchManager } from '../debug-watch-manager';
 import { DebugFunctionBreakpoint } from '../model/debug-function-breakpoint';
 import { DebugInstructionBreakpoint } from '../model/debug-instruction-breakpoint';
+import { DebugSessionOptionsBase } from '../debug-session-options';
 
 @injectable()
 export class DebugViewModel implements Disposable {
@@ -136,12 +137,12 @@ export class DebugViewModel implements Disposable {
         return this.manager.getInstructionBreakpoints(this.currentSession);
     }
 
-    async start(): Promise<void> {
+    async start(options: Partial<Pick<DebugSessionOptionsBase, 'startedByUser'>> = {}): Promise<void> {
         const { session } = this;
         if (!session) {
             return;
         }
-        const newSession = await this.manager.start(session.options);
+        const newSession = await this.manager.start(Object.assign(session.options, options));
         if (newSession) {
             this.fireDidChange();
         }

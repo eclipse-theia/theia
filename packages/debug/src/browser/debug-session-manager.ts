@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { DisposableCollection, Emitter, Event, MessageService, nls, ProgressService, WaitUntilEvent } from '@theia/core';
-import { LabelProvider, ApplicationShell } from '@theia/core/lib/browser';
+import { LabelProvider, ApplicationShell, ConfirmDialog } from '@theia/core/lib/browser';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import URI from '@theia/core/lib/common/uri';
 import { EditorManager } from '@theia/editor/lib/browser';
@@ -37,6 +37,7 @@ import { DebugSourceBreakpoint } from './model/debug-source-breakpoint';
 import { DebugFunctionBreakpoint } from './model/debug-function-breakpoint';
 import * as monaco from '@theia/monaco-editor-core';
 import { DebugInstructionBreakpoint } from './model/debug-instruction-breakpoint';
+import { DebugWidget } from './view/debug-widget';
 
 export interface WillStartDebugSession extends WaitUntilEvent {
 }
@@ -382,11 +383,22 @@ export class DebugSessionManager {
         return this.debug.resolveDebugConfigurationWithSubstitutedVariables(configuration, workspaceFolderUri);
     }
 
-    protected async doStart(sessionId: string, options: DebugConfigurationSessionOptions): Promise<DebugSession> {
+    protected async doStart(sessionId: string, options: DebugConfigurationSessionOptions): Promise<DebugSession | undefined> {
         const parentSession = options.configuration.parentSessionId ? this._sessions.get(options.configuration.parentSessionId) : undefined;
         const contrib = this.sessionContributionRegistry.get(options.configuration.type);
         const sessionFactory = contrib ? contrib.debugSessionFactory() : this.debugSessionFactory;
         const session = sessionFactory.get(this, sessionId, options, parentSession);
+
+        if (options?.startedByUser && this.sessions.some(s => s.getLabel() === session.getLabel()) && options.configuration.suppressMultipleSessionWarning !== true) {
+            const yes = await new ConfirmDialog({
+                title: DebugWidget.LABEL,
+                msg: nls.localize('theia/debug/multipleSession', "'{0}' is already running. Do you want to start another instance?", session.getLabel())
+            }).open();
+            if (!yes) {
+                return undefined
+            }
+        }
+
         this._sessions.set(sessionId, session);
 
         this.debugTypeKey.set(session.configuration.type);
