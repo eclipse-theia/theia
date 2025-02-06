@@ -313,7 +313,7 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
 
     // To set the active language for the console input text model.
     // https://github.com/microsoft/vscode/blob/2af422737386e792c3fcde7884f9bf47a1aff2f5/src/vs/workbench/contrib/debug/browser/repl.ts#L371-L384
-    protected setMode() {
+    protected setMode(): void {
         if (this.isHidden) {
             return;
         }
@@ -322,7 +322,7 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
         if (activeEditorControl) {
             this._modelChangeListener.dispose();
             this._modelChangeListener = activeEditorControl.onDidChangeModelLanguage(() => this.setMode());
-            const consoleModel = this._input.getControl().getModel()
+            const consoleModel = this._input.getControl().getModel();
             const activeEditorModel = activeEditorControl.getModel();
             if (consoleModel && activeEditorModel) {
                 monaco.editor.setModelLanguage(consoleModel, activeEditorModel.getLanguageId());
