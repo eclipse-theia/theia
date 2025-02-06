@@ -33,6 +33,7 @@ import { TemplateRenderer } from './template-settings-renderer';
 import { AIConfigurationSelectionService } from './ai-configuration-service';
 import { AIVariableConfigurationWidget } from './variable-configuration-widget';
 import { AgentService } from '../../common/agent-service';
+import { nls } from '@theia/core';
 
 interface ParsedPrompt {
     functions: string[];
@@ -44,7 +45,7 @@ interface ParsedPrompt {
 export class AIAgentConfigurationWidget extends ReactWidget {
 
     static readonly ID = 'ai-agent-configuration-container-widget';
-    static readonly LABEL = 'Agents';
+    static readonly LABEL = nls.localize('theia/ai/core/agentConfiguration/label', 'Agents');
 
     @inject(AgentService)
     protected readonly agentService: AgentService;

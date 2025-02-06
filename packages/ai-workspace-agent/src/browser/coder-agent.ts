@@ -19,6 +19,7 @@ import { injectable } from '@theia/core/shared/inversify';
 import { FILE_CONTENT_FUNCTION_ID, GET_WORKSPACE_FILE_LIST_FUNCTION_ID, GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID } from '../common/workspace-functions';
 import { CODER_DEFAULT_PROMPT_TEMPLATE_ID, getCoderReplacePromptTemplate } from '../common/coder-replace-prompt-template';
 import { WriteChangeToFileProvider } from './file-changeset-functions';
+import { nls } from '@theia/core';
 
 @injectable()
 export class CoderAgent extends AbstractStreamParsingChatAgent implements ChatAgent {
@@ -35,7 +36,8 @@ export class CoderAgent extends AbstractStreamParsingChatAgent implements ChatAg
             identifier: 'openai/gpt-4o',
         }], 'chat');
         this.name = 'Coder';
-        this.description = 'An AI assistant integrated into Theia IDE, designed to assist software developers with code tasks.';
+        this.description = nls.localize('theia/ai/workspace/coderAgent/description',
+            'An AI assistant integrated into Theia IDE, designed to assist software developers with code tasks.');
         this.promptTemplates = [getCoderReplacePromptTemplate(false), getCoderReplacePromptTemplate(true)];
         this.variables = [];
         this.agentSpecificVariables = [];

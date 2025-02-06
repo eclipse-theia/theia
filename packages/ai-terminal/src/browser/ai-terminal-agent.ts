@@ -22,7 +22,7 @@ import {
     LanguageModelRegistry, LanguageModelRequirement,
     PromptService
 } from '@theia/ai-core/lib/common';
-import { generateUuid, ILogger } from '@theia/core';
+import { generateUuid, ILogger, nls } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { z } from 'zod';
 import zodToJsonSchema from 'zod-to-json-schema';
@@ -39,9 +39,9 @@ export class AiTerminalAgent implements Agent {
 
     id = 'Terminal Assistant';
     name = 'Terminal Assistant';
-    description = 'This agent provides assistance to write and execute arbitrary terminal commands. \
+    description = nls.localize('theia/ai/terminal/agent/description', 'This agent provides assistance to write and execute arbitrary terminal commands. \
         Based on the user\'s request, it suggests commands and allows the user to directly paste and execute them in the terminal. \
-        It accesses the current directory, environment and the recent terminal output of the terminal session to provide context-aware assistance';
+        It accesses the current directory, environment and the recent terminal output of the terminal session to provide context-aware assistance');
     variables = [];
     functions = [];
     agentSpecificVariables = [
@@ -54,7 +54,7 @@ export class AiTerminalAgent implements Agent {
         {
             id: 'terminal-system',
             name: 'AI Terminal System Prompt',
-            description: 'Prompt for the AI Terminal Assistant',
+            description: nls.localize('theia/ai/terminal/systemPrompt/description', 'Prompt for the AI Terminal Assistant'),
             template: `{{!-- Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
 # Instructions
@@ -102,7 +102,7 @@ nothing to commit, working tree clean
         {
             id: 'terminal-user',
             name: 'AI Terminal User Prompt',
-            description: 'Prompt that contains the user request',
+            description: nls.localize('theia/ai/terminal/userPrompt/description', 'Prompt that contains the user request'),
             template: `{{!-- Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
 user-request: {{userRequest}}

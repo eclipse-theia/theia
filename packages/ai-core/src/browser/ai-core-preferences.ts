@@ -14,11 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { nls } from '@theia/core';
 import { PreferenceContribution, PreferenceProxy, PreferenceSchema } from '@theia/core/lib/browser';
 import { PreferenceProxyFactory } from '@theia/core/lib/browser/preferences/injectable-preference-proxy';
 import { interfaces } from '@theia/core/shared/inversify';
 
-export const AI_CORE_PREFERENCES_TITLE = '✨ AI Features [Experimental]';
+export const AI_CORE_PREFERENCES_TITLE = nls.localize('theia/ai/core/prefs/title', '✨ AI Features [Experimental]');
 export const PREFERENCE_NAME_ENABLE_EXPERIMENTAL = 'ai-features.AiEnable.enableAI';
 export const PREFERENCE_NAME_PROMPT_TEMPLATES = 'ai-features.promptTemplates.promptTemplatesFolder';
 export const PREFERENCE_NAME_REQUEST_SETTINGS = 'ai-features.modelSettings.requestSettings';
@@ -28,7 +29,8 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
     properties: {
         [PREFERENCE_NAME_ENABLE_EXPERIMENTAL]: {
             title: AI_CORE_PREFERENCES_TITLE,
-            markdownDescription: '❗ This setting allows you to access and experiment with the latest AI capabilities.\
+            markdownDescription: nls.localize('theia/ai/core/enableExperimental/mdDescription',
+                '❗ This setting allows you to access and experiment with the latest AI capabilities.\
             \n\
             Please note that these features are in an experimental phase, which means they may be unstable and\
             undergo significant changes. It is important to be aware that these experimental features may generate\
@@ -37,14 +39,15 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
             \n\
             **Please note! The settings below in this section will only take effect\n\
             once the main feature setting is enabled. After enabling the feature, you need to configure at least one\
-            LLM provider below. Also see [the documentation](https://theia-ide.org/docs/user_ai/)**.',
+            LLM provider below. Also see [the documentation](https://theia-ide.org/docs/user_ai/)**.'),
             type: 'boolean',
             default: false,
         },
         [PREFERENCE_NAME_PROMPT_TEMPLATES]: {
             title: AI_CORE_PREFERENCES_TITLE,
-            description: 'Folder for storing customized prompt templates. If not customized the user config directory is used. Please consider to use a folder, which is\
-            under version control to manage your variants of prompt templates.',
+            description: nls.localize('theia/ai/core/promptTemplates/description',
+                'Folder for storing customized prompt templates. If not customized the user config directory is used. Please consider to use a folder, which is\
+            under version control to manage your variants of prompt templates.'),
             type: 'string',
             default: '',
             typeDetails: {
@@ -58,12 +61,12 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
             },
         },
         [PREFERENCE_NAME_REQUEST_SETTINGS]: {
-            title: 'Custom Request Settings',
-            markdownDescription: 'Allows specifying custom request settings for multiple models.\n\
+            title: nls.localize('theia/ai/core/requestSettings/title', 'Custom Request Settings'),
+            markdownDescription: nls.localize('theia/ai/core/requestSettings/mdDescription', 'Allows specifying custom request settings for multiple models.\n\
             Each object represents the configuration for a specific model. The `modelId` field specifies the model ID, `requestSettings` defines model-specific settings.\n\
             The `providerId` field is optional and allows you to apply the settings to a specific provider. If not set, the settings will be applied to all providers.\n\
             Example providerIds: huggingface, openai, ollama, llamafile.\n\
-            Refer to [our documentation](https://theia-ide.org/docs/user_ai/#custom-request-settings) for more information.',
+            Refer to [our documentation](https://theia-ide.org/docs/user_ai/#custom-request-settings) for more information.'),
             type: 'array',
             items: {
                 type: 'object',

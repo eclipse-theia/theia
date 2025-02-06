@@ -20,6 +20,7 @@ import {
 } from '@theia/ai-core/lib/common';
 import { injectable } from '@theia/core/shared/inversify';
 import { AbstractStreamParsingChatAgent, ChatAgent, SystemMessageDescription } from './chat-agents';
+import { nls } from '@theia/core';
 
 export const universalTemplate: PromptTemplate = {
    id: 'universal-system',
@@ -99,10 +100,11 @@ export class UniversalChatAgent extends AbstractStreamParsingChatAgent implement
          identifier: 'openai/gpt-4o',
       }], 'chat');
       this.name = 'Universal';
-      this.description = 'This agent is designed to help software developers by providing concise and accurate '
-         + 'answers to general programming and software development questions. It is also the fall-back for any generic '
-         + 'questions the user might ask. The universal agent currently does not have any context by default, i.e. it cannot '
-         + 'access the current user context or the workspace.';
+      this.description = nls.localize('theia/ai/chat/universal/description',
+         'This agent is designed to help software developers by providing concise and accurate \
+answers to general programming and software development questions. It is also the fall-back for any generic \
+questions the user might ask. The universal agent currently does not have any context by default, i.e. it cannot \
+access the current user context or the workspace.');
       this.variables = [];
       this.promptTemplates = [universalTemplate, universalTemplateVariant];
       this.functions = [];
