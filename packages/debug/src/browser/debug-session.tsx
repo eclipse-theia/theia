@@ -976,17 +976,4 @@ export class DebugSession implements CompositeTreeElement {
         } while (debugSession?.parentSession && debugSession.configuration.consoleMode === DebugConsoleMode.MergeWithParent);
         return debugSession;
     }
-
-    // https://github.com/microsoft/vscode/blob/907518a25c6d6b9467cbcc57132c6adb7e7396b0/src/vs/workbench/contrib/debug/browser/debugSession.ts#L253-L256
-    getLabel(): string {
-        const includeRoot = this.workspaceService.tryGetRoots.length > 1;
-        let name = this.options.name;
-        if (includeRoot && this.options.workspaceFolderUri) {
-            const uri = new URI(this.options.workspaceFolderUri);
-            const path = uri.path;
-            const basenameOrAuthority = path.name || uri.authority;
-            name += ` (${basenameOrAuthority})`;
-        }
-        return name;
-    }
 }

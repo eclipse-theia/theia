@@ -38,6 +38,7 @@ import { DebugFunctionBreakpoint } from './model/debug-function-breakpoint';
 import * as monaco from '@theia/monaco-editor-core';
 import { DebugInstructionBreakpoint } from './model/debug-instruction-breakpoint';
 import { DebugWidget } from './view/debug-widget';
+import { DebugSessionLabelProvider } from './debug-session-label-provider';
 
 export interface WillStartDebugSession extends WaitUntilEvent {
 }
@@ -153,6 +154,9 @@ export class DebugSessionManager {
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
 
+    @inject(DebugSessionLabelProvider)
+    protected readonly sessionLabelProvider: DebugSessionLabelProvider;
+
     protected debugTypeKey: ContextKey<string>;
     protected inDebugModeKey: ContextKey<boolean>;
     protected debugStateKey: ContextKey<string>;
@@ -227,6 +231,19 @@ export class DebugSessionManager {
                         this.debugConfigurationManager.openConfiguration();
                     }
                     return undefined;
+                }
+
+                const sessionLabel = this.sessionLabelProvider.getLabel(resolved);
+                if (options?.startedByUser
+                    && this.sessions.some(s => this.sessionLabelProvider.getLabel(s.options) === sessionLabel)
+                    && options.configuration.suppressMultipleSessionWarning !== true) {
+                    const yes = await new ConfirmDialog({
+                        title: DebugWidget.LABEL,
+                        msg: nls.localizeByDefault("'{0}' is already running. Do you want to start another instance?", sessionLabel)
+                    }).open();
+                    if (!yes) {
+                        return undefined;
+                    }
                 }
 
                 // preLaunchTask isn't run in case of auto restart as well as postDebugTask
@@ -388,16 +405,6 @@ export class DebugSessionManager {
         const contrib = this.sessionContributionRegistry.get(options.configuration.type);
         const sessionFactory = contrib ? contrib.debugSessionFactory() : this.debugSessionFactory;
         const session = sessionFactory.get(this, sessionId, options, parentSession);
-
-        if (options?.startedByUser && this.sessions.some(s => s.getLabel() === session.getLabel()) && options.configuration.suppressMultipleSessionWarning !== true) {
-            const yes = await new ConfirmDialog({
-                title: DebugWidget.LABEL,
-                msg: nls.localizeByDefault("'{0}' is already running. Do you want to start another instance?", session.getLabel())
-            }).open();
-            if (!yes) {
-                return undefined;
-            }
-        }
 
         this._sessions.set(sessionId, session);
 
