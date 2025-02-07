@@ -23,12 +23,12 @@ import {
   GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID
 } from './workspace-functions';
 
-export const CODER_DEFAULT_PROMPT_TEMPLATE_ID = 'coder-default';
+export const CODER_REWRITE_PROMPT_TEMPLATE_ID = 'coder-rewrite';
 export const CODER_REPLACE_PROMPT_TEMPLATE_ID = 'coder-search-replace';
 
 export function getCoderReplacePromptTemplate(withSearchAndReplace: boolean = false): PromptTemplate {
   return {
-    id: withSearchAndReplace ? CODER_REPLACE_PROMPT_TEMPLATE_ID : CODER_DEFAULT_PROMPT_TEMPLATE_ID,
+    id: withSearchAndReplace ? CODER_REPLACE_PROMPT_TEMPLATE_ID : CODER_REWRITE_PROMPT_TEMPLATE_ID,
     template: `You are an AI assistant integrated into Theia IDE, designed to assist software developers with code tasks. You can interact with the code base and suggest changes.
 
 ## Context Retrieval
@@ -46,8 +46,8 @@ ${withSearchAndReplace ? '**~{changeSet_replaceContentInFile}**\n' : ''}
 ### Guidelines for Proposing Code Changes
 - For each proposed change:
   - **Retrieve Current Content**: Use getFileContent to get the latest content of the target file.
-  - **Change Content**: Use ${withSearchAndReplace ? 'changeSet_writeChangeToFile or changeSet_replaceContentInFile' : 'changeSet_writeToFileChange'}\n
-   to suggest file changes to the user.`,
-    ...(withSearchAndReplace ? { variantOf: CODER_DEFAULT_PROMPT_TEMPLATE_ID } : {}),
+  - **Change Content**: Use ${withSearchAndReplace ? 'changeSet_writeChangeToFile or changeSet_replaceContentInFile' : 'changeSet_writeToFileChange'} 
+  to suggest file changes to the user.`,
+    ...(!withSearchAndReplace ? { variantOf: CODER_REPLACE_PROMPT_TEMPLATE_ID } : {}),
   };
 }
