@@ -91,8 +91,10 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         this.chatSession = this.chatService.createSession();
 
         this.inputWidget.onQuery = this.onQuery.bind(this);
+        this.inputWidget.onUnpin = this.onUnpin.bind(this);
         this.inputWidget.onCancel = this.onCancel.bind(this);
         this.inputWidget.chatModel = this.chatSession.model;
+        this.inputWidget.pinnedAgent = this.chatSession.pinnedAgent;
         this.inputWidget.onDeleteChangeSet = this.onDeleteChangeSet.bind(this);
         this.inputWidget.onDeleteChangeSetElement = this.onDeleteChangeSetElement.bind(this);
         this.treeWidget.trackChatModel(this.chatSession.model);
@@ -117,6 +119,7 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
                     this.chatSession = session;
                     this.treeWidget.trackChatModel(this.chatSession.model);
                     this.inputWidget.chatModel = this.chatSession.model;
+                    this.inputWidget.pinnedAgent = this.chatSession.pinnedAgent;
                     if (event.focus) {
                         this.show();
                     }
@@ -169,12 +172,19 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
             if (responseModel.isError) {
                 this.messageService.error(responseModel.errorObject?.message ?? 'An error occurred during chat service invocation.');
             }
+        }).finally(() => {
+            this.inputWidget.pinnedAgent = this.chatSession.pinnedAgent;
         });
         if (!requestProgress) {
             this.messageService.error(`Was not able to send request "${chatRequest.text}" to session ${this.chatSession.id}`);
             return;
         }
         // Tree Widget currently tracks the ChatModel itself. Therefore no notification necessary.
+    }
+
+    protected onUnpin(): void {
+        this.chatSession.pinnedAgent = undefined;
+        this.inputWidget.pinnedAgent = this.chatSession.pinnedAgent;
     }
 
     protected onCancel(requestModel: ChatRequestModel): void {

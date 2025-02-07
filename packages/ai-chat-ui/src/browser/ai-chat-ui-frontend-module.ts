@@ -61,7 +61,8 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
 
     bind(AIChatInputWidget).toSelf();
     bind(AIChatInputConfiguration).toConstantValue({
-        showContext: false
+        showContext: false,
+        showPinnedAgent: true
     });
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
         id: AIChatInputWidget.ID,

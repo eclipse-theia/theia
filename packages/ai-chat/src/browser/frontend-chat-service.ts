@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { ChatAgent, ChatServiceImpl, ParsedChatRequest } from '../common';
+import { ChatAgent, ChatServiceImpl, ChatSession, ParsedChatRequest } from '../common';
 import { PreferenceService } from '@theia/core/lib/browser';
-import { DEFAULT_CHAT_AGENT_PREF } from './ai-chat-preferences';
+import { DEFAULT_CHAT_AGENT_PREF, PIN_CHAT_AGENT_PREF } from './ai-chat-preferences';
 
 @injectable()
 export class FrontendChatServiceImpl extends ChatServiceImpl {
@@ -25,7 +25,20 @@ export class FrontendChatServiceImpl extends ChatServiceImpl {
     @inject(PreferenceService)
     protected preferenceService: PreferenceService;
 
-    protected override getAgent(parsedRequest: ParsedChatRequest): ChatAgent | undefined {
+    protected override getAgent(parsedRequest: ParsedChatRequest, session: ChatSession): ChatAgent | undefined {
+        let agent = this.initialAgentSelection(parsedRequest);
+        if (!this.preferenceService.get<boolean>(PIN_CHAT_AGENT_PREF)) {
+            return agent;
+        }
+        if (!session.pinnedAgent && agent && agent.id !== this.defaultChatAgentId?.id) {
+            session.pinnedAgent = agent;
+        } else if (session.pinnedAgent && this.getMentionedAgent(parsedRequest) === undefined) {
+            agent = session.pinnedAgent;
+        }
+        return agent;
+    }
+
+    protected override initialAgentSelection(parsedRequest: ParsedChatRequest): ChatAgent | undefined {
         const agentPart = this.getMentionedAgent(parsedRequest);
         if (agentPart) {
             return this.chatAgentService.getAgent(agentPart.agentId);

@@ -18,6 +18,7 @@ import { AI_CORE_PREFERENCES_TITLE } from '@theia/ai-core/lib/browser/ai-core-pr
 import { PreferenceSchema } from '@theia/core/lib/browser/preferences/preference-contribution';
 
 export const DEFAULT_CHAT_AGENT_PREF = 'ai-features.chat.defaultChatAgent';
+export const PIN_CHAT_AGENT_PREF = 'ai-features.chat.pinChatAgent';
 
 export const aiChatPreferences: PreferenceSchema = {
     type: 'object',
@@ -26,6 +27,14 @@ export const aiChatPreferences: PreferenceSchema = {
             type: 'string',
             description: 'Optional: <agent-name> of the Chat Agent that shall be invoked, if no agent is explicitly mentioned with @<agent-name> in the user query.\
             If no Default Agent is configured, Theia´s defaults will be applied.',
+            title: AI_CORE_PREFERENCES_TITLE,
+        },
+        [PIN_CHAT_AGENT_PREF]: {
+            type: 'boolean',
+            description: 'Enable agent pinning to automatically keep a mentioned chat agent active across prompts, reducing the need for repeated mentions.\
+            \n\
+            You can manually unpin or switch agents anytime.',
+            default: true,
             title: AI_CORE_PREFERENCES_TITLE,
         }
     }
