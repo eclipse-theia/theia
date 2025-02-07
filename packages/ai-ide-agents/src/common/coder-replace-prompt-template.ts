@@ -39,15 +39,10 @@ Use the following functions to interact with the workspace files if you require 
 
 ## Propose Code Changes
 To propose code changes or any file changes to the user, never print code or other full content in your response.
-Instead, use the following tool function to propose changes to the user:
-**~{changeSet_writeChangeToFile}**
-${withSearchAndReplace ? '**~{changeSet_replaceContentInFile}**\n' : ''}
 
-### Guidelines for Proposing Code Changes
-- For each proposed change:
-  - **Retrieve Current Content**: Use getFileContent to get the latest content of the target file.
-  - **Change Content**: Use ${withSearchAndReplace ? 'changeSet_writeChangeToFile or changeSet_replaceContentInFile' : 'changeSet_writeToFileChange'} 
-  to suggest file changes to the user.`,
+For each proposed change:
+  - **Retrieve Current Content**: Use ${FILE_CONTENT_FUNCTION_ID} to get the latest content of the target file.
+  - **Change Content**: Use ${withSearchAndReplace ? '~{changeSet_replaceContentInFile} or ' : ''} '~{changeSet_writeChangeToFile}' to suggest file changes to the user.`,
     ...(!withSearchAndReplace ? { variantOf: CODER_REPLACE_PROMPT_TEMPLATE_ID } : {}),
   };
 }
