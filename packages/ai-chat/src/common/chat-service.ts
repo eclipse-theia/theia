@@ -73,6 +73,9 @@ export interface DefaultChatAgentId {
     id: string;
 }
 
+export const PinChatAgent = Symbol('PinChatAgent');
+export type PinChatAgent = boolean;
+
 export const ChatService = Symbol('ChatService');
 export interface ChatService {
     onActiveSessionChanged: Event<ActiveSessionChangedEvent>
@@ -108,6 +111,9 @@ export class ChatServiceImpl implements ChatService {
 
     @inject(DefaultChatAgentId) @optional()
     protected defaultChatAgentId: DefaultChatAgentId | undefined;
+
+    @inject(PinChatAgent) @optional()
+    protected pinChatAgent: boolean | undefined;
 
     @inject(ChatRequestParser)
     protected chatRequestParser: ChatRequestParser;
@@ -167,13 +173,7 @@ export class ChatServiceImpl implements ChatService {
         session.title = request.text;
 
         const parsedRequest = this.chatRequestParser.parseChatRequest(request, session.model.location);
-        let agent = this.getAgent(parsedRequest);
-
-        if (!session.pinnedAgent && agent && agent.id !== this.defaultChatAgentId?.id) {
-            session.pinnedAgent = agent;
-        } else if (session.pinnedAgent && this.getMentionedAgent(parsedRequest) === undefined) {
-            agent = session.pinnedAgent;
-        }
+        const agent = this.getAgent(parsedRequest, session);
 
         if (agent === undefined) {
             const error = 'No ChatAgents available to handle request!';
@@ -236,7 +236,20 @@ export class ChatServiceImpl implements ChatService {
         return this.getSession(sessionId)?.model.getRequest(requestId)?.response.cancel();
     }
 
-    protected getAgent(parsedRequest: ParsedChatRequest): ChatAgent | undefined {
+    protected getAgent(parsedRequest: ParsedChatRequest, session: ChatSession): ChatAgent | undefined {
+        let agent = this.initialAgentSelection(parsedRequest);
+        if (this.pinChatAgent === false) {
+            return agent;
+        }
+        if (!session.pinnedAgent && agent && agent.id !== this.defaultChatAgentId?.id) {
+            session.pinnedAgent = agent;
+        } else if (session.pinnedAgent && this.getMentionedAgent(parsedRequest) === undefined) {
+            agent = session.pinnedAgent;
+        }
+        return agent;
+    }
+
+    protected initialAgentSelection(parsedRequest: ParsedChatRequest): ChatAgent | undefined {
         const agentPart = this.getMentionedAgent(parsedRequest);
         if (agentPart) {
             return this.chatAgentService.getAgent(agentPart.agentId);

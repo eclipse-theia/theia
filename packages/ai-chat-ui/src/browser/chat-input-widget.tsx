@@ -33,6 +33,7 @@ type DeleteChangeSetElement = (requestModel: ChatRequestModel, index: number) =>
 export const AIChatInputConfiguration = Symbol('AIChatInputConfiguration');
 export interface AIChatInputConfiguration {
     showContext?: boolean;
+    showPinnedAgent?: boolean;
 }
 
 @injectable()
@@ -126,6 +127,7 @@ export class AIChatInputWidget extends ReactWidget {
                     this.editorReady.resolve();
                 }}
                 showContext={this.configuration?.showContext}
+                showPinnedAgent={this.configuration?.showPinnedAgent}
                 labelProvider={this.labelProvider}
             />
         );
@@ -160,6 +162,7 @@ interface ChatInputProperties {
     contextMenuCallback: (event: IMouseEvent) => void;
     setEditorRef: (editor: MonacoEditor | undefined) => void;
     showContext?: boolean;
+    showPinnedAgent?: boolean;
     labelProvider: LabelProvider;
 }
 
@@ -333,6 +336,22 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         }
     };
 
+    const handlePin = () => {
+        if (editorRef.current) {
+            editorRef.current.getControl().getModel()?.applyEdits([{
+                range: {
+                    startLineNumber: 1,
+                    startColumn: 1,
+                    endLineNumber: 1,
+                    endColumn: 1
+                },
+                text: '@ ',
+            }]);
+            editorRef.current.getControl().setPosition({ lineNumber: 1, column: 2 });
+            editorRef.current.getControl().getAction('editor.action.triggerSuggest')?.run();
+        }
+    };
+
     const leftOptions = [
         ...(props.showContext
             ? [{
@@ -341,14 +360,14 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                 className: 'codicon-add'
             }]
             : []),
-        ...(props.pinnedAgent
+        ...(props.showPinnedAgent
             ? [{
-                title: 'Unpin Agent',
-                handler: props.onUnpin,
+                title: props.pinnedAgent ? 'Unpin Agent' : 'Pin Agent',
+                handler: props.pinnedAgent ? props.onUnpin : handlePin,
                 className: 'at-icon',
                 text: {
                     align: 'right',
-                    content: props.pinnedAgent.name
+                    content: props.pinnedAgent && props.pinnedAgent.name
                 },
             }]
             : []),
