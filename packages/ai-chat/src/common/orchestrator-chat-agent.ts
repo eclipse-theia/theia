@@ -14,13 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { AgentSpecificVariables, getJsonOfText, getTextOfResponse, LanguageModelResponse } from '@theia/ai-core';
-import {
-    PromptTemplate
-} from '@theia/ai-core/lib/common';
+import { getJsonOfText, getTextOfResponse, LanguageModelRequirement, LanguageModelResponse } from '@theia/ai-core';
+import { PromptTemplate } from '@theia/ai-core/lib/common';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatAgentService } from './chat-agent-service';
-import { AbstractStreamParsingChatAgent, ChatAgent, SystemMessageDescription } from './chat-agents';
+import { AbstractStreamParsingChatAgent } from './chat-agents';
 import { ChatRequestModelImpl, InformationalChatResponseContentImpl } from './chat-model';
 import { generateUuid } from '@theia/core';
 import { ChatHistoryEntry } from './chat-history-entry';
@@ -66,29 +64,25 @@ export const OrchestratorChatAgentId = 'Orchestrator';
 const OrchestratorRequestIdKey = 'orchestatorRequestIdKey';
 
 @injectable()
-export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent implements ChatAgent {
-    name: string;
-    description: string;
-    readonly variables: string[];
-    promptTemplates: PromptTemplate[];
-    fallBackChatAgentId: string;
-    readonly functions: string[] = [];
-    readonly agentSpecificVariables: AgentSpecificVariables[] = [];
+export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
+    id: string = OrchestratorChatAgentId;
+    name = OrchestratorChatAgentId;
+    languageModelRequirements: LanguageModelRequirement[] = [{
+        purpose: 'agent-selection',
+        identifier: 'openai/gpt-4o',
+    }];
+    protected defaultLanguageModelPurpose: string = 'agent-selection';
 
-    constructor() {
-        super(OrchestratorChatAgentId, [{
-            purpose: 'agent-selection',
-            identifier: 'openai/gpt-4o',
-        }], 'agent-selection', 'codicon codicon-symbol-boolean', undefined, undefined, false);
-        this.name = OrchestratorChatAgentId;
-        this.description = 'This agent analyzes the user request against the description of all available chat agents and selects the best fitting agent to answer the request \
-        (by using AI).The user\'s request will be directly delegated to the selected agent without further confirmation.';
-        this.variables = ['chatAgents'];
-        this.promptTemplates = [orchestratorTemplate];
-        this.fallBackChatAgentId = 'Universal';
-        this.functions = [];
-        this.agentSpecificVariables = [];
-    }
+    override variables = ['chatAgents'];
+    override promptTemplates = [orchestratorTemplate];
+    override description = 'This agent analyzes the user request against the description of all available chat agents and selects the best fitting agent to answer the request \
+    (by using AI).The user\'s request will be directly delegated to the selected agent without further confirmation.';
+    override iconClass: string = 'codicon codicon-symbol-boolean';
+
+    protected override defaultLogging = false;
+    protected override systemPromptId: string = orchestratorTemplate.id;
+
+    private fallBackChatAgentId = 'Universal';
 
     @inject(ChatAgentService)
     protected chatAgentService: ChatAgentService;
@@ -108,11 +102,6 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent implem
             })
         );
         return super.invoke(request);
-    }
-
-    protected async getSystemMessageDescription(): Promise<SystemMessageDescription | undefined> {
-        const resolvedPrompt = await this.promptService.getPrompt(orchestratorTemplate.id);
-        return resolvedPrompt ? SystemMessageDescription.fromResolvedPromptTemplate(resolvedPrompt) : undefined;
     }
 
     protected override async addContentsToResponse(response: LanguageModelResponse, request: ChatRequestModelImpl): Promise<void> {
