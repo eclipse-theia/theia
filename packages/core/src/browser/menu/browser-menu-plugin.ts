@@ -15,18 +15,20 @@
 // *****************************************************************************
 
 import { injectable, inject } from 'inversify';
-import { MenuBar, Menu as MenuWidget, Widget } from '@phosphor/widgets';
+import { Menu, MenuBar, Menu as MenuWidget, Widget } from '@phosphor/widgets';
 import { CommandRegistry as PhosphorCommandRegistry } from '@phosphor/commands';
+import { ElementExt } from '@phosphor/domutils';
 import {
     CommandRegistry, environment, DisposableCollection, Disposable,
-    MenuModelRegistry, MAIN_MENU_BAR, MenuPath, MenuNode, MenuCommandExecutor, CompoundMenuNode, CompoundMenuNodeRole, CommandMenuNode
+    MenuModelRegistry, MAIN_MENU_BAR, MenuPath, MenuNode, MenuCommandExecutor, CompoundMenuNode, CompoundMenuNodeRole, CommandMenuNode,
+    ArrayUtils
 } from '../../common';
 import { KeybindingRegistry } from '../keybinding';
 import { FrontendApplication } from '../frontend-application';
 import { FrontendApplicationContribution } from '../frontend-application-contribution';
 import { ContextKeyService, ContextMatcher } from '../context-key-service';
 import { ContextMenuContext } from './context-menu-context';
-import { waitForRevealed } from '../widgets';
+import { Message, waitForRevealed } from '../widgets';
 import { ApplicationShell } from '../shell';
 import { CorePreferences } from '../core-preferences';
 import { PreferenceService } from '../preferences/preference-service';
@@ -82,8 +84,10 @@ export class BrowserMainMenuFactory implements MenuWidgetFactory {
             this.keybindingRegistry.onKeybindingsChanged(() => {
                 this.showMenuBar(menuBar);
             }),
-            this.menuProvider.onDidChange(() => {
-                this.showMenuBar(menuBar);
+            this.menuProvider.onDidChange(evt => {
+                if (ArrayUtils.startsWith(evt.path, MAIN_MENU_BAR)) {
+                    this.showMenuBar(menuBar);
+                }
             })
         );
         menuBar.disposed.connect(() => disposable.dispose());
@@ -154,6 +158,10 @@ export class BrowserMainMenuFactory implements MenuWidgetFactory {
         };
     }
 
+}
+
+export function isMenuElement(element: HTMLElement | null): boolean {
+    return !!element && element.className.includes('lm-Menu');
 }
 
 export class DynamicMenuBarWidget extends MenuBarWidget {
@@ -261,6 +269,48 @@ export class DynamicMenuWidget extends MenuWidget {
             this.title.iconClass = menu.icon;
         }
         this.updateSubMenus(this, this.menu, this.options.commands);
+    }
+
+    protected override onAfterAttach(msg: Message): void {
+        super.onAfterAttach(msg);
+        this.node.ownerDocument.addEventListener('pointerdown', this, true);
+    }
+
+    protected override onBeforeDetach(msg: Message): void {
+        this.node.ownerDocument.removeEventListener('pointerdown', this);
+        super.onAfterDetach(msg);
+    }
+
+    override handleEvent(event: Event): void {
+        if (event.type === 'pointerdown') {
+            this.handlePointerDown(event as PointerEvent);
+        }
+        super.handleEvent(event);
+    }
+
+    handlePointerDown(event: PointerEvent): void {
+        // this code is copied from the superclass because we cannot use the hit
+        // test from the "Private" implementation namespace
+        if (this['_parentMenu']) {
+            return;
+        }
+
+        // The mouse button which is pressed is irrelevant. If the press
+        // is not on a menu, the entire hierarchy is closed and the event
+        // is allowed to propagate. This allows other code to act on the
+        // event, such as focusing the clicked element.
+        if (!this.hitTestMenus(this, event.clientX, event.clientY)) {
+            this.close();
+        }
+    }
+
+    private hitTestMenus(menu: Menu, x: number, y: number): boolean {
+        for (let temp: Menu | null = menu; temp; temp = temp.childMenu) {
+            if (ElementExt.hitTest(temp.node, x, y)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public aboutToShow({ previousFocusedElement }: { previousFocusedElement: HTMLElement | undefined }): void {
