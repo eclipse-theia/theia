@@ -220,7 +220,7 @@ export class DebugViewModel implements Disposable {
         this.refreshWatchExpressionsQueue = this.refreshWatchExpressionsQueue.then(async () => {
             try {
                 for (const watchExpression of this.watchExpressions) {
-                    await Promise.all([
+                    await Promise.race([
                         watchExpression.evaluate(),
                         // For example vscode-js-debug does not error when evaluating watch expressions "too early".
                         // https://github.com/eclipse-theia/theia/issues/11955#issuecomment-2643161927
