@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { AbstractTextToModelParsingChatAgent, ChatAgent, SystemMessageDescription } from './chat-agents';
+import { AbstractTextToModelParsingChatAgent, ChatAgent, SystemMessageDescription } from '@theia/ai-chat/lib/common/chat-agents';
 import {
     PromptTemplate,
     AgentSpecificVariables
@@ -27,7 +27,7 @@ import {
     CustomCallback,
     HorizontalLayoutChatResponseContentImpl,
     MarkdownChatResponseContentImpl,
-} from './chat-model';
+} from '@theia/ai-chat/lib/common/chat-model';
 import {
     CommandRegistry,
     MessageService,

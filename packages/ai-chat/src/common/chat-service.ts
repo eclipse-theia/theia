@@ -67,8 +67,19 @@ export interface SessionOptions {
     focus?: boolean;
 }
 
+/**
+ * The default chat agent to invoke
+ */
 export const DefaultChatAgentId = Symbol('DefaultChatAgentId');
 export interface DefaultChatAgentId {
+    id: string;
+}
+
+/**
+ * In case no fitting chat agent is available, this one will be used (if it is itself available)
+ */
+export const FallbackChatAgentId = Symbol('FallbackChatAgentId');
+export interface FallbackChatAgentId {
     id: string;
 }
 
@@ -107,6 +118,9 @@ export class ChatServiceImpl implements ChatService {
 
     @inject(DefaultChatAgentId) @optional()
     protected defaultChatAgentId: DefaultChatAgentId | undefined;
+
+    @inject(FallbackChatAgentId) @optional()
+    protected fallbackChatAgentId: FallbackChatAgentId | undefined;
 
     @inject(ChatRequestParser)
     protected chatRequestParser: ChatRequestParser;
@@ -233,9 +247,17 @@ export class ChatServiceImpl implements ChatService {
         if (agentPart) {
             return this.chatAgentService.getAgent(agentPart.agentId);
         }
+        let chatAgent = undefined;
         if (this.defaultChatAgentId) {
-            return this.chatAgentService.getAgent(this.defaultChatAgentId.id);
+            chatAgent = this.chatAgentService.getAgent(this.defaultChatAgentId.id);
         }
+        if (!chatAgent && this.fallbackChatAgentId) {
+            chatAgent = this.chatAgentService.getAgent(this.fallbackChatAgentId.id);
+        }
+        if (chatAgent) {
+            return chatAgent;
+        }
+        this.logger.warn('Neither the default chat agent nor the fallback chat agent are configured or available. Falling back to the first registered agent');
         return this.chatAgentService.getAgents()[0] ?? undefined;
     }
 

@@ -22,7 +22,7 @@
    This file can be removed once we have real unit
    tests in place. */
 
-describe('ai-workspace-agent package', () => {
+describe('ai-ide-agents package', () => {
 
     it('support code coverage statistics', () => true);
 });
