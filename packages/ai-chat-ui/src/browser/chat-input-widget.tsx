@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { ChangeSet, ChangeSetElement, ChatChangeEvent, ChatModel, ChatRequestModel } from '@theia/ai-chat';
-import { Disposable, UntitledResourceResolver } from '@theia/core';
+import { Disposable, nls, UntitledResourceResolver } from '@theia/core';
 import { ContextMenuRenderer, LabelProvider, Message, ReactWidget } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
@@ -320,14 +320,14 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     };
 
     const leftOptions = props.showContext ? [{
-        title: 'Attach elements to context',
+        title: nls.localize('theia/ai/chatUi/attachToContext', 'Attach elements to context'),
         handler: () => { /* TODO */ },
         className: 'codicon-add'
     }] : [];
 
     const rightOptions = inProgress
         ? [{
-            title: 'Cancel (Esc)',
+            title: nls.localize('theia/ai/chatUi/cancel', 'Cancel (Esc)'),
             handler: () => {
                 const latestRequest = getLatestRequest(props.chatModel);
                 if (latestRequest) {
@@ -338,7 +338,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             className: 'codicon-stop-circle'
         }]
         : [{
-            title: 'Send (Enter)',
+            title: nls.localize('theia/ai/chatUi/send', 'Send (Enter)'),
             handler: () => {
                 if (props.isEnabled) {
                     submit(editorRef.current?.document.textEditorModel.getValue() || '');

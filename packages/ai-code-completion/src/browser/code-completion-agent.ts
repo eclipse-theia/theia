@@ -18,7 +18,7 @@ import {
     Agent, AgentSpecificVariables, CommunicationRecordingService, getTextOfResponse,
     LanguageModelRegistry, LanguageModelRequest, LanguageModelRequirement, PromptService, PromptTemplate
 } from '@theia/ai-core/lib/common';
-import { generateUuid, ILogger, ProgressService } from '@theia/core';
+import { generateUuid, ILogger, nls, ProgressService } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
 import { PREF_AI_INLINE_COMPLETION_MAX_CONTEXT_LINES } from './ai-code-completion-preference';
@@ -184,7 +184,7 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
     id = 'Code Completion';
     name = 'Code Completion';
     description =
-        'This agent provides inline code completion in the code editor in the Theia IDE.';
+        nls.localize('theia/ai/completion/agent/description', 'This agent provides inline code completion in the code editor in the Theia IDE.');
     promptTemplates: PromptTemplate[] = [
         {
             id: 'code-completion-prompt-previous',

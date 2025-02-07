@@ -19,7 +19,7 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import * as React from '@theia/core/shared/react';
 import { CommunicationCard } from './ai-history-communication-card';
 import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/select-component';
-import { deepClone } from '@theia/core';
+import { deepClone, nls } from '@theia/core';
 
 namespace AIHistoryView {
     export interface State {
@@ -35,7 +35,7 @@ export class AIHistoryView extends ReactWidget implements StatefulWidget {
     protected readonly agentService: AgentService;
 
     public static ID = 'ai-history-widget';
-    static LABEL = '✨ AI Agent History [Experimental]';
+    static LABEL = nls.localize('theia/ai/history/view/label', '✨ AI Agent History [Experimental]');
 
     protected selectedAgent?: Agent;
 

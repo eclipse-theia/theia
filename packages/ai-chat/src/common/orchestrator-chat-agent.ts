@@ -22,7 +22,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatAgentService } from './chat-agent-service';
 import { AbstractStreamParsingChatAgent, ChatAgent, SystemMessageDescription } from './chat-agents';
 import { ChatRequestModelImpl, InformationalChatResponseContentImpl } from './chat-model';
-import { generateUuid } from '@theia/core';
+import { generateUuid, nls } from '@theia/core';
 import { ChatHistoryEntry } from './chat-history-entry';
 
 export const orchestratorTemplate: PromptTemplate = {
@@ -81,8 +81,9 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent implem
             identifier: 'openai/gpt-4o',
         }], 'agent-selection', 'codicon codicon-symbol-boolean', undefined, undefined, false);
         this.name = OrchestratorChatAgentId;
-        this.description = 'This agent analyzes the user request against the description of all available chat agents and selects the best fitting agent to answer the request \
-        (by using AI).The user\'s request will be directly delegated to the selected agent without further confirmation.';
+        this.description = nls.localize('theia/ai/chat/orchestrator/description',
+            'This agent analyzes the user request against the description of all available chat agents and selects the best fitting agent to answer the request \
+(by using AI). The user\'s request will be directly delegated to the selected agent without further confirmation.');
         this.variables = ['chatAgents'];
         this.promptTemplates = [orchestratorTemplate];
         this.fallBackChatAgentId = 'Universal';

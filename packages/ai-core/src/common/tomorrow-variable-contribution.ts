@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { MaybePromise } from '@theia/core';
+import { MaybePromise, nls } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
 import { AIVariable, AIVariableContext, AIVariableContribution, AIVariableResolutionRequest, AIVariableResolver, AIVariableService, ResolvedAIVariable } from './variable-service';
 
@@ -24,11 +24,14 @@ export namespace TomorrowVariableArgs {
 
 export const TOMORROW_VARIABLE: AIVariable = {
     id: 'tomorrow-provider',
-    description: 'Does something for tomorrow',
+    description: nls.localize('theia/ai/core/tomorrowVariable/description', 'Does something for tomorrow'),
     name: 'tomorrow',
     args: [
-        { name: TomorrowVariableArgs.IN_ISO_8601, description: 'Returns the current date in ISO 8601 format' },
-        { name: TomorrowVariableArgs.IN_UNIX_SECONDS, description: 'Returns the current date in unix seconds format' }
+        { name: TomorrowVariableArgs.IN_ISO_8601, description: nls.localize('theia/ai/core/tomorrowVariable/iso/description', 'Returns the current date in ISO 8601 format') },
+        {
+            name: TomorrowVariableArgs.IN_UNIX_SECONDS,
+            description: nls.localize('theia/ai/core/tomorrowVariable/unix/description', 'Returns the current date in unix seconds format')
+        }
     ]
 };
 
