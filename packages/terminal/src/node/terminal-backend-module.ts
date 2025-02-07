@@ -24,7 +24,6 @@ import { TerminalServer } from './terminal-server';
 import { IShellTerminalServer, shellTerminalPath } from '../common/shell-terminal-protocol';
 import { ShellTerminalServer } from '../node/shell-terminal-server';
 import { TerminalWatcher } from '../common/terminal-watcher';
-import { createCommonBindings } from '../common/terminal-common-module';
 import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
 
 export function bindTerminalServer(bind: interfaces.Bind, { path, identifier, constructor }: {
@@ -77,6 +76,4 @@ export default new ContainerModule(bind => {
         identifier: IShellTerminalServer,
         constructor: ShellTerminalServer
     });
-
-    createCommonBindings(bind);
 });

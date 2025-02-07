@@ -15,7 +15,6 @@
 // *****************************************************************************
 
 import { interfaces } from '@theia/core/shared/inversify';
-import { ILogger } from '@theia/core';
 import { TaskWatcher } from './task-watcher';
 
 /**
@@ -24,11 +23,5 @@ import { TaskWatcher } from './task-watcher';
  * @param bind The bind function from inversify.
  */
 export function createCommonBindings(bind: interfaces.Bind): void {
-
-    bind(ILogger).toDynamicValue(ctx => {
-        const logger = ctx.container.get<ILogger>(ILogger);
-        return logger.child('task');
-    }).inSingletonScope().whenTargetNamed('task');
-
     bind(TaskWatcher).toSelf().inSingletonScope();
 }
