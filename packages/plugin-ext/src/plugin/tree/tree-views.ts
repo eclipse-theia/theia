@@ -253,21 +253,25 @@ class TreeViewExtImpl<T> implements Disposable {
         });
         this.toDispose.push(Disposable.create(() => this.proxy.$unregisterTreeDataProvider(treeViewId)));
         options.treeDataProvider.onDidChangeTreeData?.(elements => {
-            const ids = [];
-            elements = elements || [];
-            if (!Array.isArray(elements)) {
-                elements = [elements];
-            }
-            const set = new Set<T>();
-            for (const element of elements) {
-                set.add(element);
-            }
-            for (const node of this.nodes.values()) {
-                if (node.value && set.has(node.value)) {
-                    ids.push(node.id);
+            if (!elements) {
+                this.pendingRefresh = proxy.$refresh(treeViewId);
+            } else {
+                const ids = [];
+                elements = elements || [];
+                if (!Array.isArray(elements)) {
+                    elements = [elements];
                 }
+                const set = new Set<T>();
+                for (const element of elements) {
+                    set.add(element);
+                }
+                for (const node of this.nodes.values()) {
+                    if (node.value && set.has(node.value)) {
+                        ids.push(node.id);
+                    }
+                }
+                this.pendingRefresh = proxy.$refresh(treeViewId, ids);
             }
-            this.pendingRefresh = proxy.$refresh(treeViewId, ids);
         });
     }
 
