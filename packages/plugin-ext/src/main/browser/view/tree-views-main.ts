@@ -110,7 +110,7 @@ export class TreeViewsMainImpl implements TreeViewsMain, Disposable {
         return BinaryBuffer.wrap(new Uint8Array(buffer));
     }
 
-    async $refresh(treeViewId: string, items: string[]): Promise<void> {
+    async $refresh(treeViewId: string, items?: string[]): Promise<void> {
         const viewPanel = await this.viewRegistry.getView(treeViewId);
         const widget = viewPanel && viewPanel.widgets[0];
         if (widget instanceof TreeViewWidget) {
