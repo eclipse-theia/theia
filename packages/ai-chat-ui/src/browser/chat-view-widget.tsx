@@ -115,7 +115,6 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         this.toDispose.push(
             this.chatService.onActiveSessionChanged(event => {
                 const session = event.sessionId ? this.chatService.getSession(event.sessionId) : this.chatService.createSession();
-
                 if (session) {
                     this.chatSession = session;
                     this.treeWidget.trackChatModel(this.chatSession.model);

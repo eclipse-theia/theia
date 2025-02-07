@@ -134,7 +134,7 @@ export class ChatServiceImpl implements ChatService {
             id: model.id,
             model,
             isActive: true,
-            pinnedAgent: pinnedAgent
+            pinnedAgent
         };
         this._sessions.push(session);
         this.setActiveSession(session.id, options);
