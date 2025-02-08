@@ -133,7 +133,7 @@ export class DebugToolBar extends ReactWidget {
         return <DebugAction enabled={state === DebugState.Running} run={this.pause} label={nls.localizeByDefault('Pause')} iconClass='debug-pause' />;
     }
 
-    protected start = () => this.model.start();
+    protected start = () => this.model.start({ startedByUser: true });
     protected restart = () => this.model.restart();
     protected stop = () => this.model.terminate();
     protected continue = () => this.model.currentThread && this.model.currentThread.continue();
