@@ -118,7 +118,10 @@ export default new ContainerModule(bind => {
     bind(FrontendVariableService).toSelf().inSingletonScope();
     bind(AIVariableService).toService(FrontendVariableService);
     bind(FrontendApplicationContribution).toService(FrontendVariableService);
-    bind(AIVariableContribution).to(TheiaVariableContribution).inSingletonScope();
+
+    bind(TheiaVariableContribution).toSelf().inSingletonScope();
+    bind(AIVariableContribution).toService(TheiaVariableContribution);
+
     bind(AIVariableContribution).to(TodayVariableContribution).inSingletonScope();
     bind(AIVariableContribution).to(TomorrowVariableContribution).inSingletonScope();
     bind(AIVariableContribution).to(AgentsVariableContribution).inSingletonScope();
