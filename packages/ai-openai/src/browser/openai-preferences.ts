@@ -45,23 +45,25 @@ on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to s
             type: 'array',
             title: AI_CORE_PREFERENCES_TITLE,
             markdownDescription: nls.localize('theia/ai/openai/customEndpoints/mdDescription',
-                'Integrate custom models compatible with the OpenAI API, for example via `vllm`. The required attributes are `model` and `url`.\n\
-\n\
-Optionally, you can\
-\n\
-- specify a unique `id` to identify the custom model in the UI. If none is given `model` will be used as `id`.\
-\n\
-- provide an `apiKey` to access the API served at the given url. Use `true` to indicate the use of the global OpenAI API key.\
-\n\
-- provide an `apiVersion` to access the API served at the given url in Azure. Use `true` to indicate the use of the global OpenAI API version.\
-\n\
-- specify `supportsDeveloperMessage: false` to indicate that the developer role shall not be used.\
-\n\
-- specify `supportsStructuredOutput: false` to indicate that structured output shall not be used.\
-\n\
-- specify `enableStreaming: false` to indicate that streaming shall not be used.\n\
-\n\
-Refer to [our documentation](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm) for more information.'),
+                'Integrate custom models compatible with the OpenAI API, for example via `vllm`. The required attributes are `model` and `url`.\
+            \n\
+            Optionally, you can\
+            \n\
+            - specify a unique `id` to identify the custom model in the UI. If none is given `model` will be used as `id`.\
+            \n\
+            - provide an `apiKey` to access the API served at the given url. Use `true` to indicate the use of the global OpenAI API key.\
+            \n\
+            - provide an `apiVersion` to access the API served at the given url in Azure. Use `true` to indicate the use of the global OpenAI API version.\
+            \n\
+            - set `developerMessageSettings` to one of `user`, `system`, `developer`, `mergeWithFirstUserMessage`, or `skip` to control how the developer message is\
+            included (where `user`, `system`, and `developer` will be used as a role, `mergeWithFirstUserMessage` will prefix the first user message with the system message,\
+            and `skip` will just remove the system message), defaulting to `developer`.\
+            \n\
+            - specify `supportsStructuredOutput: false` to indicate that structured output shall not be used.\
+            \n\
+            - specify `enableStreaming: false` to indicate that streaming shall not be used.\
+            \n\
+            Refer to [our documentation](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm) for more information.'),
             default: [],
             items: {
                 type: 'object',
@@ -88,10 +90,13 @@ Refer to [our documentation](https://theia-ide.org/docs/user_ai/#openai-compatib
                         title: nls.localize('theia/ai/openai/customEndpoints/apiVersion/title',
                             'Either the version to access the API served at the given url in Azure or `true` to use the global OpenAI API version'),
                     },
-                    supportsDeveloperMessage: {
-                        type: 'boolean',
-                        title: nls.localize('theia/ai/openai/customEndpoints/supportsDevMessage/title',
-                            'Indicates whether the model supports the `developer` role. `true` by default.'),
+                    developerMessageSettings: {
+                        type: 'string',
+                        enum: ['user', 'system', 'developer', 'mergeWithFirstUserMessage', 'skip'],
+                        default: 'developer',
+                        title: nls.localize('theia/ai/openai/customEndpoints/developerMessageSettings/title',
+                            'Controls the first system message: `user`, `system`, and `developer` will be used as a role, `mergeWithFirstUserMessage` will prefix\
+                         the first user message with the system message, and `skip` will just remove the system message), defaulting to `developer`.')
                     },
                     supportsStructuredOutput: {
                         type: 'boolean',
