@@ -27,7 +27,6 @@ import { DebugWatchExpression } from './debug-watch-expression';
 import { DebugWatchManager } from '../debug-watch-manager';
 import { DebugFunctionBreakpoint } from '../model/debug-function-breakpoint';
 import { DebugInstructionBreakpoint } from '../model/debug-instruction-breakpoint';
-import { timeoutReject } from '@theia/core/lib/common/promise-util';
 
 @injectable()
 export class DebugViewModel implements Disposable {
@@ -219,14 +218,7 @@ export class DebugViewModel implements Disposable {
     protected refreshWatchExpressions = debounce(() => {
         this.refreshWatchExpressionsQueue = this.refreshWatchExpressionsQueue.then(async () => {
             try {
-                for (const watchExpression of this.watchExpressions) {
-                    await Promise.race([
-                        watchExpression.evaluate(),
-                        // For example vscode-js-debug does not error when evaluating watch expressions "too early".
-                        // https://github.com/eclipse-theia/theia/issues/11955#issuecomment-2643161927
-                        timeoutReject(1_000, 'Failed to refresh watch expressions: timeout'),
-                    ]);
-                }
+                await Promise.all(Array.from(this.watchExpressions).map(expr => expr.evaluate()));
             } catch (e) {
                 console.error('Failed to refresh watch expressions: ', e);
             }
