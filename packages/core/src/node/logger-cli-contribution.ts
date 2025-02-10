@@ -104,6 +104,16 @@ export class LogLevelCliContribution implements CliContribution {
             let filename: string = args['log-file'] as string;
             try {
                 filename = path.resolve(filename);
+                try {
+                    const stat = await fs.stat(filename);
+                    if (stat && stat.isFile()) {
+                        // Rename the previous log file to avoid overwriting it
+                        const oldFilename = `${filename}.${stat.ctime.toISOString().replace(/:/g, '-')}.old`;
+                        await fs.rename(filename, oldFilename);
+                    }
+                } catch (err) {
+                    // File does not exist, just continue to create it
+                }
                 await fs.writeFile(filename, '');
                 this._logFile = filename;
             } catch (e) {
