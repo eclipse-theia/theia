@@ -24,6 +24,7 @@ import ignore from 'ignore';
 import { Minimatch } from 'minimatch';
 import { PreferenceService } from '@theia/core/lib/browser';
 import { CONSIDER_GITIGNORE_PREF, USER_EXCLUDE_PATTERN_PREF } from './workspace-preferences';
+import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 
 @injectable()
 export class WorkspaceFunctionScope {
@@ -207,6 +208,9 @@ export class FileContentFunction implements ToolProvider {
     @inject(WorkspaceFunctionScope)
     protected readonly workspaceScope: WorkspaceFunctionScope;
 
+    @inject(MonacoWorkspace)
+    protected readonly monacoWorkspace: MonacoWorkspace;
+
     private parseArg(arg_string: string): string {
         const result = JSON.parse(arg_string);
         return result.file;
@@ -224,10 +228,9 @@ export class FileContentFunction implements ToolProvider {
         this.workspaceScope.ensureWithinWorkspace(targetUri, workspaceRoot);
 
         try {
-            const fileStat = await this.fileService.resolve(targetUri);
-
-            if (!fileStat || fileStat.isDirectory) {
-                return JSON.stringify({ error: 'File not found' });
+            const openEditorValue = this.monacoWorkspace.getTextDocument(targetUri.toString())?.getText();
+            if (openEditorValue !== undefined) {
+                return openEditorValue;
             }
 
             const fileContent = await this.fileService.read(targetUri);
