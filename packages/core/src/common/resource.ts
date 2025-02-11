@@ -62,6 +62,8 @@ export interface Resource extends Disposable {
     readonly readOnly?: boolean | MarkdownString;
 
     readonly initiallyDirty?: boolean;
+    /** If false, the application should not attempt to auto-save this resource. */
+    readonly autosaveable?: boolean;
     /**
      * Reads latest content of this resource.
      *
@@ -390,7 +392,8 @@ export class UntitledResourceResolver implements ResourceResolver {
 export class UntitledResource implements Resource {
 
     protected readonly onDidChangeContentsEmitter = new Emitter<void>();
-    initiallyDirty: boolean;
+    readonly initiallyDirty: boolean;
+    readonly autosaveable = false;
     get onDidChangeContents(): Event<void> {
         return this.onDidChangeContentsEmitter.event;
     }

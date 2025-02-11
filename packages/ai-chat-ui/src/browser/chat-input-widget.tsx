@@ -426,8 +426,8 @@ const buildChangeSetUI = (changeSet: ChangeSet, labelProvider: LabelProvider, on
         name: element.name ?? labelProvider.getName(element.uri),
         additionalInfo: element.additionalInfo ?? labelProvider.getDetails(element.uri),
         openChange: element?.openChange?.bind(element),
-        accept: element.state !== 'applied' ? element?.accept?.bind(element) : undefined,
-        discard: element.state === 'applied' ? element?.discard?.bind(element) : undefined,
+        accept: element.state !== 'applied' ? element?.apply?.bind(element) : undefined,
+        discard: element.state === 'applied' ? element?.revert?.bind(element) : undefined,
         delete: () => onDeleteChangeSetElement(changeSet.getElements().indexOf(element))
     }))
 });
@@ -557,7 +557,7 @@ const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({ left
 );
 
 function acceptAllPendingElements(changeSet: ChangeSet): void {
-    acceptablePendingElements(changeSet).forEach(e => e.accept!());
+    acceptablePendingElements(changeSet).forEach(e => e.apply!());
 }
 
 function hasPendingElementsToAccept(changeSet: ChangeSet): boolean | undefined {
@@ -565,7 +565,7 @@ function hasPendingElementsToAccept(changeSet: ChangeSet): boolean | undefined {
 }
 
 function acceptablePendingElements(changeSet: ChangeSet): ChangeSetElement[] {
-    return changeSet.getElements().filter(e => e.accept && (e.state === undefined || e.state === 'pending'));
+    return changeSet.getElements().filter(e => e.apply && (e.state === undefined || e.state === 'pending'));
 }
 
 function getLatestRequest(chatModel: ChatModel): ChatRequestModel | undefined {

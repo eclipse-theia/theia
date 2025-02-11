@@ -95,6 +95,7 @@ export interface ChatModel {
 export interface ChangeSet {
     readonly title: string;
     getElements(): ChangeSetElement[];
+    onDidChange: Event<void>;
 }
 
 export interface ChangeSetElement {
@@ -104,14 +105,15 @@ export interface ChangeSetElement {
     readonly icon?: string;
     readonly additionalInfo?: string;
 
-    readonly state?: 'pending' | 'applied' | 'discarded';
+    readonly state?: 'pending' | 'applied';
     readonly type?: 'add' | 'modify' | 'delete';
     readonly data?: { [key: string]: unknown };
 
     open?(): Promise<void>;
     openChange?(): Promise<void>;
-    accept?(): Promise<void>;
-    discard?(): Promise<void>;
+    apply?(): Promise<void>;
+    revert?(): Promise<void>;
+    dispose?(): void;
 }
 
 export interface ChatRequest {
@@ -584,7 +586,8 @@ export class ChangeSetImpl implements ChangeSet {
     }
 
     removeElement(index: number): void {
-        this._elements.splice(index, 1);
+        const deletion = this._elements.splice(index, 1);
+        deletion.forEach(deleted => deleted.dispose?.());
         this.notifyChange();
     }
 

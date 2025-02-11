@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { URI } from '@theia/core';
+import { MEMORY_TEXT, URI } from '@theia/core';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { ChangeSetElement, ChangeSetImpl } from '../common';
 import { createChangeSetFileUri } from './change-set-file-resource';
@@ -47,7 +47,7 @@ export class ChangeSetFileElement implements ChangeSetElement {
     @inject(ChangeSetFileService)
     protected readonly changeSetFileService: ChangeSetFileService;
 
-    protected _state: 'pending' | 'applied' | 'discarded' | undefined;
+    protected _state: 'pending' | 'applied' | undefined;
 
     protected originalContent: string | undefined;
 
@@ -62,6 +62,10 @@ export class ChangeSetFileElement implements ChangeSetElement {
 
     get uri(): URI {
         return this.elementProps.uri;
+    }
+
+    get readOnlyUri(): URI {
+        return this.elementProps.uri.withScheme(MEMORY_TEXT).withQuery(this.originalContent ?? '');
     }
 
     get changedUri(): URI {
@@ -80,11 +84,11 @@ export class ChangeSetFileElement implements ChangeSetElement {
         return this.changeSetFileService.getAdditionalInfo(this.uri);
     }
 
-    get state(): 'pending' | 'applied' | 'discarded' | undefined {
+    get state(): 'pending' | 'applied' | undefined {
         return this._state ?? this.elementProps.state;
     }
 
-    protected set state(value: 'pending' | 'applied' | 'discarded' | undefined) {
+    protected set state(value: 'pending' | 'applied' | undefined) {
         this._state = value;
         this.elementProps.changeSet.notifyChange();
     }
@@ -107,31 +111,36 @@ export class ChangeSetFileElement implements ChangeSetElement {
 
     async openChange(): Promise<void> {
         this.changeSetFileService.openDiff(
-            this.uri,
+            this.readOnlyUri,
             this.changedUri
         );
     }
 
-    async accept(contents?: string): Promise<void> {
-        this.state = 'applied';
-        if (this.type === 'delete') {
+    async apply(contents?: string): Promise<void> {
+        if (await this.changeSetFileService.trySave(this.changedUri)) { /** Continue */ } else if (this.type === 'delete') {
             await this.changeSetFileService.delete(this.uri);
             this.state = 'applied';
-            return;
+        } else {
+            await this.writeChanges(contents);
         }
-
-        await this.changeSetFileService.write(this.uri, contents !== undefined ? contents : this.targetState);
+        this.changeSetFileService.closeDiffsFor(this.readOnlyUri);
     }
 
-    async discard(): Promise<void> {
-        this.state = 'discarded';
+    async writeChanges(contents?: string): Promise<void> {
+        await this.changeSetFileService.writeFrom(this.changedUri, this.uri, contents ?? this.targetState);
+        this.state = 'applied';
+    }
+
+    async revert(): Promise<void> {
+        this.state = 'pending';
         if (this.type === 'add') {
             await this.changeSetFileService.delete(this.uri);
-            return;
-        }
-        if (this.originalContent) {
+        } else if (this.originalContent) {
             await this.changeSetFileService.write(this.uri, this.originalContent);
         }
     }
 
+    dispose(): void {
+        this.changeSetFileService.closeDiffsFor(this.readOnlyUri);
+    }
 }

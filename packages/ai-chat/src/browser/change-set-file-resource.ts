@@ -18,6 +18,7 @@ import { Resource, ResourceResolver, ResourceSaveOptions, URI } from '@theia/cor
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatService } from '../common';
 import { ChangeSetFileElement } from './change-set-file-element';
+import { ChangeSetFileService } from './change-set-file-service';
 
 export const CHANGE_SET_FILE_RESOURCE_SCHEME = 'changeset-file';
 const QUERY = 'uri=';
@@ -36,6 +37,9 @@ export class ChangeSetFileResourceResolver implements ResourceResolver {
     @inject(ChatService)
     protected readonly chatService: ChatService;
 
+    @inject(ChangeSetFileService)
+    protected readonly changeSetFileService: ChangeSetFileService;
+
     async resolve(uri: URI): Promise<Resource> {
         if (uri.scheme !== CHANGE_SET_FILE_RESOURCE_SCHEME) {
             throw new Error('The given uri is not a change set file uri: ' + uri);
@@ -53,22 +57,36 @@ export class ChangeSetFileResourceResolver implements ResourceResolver {
         }
 
         const fileUri = decodeURIComponent(uri.query.toString().replace(QUERY, ''));
-        const element = changeSet.getElements().find(e => e.uri.path.toString() === fileUri);
-        if (!(element instanceof ChangeSetFileElement)) {
-            throw new Error('Change set element not found: ' + fileUri);
-        }
+        let current: ChangeSetFileElement | undefined = undefined;
+        const refreshElement = () => {
+            const element = changeSet.getElements().find(e => e.uri.path.toString() === fileUri);
+            if (element instanceof ChangeSetFileElement) {
+                current = element;
+            } else if (!current) {
+                throw new Error('Change set element not found: ' + fileUri);
+            }
+            return current;
+        };
+        refreshElement();
+
+        const changeListener = changeSet.onDidChange(() => {
+            try {
+                const activeElement = refreshElement();
+                this.changeSetFileService.updateEditorsWithNewSuggestion(activeElement.changedUri, activeElement.targetState);
+            } catch { /** No op - we should be closing any editors anyway. */ }
+        });
 
         return {
             uri,
             readOnly: false,
             initiallyDirty: true,
-            readContents: async () => element.targetState ?? '',
-            saveContents: async (content: string, options?: ResourceSaveOptions): Promise<void> => {
-                element.accept(content);
-            },
-            dispose: () => { }
+            autosaveable: false,
+            readContents: async () => refreshElement().targetState ?? '',
+            saveContents: async (content: string, options?: ResourceSaveOptions): Promise<void> => refreshElement().writeChanges(),
+            dispose: () => {
+                changeListener.dispose();
+            }
         };
     }
 
 }
-
