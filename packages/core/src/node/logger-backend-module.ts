@@ -16,20 +16,19 @@
 
 import { ContainerModule, Container, interfaces } from 'inversify';
 import { ConnectionHandler, RpcConnectionHandler } from '../common/messaging';
-import { ILogger, LoggerFactory, Logger, setRootLogger, LoggerName, rootLoggerName } from '../common/logger';
+import { ILogger, LoggerFactory, Logger, setRootLogger, LoggerName } from '../common/logger';
 import { ILoggerServer, ILoggerClient, loggerPath, DispatchingLoggerClient } from '../common/logger-protocol';
 import { ConsoleLoggerServer } from './console-logger-server';
 import { LoggerWatcher } from '../common/logger-watcher';
 import { BackendApplicationContribution } from './backend-application';
 import { CliContribution } from './cli';
 import { LogLevelCliContribution } from './logger-cli-contribution';
+import { bindCommonLogger } from '../common/logger-binding';
 
 export function bindLogger(bind: interfaces.Bind, props?: {
     onLoggerServerActivation?: (context: interfaces.Context, server: ILoggerServer) => void
 }): void {
-    bind(LoggerName).toConstantValue(rootLoggerName);
-    bind(ILogger).to(Logger).inSingletonScope().whenTargetIsDefault();
-    bind(LoggerWatcher).toSelf().inSingletonScope();
+    bindCommonLogger(bind);
     bind<ILoggerServer>(ILoggerServer).to(ConsoleLoggerServer).inSingletonScope().onActivation((context, server) => {
         if (props && props.onLoggerServerActivation) {
             props.onLoggerServerActivation(context, server);

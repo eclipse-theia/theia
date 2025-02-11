@@ -16,11 +16,12 @@
 
 import { ContainerModule, Container } from 'inversify';
 import { ILoggerServer, loggerPath, ConsoleLogger } from '../common/logger-protocol';
-import { ILogger, Logger, LoggerFactory, setRootLogger, LoggerName, rootLoggerName } from '../common/logger';
+import { ILogger, Logger, LoggerFactory, setRootLogger, LoggerName } from '../common/logger';
 import { LoggerWatcher } from '../common/logger-watcher';
 import { WebSocketConnectionProvider } from './messaging';
 import { FrontendApplicationContribution } from './frontend-application-contribution';
 import { EncodingError } from '../common/message-rpc/rpc-message-encoder';
+import { bindCommonLogger } from '../common/logger-binding';
 
 export const loggerFrontendModule = new ContainerModule(bind => {
     bind(FrontendApplicationContribution).toDynamicValue(ctx => ({
@@ -29,9 +30,7 @@ export const loggerFrontendModule = new ContainerModule(bind => {
         }
     }));
 
-    bind(LoggerName).toConstantValue(rootLoggerName);
-    bind(ILogger).to(Logger).inSingletonScope().whenTargetIsDefault();
-    bind(LoggerWatcher).toSelf().inSingletonScope();
+    bindCommonLogger(bind);
     bind(ILoggerServer).toDynamicValue(ctx => {
         const loggerWatcher = ctx.container.get(LoggerWatcher);
         const connection = ctx.container.get(WebSocketConnectionProvider);
