@@ -70,12 +70,16 @@ export class FileVariableContribution implements AIVariableContribution, AIVaria
             return undefined;
         }
 
-        const content = await this.fileService.readFile(absoluteUri);
-        return {
-            variable: request.variable,
-            value: await this.wsService.getWorkspaceRelativePath(absoluteUri),
-            contextValue: content.value.toString()
-        };
+        try {
+            const content = await this.fileService.readFile(absoluteUri);
+            return {
+                variable: request.variable,
+                value: await this.wsService.getWorkspaceRelativePath(absoluteUri),
+                contextValue: content.value.toString()
+            };
+        } catch (error) {
+            return undefined;
+        }
     }
 
     protected async makeAbsolute(pathStr: string): Promise<URI | undefined> {

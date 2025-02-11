@@ -14,16 +14,20 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { AIVariableContribution, AIVariableService, PromptText } from '@theia/ai-core';
+import { AIVariableContext, AIVariableContribution, AIVariableDropResult, AIVariableResolutionRequest, AIVariableService, PromptText } from '@theia/ai-core';
 import { FILE_VARIABLE } from '@theia/ai-core/lib/browser/file-variable-contribution';
-import { CancellationToken, QuickInputService } from '@theia/core';
+import { CancellationToken, QuickInputService, URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
 import { FileQuickPickItem, QuickFileSelectService } from '@theia/file-search/lib/browser/quick-file-select-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
 
 @injectable()
 export class FileChatVariableContribution implements AIVariableContribution {
+    @inject(FileService)
+    protected readonly fileService: FileService;
+
     @inject(WorkspaceService)
     protected readonly wsService: WorkspaceService;
 
@@ -36,9 +40,10 @@ export class FileChatVariableContribution implements AIVariableContribution {
     registerVariables(service: AIVariableService): void {
         service.registerArgumentPicker(FILE_VARIABLE, this.triggerArgumentPicker.bind(this));
         service.registerArgumentCompletionProvider(FILE_VARIABLE, this.provideArgumentCompletionItems.bind(this));
+        service.registerDropHandler(this.handleDrop.bind(this));
     }
 
-    private async triggerArgumentPicker(): Promise<string | undefined> {
+    protected async triggerArgumentPicker(): Promise<string | undefined> {
         const quickPick = this.quickInputService.createQuickPick();
         quickPick.items = await this.quickFileSelectService.getPicks();
 
@@ -61,7 +66,7 @@ export class FileChatVariableContribution implements AIVariableContribution {
         });
     }
 
-    private async provideArgumentCompletionItems(
+    protected async provideArgumentCompletionItems(
         model: monaco.editor.ITextModel,
         position: monaco.Position
     ): Promise<monaco.languages.CompletionItem[] | undefined> {
@@ -96,5 +101,39 @@ export class FileChatVariableContribution implements AIVariableContribution {
                     sortText: `ZZ${index.toString().padStart(4, '0')}_${pick.label}`,
                 }))
         );
+    }
+
+    protected async handleDrop(event: DragEvent, _: AIVariableContext): Promise<AIVariableDropResult | undefined> {
+        const data = event.dataTransfer?.getData('selected-tree-nodes');
+        if (!data) {
+            return undefined;
+        }
+
+        try {
+            const nodes: string[] = JSON.parse(data);
+            const variables: AIVariableResolutionRequest[] = [];
+            const texts: string[] = [];
+
+            for (const node of nodes) {
+                const [, filePath] = node.split(':');
+                if (!filePath) {
+                    continue;
+                }
+
+                const uri = URI.fromFilePath(filePath);
+                if (await this.fileService.exists(uri)) {
+                    const wsRelativePath = await this.wsService.getWorkspaceRelativePath(uri);
+                    variables.push({
+                        variable: FILE_VARIABLE,
+                        arg: wsRelativePath
+                    });
+                    texts.push(`${PromptText.VARIABLE_CHAR}${FILE_VARIABLE.id}${PromptText.VARIABLE_ARG_SEPARATOR}${wsRelativePath}`);
+                }
+            }
+
+            return { variables, text: texts.length ? texts.join(' ') : undefined };
+        } catch {
+            return undefined;
+        }
     }
 }

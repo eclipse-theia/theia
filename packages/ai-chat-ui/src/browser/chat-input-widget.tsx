@@ -23,7 +23,7 @@ import { IMouseEvent } from '@theia/monaco-editor-core';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { CHAT_VIEW_LANGUAGE_EXTENSION } from './chat-view-language-contribution';
-import { AIVariableResolutionRequest } from '@theia/ai-core';
+import { AIVariableResolutionRequest, AIVariableService } from '@theia/ai-core';
 import { ContextVariablePicker } from './context-variable-picker';
 
 type Query = (query: string, context?: AIVariableResolutionRequest[]) => Promise<void>;
@@ -52,6 +52,9 @@ export class AIChatInputWidget extends ReactWidget {
 
     @inject(AIChatInputConfiguration) @optional()
     protected readonly configuration: AIChatInputConfiguration | undefined;
+
+    @inject(AIVariableService)
+    protected readonly variableService: AIVariableService;
 
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
@@ -110,6 +113,8 @@ export class AIChatInputWidget extends ReactWidget {
             <ChatInput
                 onQuery={this._onQuery.bind(this)}
                 onCancel={this._onCancel.bind(this)}
+                onDragOver={this.onDragOver.bind(this)}
+                onDrop={this.onDrop.bind(this)}
                 onDeleteChangeSet={this._onDeleteChangeSet.bind(this)}
                 onDeleteChangeSetElement={this._onDeleteChangeSetElement.bind(this)}
                 onAddContextElement={this.addContextElement.bind(this)}
@@ -128,6 +133,29 @@ export class AIChatInputWidget extends ReactWidget {
                 labelProvider={this.labelProvider}
             />
         );
+    }
+
+    protected onDragOver(event: React.DragEvent): void {
+        event.preventDefault();
+        event.stopPropagation();
+        this.node.classList.add('drag-over');
+        event.dataTransfer!.dropEffect = 'link';
+    }
+
+    protected onDrop(event: React.DragEvent): void {
+        this.node.classList.remove('drag-over');
+        const dataTransferText = event.dataTransfer?.getData('text');
+        const position = this.editorRef?.getControl().getTargetAtClientPoint(event.clientX, event.clientY)?.position;
+        this.variableService.getDropResult(event.nativeEvent, { type: 'ai-chat-input-widget' }).then(result => {
+            result.variables.forEach(variable => this.addContext(variable));
+            const text = result.text ?? dataTransferText;
+            if (position && text) {
+                this.editorRef?.getControl().executeEdits('drag-and-drop', [{
+                    range: { startLineNumber: position.lineNumber, startColumn: position.column, endLineNumber: position.lineNumber, endColumn: position.column },
+                    text
+                }]);
+            }
+        });
     }
 
     public setEnabled(enabled: boolean): void {
@@ -166,6 +194,8 @@ export class AIChatInputWidget extends ReactWidget {
 interface ChatInputProperties {
     onCancel: (requestModel: ChatRequestModel) => void;
     onQuery: (query: string, context?: AIVariableResolutionRequest[]) => void;
+    onDragOver: (event: React.DragEvent) => void;
+    onDrop: (event: React.DragEvent) => void;
     onDeleteChangeSet: (sessionId: string) => void;
     onDeleteChangeSetElement: (sessionId: string, index: number) => void;
     onAddContextElement: () => void;
@@ -383,7 +413,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
 
     const contextUI = buildContextUI(props.context, props.labelProvider, props.onDeleteContextElement);
 
-    return <div className='theia-ChatInput'>
+    return <div className='theia-ChatInput' onDragOver={props.onDragOver} onDrop={props.onDrop}    >
         {changeSetUI?.elements &&
             <ChangeSetBox changeSet={changeSetUI} />
         }
