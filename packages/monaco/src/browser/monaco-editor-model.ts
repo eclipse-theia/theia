@@ -259,6 +259,10 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
         return this.resource.uri.toString();
     }
 
+    get autosaveable(): boolean | undefined {
+        return this.resource.autosaveable;
+    }
+
     protected _languageId: string | undefined;
     get languageId(): string {
         return this._languageId !== undefined ? this._languageId : this.model.getLanguageId();

@@ -162,7 +162,7 @@ export class SaveableService implements FrontendApplicationContribution {
             // Never auto-save untitled documents
             return false;
         } else {
-            return saveable.dirty;
+            return saveable.autosaveable !== false && saveable.dirty;
         }
     }
 
