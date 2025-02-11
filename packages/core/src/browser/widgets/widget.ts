@@ -225,14 +225,18 @@ export class BaseWidget extends Widget implements PreviewableWidget {
     override setFlag(flag: Widget.Flag): void {
         super.setFlag(flag);
         if (flag === Widget.Flag.IsVisible) {
-            this.onDidChangeVisibilityEmitter.fire(this.isVisible);
+            this.handleVisiblityChanged(this.isVisible)
         }
+    }
+
+    protected handleVisiblityChanged(isNowVisible: boolean): void {
+        this.onDidChangeVisibilityEmitter.fire(isNowVisible);
     }
 
     override clearFlag(flag: Widget.Flag): void {
         super.clearFlag(flag);
         if (flag === Widget.Flag.IsVisible) {
-            this.onDidChangeVisibilityEmitter.fire(this.isVisible);
+            this.handleVisiblityChanged(this.isVisible);
         }
     }
 }

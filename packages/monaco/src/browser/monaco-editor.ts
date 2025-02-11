@@ -109,6 +109,7 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
     readonly onDidResize = this.onResizeEmitter.event;
 
     readonly documents = new Set<MonacoEditorModel>();
+    protected model: monaco.editor.ITextModel | null;
 
     constructor(
         readonly uri: URI,
@@ -226,6 +227,18 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
         this.toDispose.push(this.onDidChangeReadOnly(readOnly => {
             codeEditor.updateOptions(MonacoEditor.createReadOnlyOptions(readOnly));
         }));
+    }
+
+    handleVisibilityChanged(nowVisible: boolean): void {
+        if (nowVisible) {
+            if (this.model) {
+                this.editor.setModel(this.model);
+            }
+        } else {
+            this.model = this.editor.getModel();
+            // eslint-disable-next-line no-null/no-null
+            this.editor.setModel(null); // workaround for https://github.com/eclipse-theia/theia/issues/14880
+        }
     }
 
     getVisibleRanges(): Range[] {
