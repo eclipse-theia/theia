@@ -794,7 +794,15 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     }
 
     asString(): string {
-        return `Tool call: ${this._name}(${this._arguments ?? ''})`;
+        return '';
+    }
+
+    asDisplayString(): string {
+        let description = `Tool call: ${this._name}(${this._arguments ?? ''})`;
+        if (this._result) {
+            description += ` => ${this._result}`;
+        }
+        return description;
     }
     merge(nextChatResponseContent: ToolCallChatResponseContent): boolean {
         if (nextChatResponseContent.id === this.id) {
