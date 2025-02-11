@@ -101,7 +101,7 @@ export class LogLevelCliContribution implements CliContribution {
         }
 
         if (args['log-file'] !== undefined) {
-            let filename: string = args['log-file'] as string;
+            let filename = args['log-file'] as string;
             try {
                 filename = path.resolve(filename);
                 try {
@@ -111,7 +111,7 @@ export class LogLevelCliContribution implements CliContribution {
                         const oldFilename = `${filename}.${stat.ctime.toISOString().replace(/:/g, '-')}.old`;
                         await fs.rename(filename, oldFilename);
                     }
-                } catch (err) {
+                } catch {
                     // File does not exist, just continue to create it
                 }
                 await fs.writeFile(filename, '');
