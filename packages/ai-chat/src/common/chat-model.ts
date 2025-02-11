@@ -110,6 +110,7 @@ export interface ChangeSetElement {
 
     open?(): Promise<void>;
     openChange?(): Promise<void>;
+    updateEditors?(): void;
     accept?(): Promise<void>;
     discard?(): Promise<void>;
 }
@@ -574,6 +575,7 @@ export class ChangeSetImpl implements ChangeSet {
         if (!this.replaceElement(element)) {
             this.addElement(element);
         }
+        element.updateEditors?.();
     }
 
     removeElement(index: number): void {
