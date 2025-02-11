@@ -16,10 +16,10 @@
 import { ChatAgentService } from '@theia/ai-chat';
 import { AIContextVariable, AIVariableService } from '@theia/ai-core/lib/common';
 import { PromptText } from '@theia/ai-core/lib/common/prompt-text';
-import { ToolInvocationRegistry, ToolProvider } from '@theia/ai-core/lib/common/tool-invocation-registry';
-import { ContributionProvider, MaybePromise } from '@theia/core';
+import { ToolInvocationRegistry } from '@theia/ai-core/lib/common/tool-invocation-registry';
+import { MaybePromise } from '@theia/core';
 import { ApplicationShell, FrontendApplication, FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { inject, injectable, named } from '@theia/core/shared/inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
 import { ProviderResult } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
 import { ChatViewWidget } from './chat-view-widget';
@@ -42,12 +42,9 @@ export class ChatViewLanguageContribution implements FrontendApplicationContribu
 
     @inject(ToolInvocationRegistry)
     protected readonly toolInvocationRegistry: ToolInvocationRegistry;
+
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
-
-    @inject(ContributionProvider)
-    @named(ToolProvider)
-    private providers: ContributionProvider<ToolProvider>;
 
     onStart(_app: FrontendApplication): MaybePromise<void> {
         monaco.languages.register({ id: CHAT_VIEW_LANGUAGE_ID, extensions: [CHAT_VIEW_LANGUAGE_EXTENSION] });

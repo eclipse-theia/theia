@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Agent, AgentService, AIVariableContribution, ToolProvider } from '@theia/ai-core/lib/common';
+import { Agent, AgentService, AIVariableContribution } from '@theia/ai-core/lib/common';
 import { bindContributionProvider, ResourceResolver } from '@theia/core';
 import { FrontendApplicationContribution, LabelProviderContribution, PreferenceContribution } from '@theia/core/lib/browser';
 import { ContainerModule } from '@theia/core/shared/inversify';
