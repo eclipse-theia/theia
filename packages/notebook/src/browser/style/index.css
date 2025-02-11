@@ -257,6 +257,17 @@
   height: 2px;
 }
 
+.error-message {
+  justify-content: center;
+  margin: 0 50px;
+  text-align: center;
+}
+
+.error-message > span {
+  color: var(--theia-errorForeground);
+  font-size: 40px !important;
+}
+
 .theia-notebook-viewport {
   display: flex;
   overflow: hidden;
