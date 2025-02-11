@@ -181,15 +181,15 @@ export class FileContentFunction implements ToolProvider {
         return {
             id: FileContentFunction.ID,
             name: FileContentFunction.ID,
-            description: `The relative path to the target file within the workspace. This path is resolved from the workspace root, and only files within the workspace boundaries
-             are accessible. Attempting to access paths outside the workspace will result in an error.`,
+            description: `Return the content of a specified file within the workspace. The file path must be provided relative to the workspace root. Only files within
+                workspace boundaries are accessible; attempting to access files outside the workspace will return an error.`,
             parameters: {
                 type: 'object',
                 properties: {
                     file: {
                         type: 'string',
-                        description: `Return the content of a specified file within the workspace. The file path must be provided relative to the workspace root. Only files within
-                         workspace boundaries are accessible; attempting to access files outside the workspace will return an error.`,
+                        description: `The relative path to the target file within the workspace. This path is resolved from the workspace root, and only files within the workspace 
+                            boundaries are accessible. Attempting to access paths outside the workspace will result in an error.`,
                     }
                 },
                 required: ['file']
