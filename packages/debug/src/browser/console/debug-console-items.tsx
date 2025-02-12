@@ -316,15 +316,16 @@ export class ExpressionItem extends ExpressionContainer {
 
     async evaluate(context: string = 'repl'): Promise<void> {
         const session = this.session;
-        if (session) {
-            try {
-                const body = await session.evaluate(this._expression, context);
-                this.setResult(body);
-            } catch (err) {
-                this.setResult(undefined, err.message);
-            }
-        } else {
-            this.setResult(undefined, 'Please start a debug session to evaluate');
+        if (!session?.currentFrame) {
+            this.setResult(undefined, ExpressionItem.notAvailable);
+            return;
+        }
+
+        try {
+            const body = await session.evaluate(this._expression, context);
+            this.setResult(body);
+        } catch (err) {
+            this.setResult(undefined, err.message);
         }
     }
 
