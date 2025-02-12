@@ -171,6 +171,7 @@ export interface ChatResponseContent {
      * representation of the response.
      */
     asString?(): string | undefined;
+    asDisplayString?(): string | undefined;
     merge?(nextChatResponseContent: ChatResponseContent): boolean;
 }
 
@@ -187,6 +188,11 @@ export namespace ChatResponseContent {
         obj: ChatResponseContent
     ): obj is Required<Pick<ChatResponseContent, 'asString'>> & ChatResponseContent {
         return typeof obj.asString === 'function';
+    }
+    export function hasDisplayString(
+        obj: ChatResponseContent
+    ): obj is Required<Pick<ChatResponseContent, 'asDisplayString'>> & ChatResponseContent {
+        return typeof obj.asDisplayString === 'function';
     }
     export function hasMerge(
         obj: ChatResponseContent
@@ -398,6 +404,7 @@ export namespace QuestionResponseContent {
 export interface ChatResponse {
     readonly content: ChatResponseContent[];
     asString(): string;
+    asDisplayString(): string;
 }
 
 /**
@@ -674,6 +681,10 @@ export class TextChatResponseContentImpl implements TextChatResponseContent {
         return this._content;
     }
 
+    asDisplayString(): string | undefined {
+        return this.asString();
+    }
+
     merge(nextChatResponseContent: TextChatResponseContent): boolean {
         this._content += nextChatResponseContent.content;
         return true;
@@ -694,6 +705,10 @@ export class MarkdownChatResponseContentImpl implements MarkdownChatResponseCont
 
     asString(): string {
         return this._content.value;
+    }
+
+    asDisplayString(): string | undefined {
+        return this.asString();
     }
 
     merge(nextChatResponseContent: MarkdownChatResponseContent): boolean {
@@ -798,11 +813,7 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     }
 
     asDisplayString(): string {
-        let description = `Tool call: ${this._name}(${this._arguments ?? ''})`;
-        if (this._result) {
-            description += ` => ${this._result}`;
-        }
-        return description;
+        return `Tool call: ${this._name}(${this._arguments ?? ''})`;
     }
     merge(nextChatResponseContent: ToolCallChatResponseContent): boolean {
         if (nextChatResponseContent.id === this.id) {
@@ -855,6 +866,10 @@ export class HorizontalLayoutChatResponseContentImpl implements HorizontalLayout
         return this._content.map(child => child.asString && child.asString()).join(' ');
     }
 
+    asDisplayString(): string | undefined {
+        return this.asString();
+    }
+
     merge(nextChatResponseContent: ChatResponseContent): boolean {
         if (HorizontalLayoutChatResponseContent.is(nextChatResponseContent)) {
             this._content.push(...nextChatResponseContent.content);
@@ -895,6 +910,7 @@ class ChatResponseImpl implements ChatResponse {
     onDidChange: Event<void> = this._onDidChangeEmitter.event;
     protected _content: ChatResponseContent[];
     protected _responseRepresentation: string;
+    protected _responseRepresentationForDisplay: string;
 
     constructor() {
         // TODO accept serialized data as a parameter to restore a previously saved ChatResponse
@@ -948,8 +964,18 @@ class ChatResponseImpl implements ChatResponse {
     }
 
     protected _updateResponseRepresentation(): void {
-        this._responseRepresentation = this._content
+        this._responseRepresentation = this.responseRepresentationsToString(this._content, false);
+        this._responseRepresentationForDisplay = this.responseRepresentationsToString(this.content, true);
+    }
+
+    protected responseRepresentationsToString(content: ChatResponseContent[], forDisplay: boolean): string {
+        return content
             .map(responseContent => {
+                if (forDisplay) {
+                    if (ChatResponseContent.hasDisplayString(responseContent)) {
+                        return responseContent.asDisplayString();
+                    }
+                }
                 if (ChatResponseContent.hasAsString(responseContent)) {
                     return responseContent.asString();
                 }
@@ -962,12 +988,16 @@ class ChatResponseImpl implements ChatResponse {
                 );
                 return undefined;
             })
-            .filter(text => text !== undefined)
+            .filter(text => (text !== undefined || text === ''))
             .join('\n\n');
     }
 
     asString(): string {
         return this._responseRepresentation;
+    }
+
+    asDisplayString(): string {
+        return this._responseRepresentationForDisplay;
     }
 }
 
