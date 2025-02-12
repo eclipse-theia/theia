@@ -425,11 +425,13 @@ const ChangeSetBox: React.FunctionComponent<{ changeSet: ChangeSetUI }> = ({ cha
                 {changeSet.elements.map((element, index) => (
                     <li key={index} title='Open Diff' onClick={() => element.openChange?.()}>
                         <div className={`theia-ChatInput-ChangeSet-Icon ${element.iconClass}`} />
-                        <span className={`theia-ChatInput-ChangeSet-title ${element.nameClass}`}>
-                            {element.name}
-                        </span>
-                        <span className='theia-ChatInput-ChangeSet-additionalInfo'>
-                            {element.additionalInfo}
+                        <span className='theia-ChatInput-ChangeSet-labelParts'>
+                            <span className={`theia-ChatInput-ChangeSet-title ${element.nameClass}`}>
+                                {element.name}
+                            </span>
+                            <span className='theia-ChatInput-ChangeSet-additionalInfo'>
+                                {element.additionalInfo}
+                            </span>
                         </span>
                         <div className='theia-ChatInput-ChangeSet-Actions'>
                             {element.open && (<span className='codicon codicon-file action' title='Open Original File' onClick={noPropagation(() => element.open!())} />)}
