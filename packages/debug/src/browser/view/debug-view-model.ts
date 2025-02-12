@@ -218,9 +218,7 @@ export class DebugViewModel implements Disposable {
     protected refreshWatchExpressions = debounce(() => {
         this.refreshWatchExpressionsQueue = this.refreshWatchExpressionsQueue.then(async () => {
             try {
-                for (const watchExpression of this.watchExpressions) {
-                    await watchExpression.evaluate();
-                }
+                await Promise.all(Array.from(this.watchExpressions).map(expr => expr.evaluate()));
             } catch (e) {
                 console.error('Failed to refresh watch expressions: ', e);
             }
