@@ -964,14 +964,14 @@ class ChatResponseImpl implements ChatResponse {
     }
 
     protected _updateResponseRepresentation(): void {
-        this._responseRepresentation = this.responseRepresentationsToString(this._content, false);
-        this._responseRepresentationForDisplay = this.responseRepresentationsToString(this.content, true);
+        this._responseRepresentation = this.responseRepresentationsToString(this._content, 'asString');
+        this._responseRepresentationForDisplay = this.responseRepresentationsToString(this.content, 'asDisplayString');
     }
 
-    protected responseRepresentationsToString(content: ChatResponseContent[], forDisplay: boolean): string {
+    protected responseRepresentationsToString(content: ChatResponseContent[], collect: 'asString' | 'asDisplayString'): string {
         return content
             .map(responseContent => {
-                if (forDisplay) {
+                if (collect === 'asDisplayString') {
                     if (ChatResponseContent.hasDisplayString(responseContent)) {
                         return responseContent.asDisplayString();
                     }
