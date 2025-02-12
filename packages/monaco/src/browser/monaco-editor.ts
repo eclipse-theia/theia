@@ -64,6 +64,7 @@ import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/edito
 import * as objects from '@theia/monaco-editor-core/esm/vs/base/common/objects';
 import { Selection } from '@theia/editor/lib/browser/editor';
 import { IHoverService } from '@theia/monaco-editor-core/esm/vs/platform/hover/browser/hover';
+import { MonacoTextModelService } from './monaco-text-model-service';
 
 export type ServicePair<T> = [ServiceIdentifier<T>, T];
 
@@ -81,12 +82,27 @@ export class MonacoEditorServices {
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
 
+    @inject(MonacoTextModelService)
+    protected readonly monacoModelService: MonacoTextModelService;
+
     constructor(@unmanaged() services: MonacoEditorServices) {
         Object.assign(this, services);
     }
 }
 
 export class MonacoEditor extends MonacoEditorServices implements TextEditor {
+
+    static async create(uri: URI,
+        document: MonacoEditorModel,
+        node: HTMLElement,
+        services: MonacoEditorServices,
+        options?: MonacoEditor.IOptions,
+        override?: EditorServiceOverrides,
+        parentEditor?: MonacoEditor): Promise<MonacoEditor> {
+        const instance = new MonacoEditor(uri, document, node, services, options, override, parentEditor);
+        await instance.init();
+        return instance;
+    }
 
     protected readonly toDispose = new DisposableCollection();
 
@@ -110,8 +126,9 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
 
     readonly documents = new Set<MonacoEditorModel>();
     protected model: monaco.editor.ITextModel | null;
+    savedViewState: monaco.editor.ICodeEditorViewState | null;
 
-    constructor(
+    protected constructor(
         readonly uri: URI,
         readonly document: MonacoEditorModel,
         readonly node: HTMLElement,
@@ -139,6 +156,10 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
             ...options
         }, override));
         this.addHandlers(this.editor);
+    }
+
+    protected async init(): Promise<void> {
+        this.toDispose.push(await this.monacoModelService.createModelReference(this.uri));
     }
 
     getEncoding(): string {
@@ -233,9 +254,13 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
         if (nowVisible) {
             if (this.model) {
                 this.editor.setModel(this.model);
+                this.editor.restoreViewState(this.savedViewState);
+                this.editor.focus();
             }
         } else {
             this.model = this.editor.getModel();
+            this.savedViewState = this.editor.saveViewState();
+
             // eslint-disable-next-line no-null/no-null
             this.editor.setModel(null); // workaround for https://github.com/eclipse-theia/theia/issues/14880
         }
