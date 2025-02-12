@@ -105,7 +105,6 @@ const ScanOSSIntegration = React.memo((props: {
         const result = await props.scanService.scanContent(props.code, props.preferenceService.get(SCAN_OSS_API_KEY_PREF, undefined));
         setScanOSSResult(result);
         props.scanOSSResults.set(props.code, result);
-        return result;
     }, [props.code, props.scanService]);
 
     React.useEffect(() => {
@@ -119,15 +118,12 @@ const ScanOSSIntegration = React.memo((props: {
         }
     }, []);
     const scanOSSClicked = React.useCallback(async () => {
-        let scanResult = scanOSSResult;
-        if (scanResult === 'pending') {
+        if (scanOSSResult === 'pending') {
             return;
-        }
-        if (!scanResult || scanResult.type === 'error') {
-            scanResult = await scanCode();
-        }
-        if (scanResult && scanResult.type === 'match') {
-            const dialog = new ScanOSSDialog(scanResult);
+        } else if (!scanOSSResult || scanOSSResult.type === 'error') {
+            scanCode();
+        } else if (scanOSSResult && scanOSSResult.type === 'match') {
+            const dialog = new ScanOSSDialog([scanOSSResult]);
             dialog.open();
         }
     }, [scanOSSResult]);
@@ -144,37 +140,35 @@ const ScanOSSIntegration = React.memo((props: {
         }
     }
     return (
-        <>
-            <div
-                className={`button scanoss-logo show-check icon-container ${scanOSSResult === 'pending'
-                    ? 'pending'
-                    : scanOSSResult
-                        ? scanOSSResult.type
-                        : ''
-                    }`}
-                title={title}
-                role="button"
-                onClick={scanOSSClicked}
-            >
-                <div className="codicon codicon-circle placeholder" />
-                {scanOSSResult && scanOSSResult !== 'pending' && (
-                    <span className="status-icon">
-                        {scanOSSResult.type === 'clean' && <span className="codicon codicon-pass-filled" />}
-                        {scanOSSResult.type === 'match' && <span className="codicon codicon-warning" />}
-                        {scanOSSResult.type === 'error' && <span className="codicon codicon-error" />}
-                    </span>
-                )}
-            </div>
-        </>
+        <div
+            className={`button scanoss-logo show-check icon-container ${scanOSSResult === 'pending'
+                ? 'pending'
+                : scanOSSResult
+                    ? scanOSSResult.type
+                    : ''
+                }`}
+            title={title}
+            role="button"
+            onClick={scanOSSClicked}
+        >
+            <div className="codicon codicon-circle placeholder" />
+            {scanOSSResult && scanOSSResult !== 'pending' && (
+                <span className="status-icon">
+                    {scanOSSResult.type === 'clean' && <span className="codicon codicon-pass-filled" />}
+                    {scanOSSResult.type === 'match' && <span className="codicon codicon-warning" />}
+                    {scanOSSResult.type === 'error' && <span className="codicon codicon-error" />}
+                </span>
+            )}
+        </div>
     );
 });
 
 export class ScanOSSDialog extends ReactDialog<void> {
     protected readonly okButton: HTMLButtonElement;
 
-    constructor(protected result: ScanOSSResultMatch) {
+    constructor(protected results: ScanOSSResultMatch[]) {
         super({
-            title: 'SCANOSS Results',
+            title: 'ScanOSS Results',
         });
         this.appendAcceptButton(Dialog.OK);
         this.update();
@@ -206,10 +200,7 @@ export class ScanOSSDialog extends ReactDialog<void> {
             <div className="scanoss-summary">
                 <h3>Summary</h3>
                 <div>
-                    Found a {this.result.matched} match in{' '}
-                    <a href={this.result.url} target="_blank" rel="noopener noreferrer">
-                        {this.result.url}
-                    </a>
+                    Found {this.results.length} match(es)
                 </div>
             </div>
         );
@@ -219,12 +210,15 @@ export class ScanOSSDialog extends ReactDialog<void> {
         return (
             <div className="scanoss-details">
                 <h4>Details</h4>
-                <pre>
-                    {
-                        // eslint-disable-next-line no-null/no-null
-                        JSON.stringify(this.result.raw, null, 2)
-                    }
-                </pre>
+                {this.results.map(result =>
+                    <div>
+                        <a href={result.url} target="_blank" rel="noopener noreferrer">
+                            {result.url}
+                        </a>
+                        <pre>
+                            {JSON.stringify(result.raw, undefined, 2)}
+                        </pre>
+                    </div>)}
             </div>
         );
     }

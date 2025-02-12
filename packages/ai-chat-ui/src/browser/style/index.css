@@ -248,14 +248,15 @@ div:last-child > .theia-ChatNode {
   color: var(--theia-disabledForeground);
   padding-top: 0;
   margin: 0;
-  display: flex;
 }
 
-.theia-ChatInput-ChangeSet-Header-Actions button {
+.theia-ChatInput-ChangeSet-Header-Actions .theia-button {
+  height: 100%;
+  box-sizing: border-box;
   font-size: 12px;
   padding: 2px 4px;
   min-width: 40px;
-  margin-left: 6px;
+  margin: 0;
 }
 
 .theia-ChatInput-ChangeSet-List ul {
@@ -337,6 +338,17 @@ div:last-child > .theia-ChatNode {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.theia-ChatInput-ChangeSet-Header-Actions {
+  display: flex;
+  flex: none;
+  flex-flow: row nowrap;
+  gap: var(--theia-ui-padding);
+}
+
+.theia-changeSet-Action {
+  flex: none;
 }
 
 .theia-ChatInput-ChangeSet-Header-Actions,
@@ -662,4 +674,30 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
 
 .section-content strong {
   font-weight: bold;
+}
+
+.theia-changeSet-scanOss {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--theia-ui-padding);
+}
+
+.theia-changeSet-scanOss .scanoss-logo {
+  background-size: cover;
+  background-color: inherit;
+}
+
+.theia-changeSet-scanOss .scanoss-logo.error,
+.theia-changeSet-scanOss .scanoss-logo.clean {
+  background-color: inherit;
+}
+
+.theia-changeSet-scanOss.clean {
+  cursor: default;
+}
+
+.theia-changeSet-scanOss .status-icon {
+  height: 16px;
 }
