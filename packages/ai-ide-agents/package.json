@@ -18,6 +18,7 @@
     "@theia/core": "1.58.0",
     "@theia/filesystem": "1.58.0",
     "@theia/workspace": "1.58.0",
+    "@theia/monaco": "1.58.0",
     "@theia/navigator": "1.58.0",
     "@theia/terminal": "1.58.0",
     "@theia/ai-core": "1.58.0",
