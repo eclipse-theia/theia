@@ -32,7 +32,7 @@ import { StreamingAsyncIterator } from './openai-streaming-iterator';
 
 export const OpenAiModelIdentifier = Symbol('OpenAiModelIdentifier');
 
-export type DeveloperMessageSettings = 'user' | 'system' | 'developer' | 'mergeWithFirstUserMessage' | 'skip';
+export type DeveloperMessageSettings = 'user' | 'system' | 'developer' | 'mergeWithFollowingUserMessage' | 'skip';
 
 export class OpenAiModel implements LanguageModel {
 
@@ -82,7 +82,8 @@ export class OpenAiModel implements LanguageModel {
         if (cancellationToken?.isCancellationRequested) {
             return { text: '' };
         }
-
+        const check = this.processMessages(request.messages);
+        console.log(JSON.stringify(check, undefined, 2));
         let runner: ChatCompletionStream;
         const tools = this.createTools(request);
         if (tools) {
@@ -189,27 +190,27 @@ export class OpenAiModelUtils {
         messages: LanguageModelRequestMessage[],
         developerMessageSettings: DeveloperMessageSettings
     ): LanguageModelRequestMessage[] {
-        if (messages.length > 0 && messages[0].actor === 'system') {
-            if (developerMessageSettings === 'skip') {
-                return messages.slice(1);
-            } else if (developerMessageSettings === 'mergeWithFirstUserMessage') {
-                const systemMsg = messages[0];
-                const updatedMessages = messages.slice();
-                const userIndex = updatedMessages.findIndex((m, index) => index > 0 && m.actor === 'user');
-                if (userIndex !== -1) {
-                    updatedMessages[userIndex] = {
-                        ...updatedMessages[userIndex],
-                        query: systemMsg.query + '\n' + updatedMessages[userIndex].query
-                    };
-                    // Remove the first system message
-                    updatedMessages.shift();
-                    return updatedMessages;
-                } else {
-                    // No user message exists, so create one with the system message content
-                    updatedMessages[0] = { actor: 'user', type: 'text', query: systemMsg.query };
-                    return updatedMessages;
+        if (developerMessageSettings === 'skip') {
+            return messages.filter(message => message.actor !== 'system');
+        } else if (developerMessageSettings === 'mergeWithFollowingUserMessage') {
+            const updated = messages.slice();
+            for (let i = updated.length - 1; i >= 0; i--) {
+                if (updated[i].actor === 'system') {
+                    if (i + 1 < updated.length && updated[i + 1].actor === 'user') {
+                        // Merge system message with the next user message
+                        updated[i + 1] = {
+                            ...updated[i + 1],
+                            query: updated[i].query + '\n' + updated[i + 1].query
+                        };
+                        updated.splice(i, 1);
+                    } else {
+                        // The message directly after is not a user message (or none exists), so create a new user message right after
+                        updated.splice(i + 1, 0, { actor: 'user', type: 'text', query: updated[i].query });
+                        updated.splice(i, 1);
+                    }
                 }
             }
+            return updated;
         }
         return messages;
     }
@@ -251,7 +252,7 @@ export class OpenAiModelUtils {
      * @param model the OpenAI model identifier. Currently not used, but allows subclasses to implement model-specific behavior.
      * @returns an array of messages formatted for the OpenAI API.
      */
-    public processMessages(
+    processMessages(
         messages: LanguageModelRequestMessage[],
         developerMessageSettings: DeveloperMessageSettings,
         model: string

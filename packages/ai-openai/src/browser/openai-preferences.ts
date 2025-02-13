@@ -55,9 +55,9 @@ on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to s
             \n\
             - provide an `apiVersion` to access the API served at the given url in Azure. Use `true` to indicate the use of the global OpenAI API version.\
             \n\
-            - set `developerMessageSettings` to one of `user`, `system`, `developer`, `mergeWithFirstUserMessage`, or `skip` to control how the developer message is\
-            included (where `user`, `system`, and `developer` will be used as a role, `mergeWithFirstUserMessage` will prefix the first user message with the system message,\
-            and `skip` will just remove the system message), defaulting to `developer`.\
+            - set `developerMessageSettings` to one of `user`, `system`, `developer`, `mergeWithFollowingUserMessage`, or `skip` to control how the developer message is\
+            included (where `user`, `system`, and `developer` will be used as a role, `mergeWithFollowingUserMessage` will prefix the first user message with the system message,\
+            or convert the system message to user mesage if the next message is not a user message. `skip` will just remove the system message). Defaulting to `developer`.\
             \n\
             - specify `supportsStructuredOutput: false` to indicate that structured output shall not be used.\
             \n\
@@ -92,11 +92,12 @@ on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to s
                     },
                     developerMessageSettings: {
                         type: 'string',
-                        enum: ['user', 'system', 'developer', 'mergeWithFirstUserMessage', 'skip'],
+                        enum: ['user', 'system', 'developer', 'mergeWithFollowingUserMessage', 'skip'],
                         default: 'developer',
                         title: nls.localize('theia/ai/openai/customEndpoints/developerMessageSettings/title',
-                            'Controls the first system message: `user`, `system`, and `developer` will be used as a role, `mergeWithFirstUserMessage` will prefix\
-                         the first user message with the system message, and `skip` will just remove the system message), defaulting to `developer`.')
+                            'Controls the first system message: `user`, `system`, and `developer` will be used as a role, `mergeWithFollowingUserMessage` will prefix\
+                         the following user message with the system message or convert the system message to user message if the next message is not a user message.\
+                         `skip` will just remove the system message), defaulting to `developer`.')
                     },
                     supportsStructuredOutput: {
                         type: 'boolean',
