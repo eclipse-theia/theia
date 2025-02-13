@@ -22,7 +22,7 @@
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import {
     ChatModel,
-    ChatModelImpl,
+    MutableChatModel,
     ChatRequest,
     ChatRequestModel,
     ChatResponseModel,
@@ -105,7 +105,7 @@ export interface ChatService {
 }
 
 interface ChatSessionInternal extends ChatSession {
-    model: ChatModelImpl;
+    model: MutableChatModel;
 }
 
 @injectable()
@@ -142,7 +142,7 @@ export class ChatServiceImpl implements ChatService {
     }
 
     createSession(location = ChatAgentLocation.Panel, options?: SessionOptions): ChatSession {
-        const model = new ChatModelImpl(location);
+        const model = new MutableChatModel(location);
         const session: ChatSessionInternal = {
             id: model.id,
             model,

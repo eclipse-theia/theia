@@ -459,7 +459,7 @@ export interface ChatResponseModel {
  * Implementations
  **********************/
 
-export class ChatModelImpl implements ChatModel {
+export class MutableChatModel implements ChatModel {
     protected readonly _onDidChangeEmitter = new Emitter<ChatChangeEvent>();
     onDidChange: Event<ChatChangeEvent> = this._onDidChangeEmitter.event;
 
@@ -588,20 +588,20 @@ export class ChangeSetImpl implements ChangeSet {
 
 export class ChatRequestModelImpl implements ChatRequestModel {
     protected readonly _id: string;
-    protected _session: ChatModelImpl;
+    protected _session: MutableChatModel;
     protected _request: ChatRequest;
-    protected _response: ChatResponseModelImpl;
+    protected _response: MutableChatResponseModel;
     protected _context: ResolvedAIVariable[];
     protected _agentId?: string;
     protected _data: { [key: string]: unknown };
 
-    constructor(session: ChatModelImpl, public readonly message: ParsedChatRequest, agentId?: string,
+    constructor(session: MutableChatModel, public readonly message: ParsedChatRequest, agentId?: string,
         context: ResolvedAIVariable[] = [], data: { [key: string]: unknown } = {}) {
         // TODO accept serialized data as a parameter to restore a previously saved ChatRequestModel
         this._request = message.request;
         this._id = generateUuid();
         this._session = session;
-        this._response = new ChatResponseModelImpl(this._id, agentId);
+        this._response = new MutableChatResponseModel(this._id, agentId);
         this._context = context.concat(message.parts.filter(part => part.kind === 'var').map(part => (part as ParsedChatRequestVariablePart).resolution));
         this._agentId = agentId;
         this._data = data;
@@ -623,7 +623,7 @@ export class ChatRequestModelImpl implements ChatRequestModel {
         return this._id;
     }
 
-    get session(): ChatModelImpl {
+    get session(): MutableChatModel {
         return this._session;
     }
 
@@ -631,7 +631,7 @@ export class ChatRequestModelImpl implements ChatRequestModel {
         return this._request;
     }
 
-    get response(): ChatResponseModelImpl {
+    get response(): MutableChatResponseModel {
         return this._response;
     }
 
@@ -963,7 +963,7 @@ class ChatResponseImpl implements ChatResponse {
     }
 }
 
-class ChatResponseModelImpl implements ChatResponseModel {
+class MutableChatResponseModel implements ChatResponseModel {
     protected readonly _onDidChangeEmitter = new Emitter<void>();
     onDidChange: Event<void> = this._onDidChangeEmitter.event;
 
@@ -1103,7 +1103,7 @@ class ChatResponseModelImpl implements ChatResponseModel {
     }
 }
 
-export class ErrorChatResponseModelImpl extends ChatResponseModelImpl {
+export class ErrorChatResponseModelImpl extends MutableChatResponseModel {
     constructor(requestId: string, error: Error, agentId?: string) {
         super(requestId, agentId);
         this.error(error);
