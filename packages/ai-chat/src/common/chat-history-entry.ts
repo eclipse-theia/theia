@@ -40,7 +40,7 @@ export namespace ChatHistoryEntry {
             agentId: agentId,
             sessionId: request.session.id,
             requestId: request.id,
-            response: request.response.response.asString(),
+            response: request.response.response.asDisplayString(),
             ...args,
         };
     }

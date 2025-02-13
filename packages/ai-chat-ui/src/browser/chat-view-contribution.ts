@@ -69,7 +69,7 @@ export class ChatViewMenuContribution implements MenuContribution, CommandContri
                     const parent = extractRequestOrResponseNodes(args).find(arg => arg.parent)?.parent;
                     const text = parent?.children
                         .filter(isRequestOrResponseNode)
-                        .map(child => this.getText(child))
+                        .map(child => this.getCopyText(child))
                         .join('\n\n---\n\n');
                     if (text) {
                         this.clipboardService.writeText(text);
@@ -93,19 +93,19 @@ export class ChatViewMenuContribution implements MenuContribution, CommandContri
     }
 
     protected copyMessage(args: (RequestNode | ResponseNode)[]): void {
-        const text = this.getTextAndJoin(args);
+        const text = this.getCopyTextAndJoin(args);
         this.clipboardService.writeText(text);
     }
 
-    protected getTextAndJoin(args: (RequestNode | ResponseNode)[] | undefined): string {
-        return args !== undefined ? args.map(arg => this.getText(arg)).join() : '';
+    protected getCopyTextAndJoin(args: (RequestNode | ResponseNode)[] | undefined): string {
+        return args !== undefined ? args.map(arg => this.getCopyText(arg)).join() : '';
     }
 
-    protected getText(arg: RequestNode | ResponseNode): string {
+    protected getCopyText(arg: RequestNode | ResponseNode): string {
         if (isRequestNode(arg)) {
             return arg.request.request.text;
         } else if (isResponseNode(arg)) {
-            return arg.response.response.asString();
+            return arg.response.response.asDisplayString();
         }
         return '';
     }

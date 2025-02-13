@@ -25,6 +25,7 @@ import {
     ChatRequestParser,
     ChatRequestParserImpl,
     ChatService,
+    ToolCallChatResponseContentFactory,
 } from '../common';
 import { ChatAgentsVariableContribution } from '../common/chat-agents-variable-contribution';
 import { CustomChatAgent } from '../common/custom-chat-agent';
@@ -89,4 +90,5 @@ export default new ContainerModule(bind => {
     });
     bind(ChangeSetFileResourceResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toService(ChangeSetFileResourceResolver);
+    bind(ToolCallChatResponseContentFactory).toSelf().inSingletonScope();
 });
