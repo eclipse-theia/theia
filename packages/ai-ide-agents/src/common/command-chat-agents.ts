@@ -18,7 +18,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { AbstractTextToModelParsingChatAgent, SystemMessageDescription } from '@theia/ai-chat/lib/common/chat-agents';
 import { LanguageModelRequirement, PromptTemplate } from '@theia/ai-core';
 import {
-    ChatRequestModelImpl,
+    MutableChatRequestModel,
     ChatResponseContent,
     CommandChatResponseContentImpl,
     CustomCallback,
@@ -299,7 +299,7 @@ export class CommandChatAgent extends AbstractTextToModelParsingChatAgent<Parsed
         return parsedCommand;
     }
 
-    protected createResponseContent(parsedCommand: ParsedCommand, request: ChatRequestModelImpl): ChatResponseContent {
+    protected createResponseContent(parsedCommand: ParsedCommand, request: MutableChatRequestModel): ChatResponseContent {
         if (parsedCommand.type === 'theia-command') {
             const theiaCommand = this.commandRegistry.getCommand(parsedCommand.commandId);
             if (theiaCommand === undefined) {

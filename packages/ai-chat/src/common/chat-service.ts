@@ -22,11 +22,11 @@
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import {
     ChatModel,
-    ChatModelImpl,
+    MutableChatModel,
     ChatRequest,
     ChatRequestModel,
     ChatResponseModel,
-    ErrorChatResponseModelImpl,
+    ErrorChatResponseModel,
 } from './chat-model';
 import { ChatAgentService } from './chat-agent-service';
 import { Emitter, ILogger, generateUuid } from '@theia/core';
@@ -105,7 +105,7 @@ export interface ChatService {
 }
 
 interface ChatSessionInternal extends ChatSession {
-    model: ChatModelImpl;
+    model: MutableChatModel;
 }
 
 @injectable()
@@ -142,7 +142,7 @@ export class ChatServiceImpl implements ChatService {
     }
 
     createSession(location = ChatAgentLocation.Panel, options?: SessionOptions): ChatSession {
-        const model = new ChatModelImpl(location);
+        const model = new MutableChatModel(location);
         const session: ChatSessionInternal = {
             id: model.id,
             model,
@@ -184,7 +184,7 @@ export class ChatServiceImpl implements ChatService {
         if (agent === undefined) {
             const error = 'No ChatAgents available to handle request!';
             this.logger.error(error);
-            const chatResponseModel = new ErrorChatResponseModelImpl(generateUuid(), new Error(error));
+            const chatResponseModel = new ErrorChatResponseModel(generateUuid(), new Error(error));
             return {
                 requestCompleted: Promise.reject(error),
                 responseCreated: Promise.reject(error),
