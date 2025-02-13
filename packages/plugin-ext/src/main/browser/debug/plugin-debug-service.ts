@@ -360,6 +360,11 @@ export class PluginDebugService implements DebugService {
                 default: 'openOnFirstSessionStart',
                 description: nls.localizeByDefault('Controls when the internal Debug Console should open.')
             };
+            properties['suppressMultipleSessionWarning'] = {
+                type: 'boolean',
+                description: nls.localizeByDefault('Disable the warning when trying to start the same debug configuration more than once.'),
+                default: true
+            };
 
             const osProperties = Object.assign({}, properties);
             properties['windows'] = {

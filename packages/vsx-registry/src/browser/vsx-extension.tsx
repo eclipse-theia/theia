@@ -306,7 +306,7 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
     async install(options?: PluginDeployOptions): Promise<void> {
         if (!this.verified) {
             const choice = await new ConfirmDialog({
-                title: nls.localize('theia/vsx-registry/confirmDialogTitle', 'Are you sure you want to proceed with the installation ?'),
+                title: nls.localize('theia/vsx-registry/confirmDialogTitle', 'Are you sure you want to proceed with the installation?'),
                 msg: nls.localize('theia/vsx-registry/confirmDialogMessage', 'The extension "{0}" is unverified and might pose a security risk.', this.displayName)
             }).open();
             if (choice) {
