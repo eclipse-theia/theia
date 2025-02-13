@@ -52,7 +52,10 @@ export const OpenAiPreferencesSchema: PreferenceSchema = {
             \n\
             - provide an `apiVersion` to access the API served at the given url in Azure. Use `true` to indicate the use of the global OpenAI API version.\
             \n\
-            - specify `supportsDeveloperMessage: false` to indicate that the developer role shall not be used.\
+            - set `developerMessageSettings` to one of `user`, `system`, `developer`, `mergeWithFollowingUserMessage`, or `skip` to control how the developer message is\
+            included (where `user`, `system`, and `developer` will be used as a role, `mergeWithFollowingUserMessage` will prefix the following user message with the system\
+            message or convert the system message to user message if the next message is not a user message. `skip` will just remove the system message).\
+            Defaulting to `developer`.\
             \n\
             - specify `supportsStructuredOutput: false` to indicate that structured output shall not be used.\
             \n\
@@ -83,9 +86,13 @@ export const OpenAiPreferencesSchema: PreferenceSchema = {
                         type: ['string', 'boolean'],
                         title: 'Either the version to access the API served at the given url in Azure or `true` to use the global OpenAI API version',
                     },
-                    supportsDeveloperMessage: {
-                        type: 'boolean',
-                        title: 'Indicates whether the model supports the `developer` role. `true` by default.',
+                    developerMessageSettings: {
+                        type: 'string',
+                        enum: ['user', 'system', 'developer', 'mergeWithFollowingUserMessage', 'skip'],
+                        default: 'developer',
+                        title: 'Controls the handling of system messages: `user`, `system`, and `developer` will be used as a role, `mergeWithFollowingUserMessage` will prefix\
+                         the following user message with the system message or convert the system message to user message if the next message is not a user message.\
+                         `skip` will just remove the system message), defaulting to `developer`.'
                     },
                     supportsStructuredOutput: {
                         type: 'boolean',
