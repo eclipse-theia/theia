@@ -287,6 +287,7 @@ import { NotebookEditorsExtImpl } from './notebook/notebook-editors';
 import { TestingExtImpl } from './tests';
 import { UriExtImpl } from './uri-ext';
 import { isObject } from '@theia/core';
+import { PluginLogger } from './logger';
 
 export function createAPIObject<T extends Object>(rawObject: T): T {
     return new Proxy(rawObject, {
@@ -353,6 +354,8 @@ export function createAPIFactory(
     const uriExt = rpc.set(MAIN_RPC_CONTEXT.URI_EXT, new UriExtImpl(rpc));
     rpc.set(MAIN_RPC_CONTEXT.DEBUG_EXT, debugExt);
 
+    const commandLogger = new PluginLogger(rpc, 'commands-plugin');
+
     return function (plugin: InternalPlugin): typeof theia {
         const authentication: typeof theia.authentication = {
             registerAuthenticationProvider(id: string, label: string, provider: theia.AuthenticationProvider, options?: theia.AuthenticationProviderOptions): theia.Disposable {
@@ -393,7 +396,7 @@ export function createAPIFactory(
                 const internalHandler = (...args: any[]): any => {
                     const activeTextEditor = editors.getActiveEditor();
                     if (!activeTextEditor) {
-                        console.warn('Cannot execute ' + command + ' because there is no active text editor.');
+                        commandLogger.warn('Cannot execute ' + command + ' because there is no active text editor.');
                         return undefined;
                     }
 
@@ -402,10 +405,10 @@ export function createAPIFactory(
                         handler.apply(thisArg, args);
                     }).then(result => {
                         if (!result) {
-                            console.warn('Edits from command ' + command + ' were not applied.');
+                            commandLogger.warn('Edits from command ' + command + ' were not applied.');
                         }
                     }, err => {
-                        console.warn('An error occurred while running command ' + command, err);
+                        commandLogger.warn('An error occurred while running command ' + command, err);
                     });
                 };
                 return commandIsDeclaredInPackage(command, plugin.rawModel)

@@ -31,7 +31,6 @@ export class UriExtImpl implements UriExt {
 
     constructor(readonly rpc: RPCProtocol) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.URI_MAIN);
-        console.log(this.proxy);
     }
 
     registerUriHandler(handler: theia.UriHandler, plugin: PluginInfo): theia.Disposable {
