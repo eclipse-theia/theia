@@ -16,7 +16,7 @@
 
 import debounce from 'p-debounce';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { Disposable, DisposableCollection, Event, Emitter } from '@theia/core/lib/common';
+import { Disposable, DisposableCollection, Event, Emitter, deepClone } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { DebugSession, DebugState } from '../debug-session';
 import { DebugSessionManager } from '../debug-session-manager';
@@ -142,7 +142,8 @@ export class DebugViewModel implements Disposable {
         if (!session) {
             return;
         }
-        const newSession = await this.manager.start(Object.assign(session.options, options));
+        const optionsCopy = deepClone(session.options);
+        const newSession = await this.manager.start(Object.assign(optionsCopy, options));
         if (newSession) {
             this.fireDidChange();
         }
