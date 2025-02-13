@@ -51,7 +51,7 @@ Requests to an OpenAI model hosted on Azure need an `apiVersion`. To configure a
 Note that if you don't configure an `apiVersion`, the default `OpenAI` object is used for initialization and a connection to an Azure hosted OpenAI model will fail.
 
 An OpenAI model version deployed on Azure might not support the `developer` role. In that case it is possible to configure whether the `developer` role is supported or not via the 
-`supportsDeveloperMessage` option, which defaults to `true`.
+`developerMessageSettings` option, e.g. setting it to `system` or `user`.
 
 The following snippet shows a possible configuration to access an OpenAI model hosted on Azure. The `AZURE_OPENAI_API_BASE_URL` needs to be given without the `/chat/completions` 
 path and without the `api-version` parameter, e.g. _`https://<my_prefix>.openai.azure.com/openai/deployments/<my_deployment>`_
@@ -66,7 +66,7 @@ path and without the `api-version` parameter, e.g. _`https://<my_prefix>.openai.
       "id": "azure-deployment",
       "apiKey": "<AZURE_OPENAI_API_KEY>",
       "apiVersion": "<AZURE_OPENAI_API_VERSION>",
-      "developerMessageSettings": "skip"
+      "developerMessageSettings": "system"
     }
   ],
   "ai-features.agentSettings": {
