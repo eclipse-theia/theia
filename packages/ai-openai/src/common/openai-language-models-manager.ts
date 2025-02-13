@@ -43,10 +43,11 @@ export interface OpenAiModelDescription {
     enableStreaming: boolean;
     /**
      * Property to configure the developer message of the model. Setting this property to 'user', 'system', or 'developer' will use that string as the role for the system message.
-     * Setting it to 'mergeWithFirstUserMessage' will prefix the first user message with the system message, while 'skip' will remove the system message altogether.
+     * Setting it to 'mergeWithFollowingUserMessage' will prefix the following user message with the system message or convert the system message to user if the next message is
+     * not a user message. 'skip' will remove the system message altogether.
      * Defaults to 'developer'.
      */
-    developerMessageSettings?: 'user' | 'system' | 'developer' | 'mergeWithFirstUserMessage' | 'skip';
+    developerMessageSettings?: 'user' | 'system' | 'developer' | 'mergeWithFollowingUserMessage' | 'skip';
     /**
      * Flag to configure whether the OpenAPI model supports structured output. Default is `true`.
      */
