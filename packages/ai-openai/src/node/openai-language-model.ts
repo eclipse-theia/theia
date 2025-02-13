@@ -82,8 +82,6 @@ export class OpenAiModel implements LanguageModel {
         if (cancellationToken?.isCancellationRequested) {
             return { text: '' };
         }
-        const check = this.processMessages(request.messages);
-        console.log(JSON.stringify(check, undefined, 2));
         let runner: ChatCompletionStream;
         const tools = this.createTools(request);
         if (tools) {
