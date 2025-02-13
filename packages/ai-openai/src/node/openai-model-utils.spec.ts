@@ -88,7 +88,7 @@ describe('OpenAiModelUtils - processMessages', () => {
             ]);
         });
 
-        it('should create a new user message from several system mesages if the next message is not a user message', () => {
+        it('should create a new user message from several system messages if the next message is not a user message', () => {
             const messages = [
                 { actor: 'user', type: 'text', query: 'user message' },
                 { actor: 'system', type: 'text', query: 'system message' },
