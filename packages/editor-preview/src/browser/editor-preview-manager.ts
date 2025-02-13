@@ -14,14 +14,32 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { EditorManager, EditorOpenerOptions, EditorWidget } from '@theia/editor/lib/browser';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { EditorManager, EditorOpenerOptions, EditorWidget, Range } from '@theia/editor/lib/browser';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { EditorPreviewPreferences } from './editor-preview-preferences';
-import { MaybePromise } from '@theia/core/lib/common';
+import { ContributionProvider, MaybePromise, Prioritizeable, RecursivePartial } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { EditorPreviewWidgetFactory, EditorPreviewOptions } from './editor-preview-widget-factory';
 import { EditorPreviewWidget } from './editor-preview-widget';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
+
+export const EditorSelectionResolver = Symbol('EditorSelectionResolver');
+
+/**
+ * Resolves an initial selection to be revealed in an editor.
+ *
+ * Implementations may provide a custom initial selection based on the given widget, opener options,
+ * and optional URI. The resolver's priority determines the order of execution, with higher values executed first.
+ *
+ * @see EditorPreviewManager#revealSelection
+ */
+export interface EditorSelectionResolver {
+    /**
+     * The priority of the resolver. A higher value resolver will be called before others.
+     */
+    priority?: number;
+    resolveSelection(widget: EditorWidget, options: EditorOpenerOptions, uri?: URI): Promise<RecursivePartial<Range> | undefined>
+}
 
 @injectable()
 export class EditorPreviewManager extends EditorManager {
@@ -29,6 +47,8 @@ export class EditorPreviewManager extends EditorManager {
 
     @inject(EditorPreviewPreferences) protected readonly preferences: EditorPreviewPreferences;
     @inject(FrontendApplicationStateService) protected readonly stateService: FrontendApplicationStateService;
+    @inject(ContributionProvider) @named(EditorSelectionResolver)
+    protected readonly resolvers: ContributionProvider<EditorSelectionResolver>;
 
     /**
      * Until the layout has been restored, widget state is not reliable, so we ignore creation events.
@@ -121,5 +141,29 @@ export class EditorPreviewManager extends EditorManager {
         if (widget instanceof EditorPreviewWidget && widget.isPreview) {
             widget.convertToNonPreview();
         }
+    }
+
+    protected override async revealSelection(widget: EditorWidget, options: EditorOpenerOptions = {}, uri?: URI): Promise<void> {
+        if (!options.selection) {
+            options.selection = await this.resolveSelection(options, widget, uri);
+        }
+        super.revealSelection(widget, options, uri);
+    }
+
+    protected async resolveSelection(options: EditorOpenerOptions, widget: EditorWidget, uri: URI | undefined): Promise<RecursivePartial<Range> | undefined> {
+        if (!options.selection) {
+            const orderedResolvers = Prioritizeable.prioritizeAllSync(this.resolvers.getContributions(), resolver => resolver.priority ?? 1);
+            for (const linkResolver of orderedResolvers) {
+                try {
+                    const selection = await linkResolver.value.resolveSelection(widget, options, uri);
+                    if (selection) {
+                        return selection;
+                    }
+                } catch (error) {
+                    console.error(error);
+                }
+            }
+        }
+        return options.selection;
     }
 }
