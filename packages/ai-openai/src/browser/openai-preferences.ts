@@ -54,7 +54,7 @@ export const OpenAiPreferencesSchema: PreferenceSchema = {
             \n\
             - set `developerMessageSettings` to one of `user`, `system`, `developer`, `mergeWithFollowingUserMessage`, or `skip` to control how the developer message is\
             included (where `user`, `system`, and `developer` will be used as a role, `mergeWithFollowingUserMessage` will prefix the following user message with the system\
-            message or convert the system message to user mesage if the next message is not a user message. `skip` will just remove the system message).\
+            message or convert the system message to user message if the next message is not a user message. `skip` will just remove the system message).\
             Defaulting to `developer`.\
             \n\
             - specify `supportsStructuredOutput: false` to indicate that structured output shall not be used.\
@@ -90,8 +90,8 @@ export const OpenAiPreferencesSchema: PreferenceSchema = {
                         type: 'string',
                         enum: ['user', 'system', 'developer', 'mergeWithFollowingUserMessage', 'skip'],
                         default: 'developer',
-                        title: 'Controls the first system message: `user`, `system`, and `developer` will be used as a role, `mergeWithFollowingUserMessage` will prefix\
-                         the following user message with the system message or convert the system message to user mesage if the next message is not a user message.\
+                        title: 'Controls the handling of system messages: `user`, `system`, and `developer` will be used as a role, `mergeWithFollowingUserMessage` will prefix\
+                         the following user message with the system message or convert the system message to user message if the next message is not a user message.\
                          `skip` will just remove the system message), defaulting to `developer`.'
                     },
                     supportsStructuredOutput: {
