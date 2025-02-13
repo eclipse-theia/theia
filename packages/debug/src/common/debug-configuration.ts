@@ -85,7 +85,7 @@ export interface DebugConfiguration {
     /** When true, the debug viewlet will not be automatically revealed for this session. */
     suppressDebugView?: boolean;
 
-    /** Disable the warning when trying to start the same debug configuration more than once. `true` by default. */
+    /** Disable the warning when trying to start the same debug configuration more than once. */
     suppressMultipleSessionWarning?: boolean;
 }
 export namespace DebugConfiguration {
