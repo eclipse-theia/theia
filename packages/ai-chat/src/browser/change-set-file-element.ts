@@ -19,6 +19,7 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { ChangeSetElement, ChangeSetImpl } from '../common';
 import { createChangeSetFileUri } from './change-set-file-resource';
 import { ChangeSetFileService } from './change-set-file-service';
+import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 
 export const ChangeSetFileElementFactory = Symbol('ChangeSetFileElementFactory');
 export type ChangeSetFileElementFactory = (elementProps: ChangeSetElementArgs) => ChangeSetFileElement;
@@ -46,6 +47,9 @@ export class ChangeSetFileElement implements ChangeSetElement {
 
     @inject(ChangeSetFileService)
     protected readonly changeSetFileService: ChangeSetFileService;
+
+    @inject(MonacoWorkspace)
+    protected readonly monacoWorkspace: MonacoWorkspace;
 
     protected _state: 'pending' | 'applied' | 'discarded' | undefined;
 
@@ -110,6 +114,12 @@ export class ChangeSetFileElement implements ChangeSetElement {
             this.uri,
             this.changedUri
         );
+    }
+
+    updateEditors(): void {
+        const existingModel = this.monacoWorkspace.getTextDocument(this.changedUri.toString());
+        if (!existingModel) { return; }
+        existingModel.textEditorModel.setValue(this.targetState);
     }
 
     async accept(contents?: string): Promise<void> {
