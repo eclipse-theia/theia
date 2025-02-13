@@ -20,6 +20,8 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { NotebookEditorWidget, NotebookEditorWidgetContainerFactory, NotebookEditorProps } from './notebook-editor-widget';
 import { NotebookService } from './service/notebook-service';
 import { NotebookModelResolverService } from './service/notebook-model-resolver-service';
+import { Deferred } from '@theia/core/lib/common/promise-util';
+import { NotebookModel } from './view-model/notebook-model';
 
 export interface NotebookEditorWidgetOptions extends NavigatableWidgetOptions {
     notebookType: string;
@@ -62,10 +64,19 @@ export class NotebookEditorWidgetFactory implements WidgetFactory {
     }
 
     protected async createEditor(uri: URI, notebookType: string): Promise<NotebookEditorWidget> {
+        const notebookData = new Deferred<NotebookModel>();
+        const resolverError = new Deferred<string>();
+        this.notebookModelResolver.resolve(uri, notebookType).then(model => {
+            notebookData.resolve(model);
+        }).catch((reason: Error) => {
+            resolverError.resolve(reason.message);
+        });
+
         return this.createNotebookEditorWidget({
             uri,
             notebookType,
-            notebookData: this.notebookModelResolver.resolve(uri, notebookType),
+            notebookData: notebookData.promise,
+            error: resolverError.promise
         });
     }
 

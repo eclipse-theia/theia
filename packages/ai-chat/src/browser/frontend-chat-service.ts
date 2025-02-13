@@ -19,6 +19,9 @@ import { ChatAgent, ChatServiceImpl, ParsedChatRequest } from '../common';
 import { PreferenceService } from '@theia/core/lib/browser';
 import { DEFAULT_CHAT_AGENT_PREF } from './ai-chat-preferences';
 
+/**
+ * Customizes the ChatServiceImpl to consider preference based default chat agent
+ */
 @injectable()
 export class FrontendChatServiceImpl extends ChatServiceImpl {
 
@@ -27,32 +30,13 @@ export class FrontendChatServiceImpl extends ChatServiceImpl {
 
     protected override getAgent(parsedRequest: ParsedChatRequest): ChatAgent | undefined {
         const agentPart = this.getMentionedAgent(parsedRequest);
-        if (agentPart) {
-            return this.chatAgentService.getAgent(agentPart.agentId);
-        }
-
-        const configuredDefaultChatAgent = this.getConfiguredDefaultChatAgent();
-        if (configuredDefaultChatAgent) {
-            return configuredDefaultChatAgent;
-        }
-
-        if (this.defaultChatAgentId) {
-            const defaultAgent = this.chatAgentService.getAgent(this.defaultChatAgentId.id);
-            // the default agent could be disabled
-            if (defaultAgent) {
-                return defaultAgent;
+        if (!agentPart) {
+            const configuredDefaultChatAgent = this.getConfiguredDefaultChatAgent();
+            if (configuredDefaultChatAgent) {
+                return configuredDefaultChatAgent;
             }
         }
-
-        // check whether "Universal" is available
-        const universalAgent = this.chatAgentService.getAgent('Universal');
-        if (universalAgent) {
-            return universalAgent;
-        }
-
-        this.logger.warn('No default chat agent is configured or available and the "Universal" Chat Agent is unavailable too. Falling back to first registered agent.');
-
-        return this.chatAgentService.getAgents()[0] ?? undefined;
+        return super.getAgent(parsedRequest);
     }
 
     protected getConfiguredDefaultChatAgent(): ChatAgent | undefined {

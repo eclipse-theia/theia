@@ -25,14 +25,10 @@ import {
     ChatRequestParser,
     ChatRequestParserImpl,
     ChatService,
-    DefaultChatAgentId
 } from '../common';
 import { ChatAgentsVariableContribution } from '../common/chat-agents-variable-contribution';
-import { CommandChatAgent } from '../common/command-chat-agents';
 import { CustomChatAgent } from '../common/custom-chat-agent';
-import { OrchestratorChatAgent, OrchestratorChatAgentId } from '../common/orchestrator-chat-agent';
 import { DefaultResponseContentFactory, DefaultResponseContentMatcherProvider, ResponseContentMatcherProvider } from '../common/response-content-matcher';
-import { UniversalChatAgent } from '../common/universal-chat-agent';
 import { aiChatPreferences } from './ai-chat-preferences';
 import { ChangeSetElementArgs, ChangeSetFileElement, ChangeSetFileElementFactory } from './change-set-file-element';
 import { AICustomAgentsFrontendApplicationContribution } from './custom-agent-frontend-application-contribution';
@@ -50,7 +46,6 @@ export default new ContainerModule(bind => {
 
     bind(ChatAgentServiceImpl).toSelf().inSingletonScope();
     bind(ChatAgentService).toService(ChatAgentServiceImpl);
-    bind(DefaultChatAgentId).toConstantValue({ id: OrchestratorChatAgentId });
 
     bindContributionProvider(bind, ResponseContentMatcherProvider);
     bind(DefaultResponseContentMatcherProvider).toSelf().inSingletonScope();
@@ -64,18 +59,6 @@ export default new ContainerModule(bind => {
 
     bind(FrontendChatServiceImpl).toSelf().inSingletonScope();
     bind(ChatService).toService(FrontendChatServiceImpl);
-
-    bind(OrchestratorChatAgent).toSelf().inSingletonScope();
-    bind(Agent).toService(OrchestratorChatAgent);
-    bind(ChatAgent).toService(OrchestratorChatAgent);
-
-    bind(UniversalChatAgent).toSelf().inSingletonScope();
-    bind(Agent).toService(UniversalChatAgent);
-    bind(ChatAgent).toService(UniversalChatAgent);
-
-    bind(CommandChatAgent).toSelf().inSingletonScope();
-    bind(Agent).toService(CommandChatAgent);
-    bind(ChatAgent).toService(CommandChatAgent);
 
     bind(PreferenceContribution).toConstantValue({ schema: aiChatPreferences });
 

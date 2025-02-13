@@ -24,6 +24,7 @@ import ignore from 'ignore';
 import { Minimatch } from 'minimatch';
 import { PreferenceService } from '@theia/core/lib/browser';
 import { CONSIDER_GITIGNORE_PREF, USER_EXCLUDE_PATTERN_PREF } from './workspace-preferences';
+import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 
 @injectable()
 export class WorkspaceFunctionScope {
@@ -181,15 +182,15 @@ export class FileContentFunction implements ToolProvider {
         return {
             id: FileContentFunction.ID,
             name: FileContentFunction.ID,
-            description: `The relative path to the target file within the workspace. This path is resolved from the workspace root, and only files within the workspace boundaries
-             are accessible. Attempting to access paths outside the workspace will result in an error.`,
+            description: `Return the content of a specified file within the workspace. The file path must be provided relative to the workspace root. Only files within
+                workspace boundaries are accessible; attempting to access files outside the workspace will return an error.`,
             parameters: {
                 type: 'object',
                 properties: {
                     file: {
                         type: 'string',
-                        description: `Return the content of a specified file within the workspace. The file path must be provided relative to the workspace root. Only files within
-                         workspace boundaries are accessible; attempting to access files outside the workspace will return an error.`,
+                        description: `The relative path to the target file within the workspace. This path is resolved from the workspace root, and only files within the workspace 
+                            boundaries are accessible. Attempting to access paths outside the workspace will result in an error.`,
                     }
                 },
                 required: ['file']
@@ -206,6 +207,9 @@ export class FileContentFunction implements ToolProvider {
 
     @inject(WorkspaceFunctionScope)
     protected readonly workspaceScope: WorkspaceFunctionScope;
+
+    @inject(MonacoWorkspace)
+    protected readonly monacoWorkspace: MonacoWorkspace;
 
     private parseArg(arg_string: string): string {
         const result = JSON.parse(arg_string);
@@ -224,10 +228,9 @@ export class FileContentFunction implements ToolProvider {
         this.workspaceScope.ensureWithinWorkspace(targetUri, workspaceRoot);
 
         try {
-            const fileStat = await this.fileService.resolve(targetUri);
-
-            if (!fileStat || fileStat.isDirectory) {
-                return JSON.stringify({ error: 'File not found' });
+            const openEditorValue = this.monacoWorkspace.getTextDocument(targetUri.toString())?.getText();
+            if (openEditorValue !== undefined) {
+                return openEditorValue;
             }
 
             const fileContent = await this.fileService.read(targetUri);

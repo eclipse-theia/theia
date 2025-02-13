@@ -19,7 +19,7 @@ import {
    PromptTemplate
 } from '@theia/ai-core/lib/common';
 import { injectable } from '@theia/core/shared/inversify';
-import { AbstractStreamParsingChatAgent, ChatAgent, SystemMessageDescription } from './chat-agents';
+import { AbstractStreamParsingChatAgent, ChatAgent, SystemMessageDescription } from '@theia/ai-chat/lib/common/chat-agents';
 
 export const universalTemplate: PromptTemplate = {
    id: 'universal-system',
@@ -84,6 +84,7 @@ export const universalTemplateVariant: PromptTemplate = {
    variantOf: universalTemplate.id,
 };
 
+export const UniversalChatAgentId = 'Universal';
 @injectable()
 export class UniversalChatAgent extends AbstractStreamParsingChatAgent implements ChatAgent {
    name: string;
@@ -94,11 +95,11 @@ export class UniversalChatAgent extends AbstractStreamParsingChatAgent implement
    readonly agentSpecificVariables: AgentSpecificVariables[];
 
    constructor() {
-      super('Universal', [{
+      super(UniversalChatAgentId, [{
          purpose: 'chat',
          identifier: 'openai/gpt-4o',
       }], 'chat');
-      this.name = 'Universal';
+      this.name = UniversalChatAgentId;
       this.description = 'This agent is designed to help software developers by providing concise and accurate '
          + 'answers to general programming and software development questions. It is also the fall-back for any generic '
          + 'questions the user might ask. The universal agent currently does not have any context by default, i.e. it cannot '
