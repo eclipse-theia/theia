@@ -28,6 +28,7 @@ import { DebugConfigurationSelect } from './debug-configuration-select';
 import { DebugViewModel } from './debug-view-model';
 import { nls } from '@theia/core/lib/common/nls';
 import { DebugSessionOptions } from '../debug-session-options';
+import { DebugSessionLabelProvider } from '../debug-session-label-provider';
 
 @injectable()
 export class DebugConfigurationWidget extends ReactWidget {
@@ -55,6 +56,9 @@ export class DebugConfigurationWidget extends ReactWidget {
 
     @inject(MessageService)
     protected readonly messageService: MessageService;
+
+    @inject(DebugSessionLabelProvider)
+    protected readonly sessionLabelProvider: DebugSessionLabelProvider;
 
     protected readonly onRender = new DisposableCollection();
 
@@ -95,6 +99,7 @@ export class DebugConfigurationWidget extends ReactWidget {
                 manager={this.manager}
                 quickInputService={this.quickInputService}
                 isMultiRoot={this.workspaceService.isMultiRootWorkspaceOpened}
+                labelProvider={this.sessionLabelProvider}
             />
             <DebugAction run={this.openConfiguration} label={nls.localizeByDefault('Open {0}', '"launch.json"')}
                 iconClass='settings-gear' />
