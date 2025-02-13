@@ -139,20 +139,22 @@ export class OpenAiModel implements LanguageModel {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             resolve?.(runner.finalChatCompletion as any);
         });
+        runner.on('chunk', chunk => {
+            if (cancellationToken?.isCancellationRequested) {
+                resolve = undefined;
+                reject = undefined;
+                return;
+            }
+            if (resolve && chunk.choices[0]?.delta) {
+                resolve({ ...chunk.choices[0]?.delta });
+            }
+        });
+
         if (cancellationToken?.isCancellationRequested) {
             return { text: '' };
         }
         const asyncIterator = {
             async *[Symbol.asyncIterator](): AsyncIterator<LanguageModelStreamResponsePart> {
-                runner.on('chunk', chunk => {
-                    if (cancellationToken?.isCancellationRequested) {
-                        resolve = undefined;
-                        return;
-                    }
-                    if (resolve && chunk.choices[0]?.delta) {
-                        resolve({ ...chunk.choices[0]?.delta });
-                    }
-                });
                 try {
                     while (!runnerEnd) {
                         if (cancellationToken?.isCancellationRequested) {
