@@ -225,7 +225,7 @@ export class BaseWidget extends Widget implements PreviewableWidget {
     override setFlag(flag: Widget.Flag): void {
         super.setFlag(flag);
         if (flag === Widget.Flag.IsVisible) {
-            this.handleVisiblityChanged(this.isVisible)
+            this.handleVisiblityChanged(this.isVisible);
         }
     }
 
