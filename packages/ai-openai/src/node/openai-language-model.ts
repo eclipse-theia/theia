@@ -98,13 +98,21 @@ export class OpenAiModel implements LanguageModel {
                 ...settings
             });
         }
-        cancellationToken?.onCancellationRequested(() => {
-            runner.abort();
-        });
 
         let runnerEnd = false;
 
+        // Keep track of the resolve/reject of the current promise handled by the async iterator
         let resolve: ((part: LanguageModelStreamResponsePart) => void) | undefined;
+        let reject: ((reason?: unknown) => void) | undefined;
+
+        const cancellationListener = cancellationToken?.onCancellationRequested(() => {
+            runner.abort();
+            runnerEnd = true;
+            if (reject) {
+                reject(new Error('Canceled'));
+            }
+        });
+
         runner.on('error', error => {
             console.error('Error in OpenAI chat completion stream:', error);
             runnerEnd = true;
@@ -145,18 +153,19 @@ export class OpenAiModel implements LanguageModel {
                         resolve({ ...chunk.choices[0]?.delta });
                     }
                 });
-                while (!runnerEnd) {
-                    if (cancellationToken?.isCancellationRequested) {
-                        throw new Error('Iterator canceled');
-                    }
-                    const promise = new Promise<LanguageModelStreamResponsePart>((res, rej) => {
-                        resolve = res;
-                        cancellationToken?.onCancellationRequested(() => {
-                            rej(new Error('Canceled'));
-                            runnerEnd = true; // Stop the iterator
+                try {
+                    while (!runnerEnd) {
+                        if (cancellationToken?.isCancellationRequested) {
+                            throw new Error('Iterator canceled');
+                        }
+                        const promise = new Promise<LanguageModelStreamResponsePart>((res, rej) => {
+                            resolve = res;
+                            reject = rej;
                         });
-                    });
-                    yield promise;
+                        yield promise;
+                    }
+                } finally {
+                    cancellationListener?.dispose();
                 }
             }
         };
