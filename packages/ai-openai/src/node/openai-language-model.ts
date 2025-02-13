@@ -42,7 +42,7 @@ export class OpenAiModel implements LanguageModel {
      * @param enableStreaming whether the streaming API shall be used
      * @param apiKey a function that returns the API key to use for this model, called on each request
      * @param apiVersion a function that returns the OpenAPI version to use for this model, called on each request
-     * @param supportsDeveloperMessage whether the model supports the `developer` role
+     * @param developerMessageSettings how to handle system messages
      * @param url the OpenAI API compatible endpoint where the model is hosted. If not provided the default OpenAI endpoint will be used.
      * @param defaultRequestSettings optional default settings for requests made using this model.
      */
