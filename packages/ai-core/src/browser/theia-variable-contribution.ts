@@ -32,12 +32,17 @@ export class TheiaVariableContribution implements AIVariableContribution, AIVari
     @inject(FrontendApplicationStateService)
     protected readonly stateService: FrontendApplicationStateService;
 
+    protected variableRenameMap: Map<string, string> = new Map([
+        ['file', 'currentFilePath'],
+    ]);
+
     registerVariables(service: AIVariableService): void {
         this.stateService.reachedState('initialized_layout').then(() => {
             // some variable contributions in Theia are done as part of the onStart, same as our AI variable contributions
             // we therefore wait for all of them to be registered before we register we map them to our own
             this.variableRegistry.getVariables().forEach(variable => {
-                service.registerResolver({ id: `theia-${variable.name}`, name: variable.name, description: variable.description ?? 'Theia Built-in Variable' }, this);
+                const variableName = this.variableRenameMap.has(variable.name) ? this.variableRenameMap.get(variable.name)! : variable.name;
+                service.registerResolver({ id: `theia-${variableName}`, name: variableName, description: variable.description ?? 'Theia Built-in Variable' }, this);
             });
         });
     }

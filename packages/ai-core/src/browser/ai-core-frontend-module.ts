@@ -56,7 +56,7 @@ import { AISettingsServiceImpl } from './ai-settings-service';
 import { FrontendPromptCustomizationServiceImpl } from './frontend-prompt-customization-service';
 import { FrontendVariableService } from './frontend-variable-service';
 import { PromptTemplateContribution } from './prompttemplate-contribution';
-import { TomorrowVariableContribution } from '../common/tomorrow-variable-contribution';
+import { FileVariableContribution } from './file-variable-contribution';
 import { TheiaVariableContribution } from './theia-variable-contribution';
 import { TodayVariableContribution } from '../common/today-variable-contribution';
 import { AgentsVariableContribution } from '../common/agents-variable-contribution';
@@ -123,7 +123,7 @@ export default new ContainerModule(bind => {
     bind(AIVariableContribution).toService(TheiaVariableContribution);
 
     bind(AIVariableContribution).to(TodayVariableContribution).inSingletonScope();
-    bind(AIVariableContribution).to(TomorrowVariableContribution).inSingletonScope();
+    bind(AIVariableContribution).to(FileVariableContribution).inSingletonScope();
     bind(AIVariableContribution).to(AgentsVariableContribution).inSingletonScope();
 
     bind(FrontendApplicationContribution).to(AICoreFrontendApplicationContribution).inSingletonScope();

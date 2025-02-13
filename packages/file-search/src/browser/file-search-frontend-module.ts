@@ -21,6 +21,7 @@ import { QuickFileOpenFrontendContribution } from './quick-file-open-contributio
 import { QuickFileOpenService } from './quick-file-open';
 import { fileSearchServicePath, FileSearchService } from '../common/file-search-service';
 import { QuickAccessContribution } from '@theia/core/lib/browser/quick-input/quick-access';
+import { QuickFileSelectService } from './quick-file-select-service';
 
 export default new ContainerModule((bind: interfaces.Bind) => {
     bind(FileSearchService).toDynamicValue(ctx => {
@@ -33,5 +34,6 @@ export default new ContainerModule((bind: interfaces.Bind) => {
         bind(serviceIdentifier).toService(QuickFileOpenFrontendContribution)
     );
 
+    bind(QuickFileSelectService).toSelf().inSingletonScope();
     bind(QuickFileOpenService).toSelf().inSingletonScope();
 });

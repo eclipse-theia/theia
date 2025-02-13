@@ -27,8 +27,12 @@ export const TODAY_VARIABLE: AIVariable = {
     description: 'Does something for today',
     name: 'today',
     args: [
-        { name: TodayVariableArgs.IN_ISO_8601, description: 'Returns the current date in ISO 8601 format' },
-        { name: TodayVariableArgs.IN_UNIX_SECONDS, description: 'Returns the current date in unix seconds format' }
+        {
+            name: 'Format',
+            description: 'The format of the date',
+            enum: [TodayVariableArgs.IN_ISO_8601, TodayVariableArgs.IN_UNIX_SECONDS],
+            isOptional: true
+        }
     ]
 };
 

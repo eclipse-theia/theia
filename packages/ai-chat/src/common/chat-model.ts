@@ -23,8 +23,8 @@ import { CancellationToken, CancellationTokenSource, Command, Disposable, Emitte
 import { MarkdownString, MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { Position } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ChatAgentLocation } from './chat-agents';
-import { ParsedChatRequest, ParsedChatRequestVariablePart } from './parsed-chat-request';
-import { ResolvedAIVariable } from '@theia/ai-core';
+import { ParsedChatRequest } from './parsed-chat-request';
+import { ResolvedAIContextVariable } from '@theia/ai-core';
 
 /**********************
  * INTERFACES AND TYPE GUARDS
@@ -125,6 +125,7 @@ export interface ChatRequestModel {
     readonly request: ChatRequest;
     readonly response: ChatResponseModel;
     readonly message: ParsedChatRequest;
+    readonly context: ResolvedAIContextVariable[];
     readonly agentId?: string;
     readonly data?: { [key: string]: unknown };
 }
@@ -522,7 +523,7 @@ export class ChatModelImpl implements ChatModel {
         }
     }
 
-    addRequest(parsedChatRequest: ParsedChatRequest, agentId?: string, context: ResolvedAIVariable[] = []): ChatRequestModelImpl {
+    addRequest(parsedChatRequest: ParsedChatRequest, agentId?: string, context: ResolvedAIContextVariable[] = []): ChatRequestModelImpl {
         const requestModel = new ChatRequestModelImpl(this, parsedChatRequest, agentId, context);
         this._requests.push(requestModel);
         this._onDidChangeEmitter.fire({
@@ -591,18 +592,18 @@ export class ChatRequestModelImpl implements ChatRequestModel {
     protected _session: ChatModelImpl;
     protected _request: ChatRequest;
     protected _response: ChatResponseModelImpl;
-    protected _context: ResolvedAIVariable[];
+    protected _context: ResolvedAIContextVariable[];
     protected _agentId?: string;
     protected _data: { [key: string]: unknown };
 
     constructor(session: ChatModelImpl, public readonly message: ParsedChatRequest, agentId?: string,
-        context: ResolvedAIVariable[] = [], data: { [key: string]: unknown } = {}) {
+        context: ResolvedAIContextVariable[] = [], data: { [key: string]: unknown } = {}) {
         // TODO accept serialized data as a parameter to restore a previously saved ChatRequestModel
         this._request = message.request;
         this._id = generateUuid();
         this._session = session;
         this._response = new ChatResponseModelImpl(this._id, agentId);
-        this._context = context.concat(message.parts.filter(part => part.kind === 'var').map(part => (part as ParsedChatRequestVariablePart).resolution));
+        this._context = context;
         this._agentId = agentId;
         this._data = data;
     }
@@ -633,6 +634,10 @@ export class ChatRequestModelImpl implements ChatRequestModel {
 
     get response(): ChatResponseModelImpl {
         return this._response;
+    }
+
+    get context(): ResolvedAIContextVariable[] {
+        return this._context;
     }
 
     get agentId(): string | undefined {

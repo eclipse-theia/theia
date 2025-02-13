@@ -29,6 +29,7 @@ import {
 import { OrchestratorChatAgent, OrchestratorChatAgentId } from '../common/orchestrator-chat-agent';
 import { UniversalChatAgent, UniversalChatAgentId } from '../common/universal-chat-agent';
 import { CommandChatAgent } from '../common/command-chat-agents';
+import { ListChatContext, ResolveChatContext } from './context-functions';
 
 export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: WorkspacePreferencesSchema });
@@ -63,4 +64,7 @@ export default new ContainerModule(bind => {
 
     bind(ToolProvider).to(WriteChangeToFileProvider);
     bind(ToolProvider).to(ReplaceContentInFileProvider);
+
+    bind(ToolProvider).to(ListChatContext);
+    bind(ToolProvider).to(ResolveChatContext);
 });
