@@ -14,11 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CancellationToken, ContributionProvider, Prioritizeable, RecursivePartial, URI } from '@theia/core';
-import { inject, injectable, named } from '@theia/core/shared/inversify';
+import { CancellationToken, RecursivePartial, URI } from '@theia/core';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { EditorOpenerOptions, EditorWidget, Range } from '@theia/editor/lib/browser';
 
-import { EditorPreviewManager } from '@theia/editor-preview/lib/browser/editor-preview-manager';
+import { EditorSelectionResolver } from '@theia/editor-preview/lib/browser/editor-preview-manager';
 import { DocumentSymbol } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
 import { TextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model/textModel';
 import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures';
@@ -29,17 +29,8 @@ import { MonacoToProtocolConverter } from '@theia/monaco/lib/browser/monaco-to-p
 /** Regex to match GitHub-style position and range declaration with line (L) and column (C) */
 export const LOCATION_REGEX = /#L(\d+)?(?:C(\d+))?(?:-L(\d+)?(?:C(\d+))?)?$/;
 
-export const AIEditorSelectionResolver = Symbol('AIEditorSelectionResolver');
-export interface AIEditorSelectionResolver {
-    /**
-     * The priority of the resolver. A higher value resolver will be called before others.
-     */
-    priority?: number;
-    resolveSelection(widget: EditorWidget, options: EditorOpenerOptions, uri?: URI): Promise<RecursivePartial<Range> | undefined>
-}
-
 @injectable()
-export class GitHubSelectionResolver implements AIEditorSelectionResolver {
+export class GitHubSelectionResolver implements EditorSelectionResolver {
     priority = 100;
 
     async resolveSelection(widget: EditorWidget, options: EditorOpenerOptions, uri?: URI): Promise<RecursivePartial<Range> | undefined> {
@@ -67,7 +58,7 @@ export class GitHubSelectionResolver implements AIEditorSelectionResolver {
 }
 
 @injectable()
-export class TypeDocSymbolSelectionResolver implements AIEditorSelectionResolver {
+export class TypeDocSymbolSelectionResolver implements EditorSelectionResolver {
     priority = 50;
 
     @inject(MonacoToProtocolConverter) protected readonly m2p: MonacoToProtocolConverter;
@@ -123,7 +114,7 @@ export class TypeDocSymbolSelectionResolver implements AIEditorSelectionResolver
 }
 
 @injectable()
-export class TextFragmentSelectionResolver implements AIEditorSelectionResolver {
+export class TextFragmentSelectionResolver implements EditorSelectionResolver {
     async resolveSelection(widget: EditorWidget, options: EditorOpenerOptions, uri?: URI): Promise<RecursivePartial<Range> | undefined> {
         if (!uri) {
             return;
@@ -149,35 +140,5 @@ export class TextFragmentSelectionResolver implements AIEditorSelectionResolver 
 
     protected findFragment(uri: URI): string | undefined {
         return uri.fragment;
-    }
-}
-
-@injectable()
-export class AIEditorManager extends EditorPreviewManager {
-    @inject(ContributionProvider) @named(AIEditorSelectionResolver)
-    protected readonly resolvers: ContributionProvider<AIEditorSelectionResolver>;
-
-    protected override async revealSelection(widget: EditorWidget, options: EditorOpenerOptions = {}, uri?: URI): Promise<void> {
-        if (!options.selection) {
-            options.selection = await this.resolveSelection(options, widget, uri);
-        }
-        super.revealSelection(widget, options, uri);
-    }
-
-    protected async resolveSelection(options: EditorOpenerOptions, widget: EditorWidget, uri: URI | undefined): Promise<RecursivePartial<Range> | undefined> {
-        if (!options.selection) {
-            const orderedResolvers = Prioritizeable.prioritizeAllSync(this.resolvers.getContributions(), resolver => resolver.priority ?? 1);
-            for (const linkResolver of orderedResolvers) {
-                try {
-                    const selection = await linkResolver.value.resolveSelection(widget, options, uri);
-                    if (selection) {
-                        return selection;
-                    }
-                } catch (error) {
-                    console.error(error);
-                }
-            }
-        }
-        return undefined;
     }
 }
