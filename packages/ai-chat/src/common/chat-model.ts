@@ -988,7 +988,7 @@ class ChatResponseImpl implements ChatResponse {
                 );
                 return undefined;
             })
-            .filter(text => (text !== undefined || text === ''))
+            .filter(text => (text !== undefined && text !== ''))
             .join('\n\n');
     }
 
