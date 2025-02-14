@@ -39,11 +39,6 @@ export const AI_CHAT_NEW_CHAT_WINDOW_COMMAND: Command = {
     iconClass: codicon('add')
 };
 
-export const AI_CHAT_NEW_CHAT_WINDOW_WITH_PINNED_AGENT_COMMAND: Command = {
-    id: 'ai-chat-ui.new-chat-with-pinned-agent',
-    iconClass: codicon('add')
-};
-
 export const AI_CHAT_SHOW_CHATS_COMMAND: Command = {
     id: 'ai-chat-ui.show-chats',
     iconClass: codicon('history')
