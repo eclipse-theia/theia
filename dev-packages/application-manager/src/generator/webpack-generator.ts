@@ -61,8 +61,9 @@ const webpack = require('webpack');
 const yargs = require('yargs');
 const resolvePackagePath = require('resolve-package-path');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
-const CompressionPlugin = require('compression-webpack-plugin')
-const MiniCssExtractPlugin = require('mini-css-extract-plugin')
+const CompressionPlugin = require('compression-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const { MonacoWebpackPlugin } = require('@theia/native-webpack-plugin/lib/monaco-webpack-plugins.js');
 
 const outputPath = path.resolve(__dirname, 'lib', 'frontend');
 const { mode, staticCompression }  = yargs.option('mode', {
@@ -99,7 +100,8 @@ const plugins = [
     new webpack.ProvidePlugin({
         // the Buffer class doesn't exist in the browser but some dependencies rely on it
         Buffer: ['buffer', 'Buffer']
-    })
+    }), 
+    new MonacoWebpackPlugin()
 ];
 // it should go after copy-plugin in order to compress monaco as well
 if (staticCompression) {
@@ -172,6 +174,10 @@ module.exports = [{
                 loader: 'ignore-loader'
             },
             {
+                test: /\\.d\\.ts$/,
+                loader: 'ignore-loader'
+            },
+            {
                 test: /\\.js$/,
                 enforce: 'pre',
                 loader: 'source-map-loader',
@@ -240,6 +246,7 @@ module.exports = [{
             filename: "[name].css",
             chunkFilename: "[id].css",
         }),
+        new MonacoWebpackPlugin(),
     ],
     devtool: 'source-map',
     entry: {
@@ -345,6 +352,7 @@ const yargs = require('yargs');
 const webpack = require('webpack');
 const TerserPlugin = require('terser-webpack-plugin');
 const NativeWebpackPlugin = require('@theia/native-webpack-plugin');
+const { MonacoWebpackPlugin } = require('@theia/native-webpack-plugin/lib/monaco-webpack-plugins.js');
 
 const { mode } = yargs.option('mode', {
     description: "Mode to use",
@@ -387,6 +395,15 @@ const nativePlugin = new NativeWebpackPlugin({
         drivelist: 'drivelist/build/Release/drivelist.node'
     }
 });
+
+${this.ifPackage('@theia/process', () => `// Ensure that node-pty is correctly hoisted
+try {
+    require.resolve('node-pty');
+} catch {
+    console.error('"node-pty" dependency is not installed correctly. Ensure that it is available in the root node_modules directory.');
+    console.error('Exiting webpack build process.');
+    process.exit(1);
+}`)}
 
 /** @type {import('webpack').Configuration} */
 const config = {
@@ -433,6 +450,10 @@ const config = {
                 }
             },
             {
+                test: /\\.d\\.ts$/,
+                loader: 'ignore-loader'
+            },
+            {
                 test: /\\.js$/,
                 enforce: 'pre',
                 loader: 'source-map-loader'
@@ -451,7 +472,8 @@ const config = {
         // Optional node dependencies can be safely ignored
         new webpack.IgnorePlugin({
             checkResource: resource => ignoredResources.has(resource)
-        })
+        }),
+        new MonacoWebpackPlugin()
     ],
     optimization: {
         // Split and reuse code across the various entry points
@@ -472,6 +494,8 @@ const config = {
     ignoreWarnings: [
         // Some packages do not have source maps, that's ok
         /Failed to parse source map/,
+        // require with expressions are not supported
+        /the request of a dependency is an expression/,
         // Some packages use dynamic requires, we can safely ignore them (they are handled by the native webpack plugin)
         /require function is used in a way in which dependencies cannot be statically extracted/, {
             module: /yargs/

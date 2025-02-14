@@ -20,6 +20,7 @@
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatAgents.ts
 
 import {
+    AgentSpecificVariables,
     CommunicationRecordingService,
     getTextOfResponse,
     LanguageModel,
@@ -27,6 +28,7 @@ import {
     LanguageModelResponse,
     LanguageModelStreamResponse,
     PromptService,
+    PromptTemplate,
     ResolvedPromptTemplate,
     ToolRequest,
 } from '@theia/ai-core';
@@ -39,11 +41,11 @@ import {
     MessageActor,
 } from '@theia/ai-core/lib/common';
 import { CancellationToken, ContributionProvider, ILogger, isArray } from '@theia/core';
-import { inject, injectable, named, postConstruct, unmanaged } from '@theia/core/shared/inversify';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { ChatAgentService } from './chat-agent-service';
 import {
     ChatModel,
-    ChatRequestModelImpl,
+    MutableChatRequestModel,
     ChatResponseContent,
     ErrorChatResponseContentImpl,
     MarkdownChatResponseContentImpl,
@@ -115,11 +117,11 @@ export const ChatAgent = Symbol('ChatAgent');
 export interface ChatAgent extends Agent {
     locations: ChatAgentLocation[];
     iconClass?: string;
-    invoke(request: ChatRequestModelImpl, chatAgentService?: ChatAgentService): Promise<void>;
+    invoke(request: MutableChatRequestModel, chatAgentService?: ChatAgentService): Promise<void>;
 }
 
 @injectable()
-export abstract class AbstractChatAgent {
+export abstract class AbstractChatAgent implements ChatAgent {
     @inject(LanguageModelRegistry) protected languageModelRegistry: LanguageModelRegistry;
     @inject(ILogger) protected logger: ILogger;
     @inject(CommunicationRecordingService) protected recordingService: CommunicationRecordingService;
@@ -128,21 +130,26 @@ export abstract class AbstractChatAgent {
 
     @inject(ContributionProvider) @named(ResponseContentMatcherProvider)
     protected contentMatcherProviders: ContributionProvider<ResponseContentMatcherProvider>;
-    protected additionalToolRequests: ToolRequest[] = [];
-    protected contentMatchers: ResponseContentMatcher[] = [];
 
     @inject(DefaultResponseContentFactory)
     protected defaultContentFactory: DefaultResponseContentFactory;
 
-    constructor(
-        @unmanaged() public id: string,
-        @unmanaged() public languageModelRequirements: LanguageModelRequirement[],
-        @unmanaged() protected defaultLanguageModelPurpose: string,
-        @unmanaged() public iconClass: string = 'codicon codicon-copilot',
-        @unmanaged() public locations: ChatAgentLocation[] = ChatAgentLocation.ALL,
-        @unmanaged() public tags: string[] = ['Chat'],
-        @unmanaged() public defaultLogging: boolean = true) {
-    }
+    readonly abstract id: string;
+    readonly abstract name: string;
+    readonly abstract languageModelRequirements: LanguageModelRequirement[];
+    iconClass: string = 'codicon codicon-copilot';
+    locations: ChatAgentLocation[] = ChatAgentLocation.ALL;
+    tags: string[] = ['Chat'];
+    description: string = '';
+    variables: string[] = [];
+    promptTemplates: PromptTemplate[] = [];
+    agentSpecificVariables: AgentSpecificVariables[] = [];
+    functions: string[] = [];
+    protected readonly abstract defaultLanguageModelPurpose: string;
+    protected defaultLogging: boolean = true;
+    protected systemPromptId: string | undefined = undefined;
+    protected additionalToolRequests: ToolRequest[] = [];
+    protected contentMatchers: ResponseContentMatcher[] = [];
 
     @postConstruct()
     init(): void {
@@ -154,7 +161,7 @@ export abstract class AbstractChatAgent {
         this.contentMatchers.push(...contributedContentMatchers);
     }
 
-    async invoke(request: ChatRequestModelImpl): Promise<void> {
+    async invoke(request: MutableChatRequestModel): Promise<void> {
         try {
             const languageModel = await this.getLanguageModel(this.defaultLanguageModelPurpose);
             if (!languageModel) {
@@ -206,7 +213,7 @@ export abstract class AbstractChatAgent {
         }
     }
 
-    protected parseContents(text: string, request: ChatRequestModelImpl): ChatResponseContent[] {
+    protected parseContents(text: string, request: MutableChatRequestModel): ChatResponseContent[] {
         return parseContents(
             text,
             request,
@@ -215,7 +222,7 @@ export abstract class AbstractChatAgent {
         );
     };
 
-    protected handleError(request: ChatRequestModelImpl, error: Error): void {
+    protected handleError(request: MutableChatRequestModel, error: Error): void {
         request.response.response.addContent(new ErrorChatResponseContentImpl(error));
         request.response.error(error);
     }
@@ -236,7 +243,13 @@ export abstract class AbstractChatAgent {
         return languageModel;
     }
 
-    protected abstract getSystemMessageDescription(): Promise<SystemMessageDescription | undefined>;
+    protected async getSystemMessageDescription(): Promise<SystemMessageDescription | undefined> {
+        if (this.systemPromptId === undefined) {
+            return undefined;
+        }
+        const resolvedPrompt = await this.promptService.getPrompt(this.systemPromptId);
+        return resolvedPrompt ? SystemMessageDescription.fromResolvedPromptTemplate(resolvedPrompt) : undefined;
+    }
 
     protected async getMessages(
         model: ChatModel, includeResponseInProgress = false
@@ -290,17 +303,17 @@ export abstract class AbstractChatAgent {
      * The default implementation sets the state of the response to `complete`.
      * Subclasses may override this method to perform additional actions or keep the response open for processing further requests.
      */
-    protected async onResponseComplete(request: ChatRequestModelImpl): Promise<void> {
+    protected async onResponseComplete(request: MutableChatRequestModel): Promise<void> {
         return request.response.complete();
     }
 
-    protected abstract addContentsToResponse(languageModelResponse: LanguageModelResponse, request: ChatRequestModelImpl): Promise<void>;
+    protected abstract addContentsToResponse(languageModelResponse: LanguageModelResponse, request: MutableChatRequestModel): Promise<void>;
 }
 
 @injectable()
 export abstract class AbstractTextToModelParsingChatAgent<T> extends AbstractChatAgent {
 
-    protected async addContentsToResponse(languageModelResponse: LanguageModelResponse, request: ChatRequestModelImpl): Promise<void> {
+    protected async addContentsToResponse(languageModelResponse: LanguageModelResponse, request: MutableChatRequestModel): Promise<void> {
         const responseAsText = await getTextOfResponse(languageModelResponse);
         const parsedCommand = await this.parseTextResponse(responseAsText);
         const content = this.createResponseContent(parsedCommand, request);
@@ -309,13 +322,13 @@ export abstract class AbstractTextToModelParsingChatAgent<T> extends AbstractCha
 
     protected abstract parseTextResponse(text: string): Promise<T>;
 
-    protected abstract createResponseContent(parsedModel: T, request: ChatRequestModelImpl): ChatResponseContent;
+    protected abstract createResponseContent(parsedModel: T, request: MutableChatRequestModel): ChatResponseContent;
 }
 
 @injectable()
 export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
 
-    protected override async addContentsToResponse(languageModelResponse: LanguageModelResponse, request: ChatRequestModelImpl): Promise<void> {
+    protected override async addContentsToResponse(languageModelResponse: LanguageModelResponse, request: MutableChatRequestModel): Promise<void> {
         if (isLanguageModelTextResponse(languageModelResponse)) {
             const contents = this.parseContents(languageModelResponse.text, request);
             request.response.response.addContents(contents);
@@ -335,7 +348,7 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
         );
     }
 
-    protected async addStreamResponse(languageModelResponse: LanguageModelStreamResponse, request: ChatRequestModelImpl): Promise<void> {
+    protected async addStreamResponse(languageModelResponse: LanguageModelStreamResponse, request: MutableChatRequestModel): Promise<void> {
         for await (const token of languageModelResponse.stream) {
             const newContents = this.parse(token, request);
             if (isArray(newContents)) {
@@ -362,7 +375,7 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
         }
     }
 
-    protected parse(token: LanguageModelStreamResponsePart, request: ChatRequestModelImpl): ChatResponseContent | ChatResponseContent[] {
+    protected parse(token: LanguageModelStreamResponsePart, request: MutableChatRequestModel): ChatResponseContent | ChatResponseContent[] {
         const content = token.content;
         // eslint-disable-next-line no-null/no-null
         if (content !== undefined && content !== null) {

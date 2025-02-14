@@ -67,6 +67,7 @@ import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { TaskTerminalWidgetManager } from './task-terminal-widget-manager';
 import { ShellTerminalServerProxy } from '@theia/terminal/lib/common/shell-terminal-protocol';
 import { Mutex } from 'async-mutex';
+import { TaskContextKeyService } from './task-context-key-service';
 
 export interface QuickPickProblemMatcherItem {
     problemMatchers: NamedProblemMatcher[] | undefined;
@@ -192,6 +193,9 @@ export class TaskService implements TaskConfigurationClient {
 
     @inject(TaskTerminalWidgetManager)
     protected readonly taskTerminalWidgetManager: TaskTerminalWidgetManager;
+
+    @inject(TaskContextKeyService)
+    protected readonly taskContextKeyService: TaskContextKeyService;
 
     @postConstruct()
     protected init(): void {

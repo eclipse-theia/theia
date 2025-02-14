@@ -369,7 +369,7 @@ export interface QuestionResponseContent extends ChatResponseContent {
     options: { text: string, value?: string }[];
     selectedOption?: { text: string, value?: string };
     handler: QuestionResponseHandler;
-    request: ChatRequestModelImpl;
+    request: MutableChatRequestModel;
 }
 
 export namespace QuestionResponseContent {
@@ -390,7 +390,7 @@ export namespace QuestionResponseContent {
             'handler' in obj &&
             typeof (obj as { handler: unknown }).handler === 'function' &&
             'request' in obj &&
-            obj.request instanceof ChatRequestModelImpl
+            obj.request instanceof MutableChatRequestModel
         );
     }
 }
@@ -459,11 +459,11 @@ export interface ChatResponseModel {
  * Implementations
  **********************/
 
-export class ChatModelImpl implements ChatModel {
+export class MutableChatModel implements ChatModel {
     protected readonly _onDidChangeEmitter = new Emitter<ChatChangeEvent>();
     onDidChange: Event<ChatChangeEvent> = this._onDidChangeEmitter.event;
 
-    protected _requests: ChatRequestModelImpl[];
+    protected _requests: MutableChatRequestModel[];
     protected _id: string;
     protected _changeSetListener?: Disposable;
     protected _changeSet?: ChangeSetImpl;
@@ -474,11 +474,11 @@ export class ChatModelImpl implements ChatModel {
         this._id = generateUuid();
     }
 
-    getRequests(): ChatRequestModelImpl[] {
+    getRequests(): MutableChatRequestModel[] {
         return this._requests;
     }
 
-    getRequest(id: string): ChatRequestModelImpl | undefined {
+    getRequest(id: string): MutableChatRequestModel | undefined {
         return this._requests.find(request => request.id === id);
     }
 
@@ -522,8 +522,8 @@ export class ChatModelImpl implements ChatModel {
         }
     }
 
-    addRequest(parsedChatRequest: ParsedChatRequest, agentId?: string, context: ResolvedAIVariable[] = []): ChatRequestModelImpl {
-        const requestModel = new ChatRequestModelImpl(this, parsedChatRequest, agentId, context);
+    addRequest(parsedChatRequest: ParsedChatRequest, agentId?: string, context: ResolvedAIVariable[] = []): MutableChatRequestModel {
+        const requestModel = new MutableChatRequestModel(this, parsedChatRequest, agentId, context);
         this._requests.push(requestModel);
         this._onDidChangeEmitter.fire({
             kind: 'addRequest',
@@ -570,6 +570,12 @@ export class ChangeSetImpl implements ChangeSet {
         return true;
     }
 
+    addOrReplaceElement(element: ChangeSetElement): void {
+        if (!this.replaceElement(element)) {
+            this.addElement(element);
+        }
+    }
+
     removeElement(index: number): void {
         this._elements.splice(index, 1);
         this.notifyChange();
@@ -580,22 +586,22 @@ export class ChangeSetImpl implements ChangeSet {
     }
 }
 
-export class ChatRequestModelImpl implements ChatRequestModel {
+export class MutableChatRequestModel implements ChatRequestModel {
     protected readonly _id: string;
-    protected _session: ChatModelImpl;
+    protected _session: MutableChatModel;
     protected _request: ChatRequest;
-    protected _response: ChatResponseModelImpl;
+    protected _response: MutableChatResponseModel;
     protected _context: ResolvedAIVariable[];
     protected _agentId?: string;
     protected _data: { [key: string]: unknown };
 
-    constructor(session: ChatModelImpl, public readonly message: ParsedChatRequest, agentId?: string,
+    constructor(session: MutableChatModel, public readonly message: ParsedChatRequest, agentId?: string,
         context: ResolvedAIVariable[] = [], data: { [key: string]: unknown } = {}) {
         // TODO accept serialized data as a parameter to restore a previously saved ChatRequestModel
         this._request = message.request;
         this._id = generateUuid();
         this._session = session;
-        this._response = new ChatResponseModelImpl(this._id, agentId);
+        this._response = new MutableChatResponseModel(this._id, agentId);
         this._context = context.concat(message.parts.filter(part => part.kind === 'var').map(part => (part as ParsedChatRequestVariablePart).resolution));
         this._agentId = agentId;
         this._data = data;
@@ -617,7 +623,7 @@ export class ChatRequestModelImpl implements ChatRequestModel {
         return this._id;
     }
 
-    get session(): ChatModelImpl {
+    get session(): MutableChatModel {
         return this._session;
     }
 
@@ -625,7 +631,7 @@ export class ChatRequestModelImpl implements ChatRequestModel {
         return this._request;
     }
 
-    get response(): ChatResponseModelImpl {
+    get response(): MutableChatResponseModel {
         return this._response;
     }
 
@@ -858,7 +864,7 @@ export class QuestionResponseContentImpl implements QuestionResponseContent {
     readonly kind = 'question';
     protected _selectedOption: { text: string; value?: string } | undefined;
     constructor(public question: string, public options: { text: string, value?: string }[],
-        public request: ChatRequestModelImpl, public handler: QuestionResponseHandler) {
+        public request: MutableChatRequestModel, public handler: QuestionResponseHandler) {
     }
     set selectedOption(option: { text: string; value?: string; } | undefined) {
         this._selectedOption = option;
@@ -957,7 +963,7 @@ class ChatResponseImpl implements ChatResponse {
     }
 }
 
-class ChatResponseModelImpl implements ChatResponseModel {
+class MutableChatResponseModel implements ChatResponseModel {
     protected readonly _onDidChangeEmitter = new Emitter<void>();
     onDidChange: Event<void> = this._onDidChangeEmitter.event;
 
@@ -1097,7 +1103,7 @@ class ChatResponseModelImpl implements ChatResponseModel {
     }
 }
 
-export class ErrorChatResponseModelImpl extends ChatResponseModelImpl {
+export class ErrorChatResponseModel extends MutableChatResponseModel {
     constructor(requestId: string, error: Error, agentId?: string) {
         super(requestId, agentId);
         this.error(error);

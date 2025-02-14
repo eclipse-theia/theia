@@ -74,10 +74,16 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
     private tryPrettyPrintJson(response: ToolCallChatResponseContent): string | undefined {
         let responseContent = response.result;
         try {
-            if (response.result) {
-                responseContent = JSON.stringify(JSON.parse(response.result), undefined, 2);
+            if (responseContent) {
+                if (typeof responseContent === 'string') {
+                    responseContent = JSON.parse(responseContent);
+                }
+                responseContent = JSON.stringify(responseContent, undefined, 2);
             }
         } catch (e) {
+            if (typeof responseContent !== 'string') {
+                responseContent = `The content could not be converted to string: '${e.message}'. This is the original content: '${responseContent}'.`;
+            }
             // fall through
         }
         return responseContent;

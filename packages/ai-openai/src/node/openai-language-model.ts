@@ -50,6 +50,7 @@ export class OpenAiModel implements LanguageModel {
         public apiKey: () => string | undefined,
         public apiVersion: () => string | undefined,
         public supportsDeveloperMessage: boolean,
+        public supportsStructuredOutput: boolean,
         public url: string | undefined,
         public defaultRequestSettings?: { [key: string]: unknown }
     ) { }
@@ -66,13 +67,14 @@ export class OpenAiModel implements LanguageModel {
         const settings = this.getSettings(request);
         const openai = this.initializeOpenAi();
 
+        if (request.response_format?.type === 'json_schema' && this.supportsStructuredOutput) {
+            return this.handleStructuredOutputRequest(openai, request);
+        }
+
         if (this.isNonStreamingModel(this.model) || (typeof settings.stream === 'boolean' && !settings.stream)) {
             return this.handleNonStreamingRequest(openai, request);
         }
 
-        if (request.response_format?.type === 'json_schema' && this.supportsStructuredOutput()) {
-            return this.handleStructuredOutputRequest(openai, request);
-        }
         if (cancellationToken?.isCancellationRequested) {
             return { text: '' };
         }
@@ -196,15 +198,6 @@ export class OpenAiModel implements LanguageModel {
 
     protected isNonStreamingModel(_model: string): boolean {
         return !this.enableStreaming;
-    }
-
-    protected supportsStructuredOutput(): boolean {
-        // see https://platform.openai.com/docs/models/gpt-4o
-        return [
-            'gpt-4o',
-            'gpt-4o-2024-08-06',
-            'gpt-4o-mini'
-        ].includes(this.model);
     }
 
     protected async handleStructuredOutputRequest(openai: OpenAI, request: LanguageModelRequest): Promise<LanguageModelParsedResponse> {

@@ -14,20 +14,20 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { nls, CommandRegistry, InMemoryResources, deepClone } from '@theia/core/lib/common';
-import { JsonSchemaContribution, JsonSchemaRegisterContext } from '@theia/core/lib/browser/json-schema-store';
+import { nls, CommandRegistry, deepClone } from '@theia/core/lib/common';
+import { JsonSchemaContribution, JsonSchemaDataStore, JsonSchemaRegisterContext } from '@theia/core/lib/browser/json-schema-store';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
+import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 
 @injectable()
 export class KeybindingSchemaUpdater implements JsonSchemaContribution {
     protected readonly uri = new URI(keybindingSchemaId);
     @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry;
-    @inject(InMemoryResources) protected readonly inMemoryResources: InMemoryResources;
+    @inject(JsonSchemaDataStore) protected readonly schemaStore: JsonSchemaDataStore;
 
     @postConstruct()
     protected init(): void {
-        this.inMemoryResources.add(new URI(keybindingSchemaId), '');
         this.updateSchema();
         this.commandRegistry.onCommandsChanged(() => this.updateSchema());
     }
@@ -49,7 +49,7 @@ export class KeybindingSchemaUpdater implements JsonSchemaContribution {
                 enumDescriptions.push(command.label ?? '');
             }
         }
-        this.inMemoryResources.update(this.uri, JSON.stringify(schema));
+        this.schemaStore.setSchema(this.uri, schema);
     }
 }
 
@@ -91,5 +91,4 @@ export const keybindingSchema = {
     },
     allowComments: true,
     allowTrailingCommas: true,
-};
-
+} as const satisfies IJSONSchema;

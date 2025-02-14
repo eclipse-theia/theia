@@ -103,9 +103,8 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
             }
 
             throw createFileSystemProviderError('Unknown file handle error', FileSystemProviderErrorCode.Unknown);
-
         } catch (error) {
-            throw createFileSystemProviderError(`Error while accessing resource ${resource.toString()}`, FileSystemProviderErrorCode.Unknown);
+            throw toFileSystemProviderError(error);
         }
     }
 
@@ -262,7 +261,7 @@ async function recursiveFileSystemHandle(handle: FileSystemHandle, pathParts: st
     }
     // If there are parts left, the handle must be a directory
     if (handle.kind !== 'directory') {
-        throw FileSystemProviderErrorCode.FileNotADirectory;
+        throw createFileSystemProviderError('Not a directory', FileSystemProviderErrorCode.FileNotADirectory);
     }
     const dirHandle = handle as FileSystemDirectoryHandle;
     // We need to create it and thus we need to stop early to create the file or directory
@@ -289,7 +288,7 @@ async function recursiveFileSystemHandle(handle: FileSystemHandle, pathParts: st
         return recursiveFileSystemHandle(newHandle, pathParts, options);
     }
 
-    throw FileSystemProviderErrorCode.FileNotFound;
+    throw createFileSystemProviderError('File not found', FileSystemProviderErrorCode.FileNotFound);
 }
 
 // Function to copy directory contents recursively

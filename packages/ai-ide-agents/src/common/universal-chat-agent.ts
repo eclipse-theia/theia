@@ -14,16 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { AgentSpecificVariables } from '@theia/ai-core';
-import {
-   PromptTemplate
-} from '@theia/ai-core/lib/common';
+import { LanguageModelRequirement, PromptTemplate } from '@theia/ai-core/lib/common';
 import { injectable } from '@theia/core/shared/inversify';
-import { AbstractStreamParsingChatAgent, ChatAgent, SystemMessageDescription } from './chat-agents';
+import { AbstractStreamParsingChatAgent } from '@theia/ai-chat/lib/common/chat-agents';
 
 export const universalTemplate: PromptTemplate = {
-   id: 'universal-system',
-   template: `{{!-- Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
+    id: 'universal-system',
+    template: `{{!-- Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
 # Instructions
 
@@ -79,39 +76,26 @@ simple solutions.
 };
 
 export const universalTemplateVariant: PromptTemplate = {
-   id: 'universal-system-empty',
-   template: '',
-   variantOf: universalTemplate.id,
+    id: 'universal-system-empty',
+    template: '',
+    variantOf: universalTemplate.id,
 };
 
+export const UniversalChatAgentId = 'Universal';
 @injectable()
-export class UniversalChatAgent extends AbstractStreamParsingChatAgent implements ChatAgent {
-   name: string;
-   description: string;
-   variables: string[];
-   promptTemplates: PromptTemplate[];
-   readonly functions: string[];
-   readonly agentSpecificVariables: AgentSpecificVariables[];
+export class UniversalChatAgent extends AbstractStreamParsingChatAgent {
+    id: string = UniversalChatAgentId;
+    name = UniversalChatAgentId;
+    languageModelRequirements: LanguageModelRequirement[] = [{
+        purpose: 'chat',
+        identifier: 'openai/gpt-4o',
+    }];
+    protected defaultLanguageModelPurpose: string = 'chat';
+    override description = 'This agent is designed to help software developers by providing concise and accurate '
+        + 'answers to general programming and software development questions. It is also the fall-back for any generic '
+        + 'questions the user might ask. The universal agent currently does not have any context by default, i.e. it cannot '
+        + 'access the current user context or the workspace.';
 
-   constructor() {
-      super('Universal', [{
-         purpose: 'chat',
-         identifier: 'openai/gpt-4o',
-      }], 'chat');
-      this.name = 'Universal';
-      this.description = 'This agent is designed to help software developers by providing concise and accurate '
-         + 'answers to general programming and software development questions. It is also the fall-back for any generic '
-         + 'questions the user might ask. The universal agent currently does not have any context by default, i.e. it cannot '
-         + 'access the current user context or the workspace.';
-      this.variables = [];
-      this.promptTemplates = [universalTemplate, universalTemplateVariant];
-      this.functions = [];
-      this.agentSpecificVariables = [];
-   }
-
-   protected override async getSystemMessageDescription(): Promise<SystemMessageDescription | undefined> {
-      const resolvedPrompt = await this.promptService.getPrompt(universalTemplate.id);
-      return resolvedPrompt ? SystemMessageDescription.fromResolvedPromptTemplate(resolvedPrompt) : undefined;
-   }
-
+    override promptTemplates = [universalTemplate, universalTemplateVariant];
+    protected override systemPromptId: string = universalTemplate.id;
 }

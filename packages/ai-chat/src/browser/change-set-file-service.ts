@@ -21,6 +21,7 @@ import { EditorManager } from '@theia/editor/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import { ChangeSetFileElement } from './change-set-file-element';
 
 @injectable()
 export class ChangeSetFileService {
@@ -82,28 +83,15 @@ export class ChangeSetFileService {
         return this.labelProvider.getLongName(uri.parent);
     }
 
-    async open(uri: URI, targetState: string): Promise<void> {
-        const exists = await this.fileService.exists(uri);
+    async open(element: ChangeSetFileElement): Promise<void> {
+        const exists = await this.fileService.exists(element.uri);
         if (exists) {
-            open(this.openerService, uri);
+            await open(this.openerService, element.uri);
             return;
         }
-        const editor = await this.editorManager.open(uri.withScheme(UNTITLED_SCHEME), {
+        await this.editorManager.open(element.changedUri, {
             mode: 'reveal'
         });
-        editor.editor.executeEdits([{
-            newText: targetState,
-            range: {
-                start: {
-                    character: 1,
-                    line: 1,
-                },
-                end: {
-                    character: 1,
-                    line: 1,
-                },
-            }
-        }]);
     }
 
     async openDiff(originalUri: URI, suggestedUri: URI): Promise<void> {
@@ -112,7 +100,7 @@ export class ChangeSetFileService {
         // Currently we don't have a great way to show the suggestions in a diff editor with accept/reject buttons
         // So we just use plain diffs with the suggestions as original and the current state as modified, so users can apply changes in their current state
         // But this leads to wrong colors and wrong label (revert change instead of accept change)
-        const diffUri = DiffUris.encode(suggestedUri, openedUri,
+        const diffUri = DiffUris.encode(openedUri, suggestedUri,
             `AI Changes: ${this.labelProvider.getName(originalUri)}`,
         );
         open(this.openerService, diffUri);
@@ -139,7 +127,7 @@ export class ChangeSetFileService {
             await this.monacoWorkspace.applyBackgroundEdit(document, [{
                 range: document.textEditorModel.getFullModelRange(),
                 text
-            }], true);
+            }], (editor, wasDirty) => editor === undefined || !wasDirty);
         } else {
             await this.fileService.write(uri, text);
         }

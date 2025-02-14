@@ -24,6 +24,9 @@ import {
     bindContributionProvider,
 } from '@theia/core';
 import {
+    ConnectionContainerModule
+} from '@theia/core/lib/node/messaging/connection-container-module';
+import {
     LanguageModelRegistry,
     LanguageModelProvider,
     PromptService,
@@ -37,7 +40,8 @@ import {
 } from '../common';
 import { BackendLanguageModelRegistry } from './backend-language-model-registry';
 
-export default new ContainerModule(bind => {
+// We use a connection module to handle AI services separately for each frontend.
+const aiCoreConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService, bindFrontendService }) => {
     bindContributionProvider(bind, LanguageModelProvider);
     bind(BackendLanguageModelRegistry).toSelf().inSingletonScope();
     bind(LanguageModelRegistry).toService(BackendLanguageModelRegistry);
@@ -80,4 +84,8 @@ export default new ContainerModule(bind => {
 
     bind(PromptServiceImpl).toSelf().inSingletonScope();
     bind(PromptService).toService(PromptServiceImpl);
+});
+
+export default new ContainerModule(bind => {
+    bind(ConnectionContainerModule).toConstantValue(aiCoreConnectionModule);
 });

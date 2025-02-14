@@ -18,8 +18,8 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { ArrayUtils, CommandService, DisposableCollection, Event, nls, QuickInputButton, QuickInputService, QuickPickInput, QuickPickItem, URI, } from '@theia/core';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { ArrayUtils, CommandService, DisposableCollection, Event, ILogger, nls, QuickInputButton, QuickInputService, QuickPickInput, QuickPickItem, URI, } from '@theia/core';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { NotebookKernelService, NotebookKernel, NotebookKernelMatchResult, SourceCommand } from './notebook-kernel-service';
 import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookEditorWidget } from '../notebook-editor-widget';
@@ -89,12 +89,12 @@ export class NotebookKernelQuickPickService {
     protected readonly quickInputService: QuickInputService;
     @inject(CommandService)
     protected readonly commandService: CommandService;
-
     @inject(OpenerService)
-    protected openerService: OpenerService;
-
+    protected readonly openerService: OpenerService;
     @inject(NotebookKernelHistoryService)
-    protected notebookKernelHistoryService: NotebookKernelHistoryService;
+    protected readonly notebookKernelHistoryService: NotebookKernelHistoryService;
+    @inject(ILogger) @named('notebook')
+    protected readonly logger: ILogger;
 
     async showQuickPick(editor: NotebookModel, wantedId?: string, skipAutoRun?: boolean): Promise<boolean> {
         const notebook = editor;
@@ -238,6 +238,10 @@ export class NotebookKernelQuickPickService {
     }
 
     protected selectKernel(notebook: NotebookModel, kernel: NotebookKernel): void {
+        this.logger.debug('Selected notebook kernel', {
+            notebook: notebook.uri.toString(),
+            kernel: kernel.id
+        });
         const currentInfo = this.notebookKernelService.getMatchingKernel(notebook);
         if (currentInfo.selected) {
             // there is already a selected kernel
@@ -270,6 +274,10 @@ export class NotebookKernelQuickPickService {
         }
 
         if (isSourcePick(pick)) {
+            this.logger.debug('Selected notebook kernel command', {
+                notebook: editor.uri.toString(),
+                command: pick.action.command.id
+            });
             // selected explicitly, it should trigger the execution?
             pick.action.run(this.commandService);
         }

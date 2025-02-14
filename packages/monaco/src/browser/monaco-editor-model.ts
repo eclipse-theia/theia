@@ -19,7 +19,7 @@ import { TextEditorDocument, EncodingMode, FindMatchesOptions, FindMatch, Editor
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { CancellationTokenSource, CancellationToken } from '@theia/core/lib/common/cancellation';
-import { Resource, ResourceError, ResourceVersion, UNTITLED_SCHEME } from '@theia/core/lib/common/resource';
+import { Resource, ResourceError, ResourceVersion } from '@theia/core/lib/common/resource';
 import { Saveable, SaveOptions } from '@theia/core/lib/browser/saveable';
 import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
@@ -202,7 +202,7 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
             const languageSelection = StandaloneServices.get(ILanguageService).createByFilepathOrFirstLine(uri, firstLine);
             this.model = StandaloneServices.get(IModelService).createModel(value, languageSelection, uri);
             this.resourceVersion = this.resource.version;
-            this.setDirty(this._dirty || (this.resource.uri.scheme === UNTITLED_SCHEME && this.model.getValueLength() > 0));
+            this.setDirty(this._dirty || (!!this.resource.initiallyDirty));
             this.updateSavedVersionId();
             this.toDispose.push(this.model);
             this.toDispose.push(this.model.onDidChangeContent(event => this.fireDidChangeContent(event)));
@@ -553,7 +553,7 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
         }
 
         const changes = [...this.contentChanges];
-        if (changes.length === 0 && !overwriteEncoding && reason !== TextDocumentSaveReason.Manual) {
+        if ((changes.length === 0 && !this.resource.initiallyDirty) && !overwriteEncoding && reason !== TextDocumentSaveReason.Manual) {
             return;
         }
 

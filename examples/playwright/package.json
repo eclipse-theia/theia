@@ -1,6 +1,6 @@
 {
   "name": "@theia/playwright",
-  "version": "1.57.0",
+  "version": "1.58.0",
   "description": "System tests for Theia",
   "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
   "repository": {

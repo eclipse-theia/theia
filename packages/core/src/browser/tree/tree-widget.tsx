@@ -32,7 +32,7 @@ import { notEmpty } from '../../common/objects';
 import { isOSX } from '../../common/os';
 import { ReactWidget } from '../widgets/react-widget';
 import * as React from 'react';
-import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
+import { Virtuoso, VirtuosoHandle, VirtuosoProps } from 'react-virtuoso';
 import { TopDownTreeIterator } from './tree-iterator';
 import { SearchBox, SearchBoxFactory, SearchBoxProps } from './search-box';
 import { TreeSearch } from './tree-search';
@@ -111,6 +111,10 @@ export interface TreeProps {
      */
     readonly expandOnlyOnExpansionToggleClick?: boolean;
 
+    /**
+     * Props that are forwarded to the virtuoso list rendered. Defaults to `{}`.
+     */
+    readonly viewProps?: VirtuosoProps<unknown, unknown>;
 }
 
 /**
@@ -498,6 +502,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                 rows={rows}
                 renderNodeRow={this.renderNodeRow}
                 scrollToRow={this.scrollToRow}
+                {...this.props.viewProps}
             />;
         }
         // eslint-disable-next-line no-null/no-null
@@ -1546,7 +1551,7 @@ export namespace TreeWidget {
     /**
      * Representation of the tree view properties.
      */
-    export interface ViewProps {
+    export interface ViewProps extends VirtuosoProps<unknown, unknown> {
         /**
          * The width property.
          */
@@ -1568,7 +1573,7 @@ export namespace TreeWidget {
     export class View extends React.Component<ViewProps> {
         list: VirtuosoHandle | undefined;
         override render(): React.ReactNode {
-            const { rows, width, height, scrollToRow } = this.props;
+            const { rows, width, height, scrollToRow, renderNodeRow, ...other } = this.props;
             return <Virtuoso
                 ref={list => {
                     this.list = (list || undefined);
@@ -1580,11 +1585,12 @@ export namespace TreeWidget {
                     }
                 }}
                 totalCount={rows.length}
-                itemContent={index => this.props.renderNodeRow(rows[index])}
+                itemContent={index => renderNodeRow(rows[index])}
                 width={width}
                 height={height}
                 // This is a pixel value, it will scan 200px to the top and bottom of the current view
                 overscan={500}
+                {...other}
             />;
         }
     }

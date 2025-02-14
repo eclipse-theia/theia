@@ -22,11 +22,11 @@
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import {
     ChatModel,
-    ChatModelImpl,
+    MutableChatModel,
     ChatRequest,
     ChatRequestModel,
     ChatResponseModel,
-    ErrorChatResponseModelImpl,
+    ErrorChatResponseModel,
 } from './chat-model';
 import { ChatAgentService } from './chat-agent-service';
 import { Emitter, ILogger, generateUuid } from '@theia/core';
@@ -68,8 +68,19 @@ export interface SessionOptions {
     focus?: boolean;
 }
 
+/**
+ * The default chat agent to invoke
+ */
 export const DefaultChatAgentId = Symbol('DefaultChatAgentId');
 export interface DefaultChatAgentId {
+    id: string;
+}
+
+/**
+ * In case no fitting chat agent is available, this one will be used (if it is itself available)
+ */
+export const FallbackChatAgentId = Symbol('FallbackChatAgentId');
+export interface FallbackChatAgentId {
     id: string;
 }
 
@@ -98,7 +109,7 @@ export interface ChatService {
 }
 
 interface ChatSessionInternal extends ChatSession {
-    model: ChatModelImpl;
+    model: MutableChatModel;
 }
 
 @injectable()
@@ -111,6 +122,9 @@ export class ChatServiceImpl implements ChatService {
 
     @inject(DefaultChatAgentId) @optional()
     protected defaultChatAgentId: DefaultChatAgentId | undefined;
+
+    @inject(FallbackChatAgentId) @optional()
+    protected fallbackChatAgentId: FallbackChatAgentId | undefined;
 
     @inject(PinChatAgent) @optional()
     protected pinChatAgent: boolean | undefined;
@@ -135,7 +149,7 @@ export class ChatServiceImpl implements ChatService {
     }
 
     createSession(location = ChatAgentLocation.Panel, options?: SessionOptions, pinnedAgent?: ChatAgent): ChatSession {
-        const model = new ChatModelImpl(location);
+        const model = new MutableChatModel(location);
         const session: ChatSessionInternal = {
             id: model.id,
             model,
@@ -178,7 +192,7 @@ export class ChatServiceImpl implements ChatService {
         if (agent === undefined) {
             const error = 'No ChatAgents available to handle request!';
             this.logger.error(error);
-            const chatResponseModel = new ErrorChatResponseModelImpl(generateUuid(), new Error(error));
+            const chatResponseModel = new ErrorChatResponseModel(generateUuid(), new Error(error));
             return {
                 requestCompleted: Promise.reject(error),
                 responseCreated: Promise.reject(error),
@@ -254,9 +268,17 @@ export class ChatServiceImpl implements ChatService {
         if (agentPart) {
             return this.chatAgentService.getAgent(agentPart.agentId);
         }
+        let chatAgent = undefined;
         if (this.defaultChatAgentId) {
-            return this.chatAgentService.getAgent(this.defaultChatAgentId.id);
+            chatAgent = this.chatAgentService.getAgent(this.defaultChatAgentId.id);
         }
+        if (!chatAgent && this.fallbackChatAgentId) {
+            chatAgent = this.chatAgentService.getAgent(this.fallbackChatAgentId.id);
+        }
+        if (chatAgent) {
+            return chatAgent;
+        }
+        this.logger.warn('Neither the default chat agent nor the fallback chat agent are configured or available. Falling back to the first registered agent');
         return this.chatAgentService.getAgents()[0] ?? undefined;
     }
 

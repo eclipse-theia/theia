@@ -822,7 +822,7 @@ export interface TreeViewsMain {
     $registerTreeDataProvider(treeViewId: string, options?: RegisterTreeDataProviderOptions): void;
     $readDroppedFile(contentId: string): Promise<BinaryBuffer>;
     $unregisterTreeDataProvider(treeViewId: string): void;
-    $refresh(treeViewId: string): Promise<void>;
+    $refresh(treeViewId: string, itemIds?: string[]): Promise<void>;
     $reveal(treeViewId: string, elementParentChain: string[], options: TreeViewRevealOptions): Promise<any>;
     $setMessage(treeViewId: string, message: string): void;
     $setTitle(treeViewId: string, title: string): void;
@@ -2296,8 +2296,9 @@ export interface TestingMain {
 }
 
 export const PLUGIN_RPC_CONTEXT = {
-    AUTHENTICATION_MAIN: <ProxyIdentifier<AuthenticationMain>>createProxyIdentifier<AuthenticationMain>('AuthenticationMain'),
-    COMMAND_REGISTRY_MAIN: <ProxyIdentifier<CommandRegistryMain>>createProxyIdentifier<CommandRegistryMain>('CommandRegistryMain'),
+    LOGGER_MAIN: createProxyIdentifier<LoggerMain>('LoggerMain'),
+    AUTHENTICATION_MAIN: createProxyIdentifier<AuthenticationMain>('AuthenticationMain'),
+    COMMAND_REGISTRY_MAIN: createProxyIdentifier<CommandRegistryMain>('CommandRegistryMain'),
     QUICK_OPEN_MAIN: createProxyIdentifier<QuickOpenMain>('QuickOpenMain'),
     DIALOGS_MAIN: createProxyIdentifier<DialogsMain>('DialogsMain'),
     WORKSPACE_MAIN: createProxyIdentifier<WorkspaceMain>('WorkspaceMain'),
@@ -2330,14 +2331,14 @@ export const PLUGIN_RPC_CONTEXT = {
     SECRETS_MAIN: createProxyIdentifier<SecretsMain>('SecretsMain'),
     DECORATIONS_MAIN: createProxyIdentifier<DecorationsMain>('DecorationsMain'),
     WINDOW_MAIN: createProxyIdentifier<WindowMain>('WindowMain'),
-    CLIPBOARD_MAIN: <ProxyIdentifier<ClipboardMain>>createProxyIdentifier<ClipboardMain>('ClipboardMain'),
-    LABEL_SERVICE_MAIN: <ProxyIdentifier<LabelServiceMain>>createProxyIdentifier<LabelServiceMain>('LabelServiceMain'),
-    TIMELINE_MAIN: <ProxyIdentifier<TimelineMain>>createProxyIdentifier<TimelineMain>('TimelineMain'),
-    THEMING_MAIN: <ProxyIdentifier<ThemingMain>>createProxyIdentifier<ThemingMain>('ThemingMain'),
-    COMMENTS_MAIN: <ProxyIdentifier<CommentsMain>>createProxyIdentifier<CommentsMain>('CommentsMain'),
-    TABS_MAIN: <ProxyIdentifier<TabsMain>>createProxyIdentifier<TabsMain>('TabsMain'),
-    TELEMETRY_MAIN: <ProxyIdentifier<TelemetryMain>>createProxyIdentifier<TelemetryMain>('TelemetryMain'),
-    LOCALIZATION_MAIN: <ProxyIdentifier<LocalizationMain>>createProxyIdentifier<LocalizationMain>('LocalizationMain'),
+    CLIPBOARD_MAIN: createProxyIdentifier<ClipboardMain>('ClipboardMain'),
+    LABEL_SERVICE_MAIN: createProxyIdentifier<LabelServiceMain>('LabelServiceMain'),
+    TIMELINE_MAIN: createProxyIdentifier<TimelineMain>('TimelineMain'),
+    THEMING_MAIN: createProxyIdentifier<ThemingMain>('ThemingMain'),
+    COMMENTS_MAIN: createProxyIdentifier<CommentsMain>('CommentsMain'),
+    TABS_MAIN: createProxyIdentifier<TabsMain>('TabsMain'),
+    TELEMETRY_MAIN: createProxyIdentifier<TelemetryMain>('TelemetryMain'),
+    LOCALIZATION_MAIN: createProxyIdentifier<LocalizationMain>('LocalizationMain'),
     TESTING_MAIN: createProxyIdentifier<TestingMain>('TestingMain'),
     URI_MAIN: createProxyIdentifier<UriMain>('UriMain')
 };
@@ -2758,4 +2759,16 @@ export interface StringDetails {
 
 export interface LocalizationMain {
     $fetchBundle(id: string): Promise<LanguagePackBundle | undefined>;
+}
+
+export enum LogLevel {
+    Trace = 1,
+    Debug = 2,
+    Info = 3,
+    Warn = 4,
+    Error = 5
+}
+
+export interface LoggerMain {
+    $log(level: LogLevel, name: string | undefined, message: string, params: any[]): void;
 }

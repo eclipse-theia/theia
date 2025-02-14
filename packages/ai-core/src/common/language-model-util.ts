@@ -64,21 +64,4 @@ export const getJsonOfText = (text: string): unknown => {
     throw new Error('Invalid response format');
 };
 
-export const toolRequestToPromptText = (toolRequest: ToolRequest): string => {
-    const parameters = toolRequest.parameters;
-    let paramsText = '';
-    // parameters are supposed to be as a JSON schema. Thus, derive the parameters from its properties definition
-    if (parameters) {
-        const properties = parameters.properties;
-        paramsText = Object.keys(properties)
-            .map(key => {
-                const param = properties[key];
-                return `${key}: ${param.type}`;
-            })
-            .join(', ');
-    }
-    const descriptionText = toolRequest.description
-        ? `: ${toolRequest.description}`
-        : '';
-    return `You can call function: ${toolRequest.id}(${paramsText})${descriptionText}`;
-};
+export const toolRequestToPromptText = (toolRequest: ToolRequest): string => `${toolRequest.id}`;

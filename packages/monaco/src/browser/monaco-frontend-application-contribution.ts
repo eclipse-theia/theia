@@ -33,9 +33,17 @@ import { MonacoEditor } from './monaco-editor';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { StandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneThemeService';
 import { IStandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
+import { SecondaryWindowService } from '@theia/core/lib/browser/window/secondary-window-service';
+import { registerWindow } from '@theia/monaco-editor-core/esm/vs/base/browser/dom';
+
+type CodeWindow = Window & typeof globalThis & {
+    vscodeWindowId: number;
+};
 
 @injectable()
 export class MonacoFrontendApplicationContribution implements FrontendApplicationContribution, StylingParticipant {
+    protected readonly windowsById = new Map<number, monaco.IDisposable>();
+    protected nextWindowId = 2; // the main window has the id "1"
 
     @inject(MonacoTextModelService)
     protected readonly textModelService: MonacoTextModelService;
@@ -55,6 +63,9 @@ export class MonacoFrontendApplicationContribution implements FrontendApplicatio
 
     @inject(SecondaryWindowHandler)
     protected readonly secondaryWindowHandler: SecondaryWindowHandler;
+
+    @inject(SecondaryWindowService)
+    protected readonly secondaryWindowService: SecondaryWindowService;
 
     @postConstruct()
     protected init(): void {
@@ -97,6 +108,17 @@ export class MonacoFrontendApplicationContribution implements FrontendApplicatio
                 const themeService = StandaloneServices.get(IStandaloneThemeService) as StandaloneThemeService;
                 themeService.registerEditorContainer(widget.node);
             }
+        });
+        this.secondaryWindowService.onWindowOpened(window => {
+            const codeWindow: CodeWindow = window as CodeWindow;
+            codeWindow.vscodeWindowId = this.nextWindowId++;
+
+            this.windowsById.set(codeWindow.vscodeWindowId, registerWindow(codeWindow));
+        });
+
+        this.secondaryWindowService.onWindowClosed(window => {
+            const codeWindow: CodeWindow = window as CodeWindow;
+            this.windowsById.get(codeWindow.vscodeWindowId)?.dispose();
         });
     }
 
@@ -172,8 +194,7 @@ export class MonacoFrontendApplicationContribution implements FrontendApplicatio
                 new editorBoolConstructor(id++, 'detectIndentation', true, editorGeneratedPreferenceProperties['editor.detectIndentation']),
                 new editorBoolConstructor(id++, 'trimAutoWhitespace', true, editorGeneratedPreferenceProperties['editor.trimAutoWhitespace']),
                 new editorBoolConstructor(id++, 'largeFileOptimizations', true, editorGeneratedPreferenceProperties['editor.largeFileOptimizations']),
-                new editorBoolConstructor(id++, 'wordBasedSuggestions', true, editorGeneratedPreferenceProperties['editor.wordBasedSuggestions']),
-                new editorStringEnumConstructor(id++, 'wordBasedSuggestionsMode', 'matchingDocuments', editorGeneratedPreferenceProperties['editor.wordBasedSuggestionsMode'].enum, editorGeneratedPreferenceProperties['editor.wordBasedSuggestionsMode']),
+                new editorStringEnumConstructor(id++, 'wordBasedSuggestions', 'matchingDocuments', editorGeneratedPreferenceProperties['editor.wordBasedSuggestions'].enum, editorGeneratedPreferenceProperties['editor.wordBasedSuggestions']),
                 new editorBoolConstructor(id++, 'stablePeek', false, editorGeneratedPreferenceProperties['editor.stablePeek']),
                 new editorIntConstructor(id++, 'maxTokenizationLineLength', 20000, 1, MAX_SAFE_INTEGER, editorGeneratedPreferenceProperties['editor.maxTokenizationLineLength']),
             );

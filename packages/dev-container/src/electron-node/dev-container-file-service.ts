@@ -14,13 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { WorkspaceServer } from '@theia/workspace/lib/common';
 import { DevContainerFile } from '../electron-common/remote-container-connection-provider';
 import { DevContainerConfiguration } from './devcontainer-file';
 import { parse } from 'jsonc-parser';
 import * as fs from '@theia/core/shared/fs-extra';
-import { Path, URI } from '@theia/core';
+import { ContributionProvider, Path, URI } from '@theia/core';
+import { VariableResolverContribution } from './devcontainer-contributions/variable-resolver-contribution';
+
+const VARIABLE_REGEX = /^\$\{(.+?)(?::(.+))?\}$/;
 
 @injectable()
 export class DevContainerFileService {
@@ -28,12 +31,44 @@ export class DevContainerFileService {
     @inject(WorkspaceServer)
     protected readonly workspaceServer: WorkspaceServer;
 
+    @inject(ContributionProvider) @named(VariableResolverContribution)
+    protected readonly variableResolverContributions: ContributionProvider<VariableResolverContribution>;
+
+    protected resolveVariable(value: string): string {
+        const match = value.match(VARIABLE_REGEX);
+        if (match) {
+            const [, type, variable] = match;
+            for (const contribution of this.variableResolverContributions.getContributions()) {
+                if (contribution.canResolve(type)) {
+                    return contribution.resolve(variable ?? type);
+                }
+            }
+        }
+        return value;
+    }
+
+    protected resolveVariablesRecursively<T>(obj: T): T {
+        if (typeof obj === 'string') {
+            return this.resolveVariable(obj) as T;
+        } else if (Array.isArray(obj)) {
+            return obj.map(item => this.resolveVariablesRecursively(item)) as T;
+        } else if (obj && typeof obj === 'object') {
+            const newObj: Record<string, unknown> = {};
+            for (const [key, value] of Object.entries(obj)) {
+                newObj[key] = this.resolveVariablesRecursively(value);
+            }
+            return newObj as T;
+        }
+        return obj;
+    }
+
     async getConfiguration(path: string): Promise<DevContainerConfiguration> {
-        const configuration: DevContainerConfiguration = parse(await fs.readFile(path, 'utf-8').catch(() => '0')) as DevContainerConfiguration;
+        let configuration: DevContainerConfiguration = parse(await fs.readFile(path, 'utf-8').catch(() => '0')) as DevContainerConfiguration;
         if (!configuration) {
             throw new Error(`devcontainer file ${path} could not be parsed`);
         }
 
+        configuration = this.resolveVariablesRecursively(configuration);
         configuration.location = path;
         return configuration;
     }

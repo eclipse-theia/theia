@@ -7,8 +7,8 @@
   flex: 1;
 }
 
-.chat-input-widget > .ps__rail-x,
-.chat-input-widget > .ps__rail-y {
+.chat-input-widget>.ps__rail-x,
+.chat-input-widget>.ps__rail-y {
   display: none !important;
 }
 
@@ -23,7 +23,7 @@
   overflow-wrap: break-word;
 }
 
-div:last-child > .theia-ChatNode {
+div:last-child>.theia-ChatNode {
   border: none;
 }
 
@@ -59,6 +59,7 @@ div:last-child > .theia-ChatNode {
 }
 
 @keyframes dots {
+
   0%,
   20% {
     content: "";
@@ -95,15 +96,18 @@ div:last-child > .theia-ChatNode {
   margin-left: auto;
   line-height: 18px;
 }
+
 .theia-ChatNodeToolbar .theia-ChatNodeToolbarAction {
   display: none;
   align-items: center;
   padding: 4px;
   border-radius: 5px;
 }
+
 .theia-ChatNode:hover .theia-ChatNodeToolbar .theia-ChatNodeToolbarAction {
   display: inline-block;
 }
+
 .theia-ChatNodeToolbar .theia-ChatNodeToolbarAction:hover {
   cursor: pointer;
   background-color: var(--theia-toolbar-hoverBackground);
@@ -118,7 +122,7 @@ div:last-child > .theia-ChatNode {
   padding-inline-start: 1rem;
 }
 
-.theia-ChatNode li > p {
+.theia-ChatNode li>p {
   margin-top: 0;
   margin-bottom: 0;
 }
@@ -132,7 +136,7 @@ div:last-child > .theia-ChatNode {
   font-size: var(--theia-code-font-size);
 }
 
-.theia-RequestNode > p div {
+.theia-RequestNode>p div {
   display: inline;
 }
 
@@ -217,10 +221,6 @@ div:last-child > .theia-ChatNode {
 
 .theia-ChatInput-ChangeSet-Actions {
   display: none;
-  position: absolute;
-  right: 8px;
-  top: 2px;
-  gap: 4px;
 }
 
 .theia-ChatInput-ChangeSet-List ul {
@@ -234,6 +234,9 @@ div:last-child > .theia-ChatNode {
 
 .theia-ChatInput-ChangeSet-List ul li:hover .theia-ChatInput-ChangeSet-Actions {
   display: flex;
+  justify-content: flex-end;
+  flex: auto;
+  gap: 4px;
 }
 
 .theia-ChatInput-ChangeSet-List .theia-ChatInput-ChangeSet-Icon {
@@ -247,12 +250,9 @@ div:last-child > .theia-ChatNode {
 
 .theia-ChatInput-ChangeSet-List .theia-ChatInput-ChangeSet-Icon::before {
   text-align: center;
-  margin-right: 4px;
-  font-size: calc(var(--theia-content-font-size) * 0.8);
 }
 
-.theia-ChatInput-ChangeSet-List
-  .theia-ChatInput-ChangeSet-Icon.codicon::before {
+.theia-ChatInput-ChangeSet-List .theia-ChatInput-ChangeSet-Icon.codicon::before {
   font-size: var(--theia-ui-font-size1);
 }
 
@@ -267,9 +267,15 @@ div:last-child > .theia-ChatNode {
   color: var(--theia-disabledForeground);
 }
 
+.theia-ChatInput-ChangeSet-labelParts {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .theia-ChatInput-ChangeSet-title {
   white-space: nowrap;
-  overflow: visible;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .theia-ChatInput-ChangeSet-Header-Actions,
@@ -288,6 +294,7 @@ div:last-child > .theia-ChatNode {
   border-radius: 4px;
   cursor: pointer;
 }
+
 .theia-ChatInput-ChangeSet-Header-Actions .codicon.action:hover {
   background-color: var(--theia-toolbar-hoverBackground);
 }
@@ -299,9 +306,11 @@ div:last-child > .theia-ChatNode {
 .theia-ChatInput-ChangeSet-title.add.pending {
   color: var(--theia-charts-green);
 }
+
 .theia-ChatInput-ChangeSet-title.modify.pending {
   color: var(--theia-charts-orange);
 }
+
 .theia-ChatInput-ChangeSet-title.delete.pending {
   color: var(--theia-charts-red);
 }
@@ -345,6 +354,7 @@ div:last-child > .theia-ChatNode {
   z-index: 10;
   text-align: left;
 }
+
 .theia-ChatInput-Editor-Placeholder.hidden {
   display: none;
 }
@@ -376,6 +386,7 @@ div:last-child > .theia-ChatNode {
 .theia-ChatInputOptions .theia-ChatInputOptions-right {
   display: flex;
 }
+
 .theia-ChatInputOptions .theia-ChatInputOptions-right {
   margin-right: 12px;
 }
@@ -440,6 +451,7 @@ div:last-child > .theia-ChatNode {
   border-radius: 5px;
   cursor: pointer;
 }
+
 .theia-CodePartRenderer-right .button:hover {
   background-color: var(--theia-toolbar-hoverBackground);
 }
@@ -454,25 +466,28 @@ div:last-child > .theia-ChatNode {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  border: var(--theia-border-width) solid
-    var(--theia-sideBarSectionHeader-border);
+  border: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
   padding: 8px 12px 12px;
   border-radius: 5px;
   margin: 0 0 8px 0;
 }
+
 .theia-QuestionPartRenderer-options {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
 }
+
 .theia-QuestionPartRenderer-option {
   min-width: 100px;
   flex: 1 1 auto;
   margin: 0;
 }
+
 .theia-QuestionPartRenderer-option.selected:disabled:hover {
   background-color: var(--theia-button-disabledBackground);
 }
+
 .theia-QuestionPartRenderer-option:disabled:not(.selected) {
   background-color: var(--theia-button-secondaryBackground);
 }
@@ -526,9 +541,11 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
 .theia-ResponseNode-ProgressMessage .inProgress {
   color: var(--theia-progressBar-background);
 }
+
 .theia-ResponseNode-ProgressMessage .completed {
   color: var(--theia-successBackground);
 }
+
 .theia-ResponseNode-ProgressMessage .failed {
   color: var(--theia-errorForeground);
 }

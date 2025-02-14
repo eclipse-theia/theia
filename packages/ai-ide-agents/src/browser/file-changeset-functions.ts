@@ -17,7 +17,7 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import { ToolProvider, ToolRequest } from '@theia/ai-core';
 import { WorkspaceFunctionScope } from './workspace-functions';
 import { ChangeSetFileElementFactory } from '@theia/ai-chat/lib/browser/change-set-file-element';
-import { ChangeSetImpl, ChatRequestModelImpl } from '@theia/ai-chat';
+import { ChangeSetImpl, MutableChatRequestModel } from '@theia/ai-chat';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { ContentReplacer, Replacement } from './content-replacer';
 
@@ -41,7 +41,7 @@ export class WriteChangeToFileProvider implements ToolProvider {
             description: `Proposes writing content to a file. If the file exists, it will be overwritten with the provided content.\n
              If the file does not exist, it will be created. This tool will automatically create any directories needed to write the file.\n
              If the new content is empty, the file will be deleted. To move a file, delete it and re-create it at the new location.\n
-             The proposed changes will be applied when the user accepts.`,
+             The proposed changes will be applied when the user accepts. If called again for the same file, previously proposed changes will be overridden.`,
             parameters: {
                 type: 'object',
                 properties: {
@@ -57,7 +57,7 @@ export class WriteChangeToFileProvider implements ToolProvider {
                 },
                 required: ['path', 'content']
             },
-            handler: async (args: string, ctx: ChatRequestModelImpl): Promise<string> => {
+            handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> => {
                 const { path, content } = JSON.parse(args);
                 const chatSessionId = ctx.session.id;
                 let changeSet = ctx.session.changeSet;
@@ -70,13 +70,10 @@ export class WriteChangeToFileProvider implements ToolProvider {
                 if (content === '') {
                     type = 'delete';
                 }
-                // In case the file does not exist and the content is empty, we consider that the AI wants to add an empty file.
-                try {
-                    await this.fileService.read(uri);
-                } catch (error) {
+                if (!await this.fileService.exists(uri)) {
                     type = 'add';
                 }
-                changeSet.addElement(
+                changeSet.addOrReplaceElement(
                     this.fileChangeFactory({
                         uri: uri,
                         type: type as 'modify' | 'add' | 'delete',
@@ -117,7 +114,8 @@ export class ReplaceContentInFileProvider implements ToolProvider {
             name: ReplaceContentInFileProvider.ID,
             description: `Request to replace sections of content in an existing file by providing a list of tuples with old content to be matched and replaced.
             Only the first matched instance of each old content in the tuples will be replaced. For deletions, use an empty new content in the tuple.\n
-            Make sure you use the same line endings and whitespace as in the original file content. The proposed changes will be applied when the user accepts.`,
+            Make sure you use the same line endings and whitespace as in the original file content. The proposed changes will be applied when the user accepts.\n
+            If called again for the same file, it will override previously proposed changes.`,
             parameters: {
                 type: 'object',
                 properties: {
@@ -146,7 +144,7 @@ export class ReplaceContentInFileProvider implements ToolProvider {
                 },
                 required: ['path', 'replacements']
             },
-            handler: async (args: string, ctx: ChatRequestModelImpl): Promise<string> => {
+            handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> => {
                 try {
                     const { path, replacements } = JSON.parse(args) as { path: string, replacements: Replacement[] };
                     const fileUri = await this.workspaceFunctionScope.resolveRelativePath(path);
@@ -165,7 +163,7 @@ export class ReplaceContentInFileProvider implements ToolProvider {
                             ctx.session.setChangeSet(changeSet);
                         }
 
-                        changeSet.addElement(
+                        changeSet.addOrReplaceElement(
                             this.fileChangeFactory({
                                 uri: fileUri,
                                 type: 'modify',

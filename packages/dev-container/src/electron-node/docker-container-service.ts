@@ -60,6 +60,8 @@ export class DockerContainerService {
     @inject(DevContainerFileService)
     protected readonly devContainerFileService: DevContainerFileService;
 
+    container: Docker.Container | undefined;
+
     async getOrCreateContainer(docker: Docker, options: ContainerConnectionOptions, outputProvider?: ContainerOutputProvider): Promise<Docker.Container> {
         let container;
 
@@ -81,6 +83,7 @@ export class DockerContainerService {
         if (!container) {
             container = await this.buildContainer(docker, options.devcontainerFile, workspace, outputProvider);
         }
+        this.container = container;
         return container;
     }
 

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { CommandRegistry, QuickInputButton, QuickInputService, QuickPickItem } from '@theia/core';
+import { CommandRegistry, isOSX, QuickInputButton, QuickInputService, QuickPickItem } from '@theia/core';
 import { Widget } from '@theia/core/lib/browser';
 import { AI_CHAT_NEW_CHAT_WINDOW_COMMAND, AI_CHAT_SHOW_CHATS_COMMAND, ChatCommands } from './chat-view-commands';
 import { ChatAgentLocation, ChatService } from '@theia/ai-chat';
@@ -52,7 +52,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
                 rank: 100
             },
             toggleCommandId: AI_CHAT_TOGGLE_COMMAND_ID,
-            toggleKeybinding: 'ctrlcmd+alt+i'
+            toggleKeybinding: isOSX ? 'ctrl+cmd+i' : 'ctrl+alt+i'
         });
     }
 
