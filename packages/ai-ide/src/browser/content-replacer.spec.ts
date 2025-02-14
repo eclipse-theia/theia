@@ -53,7 +53,7 @@ describe('ContentReplacer', () => {
         ];
         const result = contentReplacer.applyReplacements(originalContent, replacements);
         expect(result.updatedContent).to.equal(originalContent);
-        expect(result.errors).to.include('Content to replace not found: "Nonexistent"');
+        expect(result.errors).to.include('Error: Content to replace not found: "Nonexistent"');
     });
 
     it('should return an error when oldContent has multiple occurrences', () => {
@@ -63,7 +63,7 @@ describe('ContentReplacer', () => {
         ];
         const result = contentReplacer.applyReplacements(originalContent, replacements);
         expect(result.updatedContent).to.equal(originalContent);
-        expect(result.errors).to.include('Multiple occurrences found for: "Repeat"');
+        expect(result.errors).to.include('Error: Multiple occurrences found for: "Repeat"');
     });
 
     it('should prepend newContent when oldContent is an empty string', () => {
@@ -88,5 +88,26 @@ describe('ContentReplacer', () => {
         const result = contentReplacer.applyReplacements(originalContent, replacements);
         expect(result.updatedContent).to.equal(expectedContent);
         expect(result.errors).to.be.empty;
+    });
+
+    it('should replace all occurrences when mutiple is true', () => {
+        const originalContent = 'Repeat Repeat Repeat';
+        const replacements: Replacement[] = [
+            { oldContent: 'Repeat', newContent: 'Once', multiple: true }
+        ];
+        const expectedContent = 'Once Once Once';
+        const result = contentReplacer.applyReplacements(originalContent, replacements);
+        expect(result.updatedContent).to.equal(expectedContent);
+        expect(result.errors).to.be.empty;
+    });
+
+    it('should return an error when mutiple is false and multiple occurrences are found', () => {
+        const originalContent = 'Repeat Repeat Repeat';
+        const replacements: Replacement[] = [
+            { oldContent: 'Repeat', newContent: 'Once', multiple: false }
+        ];
+        const result = contentReplacer.applyReplacements(originalContent, replacements);
+        expect(result.updatedContent).to.equal(originalContent);
+        expect(result.errors).to.include('Error: Multiple occurrences found for: "Repeat"');
     });
 });
