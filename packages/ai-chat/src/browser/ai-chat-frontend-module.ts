@@ -25,6 +25,7 @@ import {
     ChatRequestParser,
     ChatRequestParserImpl,
     ChatService,
+    ToolCallChatResponseContentFactory,
     PinChatAgent
 } from '../common';
 import { ChatAgentsVariableContribution } from '../common/chat-agents-variable-contribution';
@@ -91,4 +92,5 @@ export default new ContainerModule(bind => {
     });
     bind(ChangeSetFileResourceResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toService(ChangeSetFileResourceResolver);
+    bind(ToolCallChatResponseContentFactory).toSelf().inSingletonScope();
 });
