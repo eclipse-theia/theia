@@ -34,7 +34,6 @@ export class StreamingAsyncIterator implements AsyncIterableIterator<LanguageMod
             this.dispose();
         });
         this.registerStreamListener('abort', () => {
-            console.debug('Got an abort!');
             this.terminalError = new CancellationError();
             this.dispose();
         }, true);

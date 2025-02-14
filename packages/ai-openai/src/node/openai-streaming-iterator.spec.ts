@@ -18,7 +18,7 @@ import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { StreamingAsyncIterator } from './openai-streaming-iterator';
 import { ChatCompletionStream } from 'openai/lib/ChatCompletionStream';
-import { CancellationTokenSource, CancellationError, Disposable } from '@theia/core';
+import { CancellationTokenSource, CancellationError } from '@theia/core';
 import { LanguageModelStreamResponsePart } from '@theia/ai-core';
 import { EventEmitter } from 'events';
 
@@ -36,8 +36,8 @@ describe('StreamingAsyncIterator', () => {
     });
 
     afterEach(() => {
-        if (iterator && (iterator as Disposable).dispose) {
-            (iterator as Disposable).dispose();
+        if (iterator) {
+            iterator.dispose();
         }
         cts.dispose();
         console.error = consoleError;
