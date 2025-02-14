@@ -49,7 +49,7 @@ export class FrontendChatServiceImpl extends ChatServiceImpl {
                 return configuredDefaultChatAgent;
             }
         }
-        return super.getAgent(parsedRequest);
+        return super.initialAgentSelection(parsedRequest);
     }
 
     protected getConfiguredDefaultChatAgent(): ChatAgent | undefined {
