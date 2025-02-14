@@ -19,7 +19,7 @@ import { PromptTemplate } from '@theia/ai-core/lib/common';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
 import { AbstractStreamParsingChatAgent } from '@theia/ai-chat/lib/common/chat-agents';
-import { ChatRequestModelImpl, InformationalChatResponseContentImpl } from '@theia/ai-chat/lib/common/chat-model';
+import { MutableChatRequestModel, InformationalChatResponseContentImpl } from '@theia/ai-chat/lib/common/chat-model';
 import { generateUuid } from '@theia/core';
 import { ChatHistoryEntry } from '@theia/ai-chat/lib/common/chat-history-entry';
 
@@ -87,7 +87,7 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
     @inject(ChatAgentService)
     protected chatAgentService: ChatAgentService;
 
-    override async invoke(request: ChatRequestModelImpl): Promise<void> {
+    override async invoke(request: MutableChatRequestModel): Promise<void> {
         request.response.addProgressMessage({ content: 'Determining the most appropriate agent', status: 'inProgress' });
         // We generate a dedicated ID for recording the orchestrator request/response, as we will forward the original request to another agent
         const orchestratorRequestId = generateUuid();
@@ -104,7 +104,7 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
         return super.invoke(request);
     }
 
-    protected override async addContentsToResponse(response: LanguageModelResponse, request: ChatRequestModelImpl): Promise<void> {
+    protected override async addContentsToResponse(response: LanguageModelResponse, request: MutableChatRequestModel): Promise<void> {
         let agentIds: string[] = [];
         const responseText = await getTextOfResponse(response);
         // We use the previously generated, dedicated ID to log the orchestrator response before we forward the original request

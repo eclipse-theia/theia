@@ -18,7 +18,7 @@ import {
     AbstractStreamParsingChatAgent,
     ChangeSetImpl,
     ChatAgent,
-    ChatRequestModelImpl,
+    MutableChatRequestModel,
     MarkdownChatResponseContentImpl,
     SystemMessageDescription
 } from '@theia/ai-chat';
@@ -55,7 +55,7 @@ export class ChangeSetChatAgent extends AbstractStreamParsingChatAgent {
     @inject(ChangeSetFileElementFactory)
     protected readonly fileChangeFactory: ChangeSetFileElementFactory;
 
-    override async invoke(request: ChatRequestModelImpl): Promise<void> {
+    override async invoke(request: MutableChatRequestModel): Promise<void> {
         const roots = this.workspaceService.tryGetRoots();
         if (roots.length === 0) {
             request.response.response.addContent(new MarkdownChatResponseContentImpl(

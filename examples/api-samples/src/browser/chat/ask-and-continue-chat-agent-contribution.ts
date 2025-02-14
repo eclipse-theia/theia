@@ -19,7 +19,7 @@ import {
     ChatAgent,
     ChatMessage,
     ChatModel,
-    ChatRequestModelImpl,
+    MutableChatRequestModel,
     lastProgressMessage,
     QuestionResponseContentImpl,
     unansweredQuestions
@@ -127,7 +127,7 @@ export class AskAndContinueChatAgent extends AbstractStreamParsingChatAgent {
         this.contentMatchers.push({
             start: /^<question>.*$/m,
             end: /^<\/question>$/m,
-            contentFactory: (content: string, request: ChatRequestModelImpl) => {
+            contentFactory: (content: string, request: MutableChatRequestModel) => {
                 const question = content.replace(/^<question>\n|<\/question>$/g, '');
                 const parsedQuestion = JSON.parse(question);
                 return new QuestionResponseContentImpl(parsedQuestion.question, parsedQuestion.options, request, selectedOption => {
@@ -137,7 +137,7 @@ export class AskAndContinueChatAgent extends AbstractStreamParsingChatAgent {
         });
     }
 
-    protected override async onResponseComplete(request: ChatRequestModelImpl): Promise<void> {
+    protected override async onResponseComplete(request: MutableChatRequestModel): Promise<void> {
         const unansweredQs = unansweredQuestions(request);
         if (unansweredQs.length < 1) {
             return super.onResponseComplete(request);
@@ -146,7 +146,7 @@ export class AskAndContinueChatAgent extends AbstractStreamParsingChatAgent {
         request.response.waitForInput();
     }
 
-    protected handleAnswer(selectedOption: { text: string; value?: string; }, request: ChatRequestModelImpl): void {
+    protected handleAnswer(selectedOption: { text: string; value?: string; }, request: MutableChatRequestModel): void {
         const progressMessage = lastProgressMessage(request);
         if (progressMessage) {
             request.response.updateProgressMessage({ ...progressMessage, show: 'untilFirstContent', status: 'completed' });

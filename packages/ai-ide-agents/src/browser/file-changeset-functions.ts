@@ -17,7 +17,7 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import { ToolProvider, ToolRequest } from '@theia/ai-core';
 import { WorkspaceFunctionScope } from './workspace-functions';
 import { ChangeSetFileElementFactory } from '@theia/ai-chat/lib/browser/change-set-file-element';
-import { ChangeSetImpl, ChatRequestModelImpl } from '@theia/ai-chat';
+import { ChangeSetImpl, MutableChatRequestModel } from '@theia/ai-chat';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { ContentReplacer, Replacement } from './content-replacer';
 
@@ -57,7 +57,7 @@ export class WriteChangeToFileProvider implements ToolProvider {
                 },
                 required: ['path', 'content']
             },
-            handler: async (args: string, ctx: ChatRequestModelImpl): Promise<string> => {
+            handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> => {
                 const { path, content } = JSON.parse(args);
                 const chatSessionId = ctx.session.id;
                 let changeSet = ctx.session.changeSet;
@@ -144,7 +144,7 @@ export class ReplaceContentInFileProvider implements ToolProvider {
                 },
                 required: ['path', 'replacements']
             },
-            handler: async (args: string, ctx: ChatRequestModelImpl): Promise<string> => {
+            handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> => {
                 try {
                     const { path, replacements } = JSON.parse(args) as { path: string, replacements: Replacement[] };
                     const fileUri = await this.workspaceFunctionScope.resolveRelativePath(path);
