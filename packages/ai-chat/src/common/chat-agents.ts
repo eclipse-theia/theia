@@ -30,6 +30,7 @@ import {
     PromptService,
     PromptTemplate,
     ResolvedPromptTemplate,
+    ToolCall,
     ToolRequest,
 } from '@theia/ai-core';
 import {
@@ -325,8 +326,26 @@ export abstract class AbstractTextToModelParsingChatAgent<T> extends AbstractCha
     protected abstract createResponseContent(parsedModel: T, request: MutableChatRequestModel): ChatResponseContent;
 }
 
+/**
+ * Factory for creating ToolCallChatResponseContent instances.
+ */
+@injectable()
+export class ToolCallChatResponseContentFactory {
+    create(toolCall: ToolCall): ChatResponseContent {
+        return new ToolCallChatResponseContentImpl(
+            toolCall.id,
+            toolCall.function?.name,
+            toolCall.function?.arguments,
+            toolCall.finished,
+            toolCall.result
+        );
+    }
+}
+
 @injectable()
 export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
+    @inject(ToolCallChatResponseContentFactory)
+    protected toolCallResponseContentFactory: ToolCallChatResponseContentFactory;
 
     protected override async addContentsToResponse(languageModelResponse: LanguageModelResponse, request: MutableChatRequestModel): Promise<void> {
         if (isLanguageModelTextResponse(languageModelResponse)) {
@@ -384,10 +403,23 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
         const toolCalls = token.tool_calls;
         if (toolCalls !== undefined) {
             const toolCallContents = toolCalls.map(toolCall =>
-                new ToolCallChatResponseContentImpl(toolCall.id, toolCall.function?.name, toolCall.function?.arguments, toolCall.finished, toolCall.result));
+                this.createToolCallResponseContent(toolCall)
+            );
             return toolCallContents;
         }
         return this.defaultContentFactory.create('', request);
     }
 
+    /**
+     * Creates a ToolCallChatResponseContent instance from the provided tool call data.
+     *
+     * This method is called when parsing stream response tokens that contain tool call data.
+     * Subclasses can override this method to customize the creation of tool call response contents.
+     *
+     * @param toolCall The ToolCall.
+     * @returns A ChatResponseContent representing the tool call.
+     */
+    protected createToolCallResponseContent(toolCall: ToolCall): ChatResponseContent {
+        return this.toolCallResponseContentFactory.create(toolCall);
+    }
 }
