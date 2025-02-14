@@ -34,7 +34,7 @@ export class StreamingAsyncIterator implements AsyncIterableIterator<LanguageMod
             this.dispose();
         });
         this.registerStreamListener('abort', () => {
-            console.log('Got an abort!');
+            console.debug('Got an abort!');
             this.terminalError = new CancellationError();
             this.dispose();
         }, true);
@@ -51,8 +51,6 @@ export class StreamingAsyncIterator implements AsyncIterableIterator<LanguageMod
             console.debug('Received Open AI message', JSON.stringify(message));
         });
         this.registerStreamListener('end', () => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            this.handleIncoming(stream.finalChatCompletion as any);
             this.dispose();
         }, true);
         this.registerStreamListener('chunk', chunk => {

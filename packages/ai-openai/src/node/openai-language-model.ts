@@ -27,7 +27,7 @@ import { OpenAI, AzureOpenAI } from 'openai';
 import { ChatCompletionStream } from 'openai/lib/ChatCompletionStream';
 import { RunnableToolFunctionWithoutParse } from 'openai/lib/RunnableFunction';
 import { ChatCompletionMessageParam } from 'openai/resources';
-import { StreamingAsyncIterator } from './streaming-iterator';
+import { StreamingAsyncIterator } from './openai-streaming-iterator';
 
 export const OpenAiModelIdentifier = Symbol('OpenAiModelIdentifier');
 
