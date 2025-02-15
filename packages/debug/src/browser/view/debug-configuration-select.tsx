@@ -21,14 +21,14 @@ import { DebugSessionOptions } from '../debug-session-options';
 import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/select-component';
 import { QuickInputService } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
-import { DebugSessionLabelProvider } from '../debug-session-label-provider';
+import { DebugSessionConfigurationLabelProvider } from '../debug-session-configuration-label-provider';
 
 interface DynamicPickItem { label: string, configurationType: string, request: string, providerType: string, workspaceFolderUri?: string }
 
 export interface DebugConfigurationSelectProps {
     manager: DebugConfigurationManager,
     quickInputService: QuickInputService,
-    labelProvider: DebugSessionLabelProvider,
+    labelProvider: DebugSessionConfigurationLabelProvider,
     isMultiRoot: boolean
 }
 

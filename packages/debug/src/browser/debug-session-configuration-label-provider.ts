@@ -24,7 +24,7 @@ import { type DebugSessionOptions } from './debug-session-options';
  * Debug session labels are used to check if sessions are the "same".
  */
 @injectable()
-export class DebugSessionLabelProvider {
+export class DebugSessionConfigurationLabelProvider {
 
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;

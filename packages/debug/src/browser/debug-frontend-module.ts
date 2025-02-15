@@ -62,7 +62,7 @@ import { DebugSessionWidget } from './view/debug-session-widget';
 import { bindDisassemblyView } from './disassembly-view/disassembly-view-contribution';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';
-import { DebugSessionLabelProvider } from './debug-session-label-provider';
+import { DebugSessionConfigurationLabelProvider } from './debug-session-configuration-label-provider';
 
 export default new ContainerModule((bind: interfaces.Bind) => {
     bindContributionProvider(bind, DebugContribution);
@@ -132,5 +132,5 @@ export default new ContainerModule((bind: interfaces.Bind) => {
     }
     bindDisassemblyView(bind);
 
-    bind(DebugSessionLabelProvider).toSelf().inSingletonScope();
+    bind(DebugSessionConfigurationLabelProvider).toSelf().inSingletonScope();
 });

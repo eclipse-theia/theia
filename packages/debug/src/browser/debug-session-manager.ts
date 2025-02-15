@@ -38,7 +38,7 @@ import { DebugFunctionBreakpoint } from './model/debug-function-breakpoint';
 import * as monaco from '@theia/monaco-editor-core';
 import { DebugInstructionBreakpoint } from './model/debug-instruction-breakpoint';
 import { DebugWidget } from './view/debug-widget';
-import { DebugSessionLabelProvider } from './debug-session-label-provider';
+import { DebugSessionConfigurationLabelProvider } from './debug-session-configuration-label-provider';
 
 export interface WillStartDebugSession extends WaitUntilEvent {
 }
@@ -154,8 +154,8 @@ export class DebugSessionManager {
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
 
-    @inject(DebugSessionLabelProvider)
-    protected readonly sessionLabelProvider: DebugSessionLabelProvider;
+    @inject(DebugSessionConfigurationLabelProvider)
+    protected readonly sessionConfigurationLabelProvider: DebugSessionConfigurationLabelProvider;
 
     protected debugTypeKey: ContextKey<string>;
     protected inDebugModeKey: ContextKey<boolean>;
@@ -233,14 +233,14 @@ export class DebugSessionManager {
                     return undefined;
                 }
 
-                const sessionLabel = this.sessionLabelProvider.getLabel(resolved);
+                const sessionConfigurationLabel = this.sessionConfigurationLabelProvider.getLabel(resolved);
                 if (options?.startedByUser
                     && options.configuration.suppressMultipleSessionWarning !== true
-                    && this.sessions.some(s => this.sessionLabelProvider.getLabel(s.options) === sessionLabel)
+                    && this.sessions.some(s => this.sessionConfigurationLabelProvider.getLabel(s.options) === sessionConfigurationLabel)
                 ) {
                     const yes = await new ConfirmDialog({
                         title: DebugWidget.LABEL,
-                        msg: nls.localizeByDefault("'{0}' is already running. Do you want to start another instance?", sessionLabel)
+                        msg: nls.localizeByDefault("'{0}' is already running. Do you want to start another instance?", sessionConfigurationLabel)
                     }).open();
                     if (!yes) {
                         return undefined;
