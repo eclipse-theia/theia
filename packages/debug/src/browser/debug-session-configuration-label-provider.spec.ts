@@ -16,7 +16,7 @@
 
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
-let disableJSDOM = enableJSDOM();
+const disableJSDOM = enableJSDOM();
 FrontendApplicationConfigProvider.set({});
 
 import { Container } from '@theia/core/shared/inversify';
@@ -40,17 +40,17 @@ describe('DebugSessionConfigurationLabelProvider', () => {
         });
         container.bind(DebugSessionConfigurationLabelProvider).toSelf();
         labelProvider = container.get(DebugSessionConfigurationLabelProvider);
-    })
+    });
 
     beforeEach(() => {
         roots = [];
-    })
+    });
 
     it('should return the name', () => {
         const name = 'name';
         const label = labelProvider.getLabel({ name });
         expect(label).to.be.equal(name);
-    })
+    });
 
     it('should return the name with default params', () => {
         const name = 'name';
@@ -90,4 +90,4 @@ describe('DebugSessionConfigurationLabelProvider', () => {
         const label = labelProvider.getLabel({ name: '', workspaceFolderUri: 'http://example.com' });
         expect(label).to.be.equal(' (example.com)');
     });
-})
+});
