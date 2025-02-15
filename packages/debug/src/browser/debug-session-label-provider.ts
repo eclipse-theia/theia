@@ -32,7 +32,7 @@ export class DebugSessionLabelProvider {
     // https://github.com/microsoft/vscode/blob/907518a25c6d6b9467cbcc57132c6adb7e7396b0/src/vs/workbench/contrib/debug/browser/debugSession.ts#L253-L256
     getLabel(
         params: Pick<DebugSessionOptions, 'name' | 'workspaceFolderUri'>,
-        includeRoot = this.workspaceService.tryGetRoots.length > 1
+        includeRoot = this.workspaceService.tryGetRoots().length > 1
     ): string {
         let { name, workspaceFolderUri } = params;
         if (includeRoot && workspaceFolderUri) {
