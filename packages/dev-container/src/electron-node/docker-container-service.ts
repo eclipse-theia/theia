@@ -65,7 +65,7 @@ export class DockerContainerService {
     async getOrCreateContainer(docker: Docker, options: ContainerConnectionOptions, outputProvider?: ContainerOutputProvider): Promise<Docker.Container> {
         let container;
 
-        const workspace = new URI(options.workspaceUri ?? await this.workspaceServer.getMostRecentlyUsedWorkspace());
+        const workspace = new URI(options.workspacePath ?? await this.workspaceServer.getMostRecentlyUsedWorkspace());
 
         if (options.lastContainerInfo && fs.statSync(options.devcontainerFile).mtimeMs < options.lastContainerInfo.lastUsed) {
             try {
