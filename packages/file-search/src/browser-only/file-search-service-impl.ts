@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2024 robertjndw
+// Copyright (C) 2025 robertjndw
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -68,7 +68,6 @@ export class FileSearchServiceImpl implements FileSearchService {
                         const candidatePattern = candidate.toLowerCase();
                         const patternExists = patterns.every(pattern => candidatePattern.includes(pattern));
 
-                        // Add exact or fuzzy matches
                         if (!searchPattern || searchPattern === '*') {
                             exactMatches.add(candidate);
                         } else if (patternExists) {
@@ -134,21 +133,19 @@ export class FileSearchServiceImpl implements FileSearchService {
     private matchesFilters(uri: URI, options: FileSearchService.BaseOptions): boolean {
         const path = uri.path.toString();
 
-        // Check exclude patterns
         if (options.excludePatterns) {
             for (const exclude of options.excludePatterns) {
                 if (minimatch(path, exclude)) {
-                    return false; // Exclude matches -> Ignore this file
+                    return false;
                 }
             }
         }
 
-        // Check include patterns
         if (options.includePatterns && options.includePatterns.length > 0) {
             return options.includePatterns.some(include => minimatch(path, include));
         }
 
-        return true; // If no include patterns, assume all files are valid
+        return true; // By default all files are valid
     }
 
     private isFuzzyMatch(patterns: string[], text: string): boolean {

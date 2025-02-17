@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2024 robertjndw
+// Copyright (C) 2025 robertjndw
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -19,7 +19,6 @@ import { FileSearchServiceImpl } from './file-search-service-impl';
 import { FileSearchService } from '../common/file-search-service';
 
 export default new ContainerModule((bind, _unbind, isBound, rebind) => {
-    bind(FileSearchService).to(FileSearchServiceImpl).inSingletonScope();
     if (isBound(FileSearchService)) {
         rebind(FileSearchService).to(FileSearchServiceImpl).inSingletonScope();
     } else {
