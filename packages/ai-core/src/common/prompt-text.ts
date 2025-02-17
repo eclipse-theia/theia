@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2024 EclipseSource GmbH.
+// Copyright (C) 2025 EclipseSource GmbH.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -13,18 +13,10 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-export * from './agent-service';
-export * from './agent';
-export * from './agents-variable-contribution';
-export * from './communication-recording-service';
-export * from './tool-invocation-registry';
-export * from './language-model-delegate';
-export * from './language-model-util';
-export * from './language-model';
-export * from './prompt-service';
-export * from './prompt-service-util';
-export * from './prompt-text';
-export * from './protocol';
-export * from './today-variable-contribution';
-export * from './variable-service';
-export * from './settings-service';
+
+export namespace PromptText {
+    export const AGENT_CHAR = '@';
+    export const VARIABLE_CHAR = '#';
+    export const FUNCTION_CHAR = '~';
+    export const VARIABLE_SEPARATOR_CHAR = ':';
+}

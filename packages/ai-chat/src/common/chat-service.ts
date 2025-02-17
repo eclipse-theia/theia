@@ -19,7 +19,12 @@
  *--------------------------------------------------------------------------------------------*/
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatService.ts
 
+import { AIVariableResolutionRequest, AIVariableService, ResolvedAIContextVariable } from '@theia/ai-core';
+import { Emitter, ILogger, generateUuid } from '@theia/core';
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
+import { Event } from '@theia/core/shared/vscode-languageserver-protocol';
+import { ChatAgentService } from './chat-agent-service';
+import { ChatAgent, ChatAgentLocation } from './chat-agents';
 import {
     ChatModel,
     MutableChatModel,
@@ -27,14 +32,10 @@ import {
     ChatRequestModel,
     ChatResponseModel,
     ErrorChatResponseModel,
+    ChatContext,
 } from './chat-model';
-import { ChatAgentService } from './chat-agent-service';
-import { Emitter, ILogger, generateUuid } from '@theia/core';
 import { ChatRequestParser } from './chat-request-parser';
-import { ChatAgent, ChatAgentLocation } from './chat-agents';
-import { ParsedChatRequestAgentPart, ParsedChatRequestVariablePart, ParsedChatRequest } from './parsed-chat-request';
-import { AIVariableService } from '@theia/ai-core';
-import { Event } from '@theia/core/shared/vscode-languageserver-protocol';
+import { ParsedChatRequest, ParsedChatRequestAgentPart, ParsedChatRequestVariablePart } from './parsed-chat-request';
 
 export interface ChatRequestInvocation {
     /**
@@ -57,6 +58,10 @@ export interface ChatSession {
     model: ChatModel;
     isActive: boolean;
     pinnedAgent?: ChatAgent;
+}
+
+export interface ChatContextRequest {
+    variableRequests: AIVariableResolutionRequest[]
 }
 
 export interface ActiveSessionChangedEvent {
@@ -99,7 +104,8 @@ export interface ChatService {
 
     sendRequest(
         sessionId: string,
-        request: ChatRequest
+        request: ChatRequest,
+        requestedContext?: ChatContextRequest
     ): Promise<ChatRequestInvocation | undefined>;
 
     deleteChangeSet(sessionId: string): void;
@@ -178,7 +184,8 @@ export class ChatServiceImpl implements ChatService {
 
     async sendRequest(
         sessionId: string,
-        request: ChatRequest
+        request: ChatRequest,
+        requestedContext: ChatContextRequest = { variableRequests: [] }
     ): Promise<ChatRequestInvocation | undefined> {
         const session = this.getSession(sessionId);
         if (!session) {
@@ -199,7 +206,9 @@ export class ChatServiceImpl implements ChatService {
                 responseCompleted: Promise.resolve(chatResponseModel),
             };
         }
-        const requestModel = session.model.addRequest(parsedRequest, agent?.id);
+
+        const resolvedContext = await this.resolveChatContext(requestedContext, request, session);
+        const requestModel = session.model.addRequest(parsedRequest, agent?.id, resolvedContext);
 
         for (const part of parsedRequest.parts) {
             if (part instanceof ParsedChatRequestVariablePart) {
@@ -244,6 +253,23 @@ export class ChatServiceImpl implements ChatService {
         }
 
         return invocation;
+    }
+
+    protected async resolveChatContext(
+        requestedContext: ChatContextRequest,
+        request: ChatRequest,
+        session: ChatSessionInternal
+    ): Promise<ChatContext> {
+        const resolvedVariables = await Promise.all(
+            requestedContext.variableRequests.map(async contextVariable => {
+                const resolvedVariable = await this.variableService.resolveVariable(contextVariable, { request, model: session });
+                if (ResolvedAIContextVariable.is(resolvedVariable)) {
+                    return resolvedVariable;
+                }
+                return undefined;
+            })
+        ).then(results => results.filter((result): result is ResolvedAIContextVariable => result !== undefined));
+        return { variables: resolvedVariables };
     }
 
     async cancelRequest(sessionId: string, requestId: string): Promise<void> {

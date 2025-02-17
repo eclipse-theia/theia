@@ -21,6 +21,7 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { AIChatInputWidget } from './chat-input-widget';
 import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
 import { AIActivationService } from '@theia/ai-core/lib/browser/ai-activation-service';
+import { AIVariableResolutionRequest } from '@theia/ai-core';
 
 export namespace ChatViewWidget {
     export interface State {
@@ -160,14 +161,12 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         return this.onStateChangedEmitter.event;
     }
 
-    protected async onQuery(query: string): Promise<void> {
+    protected async onQuery(query: string, contextVariableRequests?: AIVariableResolutionRequest[]): Promise<void> {
         if (query.length === 0) { return; }
 
-        const chatRequest: ChatRequest = {
-            text: query
-        };
-
-        const requestProgress = await this.chatService.sendRequest(this.chatSession.id, chatRequest);
+        const chatRequest: ChatRequest = { text: query };
+        const context = { variableRequests: contextVariableRequests ?? [] };
+        const requestProgress = await this.chatService.sendRequest(this.chatSession.id, chatRequest, context);
         requestProgress?.responseCompleted.then(responseModel => {
             if (responseModel.isError) {
                 this.messageService.error(responseModel.errorObject?.message ?? 'An error occurred during chat service invocation.');
@@ -213,5 +212,9 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
 
     get isExtractable(): boolean {
         return this.secondaryWindow === undefined;
+    }
+
+    addContext(variable: AIVariableResolutionRequest): void {
+        this.inputWidget.addContext(variable);
     }
 }
