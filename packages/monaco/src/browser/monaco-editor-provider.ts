@@ -380,7 +380,7 @@ export class MonacoEditorProvider {
             }, this.m2p, this.p2m);
             toDispose.push(document);
             const model = (await document.load()).textEditorModel;
-            return await MonacoEditor.create(
+            return new MonacoEditor(
                 uri,
                 document,
                 node,
