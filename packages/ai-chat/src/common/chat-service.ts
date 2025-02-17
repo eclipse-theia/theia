@@ -56,6 +56,7 @@ export interface ChatSession {
     title?: string;
     model: ChatModel;
     isActive: boolean;
+    pinnedAgent?: ChatAgent;
 }
 
 export interface ActiveSessionChangedEvent {
@@ -83,13 +84,16 @@ export interface FallbackChatAgentId {
     id: string;
 }
 
+export const PinChatAgent = Symbol('PinChatAgent');
+export type PinChatAgent = boolean;
+
 export const ChatService = Symbol('ChatService');
 export interface ChatService {
     onActiveSessionChanged: Event<ActiveSessionChangedEvent>
 
     getSession(id: string): ChatSession | undefined;
     getSessions(): ChatSession[];
-    createSession(location?: ChatAgentLocation, options?: SessionOptions): ChatSession;
+    createSession(location?: ChatAgentLocation, options?: SessionOptions, pinnedAgent?: ChatAgent): ChatSession;
     deleteSession(sessionId: string): void;
     setActiveSession(sessionId: string, options?: SessionOptions): void;
 
@@ -122,6 +126,9 @@ export class ChatServiceImpl implements ChatService {
     @inject(FallbackChatAgentId) @optional()
     protected fallbackChatAgentId: FallbackChatAgentId | undefined;
 
+    @inject(PinChatAgent) @optional()
+    protected pinChatAgent: boolean | undefined;
+
     @inject(ChatRequestParser)
     protected chatRequestParser: ChatRequestParser;
 
@@ -141,12 +148,13 @@ export class ChatServiceImpl implements ChatService {
         return this._sessions.find(session => session.id === id);
     }
 
-    createSession(location = ChatAgentLocation.Panel, options?: SessionOptions): ChatSession {
+    createSession(location = ChatAgentLocation.Panel, options?: SessionOptions, pinnedAgent?: ChatAgent): ChatSession {
         const model = new MutableChatModel(location);
         const session: ChatSessionInternal = {
             id: model.id,
             model,
-            isActive: true
+            isActive: true,
+            pinnedAgent
         };
         this._sessions.push(session);
         this.setActiveSession(session.id, options);
@@ -179,8 +187,8 @@ export class ChatServiceImpl implements ChatService {
         session.title = request.text;
 
         const parsedRequest = this.chatRequestParser.parseChatRequest(request, session.model.location);
+        const agent = this.getAgent(parsedRequest, session);
 
-        const agent = this.getAgent(parsedRequest);
         if (agent === undefined) {
             const error = 'No ChatAgents available to handle request!';
             this.logger.error(error);
@@ -242,7 +250,20 @@ export class ChatServiceImpl implements ChatService {
         return this.getSession(sessionId)?.model.getRequest(requestId)?.response.cancel();
     }
 
-    protected getAgent(parsedRequest: ParsedChatRequest): ChatAgent | undefined {
+    protected getAgent(parsedRequest: ParsedChatRequest, session: ChatSession): ChatAgent | undefined {
+        let agent = this.initialAgentSelection(parsedRequest);
+        if (this.pinChatAgent === false) {
+            return agent;
+        }
+        if (!session.pinnedAgent && agent && agent.id !== this.defaultChatAgentId?.id) {
+            session.pinnedAgent = agent;
+        } else if (session.pinnedAgent && this.getMentionedAgent(parsedRequest) === undefined) {
+            agent = session.pinnedAgent;
+        }
+        return agent;
+    }
+
+    protected initialAgentSelection(parsedRequest: ParsedChatRequest): ChatAgent | undefined {
         const agentPart = this.getMentionedAgent(parsedRequest);
         if (agentPart) {
             return this.chatAgentService.getAgent(agentPart.agentId);

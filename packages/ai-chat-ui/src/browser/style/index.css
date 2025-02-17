@@ -392,10 +392,13 @@ div:last-child>.theia-ChatNode {
 }
 
 .theia-ChatInputOptions .option {
-  width: 21px;
+  min-width: 21px;
   height: 21px;
   padding: 2px;
-  display: inline-block;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2px;
   box-sizing: border-box;
   user-select: none;
   background-repeat: no-repeat;
@@ -414,6 +417,10 @@ div:last-child>.theia-ChatNode {
 .theia-ChatInputOptions .option:hover {
   opacity: 1;
   background-color: var(--theia-toolbar-hoverBackground);
+}
+
+.theia-ChatInputOptions .reverse {
+    flex-direction: row-reverse;
 }
 
 .theia-CodePartRenderer-root {

@@ -26,6 +26,7 @@ import {
     ChatRequestParserImpl,
     ChatService,
     ToolCallChatResponseContentFactory,
+    PinChatAgent
 } from '../common';
 import { ChatAgentsVariableContribution } from '../common/chat-agents-variable-contribution';
 import { CustomChatAgent } from '../common/custom-chat-agent';
@@ -47,6 +48,7 @@ export default new ContainerModule(bind => {
 
     bind(ChatAgentServiceImpl).toSelf().inSingletonScope();
     bind(ChatAgentService).toService(ChatAgentServiceImpl);
+    bind(PinChatAgent).toConstantValue(true);
 
     bindContributionProvider(bind, ResponseContentMatcherProvider);
     bind(DefaultResponseContentMatcherProvider).toSelf().inSingletonScope();
