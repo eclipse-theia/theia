@@ -71,7 +71,10 @@ export class FileChatVariableContribution implements AIVariableContribution {
         position: monaco.Position
     ): Promise<monaco.languages.CompletionItem[] | undefined> {
         const lineContent = model.getLineContent(position.lineNumber);
-        const triggerCharIndex = lineContent.lastIndexOf(PromptText.VARIABLE_CHAR, position.column - 1);
+        const triggerCharIndex = Math.max(
+            lineContent.lastIndexOf(PromptText.VARIABLE_CHAR, position.column - 1),
+            lineContent.lastIndexOf(PromptText.VARIABLE_SEPARATOR_CHAR, position.column - 1)
+        );
         if (triggerCharIndex === -1) {
             return undefined;
         }
@@ -83,6 +86,7 @@ export class FileChatVariableContribution implements AIVariableContribution {
 
         const range = new monaco.Range(position.lineNumber, triggerCharIndex + 2, position.lineNumber, position.column);
         const picks = await this.quickFileSelectService.getPicks(typedWord, CancellationToken.None);
+        const prefix = lineContent[triggerCharIndex] === PromptText.VARIABLE_CHAR ? FILE_VARIABLE.name + PromptText.VARIABLE_SEPARATOR_CHAR : '';
 
         return Promise.all(
             picks
@@ -93,10 +97,10 @@ export class FileChatVariableContribution implements AIVariableContribution {
                     label: pick.label,
                     kind: monaco.languages.CompletionItemKind.File,
                     range,
+                    insertText: `${prefix}${await this.wsService.getWorkspaceRelativePath(pick.uri)}`,
+                    detail: await this.wsService.getWorkspaceRelativePath(pick.uri.parent),
                     // don't let monaco filter the items, as we only return picks that are filtered
                     filterText: typedWord,
-                    insertText: await this.wsService.getWorkspaceRelativePath(pick.uri),
-                    detail: await this.wsService.getWorkspaceRelativePath(pick.uri.parent),
                     // keep the order of the items, but move them to the end of the list
                     sortText: `ZZ${index.toString().padStart(4, '0')}_${pick.label}`,
                 }))

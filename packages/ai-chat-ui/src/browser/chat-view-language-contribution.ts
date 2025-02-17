@@ -58,7 +58,7 @@ export class ChatViewLanguageContribution implements FrontendApplicationContribu
             provideCompletionItems: (model, position, _context, _token): ProviderResult<monaco.languages.CompletionList> => this.provideVariableCompletions(model, position),
         });
         monaco.languages.registerCompletionItemProvider(CHAT_VIEW_LANGUAGE_ID, {
-            triggerCharacters: [PromptText.VARIABLE_CHAR],
+            triggerCharacters: [PromptText.VARIABLE_CHAR, PromptText.VARIABLE_SEPARATOR_CHAR],
             provideCompletionItems: (model, position, _context, _token): ProviderResult<monaco.languages.CompletionList> => this.provideVariableWithArgCompletions(model, position),
         });
         monaco.languages.registerCompletionItemProvider(CHAT_VIEW_LANGUAGE_ID, {
@@ -156,8 +156,6 @@ export class ChatViewLanguageContribution implements FrontendApplicationContribu
                 if (items) {
                     suggestions.push(...items.map(item => ({
                         ...item,
-                        // adjust insert text to include the variable name
-                        insertText: `${variable.name}${PromptText.VARIABLE_SEPARATOR_CHAR}${item.insertText}`,
                         // trigger command to check if we should add a context variable
                         command: {
                             title: 'Add context variable',
