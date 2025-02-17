@@ -162,11 +162,15 @@ export class ChatServiceImpl implements ChatService {
     }
 
     deleteSession(sessionId: string): void {
+        const sessionIndex = this._sessions.findIndex(candidate => candidate.id === sessionId);
+        if (~sessionIndex) { return; }
+        const session = this._sessions[sessionIndex];
         // If the removed session is the active one, set the newest one as active
-        if (this.getSession(sessionId)?.isActive) {
+        if (session.isActive) {
             this.setActiveSession(this._sessions[this._sessions.length - 1]?.id);
         }
-        this._sessions = this._sessions.filter(item => item.id !== sessionId);
+        session.model.dispose();
+        this._sessions.splice(sessionIndex, 1);
     }
 
     setActiveSession(sessionId: string | undefined, options?: SessionOptions): void {
@@ -291,6 +295,6 @@ export class ChatServiceImpl implements ChatService {
     }
 
     deleteChangeSetElement(sessionId: string, index: number): void {
-        this.getSession(sessionId)?.model.changeSet?.removeElement(index);
+        this.getSession(sessionId)?.model.changeSet?.removeElements(index);
     }
 }

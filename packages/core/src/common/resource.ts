@@ -225,7 +225,7 @@ export class DefaultResourceProvider {
 }
 
 export class MutableResource implements Resource {
-    private contents: string = '';
+    protected contents: string = '';
 
     constructor(readonly uri: URI) {
     }
@@ -290,7 +290,7 @@ export class InMemoryResources implements ResourceResolver {
         const resourceUri = uri.toString();
         const resource = this.resources.get(resourceUri);
         if (!resource) {
-            throw new Error(`Cannot update non-existed in-memory resource '${resourceUri}'`);
+            throw new Error(`Cannot update non-existent in-memory resource '${resourceUri}'`);
         }
         resource.saveContents(contents);
         return resource;

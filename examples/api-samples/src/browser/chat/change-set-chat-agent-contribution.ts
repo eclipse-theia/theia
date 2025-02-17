@@ -81,7 +81,8 @@ export class ChangeSetChatAgent extends AbstractStreamParsingChatAgent {
 
         const chatSessionId = request.session.id;
         const changeSet = new ChangeSetImpl('My Test Change Set');
-        changeSet.addElement(
+
+        changeSet.addElements(
             this.fileChangeFactory({
                 uri: fileToAdd,
                 type: 'add',
@@ -93,7 +94,7 @@ export class ChangeSetChatAgent extends AbstractStreamParsingChatAgent {
         );
 
         if (fileToChange && fileToChange.resource) {
-            changeSet.addElement(
+            changeSet.addElements(
                 this.fileChangeFactory({
                     uri: fileToChange.resource,
                     type: 'modify',
@@ -105,7 +106,7 @@ export class ChangeSetChatAgent extends AbstractStreamParsingChatAgent {
             );
         }
         if (fileToDelete && fileToDelete.resource) {
-            changeSet.addElement(
+            changeSet.addElements(
                 this.fileChangeFactory({
                     uri: fileToDelete.resource,
                     type: 'delete',
@@ -115,6 +116,7 @@ export class ChangeSetChatAgent extends AbstractStreamParsingChatAgent {
                 })
             );
         }
+
         request.session.setChangeSet(changeSet);
 
         request.response.response.addContent(new MarkdownChatResponseContentImpl(

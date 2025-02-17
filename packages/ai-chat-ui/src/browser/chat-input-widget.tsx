@@ -417,7 +417,7 @@ const noPropagation = (handler: () => void) => (e: React.MouseEvent) => {
 const buildChangeSetUI = (changeSet: ChangeSet, labelProvider: LabelProvider, onDeleteChangeSet: () => void, onDeleteChangeSetElement: (index: number) => void): ChangeSetUI => ({
     title: changeSet.title,
     disabled: !hasPendingElementsToAccept(changeSet),
-    acceptAllPendingElements: () => acceptAllPendingElements(changeSet),
+    applyAllPendingElements: () => applyAllPendingElements(changeSet),
     delete: () => onDeleteChangeSet(),
     elements: changeSet.getElements().map(element => ({
         open: element?.open?.bind(element),
@@ -426,8 +426,8 @@ const buildChangeSetUI = (changeSet: ChangeSet, labelProvider: LabelProvider, on
         name: element.name ?? labelProvider.getName(element.uri),
         additionalInfo: element.additionalInfo ?? labelProvider.getDetails(element.uri),
         openChange: element?.openChange?.bind(element),
-        accept: element.state !== 'applied' ? element?.apply?.bind(element) : undefined,
-        discard: element.state === 'applied' ? element?.revert?.bind(element) : undefined,
+        apply: element.state !== 'applied' ? element?.apply?.bind(element) : undefined,
+        revert: element.state === 'applied' || element.state === 'stale' ? element?.revert?.bind(element) : undefined,
         delete: () => onDeleteChangeSetElement(changeSet.getElements().indexOf(element))
     }))
 });
@@ -439,15 +439,15 @@ interface ChangeSetUIElement {
     additionalInfo: string;
     open?: () => void;
     openChange?: () => void;
-    accept?: () => void;
-    discard?: () => void;
+    apply?: () => void;
+    revert?: () => void;
     delete: () => void;
 }
 
 interface ChangeSetUI {
     title: string;
     disabled: boolean;
-    acceptAllPendingElements: () => void;
+    applyAllPendingElements: () => void;
     delete: () => void;
     elements: ChangeSetUIElement[];
 }
@@ -460,10 +460,10 @@ const ChangeSetBox: React.FunctionComponent<{ changeSet: ChangeSetUI }> = ({ cha
                 <button
                     className='theia-button'
                     disabled={changeSet.disabled}
-                    title={nls.localize('theia/ai/chat-ui/acceptAll', 'Accept all pending changes')}
-                    onClick={() => changeSet.acceptAllPendingElements()}
+                    title={nls.localize('theia/ai/chat-ui/acceptAll', 'Apply all pending suggestions')}
+                    onClick={() => changeSet.applyAllPendingElements()}
                 >
-                    Accept
+                    {nls.localizeByDefault('Copy All')}
                 </button>
                 <span className='codicon codicon-close action' title={nls.localize('theia/ai/chat-ui/deleteChangeSet', 'Delete Change Set')} onClick={() => changeSet.delete()} />
             </div>
@@ -488,17 +488,17 @@ const ChangeSetBox: React.FunctionComponent<{ changeSet: ChangeSetUI }> = ({ cha
                                     title={nls.localize('theia/ai/chat-ui/openOriginalFile', 'Open Original File')}
                                     onClick={noPropagation(() => element.open!())}
                                 />)}
-                            {element.discard && (
+                            {element.revert && (
                                 <span
                                     className='codicon codicon-discard action'
-                                    title={nls.localizeByDefault('Undo')}
-                                    onClick={noPropagation(() => element.discard!())}
+                                    title={nls.localizeByDefault('Revert')}
+                                    onClick={noPropagation(() => element.revert!())}
                                 />)}
-                            {element.accept && (
+                            {element.apply && (
                                 <span
                                     className='codicon codicon-check action'
-                                    title={nls.localizeByDefault('Accept')}
-                                    onClick={noPropagation(() => element.accept!())}
+                                    title={nls.localizeByDefault('Apply')}
+                                    onClick={noPropagation(() => element.apply!())}
                                 />)}
                             <span className='codicon codicon-close action' title={nls.localizeByDefault('Delete')} onClick={noPropagation(() => element.delete())} />
                         </div>
@@ -556,15 +556,15 @@ const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({ left
     </div>
 );
 
-function acceptAllPendingElements(changeSet: ChangeSet): void {
-    acceptablePendingElements(changeSet).forEach(e => e.apply!());
+function applyAllPendingElements(changeSet: ChangeSet): void {
+    getPendingElements(changeSet).forEach(e => e.apply!());
 }
 
 function hasPendingElementsToAccept(changeSet: ChangeSet): boolean | undefined {
-    return acceptablePendingElements(changeSet).length > 0;
+    return getPendingElements(changeSet).length > 0;
 }
 
-function acceptablePendingElements(changeSet: ChangeSet): ChangeSetElement[] {
+function getPendingElements(changeSet: ChangeSet): ChangeSetElement[] {
     return changeSet.getElements().filter(e => e.apply && (e.state === undefined || e.state === 'pending'));
 }
 

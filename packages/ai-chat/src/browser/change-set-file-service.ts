@@ -143,14 +143,16 @@ export class ChangeSetFileService {
         }
     }
 
-    updateEditorsWithNewSuggestion(uri: URI, content: string): void {
-        const existingModel = this.monacoWorkspace.getTextDocument(uri.toString());
-        existingModel?.textEditorModel.setValue(content);
+    closeDiffsForSession(sessionId: string, except?: URI[]): void {
+        const openEditors = this.shell.widgets.filter(widget => {
+            const uri = NavigatableWidget.getUri(widget);
+            return uri && uri.authority === sessionId && !except?.some(candidate => candidate.path.toString() === uri.path.toString());
+        });
+        openEditors.forEach(editor => editor.close());
     }
 
-    closeDiffsFor(originalUri: URI): void {
-        // Diff editors return the URI of the left side as their URI.
-        const openEditors = this.shell.widgets.filter(widget => NavigatableWidget.getUri(widget)?.isEqual(originalUri));
+    closeDiff(uri: URI): void {
+        const openEditors = this.shell.widgets.filter(widget => NavigatableWidget.getUri(widget)?.isEqual(uri));
         openEditors.forEach(editor => editor.close());
     }
 }
