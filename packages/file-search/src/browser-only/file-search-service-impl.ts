@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2025 robertjndw
+// Copyright (C) 2025 robertjndw, TypeFox
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { FileSearchService, WHITESPACE_QUERY_SEPARATOR } from '../common/file-search-service';
 import { FileSystemProvider, FileType } from '@theia/filesystem/lib/common/files';
 import { CancellationTokenSource, CancellationToken, ILogger, URI } from '@theia/core';
@@ -23,7 +23,8 @@ import { minimatch } from 'minimatch';
 @injectable()
 export class FileSearchServiceImpl implements FileSearchService {
     constructor(
-        @inject(ILogger) protected readonly logger: ILogger,
+        @inject(ILogger) @named('file-search')
+        protected logger: ILogger,
         @inject(FileSystemProvider)
         protected readonly fileSystemProvider: FileSystemProvider
     ) { }

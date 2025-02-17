@@ -9,7 +9,7 @@
     "@theia/process": "1.58.0",
     "@theia/workspace": "1.58.0",
     "@vscode/ripgrep": "^1.14.2",
-    "minimatch": "9.0.5",
+    "minimatch": "^5.1.0",
     "tslib": "^2.6.2"
   },
   "publishConfig": {
