@@ -14,13 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { Agent, AgentService, AIVariable, AIVariableService } from '@theia/ai-core/lib/common';
 import { codicon, ReactWidget } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
-import { Agent, AIVariable, AIVariableService } from '../../common';
 import { AIAgentConfigurationWidget } from './agent-configuration-widget';
 import { AIConfigurationSelectionService } from './ai-configuration-service';
-import { AgentService } from '../../common/agent-service';
 
 @injectable()
 export class AIVariableConfigurationWidget extends ReactWidget {
@@ -107,4 +106,3 @@ export class AIVariableConfigurationWidget extends ReactWidget {
         return this.agentService.getAgents().filter(a => a.variables?.includes(variable.id));
     }
 }
-

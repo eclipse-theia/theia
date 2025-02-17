@@ -12,7 +12,7 @@
 
 ## Description
 
-The `@theia/ai-ide-agents` package consolidates various AI agents for use within IDEs like the Theia IDE.
+The `@theia/ai-ide` package consolidates various AI agents for use within IDEs like the Theia IDE.
 
 ## Agents
 
@@ -27,6 +27,10 @@ The package includes the following agents:
 - **Command Chat Agent**: This agent helps users execute commands within the Theia IDE based on user requests. It identifies the correct command from Theia's command registry and facilitates its execution, providing users with a seamless command interaction experience.
 
 - **Workspace Agent**: The agent is able to inspect the current files of the workspace, including their content, to answer questions.
+
+## Configuration View
+
+The package provides a configuration view that enables you to adjust settings related to the behavior of AI agents. This view is implemented in the files located at packages/ai-ide/src/browser/ai-configuration and offers customization of default parameters, feature toggles, and additional preferences for the AI IDE.
 
 ## Additional Information
 

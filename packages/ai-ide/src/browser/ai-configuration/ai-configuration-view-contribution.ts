@@ -13,11 +13,11 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+import { AIViewContribution } from '@theia/ai-core/lib/browser';
+import { Command, CommandRegistry } from '@theia/core';
 import { FrontendApplication } from '@theia/core/lib/browser';
 import { injectable } from '@theia/core/shared/inversify';
-import { AIViewContribution } from '../ai-view-contribution';
 import { AIConfigurationContainerWidget } from './ai-configuration-widget';
-import { Command, CommandRegistry } from '@theia/core';
 
 export const AI_CONFIGURATION_TOGGLE_COMMAND_ID = 'aiConfiguration:toggle';
 export const OPEN_AI_CONFIG_VIEW = Command.toLocalizedCommand({
@@ -51,4 +51,3 @@ export class AIAgentConfigurationViewContribution extends AIViewContribution<AIC
         });
     }
 }
-

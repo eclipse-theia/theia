@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { Agent } from '@theia/ai-core/lib/common';
 import { Emitter } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
-import { Agent } from '../../common';
 
 @injectable()
 export class AIConfigurationSelectionService {
