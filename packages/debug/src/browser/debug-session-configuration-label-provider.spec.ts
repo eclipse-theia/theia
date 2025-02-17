@@ -64,16 +64,21 @@ describe('DebugSessionConfigurationLabelProvider', () => {
         expect(label).to.be.equal('name (basename)');
     });
 
-    it('should return the name without default params', () => {
+    it('should ignore the workspace and return the name without default params', () => {
+        roots = [
+            {/* irrelevant */ } as FileStat,
+            {/* irrelevant */ } as FileStat,
+        ];
+
         const name = 'name';
-        const label = labelProvider.getLabel({ name });
+        const label = labelProvider.getLabel({ name }, false);
         expect(label).to.be.equal(name);
     });
 
     it('should handle multi-workspace roots', () => {
         roots = [
-            {} as any, // irrelevant
-            {} as any, // irrelevant
+            {/* irrelevant */ } as FileStat,
+            {/* irrelevant */ } as FileStat,
         ];
 
         const name = 'name';
@@ -83,8 +88,8 @@ describe('DebugSessionConfigurationLabelProvider', () => {
 
     it('should handle falsy basename and URI authority wins with multi-workspace roots', () => {
         roots = [
-            {} as any, // irrelevant
-            {} as any, // irrelevant
+            {/* irrelevant */ } as FileStat,
+            {/* irrelevant */ } as FileStat,
         ];
 
         const label = labelProvider.getLabel({ name: '', workspaceFolderUri: 'http://example.com' });
