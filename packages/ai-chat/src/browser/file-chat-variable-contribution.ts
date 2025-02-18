@@ -71,19 +71,18 @@ export class FileChatVariableContribution implements AIVariableContribution {
         position: monaco.Position
     ): Promise<monaco.languages.CompletionItem[] | undefined> {
         const lineContent = model.getLineContent(position.lineNumber);
-        const triggerCharIndex = Math.max(
-            lineContent.lastIndexOf(PromptText.VARIABLE_CHAR, position.column - 1),
-            lineContent.lastIndexOf(PromptText.VARIABLE_SEPARATOR_CHAR, position.column - 1)
-        );
-        if (triggerCharIndex === -1) {
+        const indexOfVariableTrigger = lineContent.lastIndexOf(PromptText.VARIABLE_CHAR, position.column - 1);
+
+        // check if there is a variable trigger and no space typed between the variable trigger and the cursor
+        if (indexOfVariableTrigger === -1 || lineContent.substring(indexOfVariableTrigger).includes(' ')) {
             return undefined;
         }
+
+        // determine whether we are providing completions before or after the variable argument separator
+        const indexOfVariableArgSeparator = lineContent.lastIndexOf(PromptText.VARIABLE_SEPARATOR_CHAR, position.column - 1);
+        const triggerCharIndex = Math.max(indexOfVariableTrigger, indexOfVariableArgSeparator);
 
         const typedWord = lineContent.substring(triggerCharIndex + 1, position.column - 1);
-        if (typedWord.includes(' ')) {
-            return undefined;
-        }
-
         const range = new monaco.Range(position.lineNumber, triggerCharIndex + 2, position.lineNumber, position.column);
         const picks = await this.quickFileSelectService.getPicks(typedWord, CancellationToken.None);
         const prefix = lineContent[triggerCharIndex] === PromptText.VARIABLE_CHAR ? FILE_VARIABLE.name + PromptText.VARIABLE_SEPARATOR_CHAR : '';
