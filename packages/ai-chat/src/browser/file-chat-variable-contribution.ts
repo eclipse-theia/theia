@@ -14,7 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { AIVariableContext, AIVariableContribution, AIVariableDropResult, AIVariableResolutionRequest, AIVariableService, PromptText } from '@theia/ai-core';
+import { AIVariableContext, AIVariableResolutionRequest, PromptText } from '@theia/ai-core';
+import { AIVariableDropResult, FrontendVariableContribution, FrontendVariableService } from '@theia/ai-core/lib/browser';
 import { FILE_VARIABLE } from '@theia/ai-core/lib/browser/file-variable-contribution';
 import { CancellationToken, QuickInputService, URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
@@ -24,7 +25,7 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 
 @injectable()
-export class FileChatVariableContribution implements AIVariableContribution {
+export class FileChatVariableContribution implements FrontendVariableContribution {
     @inject(FileService)
     protected readonly fileService: FileService;
 
@@ -37,7 +38,7 @@ export class FileChatVariableContribution implements AIVariableContribution {
     @inject(QuickFileSelectService)
     protected readonly quickFileSelectService: QuickFileSelectService;
 
-    registerVariables(service: AIVariableService): void {
+    registerVariables(service: FrontendVariableService): void {
         service.registerArgumentPicker(FILE_VARIABLE, this.triggerArgumentPicker.bind(this));
         service.registerArgumentCompletionProvider(FILE_VARIABLE, this.provideArgumentCompletionItems.bind(this));
         service.registerDropHandler(this.handleDrop.bind(this));

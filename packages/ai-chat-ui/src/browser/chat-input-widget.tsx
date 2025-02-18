@@ -23,7 +23,8 @@ import { IMouseEvent } from '@theia/monaco-editor-core';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { CHAT_VIEW_LANGUAGE_EXTENSION } from './chat-view-language-contribution';
-import { AIVariableResolutionRequest, AIVariableService } from '@theia/ai-core';
+import { AIVariableResolutionRequest } from '@theia/ai-core';
+import { FrontendVariableService } from '@theia/ai-core/lib/browser';
 import { ContextVariablePicker } from './context-variable-picker';
 
 type Query = (query: string, context?: AIVariableResolutionRequest[]) => Promise<void>;
@@ -55,8 +56,8 @@ export class AIChatInputWidget extends ReactWidget {
     @inject(AIChatInputConfiguration) @optional()
     protected readonly configuration: AIChatInputConfiguration | undefined;
 
-    @inject(AIVariableService)
-    protected readonly variableService: AIVariableService;
+    @inject(FrontendVariableService)
+    protected readonly variableService: FrontendVariableService;
 
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
