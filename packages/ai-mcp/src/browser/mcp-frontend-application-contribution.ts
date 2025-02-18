@@ -150,6 +150,7 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
             map.set(name, {
                 name,
                 ...description,
+                autostart: 'autostart' in description ? description.autostart : true,
                 env: description.env || undefined
             });
         });

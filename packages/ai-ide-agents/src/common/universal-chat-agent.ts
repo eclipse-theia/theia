@@ -17,10 +17,11 @@
 import { LanguageModelRequirement, PromptTemplate } from '@theia/ai-core/lib/common';
 import { injectable } from '@theia/core/shared/inversify';
 import { AbstractStreamParsingChatAgent } from '@theia/ai-chat/lib/common/chat-agents';
+import { nls } from '@theia/core';
 
 export const universalTemplate: PromptTemplate = {
-    id: 'universal-system',
-    template: `{{!-- Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
+   id: 'universal-system',
+   template: `{{!-- Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
 # Instructions
 
@@ -76,26 +77,26 @@ simple solutions.
 };
 
 export const universalTemplateVariant: PromptTemplate = {
-    id: 'universal-system-empty',
-    template: '',
-    variantOf: universalTemplate.id,
+   id: 'universal-system-empty',
+   template: '',
+   variantOf: universalTemplate.id,
 };
 
 export const UniversalChatAgentId = 'Universal';
 @injectable()
 export class UniversalChatAgent extends AbstractStreamParsingChatAgent {
-    id: string = UniversalChatAgentId;
-    name = UniversalChatAgentId;
-    languageModelRequirements: LanguageModelRequirement[] = [{
-        purpose: 'chat',
-        identifier: 'openai/gpt-4o',
-    }];
-    protected defaultLanguageModelPurpose: string = 'chat';
-    override description = 'This agent is designed to help software developers by providing concise and accurate '
-        + 'answers to general programming and software development questions. It is also the fall-back for any generic '
-        + 'questions the user might ask. The universal agent currently does not have any context by default, i.e. it cannot '
-        + 'access the current user context or the workspace.';
+   id: string = UniversalChatAgentId;
+   name = UniversalChatAgentId;
+   languageModelRequirements: LanguageModelRequirement[] = [{
+      purpose: 'chat',
+      identifier: 'openai/gpt-4o',
+   }];
+   protected defaultLanguageModelPurpose: string = 'chat';
+   override description = nls.localize('theia/ai/chat/universal/description', 'This agent is designed to help software developers by providing concise and accurate '
+      + 'answers to general programming and software development questions. It is also the fall-back for any generic '
+      + 'questions the user might ask. The universal agent currently does not have any context by default, i.e. it cannot '
+      + 'access the current user context or the workspace.');
 
-    override promptTemplates = [universalTemplate, universalTemplateVariant];
-    protected override systemPromptId: string = universalTemplate.id;
+   override promptTemplates = [universalTemplate, universalTemplateVariant];
+   protected override systemPromptId: string = universalTemplate.id;
 }

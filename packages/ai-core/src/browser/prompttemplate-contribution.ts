@@ -17,7 +17,7 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { GrammarDefinition, GrammarDefinitionProvider, LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/monaco/lib/browser/textmate';
 import * as monaco from '@theia/monaco-editor-core';
-import { Command, CommandContribution, CommandRegistry, MessageService } from '@theia/core';
+import { Command, CommandContribution, CommandRegistry, MessageService, nls } from '@theia/core';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 
 import { codicon, Widget } from '@theia/core/lib/browser';
@@ -245,7 +245,7 @@ export class PromptTemplateContribution implements LanguageGrammarDefinitionCont
         registry.registerItem({
             id: DISCARD_PROMPT_TEMPLATE_CUSTOMIZATIONS.id,
             command: DISCARD_PROMPT_TEMPLATE_CUSTOMIZATIONS.id,
-            tooltip: 'Discard Customizations'
+            tooltip: nls.localize('theia/ai/core/discardCustomPrompt/tooltip', 'Discard Customizations')
         });
     }
 }

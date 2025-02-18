@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { nls } from '@theia/core';
 import { PreferenceSchema } from '@theia/core/lib/browser/preferences/preference-contribution';
 
 export const CONSIDER_GITIGNORE_PREF = 'ai-features.workspaceFunctions.considerGitIgnore';
@@ -24,14 +25,15 @@ export const WorkspacePreferencesSchema: PreferenceSchema = {
     properties: {
         [CONSIDER_GITIGNORE_PREF]: {
             type: 'boolean',
-            title: 'Consider .gitignore',
-            description: 'If enabled, excludes files/folders specified in a global .gitignore file (expected location is the workspace root).',
+            title: nls.localize('theia/ai/workspace/considerGitignore/title', 'Consider .gitignore'),
+            description: nls.localize('theia/ai/workspace/considerGitignore/description',
+                'If enabled, excludes files/folders specified in a global .gitignore file (expected location is the workspace root).'),
             default: false
         },
         [USER_EXCLUDE_PATTERN_PREF]: {
             type: 'array',
-            title: 'Excluded File Patterns',
-            description: 'List of patterns (glob or regex) for files/folders to exclude.',
+            title: nls.localize('theia/ai/workspace/excludedPattern/title', 'Excluded File Patterns'),
+            description: nls.localize('theia/ai/workspace/excludedPattern/description', 'List of patterns (glob or regex) for files/folders to exclude.'),
             default: ['node_modules', 'lib', '.*'],
             items: {
                 type: 'string'

@@ -16,6 +16,7 @@
 import * as React from '@theia/core/shared/react';
 import { PromptCustomizationService, PromptService } from '../../common/prompt-service';
 import { AISettingsService, PromptTemplate } from '../../common';
+import { nls } from '@theia/core/lib/common/nls';
 
 const DEFAULT_VARIANT = 'default';
 
@@ -87,7 +88,7 @@ export const TemplateRenderer: React.FC<TemplateRendererProps> = ({
                 {(variantIds.length > 1 || isInvalidVariant) && (
                     <>
                         <label htmlFor={`variant-selector-${template.id}`} className="template-select-label">
-                            Select Variant:
+                            {nls.localize('theia/ai/core/templateSettings/selectVariant', 'Select Variant:')}
                         </label>
                         <select
                             id={`variant-selector-${template.id}`}
@@ -97,7 +98,7 @@ export const TemplateRenderer: React.FC<TemplateRendererProps> = ({
                         >
                             {isInvalidVariant && (
                                 <option value="invalid" disabled>
-                                    The selected variant is no longer available
+                                    {nls.localize('theia/ai/core/templateSettings/unavailableVariant', 'The selected variant is no longer available')}
                                 </option>
                             )}
                             {variantIds.map(variantId => (
@@ -113,14 +114,14 @@ export const TemplateRenderer: React.FC<TemplateRendererProps> = ({
                     onClick={openTemplate}
                     disabled={isInvalidVariant}
                 >
-                    Edit
+                    {nls.localizeByDefault('Edit')}
                 </button>
                 <button
                     className="theia-button secondary"
                     onClick={resetTemplate}
                     disabled={isInvalidVariant}
                 >
-                    Reset
+                    {nls.localizeByDefault('Reset')}
                 </button>
             </div>
         </div>
