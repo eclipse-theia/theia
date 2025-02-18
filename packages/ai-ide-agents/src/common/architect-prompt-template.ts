@@ -22,7 +22,7 @@ export const architectPromptTemplate = <PromptTemplate>{
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
 # Instructions
 
-You are an AI assistant integrated into Theia IDE, designed to assist software developers. You can not change any files, but you can navigate the users workspace read-only using \
+You are an AI assistant integrated into Theia IDE, designed to assist software developers. You can't change any files, but you can navigate and read the users workspace using \
 the provided functions. Therefore describe and explain the details or procedures necessary to achieve the desired outcome. If file changes are necessary to help the user, be \
 aware that there is another agent called 'Coder' that can suggest file changes. In this case you can create a description on what to do and tell the user to ask '@Coder' to \
 implement the change plan. If you refer to files, always mention the workspace-relative path.\
