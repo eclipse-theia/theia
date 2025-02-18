@@ -15,9 +15,10 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { ChatAgent, ChatServiceImpl, ChatSession, ParsedChatRequest } from '../common';
+import { ChangeSet, ChatAgent, ChatAgentLocation, ChatServiceImpl, ChatSession, ParsedChatRequest, SessionOptions } from '../common';
 import { PreferenceService } from '@theia/core/lib/browser';
 import { DEFAULT_CHAT_AGENT_PREF, PIN_CHAT_AGENT_PREF } from './ai-chat-preferences';
+import { ChangeSetFileService } from './change-set-file-service';
 
 /**
  * Customizes the ChatServiceImpl to consider preference based default chat agent
@@ -26,7 +27,10 @@ import { DEFAULT_CHAT_AGENT_PREF, PIN_CHAT_AGENT_PREF } from './ai-chat-preferen
 export class FrontendChatServiceImpl extends ChatServiceImpl {
 
     @inject(PreferenceService)
-    protected preferenceService: PreferenceService;
+    protected readonly preferenceService: PreferenceService;
+
+    @inject(ChangeSetFileService)
+    protected readonly changeSetFileService: ChangeSetFileService;
 
     protected override getAgent(parsedRequest: ParsedChatRequest, session: ChatSession): ChatAgent | undefined {
         let agent = this.initialAgentSelection(parsedRequest);
@@ -59,5 +63,18 @@ export class FrontendChatServiceImpl extends ChatServiceImpl {
             this.logger.warn(`The configured default chat agent with id '${configuredDefaultChatAgentId}' does not exist.`);
         }
         return configuredDefaultChatAgent;
+    }
+
+    override createSession(location?: ChatAgentLocation, options?: SessionOptions): ChatSession {
+        const session = super.createSession(location, options);
+        session.model.onDidChange(event => {
+            const changeSet = (event as { changeSet?: ChangeSet }).changeSet;
+            if (event.kind === 'removeChangeSet') {
+                this.changeSetFileService.closeDiffsForSession(session.id);
+            } else if (changeSet) {
+                this.changeSetFileService.closeDiffsForSession(session.id, changeSet.getElements().map(({ uri }) => uri));
+            }
+        });
+        return session;
     }
 }

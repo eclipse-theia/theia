@@ -62,6 +62,8 @@ export interface Resource extends Disposable {
     readonly readOnly?: boolean | MarkdownString;
 
     readonly initiallyDirty?: boolean;
+    /** If false, the application should not attempt to auto-save this resource. */
+    readonly autosaveable?: boolean;
     /**
      * Reads latest content of this resource.
      *
@@ -223,7 +225,7 @@ export class DefaultResourceProvider {
 }
 
 export class MutableResource implements Resource {
-    private contents: string = '';
+    protected contents: string = '';
 
     constructor(readonly uri: URI) {
     }
@@ -288,7 +290,7 @@ export class InMemoryResources implements ResourceResolver {
         const resourceUri = uri.toString();
         const resource = this.resources.get(resourceUri);
         if (!resource) {
-            throw new Error(`Cannot update non-existed in-memory resource '${resourceUri}'`);
+            throw new Error(`Cannot update non-existent in-memory resource '${resourceUri}'`);
         }
         resource.saveContents(contents);
         return resource;
@@ -390,7 +392,8 @@ export class UntitledResourceResolver implements ResourceResolver {
 export class UntitledResource implements Resource {
 
     protected readonly onDidChangeContentsEmitter = new Emitter<void>();
-    initiallyDirty: boolean;
+    readonly initiallyDirty: boolean;
+    readonly autosaveable = false;
     get onDidChangeContents(): Event<void> {
         return this.onDidChangeContentsEmitter.event;
     }

@@ -35,7 +35,6 @@ export type ChatChangeEvent =
     | ChatAddResponseEvent
     | ChatRemoveRequestEvent
     | ChatSetChangeSetEvent
-    | ChatSetChangeDeleteEvent
     | ChatUpdateChangeSetEvent
     | ChatRemoveChangeSetEvent;
 
@@ -52,10 +51,7 @@ export interface ChatAddResponseEvent {
 export interface ChatSetChangeSetEvent {
     kind: 'setChangeSet';
     changeSet: ChangeSet;
-}
-
-export interface ChatSetChangeDeleteEvent {
-    kind: 'deleteChangeSet';
+    oldChangeSet?: ChangeSet;
 }
 
 export interface ChatUpdateChangeSetEvent {
@@ -70,7 +66,7 @@ export interface ChatRemoveChangeSetEvent {
 
 export namespace ChatChangeEvent {
     export function isChangeSetEvent(event: ChatChangeEvent): event is ChatSetChangeSetEvent | ChatUpdateChangeSetEvent | ChatRemoveChangeSetEvent {
-        return event.kind === 'setChangeSet' || event.kind === 'deleteChangeSet' || event.kind === 'removeChangeSet' || event.kind === 'updateChangeSet';
+        return event.kind === 'setChangeSet' || event.kind === 'removeChangeSet' || event.kind === 'updateChangeSet';
     }
 }
 
@@ -93,25 +89,29 @@ export interface ChatModel {
 }
 
 export interface ChangeSet {
+    onDidChange: Event<ChangeSetChangeEvent>;
     readonly title: string;
     getElements(): ChangeSetElement[];
+    dispose(): void;
 }
 
 export interface ChangeSetElement {
     readonly uri: URI;
 
+    onDidChange?: Event<void>
     readonly name?: string;
     readonly icon?: string;
     readonly additionalInfo?: string;
 
-    readonly state?: 'pending' | 'applied' | 'discarded';
+    readonly state?: 'pending' | 'applied' | 'stale';
     readonly type?: 'add' | 'modify' | 'delete';
     readonly data?: { [key: string]: unknown };
 
     open?(): Promise<void>;
     openChange?(): Promise<void>;
-    accept?(): Promise<void>;
-    discard?(): Promise<void>;
+    apply?(): Promise<void>;
+    revert?(): Promise<void>;
+    dispose?(): void;
 }
 
 export interface ChatRequest {
@@ -471,13 +471,12 @@ export interface ChatResponseModel {
  * Implementations
  **********************/
 
-export class MutableChatModel implements ChatModel {
+export class MutableChatModel implements ChatModel, Disposable {
     protected readonly _onDidChangeEmitter = new Emitter<ChatChangeEvent>();
     onDidChange: Event<ChatChangeEvent> = this._onDidChangeEmitter.event;
 
     protected _requests: MutableChatRequestModel[];
     protected _id: string;
-    protected _changeSetListener?: Disposable;
     protected _changeSet?: ChangeSetImpl;
 
     constructor(public readonly location = ChatAgentLocation.Panel) {
@@ -503,22 +502,21 @@ export class MutableChatModel implements ChatModel {
     }
 
     setChangeSet(changeSet: ChangeSetImpl | undefined): void {
-        this._changeSet = changeSet;
-        if (this._changeSet === undefined) {
-            this._changeSetListener?.dispose();
-            this._onDidChangeEmitter.fire({
-                kind: 'deleteChangeSet',
-            });
-            return;
+        if (!changeSet) {
+            return this.removeChangeSet();
         }
+        const oldChangeSet = this._changeSet;
+        oldChangeSet?.dispose();
+        this._changeSet = changeSet;
         this._onDidChangeEmitter.fire({
             kind: 'setChangeSet',
-            changeSet: this._changeSet,
+            changeSet,
+            oldChangeSet,
         });
-        this._changeSetListener = this._changeSet.onDidChange(() => {
+        changeSet.onDidChange(() => {
             this._onDidChangeEmitter.fire({
                 kind: 'updateChangeSet',
-                changeSet: this._changeSet!,
+                changeSet,
             });
         });
     }
@@ -527,6 +525,7 @@ export class MutableChatModel implements ChatModel {
         if (this._changeSet) {
             const oldChangeSet = this._changeSet;
             this._changeSet = undefined;
+            oldChangeSet.dispose();
             this._onDidChangeEmitter.fire({
                 kind: 'removeChangeSet',
                 changeSet: oldChangeSet,
@@ -547,54 +546,72 @@ export class MutableChatModel implements ChatModel {
     isEmpty(): boolean {
         return this._requests.length === 0;
     }
+
+    dispose(): void {
+        this.removeChangeSet(); // Signal disposal of last change set.
+        this._onDidChangeEmitter.dispose();
+    }
+}
+
+interface ChangeSetChangeEvent {
+    added?: URI[],
+    removed?: URI[],
+    modified?: URI[],
+    /** Fired when only the state of a given element changes, not its contents */
+    state?: URI[],
 }
 
 export class ChangeSetImpl implements ChangeSet {
-    protected readonly _onDidChangeEmitter = new Emitter<void>();
-    onDidChange: Event<void> = this._onDidChangeEmitter.event;
+    protected readonly _onDidChangeEmitter = new Emitter<ChangeSetChangeEvent>();
+    onDidChange: Event<ChangeSetChangeEvent> = this._onDidChangeEmitter.event;
 
     protected _elements: ChangeSetElement[] = [];
 
     constructor(public readonly title: string, elements: ChangeSetElement[] = []) {
-        this.addElements(elements);
+        this.addElements(...elements);
     }
 
     getElements(): ChangeSetElement[] {
         return this._elements;
     }
 
-    addElement(element: ChangeSetElement): void {
-        this.addElements([element]);
+    /** Will replace any element that is already present, using URI as identity criterion. */
+    addElements(...elements: ChangeSetElement[]): void {
+        const added: URI[] = [];
+        const modified: URI[] = [];
+        const toDispose: ChangeSetElement[] = [];
+        const current = new Map(this.getElements().map((element, index) => [element.uri.toString(), index]));
+        elements.forEach(element => {
+            const existingIndex = current.get(element.uri.toString());
+            if (existingIndex !== undefined) {
+                modified.push(element.uri);
+                toDispose.push(this._elements[existingIndex]);
+                this._elements[existingIndex] = element;
+            } else {
+                added.push(element.uri);
+                this._elements.push(element);
+            }
+            element.onDidChange?.(() => this.notifyChange({ state: [element.uri] }));
+        });
+        toDispose.forEach(element => element.dispose?.());
+        this.notifyChange({ added, modified });
     }
 
-    addElements(elements: ChangeSetElement[]): void {
-        this._elements.push(...elements);
-        this.notifyChange();
+    removeElements(...indices: number[]): void {
+        // From highest to lowest so that we don't affect lower indices with our splicing.
+        const sorted = indices.slice().sort((left, right) => left - right);
+        const deletions = sorted.flatMap(index => this._elements.splice(index, 1));
+        deletions.forEach(deleted => deleted.dispose?.());
+        this.notifyChange({ removed: deletions.map(element => element.uri) });
     }
 
-    replaceElement(element: ChangeSetElement): boolean {
-        const index = this._elements.findIndex(e => e.uri.toString() === element.uri.toString());
-        if (index < 0) {
-            return false;
-        }
-        this._elements[index] = element;
-        this.notifyChange();
-        return true;
+    protected notifyChange(change: ChangeSetChangeEvent): void {
+        this._onDidChangeEmitter.fire(change);
     }
 
-    addOrReplaceElement(element: ChangeSetElement): void {
-        if (!this.replaceElement(element)) {
-            this.addElement(element);
-        }
-    }
-
-    removeElement(index: number): void {
-        this._elements.splice(index, 1);
-        this.notifyChange();
-    }
-
-    notifyChange(): void {
-        this._onDidChangeEmitter.fire();
+    dispose(): void {
+        this._elements.forEach(element => element.dispose?.());
+        this._onDidChangeEmitter.dispose();
     }
 }
 

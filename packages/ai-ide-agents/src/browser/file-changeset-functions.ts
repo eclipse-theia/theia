@@ -73,7 +73,7 @@ export class WriteChangeToFileProvider implements ToolProvider {
                 if (!await this.fileService.exists(uri)) {
                     type = 'add';
                 }
-                changeSet.addOrReplaceElement(
+                changeSet.addElements(
                     this.fileChangeFactory({
                         uri: uri,
                         type: type as 'modify' | 'add' | 'delete',
@@ -163,7 +163,7 @@ export class ReplaceContentInFileProvider implements ToolProvider {
                             ctx.session.setChangeSet(changeSet);
                         }
 
-                        changeSet.addOrReplaceElement(
+                        changeSet.addElements(
                             this.fileChangeFactory({
                                 uri: fileUri,
                                 type: 'modify',
