@@ -32,6 +32,15 @@ export class ContentReplacer {
         let updatedContent = originalContent;
         const errorMessages: string[] = [];
 
+        // Guard against conflicting replacements: if the same oldContent appears with different newContent, return with an error.
+        const conflictMap = new Map<string, string>();
+        for (const replacement of replacements) {
+            if (conflictMap.has(replacement.oldContent) && conflictMap.get(replacement.oldContent) !== replacement.newContent) {
+                return { updatedContent: originalContent, errors: [`Conflicting replacement values for: "${replacement.oldContent}"`] };
+            }
+            conflictMap.set(replacement.oldContent, replacement.newContent);
+        }
+
         replacements.forEach(({ oldContent, newContent, multiple }) => {
             // If the old content is empty, prepend the new content to the beginning of the file (e.g. in new file)
             if (oldContent === '') {
@@ -46,12 +55,12 @@ export class ContentReplacer {
             }
 
             if (matchIndices.length === 0) {
-                errorMessages.push(`Error: Content to replace not found: "${oldContent}"`);
+                errorMessages.push(`Content to replace not found: "${oldContent}"`);
             } else if (matchIndices.length > 1) {
                 if (multiple) {
                     updatedContent = this.replaceContentAll(updatedContent, oldContent, newContent);
                 } else {
-                    errorMessages.push(`Error: Multiple occurrences found for: "${oldContent}"`);
+                    errorMessages.push(`Multiple occurrences found for: "${oldContent}"`);
                 }
             } else {
                 updatedContent = this.replaceContentOnce(updatedContent, oldContent, newContent);

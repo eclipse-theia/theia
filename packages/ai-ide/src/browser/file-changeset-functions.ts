@@ -146,9 +146,10 @@ export class ReplaceContentInFileFunctionHelper {
 
         const replacementSentence = supportMutipleReplace
             ? 'By default, a single occurrence of each old content in the tuples is expected to be replaced. If the optional \'multiple\' flag is set to true, all occurrences will\
-             be replaced. In either case, if the number of occurrences in the file does not match the expectation the function will return an error, try a different approach then.'
+             be replaced. In either case, if the number of occurrences in the file does not match the expectation the function will return an error. \
+             In that case try a different approach.'
             : 'A single occurrence of each old content in the tuples is expected to be replaced. If the number of occurrences in the file does not match the expectation,\
-              the function will return an error, try a different approach then.';
+              the function will return an error. In that case try a different approach.';
 
         const replacementDescription = `Request to replace sections of content in an existing file by providing a list of tuples with old content to be matched and replaced.
             ${replacementSentence}. For deletions, use an empty new content in the tuple.\
@@ -194,7 +195,7 @@ export class ReplaceContentInFileFunctionHelper {
             }
             return `Proposed replacements in file ${path}. The user will review and potentially apply the changes.`;
         } catch (error) {
-            console.info('Error processing replacements:', error.message);
+            console.debug('Error processing replacements:', error.message);
             return JSON.stringify({ error: error.message });
         }
     }

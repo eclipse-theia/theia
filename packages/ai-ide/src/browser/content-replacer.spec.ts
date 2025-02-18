@@ -53,7 +53,7 @@ describe('ContentReplacer', () => {
         ];
         const result = contentReplacer.applyReplacements(originalContent, replacements);
         expect(result.updatedContent).to.equal(originalContent);
-        expect(result.errors).to.include('Error: Content to replace not found: "Nonexistent"');
+        expect(result.errors).to.include('Content to replace not found: "Nonexistent"');
     });
 
     it('should return an error when oldContent has multiple occurrences', () => {
@@ -63,7 +63,7 @@ describe('ContentReplacer', () => {
         ];
         const result = contentReplacer.applyReplacements(originalContent, replacements);
         expect(result.updatedContent).to.equal(originalContent);
-        expect(result.errors).to.include('Error: Multiple occurrences found for: "Repeat"');
+        expect(result.errors).to.include('Multiple occurrences found for: "Repeat"');
     });
 
     it('should prepend newContent when oldContent is an empty string', () => {
@@ -108,6 +108,17 @@ describe('ContentReplacer', () => {
         ];
         const result = contentReplacer.applyReplacements(originalContent, replacements);
         expect(result.updatedContent).to.equal(originalContent);
-        expect(result.errors).to.include('Error: Multiple occurrences found for: "Repeat"');
+        expect(result.errors).to.include('Multiple occurrences found for: "Repeat"');
+    });
+
+    it('should return an error when conflicting replacements for the same oldContent are provided', () => {
+        const originalContent = 'Conflict test content';
+        const replacements: Replacement[] = [
+            { oldContent: 'test', newContent: 'test1' },
+            { oldContent: 'test', newContent: 'test2' }
+        ];
+        const result = contentReplacer.applyReplacements(originalContent, replacements);
+        expect(result.updatedContent).to.equal(originalContent);
+        expect(result.errors).to.include('Conflicting replacement values for: "test"');
     });
 });
