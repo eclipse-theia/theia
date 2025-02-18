@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { ChangeSet, ChangeSetElement, ChatChangeEvent, ChatModel, ChatRequestModel } from '@theia/ai-chat';
+import { ChangeSet, ChangeSetElement, ChatAgent, ChatChangeEvent, ChatModel, ChatRequestModel } from '@theia/ai-chat';
 import { Disposable, nls, UntitledResourceResolver } from '@theia/core';
 import { ContextMenuRenderer, LabelProvider, Message, ReactWidget } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -25,6 +25,7 @@ import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-pr
 import { CHAT_VIEW_LANGUAGE_EXTENSION } from './chat-view-language-contribution';
 
 type Query = (query: string) => Promise<void>;
+type Unpin = () => void;
 type Cancel = (requestModel: ChatRequestModel) => void;
 type DeleteChangeSet = (requestModel: ChatRequestModel) => void;
 type DeleteChangeSetElement = (requestModel: ChatRequestModel, index: number) => void;
@@ -32,6 +33,7 @@ type DeleteChangeSetElement = (requestModel: ChatRequestModel, index: number) =>
 export const AIChatInputConfiguration = Symbol('AIChatInputConfiguration');
 export interface AIChatInputConfiguration {
     showContext?: boolean;
+    showPinnedAgent?: boolean;
 }
 
 @injectable()
@@ -63,6 +65,10 @@ export class AIChatInputWidget extends ReactWidget {
     set onQuery(query: Query) {
         this._onQuery = query;
     }
+    private _onUnpin: Unpin;
+    set onUnpin(unpin: Unpin) {
+        this._onUnpin = unpin;
+    }
     private _onCancel: Cancel;
     set onCancel(cancel: Cancel) {
         this._onCancel = cancel;
@@ -78,6 +84,11 @@ export class AIChatInputWidget extends ReactWidget {
     private _chatModel: ChatModel;
     set chatModel(chatModel: ChatModel) {
         this._chatModel = chatModel;
+        this.update();
+    }
+    private _pinnedAgent: ChatAgent | undefined;
+    set pinnedAgent(pinnedAgent: ChatAgent | undefined) {
+        this._pinnedAgent = pinnedAgent;
         this.update();
     }
 
@@ -101,10 +112,12 @@ export class AIChatInputWidget extends ReactWidget {
         return (
             <ChatInput
                 onQuery={this._onQuery.bind(this)}
+                onUnpin={this._onUnpin.bind(this)}
                 onCancel={this._onCancel.bind(this)}
                 onDeleteChangeSet={this._onDeleteChangeSet.bind(this)}
                 onDeleteChangeSetElement={this._onDeleteChangeSetElement.bind(this)}
                 chatModel={this._chatModel}
+                pinnedAgent={this._pinnedAgent}
                 editorProvider={this.editorProvider}
                 untitledResourceResolver={this.untitledResourceResolver}
                 contextMenuCallback={this.handleContextMenu.bind(this)}
@@ -114,6 +127,7 @@ export class AIChatInputWidget extends ReactWidget {
                     this.editorReady.resolve();
                 }}
                 showContext={this.configuration?.showContext}
+                showPinnedAgent={this.configuration?.showPinnedAgent}
                 labelProvider={this.labelProvider}
             />
         );
@@ -137,15 +151,18 @@ export class AIChatInputWidget extends ReactWidget {
 interface ChatInputProperties {
     onCancel: (requestModel: ChatRequestModel) => void;
     onQuery: (query: string) => void;
+    onUnpin: () => void;
     onDeleteChangeSet: (sessionId: string) => void;
     onDeleteChangeSetElement: (sessionId: string, index: number) => void;
     isEnabled?: boolean;
     chatModel: ChatModel;
+    pinnedAgent?: ChatAgent;
     editorProvider: MonacoEditorProvider;
     untitledResourceResolver: UntitledResourceResolver;
     contextMenuCallback: (event: IMouseEvent) => void;
     setEditorRef: (editor: MonacoEditor | undefined) => void;
     showContext?: boolean;
+    showPinnedAgent?: boolean;
     labelProvider: LabelProvider;
 }
 
@@ -319,11 +336,42 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         }
     };
 
-    const leftOptions = props.showContext ? [{
-        title: nls.localize('theia/ai/chat-ui/attachToContext', 'Attach elements to context'),
-        handler: () => { /* TODO */ },
-        className: 'codicon-add'
-    }] : [];
+    const handlePin = () => {
+        if (editorRef.current) {
+            editorRef.current.getControl().getModel()?.applyEdits([{
+                range: {
+                    startLineNumber: 1,
+                    startColumn: 1,
+                    endLineNumber: 1,
+                    endColumn: 1
+                },
+                text: '@ ',
+            }]);
+            editorRef.current.getControl().setPosition({ lineNumber: 1, column: 2 });
+            editorRef.current.getControl().getAction('editor.action.triggerSuggest')?.run();
+        }
+    };
+
+    const leftOptions = [
+        ...(props.showContext
+            ? [{
+                title: nls.localize('theia/ai/chat-ui/attachToContext', 'Attach elements to context'),
+                handler: () => { /* TODO */ },
+                className: 'codicon-add'
+            }]
+            : []),
+        ...(props.showPinnedAgent
+            ? [{
+                title: props.pinnedAgent ? 'Unpin Agent' : 'Pin Agent',
+                handler: props.pinnedAgent ? props.onUnpin : handlePin,
+                className: 'at-icon',
+                text: {
+                    align: 'right',
+                    content: props.pinnedAgent && props.pinnedAgent.name
+                },
+            }]
+            : []),
+    ] as Option[];
 
     const rightOptions = inProgress
         ? [{
@@ -471,6 +519,10 @@ interface Option {
     handler: () => void;
     className: string;
     disabled?: boolean;
+    text?: {
+        align?: 'left' | 'right';
+        content: string;
+    };
 }
 
 const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({ leftOptions, rightOptions }) => (
@@ -479,20 +531,26 @@ const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({ left
             {leftOptions.map((option, index) => (
                 <span
                     key={index}
-                    className={`codicon ${option.className} option ${option.disabled ? 'disabled' : ''}`}
+                    className={`option ${option.disabled ? 'disabled' : ''} ${option.text?.align === 'right' ? 'reverse' : ''}`}
                     title={option.title}
                     onClick={option.handler}
-                />
+                >
+                    <span>{option.text?.content}</span>
+                    <span className={`codicon ${option.className}`} />
+                </span>
             ))}
         </div>
         <div className="theia-ChatInputOptions-right">
             {rightOptions.map((option, index) => (
                 <span
                     key={index}
-                    className={`codicon ${option.className} option ${option.disabled ? 'disabled' : ''}`}
+                    className={`option ${option.disabled ? 'disabled' : ''} ${option.text?.align === 'right' ? 'reverse' : ''}`}
                     title={option.title}
                     onClick={option.handler}
-                />
+                >
+                    <span>{option.text?.content}</span>
+                    <span className={`codicon ${option.className}`}/>
+                </span>
             ))}
         </div>
     </div>
