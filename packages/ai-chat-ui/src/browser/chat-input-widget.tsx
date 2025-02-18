@@ -460,10 +460,10 @@ const ChangeSetBox: React.FunctionComponent<{ changeSet: ChangeSetUI }> = ({ cha
                 <button
                     className='theia-button'
                     disabled={changeSet.disabled}
-                    title={nls.localize('theia/ai/chat-ui/acceptAll', 'Apply all pending suggestions')}
+                    title={nls.localize('theia/ai/chat-ui/applyAllTitle', 'Apply all pending suggestions')}
                     onClick={() => changeSet.applyAllPendingElements()}
                 >
-                    {nls.localizeByDefault('Copy All')}
+                    {nls.localize('theia/ai/chat-ui/acceptAll', 'Apply All')}
                 </button>
                 <span className='codicon codicon-close action' title={nls.localize('theia/ai/chat-ui/deleteChangeSet', 'Delete Change Set')} onClick={() => changeSet.delete()} />
             </div>
