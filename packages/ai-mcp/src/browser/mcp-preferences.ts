@@ -25,10 +25,11 @@ export const McpServersPreferenceSchema: PreferenceSchema = {
     [MCP_SERVERS_PREF]: {
       type: 'object',
       title: nls.localize('theia/ai/mcp/servers/title', 'MCP Servers Configuration'),
-      markdownDescription: nls.localize('theia/ai/mcp/servers/mdDescription', 'Configure MCP servers with command, arguments, optionally environment variables, and autostart. \
-Each server is identified by a unique key, such as "brave-search" or "filesystem". \
+      markdownDescription: nls.localize('theia/ai/mcp/servers/mdDescription', 'Configure MCP servers with command, arguments, optionally environment variables, and autostart \
+(true by default). Each server is identified by a unique key, such as "brave-search" or "filesystem". \
 To start a server, use the "MCP: Start MCP Server" command, which enables you to select the desired server. \
 To stop a server, use the "MCP: Stop MCP Server" command. \
+Please note that autostart will only take effect after a restart, you need to start a server manually for the first time.\
 \n\
 Example configuration:\n\
 ```\
@@ -42,7 +43,6 @@ Example configuration:\n\
     "env": {\n\
       "BRAVE_API_KEY": "YOUR_API_KEY"\n\
     },\n\
-    "autostart": true\n\
   },\n\
   "filesystem": {\n\
     "command": "npx",\n\
@@ -65,9 +65,6 @@ Example configuration:\n\
             type: 'array',
             title: nls.localize('theia/ai/mcp/servers/args/title', 'Arguments for the command'),
             markdownDescription: nls.localize('theia/ai/mcp/servers/args/mdDescription', 'An array of arguments to pass to the command.'),
-            items: {
-              type: 'string'
-            }
           },
           env: {
             type: 'object',
@@ -81,8 +78,8 @@ Example configuration:\n\
             type: 'boolean',
             title: nls.localize('theia/ai/mcp/servers/autostart/title', 'Autostart'),
             markdownDescription: nls.localize('theia/ai/mcp/servers/autostart/mdDescription',
-              'Automatically start this server when the frontend starts. Newly added servers are not immediately auto started.'),
-            default: false
+              'Automatically start this server when the frontend starts. Newly added servers are not immediately auto started, but on restart'),
+            default: true
           }
         },
         required: ['command', 'args']
