@@ -80,7 +80,7 @@ import * as monaco from '@theia/monaco-editor-core';
 import { VSCodeExtensionUri } from '../common/plugin-vscode-uri';
 import { CodeEditorWidgetUtil } from '@theia/plugin-ext/lib/main/browser/menus/vscode-theia-menu-mappings';
 import { OutlineViewContribution } from '@theia/outline-view/lib/browser/outline-view-contribution';
-import { Range } from '@theia/plugin';
+import { CompletionList, Range, Position as PluginPosition } from '@theia/plugin';
 import { MonacoLanguages } from '@theia/monaco/lib/browser/monaco-languages';
 
 export namespace VscodeCommands {
@@ -675,6 +675,22 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             {
                 execute: ((resource: URI, range: Range, kind?: string, itemResolveCount?: number) =>
                     commands.executeCommand<TextEdit[]>('_executeCodeActionProvider', monaco.Uri.from(resource), range, kind, itemResolveCount))
+            }
+        );
+        commands.registerCommand(
+            {
+                id: 'vscode.executeCompletionItemProvider'
+            },
+            {
+                execute: ((resource: URI, position: PluginPosition, triggerCharacter?: string, itemResolveCount?: number) =>
+                    commands.executeCommand<CompletionList[]>(
+                        '_executeCompletionItemProvider',
+                        monaco.Uri.from(resource),
+                        { lineNumber: position.line, column: position.character },
+                        triggerCharacter,
+                        itemResolveCount
+                    )
+                )
             }
         );
         commands.registerCommand(
