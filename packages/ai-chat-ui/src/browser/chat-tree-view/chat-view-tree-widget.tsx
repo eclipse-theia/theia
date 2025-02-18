@@ -170,7 +170,7 @@ export class ChatViewTreeWidget extends TreeWidget {
                             <li>Provide at least one LLM provider (e.g. OpenAI), also see <a href="https://theia-ide.org/docs/user_ai/" target="_blank">the documentation</a>
                                 for more information.</li>
                         </ol>
-                        <p>This will activate the AI capabilities in the app. Please remember, these features are <strong>in alpha</strong>,
+                        <p>This will activate the AI capabilities in the app. Please remember, these features are <strong>in an alpha state</strong>,
                             so they may change and we are working on improving them 🚧.<br></br>
                             Please support us by <a href="https://github.com/eclipse-theia/theia">providing feedback
                             </a>!</p>
