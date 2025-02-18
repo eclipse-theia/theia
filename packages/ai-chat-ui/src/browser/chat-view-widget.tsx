@@ -33,7 +33,7 @@ export namespace ChatViewWidget {
 export class ChatViewWidget extends BaseWidget implements ExtractableWidget, StatefulWidget {
 
     public static ID = 'chat-view-widget';
-    static LABEL = `✨ ${nls.localizeByDefault('Chat')} [Experimental]`;
+    static LABEL = `✨ ${nls.localizeByDefault('Chat')} [Alpha]`;
 
     @inject(ChatService)
     protected chatService: ChatService;
