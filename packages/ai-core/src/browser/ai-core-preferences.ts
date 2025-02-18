@@ -30,7 +30,7 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
         [PREFERENCE_NAME_ENABLE_AI]: {
             title: AI_CORE_PREFERENCES_TITLE,
             markdownDescription: nls.localize('theia/ai/core/enableAI/mdDescription',
-                '❗ This setting allows you to access the latest AI capabilities (in alpha).\
+                '❗ This setting allows you to access the latest AI capabilities (Alpha version).\
             \n\
             Please note that these features are in an alpha phase, which means they may \
             undergo changes and will be further improved. It is important to be aware that these features may generate\
