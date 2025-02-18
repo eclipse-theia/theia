@@ -33,9 +33,9 @@ If no Default Agent is configured, Theia´s defaults will be applied.'),
         },
         [PIN_CHAT_AGENT_PREF]: {
             type: 'boolean',
-            description: 'Enable agent pinning to automatically keep a mentioned chat agent active across prompts, reducing the need for repeated mentions.\
-            \n\
-            You can manually unpin or switch agents anytime.',
+            description: nls.localize('theia/ai/chat/pinChatAgent/description',
+                'Enable agent pinning to automatically keep a mentioned chat agent active across prompts, reducing the need for repeated mentions.\
+You can manually unpin or switch agents anytime.'),
             default: true,
             title: AI_CORE_PREFERENCES_TITLE,
         }
