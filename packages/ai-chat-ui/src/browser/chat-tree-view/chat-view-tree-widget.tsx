@@ -153,7 +153,7 @@ export class ChatViewTreeWidget extends TreeWidget {
             <div className='theia-ResponseNode-Content' key={'disabled-message'}>
                 <div className="disable-message">
                     <span className="section-header">{
-                        nls.localize('theia/ai/chat-ui/chat-view-tree-widget/aiFeatureHeader', '🚀 AI Features Available (in alpha)!')}
+                        nls.localize('theia/ai/chat-ui/chat-view-tree-widget/aiFeatureHeader', '🚀 AI Features Available (Alpha Version)!')}
                     </span>
                     <div className="section-title">
                         <p><code>{nls.localize('theia/ai/chat-ui/chat-view-tree-widget/featuresDisabled', 'Currently, all AI Features are disabled!')}</code></p>
