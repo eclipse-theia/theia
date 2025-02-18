@@ -45,7 +45,7 @@ on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to s
             type: 'array',
             title: AI_CORE_PREFERENCES_TITLE,
             markdownDescription: nls.localize('theia/ai/openai/customEndpoints/mdDescription',
-                'Integrate custom models compatible with the OpenAI API, for example via `vllm`. The required attributes are `model` and `url`.\
+                'Integrate custom models compatible with the OpenAI API, for example via `vllm`. The required attributes are `model` and `url`.\n\
 \n\
 Optionally, you can\
 \n\
@@ -59,7 +59,7 @@ Optionally, you can\
 \n\
 - specify `supportsStructuredOutput: false` to indicate that structured output shall not be used.\
 \n\
-- specify `enableStreaming: false` to indicate that streaming shall not be used.\
+- specify `enableStreaming: false` to indicate that streaming shall not be used.\n\
 \n\
 Refer to [our documentation](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm) for more information.'),
             default: [],
