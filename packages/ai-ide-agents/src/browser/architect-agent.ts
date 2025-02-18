@@ -16,15 +16,15 @@
 import { AbstractStreamParsingChatAgent } from '@theia/ai-chat/lib/common';
 import { LanguageModelRequirement } from '@theia/ai-core';
 import { injectable } from '@theia/core/shared/inversify';
-import { workspacePromptTemplate } from '../common/workspace-prompt-template';
+import { architectPromptTemplate } from '../common/architect-prompt-template';
 import { FILE_CONTENT_FUNCTION_ID, GET_WORKSPACE_FILE_LIST_FUNCTION_ID } from '../common/workspace-functions';
 import { nls } from '@theia/core';
 
 @injectable()
-export class WorkspaceAgent extends AbstractStreamParsingChatAgent {
+export class ArchitectAgent extends AbstractStreamParsingChatAgent {
 
-    name = 'Workspace';
-    id = 'Workspace';
+    name = 'Architect';
+    id = 'Architect';
     languageModelRequirements: LanguageModelRequirement[] = [{
         purpose: 'chat',
         identifier: 'openai/gpt-4o',
@@ -32,10 +32,10 @@ export class WorkspaceAgent extends AbstractStreamParsingChatAgent {
     protected defaultLanguageModelPurpose: string = 'chat';
 
     override description = nls.localize('theia/ai/workspace/workspaceAgent/description',
-        'This agent can access the users workspace, it can get a list of all available files and retrieve their content. \
-    It can therefore answer questions about the current project, project files and source code in the workspace, such as how to build the project, \
-    where to put source code, where to find specific code or configurations, etc.');
-    override promptTemplates = [workspacePromptTemplate];
+        'An AI assistant integrated into Theia IDE, designed to assist software developers. This agent can access the users workspace, it can get a list of all available files \
+         and folders and retrieve their content. It cannot modify files. It can therefore answer questions about the current project, project files and source code in the \
+         workspace, such as how to build the project, where to put source code, where to find specific code or configurations, etc.');
+    override promptTemplates = [architectPromptTemplate];
     override functions = [GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID];
-    protected override systemPromptId: string | undefined = workspacePromptTemplate.id;
+    protected override systemPromptId: string | undefined = architectPromptTemplate.id;
 }
