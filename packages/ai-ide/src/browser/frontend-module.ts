@@ -31,7 +31,7 @@ import {
 import { OrchestratorChatAgent, OrchestratorChatAgentId } from '../common/orchestrator-chat-agent';
 import { UniversalChatAgent, UniversalChatAgentId } from '../common/universal-chat-agent';
 import { CommandChatAgent } from '../common/command-chat-agents';
-import { ListChatContext, ResolveChatContext } from './context-functions';
+import { ListChatContext, ResolveChatContext, AddFileToChatContext } from './context-functions';
 import { AIAgentConfigurationWidget } from './ai-configuration/agent-configuration-widget';
 import { AIConfigurationSelectionService } from './ai-configuration/ai-configuration-service';
 import { AIAgentConfigurationViewContribution } from './ai-configuration/ai-configuration-view-contribution';
@@ -102,4 +102,5 @@ export default new ContainerModule(bind => {
         .inSingletonScope();
 
     bind(ToolProvider).to(SimpleReplaceContentInFileProvider);
+    bind(ToolProvider).to(AddFileToChatContext);
 });
