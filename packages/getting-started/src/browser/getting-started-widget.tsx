@@ -407,7 +407,7 @@ export class GettingStartedWidget extends ReactWidget {
         return <div className='gs-container gs-aifeature-container'>
             <div className='flex-grid'>
                 <div className='col'>
-                    <h3 className='gs-section-header'> 🚀 AI Support in the Theia IDE is available (in alpha)! ✨</h3>
+                    <h3 className='gs-section-header'> 🚀 AI Support in the Theia IDE is available (Alpha Version)! ✨</h3>
                     <br />
                     <div className='gs-action-container'>
                         Theia IDE now contains AI support, which offers early access to cutting-edge AI capabilities within your IDE.
