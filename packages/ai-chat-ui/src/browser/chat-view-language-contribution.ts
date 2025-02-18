@@ -17,7 +17,7 @@ import { ChatAgentService } from '@theia/ai-chat';
 import { AIContextVariable, AIVariableService } from '@theia/ai-core/lib/common';
 import { PromptText } from '@theia/ai-core/lib/common/prompt-text';
 import { ToolInvocationRegistry } from '@theia/ai-core/lib/common/tool-invocation-registry';
-import { MaybePromise } from '@theia/core';
+import { MaybePromise, nls } from '@theia/core';
 import { ApplicationShell, FrontendApplication, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
@@ -140,7 +140,7 @@ export class ChatViewLanguageContribution implements FrontendApplicationContribu
             variable => variable.name,
             variable => variable.description,
             {
-                title: 'Select variable arguments',
+                title: nls.localize('theia/ai/chat-ui/selectVariableArguments', 'Select variable arguments'),
                 id: VARIABLE_ARGUMENT_PICKER_COMMAND,
             }
         );
@@ -158,7 +158,7 @@ export class ChatViewLanguageContribution implements FrontendApplicationContribu
                         ...item,
                         // trigger command to check if we should add a context variable
                         command: {
-                            title: 'Add context variable',
+                            title: nls.localize('theia/ai/chat-ui/addContextVariable', 'Add context variable'),
                             id: VARIABLE_ADD_CONTEXT_COMMAND,
                             arguments: [variable.name, item.insertText]
                         }

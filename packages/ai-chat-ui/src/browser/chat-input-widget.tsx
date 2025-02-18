@@ -692,7 +692,7 @@ const ChatContext: React.FunctionComponent<ChatContextUI> = ({ context }) => (
                     <span className='theia-ChatInput-ChatContext-additionalInfo'>
                         {element.additionalInfo}
                     </span>
-                    <span className="codicon codicon-close action" title="Delete" onClick={() => element.delete()} />
+                    <span className="codicon codicon-close action" title={nls.localizeByDefault('Delete')} onClick={() => element.delete()} />
                 </li>
             ))}
         </ul>
