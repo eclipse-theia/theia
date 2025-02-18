@@ -48,7 +48,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
             widgetId: ChatViewWidget.ID,
             widgetName: ChatViewWidget.LABEL,
             defaultWidgetOptions: {
-                area: 'left',
+                area: 'right',
                 rank: 100
             },
             toggleCommandId: AI_CHAT_TOGGLE_COMMAND_ID,
