@@ -22,6 +22,9 @@
       "path": "../editor"
     },
     {
+      "path": "../file-search"
+    },
+    {
       "path": "../filesystem"
     },
     {

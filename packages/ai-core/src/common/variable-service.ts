@@ -21,25 +21,89 @@
 
 import { ContributionProvider, Disposable, Emitter, ILogger, MaybePromise, Prioritizeable, Event } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
+import * as monaco from '@theia/monaco-editor-core';
 
+/**
+ * A variable is a short string that is used to reference a value that is resolved and replaced in the user prompt at request-time.
+ */
 export interface AIVariable {
     /** provider id */
     id: string;
-    /** variable name */
+    /** variable name, used for referencing variables in the chat */
     name: string;
     /** variable description */
     description: string;
+    /** optional label, used for showing the variable in the UI. If not provided, the variable name is used */
+    label?: string;
+    /** optional icon classes, used for showing the variable in the UI. */
+    iconClasses?: string[];
+    /** specifies whether this variable contributes to the context -- @see ResolvedAIContextVariable */
+    isContextVariable?: boolean;
+    /** optional arguments for resolving the variable into a value */
     args?: AIVariableDescription[];
+}
+
+export namespace AIVariable {
+    export function is(arg: unknown): arg is AIVariable {
+        return !!arg && typeof arg === 'object' &&
+            'id' in arg &&
+            'name' in arg &&
+            'description' in arg;
+    }
+}
+
+export interface AIContextVariable extends AIVariable {
+    label: string;
+    isContextVariable: true;
+}
+
+export namespace AIContextVariable {
+    export function is(arg: unknown): arg is AIContextVariable {
+        return AIVariable.is(arg) && 'isContextVariable' in arg && arg.isContextVariable === true;
+    }
 }
 
 export interface AIVariableDescription {
     name: string;
     description: string;
+    enum?: string[];
+    isOptional?: boolean;
 }
 
 export interface ResolvedAIVariable {
     variable: AIVariable;
+    arg?: string;
+    /** value that is inserted into the prompt at the position of the variable usage */
     value: string;
+}
+
+export namespace ResolvedAIVariable {
+    export function is(arg: unknown): arg is ResolvedAIVariable {
+        return !!arg && typeof arg === 'object' &&
+            'variable' in arg &&
+            'value' in arg &&
+            typeof (arg as { variable: unknown }).variable === 'object' &&
+            typeof (arg as { value: unknown }).value === 'string';
+    }
+}
+
+/**
+ * A context variable is a variable that also contributes to the context of a chat request.
+ *
+ * In contrast to a plain variable, it can also be attached to a request and is resolved into a context value.
+ * The context value is put into the `ChatRequestModel.context`, available to the processing chat agent for further
+ * processing by the chat agent, or invoked tool functions.
+ */
+export interface ResolvedAIContextVariable extends ResolvedAIVariable {
+    contextValue: string;
+}
+
+export namespace ResolvedAIContextVariable {
+    export function is(arg: unknown): arg is ResolvedAIContextVariable {
+        return ResolvedAIVariable.is(arg) &&
+            'contextValue' in arg &&
+            typeof (arg as { contextValue: unknown }).contextValue === 'string';
+    }
 }
 
 export interface AIVariableResolutionRequest {
@@ -47,10 +111,27 @@ export interface AIVariableResolutionRequest {
     arg?: string;
 }
 
+export namespace AIVariableResolutionRequest {
+    export function is(arg: unknown): arg is AIVariableResolutionRequest {
+        return !!arg && typeof arg === 'object' &&
+            'variable' in arg &&
+            typeof (arg as { variable: { name: unknown } }).variable.name === 'string';
+    }
+}
+
 export interface AIVariableContext {
 }
 
+export interface AIVariableDropResult {
+    variables: AIVariableResolutionRequest[],
+    text?: string
+};
+
 export type AIVariableArg = string | { variable: string, arg?: string } | AIVariableResolutionRequest;
+
+export type AIVariableArgPicker = (context: AIVariableContext) => MaybePromise<string | undefined>;
+export type AIVariableArgCompletionProvider = (model: monaco.editor.ITextModel, position: monaco.Position) => MaybePromise<monaco.languages.CompletionItem[] | undefined>;
+export type AIVariableDropHandler = (event: DragEvent, context: AIVariableContext) => Promise<AIVariableDropResult | undefined>;
 
 export interface AIVariableResolver {
     canResolve(request: AIVariableResolutionRequest, context: AIVariableContext): MaybePromise<number>,
@@ -62,12 +143,25 @@ export interface AIVariableService {
     hasVariable(name: string): boolean;
     getVariable(name: string): Readonly<AIVariable> | undefined;
     getVariables(): Readonly<AIVariable>[];
+    getContextVariables(): Readonly<AIContextVariable>[];
     unregisterVariable(name: string): void;
     readonly onDidChangeVariables: Event<void>;
 
     registerResolver(variable: AIVariable, resolver: AIVariableResolver): Disposable;
     unregisterResolver(variable: AIVariable, resolver: AIVariableResolver): void;
     getResolver(name: string, arg: string | undefined, context: AIVariableContext): Promise<AIVariableResolver | undefined>;
+
+    registerArgumentPicker(variable: AIVariable, argPicker: AIVariableArgPicker): Disposable;
+    unregisterArgumentPicker(variable: AIVariable, argPicker: AIVariableArgPicker): void;
+    getArgumentPicker(name: string, context: AIVariableContext): Promise<AIVariableArgPicker | undefined>;
+
+    registerArgumentCompletionProvider(variable: AIVariable, argPicker: AIVariableArgCompletionProvider): Disposable;
+    unregisterArgumentCompletionProvider(variable: AIVariable, argPicker: AIVariableArgCompletionProvider): void;
+    getArgumentCompletionProvider(name: string): Promise<AIVariableArgCompletionProvider | undefined>;
+
+    registerDropHandler(handler: AIVariableDropHandler): Disposable;
+    unregisterDropHandler(handler: AIVariableDropHandler): void;
+    getDropResult(event: DragEvent, context: AIVariableContext): Promise<AIVariableDropResult>;
 
     resolveVariable(variable: AIVariableArg, context: AIVariableContext): Promise<ResolvedAIVariable | undefined>;
 }
@@ -81,6 +175,9 @@ export interface AIVariableContribution {
 export class DefaultAIVariableService implements AIVariableService {
     protected variables = new Map<string, AIVariable>();
     protected resolvers = new Map<string, AIVariableResolver[]>();
+    protected argPickers = new Map<string, AIVariableArgPicker>();
+    protected argCompletionProviders = new Map<string, AIVariableArgCompletionProvider>();
+    protected dropHandlers = new Set<AIVariableDropHandler>();
 
     protected readonly onDidChangeVariablesEmitter = new Emitter<void>();
     readonly onDidChangeVariables: Event<void> = this.onDidChangeVariablesEmitter.event;
@@ -137,6 +234,10 @@ export class DefaultAIVariableService implements AIVariableService {
         return [...this.variables.values()];
     }
 
+    getContextVariables(): Readonly<AIContextVariable>[] {
+        return this.getVariables().filter(AIContextVariable.is);
+    }
+
     registerResolver(variable: AIVariable, resolver: AIVariableResolver): Disposable {
         const key = this.getKey(variable.name);
         if (!this.variables.get(key)) {
@@ -164,6 +265,66 @@ export class DefaultAIVariableService implements AIVariableService {
         this.onDidChangeVariablesEmitter.fire();
     }
 
+    registerArgumentPicker(variable: AIVariable, argPicker: AIVariableArgPicker): Disposable {
+        const key = this.getKey(variable.name);
+        this.argPickers.set(key, argPicker);
+        return Disposable.create(() => this.unregisterArgumentPicker(variable, argPicker));
+    }
+
+    unregisterArgumentPicker(variable: AIVariable, argPicker: AIVariableArgPicker): void {
+        const key = this.getKey(variable.name);
+        const registeredArgPicker = this.argPickers.get(key);
+        if (registeredArgPicker === argPicker) {
+            this.argPickers.delete(key);
+        }
+    }
+
+    async getArgumentPicker(name: string): Promise<AIVariableArgPicker | undefined> {
+        return this.argPickers.get(this.getKey(name)) ?? undefined;
+    }
+
+    registerArgumentCompletionProvider(variable: AIVariable, completionProvider: AIVariableArgCompletionProvider): Disposable {
+        const key = this.getKey(variable.name);
+        this.argCompletionProviders.set(key, completionProvider);
+        return Disposable.create(() => this.unregisterArgumentCompletionProvider(variable, completionProvider));
+    }
+
+    unregisterArgumentCompletionProvider(variable: AIVariable, completionProvider: AIVariableArgCompletionProvider): void {
+        const key = this.getKey(variable.name);
+        const registeredCompletionProvider = this.argCompletionProviders.get(key);
+        if (registeredCompletionProvider === completionProvider) {
+            this.argCompletionProviders.delete(key);
+        }
+    }
+
+    async getArgumentCompletionProvider(name: string): Promise<AIVariableArgCompletionProvider | undefined> {
+        return this.argCompletionProviders.get(this.getKey(name)) ?? undefined;
+    }
+
+    registerDropHandler(handler: AIVariableDropHandler): Disposable {
+        this.dropHandlers.add(handler);
+        return Disposable.create(() => this.unregisterDropHandler(handler));
+    }
+
+    unregisterDropHandler(handler: AIVariableDropHandler): void {
+        this.dropHandlers.delete(handler);
+    }
+
+    async getDropResult(event: DragEvent, context: AIVariableContext): Promise<AIVariableDropResult> {
+        let text: string | undefined = undefined;
+        const variables: AIVariableResolutionRequest[] = [];
+        for (const handler of this.dropHandlers) {
+            const result = await handler(event, context);
+            if (result) {
+                variables.push(...result.variables);
+                if (text === undefined) {
+                    text = result.text;
+                }
+            }
+        }
+        return { variables, text };
+    }
+
     async resolveVariable(request: AIVariableArg, context: AIVariableContext): Promise<ResolvedAIVariable | undefined> {
         const variableName = typeof request === 'string' ? request : typeof request.variable === 'string' ? request.variable : request.variable.name;
         const variable = this.getVariable(variableName);
@@ -172,6 +333,7 @@ export class DefaultAIVariableService implements AIVariableService {
         }
         const arg = typeof request === 'string' ? undefined : request.arg;
         const resolver = await this.getResolver(variableName, arg, context);
-        return resolver?.resolve({ variable, arg }, context);
+        const resolved = await resolver?.resolve({ variable, arg }, context);
+        return resolved ? { ...resolved, arg } : undefined;
     }
 }

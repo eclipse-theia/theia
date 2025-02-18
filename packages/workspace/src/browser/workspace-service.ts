@@ -692,6 +692,22 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         return rootUris.sort((r1, r2) => r2.toString().length - r1.toString().length)[0];
     }
 
+    /**
+     * Returns the relative path of the given file to the workspace root.
+     * @param uri URI of the file
+     * @see getWorkspaceRootUri(uri)
+     */
+    async getWorkspaceRelativePath(uri: URI): Promise<string> {
+        const wsUri = this.getWorkspaceRootUri(uri);
+        if (wsUri) {
+            const wsRelative = wsUri.relative(uri);
+            if (wsRelative) {
+                return wsRelative.toString();
+            }
+        }
+        return uri.path.fsPath();
+    }
+
     areWorkspaceRoots(uris: URI[]): boolean {
         if (!uris.length) {
             return false;
