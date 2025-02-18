@@ -362,7 +362,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             : []),
         ...(props.showPinnedAgent
             ? [{
-                title: props.pinnedAgent ? 'Unpin Agent' : 'Pin Agent',
+                title: props.pinnedAgent ? nls.localize('theia/ai/chat-ui/unpinAgent', 'Unpin Agent') : nls.localize('theia/ai/chat-ui/pinAgent', 'Pin Agent'),
                 handler: props.pinnedAgent ? props.onUnpin : handlePin,
                 className: 'at-icon',
                 text: {
@@ -549,7 +549,7 @@ const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({ left
                     onClick={option.handler}
                 >
                     <span>{option.text?.content}</span>
-                    <span className={`codicon ${option.className}`}/>
+                    <span className={`codicon ${option.className}`} />
                 </span>
             ))}
         </div>
