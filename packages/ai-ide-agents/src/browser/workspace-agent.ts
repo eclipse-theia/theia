@@ -18,6 +18,7 @@ import { LanguageModelRequirement } from '@theia/ai-core';
 import { injectable } from '@theia/core/shared/inversify';
 import { workspacePromptTemplate } from '../common/workspace-prompt-template';
 import { FILE_CONTENT_FUNCTION_ID, GET_WORKSPACE_FILE_LIST_FUNCTION_ID } from '../common/workspace-functions';
+import { nls } from '@theia/core';
 
 @injectable()
 export class WorkspaceAgent extends AbstractStreamParsingChatAgent {
@@ -30,9 +31,10 @@ export class WorkspaceAgent extends AbstractStreamParsingChatAgent {
     }];
     protected defaultLanguageModelPurpose: string = 'chat';
 
-    override description = 'This agent can access the users workspace, it can get a list of all available files and retrieve their content. \
+    override description = nls.localize('theia/ai/workspace/workspaceAgent/description',
+        'This agent can access the users workspace, it can get a list of all available files and retrieve their content. \
     It can therefore answer questions about the current project, project files and source code in the workspace, such as how to build the project, \
-    where to put source code, where to find specific code or configurations, etc.';
+    where to put source code, where to find specific code or configurations, etc.');
     override promptTemplates = [workspacePromptTemplate];
     override functions = [GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID];
     protected override systemPromptId: string | undefined = workspacePromptTemplate.id;

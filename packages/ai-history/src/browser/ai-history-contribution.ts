@@ -17,7 +17,7 @@ import { FrontendApplication, codicon } from '@theia/core/lib/browser';
 import { AIViewContribution } from '@theia/ai-core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { AIHistoryView } from './ai-history-widget';
-import { Command, CommandRegistry, Emitter } from '@theia/core';
+import { Command, CommandRegistry, Emitter, nls } from '@theia/core';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { CommunicationRecordingService } from '@theia/ai-core';
 
@@ -115,21 +115,21 @@ export class AIHistoryViewContribution extends AIViewContribution<AIHistoryView>
         registry.registerItem({
             id: AI_HISTORY_VIEW_SORT_CHRONOLOGICALLY.id,
             command: AI_HISTORY_VIEW_SORT_CHRONOLOGICALLY.id,
-            tooltip: 'Sort chronologically',
+            tooltip: nls.localize('theia/ai/history/sortChronologically/tooltip', 'Sort chronologically'),
             isVisible: widget => this.withHistoryWidget(widget),
             onDidChange: this.chronologicalStateChanged
         });
         registry.registerItem({
             id: AI_HISTORY_VIEW_SORT_REVERSE_CHRONOLOGICALLY.id,
             command: AI_HISTORY_VIEW_SORT_REVERSE_CHRONOLOGICALLY.id,
-            tooltip: 'Sort reverse chronologically',
+            tooltip: nls.localize('theia/ai/history/sortReverseChronologically/tooltip', 'Sort reverse chronologically'),
             isVisible: widget => this.withHistoryWidget(widget),
             onDidChange: this.chronologicalStateChanged
         });
         registry.registerItem({
             id: AI_HISTORY_VIEW_CLEAR.id,
             command: AI_HISTORY_VIEW_CLEAR.id,
-            tooltip: 'Clear History of all agents',
+            tooltip: nls.localize('theia/ai/history/clear/tooltip', 'Clear History of all agents'),
             isVisible: widget => this.withHistoryWidget(widget)
         });
     }

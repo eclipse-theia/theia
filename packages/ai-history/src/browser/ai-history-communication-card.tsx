@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { CommunicationHistoryEntry } from '@theia/ai-core';
+import { nls } from '@theia/core';
 import * as React from '@theia/core/shared/react';
 
 export interface CommunicationCardProps {
@@ -23,35 +24,35 @@ export interface CommunicationCardProps {
 export const CommunicationCard: React.FC<CommunicationCardProps> = ({ entry }) => (
     <div className='theia-card'>
         <div className='theia-card-meta'>
-            <span className='theia-card-request-id'>Request ID: {entry.requestId}</span>
-            <span className='theia-card-session-id'>Session ID: {entry.sessionId}</span>
+            <span className='theia-card-request-id'>{nls.localize('theia/ai/history/communication-card/requestId', 'Request ID')}: {entry.requestId}</span>
+            <span className='theia-card-session-id'>{nls.localize('theia/ai/history/communication-card/sessionId', 'Session ID')}: {entry.sessionId}</span>
         </div>
         <div className='theia-card-content'>
             {entry.request && (
                 <div className='theia-card-request'>
-                    <h2>Request</h2>
+                    <h2>{nls.localize('theia/ai/history/communication-card/request', 'Request')}</h2>
                     <pre>{entry.request}</pre>
                 </div>
             )}
             {entry.response && (
                 <div className='theia-card-response'>
-                    <h2>Response</h2>
+                    <h2>{nls.localize('theia/ai/history/communication-card/response', 'Response')}</h2>
                     <pre>{entry.response}</pre>
                 </div>
             )}
             {(entry.systemMessage || (entry.messages && entry.messages.length > 0)) && (
                 <div className='theia-card-context'>
                     <details>
-                        <summary><h2>Context</h2></summary>
+                        <summary><h2>{nls.localize('theia/ai/history/communication-card/context', 'Context')}</h2></summary>
                         {(entry.systemMessage && (
                             <div className='theia-context-system-message'>
-                                <h3>System Message</h3>
+                                <h3>{nls.localize('theia/ai/history/communication-card/systemMessage', 'System Message')}</h3>
                                 <pre>{entry.systemMessage}</pre>
                             </div>
                         ))}
                         {(entry.messages && entry.messages.length > 0) && (
                             <div className='theia-context-messages'>
-                                <h3>Messages</h3>
+                                <h3>{nls.localize('theia/ai/history/communication-card/messages', 'Messages')}</h3>
                                 <ul>
                                     {entry.messages.map((message, index) => (
                                         <li key={index}><pre>{JSON.stringify(message, undefined, 2)}</pre></li>
@@ -64,8 +65,9 @@ export const CommunicationCard: React.FC<CommunicationCardProps> = ({ entry }) =
             )}
         </div>
         <div className='theia-card-meta'>
-            <span className='theia-card-timestamp'>Timestamp: {new Date(entry.timestamp).toLocaleString()}</span>
-            {entry.responseTime && <span className='theia-card-response-time'>Response Time: {entry.responseTime}ms</span>}
+            <span className='theia-card-timestamp'>{nls.localize('theia/ai/history/communication-card/timestamp', 'Timestamp')}: {new Date(entry.timestamp).toLocaleString()}</span>
+            {entry.responseTime &&
+                <span className='theia-card-response-time'>{nls.localize('theia/ai/history/communication-card/responseTime', 'Response Time')}: {entry.responseTime}ms</span>}
         </div>
     </div>
 );

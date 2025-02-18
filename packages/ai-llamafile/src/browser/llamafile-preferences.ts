@@ -14,10 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { nls } from '@theia/core';
 import { PreferenceContribution, PreferenceSchema } from '@theia/core/lib/browser';
 import { interfaces } from '@theia/core/shared/inversify';
 
-export const AI_LLAMAFILE_PREFERENCES_TITLE = '✨ AI LlamaFile';
+export const AI_LLAMAFILE_PREFERENCES_TITLE = nls.localize('theia/ai/llamaFile/prefs/title', '✨ AI LlamaFile');
 export const PREFERENCE_LLAMAFILE = 'ai-features.llamafile.llamafiles';
 
 export const aiLlamafilePreferencesSchema: PreferenceSchema = {
@@ -25,7 +26,7 @@ export const aiLlamafilePreferencesSchema: PreferenceSchema = {
     properties: {
         [PREFERENCE_LLAMAFILE]: {
             title: AI_LLAMAFILE_PREFERENCES_TITLE,
-            markdownDescription: 'This setting allows you to configure and manage LlamaFile models in Theia IDE.\
+            markdownDescription: nls.localize('theia/ai/llamaFile/prefs/mdDescription', 'This setting allows you to configure and manage LlamaFile models in Theia IDE.\
             \n\
             Each entry requires a user-friendly `name`, the file `uri` pointing to your LlamaFile, and the `port` on which it will run.\
             \n\
@@ -33,7 +34,7 @@ export const aiLlamafilePreferencesSchema: PreferenceSchema = {
             \n\
             If you edit an entry (e.g., change the port), any running instance will stop, and you will need to manually start it again.\
             \n\
-            [Learn more about configuring and managing LlamaFiles in the Theia IDE documentation](https://theia-ide.org/docs/user_ai/#llamafile-models).',
+            [Learn more about configuring and managing LlamaFiles in the Theia IDE documentation](https://theia-ide.org/docs/user_ai/#llamafile-models).'),
             type: 'array',
             default: [],
             items: {
@@ -41,15 +42,15 @@ export const aiLlamafilePreferencesSchema: PreferenceSchema = {
                 properties: {
                     name: {
                         type: 'string',
-                        description: 'The model name to use for this Llamafile.'
+                        description: nls.localize('theia/ai/llamaFile/prefs/name/description', 'The model name to use for this Llamafile.')
                     },
                     uri: {
                         type: 'string',
-                        description: 'The file uri to the Llamafile.'
+                        description: nls.localize('theia/ai/llamaFile/prefs/uri/description', 'The file uri to the Llamafile.')
                     },
                     port: {
                         type: 'number',
-                        description: 'The port to use to start the server.'
+                        description: nls.localize('theia/ai/llamaFile/prefs/port/description', 'The port to use to start the server.')
                     }
                 }
             }

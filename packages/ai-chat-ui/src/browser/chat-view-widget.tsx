@@ -170,7 +170,8 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         const requestProgress = await this.chatService.sendRequest(this.chatSession.id, chatRequest);
         requestProgress?.responseCompleted.then(responseModel => {
             if (responseModel.isError) {
-                this.messageService.error(responseModel.errorObject?.message ?? 'An error occurred during chat service invocation.');
+                this.messageService.error(responseModel.errorObject?.message ??
+                    nls.localize('theia/ai/chat-ui/errorChatInvocation', 'An error occurred during chat service invocation.'));
             }
         }).finally(() => {
             this.inputWidget.pinnedAgent = this.chatSession.pinnedAgent;

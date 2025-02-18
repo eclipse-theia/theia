@@ -15,13 +15,13 @@
 // *****************************************************************************
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { AIVariable, AIVariableContext, AIVariableContribution, AIVariableResolutionRequest, AIVariableResolver, AIVariableService, ResolvedAIVariable } from './variable-service';
-import { MaybePromise } from '@theia/core';
+import { MaybePromise, nls } from '@theia/core';
 import { AgentService } from './agent-service';
 
 export const AGENTS_VARIABLE: AIVariable = {
     id: 'agents',
     name: 'agents',
-    description: 'Returns the list of agents available in the system'
+    description: nls.localize('theia/ai/core/agentsVariable/description', 'Returns the list of agents available in the system')
 };
 
 export interface ResolvedAgentsVariable extends ResolvedAIVariable {

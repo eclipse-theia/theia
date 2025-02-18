@@ -20,7 +20,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
 import { AbstractStreamParsingChatAgent } from '@theia/ai-chat/lib/common/chat-agents';
 import { MutableChatRequestModel, InformationalChatResponseContentImpl } from '@theia/ai-chat/lib/common/chat-model';
-import { generateUuid } from '@theia/core';
+import { generateUuid, nls } from '@theia/core';
 import { ChatHistoryEntry } from '@theia/ai-chat/lib/common/chat-history-entry';
 
 export const orchestratorTemplate: PromptTemplate = {
@@ -75,8 +75,9 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
 
     override variables = ['chatAgents'];
     override promptTemplates = [orchestratorTemplate];
-    override description = 'This agent analyzes the user request against the description of all available chat agents and selects the best fitting agent to answer the request \
-    (by using AI).The user\'s request will be directly delegated to the selected agent without further confirmation.';
+    override description = nls.localize('theia/ai/chat/orchestrator/description',
+        'This agent analyzes the user request against the description of all available chat agents and selects the best fitting agent to answer the request \
+    (by using AI).The user\'s request will be directly delegated to the selected agent without further confirmation.');
     override iconClass: string = 'codicon codicon-symbol-boolean';
 
     protected override defaultLogging = false;

@@ -19,6 +19,7 @@ import { FILE_CONTENT_FUNCTION_ID, GET_WORKSPACE_FILE_LIST_FUNCTION_ID, GET_WORK
 import { CODER_REPLACE_PROMPT_TEMPLATE_ID, getCoderReplacePromptTemplate } from '../common/coder-replace-prompt-template';
 import { WriteChangeToFileProvider } from './file-changeset-functions';
 import { LanguageModelRequirement } from '@theia/ai-core';
+import { nls } from '@theia/core';
 
 @injectable()
 export class CoderAgent extends AbstractStreamParsingChatAgent {
@@ -30,7 +31,8 @@ export class CoderAgent extends AbstractStreamParsingChatAgent {
     }];
     protected defaultLanguageModelPurpose: string = 'chat';
 
-    override description = 'An AI assistant integrated into Theia IDE, designed to assist software developers with code tasks.';
+    override description = nls.localize('theia/ai/workspace/coderAgent/description',
+        'An AI assistant integrated into Theia IDE, designed to assist software developers with code tasks.');
     override promptTemplates = [getCoderReplacePromptTemplate(true), getCoderReplacePromptTemplate(false)];
     override functions = [GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID, GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID, WriteChangeToFileProvider.ID];
     protected override systemPromptId: string | undefined = CODER_REPLACE_PROMPT_TEMPLATE_ID;
