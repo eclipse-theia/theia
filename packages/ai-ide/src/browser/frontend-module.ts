@@ -72,7 +72,6 @@ export default new ContainerModule(bind => {
     bind(ToolProvider).to(WriteChangeToFileProvider);
     bind(ReplaceContentInFileFunctionHelper).toSelf().inSingletonScope();
     bind(ToolProvider).to(ReplaceContentInFileProvider);
-
     bind(ToolProvider).to(ListChatContext);
     bind(ToolProvider).to(ResolveChatContext);
     bind(AIConfigurationSelectionService).toSelf().inSingletonScope();
