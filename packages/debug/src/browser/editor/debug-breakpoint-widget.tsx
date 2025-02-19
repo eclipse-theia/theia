@@ -18,7 +18,7 @@ import * as React from '@theia/core/shared/react';
 import { createRoot, Root } from '@theia/core/shared/react-dom/client';
 import { DebugProtocol } from '@vscode/debugprotocol';
 import { injectable, postConstruct, inject } from '@theia/core/shared/inversify';
-import { Disposable, DisposableCollection, nls } from '@theia/core';
+import { Disposable, DisposableCollection, InMemoryResources, nls } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { MonacoEditorZoneWidget } from '@theia/monaco/lib/browser/monaco-editor-zone-widget';
@@ -45,6 +45,8 @@ export type ShowDebugBreakpointOptions = DebugSourceBreakpoint | {
     context: DebugBreakpointWidget.Context
 };
 
+export const BREAKPOINT_INPUT_SCHEME = 'breakpointinput';
+
 @injectable()
 export class DebugBreakpointWidget implements Disposable {
 
@@ -54,8 +56,12 @@ export class DebugBreakpointWidget implements Disposable {
     @inject(MonacoEditorProvider)
     protected readonly editorProvider: MonacoEditorProvider;
 
+    @inject(InMemoryResources)
+    protected readonly resources: InMemoryResources;
+
     protected selectNode: HTMLDivElement;
     protected selectNodeRoot: Root;
+    protected uri: URI;
 
     protected zone: MonacoEditorZoneWidget;
 
@@ -100,6 +106,8 @@ export class DebugBreakpointWidget implements Disposable {
     }
 
     protected async doInit(): Promise<void> {
+        this.uri = new URI().withScheme(BREAKPOINT_INPUT_SCHEME).withPath(this.editor.getControl().getId());
+        this.toDispose.push(this.resources.add(this.uri, ''));
         this.toDispose.push(this.zone = new MonacoEditorZoneWidget(this.editor.getControl()));
         this.zone.containerNode.classList.add('theia-debug-breakpoint-widget');
 
@@ -215,14 +223,16 @@ export class DebugBreakpointWidget implements Disposable {
     }
 
     protected createInput(node: HTMLElement): Promise<MonacoEditor> {
-        return this.editorProvider.createInline(new URI().withScheme('breakpointinput').withPath(this.editor.getControl().getId()), node, {
+        return this.editorProvider.createInline(this.uri, node, {
             autoSizing: false
         });
     }
 
     protected render(): void {
+        const value = this._values[this.context] || '';
+        this.resources.update(this.uri, value);
         if (this._input) {
-            this._input.getControl().setValue(this._values[this.context] || '');
+            this._input.getControl().setValue(value);
         }
         const selectComponent = this.selectComponentRef.current;
         if (selectComponent && selectComponent.value !== this.context) {

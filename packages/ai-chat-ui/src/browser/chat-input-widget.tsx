@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { ChangeSet, ChangeSetElement, ChatAgent, ChatChangeEvent, ChatModel, ChatRequestModel } from '@theia/ai-chat';
-import { Disposable, nls, UntitledResourceResolver } from '@theia/core';
+import { Disposable, InMemoryResources, URI, nls } from '@theia/core';
 import { ContextMenuRenderer, LabelProvider, Message, ReactWidget } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
@@ -47,8 +47,8 @@ export class AIChatInputWidget extends ReactWidget {
     @inject(MonacoEditorProvider)
     protected readonly editorProvider: MonacoEditorProvider;
 
-    @inject(UntitledResourceResolver)
-    protected readonly untitledResourceResolver: UntitledResourceResolver;
+    @inject(InMemoryResources)
+    protected readonly resources: InMemoryResources;
 
     @inject(ContextMenuRenderer)
     protected readonly contextMenuRenderer: ContextMenuRenderer;
@@ -136,7 +136,7 @@ export class AIChatInputWidget extends ReactWidget {
                 chatModel={this._chatModel}
                 pinnedAgent={this._pinnedAgent}
                 editorProvider={this.editorProvider}
-                untitledResourceResolver={this.untitledResourceResolver}
+                resources={this.resources}
                 contextMenuCallback={this.handleContextMenu.bind(this)}
                 isEnabled={this.isEnabled}
                 setEditorRef={editor => {
@@ -234,7 +234,7 @@ interface ChatInputProperties {
     chatModel: ChatModel;
     pinnedAgent?: ChatAgent;
     editorProvider: MonacoEditorProvider;
-    untitledResourceResolver: UntitledResourceResolver;
+    resources: InMemoryResources;
     contextMenuCallback: (event: IMouseEvent) => void;
     setEditorRef: (editor: MonacoEditor | undefined) => void;
     showContext?: boolean;
@@ -259,12 +259,13 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     const editorRef = React.useRef<MonacoEditor | undefined>(undefined);
 
     React.useEffect(() => {
+        const uri = new URI(`ai-chat:/input.${CHAT_VIEW_LANGUAGE_EXTENSION}`);
+        const resource = props.resources.add(uri, '');
         const createInputElement = async () => {
             const paddingTop = 6;
             const lineHeight = 20;
             const maxHeight = 240;
-            const resource = await props.untitledResourceResolver.createUntitledResource('', CHAT_VIEW_LANGUAGE_EXTENSION);
-            const editor = await props.editorProvider.createInline(resource.uri, editorContainerRef.current!, {
+            const editor = await props.editorProvider.createInline(uri, editorContainerRef.current!, {
                 language: CHAT_VIEW_LANGUAGE_EXTENSION,
                 // Disable code lens, inlay hints and hover support to avoid console errors from other contributions
                 codeLens: false,
@@ -329,6 +330,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         createInputElement();
 
         return () => {
+            resource.dispose();
             props.setEditorRef(undefined);
             if (editorRef.current) {
                 editorRef.current.dispose();

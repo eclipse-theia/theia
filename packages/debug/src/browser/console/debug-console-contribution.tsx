@@ -28,6 +28,7 @@ import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/s
 import { DebugSession } from '../debug-session';
 import { DebugSessionManager, DidChangeActiveDebugSession } from '../debug-session-manager';
 import { DebugConsoleSession, DebugConsoleSessionFactory } from './debug-console-session';
+import { InMemoryResources } from '@theia/core';
 
 export type InDebugReplContextKey = ContextKey<boolean>;
 export const InDebugReplContextKey = Symbol('inDebugReplContextKey');
@@ -56,6 +57,9 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
     @inject(DebugSessionManager)
     protected debugSessionManager: DebugSessionManager;
 
+    @inject(InMemoryResources)
+    protected readonly resources: InMemoryResources;
+
     constructor() {
         super({
             widgetId: DebugConsoleContribution.options.id,
@@ -70,6 +74,7 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
 
     @postConstruct()
     protected init(): void {
+        this.resources.add(DebugConsoleSession.uri, '');
         this.debugSessionManager.onDidCreateDebugSession(session => {
             const consoleParent = session.findConsoleParent();
             if (consoleParent) {

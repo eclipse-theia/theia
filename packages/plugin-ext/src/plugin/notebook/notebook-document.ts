@@ -57,7 +57,7 @@ export class Cell {
             uri: cell.uri,
             isDirty: false,
             versionId: 1,
-            modeId: ''
+            modeId: cell.language
         };
     }
 

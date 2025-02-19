@@ -32,7 +32,7 @@ import { MonacoKeybindingContribution } from './monaco-keybinding';
 import { MonacoLanguages } from './monaco-languages';
 import { MonacoWorkspace } from './monaco-workspace';
 import { MonacoEditorService, MonacoEditorServiceFactory, VSCodeContextKeyService, VSCodeThemeService } from './monaco-editor-service';
-import { MonacoTextModelService, MonacoEditorModelFactory } from './monaco-text-model-service';
+import { MonacoTextModelService, MonacoEditorModelFactory, MonacoEditorModelFilter } from './monaco-text-model-service';
 import { MonacoContextMenuService } from './monaco-context-menu';
 import { MonacoOutlineContribution } from './monaco-outline-contribution';
 import { MonacoStatusBarContribution } from './monaco-status-bar-contribution';
@@ -118,6 +118,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(MonacoEditorProvider).toSelf().inSingletonScope();
     bindContributionProvider(bind, MonacoEditorFactory);
     bindContributionProvider(bind, MonacoEditorModelFactory);
+    bindContributionProvider(bind, MonacoEditorModelFilter);
     bind(MonacoCommandService).toSelf().inTransientScope();
 
     bind(TextEditorProvider).toProvider(context =>

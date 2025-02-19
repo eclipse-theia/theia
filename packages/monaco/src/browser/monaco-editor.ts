@@ -128,7 +128,7 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
     protected model: monaco.editor.ITextModel | null;
     savedViewState: monaco.editor.ICodeEditorViewState | null;
 
-    constructor(
+    protected constructor(
         readonly uri: URI,
         readonly document: MonacoEditorModel,
         readonly node: HTMLElement,
