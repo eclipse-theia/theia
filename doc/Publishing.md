@@ -169,7 +169,11 @@ Format:
 
 - Push the branch.
 
-- Run the [_Package Native Dependencies_](https://github.com/eclipse-theia/theia/actions/workflows/native-dependencies.yml) GitHub Action on the new branch and download the artifacts.
+- Get the `native dependencies`
+  - Run the [_Package Native Dependencies_](https://github.com/eclipse-theia/theia/actions/workflows/native-dependencies.yml) GitHub Action on the new branch (You can continue while you wait).
+  - Download the artifacts (They are located on the build overview at the bottom).
+  - Extract the downloaded folders.
+  - Leave the dependencies for now, you will need them later.
 
 - Create a PR (not needed for patch releases):
   - Name: `Theia {version}`.
@@ -180,6 +184,12 @@ Format:
 
   ```bash
   git tag -a v{version} ${sha} -m "v{version}"
+  ```
+
+  _Note_: The tag needs to be annotated otherwise it might break the publishing. Check that the output of the following command is `tag` and not `commit`.
+
+  ```bash
+  git for-each-ref refs/tags | grep 'v1.58.0' | awk '{print $2}'
   ```
 
 - Push the tag:
@@ -193,7 +203,10 @@ Format:
   - Choose the appropriate `tag` and input a `name` (e.g., `v1.55.0`, `Eclipse Theia v1.55.0`).
   - Use `generate release notes` for contributors and format like previous releases.
   - Reference the `changelog` and breaking changes.
-  - Attach _Package Native Dependencies_ artifacts.
+  - Attach _Native Dependencies_ artifacts (the extracted zips).
+    - native-dependencies-darwin-arm64.zip
+    - native-dependencies-linux-x64.zip
+    - native-dependencies-win32-x64.zip
   - Mark the release as `latest` (_Do not mark for a patch on an older version_).
   - Select _"Publish Release"_.
   - See [GitHub documentation](https://help.github.com/en/github/administering-a-repository/managing-releases-in-a-repository#creating-a-release) for details.
