@@ -89,7 +89,7 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
 
     protected _input: MonacoEditor;
     protected _inputFocusContextKey: ContextKey<boolean>;
-    protected _modelChangeListener = Disposable.NULL;
+    protected modelChangeListener = Disposable.NULL;
 
     constructor() {
         super();
@@ -312,7 +312,7 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
 
     override dispose(): void {
         super.dispose();
-        this._modelChangeListener.dispose();
+        this.modelChangeListener.dispose();
     }
 
     // To set the active language for the console input text model.
@@ -324,8 +324,8 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
 
         const activeEditorControl = this.editorService.getActiveCodeEditor();
         if (activeEditorControl) {
-            this._modelChangeListener.dispose();
-            this._modelChangeListener = activeEditorControl.onDidChangeModelLanguage(() => this.setMode());
+            this.modelChangeListener.dispose();
+            this.modelChangeListener = activeEditorControl.onDidChangeModelLanguage(() => this.setMode());
             const consoleModel = this._input.getControl().getModel();
             const activeEditorModel = activeEditorControl.getModel();
             if (consoleModel && activeEditorModel) {
