@@ -33,7 +33,7 @@ export class AIActivationService implements FrontendApplicationContribution {
     @inject(PreferenceService)
     protected preferenceService: PreferenceService;
 
-    protected isAIEnabledKey: ContextKey<boolean>;
+    protected isAiEnabledKey: ContextKey<boolean>;
 
     protected onDidChangeAIEnabled = new Emitter<boolean>();
     get onDidChangeActiveStatus(): Event<boolean> {
@@ -41,14 +41,14 @@ export class AIActivationService implements FrontendApplicationContribution {
     }
 
     get isActive(): boolean {
-        return this.isAIEnabledKey.get() ?? false;
+        return this.isAiEnabledKey.get() ?? false;
     }
 
     initialize(): MaybePromise<void> {
-        this.isAIEnabledKey = this.contextKeyService.createKey(ENABLE_AI_CONTEXT_KEY, false);
+        this.isAiEnabledKey = this.contextKeyService.createKey(ENABLE_AI_CONTEXT_KEY, false);
         this.preferenceService.onPreferenceChanged(e => {
             if (e.preferenceName === PREFERENCE_NAME_ENABLE_AI) {
-                this.isAIEnabledKey.set(e.newValue);
+                this.isAiEnabledKey.set(e.newValue);
                 this.onDidChangeAIEnabled.fire(e.newValue);
             }
         });
