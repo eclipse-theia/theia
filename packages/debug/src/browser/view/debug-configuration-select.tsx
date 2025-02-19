@@ -21,12 +21,14 @@ import { DebugSessionOptions } from '../debug-session-options';
 import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/select-component';
 import { QuickInputService } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
+import { DebugSessionConfigurationLabelProvider } from '../debug-session-configuration-label-provider';
 
 interface DynamicPickItem { label: string, configurationType: string, request: string, providerType: string, workspaceFolderUri?: string }
 
 export interface DebugConfigurationSelectProps {
     manager: DebugConfigurationManager,
     quickInputService: QuickInputService,
+    labelProvider: DebugSessionConfigurationLabelProvider,
     isMultiRoot: boolean
 }
 
@@ -256,11 +258,7 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
     }
 
     protected toName(options: DebugSessionOptions, multiRoot: boolean): string {
-        const name = options.configuration?.name ?? options.name;
-        if (!options.workspaceFolderUri || !multiRoot) {
-            return name;
-        }
-        return `${name} (${this.toBaseName(options.workspaceFolderUri)})`;
+        return this.props.labelProvider.getLabel(options, multiRoot);
     }
 
     protected toBaseName(uri: string | undefined): string {

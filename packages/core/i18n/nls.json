@@ -540,7 +540,7 @@
     },
     "vsx-registry": {
       "confirmDialogMessage": "The extension \"{0}\" is unverified and might pose a security risk.",
-      "confirmDialogTitle": "Are you sure you want to proceed with the installation ?",
+      "confirmDialogTitle": "Are you sure you want to proceed with the installation?",
       "downloadCount": "Download count: {0}",
       "errorFetching": "Error fetching extensions.",
       "errorFetchingConfigurationHint": "This could be caused by network configuration issues.",

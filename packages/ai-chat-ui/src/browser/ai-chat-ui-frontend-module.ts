@@ -18,7 +18,9 @@ import { bindContributionProvider, CommandContribution, MenuContribution } from 
 import { bindViewContribution, FrontendApplicationContribution, WidgetFactory } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
+import { EditorPreviewManager } from '@theia/editor-preview/lib/browser/editor-preview-manager';
 import { EditorManager } from '@theia/editor/lib/browser';
+import '../../src/browser/style/index.css';
 import { AIChatContribution } from './ai-chat-ui-contribution';
 import { AIChatInputConfiguration, AIChatInputWidget } from './chat-input-widget';
 import { ChatNodeToolbarActionContribution } from './chat-node-toolbar-action-contribution';
@@ -41,15 +43,14 @@ import {
     TextFragmentSelectionResolver,
     TypeDocSymbolSelectionResolver,
 } from './chat-response-renderer/ai-editor-manager';
+import { QuestionPartRenderer } from './chat-response-renderer/question-part-renderer';
 import { createChatViewTreeWidget } from './chat-tree-view';
 import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
 import { ChatViewMenuContribution } from './chat-view-contribution';
 import { ChatViewLanguageContribution } from './chat-view-language-contribution';
 import { ChatViewWidget } from './chat-view-widget';
 import { ChatViewWidgetToolbarContribution } from './chat-view-widget-toolbar-contribution';
-import { EditorPreviewManager } from '@theia/editor-preview/lib/browser/editor-preview-manager';
-import { QuestionPartRenderer } from './chat-response-renderer/question-part-renderer';
-import '../../src/browser/style/index.css';
+import { ContextVariablePicker } from './context-variable-picker';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindViewContribution(bind, AIChatContribution);
@@ -61,7 +62,8 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
 
     bind(AIChatInputWidget).toSelf();
     bind(AIChatInputConfiguration).toConstantValue({
-        showContext: false
+        showContext: true,
+        showPinnedAgent: true
     });
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
         id: AIChatInputWidget.ID,
@@ -75,6 +77,8 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
         id: ChatViewTreeWidget.ID,
         createWidget: () => container.get(ChatViewTreeWidget)
     })).inSingletonScope();
+
+    bind(ContextVariablePicker).toSelf().inSingletonScope();
 
     bind(ChatResponsePartRenderer).to(HorizontalLayoutPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(ErrorPartRenderer).inSingletonScope();

@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ILogger, UNTITLED_SCHEME, URI } from '@theia/core';
-import { DiffUris, LabelProvider, OpenerService, open } from '@theia/core/lib/browser';
+import { ILogger, URI } from '@theia/core';
+import { ApplicationShell, DiffUris, LabelProvider, NavigatableWidget, OpenerService, open } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -39,6 +39,9 @@ export class ChangeSetFileService {
 
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
+
+    @inject(ApplicationShell)
+    protected readonly shell: ApplicationShell;
 
     @inject(MonacoWorkspace)
     protected readonly monacoWorkspace: MonacoWorkspace;
@@ -95,15 +98,14 @@ export class ChangeSetFileService {
     }
 
     async openDiff(originalUri: URI, suggestedUri: URI): Promise<void> {
-        const exists = await this.fileService.exists(originalUri);
-        const openedUri = exists ? originalUri : originalUri.withScheme(UNTITLED_SCHEME);
-        // Currently we don't have a great way to show the suggestions in a diff editor with accept/reject buttons
-        // So we just use plain diffs with the suggestions as original and the current state as modified, so users can apply changes in their current state
-        // But this leads to wrong colors and wrong label (revert change instead of accept change)
-        const diffUri = DiffUris.encode(openedUri, suggestedUri,
+        const diffUri = this.getDiffUri(originalUri, suggestedUri);
+        open(this.openerService, diffUri);
+    }
+
+    protected getDiffUri(originalUri: URI, suggestedUri: URI): URI {
+        return DiffUris.encode(originalUri, suggestedUri,
             `AI Changes: ${this.labelProvider.getName(originalUri)}`,
         );
-        open(this.openerService, diffUri);
     }
 
     async delete(uri: URI): Promise<void> {
@@ -113,24 +115,44 @@ export class ChangeSetFileService {
         }
     }
 
-    async write(uri: URI, targetState: string): Promise<void> {
-        const exists = await this.fileService.exists(uri);
-        if (!exists) {
-            await this.fileService.create(uri, targetState);
+    /** Returns true if there was a document available to save for the specified URI. */
+    async trySave(suggestedUri: URI): Promise<boolean> {
+        const openModel = this.monacoWorkspace.getTextDocument(suggestedUri.toString());
+        if (openModel) {
+            await openModel.save();
+            return true;
+        } else {
+            return false;
         }
-        await this.doWrite(uri, targetState);
     }
 
-    protected async doWrite(uri: URI, text: string): Promise<void> {
+    async writeFrom(from: URI, to: URI, fallbackContent: string): Promise<void> {
+        const authoritativeContent = this.monacoWorkspace.getTextDocument(from.toString())?.getText() ?? fallbackContent;
+        await this.write(to, authoritativeContent);
+    }
+
+    async write(uri: URI, text: string): Promise<void> {
         const document = this.monacoWorkspace.getTextDocument(uri.toString());
         if (document) {
             await this.monacoWorkspace.applyBackgroundEdit(document, [{
                 range: document.textEditorModel.getFullModelRange(),
                 text
-            }], (editor, wasDirty) => editor === undefined || !wasDirty);
+            }], () => true);
         } else {
             await this.fileService.write(uri, text);
         }
     }
 
+    closeDiffsForSession(sessionId: string, except?: URI[]): void {
+        const openEditors = this.shell.widgets.filter(widget => {
+            const uri = NavigatableWidget.getUri(widget);
+            return uri && uri.authority === sessionId && !except?.some(candidate => candidate.path.toString() === uri.path.toString());
+        });
+        openEditors.forEach(editor => editor.close());
+    }
+
+    closeDiff(uri: URI): void {
+        const openEditors = this.shell.widgets.filter(widget => NavigatableWidget.getUri(widget)?.isEqual(uri));
+        openEditors.forEach(editor => editor.close());
+    }
 }

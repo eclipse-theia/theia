@@ -18,13 +18,13 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { CellExecution, NotebookExecutionStateService } from '../service/notebook-execution-state-service';
 import { CellKind, NotebookCellExecutionState } from '../../common';
 import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookKernelService } from './notebook-kernel-service';
-import { CommandService, Disposable } from '@theia/core';
+import { CommandService, Disposable, ILogger } from '@theia/core';
 import { NotebookKernelQuickPickService } from './notebook-kernel-quick-pick-service';
 import { NotebookKernelHistoryService } from './notebook-kernel-history-service';
 
@@ -50,6 +50,9 @@ export class NotebookExecutionService {
     @inject(NotebookKernelQuickPickService)
     protected notebookKernelQuickPickService: NotebookKernelQuickPickService;
 
+    @inject(ILogger) @named('notebook')
+    protected readonly logger: ILogger;
+
     protected readonly cellExecutionParticipants = new Set<CellExecutionParticipant>();
 
     async executeNotebookCells(notebook: NotebookModel, cells: Iterable<NotebookCellModel>): Promise<void> {
@@ -58,6 +61,11 @@ export class NotebookExecutionService {
         if (!cellsArr.length) {
             return;
         }
+
+        this.logger.debug('Executing notebook cells', {
+            notebook: notebook.uri.toString(),
+            cells: cellsArr.map(c => c.handle)
+        });
 
         // create cell executions
         const cellExecutions: [NotebookCellModel, CellExecution][] = [];
@@ -71,6 +79,7 @@ export class NotebookExecutionService {
         const kernel = await this.notebookKernelHistoryService.resolveSelectedKernel(notebook);
 
         if (!kernel) {
+            this.logger.debug('Failed to resolve kernel for execution', notebook.uri.toString());
             // clear all pending cell executions
             cellExecutions.forEach(cellExe => cellExe[1].complete({}));
             return;
@@ -99,7 +108,16 @@ export class NotebookExecutionService {
             });
             await this.runExecutionParticipants(validCellExecutions);
 
+            this.logger.debug('Selecting kernel for cell execution', {
+                notebook: notebook.uri.toString(),
+                kernel: kernel.id
+            });
             this.notebookKernelService.selectKernelForNotebook(kernel, notebook);
+
+            this.logger.debug('Running cell execution request', {
+                notebook: notebook.uri.toString(),
+                cells: validCellExecutions.map(c => c.cellHandle)
+            });
             await kernel.executeNotebookCellsRequest(notebook.uri, validCellExecutions.map(c => c.cellHandle));
             // the connecting state can change before the kernel resolves executeNotebookCellsRequest
             const unconfirmed = validCellExecutions.filter(exe => exe.state === NotebookCellExecutionState.Unconfirmed);

@@ -26,7 +26,7 @@ export interface ContainerConnectionOptions {
     nodeDownloadTemplate?: string;
     lastContainerInfo?: LastContainerInfo
     devcontainerFile: string;
-    workspaceUri?: string;
+    workspacePath?: string;
 }
 
 export interface LastContainerInfo {

@@ -18,6 +18,7 @@ import { Agent, LanguageModelRequirement } from '../../common';
 import { LanguageModel, LanguageModelRegistry } from '../../common/language-model';
 import { AISettingsService } from '../../common/settings-service';
 import { Mutable } from '@theia/core';
+import { nls } from '@theia/core/lib/common/nls';
 
 export interface LanguageModelSettingsProps {
     agent: Agent;
@@ -64,13 +65,19 @@ export const LanguageModelRenderer: React.FC<LanguageModelSettingsProps> = (
         return <>
             <div>{requirement.purpose}</div>
             <div key={index}>
-                {languageModel.id && <p><strong>Identifier: </strong> {languageModel.id}</p>}
-                {languageModel.name && <p><strong>Name: </strong> {languageModel.name}</p>}
-                {languageModel.vendor && <p><strong>Vendor: </strong> {languageModel.vendor}</p>}
-                {languageModel.version && <p><strong>Version: </strong> {languageModel.version}</p>}
-                {languageModel.family && <p><strong>Family: </strong> {languageModel.family}</p>}
-                {languageModel.maxInputTokens && <p><strong>Min Input Tokens: </strong> {languageModel.maxInputTokens}</p>}
-                {languageModel.maxOutputTokens && <p><strong>Max Output Tokens: </strong> {languageModel.maxOutputTokens}</p>}
+                {languageModel.id && <p><strong>{nls.localizeByDefault('Identifier')}: </strong> {languageModel.id}</p>}
+                {languageModel.name && <p><strong>{nls.localizeByDefault('Name')}: </strong> {languageModel.name}</p>}
+                {languageModel.vendor && <p><strong>{nls.localize('theia/ai/core/languageModelRenderer/vendor', 'Vendor')}: </strong> {languageModel.vendor}</p>}
+                {languageModel.version && <p><strong>{nls.localize('theia/ai/core/languageModelRenderer/version', 'Version')}: </strong> {languageModel.version}</p>}
+                {languageModel.family && <p><strong>{nls.localize('theia/ai/core/languageModelRenderer/family', 'Family')}: </strong> {languageModel.family}</p>}
+                {languageModel.maxInputTokens &&
+                    <p><strong>
+                        {nls.localize('theia/ai/core/languageModelRenderer/minInputTokens', 'Min Input Tokens')}:
+                    </strong> {languageModel.maxInputTokens}</p>}
+                {languageModel.maxOutputTokens &&
+                    <p><strong>
+                        {nls.localize('theia/ai/core/languageModelRenderer/maxOutputTokens', 'Max Output Tokens')}:
+                    </strong> {languageModel.maxOutputTokens}</p>}
             </div>
         </>;
 
@@ -85,13 +92,17 @@ export const LanguageModelRenderer: React.FC<LanguageModelSettingsProps> = (
     return <div className='language-model-container'>
         {Object.values(lmRequirementMap).map((requirements, index) => (
             <React.Fragment key={index}>
-                <div><strong>Purpose:</strong></div>
+                <div><strong>{nls.localize('theia/ai/core/languageModelRenderer/purpose', 'Purpose')}:</strong></div>
                 <div>
                     {/* language model metadata */}
                     {renderLanguageModelMetadata(requirements, index)}
                     {/* language model selector */}
                     <>
-                        <label className="theia-header no-select" htmlFor={`model-select-${agent.id}`}>Language Model:</label>
+                        <label
+                            className="theia-header no-select"
+                            htmlFor={`model-select-${agent.id}`}>
+                            {nls.localize('theia/ai/core/languageModelRenderer/languageModel', 'Language Model')}:
+                        </label>
                         <select
                             className="theia-select"
                             id={`model-select-${agent.id}`}

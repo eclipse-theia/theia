@@ -14,10 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
+import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { VariableRegistry, VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { AIVariableContribution, AIVariableResolver, AIVariableService, AIVariableResolutionRequest, AIVariableContext, ResolvedAIVariable } from '../common';
 
+/**
+ * Integrates the Theia VariableRegistry with the Theia AI VariableService
+ */
 @injectable()
 export class TheiaVariableContribution implements AIVariableContribution, AIVariableResolver {
     @inject(VariableResolverService)
@@ -29,12 +33,21 @@ export class TheiaVariableContribution implements AIVariableContribution, AIVari
     @inject(FrontendApplicationStateService)
     protected readonly stateService: FrontendApplicationStateService;
 
+    protected variableRenameMap: Map<string, string> = new Map([
+        ['file', 'currentFilePath'],
+    ]);
+
     registerVariables(service: AIVariableService): void {
         this.stateService.reachedState('initialized_layout').then(() => {
             // some variable contributions in Theia are done as part of the onStart, same as our AI variable contributions
             // we therefore wait for all of them to be registered before we register we map them to our own
             this.variableRegistry.getVariables().forEach(variable => {
-                service.registerResolver({ id: `theia-${variable.name}`, name: variable.name, description: variable.description ?? 'Theia Built-in Variable' }, this);
+                const variableName = this.variableRenameMap.has(variable.name) ? this.variableRenameMap.get(variable.name)! : variable.name;
+                service.registerResolver({
+                    id: `theia-${variable.name}`,
+                    name: variableName,
+                    description: variable.description ?? nls.localize('theia/ai/core/variable-contribution/builtInVariable', 'Theia Built-in Variable')
+                }, this);
             });
         });
     }

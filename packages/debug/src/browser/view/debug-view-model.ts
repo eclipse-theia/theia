@@ -16,7 +16,7 @@
 
 import debounce from 'p-debounce';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { Disposable, DisposableCollection, Event, Emitter } from '@theia/core/lib/common';
+import { Disposable, DisposableCollection, Event, Emitter, deepClone } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { DebugSession, DebugState } from '../debug-session';
 import { DebugSessionManager } from '../debug-session-manager';
@@ -27,6 +27,7 @@ import { DebugWatchExpression } from './debug-watch-expression';
 import { DebugWatchManager } from '../debug-watch-manager';
 import { DebugFunctionBreakpoint } from '../model/debug-function-breakpoint';
 import { DebugInstructionBreakpoint } from '../model/debug-instruction-breakpoint';
+import { DebugSessionOptionsBase } from '../debug-session-options';
 
 @injectable()
 export class DebugViewModel implements Disposable {
@@ -136,12 +137,13 @@ export class DebugViewModel implements Disposable {
         return this.manager.getInstructionBreakpoints(this.currentSession);
     }
 
-    async start(): Promise<void> {
+    async start(options: Partial<Pick<DebugSessionOptionsBase, 'startedByUser'>> = {}): Promise<void> {
         const { session } = this;
         if (!session) {
             return;
         }
-        const newSession = await this.manager.start(session.options);
+        const optionsCopy = deepClone(session.options);
+        const newSession = await this.manager.start(Object.assign(optionsCopy, options));
         if (newSession) {
             this.fireDidChange();
         }
@@ -218,9 +220,7 @@ export class DebugViewModel implements Disposable {
     protected refreshWatchExpressions = debounce(() => {
         this.refreshWatchExpressionsQueue = this.refreshWatchExpressionsQueue.then(async () => {
             try {
-                for (const watchExpression of this.watchExpressions) {
-                    await watchExpression.evaluate();
-                }
+                await Promise.all(Array.from(this.watchExpressions).map(expr => expr.evaluate()));
             } catch (e) {
                 console.error('Failed to refresh watch expressions: ', e);
             }

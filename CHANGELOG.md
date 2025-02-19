@@ -4,6 +4,13 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## 1.59.0
+
+<a name="breaking_changes_1.59.0">[Breaking Changes:](#breaking_changes_1.59.0)</a>
+
+- [core] Adjusted the binding of named `ILogger` injections. These no longer have to be bound explicitly.
+  If you encounter errors such as `Error: Ambiguous match found for serviceIdentifier: Symbol(ILogger)`, remove your bindings for the `ILogger` symbol.
+
 ## 1.58.0 - 01/30/2025
 
 - [ai] added 'required' property to tool call parameters [#14673](https://github.com/eclipse-theia/theia/pull/14673)
@@ -33,7 +40,7 @@
 - [core] added support for dragging files in browser [#14756](https://github.com/eclipse-theia/theia/pull/14756)
 - [core] fixed dragging file from outside the workspace [#14746](https://github.com/eclipse-theia/theia/pull/14746)
 - [core] fixed override of default key bindings [#14668](https://github.com/eclipse-theia/theia/pull/14668)
-- [core] fixed workbench.action.files.newUntitledFile [#0](https://github.com/eclipse-theia/theia/pull/0)
+- [core] fixed `workbench.action.files.newUntitledFile` command [#14754](https://github.com/eclipse-theia/theia/pull/14754)
 - [core] fixed z-index overlay issue in dock panels [#14695](https://github.com/eclipse-theia/theia/pull/14695)
 - [core] updated build scripts to use npm instead of yarn to build Theia [#14481](https://github.com/eclipse-theia/theia/pull/14481) - Contributed on behalf of STMicroelectronics
 - [core] updated keytar and drivelist [#14306](https://github.com/eclipse-theia/theia/pull/14306)

@@ -20,7 +20,6 @@ import {
     LanguageModelRequest,
     LanguageModelRequestMessage,
     LanguageModelResponse,
-    LanguageModelStreamResponsePart,
     LanguageModelTextResponse
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
@@ -28,6 +27,7 @@ import { OpenAI, AzureOpenAI } from 'openai';
 import { ChatCompletionStream } from 'openai/lib/ChatCompletionStream';
 import { RunnableToolFunctionWithoutParse } from 'openai/lib/RunnableFunction';
 import { ChatCompletionMessageParam } from 'openai/resources';
+import { StreamingAsyncIterator } from './openai-streaming-iterator';
 
 export const OpenAiModelIdentifier = Symbol('OpenAiModelIdentifier');
 
@@ -98,69 +98,8 @@ export class OpenAiModel implements LanguageModel {
                 ...settings
             });
         }
-        cancellationToken?.onCancellationRequested(() => {
-            runner.abort();
-        });
 
-        let runnerEnd = false;
-
-        let resolve: ((part: LanguageModelStreamResponsePart) => void) | undefined;
-        runner.on('error', error => {
-            console.error('Error in OpenAI chat completion stream:', error);
-            runnerEnd = true;
-            resolve?.({ content: error.message });
-        });
-        // we need to also listen for the emitted errors, as otherwise any error actually thrown by the API will not be caught
-        runner.emitted('error').then(error => {
-            console.error('Error in OpenAI chat completion stream:', error);
-            runnerEnd = true;
-            resolve?.({ content: error.message });
-        });
-        runner.emitted('abort').then(() => {
-            // cancel async iterator
-            runnerEnd = true;
-        });
-        runner.on('message', message => {
-            if (message.role === 'tool') {
-                resolve?.({ tool_calls: [{ id: message.tool_call_id, finished: true, result: this.getCompletionContent(message) }] });
-            }
-            console.debug('Received Open AI message', JSON.stringify(message));
-        });
-        runner.once('end', () => {
-            runnerEnd = true;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            resolve?.(runner.finalChatCompletion as any);
-        });
-        if (cancellationToken?.isCancellationRequested) {
-            return { text: '' };
-        }
-        const asyncIterator = {
-            async *[Symbol.asyncIterator](): AsyncIterator<LanguageModelStreamResponsePart> {
-                runner.on('chunk', chunk => {
-                    if (cancellationToken?.isCancellationRequested) {
-                        resolve = undefined;
-                        return;
-                    }
-                    if (resolve && chunk.choices[0]?.delta) {
-                        resolve({ ...chunk.choices[0]?.delta });
-                    }
-                });
-                while (!runnerEnd) {
-                    if (cancellationToken?.isCancellationRequested) {
-                        throw new Error('Iterator canceled');
-                    }
-                    const promise = new Promise<LanguageModelStreamResponsePart>((res, rej) => {
-                        resolve = res;
-                        cancellationToken?.onCancellationRequested(() => {
-                            rej(new Error('Canceled'));
-                            runnerEnd = true; // Stop the iterator
-                        });
-                    });
-                    yield promise;
-                }
-            }
-        };
-        return { stream: asyncIterator };
+        return { stream: new StreamingAsyncIterator(runner, cancellationToken) };
     }
 
     protected async handleNonStreamingRequest(openai: OpenAI, request: LanguageModelRequest): Promise<LanguageModelTextResponse> {
@@ -217,13 +156,6 @@ export class OpenAiModel implements LanguageModel {
             content: message.content ?? '',
             parsed: message.parsed
         };
-    }
-
-    private getCompletionContent(message: OpenAI.Chat.Completions.ChatCompletionToolMessageParam): string {
-        if (Array.isArray(message.content)) {
-            return message.content.join('');
-        }
-        return message.content;
     }
 
     protected createTools(request: LanguageModelRequest): RunnableToolFunctionWithoutParse[] | undefined {

@@ -82,7 +82,7 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
             throw new Error(`Devcontainer file at ${filePath} not found in workspace`);
         }
 
-        return this.doOpenInContainer(devcontainerFile, uri.toString());
+        return this.doOpenInContainer(devcontainerFile, uri.path.toString());
     }
 
     async getWorkspaceLabel(uri: URI): Promise<string | undefined> {
@@ -103,7 +103,7 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
         this.doOpenInContainer(devcontainerFile);
     }
 
-    async doOpenInContainer(devcontainerFile: DevContainerFile, workspaceUri?: string): Promise<void> {
+    async doOpenInContainer(devcontainerFile: DevContainerFile, workspacePath?: string): Promise<void> {
         const lastContainerInfoKey = `${LAST_USED_CONTAINER}:${devcontainerFile.path}`;
         const lastContainerInfo = await this.workspaceStorageService.getData<LastContainerInfo | undefined>(lastContainerInfoKey);
 
@@ -113,7 +113,7 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
             nodeDownloadTemplate: this.remotePreferences['remote.nodeDownloadTemplate'],
             lastContainerInfo,
             devcontainerFile: devcontainerFile.path,
-            workspaceUri
+            workspacePath: workspacePath
         });
 
         this.workspaceStorageService.setData<LastContainerInfo>(lastContainerInfoKey, {
@@ -122,7 +122,7 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
         });
 
         this.workspaceServer.setMostRecentlyUsedWorkspace(
-            `${DEV_CONTAINER_WORKSPACE_SCHEME}:${this.workspaceService.workspace?.resource.path}?${DEV_CONTAINER_PATH_QUERY}=${devcontainerFile.path}`);
+            `${DEV_CONTAINER_WORKSPACE_SCHEME}:${workspacePath ?? this.workspaceService.workspace?.resource.path}?${DEV_CONTAINER_PATH_QUERY}=${devcontainerFile.path}`);
 
         this.openRemote(connectionResult.port, false, connectionResult.workspacePath);
     }

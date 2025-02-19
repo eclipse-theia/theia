@@ -18,7 +18,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { IRawThemeSetting } from 'vscode-textmate/release/theme';
+import { IRawTheme } from 'vscode-textmate';
 import * as monaco from '@theia/monaco-editor-core';
 import { IStandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
@@ -95,7 +95,7 @@ export class MonacoThemeRegistry {
                 result.settings.push(...parentTheme.settings);
             }
         }
-        const tokenColors: Array<IRawThemeSetting> = json.tokenColors;
+        const tokenColors: IRawTheme['settings'] = json.tokenColors;
         if (Array.isArray(tokenColors)) {
             for (const tokenColor of tokenColors) {
                 if (tokenColor.scope && tokenColor.settings) {
