@@ -142,6 +142,7 @@ export class AIChatInputWidget extends ReactWidget {
         this.contextMenuRenderer.render({
             menuPath: AIChatInputWidget.CONTEXT_MENU,
             anchor: { x: event.posx, y: event.posy },
+            context: event.target
         });
         event.preventDefault();
     }
