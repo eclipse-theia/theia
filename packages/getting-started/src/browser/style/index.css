@@ -114,7 +114,7 @@ body {
   margin-top: 100px;
 }
 
-.gs-container.gs-experimental-container {
+.gs-container.gs-aifeature-container {
   border: 1px solid var(--theia-focusBorder);
   padding: 15px;
 }
@@ -124,6 +124,13 @@ body {
 }
 
 @keyframes shadowPulse {
-  0%, 100% { box-shadow: 0 0 0 rgba(0, 0, 0, 0); }
-  50% { box-shadow: 0 0 15px rgba(0, 0, 0, 0.4); }
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+  }
+
+  50% {
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
+  }
 }

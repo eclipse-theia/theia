@@ -19,21 +19,21 @@ import { PreferenceContribution, PreferenceProxy, PreferenceSchema } from '@thei
 import { PreferenceProxyFactory } from '@theia/core/lib/browser/preferences/injectable-preference-proxy';
 import { interfaces } from '@theia/core/shared/inversify';
 
-export const AI_CORE_PREFERENCES_TITLE = nls.localize('theia/ai/core/prefs/title', '✨ AI Features [Experimental]');
-export const PREFERENCE_NAME_ENABLE_EXPERIMENTAL = 'ai-features.AiEnable.enableAI';
+export const AI_CORE_PREFERENCES_TITLE = nls.localize('theia/ai/core/prefs/title', '✨ AI Features [Alpha]');
+export const PREFERENCE_NAME_ENABLE_AI = 'ai-features.AiEnable.enableAI';
 export const PREFERENCE_NAME_PROMPT_TEMPLATES = 'ai-features.promptTemplates.promptTemplatesFolder';
 export const PREFERENCE_NAME_REQUEST_SETTINGS = 'ai-features.modelSettings.requestSettings';
 
 export const aiCorePreferenceSchema: PreferenceSchema = {
     type: 'object',
     properties: {
-        [PREFERENCE_NAME_ENABLE_EXPERIMENTAL]: {
+        [PREFERENCE_NAME_ENABLE_AI]: {
             title: AI_CORE_PREFERENCES_TITLE,
-            markdownDescription: nls.localize('theia/ai/core/enableExperimental/mdDescription',
-                '❗ This setting allows you to access and experiment with the latest AI capabilities.\
+            markdownDescription: nls.localize('theia/ai/core/enableAI/mdDescription',
+                '❗ This setting allows you to access the latest AI capabilities (Alpha version).\
             \n\
-            Please note that these features are in an experimental phase, which means they may be unstable and\
-            undergo significant changes. It is important to be aware that these experimental features may generate\
+            Please note that these features are in an alpha phase, which means they may \
+            undergo changes and will be further improved. It is important to be aware that these features may generate\
             continuous requests to the language models (LLMs) you provide access to. This might incur costs that you\
             need to monitor closely. By enabling this option, you acknowledge these risks.\
             \n\
@@ -91,7 +91,7 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
     }
 };
 export interface AICoreConfiguration {
-    [PREFERENCE_NAME_ENABLE_EXPERIMENTAL]: boolean | undefined;
+    [PREFERENCE_NAME_ENABLE_AI]: boolean | undefined;
     [PREFERENCE_NAME_PROMPT_TEMPLATES]: string | undefined;
     [PREFERENCE_NAME_REQUEST_SETTINGS]: Array<{
         modelId: string;

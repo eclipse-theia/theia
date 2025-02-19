@@ -153,16 +153,16 @@ export class ChatViewTreeWidget extends TreeWidget {
             <div className='theia-ResponseNode-Content' key={'disabled-message'}>
                 <div className="disable-message">
                     <span className="section-header">{
-                        nls.localize('theia/ai/chat-ui/chat-view-tree-widget/experimentalFeatureHeader', '🚀 Experimental AI Feature Available!')}
+                        nls.localize('theia/ai/chat-ui/chat-view-tree-widget/aiFeatureHeader', '🚀 AI Features Available (Alpha Version)!')}
                     </span>
                     <div className="section-title">
                         <p><code>{nls.localize('theia/ai/chat-ui/chat-view-tree-widget/featuresDisabled', 'Currently, all AI Features are disabled!')}</code></p>
                     </div>
                     <div className="section-title">
-                        <p>{nls.localize('theia/ai/chat-ui/chat-view-tree-widget/howToEnable', 'How to Enable Experimental AI Features:')}</p>
+                        <p>{nls.localize('theia/ai/chat-ui/chat-view-tree-widget/howToEnable', 'How to Enable the AI Features:')}</p>
                     </div>
                     <div className="section-content">
-                        <p>To enable the experimental AI features, please go to &nbsp;
+                        <p>To enable the AI features, please go to &nbsp;
                             {this.renderLinkButton(nls.localize('theia/ai/chat-ui/chat-view-tree-widget/settingsMenu', 'the settings menu'), CommonCommands.OPEN_PREFERENCES.id)}
                             &nbsp;and locate the <strong>AI Features</strong> section.</p>
                         <ol>
@@ -170,21 +170,25 @@ export class ChatViewTreeWidget extends TreeWidget {
                             <li>Provide at least one LLM provider (e.g. OpenAI), also see <a href="https://theia-ide.org/docs/user_ai/" target="_blank">the documentation</a>
                                 for more information.</li>
                         </ol>
-                        <p>This will activate the new AI capabilities in the app. Please remember, these features are still in development, so they may change or be unstable. 🚧</p>
+                        <p>This will activate the AI capabilities in the app. Please remember, these features are <strong>in an alpha state</strong>,
+                            so they may change and we are working on improving them 🚧.<br></br>
+                            Please support us by <a href="https://github.com/eclipse-theia/theia">providing feedback
+                            </a>!</p>
                     </div>
 
                     <div className="section-title">
                         <p>Currently Supported Views and Features:</p>
                     </div>
                     <div className="section-content">
-                        <p>Once the experimental AI features are enabled, you can access the following views and features:</p>
+                        <p>Once the AI features are enabled, you can access the following views and features:</p>
                         <ul>
                             <li>Code Completion</li>
                             <li>Terminal Assistance (via CTRL+I in a terminal)</li>
                             <li>This Chat View (features the following agents):
                                 <ul>
                                     <li>Universal Chat Agent</li>
-                                    <li>Workspace Chat Agent</li>
+                                    <li>Coder Chat Agent</li>
+                                    <li>Architect Chat Agent</li>
                                     <li>Command Chat Agent</li>
                                     <li>Orchestrator Chat Agent</li>
                                 </ul>
