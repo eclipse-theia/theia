@@ -161,7 +161,7 @@ export class BrowserMainMenuFactory implements MenuWidgetFactory {
 }
 
 export function isMenuElement(element: HTMLElement | null): boolean {
-    return !!element && element.className.includes('lm-Menu');
+    return !!element && element.className.includes('p-Menu');
 }
 
 export class DynamicMenuBarWidget extends MenuBarWidget {
