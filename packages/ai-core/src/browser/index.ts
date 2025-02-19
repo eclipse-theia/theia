@@ -24,3 +24,4 @@ export * from './frontend-language-model-registry';
 export * from './frontend-variable-service';
 export * from './prompttemplate-contribution';
 export * from './theia-variable-contribution';
+export * from './frontend-variable-service';

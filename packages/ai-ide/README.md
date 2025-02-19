@@ -26,7 +26,7 @@ The package includes the following agents:
 
 - **Command Chat Agent**: This agent helps users execute commands within the Theia IDE based on user requests. It identifies the correct command from Theia's command registry and facilitates its execution, providing users with a seamless command interaction experience.
 
-- **Workspace Agent**: The agent is able to inspect the current files of the workspace, including their content, to answer questions.
+- **Architect Agent**: The agent is able to inspect the current files of the workspace, including their content, to answer questions.
 
 ## Configuration View
 

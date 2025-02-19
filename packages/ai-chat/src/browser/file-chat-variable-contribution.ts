@@ -14,7 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { AIVariableContext, AIVariableContribution, AIVariableDropResult, AIVariableResolutionRequest, AIVariableService, PromptText } from '@theia/ai-core';
+import { AIVariableContext, AIVariableResolutionRequest, PromptText } from '@theia/ai-core';
+import { AIVariableDropResult, FrontendVariableContribution, FrontendVariableService } from '@theia/ai-core/lib/browser';
 import { FILE_VARIABLE } from '@theia/ai-core/lib/browser/file-variable-contribution';
 import { CancellationToken, QuickInputService, URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
@@ -24,7 +25,7 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 
 @injectable()
-export class FileChatVariableContribution implements AIVariableContribution {
+export class FileChatVariableContribution implements FrontendVariableContribution {
     @inject(FileService)
     protected readonly fileService: FileService;
 
@@ -37,7 +38,7 @@ export class FileChatVariableContribution implements AIVariableContribution {
     @inject(QuickFileSelectService)
     protected readonly quickFileSelectService: QuickFileSelectService;
 
-    registerVariables(service: AIVariableService): void {
+    registerVariables(service: FrontendVariableService): void {
         service.registerArgumentPicker(FILE_VARIABLE, this.triggerArgumentPicker.bind(this));
         service.registerArgumentCompletionProvider(FILE_VARIABLE, this.provideArgumentCompletionItems.bind(this));
         service.registerDropHandler(this.handleDrop.bind(this));
@@ -71,19 +72,18 @@ export class FileChatVariableContribution implements AIVariableContribution {
         position: monaco.Position
     ): Promise<monaco.languages.CompletionItem[] | undefined> {
         const lineContent = model.getLineContent(position.lineNumber);
-        const triggerCharIndex = Math.max(
-            lineContent.lastIndexOf(PromptText.VARIABLE_CHAR, position.column - 1),
-            lineContent.lastIndexOf(PromptText.VARIABLE_SEPARATOR_CHAR, position.column - 1)
-        );
-        if (triggerCharIndex === -1) {
+        const indexOfVariableTrigger = lineContent.lastIndexOf(PromptText.VARIABLE_CHAR, position.column - 1);
+
+        // check if there is a variable trigger and no space typed between the variable trigger and the cursor
+        if (indexOfVariableTrigger === -1 || lineContent.substring(indexOfVariableTrigger).includes(' ')) {
             return undefined;
         }
+
+        // determine whether we are providing completions before or after the variable argument separator
+        const indexOfVariableArgSeparator = lineContent.lastIndexOf(PromptText.VARIABLE_SEPARATOR_CHAR, position.column - 1);
+        const triggerCharIndex = Math.max(indexOfVariableTrigger, indexOfVariableArgSeparator);
 
         const typedWord = lineContent.substring(triggerCharIndex + 1, position.column - 1);
-        if (typedWord.includes(' ')) {
-            return undefined;
-        }
-
         const range = new monaco.Range(position.lineNumber, triggerCharIndex + 2, position.lineNumber, position.column);
         const picks = await this.quickFileSelectService.getPicks(typedWord, CancellationToken.None);
         const prefix = lineContent[triggerCharIndex] === PromptText.VARIABLE_CHAR ? FILE_VARIABLE.name + PromptText.VARIABLE_SEPARATOR_CHAR : '';

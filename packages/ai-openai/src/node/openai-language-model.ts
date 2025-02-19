@@ -23,6 +23,7 @@ import {
     LanguageModelTextResponse
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
+import { injectable } from '@theia/core/shared/inversify';
 import { OpenAI, AzureOpenAI } from 'openai';
 import { ChatCompletionStream } from 'openai/lib/ChatCompletionStream';
 import { RunnableToolFunctionWithoutParse } from 'openai/lib/RunnableFunction';
@@ -30,6 +31,8 @@ import { ChatCompletionMessageParam } from 'openai/resources';
 import { StreamingAsyncIterator } from './openai-streaming-iterator';
 
 export const OpenAiModelIdentifier = Symbol('OpenAiModelIdentifier');
+
+export type DeveloperMessageSettings = 'user' | 'system' | 'developer' | 'mergeWithFollowingUserMessage' | 'skip';
 
 export class OpenAiModel implements LanguageModel {
 
@@ -39,7 +42,7 @@ export class OpenAiModel implements LanguageModel {
      * @param enableStreaming whether the streaming API shall be used
      * @param apiKey a function that returns the API key to use for this model, called on each request
      * @param apiVersion a function that returns the OpenAPI version to use for this model, called on each request
-     * @param supportsDeveloperMessage whether the model supports the `developer` role
+     * @param developerMessageSettings how to handle system messages
      * @param url the OpenAI API compatible endpoint where the model is hosted. If not provided the default OpenAI endpoint will be used.
      * @param defaultRequestSettings optional default settings for requests made using this model.
      */
@@ -49,10 +52,11 @@ export class OpenAiModel implements LanguageModel {
         public enableStreaming: boolean,
         public apiKey: () => string | undefined,
         public apiVersion: () => string | undefined,
-        public supportsDeveloperMessage: boolean,
         public supportsStructuredOutput: boolean,
         public url: string | undefined,
-        public defaultRequestSettings?: { [key: string]: unknown }
+        public openAiModelUtils: OpenAiModelUtils,
+        public developerMessageSettings: DeveloperMessageSettings = 'developer',
+        public defaultRequestSettings?: { [key: string]: unknown },
     ) { }
 
     protected getSettings(request: LanguageModelRequest): Record<string, unknown> {
@@ -78,13 +82,12 @@ export class OpenAiModel implements LanguageModel {
         if (cancellationToken?.isCancellationRequested) {
             return { text: '' };
         }
-
         let runner: ChatCompletionStream;
         const tools = this.createTools(request);
         if (tools) {
             runner = openai.beta.chat.completions.runTools({
                 model: this.model,
-                messages: request.messages.map(this.toOpenAIMessage.bind(this)),
+                messages: this.processMessages(request.messages),
                 stream: true,
                 tools: tools,
                 tool_choice: 'auto',
@@ -93,7 +96,7 @@ export class OpenAiModel implements LanguageModel {
         } else {
             runner = openai.beta.chat.completions.stream({
                 model: this.model,
-                messages: request.messages.map(this.toOpenAIMessage.bind(this)),
+                messages: this.processMessages(request.messages),
                 stream: true,
                 ...settings
             });
@@ -106,7 +109,7 @@ export class OpenAiModel implements LanguageModel {
         const settings = this.getSettings(request);
         const response = await openai.chat.completions.create({
             model: this.model,
-            messages: request.messages.map(this.toOpenAIMessage.bind(this)),
+            messages: this.processMessages(request.messages),
             ...settings
         });
 
@@ -115,24 +118,6 @@ export class OpenAiModel implements LanguageModel {
         return {
             text: message.content ?? ''
         };
-    }
-
-    protected toOpenAIMessage(message: LanguageModelRequestMessage): ChatCompletionMessageParam {
-        return {
-            role: this.toOpenAiRole(message),
-            content: message.query || ''
-        };
-    }
-
-    protected toOpenAiRole(message: LanguageModelRequestMessage): 'developer' | 'user' | 'assistant' {
-        switch (message.actor) {
-            case 'system':
-                return this.supportsDeveloperMessage ? 'developer' : 'user';
-            case 'ai':
-                return 'assistant';
-            default:
-                return 'user';
-        }
     }
 
     protected isNonStreamingModel(_model: string): boolean {
@@ -144,7 +129,7 @@ export class OpenAiModel implements LanguageModel {
         // TODO implement tool support for structured output (parse() seems to require different tool format)
         const result = await openai.beta.chat.completions.parse({
             model: this.model,
-            messages: request.messages.map(this.toOpenAIMessage.bind(this)),
+            messages: this.processMessages(request.messages),
             response_format: request.response_format,
             ...settings
         });
@@ -184,5 +169,93 @@ export class OpenAiModel implements LanguageModel {
             // We need to hand over "some" key, even if a custom url is not key protected as otherwise the OpenAI client will throw an error
             return new OpenAI({ apiKey: apiKey ?? 'no-key', baseURL: this.url });
         }
+    }
+
+    protected processMessages(messages: LanguageModelRequestMessage[]): ChatCompletionMessageParam[] {
+        return this.openAiModelUtils.processMessages(messages, this.developerMessageSettings, this.model);
+    }
+}
+
+/**
+ * Utility class for processing messages for the OpenAI language model.
+ *
+ * Adopters can rebind this class to implement custom message processing behavior.
+ */
+@injectable()
+export class OpenAiModelUtils {
+
+    protected processSystemMessages(
+        messages: LanguageModelRequestMessage[],
+        developerMessageSettings: DeveloperMessageSettings
+    ): LanguageModelRequestMessage[] {
+        if (developerMessageSettings === 'skip') {
+            return messages.filter(message => message.actor !== 'system');
+        } else if (developerMessageSettings === 'mergeWithFollowingUserMessage') {
+            const updated = messages.slice();
+            for (let i = updated.length - 1; i >= 0; i--) {
+                if (updated[i].actor === 'system') {
+                    if (i + 1 < updated.length && updated[i + 1].actor === 'user') {
+                        // Merge system message with the next user message
+                        updated[i + 1] = {
+                            ...updated[i + 1],
+                            query: updated[i].query + '\n' + updated[i + 1].query
+                        };
+                        updated.splice(i, 1);
+                    } else {
+                        // The message directly after is not a user message (or none exists), so create a new user message right after
+                        updated.splice(i + 1, 0, { actor: 'user', type: 'text', query: updated[i].query });
+                        updated.splice(i, 1);
+                    }
+                }
+            }
+            return updated;
+        }
+        return messages;
+    }
+
+    protected toOpenAiRole(
+        message: LanguageModelRequestMessage,
+        developerMessageSettings: DeveloperMessageSettings
+    ): 'developer' | 'user' | 'assistant' | 'system' {
+        if (message.actor === 'system') {
+            if (developerMessageSettings === 'user' || developerMessageSettings === 'system' || developerMessageSettings === 'developer') {
+                return developerMessageSettings;
+            } else {
+                return 'developer';
+            }
+        } else if (message.actor === 'ai') {
+            return 'assistant';
+        }
+        return 'user';
+    }
+
+    protected toOpenAIMessage(
+        message: LanguageModelRequestMessage,
+        developerMessageSettings: DeveloperMessageSettings
+    ): ChatCompletionMessageParam {
+        return {
+            role: this.toOpenAiRole(message, developerMessageSettings),
+            content: message.query || ''
+        };
+    }
+
+    /**
+     * Processes the provided list of messages by applying system message adjustments and converting
+     * them to the format expected by the OpenAI API.
+     *
+     * Adopters can rebind this processing to implement custom behavior.
+     *
+     * @param messages the list of messages to process.
+     * @param developerMessageSettings how system and developer messages are handled during processing.
+     * @param model the OpenAI model identifier. Currently not used, but allows subclasses to implement model-specific behavior.
+     * @returns an array of messages formatted for the OpenAI API.
+     */
+    processMessages(
+        messages: LanguageModelRequestMessage[],
+        developerMessageSettings: DeveloperMessageSettings,
+        model: string
+    ): ChatCompletionMessageParam[] {
+        const processed = this.processSystemMessages(messages, developerMessageSettings);
+        return processed.map(m => this.toOpenAIMessage(m, developerMessageSettings));
     }
 }

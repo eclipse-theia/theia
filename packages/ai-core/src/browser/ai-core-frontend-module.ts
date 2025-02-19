@@ -50,7 +50,7 @@ import { AICoreFrontendApplicationContribution } from './ai-core-frontend-applic
 import { bindAICorePreferences } from './ai-core-preferences';
 import { AISettingsServiceImpl } from './ai-settings-service';
 import { FrontendPromptCustomizationServiceImpl } from './frontend-prompt-customization-service';
-import { FrontendVariableService } from './frontend-variable-service';
+import { DefaultFrontendVariableService, FrontendVariableService } from './frontend-variable-service';
 import { PromptTemplateContribution } from './prompttemplate-contribution';
 import { FileVariableContribution } from './file-variable-contribution';
 import { TheiaVariableContribution } from './theia-variable-contribution';
@@ -101,7 +101,8 @@ export default new ContainerModule(bind => {
 
     bind(AISettingsService).to(AISettingsServiceImpl).inRequestScope();
     bindContributionProvider(bind, AIVariableContribution);
-    bind(FrontendVariableService).toSelf().inSingletonScope();
+    bind(DefaultFrontendVariableService).toSelf().inSingletonScope();
+    bind(FrontendVariableService).toService(DefaultFrontendVariableService);
     bind(AIVariableService).toService(FrontendVariableService);
     bind(FrontendApplicationContribution).toService(FrontendVariableService);
 
