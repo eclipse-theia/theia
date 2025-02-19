@@ -192,8 +192,7 @@ export class AIChatInputWidget extends ReactWidget {
     protected addContextElement(): void {
         this.contextVariablePicker.pickContextVariable().then(contextElement => {
             if (contextElement) {
-                this.context.push(contextElement);
-                this.update();
+                this.addContext(contextElement);
             }
         });
     }
@@ -211,8 +210,11 @@ export class AIChatInputWidget extends ReactWidget {
         event.preventDefault();
     }
 
-    addContext(variable: AIVariableResolutionRequest): void {
-        this.context.push(variable);
+    addContext(variableRequest: AIVariableResolutionRequest): void {
+        if (this.context.some(existing => existing.variable.id === variableRequest.variable.id && existing.arg === variableRequest.arg)) {
+            return;
+        }
+        this.context.push(variableRequest);
         this.update();
     }
 }
