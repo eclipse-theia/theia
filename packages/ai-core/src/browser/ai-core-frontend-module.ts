@@ -42,14 +42,10 @@ import {
     LanguageModelDelegateClientImpl,
 } from './frontend-language-model-registry';
 
-import { bindViewContribution, FrontendApplicationContribution, WidgetFactory } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { LanguageGrammarDefinitionContribution } from '@theia/monaco/lib/browser/textmate';
-import { AIAgentConfigurationWidget } from './ai-configuration/agent-configuration-widget';
-import { AIConfigurationSelectionService } from './ai-configuration/ai-configuration-service';
-import { AIAgentConfigurationViewContribution } from './ai-configuration/ai-configuration-view-contribution';
-import { AIConfigurationContainerWidget } from './ai-configuration/ai-configuration-widget';
-import { AIVariableConfigurationWidget } from './ai-configuration/variable-configuration-widget';
+
 import { AICoreFrontendApplicationContribution } from './ai-core-frontend-application-contribution';
 import { bindAICorePreferences } from './ai-core-preferences';
 import { AISettingsServiceImpl } from './ai-settings-service';
@@ -103,16 +99,6 @@ export default new ContainerModule(bind => {
     bind(CommandContribution).toService(PromptTemplateContribution);
     bind(TabBarToolbarContribution).toService(PromptTemplateContribution);
 
-    bind(AIConfigurationSelectionService).toSelf().inSingletonScope();
-    bind(AIConfigurationContainerWidget).toSelf();
-    bind(WidgetFactory)
-        .toDynamicValue(ctx => ({
-            id: AIConfigurationContainerWidget.ID,
-            createWidget: () => ctx.container.get(AIConfigurationContainerWidget)
-        }))
-        .inSingletonScope();
-
-    bindViewContribution(bind, AIAgentConfigurationViewContribution);
     bind(AISettingsService).to(AISettingsServiceImpl).inRequestScope();
     bindContributionProvider(bind, AIVariableContribution);
     bind(DefaultFrontendVariableService).toSelf().inSingletonScope();
@@ -128,22 +114,6 @@ export default new ContainerModule(bind => {
     bind(AIVariableContribution).to(AgentsVariableContribution).inSingletonScope();
 
     bind(FrontendApplicationContribution).to(AICoreFrontendApplicationContribution).inSingletonScope();
-
-    bind(AIVariableConfigurationWidget).toSelf();
-    bind(WidgetFactory)
-        .toDynamicValue(ctx => ({
-            id: AIVariableConfigurationWidget.ID,
-            createWidget: () => ctx.container.get(AIVariableConfigurationWidget)
-        }))
-        .inSingletonScope();
-
-    bind(AIAgentConfigurationWidget).toSelf();
-    bind(WidgetFactory)
-        .toDynamicValue(ctx => ({
-            id: AIAgentConfigurationWidget.ID,
-            createWidget: () => ctx.container.get(AIAgentConfigurationWidget)
-        }))
-        .inSingletonScope();
 
     bind(ToolInvocationRegistry).to(ToolInvocationRegistryImpl).inSingletonScope();
     bindContributionProvider(bind, ToolProvider);

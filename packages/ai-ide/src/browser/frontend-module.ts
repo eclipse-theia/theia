@@ -20,7 +20,7 @@ import { Agent, ToolProvider } from '@theia/ai-core/lib/common';
 import { ArchitectAgent } from './architect-agent';
 import { CoderAgent } from './coder-agent';
 import { FileContentFunction, GetWorkspaceDirectoryStructure, GetWorkspaceFileList, WorkspaceFunctionScope } from './workspace-functions';
-import { PreferenceContribution } from '@theia/core/lib/browser';
+import { PreferenceContribution, WidgetFactory, bindViewContribution } from '@theia/core/lib/browser';
 import { WorkspacePreferencesSchema } from './workspace-preferences';
 import {
     ReplaceContentInFileProvider,
@@ -30,6 +30,11 @@ import { OrchestratorChatAgent, OrchestratorChatAgentId } from '../common/orches
 import { UniversalChatAgent, UniversalChatAgentId } from '../common/universal-chat-agent';
 import { CommandChatAgent } from '../common/command-chat-agents';
 import { ListChatContext, ResolveChatContext } from './context-functions';
+import { AIAgentConfigurationWidget } from './ai-configuration/agent-configuration-widget';
+import { AIConfigurationSelectionService } from './ai-configuration/ai-configuration-service';
+import { AIAgentConfigurationViewContribution } from './ai-configuration/ai-configuration-view-contribution';
+import { AIConfigurationContainerWidget } from './ai-configuration/ai-configuration-widget';
+import { AIVariableConfigurationWidget } from './ai-configuration/variable-configuration-widget';
 
 export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: WorkspacePreferencesSchema });
@@ -67,4 +72,31 @@ export default new ContainerModule(bind => {
 
     bind(ToolProvider).to(ListChatContext);
     bind(ToolProvider).to(ResolveChatContext);
+    bind(AIConfigurationSelectionService).toSelf().inSingletonScope();
+    bind(AIConfigurationContainerWidget).toSelf();
+    bind(WidgetFactory)
+        .toDynamicValue(ctx => ({
+            id: AIConfigurationContainerWidget.ID,
+            createWidget: () => ctx.container.get(AIConfigurationContainerWidget)
+        }))
+        .inSingletonScope();
+
+    bindViewContribution(bind, AIAgentConfigurationViewContribution);
+
+    bind(AIVariableConfigurationWidget).toSelf();
+    bind(WidgetFactory)
+        .toDynamicValue(ctx => ({
+            id: AIVariableConfigurationWidget.ID,
+            createWidget: () => ctx.container.get(AIVariableConfigurationWidget)
+        }))
+        .inSingletonScope();
+
+    bind(AIAgentConfigurationWidget).toSelf();
+    bind(WidgetFactory)
+        .toDynamicValue(ctx => ({
+            id: AIAgentConfigurationWidget.ID,
+            createWidget: () => ctx.container.get(AIAgentConfigurationWidget)
+        }))
+        .inSingletonScope();
+
 });

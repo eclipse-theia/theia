@@ -33,7 +33,7 @@
       "path": "../../packages/ai-hugging-face"
     },
     {
-      "path": "../../packages/ai-ide-agents"
+      "path": "../../packages/ai-ide"
     },
     {
       "path": "../../packages/ai-llamafile"

@@ -14,11 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { codicon, ReactWidget } from '@theia/core/lib/browser';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import * as React from '@theia/core/shared/react';
 import {
     Agent,
+    AgentService,
     AISettingsService,
     AIVariableService,
     LanguageModel,
@@ -27,12 +25,14 @@ import {
     PROMPT_FUNCTION_REGEX,
     PromptCustomizationService,
     PromptService,
-} from '../../common';
+} from '@theia/ai-core/lib/common';
+import { codicon, ReactWidget } from '@theia/core/lib/browser';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import * as React from '@theia/core/shared/react';
+import { AIConfigurationSelectionService } from './ai-configuration-service';
 import { LanguageModelRenderer } from './language-model-renderer';
 import { TemplateRenderer } from './template-settings-renderer';
-import { AIConfigurationSelectionService } from './ai-configuration-service';
 import { AIVariableConfigurationWidget } from './variable-configuration-widget';
-import { AgentService } from '../../common/agent-service';
 import { nls } from '@theia/core';
 
 interface ParsedPrompt {

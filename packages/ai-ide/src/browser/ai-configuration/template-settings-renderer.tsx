@@ -13,9 +13,8 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+import { AISettingsService, PromptCustomizationService, PromptService, PromptTemplate } from '@theia/ai-core/lib/common';
 import * as React from '@theia/core/shared/react';
-import { PromptCustomizationService, PromptService } from '../../common/prompt-service';
-import { AISettingsService, PromptTemplate } from '../../common';
 import { nls } from '@theia/core/lib/common/nls';
 
 const DEFAULT_VARIANT = 'default';
