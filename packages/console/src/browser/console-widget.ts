@@ -151,7 +151,6 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
         contentContext.setContext('consoleContentFocus', true);
 
         this.toDispose.pushAll([
-            this._modelChangeListener,
             this.editorManager.onActiveEditorChanged(() => this.setMode()),
             this.onDidChangeVisibility(() => this.setMode())
         ]);
@@ -309,6 +308,11 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
 
     hasInputFocus(): boolean {
         return this._input && this._input.isFocused({ strict: true });
+    }
+
+    override dispose(): void {
+        super.dispose();
+        this._modelChangeListener.dispose();
     }
 
     // To set the active language for the console input text model.
