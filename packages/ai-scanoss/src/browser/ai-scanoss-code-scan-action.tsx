@@ -135,13 +135,13 @@ const ScanOSSIntegration = React.memo((props: {
     let title = 'SCANOSS - Perform scan';
     if (scanOSSResult) {
         if (scanOSSResult === 'pending') {
-            title = nls.localize('thei/ai/scanoss/snippet/in-progress', 'SCANOSS - Performing scan...');
+            title = nls.localize('theia/ai/scanoss/snippet/in-progress', 'SCANOSS - Performing scan...');
         } else if (scanOSSResult.type === 'error') {
-            title = nls.localize('thei/ai/scanoss/snippet/errored', 'SCANOSS - Error - {0}', scanOSSResult.message);
+            title = nls.localize('theia/ai/scanoss/snippet/errored', 'SCANOSS - Error - {0}', scanOSSResult.message);
         } else if (scanOSSResult.type === 'match') {
-            title = nls.localize('thei/ai/scanoss/snippet/matched', 'SCANOSS - Found {0} match', scanOSSResult.matched);
+            title = nls.localize('theia/ai/scanoss/snippet/matched', 'SCANOSS - Found {0} match', scanOSSResult.matched);
         } else if (scanOSSResult.type === 'clean') {
-            title = nls.localize('thei/ai/scanoss/snippet/no-match', 'SCANOSS - No match');
+            title = nls.localize('theia/ai/scanoss/snippet/no-match', 'SCANOSS - No match');
         }
     }
     return (
@@ -173,7 +173,7 @@ export class ScanOSSDialog extends ReactDialog<void> {
 
     constructor(protected results: ScanOSSResultMatch[]) {
         super({
-            title: nls.localize('thei/ai/scanoss/snippet/dialog-header', 'ScanOSS Results'),
+            title: nls.localize('theia/ai/scanoss/snippet/dialog-header', 'ScanOSS Results'),
         });
         this.appendAcceptButton(Dialog.OK);
         this.update();
@@ -203,9 +203,9 @@ export class ScanOSSDialog extends ReactDialog<void> {
     protected renderSummary(): React.ReactNode {
         return (
             <div className="scanoss-summary">
-                <h3>{nls.localize('thei/ai/scanoss/snippet/summary', 'Summary')}</h3>
+                <h3>{nls.localize('theia/ai/scanoss/snippet/summary', 'Summary')}</h3>
                 <div>
-                    {nls.localize('thei/ai/scanoss/snippet/match-count', 'Found {0} match(es)', this.results.length)}
+                    {nls.localize('theia/ai/scanoss/snippet/match-count', 'Found {0} match(es)', this.results.length)}
                 </div>
             </div>
         );
@@ -217,7 +217,7 @@ export class ScanOSSDialog extends ReactDialog<void> {
                 <h4>{nls.localizeByDefault('Details')}</h4>
                 {this.results.map(result =>
                     <div key={result.matched}>
-                        {result.file && <h4>{nls.localize('thei/ai/scanoss/snippet/file-name-heading', 'Match found in {0}', result.file)}</h4>}
+                        {result.file && <h4>{nls.localize('theia/ai/scanoss/snippet/file-name-heading', 'Match found in {0}', result.file)}</h4>}
                         <a href={result.url} target="_blank" rel="noopener noreferrer">
                             {result.url}
                         </a>
