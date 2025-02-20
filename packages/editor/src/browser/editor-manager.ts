@@ -136,22 +136,24 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
 
     protected override tryGetPendingWidget(uri: URI, options?: EditorOpenerOptions): MaybePromise<EditorWidget> | undefined {
         const editorPromise = super.tryGetPendingWidget(uri, options);
-        if (editorPromise) {
-            // Reveal selection before attachment to manage nav stack. (https://github.com/eclipse-theia/theia/issues/8955)
-            if (!(editorPromise instanceof Widget)) {
-                editorPromise.then(editor => this.revealSelection(editor, options, uri));
-            } else {
-                this.revealSelection(editorPromise, options, uri);
-            }
+        if (!editorPromise) {
+            return editorPromise;
         }
-        return editorPromise;
+
+        // Reveal selection before attachment to manage nav stack. (https://github.com/eclipse-theia/theia/issues/8955)
+        if (!(editorPromise instanceof Widget)) {
+            return editorPromise.then(editor => this.revealSelection(editor, options, uri)).then(() => editorPromise);
+        } else {
+            return this.revealSelection(editorPromise, options, uri).then(() => editorPromise);
+        }
+
     }
 
     protected override async getWidget(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget | undefined> {
         const editor = await super.getWidget(uri, options);
         if (editor) {
             // Reveal selection before attachment to manage nav stack. (https://github.com/eclipse-theia/theia/issues/8955)
-            this.revealSelection(editor, options, uri);
+            await this.revealSelection(editor, options, uri);
         }
         return editor;
     }
@@ -159,7 +161,7 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
     protected override async getOrCreateWidget(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget> {
         const editor = await super.getOrCreateWidget(uri, options);
         // Reveal selection before attachment to manage nav stack. (https://github.com/eclipse-theia/theia/issues/8955)
-        this.revealSelection(editor, options, uri);
+        await this.revealSelection(editor, options, uri);
         return editor;
     }
 
