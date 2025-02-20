@@ -169,7 +169,7 @@ export class ChatServiceImpl implements ChatService {
 
     deleteSession(sessionId: string): void {
         const sessionIndex = this._sessions.findIndex(candidate => candidate.id === sessionId);
-        if (~sessionIndex) { return; }
+        if (!~sessionIndex) { return; }
         const session = this._sessions[sessionIndex];
         // If the removed session is the active one, set the newest one as active
         if (session.isActive) {
