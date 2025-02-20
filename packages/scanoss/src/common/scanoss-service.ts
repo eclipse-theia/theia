@@ -26,6 +26,7 @@ export interface ScanOSSResultMatch {
     matched: string; // e.g. "75%"
     url: string;
     raw: ScannerComponent;
+    file?: string;
 }
 export interface ScanOSSResultError {
     type: 'error';

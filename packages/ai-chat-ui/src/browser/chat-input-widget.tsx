@@ -587,8 +587,8 @@ const ChangeSetBox: React.FunctionComponent<{ changeSet: ChangeSetUI }> = React.
             <div className='theia-ChatInput-ChangeSet-Header-Actions'>
                 {actions.map(action => <div key={action.id} className='theia-changeSet-Action'>{action.render(changeSet)}</div>)}
                 <span className='codicon codicon-close action' title='Delete Change Set' onClick={() => deleteChangeSet()} />
-            </div >
-        </div >
+            </div>
+        </div>
         <div className='theia-ChatInput-ChangeSet-List'>
             <ul>
                 {elements.map((element, index) => (
@@ -626,8 +626,8 @@ const ChangeSetBox: React.FunctionComponent<{ changeSet: ChangeSetUI }> = React.
                     </li>
                 ))}
             </ul>
-        </div >
-    </div >
+        </div>
+    </div>
 ));
 
 interface ChatInputOptionsProps {
