@@ -18,8 +18,7 @@ import { bindContributionProvider, CommandContribution, MenuContribution } from 
 import { bindViewContribution, FrontendApplicationContribution, WidgetFactory } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
-import { EditorPreviewManager } from '@theia/editor-preview/lib/browser/editor-preview-manager';
-import { EditorManager } from '@theia/editor/lib/browser';
+import { EditorSelectionResolver } from '@theia/editor/lib/browser/editor-manager';
 import '../../src/browser/style/index.css';
 import { AIChatContribution } from './ai-chat-ui-contribution';
 import { AIChatInputConfiguration, AIChatInputWidget } from './chat-input-widget';
@@ -37,12 +36,10 @@ import {
     ToolCallPartRenderer,
 } from './chat-response-renderer';
 import {
-    AIEditorManager,
-    AIEditorSelectionResolver,
     GitHubSelectionResolver,
     TextFragmentSelectionResolver,
     TypeDocSymbolSelectionResolver,
-} from './chat-response-renderer/ai-editor-manager';
+} from './chat-response-renderer/ai-selection-resolver';
 import { QuestionPartRenderer } from './chat-response-renderer/question-part-renderer';
 import { createChatViewTreeWidget } from './chat-tree-view';
 import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
@@ -98,14 +95,9 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(InsertCodeAtCursorButtonAction).toSelf().inSingletonScope();
     bind(CodePartRendererAction).toService(InsertCodeAtCursorButtonAction);
 
-    bind(AIEditorManager).toSelf().inSingletonScope();
-    rebind(EditorManager).toService(AIEditorManager);
-    rebind(EditorPreviewManager).toService(AIEditorManager);
-
-    bindContributionProvider(bind, AIEditorSelectionResolver);
-    bind(AIEditorSelectionResolver).to(GitHubSelectionResolver).inSingletonScope();
-    bind(AIEditorSelectionResolver).to(TypeDocSymbolSelectionResolver).inSingletonScope();
-    bind(AIEditorSelectionResolver).to(TextFragmentSelectionResolver).inSingletonScope();
+    bind(EditorSelectionResolver).to(GitHubSelectionResolver).inSingletonScope();
+    bind(EditorSelectionResolver).to(TypeDocSymbolSelectionResolver).inSingletonScope();
+    bind(EditorSelectionResolver).to(TextFragmentSelectionResolver).inSingletonScope();
 
     bind(ChatViewWidgetToolbarContribution).toSelf().inSingletonScope();
     bind(TabBarToolbarContribution).toService(ChatViewWidgetToolbarContribution);
