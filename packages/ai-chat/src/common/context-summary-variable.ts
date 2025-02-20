@@ -40,10 +40,9 @@ export class ContextSummaryVariableContribution implements AIVariableContributio
         if (!ChatSessionContext.is(context) || request.variable.name !== CONTEXT_SUMMARY_VARIABLE.name) { return undefined; }
         const data = context.model.context.getVariables().filter(variable => variable.variable.isContextVariable)
             .map(variable => ({
-                variableTypeId: variable.variable.id,
-                variableTypeDescription: variable.variable.description,
+                type: variable.variable.name,
                 // eslint-disable-next-line no-null/no-null
-                variableInstanceData: variable.arg || null,
+                instanceData: variable.arg || null,
                 contextElementId: variable.variable.id + variable.arg
             }));
         return {

@@ -40,9 +40,7 @@ export class ContextDetailsVariableContribution implements AIVariableContributio
         /** By expecting context.request, we're assuming that this variable will not be resolved until the context has been resolved. */
         if (!ChatSessionContext.is(context) || request.variable.name !== CONTEXT_DETAILS_VARIABLE.name || !context.request) { return undefined; }
         const data = context.request.context.variables.map(variable => ({
-            id: variable.variable.id + variable.arg,
             type: variable.variable.name,
-            typeDescription: variable.variable.description,
             value: variable.value,
             content: variable.contextValue
         }));

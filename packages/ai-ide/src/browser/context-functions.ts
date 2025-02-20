@@ -64,9 +64,7 @@ export class ResolveChatContext implements ToolProvider {
                 const variable = ctx.context.variables.find(contextElement => contextElement.variable.id + contextElement.arg === contextElementId);
                 if (variable) {
                     const result = {
-                        id: variable.variable.id + variable.arg,
                         type: variable.variable.name,
-                        typeDescription: variable.variable.description,
                         value: variable.value,
                         content: variable.contextValue
                     };

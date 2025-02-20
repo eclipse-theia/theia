@@ -31,9 +31,10 @@
 // *****************************************************************************
 
 import { MaybePromise, nls } from '@theia/core';
-import { injectable } from '@theia/core/shared/inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { AIVariable, ResolvedAIVariable, AIVariableContribution, AIVariableResolver, AIVariableService, AIVariableResolutionRequest, AIVariableContext } from '@theia/ai-core';
 import { ChatSessionContext } from './chat-agents';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 
 export const CHANGE_SET_SUMMARY_VARIABLE: AIVariable = {
     id: 'changeSetSummary',
@@ -44,6 +45,8 @@ export const CHANGE_SET_SUMMARY_VARIABLE: AIVariable = {
 
 @injectable()
 export class ChangeSetVariableContribution implements AIVariableContribution, AIVariableResolver {
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
 
     registerVariables(service: AIVariableService): void {
         service.registerResolver(CHANGE_SET_SUMMARY_VARIABLE, this);
@@ -55,9 +58,12 @@ export class ChangeSetVariableContribution implements AIVariableContribution, AI
 
     async resolve(request: AIVariableResolutionRequest, context: AIVariableContext): Promise<ResolvedAIVariable | undefined> {
         if (!ChatSessionContext.is(context) || request.variable.name !== CHANGE_SET_SUMMARY_VARIABLE.name || !context.model.changeSet?.getElements().length) { return undefined; }
+        const entries = await Promise.all(
+            context.model.changeSet.getElements().map(async element => `- file: ${await this.workspaceService.getWorkspaceRelativePath(element.uri)}, status: ${element.state}`)
+        );
         return {
             variable: CHANGE_SET_SUMMARY_VARIABLE,
-            value: context.model.changeSet.getElements().map(element => `- file: ${element.uri.toString()}, status: ${element.state}`).join('\n-')
+            value: entries.join('\n')
         };
     }
 }
