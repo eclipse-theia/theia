@@ -197,7 +197,7 @@ const ChangeSetScanOSSIntegration = React.memo(({
             className={`theia-button button theia-changeSet-scanOss ${state}`}
             title={title}
         >
-            <span className={`scanoss-logo show-check icon-container ${state}`} />
+            <span className={`scanoss-logo icon-container`} />
             {content}
             {icon}
         </div>;
@@ -207,7 +207,7 @@ const ChangeSetScanOSSIntegration = React.memo(({
             title={title}
             onClick={scanOSSClicked}
         >
-            <span className={`scanoss-logo show-check icon-container ${state}`} />
+            <span className={`scanoss-logo icon-container`} />
             {content}
             {icon}
         </button>;

@@ -139,17 +139,11 @@
     gap: var(--theia-ui-padding);
 }
 
-.theia-changeSet-scanOss .scanoss-logo {
+.theia-changeSet-Action .theia-changeSet-scanOss .scanoss-logo {
     background-size: cover;
     background-color: inherit;
-}
-
-.theia-changeSet-scanOss .scanoss-logo.none,
-.theia-changeSet-scanOss .scanoss-logo.pending,
-.theia-changeSet-scanOss .scanoss-logo.error,
-.theia-changeSet-scanOss .scanoss-logo.clean,
-.theia-changeSet-scanOss .scanoss-logo.match {
-    background-color: inherit;
+    /* Buttons in all themes tested used a light font color */
+    background-image: url("scanoss_logo_dark_theme.svg");
 }
 
 .theia-changeSet-scanOss.clean,
