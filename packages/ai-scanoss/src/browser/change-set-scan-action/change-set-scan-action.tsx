@@ -68,10 +68,14 @@ export class ChangeSetScanActionRenderer implements ChangeSetActionRenderer {
         return (
             <ChangeSetScanOSSIntegration
                 changeSet={changeSet}
-                scanOssMode={this.preferenceService.get(SCANOSS_MODE_PREF, 'off')}
+                scanOssMode={this.getPreferenceValues()}
                 scanChangeSet={this._scan}
             />
         );
+    }
+
+    protected getPreferenceValues(): string {
+        return this.preferenceService.get(SCANOSS_MODE_PREF, 'off');
     }
 
     protected _scan: (changeSetElements: ChangeSetElement[]) => Promise<ScanOSSResult[]>;
@@ -85,15 +89,15 @@ export class ChangeSetScanActionRenderer implements ChangeSetActionRenderer {
             }
             const toScan = await this.getScanContent(fileChange);
 
-            if (!toScan.trim()) { return { type: 'clean' } satisfies ScanOSSResult; }
+            if (!toScan) { return { type: 'clean' } satisfies ScanOSSResult; }
 
-            const cached = cache.get(toScan.trim());
+            const cached = cache.get(toScan);
             if (cached) { return cached; }
 
             const result = { ...await this.scanService.scanContent(toScan, apiKey), file: fileChange.uri.path.toString() };
             if (result.type !== 'error') {
                 cache.set(toScan, result);
-            } else if (!notifiedError) {
+            } else if (!notifiedError && this.getPreferenceValues() !== 'automatic') {
                 this.messageService.warn(nls.localize('theia/ai/scanoss/changeSet/error-notification', 'ScanOSS error encountered: {0}.', result.message));
             }
 
@@ -179,7 +183,7 @@ const ChangeSetScanOSSIntegration = React.memo(({
             const dialog = new ScanOSSDialog(matches);
             dialog.open();
         }
-    }, [scanOSSResult]);
+    }, [scanOSSResult, changeSetElements]);
 
     const state = getResult(scanOSSResult);
     const content = getTitle(state);

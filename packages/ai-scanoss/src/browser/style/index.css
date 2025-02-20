@@ -1,83 +1,77 @@
 .scanoss-logo {
-    background-image: url("scanoss_logo_dark_theme.svg");
-    background-repeat: no-repeat;
-    background-position: center;
+  background-image: url("scanoss_logo_dark_theme.svg");
+  background-repeat: no-repeat;
+  background-position: center;
 }
 
 .vs-light .scanoss-logo,
 .theia-light .scanoss-logo,
-.light-theia .scanoss-logo {
-    background-image: url("scanoss_logo_light_theme.svg");
+.light-theia .scanoss-logo   {
+  background-image: url("scanoss_logo_light_theme.svg");
 }
 
 /* We need a more detailed selector to override the default button style */
 .theia-CodePartRenderer-actions .scanoss-logo {
-    background-size: 82% auto;
-    /* scale the image to be a bit smaller than the button because the codicon icons are also smaller */
-    transition: filter 0.3s;
-    display: inline-block;
+  background-size: 82% auto; /* scale the image to be a bit smaller than the button because the codicon icons are also smaller */
+  transition: filter 0.3s;
+  display: inline-block;
 }
 
 .scanoss-logo.requesting {
-    animation: pulse 1s infinite ease-in-out;
+  animation: pulse 1s infinite ease-in-out;
 }
 
 /* Use a rounded background when not hovered  */
 .theia-CodePartRenderer-actions .scanoss-logo:not(:hover) {
-    border-radius: 50%;
+  border-radius: 50%;
 }
 
 .scanoss-logo.clean {
-    background-color: rgba(46, 125, 50, 0.3);
-    /* translucent green */
+  background-color: rgba(46, 125, 50, 0.3); /* translucent green */
 }
 
 .scanoss-logo.match {
-    background-color: rgba(249, 215, 116, 0.3);
-    /* translucent yellow */
+  background-color: rgba(249, 215, 116, 0.3); /* translucent yellow */
 }
 
 .scanoss-logo.error {
-    background-color: rgba(210, 72, 72, 0.3);
-    /* translucent red */
+  background-color: rgba(210, 72, 72, 0.3); /* translucent red */
 }
 
 .icon-container {
-    position: relative;
-    display: inline-block;
-    width: 16px;
-    height: 16px;
+  position: relative; 
+  display: inline-block;
+  width: 16px;
+  height: 16px;
 }
 
 /* The placeholder is used to align with the remaining actions, however it should not be visible*/
 .scanoss-logo .placeholder {
-    visibility: hidden;
+  visibility: hidden;
 }
 
 /* The status icon is used to display the result of the scan on the top right */
 .scanoss-logo .status-icon {
-    position: absolute;
-    transform: translate(-4px, -5px);
+  position: absolute;
+  transform: translate(-4px, -5px);
 }
 
 .scanoss-logo.clean .status-icon {
     color: green;
 }
-
 .scanoss-logo.match .status-icon {
     color: yellow;
-    text-shadow: 0 0 3px rgba(0, 0, 0, 0.9);
+    text-shadow: 0 0 3px rgba(0,0,0,0.9);
 }
-
 .scanoss-logo.error .status-icon {
     color: red;
     text-shadow: 0 0 3px currentColor
 }
 
 /* Disable the button when it's in the clean state */
-.theia-CodePartRenderer-actions .scanoss-logo.clean {
-    pointer-events: none;
-    cursor: default;
+.theia-CodePartRenderer-actions .scanoss-logo.clean{
+  pointer-events: none; 
+  cursor: default;
 }
 
 .scanoss-dialog-container .scanoss-header {
@@ -158,18 +152,24 @@
     background-color: inherit;
 }
 
-.theia-changeSet-scanOss.clean {
+.theia-changeSet-scanOss.clean,
+.theia-changeSet-scanOss.pending {
     cursor: default;
+}
+
+.theia-changeSet-scanOss.clean:hover,
+.theia-changeSet-scanOss.pending:hover {
+    background-color: var(--theia-button-background);
 }
 
 .theia-changeSet-scanOss .status-icon {
     height: 16px;
 }
 
-.theia-changeSet-scanOss .status-icon.clean {
+.theia-changeSet-scanOss.clean .status-icon {
     color: var(--theia-notebookStatusSuccessIcon-foreground);
 }
 
-.theia-changeSet-scanOss .status-icon.match {
+.theia-changeSet-scanOss.match .status-icon {
     color: var(--theia-problemsWarningIcon-foreground);
 }
