@@ -82,7 +82,7 @@ export class ChangeSetScanActionRenderer implements ChangeSetActionRenderer {
 
     protected async runScan(changeSetElements: ChangeSetFileElement[], cache: Map<string, ScanOSSResult>, userTriggered: boolean): Promise<ScanOSSResult[]> {
         const apiKey = this.preferenceService.get(SCAN_OSS_API_KEY_PREF, undefined);
-        const notifiedError = false;
+        let notifiedError = false;
         const fileResults = await Promise.all(changeSetElements.map(async fileChange => {
             if (fileChange.targetState.trim().length === 0) {
                 return { type: 'clean' } satisfies ScanOSSResult;
@@ -98,6 +98,7 @@ export class ChangeSetScanActionRenderer implements ChangeSetActionRenderer {
             if (result.type !== 'error') {
                 cache.set(toScan, result);
             } else if (!notifiedError && userTriggered) {
+                notifiedError = true;
                 this.messageService.warn(nls.localize('theia/ai/scanoss/changeSet/error-notification', 'ScanOSS error encountered: {0}.', result.message));
             }
 
