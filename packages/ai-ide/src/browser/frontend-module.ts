@@ -23,7 +23,9 @@ import { FileContentFunction, GetWorkspaceDirectoryStructure, GetWorkspaceFileLi
 import { PreferenceContribution, WidgetFactory, bindViewContribution } from '@theia/core/lib/browser';
 import { WorkspacePreferencesSchema } from './workspace-preferences';
 import {
+    ReplaceContentInFileFunctionHelper,
     ReplaceContentInFileProvider,
+    SimpleReplaceContentInFileProvider,
     WriteChangeToFileProvider
 } from './file-changeset-functions';
 import { OrchestratorChatAgent, OrchestratorChatAgentId } from '../common/orchestrator-chat-agent';
@@ -68,8 +70,8 @@ export default new ContainerModule(bind => {
     bind(WorkspaceFunctionScope).toSelf().inSingletonScope();
 
     bind(ToolProvider).to(WriteChangeToFileProvider);
+    bind(ReplaceContentInFileFunctionHelper).toSelf().inSingletonScope();
     bind(ToolProvider).to(ReplaceContentInFileProvider);
-
     bind(ToolProvider).to(ListChatContext);
     bind(ToolProvider).to(ResolveChatContext);
     bind(AIConfigurationSelectionService).toSelf().inSingletonScope();
@@ -99,4 +101,5 @@ export default new ContainerModule(bind => {
         }))
         .inSingletonScope();
 
+    bind(ToolProvider).to(SimpleReplaceContentInFileProvider);
 });

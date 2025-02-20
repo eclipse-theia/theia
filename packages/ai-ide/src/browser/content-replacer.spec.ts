@@ -89,4 +89,36 @@ describe('ContentReplacer', () => {
         expect(result.updatedContent).to.equal(expectedContent);
         expect(result.errors).to.be.empty;
     });
+
+    it('should replace all occurrences when mutiple is true', () => {
+        const originalContent = 'Repeat Repeat Repeat';
+        const replacements: Replacement[] = [
+            { oldContent: 'Repeat', newContent: 'Once', multiple: true }
+        ];
+        const expectedContent = 'Once Once Once';
+        const result = contentReplacer.applyReplacements(originalContent, replacements);
+        expect(result.updatedContent).to.equal(expectedContent);
+        expect(result.errors).to.be.empty;
+    });
+
+    it('should return an error when mutiple is false and multiple occurrences are found', () => {
+        const originalContent = 'Repeat Repeat Repeat';
+        const replacements: Replacement[] = [
+            { oldContent: 'Repeat', newContent: 'Once', multiple: false }
+        ];
+        const result = contentReplacer.applyReplacements(originalContent, replacements);
+        expect(result.updatedContent).to.equal(originalContent);
+        expect(result.errors).to.include('Multiple occurrences found for: "Repeat"');
+    });
+
+    it('should return an error when conflicting replacements for the same oldContent are provided', () => {
+        const originalContent = 'Conflict test content';
+        const replacements: Replacement[] = [
+            { oldContent: 'test', newContent: 'test1' },
+            { oldContent: 'test', newContent: 'test2' }
+        ];
+        const result = contentReplacer.applyReplacements(originalContent, replacements);
+        expect(result.updatedContent).to.equal(originalContent);
+        expect(result.errors).to.include('Conflicting replacement values for: "test"');
+    });
 });

@@ -17,6 +17,7 @@
 export interface Replacement {
     oldContent: string;
     newContent: string;
+    multiple?: boolean;
 }
 
 export class ContentReplacer {
@@ -24,13 +25,23 @@ export class ContentReplacer {
      * Applies a list of replacements to the original content using a multi-step matching strategy.
      * @param originalContent The original file content.
      * @param replacements Array of Replacement objects.
+     * @param allowMultiple If true, all occurrences of each oldContent will be replaced. If false, an error is returned when multiple occurrences are found.
      * @returns An object containing the updated content and any error messages.
      */
     applyReplacements(originalContent: string, replacements: Replacement[]): { updatedContent: string, errors: string[] } {
         let updatedContent = originalContent;
         const errorMessages: string[] = [];
 
-        replacements.forEach(({ oldContent, newContent }) => {
+        // Guard against conflicting replacements: if the same oldContent appears with different newContent, return with an error.
+        const conflictMap = new Map<string, string>();
+        for (const replacement of replacements) {
+            if (conflictMap.has(replacement.oldContent) && conflictMap.get(replacement.oldContent) !== replacement.newContent) {
+                return { updatedContent: originalContent, errors: [`Conflicting replacement values for: "${replacement.oldContent}"`] };
+            }
+            conflictMap.set(replacement.oldContent, replacement.newContent);
+        }
+
+        replacements.forEach(({ oldContent, newContent, multiple }) => {
             // If the old content is empty, prepend the new content to the beginning of the file (e.g. in new file)
             if (oldContent === '') {
                 updatedContent = newContent + updatedContent;
@@ -46,7 +57,11 @@ export class ContentReplacer {
             if (matchIndices.length === 0) {
                 errorMessages.push(`Content to replace not found: "${oldContent}"`);
             } else if (matchIndices.length > 1) {
-                errorMessages.push(`Multiple occurrences found for: "${oldContent}"`);
+                if (multiple) {
+                    updatedContent = this.replaceContentAll(updatedContent, oldContent, newContent);
+                } else {
+                    errorMessages.push(`Multiple occurrences found for: "${oldContent}"`);
+                }
             } else {
                 updatedContent = this.replaceContentOnce(updatedContent, oldContent, newContent);
             }
@@ -123,4 +138,14 @@ export class ContentReplacer {
         return content.substring(0, index) + newContent + content.substring(index + oldContent.length);
     }
 
+    /**
+     * Replaces all occurrences of oldContent with newContent in the content.
+     * @param content The original content.
+     * @param oldContent The content to be replaced.
+     * @param newContent The content to replace with.
+     * @returns The content after all replacements.
+     */
+    private replaceContentAll(content: string, oldContent: string, newContent: string): string {
+        return content.split(oldContent).join(newContent);
+    }
 }
