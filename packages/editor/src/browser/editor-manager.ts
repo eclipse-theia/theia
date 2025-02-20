@@ -14,12 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, postConstruct, inject } from '@theia/core/shared/inversify';
+import { injectable, postConstruct, inject, named } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { RecursivePartial, Emitter, Event, MaybePromise, CommandService, nls } from '@theia/core/lib/common';
+import { RecursivePartial, Emitter, Event, MaybePromise, CommandService, nls, ContributionProvider, Prioritizeable } from '@theia/core/lib/common';
 import {
-    WidgetOpenerOptions, NavigatableWidgetOpenHandler, NavigatableWidgetOptions, Widget, PreferenceService, CommonCommands, getDefaultHandler,
-    defaultHandlerPriority
+    WidgetOpenerOptions, NavigatableWidgetOpenHandler, NavigatableWidgetOptions, Widget, PreferenceService, CommonCommands, getDefaultHandler, defaultHandlerPriority
 } from '@theia/core/lib/browser';
 import { EditorWidget } from './editor-widget';
 import { Range, Position, Location, TextEditor } from './editor';
@@ -33,7 +32,13 @@ export interface WidgetId {
 export interface EditorOpenerOptions extends WidgetOpenerOptions {
     selection?: RecursivePartial<Range>;
     preview?: boolean;
-    counter?: number
+    counter?: number;
+}
+
+export const EditorSelectionResolver = Symbol('EditorSelectionResolver');
+export interface EditorSelectionResolver {
+    priority?: number;
+    resolveSelection(widget: EditorWidget, options: EditorOpenerOptions, uri?: URI): Promise<RecursivePartial<Range> | undefined>;
 }
 
 @injectable()
@@ -60,9 +65,19 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
     @inject(CommandService) protected readonly commands: CommandService;
     @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
 
+    @inject(ContributionProvider) @named(EditorSelectionResolver)
+    protected readonly resolverContributions: ContributionProvider<EditorSelectionResolver>;
+    protected selectionResolvers: EditorSelectionResolver[] = [];
+
     @postConstruct()
     protected override init(): void {
         super.init();
+
+        this.selectionResolvers = Prioritizeable.prioritizeAllSync(
+            this.resolverContributions.getContributions(),
+            resolver => resolver.priority ?? 0
+        ).map(p => p.value);
+
         this.shell.onDidChangeActiveWidget(() => this.updateActiveEditor());
         this.shell.onDidChangeCurrentWidget(() => this.updateCurrentEditor());
         this.shell.onDidDoubleClickMainArea(() =>
@@ -240,13 +255,17 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
         return this.open(uri, splitOptions);
     }
 
-    protected revealSelection(widget: EditorWidget, input?: EditorOpenerOptions, uri?: URI): void {
+    protected async revealSelection(widget: EditorWidget, input?: EditorOpenerOptions, uri?: URI): Promise<void> {
         let inputSelection = input?.selection;
+        if (!inputSelection) {
+            inputSelection = await this.resolveSelection(widget, input ?? {}, uri);
+        }
+        // this logic could be moved into a 'EditorSelectionResolver'
         if (!inputSelection && uri) {
+            // support file:///some/file.js#73,84
+            // support file:///some/file.js#L73
             const match = /^L?(\d+)(?:,(\d+))?/.exec(uri.fragment);
             if (match) {
-                // support file:///some/file.js#73,84
-                // support file:///some/file.js#L73
                 inputSelection = {
                     start: {
                         line: parseInt(match[1]) - 1,
@@ -256,20 +275,34 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
             }
         }
         if (inputSelection) {
-            const editor = widget.editor;
             const selection = this.getSelection(widget, inputSelection);
+            const editor = widget.editor;
             if (Position.is(selection)) {
                 editor.cursor = selection;
                 editor.revealPosition(selection);
             } else if (Range.is(selection)) {
                 editor.cursor = selection.end;
-                editor.selection = {
-                    ...selection,
-                    direction: 'ltr'
-                };
+                editor.selection = { ...selection, direction: 'ltr' };
                 editor.revealRange(selection);
             }
         }
+    }
+
+    protected async resolveSelection(widget: EditorWidget, options: EditorOpenerOptions, uri?: URI): Promise<RecursivePartial<Range> | undefined> {
+        if (options.selection) {
+            return options.selection;
+        }
+        for (const resolver of this.selectionResolvers) {
+            try {
+                const selection = await resolver.resolveSelection(widget, options, uri);
+                if (selection) {
+                    return selection;
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        }
+        return undefined;
     }
 
     protected getSelection(widget: EditorWidget, selection: RecursivePartial<Range>): Range | Position | undefined {

@@ -18,7 +18,7 @@ import { CancellationToken, RecursivePartial, URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { EditorOpenerOptions, EditorWidget, Range } from '@theia/editor/lib/browser';
 
-import { EditorSelectionResolver } from '@theia/editor-preview/lib/browser/editor-preview-manager';
+import { EditorSelectionResolver } from '@theia/editor/lib/browser/editor-manager';
 import { DocumentSymbol } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
 import { TextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model/textModel';
 import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures';
