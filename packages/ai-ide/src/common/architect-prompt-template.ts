@@ -15,8 +15,7 @@
 // *****************************************************************************
 import { PromptTemplate } from '@theia/ai-core/lib/common';
 import { GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID, GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID } from './workspace-functions';
-import { RESOLVE_CHAT_CONTEXT_FUNCTION_ID } from './context-functions';
-import { CHAT_CONTEXT_VARIABLE } from './context-variables';
+import { CONTEXT_FILES_VARIABLE_ID } from './context-variables';
 
 export const architectPromptTemplate = <PromptTemplate>{
    id: 'architect-system',
@@ -42,8 +41,8 @@ Use the following functions to interact with the workspace files as needed:
 
 ## Additional Context
 
-The following items have been provided for additional context. Some of them may also be referred to above.\
-You can retrieve details of a given context item by calling the ~{${RESOLVE_CHAT_CONTEXT_FUNCTION_ID}} with the item's contextElementId
-{{${CHAT_CONTEXT_VARIABLE}}}
+The following files have been provided for additional context. Some of them may also be referred to above.\
+Always look at the relevant files to understand your task using getFileContent
+{{${CONTEXT_FILES_VARIABLE_ID}}}
 `
 };

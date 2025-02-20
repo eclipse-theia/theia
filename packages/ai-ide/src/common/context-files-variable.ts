@@ -17,37 +17,31 @@
 import { MaybePromise, nls } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
 import { AIVariable, ResolvedAIVariable, AIVariableContribution, AIVariableResolver, AIVariableService, AIVariableResolutionRequest, AIVariableContext } from '@theia/ai-core';
-import { dataToJsonCodeBlock } from './chat-string-utils';
-import { ChatSessionContext } from './chat-agents';
-import { CHAT_CONTEXT_DETAILS_VARIABLE_ID } from './context-variables';
+import { ChatSessionContext } from '@theia/ai-chat';
+import { CONTEXT_FILES_VARIABLE_ID } from './context-variables';
 
-export const CONTEXT_DETAILS_VARIABLE: AIVariable = {
-    id: CHAT_CONTEXT_DETAILS_VARIABLE_ID,
-    description: nls.localize('theia/ai/core/contextDetailsVariable/description', 'Provides full text values and descriptions for all context variables.'),
-    name: CHAT_CONTEXT_DETAILS_VARIABLE_ID,
+export const CONTEXT_FILES_VARIABLE: AIVariable = {
+    id: CONTEXT_FILES_VARIABLE_ID,
+    description: nls.localize('theia/ai/core/contextSummaryVariable/description', 'Describes files in the context for a given session.'),
+    name: CONTEXT_FILES_VARIABLE_ID,
 };
 
 @injectable()
-export class ContextDetailsVariableContribution implements AIVariableContribution, AIVariableResolver {
+export class ContextFilesVariableContribution implements AIVariableContribution, AIVariableResolver {
     registerVariables(service: AIVariableService): void {
-        service.registerResolver(CONTEXT_DETAILS_VARIABLE, this);
+        service.registerResolver(CONTEXT_FILES_VARIABLE, this);
     }
 
     canResolve(request: AIVariableResolutionRequest, context: AIVariableContext): MaybePromise<number> {
-        return request.variable.name === CONTEXT_DETAILS_VARIABLE.name ? 50 : 0;
+        return request.variable.name === CONTEXT_FILES_VARIABLE.name ? 50 : 0;
     }
 
     async resolve(request: AIVariableResolutionRequest, context: AIVariableContext): Promise<ResolvedAIVariable | undefined> {
-        /** By expecting context.request, we're assuming that this variable will not be resolved until the context has been resolved. */
-        if (!ChatSessionContext.is(context) || request.variable.name !== CONTEXT_DETAILS_VARIABLE.name || !context.request) { return undefined; }
-        const data = context.request.context.variables.map(variable => ({
-            type: variable.variable.name,
-            ref: variable.value,
-            content: variable.contextValue
-        }));
+        if (!ChatSessionContext.is(context) || request.variable.name !== CONTEXT_FILES_VARIABLE.name) { return undefined; }
         return {
-            variable: CONTEXT_DETAILS_VARIABLE,
-            value: dataToJsonCodeBlock(data)
+            variable: CONTEXT_FILES_VARIABLE,
+            value: context.model.context.getVariables().filter(variable => variable.variable.name === 'file' && !!variable.arg)
+                .map(variable => `- ${variable.arg}`).join('\n')
         };
     }
 }

@@ -44,7 +44,7 @@ import { ContextFileVariableLabelProvider } from './context-file-variable-label-
 import { FileChatVariableContribution } from './file-chat-variable-contribution';
 import { ContextSummaryVariableContribution } from '../common/context-summary-variable';
 import { ContextDetailsVariableContribution } from '../common/context-details-variable';
-import { ChangeSetVariableContribution } from '../common/change-set-variable';
+import { ChangeSetVariableContribution } from './change-set-variable';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, Agent);

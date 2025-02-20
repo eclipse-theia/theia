@@ -16,7 +16,7 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { ChatAgent, DefaultChatAgentId, FallbackChatAgentId } from '@theia/ai-chat/lib/common';
-import { Agent, ToolProvider } from '@theia/ai-core/lib/common';
+import { Agent, AIVariableContribution, ToolProvider } from '@theia/ai-core/lib/common';
 import { ArchitectAgent } from './architect-agent';
 import { CoderAgent } from './coder-agent';
 import { FileContentFunction, GetWorkspaceDirectoryStructure, GetWorkspaceFileList, WorkspaceFunctionScope } from './workspace-functions';
@@ -37,6 +37,7 @@ import { AIConfigurationSelectionService } from './ai-configuration/ai-configura
 import { AIAgentConfigurationViewContribution } from './ai-configuration/ai-configuration-view-contribution';
 import { AIConfigurationContainerWidget } from './ai-configuration/ai-configuration-widget';
 import { AIVariableConfigurationWidget } from './ai-configuration/variable-configuration-widget';
+import { ContextFilesVariableContribution } from '../common/context-files-variable';
 
 export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: WorkspacePreferencesSchema });
@@ -103,4 +104,5 @@ export default new ContainerModule(bind => {
 
     bind(ToolProvider).to(SimpleReplaceContentInFileProvider);
     bind(ToolProvider).to(AddFileToChatContext);
+    bind(AIVariableContribution).to(ContextFilesVariableContribution).inSingletonScope();
 });

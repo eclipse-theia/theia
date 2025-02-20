@@ -17,8 +17,8 @@
 import { LanguageModelRequirement, PromptTemplate } from '@theia/ai-core/lib/common';
 import { injectable } from '@theia/core/shared/inversify';
 import { AbstractStreamParsingChatAgent } from '@theia/ai-chat/lib/common/chat-agents';
+import { CHAT_CONTEXT_DETAILS_VARIABLE_ID } from '@theia/ai-chat';
 import { nls } from '@theia/core';
-import { CHAT_CONTEXT_DETAILS_VARIABLE } from './context-variables';
 
 export const universalTemplate: PromptTemplate = {
    id: 'universal-system',
@@ -77,7 +77,7 @@ simple solutions.
 
 ### Current Context
 Some files and other pieces of data may already have been added to the context of the chat. If any have, the details can be found below.
-{{${CHAT_CONTEXT_DETAILS_VARIABLE}}}
+{{${CHAT_CONTEXT_DETAILS_VARIABLE_ID}}}
 `
 };
 

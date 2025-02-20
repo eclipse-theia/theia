@@ -14,4 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export const CONTEXT_FILES_VARIABLE_ID = 'contextFiles';
+export const CHAT_CONTEXT_VARIABLE_ID = 'contextSummary';
+export const CHAT_CONTEXT_DETAILS_VARIABLE_ID = 'contextDetails';
+export const CHANGE_SET_SUMMARY_VARIABLE_ID = 'changeSetSummary';

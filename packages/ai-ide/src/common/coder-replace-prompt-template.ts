@@ -17,13 +17,14 @@
 // *****************************************************************************
 
 import { PromptTemplate } from '@theia/ai-core/lib/common';
+import { CHANGE_SET_SUMMARY_VARIABLE_ID } from '@theia/ai-chat';
 import {
   GET_WORKSPACE_FILE_LIST_FUNCTION_ID,
   FILE_CONTENT_FUNCTION_ID,
   GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID
 } from './workspace-functions';
-import { CHANGE_SET_SUMMARY_VARIABLE, CHAT_CONTEXT_VARIABLE } from './context-variables';
-import { RESOLVE_CHAT_CONTEXT_FUNCTION_ID, UPDATE_CONTEXT_FILES_FUNCTION_ID } from './context-functions';
+import { CONTEXT_FILES_VARIABLE_ID } from './context-variables';
+import { UPDATE_CONTEXT_FILES_FUNCTION_ID } from './context-functions';
 
 export const CODER_REWRITE_PROMPT_TEMPLATE_ID = 'coder-rewrite';
 export const CODER_REPLACE_PROMPT_TEMPLATE_ID = 'coder-search-replace';
@@ -50,13 +51,13 @@ Instead, for each file you want to propose changes for:
   
 ## Additional Context
 
-The following items have been provided for additional context. Some of them may also be referred to above.\
-You can retrieve details of a given context item by calling the ~{${RESOLVE_CHAT_CONTEXT_FUNCTION_ID}} with the item's contextElementId
-{{${CHAT_CONTEXT_VARIABLE}}}
+The following files have been provided for additional context. Some of them may also be referred to above.\
+Always look at the relevant files to understand your task using getFileContent
+{{${CONTEXT_FILES_VARIABLE_ID}}}
 
 ## Previously Proposed Changes
 Changes have been proposed for the following files. Some suggestions may have been accepted, while others may still be pending.
-{{${CHANGE_SET_SUMMARY_VARIABLE}}}
+{{${CHANGE_SET_SUMMARY_VARIABLE_ID}}}
 `,
     ...(!withSearchAndReplace ? { variantOf: CODER_REPLACE_PROMPT_TEMPLATE_ID } : {}),
   };
