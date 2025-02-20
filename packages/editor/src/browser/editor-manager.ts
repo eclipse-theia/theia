@@ -16,7 +16,7 @@
 
 import { injectable, postConstruct, inject, named } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { RecursivePartial, Emitter, Event, MaybePromise, CommandService, nls, ContributionProvider, Prioritizeable } from '@theia/core/lib/common';
+import { RecursivePartial, Emitter, Event, MaybePromise, CommandService, nls, ContributionProvider, Prioritizeable, Disposable } from '@theia/core/lib/common';
 import {
     WidgetOpenerOptions, NavigatableWidgetOpenHandler, NavigatableWidgetOptions, Widget, PreferenceService, CommonCommands, getDefaultHandler, defaultHandlerPriority
 } from '@theia/core/lib/browser';
@@ -104,6 +104,26 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
         }
 
         this.updateCurrentEditor();
+    }
+
+    /**
+     * Registers a dynamic selection resolver.
+     * The resolver is added to the sorted list of selection resolvers and can later be disposed to remove it.
+     *
+     * @param resolver The selection resolver to register.
+     * @returns A Disposable that unregisters the resolver when disposed.
+     */
+    public registerSelectionResolver(resolver: EditorSelectionResolver): Disposable {
+        this.selectionResolvers.push(resolver);
+        this.selectionResolvers.sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+        return {
+            dispose: () => {
+                const index = this.selectionResolvers.indexOf(resolver);
+                if (index !== -1) {
+                    this.selectionResolvers.splice(index, 1);
+                }
+            }
+        };
     }
 
     override getByUri(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget | undefined> {
