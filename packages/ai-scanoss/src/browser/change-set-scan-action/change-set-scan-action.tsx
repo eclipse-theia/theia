@@ -80,7 +80,7 @@ export class ChangeSetScanActionRenderer implements ChangeSetActionRenderer {
 
     protected _scan: (changeSetElements: ChangeSetElement[]) => Promise<ScanOSSResult[]>;
 
-    protected async runScan(changeSetElements: ChangeSetFileElement[], cache: Map<string, ScanOSSResult>): Promise<ScanOSSResult[]> {
+    protected async runScan(changeSetElements: ChangeSetFileElement[], cache: Map<string, ScanOSSResult>, userTriggered: boolean): Promise<ScanOSSResult[]> {
         const apiKey = this.preferenceService.get(SCAN_OSS_API_KEY_PREF, undefined);
         const notifiedError = false;
         const fileResults = await Promise.all(changeSetElements.map(async fileChange => {
@@ -97,7 +97,7 @@ export class ChangeSetScanActionRenderer implements ChangeSetActionRenderer {
             const result = { ...await this.scanService.scanContent(toScan, apiKey), file: fileChange.uri.path.toString() };
             if (result.type !== 'error') {
                 cache.set(toScan, result);
-            } else if (!notifiedError && this.getPreferenceValues() !== 'automatic') {
+            } else if (!notifiedError && userTriggered) {
                 this.messageService.warn(nls.localize('theia/ai/scanoss/changeSet/error-notification', 'ScanOSS error encountered: {0}.', result.message));
             }
 
@@ -142,7 +142,7 @@ export class ChangeSetScanActionRenderer implements ChangeSetActionRenderer {
 interface ChangeSetScanActionProps {
     changeSet: ChangeSet;
     scanOssMode: string;
-    scanChangeSet: (changeSet: ChangeSetElement[], cache: Map<string, ScanOSSResult>) => Promise<ScanOSSResult[]>
+    scanChangeSet: (changeSet: ChangeSetElement[], cache: Map<string, ScanOSSResult>, userTriggered: boolean) => Promise<ScanOSSResult[]>
 }
 
 const ChangeSetScanOSSIntegration = React.memo(({
@@ -158,7 +158,7 @@ const ChangeSetScanOSSIntegration = React.memo(({
         if (scanOSSResult === undefined) {
             if (scanOssMode === 'automatic' && scanOSSResult === undefined) {
                 setScanOSSResult('pending');
-                scanChangeSet(changeSetElements, cache.current).then(result => setScanOSSResult(result));
+                scanChangeSet(changeSetElements, cache.current, false).then(result => setScanOSSResult(result));
             }
         }
     }, [scanOssMode, scanOSSResult]);
@@ -176,7 +176,7 @@ const ChangeSetScanOSSIntegration = React.memo(({
             return;
         } else if (!scanOSSResult || scanOSSResult.some(candidate => candidate.type === 'error')) {
             setScanOSSResult('pending');
-            scanChangeSet(changeSetElements, cache.current).then(result => setScanOSSResult(result));
+            scanChangeSet(changeSetElements, cache.current, true).then(result => setScanOSSResult(result));
         } else {
             const matches = scanOSSResult.filter((candidate): candidate is ScanOSSResultMatch => candidate.type === 'match');
             if (matches.length === 0) { return; }
@@ -197,7 +197,7 @@ const ChangeSetScanOSSIntegration = React.memo(({
             className={`theia-button button theia-changeSet-scanOss ${state}`}
             title={title}
         >
-            <span className={`scanoss-logo icon-container`} />
+            <span className={'scanoss-logo icon-container'} />
             {content}
             {icon}
         </div>;
@@ -207,7 +207,7 @@ const ChangeSetScanOSSIntegration = React.memo(({
             title={title}
             onClick={scanOSSClicked}
         >
-            <span className={`scanoss-logo icon-container`} />
+            <span className={'scanoss-logo icon-container'} />
             {content}
             {icon}
         </button>;
