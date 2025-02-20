@@ -159,7 +159,6 @@ export class ChangeSetFileElement implements ChangeSetElement {
         return this.elementProps.replacements;
     }
 
-
     get type(): 'add' | 'modify' | 'delete' | undefined {
         return this.elementProps.type;
     }
