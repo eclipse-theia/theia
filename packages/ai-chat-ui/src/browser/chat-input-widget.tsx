@@ -586,7 +586,7 @@ const ChangeSetBox: React.FunctionComponent<{ changeSet: ChangeSetUI }> = React.
             <h3>{title}</h3>
             <div className='theia-ChatInput-ChangeSet-Header-Actions'>
                 {actions.map(action => <div key={action.id} className='theia-changeSet-Action'>{action.render(changeSet)}</div>)}
-                <span className='codicon codicon-close action' title='Delete Change Set' onClick={() => deleteChangeSet()} />
+                <span className='codicon codicon-close action' title={nls.localize('theia/ai/chat-ui/deleteChangeSet', 'Delete Change Set')} onClick={() => deleteChangeSet()} />
             </div>
         </div>
         <div className='theia-ChatInput-ChangeSet-List'>

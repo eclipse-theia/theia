@@ -137,9 +137,9 @@ const ScanOSSIntegration = React.memo((props: {
         if (scanOSSResult === 'pending') {
             title = nls.localize('thei/ai/scanoss/snippet/in-progress', 'SCANOSS - Performing scan...');
         } else if (scanOSSResult.type === 'error') {
-            title = nls.localize('thei/ai/scanoss/snippet/errored', `SCANOSS - Error - {0}`, scanOSSResult.message);
+            title = nls.localize('thei/ai/scanoss/snippet/errored', 'SCANOSS - Error - {0}', scanOSSResult.message);
         } else if (scanOSSResult.type === 'match') {
-            title = nls.localize('thei/ai/scanoss/snippet/matched', `SCANOSS - Found {0} match`, scanOSSResult.matched);
+            title = nls.localize('thei/ai/scanoss/snippet/matched', 'SCANOSS - Found {0} match', scanOSSResult.matched);
         } else if (scanOSSResult.type === 'clean') {
             title = nls.localize('thei/ai/scanoss/snippet/no-match', 'SCANOSS - No match');
         }
@@ -214,7 +214,7 @@ export class ScanOSSDialog extends ReactDialog<void> {
     protected renderContent(): React.ReactNode {
         return (
             <div className="scanoss-details">
-                <h4>{nls.localize('thei/ai/scanoss/snippet/detail-header', 'Details')}</h4>
+                <h4>{nls.localizeByDefault('Details')}</h4>
                 {this.results.map(result =>
                     <div key={result.matched}>
                         {result.file && <h4>{nls.localize('thei/ai/scanoss/snippet/file-name-heading', 'Match found in {0}', result.file)}</h4>}

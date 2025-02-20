@@ -78,7 +78,7 @@ export class ChangeSetScanActionRenderer implements ChangeSetActionRenderer {
 
     protected async runScan(changeSetElements: ChangeSetFileElement[], cache: Map<string, ScanOSSResult>): Promise<ScanOSSResult[]> {
         const apiKey = this.preferenceService.get(SCAN_OSS_API_KEY_PREF, undefined);
-        let notifiedError = false;
+        const notifiedError = false;
         const fileResults = await Promise.all(changeSetElements.map(async fileChange => {
             if (fileChange.targetState.trim().length === 0) {
                 return { type: 'clean' } satisfies ScanOSSResult;
@@ -225,7 +225,7 @@ function getTitle(result: ScanOSSState): string {
         case 'none': return nls.localize('thei/ai/scanoss/changeSet/scan', 'Scan');
         case 'pending': return nls.localize('thei/ai/scanoss/changeSet/scanning', 'Scanning...');
         case 'error': return nls.localize('thei/ai/scanoss/changeSet/error', 'Error: Rerun');
-        case 'match': return nls.localize('thei/ai/scanoss/changeSet/view-matches', 'View Matches')
+        case 'match': return nls.localize('thei/ai/scanoss/changeSet/view-matches', 'View Matches');
         case 'clean': return nls.localize('thei/ai/scanoss/changeSet/clean', 'No Matches');
     }
 }
