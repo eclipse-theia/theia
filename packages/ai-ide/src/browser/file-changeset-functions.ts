@@ -21,7 +21,6 @@ import { ChangeSetImpl, MutableChatRequestModel } from '@theia/ai-chat';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { ContentReplacer, Replacement } from '@theia/core/lib/common/content-replacer';
 
-
 @injectable()
 export class WriteChangeToFileProvider implements ToolProvider {
     static ID = 'changeSet_writeChangeToFile';
