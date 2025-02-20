@@ -161,12 +161,11 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         return this.onStateChangedEmitter.event;
     }
 
-    protected async onQuery(query: string, contextVariableRequests?: AIVariableResolutionRequest[]): Promise<void> {
+    protected async onQuery(query: string): Promise<void> {
         if (query.length === 0) { return; }
 
         const chatRequest: ChatRequest = { text: query };
-        const context = { variableRequests: contextVariableRequests ?? [] };
-        const requestProgress = await this.chatService.sendRequest(this.chatSession.id, chatRequest, context);
+        const requestProgress = await this.chatService.sendRequest(this.chatSession.id, chatRequest);
         requestProgress?.responseCompleted.then(responseModel => {
             if (responseModel.isError) {
                 this.messageService.error(responseModel.errorObject?.message ??

@@ -18,7 +18,7 @@ import { getJsonOfText, getTextOfResponse, LanguageModelRequirement, LanguageMod
 import { PromptTemplate } from '@theia/ai-core/lib/common';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
-import { AbstractStreamParsingChatAgent } from '@theia/ai-chat/lib/common/chat-agents';
+import { AbstractStreamParsingChatAgent, ChatSessionContext } from '@theia/ai-chat/lib/common/chat-agents';
 import { MutableChatRequestModel, InformationalChatResponseContentImpl } from '@theia/ai-chat/lib/common/chat-model';
 import { generateUuid, nls } from '@theia/core';
 import { ChatHistoryEntry } from '@theia/ai-chat/lib/common/chat-history-entry';
@@ -94,7 +94,7 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
         const orchestratorRequestId = generateUuid();
         request.addData(OrchestratorRequestIdKey, orchestratorRequestId);
         const messages = await this.getMessages(request.session);
-        const systemMessage = (await this.getSystemMessageDescription({ request, session: request.session }))?.text;
+        const systemMessage = (await this.getSystemMessageDescription({ model: request.session, request } satisfies ChatSessionContext))?.text;
         this.recordingService.recordRequest(
             ChatHistoryEntry.fromRequest(this.id, request, {
                 requestId: orchestratorRequestId,

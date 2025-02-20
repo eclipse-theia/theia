@@ -17,8 +17,8 @@
 import { MaybePromise, nls } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
 import { AIVariable, ResolvedAIVariable, AIVariableContribution, AIVariableResolver, AIVariableService, AIVariableResolutionRequest, AIVariableContext } from '@theia/ai-core';
-import { ChatSessionContext } from './chat-service';
 import { dataToJsonCodeBlock } from './chat-string-utils';
+import { ChatSessionContext } from './chat-agents';
 
 export const CONTEXT_DETAILS_VARIABLE: AIVariable = {
     id: 'contextDetails',
@@ -28,10 +28,7 @@ export const CONTEXT_DETAILS_VARIABLE: AIVariable = {
 
 @injectable()
 export class ContextDetailsVariableContribution implements AIVariableContribution, AIVariableResolver {
-    protected variableService: AIVariableService | undefined;
-
     registerVariables(service: AIVariableService): void {
-        this.variableService = service;
         service.registerResolver(CONTEXT_DETAILS_VARIABLE, this);
     }
 
@@ -40,9 +37,9 @@ export class ContextDetailsVariableContribution implements AIVariableContributio
     }
 
     async resolve(request: AIVariableResolutionRequest, context: AIVariableContext): Promise<ResolvedAIVariable | undefined> {
-        /** By expecting context.model, we're assuming that this variable will not be resolved until the context has been resolved. */
-        if (!ChatSessionContext.is(context) || request.variable.name !== CONTEXT_DETAILS_VARIABLE.name || !context.model) { return undefined; }
-        const data = context.model.context.variables.map(variable => ({
+        /** By expecting context.request, we're assuming that this variable will not be resolved until the context has been resolved. */
+        if (!ChatSessionContext.is(context) || request.variable.name !== CONTEXT_DETAILS_VARIABLE.name || !context.request) { return undefined; }
+        const data = context.request.context.variables.map(variable => ({
             id: variable.variable.id + variable.arg,
             type: variable.variable.name,
             typeDescription: variable.variable.description,

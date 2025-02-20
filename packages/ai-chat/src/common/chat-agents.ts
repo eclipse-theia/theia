@@ -51,7 +51,8 @@ import {
     ChatResponseContent,
     ErrorChatResponseContentImpl,
     MarkdownChatResponseContentImpl,
-    ToolCallChatResponseContentImpl
+    ToolCallChatResponseContentImpl,
+    ChatRequestModel
 } from './chat-model';
 import { findFirstMatch, parseContents } from './parse-contents';
 import { DefaultResponseContentFactory, ResponseContentMatcher, ResponseContentMatcherProvider } from './response-content-matcher';
@@ -84,6 +85,17 @@ export namespace SystemMessageDescription {
             text: resolvedPrompt.text,
             functionDescriptions: resolvedPrompt.functionDescriptions
         };
+    }
+}
+
+export interface ChatSessionContext extends AIVariableContext {
+    request?: ChatRequestModel;
+    model: ChatModel;
+}
+
+export namespace ChatSessionContext {
+    export function is(candidate: unknown): candidate is ChatSessionContext {
+        return typeof candidate === 'object' && !!candidate && 'model' in candidate;
     }
 }
 
@@ -169,8 +181,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
             if (!languageModel) {
                 throw new Error('Couldn\'t find a matching language model. Please check your setup!');
             }
-
-            const systemMessageDescription = await this.getSystemMessageDescription({ request, session: request.session });
+            const systemMessageDescription = await this.getSystemMessageDescription({ model: request.session, request } satisfies ChatSessionContext);
             const messages = await this.getMessages(request.session);
             if (this.defaultLogging) {
                 this.recordingService.recordRequest(

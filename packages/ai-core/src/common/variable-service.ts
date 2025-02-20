@@ -96,8 +96,6 @@ export namespace ResolvedAIVariable {
  */
 export interface ResolvedAIContextVariable extends ResolvedAIVariable {
     contextValue: string;
-    /** A sting to help clarify the significance of the variable to the LLM. */
-    contextSummary?: string;
 }
 
 export namespace ResolvedAIContextVariable {

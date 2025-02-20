@@ -28,7 +28,7 @@ import { FrontendVariableService } from '@theia/ai-core/lib/browser';
 import { ContextVariablePicker } from './context-variable-picker';
 import { ChangeSetActionRenderer, ChangeSetActionService } from './change-set-actions/change-set-action-service';
 
-type Query = (query: string, context?: AIVariableResolutionRequest[]) => Promise<void>;
+type Query = (query: string) => Promise<void>;
 type Unpin = () => void;
 type Cancel = (requestModel: ChatRequestModel) => void;
 type DeleteChangeSet = (requestModel: ChatRequestModel) => void;
@@ -227,7 +227,7 @@ export class AIChatInputWidget extends ReactWidget {
 
 interface ChatInputProperties {
     onCancel: (requestModel: ChatRequestModel) => void;
-    onQuery: (query: string, context?: readonly AIVariableResolutionRequest[]) => void;
+    onQuery: (query: string) => void;
     onUnpin: () => void;
     onDragOver: (event: React.DragEvent) => void;
     onDrop: (event: React.DragEvent) => void;
@@ -411,7 +411,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             return;
         }
         setInProgress(true);
-        props.onQuery(value, props.context);
+        props.onQuery(value);
         if (editorRef.current) {
             editorRef.current.document.textEditorModel.setValue('');
         }

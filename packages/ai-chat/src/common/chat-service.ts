@@ -19,12 +19,12 @@
  *--------------------------------------------------------------------------------------------*/
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatService.ts
 
-import { AIVariableContext, AIVariableResolutionRequest, AIVariableService, ResolvedAIContextVariable } from '@theia/ai-core';
+import { AIVariableResolutionRequest, AIVariableService, ResolvedAIContextVariable } from '@theia/ai-core';
 import { Emitter, ILogger, generateUuid } from '@theia/core';
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import { Event } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ChatAgentService } from './chat-agent-service';
-import { ChatAgent, ChatAgentLocation } from './chat-agents';
+import { ChatAgent, ChatAgentLocation, ChatSessionContext } from './chat-agents';
 import {
     ChatModel,
     MutableChatModel,
@@ -58,22 +58,6 @@ export interface ChatSession {
     model: ChatModel;
     isActive: boolean;
     pinnedAgent?: ChatAgent;
-}
-
-export interface ChatSessionContext extends AIVariableContext {
-    request: ChatRequest;
-    session: ChatSession;
-    model?: ChatRequestModel;
-}
-
-export namespace ChatSessionContext {
-    export function is(candidate: unknown): candidate is ChatSessionContext {
-        return typeof candidate === 'object' && !!candidate && 'session' in candidate && 'request' in candidate;
-    }
-}
-
-export interface ChatContextRequest {
-    variableRequests: AIVariableResolutionRequest[]
 }
 
 export interface ActiveSessionChangedEvent {
@@ -116,8 +100,7 @@ export interface ChatService {
 
     sendRequest(
         sessionId: string,
-        request: ChatRequest,
-        requestedContext?: ChatContextRequest
+        request: ChatRequest
     ): Promise<ChatRequestInvocation | undefined>;
 
     deleteChangeSet(sessionId: string): void;
@@ -201,7 +184,6 @@ export class ChatServiceImpl implements ChatService {
     async sendRequest(
         sessionId: string,
         request: ChatRequest,
-        requestedContext: ChatContextRequest = { variableRequests: [] }
     ): Promise<ChatRequestInvocation | undefined> {
         const session = this.getSession(sessionId);
         if (!session) {
@@ -223,9 +205,10 @@ export class ChatServiceImpl implements ChatService {
             };
         }
 
-        const resolutionContext = { request, session: session } satisfies ChatSessionContext;
-        const resolvedContext = await this.resolveChatContext(requestedContext, resolutionContext);
+        const resolutionContext: ChatSessionContext = { model: session.model };
+        const resolvedContext = await this.resolveChatContext(session.model.context.getVariables(), resolutionContext);
         const requestModel = session.model.addRequest(parsedRequest, agent?.id, resolvedContext);
+        resolutionContext.request = requestModel;
 
         for (const part of parsedRequest.parts) {
             if (part instanceof ParsedChatRequestVariablePart) {
@@ -273,11 +256,11 @@ export class ChatServiceImpl implements ChatService {
     }
 
     protected async resolveChatContext(
-        requestedContext: ChatContextRequest,
+        resolutionRequests: readonly AIVariableResolutionRequest[],
         context: ChatSessionContext,
     ): Promise<ChatContext> {
         const resolvedVariables = await Promise.all(
-            requestedContext.variableRequests.map(async contextVariable => {
+            resolutionRequests.map(async contextVariable => {
                 const resolvedVariable = await this.variableService.resolveVariable(contextVariable, context);
                 if (ResolvedAIContextVariable.is(resolvedVariable)) {
                     return resolvedVariable;

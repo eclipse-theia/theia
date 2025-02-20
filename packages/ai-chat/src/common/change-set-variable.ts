@@ -33,7 +33,7 @@
 import { MaybePromise, nls } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
 import { AIVariable, ResolvedAIVariable, AIVariableContribution, AIVariableResolver, AIVariableService, AIVariableResolutionRequest, AIVariableContext } from '@theia/ai-core';
-import { ChatSessionContext } from './chat-service';
+import { ChatSessionContext } from './chat-agents';
 
 export const CHANGE_SET_SUMMARY_VARIABLE: AIVariable = {
     id: 'changeSetSummary',
@@ -54,10 +54,10 @@ export class ChangeSetVariableContribution implements AIVariableContribution, AI
     }
 
     async resolve(request: AIVariableResolutionRequest, context: AIVariableContext): Promise<ResolvedAIVariable | undefined> {
-        if (!ChatSessionContext.is(context) || request.variable.name !== CHANGE_SET_SUMMARY_VARIABLE.name || !context.session.model.changeSet?.getElements().length) { return undefined; }
+        if (!ChatSessionContext.is(context) || request.variable.name !== CHANGE_SET_SUMMARY_VARIABLE.name || !context.model.changeSet?.getElements().length) { return undefined; }
         return {
             variable: CHANGE_SET_SUMMARY_VARIABLE,
-            value: context.session.model.changeSet.getElements().map(element => `- file: ${element.uri.toString()}, status: ${element.state}`).join('\n-')
+            value: context.model.changeSet.getElements().map(element => `- file: ${element.uri.toString()}, status: ${element.state}`).join('\n-')
         };
     }
 }
