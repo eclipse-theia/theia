@@ -43,7 +43,7 @@ export const CHANGE_SET_SUMMARY_VARIABLE: AIVariable = {
 };
 
 @injectable()
-export class ContextSummaryVariableContribution implements AIVariableContribution, AIVariableResolver {
+export class ChangeSetVariableContribution implements AIVariableContribution, AIVariableResolver {
 
     registerVariables(service: AIVariableService): void {
         service.registerResolver(CHANGE_SET_SUMMARY_VARIABLE, this);
@@ -54,10 +54,10 @@ export class ContextSummaryVariableContribution implements AIVariableContributio
     }
 
     async resolve(request: AIVariableResolutionRequest, context: AIVariableContext): Promise<ResolvedAIVariable | undefined> {
-        if (!ChatSessionContext.is(context) || request.variable.name !== CHANGE_SET_SUMMARY_VARIABLE.name || !context.session.changeSet?.getElements().length) { return undefined; }
+        if (!ChatSessionContext.is(context) || request.variable.name !== CHANGE_SET_SUMMARY_VARIABLE.name || !context.session.model.changeSet?.getElements().length) { return undefined; }
         return {
             variable: CHANGE_SET_SUMMARY_VARIABLE,
-            value: context.session.changeSet.getElements().map(element => `- file: ${element.uri.toString()}, status: ${element.state}`).join('\n-')
+            value: context.session.model.changeSet.getElements().map(element => `- file: ${element.uri.toString()}, status: ${element.state}`).join('\n-')
         };
     }
 }

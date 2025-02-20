@@ -18,6 +18,7 @@ import { MaybePromise, nls } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
 import { AIVariable, ResolvedAIVariable, AIVariableContribution, AIVariableResolver, AIVariableService, AIVariableResolutionRequest, AIVariableContext } from '@theia/ai-core';
 import { ChatSessionContext } from './chat-service';
+import { dataToJsonCodeBlock } from './chat-string-utils';
 
 export const CONTEXT_DETAILS_VARIABLE: AIVariable = {
     id: 'contextDetails',
@@ -26,7 +27,7 @@ export const CONTEXT_DETAILS_VARIABLE: AIVariable = {
 };
 
 @injectable()
-export class ContextSummaryVariableContribution implements AIVariableContribution, AIVariableResolver {
+export class ContextDetailsVariableContribution implements AIVariableContribution, AIVariableResolver {
     protected variableService: AIVariableService | undefined;
 
     registerVariables(service: AIVariableService): void {
@@ -39,23 +40,18 @@ export class ContextSummaryVariableContribution implements AIVariableContributio
     }
 
     async resolve(request: AIVariableResolutionRequest, context: AIVariableContext): Promise<ResolvedAIVariable | undefined> {
-        if (!ChatSessionContext.is(context) || request.variable.name !== CONTEXT_DETAILS_VARIABLE.name || !this.variableService) { return undefined; }
+        /** By expecting context.model, we're assuming that this variable will not be resolved until the context has been resolved. */
+        if (!ChatSessionContext.is(context) || request.variable.name !== CONTEXT_DETAILS_VARIABLE.name || !context.model) { return undefined; }
+        const data = context.model.context.variables.map(variable => ({
+            id: variable.variable.id + variable.arg,
+            type: variable.variable.name,
+            typeDescription: variable.variable.description,
+            value: variable.value,
+            content: variable.contextValue
+        }));
         return {
             variable: CONTEXT_DETAILS_VARIABLE,
-            value: await this.resolveAllContextVariables(context)
+            value: dataToJsonCodeBlock(data)
         };
     }
-
-    protected async resolveAllContextVariables(context: ChatSessionContext): Promise<string> {
-        const values = await Promise.all(context.session.context.getVariables().map(variable => this.variableService?.resolveVariable(variable, context)));
-        const data = values.filter((candidate): candidate is ResolvedAIVariable => !!candidate)
-            .map(resolved => ({
-                variableKind: resolved.variable.name,
-                variableKindDescription: resolved.variable.description,
-                variableInstanceData: resolved.arg,
-                value: resolved.value
-            }));
-        return `\`\`\`json\n${JSON.stringify(data)}\n\`\`\``;
-    }
 }
-

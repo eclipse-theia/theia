@@ -43,6 +43,8 @@ import { ContextVariableLabelProvider } from './context-variable-label-provider'
 import { ContextFileVariableLabelProvider } from './context-file-variable-label-provider';
 import { FileChatVariableContribution } from './file-chat-variable-contribution';
 import { ContextSummaryVariableContribution } from '../common/context-summary-variable';
+import { ContextDetailsVariableContribution } from '../common/context-details-variable';
+import { ChangeSetVariableContribution } from '../common/change-set-variable';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, Agent);
@@ -104,4 +106,6 @@ export default new ContainerModule(bind => {
     bind(ToolCallChatResponseContentFactory).toSelf().inSingletonScope();
     bind(AIVariableContribution).to(FileChatVariableContribution).inSingletonScope();
     bind(AIVariableContribution).to(ContextSummaryVariableContribution).inSingletonScope();
+    bind(AIVariableContribution).to(ContextDetailsVariableContribution).inSingletonScope();
+    bind(AIVariableContribution).to(ChangeSetVariableContribution).inSingletonScope();
 });

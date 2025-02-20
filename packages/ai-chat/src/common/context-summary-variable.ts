@@ -18,6 +18,7 @@ import { MaybePromise, nls } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
 import { AIVariable, ResolvedAIVariable, AIVariableContribution, AIVariableResolver, AIVariableService, AIVariableResolutionRequest, AIVariableContext } from '@theia/ai-core';
 import { ChatSessionContext } from './chat-service';
+import { dataToJsonCodeBlock } from './chat-string-utils';
 
 export const CONTEXT_SUMMARY_VARIABLE: AIVariable = {
     id: 'contextSummary',
@@ -37,10 +38,17 @@ export class ContextSummaryVariableContribution implements AIVariableContributio
 
     async resolve(request: AIVariableResolutionRequest, context: AIVariableContext): Promise<ResolvedAIVariable | undefined> {
         if (!ChatSessionContext.is(context) || request.variable.name !== CONTEXT_SUMMARY_VARIABLE.name) { return undefined; }
+        const data = context.session.model.context.getVariables().filter(variable => variable.variable.isContextVariable)
+            .map(variable => ({
+                variableTypeId: variable.variable.id,
+                variableTypeDescription: variable.variable.description,
+                // eslint-disable-next-line no-null/no-null
+                variableInstanceData: variable.arg || null,
+                contextElementId: variable.variable.id + variable.arg
+            }));
         return {
             variable: CONTEXT_SUMMARY_VARIABLE,
-            value: context.session.context.getVariables().filter(variable => !!variable.arg).map(variable => `- ${variable.arg}`).join('\n')
+            value: dataToJsonCodeBlock(data)
         };
     }
 }
-

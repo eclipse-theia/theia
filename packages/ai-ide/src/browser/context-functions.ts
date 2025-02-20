@@ -66,7 +66,7 @@ export class ResolveChatContext implements ToolProvider {
                     const result = {
                         id: variable.variable.id + variable.arg,
                         type: variable.variable.name,
-                        description: variable.variable.description,
+                        typeDescription: variable.variable.description,
                         value: variable.value,
                         content: variable.contextValue
                     };

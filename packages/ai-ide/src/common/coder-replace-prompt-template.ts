@@ -23,7 +23,7 @@ import {
   GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID
 } from './workspace-functions';
 import { CHANGE_SET_SUMMARY_VARIABLE, CHAT_CONTEXT_VARIABLE } from './context-variables';
-import { UPDATE_CONTEXT_FILES_FUNCTION_ID } from './context-functions';
+import { RESOLVE_CHAT_CONTEXT_FUNCTION_ID, UPDATE_CONTEXT_FILES_FUNCTION_ID } from './context-functions';
 
 export const CODER_REWRITE_PROMPT_TEMPLATE_ID = 'coder-rewrite';
 export const CODER_REPLACE_PROMPT_TEMPLATE_ID = 'coder-search-replace';
@@ -50,13 +50,13 @@ Instead, for each file you want to propose changes for:
   
 ## Additional Context
 
-The following files have been provided for additional context. Some of them may also be referred to above.\
-Always look at the relevant files to understand your task using getFileContent
+The following items have been provided for additional context. Some of them may also be referred to above.\
+You can retrieve details of a given context item by calling the ~{${RESOLVE_CHAT_CONTEXT_FUNCTION_ID}} with the item's contextElementId
 {{${CHAT_CONTEXT_VARIABLE}}}
 
 ## Previously Proposed Changes
 Changes have been proposed for the following files. Some suggestions may have been accepted, while others may still be pending.
-{{${CHANGE_SET_SUMMARY_VARIABLE}}} 
+{{${CHANGE_SET_SUMMARY_VARIABLE}}}
 `,
     ...(!withSearchAndReplace ? { variantOf: CODER_REPLACE_PROMPT_TEMPLATE_ID } : {}),
   };

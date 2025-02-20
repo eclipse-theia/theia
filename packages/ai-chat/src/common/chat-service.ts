@@ -61,8 +61,9 @@ export interface ChatSession {
 }
 
 export interface ChatSessionContext extends AIVariableContext {
-    request: ChatRequestModel;
-    session: ChatModel;
+    request: ChatRequest;
+    session: ChatSession;
+    model?: ChatRequestModel;
 }
 
 export namespace ChatSessionContext {
@@ -222,14 +223,15 @@ export class ChatServiceImpl implements ChatService {
             };
         }
 
-        const resolvedContext = await this.resolveChatContext(requestedContext, request, session);
+        const resolutionContext = { request, session: session } satisfies ChatSessionContext;
+        const resolvedContext = await this.resolveChatContext(requestedContext, resolutionContext);
         const requestModel = session.model.addRequest(parsedRequest, agent?.id, resolvedContext);
 
         for (const part of parsedRequest.parts) {
             if (part instanceof ParsedChatRequestVariablePart) {
                 const resolvedVariable = await this.variableService.resolveVariable(
                     { variable: part.variableName, arg: part.variableArg },
-                    { request, model: session }
+                    resolutionContext
                 );
                 if (resolvedVariable) {
                     part.resolution = resolvedVariable;
@@ -272,12 +274,11 @@ export class ChatServiceImpl implements ChatService {
 
     protected async resolveChatContext(
         requestedContext: ChatContextRequest,
-        request: ChatRequest,
-        session: ChatSessionInternal
+        context: ChatSessionContext,
     ): Promise<ChatContext> {
         const resolvedVariables = await Promise.all(
             requestedContext.variableRequests.map(async contextVariable => {
-                const resolvedVariable = await this.variableService.resolveVariable(contextVariable, { request, model: session });
+                const resolvedVariable = await this.variableService.resolveVariable(contextVariable, context);
                 if (ResolvedAIContextVariable.is(resolvedVariable)) {
                     return resolvedVariable;
                 }
