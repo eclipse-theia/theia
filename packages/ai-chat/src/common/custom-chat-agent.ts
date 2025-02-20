@@ -24,9 +24,10 @@ export class CustomChatAgent extends AbstractStreamParsingChatAgent {
     name: string = 'CustomChatAgent';
     languageModelRequirements: LanguageModelRequirement[] = [{ purpose: 'chat' }];
     protected defaultLanguageModelPurpose: string = 'chat';
-    protected override systemPromptId: string = `${this.name}_prompt`;
 
     set prompt(prompt: string) {
+        // the name is dynamic, so we set the propmptId here
+        this.systemPromptId = `${this.name}_prompt`;
         this.promptTemplates.push({ id: `${this.name}_prompt`, template: prompt });
     }
 }
