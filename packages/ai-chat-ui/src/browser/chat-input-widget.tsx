@@ -353,10 +353,10 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                     setInProgress(ChatRequestModel.isInProgress(event.request))
                 );
             } else if (ChatChangeEvent.isChangeSetEvent(event)) {
-                if (event.changeSet) {
-                    setChangeSetUI(buildChangeSetUI(event.changeSet, props.labelProvider, onDeleteChangeSet, onDeleteChangeSetElement));
-                } else {
+                if (event.kind === 'removeChangeSet') {
                     setChangeSetUI(undefined);
+                } else if (event.kind === 'setChangeSet' || 'updateChangeSet') {
+                    setChangeSetUI(buildChangeSetUI(event.changeSet, props.labelProvider, onDeleteChangeSet, onDeleteChangeSetElement));
                 }
             }
         });
