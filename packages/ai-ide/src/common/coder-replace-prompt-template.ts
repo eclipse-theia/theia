@@ -52,7 +52,7 @@ Instead, for each file you want to propose changes for:
 ## Additional Context
 
 The following files have been provided for additional context. Some of them may also be referred to above. \
-Always look at the relevant files to understand your task using getFileContent
+Always look at the relevant files to understand your task using the function ~{${FILE_CONTENT_FUNCTION_ID}}
 {{${CONTEXT_FILES_VARIABLE_ID}}}
 
 ## Previously Proposed Changes
