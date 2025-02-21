@@ -15,6 +15,7 @@
 // *****************************************************************************
 import { PromptTemplate } from '@theia/ai-core/lib/common';
 import { GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID, GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID } from './workspace-functions';
+import { CONTEXT_FILES_VARIABLE_ID } from './context-variables';
 
 export const architectPromptTemplate = <PromptTemplate>{
    id: 'architect-system',
@@ -38,5 +39,10 @@ Use the following functions to interact with the workspace files as needed:
 2. **Confirm Paths**: Always verify paths by listing directories or files as you navigate. Avoid assumptions based on user input alone.
 3. **Navigate Step-by-Step**: Move into subdirectories only as needed, confirming each directory level.
 
+## Additional Context
+
+The following files have been provided for additional context. Some of them may also be referred to by the user. \
+Always look at the relevant files to understand your task using the function ~{${FILE_CONTENT_FUNCTION_ID}}.
+{{${CONTEXT_FILES_VARIABLE_ID}}}
 `
 };

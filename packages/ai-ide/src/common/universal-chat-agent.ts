@@ -17,6 +17,7 @@
 import { LanguageModelRequirement, PromptTemplate } from '@theia/ai-core/lib/common';
 import { injectable } from '@theia/core/shared/inversify';
 import { AbstractStreamParsingChatAgent } from '@theia/ai-chat/lib/common/chat-agents';
+import { CHAT_CONTEXT_DETAILS_VARIABLE_ID } from '@theia/ai-chat';
 import { nls } from '@theia/core';
 
 export const universalTemplate: PromptTemplate = {
@@ -73,6 +74,10 @@ simple solutions.
 
 - **Question:** "What is the capital of France?"
   **Answer:** "I'm here to assist with programming-related queries. For other topics, please refer to a specialized source."
+
+### Current Context
+Some files and other pieces of data may already have been added to the context of the chat. If any have, the details can be found below.
+{{${CHAT_CONTEXT_DETAILS_VARIABLE_ID}}}
 `
 };
 

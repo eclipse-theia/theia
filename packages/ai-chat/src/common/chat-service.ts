@@ -24,7 +24,7 @@ import { Emitter, ILogger, generateUuid } from '@theia/core';
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import { Event } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ChatAgentService } from './chat-agent-service';
-import { ChatAgent, ChatAgentLocation } from './chat-agents';
+import { ChatAgent, ChatAgentLocation, ChatSessionContext } from './chat-agents';
 import {
     ChatModel,
     MutableChatModel,
@@ -58,10 +58,6 @@ export interface ChatSession {
     model: ChatModel;
     isActive: boolean;
     pinnedAgent?: ChatAgent;
-}
-
-export interface ChatContextRequest {
-    variableRequests: AIVariableResolutionRequest[]
 }
 
 export interface ActiveSessionChangedEvent {
@@ -104,8 +100,7 @@ export interface ChatService {
 
     sendRequest(
         sessionId: string,
-        request: ChatRequest,
-        requestedContext?: ChatContextRequest
+        request: ChatRequest
     ): Promise<ChatRequestInvocation | undefined>;
 
     deleteChangeSet(sessionId: string): void;
@@ -189,7 +184,6 @@ export class ChatServiceImpl implements ChatService {
     async sendRequest(
         sessionId: string,
         request: ChatRequest,
-        requestedContext: ChatContextRequest = { variableRequests: [] }
     ): Promise<ChatRequestInvocation | undefined> {
         const session = this.getSession(sessionId);
         if (!session) {
@@ -211,14 +205,16 @@ export class ChatServiceImpl implements ChatService {
             };
         }
 
-        const resolvedContext = await this.resolveChatContext(requestedContext, request, session);
+        const resolutionContext: ChatSessionContext = { model: session.model };
+        const resolvedContext = await this.resolveChatContext(session.model.context.getVariables(), resolutionContext);
         const requestModel = session.model.addRequest(parsedRequest, agent?.id, resolvedContext);
+        resolutionContext.request = requestModel;
 
         for (const part of parsedRequest.parts) {
             if (part instanceof ParsedChatRequestVariablePart) {
                 const resolvedVariable = await this.variableService.resolveVariable(
                     { variable: part.variableName, arg: part.variableArg },
-                    { request, model: session }
+                    resolutionContext
                 );
                 if (resolvedVariable) {
                     part.resolution = resolvedVariable;
@@ -260,13 +256,12 @@ export class ChatServiceImpl implements ChatService {
     }
 
     protected async resolveChatContext(
-        requestedContext: ChatContextRequest,
-        request: ChatRequest,
-        session: ChatSessionInternal
+        resolutionRequests: readonly AIVariableResolutionRequest[],
+        context: ChatSessionContext,
     ): Promise<ChatContext> {
         const resolvedVariables = await Promise.all(
-            requestedContext.variableRequests.map(async contextVariable => {
-                const resolvedVariable = await this.variableService.resolveVariable(contextVariable, { request, model: session });
+            resolutionRequests.map(async contextVariable => {
+                const resolvedVariable = await this.variableService.resolveVariable(contextVariable, context);
                 if (ResolvedAIContextVariable.is(resolvedVariable)) {
                     return resolvedVariable;
                 }

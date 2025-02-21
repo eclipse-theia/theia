@@ -21,6 +21,7 @@
 
 import {
     AgentSpecificVariables,
+    AIVariableContext,
     CommunicationRecordingService,
     getTextOfResponse,
     LanguageModel,
@@ -50,7 +51,8 @@ import {
     ChatResponseContent,
     ErrorChatResponseContentImpl,
     MarkdownChatResponseContentImpl,
-    ToolCallChatResponseContentImpl
+    ToolCallChatResponseContentImpl,
+    ChatRequestModel
 } from './chat-model';
 import { findFirstMatch, parseContents } from './parse-contents';
 import { DefaultResponseContentFactory, ResponseContentMatcher, ResponseContentMatcherProvider } from './response-content-matcher';
@@ -83,6 +85,17 @@ export namespace SystemMessageDescription {
             text: resolvedPrompt.text,
             functionDescriptions: resolvedPrompt.functionDescriptions
         };
+    }
+}
+
+export interface ChatSessionContext extends AIVariableContext {
+    request?: ChatRequestModel;
+    model: ChatModel;
+}
+
+export namespace ChatSessionContext {
+    export function is(candidate: unknown): candidate is ChatSessionContext {
+        return typeof candidate === 'object' && !!candidate && 'model' in candidate;
     }
 }
 
@@ -168,8 +181,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
             if (!languageModel) {
                 throw new Error('Couldn\'t find a matching language model. Please check your setup!');
             }
-
-            const systemMessageDescription = await this.getSystemMessageDescription();
+            const systemMessageDescription = await this.getSystemMessageDescription({ model: request.session, request } satisfies ChatSessionContext);
             const messages = await this.getMessages(request.session);
             if (this.defaultLogging) {
                 this.recordingService.recordRequest(
@@ -244,11 +256,11 @@ export abstract class AbstractChatAgent implements ChatAgent {
         return languageModel;
     }
 
-    protected async getSystemMessageDescription(): Promise<SystemMessageDescription | undefined> {
+    protected async getSystemMessageDescription(context: AIVariableContext): Promise<SystemMessageDescription | undefined> {
         if (this.systemPromptId === undefined) {
             return undefined;
         }
-        const resolvedPrompt = await this.promptService.getPrompt(this.systemPromptId);
+        const resolvedPrompt = await this.promptService.getPrompt(this.systemPromptId, undefined, context);
         return resolvedPrompt ? SystemMessageDescription.fromResolvedPromptTemplate(resolvedPrompt) : undefined;
     }
 

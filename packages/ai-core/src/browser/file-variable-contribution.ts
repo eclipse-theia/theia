@@ -75,7 +75,7 @@ export class FileVariableContribution implements AIVariableContribution, AIVaria
             return {
                 variable: request.variable,
                 value: await this.wsService.getWorkspaceRelativePath(absoluteUri),
-                contextValue: content.value.toString()
+                contextValue: content.value.toString(),
             };
         } catch (error) {
             return undefined;
