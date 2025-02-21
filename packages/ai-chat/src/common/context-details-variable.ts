@@ -23,7 +23,7 @@ import { CHAT_CONTEXT_DETAILS_VARIABLE_ID } from './context-variables';
 
 export const CONTEXT_DETAILS_VARIABLE: AIVariable = {
     id: CHAT_CONTEXT_DETAILS_VARIABLE_ID,
-    description: nls.localize('theia/ai/core/contextDetailsVariable/description', 'Provides full text values and descriptions for all context variables.'),
+    description: nls.localize('theia/ai/core/contextDetailsVariable/description', 'Provides full text values and descriptions for all context elements.'),
     name: CHAT_CONTEXT_DETAILS_VARIABLE_ID,
 };
 
