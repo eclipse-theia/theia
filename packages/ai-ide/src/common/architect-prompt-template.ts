@@ -41,7 +41,7 @@ Use the following functions to interact with the workspace files as needed:
 
 ## Additional Context
 
-The following files have been provided for additional context. Some of them may also be referred to above.\
+The following files have been provided for additional context. Some of them may also be referred to above. \
 Always look at the relevant files to understand your task using getFileContent
 {{${CONTEXT_FILES_VARIABLE_ID}}}
 `

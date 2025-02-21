@@ -46,17 +46,17 @@ To propose code changes or any file changes to the user, never print code or new
 
 Instead, for each file you want to propose changes for:
 - **Always Retrieve Current Content**: Use ${FILE_CONTENT_FUNCTION_ID} to get the latest content of the target file.
-- **Change Content**: Use ~{changeSet_writeChangeToFile}${withSearchAndReplace ? ' or ~{changeSet_replaceContentInFile}' : ''} to suggest file changes to the user.\
+- **Change Content**: Use ~{changeSet_writeChangeToFile}${withSearchAndReplace ? ' or ~{changeSet_replaceContentInFile}' : ''} to propose file changes to the user.\
   ${withSearchAndReplace ? 'Only select and call one function per file.' : ''}
   
 ## Additional Context
 
-The following files have been provided for additional context. Some of them may also be referred to above.\
+The following files have been provided for additional context. Some of them may also be referred to above. \
 Always look at the relevant files to understand your task using getFileContent
 {{${CONTEXT_FILES_VARIABLE_ID}}}
 
 ## Previously Proposed Changes
-Changes have been proposed for the following files. Some suggestions may have been accepted, while others may still be pending.
+You have previously proposed changes for the following files. Some suggestions may have been accepted by the user, while others may still be pending.
 {{${CHANGE_SET_SUMMARY_VARIABLE_ID}}}
 `,
     ...(!withSearchAndReplace ? { variantOf: CODER_REPLACE_PROMPT_TEMPLATE_ID } : {}),
