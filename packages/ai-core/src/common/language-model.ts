@@ -32,7 +32,14 @@ export const isLanguageModelRequestMessage = (obj: unknown): obj is LanguageMode
         'query' in obj &&
         typeof (obj as { query: unknown }).query === 'string'
     );
-export type ToolRequestParametersProperties = Record<string, { type: string, [key: string]: unknown }>;
+
+export interface ToolRequestParameterProperty {
+    type?: string;
+    anyOf?: ToolRequestParameterProperty[];
+    [key: string]: unknown;
+}
+
+export type ToolRequestParametersProperties = Record<string, ToolRequestParameterProperty>;
 export interface ToolRequestParameters {
     type?: 'object';
     properties: ToolRequestParametersProperties;
@@ -48,17 +55,45 @@ export interface ToolRequest {
 }
 
 export namespace ToolRequest {
-    export function isToolRequestParametersProperties(obj: unknown): obj is ToolRequestParametersProperties {
-        if (!obj || typeof obj !== 'object') { return false; };
+    function isToolRequestParameterProperty(obj: unknown): obj is ToolRequestParameterProperty {
+        if (!obj || typeof obj !== 'object') {
+            return false;
+        }
+        const record = obj as Record<string, unknown>;
 
-        return Object.entries(obj).every(([key, value]) =>
-            typeof key === 'string' &&
-            value &&
-            typeof value === 'object' &&
-            'type' in value &&
-            typeof value.type === 'string' &&
-            Object.keys(value).every(k => typeof k === 'string')
-        );
+        // Check that at least one of "type" or "anyOf" exists
+        if (!('type' in record) && !('anyOf' in record)) {
+            return false;
+        }
+
+        // If an "anyOf" field is present, it must be an array where each item is also a valid property.
+        if ('anyOf' in record) {
+            if (!Array.isArray(record.anyOf)) {
+                return false;
+            }
+            for (const item of record.anyOf) {
+                if (!isToolRequestParameterProperty(item)) {
+                    return false;
+                }
+            }
+        }
+        if ('type' in record && typeof record.type !== 'string') {
+            return false;
+        }
+
+        // No further checks required for additional properties.
+        return true;
+    }
+    export function isToolRequestParametersProperties(obj: unknown): obj is ToolRequestParametersProperties {
+        if (!obj || typeof obj !== 'object') {
+            return false;
+        }
+        return Object.entries(obj).every(([key, value]) => {
+            if (typeof key !== 'string') {
+                return false;
+            }
+            return isToolRequestParameterProperty(value);
+        });
     }
     export function isToolRequestParameters(obj: unknown): obj is ToolRequestParameters {
         return !!obj && typeof obj === 'object' &&
