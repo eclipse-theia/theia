@@ -71,17 +71,15 @@ export class ChatViewLanguageContribution implements FrontendApplicationContribu
     }
 
     getCompletionRange(model: monaco.editor.ITextModel, position: monaco.Position, triggerCharacter: string): monaco.Range | undefined {
-        // Check if the character before the current position is the trigger character
+        const wordInfo = model.getWordUntilPosition(position);
         const lineContent = model.getLineContent(position.lineNumber);
-        const characterBefore = lineContent[position.column - 2]; // Get the character before the current position
-
-        if (characterBefore !== triggerCharacter) {
-            // Do not return agent suggestions if the user didn't just type the trigger character
+        // one to the left, and -1 for 0-based index
+        const characterBeforeCurrentWord = lineContent[wordInfo.startColumn - 1 - 1];
+        // return suggestions only if the word is directly preceded by the trigger character
+        if (characterBeforeCurrentWord !== triggerCharacter) {
             return undefined;
         }
 
-        // Calculate the range from the position of the trigger character
-        const wordInfo = model.getWordUntilPosition(position);
         return new monaco.Range(
             position.lineNumber,
             wordInfo.startColumn,
@@ -136,7 +134,7 @@ export class ChatViewLanguageContribution implements FrontendApplicationContribu
             PromptText.VARIABLE_CHAR,
             this.variableService.getVariables(),
             monaco.languages.CompletionItemKind.Variable,
-            variable => variable.name,
+            variable => variable.args?.some(arg => !arg.isOptional) ? variable.name + PromptText.VARIABLE_SEPARATOR_CHAR : variable.name,
             variable => variable.name,
             variable => variable.description,
             {
@@ -192,7 +190,16 @@ export class ChatViewLanguageContribution implements FrontendApplicationContribu
         if (!model || !position) {
             return;
         }
-        const variableName = model.getWordAtPosition(position)?.word;
+
+        // account for the variable separator character if present
+        let endOfWordPosition = position.column;
+        let insertTextPrefix = PromptText.VARIABLE_SEPARATOR_CHAR;
+        if (this.getCharacterBeforePosition(model, position) === PromptText.VARIABLE_SEPARATOR_CHAR) {
+            endOfWordPosition = position.column - 1;
+            insertTextPrefix = '';
+        }
+
+        const variableName = model.getWordAtPosition({ ...position, column: endOfWordPosition })?.word;
         if (!variableName) {
             return;
         }
@@ -206,9 +213,14 @@ export class ChatViewLanguageContribution implements FrontendApplicationContribu
         }
         inputEditor.executeEdits('variable-argument-picker', [{
             range: new monaco.Range(position.lineNumber, position.column, position.lineNumber, position.column),
-            text: PromptText.VARIABLE_SEPARATOR_CHAR + arg
+            text: insertTextPrefix + arg
         }]);
         await this.addContextVariable(variableName, arg);
+    }
+
+    protected getCharacterBeforePosition(model: monaco.editor.ITextModel, position: monaco.Position): string {
+        // one to the left, and -1 for 0-based index
+        return model.getLineContent(position.lineNumber)[position.column - 1 - 1];
     }
 
     protected async addContextVariable(variableName: string, arg: string | undefined): Promise<void> {
