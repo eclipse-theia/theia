@@ -73,7 +73,7 @@ export class CommentThreadWidget extends BaseWidget {
         this.toDispose.push(this.commentGlyphWidget = new CommentGlyphWidget(editor));
         this.toDispose.push(this._commentThread.onDidChangeCollapsibleState(state => {
             if (state === CommentThreadCollapsibleState.Expanded && !this.isExpanded) {
-                const lineNumber = this._commentThread.range.startLineNumber;
+                const lineNumber = this._commentThread.range?.startLineNumber ?? 0;
 
                 this.display({ afterLineNumber: lineNumber, afterColumn: 1, heightInLines: 2 });
                 return;
@@ -256,8 +256,8 @@ export class CommentThreadWidget extends BaseWidget {
         const frameThickness = Math.round(lineHeight / 9) * 2;
         const body = this.zoneWidget.containerNode.getElementsByClassName('body')[0];
 
-        const computedLinesNumber = Math.ceil((headHeight + body.clientHeight + arrowHeight + frameThickness + 8 /** margin bottom to avoid margin collapse */) / lineHeight);
-        this.zoneWidget.show({ afterLineNumber: this._commentThread.range.startLineNumber, heightInLines: computedLinesNumber });
+        const computedLinesNumber = Math.ceil((headHeight + body?.clientHeight + arrowHeight + frameThickness + 8 /** margin bottom to avoid margin collapse */) / lineHeight);
+        this.zoneWidget.show({ afterLineNumber: this._commentThread.range?.startLineNumber ?? 0, heightInLines: computedLinesNumber });
     }
 
     protected render(): void {
@@ -588,7 +588,8 @@ export class CommentEditContainer extends React.Component<CommentEditContainer.P
                 {menus.getMenu(COMMENT_CONTEXT).children.map((node, index) => {
                     const onClick = () => {
                         commands.executeCommand(node.id, {
-                            thread: commentThread,
+                            commentControlHandle: commentThread.controllerHandle,
+                            commentThreadHandle: commentThread.commentThreadHandle,
                             commentUniqueId: comment.uniqueIdInThread,
                             text: this.inputRef.current ? this.inputRef.current.value : ''
                         });
@@ -623,7 +624,8 @@ export class CommentsInlineAction extends React.Component<CommentsInlineAction.P
                 title={node.label}
                 onClick={() => {
                     commands.executeCommand(node.id, {
-                        thread: commentThread,
+                        commentControlHandle: commentThread.controllerHandle,
+                        commentThreadHandle: commentThread.commentThreadHandle,
                         commentUniqueId
                     });
                 }} />
@@ -651,8 +653,10 @@ export class CommentActions extends React.Component<CommentActions.Props> {
                     commands={commands}
                     node={node}
                     onClick={() => {
+                        console.log('CommentActions.onClick: ' + commentThread);
                         commands.executeCommand(node.id, {
-                            thread: commentThread,
+                            commentControlHandle: commentThread.controllerHandle,
+                            commentThreadHandle: commentThread.commentThreadHandle,
                             text: getInput()
                         });
                         clearInput();
