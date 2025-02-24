@@ -41,7 +41,7 @@ export class TheiaVariableContribution implements AIVariableContribution, AIVari
             currently opened file. Please note that most agents will expect a relative file path (relative to the current workspace).')
         }],
         ['selectedText', {
-            name: 'currentSelectedText', description: nls.localize('theia/ai/core/variable-contribution/currentSelectedText', 'The plain text that is currently selected in the \
+            description: nls.localize('theia/ai/core/variable-contribution/currentSelectedText', 'The plain text that is currently selected in the \
             opened file. This excludes the information where the content is coming from. Please note that most agents will work better with a relative file path \
             (relative to the current workspace).')
         }],
