@@ -24,6 +24,9 @@ import { AIVariableContribution, AIVariableResolver, AIVariableService, AIVariab
  */
 @injectable()
 export class TheiaVariableContribution implements AIVariableContribution, AIVariableResolver {
+
+    private static readonly THEIA_PREFIX = 'theia-';
+
     @inject(VariableResolverService)
     protected readonly variableResolverService: VariableResolverService;
 
@@ -77,7 +80,7 @@ export class TheiaVariableContribution implements AIVariableContribution, AIVari
                         : nls.localize('theia/ai/core/variable-contribution/builtInVariable', 'Theia Built-in Variable'));
 
                 service.registerResolver({
-                    id: `theia-${variable.name}`,
+                    id: `${TheiaVariableContribution.THEIA_PREFIX}${variable.name}`,
                     name: newName,
                     description: newDescription
                 }, this);
@@ -86,13 +89,14 @@ export class TheiaVariableContribution implements AIVariableContribution, AIVari
     }
 
     protected toTheiaVariable(request: AIVariableResolutionRequest): string {
-        // Remove the 'theia-' prefix if present before constructing the variable string
-        const variableId = request.variable.id.startsWith('theia-') ? request.variable.id.slice(6) : request.variable.id;
+        // Remove the THEIA_PREFIX if present before constructing the variable string
+        const variableId = request.variable.id.startsWith(TheiaVariableContribution.THEIA_PREFIX) ? request.variable.id.slice(TheiaVariableContribution.THEIA_PREFIX.length) :
+            request.variable.id;
         return `\${${variableId}${request.arg ? ':' + request.arg : ''}}`;
     }
 
     async canResolve(request: AIVariableResolutionRequest, context: AIVariableContext): Promise<number> {
-        if (!request.variable.id.startsWith('theia-')) {
+        if (!request.variable.id.startsWith(TheiaVariableContribution.THEIA_PREFIX)) {
             return 0;
         }
         // some variables are not resolvable without providing a specific context
