@@ -405,6 +405,10 @@ div:last-child > .theia-ChatNode {
   border-color: var(--theia-focusBorder);
 }
 
+.theia-ChatInput-Editor-Box .monaco-editor {
+  outline-color: var(--theia-editor-background);
+}
+
 .theia-ChatInput-Editor {
   width: 100%;
   height: auto;
@@ -493,7 +497,7 @@ div:last-child > .theia-ChatNode {
 }
 
 .theia-ChatInputOptions .reverse {
-    flex-direction: row-reverse;
+  flex-direction: row-reverse;
 }
 
 .theia-CodePartRenderer-root {
