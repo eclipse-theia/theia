@@ -29,10 +29,10 @@ export namespace ChatViewCommands {
         id: 'chat.copy.all',
         label: 'Copy All'
     });
-    export const COPY_CODE = Command.toDefaultLocalizedCommand({
+    export const COPY_CODE = Command.toLocalizedCommand({
         id: 'chat.copy.code',
         label: 'Copy Code Block'
-    });
+    }, 'theia/ai/chat-ui/copyCodeBlock');
 }
 
 @injectable()

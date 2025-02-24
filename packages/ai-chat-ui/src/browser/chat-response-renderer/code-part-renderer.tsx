@@ -190,7 +190,7 @@ const InsertCodeAtCursorButton = (props: { code: string, editorManager: EditorMa
             }]);
         }
     }, [code, editorManager]);
-    return <div className='button codicon codicon-insert' title={nls.localizeByDefault('Insert at Cursor')} role='button' onClick={insertCode}></div>;
+    return <div className='button codicon codicon-insert' title={nls.localizeByDefault('Insert At Cursor')} role='button' onClick={insertCode}></div>;
 };
 
 /**

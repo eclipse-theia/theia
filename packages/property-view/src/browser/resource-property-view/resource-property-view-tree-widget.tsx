@@ -110,7 +110,7 @@ export class ResourcePropertyViewTreeWidget extends TreeWidget implements Proper
                 this.getLastModificationString(fileStatObject), infoNode));
             infoNode.children.push(this.createResultLineNode('created', nls.localize('theia/property-view/created', 'Created'),
                 this.getCreationTimeString(fileStatObject), infoNode));
-            infoNode.children.push(this.createResultLineNode('size', nls.localize('theia/property-view/size', 'Size'), this.getSizeString(fileStatObject), infoNode));
+            infoNode.children.push(this.createResultLineNode('size', nls.localizeByDefault('Size'), this.getSizeString(fileStatObject), infoNode));
             this.refreshModelChildren();
         }
     }

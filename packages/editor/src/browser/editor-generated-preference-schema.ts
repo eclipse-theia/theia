@@ -158,7 +158,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     "editor.experimental.treeSitterTelemetry": {
         "type": "boolean",
         "default": false,
-        "markdownDescription": nls.localize("theia/editor/editor.experimental.treeSitterTelemetry", "Controls whether tree sitter parsing should be turned on and telemetry collected. Setting `editor.experimental.preferTreeSitter` for specific languages will take precedence."),
+        "markdownDescription": nls.localizeByDefault("Controls whether tree sitter parsing should be turned on and telemetry collected. Setting `editor.experimental.preferTreeSitter` for specific languages will take precedence."),
         "tags": [
             "experimental",
             "onExP"
@@ -175,7 +175,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             ]
         },
         "default": [],
-        "markdownDescription": nls.localize("theia/editor/editor.experimental.preferTreeSitter", "Controls whether tree sitter parsing should be turned on for specific languages. This will take precedence over `editor.experimental.treeSitterTelemetry` for the specified languages."),
+        "markdownDescription": nls.localizeByDefault("Controls whether tree sitter parsing should be turned on for specific languages. This will take precedence over `editor.experimental.treeSitterTelemetry` for the specified languages."),
         "tags": [
             "experimental"
         ],
@@ -376,7 +376,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     "diffEditor.experimental.useTrueInlineView": {
         "type": "boolean",
         "default": false,
-        "description": nls.localize("theia/editor/diffEditor.experimental.useTrueInlineView", "If enabled and the editor uses the inline view, word changes are rendered inline."),
+        "description": nls.localizeByDefault("If enabled and the editor uses the inline view, word changes are rendered inline."),
         "scope": "language-overridable",
         "restricted": false
     },
@@ -764,7 +764,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "restricted": false
     },
     "editor.cursorStyle": {
-        "description": nls.localize("theia/editor/editor.cursorStyle", "Controls the cursor style in insert input mode."),
+        "description": nls.localizeByDefault("Controls the cursor style in insert input mode."),
         "type": "string",
         "enum": [
             "line",
@@ -841,7 +841,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "restricted": false
     },
     "editor.experimentalEditContextEnabled": {
-        "description": nls.localize("theia/editor/editor.experimentalEditContextEnabled", "Sets whether the new experimental edit context should be used instead of the text area."),
+        "description": nls.localizeByDefault("Sets whether the new experimental edit context should be used instead of the text area."),
         "included": true,
         "type": "boolean",
         "default": false,
@@ -942,10 +942,10 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "workspace",
         "enumDescriptions": [
-            nls.localize("theia/editor/editor.find.history0", "Do not store search history from the find widget."),
-            nls.localize("theia/editor/editor.find.history1", "Store search history across the active workspace")
+            nls.localizeByDefault("Do not store search history from the find widget."),
+            nls.localizeByDefault("Store search history across the active workspace")
         ],
-        "description": nls.localize("theia/editor/editor.find.history", "Controls how the find widget history should be stored"),
+        "description": nls.localizeByDefault("Controls how the find widget history should be stored"),
         "scope": "language-overridable",
         "restricted": false
     },
@@ -1375,7 +1375,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     "editor.inlineSuggest.syntaxHighlightingEnabled": {
         "type": "boolean",
         "default": false,
-        "description": nls.localize("theia/editor/editor.inlineSuggest.syntaxHighlightingEnabled", "Controls whether to show syntax highlighting for inline suggestions in the editor."),
+        "description": nls.localizeByDefault("Controls whether to show syntax highlighting for inline suggestions in the editor."),
         "scope": "language-overridable",
         "restricted": false
     },
@@ -1611,7 +1611,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     "editor.minimap.sectionHeaderLetterSpacing": {
         "type": "number",
         "default": 1,
-        "description": nls.localize("theia/editor/editor.minimap.sectionHeaderLetterSpacing", "Controls the amount of space (in pixels) between characters of section header. This helps the readability of the header in small font sizes."),
+        "description": nls.localizeByDefault("Controls the amount of space (in pixels) between characters of section header. This helps the readability of the header in small font sizes."),
         "scope": "language-overridable",
         "restricted": false
     },
@@ -1693,7 +1693,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "restricted": false
     },
     "editor.occurrencesHighlightDelay": {
-        "description": nls.localize("theia/editor/editor.occurrencesHighlightDelay", "Controls the delay in milliseconds after which occurrences are highlighted."),
+        "description": nls.localizeByDefault("Controls the delay in milliseconds after which occurrences are highlighted."),
         "tags": [
             "preview"
         ],
@@ -1705,7 +1705,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "restricted": false
     },
     "editor.overtypeCursorStyle": {
-        "description": nls.localize("theia/editor/editor.overtypeCursorStyle", "Controls the cursor style in overtype input mode."),
+        "description": nls.localizeByDefault("Controls the cursor style in overtype input mode."),
         "type": "string",
         "enum": [
             "line",
@@ -1720,7 +1720,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "restricted": false
     },
     "editor.overtypeOnPaste": {
-        "description": nls.localize("theia/editor/editor.overtypeOnPaste", "Controls whether pasting should overtype."),
+        "description": nls.localizeByDefault("Controls whether pasting should overtype."),
         "type": "boolean",
         "default": true,
         "scope": "language-overridable",
@@ -2260,7 +2260,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             nls.localizeByDefault("Select a suggestion only when triggering IntelliSense as you type.")
         ],
         "default": "always",
-        "markdownDescription": nls.localizeByDefault("Controls whether a suggestion is selected when the widget shows. Note that this only applies to automatically triggered suggestions (`#editor.quickSuggestions#` and `#editor.suggestOnTriggerCharacters#`) and that a suggestion is always selected when explicitly invoked, e.g via `Ctrl+Space`."),
+        "markdownDescription": nls.localizeByDefault('Controls whether a suggestion is selected when the widget shows. Note that this only applies to automatically triggered suggestions ({0} and {1}) and that a suggestion is always selected when explicitly invoked, e.g via `Ctrl+Space`.', '`#editor.quickSuggestions#`', '`#editor.suggestOnTriggerCharacters#`'),
         "scope": "language-overridable",
         "restricted": false
     },
@@ -2840,7 +2840,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     "editor.inlayHints.maximumLength": {
         "type": "number",
         "default": 43,
-        "markdownDescription": nls.localize("theia/editor/editor.inlayHints.maximumLength", "Maximum overall length of inlay hints, for a single line, before they get truncated by the editor. Set to `0` to never truncate"),
+        "markdownDescription": nls.localizeByDefault("Maximum overall length of inlay hints, for a single line, before they get truncated by the editor. Set to `0` to never truncate"),
         "scope": "language-overridable",
         "restricted": false
     },
@@ -2853,11 +2853,11 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     },
     "editor.defaultColorDecorators": {
         "enumDescriptions": [
-            nls.localize("theia/editor/editor.defaultColorDecorators0", "Show default color decorators only when no extension provides colors decorators."),
-            nls.localize("theia/editor/editor.defaultColorDecorators1", "Always show default color decorators."),
-            nls.localize("theia/editor/editor.defaultColorDecorators2", "Never show default color decorators.")
+            nls.localizeByDefault("Show default color decorators only when no extension provides colors decorators."),
+            nls.localizeByDefault("Always show default color decorators."),
+            nls.localizeByDefault("Never show default color decorators.")
         ],
-        "description": nls.localize("theia/editor/editor.defaultColorDecorators", "Controls whether inline color decorations should be shown using the default document color provider."),
+        "description": nls.localizeByDefault("Controls whether inline color decorations should be shown using the default document color provider."),
         "type": "string",
         "enum": [
             "auto",
@@ -2874,7 +2874,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             nls.localizeByDefault("Make the color picker appear on hover of the color decorator"),
             nls.localizeByDefault("Make the color picker appear on click of the color decorator")
         ],
-        "description": nls.localizeByDefault("Controls the condition to make a color picker appear from a color decorator"),
+        "description": nls.localizeByDefault("Controls the condition to make a color picker appear from a color decorator."),
         "type": "string",
         "enum": [
             "clickAndHover",
