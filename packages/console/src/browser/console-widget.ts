@@ -175,6 +175,10 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
 
     get consoleNavigationForwardEnabled(): boolean {
         const editor = this.input.getControl();
+        const model = editor.getModel();
+        if (!model) {
+            return false;
+        }
         const lineNumber = editor.getModel()!.getLineCount();
         const column = editor.getModel()!.getLineMaxColumn(lineNumber);
         return !!editor.getPosition()!.equals({ lineNumber, column });

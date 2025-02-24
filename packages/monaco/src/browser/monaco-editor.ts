@@ -559,10 +559,8 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
         const toPosition = (line: number): monaco.Position => this.p2m.asPosition({ line, character: 0 });
         const start = toPosition(startLineNumber).lineNumber;
         const end = toPosition(endLineNumber).lineNumber;
-        return this.editor
-            .getModel()!
-            .getLinesDecorations(start, end)
-            .map(this.toEditorDecoration.bind(this));
+        return this.editor.getModel()?.getLinesDecorations(start, end)
+            .map(this.toEditorDecoration.bind(this)) || [];
     }
 
     protected toEditorDecoration(decoration: monaco.editor.IModelDecoration): EditorDecoration & Readonly<{ id: string }> {

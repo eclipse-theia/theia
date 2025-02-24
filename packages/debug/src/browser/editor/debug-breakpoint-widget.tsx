@@ -130,13 +130,14 @@ export class DebugBreakpointWidget implements Disposable {
         this.toDispose.push((monaco.languages.registerCompletionItemProvider as (languageId: LanguageSelector, provider: monaco.languages.CompletionItemProvider) => Disposable)
             ({ scheme: input.uri.scheme }, {
                 provideCompletionItems: async (model, position, context, token): Promise<monaco.languages.CompletionList> => {
+                    const editor = this.editor.getControl();
+                    const editorModel = editor.getModel() as unknown as TextModel | undefined;
                     const suggestions: monaco.languages.CompletionItem[] = [];
-                    if ((this.context === 'condition' || this.context === 'logMessage')
+                    if (editorModel && (this.context === 'condition' || this.context === 'logMessage')
                         && input.uri.toString() === model.uri.toString()) {
-                        const editor = this.editor.getControl();
                         const completions = await provideSuggestionItems(
                             StandaloneServices.get(ILanguageFeaturesService).completionProvider,
-                            editor.getModel()! as unknown as TextModel,
+                            editorModel,
                             new monaco.Position(editor.getPosition()!.lineNumber, 1),
                             new CompletionOptions(undefined, new Set<CompletionItemKind>().add(CompletionItemKind.Snippet)),
                             context as unknown as CompletionContext, token);
@@ -161,7 +162,7 @@ export class DebugBreakpointWidget implements Disposable {
             }));
         this.toDispose.push(this.zone.onDidLayoutChange(dimension => this.layout(dimension)));
         this.toDispose.push(input.getControl().onDidChangeModelContent(() => {
-            const heightInLines = input.getControl().getModel()!.getLineCount() + 1;
+            const heightInLines = input.getControl().getModel()?.getLineCount() || 0 + 1;
             this.zone.layout(heightInLines);
             this.updatePlaceholder();
         }));
@@ -203,9 +204,12 @@ export class DebugBreakpointWidget implements Disposable {
         const afterLineNumber = breakpoint ? breakpoint.line : position!.lineNumber;
         const afterColumn = breakpoint ? breakpoint.column : position!.column;
         const editor = this._input.getControl();
-        const heightInLines = editor.getModel()!.getLineCount() + 1;
+        const editorModel = editor.getModel();
+        const heightInLines = (editorModel?.getLineCount() || 0) + 1;
         this.zone.show({ afterLineNumber, afterColumn, heightInLines, frameWidth: 1 });
-        editor.setPosition(editor.getModel()!.getPositionAt(editor.getModel()!.getValueLength()));
+        if (editorModel) {
+            editor.setPosition(editorModel.getPositionAt(editorModel.getValueLength()));
+        }
         this._input.focus();
         this.editor.getControl().createContextKey<boolean>('isBreakpointWidgetVisible', true);
     }
