@@ -28,6 +28,35 @@
  */
 
 // Before importing anything from monaco we need to override its localization function
+import * as MonacoNls from '@theia/monaco-editor-core/esm/vs/nls';
+import { nls } from '@theia/core/lib/common/nls';
+import { FormatType, Localization } from '@theia/core/lib/common/i18n/localization';
+
+function localize(label: string, ...args: FormatType[]): MonacoNls.ILocalizedString {
+    const original = Localization.format(label, args);
+    if (nls.locale) {
+        const defaultKey = nls.getDefaultKey(label);
+        if (defaultKey) {
+            return {
+                original,
+                value: nls.localize(defaultKey, label, ...args)
+            };
+        }
+    }
+    return {
+        original,
+        value: original
+    };
+}
+
+Object.assign(MonacoNls, {
+    localize(_key: string, label: string, ...args: FormatType[]): string {
+        return localize(label, ...args).value;
+    },
+    localize2(_key: string, label: string, ...args: FormatType[]): MonacoNls.ILocalizedString {
+        return localize(label, ...args);
+    }
+});
 
 import { Container } from '@theia/core/shared/inversify';
 import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';
