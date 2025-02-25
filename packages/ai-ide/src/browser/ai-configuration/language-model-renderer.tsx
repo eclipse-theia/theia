@@ -66,7 +66,7 @@ export const LanguageModelRenderer: React.FC<LanguageModelSettingsProps> = (
                 {languageModel.id && <p><strong>{nls.localizeByDefault('Identifier')}: </strong> {languageModel.id}</p>}
                 {languageModel.name && <p><strong>{nls.localizeByDefault('Name')}: </strong> {languageModel.name}</p>}
                 {languageModel.vendor && <p><strong>{nls.localize('theia/ai/core/languageModelRenderer/vendor', 'Vendor')}: </strong> {languageModel.vendor}</p>}
-                {languageModel.version && <p><strong>{nls.localize('theia/ai/core/languageModelRenderer/version', 'Version')}: </strong> {languageModel.version}</p>}
+                {languageModel.version && <p><strong>{nls.localizeByDefault('Version')}: </strong> {languageModel.version}</p>}
                 {languageModel.family && <p><strong>{nls.localize('theia/ai/core/languageModelRenderer/family', 'Family')}: </strong> {languageModel.family}</p>}
                 {languageModel.maxInputTokens &&
                     <p><strong>

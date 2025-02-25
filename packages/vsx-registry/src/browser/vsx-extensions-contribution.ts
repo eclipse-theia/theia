@@ -154,7 +154,7 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
         });
         menus.registerMenuAction(VSXExtensionsContextMenu.INSTALL, {
             commandId: VSXExtensionsCommands.INSTALL_ANOTHER_VERSION.id,
-            label: nls.localizeByDefault('Install Another Version...'),
+            label: nls.localizeByDefault('Install Specific Version...'),
         });
         menus.registerMenuAction(NAVIGATOR_CONTEXT_MENU, {
             commandId: VSXExtensionsCommands.INSTALL_VSIX_FILE.id,
@@ -245,7 +245,7 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
         const extensionName = this.labelProvider.getName(fileURI);
         try {
             await this.commandRegistry.executeCommand(VscodeCommands.INSTALL_FROM_VSIX.id, fileURI);
-            this.messageService.info(nls.localizeByDefault('Completed installing {0} extension from VSIX.', extensionName));
+            this.messageService.info(nls.localizeByDefault('Completed installing extension.', extensionName));
         } catch (e) {
             this.messageService.error(nls.localize('theia/vsx-registry/failedInstallingVSIX', 'Failed to install {0} from VSIX.', extensionName));
             console.warn(e);

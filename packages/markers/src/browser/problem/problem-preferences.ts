@@ -23,7 +23,7 @@ export const ProblemConfigSchema: PreferenceSchema = {
     'properties': {
         'problems.decorations.enabled': {
             'type': 'boolean',
-            'description': nls.localizeByDefault('Show Errors & Warnings on files and folder. Overwritten by `#problems.visibility#` when it is off.'),
+            'description': nls.localizeByDefault('Show Errors & Warnings on files and folder. Overwritten by {0} when it is off.', '`#problems.visibility#`'),
             'default': true,
         },
         'problems.decorations.tabbar.enabled': {

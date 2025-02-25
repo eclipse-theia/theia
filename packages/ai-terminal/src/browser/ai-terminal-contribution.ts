@@ -26,10 +26,10 @@ import { AICommandHandlerFactory } from '@theia/ai-core/lib/browser/ai-command-h
 import { AgentService } from '@theia/ai-core';
 import { nls } from '@theia/core/lib/common/nls';
 
-const AI_TERMINAL_COMMAND = Command.toDefaultLocalizedCommand({
+const AI_TERMINAL_COMMAND = Command.toLocalizedCommand({
     id: 'ai-terminal:open',
-    label: nls.localize('theia/ai/terminal/askAi', 'Ask the AI')
-});
+    label: 'Ask the AI'
+}, 'theia/ai/terminal/askAi');
 
 @injectable()
 export class AiTerminalCommandContribution implements CommandContribution, MenuContribution, KeybindingContribution {
