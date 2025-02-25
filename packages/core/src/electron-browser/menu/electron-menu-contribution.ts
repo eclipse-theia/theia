@@ -30,7 +30,7 @@ import { WindowTitleService } from '../../browser/window/window-title-service';
 
 import '../../../src/electron-browser/menu/electron-menu-style.css';
 import { ThemeService } from '../../browser/theming';
-import { ThemeChangeEvent } from '../../common/theme';
+import { isLightOrDark, ThemeChangeEvent } from '../../common/theme';
 
 export namespace ElectronCommands {
     export const TOGGLE_DEVELOPER_TOOLS = Command.toDefaultLocalizedCommand({
@@ -424,6 +424,7 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
     protected handleThemeChange(e: ThemeChangeEvent): void {
         const backgroundColor = window.getComputedStyle(document.body).backgroundColor;
         window.electronTheiaCore.setBackgroundColor(backgroundColor);
+        window.electronTheiaCore.setTheme(isLightOrDark(e.newTheme.type));
     }
 
 }

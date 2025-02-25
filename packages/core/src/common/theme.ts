@@ -32,6 +32,10 @@ export function isHighContrast(scheme: ThemeType): boolean {
     return scheme === 'hc' || scheme === 'hcLight';
 }
 
+export function isLightOrDark(type: ThemeType): 'light' | 'dark' {
+    return type === 'hc' || type === 'dark' ? 'dark' : 'light';
+}
+
 export interface ThemeChangeEvent {
     readonly newTheme: Theme;
     readonly oldTheme?: Theme;
