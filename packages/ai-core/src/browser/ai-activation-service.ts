@@ -45,7 +45,8 @@ export class AIActivationService implements FrontendApplicationContribution {
     }
 
     initialize(): MaybePromise<void> {
-        this.isAiEnabledKey = this.contextKeyService.createKey(ENABLE_AI_CONTEXT_KEY, false);
+        const value = this.preferenceService.get<boolean>(ENABLE_AI_CONTEXT_KEY);
+        this.isAiEnabledKey = this.contextKeyService.createKey(ENABLE_AI_CONTEXT_KEY, value);
         this.preferenceService.onPreferenceChanged(e => {
             if (e.preferenceName === PREFERENCE_NAME_ENABLE_AI) {
                 this.isAiEnabledKey.set(e.newValue);
