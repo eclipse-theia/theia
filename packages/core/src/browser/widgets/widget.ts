@@ -237,7 +237,7 @@ export class BaseWidget extends Widget implements PreviewableWidget {
         const wasVisible = this.isVisible;
         super.clearFlag(flag);
         const isVisible = this.isVisible;
-        if (isVisible != wasVisible) {
+        if (isVisible !== wasVisible) {
             this.handleVisiblityChanged(isVisible);
         }
     }
