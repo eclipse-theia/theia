@@ -25,13 +25,13 @@
 }
 
 .memory-view-icon {
-  -webkit-mask: url('memory-view.svg');
-  mask: url('memory-view.svg');
+  -webkit-mask: url("memory-view.svg");
+  mask: url("memory-view.svg");
 }
 
 .register-view-icon {
-  -webkit-mask: url('register-view.svg');
-  mask: url('register-view.svg');
+  -webkit-mask: url("register-view.svg");
+  mask: url("register-view.svg");
 }
 
 .memory-view-icon.toolbar,
@@ -50,13 +50,13 @@
 }
 
 .memory-lock-icon {
-  -webkit-mask: url('memory-lock.svg');
-  mask: url('memory-lock.svg');
+  -webkit-mask: url("memory-lock.svg");
+  mask: url("memory-lock.svg");
 }
 
 .register-lock-icon {
-  -webkit-mask: url('register-lock.svg');
-  mask: url('register-lock.svg');
+  -webkit-mask: url("register-lock.svg");
+  mask: url("register-lock.svg");
 }
 
 .t-mv-container {
@@ -273,8 +273,8 @@
   margin-right: var(--theia-ui-padding);
 }
 
-.toggle-settings-container + div > .t-mv-settings-group-header:first-of-type,
-.toggle-settings-container + .t-mv-settings-group-header {
+.toggle-settings-container+div>.t-mv-settings-group-header:first-of-type,
+.toggle-settings-container+.t-mv-settings-group-header {
   margin-top: 0;
 }
 
@@ -382,7 +382,7 @@ table.t-mv-view .t-mv-view-address {
 }
 
 .t-mv-variable-label:not(:last-of-type)::after {
-  content: ',';
+  content: ",";
   margin-right: var(--theia-ui-padding);
   color: var(--theia-editor-foreground);
 }
@@ -568,7 +568,7 @@ table.t-mv-view .t-mv-view-address {
 }
 
 .t-mv-view-container span.different::before {
-  content: '';
+  content: "";
   position: absolute;
   height: 100%;
   width: 100%;
@@ -719,7 +719,7 @@ table.t-mv-view .t-mv-view-address {
   -webkit-appearance: none;
 }
 
-.mw-bookmarks-bar input:checked ~ .bookmark-radio-button {
+.mw-bookmarks-bar input:checked~.bookmark-radio-button {
   background-color: var(--theia-button-background);
   color: var(--theia-button-foreground);
 }
@@ -733,9 +733,7 @@ table.t-mv-view .t-mv-view-address {
   cursor: pointer;
 }
 
-#memory-table-widget.editable
-  .t-mv-memory-container:focus
-  .eight-bits.highlight {
+#memory-table-widget.editable .t-mv-memory-container:focus .eight-bits.highlight {
   cursor: text;
 }
 
