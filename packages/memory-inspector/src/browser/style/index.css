@@ -25,13 +25,13 @@
 }
 
 .memory-view-icon {
-  -webkit-mask: url("memory-view.svg");
-  mask: url("memory-view.svg");
+  -webkit-mask: url('memory-view.svg');
+  mask: url('memory-view.svg');
 }
 
 .register-view-icon {
-  -webkit-mask: url("register-view.svg");
-  mask: url("register-view.svg");
+  -webkit-mask: url('register-view.svg');
+  mask: url('register-view.svg');
 }
 
 .memory-view-icon.toolbar,
@@ -50,13 +50,13 @@
 }
 
 .memory-lock-icon {
-  -webkit-mask: url("memory-lock.svg");
-  mask: url("memory-lock.svg");
+  -webkit-mask: url('memory-lock.svg');
+  mask: url('memory-lock.svg');
 }
 
 .register-lock-icon {
-  -webkit-mask: url("register-lock.svg");
-  mask: url("register-lock.svg");
+  -webkit-mask: url('register-lock.svg');
+  mask: url('register-lock.svg');
 }
 
 .t-mv-container {
@@ -382,7 +382,7 @@ table.t-mv-view .t-mv-view-address {
 }
 
 .t-mv-variable-label:not(:last-of-type)::after {
-  content: ",";
+  content: ',';
   margin-right: var(--theia-ui-padding);
   color: var(--theia-editor-foreground);
 }
@@ -394,8 +394,11 @@ table.t-mv-view .t-mv-view-address {
 
 .mw-input-select .theia-input {
   position: absolute;
+  top: 1px;
+  left: 1px;
   z-index: 1;
   width: calc(100% - 18px);
+  padding-block: unset;
 }
 
 .mw-input-select .theia-input:focus {
@@ -565,7 +568,7 @@ table.t-mv-view .t-mv-view-address {
 }
 
 .t-mv-view-container span.different::before {
-  content: "";
+  content: '';
   position: absolute;
   height: 100%;
   width: 100%;
