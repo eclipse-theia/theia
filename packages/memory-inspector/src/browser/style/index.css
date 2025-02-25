@@ -733,7 +733,6 @@ table.t-mv-view .t-mv-view-address {
   cursor: pointer;
 }
 
-
 #memory-table-widget.editable
   .t-mv-memory-container:focus
   .eight-bits.highlight {
