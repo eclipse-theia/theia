@@ -22,6 +22,7 @@ import { StandaloneCodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/st
 import { IDecorationOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/editorCommon';
 import { IEditorHoverOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
 import URI from '@theia/core/lib/common/uri';
+import { URI as CodeUri } from '@theia/core/shared/vscode-uri';
 import { Disposable, DisposableCollection, MenuPath, isOSX } from '@theia/core';
 import { ContextMenuRenderer } from '@theia/core/lib/browser';
 import { BreakpointManager, SourceBreakpointsChangeEvent } from '../breakpoint/breakpoint-manager';
@@ -69,6 +70,7 @@ export class DebugEditorModel implements Disposable {
     protected topFrameRange: monaco.Range | undefined;
 
     protected updatingDecorations = false;
+    protected toDisposeOnModelChange = new DisposableCollection();
 
     @inject(DebugHoverWidget)
     readonly hover: DebugHoverWidget;
@@ -99,7 +101,7 @@ export class DebugEditorModel implements Disposable {
 
     @postConstruct()
     protected init(): void {
-        this.uri = new URI(this.editor.getControl().getModel()!.uri.toString());
+        this.uri = new URI(this.editor.getResourceUri().toString());
         this.toDispose.pushAll([
             this.hover,
             this.breakpointWidget,
@@ -109,7 +111,7 @@ export class DebugEditorModel implements Disposable {
             this.editor.getControl().onMouseLeave(event => this.handleMouseLeave(event)),
             this.editor.getControl().onKeyDown(() => this.hover.hide({ immediate: false })),
             this.editor.getControl().onDidChangeModelContent(() => this.update()),
-            this.editor.getControl().getModel()!.onDidChangeDecorations(() => this.updateBreakpoints()),
+            this.editor.getControl().onDidChangeModel(e => this.updateModel()),
             this.editor.onDidResize(e => this.breakpointWidget.inputSize = e),
             this.sessions.onDidChange(() => this.update()),
             this.toDisposeOnUpdate,
@@ -121,6 +123,16 @@ export class DebugEditorModel implements Disposable {
             this.breakpoints.onDidChangeBreakpoints(event => this.closeBreakpointIfAffected(event)),
         ]);
         this.update();
+        this.render();
+    }
+
+    protected updateModel(): void {
+        this.toDisposeOnModelChange.dispose();
+        this.toDisposeOnModelChange = new DisposableCollection();
+        const model = this.editor.getControl().getModel();
+        if (model) {
+            this.toDisposeOnModelChange.push(model.onDidChangeDecorations(() => this.updateBreakpoints()));
+        }
         this.render();
     }
 
@@ -148,10 +160,10 @@ export class DebugEditorModel implements Disposable {
             const codeEditor = this.editor.getControl();
             codeEditor.updateOptions({ hover: { enabled: false } });
             this.toDisposeOnUpdate.push(Disposable.create(() => {
-                const model = codeEditor.getModel()!;
+                const model = codeEditor.getModel();
                 const overrides = {
-                    resource: model.uri,
-                    overrideIdentifier: model.getLanguageId(),
+                    resource: CodeUri.parse(this.editor.getResourceUri().toString()),
+                    overrideIdentifier: model?.getLanguageId(),
                 };
                 const { enabled, delay, sticky } = StandaloneServices.get(IConfigurationService).getValue<IEditorHoverOptions>('editor.hover', overrides);
                 codeEditor.updateOptions({
@@ -283,8 +295,10 @@ export class DebugEditorModel implements Disposable {
         for (let i = 0; i < this.breakpointDecorations.length; i++) {
             const decoration = this.breakpointDecorations[i];
             const breakpoint = breakpoints[i];
-            const range = this.editor.getControl().getModel()!.getDecorationRange(decoration)!;
-            this.breakpointRanges.set(decoration, [range, breakpoint]);
+            const range = this.editor.getControl().getModel()?.getDecorationRange(decoration);
+            if (range) {
+                this.breakpointRanges.set(decoration, [range, breakpoint]);
+            }
         }
     }
 
@@ -301,7 +315,7 @@ export class DebugEditorModel implements Disposable {
         const column = breakpoint.column;
         const range = typeof column === 'number' ? new monaco.Range(lineNumber, column, lineNumber, column + 1) : new monaco.Range(lineNumber, 1, lineNumber, 1);
         const { className, message } = breakpoint.getDecoration();
-        const renderInline = typeof column === 'number' && (column > this.editor.getControl().getModel()!.getLineFirstNonWhitespaceColumn(lineNumber));
+        const renderInline = typeof column === 'number' && (column > (this.editor.getControl().getModel()?.getLineFirstNonWhitespaceColumn(lineNumber) || 0));
         return {
             range,
             options: {
@@ -324,7 +338,7 @@ export class DebugEditorModel implements Disposable {
             return false;
         }
         for (const decoration of this.breakpointDecorations) {
-            const range = this.editor.getControl().getModel()!.getDecorationRange(decoration);
+            const range = this.editor.getControl().getModel()?.getDecorationRange(decoration);
             const oldRange = this.breakpointRanges.get(decoration)![0];
             if (!range || !range.equalsRange(oldRange)) {
                 return true;
@@ -337,7 +351,7 @@ export class DebugEditorModel implements Disposable {
         const lines = new Set<number>();
         const breakpoints: SourceBreakpoint[] = [];
         for (const decoration of this.breakpointDecorations) {
-            const range = this.editor.getControl().getModel()!.getDecorationRange(decoration);
+            const range = this.editor.getControl().getModel()?.getDecorationRange(decoration);
             if (range && !lines.has(range.startLineNumber)) {
                 const line = range.startLineNumber;
                 const column = range.startColumn;
