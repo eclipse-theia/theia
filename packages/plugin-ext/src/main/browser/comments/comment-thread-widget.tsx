@@ -256,7 +256,8 @@ export class CommentThreadWidget extends BaseWidget {
         const frameThickness = Math.round(lineHeight / 9) * 2;
         const body = this.zoneWidget.containerNode.getElementsByClassName('body')[0];
 
-        const computedLinesNumber = Math.ceil((headHeight + body?.clientHeight + arrowHeight + frameThickness + 8 /** margin bottom to avoid margin collapse */) / lineHeight);
+        const computedLinesNumber = Math.ceil((headHeight + (body?.clientHeight ?? 0) + arrowHeight + frameThickness + 8 /** margin bottom to avoid margin collapse */)
+            / lineHeight);
         this.zoneWidget.show({ afterLineNumber: this._commentThread.range?.startLineNumber ?? 0, heightInLines: computedLinesNumber });
     }
 
@@ -653,7 +654,6 @@ export class CommentActions extends React.Component<CommentActions.Props> {
                     commands={commands}
                     node={node}
                     onClick={() => {
-                        console.log('CommentActions.onClick: ' + commentThread);
                         commands.executeCommand(node.id, {
                             commentControlHandle: commentThread.controllerHandle,
                             commentThreadHandle: commentThread.commentThreadHandle,

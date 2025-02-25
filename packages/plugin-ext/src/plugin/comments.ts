@@ -177,15 +177,7 @@ export class CommentsExtImpl implements CommentsExt {
 
         const documentData = this._documents.getDocumentData(URI.revive(uriComponents));
         if (documentData) {
-            const commentingRanges:
-                | theia.Range[]
-                | theia.CommentingRanges
-                | undefined
-                | null =
-                await commentController.commentingRangeProvider!.provideCommentingRanges(
-                    documentData.document,
-                    token
-                );
+            const commentingRanges = await commentController.commentingRangeProvider!.provideCommentingRanges(documentData.document, token);
             if (isArray(commentingRanges)) {
                 return {
                     ranges: commentingRanges.map(x => fromRange(x)),
@@ -196,8 +188,6 @@ export class CommentsExtImpl implements CommentsExt {
                     ranges: commentingRanges.ranges?.map(x => fromRange(x)) || [],
                     fileComments: commentingRanges.enableFileComments
                 };
-            } else {
-                return commentingRanges ?? undefined;
             }
         }
         return undefined;
@@ -244,16 +234,16 @@ export class ExtHostCommentThread implements theia.CommentThread, theia.Disposab
     private readonly _onDidUpdateCommentThread = new Emitter<void>();
     readonly onDidUpdateCommentThread = this._onDidUpdateCommentThread.event;
 
-    set range(range: theia.Range) {
-        if ( ((range === undefined) !== (this._range === undefined))
-            || (range && !range.isEqual(this._range))) {
+    set range(range: theia.Range | undefined) {
+        if (((range === undefined) !== (this._range === undefined))
+            || (range && this._range && !range.isEqual(this._range))) {
             this._range = range;
             this.modifications.range = range;
             this._onDidUpdateCommentThread.fire();
         }
     }
 
-    get range(): theia.Range {
+    get range(): theia.Range | undefined {
         return this._range;
     }
 
@@ -345,7 +335,7 @@ export class ExtHostCommentThread implements theia.CommentThread, theia.Disposab
         private commentController: CommentController,
         private _id: string | undefined,
         private _uri: theia.Uri,
-        private _range: theia.Range,
+        private _range: theia.Range | undefined,
         private _comments: theia.Comment[],
         extensionId: string
     ) {
