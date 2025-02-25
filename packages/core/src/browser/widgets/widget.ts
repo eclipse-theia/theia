@@ -234,9 +234,11 @@ export class BaseWidget extends Widget implements PreviewableWidget {
     }
 
     override clearFlag(flag: Widget.Flag): void {
+        const wasVisible = this.isVisible;
         super.clearFlag(flag);
-        if (flag === Widget.Flag.IsVisible) {
-            this.handleVisiblityChanged(this.isVisible);
+        const isVisible = this.isVisible;
+        if (isVisible !== wasVisible) {
+            this.handleVisiblityChanged(isVisible);
         }
     }
 }
