@@ -22,8 +22,9 @@ import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/li
 
 import { codicon, Widget } from '@theia/core/lib/browser';
 import { EditorWidget, ReplaceOperation } from '@theia/editor/lib/browser';
-import { PromptCustomizationService, PromptService, ToolInvocationRegistry } from '../common';
+import { PromptCustomizationService, PromptService, PromptText, ToolInvocationRegistry } from '../common';
 import { ProviderResult } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
+import { AIVariableService } from '../common/variable-service';
 
 const PROMPT_TEMPLATE_LANGUAGE_ID = 'theia-ai-prompt-template';
 const PROMPT_TEMPLATE_TEXTMATE_SCOPE = 'source.prompttemplate';
@@ -59,19 +60,28 @@ export class PromptTemplateContribution implements LanguageGrammarDefinitionCont
     @inject(ToolInvocationRegistry)
     protected readonly toolInvocationRegistry: ToolInvocationRegistry;
 
+    @inject(AIVariableService)
+    protected readonly variableService: AIVariableService;
+
     readonly config: monaco.languages.LanguageConfiguration =
         {
             'brackets': [
                 ['${', '}'],
-                ['~{', '}']
+                ['~{', '}'],
+                ['{{', '}}'],
+                ['{{{', '}}}']
             ],
             'autoClosingPairs': [
                 { 'open': '${', 'close': '}' },
                 { 'open': '~{', 'close': '}' },
+                { 'open': '{{', 'close': '}}' },
+                { 'open': '{{{', 'close': '}}}' }
             ],
             'surroundingPairs': [
                 { 'open': '${', 'close': '}' },
-                { 'open': '~{', 'close': '}' }
+                { 'open': '~{', 'close': '}' },
+                { 'open': '{{', 'close': '}}' },
+                { 'open': '{{{', 'close': '}}}' }
             ]
         };
 
@@ -93,6 +103,12 @@ export class PromptTemplateContribution implements LanguageGrammarDefinitionCont
             // Monaco only supports single character trigger characters
             triggerCharacters: ['{'],
             provideCompletionItems: (model, position, _context, _token): ProviderResult<monaco.languages.CompletionList> => this.provideFunctionCompletions(model, position),
+        });
+
+        monaco.languages.registerCompletionItemProvider(PROMPT_TEMPLATE_LANGUAGE_ID, {
+            // Monaco only supports single character trigger characters
+            triggerCharacters: ['{'],
+            provideCompletionItems: (model, position, _context, _token): ProviderResult<monaco.languages.CompletionList> => this.provideVariableCompletions(model, position),
         });
 
         const textmateGrammar = require('../../data/prompttemplate.tmLanguage.json');
@@ -119,6 +135,19 @@ export class PromptTemplateContribution implements LanguageGrammarDefinitionCont
             tool => tool.id,
             tool => tool.name,
             tool => tool.description ?? ''
+        );
+    }
+
+    provideVariableCompletions(model: monaco.editor.ITextModel, position: monaco.Position): ProviderResult<monaco.languages.CompletionList> {
+        return this.getSuggestions(
+            model,
+            position,
+            '{{',
+            this.variableService.getVariables(),
+            monaco.languages.CompletionItemKind.Variable,
+            variable => variable.args?.some(arg => !arg.isOptional) ? variable.name + PromptText.VARIABLE_SEPARATOR_CHAR : variable.name,
+            variable => variable.name,
+            variable => variable.description ?? ''
         );
     }
 
