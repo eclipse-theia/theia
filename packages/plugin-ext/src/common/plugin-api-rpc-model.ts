@@ -457,7 +457,7 @@ export interface WorkspaceEditMetadata {
     needsConfirmation: boolean;
     label: string;
     description?: string;
-    iconPath?: {
+    iconPath?: UriComponents | {
         id: string;
     } | {
         light: UriComponents;

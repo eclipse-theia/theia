@@ -1529,7 +1529,7 @@ export interface WorkspaceEditEntryMetadataDto {
     needsConfirmation: boolean;
     label: string;
     description?: string;
-    iconPath?: ThemeIcon | {
+    iconPath?: UriComponents | ThemeIcon | {
         light: UriComponents;
         dark: UriComponents;
     };
