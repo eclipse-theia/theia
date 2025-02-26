@@ -10,6 +10,16 @@
 - [core] A context html element is now mandatory when showing a context menu [#14982](https://github.com/eclipse-theia/theia/pull/14982) - contributed on behalf of STMicroelectronics
 - [core] Adjusted the binding of named `ILogger` injections. These no longer have to be bound explicitly.
   If you encounter errors such as `Error: Ambiguous match found for serviceIdentifier: Symbol(ILogger)`, remove your bindings for the `ILogger` symbol.
+- [ai-chat] [#14910](https://github.com/eclipse-theia/theia/pull/14910)
+  - `ChatSetChangeDeleteEvent` removed.
+  - `ChangeSet` interface: `onDidChange` event and `dispose()` method added. `accept()` -> `apply()`, `discard()` -> `revert()`
+  - `ChangeSetElement` interface: `discarded` removed from `ChangeSetElement` states and `stale` added.
+  - `ChangeSetImpl`: `addElement()`, `addOrReplaceElement()` removed; use `addElements()`. `removeElement()` removed; use `removeElements()`. `notifyChange` made protected.
+- [ai-ide] `content-replacer.ts` moved from `ai-ide/src/browser/` to `core/src/common/` [#14930](https://github.com/eclipse-theia/theia/pull/14930)
+- [ai-scanoss] `ScanOSSDialog` constructor accepts array of results rather than single result. [#14930](https://github.com/eclipse-theia/theia/pull/14930)
+- [ai-core] `ChatModel` interface: `context` added. `PromptService`: optional `context` argument added to `getPrompt()` [#14930](https://github.com/eclipse-theia/theia/pull/14930)
+- [ai-chat] `AbstractChatAgent` required `context` parameter added to `getSystemMessageDescription()`. [#14930](https://github.com/eclipse-theia/theia/pull/14930)
+
 
 ## 1.58.0 - 01/30/2025
 
