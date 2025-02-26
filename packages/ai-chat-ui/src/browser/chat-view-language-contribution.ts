@@ -121,7 +121,7 @@ export class ChatViewLanguageContribution implements FrontendApplicationContribu
             PromptText.AGENT_CHAR,
             this.agentService.getAgents(),
             monaco.languages.CompletionItemKind.Value,
-            agent => agent.id,
+            agent => `${agent.id} `,
             agent => agent.name,
             agent => agent.description
         );
@@ -134,7 +134,7 @@ export class ChatViewLanguageContribution implements FrontendApplicationContribu
             PromptText.VARIABLE_CHAR,
             this.variableService.getVariables(),
             monaco.languages.CompletionItemKind.Variable,
-            variable => variable.args?.some(arg => !arg.isOptional) ? variable.name + PromptText.VARIABLE_SEPARATOR_CHAR : variable.name,
+            variable => variable.args?.some(arg => !arg.isOptional) ? variable.name + PromptText.VARIABLE_SEPARATOR_CHAR : `${variable.name} `,
             variable => variable.name,
             variable => variable.description,
             {
@@ -174,7 +174,7 @@ export class ChatViewLanguageContribution implements FrontendApplicationContribu
             PromptText.FUNCTION_CHAR,
             this.toolInvocationRegistry.getAllFunctions(),
             monaco.languages.CompletionItemKind.Function,
-            tool => tool.id,
+            tool => `${tool.id} `,
             tool => tool.name,
             tool => tool.description ?? ''
         );
