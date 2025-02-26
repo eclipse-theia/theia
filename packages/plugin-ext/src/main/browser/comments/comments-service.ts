@@ -190,15 +190,17 @@ export class PluginCommentService implements CommentsService {
     }
 
     async getCommentingRanges(resource: URI): Promise<Range[]> {
-        const commentControlResult: Promise<Range[]>[] = [];
+        const commentControlResult: Promise<{ ranges: Range[]; fileComments: boolean } | undefined>[] = [];
 
         this.commentControls.forEach(control => {
             commentControlResult.push(control.getCommentingRanges(resource, CancellationToken.None));
         });
 
         const ret = await Promise.all(commentControlResult);
-        return ret.reduce((prev, curr) => {
-            prev.push(...curr);
+        return ret.reduce<Range[]>((prev, curr) => {
+            if (curr) {
+                prev.push(...curr.ranges);
+            }
             return prev;
         }, []);
     }
