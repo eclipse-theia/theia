@@ -729,7 +729,7 @@ export interface CommentThread {
     extensionId?: string;
     threadId: string;
     resource: string | null;
-    range: Range;
+    range: Range | undefined;
     label: string | undefined;
     contextValue: string | undefined;
     comments: Comment[] | undefined;
@@ -738,7 +738,7 @@ export interface CommentThread {
     state?: CommentThreadState;
     input?: CommentInput;
     onDidChangeInput: TheiaEvent<CommentInput | undefined>;
-    onDidChangeRange: TheiaEvent<Range>;
+    onDidChangeRange: TheiaEvent<Range | undefined>;
     onDidChangeLabel: TheiaEvent<string | undefined>;
     onDidChangeState: TheiaEvent<CommentThreadState | undefined>;
     onDidChangeCollapsibleState: TheiaEvent<CommentThreadCollapsibleState | undefined>;
@@ -771,6 +771,7 @@ export interface CommentThreadChangedEvent {
 export interface CommentingRanges {
     readonly resource: URI;
     ranges: Range[];
+    fileComments: boolean;
 }
 
 export interface CommentInfo {
