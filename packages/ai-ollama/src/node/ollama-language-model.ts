@@ -23,7 +23,8 @@ import {
     LanguageModelStreamResponse,
     LanguageModelStreamResponsePart,
     ToolCall,
-    ToolRequest
+    ToolRequest,
+    ToolRequestParametersProperties
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 import { ChatRequest, ChatResponse, Message, Ollama, Options, Tool } from 'ollama';
@@ -200,16 +201,21 @@ export class OllamaModel implements LanguageModel {
     }
 
     protected toOllamaTool(tool: ToolRequest): ToolWithHandler {
-        const transform = (props: Record<string, { [key: string]: unknown; type: string; }> | undefined) => {
+        const transform = (props: ToolRequestParametersProperties | undefined) => {
             if (!props) {
                 return undefined;
             }
             const result: Record<string, { type: string, description: string }> = {};
             for (const key in props) {
                 if (Object.prototype.hasOwnProperty.call(props, key)) {
-                    result[key] = {
-                        type: props[key].type,
-                        description: key
+                    const type = props[key].type;
+                    if (!type) {
+                        // Todo: Should handle anyOf, but this is not supported by the Ollama type yet
+                    } else {
+                        result[key] = {
+                            type: type,
+                            description: key
+                        };
                     };
                 }
             }
