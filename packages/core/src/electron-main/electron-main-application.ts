@@ -277,6 +277,10 @@ export class ElectronMainApplication {
         this.saveState(webContents);
     }
 
+    public setTheme(theme: 'light' | 'dark'): void {
+        nativeTheme.themeSource = theme;
+    }
+
     protected saveState(webContents: Electron.WebContents): void {
         const browserWindow = BrowserWindow.fromWebContents(webContents);
         if (browserWindow) {

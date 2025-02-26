@@ -65,6 +65,7 @@ export interface TheiaCoreAPI {
     getTitleBarStyleAtStartup(): Promise<string>;
     setTitleBarStyle(style: string): void;
     setBackgroundColor(backgroundColor: string): void;
+    setTheme(theme: 'dark' | 'light'): void;
     minimize(): void;
     isMaximized(): boolean; // TODO: this should really be async, since it blocks the renderer process
     maximize(): void;
@@ -125,6 +126,7 @@ export const CHANNEL_ATTACH_SECURITY_TOKEN = 'AttachSecurityToken';
 export const CHANNEL_GET_TITLE_STYLE_AT_STARTUP = 'GetTitleStyleAtStartup';
 export const CHANNEL_SET_TITLE_STYLE = 'SetTitleStyle';
 export const CHANNEL_SET_BACKGROUND_COLOR = 'SetBackgroundColor';
+export const CHANNEL_SET_THEME = 'SetTheme';
 export const CHANNEL_CLOSE = 'Close';
 export const CHANNEL_MINIMIZE = 'Minimize';
 export const CHANNEL_MAXIMIZE = 'Maximize';
