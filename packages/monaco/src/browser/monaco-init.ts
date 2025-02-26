@@ -80,6 +80,8 @@ import { IQuickInputService } from '@theia/monaco-editor-core/esm/vs/platform/qu
 import { IStandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
 import { MonacoStandaloneThemeService } from './monaco-standalone-theme-service';
 import { createContentHoverWidgetPatcher } from './content-hover-widget-patcher';
+import { IHoverService } from '@theia/monaco-editor-core/esm/vs/platform/hover/browser/hover';
+import { setBaseLayerHoverDelegate } from '@theia/monaco-editor-core/esm/vs/base/browser/ui/hover/hoverDelegate2';
 
 export const contentHoverWidgetPatcher = createContentHoverWidgetPatcher();
 
@@ -153,5 +155,8 @@ export namespace MonacoInit {
             [IQuickInputService.toString()]: new SyncDescriptor(MonacoQuickInputImplementationConstructor, [container]),
             [IStandaloneThemeService.toString()]: new SyncDescriptor(MonacoStandaloneThemeServiceConstructor, [])
         });
+        // Make sure the global base hover delegate is initialized as otherwise the quick input will throw an error and not update correctly
+        // in case no Monaco editor was constructed before and items with keybindings are shown. See #15042.
+        setBaseLayerHoverDelegate(StandaloneServices.get(IHoverService));
     }
 }
