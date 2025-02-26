@@ -1796,8 +1796,6 @@ export interface WorkspaceEditMetadata {
     label: string;
     description?: string;
     iconPath?: {
-        id: string;
-    } | {
         light: URI;
         dark: URI;
     } | ThemeIcon;
