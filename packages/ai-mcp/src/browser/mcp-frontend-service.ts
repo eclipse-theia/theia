@@ -15,7 +15,8 @@
 // *****************************************************************************
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { MCPServer, MCPServerManager } from '../common/mcp-server-manager';
-import { ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
+import { AIVariableService, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
+import { DisposableCollection } from '@theia/core';
 
 @injectable()
 export class MCPFrontendService {
@@ -25,15 +26,22 @@ export class MCPFrontendService {
     @inject(ToolInvocationRegistry)
     protected readonly toolInvocationRegistry: ToolInvocationRegistry;
 
+    @inject(AIVariableService)
+    protected readonly variableService: AIVariableService;
+
+    private resourcesVariableRegistrations: Map<string, DisposableCollection> = new Map();
+
     async startServer(serverName: string): Promise<void> {
         await this.mcpServerManager.startServer(serverName);
         this.registerTools(serverName);
+        await this.registerResourcesVariables(serverName);
     }
 
     async registerToolsForAllStartedServers(): Promise<void> {
         const startedServers = await this.getStartedServers();
         for (const serverName of startedServers) {
             await this.registerTools(serverName);
+            await this.registerResourcesVariables(serverName);
         }
     }
 
@@ -45,8 +53,87 @@ export class MCPFrontendService {
         );
     }
 
+    async registerResourcesVariables(serverName: string): Promise<void> {
+        // Clean up any existing registrations for this server
+        this.unregisterResourcesVariables(serverName);
+
+        // Create a new collection for this server's variable registrations
+        const registrations = new DisposableCollection();
+        this.resourcesVariableRegistrations.set(serverName, registrations);
+
+        try {
+            // Get all resources from the server
+            const { resources } = await this.mcpServerManager.getResources(serverName);
+
+            // Register a variable for each resource
+            for (const resource of resources) {
+                const variableId = `mcp_${serverName}_resource_${this.sanitizeId(resource.uri)}`;
+                const variableName = this.sanitizeId(resource.name);
+                const description = resource.description || `Resource from ${serverName}`;
+
+                const registration = this.variableService.registerResolver(
+                    {
+                        id: variableId,
+                        name: variableName,
+                        description: description,
+                        label: variableName,
+                        iconClasses: ['mcp-resource-icon']
+                    },
+                    {
+                        canResolve: async request => request.variable.id === variableId ? 100 : 0,
+                        resolve: async request => {
+                            try {
+                                const resourceObject = await this.mcpServerManager.getResourceContent(serverName, resource.uri);
+                                // Handle different types of resource content (text or binary)
+                                let value = '';
+                                if (resourceObject.contents && resourceObject.contents.length > 0) {
+                                    const content = resourceObject.contents[0];
+                                    if (content.text !== undefined) {
+                                        // Use text content directly if available
+                                        value = content.text as string;
+                                    } else if (content.blob !== undefined) {
+                                        value = content.blob as string;
+                                    }
+                                }
+                                return {
+                                    variable: request.variable,
+                                    value
+                                };
+                            } catch (error) {
+                                console.error(`Error resolving resource ${resource.uri} from server ${serverName}:`, error);
+                                return {
+                                    variable: request.variable,
+                                    value: `Could not retrieve resource content: ${error}`
+                                };
+                            }
+                        }
+                    }
+                );
+
+                registrations.push(registration);
+            }
+
+        } catch (error) {
+            console.error(`Error registering resources variables for server ${serverName}:`, error);
+        }
+    }
+
+    private sanitizeId(uri: string): string {
+        // Replace any non-alphanumeric characters with underscores
+        return uri.replace(/[^a-zA-Z0-9]/g, '_');
+    }
+
+    private unregisterResourcesVariables(serverName: string): void {
+        const registrations = this.resourcesVariableRegistrations.get(serverName);
+        if (registrations) {
+            registrations.dispose();
+            this.resourcesVariableRegistrations.delete(serverName);
+        }
+    }
+
     async stopServer(serverName: string): Promise<void> {
         this.toolInvocationRegistry.unregisterAllTools(`mcp_${serverName}`);
+        this.unregisterResourcesVariables(serverName);
         await this.mcpServerManager.stopServer(serverName);
     }
 
@@ -60,6 +147,14 @@ export class MCPFrontendService {
 
     getTools(serverName: string): ReturnType<MCPServer['getTools']> {
         return this.mcpServerManager.getTools(serverName);
+    }
+
+    getResources(serverName: string): ReturnType<MCPServer['getResources']> {
+        return this.mcpServerManager.getResources(serverName);
+    }
+
+    async getResourceContent(serverName: string, resourceId: string): ReturnType<MCPServer['getResourceContent']> {
+        return this.mcpServerManager.getResourceContent(serverName, resourceId);
     }
 
     private convertToToolRequest(tool: Awaited<ReturnType<MCPServerManager['getTools']>>['tools'][number], serverName: string): ToolRequest {

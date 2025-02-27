@@ -44,9 +44,25 @@ export class MCPServerManagerImpl implements MCPServerManager {
     callTool(serverName: string, toolName: string, arg_string: string): ReturnType<MCPServer['callTool']> {
         const server = this.servers.get(serverName);
         if (!server) {
-            throw new Error(`MCP server "${toolName}" not found.`);
+            throw new Error(`MCP server "${serverName}" not found.`);
         }
         return server.callTool(toolName, arg_string);
+    }
+
+    async getResources(serverName: string): ReturnType<MCPServer['getResources']> {
+        const server = this.servers.get(serverName);
+        if (!server) {
+            throw new Error(`MCP server "${serverName}" not found.`);
+        }
+        return server.getResources();
+    }
+
+    async getResourceContent(serverName: string, resourceId: string): ReturnType<MCPServer['getResourceContent']> {
+        const server = this.servers.get(serverName);
+        if (!server) {
+            throw new Error(`MCP server "${serverName}" not found.`);
+        }
+        return server.getResourceContent(resourceId);
     }
 
     async startServer(serverName: string): Promise<void> {
@@ -66,7 +82,6 @@ export class MCPServerManagerImpl implements MCPServerManager {
             throw new Error(`MCP server "${serverName}" not found.`);
         }
         return server.getTools();
-
     }
 
     addOrUpdateServer(description: MCPServerDescription): void {
