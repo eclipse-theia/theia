@@ -97,6 +97,27 @@
           "match": "[a-zA-Z_][a-zA-Z0-9_\\-]*"
         }
       ]
+    },
+    {
+      "name": "variable.parameter.prompttemplate",
+      "begin": "#{",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.variable.begin"
+        }
+      },
+      "end": "}",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.variable.end"
+        }
+      },
+      "patterns": [
+        {
+          "name": "keyword.control",
+          "match": "[a-zA-Z_][a-zA-Z0-9_\\-]*"
+        }
+      ]
     }
   ],
   "repository": {},
