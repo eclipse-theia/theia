@@ -12,6 +12,346 @@
   "terminal:new:profile": "Új integrált terminál létrehozása profilból",
   "terminal:profile:default": "Válassza ki az alapértelmezett terminálprofilt",
   "theia": {
+    "ai": {
+      "anthropic": {
+        "apiKey": {
+          "description": "Adja meg a hivatalos Anthropic-fiókjának API-kulcsát. **Figyelem:** Ha ezt a beállítást használja, az Anthropic API-kulcsa tiszta szövegben lesz tárolva a Theia-t futtató gépen. A kulcs biztonságos beállításához használja az `ANTHROPIC_API_KEY` környezeti változót."
+        },
+        "models": {
+          "description": "Hivatalos antropikus modellek használata"
+        }
+      },
+      "chat": {
+        "defaultAgent": {
+          "description": "Nem kötelező: <agent-name> a meghívandó csevegőügynök, ha a felhasználói lekérdezésben nincs kifejezetten @<agent-name> címmel megemlített ügynök. Ha nincs megadva alapértelmezett ügynök, a Theia alapértelmezett beállításai kerülnek alkalmazásra."
+        },
+        "pinChatAgent": {
+          "description": "Ha engedélyezi az ügynök kitűzését, akkor az említett csevegőügynök automatikusan aktív marad az összes felszólítás között, csökkentve ezzel az ismételt említések szükségességét.Az ügynökök kitűzését vagy váltását bármikor manuálisan feloldhatja."
+        }
+      },
+      "chat-ui": {
+        "addContextVariable": "Kontextusváltozó hozzáadása",
+        "applyAll": "Alkalmazni mindent",
+        "applyAllTitle": "Alkalmazza az összes függőben lévő módosítást",
+        "attachToContext": "Elemek csatolása a kontextushoz",
+        "cancel": "Törlés (Esc)",
+        "chat-view-tree-widget": {
+          "ai": "AI",
+          "aiConfigurationView": "AI konfigurációs nézet",
+          "aiFeatureHeader": "🚀 AI funkciók elérhetőek (Alpha verzió)!",
+          "aiFeaturesEnable": "Ai-jellemzők: Enable",
+          "aiHistoryView": "AI előzmények nézete",
+          "featuresDisabled": "Jelenleg minden AI funkció le van tiltva!",
+          "howToEnable": "Az AI funkciók engedélyezése:",
+          "noRenderer": "Hiba: Nem talált renderelőt",
+          "settingsMenu": "a beállítások menü",
+          "waitingForInput": "Várakozás a bemenetre",
+          "you": "Te"
+        },
+        "code-part-renderer": {
+          "generatedCode": "Generált kód"
+        },
+        "copyCodeBlock": "Kódblokk másolása",
+        "deleteChangeSet": "Váltáskészlet törlése",
+        "errorChatInvocation": "Hiba történt a chatszolgáltatás meghívása során.",
+        "openDiff": "Nyitott diff",
+        "openOriginalFile": "Eredeti fájl megnyitása",
+        "pinAgent": "Pin ügynök",
+        "removeChat": "Chat eltávolítása",
+        "selectChat": "Válassza ki a csevegést",
+        "selectVariableArguments": "Változó argumentumok kiválasztása",
+        "send": "Küldés (Enter)",
+        "text-part-renderer": {
+          "cantDisplay": "Nem tudja megjeleníteni a választ, kérjük ellenőrizze a ChatResponsePartRenderereket!"
+        },
+        "toolcall-part-renderer": {
+          "finished": "Ran",
+          "prettyPrintError": "A tartalmat nem sikerült stringgé alakítani: '{0}'. Ez az eredeti tartalom: '{1}'."
+        },
+        "unpinAgent": "Unpin ügynök"
+      },
+      "code-completion": {
+        "progressText": "AI kód kitöltésének kiszámítása..."
+      },
+      "completion": {
+        "agent": {
+          "description": "Ez az ügynök soron belüli kódkiegészítést biztosít a Theia IDE kódszerkesztőjében."
+        },
+        "automaticEnable": {
+          "description": "Szerkesztés közben automatikusan kiválthatja a mesterséges intelligencia kiegészítéseket bármely (monacói) szerkesztőprogramban.            \n            Alternatívaként manuálisan is kiválthatja a kódot a \"Trigger Inline Suggestion\" paranccsal vagy az alapértelmezett \"Ctrl+Alt+Space\" gyorsbillentyűvel."
+        },
+        "excludedFileExts": {
+          "description": "Adja meg azokat a fájlkiterjesztéseket (pl. .md, .txt), amelyeknél a mesterséges intelligencia kitöltését le kell tiltani.",
+          "title": "Kizárt fájlkiterjesztések"
+        },
+        "maxContextLines": {
+          "description": "A kontextusként használt sorok maximális száma, a kurzor pozíciója előtti és utáni sorok között elosztva (előtag és utótag).            Állítsa ezt -1-re, ha a teljes fájlt szeretné használni kontextusként, sorhatár nélkül, és 0-ra, ha csak az aktuális sort szeretné használni.",
+          "title": "Maximális kontextus Vonalak"
+        },
+        "stripBackticks": {
+          "description": "Eltávolítja a környező backtickeket az egyes LLM-ek által visszaküldött kódból. Ha backticket észlel, a záró backtick utáni összes tartalom is eltávolításra kerül. Ez a beállítás segít biztosítani, hogy egyszerű kódot kapjunk vissza, amikor a nyelvi modellek leütésszerű formázást használnak.",
+          "title": "Visszautalások eltávolítása a soron belüli kitöltésekből"
+        }
+      },
+      "core": {
+        "agentConfiguration": {
+          "addCustomAgent": "Egyéni ügynök hozzáadása",
+          "description": "Leírás:",
+          "enableAgent": "Ügynök engedélyezése",
+          "label": "Ügynökök",
+          "name": "Név:",
+          "noDefaultTemplate": "Nincs alapértelmezett sablon",
+          "notUsedInPrompt": "A promptban nem használt",
+          "promptTemplates": "Prompt sablonok",
+          "selectAgentMessage": "Kérjük, először válasszon ügynököt!",
+          "undeclared": "Be nem jelentett"
+        },
+        "aiConfiguration": {
+          "label": "✨ AI konfiguráció [Alpha]"
+        },
+        "changeSetSummaryVariable": {
+          "description": "Összefoglalót ad a módosításkészletben lévő fájlokról és azok tartalmáról."
+        },
+        "discardCustomPrompt": {
+          "tooltip": "Testreszabások elvetése"
+        },
+        "enableAI": {
+          "mdDescription": "❗ Ez a beállítás lehetővé teszi a legújabb AI képességek (Alpha verzió) elérését.            \n            Kérjük, vegye figyelembe, hogy ezek a funkciók alfa fázisban vannak, ami azt jelenti, hogy változásokon mehetnek keresztül, és továbbfejlesztésre kerülnek. Fontos tisztában lenni azzal, hogy ezek a funkciók folyamatos kéréseket generálhatnak a nyelvi modellekhez (LLM), amelyekhez hozzáférést biztosít. Ez költségekkel járhat, amelyeket szorosan nyomon kell követnie. Az opció engedélyezésével Ön tudomásul veszi ezeket a kockázatokat.            \n            **Kérjük, vegye figyelembe! Az ebben a szakaszban található alábbi beállítások csak akkor lépnek életbe, ha\n            a fő funkció beállításának engedélyezése után lépnek érvénybe. A funkció engedélyezése után legalább egy LLM-szolgáltatót kell beállítania az alábbiakban. Lásd még [a dokumentációt](https://theia-ide.org/docs/user_ai/)**."
+        },
+        "languageModelRenderer": {
+          "family": "Család",
+          "languageModel": "Nyelvi modell",
+          "maxOutputTokens": "Max kimeneti tokenek",
+          "minInputTokens": "Minimális bemeneti tokenek",
+          "purpose": "Cél",
+          "vendor": "Forgalmazó"
+        },
+        "prefs": {
+          "title": "✨ AI funkciók [Alpha]"
+        },
+        "promptTemplates": {
+          "description": "Egyéni prompt sablonok tárolására szolgáló mappa. Ha nincs testreszabva, akkor a felhasználói konfigurációs könyvtárat kell használni. Kérjük, fontolja meg egy olyan mappa használatát, amely verzióvezérlés alatt áll a prompt sablonok változatainak kezeléséhez."
+        },
+        "requestSettings": {
+          "mdDescription": "Lehetővé teszi az egyéni kérési beállítások megadását több modellhez.\n            Minden objektum egy adott modell konfigurációját jelenti. A `modelId` mező a modell azonosítóját adja meg, a `requestSettings` a modellspecifikus beállításokat határozza meg.\n            A `providerId` mező opcionális, és lehetővé teszi a beállítások alkalmazását egy adott szolgáltatóra. Ha nincs megadva, a beállítások az összes szolgáltatóra alkalmazásra kerülnek.\n            Példa providerId: huggingface, openai, ollama, llamafile.\n            További információért lásd [dokumentációnk](https://theia-ide.org/docs/user_ai/#custom-request-settings).",
+          "title": "Egyéni kérési beállítások"
+        },
+        "templateSettings": {
+          "selectVariant": "Válassza ki a változatot:",
+          "unavailableVariant": "A kiválasztott változat már nem elérhető"
+        },
+        "variable-contribution": {
+          "builtInVariable": "Theia Beépített változó",
+          "currentAbsoluteFilePath": "Az aktuálisan megnyitott fájl abszolút elérési útja. Felhívjuk a figyelmet arra, hogy a legtöbb ügynök relatív (az aktuális munkaterülethez viszonyított) fájl elérési útvonalát várja el.",
+          "currentFileContent": "Az aktuálisan megnyitott fájl egyszerű tartalma. Ez nem tartalmazza azt az információt, hogy honnan származik a tartalom. Vegye figyelembe, hogy a legtöbb ügynök jobban fog működni relatív fájlútvonallal (az aktuális munkaterülethez képest).",
+          "currentRelativeDirPath": "Az aktuálisan megnyitott fájlt tartalmazó könyvtár relatív elérési útja.",
+          "currentRelativeFilePath": "Az aktuálisan megnyitott fájl relatív elérési útja.",
+          "currentSelectedText": "A megnyitott fájlban jelenleg kijelölt sima szöveg. Ez kizárja azt az információt, hogy honnan származik a tartalom. Kérjük, vegye figyelembe, hogy a legtöbb ügynök jobban működik relatív fájlútvonallal (az aktuális munkaterülethez viszonyítva)."
+        }
+      },
+      "history": {
+        "clear": {
+          "tooltip": "Törölje az összes ügynök előzményeit"
+        },
+        "communication-card": {
+          "context": "Kontextus",
+          "messages": "Üzenetek",
+          "request": "Kérés",
+          "requestId": "Kérelem azonosítója",
+          "response": "Válasz",
+          "responseTime": "Válaszidő",
+          "sessionId": "Munkamenet azonosítója",
+          "systemMessage": "Rendszerüzenet",
+          "timestamp": "Időbélyegző"
+        },
+        "sortChronologically": {
+          "tooltip": "Időrendi sorrendbe rendezés"
+        },
+        "sortReverseChronologically": {
+          "tooltip": "Fordított időrendi sorrendbe rendezés"
+        },
+        "view": {
+          "label": "✨ AI Agent History [Alpha]",
+          "noAgent": "Nincs elérhető ügynök.",
+          "noAgentSelected": "Nincs kiválasztott ügynök.",
+          "noHistoryForAgent": "A kiválasztott ügynökhöz nem áll rendelkezésre előzmény '{0}'"
+        }
+      },
+      "huggingFace": {
+        "apiKey": {
+          "mdDescription": "Adja meg az API-kulcsot a Hugging Face-fiókjához. **Figyelem:** Ennek a beállításnak a használatával a Hugging Face API kulcsa tiszta szövegben kerül tárolásra a Theia-t futtató gépen. A kulcs biztonságos beállításához használja a `HUGGINGFACE_API_KEY` környezeti változót."
+        },
+        "models": {
+          "description": "Hugging Face modellek használata"
+        }
+      },
+      "llamaFile": {
+        "prefs": {
+          "mdDescription": "Ez a beállítás lehetővé teszi a LlamaFile modellek konfigurálását és kezelését a Theia IDE-ben.            \n            Minden bejegyzéshez szükség van egy felhasználóbarát `névre`, a LlamaFile-ra mutató `uri` fájlra és a `portra`, amelyen futni fog.            \n            Egy LlamaFile indításához használja a `Start LlamaFile` parancsot, amellyel kiválaszthatja a kívánt modellt.            \n            Ha szerkeszt egy bejegyzést (pl. megváltoztatja a portot), minden futó példány leáll, és manuálisan újra kell indítani.            \n            [A LlamaFile-ok konfigurálásáról és kezeléséről bővebben a Theia IDE dokumentációjában](https://theia-ide.org/docs/user_ai/#llamafile-models).",
+          "name": {
+            "description": "A Llamafile modellneve."
+          },
+          "port": {
+            "description": "A kiszolgáló indításához használandó port."
+          },
+          "title": "✨ AI LlamaFile",
+          "uri": {
+            "description": "A Llamafile fájl urija."
+          }
+        },
+        "start": "Llamafile indítása",
+        "stop": "Stop Llamafile"
+      },
+      "llamafile": {
+        "error": {
+          "noConfigured": "Nincs Llamafiles konfigurálva.",
+          "noRunning": "Nem futnak a Llamafiles fájlok.",
+          "startFailed": "Valami baj történt a llamafile indításakor: {0}.\nTovábbi információért lásd a konzol.",
+          "stopFailed": "Valami baj történt a llamafile leállítása közben: {0}.\nTovábbi információért lásd a konzol."
+        }
+      },
+      "mcp": {
+        "error": {
+          "allServersRunning": "Az összes MCP-kiszolgáló már fut.",
+          "noRunningServers": "Nem futnak MCP-kiszolgálók.",
+          "noServersConfigured": "Nincsenek MCP-kiszolgálók konfigurálva.",
+          "startFailed": "Hiba történt az MCP-kiszolgáló indítása közben."
+        },
+        "info": {
+          "serverStarted": "Az MCP-kiszolgáló \"{0}\" sikeresen elindult. Regisztrált eszközök: {1}"
+        },
+        "servers": {
+          "args": {
+            "mdDescription": "A parancsnak átadandó argumentumok tömbje.",
+            "title": "Érvek a parancshoz"
+          },
+          "autostart": {
+            "mdDescription": "Automatikusan elindítja ezt a kiszolgálót, amikor a frontend elindul. Az újonnan hozzáadott kiszolgálók nem indulnak el azonnal automatikusan, hanem az újraindításkor.",
+            "title": "Autostart"
+          },
+          "command": {
+            "mdDescription": "Az MCP-kiszolgáló indítására használt parancs, pl. \"uvx\" vagy \"npx\".",
+            "title": "Az MCP-kiszolgálót végrehajtó parancs"
+          },
+          "env": {
+            "mdDescription": "A kiszolgáló számára beállítandó opcionális környezeti változók, például egy API-kulcs.",
+            "title": "Környezeti változók"
+          },
+          "mdDescription": "Az MCP-kiszolgálók konfigurálása parancsokkal, argumentumokkal, opcionálisan környezeti változókkal és automatikus indítással (alapértelmezés szerint igaz). Minden kiszolgálót egy egyedi kulcs azonosít, például \"brave-search\" vagy \"filesystem\". Egy kiszolgáló indításához használja az \"MCP: MCP Server indítása\" parancsot, amellyel kiválaszthatja a kívánt kiszolgálót. A kiszolgáló leállításához használja az \"MCP: Stop MCP Server\" parancsot. Felhívjuk figyelmét, hogy az automatikus indítás csak újraindítás után lép életbe, első alkalommal kézzel kell elindítani a kiszolgálót.\nPélda konfigurációra:\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"YOUR_API_KEY\".\n    },\n  },\n  \"filesystem\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  }\n}\n```",
+          "title": "MCP szerverek konfigurációja"
+        },
+        "start": {
+          "label": "MCP: MCP-kiszolgáló indítása"
+        },
+        "stop": {
+          "label": "MCP: MCP-kiszolgáló leállítása"
+        },
+        "tool": {
+          "unnamed": "Névtelen eszköz"
+        }
+      },
+      "openai": {
+        "apiKey": {
+          "mdDescription": "Adja meg a hivatalos OpenAI-fiókjának API-kulcsát. **Figyelem:** Ha ezt a beállítást használja, az Open AI API kulcsa tiszta szövegben tárolódik a Theia-t futtató gépen. A kulcs biztonságos beállításához használja az `OPENAI_API_KEY` környezeti változót."
+        },
+        "customEndpoints": {
+          "apiKey": {
+            "title": "Vagy az adott url-en kiszolgált API-hoz való hozzáférés kulcsa, vagy `true` a globális OpenAI API kulcs használatához."
+          },
+          "apiVersion": {
+            "title": "Vagy az adott Azure-i url-en kiszolgált API-hoz való hozzáférés verziója, vagy `true` a globális OpenAI API verzió használatához."
+          },
+          "developerMessageSettings": {
+            "title": "A rendszerüzenetek kezelését vezérli: A `mergeWithFollowingUserMessage` a következő felhasználói üzenetet a rendszerüzenettel előtagolja, vagy a rendszerüzenetet felhasználói üzenetté alakítja, ha a következő üzenet nem felhasználói üzenet.                         A `skip` csak a rendszerüzenetet távolítja el), alapértelmezés szerint `developer`."
+          },
+          "enableStreaming": {
+            "title": "Jelzi, hogy a streaming API-t kell-e használni. Alapértelmezés szerint `true`."
+          },
+          "id": {
+            "title": "Egyedi azonosító, amelyet a felhasználói felület az egyéni modell azonosítására használ."
+          },
+          "mdDescription": "Az OpenAI API-val kompatibilis egyéni modellek integrálása, például az `vllm` segítségével. A szükséges attribútumok a `model` és az `url`.            \n            Opcionálisan            \n            - megadhat egy egyedi `id` azonosítót az egyéni modell azonosítására a felhasználói felületen. Ha nincs megadva, akkor a `model` lesz az `id`.            \n            - meg kell adni egy `apiKey`-t a megadott url-en kiszolgált API eléréséhez. A `true` használatával jelzi a globális OpenAI API-kulcs használatát.            \n            - adjon meg egy `apiVersion` értéket az Azure-ban az adott url-en kiszolgált API eléréséhez. Használja a `true` értéket a globális OpenAI API verzió használatának jelzésére.            \n            - a `developerMessageSettings` beállítást a `user`, `system`, `developer`, `mergeWithFollowingUserMessage` vagy `skip` valamelyikére állítsa be a fejlesztői üzenet szerepeltetésének szabályozásához (ahol a `user`, `system` és `developer` szerepként lesz használva, a `mergeWithFollowingUserMessage` a következő felhasználói üzenetet a rendszerüzenettel előzi meg, vagy a rendszerüzenetet felhasználói üzenetté alakítja, ha a következő üzenet nem felhasználói üzenet. A `skip` csak a rendszerüzenetet távolítja el).            Alapértelmezés szerint `developer`.            \n            - a `supportsStructuredOutput: false` megadása annak jelzésére, hogy a strukturált kimenet nem használható.            \n            - a `enableStreaming: false` megadása annak jelzésére, hogy a streaming nem használható.            \n            További információkért lásd [dokumentációnk](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm).",
+          "modelId": {
+            "title": "Modell azonosító"
+          },
+          "supportsStructuredOutput": {
+            "title": "Jelzi, hogy a modell támogatja-e a strukturált kimenetet. Alapértelmezés szerint `true`."
+          },
+          "url": {
+            "title": "Az Open AI API kompatibilis végpont, ahol a modellt tárolják."
+          }
+        },
+        "models": {
+          "description": "Hivatalos OpenAI modellek használata"
+        }
+      },
+      "scanoss": {
+        "changeSet": {
+          "clean": "Nincsenek találatok",
+          "error": "Hiba: Újraindítás",
+          "error-notification": "ScanOSS hiba: {0}.",
+          "scan": "Szkennelés",
+          "scanning": "Szkennelés...",
+          "view-matches": "Gyufák megtekintése"
+        },
+        "mode": {
+          "automatic": {
+            "description": "A kódrészletek automatikus beolvasásának engedélyezése a csevegési nézetekben."
+          },
+          "description": "A SCANOSS funkció beállítása a kódrészletek elemzéséhez a csevegési nézetekben. Ez elküldi a javasolt kódrészletek hash-jét a SCANOSS\n[Software Transparency Foundation] (https://www.softwaretransparency.org/osskb) által üzemeltetett szolgáltatásnak elemzésre.",
+          "manual": {
+            "description": "A felhasználó manuálisan is elindíthatja a vizsgálatot a csevegési nézetben a SCANOSS elemre kattintva."
+          },
+          "off": {
+            "description": "A funkció teljesen ki van kapcsolva."
+          }
+        },
+        "snippet": {
+          "dialog-header": "ScanOSS eredmények",
+          "errored": "SCANOSS - Hiba - {0}",
+          "file-name-heading": "Talált egyezés {0}",
+          "in-progress": "SCANOSS - Ellenőrzés végrehajtása...",
+          "match-count": "Talált {0} egyezés(ek)",
+          "matched": "SCANOSS - Talált {0} egyezés",
+          "no-match": "SCANOSS - Nincs egyezés",
+          "summary": "Összefoglaló"
+        }
+      },
+      "terminal": {
+        "agent": {
+          "description": "Ez az ügynök segítséget nyújt tetszőleges terminálparancsok írásához és végrehajtásához.         A felhasználó kérése alapján parancsokat javasol, és lehetővé teszi, hogy a felhasználó közvetlenül beillessze és futtassa azokat a terminálon.         Hozzáfér az aktuális könyvtárhoz, a környezethez és a terminál munkamenet legutóbbi terminál kimenetéhez, hogy kontextustudatos segítséget nyújtson."
+        },
+        "askAi": "Kérdezd az AI-t",
+        "askTerminalCommand": "Kérdezzen egy terminálparancsról...",
+        "hitEnterConfirm": "Nyomja meg az Entert a megerősítéshez",
+        "howCanIHelp": "Miben segíthetek?",
+        "loading": "Betöltés",
+        "systemPrompt": {
+          "description": "Az AI terminál asszisztens felkérése"
+        },
+        "tryAgain": "Próbáld újra...",
+        "useArrowsAlternatives": " vagy használja a ⇅-t az alternatívák megjelenítéséhez...",
+        "userPrompt": {
+          "description": "A felhasználói kérést tartalmazó súgó"
+        }
+      },
+      "workspace": {
+        "coderAgent": {
+          "description": "A Theia IDE-be integrált mesterséges intelligencia asszisztens, amelyet a szoftverfejlesztők segítésére terveztek. Ez az ügynök hozzáférhet a felhasználó munkaterületéhez, lekérheti az összes elérhető fájl és mappa listáját, és lekérheti azok tartalmát. Továbbá képes a felhasználónak a fájlok módosítását javasolni. Így segíthet a felhasználónak a kódolási feladatokban vagy más, fájlmódosítással járó feladatokban."
+        },
+        "considerGitignore": {
+          "description": "Ha engedélyezve van, kizárja a globális .gitignore fájlban megadott fájlokat/mappákat (várható helye a munkaterület gyökere).",
+          "title": "Tekintsük a .gitignore-t"
+        },
+        "excludedPattern": {
+          "description": "A kizárandó fájlok/mappák mintáinak (glob vagy regex) listája.",
+          "title": "Kizárt fájlminták"
+        },
+        "workspaceAgent": {
+          "description": "A Theia IDE-be integrált mesterséges intelligencia asszisztens, amelyet a szoftverfejlesztők segítésére terveztek. Ez az ügynök hozzáférhet a felhasználó munkaterületéhez, lekérheti az összes elérhető fájl és mappa listáját, és lekérheti azok tartalmát. A fájlokat nem tudja módosítani. Ezért képes válaszolni az aktuális projekttel, a projektfájlokkal és a munkaterületen található forráskóddal kapcsolatos kérdésekre, például arra, hogy hogyan kell a projektet felépíteni, hová kell a forráskódot elhelyezni, hol találunk bizonyos kódokat vagy konfigurációkat stb."
+        }
+      }
+    },
     "callhierarchy": {
       "noCallers": "Nem észleltek hívókat.",
       "open": "Nyílt felhívás hierarchia"
@@ -46,8 +386,7 @@
     "core": {
       "about": {
         "compatibility": "{0} Kompatibilitás",
-        "defaultApi": "Alapértelmezett {0} API",
-        "version": "Verzió"
+        "defaultApi": "Alapértelmezett {0} API"
       },
       "common": {
         "closeAll": "Minden lap bezárása",
@@ -59,6 +398,8 @@
         "closeTabMain": "Zárja be a fő terület lapját",
         "collapseAllTabs": "Összes oldalsó panel összezárása",
         "collapseBottomPanel": "Alsó panel átkapcsolása",
+        "collapseLeftPanel": "Bal oldali panel átkapcsolása",
+        "collapseRightPanel": "Jobb oldali panel átkapcsolása",
         "collapseTab": "Összecsukható oldalsó panel",
         "showNextTabGroup": "Váltás a következő lapcsoportra",
         "showNextTabInGroup": "Csoporton belüli következő lapra váltás",
@@ -137,38 +478,20 @@
       "toggleTracing": "A hibakeresési adapterekkel folytatott kommunikáció nyomon követésének engedélyezése/letiltása"
     },
     "editor": {
-      "diffEditor.experimental.useTrueInlineView": "Ha engedélyezve van, és a szerkesztő az inline nézetet használja, akkor a szóváltozások inline megjelenítésre kerülnek.",
       "diffEditor.wordWrap2": "A sorok a `#editor.wordWrap#` beállításnak megfelelően kerülnek a sorok közé.",
       "dirtyEncoding": "A fájl piszkos. Kérjük, először mentse el, mielőtt más kódolással újra megnyitná.",
       "editor.bracketPairColorization.enabled": "Szabályozza, hogy a zárójelpár színezése engedélyezve legyen-e vagy sem. Használja a `#workbench.colorCustomizations#` parancsot a zárójelek kiemelési színeinek felülbírálásához.",
       "editor.codeActions.triggerOnFocusChange": "A `#editor.codeActionsOnSave#` kiváltásának engedélyezése, ha a `#files.autoSave#` értéke `afterDelay`. A kódműveleteknek `always`-re kell állítaniuk, hogy az ablak- és fókuszváltások esetén is aktiválódjanak.",
-      "editor.cursorStyle": "A kurzor stílusát vezérli a beillesztési beviteli módban.",
-      "editor.defaultColorDecorators": "Szabályozza, hogy a soron belüli színdekorációk az alapértelmezett dokumentumszínszolgáltató használatával jelenjenek-e meg.",
-      "editor.defaultColorDecorators0": "Az alapértelmezett színdekorátorok megjelenítése csak akkor, ha a kiterjesztés nem biztosít színdekorátorokat.",
-      "editor.defaultColorDecorators1": "Mindig az alapértelmezett színdekorátorok megjelenítése.",
-      "editor.defaultColorDecorators2": "Soha ne jelenítsen meg alapértelmezett színdekorátorokat.",
       "editor.detectIndentation": "Szabályozza, hogy a `#editor.tabSize#` és a `#editor.insertSpaces#` automatikusan felismerésre kerüljön-e egy fájl megnyitásakor a fájl tartalma alapján.",
-      "editor.experimental.preferTreeSitter": "Szabályozza, hogy a tree sitter elemzése be legyen-e kapcsolva bizonyos nyelvek esetében. Ez elsőbbséget élvez a `editor.experimental.treeSitterTelemetry` beállítással szemben a megadott nyelvek esetében.",
-      "editor.experimental.treeSitterTelemetry": "Szabályozza, hogy a tree sitter elemzése be legyen-e kapcsolva, és a telemetria összegyűjtésre kerüljön-e. Az `editor.experimental.preferTreeSitter` beállítása az adott nyelvek esetében elsőbbséget élvez.",
-      "editor.experimentalEditContextEnabled": "Beállítja, hogy az új kísérleti szerkesztési környezetet kell-e használni a szövegterület helyett.",
-      "editor.find.history": "Szabályozza, hogy a keresési widget előzményei hogyan legyenek tárolva",
-      "editor.find.history0": "Ne tárolja a keresési előzményeket a keresési widgetből.",
-      "editor.find.history1": "Keresési előzmények tárolása az aktív munkaterületen",
       "editor.inlayHints.enabled1": "Az inlay tippek alapértelmezés szerint megjelennek, és elrejtődnek, ha a \"Ctrl+Alt\" billentyűkombinációt nyomva tartjuk.",
       "editor.inlayHints.enabled2": "Az inlay tippek alapértelmezés szerint el vannak rejtve, és a \"Ctrl+Alt\" billentyűkombináció lenyomásakor jelennek meg.",
       "editor.inlayHints.fontFamily": "A betűcsaládot vezérli a betétfájlok betűtípusát a szerkesztőben. Ha üres, akkor a `#editor.fontFamily#`-t használja.",
       "editor.inlayHints.fontSize": "A betűméretet szabályozza a szerkesztőben megjelenő betűjelzések betűméretét. Alapértelmezés szerint az `#editor.fontSize#` értéket használja, ha a beállított érték kisebb, mint `5` vagy nagyobb, mint a szerkesztő betűmérete.",
-      "editor.inlayHints.maximumLength": "A beágyazási tippek maximális teljes hossza egy sorban, mielőtt a szerkesztő lecsonkítja őket. A \"0\"-ra állítva soha nem csonkolódik le.",
       "editor.inlineSuggest.edits.experimental.enabled": "Szabályozza, hogy engedélyezzék-e a kísérleti szerkesztéseket a soron belüli javaslatokban.",
       "editor.inlineSuggest.edits.experimental.onlyShowWhenCloseToCursor": "Azt szabályozza, hogy csak akkor jelenjenek meg a soron belüli javaslatok, ha a kurzor a javaslat közelében van.",
       "editor.inlineSuggest.edits.experimental.useInterleavedLinesDiff": "Szabályozza, hogy engedélyezi-e a kísérleti sorok közötti különbségeket a soron belüli javaslatokban.",
       "editor.inlineSuggest.edits.experimental.useMixedLinesDiff": "Szabályozza, hogy engedélyezzék-e a kísérleti szerkesztéseket a soron belüli javaslatokban.",
-      "editor.inlineSuggest.syntaxHighlightingEnabled": "Szabályozza, hogy a szerkesztőben megjelenjen-e a soron belüli javaslatok szintaxis-kiemelése.",
       "editor.insertSpaces": "Szóközök beillesztése a \"Tab\" billentyű lenyomásakor. Ez a beállítás a fájl tartalma alapján felülíródik, ha a `#editor.detectIndentation#` be van kapcsolva.",
-      "editor.minimap.sectionHeaderLetterSpacing": "A szakaszfejléc karakterei közötti távolságot (pixelben) szabályozza. Ez segíti a fejléc olvashatóságát kis betűméretekben.",
-      "editor.occurrencesHighlightDelay": "Ezredmásodpercben határozza meg azt a késleltetést, amely után az előfordulások kiemelésre kerülnek.",
-      "editor.overtypeCursorStyle": "A kurzor stílusát szabályozza az overtype beviteli módban.",
-      "editor.overtypeOnPaste": "Szabályozza, hogy a beillesztés felülírja-e a betűtípust.",
       "editor.quickSuggestions": "Szabályozza, hogy a javaslatok automatikusan megjelenjenek-e gépelés közben. Ezt a megjegyzések, karakterláncok és más kódok beírása esetén lehet szabályozni. A gyors javaslatok beállíthatók úgy, hogy szellemszövegként vagy a javaslat widget segítségével jelenjenek meg. Figyeljen a '#editor.suggestOnTriggerCharacters#'-beállításra is, amely azt szabályozza, hogy a javaslatok speciális karakterek hatására aktiválódjanak-e.",
       "editor.suggestFontSize": "A javaslat widget betűmérete. Ha `0`-ra van állítva, akkor a `#editor.fontSize#` értékét használja.",
       "editor.suggestLineHeight": "A javaslat widget vonalmagassága. Ha `0`-ra van állítva, akkor a `#editor.lineHeight#` értékét használja. A minimális érték 8.",
@@ -448,7 +771,6 @@
       "location": "Helyszín",
       "noProperties": "Nincsenek elérhető tulajdonságok.",
       "properties": "Tulajdonságok",
-      "size": "Méret",
       "symbolicLink": "Szimbolikus kapcsolat"
     },
     "scm": {
@@ -483,8 +805,7 @@
     "task": {
       "attachTask": "Feladat csatolása...",
       "clearHistory": "Történelem törlése",
-      "noTaskToRun": "Nem találtunk futtatandó feladatot. Feladatok konfigurálása...",
-      "openUserTasks": "Felhasználói feladatok megnyitása"
+      "noTaskToRun": "Nem találtunk futtatandó feladatot. Feladatok konfigurálása..."
     },
     "terminal": {
       "defaultProfile": "Az alapértelmezett profil a {0}",
