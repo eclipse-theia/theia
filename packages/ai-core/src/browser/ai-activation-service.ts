@@ -15,7 +15,7 @@
 // *****************************************************************************
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution, PreferenceService } from '@theia/core/lib/browser';
-import { Emitter, Event } from '@theia/core';
+import { Emitter, MaybePromise, Event, } from '@theia/core';
 import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
 import { PREFERENCE_NAME_ENABLE_AI } from './ai-core-preferences';
 
@@ -44,8 +44,7 @@ export class AIActivationService implements FrontendApplicationContribution {
         return this.isAiEnabledKey.get() ?? false;
     }
 
-    async initialize(): Promise<void> {
-        await this.preferenceService.ready;
+    initialize(): MaybePromise<void> {
         const value = this.preferenceService.get<boolean>(ENABLE_AI_CONTEXT_KEY);
         this.isAiEnabledKey = this.contextKeyService.createKey(ENABLE_AI_CONTEXT_KEY, value);
         this.preferenceService.onPreferenceChanged(e => {
