@@ -42,6 +42,7 @@ import { createDisposableListener } from './event-utils';
 import { TheiaRendererAPI } from './electron-api-main';
 import { StopReason } from '../common/frontend-application-state';
 import { dynamicRequire } from '../node/dynamic-require';
+import { ThemeMode } from '../common/theme';
 
 export { ElectronMainApplicationGlobals };
 
@@ -277,7 +278,7 @@ export class ElectronMainApplication {
         this.saveState(webContents);
     }
 
-    public setTheme(theme: 'light' | 'dark'): void {
+    public setTheme(theme: ThemeMode): void {
         nativeTheme.themeSource = theme;
     }
 

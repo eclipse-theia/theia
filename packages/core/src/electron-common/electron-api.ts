@@ -17,6 +17,7 @@
 import { NativeKeyboardLayout } from '../common/keyboard/keyboard-layout-provider';
 import { Disposable } from '../common';
 import { FrontendApplicationState, StopReason } from '../common/frontend-application-state';
+import { ThemeMode } from '../common/theme';
 
 export type MenuRole = ('undo' | 'redo' | 'cut' | 'copy' | 'paste' | 'selectAll' | 'about' | 'services' | 'hide' | 'hideOthers' | 'unhide' | 'quit');
 
@@ -65,7 +66,7 @@ export interface TheiaCoreAPI {
     getTitleBarStyleAtStartup(): Promise<string>;
     setTitleBarStyle(style: string): void;
     setBackgroundColor(backgroundColor: string): void;
-    setTheme(theme: 'dark' | 'light'): void;
+    setTheme(theme: ThemeMode): void;
     minimize(): void;
     isMaximized(): boolean; // TODO: this should really be async, since it blocks the renderer process
     maximize(): void;
