@@ -394,8 +394,11 @@ table.t-mv-view .t-mv-view-address {
 
 .mw-input-select .theia-input {
   position: absolute;
+  top: 1px;
+  left: 1px;
   z-index: 1;
   width: calc(100% - 18px);
+  padding-block: unset;
 }
 
 .mw-input-select .theia-input:focus {
