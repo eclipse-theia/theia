@@ -18,6 +18,8 @@ import { URI } from 'vscode-uri';
 
 export type ThemeType = 'light' | 'dark' | 'hc' | 'hcLight';
 
+export type ThemeMode = 'light' | 'dark';
+
 export interface Theme {
     readonly id: string;
     readonly type: ThemeType;
@@ -30,6 +32,10 @@ export interface Theme {
 
 export function isHighContrast(scheme: ThemeType): boolean {
     return scheme === 'hc' || scheme === 'hcLight';
+}
+
+export function getThemeMode(type: ThemeType): ThemeMode {
+    return (type === 'hc' || type === 'dark') ? 'dark' : 'light';
 }
 
 export interface ThemeChangeEvent {

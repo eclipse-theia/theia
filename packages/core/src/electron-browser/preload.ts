@@ -27,7 +27,7 @@ import {
     CHANNEL_REQUEST_RELOAD, CHANNEL_APP_STATE_CHANGED, CHANNEL_SHOW_ITEM_IN_FOLDER, CHANNEL_READ_CLIPBOARD, CHANNEL_WRITE_CLIPBOARD,
     CHANNEL_KEYBOARD_LAYOUT_CHANGED, CHANNEL_IPC_CONNECTION, InternalMenuDto, CHANNEL_REQUEST_SECONDARY_CLOSE, CHANNEL_SET_BACKGROUND_COLOR,
     CHANNEL_WC_METADATA, CHANNEL_ABOUT_TO_CLOSE, CHANNEL_OPEN_WITH_SYSTEM_APP,
-    CHANNEL_OPEN_URL
+    CHANNEL_OPEN_URL, CHANNEL_SET_THEME
 } from '../electron-common/electron-api';
 
 // eslint-disable-next-line import/no-extraneous-dependencies
@@ -119,6 +119,9 @@ const api: TheiaCoreAPI = {
     },
     setBackgroundColor: function (backgroundColor): void {
         ipcRenderer.send(CHANNEL_SET_BACKGROUND_COLOR, backgroundColor);
+    },
+    setTheme: function (theme): void {
+        ipcRenderer.send(CHANNEL_SET_THEME, theme);
     },
     minimize: function (): void {
         ipcRenderer.send(CHANNEL_MINIMIZE);

@@ -55,7 +55,8 @@ import {
     CHANNEL_WC_METADATA,
     CHANNEL_ABOUT_TO_CLOSE,
     CHANNEL_OPEN_WITH_SYSTEM_APP,
-    CHANNEL_OPEN_URL
+    CHANNEL_OPEN_URL,
+    CHANNEL_SET_THEME
 } from '../electron-common/electron-api';
 import { ElectronMainApplication, ElectronMainApplicationContribution } from './electron-main-application';
 import { Disposable, DisposableCollection, isOSX, MaybePromise } from '../common';
@@ -175,6 +176,8 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
         ipcMain.on(CHANNEL_SET_TITLE_STYLE, (event, style) => application.setTitleBarStyle(event.sender, style));
 
         ipcMain.on(CHANNEL_SET_BACKGROUND_COLOR, (event, backgroundColor) => application.setBackgroundColor(event.sender, backgroundColor));
+
+        ipcMain.on(CHANNEL_SET_THEME, (event, theme) => application.setTheme(theme));
 
         ipcMain.on(CHANNEL_MINIMIZE, event => {
             BrowserWindow.fromWebContents(event.sender)?.minimize();
