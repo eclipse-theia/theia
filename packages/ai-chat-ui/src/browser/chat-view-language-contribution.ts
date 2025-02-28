@@ -92,7 +92,7 @@ export class ChatViewLanguageContribution implements FrontendApplicationContribu
             triggerCharacter: PromptText.FUNCTION_CHAR,
             getItems: () => this.toolInvocationRegistry.getAllFunctions(),
             kind: monaco.languages.CompletionItemKind.Function,
-            getId: tool => `{tool.id} `,
+            getId: tool => `${tool.id} `,
             getName: tool => tool.name,
             getDescription: tool => tool.description ?? ''
         });
@@ -119,15 +119,22 @@ export class ChatViewLanguageContribution implements FrontendApplicationContribu
         // one to the left, and -1 for 0-based index
         const characterBeforeCurrentWord = lineContent[wordInfo.startColumn - 1 - 1];
 
-        // Check if we're in the middle of a word, not at the beginning
-        if (wordInfo.startColumn > 1 && characterBeforeCurrentWord !== triggerCharacter) {
+        if (characterBeforeCurrentWord !== triggerCharacter) {
             return undefined;
         }
 
-        // Check if the trigger character is actually part of another word
-        const wordAtTriggerPosition = model.getWordAtPosition({ lineNumber: position.lineNumber, column: wordInfo.startColumn - 1 });
-        if (wordAtTriggerPosition && wordAtTriggerPosition.word.length > 1) {
-            return undefined;
+        // we are not at the beginning of the line
+        if (wordInfo.startColumn > 2) {
+            const charBeforeTrigger = model.getValueInRange({
+                startLineNumber: position.lineNumber,
+                startColumn: wordInfo.startColumn - 2,
+                endLineNumber: position.lineNumber,
+                endColumn: wordInfo.startColumn - 1
+            });
+            // If the character before the trigger is not whitespace, don't provide completions
+            if (!/\s/.test(charBeforeTrigger)) {
+                return undefined;
+            }
         }
 
         return new monaco.Range(
@@ -222,32 +229,15 @@ export class ChatViewLanguageContribution implements FrontendApplicationContribu
             return;
         }
 
-        // Get the current line's content and the word at cursor
-        const lineContent = model.getLineContent(position.lineNumber);
+        // // Get the word at cursor
         const wordInfo = model.getWordUntilPosition(position);
-
-        // Only trigger if current word starts with #, followed by actual text
-        if (!wordInfo.word.startsWith(PromptText.VARIABLE_CHAR) || wordInfo.word.length <= 1) {
-            return;
-        }
-
-        // Ensure the # isn't part of another word (like "Hello#")
-        // by checking if there's a word character before the # character
-        if (wordInfo.startColumn > 1) {
-            // Convert to 0-based index and account for the # at start of word
-            const indexBeforeHash = wordInfo.startColumn - 2;
-            if (indexBeforeHash >= 0 && /\w/.test(lineContent[indexBeforeHash])) {
-                // We're in a case like "Hello#variable" - don't trigger
-                return;
-            }
-        }
 
         // account for the variable separator character if present
         let endOfWordPosition = position.column;
-        let insertTextPrefix = PromptText.VARIABLE_SEPARATOR_CHAR;
-        if (this.getCharacterBeforePosition(model, position) === PromptText.VARIABLE_SEPARATOR_CHAR) {
+        if (wordInfo.word === '' && this.getCharacterBeforePosition(model, position) === PromptText.VARIABLE_SEPARATOR_CHAR) {
             endOfWordPosition = position.column - 1;
-            insertTextPrefix = '';
+        } else {
+            return;
         }
 
         const variableName = model.getWordAtPosition({ ...position, column: endOfWordPosition })?.word;
@@ -267,7 +257,7 @@ export class ChatViewLanguageContribution implements FrontendApplicationContribu
 
         inputEditor.executeEdits('variable-argument-picker', [{
             range: new monaco.Range(position.lineNumber, position.column, position.lineNumber, position.column),
-            text: insertTextPrefix + arg
+            text: arg
         }]);
 
         await this.addContextVariable(variableName, arg);
