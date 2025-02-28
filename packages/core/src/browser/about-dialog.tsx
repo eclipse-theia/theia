@@ -94,8 +94,9 @@ export class AboutDialog extends ReactDialog<void> {
 
     protected renderExtensions(): React.ReactNode {
         const extensionsInfos = this.extensionsInfos;
+        const listOfExtensions = nls.localize('theia/core/about/listOfExtensions', 'List of extensions');
         return <>
-            <h3>List of extensions</h3>
+            <h3>{listOfExtensions}</h3>
             <ul className={ABOUT_EXTENSIONS_CLASS}>
                 {
                     extensionsInfos
