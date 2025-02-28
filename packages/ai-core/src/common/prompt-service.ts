@@ -265,7 +265,7 @@ export class PromptServiceImpl implements PromptService {
 
         // First resolve variables and arguments
         let resolvedTemplate = prompt.template;
-        const variableAndArgReplacements = await this.getVariableAndArgReplacements(prompt.template, args);
+        const variableAndArgReplacements = await this.getVariableAndArgReplacements(prompt.template, args, context);
         variableAndArgReplacements.forEach(replacement => resolvedTemplate = resolvedTemplate.replace(replacement.placeholder, replacement.value));
 
         // Then resolve function references with already resolved variables and arguments
@@ -315,7 +315,11 @@ export class PromptServiceImpl implements PromptService {
      * @param template the unresolved template text
      * @param args the object with placeholders, mapping the placeholder key to the value
      */
-    protected async getVariableAndArgReplacements(template: string, args?: { [key: string]: unknown }): Promise<{ placeholder: string; value: string }[]> {
+    protected async getVariableAndArgReplacements(
+        template: string,
+        args?: { [key: string]: unknown },
+        context?: AIVariableContext
+    ): Promise<{ placeholder: string; value: string }[]> {
         const matches = matchVariablesRegEx(template);
         const variableAndArgReplacements = await Promise.all(matches.map(async match => {
             const completeText = match[0];
