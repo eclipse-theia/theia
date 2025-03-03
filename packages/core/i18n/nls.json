@@ -453,7 +453,14 @@
       "tabDefaultSize": "Specifies the default size for tabs.",
       "tabMaximize": "Controls whether to maximize tabs on double click.",
       "tabMinimumSize": "Specifies the minimum size for tabs.",
-      "tabShrinkToFit": "Shrink tabs to fit available space."
+      "tabShrinkToFit": "Shrink tabs to fit available space.",
+      "window": {
+        "tabCloseIconPlacement": {
+          "description": "Place the close icons on tab titles at the start or end of the tab. The default is the host OS convention.",
+          "end": "Place the close icon at the end of the label. In left-to-right languages, this is the right side of the tab.",
+          "start": "Place the close icon at the start of the label. In left-to-right languages, this is the left side of the tab."
+        }
+      }
     },
     "debug": {
       "addConfigurationPlaceholder": "Select workspace root to add configuration to",
