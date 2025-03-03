@@ -31,6 +31,16 @@ const VARIABLE_RESOLUTION_CONTEXT = { context: 'chat-input-autocomplete' };
 const VARIABLE_ARGUMENT_PICKER_COMMAND = 'trigger-variable-argument-picker';
 const VARIABLE_ADD_CONTEXT_COMMAND = 'add-context-variable';
 
+interface CompletionSource<T> {
+    triggerCharacter: string;
+    getItems: () => T[];
+    kind: monaco.languages.CompletionItemKind;
+    getId: (item: T) => string;
+    getName: (item: T) => string;
+    getDescription: (item: T) => string;
+    command?: monaco.languages.Command;
+}
+
 @injectable()
 export class ChatViewLanguageContribution implements FrontendApplicationContribution {
 
@@ -49,25 +59,58 @@ export class ChatViewLanguageContribution implements FrontendApplicationContribu
     onStart(_app: FrontendApplication): MaybePromise<void> {
         monaco.languages.register({ id: CHAT_VIEW_LANGUAGE_ID, extensions: [CHAT_VIEW_LANGUAGE_EXTENSION] });
 
-        monaco.languages.registerCompletionItemProvider(CHAT_VIEW_LANGUAGE_ID, {
-            triggerCharacters: [PromptText.AGENT_CHAR],
-            provideCompletionItems: (model, position, _context, _token): ProviderResult<monaco.languages.CompletionList> => this.provideAgentCompletions(model, position),
-        });
-        monaco.languages.registerCompletionItemProvider(CHAT_VIEW_LANGUAGE_ID, {
-            triggerCharacters: [PromptText.VARIABLE_CHAR],
-            provideCompletionItems: (model, position, _context, _token): ProviderResult<monaco.languages.CompletionList> => this.provideVariableCompletions(model, position),
-        });
-        monaco.languages.registerCompletionItemProvider(CHAT_VIEW_LANGUAGE_ID, {
-            triggerCharacters: [PromptText.VARIABLE_CHAR, PromptText.VARIABLE_SEPARATOR_CHAR],
-            provideCompletionItems: (model, position, _context, _token): ProviderResult<monaco.languages.CompletionList> => this.provideVariableWithArgCompletions(model, position),
-        });
-        monaco.languages.registerCompletionItemProvider(CHAT_VIEW_LANGUAGE_ID, {
-            triggerCharacters: [PromptText.FUNCTION_CHAR],
-            provideCompletionItems: (model, position, _context, _token): ProviderResult<monaco.languages.CompletionList> => this.provideToolCompletions(model, position),
-        });
+        this.registerCompletionProviders();
 
         monaco.editor.registerCommand(VARIABLE_ARGUMENT_PICKER_COMMAND, this.triggerVariableArgumentPicker.bind(this));
         monaco.editor.registerCommand(VARIABLE_ADD_CONTEXT_COMMAND, (_, ...args) => args.length > 1 ? this.addContextVariable(args[0], args[1]) : undefined);
+    }
+
+    protected registerCompletionProviders(): void {
+        this.registerStandardCompletionProvider({
+            triggerCharacter: PromptText.AGENT_CHAR,
+            getItems: () => this.agentService.getAgents(),
+            kind: monaco.languages.CompletionItemKind.Value,
+            getId: agent => `${agent.id} `,
+            getName: agent => agent.name,
+            getDescription: agent => agent.description
+        });
+
+        this.registerStandardCompletionProvider({
+            triggerCharacter: PromptText.VARIABLE_CHAR,
+            getItems: () => this.variableService.getVariables(),
+            kind: monaco.languages.CompletionItemKind.Variable,
+            getId: variable => variable.args?.some(arg => !arg.isOptional) ? variable.name + PromptText.VARIABLE_SEPARATOR_CHAR : `${variable.name} `,
+            getName: variable => variable.name,
+            getDescription: variable => variable.description,
+            command: {
+                title: nls.localize('theia/ai/chat-ui/selectVariableArguments', 'Select variable arguments'),
+                id: VARIABLE_ARGUMENT_PICKER_COMMAND,
+            }
+        });
+
+        this.registerStandardCompletionProvider({
+            triggerCharacter: PromptText.FUNCTION_CHAR,
+            getItems: () => this.toolInvocationRegistry.getAllFunctions(),
+            kind: monaco.languages.CompletionItemKind.Function,
+            getId: tool => `${tool.id} `,
+            getName: tool => tool.name,
+            getDescription: tool => tool.description ?? ''
+        });
+
+        // Register the variable argument completion provider (special case)
+        monaco.languages.registerCompletionItemProvider(CHAT_VIEW_LANGUAGE_ID, {
+            triggerCharacters: [PromptText.VARIABLE_CHAR, PromptText.VARIABLE_SEPARATOR_CHAR],
+            provideCompletionItems: (model, position, _context, _token): ProviderResult<monaco.languages.CompletionList> =>
+                this.provideVariableWithArgCompletions(model, position),
+        });
+    }
+
+    protected registerStandardCompletionProvider<T>(source: CompletionSource<T>): void {
+        monaco.languages.registerCompletionItemProvider(CHAT_VIEW_LANGUAGE_ID, {
+            triggerCharacters: [source.triggerCharacter],
+            provideCompletionItems: (model, position, _context, _token): ProviderResult<monaco.languages.CompletionList> =>
+                this.provideCompletions(model, position, source),
+        });
     }
 
     getCompletionRange(model: monaco.editor.ITextModel, position: monaco.Position, triggerCharacter: string): monaco.Range | undefined {
@@ -75,9 +118,23 @@ export class ChatViewLanguageContribution implements FrontendApplicationContribu
         const lineContent = model.getLineContent(position.lineNumber);
         // one to the left, and -1 for 0-based index
         const characterBeforeCurrentWord = lineContent[wordInfo.startColumn - 1 - 1];
-        // return suggestions only if the word is directly preceded by the trigger character
+
         if (characterBeforeCurrentWord !== triggerCharacter) {
             return undefined;
+        }
+
+        // we are not at the beginning of the line
+        if (wordInfo.startColumn > 2) {
+            const charBeforeTrigger = model.getValueInRange({
+                startLineNumber: position.lineNumber,
+                startColumn: wordInfo.startColumn - 2,
+                endLineNumber: position.lineNumber,
+                endColumn: wordInfo.startColumn - 1
+            });
+            // If the character before the trigger is not whitespace, don't provide completions
+            if (!/\s/.test(charBeforeTrigger)) {
+                return undefined;
+            }
         }
 
         return new monaco.Range(
@@ -88,73 +145,65 @@ export class ChatViewLanguageContribution implements FrontendApplicationContribu
         );
     }
 
-    private getSuggestions<T>(
+    protected provideCompletions<T>(
         model: monaco.editor.ITextModel,
         position: monaco.Position,
-        triggerChar: string,
-        items: T[],
-        kind: monaco.languages.CompletionItemKind,
-        getId: (item: T) => string,
-        getName: (item: T) => string,
-        getDescription: (item: T) => string,
-        command?: monaco.languages.Command
+        source: CompletionSource<T>
     ): ProviderResult<monaco.languages.CompletionList> {
-        const completionRange = this.getCompletionRange(model, position, triggerChar);
+        const completionRange = this.getCompletionRange(model, position, source.triggerCharacter);
         if (completionRange === undefined) {
             return { suggestions: [] };
         }
+
+        const items = source.getItems();
         const suggestions = items.map(item => ({
-            insertText: getId(item),
-            kind: kind,
-            label: getName(item),
+            insertText: source.getId(item),
+            kind: source.kind,
+            label: source.getName(item),
             range: completionRange,
-            detail: getDescription(item),
-            command
+            detail: source.getDescription(item),
+            command: source.command
         }));
+
         return { suggestions };
     }
 
-    provideAgentCompletions(model: monaco.editor.ITextModel, position: monaco.Position): ProviderResult<monaco.languages.CompletionList> {
-        return this.getSuggestions(
-            model,
-            position,
-            PromptText.AGENT_CHAR,
-            this.agentService.getAgents(),
-            monaco.languages.CompletionItemKind.Value,
-            agent => `${agent.id} `,
-            agent => agent.name,
-            agent => agent.description
-        );
-    }
-
-    provideVariableCompletions(model: monaco.editor.ITextModel, position: monaco.Position): ProviderResult<monaco.languages.CompletionList> {
-        return this.getSuggestions(
-            model,
-            position,
-            PromptText.VARIABLE_CHAR,
-            this.variableService.getVariables(),
-            monaco.languages.CompletionItemKind.Variable,
-            variable => variable.args?.some(arg => !arg.isOptional) ? variable.name + PromptText.VARIABLE_SEPARATOR_CHAR : `${variable.name} `,
-            variable => variable.name,
-            variable => variable.description,
-            {
-                title: nls.localize('theia/ai/chat-ui/selectVariableArguments', 'Select variable arguments'),
-                id: VARIABLE_ARGUMENT_PICKER_COMMAND,
-            }
-        );
-    }
-
     async provideVariableWithArgCompletions(model: monaco.editor.ITextModel, position: monaco.Position): Promise<monaco.languages.CompletionList> {
+        // Get the text of the current line up to the cursor position
+        const textUntilPosition = model.getValueInRange({
+            startLineNumber: position.lineNumber,
+            startColumn: 1,
+            endLineNumber: position.lineNumber,
+            endColumn: position.column,
+        });
+
+        // Regex that captures the variable name in contexts like "#varname" or "#var-name:args"
+        // Matches only when # is at the beginning of the string or after whitespace
+        const variableRegex = /(?:^|\s)#([\w-]*)/;
+        const match = textUntilPosition.match(variableRegex);
+
+        if (!match) {
+            return { suggestions: [] };
+        }
+
+        const currentVariableName = match[1];
+        const hasColonSeparator = textUntilPosition.includes(`${currentVariableName}:`);
+
         const variables = this.variableService.getVariables();
         const suggestions: monaco.languages.CompletionItem[] = [];
+
         for (const variable of variables) {
+            // If we have a variable:arg pattern, only process the matching variable
+            if (hasColonSeparator && variable.name !== currentVariableName) {
+                continue;
+            }
+
             const provider = await this.variableService.getArgumentCompletionProvider(variable.name);
             if (provider) {
                 const items = await provider(model, position);
                 if (items) {
                     suggestions.push(...items.map(item => ({
                         ...item,
-                        // trigger command to check if we should add a context variable
                         command: {
                             title: nls.localize('theia/ai/chat-ui/addContextVariable', 'Add context variable'),
                             id: VARIABLE_ADD_CONTEXT_COMMAND,
@@ -164,20 +213,8 @@ export class ChatViewLanguageContribution implements FrontendApplicationContribu
                 }
             }
         }
-        return { suggestions };
-    }
 
-    provideToolCompletions(model: monaco.editor.ITextModel, position: monaco.Position): ProviderResult<monaco.languages.CompletionList> {
-        return this.getSuggestions(
-            model,
-            position,
-            PromptText.FUNCTION_CHAR,
-            this.toolInvocationRegistry.getAllFunctions(),
-            monaco.languages.CompletionItemKind.Function,
-            tool => `${tool.id} `,
-            tool => tool.name,
-            tool => tool.description ?? ''
-        );
+        return { suggestions };
     }
 
     protected async triggerVariableArgumentPicker(): Promise<void> {
@@ -185,41 +222,48 @@ export class ChatViewLanguageContribution implements FrontendApplicationContribu
         if (!inputEditor) {
             return;
         }
+
         const model = inputEditor.getModel();
         const position = inputEditor.getPosition();
         if (!model || !position) {
             return;
         }
 
+        // // Get the word at cursor
+        const wordInfo = model.getWordUntilPosition(position);
+
         // account for the variable separator character if present
         let endOfWordPosition = position.column;
-        let insertTextPrefix = PromptText.VARIABLE_SEPARATOR_CHAR;
-        if (this.getCharacterBeforePosition(model, position) === PromptText.VARIABLE_SEPARATOR_CHAR) {
+        if (wordInfo.word === '' && this.getCharacterBeforePosition(model, position) === PromptText.VARIABLE_SEPARATOR_CHAR) {
             endOfWordPosition = position.column - 1;
-            insertTextPrefix = '';
+        } else {
+            return;
         }
 
         const variableName = model.getWordAtPosition({ ...position, column: endOfWordPosition })?.word;
         if (!variableName) {
             return;
         }
+
         const provider = await this.variableService.getArgumentPicker(variableName, VARIABLE_RESOLUTION_CONTEXT);
         if (!provider) {
             return;
         }
+
         const arg = await provider(VARIABLE_RESOLUTION_CONTEXT);
         if (!arg) {
             return;
         }
+
         inputEditor.executeEdits('variable-argument-picker', [{
             range: new monaco.Range(position.lineNumber, position.column, position.lineNumber, position.column),
-            text: insertTextPrefix + arg
+            text: arg
         }]);
+
         await this.addContextVariable(variableName, arg);
     }
 
     protected getCharacterBeforePosition(model: monaco.editor.ITextModel, position: monaco.Position): string {
-        // one to the left, and -1 for 0-based index
         return model.getLineContent(position.lineNumber)[position.column - 1 - 1];
     }
 
@@ -228,6 +272,7 @@ export class ChatViewLanguageContribution implements FrontendApplicationContribu
         if (!variable || !AIContextVariable.is(variable)) {
             return;
         }
+
         const widget = this.shell.getWidgetById(ChatViewWidget.ID);
         if (widget instanceof ChatViewWidget) {
             widget.addContext({ variable, arg });
