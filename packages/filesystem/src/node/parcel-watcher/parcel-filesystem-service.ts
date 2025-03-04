@@ -242,12 +242,18 @@ export class ParcelWatcher {
         }
         return subscribe(fsPath, (err, events) => {
             if (err) {
-                console.error(`Watcher service error on "${fsPath}":`, err);
-                this._dispose();
-                this.fireError();
-                return;
+                if (err.message && err.message.indexOf('File system must be re-scanned') !== -1) {
+                    console.log(`FS Events were dropped on watcher ${fsp}`);
+                } else {
+                    console.error(`Watcher service error on "${fsPath}":`, err);
+                    this._dispose();
+                    this.fireError();
+                    return;
+                }
             }
-            this.handleWatcherEvents(events);
+            if (events) {
+                this.handleWatcherEvents(events);
+            }
         }, {
             ...this.parcelFileSystemWatchServerOptions.parcelOptions
         });
