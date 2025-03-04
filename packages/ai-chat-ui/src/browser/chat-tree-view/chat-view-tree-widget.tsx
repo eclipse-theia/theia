@@ -47,6 +47,7 @@ import {
     postConstruct
 } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
+import { nls } from '@theia/core/lib/common/nls';
 
 import { ChatNodeToolbarActionContribution } from '../chat-node-toolbar-action-contribution';
 import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
@@ -151,43 +152,51 @@ export class ChatViewTreeWidget extends TreeWidget {
         return <div className={'theia-ResponseNode'}>
             <div className='theia-ResponseNode-Content' key={'disabled-message'}>
                 <div className="disable-message">
-                    <span className="section-header"> 🚀 Experimental AI Feature Available!</span>
+                    <span className="section-header">{
+                        nls.localize('theia/ai/chat-ui/chat-view-tree-widget/aiFeatureHeader', '🚀 AI Features Available (Alpha Version)!')}
+                    </span>
                     <div className="section-title">
-                        <p><code>Currently, all AI Features are disabled!</code></p>
+                        <p><code>{nls.localize('theia/ai/chat-ui/chat-view-tree-widget/featuresDisabled', 'Currently, all AI Features are disabled!')}</code></p>
                     </div>
                     <div className="section-title">
-                        <p>How to Enable Experimental AI Features:</p>
+                        <p>{nls.localize('theia/ai/chat-ui/chat-view-tree-widget/howToEnable', 'How to Enable the AI Features:')}</p>
                     </div>
                     <div className="section-content">
-                        <p>To enable the experimental AI features, please go to &nbsp;
-                            {this.renderLinkButton('the settings menu', CommonCommands.OPEN_PREFERENCES.id)}
+                        <p>To enable the AI features, please go to &nbsp;
+                            {this.renderLinkButton(nls.localize('theia/ai/chat-ui/chat-view-tree-widget/settingsMenu', 'the settings menu'), CommonCommands.OPEN_PREFERENCES.id)}
                             &nbsp;and locate the <strong>AI Features</strong> section.</p>
                         <ol>
-                            <li>Toggle the switch for <strong>'Ai-features: Enable'</strong>.</li>
+                            <li>Toggle the switch for <strong>{nls.localize('theia/ai/chat-ui/chat-view-tree-widget/aiFeaturesEnable', 'Ai-features: Enable')}</strong>.</li>
                             <li>Provide at least one LLM provider (e.g. OpenAI), also see <a href="https://theia-ide.org/docs/user_ai/" target="_blank">the documentation</a>
                                 for more information.</li>
                         </ol>
-                        <p>This will activate the new AI capabilities in the app. Please remember, these features are still in development, so they may change or be unstable. 🚧</p>
+                        <p>This will activate the AI capabilities in the app. Please remember, these features are <strong>in an alpha state</strong>,
+                            so they may change and we are working on improving them 🚧.<br></br>
+                            Please support us by <a href="https://github.com/eclipse-theia/theia">providing feedback
+                            </a>!</p>
                     </div>
 
                     <div className="section-title">
                         <p>Currently Supported Views and Features:</p>
                     </div>
                     <div className="section-content">
-                        <p>Once the experimental AI features are enabled, you can access the following views and features:</p>
+                        <p>Once the AI features are enabled, you can access the following views and features:</p>
                         <ul>
                             <li>Code Completion</li>
                             <li>Terminal Assistance (via CTRL+I in a terminal)</li>
                             <li>This Chat View (features the following agents):
                                 <ul>
                                     <li>Universal Chat Agent</li>
-                                    <li>Workspace Chat Agent</li>
+                                    <li>Coder Chat Agent</li>
+                                    <li>Architect Chat Agent</li>
                                     <li>Command Chat Agent</li>
                                     <li>Orchestrator Chat Agent</li>
                                 </ul>
                             </li>
-                            <li>{this.renderLinkButton('AI History View', 'aiHistory:open')}</li>
-                            <li>{this.renderLinkButton('AI Configuration View', 'aiConfiguration:open')}</li>
+                            <li>{this.renderLinkButton(nls.localize('theia/ai/chat-ui/chat-view-tree-widget/aiHistoryView', 'AI History View'), 'aiHistory:open')}</li>
+                            <li>{this.renderLinkButton(
+                                nls.localize('theia/ai/chat-ui/chat-view-tree-widget/aiConfigurationView', 'AI Configuration View'), 'aiConfiguration:open')}
+                            </li>
                         </ul>
                         <p>See <a href="https://theia-ide.org/docs/user_ai/" target="_blank">the documentation</a> for more information.</p>
                     </div>
@@ -307,8 +316,9 @@ export class ChatViewTreeWidget extends TreeWidget {
                     }}>
                     {this.getAgentLabel(node)}
                 </h3>
-                {inProgress && !waitingForInput && <span className='theia-ChatContentInProgress'>Generating</span>}
-                {inProgress && waitingForInput && <span className='theia-ChatContentInProgress'>Waiting for input</span>}
+                {inProgress && !waitingForInput && <span className='theia-ChatContentInProgress'>{nls.localizeByDefault('Generating')}</span>}
+                {inProgress && waitingForInput && <span className='theia-ChatContentInProgress'>{
+                    nls.localize('theia/ai/chat-ui/chat-view-tree-widget/waitingForInput', 'Waiting for input')}</span>}
                 <div className='theia-ChatNodeToolbar'>
                     {!inProgress &&
                         toolbarContributions.length > 0 &&
@@ -338,9 +348,9 @@ export class ChatViewTreeWidget extends TreeWidget {
     private getAgentLabel(node: RequestNode | ResponseNode): string {
         if (isRequestNode(node)) {
             // TODO find user name
-            return 'You';
+            return nls.localize('theia/ai/chat-ui/chat-view-tree-widget/you', 'You');
         }
-        return this.getAgent(node)?.name ?? 'AI';
+        return this.getAgent(node)?.name ?? nls.localize('theia/ai/chat-ui/chat-view-tree-widget/ai', 'AI');
     }
 
     private getAgent(node: RequestNode | ResponseNode): ChatAgent | undefined {
@@ -420,7 +430,7 @@ export class ChatViewTreeWidget extends TreeWidget {
             [-1, undefined])[1];
         if (!renderer) {
             console.error('No renderer found for content', content);
-            return <div>Error: No renderer found</div>;
+            return <div>{nls.localize('theia/ai/chat-ui/chat-view-tree-widget/noRenderer', 'Error: No renderer found')}</div>;
         }
         return renderer.render(content, node);
     }

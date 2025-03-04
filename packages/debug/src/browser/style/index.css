@@ -218,6 +218,10 @@
   color: var(--theia-debugConsole-errorForeground);
 }
 
+.theia-debug-console-variable .watch-not-available {
+  font-style: italic;
+}
+
 .theia-debug-watch-expression {
   display: flex;
 }

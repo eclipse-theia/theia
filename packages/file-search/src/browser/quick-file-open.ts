@@ -14,19 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
-import { OpenerService, KeybindingRegistry, QuickAccessRegistry, QuickAccessProvider, CommonCommands, PreferenceService } from '@theia/core/lib/browser';
-import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import URI from '@theia/core/lib/common/uri';
-import { FileSearchService, WHITESPACE_QUERY_SEPARATOR } from '../common/file-search-service';
+import { CommonCommands, KeybindingRegistry, OpenerService, QuickAccessProvider, QuickAccessRegistry } from '@theia/core/lib/browser';
+import { QuickInputService, QuickPickItem, QuickPicks } from '@theia/core/lib/browser/quick-input/quick-input-service';
 import { CancellationToken, Command, nls } from '@theia/core/lib/common';
-import { LabelProvider } from '@theia/core/lib/browser/label-provider';
-import { NavigationLocationService } from '@theia/editor/lib/browser/navigation/navigation-location-service';
-import * as fuzzy from '@theia/core/shared/fuzzy';
 import { MessageService } from '@theia/core/lib/common/message-service';
-import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
+import URI from '@theia/core/lib/common/uri';
+import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
 import { EditorOpenerOptions, EditorWidget, Position, Range } from '@theia/editor/lib/browser';
-import { findMatches, QuickInputService, QuickPickItem, QuickPicks } from '@theia/core/lib/browser/quick-input/quick-input-service';
+import { NavigationLocationService } from '@theia/editor/lib/browser/navigation/navigation-location-service';
+import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import { QuickFileSelectService } from './quick-file-select-service';
 
 export const quickFileOpen = Command.toDefaultLocalizedCommand({
     id: 'file-search.openFile',
@@ -56,18 +53,12 @@ export class QuickFileOpenService implements QuickAccessProvider {
     protected readonly quickInputService: QuickInputService;
     @inject(QuickAccessRegistry)
     protected readonly quickAccessRegistry: QuickAccessRegistry;
-    @inject(FileSearchService)
-    protected readonly fileSearchService: FileSearchService;
-    @inject(LabelProvider)
-    protected readonly labelProvider: LabelProvider;
     @inject(NavigationLocationService)
     protected readonly navigationLocationService: NavigationLocationService;
     @inject(MessageService)
     protected readonly messageService: MessageService;
-    @inject(FileSystemPreferences)
-    protected readonly fsPreferences: FileSystemPreferences;
-    @inject(PreferenceService)
-    protected readonly preferences: PreferenceService;
+    @inject(QuickFileSelectService)
+    protected readonly quickFileSelectService: QuickFileSelectService;
 
     registerQuickAccessProvider(): void {
         this.quickAccessRegistry.registerQuickAccessProvider({
@@ -95,15 +86,6 @@ export class QuickFileOpenService implements QuickAccessProvider {
      * Tracks the user file search filter and location range e.g. fileFilter:line:column or fileFilter:line,column
      */
     protected filterAndRange: FilterAndRange = this.filterAndRangeDefault;
-
-    /**
-     * The score constants when comparing file search results.
-     */
-    private static readonly Scores = {
-        max: 1000,  // represents the maximum score from fuzzy matching (Infinity).
-        exact: 500, // represents the score assigned to exact matching.
-        partial: 250 // represents the score assigned to partial matching.
-    };
 
     @postConstruct()
     protected init(): void {
@@ -156,125 +138,13 @@ export class QuickFileOpenService implements QuickAccessProvider {
     }
 
     async getPicks(filter: string, token: CancellationToken): Promise<QuickPicks> {
-        const roots = this.workspaceService.tryGetRoots();
-
         this.filterAndRange = this.splitFilterAndRange(filter);
         const fileFilter = this.filterAndRange.filter;
-
-        const alreadyCollected = new Set<string>();
-        const recentlyUsedItems: QuickPicks = [];
-
-        if (this.preferences.get('search.quickOpen.includeHistory')) {
-            const locations = [...this.navigationLocationService.locations()].reverse();
-            for (const location of locations) {
-                const uriString = location.uri.toString();
-
-                if (location.uri.scheme === 'file' && !alreadyCollected.has(uriString) && fuzzy.test(fileFilter, uriString)) {
-                    if (recentlyUsedItems.length === 0) {
-                        recentlyUsedItems.push({
-                            type: 'separator',
-                            label: nls.localizeByDefault('recently opened')
-                        });
-                    }
-                    const item = this.toItem(fileFilter, location.uri);
-                    recentlyUsedItems.push(item);
-                    alreadyCollected.add(uriString);
-                }
-            }
-        }
-
-        if (fileFilter.length > 0) {
-            const handler = async (results: string[]) => {
-                if (token.isCancellationRequested || results.length <= 0) {
-                    return [];
-                }
-
-                const result = [...recentlyUsedItems];
-                const fileSearchResultItems: FileQuickPickItem[] = [];
-
-                for (const fileUri of results) {
-                    if (!alreadyCollected.has(fileUri)) {
-                        const item = this.toItem(fileFilter, fileUri);
-                        fileSearchResultItems.push(item);
-                        alreadyCollected.add(fileUri);
-                    }
-                }
-
-                // Create a copy of the file search results and sort.
-                const sortedResults = fileSearchResultItems.slice();
-                sortedResults.sort((a, b) => this.compareItems(a, b));
-
-                if (sortedResults.length > 0) {
-                    result.push({
-                        type: 'separator',
-                        label: nls.localizeByDefault('file results')
-                    });
-                    result.push(...sortedResults);
-                }
-
-                // Return the recently used items, followed by the search results.
-                return result;
-            };
-
-            return this.fileSearchService.find(fileFilter, {
-                rootUris: roots.map(r => r.resource.toString()),
-                fuzzyMatch: true,
-                limit: 200,
-                useGitIgnore: this.hideIgnoredFiles,
-                excludePatterns: this.hideIgnoredFiles
-                    ? Object.keys(this.fsPreferences['files.exclude'])
-                    : undefined,
-            }, token).then(handler);
-        } else {
-            return roots.length !== 0 ? recentlyUsedItems : [];
-        }
-    }
-
-    protected compareItems(
-        left: FileQuickPickItem,
-        right: FileQuickPickItem): number {
-
-        /**
-         * Score a given string.
-         *
-         * @param str the string to score on.
-         * @returns the score.
-         */
-        function score(str: string | undefined): number {
-            if (!str) {
-                return 0;
-            }
-
-            let exactMatch = true;
-            const partialMatches = querySplit.reduce((matched, part) => {
-                const partMatches = str.includes(part);
-                exactMatch = exactMatch && partMatches;
-                return partMatches ? matched + QuickFileOpenService.Scores.partial : matched;
-            }, 0);
-
-            // Check fuzzy matches.
-            const fuzzyMatch = fuzzy.match(queryJoin, str) ?? { score: 0 };
-            if (fuzzyMatch.score === Infinity && exactMatch) {
-                return Number.MAX_SAFE_INTEGER;
-            }
-
-            return fuzzyMatch.score + partialMatches + (exactMatch ? QuickFileOpenService.Scores.exact : 0);
-        }
-
-        const query: string = normalize(this.filterAndRange.filter);
-        // Adjust for whitespaces in the query.
-        const querySplit = query.split(WHITESPACE_QUERY_SEPARATOR);
-        const queryJoin = querySplit.join('');
-
-        const compareByLabelScore = (l: FileQuickPickItem, r: FileQuickPickItem) => score(r.label) - score(l.label);
-        const compareByLabelIndex = (l: FileQuickPickItem, r: FileQuickPickItem) => r.label.indexOf(query) - l.label.indexOf(query);
-        const compareByLabel = (l: FileQuickPickItem, r: FileQuickPickItem) => l.label.localeCompare(r.label);
-
-        const compareByPathScore = (l: FileQuickPickItem, r: FileQuickPickItem) => score(r.uri.path.toString()) - score(l.uri.path.toString());
-        const compareByPathIndex = (l: FileQuickPickItem, r: FileQuickPickItem) => r.uri.path.toString().indexOf(query) - l.uri.path.toString().indexOf(query);
-        const compareByPathLabel = (l: FileQuickPickItem, r: FileQuickPickItem) => l.uri.path.toString().localeCompare(r.uri.path.toString());
-
-        return compareWithDiscriminators(left, right, compareByLabelScore, compareByLabelIndex, compareByLabel, compareByPathScore, compareByPathIndex, compareByPathLabel);
+        return this.quickFileSelectService.getPicks(fileFilter, token, {
+            hideIgnoredFiles: this.hideIgnoredFiles,
+            onSelect: item => this.openFile(item.uri)
+        },
+        );
     }
 
     openFile(uri: URI): void {
@@ -296,37 +166,6 @@ export class QuickFileOpenService implements QuickAccessProvider {
 
     protected buildOpenerOptions(): EditorOpenerOptions {
         return { selection: this.filterAndRange.range };
-    }
-
-    private toItem(lookFor: string, uriOrString: URI | string): FileQuickPickItem {
-        const uri = uriOrString instanceof URI ? uriOrString : new URI(uriOrString);
-        const label = this.labelProvider.getName(uri);
-        const description = this.getItemDescription(uri);
-        const iconClasses = this.getItemIconClasses(uri);
-
-        return {
-            label,
-            description,
-            highlights: {
-                label: findMatches(label, lookFor),
-                description: findMatches(description, lookFor)
-            },
-            iconClasses,
-            uri,
-            execute: () => this.openFile(uri)
-        };
-    }
-
-    private getItemIconClasses(uri: URI): string[] | undefined {
-        const icon = this.labelProvider.getIcon(uri).split(' ').filter(v => v.length > 0);
-        if (icon.length > 0) {
-            icon.push('file-icon');
-        }
-        return icon;
-    }
-
-    private getItemDescription(uri: URI): string {
-        return this.labelProvider.getDetails(uri);
     }
 
     private getPlaceHolder(): string {
@@ -366,25 +205,4 @@ export class QuickFileOpenService implements QuickAccessProvider {
         }
         return { filter, range };
     }
-}
-
-/**
- * Normalize a given string.
- *
- * @param str the raw string value.
- * @returns the normalized string value.
- */
-function normalize(str: string): string {
-    return str.trim().toLowerCase();
-}
-
-function compareWithDiscriminators<T>(left: T, right: T, ...discriminators: ((left: T, right: T) => number)[]): number {
-    let comparisonValue = 0;
-    let i = 0;
-
-    while (comparisonValue === 0 && i < discriminators.length) {
-        comparisonValue = discriminators[i](left, right);
-        i++;
-    }
-    return comparisonValue;
 }

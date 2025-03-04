@@ -826,7 +826,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     }
 
     override dispose(): void {
-        if (this.closeOnDispose === true && typeof this.terminalId === 'number' && !this.exitStatus) {
+        if (this.closeOnDispose === true && typeof this.terminalId === 'number' && !this.exitStatus?.code) {
             // Close the backend terminal only when explicitly closing the terminal
             // a refresh for example won't close it.
             this.shellTerminalServer.close(this.terminalId);

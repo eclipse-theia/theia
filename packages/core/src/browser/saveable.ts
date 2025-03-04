@@ -28,6 +28,8 @@ export type AutoSaveMode = 'off' | 'afterDelay' | 'onFocusChange' | 'onWindowCha
 
 export interface Saveable {
     readonly dirty: boolean;
+    /** If false, the saveable will not participate in autosaving. */
+    readonly autosaveable?: boolean;
     /**
      * This event is fired when the content of the `dirty` variable changes.
      */

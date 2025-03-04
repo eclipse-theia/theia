@@ -112,7 +112,7 @@ export namespace TestViewCommands {
 
     export const SELECT_DEFAULT_PROFILES: Command = Command.toDefaultLocalizedCommand({
         id: TestCommandId.SelectDefaultTestProfiles,
-        label: 'Select Default Test Profiles...',
+        label: 'Select Default Profile',
         category: 'Test'
     });
 

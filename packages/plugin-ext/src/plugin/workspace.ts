@@ -44,6 +44,7 @@ import { MessageRegistryExt } from './message-registry';
 import * as Converter from './type-converters';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { isUndefinedOrNull, isUndefined } from '../common/types';
+import { PluginLogger } from './logger';
 
 @injectable()
 export class WorkspaceExtImpl implements WorkspaceExt {
@@ -58,6 +59,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
     protected messageService: MessageRegistryExt;
 
     private proxy: WorkspaceMain;
+    private logger: PluginLogger;
 
     private workspaceFoldersChangedEmitter = new Emitter<theia.WorkspaceFoldersChangeEvent>();
     public readonly onDidChangeWorkspaceFolders: Event<theia.WorkspaceFoldersChangeEvent> = this.workspaceFoldersChangedEmitter.event;
@@ -77,6 +79,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
     @postConstruct()
     initialize(): void {
         this.proxy = this.rpc.getProxy(Ext.WORKSPACE_MAIN);
+        this.logger = new PluginLogger(this.rpc, 'workspace');
     }
 
     get rootPath(): string | undefined {
@@ -267,7 +270,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
             throw new Error(`Text Content Document Provider for scheme '${scheme}' is already registered`);
         } else if (this.documentContentProviders.has(scheme)) {
             // TODO: we should be able to handle multiple registrations, but for now we should ensure that it doesn't crash plugin activation.
-            console.warn(`Repeat registration of TextContentDocumentProvider for scheme '${scheme}'. This registration will be ignored.`);
+            this.logger.warn(`Repeat registration of TextContentDocumentProvider for scheme '${scheme}'. This registration will be ignored.`);
             return { dispose: () => { } };
         }
 
@@ -472,7 +475,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
 
         this.canonicalUriProviders.set(scheme, provider);
         this.proxy.$registerCanonicalUriProvider(scheme).catch(e => {
-            console.error(`Canonical URI provider for scheme: '${scheme}' already exists globally`);
+            this.logger.error(`Canonical URI provider for scheme: '${scheme}' already exists globally`);
             this.canonicalUriProviders.delete(scheme);
         });
         const result = Disposable.create(() => { this.proxy.$unregisterCanonicalUriProvider(scheme); });
@@ -481,7 +484,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
 
     $disposeCanonicalUriProvider(scheme: string): void {
         if (!this.canonicalUriProviders.delete(scheme)) {
-            console.warn(`No canonical uri provider registered for '${scheme}'`);
+            this.logger.warn(`diposeCanonicalUriProvider: No canonical uri provider registered for '${scheme}'`);
         }
     }
 
@@ -494,7 +497,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
         const parsed = URI.parse(uri);
         const provider = this.canonicalUriProviders.get(parsed.scheme);
         if (!provider) {
-            console.warn(`No canonical uri provider registered for '${parsed.scheme}'`);
+            this.logger.warn(`provideCanonicalUri: No canonical uri provider registered for '${parsed.scheme}'`);
             return undefined;
         }
         const result = await provider.provideCanonicalUri(parsed, { targetScheme: targetScheme }, token);

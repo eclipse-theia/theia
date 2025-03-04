@@ -16,11 +16,14 @@
 
 import { LanguageModelRegistry } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { OpenAiModel } from './openai-language-model';
+import { OpenAiModel, OpenAiModelUtils } from './openai-language-model';
 import { OpenAiLanguageModelsManager, OpenAiModelDescription } from '../common';
 
 @injectable()
 export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsManager {
+
+    @inject(OpenAiModelUtils)
+    protected readonly openAiModelUtils: OpenAiModelUtils;
 
     protected _apiKey: string | undefined;
     protected _apiVersion: string | undefined;
@@ -70,7 +73,7 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                 model.url = modelDescription.url;
                 model.apiKey = apiKeyProvider;
                 model.apiVersion = apiVersionProvider;
-                model.supportsDeveloperMessage = modelDescription.supportsDeveloperMessage;
+                model.developerMessageSettings = modelDescription.developerMessageSettings || 'developer';
                 model.supportsStructuredOutput = modelDescription.supportsStructuredOutput;
                 model.defaultRequestSettings = modelDescription.defaultRequestSettings;
             } else {
@@ -81,9 +84,10 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                         modelDescription.enableStreaming,
                         apiKeyProvider,
                         apiVersionProvider,
-                        modelDescription.supportsDeveloperMessage,
                         modelDescription.supportsStructuredOutput,
                         modelDescription.url,
+                        this.openAiModelUtils,
+                        modelDescription.developerMessageSettings,
                         modelDescription.defaultRequestSettings
                     )
                 ]);

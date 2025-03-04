@@ -23,6 +23,7 @@ import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
+import { nls } from '@theia/core/lib/common/nls';
 import { Position } from '@theia/core/shared/vscode-languageserver-protocol';
 import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
@@ -113,7 +114,7 @@ export class CodePartRenderer
     private getTitle(uri: URI | undefined, language: string | undefined): string {
         // If there is a URI, use the file name as the title. Otherwise, use the language as the title.
         // If there is no language, use a generic fallback title.
-        return uri?.path?.toString().split('/').pop() ?? language ?? 'Generated Code';
+        return uri?.path?.toString().split('/').pop() ?? language ?? nls.localize('theia/ai/chat-ui/code-part-renderer/generatedCode', 'Generated Code');
     }
 
     /**
@@ -158,7 +159,7 @@ const CopyToClipboardButton = (props: { code: string, clipboardService: Clipboar
     const copyCodeToClipboard = React.useCallback(() => {
         clipboardService.writeText(code);
     }, [code, clipboardService]);
-    return <div className='button codicon codicon-copy' title='Copy' role='button' onClick={copyCodeToClipboard}></div>;
+    return <div className='button codicon codicon-copy' title={nls.localizeByDefault('Copy')} role='button' onClick={copyCodeToClipboard}></div>;
 };
 
 @injectable()
@@ -190,7 +191,7 @@ const InsertCodeAtCursorButton = (props: { code: string, editorManager: EditorMa
             }]);
         }
     }, [code, editorManager]);
-    return <div className='button codicon codicon-insert' title='Insert at Cursor' role='button' onClick={insertCode}></div>;
+    return <div className='button codicon codicon-insert' title={nls.localizeByDefault('Insert At Cursor')} role='button' onClick={insertCode}></div>;
 };
 
 /**

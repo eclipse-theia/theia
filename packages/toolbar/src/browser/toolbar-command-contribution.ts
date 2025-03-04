@@ -19,7 +19,6 @@ import {
     CommandContribution,
     CommandRegistry,
     CommandService,
-    InMemoryResources,
     MenuContribution,
     MenuModelRegistry,
 } from '@theia/core';
@@ -52,7 +51,7 @@ import { ToolbarController } from './toolbar-controller';
 import { ToolbarPreferencesSchema, ToolbarPreferences, TOOLBAR_ENABLE_PREFERENCE_ID } from './toolbar-preference-contribution';
 import { ToolbarDefaults, ToolbarDefaultsFactory } from './toolbar-defaults';
 import { ToolbarCommands, ToolbarMenus, UserToolbarURI, USER_TOOLBAR_URI } from './toolbar-constants';
-import { JsonSchemaContribution, JsonSchemaRegisterContext } from '@theia/core/lib/browser/json-schema-store';
+import { JsonSchemaContribution, JsonSchemaDataStore, JsonSchemaRegisterContext } from '@theia/core/lib/browser/json-schema-store';
 import { toolbarConfigurationSchema, toolbarSchemaId } from './toolbar-preference-schema';
 import URI from '@theia/core/lib/common/uri';
 
@@ -65,11 +64,11 @@ export class ToolbarCommandContribution implements CommandContribution, Keybindi
     @inject(EditorManager) protected readonly editorManager: EditorManager;
     @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
     @inject(ToolbarController) protected readonly toolbarModel: ToolbarController;
-    @inject(InMemoryResources) protected readonly inMemoryResources: InMemoryResources;
+    @inject(JsonSchemaDataStore) protected readonly schemaStore: JsonSchemaDataStore;
     protected readonly schemaURI = new URI(toolbarSchemaId);
 
     registerSchemas(context: JsonSchemaRegisterContext): void {
-        this.inMemoryResources.add(this.schemaURI, JSON.stringify(toolbarConfigurationSchema));
+        this.schemaStore.setSchema(this.schemaURI, toolbarConfigurationSchema);
         context.registerSchema({
             fileMatch: ['toolbar.json'],
             url: this.schemaURI.toString(),

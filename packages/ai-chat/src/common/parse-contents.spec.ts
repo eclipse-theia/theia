@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { ChatRequestModelImpl, ChatResponseContent, CodeChatResponseContentImpl, MarkdownChatResponseContentImpl } from './chat-model';
+import { MutableChatRequestModel, ChatResponseContent, CodeChatResponseContentImpl, MarkdownChatResponseContentImpl } from './chat-model';
 import { parseContents } from './parse-contents';
 import { CodeContentMatcher, ResponseContentMatcher } from './response-content-matcher';
 
@@ -33,7 +33,7 @@ export const CommandContentMatcher: ResponseContentMatcher = {
     }
 };
 
-const fakeRequest = {} as ChatRequestModelImpl;
+const fakeRequest = {} as MutableChatRequestModel;
 
 describe('parseContents', () => {
     it('should parse code content', () => {

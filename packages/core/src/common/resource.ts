@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject, named } from 'inversify';
+import { injectable, inject, named, postConstruct } from 'inversify';
 import { TextDocumentContentChangeEvent } from 'vscode-languageserver-protocol';
 import URI from '../common/uri';
 import { ContributionProvider } from './contribution-provider';
@@ -62,6 +62,8 @@ export interface Resource extends Disposable {
     readonly readOnly?: boolean | MarkdownString;
 
     readonly initiallyDirty?: boolean;
+    /** If false, the application should not attempt to auto-save this resource. */
+    readonly autosaveable?: boolean;
     /**
      * Reads latest content of this resource.
      *
@@ -179,6 +181,11 @@ export namespace ResourceError {
 export const ResourceResolver = Symbol('ResourceResolver');
 export interface ResourceResolver {
     /**
+     * Resolvers will be ordered by descending priority.
+     * Default: 0
+     */
+    priority?: number;
+    /**
      * Reject if a resource cannot be provided.
      */
     resolve(uri: URI): MaybePromise<Resource>;
@@ -194,6 +201,11 @@ export class DefaultResourceProvider {
         @inject(ContributionProvider) @named(ResourceResolver)
         protected readonly resolversProvider: ContributionProvider<ResourceResolver>
     ) { }
+
+    @postConstruct()
+    init(): void {
+        this.resolversProvider.getContributions().sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+    }
 
     /**
      * Reject if a resource cannot be provided.
@@ -213,7 +225,7 @@ export class DefaultResourceProvider {
 }
 
 export class MutableResource implements Resource {
-    private contents: string = '';
+    protected contents: string = '';
 
     constructor(readonly uri: URI) {
     }
@@ -278,7 +290,7 @@ export class InMemoryResources implements ResourceResolver {
         const resourceUri = uri.toString();
         const resource = this.resources.get(resourceUri);
         if (!resource) {
-            throw new Error(`Cannot update non-existed in-memory resource '${resourceUri}'`);
+            throw new Error(`Cannot update non-existent in-memory resource '${resourceUri}'`);
         }
         resource.saveContents(contents);
         return resource;
@@ -380,7 +392,8 @@ export class UntitledResourceResolver implements ResourceResolver {
 export class UntitledResource implements Resource {
 
     protected readonly onDidChangeContentsEmitter = new Emitter<void>();
-    initiallyDirty: boolean;
+    readonly initiallyDirty: boolean;
+    readonly autosaveable = false;
     get onDidChangeContents(): Event<void> {
         return this.onDidChangeContentsEmitter.event;
     }

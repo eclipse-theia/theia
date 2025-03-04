@@ -95,15 +95,18 @@ div:last-child > .theia-ChatNode {
   margin-left: auto;
   line-height: 18px;
 }
+
 .theia-ChatNodeToolbar .theia-ChatNodeToolbarAction {
   display: none;
   align-items: center;
   padding: 4px;
   border-radius: 5px;
 }
+
 .theia-ChatNode:hover .theia-ChatNodeToolbar .theia-ChatNodeToolbarAction {
   display: inline-block;
 }
+
 .theia-ChatNodeToolbar .theia-ChatNodeToolbarAction:hover {
   cursor: pointer;
   background-color: var(--theia-toolbar-hoverBackground);
@@ -160,6 +163,67 @@ div:last-child > .theia-ChatNode {
   gap: 4px;
 }
 
+.theia-ChatInput-ChatContext ul {
+  list-style-type: none;
+  padding: 0px 4px 8px 8px;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.theia-ChatInput-ChatContext-Element {
+  display: flex;
+  align-items: center;
+  border-radius: calc(var(--theia-ui-padding) * 2 / 3);
+  border: var(--theia-border-width) solid var(--theia-dropdown-border);
+  padding: 2px 4px 2px 6px;
+  height: 18px;
+  line-height: 16px;
+  min-width: 0;
+}
+
+.theia-ChatInput-ChatContext-title {
+  flex: 10 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.theia-ChatInput-ChatContext-additionalInfo {
+  color: var(--theia-disabledForeground);
+  font-size: calc(var(--theia-content-font-size) * 0.8);
+  margin-left: 4px;
+  line-height: 18px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1 10 auto;
+  min-width: 0;
+}
+
+.theia-ChatInput-ChatContext-Element .action {
+  cursor: pointer;
+  margin-left: 4px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.theia-ChatInput-ChatContext-Element .action:hover {
+  background-color: var(--theia-toolbar-hoverBackground);
+}
+
+.theia-ChatInput-ChatContext-Icon {
+  display: inline;
+  line-height: 18px;
+  flex-shrink: 0;
+}
+
+.theia-ChatInput-ChatContext-Icon.codicon {
+  margin-right: 6px;
+}
+
 .theia-ChatInput-ChangeSet-Box {
   margin: 0 16px -5px 16px;
   padding: 2px;
@@ -184,14 +248,15 @@ div:last-child > .theia-ChatNode {
   color: var(--theia-disabledForeground);
   padding-top: 0;
   margin: 0;
-  display: flex;
 }
 
-.theia-ChatInput-ChangeSet-Header-Actions button {
+.theia-ChatInput-ChangeSet-Header-Actions .theia-button {
+  height: 100%;
+  box-sizing: border-box;
   font-size: 12px;
   padding: 2px 4px;
   min-width: 40px;
-  margin-left: 6px;
+  margin: 0;
 }
 
 .theia-ChatInput-ChangeSet-List ul {
@@ -217,10 +282,6 @@ div:last-child > .theia-ChatNode {
 
 .theia-ChatInput-ChangeSet-Actions {
   display: none;
-  position: absolute;
-  right: 8px;
-  top: 2px;
-  gap: 4px;
 }
 
 .theia-ChatInput-ChangeSet-List ul {
@@ -234,6 +295,9 @@ div:last-child > .theia-ChatNode {
 
 .theia-ChatInput-ChangeSet-List ul li:hover .theia-ChatInput-ChangeSet-Actions {
   display: flex;
+  justify-content: flex-end;
+  flex: auto;
+  gap: 4px;
 }
 
 .theia-ChatInput-ChangeSet-List .theia-ChatInput-ChangeSet-Icon {
@@ -247,8 +311,6 @@ div:last-child > .theia-ChatNode {
 
 .theia-ChatInput-ChangeSet-List .theia-ChatInput-ChangeSet-Icon::before {
   text-align: center;
-  margin-right: 4px;
-  font-size: calc(var(--theia-content-font-size) * 0.8);
 }
 
 .theia-ChatInput-ChangeSet-List
@@ -267,9 +329,26 @@ div:last-child > .theia-ChatNode {
   color: var(--theia-disabledForeground);
 }
 
+.theia-ChatInput-ChangeSet-labelParts {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .theia-ChatInput-ChangeSet-title {
   white-space: nowrap;
-  overflow: visible;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.theia-ChatInput-ChangeSet-Header-Actions {
+  display: flex;
+  flex: none;
+  flex-flow: row nowrap;
+  gap: var(--theia-ui-padding);
+}
+
+.theia-changeSet-Action {
+  flex: none;
 }
 
 .theia-ChatInput-ChangeSet-Header-Actions,
@@ -288,6 +367,7 @@ div:last-child > .theia-ChatNode {
   border-radius: 4px;
   cursor: pointer;
 }
+
 .theia-ChatInput-ChangeSet-Header-Actions .codicon.action:hover {
   background-color: var(--theia-toolbar-hoverBackground);
 }
@@ -299,9 +379,11 @@ div:last-child > .theia-ChatNode {
 .theia-ChatInput-ChangeSet-title.add.pending {
   color: var(--theia-charts-green);
 }
+
 .theia-ChatInput-ChangeSet-title.modify.pending {
   color: var(--theia-charts-orange);
 }
+
 .theia-ChatInput-ChangeSet-title.delete.pending {
   color: var(--theia-charts-red);
 }
@@ -321,6 +403,10 @@ div:last-child > .theia-ChatNode {
 
 .theia-ChatInput-Editor-Box:has(.monaco-editor.focused) {
   border-color: var(--theia-focusBorder);
+}
+
+.theia-ChatInput-Editor-Box .monaco-editor {
+  outline-color: var(--theia-editor-background);
 }
 
 .theia-ChatInput-Editor {
@@ -345,6 +431,7 @@ div:last-child > .theia-ChatNode {
   z-index: 10;
   text-align: left;
 }
+
 .theia-ChatInput-Editor-Placeholder.hidden {
   display: none;
 }
@@ -376,15 +463,19 @@ div:last-child > .theia-ChatNode {
 .theia-ChatInputOptions .theia-ChatInputOptions-right {
   display: flex;
 }
+
 .theia-ChatInputOptions .theia-ChatInputOptions-right {
   margin-right: 12px;
 }
 
 .theia-ChatInputOptions .option {
-  width: 21px;
+  min-width: 21px;
   height: 21px;
   padding: 2px;
-  display: inline-block;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2px;
   box-sizing: border-box;
   user-select: none;
   background-repeat: no-repeat;
@@ -403,6 +494,10 @@ div:last-child > .theia-ChatNode {
 .theia-ChatInputOptions .option:hover {
   opacity: 1;
   background-color: var(--theia-toolbar-hoverBackground);
+}
+
+.theia-ChatInputOptions .reverse {
+  flex-direction: row-reverse;
 }
 
 .theia-CodePartRenderer-root {
@@ -433,6 +528,7 @@ div:last-child > .theia-ChatNode {
   border-radius: 5px;
   cursor: pointer;
 }
+
 .theia-CodePartRenderer-right .button:hover {
   background-color: var(--theia-toolbar-hoverBackground);
 }
@@ -453,19 +549,23 @@ div:last-child > .theia-ChatNode {
   border-radius: 5px;
   margin: 0 0 8px 0;
 }
+
 .theia-QuestionPartRenderer-options {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
 }
+
 .theia-QuestionPartRenderer-option {
   min-width: 100px;
   flex: 1 1 auto;
   margin: 0;
 }
+
 .theia-QuestionPartRenderer-option.selected:disabled:hover {
   background-color: var(--theia-button-disabledBackground);
 }
+
 .theia-QuestionPartRenderer-option:disabled:not(.selected) {
   background-color: var(--theia-button-secondaryBackground);
 }
@@ -519,9 +619,11 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
 .theia-ResponseNode-ProgressMessage .inProgress {
   color: var(--theia-progressBar-background);
 }
+
 .theia-ResponseNode-ProgressMessage .completed {
   color: var(--theia-successBackground);
 }
+
 .theia-ResponseNode-ProgressMessage .failed {
   color: var(--theia-errorForeground);
 }

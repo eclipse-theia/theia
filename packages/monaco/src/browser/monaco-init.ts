@@ -16,8 +16,8 @@
 
 /*
  * The code in this file is responsible for overriding service implementations in the Monaco editor with our own Theia-based implementations.
- * Since we only get a single chance to call `StandaloneServies.initialize()` with our overrides, we need to make sure that intialize is called before the first call to
- * `StandaloneServices.get()` or `StandaloneServies.initialize()`. As we do not control the mechanics of Inversify instance constructions, the approach here is to call
+ * Since we only get a single chance to call `StandaloneServices.initialize()` with our overrides, we need to make sure that initialize is called before the first call to
+ * `StandaloneServices.get()` or `StandaloneServices.initialize()`. As we do not control the mechanics of Inversify instance constructions, the approach here is to call
  * `MonacoInit.init()` from the `index.js` file after all container modules are loaded, but before the first object is fetched from it.
  * `StandaloneServices.initialize()` is called with service descriptors, not service instances. This lets us finish all overrides before any inversify object is constructed and
  * might call `initialize()` while being constructed.
@@ -28,6 +28,35 @@
  */
 
 // Before importing anything from monaco we need to override its localization function
+import * as MonacoNls from '@theia/monaco-editor-core/esm/vs/nls';
+import { nls } from '@theia/core/lib/common/nls';
+import { FormatType, Localization } from '@theia/core/lib/common/i18n/localization';
+
+function localize(label: string, ...args: FormatType[]): MonacoNls.ILocalizedString {
+    const original = Localization.format(label, args);
+    if (nls.locale) {
+        const defaultKey = nls.getDefaultKey(label);
+        if (defaultKey) {
+            return {
+                original,
+                value: nls.localize(defaultKey, label, ...args)
+            };
+        }
+    }
+    return {
+        original,
+        value: original
+    };
+}
+
+Object.assign(MonacoNls, {
+    localize(_key: string, label: string, ...args: FormatType[]): string {
+        return localize(label, ...args).value;
+    },
+    localize2(_key: string, label: string, ...args: FormatType[]): MonacoNls.ILocalizedString {
+        return localize(label, ...args);
+    }
+});
 
 import { Container } from '@theia/core/shared/inversify';
 import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';
@@ -50,6 +79,11 @@ import { MonacoQuickInputImplementation } from './monaco-quick-input-service';
 import { IQuickInputService } from '@theia/monaco-editor-core/esm/vs/platform/quickinput/common/quickInput';
 import { IStandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
 import { MonacoStandaloneThemeService } from './monaco-standalone-theme-service';
+import { createContentHoverWidgetPatcher } from './content-hover-widget-patcher';
+import { IHoverService } from '@theia/monaco-editor-core/esm/vs/platform/hover/browser/hover';
+import { setBaseLayerHoverDelegate } from '@theia/monaco-editor-core/esm/vs/base/browser/ui/hover/hoverDelegate2';
+
+export const contentHoverWidgetPatcher = createContentHoverWidgetPatcher();
 
 class MonacoEditorServiceConstructor {
     /**
@@ -121,5 +155,8 @@ export namespace MonacoInit {
             [IQuickInputService.toString()]: new SyncDescriptor(MonacoQuickInputImplementationConstructor, [container]),
             [IStandaloneThemeService.toString()]: new SyncDescriptor(MonacoStandaloneThemeServiceConstructor, [])
         });
+        // Make sure the global base hover delegate is initialized as otherwise the quick input will throw an error and not update correctly
+        // in case no Monaco editor was constructed before and items with keybindings are shown. See #15042.
+        setBaseLayerHoverDelegate(StandaloneServices.get(IHoverService));
     }
 }

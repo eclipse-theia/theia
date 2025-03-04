@@ -65,14 +65,21 @@ export class NotebookModelResolverService {
             throw new Error(`Missing viewType for '${resource}'`);
         }
 
-        const actualResource = await this.resourceProvider(resource);
-        const notebookData = await this.resolveExistingNotebookData(actualResource, viewType!);
-        const notebookModel = await this.notebookService.createNotebookModel(notebookData, viewType, actualResource);
+        try {
 
-        notebookModel.onDirtyChanged(() => this.onDidChangeDirtyEmitter.fire(notebookModel));
-        notebookModel.onDidSaveNotebook(() => this.onDidSaveNotebookEmitter.fire(notebookModel.uri.toComponents()));
+            const actualResource = await this.resourceProvider(resource);
+            const notebookData = await this.resolveExistingNotebookData(actualResource, viewType!);
+            const notebookModel = await this.notebookService.createNotebookModel(notebookData, viewType, actualResource);
 
-        return notebookModel;
+            notebookModel.onDirtyChanged(() => this.onDidChangeDirtyEmitter.fire(notebookModel));
+            notebookModel.onDidSaveNotebook(() => this.onDidSaveNotebookEmitter.fire(notebookModel.uri.toComponents()));
+
+            return notebookModel;
+        } catch (e) {
+            const message = `Error resolving notebook model for: \n ${resource.path.fsPath()} \n with view type ${viewType}. \n ${e}`;
+            console.error(message);
+            throw new Error(message);
+        }
     }
 
     async resolveUntitledResource(arg: UntitledResource, viewType: string): Promise<NotebookModel> {

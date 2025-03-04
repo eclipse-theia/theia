@@ -16,8 +16,7 @@
 
 import * as monaco from '@theia/monaco-editor-core';
 import { IStandaloneTheme } from '@theia/monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
-import { IOnigLib, Registry } from 'vscode-textmate';
-import { IRawTheme } from 'vscode-textmate/release/theme';
+import { IOnigLib, IRawTheme, Registry } from 'vscode-textmate';
 
 export interface ThemeMix extends IRawTheme, monaco.editor.IStandaloneThemeData { }
 export interface MixStandaloneTheme extends IStandaloneTheme {

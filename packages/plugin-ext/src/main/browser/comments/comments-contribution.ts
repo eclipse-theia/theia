@@ -196,7 +196,7 @@ export class CommentsContribution {
                 this.commentsContextKeyService.commentController.set(provider.id);
             }
             const zoneWidget = new CommentThreadWidget(editor, owner, thread, this.commentService, this.menus, this.commentsContextKeyService, this.commands);
-            zoneWidget.display({ afterLineNumber: thread.range.startLineNumber, heightInLines: 5 });
+            zoneWidget.display({ afterLineNumber: thread.range?.startLineNumber ?? 0, heightInLines: 5 }); // messages with no range are put on top of the editor
             const currentEditor = this.getCurrentEditor();
             if (currentEditor) {
                 currentEditor.onDispose(() => zoneWidget.dispose());

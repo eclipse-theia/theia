@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { EXPERIMENTAL_AI_CONTEXT_KEY } from '@theia/ai-core/lib/browser';
-import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from '@theia/core';
+import { ENABLE_AI_CONTEXT_KEY } from '@theia/ai-core/lib/browser';
+import { Command, CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from '@theia/core';
 import { KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
@@ -24,11 +24,12 @@ import { TerminalWidgetImpl } from '@theia/terminal/lib/browser/terminal-widget-
 import { AiTerminalAgent } from './ai-terminal-agent';
 import { AICommandHandlerFactory } from '@theia/ai-core/lib/browser/ai-command-handler-factory';
 import { AgentService } from '@theia/ai-core';
+import { nls } from '@theia/core/lib/common/nls';
 
-const AI_TERMINAL_COMMAND = {
+const AI_TERMINAL_COMMAND = Command.toLocalizedCommand({
     id: 'ai-terminal:open',
     label: 'Ask the AI'
-};
+}, 'theia/ai/terminal/askAi');
 
 @injectable()
 export class AiTerminalCommandContribution implements CommandContribution, MenuContribution, KeybindingContribution {
@@ -49,12 +50,12 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
         keybindings.registerKeybinding({
             command: AI_TERMINAL_COMMAND.id,
             keybinding: 'ctrlcmd+i',
-            when: `terminalFocus && ${EXPERIMENTAL_AI_CONTEXT_KEY}`
+            when: `terminalFocus && ${ENABLE_AI_CONTEXT_KEY}`
         });
     }
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction([...TerminalMenus.TERMINAL_CONTEXT_MENU, '_5'], {
-            when: EXPERIMENTAL_AI_CONTEXT_KEY,
+            when: ENABLE_AI_CONTEXT_KEY,
             commandId: AI_TERMINAL_COMMAND.id
         });
     }
@@ -97,7 +98,7 @@ class AiTerminalChatWidget {
         const chatResultContainer = document.createElement('div');
         chatResultContainer.className = 'ai-terminal-chat-result';
         this.chatResultParagraph = document.createElement('p');
-        this.chatResultParagraph.textContent = 'How can I help you?';
+        this.chatResultParagraph.textContent = nls.localize('theia/ai/terminal/howCanIHelp', 'How can I help you?');
         chatResultContainer.appendChild(this.chatResultParagraph);
         this.chatContainer.appendChild(chatResultContainer);
 
@@ -106,7 +107,7 @@ class AiTerminalChatWidget {
 
         this.chatInput = document.createElement('textarea');
         this.chatInput.className = 'theia-input theia-ChatInput';
-        this.chatInput.placeholder = 'Ask about a terminal command...';
+        this.chatInput.placeholder = nls.localize('theia/ai/terminal/askTerminalCommand', 'Ask about a terminal command...');
         this.chatInput.onkeydown = event => {
             if (event.key === 'Enter' && !event.shiftKey) {
                 event.preventDefault();
@@ -129,7 +130,7 @@ class AiTerminalChatWidget {
         const chatInputOptionsContainer = document.createElement('div');
         const chatInputOptionsSpan = document.createElement('span');
         chatInputOptionsSpan.className = 'codicon codicon-send option';
-        chatInputOptionsSpan.title = 'Send';
+        chatInputOptionsSpan.title = nls.localizeByDefault('Send');
         chatInputOptionsSpan.onclick = () => this.send();
         chatInputOptionsContainer.appendChild(chatInputOptionsSpan);
         this.chatInputContainer.appendChild(chatInputOptionsContainer);
@@ -146,7 +147,7 @@ class AiTerminalChatWidget {
         if (userRequest) {
             this.chatInput.value = '';
 
-            this.chatResultParagraph.innerText = 'Loading';
+            this.chatResultParagraph.innerText = nls.localize('theia/ai/terminal/loading', 'Loading');
             this.chatResultParagraph.className = 'loading';
 
             const cwd = (await this.terminalWidget.cwd).toString();
@@ -159,15 +160,15 @@ class AiTerminalChatWidget {
             if (this.commands.length > 0) {
                 this.chatResultParagraph.className = 'command';
                 this.chatResultParagraph.innerText = this.commands[0];
-                this.chatInput.placeholder = 'Hit enter to confirm';
+                this.chatInput.placeholder = nls.localize('theia/ai/terminal/hitEnterConfirm', 'Hit enter to confirm');
                 if (this.commands.length > 1) {
-                    this.chatInput.placeholder += ' or use ⇅ to show alternatives...';
+                    this.chatInput.placeholder += nls.localize('theia/ai/terminal/useArrowsAlternatives', ' or use ⇅ to show alternatives...');
                 }
                 this.haveResult = true;
             } else {
                 this.chatResultParagraph.className = '';
-                this.chatResultParagraph.innerText = 'No results';
-                this.chatInput.placeholder = 'Try again...';
+                this.chatResultParagraph.innerText = nls.localizeByDefault('No results');
+                this.chatInput.placeholder = nls.localize('theia/ai/terminal/tryAgain', 'Try again...');
             }
         }
     }

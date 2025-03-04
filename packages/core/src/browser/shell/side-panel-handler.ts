@@ -241,7 +241,7 @@ export class SidePanelHandler {
             args: [title.owner],
             menuPath: SIDE_PANEL_TOOLBAR_CONTEXT_MENU,
             anchor: e,
-            context: e.currentTarget instanceof HTMLElement ? e.currentTarget : undefined
+            context: e.currentTarget instanceof HTMLElement ? e.currentTarget : this.tabBar.node
         });
     }
 

@@ -13,6 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+
 import '@theia/core/shared/reflect-metadata';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { RPCProtocol, RPCProtocolImpl } from '../../common/rpc-protocol';
@@ -34,10 +35,13 @@ import { KeyValueStorageProxy, InternalStorageExt } from '../../plugin/plugin-st
 import { WebviewsExtImpl } from '../../plugin/webviews';
 import { TerminalServiceExtImpl } from '../../plugin/terminal-ext';
 import { InternalSecretsExt, SecretsExtImpl } from '../../plugin/secrets-ext';
+import { setupPluginHostLogger } from './plugin-host-logger';
 
 export default new ContainerModule(bind => {
     const channel = new IPCChannel();
-    bind(RPCProtocol).toConstantValue(new RPCProtocolImpl(channel));
+    const rpc = new RPCProtocolImpl(channel);
+    setupPluginHostLogger(rpc);
+    bind(RPCProtocol).toConstantValue(rpc);
 
     bind(PluginContainerModuleLoader).toDynamicValue(({ container }) =>
         (module: ContainerModule) => {

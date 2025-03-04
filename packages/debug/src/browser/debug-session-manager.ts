@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { DisposableCollection, Emitter, Event, MessageService, nls, ProgressService, WaitUntilEvent } from '@theia/core';
-import { LabelProvider, ApplicationShell } from '@theia/core/lib/browser';
+import { LabelProvider, ApplicationShell, ConfirmDialog } from '@theia/core/lib/browser';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import URI from '@theia/core/lib/common/uri';
 import { EditorManager } from '@theia/editor/lib/browser';
@@ -37,6 +37,8 @@ import { DebugSourceBreakpoint } from './model/debug-source-breakpoint';
 import { DebugFunctionBreakpoint } from './model/debug-function-breakpoint';
 import * as monaco from '@theia/monaco-editor-core';
 import { DebugInstructionBreakpoint } from './model/debug-instruction-breakpoint';
+import { DebugWidget } from './view/debug-widget';
+import { DebugSessionConfigurationLabelProvider } from './debug-session-configuration-label-provider';
 
 export interface WillStartDebugSession extends WaitUntilEvent {
 }
@@ -152,6 +154,9 @@ export class DebugSessionManager {
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
 
+    @inject(DebugSessionConfigurationLabelProvider)
+    protected readonly sessionConfigurationLabelProvider: DebugSessionConfigurationLabelProvider;
+
     protected debugTypeKey: ContextKey<string>;
     protected inDebugModeKey: ContextKey<boolean>;
     protected debugStateKey: ContextKey<string>;
@@ -226,6 +231,20 @@ export class DebugSessionManager {
                         this.debugConfigurationManager.openConfiguration();
                     }
                     return undefined;
+                }
+
+                const sessionConfigurationLabel = this.sessionConfigurationLabelProvider.getLabel(resolved);
+                if (options?.startedByUser
+                    && options.configuration.suppressMultipleSessionWarning !== true
+                    && this.sessions.some(s => this.sessionConfigurationLabelProvider.getLabel(s.options) === sessionConfigurationLabel)
+                ) {
+                    const yes = await new ConfirmDialog({
+                        title: DebugWidget.LABEL,
+                        msg: nls.localizeByDefault("'{0}' is already running. Do you want to start another instance?", sessionConfigurationLabel)
+                    }).open();
+                    if (!yes) {
+                        return undefined;
+                    }
                 }
 
                 // preLaunchTask isn't run in case of auto restart as well as postDebugTask

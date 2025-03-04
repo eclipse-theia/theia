@@ -32,7 +32,7 @@ import { MonacoKeybindingContribution } from './monaco-keybinding';
 import { MonacoLanguages } from './monaco-languages';
 import { MonacoWorkspace } from './monaco-workspace';
 import { MonacoEditorService, MonacoEditorServiceFactory, VSCodeContextKeyService, VSCodeThemeService } from './monaco-editor-service';
-import { MonacoTextModelService, MonacoEditorModelFactory } from './monaco-text-model-service';
+import { MonacoTextModelService, MonacoEditorModelFactory, MonacoEditorModelFilter } from './monaco-text-model-service';
 import { MonacoContextMenuService } from './monaco-context-menu';
 import { MonacoOutlineContribution } from './monaco-outline-contribution';
 import { MonacoStatusBarContribution } from './monaco-status-bar-contribution';
@@ -77,6 +77,7 @@ import { IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/co
 import { IThemeService } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService.js';
 import { ActiveMonacoUndoRedoHandler, FocusedMonacoUndoRedoHandler } from './monaco-undo-redo-handler';
 import { ILogService } from '@theia/monaco-editor-core/esm/vs/platform/log/common/log';
+import { DefaultContentHoverWidgetPatcher } from './default-content-hover-widget-patcher';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(MonacoThemingService).toSelf().inSingletonScope();
@@ -117,6 +118,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(MonacoEditorProvider).toSelf().inSingletonScope();
     bindContributionProvider(bind, MonacoEditorFactory);
     bindContributionProvider(bind, MonacoEditorModelFactory);
+    bindContributionProvider(bind, MonacoEditorModelFilter);
     bind(MonacoCommandService).toSelf().inTransientScope();
 
     bind(TextEditorProvider).toProvider(context =>
@@ -184,6 +186,9 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(ActiveMonacoUndoRedoHandler).toSelf().inSingletonScope();
     bind(UndoRedoHandler).toService(FocusedMonacoUndoRedoHandler);
     bind(UndoRedoHandler).toService(ActiveMonacoUndoRedoHandler);
+
+    bind(DefaultContentHoverWidgetPatcher).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(DefaultContentHoverWidgetPatcher);
 });
 
 export const MonacoConfigurationService = Symbol('MonacoConfigurationService');

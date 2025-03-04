@@ -21,6 +21,7 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { AIChatInputWidget } from './chat-input-widget';
 import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
 import { AIActivationService } from '@theia/ai-core/lib/browser/ai-activation-service';
+import { AIVariableResolutionRequest } from '@theia/ai-core';
 
 export namespace ChatViewWidget {
     export interface State {
@@ -32,7 +33,7 @@ export namespace ChatViewWidget {
 export class ChatViewWidget extends BaseWidget implements ExtractableWidget, StatefulWidget {
 
     public static ID = 'chat-view-widget';
-    static LABEL = `✨ ${nls.localizeByDefault('Chat')} [Experimental]`;
+    static LABEL = `${nls.localizeByDefault('Chat')}`;
 
     @inject(ChatService)
     protected chatService: ChatService;
@@ -91,8 +92,10 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         this.chatSession = this.chatService.createSession();
 
         this.inputWidget.onQuery = this.onQuery.bind(this);
+        this.inputWidget.onUnpin = this.onUnpin.bind(this);
         this.inputWidget.onCancel = this.onCancel.bind(this);
         this.inputWidget.chatModel = this.chatSession.model;
+        this.inputWidget.pinnedAgent = this.chatSession.pinnedAgent;
         this.inputWidget.onDeleteChangeSet = this.onDeleteChangeSet.bind(this);
         this.inputWidget.onDeleteChangeSetElement = this.onDeleteChangeSetElement.bind(this);
         this.treeWidget.trackChatModel(this.chatSession.model);
@@ -117,6 +120,7 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
                     this.chatSession = session;
                     this.treeWidget.trackChatModel(this.chatSession.model);
                     this.inputWidget.chatModel = this.chatSession.model;
+                    this.inputWidget.pinnedAgent = this.chatSession.pinnedAgent;
                     if (event.focus) {
                         this.show();
                     }
@@ -160,21 +164,26 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
     protected async onQuery(query: string): Promise<void> {
         if (query.length === 0) { return; }
 
-        const chatRequest: ChatRequest = {
-            text: query
-        };
-
+        const chatRequest: ChatRequest = { text: query };
         const requestProgress = await this.chatService.sendRequest(this.chatSession.id, chatRequest);
         requestProgress?.responseCompleted.then(responseModel => {
             if (responseModel.isError) {
-                this.messageService.error(responseModel.errorObject?.message ?? 'An error occurred during chat service invocation.');
+                this.messageService.error(responseModel.errorObject?.message ??
+                    nls.localize('theia/ai/chat-ui/errorChatInvocation', 'An error occurred during chat service invocation.'));
             }
+        }).finally(() => {
+            this.inputWidget.pinnedAgent = this.chatSession.pinnedAgent;
         });
         if (!requestProgress) {
             this.messageService.error(`Was not able to send request "${chatRequest.text}" to session ${this.chatSession.id}`);
             return;
         }
         // Tree Widget currently tracks the ChatModel itself. Therefore no notification necessary.
+    }
+
+    protected onUnpin(): void {
+        this.chatSession.pinnedAgent = undefined;
+        this.inputWidget.pinnedAgent = this.chatSession.pinnedAgent;
     }
 
     protected onCancel(requestModel: ChatRequestModel): void {
@@ -203,5 +212,9 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
 
     get isExtractable(): boolean {
         return this.secondaryWindow === undefined;
+    }
+
+    addContext(variable: AIVariableResolutionRequest): void {
+        this.inputWidget.addContext(variable);
     }
 }

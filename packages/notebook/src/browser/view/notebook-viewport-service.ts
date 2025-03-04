@@ -30,7 +30,7 @@ export class NotebookViewportService implements Disposable {
 
     protected _viewportElement: HTMLDivElement | undefined;
 
-    protected resizeObserver: ResizeObserver;
+    protected resizeObserver?: ResizeObserver;
 
     set viewportElement(element: HTMLDivElement | undefined) {
         this._viewportElement = element;
@@ -56,6 +56,6 @@ export class NotebookViewportService implements Disposable {
     }
 
     dispose(): void {
-        this.resizeObserver.disconnect();
+        this.resizeObserver?.disconnect();
     }
 }

@@ -27,6 +27,7 @@ import { RPCProtocol } from '../common/rpc-protocol';
 import { Disposable, FileDecoration, URI } from './types-impl';
 import { CancellationToken } from '@theia/core/lib/common';
 import { dirname } from 'path';
+import { PluginLogger } from './logger';
 
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
@@ -45,9 +46,11 @@ export class DecorationsExtImpl implements DecorationsExt {
 
     private readonly providersMap: Map<number, ProviderData>;
     private readonly proxy: DecorationsMain;
+    private readonly logger: PluginLogger;
 
     constructor(readonly rpc: RPCProtocol) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.DECORATIONS_MAIN);
+        this.logger = new PluginLogger(rpc, 'decorations-plugin');
         this.providersMap = new Map();
     }
 
@@ -128,10 +131,10 @@ export class DecorationsExtImpl implements DecorationsExt {
                     FileDecoration.validate(data);
                     result[id] = <DecorationData>[data.propagate, data.tooltip, data.badge, data.color];
                 } catch (e) {
-                    console.warn(`INVALID decoration from extension '${pluginInfo.name}': ${e}`);
+                    this.logger.warn(`INVALID decoration from extension '${pluginInfo.name}': ${e}`);
                 }
             } catch (err) {
-                console.error(err);
+                this.logger.error(err);
             }
         }));
 

@@ -13,7 +13,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  */
-import { ChatRequestModelImpl, ChatResponseContent } from './chat-model';
+import { MutableChatRequestModel, ChatResponseContent } from './chat-model';
 import { CodeContentMatcher, MarkdownContentFactory, ResponseContentFactory, ResponseContentMatcher } from './response-content-matcher';
 
 interface Match {
@@ -24,7 +24,7 @@ interface Match {
 
 export function parseContents(
     text: string,
-    request: ChatRequestModelImpl,
+    request: MutableChatRequestModel,
     contentMatchers: ResponseContentMatcher[] = [CodeContentMatcher],
     defaultContentFactory: ResponseContentFactory = MarkdownContentFactory
 ): ChatResponseContent[] {

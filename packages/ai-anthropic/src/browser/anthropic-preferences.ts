@@ -16,6 +16,7 @@
 
 import { PreferenceSchema } from '@theia/core/lib/browser/preferences/preference-contribution';
 import { AI_CORE_PREFERENCES_TITLE } from '@theia/ai-core/lib/browser/ai-core-preferences';
+import { nls } from '@theia/core';
 
 export const API_KEY_PREF = 'ai-features.anthropic.AnthropicApiKey';
 export const MODELS_PREF = 'ai-features.anthropic.AnthropicModels';
@@ -25,15 +26,16 @@ export const AnthropicPreferencesSchema: PreferenceSchema = {
     properties: {
         [API_KEY_PREF]: {
             type: 'string',
-            markdownDescription: 'Enter an API Key of your official Anthropic Account. **Please note:** By using this preference the Anthropic API key will be stored in clear text\
-            on the machine running Theia. Use the environment variable `ANTHROPIC_API_KEY` to set the key securely.',
+            markdownDescription: nls.localize('theia/ai/anthropic/apiKey/description',
+                'Enter an API Key of your official Anthropic Account. **Please note:** By using this preference the Anthropic API key will be stored in clear text\
+            on the machine running Theia. Use the environment variable `ANTHROPIC_API_KEY` to set the key securely.'),
             title: AI_CORE_PREFERENCES_TITLE,
         },
         [MODELS_PREF]: {
             type: 'array',
-            description: 'Official Anthropic models to use',
+            description: nls.localize('theia/ai/anthropic/models/description', 'Official Anthropic models to use'),
             title: AI_CORE_PREFERENCES_TITLE,
-            default: ['claude-3-5-sonnet-latest', 'claude-3-5-haiku-latest', 'claude-3-opus-latest'],
+            default: ['claude-3-7-sonnet-latest', 'claude-3-5-sonnet-latest', 'claude-3-5-haiku-latest', 'claude-3-opus-latest'],
             items: {
                 type: 'string'
             }

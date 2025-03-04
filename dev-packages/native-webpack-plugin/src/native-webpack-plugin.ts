@@ -58,15 +58,7 @@ export class NativeWebpackPlugin {
         let ripgrepIssuer: string | undefined;
         compiler.hooks.initialize.tap(NativeWebpackPlugin.name, async () => {
             const directory = path.resolve(compiler.outputPath, 'native-webpack-plugin');
-            if (fs.existsSync(directory)) {
-                await fs.promises.rm(directory, {
-                    force: true,
-                    recursive: true
-                });
-            }
-            await fs.promises.mkdir(directory, {
-                recursive: true
-            });
+            await fs.promises.mkdir(directory, { recursive: true });
             const bindingsFile = (issuer: string) => buildFile(directory, 'bindings.js', bindingsReplacement(issuer, Array.from(this.bindings.entries())));
             const ripgrepFile = () => buildFile(directory, 'ripgrep.js', ripgrepReplacement(this.options.out));
             const keymappingFile = () => Promise.resolve('./build/Release/keymapping.node');
@@ -94,14 +86,6 @@ export class NativeWebpackPlugin {
                     for (const [file, replacement] of Object.entries(replacements)) {
                         if (result.request === file) {
                             result.request = await replacement(result.contextInfo.issuer);
-                        }
-                    }
-                });
-                nmf.hooks.afterResolve.tapPromise(NativeWebpackPlugin.name, async result => {
-                    const createData = result.createData;
-                    for (const [file, replacement] of Object.entries(replacements)) {
-                        if (createData.resource === file) {
-                            createData.resource = await replacement(result.contextInfo.issuer);
                         }
                     }
                 });
@@ -183,7 +167,20 @@ function findNativeWatcherFile(issuer: string): string {
 
 async function buildFile(root: string, name: string, content: string): Promise<string> {
     const tmpFile = path.join(root, name);
-    await fs.promises.writeFile(tmpFile, content);
+    let write = true;
+    try {
+        const existing = await fs.promises.readFile(tmpFile, 'utf8');
+        if (existing === content) {
+            // prevent writing the same content again
+            // this would trigger the watch mode repeatedly
+            write = false;
+        }
+    } catch {
+        // ignore
+    }
+    if (write) {
+        await fs.promises.writeFile(tmpFile, content);
+    }
     return tmpFile;
 }
 

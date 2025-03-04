@@ -60,6 +60,11 @@ export class EditorWidget extends BaseWidget implements SaveableSource, Navigata
         }
     }
 
+    protected override handleVisiblityChanged(isNowVisible: boolean): void {
+        this.editor.handleVisibilityChanged(isNowVisible);
+        super.handleVisiblityChanged(isNowVisible);
+    }
+
     get saveable(): Saveable {
         return this.editor.document;
     }

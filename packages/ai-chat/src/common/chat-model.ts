@@ -23,8 +23,8 @@ import { CancellationToken, CancellationTokenSource, Command, Disposable, Emitte
 import { MarkdownString, MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { Position } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ChatAgentLocation } from './chat-agents';
-import { ParsedChatRequest, ParsedChatRequestVariablePart } from './parsed-chat-request';
-import { ResolvedAIVariable } from '@theia/ai-core';
+import { ParsedChatRequest } from './parsed-chat-request';
+import { AIVariableResolutionRequest, ResolvedAIContextVariable } from '@theia/ai-core';
 
 /**********************
  * INTERFACES AND TYPE GUARDS
@@ -33,9 +33,10 @@ import { ResolvedAIVariable } from '@theia/ai-core';
 export type ChatChangeEvent =
     | ChatAddRequestEvent
     | ChatAddResponseEvent
+    | ChatAddVariableEvent
+    | ChatRemoveVariableEvent
     | ChatRemoveRequestEvent
     | ChatSetChangeSetEvent
-    | ChatSetChangeDeleteEvent
     | ChatUpdateChangeSetEvent
     | ChatRemoveChangeSetEvent;
 
@@ -52,10 +53,7 @@ export interface ChatAddResponseEvent {
 export interface ChatSetChangeSetEvent {
     kind: 'setChangeSet';
     changeSet: ChangeSet;
-}
-
-export interface ChatSetChangeDeleteEvent {
-    kind: 'deleteChangeSet';
+    oldChangeSet?: ChangeSet;
 }
 
 export interface ChatUpdateChangeSetEvent {
@@ -68,9 +66,17 @@ export interface ChatRemoveChangeSetEvent {
     changeSet: ChangeSet;
 }
 
+export interface ChatAddVariableEvent {
+    kind: 'addVariable';
+}
+
+export interface ChatRemoveVariableEvent {
+    kind: 'removeVariable';
+}
+
 export namespace ChatChangeEvent {
     export function isChangeSetEvent(event: ChatChangeEvent): event is ChatSetChangeSetEvent | ChatUpdateChangeSetEvent | ChatRemoveChangeSetEvent {
-        return event.kind === 'setChangeSet' || event.kind === 'deleteChangeSet' || event.kind === 'removeChangeSet' || event.kind === 'updateChangeSet';
+        return event.kind === 'setChangeSet' || event.kind === 'removeChangeSet' || event.kind === 'updateChangeSet';
     }
 }
 
@@ -88,35 +94,52 @@ export interface ChatModel {
     readonly id: string;
     readonly location: ChatAgentLocation;
     readonly changeSet?: ChangeSet;
+    readonly context: ChatContextManager;
     getRequests(): ChatRequestModel[];
     isEmpty(): boolean;
 }
 
-export interface ChangeSet {
+export interface ChangeSet extends Disposable {
+    onDidChange: Event<ChangeSetChangeEvent>;
     readonly title: string;
     getElements(): ChangeSetElement[];
+    dispose(): void;
+}
+
+export interface ChatContextManager {
+    onDidChange: Event<ChatAddVariableEvent | ChatRemoveVariableEvent>;
+    getVariables(): readonly AIVariableResolutionRequest[]
+    addVariables(...variables: AIVariableResolutionRequest[]): void;
+    deleteVariables(...indices: number[]): void;
+    clear(): void;
 }
 
 export interface ChangeSetElement {
     readonly uri: URI;
 
+    onDidChange?: Event<void>
     readonly name?: string;
     readonly icon?: string;
     readonly additionalInfo?: string;
 
-    readonly state?: 'pending' | 'applied' | 'discarded';
+    readonly state?: 'pending' | 'applied' | 'stale';
     readonly type?: 'add' | 'modify' | 'delete';
     readonly data?: { [key: string]: unknown };
 
     open?(): Promise<void>;
     openChange?(): Promise<void>;
-    accept?(): Promise<void>;
-    discard?(): Promise<void>;
+    apply?(): Promise<void>;
+    revert?(): Promise<void>;
+    dispose?(): void;
 }
 
 export interface ChatRequest {
     readonly text: string;
     readonly displayText?: string;
+}
+
+export interface ChatContext {
+    variables: ResolvedAIContextVariable[];
 }
 
 export interface ChatRequestModel {
@@ -125,6 +148,7 @@ export interface ChatRequestModel {
     readonly request: ChatRequest;
     readonly response: ChatResponseModel;
     readonly message: ParsedChatRequest;
+    readonly context: ChatContext;
     readonly agentId?: string;
     readonly data?: { [key: string]: unknown };
 }
@@ -171,6 +195,7 @@ export interface ChatResponseContent {
      * representation of the response.
      */
     asString?(): string | undefined;
+    asDisplayString?(): string | undefined;
     merge?(nextChatResponseContent: ChatResponseContent): boolean;
 }
 
@@ -187,6 +212,11 @@ export namespace ChatResponseContent {
         obj: ChatResponseContent
     ): obj is Required<Pick<ChatResponseContent, 'asString'>> & ChatResponseContent {
         return typeof obj.asString === 'function';
+    }
+    export function hasDisplayString(
+        obj: ChatResponseContent
+    ): obj is Required<Pick<ChatResponseContent, 'asDisplayString'>> & ChatResponseContent {
+        return typeof obj.asDisplayString === 'function';
     }
     export function hasMerge(
         obj: ChatResponseContent
@@ -369,7 +399,7 @@ export interface QuestionResponseContent extends ChatResponseContent {
     options: { text: string, value?: string }[];
     selectedOption?: { text: string, value?: string };
     handler: QuestionResponseHandler;
-    request: ChatRequestModelImpl;
+    request: MutableChatRequestModel;
 }
 
 export namespace QuestionResponseContent {
@@ -390,7 +420,7 @@ export namespace QuestionResponseContent {
             'handler' in obj &&
             typeof (obj as { handler: unknown }).handler === 'function' &&
             'request' in obj &&
-            obj.request instanceof ChatRequestModelImpl
+            obj.request instanceof MutableChatRequestModel
         );
     }
 }
@@ -398,6 +428,7 @@ export namespace QuestionResponseContent {
 export interface ChatResponse {
     readonly content: ChatResponseContent[];
     asString(): string;
+    asDisplayString(): string;
 }
 
 /**
@@ -459,26 +490,27 @@ export interface ChatResponseModel {
  * Implementations
  **********************/
 
-export class ChatModelImpl implements ChatModel {
+export class MutableChatModel implements ChatModel, Disposable {
     protected readonly _onDidChangeEmitter = new Emitter<ChatChangeEvent>();
     onDidChange: Event<ChatChangeEvent> = this._onDidChangeEmitter.event;
 
-    protected _requests: ChatRequestModelImpl[];
+    protected _requests: MutableChatRequestModel[];
     protected _id: string;
-    protected _changeSetListener?: Disposable;
     protected _changeSet?: ChangeSetImpl;
+    protected readonly _contextManager = new ChatContextManagerImpl();
 
     constructor(public readonly location = ChatAgentLocation.Panel) {
         // TODO accept serialized data as a parameter to restore a previously saved ChatModel
         this._requests = [];
         this._id = generateUuid();
+        this._contextManager.onDidChange(e => this._onDidChangeEmitter.fire(e));
     }
 
-    getRequests(): ChatRequestModelImpl[] {
+    getRequests(): MutableChatRequestModel[] {
         return this._requests;
     }
 
-    getRequest(id: string): ChatRequestModelImpl | undefined {
+    getRequest(id: string): MutableChatRequestModel | undefined {
         return this._requests.find(request => request.id === id);
     }
 
@@ -490,23 +522,26 @@ export class ChatModelImpl implements ChatModel {
         return this._changeSet;
     }
 
+    get context(): ChatContextManager {
+        return this._contextManager;
+    }
+
     setChangeSet(changeSet: ChangeSetImpl | undefined): void {
-        this._changeSet = changeSet;
-        if (this._changeSet === undefined) {
-            this._changeSetListener?.dispose();
-            this._onDidChangeEmitter.fire({
-                kind: 'deleteChangeSet',
-            });
-            return;
+        if (!changeSet) {
+            return this.removeChangeSet();
         }
+        const oldChangeSet = this._changeSet;
+        oldChangeSet?.dispose();
+        this._changeSet = changeSet;
         this._onDidChangeEmitter.fire({
             kind: 'setChangeSet',
-            changeSet: this._changeSet,
+            changeSet,
+            oldChangeSet,
         });
-        this._changeSetListener = this._changeSet.onDidChange(() => {
+        changeSet.onDidChange(() => {
             this._onDidChangeEmitter.fire({
                 kind: 'updateChangeSet',
-                changeSet: this._changeSet!,
+                changeSet,
             });
         });
     }
@@ -515,6 +550,7 @@ export class ChatModelImpl implements ChatModel {
         if (this._changeSet) {
             const oldChangeSet = this._changeSet;
             this._changeSet = undefined;
+            oldChangeSet.dispose();
             this._onDidChangeEmitter.fire({
                 kind: 'removeChangeSet',
                 changeSet: oldChangeSet,
@@ -522,8 +558,8 @@ export class ChatModelImpl implements ChatModel {
         }
     }
 
-    addRequest(parsedChatRequest: ParsedChatRequest, agentId?: string, context: ResolvedAIVariable[] = []): ChatRequestModelImpl {
-        const requestModel = new ChatRequestModelImpl(this, parsedChatRequest, agentId, context);
+    addRequest(parsedChatRequest: ParsedChatRequest, agentId?: string, context: ChatContext = { variables: [] }): MutableChatRequestModel {
+        const requestModel = new MutableChatRequestModel(this, parsedChatRequest, agentId, context);
         this._requests.push(requestModel);
         this._onDidChangeEmitter.fire({
             kind: 'addRequest',
@@ -535,74 +571,137 @@ export class ChatModelImpl implements ChatModel {
     isEmpty(): boolean {
         return this._requests.length === 0;
     }
+
+    dispose(): void {
+        this.removeChangeSet(); // Signal disposal of last change set.
+        this._onDidChangeEmitter.dispose();
+    }
+}
+
+interface ChangeSetChangeEvent {
+    added?: URI[],
+    removed?: URI[],
+    modified?: URI[],
+    /** Fired when only the state of a given element changes, not its contents */
+    state?: URI[],
 }
 
 export class ChangeSetImpl implements ChangeSet {
-    protected readonly _onDidChangeEmitter = new Emitter<void>();
-    onDidChange: Event<void> = this._onDidChangeEmitter.event;
+    protected readonly _onDidChangeEmitter = new Emitter<ChangeSetChangeEvent>();
+    onDidChange: Event<ChangeSetChangeEvent> = this._onDidChangeEmitter.event;
 
     protected _elements: ChangeSetElement[] = [];
 
     constructor(public readonly title: string, elements: ChangeSetElement[] = []) {
-        this.addElements(elements);
+        this.addElements(...elements);
     }
 
     getElements(): ChangeSetElement[] {
         return this._elements;
     }
 
-    addElement(element: ChangeSetElement): void {
-        this.addElements([element]);
+    /** Will replace any element that is already present, using URI as identity criterion. */
+    addElements(...elements: ChangeSetElement[]): void {
+        const added: URI[] = [];
+        const modified: URI[] = [];
+        const toDispose: ChangeSetElement[] = [];
+        const current = new Map(this.getElements().map((element, index) => [element.uri.toString(), index]));
+        elements.forEach(element => {
+            const existingIndex = current.get(element.uri.toString());
+            if (existingIndex !== undefined) {
+                modified.push(element.uri);
+                toDispose.push(this._elements[existingIndex]);
+                this._elements[existingIndex] = element;
+            } else {
+                added.push(element.uri);
+                this._elements.push(element);
+            }
+            element.onDidChange?.(() => this.notifyChange({ state: [element.uri] }));
+        });
+        toDispose.forEach(element => element.dispose?.());
+        this.notifyChange({ added, modified });
     }
 
-    addElements(elements: ChangeSetElement[]): void {
-        this._elements.push(...elements);
-        this.notifyChange();
+    removeElements(...indices: number[]): void {
+        // From highest to lowest so that we don't affect lower indices with our splicing.
+        const sorted = indices.slice().sort((left, right) => left - right);
+        const deletions = sorted.flatMap(index => this._elements.splice(index, 1));
+        deletions.forEach(deleted => deleted.dispose?.());
+        this.notifyChange({ removed: deletions.map(element => element.uri) });
     }
 
-    replaceElement(element: ChangeSetElement): boolean {
-        const index = this._elements.findIndex(e => e.uri.toString() === element.uri.toString());
-        if (index < 0) {
-            return false;
-        }
-        this._elements[index] = element;
-        this.notifyChange();
-        return true;
+    protected notifyChange(change: ChangeSetChangeEvent): void {
+        this._onDidChangeEmitter.fire(change);
     }
 
-    addOrReplaceElement(element: ChangeSetElement): void {
-        if (!this.replaceElement(element)) {
-            this.addElement(element);
-        }
-    }
-
-    removeElement(index: number): void {
-        this._elements.splice(index, 1);
-        this.notifyChange();
-    }
-
-    notifyChange(): void {
-        this._onDidChangeEmitter.fire();
+    dispose(): void {
+        this._onDidChangeEmitter.dispose();
+        this._elements.forEach(element => element.dispose?.());
     }
 }
 
-export class ChatRequestModelImpl implements ChatRequestModel {
+export class ChatContextManagerImpl implements ChatContextManager {
+    protected readonly variables = new Array<AIVariableResolutionRequest>();
+    protected readonly onDidChangeEmitter = new Emitter<ChatAddVariableEvent | ChatRemoveVariableEvent>();
+    get onDidChange(): Event<ChatAddVariableEvent | ChatRemoveVariableEvent> {
+        return this.onDidChangeEmitter.event;
+    }
+
+    getVariables(): readonly AIVariableResolutionRequest[] {
+        const result = this.variables.slice();
+        Object.freeze(result);
+        return result;
+    }
+
+    addVariables(...variables: AIVariableResolutionRequest[]): void {
+        let modified = false;
+        variables.forEach(variable => {
+            if (this.variables.some(existing => existing.variable.id === variable.variable.id && existing.arg === variable.arg)) {
+                return;
+            }
+            this.variables.push(variable);
+            modified = true;
+        });
+        if (modified) {
+            this.onDidChangeEmitter.fire({ kind: 'addVariable' });
+        }
+    }
+
+    deleteVariables(...indices: number[]): void {
+        const toDelete = indices.filter(candidate => candidate <= this.variables.length).sort((left, right) => right - left);
+        if (toDelete.length) {
+            toDelete.forEach(index => {
+                this.variables.splice(index, 1);
+            });
+            this.onDidChangeEmitter.fire({ kind: 'removeVariable' });
+        }
+    }
+
+    clear(): void {
+        if (this.variables.length) {
+            this.variables.length = 0;
+            this.onDidChangeEmitter.fire({ kind: 'removeVariable' });
+        }
+    }
+}
+
+export class MutableChatRequestModel implements ChatRequestModel {
     protected readonly _id: string;
-    protected _session: ChatModelImpl;
+    protected _session: MutableChatModel;
     protected _request: ChatRequest;
-    protected _response: ChatResponseModelImpl;
-    protected _context: ResolvedAIVariable[];
+    protected _response: MutableChatResponseModel;
+    protected _context: ChatContext;
     protected _agentId?: string;
     protected _data: { [key: string]: unknown };
 
-    constructor(session: ChatModelImpl, public readonly message: ParsedChatRequest, agentId?: string,
-        context: ResolvedAIVariable[] = [], data: { [key: string]: unknown } = {}) {
+    constructor(session: MutableChatModel, public readonly message: ParsedChatRequest, agentId?: string,
+        context: ChatContext = { variables: [] }, data: { [key: string]: unknown } = {}) {
         // TODO accept serialized data as a parameter to restore a previously saved ChatRequestModel
         this._request = message.request;
         this._id = generateUuid();
         this._session = session;
-        this._response = new ChatResponseModelImpl(this._id, agentId);
-        this._context = context.concat(message.parts.filter(part => part.kind === 'var').map(part => (part as ParsedChatRequestVariablePart).resolution));
+        this._response = new MutableChatResponseModel(this._id, agentId);
+        this._context = context;
         this._agentId = agentId;
         this._data = data;
     }
@@ -623,7 +722,7 @@ export class ChatRequestModelImpl implements ChatRequestModel {
         return this._id;
     }
 
-    get session(): ChatModelImpl {
+    get session(): MutableChatModel {
         return this._session;
     }
 
@@ -631,8 +730,12 @@ export class ChatRequestModelImpl implements ChatRequestModel {
         return this._request;
     }
 
-    get response(): ChatResponseModelImpl {
+    get response(): MutableChatResponseModel {
         return this._response;
+    }
+
+    get context(): ChatContext {
+        return this._context;
     }
 
     get agentId(): string | undefined {
@@ -674,6 +777,10 @@ export class TextChatResponseContentImpl implements TextChatResponseContent {
         return this._content;
     }
 
+    asDisplayString(): string | undefined {
+        return this.asString();
+    }
+
     merge(nextChatResponseContent: TextChatResponseContent): boolean {
         this._content += nextChatResponseContent.content;
         return true;
@@ -694,6 +801,10 @@ export class MarkdownChatResponseContentImpl implements MarkdownChatResponseCont
 
     asString(): string {
         return this._content.value;
+    }
+
+    asDisplayString(): string | undefined {
+        return this.asString();
     }
 
     merge(nextChatResponseContent: MarkdownChatResponseContent): boolean {
@@ -794,6 +905,10 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     }
 
     asString(): string {
+        return '';
+    }
+
+    asDisplayString(): string {
         return `Tool call: ${this._name}(${this._arguments ?? ''})`;
     }
     merge(nextChatResponseContent: ToolCallChatResponseContent): boolean {
@@ -847,6 +962,10 @@ export class HorizontalLayoutChatResponseContentImpl implements HorizontalLayout
         return this._content.map(child => child.asString && child.asString()).join(' ');
     }
 
+    asDisplayString(): string | undefined {
+        return this.asString();
+    }
+
     merge(nextChatResponseContent: ChatResponseContent): boolean {
         if (HorizontalLayoutChatResponseContent.is(nextChatResponseContent)) {
             this._content.push(...nextChatResponseContent.content);
@@ -864,7 +983,7 @@ export class QuestionResponseContentImpl implements QuestionResponseContent {
     readonly kind = 'question';
     protected _selectedOption: { text: string; value?: string } | undefined;
     constructor(public question: string, public options: { text: string, value?: string }[],
-        public request: ChatRequestModelImpl, public handler: QuestionResponseHandler) {
+        public request: MutableChatRequestModel, public handler: QuestionResponseHandler) {
     }
     set selectedOption(option: { text: string; value?: string; } | undefined) {
         this._selectedOption = option;
@@ -887,6 +1006,7 @@ class ChatResponseImpl implements ChatResponse {
     onDidChange: Event<void> = this._onDidChangeEmitter.event;
     protected _content: ChatResponseContent[];
     protected _responseRepresentation: string;
+    protected _responseRepresentationForDisplay: string;
 
     constructor() {
         // TODO accept serialized data as a parameter to restore a previously saved ChatResponse
@@ -940,8 +1060,18 @@ class ChatResponseImpl implements ChatResponse {
     }
 
     protected _updateResponseRepresentation(): void {
-        this._responseRepresentation = this._content
+        this._responseRepresentation = this.responseRepresentationsToString(this._content, 'asString');
+        this._responseRepresentationForDisplay = this.responseRepresentationsToString(this.content, 'asDisplayString');
+    }
+
+    protected responseRepresentationsToString(content: ChatResponseContent[], collect: 'asString' | 'asDisplayString'): string {
+        return content
             .map(responseContent => {
+                if (collect === 'asDisplayString') {
+                    if (ChatResponseContent.hasDisplayString(responseContent)) {
+                        return responseContent.asDisplayString();
+                    }
+                }
                 if (ChatResponseContent.hasAsString(responseContent)) {
                     return responseContent.asString();
                 }
@@ -954,16 +1084,20 @@ class ChatResponseImpl implements ChatResponse {
                 );
                 return undefined;
             })
-            .filter(text => text !== undefined)
+            .filter(text => (text !== undefined && text !== ''))
             .join('\n\n');
     }
 
     asString(): string {
         return this._responseRepresentation;
     }
+
+    asDisplayString(): string {
+        return this._responseRepresentationForDisplay;
+    }
 }
 
-class ChatResponseModelImpl implements ChatResponseModel {
+class MutableChatResponseModel implements ChatResponseModel {
     protected readonly _onDidChangeEmitter = new Emitter<void>();
     onDidChange: Event<void> = this._onDidChangeEmitter.event;
 
@@ -1103,7 +1237,7 @@ class ChatResponseModelImpl implements ChatResponseModel {
     }
 }
 
-export class ErrorChatResponseModelImpl extends ChatResponseModelImpl {
+export class ErrorChatResponseModel extends MutableChatResponseModel {
     constructor(requestId: string, error: Error, agentId?: string) {
         super(requestId, agentId);
         this.error(error);

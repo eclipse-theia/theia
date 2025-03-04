@@ -16,7 +16,7 @@
 
 import { Agent, AgentService, AIVariableContribution } from '@theia/ai-core/lib/common';
 import { bindContributionProvider, ResourceResolver } from '@theia/core';
-import { FrontendApplicationContribution, PreferenceContribution } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, LabelProviderContribution, PreferenceContribution } from '@theia/core/lib/browser';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import {
     ChatAgent,
@@ -25,14 +25,12 @@ import {
     ChatRequestParser,
     ChatRequestParserImpl,
     ChatService,
-    DefaultChatAgentId
+    ToolCallChatResponseContentFactory,
+    PinChatAgent
 } from '../common';
 import { ChatAgentsVariableContribution } from '../common/chat-agents-variable-contribution';
-import { CommandChatAgent } from '../common/command-chat-agents';
 import { CustomChatAgent } from '../common/custom-chat-agent';
-import { OrchestratorChatAgent, OrchestratorChatAgentId } from '../common/orchestrator-chat-agent';
 import { DefaultResponseContentFactory, DefaultResponseContentMatcherProvider, ResponseContentMatcherProvider } from '../common/response-content-matcher';
-import { UniversalChatAgent } from '../common/universal-chat-agent';
 import { aiChatPreferences } from './ai-chat-preferences';
 import { ChangeSetElementArgs, ChangeSetFileElement, ChangeSetFileElementFactory } from './change-set-file-element';
 import { AICustomAgentsFrontendApplicationContribution } from './custom-agent-frontend-application-contribution';
@@ -41,6 +39,12 @@ import { CustomAgentFactory } from './custom-agent-factory';
 import { ChatToolRequestService } from '../common/chat-tool-request-service';
 import { ChangeSetFileResourceResolver } from './change-set-file-resource';
 import { ChangeSetFileService } from './change-set-file-service';
+import { ContextVariableLabelProvider } from './context-variable-label-provider';
+import { ContextFileVariableLabelProvider } from './context-file-variable-label-provider';
+import { FileChatVariableContribution } from './file-chat-variable-contribution';
+import { ContextSummaryVariableContribution } from '../common/context-summary-variable';
+import { ContextDetailsVariableContribution } from '../common/context-details-variable';
+import { ChangeSetVariableContribution } from './change-set-variable';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, Agent);
@@ -50,7 +54,7 @@ export default new ContainerModule(bind => {
 
     bind(ChatAgentServiceImpl).toSelf().inSingletonScope();
     bind(ChatAgentService).toService(ChatAgentServiceImpl);
-    bind(DefaultChatAgentId).toConstantValue({ id: OrchestratorChatAgentId });
+    bind(PinChatAgent).toConstantValue(true);
 
     bindContributionProvider(bind, ResponseContentMatcherProvider);
     bind(DefaultResponseContentMatcherProvider).toSelf().inSingletonScope();
@@ -64,18 +68,6 @@ export default new ContainerModule(bind => {
 
     bind(FrontendChatServiceImpl).toSelf().inSingletonScope();
     bind(ChatService).toService(FrontendChatServiceImpl);
-
-    bind(OrchestratorChatAgent).toSelf().inSingletonScope();
-    bind(Agent).toService(OrchestratorChatAgent);
-    bind(ChatAgent).toService(OrchestratorChatAgent);
-
-    bind(UniversalChatAgent).toSelf().inSingletonScope();
-    bind(Agent).toService(UniversalChatAgent);
-    bind(ChatAgent).toService(UniversalChatAgent);
-
-    bind(CommandChatAgent).toSelf().inSingletonScope();
-    bind(Agent).toService(CommandChatAgent);
-    bind(ChatAgent).toService(CommandChatAgent);
 
     bind(PreferenceContribution).toConstantValue({ schema: aiChatPreferences });
 
@@ -97,6 +89,11 @@ export default new ContainerModule(bind => {
         });
     bind(FrontendApplicationContribution).to(AICustomAgentsFrontendApplicationContribution).inSingletonScope();
 
+    bind(ContextVariableLabelProvider).toSelf().inSingletonScope();
+    bind(LabelProviderContribution).toService(ContextVariableLabelProvider);
+    bind(ContextFileVariableLabelProvider).toSelf().inSingletonScope();
+    bind(LabelProviderContribution).toService(ContextFileVariableLabelProvider);
+
     bind(ChangeSetFileService).toSelf().inSingletonScope();
     bind(ChangeSetFileElementFactory).toFactory(ctx => (args: ChangeSetElementArgs) => {
         const container = ctx.container.createChild();
@@ -106,4 +103,9 @@ export default new ContainerModule(bind => {
     });
     bind(ChangeSetFileResourceResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toService(ChangeSetFileResourceResolver);
+    bind(ToolCallChatResponseContentFactory).toSelf().inSingletonScope();
+    bind(AIVariableContribution).to(FileChatVariableContribution).inSingletonScope();
+    bind(AIVariableContribution).to(ContextSummaryVariableContribution).inSingletonScope();
+    bind(AIVariableContribution).to(ContextDetailsVariableContribution).inSingletonScope();
+    bind(AIVariableContribution).to(ChangeSetVariableContribution).inSingletonScope();
 });

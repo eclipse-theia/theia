@@ -17,13 +17,13 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution, PreferenceService } from '@theia/core/lib/browser';
 import { Emitter, MaybePromise, Event, } from '@theia/core';
 import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
-import { PREFERENCE_NAME_ENABLE_EXPERIMENTAL } from './ai-core-preferences';
+import { PREFERENCE_NAME_ENABLE_AI } from './ai-core-preferences';
 
 /**
- * Context key for the experimental AI feature. It is set to `true` if the feature is enabled.
+ * Context key for the AI features. It is set to `true` if the feature is enabled.
  */
 // We reuse the enablement preference for the context key
-export const EXPERIMENTAL_AI_CONTEXT_KEY = PREFERENCE_NAME_ENABLE_EXPERIMENTAL;
+export const ENABLE_AI_CONTEXT_KEY = PREFERENCE_NAME_ENABLE_AI;
 
 @injectable()
 export class AIActivationService implements FrontendApplicationContribution {
@@ -33,23 +33,23 @@ export class AIActivationService implements FrontendApplicationContribution {
     @inject(PreferenceService)
     protected preferenceService: PreferenceService;
 
-    protected isExperimentalEnabledKey: ContextKey<boolean>;
+    protected isAiEnabledKey: ContextKey<boolean>;
 
-    protected onDidChangeExperimental = new Emitter<boolean>();
+    protected onDidChangeAIEnabled = new Emitter<boolean>();
     get onDidChangeActiveStatus(): Event<boolean> {
-        return this.onDidChangeExperimental.event;
+        return this.onDidChangeAIEnabled.event;
     }
 
     get isActive(): boolean {
-        return this.isExperimentalEnabledKey.get() ?? false;
+        return this.isAiEnabledKey.get() ?? false;
     }
 
     initialize(): MaybePromise<void> {
-        this.isExperimentalEnabledKey = this.contextKeyService.createKey(EXPERIMENTAL_AI_CONTEXT_KEY, false);
+        this.isAiEnabledKey = this.contextKeyService.createKey(ENABLE_AI_CONTEXT_KEY, false);
         this.preferenceService.onPreferenceChanged(e => {
-            if (e.preferenceName === PREFERENCE_NAME_ENABLE_EXPERIMENTAL) {
-                this.isExperimentalEnabledKey.set(e.newValue);
-                this.onDidChangeExperimental.fire(e.newValue);
+            if (e.preferenceName === PREFERENCE_NAME_ENABLE_AI) {
+                this.isAiEnabledKey.set(e.newValue);
+                this.onDidChangeAIEnabled.fire(e.newValue);
             }
         });
     }

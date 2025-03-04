@@ -1,6 +1,6 @@
 {
   "extends": "../../configs/base.tsconfig",
-  "include": [ ],
+  "include": [],
   "compilerOptions": {
     "composite": true
   },
@@ -33,6 +33,9 @@
       "path": "../../packages/ai-hugging-face"
     },
     {
+      "path": "../../packages/ai-ide"
+    },
+    {
       "path": "../../packages/ai-llamafile"
     },
     {
@@ -49,9 +52,6 @@
     },
     {
       "path": "../../packages/ai-terminal"
-    },
-    {
-      "path": "../../packages/ai-workspace-agent"
     },
     {
       "path": "../../packages/bulk-edit"
