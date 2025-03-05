@@ -19,7 +19,7 @@ import {
     CommunicationRequestEntry,
     CommunicationRequestEntryParam,
     CommunicationResponseEntry,
-    CommunicationResponseEntryParam
+    CommunicationResponseEntryParam,
 } from '@theia/ai-core';
 import { Emitter, Event, ILogger } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
@@ -56,10 +56,19 @@ export class DefaultCommunicationRecordingService implements CommunicationRecord
     recordRequest(requestEntry: CommunicationRequestEntryParam): void {
         this.logger.debug('Recording request:', requestEntry.request);
         const completedEntry = { timestamp: Date.now(), ...requestEntry };
-        if (this.history.has(requestEntry.agentId)) {
-            this.history.get(requestEntry.agentId)?.push(completedEntry);
-        } else {
+        if (!this.history.has(requestEntry.agentId)) {
             this.history.set(requestEntry.agentId, [completedEntry]);
+        } else {
+            const agentHistory = this.history.get(requestEntry.agentId)!;
+            const existingEntryIndex = agentHistory.findIndex(e => e.requestId === requestEntry.requestId);
+            if (existingEntryIndex !== -1) {
+                agentHistory[existingEntryIndex] = {
+                    ...agentHistory[existingEntryIndex],
+                    ...completedEntry
+                };
+            } else {
+                agentHistory.push(completedEntry);
+            }
         }
         this.onDidRecordRequestEmitter.fire(completedEntry);
     }
@@ -68,9 +77,9 @@ export class DefaultCommunicationRecordingService implements CommunicationRecord
         this.logger.debug('Recording response:', responseEntry.response);
         const completedEntry = { timestamp: Date.now(), ...responseEntry };
         if (this.history.has(completedEntry.agentId)) {
-            const entry = this.history.get(completedEntry.agentId);
-            if (entry) {
-                const matchingRequest = entry.find(e => e.requestId === completedEntry.requestId);
+            const agentHistory = this.history.get(completedEntry.agentId);
+            if (agentHistory) {
+                const matchingRequest = agentHistory.find(e => e.requestId === completedEntry.requestId);
                 if (!matchingRequest) {
                     throw Error('No matching request found for response');
                 }
