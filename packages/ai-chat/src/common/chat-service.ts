@@ -33,9 +33,11 @@ import {
     ChatResponseModel,
     ErrorChatResponseModel,
     ChatContext,
+    MutableChatRequestModel,
 } from './chat-model';
 import { ChatRequestParser } from './chat-request-parser';
 import { ParsedChatRequest, ParsedChatRequestAgentPart, ParsedChatRequestVariablePart } from './parsed-chat-request';
+import { ChatSessionNamingService } from './chat-session-naming-service';
 
 export interface ChatRequestInvocation {
     /**
@@ -55,6 +57,7 @@ export interface ChatRequestInvocation {
 export interface ChatSession {
     id: string;
     title?: string;
+    lastInteraction?: Date;
     model: ChatModel;
     isActive: boolean;
     pinnedAgent?: ChatAgent;
@@ -127,6 +130,9 @@ export class ChatServiceImpl implements ChatService {
     @inject(FallbackChatAgentId) @optional()
     protected fallbackChatAgentId: FallbackChatAgentId | undefined;
 
+    @inject(ChatSessionNamingService) @optional()
+    protected chatSessionNamingService: ChatSessionNamingService | undefined;
+
     @inject(PinChatAgent) @optional()
     protected pinChatAgent: boolean | undefined;
 
@@ -189,8 +195,6 @@ export class ChatServiceImpl implements ChatService {
         if (!session) {
             return undefined;
         }
-        session.title = request.text;
-
         const parsedRequest = this.chatRequestParser.parseChatRequest(request, session.model.location);
         const agent = this.getAgent(parsedRequest, session);
 
@@ -208,6 +212,7 @@ export class ChatServiceImpl implements ChatService {
         const resolutionContext: ChatSessionContext = { model: session.model };
         const resolvedContext = await this.resolveChatContext(session.model.context.getVariables(), resolutionContext);
         const requestModel = session.model.addRequest(parsedRequest, agent?.id, resolvedContext);
+        this.updateSessionMetadata(session, requestModel);
         resolutionContext.request = requestModel;
 
         for (const part of parsedRequest.parts) {
@@ -253,6 +258,28 @@ export class ChatServiceImpl implements ChatService {
         }
 
         return invocation;
+    }
+
+    protected updateSessionMetadata(session: ChatSessionInternal, request: MutableChatRequestModel): void {
+        session.lastInteraction = new Date();
+        if (session.title) {
+            return;
+        }
+        const requestText = request.request.displayText ?? request.request.text;
+        session.title = requestText;
+        if (this.chatSessionNamingService) {
+            const otherSessionNames = this._sessions.map(s => s.title).filter((title): title is string => title !== undefined);
+            const namingService = this.chatSessionNamingService;
+            let didGenerateName = false;
+            request.response.onDidChange(() => {
+                if (request.response.isComplete && !didGenerateName) {
+                    namingService.generateChatSessionName(session, otherSessionNames).then(name => {
+                        session.title = name;
+                        didGenerateName = true;
+                    }).catch(error => this.logger.error('Failed to generate chat session name', error));
+                }
+            });
+        }
     }
 
     protected async resolveChatContext(
