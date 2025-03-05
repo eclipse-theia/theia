@@ -453,7 +453,7 @@ div:last-child > .theia-ChatNode {
 .theia-ChatInputOptions {
   width: 100%;
   height: 25px;
-  padding-left: 6px;
+  padding-left: 3px;
   padding-right: 6px;
   display: flex;
   justify-content: space-between;
@@ -465,7 +465,7 @@ div:last-child > .theia-ChatNode {
 }
 
 .theia-ChatInputOptions .theia-ChatInputOptions-right {
-  margin-right: 12px;
+  margin-right: 8px;
 }
 
 .theia-ChatInputOptions .option {
@@ -506,6 +506,10 @@ div:last-child > .theia-ChatNode {
   gap: 2px;
   border: var(--theia-border-width) solid var(--theia-input-border);
   border-radius: 4px;
+}
+
+.theia-CodePartRenderer-root .monaco-editor {
+  outline-color: var(--theia-editor-background);
 }
 
 .theia-CodePartRenderer-left {
