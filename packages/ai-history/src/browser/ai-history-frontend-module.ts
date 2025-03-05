@@ -34,5 +34,4 @@ export default new ContainerModule(bind => {
         createWidget: () => context.container.get<AIHistoryView>(AIHistoryView)
     })).inSingletonScope();
     bind(TabBarToolbarContribution).toService(AIHistoryViewContribution);
-
 });

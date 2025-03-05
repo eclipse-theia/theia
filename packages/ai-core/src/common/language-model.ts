@@ -119,6 +119,10 @@ export interface ResponseFormatJsonSchema {
     };
 }
 
+export interface LanguageModelRequestWithRawResponse extends LanguageModelRequest {
+    response?: LanguageModelTextResponse & { tool_calls?: ToolCall[] };
+}
+
 export interface LanguageModelTextResponse {
     text: string;
 }

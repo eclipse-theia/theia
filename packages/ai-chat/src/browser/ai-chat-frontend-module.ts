@@ -45,6 +45,8 @@ import { FileChatVariableContribution } from './file-chat-variable-contribution'
 import { ContextSummaryVariableContribution } from '../common/context-summary-variable';
 import { ContextDetailsVariableContribution } from '../common/context-details-variable';
 import { ChangeSetVariableContribution } from './change-set-variable';
+import { ChatLanguageModelService, ChatLanguageModelServiceImpl } from '../common/chat-language-model-service';
+import { ChatCommunicationRecorder } from '../common/chat-communication-recorder';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, Agent);
@@ -55,6 +57,9 @@ export default new ContainerModule(bind => {
     bind(ChatAgentServiceImpl).toSelf().inSingletonScope();
     bind(ChatAgentService).toService(ChatAgentServiceImpl);
     bind(PinChatAgent).toConstantValue(true);
+
+    bind(ChatCommunicationRecorder).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(ChatCommunicationRecorder);
 
     bindContributionProvider(bind, ResponseContentMatcherProvider);
     bind(DefaultResponseContentMatcherProvider).toSelf().inSingletonScope();
@@ -68,6 +73,9 @@ export default new ContainerModule(bind => {
 
     bind(FrontendChatServiceImpl).toSelf().inSingletonScope();
     bind(ChatService).toService(FrontendChatServiceImpl);
+
+    bind(ChatLanguageModelServiceImpl).toSelf().inSingletonScope();
+    bind(ChatLanguageModelService).toService(ChatLanguageModelServiceImpl);
 
     bind(PreferenceContribution).toConstantValue({ schema: aiChatPreferences });
 

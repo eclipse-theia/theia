@@ -1,92 +1,133 @@
 .agent-history-widget {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-
 .agent-history-widget .theia-select-component {
-    margin: 10px 0;
-    width: 80%;
+  margin: 10px 0;
+  width: 80%;
 }
 
 .agent-history {
-    width: calc(80% + 16px);
-    display: flex;
-    align-items: center;
-    flex-direction: column;
+  width: calc(80% + 16px);
+  display: flex;
+  align-items: center;
+  flex-direction: column;
 }
 
 .theia-card {
-    background-color: var(--theia-sideBar-background);
-    border: 1px solid var(--theia-sideBarSectionHeader-border);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    padding: 15px;
-    margin: 10px 0;
-    width: 100%;
-    box-sizing: border-box;
+  background-color: var(--theia-sideBar-background);
+  border: 1px solid var(--theia-sideBarSectionHeader-border);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 15px;
+  margin: 10px 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .theia-card-meta {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.9em;
-    padding: var(--theia-ui-padding) 0;
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9em;
+  padding: var(--theia-ui-padding) 0;
 }
 
 .theia-card-content {
-    color: var(--theia-font-color);
-    margin-bottom: 10px;
+  color: var(--theia-font-color);
+  margin-bottom: 10px;
 }
 
 .theia-card-content h2 {
-    font-size: var(--theia-ui-font-size2);
+  font-size: var(--theia-ui-font-size2);
 }
+
 .theia-card-content h3 {
-    font-size: var(--theia-ui-font-size1);
-    font-weight: bold;
+  font-size: var(--theia-ui-font-size1);
+  font-weight: bold;
 }
 
-.theia-card-content .theia-card-context h2 {
-    display: inline;
-}
-.theia-card-content .theia-card-context ul {
-    padding-inline-start: 20px;
-}
-.theia-card-content .theia-card-context pre {
-    overflow: scroll;
-}
-
-.theia-card-content p {
-    margin: var(--theia-ui-padding) 0;
+.theia-card-content pre {
+  border-radius: 4px;
+  border: 1px solid var(--theia-sideBarSectionHeader-border);
+  background-color: var(--theia-terminal-background);
+  overflow: auto;
+  padding: 10px;
+  margin: 5px 0;
 }
 
-.theia-card-request, .theia-card-response {
-    margin-bottom: 10px;
+.theia-card-llm-requests details {
+  margin: 10px 0;
+  border: 1px solid var(--theia-editorWidget-border);
+  border-radius: 4px;
+  overflow: hidden;
 }
 
-.theia-card-request pre,
-.theia-card-response pre {
-    font-family: monospace;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    background-color: var(--theia-sideBar-background);
-    margin: var(--theia-ui-padding) 0;
+.theia-card-llm-requests summary {
+  padding: 10px;
+  background-color: var(--theia-editorWidget-background);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.theia-card-llm-requests summary:hover {
+  background-color: var(--theia-list-hoverBackground);
+}
+
+.theia-card-llm-requests summary h3 {
+  display: inline;
+  margin: 0;
+}
+
+.theia-card-llm-requests details > div {
+  padding: 0 10px 10px 10px;
+  border-top: 1px solid var(--theia-editorWidget-border);
+  background-color: var(--theia-editor-background);
+  position: relative;
+}
+
+.theia-card-llm-requests h4 {
+  margin-top: 12px;
+  color: var(--theia-editor-foreground);
+  font-size: var(--theia-ui-font-size1);
+  border-bottom: 1px solid var(--theia-sideBarSectionHeader-border);
+  padding-bottom: 5px;
+}
+
+.theia-card-llm-requests ul {
+  list-style: none;
+  padding-inline-start: 0;
+}
+
+.theia-card-llm-requests pre {
+  background-color: var(--theia-editor-background);
+}
+
+.theia-card-request,
+.theia-card-response {
+  margin-bottom: 10px;
+}
+
+.theia-card-llm-request-messages-list li,
+.theia-card-llm-request-response-tool-calls-list li {
+  margin-bottom: 15px;
+  position: relative;
+  padding-left: 0;
 }
 
 .theia-card-request-id,
 .theia-card-session-id,
 .theia-card-timestamp,
 .theia-card-response-time {
-    flex: 1;
+  flex: 1;
 }
 
 .theia-card-request-id,
 .theia-card-timestamp {
-    text-align: left;
+  text-align: left;
 }
 
 .theia-card-session-id,
 .theia-card-response-time {
-    text-align: right;
+  text-align: right;
 }
