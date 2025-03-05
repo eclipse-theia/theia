@@ -66,6 +66,8 @@ export class OutputWidget extends BaseWidget implements StatefulWidget {
     @postConstruct()
     protected init(): void {
         this.toDispose.pushAll([
+            this.outputChannelManager.onChannelAdded(() => this.refreshEditorWidget()),
+            this.outputChannelManager.onChannelDeleted(() => this.refreshEditorWidget()),
             this.outputChannelManager.onChannelWasHidden(() => this.refreshEditorWidget()),
             this.outputChannelManager.onChannelWasShown(({ preserveFocus }) => this.refreshEditorWidget({ preserveFocus: !!preserveFocus })),
             this.toDisposeOnSelectedChannelChanged,
