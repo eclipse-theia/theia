@@ -19,7 +19,7 @@ import {
     CommunicationRecordingService,
     getJsonOfResponse,
     isLanguageModelParsedResponse,
-    LanguageModelRegistry, LanguageModelRequirement,
+    LanguageModelRegistry, LanguageModelRequest, LanguageModelRequirement,
     PromptService
 } from '@theia/ai-core/lib/common';
 import { generateUuid, ILogger, nls } from '@theia/core';
@@ -100,44 +100,45 @@ export class AiTerminalAgent implements Agent {
         // since we do not actually hold complete conversions, the request/response pair is considered a session
         const sessionId = generateUuid();
         const requestId = generateUuid();
+        const llmRequest: LanguageModelRequest = {
+            messages: [
+                {
+                    actor: 'ai',
+                    type: 'text',
+                    query: systemMessage
+                },
+                {
+                    actor: 'user',
+                    type: 'text',
+                    query: request
+                }
+            ],
+            response_format: {
+                type: 'json_schema',
+                json_schema: {
+                    name: 'terminal-commands',
+                    description: 'Suggested terminal commands based on the user request',
+                    schema: zodToJsonSchema(Commands)
+                }
+            }
+        };
         this.recordingService.recordRequest({
             agentId: this.id,
             sessionId,
             requestId,
             request,
-            systemMessage
+            ...llmRequest
         });
 
         try {
-            const result = await lm.request({
-                messages: [
-                    {
-                        actor: 'ai',
-                        type: 'text',
-                        query: systemMessage
-                    },
-                    {
-                        actor: 'user',
-                        type: 'text',
-                        query: request
-                    }
-                ],
-                response_format: {
-                    type: 'json_schema',
-                    json_schema: {
-                        name: 'terminal-commands',
-                        description: 'Suggested terminal commands based on the user request',
-                        schema: zodToJsonSchema(Commands)
-                    }
-                }
-            });
+            const result = await lm.request(llmRequest);
 
             if (isLanguageModelParsedResponse(result)) {
                 // model returned structured output
                 const parsedResult = Commands.safeParse(result.parsed);
                 if (parsedResult.success) {
                     const response = JSON.stringify(parsedResult.data.commands);
-                    this.recordingService.recordResponse({ agentId: this.id, sessionId, requestId, response, systemMessage });
+                    this.recordingService.recordResponse({ agentId: this.id, sessionId, requestId, response, ...result });
                     return parsedResult.data.commands;
                 }
             }
