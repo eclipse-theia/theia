@@ -37,8 +37,8 @@ import { RemoteUserStorageContribution } from './remote-user-storage-provider';
 import { remoteFileSystemPath, RemoteFileSystemProxyFactory, RemoteFileSystemServer } from '@theia/filesystem/lib/common/remote-file-system-provider';
 import { LocalEnvVariablesServer, LocalRemoteFileSystemContribution, LocalRemoteFileSystemProvider, LocalRemoteFileSytemServer } from './local-backend-services';
 import { envVariablesPath, EnvVariablesServer } from '@theia/core/lib/common/env-variables';
-import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { RemoteWorkspaceService } from './remote-workspace-service';
+import { WorkspaceHandlingContribution, WorkspaceOpenHandlerContribution } from '@theia/workspace/lib/browser';
+import { RemoteLocalWorkspaceContribution } from './remote-local-workspace-contribution';
 import { FileServiceContribution } from '@theia/filesystem/lib/browser/file-service';
 
 export default new ContainerModule((bind, _, __, rebind) => {
@@ -85,7 +85,9 @@ export default new ContainerModule((bind, _, __, rebind) => {
     rebind(UserStorageContribution).to(RemoteUserStorageContribution);
 
     if (isRemote) {
-        rebind(WorkspaceService).to(RemoteWorkspaceService).inSingletonScope();
+        bind(RemoteLocalWorkspaceContribution).toSelf().inSingletonScope();
+        bind(WorkspaceOpenHandlerContribution).toService(RemoteLocalWorkspaceContribution);
+        bind(WorkspaceHandlingContribution).toService(RemoteLocalWorkspaceContribution);
         bind(LocalRemoteFileSystemContribution).toSelf().inSingletonScope();
         bind(FileServiceContribution).toService(LocalRemoteFileSystemContribution);
     }

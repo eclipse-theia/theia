@@ -45,9 +45,9 @@ export interface WorkspaceOpenHandlerContribution {
     getWorkspaceLabel?(uri: URI): MaybePromise<string | undefined>;
 }
 
+export const WorkspaceHandlingContribution = Symbol('WorkspaceHandlingContribution');
 export interface WorkspaceHandlingContribution {
     modifyRecentWorksapces?(workspaces: string[]): MaybePromise<string[]>;
-
 }
 
 /**
@@ -108,6 +108,9 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
 
     @inject(ContributionProvider) @named(WorkspaceOpenHandlerContribution)
     protected readonly openHandlerContribution: ContributionProvider<WorkspaceOpenHandlerContribution>;
+
+    @inject(ContributionProvider) @named(WorkspaceHandlingContribution)
+    protected readonly workspaceHandlingContribution: ContributionProvider<WorkspaceHandlingContribution>;
 
     protected _ready = new Deferred<void>();
     get ready(): Promise<void> {
@@ -337,7 +340,15 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
     }
 
     async recentWorkspaces(): Promise<string[]> {
-        return this.server.getRecentWorkspaces();
+        let recentWorkspaces = await this.server.getRecentWorkspaces();
+
+        for (const handler of this.workspaceHandlingContribution.getContributions()) {
+            if (handler.modifyRecentWorksapces) {
+                recentWorkspaces = await handler.modifyRecentWorksapces(recentWorkspaces);
+            }
+        }
+
+        return recentWorkspaces;
     }
 
     async removeRecentWorkspace(uri: string): Promise<void> {

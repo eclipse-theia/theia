@@ -14,25 +14,34 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { URI } from '@theia/core';
+import { ILogger, MaybePromise, URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { WorkspaceInput, WorkspaceService } from '@theia/workspace/lib/browser';
+import { WorkspaceHandlingContribution, WorkspaceInput, WorkspaceOpenHandlerContribution, WorkspacePreferences } from '@theia/workspace/lib/browser';
 import { LOCAL_FILE_SCHEME } from './local-backend-services';
 import { CURRENT_PORT_PARAM, LOCAL_PORT_PARAM, getCurrentPort, getLocalPort } from '@theia/core/lib/electron-browser/messaging/electron-local-ws-connection-source';
 import { RemoteStatusService } from '../electron-common/remote-status-service';
+import { WindowService } from '@theia/core/lib/browser/window/window-service';
 
 @injectable()
-export class RemoteWorkspaceService extends WorkspaceService {
+export class RemoteLocalWorkspaceContribution implements WorkspaceOpenHandlerContribution, WorkspaceHandlingContribution {
 
     @inject(RemoteStatusService)
     protected readonly remoteStatusService: RemoteStatusService;
 
-    override canHandle(uri: URI): boolean {
-        return super.canHandle(uri) || uri.scheme === LOCAL_FILE_SCHEME;
+    @inject(WindowService)
+    protected readonly windowService: WindowService;
+
+    @inject(ILogger)
+    protected logger: ILogger;
+
+    @inject(WorkspacePreferences)
+    protected preferences: WorkspacePreferences;
+
+    canHandle(uri: URI): boolean {
+        return uri.scheme === LOCAL_FILE_SCHEME;
     }
 
-    override async recentWorkspaces(): Promise<string[]> {
-        const workspaces = await super.recentWorkspaces();
+    async modifyRecentWorksapces(workspaces: string[]): Promise<string[]> {
         return workspaces.map(workspace => {
             const uri = new URI(workspace);
             if (uri.scheme === 'file') {
@@ -43,15 +52,28 @@ export class RemoteWorkspaceService extends WorkspaceService {
         });
     }
 
-    protected override reloadWindow(options?: WorkspaceInput): void {
-        const currentPort = getCurrentPort();
-        const url = this.getModifiedUrl();
-        history.replaceState(undefined, '', url.toString());
-        this.remoteStatusService.connectionClosed(parseInt(currentPort ?? '0'));
-        super.reloadWindow(options);
+    openWorkspace(uri: URI, options?: WorkspaceInput | undefined): MaybePromise<void> {
+        const workspacePath = uri.path.toString();
+
+        if (this.preferences['workspace.preserveWindow'] || (options && options.preserveWindow)) {
+            this.reloadWindow(workspacePath);
+        } else {
+            try {
+                this.openNewWindow(workspacePath);
+            } catch (error) {
+                this.logger.error(error.toString()).then(() => this.reloadWindow(workspacePath));
+            }
+        }
     }
 
-    protected override openNewWindow(workspacePath: string, options?: WorkspaceInput): void {
+    protected reloadWindow(workspacePath: string): void {
+        const currentPort = getCurrentPort();
+        this.remoteStatusService.connectionClosed(parseInt(currentPort ?? '0'));
+        const searchParams = this.getModifiedUrl().searchParams;
+        this.windowService.reload({ hash: encodeURI(workspacePath), search: Object.fromEntries(searchParams) });
+    }
+
+    protected openNewWindow(workspacePath: string): void {
         const url = this.getModifiedUrl();
         url.hash = encodeURI(workspacePath);
         this.windowService.openNewWindow(url.toString());
