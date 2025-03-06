@@ -22,12 +22,16 @@ import { TreeViewWidget } from './view/tree-view-widget';
 import { CompositeTreeNode, Widget, codicon } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { PluginViewWidget } from './view/plugin-view-widget';
+import { PluginApiAccessService } from './plugin-api-access';
 
 @injectable()
 export class PluginApiFrontendContribution implements CommandContribution, TabBarToolbarContribution {
 
     @inject(OpenUriCommandHandler)
     protected readonly openUriCommandHandler: OpenUriCommandHandler;
+
+    @inject(PluginApiAccessService)
+    protected readonly pluginApiAccessService: PluginApiAccessService;
 
     static readonly COLLAPSE_ALL_COMMAND = Command.toDefaultLocalizedCommand({
         id: 'treeviews.collapseAll',
@@ -54,6 +58,17 @@ export class PluginApiFrontendContribution implements CommandContribution, TabBa
                 }
             },
             isVisible: (widget: Widget) => widget instanceof PluginViewWidget && widget.widgets[0] instanceof TreeViewWidget && widget.widgets[0].showCollapseAll
+        });
+
+        const pluginApiAccessService = this.pluginApiAccessService;
+        commands.registerCommand({
+            id: 'plugin-api-access-test',
+            label: 'Plugin API Access Test'
+        }, {
+            async execute(): Promise<void> {
+                const api = pluginApiAccessService.getExports<{ environments: {} }>('ms-python.python');
+                console.log((await api).environments);
+            }
         });
 
     }

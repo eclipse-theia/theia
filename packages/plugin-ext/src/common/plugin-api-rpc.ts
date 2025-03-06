@@ -2261,6 +2261,11 @@ export interface UriMain {
     $unregisterUriHandler(extensionId: string): void;
 }
 
+export interface PluginApiAccessExt {
+    $exec(pluginId: string, methodName: string, args: any[]): Promise<any>;
+    $getBasicExports<T extends object>(pluginId: string): Promise<T>
+}
+
 export interface TestControllerUpdate {
     label: string;
     canRefresh: boolean;
@@ -2383,7 +2388,8 @@ export const MAIN_RPC_CONTEXT = {
     TABS_EXT: createProxyIdentifier<TabsExt>('TabsExt'),
     TELEMETRY_EXT: createProxyIdentifier<TelemetryExt>('TelemetryExt)'),
     TESTING_EXT: createProxyIdentifier<TestingExt>('TestingExt'),
-    URI_EXT: createProxyIdentifier<UriExt>('UriExt')
+    URI_EXT: createProxyIdentifier<UriExt>('UriExt'),
+    PLUGIN_API_ACCESS_EXT: createProxyIdentifier<PluginApiAccessExt>('PluginApiExt')
 };
 
 export interface TasksExt {

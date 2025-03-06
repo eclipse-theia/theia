@@ -91,6 +91,7 @@ import { CellOutputWebviewImpl, createCellOutputWebviewContainer } from './noteb
 import { ArgumentProcessorContribution } from './command-registry-main';
 import { WebviewSecondaryWindowSupport } from './webview/webview-secondary-window-support';
 import { CustomEditorUndoRedoHandler } from './custom-editors/custom-editor-undo-redo-handler';
+import { PluginApiAccessService } from './plugin-api-access';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
@@ -289,4 +290,5 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     );
     bindContributionProvider(bind, ArgumentProcessorContribution);
 
+    bind(PluginApiAccessService).toSelf().inSingletonScope();
 });
