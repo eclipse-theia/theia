@@ -746,11 +746,14 @@ export class ElectronMainApplication {
         this.stopContributions();
     }
 
-    protected async onSecondInstance(event: ElectronEvent, argv: string[], cwd: string): Promise<void> {
-        if (argv.includes('--open-url')) {
-            this.openUrl(argv[argv.length - 1]);
+    protected async onSecondInstance(event: ElectronEvent, _: string[], cwd: string, originalArgv: string[]): Promise<void> {
+        // the second instance passes it's original argument array as the fourth argument to this method
+        // The `argv` second parameter is not usable for us since it is mangled by electron before being passed here
+
+        if (originalArgv.includes('--open-url')) {
+            this.openUrl(originalArgv[originalArgv.length - 1]);
         } else {
-            createYargs(this.processArgv.getProcessArgvWithoutBin(argv), process.cwd())
+            createYargs(this.processArgv.getProcessArgvWithoutBin(originalArgv), process.cwd())
                 .help(false)
                 .command('$0 [file]', false,
                     cmd => cmd
