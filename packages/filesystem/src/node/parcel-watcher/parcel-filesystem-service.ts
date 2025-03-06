@@ -242,7 +242,7 @@ export class ParcelWatcher {
         }
         return subscribe(fsPath, (err, events) => {
             if (err) {
-                if (err.message && err.message.indexOf('File system must be re-scanned') !== -1) {
+                if (err.message && err.message.includes('File system must be re-scanned')) {
                     console.log(`FS Events were dropped on watcher ${fsp}`);
                 } else {
                     console.error(`Watcher service error on "${fsPath}":`, err);
