@@ -64,7 +64,7 @@ process.env.LC_NUMERIC = 'C';
     const config = ${this.prettyStringify(this.pck.props.frontend.config)};
     const isSingleInstance = ${this.pck.props.backend.config.singleInstance === true ? 'true' : 'false'};
 
-    if (isSingleInstance && !app.requestSingleInstanceLock()) {
+    if (isSingleInstance && !app.requestSingleInstanceLock(process.argv)) {
         // There is another instance running, exit now. The other instance will request focus.
         app.quit();
         return;
