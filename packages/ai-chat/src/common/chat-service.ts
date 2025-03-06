@@ -317,5 +317,9 @@ export class ChatServiceImpl implements ChatService {
 
     deleteChangeSetElement(sessionId: string, index: number): void {
         this.getSession(sessionId)?.model.changeSet?.removeElements(index);
+        const elements = this.getSession(sessionId)?.model.changeSet?.getElements();
+        if (elements?.length === 0) {
+            this.deleteChangeSet(sessionId);
+        }
     }
 }
