@@ -114,7 +114,7 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
             const sessionId = generateUuid();
             const requestId = generateUuid();
             const request: LanguageModelRequest = {
-                messages: [{ type: 'text', actor: 'user', query: prompt }],
+                messages: [{ type: 'text', actor: 'user', text: prompt }],
                 settings: {
                     stream: false
                 }
