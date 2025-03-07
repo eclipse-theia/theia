@@ -4,6 +4,12 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## 1.60.0
+
+<a name="breaking_changes_1.60.0">[Breaking Changes:](#breaking_changes_1.60.0)</a>
+
+- [core] fixed version `@types/express` to `^4.17.21` and `@types/express-serve-static-core` to `5.0.4`. This might be required for adopters as well if they run into typing issues. [#15147](https://github.com/eclipse-theia/theia/pull/15147)
+
 ## 1.59.0 - 02/27/2025
 
 - [ai] added claude sonnet 3.7 to default models [#15023](https://github.com/eclipse-theia/theia/pull/15023)
