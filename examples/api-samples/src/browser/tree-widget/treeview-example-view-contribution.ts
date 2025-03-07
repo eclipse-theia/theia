@@ -14,11 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Command, CommandRegistry, MenuModelRegistry } from "@theia/core";
-import { AbstractViewContribution } from "@theia/core/lib/browser";
-import { injectable } from "@theia/core/shared/inversify";
-import { ExampleTreeNode } from "./treeview-example-model";
-import { TREEVIEW_EXAMPLE_CONTEXT_MENU, TreeViewExampleWidget } from "./treeview-example-widget";
+import { Command, CommandRegistry, MenuModelRegistry } from '@theia/core';
+import { AbstractViewContribution } from '@theia/core/lib/browser';
+import { injectable } from '@theia/core/shared/inversify';
+import { ExampleTreeNode } from './treeview-example-model';
+import { TREEVIEW_EXAMPLE_CONTEXT_MENU, TreeViewExampleWidget } from './treeview-example-widget';
 
 /** Definition of a command to show the TreeView Example View */
 export const OpenTreeviewExampleView: Command = {
@@ -29,7 +29,7 @@ export const OpenTreeviewExampleView: Command = {
 export const TreeviewExampleTreeAddItem: Command = {
     id: 'theia-examples:treeview-example-tree-add-item-command-id',
     label: 'Example Tree View: Add New Child'
-}
+};
 
 /**
  * Contribution of the `TreeViewExampleWidget`

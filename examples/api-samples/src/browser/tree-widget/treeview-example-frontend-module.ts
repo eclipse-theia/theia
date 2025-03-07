@@ -27,12 +27,12 @@ import { TREEVIEW_EXAMPLE_CONTEXT_MENU, TreeViewExampleWidget } from './treeview
 
 /**
  * Frontend contribution bindings.
- * 
+ *
  * (in a standalone extension, this would be `export default new ContainerModule(bind => { ... })`)
- * 
+ *
  * @param bind the binding function
  */
-export function bindTreeViewExample(bind: interfaces.Bind) {
+export function bindTreeViewExample(bind: interfaces.Bind): void {
     bindViewContribution(bind, TreeviewExampleViewContribution);
 
     bind(WidgetFactory).toDynamicValue(ctx => ({
@@ -50,7 +50,7 @@ export function bindTreeViewExample(bind: interfaces.Bind) {
 /**
  * Create the child container which contains the `TreeViewExampleWidget` and all its collaborators
  * in an isolated child container so the bound services affect only the `TreeViewExampleWidget`
- * 
+ *
  * @param parent the parent container
  * @returns the new child container
  */

@@ -14,12 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Disposable, DisposableCollection, MenuPath, MessageService } from "@theia/core";
-import { ContextMenuRenderer, NodeProps, TreeModel, TreeNode, TreeProps, TreeWidget } from "@theia/core/lib/browser";
-import { inject, injectable } from "@theia/core/shared/inversify";
-import * as React from "@theia/core/shared/react";
-import "../../../src/browser/tree-widget/treeview-example-widget.css";
-import { ExampleTreeLeaf, ExampleTreeNode, TreeViewExampleModel } from "./treeview-example-model";
+import { Disposable, DisposableCollection, MenuPath, MessageService } from '@theia/core';
+import { ContextMenuRenderer, NodeProps, TreeModel, TreeNode, TreeProps, TreeWidget } from '@theia/core/lib/browser';
+import { inject, injectable } from '@theia/core/shared/inversify';
+import * as React from '@theia/core/shared/react';
+import '../../../src/browser/tree-widget/treeview-example-widget.css';
+import { ExampleTreeLeaf, ExampleTreeNode, TreeViewExampleModel } from './treeview-example-model';
 
 /** Well-known constant for the context menu path */
 export const TREEVIEW_EXAMPLE_CONTEXT_MENU: MenuPath = ['theia-examples:treeview-example-context-menu'];
@@ -62,13 +62,13 @@ export class TreeViewExampleWidget extends TreeWidget {
 
     /**
      * Enable icon rendering.
-     * 
+     *
      * The super implementation is currently empty.
      * This implementation is taken from `file-tree-widget.tsx`.
-     * 
+     *
      * @param node the node to render
      * @param props the node props (currently transporting the depth of the item in the tree)
-     * @returns 
+     * @returns
      */
     protected override renderIcon(node: TreeNode, props: NodeProps): React.ReactNode {
         const icon = this.getIconClass(this.toNodeIcon(node));
@@ -80,9 +80,9 @@ export class TreeViewExampleWidget extends TreeWidget {
 
     /**
      * Provide CSS class names for a given tree node.
-     * 
+     *
      * In our example, we append our own CSS class to all nodes. See/modify the included CSS file for the corresponding style.
-     * 
+     *
      * @param node the node to render
      * @param props the node props (currently transporting the depth of the item in the tree)
      * @returns the node's CSS classes
@@ -93,11 +93,11 @@ export class TreeViewExampleWidget extends TreeWidget {
 
     /**
      * Provide node element attributes for a given tree node.
-     * 
+     *
      * In our example, we use this to add Drag & Drop event handlers to the tree nodes.
-     * 
+     *
      * Note: the Drag & Drop code has been taken and adapted from `file-tree-widget.tsx`
-     * 
+     *
      * @param node the node to render
      * @param props the node props (currently transporting the depth of the item in the tree)
      * @returns the HTML element attributes.
@@ -111,9 +111,9 @@ export class TreeViewExampleWidget extends TreeWidget {
 
     /**
      * Returns HTML attributes to install Drag & Drop event handlers for the given tree node.
-     * 
+     *
      * Note: the Drag & Drop code has been taken and adapted from `file-tree-widget.tsx`
-     * 
+     *
      * @param node the tree node
      * @returns the drag event handlers to be used as additional HTML element attributes
      */
@@ -130,9 +130,9 @@ export class TreeViewExampleWidget extends TreeWidget {
 
     /**
      * Handler for the _dragStart_ event.
-     * 
+     *
      * Stores the ID of the dragged tree node in the Drag & Drop data.
-     * 
+     *
      * @param node the tree node
      * @param event the event
      */
@@ -145,10 +145,10 @@ export class TreeViewExampleWidget extends TreeWidget {
 
     /**
      * Handler for the _dragOver_ event.
-     * 
-     * Registers deferred tree expansion that shall be triggered if the user hovers over an expandable tree item for 
+     *
+     * Registers deferred tree expansion that shall be triggered if the user hovers over an expandable tree item for
      * some time.
-     * 
+     *
      * @param node the tree node
      * @param event the event
      */
@@ -171,10 +171,10 @@ export class TreeViewExampleWidget extends TreeWidget {
 
     /**
      * Handler for the _dragEnter_ event.
-     * 
-     * Cancels any pending deferred tree extension, selects the current target node to highlight it in the UI, and 
+     *
+     * Cancels any pending deferred tree extension, selects the current target node to highlight it in the UI, and
      * sets the Drag & Drop indicator to "move".
-     * 
+     *
      * @param node the tree node
      * @param event the event
      */
@@ -195,9 +195,9 @@ export class TreeViewExampleWidget extends TreeWidget {
 
     /**
      * Handler for the _dragLeave_ event.
-     * 
+     *
      * Cancels any pending deferred tree extension.
-     * 
+     *
      * @param node the tree node
      * @param event the event
      */
@@ -209,9 +209,9 @@ export class TreeViewExampleWidget extends TreeWidget {
 
     /**
      * Handler for the _drop_ event.
-     * 
+     *
      * Calls the code to move the dragged node to the new parent.
-     * 
+     *
      * @param node the tree node
      * @param event the event
      */

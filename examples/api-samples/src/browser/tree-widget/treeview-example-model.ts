@@ -14,15 +14,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CompositeTreeNode, ExpandableTreeNode, SelectableTreeNode, TreeModelImpl, TreeNode } from "@theia/core/lib/browser";
-import { injectable, postConstruct } from "@theia/core/shared/inversify";
+import { CompositeTreeNode, ExpandableTreeNode, SelectableTreeNode, TreeModelImpl, TreeNode } from '@theia/core/lib/browser';
+import { injectable, postConstruct } from '@theia/core/shared/inversify';
 
 /** well-known ID for the root node in our tree */
 export const ROOT_NODE_ID = 'treeview-example-root';
 
-/** 
+/**
  * Interface for the "business model".
- * 
+ *
  * (Note: this could be more elaborated, using different interfaces for containers and concrete items, but for this demonstration,
  * we keep the model like this...)
  */
@@ -119,8 +119,8 @@ const EXAMPLE_DATA: Item[] = [{
 ];
 
 /**
- * The Tree Model for the tree. 
- * 
+ * The Tree Model for the tree.
+ *
  * This class contains the bridge between business model and tree model and realizes operations on the data.
  */
 @injectable()
@@ -139,7 +139,7 @@ export class TreeViewExampleModel extends TreeModelImpl {
             parent: undefined,
             children: [],
             visible: false // do not show the root node in the UI
-        }
+        };
 
         // populate the direct children
         EXAMPLE_DATA.map(item => Item.toTreeNode(item))
@@ -147,15 +147,15 @@ export class TreeViewExampleModel extends TreeModelImpl {
 
         // set the root node as root of the tree
         // This will also initialize the ID-node-map in the tree, so this should be called
-        // after populating the children. 
+        // after populating the children.
         this.tree.root = root;
     }
 
     /**
      * This is executed when a tree item's checkbox is checked/unchecked.
-     * 
+     *
      * For this example, the check state is applied to the business model (backOrdered property).
-     * 
+     *
      * @param node the affected node
      * @param checked the new state of the checkbox
      */
@@ -168,16 +168,16 @@ export class TreeViewExampleModel extends TreeModelImpl {
 
     /**
      * Logic to add a new child item to the given parent.
-     * 
+     *
      * For simplicity, we use a static/constant child, so we don't have to implement UI to ask the user for the name etc.
      * Note that because of the TreeNode.id initialization to Item.name, this method should only be called once. Otherwise
-     * we end up with multiple tree items with the same ID, which is not desirable. 
-     * 
+     * we end up with multiple tree items with the same ID, which is not desirable.
+     *
      * So in practice, the id should be calculated in a better way...
-     * 
+     *
      * @param parent the parent of the new item
      */
-    public addItem(parent: TreeNode) {
+    public addItem(parent: TreeNode): void {
         if (ExampleTreeNode.is(parent)) {
             const newItem: Item = { name: 'Watermelon', quantity: 4 };
             parent.data.children?.push(newItem);
@@ -188,13 +188,13 @@ export class TreeViewExampleModel extends TreeModelImpl {
 
     /**
      * Logic to move an leaf node to a new container node.
-     * 
+     *
      * This is used in the Drag & Drop demonstration code to move a dragged item.
-     * 
+     *
      * @param nodeIdToReparent the node ID of the leaf node to move
      * @param targetNode the new parent of the leaf node
      */
-    public reparent(nodeIdToReparent: string, targetNode: ExampleTreeNode) {
+    public reparent(nodeIdToReparent: string, targetNode: ExampleTreeNode): void {
         // resolve the ID to the actual node (using the ID-to-node map of the tree)
         const nodeToReparent = this.tree.getNode(nodeIdToReparent);
 

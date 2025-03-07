@@ -14,18 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CompositeTreeNode, TreeImpl, TreeNode } from "@theia/core/lib/browser";
-import { ExampleTreeNode, Item, ROOT_NODE_ID } from "./treeview-example-model";
+import { CompositeTreeNode, TreeImpl, TreeNode } from '@theia/core/lib/browser';
+import { ExampleTreeNode, Item, ROOT_NODE_ID } from './treeview-example-model';
 
 /**
  * Tree implementation.
- * 
+ *
  * We override this to enable lazy child node resolution on node expansion.
  */
 export class TreeviewExampleTree extends TreeImpl {
     /**
-     * Resolves children of the given parent node. 
-     * 
+     * Resolves children of the given parent node.
+     *
      * @param parent the node for which to provide the children
      * @returns a new array of child tree nodes for the given parent node.
      */
@@ -42,7 +42,7 @@ export class TreeviewExampleTree extends TreeImpl {
 
         // performance optimization - if the children are resolved already and the number of children is still correct
         // we reuse the already resolved items.
-        // Note: In a real application this comparison might require more logic, because if a child is replaced by a 
+        // Note: In a real application this comparison might require more logic, because if a child is replaced by a
         // different one or if children are reordered, this code would not work...
         if (parent.children.length === parent.data.children?.length) {
             return Promise.resolve([...parent.children]);
