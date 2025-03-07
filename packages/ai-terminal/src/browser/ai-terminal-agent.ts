@@ -188,7 +188,7 @@ recent-terminal-contents:
             sessionId,
             requestId,
             request,
-            ...llmRequest
+            llmRequests: [llmRequest]
         });
 
         try {
