@@ -128,6 +128,7 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
                 sessionId,
                 requestId,
                 request: prompt,
+                llmRequests: [request]
             });
             const response = await languageModel.request(request, token);
             if (token.isCancellationRequested) {
