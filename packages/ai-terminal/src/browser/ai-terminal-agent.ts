@@ -127,7 +127,7 @@ export class AiTerminalAgent implements Agent {
             sessionId,
             requestId,
             request,
-            ...llmRequest
+            llmRequests: [llmRequest]
         });
 
         try {
