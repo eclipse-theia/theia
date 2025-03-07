@@ -40,27 +40,40 @@ export const CommunicationCard: React.FC<CommunicationCardProps> = ({ entry }) =
                     <pre>{entry.response}</pre>
                 </div>
             )}
-            {(entry.systemMessage || (entry.messages && entry.messages.length > 0)) && (
-                <div className='theia-card-context'>
-                    <details>
-                        <summary><h2>{nls.localize('theia/ai/history/communication-card/context', 'Context')}</h2></summary>
-                        {(entry.systemMessage && (
-                            <div className='theia-context-system-message'>
-                                <h3>{nls.localize('theia/ai/history/communication-card/systemMessage', 'System Message')}</h3>
-                                <pre>{entry.systemMessage}</pre>
-                            </div>
-                        ))}
-                        {(entry.messages && entry.messages.length > 0) && (
-                            <div className='theia-context-messages'>
-                                <h3>{nls.localize('theia/ai/history/communication-card/messages', 'Messages')}</h3>
-                                <ul>
-                                    {entry.messages.map((message, index) => (
-                                        <li key={index}><pre>{JSON.stringify(message, undefined, 2)}</pre></li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )}
-                    </details>
+            {(entry.llmRequests && entry.llmRequests.length > 0) && (
+                <div className='theia-card-llm-requests'>
+                    <h2>{nls.localize('theia/ai/history/communication-card/llmRequests', 'Language Model Requests')}</h2>
+                    {entry.llmRequests.map((llmRequest, index) => (
+                        <details key={`llmRequest-${index}`}>
+                            <summary><h3>{`${nls.localize('theia/ai/history/communication-card/llmRequests/request', 'Request')} ${(index + 1)}`}</h3></summary>
+                            {llmRequest.messages && llmRequest.messages.length > 0 && llmRequest.messages && (
+                                <div className='theia-card-llm-request-messages'>
+                                    <h4>{nls.localize('theia/ai/history/communication-card/llmRequests/request/messages', 'Messages')}</h4>
+                                    <ul className='theia-card-llm-request-messages-list'>
+                                        {llmRequest.messages.map((message, messageIndex) => (
+                                            <li key={`message-${index}-${messageIndex}`}><pre>{JSON.stringify(message, undefined, 2)}</pre></li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                            {llmRequest.response && (
+                                <div className='theia-card-llm-request-response'>
+                                    <h4>{nls.localize('theia/ai/history/communication-card/llmRequests/request/response', 'Response')}</h4>
+                                    <pre className='theia-card-llm-request-response-text'>{llmRequest.response.text}</pre>
+                                    {llmRequest.response.tool_calls && (
+                                        <div className='theia-card-llm-request-response-tool-calls'>
+                                            <h4>{nls.localize('theia/ai/history/communication-card/llmRequests/request/response/toolCalls', 'Tool Calls')}</h4>
+                                            <ul className='theia-card-llm-request-response-tool-calls-list'>
+                                                {llmRequest.response.tool_calls.map((toolCall, toolCallIndex) => (
+                                                    <li key={`toolCall-${index}-${toolCallIndex}`}><pre>{JSON.stringify(toolCall, undefined, 2)}</pre></li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </details>
+                    ))}
                 </div>
             )}
         </div>

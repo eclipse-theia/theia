@@ -28,6 +28,7 @@ export namespace ChatHistoryEntry {
             sessionId: request.session.id,
             requestId: request.id,
             request: request.request.text,
+            llmRequests: request.llmRequests,
             ...args,
         };
     }

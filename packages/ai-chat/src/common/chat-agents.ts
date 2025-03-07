@@ -22,7 +22,6 @@
 import {
     AgentSpecificVariables,
     AIVariableContext,
-    CommunicationRecordingService,
     getTextOfResponse,
     LanguageModel,
     LanguageModelRequirement,
@@ -42,7 +41,7 @@ import {
     LanguageModelStreamResponsePart,
     MessageActor,
 } from '@theia/ai-core/lib/common';
-import { CancellationToken, ContributionProvider, ILogger, isArray } from '@theia/core';
+import { ContributionProvider, ILogger, isArray } from '@theia/core';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { ChatAgentService } from './chat-agent-service';
 import {
@@ -56,8 +55,8 @@ import {
 } from './chat-model';
 import { findFirstMatch, parseContents } from './parse-contents';
 import { DefaultResponseContentFactory, ResponseContentMatcher, ResponseContentMatcherProvider } from './response-content-matcher';
-import { ChatHistoryEntry } from './chat-history-entry';
-import { ChatToolRequestService } from './chat-tool-request-service';
+import { ChatToolRequest, ChatToolRequestService } from './chat-tool-request-service';
+import { ChatLanguageModelService } from './chat-language-model-service';
 
 /**
  * A conversation consists of a sequence of ChatMessages.
@@ -138,8 +137,8 @@ export interface ChatAgent extends Agent {
 export abstract class AbstractChatAgent implements ChatAgent {
     @inject(LanguageModelRegistry) protected languageModelRegistry: LanguageModelRegistry;
     @inject(ILogger) protected logger: ILogger;
-    @inject(CommunicationRecordingService) protected recordingService: CommunicationRecordingService;
     @inject(ChatToolRequestService) protected chatToolRequestService: ChatToolRequestService;
+    @inject(ChatLanguageModelService) protected chatLanguageModelService: ChatLanguageModelService;
     @inject(PromptService) protected promptService: PromptService;
 
     @inject(ContributionProvider) @named(ResponseContentMatcherProvider)
@@ -160,7 +159,6 @@ export abstract class AbstractChatAgent implements ChatAgent {
     agentSpecificVariables: AgentSpecificVariables[] = [];
     functions: string[] = [];
     protected readonly abstract defaultLanguageModelPurpose: string;
-    protected defaultLogging: boolean = true;
     protected systemPromptId: string | undefined = undefined;
     protected additionalToolRequests: ToolRequest[] = [];
     protected contentMatchers: ResponseContentMatcher[] = [];
@@ -183,15 +181,6 @@ export abstract class AbstractChatAgent implements ChatAgent {
             }
             const systemMessageDescription = await this.getSystemMessageDescription({ model: request.session, request } satisfies ChatSessionContext);
             const messages = await this.getMessages(request.session);
-            if (this.defaultLogging) {
-                this.recordingService.recordRequest(
-                    ChatHistoryEntry.fromRequest(
-                        this.id, request, {
-                        messages,
-                        systemMessage: systemMessageDescription?.text
-                    })
-                );
-            }
 
             if (systemMessageDescription) {
                 const systemMsg: ChatMessage = {
@@ -210,17 +199,11 @@ export abstract class AbstractChatAgent implements ChatAgent {
                 ...this.chatToolRequestService.toChatToolRequests(this.additionalToolRequests, request)
             ];
 
-            const languageModelResponse = await this.callLlm(
-                languageModel,
-                messages,
-                tools.length > 0 ? tools : undefined,
-                request.response.cancellationToken
-            );
+            const languageModelResponse = await this.sendLlmRequest(request, messages, tools, languageModel);
+
             await this.addContentsToResponse(languageModelResponse, request);
             await this.onResponseComplete(request);
-            if (this.defaultLogging) {
-                this.recordingService.recordResponse(ChatHistoryEntry.fromResponse(this.id, request));
-            }
+
         } catch (e) {
             this.handleError(request, e);
         }
@@ -288,19 +271,15 @@ export abstract class AbstractChatAgent implements ChatAgent {
         return requestMessages;
     }
 
-    protected async callLlm(
-        languageModel: LanguageModel,
+    protected async sendLlmRequest(
+        request: MutableChatRequestModel,
         messages: ChatMessage[],
-        tools: ToolRequest[] | undefined,
-        token: CancellationToken
+        toolRequests: ChatToolRequest[],
+        languageModel: LanguageModel
     ): Promise<LanguageModelResponse> {
         const settings = this.getLlmSettings();
-        const languageModelResponse = languageModel.request({
-            messages,
-            tools,
-            settings,
-        }, token);
-        return languageModelResponse;
+        const tools = toolRequests.length > 0 ? toolRequests : undefined;
+        return this.chatLanguageModelService.sendRequest({ messages, tools, settings }, request, languageModel);
     }
 
     /**
