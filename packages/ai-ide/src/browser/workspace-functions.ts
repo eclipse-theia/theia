@@ -14,15 +14,19 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { ToolProvider, ToolRequest } from '@theia/ai-core';
-import { URI } from '@theia/core';
+import { Disposable, URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { FILE_CONTENT_FUNCTION_ID, GET_FILE_DIAGNOSTICS_ID, GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID, GET_WORKSPACE_FILE_LIST_FUNCTION_ID } from '../common/workspace-functions';
+import {
+    FILE_CONTENT_FUNCTION_ID, GET_FILE_DIAGNOSTICS_ID,
+    GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID,
+    GET_WORKSPACE_FILE_LIST_FUNCTION_ID
+} from '../common/workspace-functions';
 import ignore from 'ignore';
 import { Minimatch } from 'minimatch';
-import { PreferenceService } from '@theia/core/lib/browser';
+import { PreferenceService, OpenerService, open } from '@theia/core/lib/browser';
 import { CONSIDER_GITIGNORE_PREF, USER_EXCLUDE_PATTERN_PREF } from './workspace-preferences';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
@@ -34,13 +38,13 @@ export class WorkspaceFunctionScope {
     protected readonly GITIGNORE_FILE_NAME = '.gitignore';
 
     @inject(WorkspaceService)
-    protected workspaceService: WorkspaceService;
+    protected readonly workspaceService: WorkspaceService;
 
     @inject(FileService)
-    protected fileService: FileService;
+    protected readonly fileService: FileService;
 
     @inject(PreferenceService)
-    protected preferences: PreferenceService;
+    protected readonly preferences: PreferenceService;
 
     private gitignoreMatcher: ReturnType<typeof ignore> | undefined;
     private gitignoreWatcherInitialized = false;
@@ -192,7 +196,7 @@ export class FileContentFunction implements ToolProvider {
                 properties: {
                     file: {
                         type: 'string',
-                        description: `The relative path to the target file within the workspace. This path is resolved from the workspace root, and only files within the workspace 
+                        description: `The relative path to the target file within the workspace. This path is resolved from the workspace root, and only files within the workspace
                             boundaries are accessible. Attempting to access paths outside the workspace will result in an error.`,
                     }
                 },
@@ -220,15 +224,14 @@ export class FileContentFunction implements ToolProvider {
     }
 
     private async getFileContent(file: string): Promise<string> {
-        let workspaceRoot;
+        let targetUri: URI | undefined;
         try {
-            workspaceRoot = await this.workspaceScope.getWorkspaceRoot();
+            const workspaceRoot = await this.workspaceScope.getWorkspaceRoot();
+            targetUri = workspaceRoot.resolve(file);
+            this.workspaceScope.ensureWithinWorkspace(targetUri, workspaceRoot);
         } catch (error) {
             return JSON.stringify({ error: error.message });
         }
-
-        const targetUri = workspaceRoot.resolve(file);
-        this.workspaceScope.ensureWithinWorkspace(targetUri, workspaceRoot);
 
         try {
             const openEditorValue = this.monacoWorkspace.getTextDocument(targetUri.toString())?.getText();
@@ -333,7 +336,7 @@ export class FileDiagonsticProvider implements ToolProvider {
     static ID = GET_FILE_DIAGNOSTICS_ID;
 
     @inject(WorkspaceFunctionScope)
-    protected workspaceScope: WorkspaceFunctionScope;
+    protected readonly workspaceScope: WorkspaceFunctionScope;
 
     @inject(ProblemManager)
     protected readonly problemManager: ProblemManager;
@@ -341,25 +344,28 @@ export class FileDiagonsticProvider implements ToolProvider {
     @inject(MonacoTextModelService)
     protected readonly modelService: MonacoTextModelService;
 
+    @inject(OpenerService)
+    protected readonly openerService: OpenerService;
+
     getTool(): ToolRequest {
         return {
             id: FileDiagonsticProvider.ID,
             name: FileDiagonsticProvider.ID,
             description:
-                `A function to retrieve diagnostics associated with a specific file in the workspace. It will return a list of problems that includes the surrounding text \
-            a message describing the problem, and optionally a code and a codeDescription field describing that code.`,
+                'A function to retrieve diagnostics associated with a specific file in the workspace. It will return a list of problems that includes the surrounding text \
+            a message describing the problem, and optionally a code and a codeDescription field describing that code.',
             parameters: {
                 type: 'object',
                 properties: {
                     file: {
                         type: 'string',
-                        description: `The relative path to the target file within the workspace. This path is resolved from the workspace root, and only files within the workspace 
+                        description: `The relative path to the target file within the workspace. This path is resolved from the workspace root, and only files within the workspace
                         boundaries are accessible. Attempting to access paths outside the workspace will result in an error.`,
                     }
                 },
                 required: ['file']
             },
-            handler: async (arg) => {
+            handler: async arg => {
                 const { file } = JSON.parse(arg);
                 let workspaceRoot;
                 try {
@@ -372,40 +378,68 @@ export class FileDiagonsticProvider implements ToolProvider {
                 this.workspaceScope.ensureWithinWorkspace(targetUri, workspaceRoot);
                 return this.getDiagnosticsForFile(targetUri);
             }
-        }
+        };
     }
 
     protected async getDiagnosticsForFile(uri: URI): Promise<string> {
-        const markers = this.problemManager.findMarkers({ uri });
-        const editor = await this.modelService.createModelReference(uri);
-        const report = markers
-            .filter(marker => marker.data.severity !== DiagnosticSeverity.Information && marker.data.severity !== DiagnosticSeverity.Hint)
-            .map(marker => {
-                const contextRange = this.atLeastThreeLines(marker.data.range, editor.object.lineCount)
-                const text = editor.object.getText(contextRange);
-                const message = marker.data.message;
-                const code = marker.data.code;
-                const codeDescription = marker.data.codeDescription;
-                return { text, message, code, codeDescription };
+        const toDispose: Disposable[] = [];
+        try {
+            let markers = this.problemManager.findMarkers({ uri });
+            if (markers.length === 0) {
+                // Open editor to ensure that the language services are active.
+                await open(this.openerService, uri);
+                // Give some time to fetch problems in a newly opened editor.
+                await new Promise<void>(res => {
+                    setTimeout(() => res, 5000);
+                    // Give another moment for additional markers to come in from different sources.
+                    const listener = this.problemManager.onDidChangeMarkers(changed => changed.isEqual(uri) && setTimeout(res, 500));
+                    toDispose.push(listener);
+                });
+                markers = this.problemManager.findMarkers({ uri });
+            }
+            if (markers.length) {
+                const editor = await this.modelService.createModelReference(uri);
+                toDispose.push(editor);
+                return JSON.stringify(markers.filter(marker => marker.data.severity !== DiagnosticSeverity.Information && marker.data.severity !== DiagnosticSeverity.Hint)
+                    .map(marker => {
+                        const contextRange = this.atLeastNLines(3, marker.data.range, editor.object.lineCount);
+                        const text = editor.object.getText(contextRange);
+                        const message = marker.data.message;
+                        const code = marker.data.code;
+                        const codeDescription = marker.data.codeDescription;
+                        return { text, message, code, codeDescription };
+                    }));
+            }
+            return JSON.stringify({
+                error: 'No diagnostics were found. The file may contain no problems, or language services may not be available. Retrying may return fresh results.'
             });
-        editor.dispose();
-        return JSON.stringify(report);
+        } catch (err) {
+            console.warn('Error when fetching markers for', uri.toString(), err);
+            return JSON.stringify({ error: err instanceof Error ? err.message : 'Unknown error when fetching for problems for ' + uri.toString() });
+        } finally {
+            toDispose.forEach(disposable => disposable.dispose());
+        }
     }
 
-    protected atLeastThreeLines(range: Range, lineCount: number): Range {
+    /**
+     * Expands the range provided until it contains at least {@link desiredLines} lines or reaches the end of the document
+     *  to attempt to provide the agent sufficient context to understand the diagnostic.
+     */
+    protected atLeastNLines(desiredLines: number, range: Range, documentLineCount: number): Range {
         let startLine = range.start.line;
         let endLine = range.end.line;
+        const desiredDifference = desiredLines - 1;
 
-        while (endLine - startLine < 2 && (startLine > 0 || endLine < lineCount - 1)) {
+        while (endLine - startLine < desiredDifference && (startLine > 0 || endLine < documentLineCount - 1)) {
             if (startLine > 0) {
-                startLine--
-            } else if (endLine < lineCount - 1) {
+                startLine--;
+            } else if (endLine < documentLineCount - 1) {
                 endLine++;
             }
-            if (endLine < lineCount - 1) {
-                endLine++
+            if (endLine < documentLineCount - 1) {
+                endLine++;
             } else if (startLine > 0) {
-                startLine
+                startLine--;
             }
         }
         return { end: { character: Number.MAX_SAFE_INTEGER, line: endLine }, start: { character: 0, line: startLine } };
