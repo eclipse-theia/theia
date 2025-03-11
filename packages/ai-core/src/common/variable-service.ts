@@ -22,6 +22,7 @@
 import { ContributionProvider, Disposable, Emitter, ILogger, MaybePromise, Prioritizeable, Event } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
+import { PromptText } from './prompt-text';
 
 /**
  * A variable is a short string that is used to reference a value that is resolved and replaced in the user prompt at request-time.
@@ -75,6 +76,8 @@ export interface ResolvedAIVariable {
     arg?: string;
     /** value that is inserted into the prompt at the position of the variable usage */
     value: string;
+    /** Flat list of all variables that have been (recursively) resolved while resolving this variable. */
+    allResolvedDependencies?: ResolvedAIVariable[];
 }
 
 export namespace ResolvedAIVariable {
@@ -132,6 +135,24 @@ export interface AIVariableResolver {
     resolve(request: AIVariableResolutionRequest, context: AIVariableContext): Promise<ResolvedAIVariable | undefined>;
 }
 
+export interface AIVariableResolverWithVariableDependencies extends AIVariableResolver {
+    resolve(request: AIVariableResolutionRequest, context: AIVariableContext): Promise<ResolvedAIVariable | undefined>;
+    resolve(
+        request: AIVariableResolutionRequest,
+        context: AIVariableContext,
+        resolveDependency: (req: AIVariableResolutionRequest) => Promise<ResolvedAIVariable | undefined>
+    ): Promise<ResolvedAIVariable | undefined>;
+}
+
+function isResolverWithDependencies(resolver: AIVariableResolver | undefined): resolver is AIVariableResolverWithVariableDependencies {
+    return resolver !== undefined && resolver.resolve.length >= 3;
+}
+
+interface CacheEntry {
+    promise: Promise<ResolvedAIVariable | undefined>;
+    inProgress: boolean;
+}
+
 export const AIVariableService = Symbol('AIVariableService');
 export interface AIVariableService {
     hasVariable(name: string): boolean;
@@ -153,7 +174,7 @@ export interface AIVariableService {
     unregisterArgumentCompletionProvider(variable: AIVariable, argPicker: AIVariableArgCompletionProvider): void;
     getArgumentCompletionProvider(name: string): Promise<AIVariableArgCompletionProvider | undefined>;
 
-    resolveVariable(variable: AIVariableArg, context: AIVariableContext): Promise<ResolvedAIVariable | undefined>;
+    resolveVariable(variable: AIVariableArg, context: AIVariableContext, cache?: Map<string, CacheEntry>): Promise<ResolvedAIVariable | undefined>;
 }
 
 /** Contributions on the frontend can optionally implement `FrontendVariableContribution`. */
@@ -291,15 +312,64 @@ export class DefaultAIVariableService implements AIVariableService {
         return this.argCompletionProviders.get(this.getKey(name)) ?? undefined;
     }
 
-    async resolveVariable(request: AIVariableArg, context: AIVariableContext): Promise<ResolvedAIVariable | undefined> {
-        const variableName = typeof request === 'string' ? request : typeof request.variable === 'string' ? request.variable : request.variable.name;
-        const variable = this.getVariable(variableName);
-        if (!variable) {
-            return undefined;
-        }
+    async resolveVariable(
+        request: AIVariableArg,
+        context: AIVariableContext,
+        cache: Map<string, CacheEntry> = new Map()
+    ): Promise<ResolvedAIVariable | undefined> {
+        // Calculate unique variable cache key from variable name and argument
+        const variableName = typeof request === 'string'
+            ? request
+            : typeof request.variable === 'string'
+                ? request.variable
+                : request.variable.name;
         const arg = typeof request === 'string' ? undefined : request.arg;
-        const resolver = await this.getResolver(variableName, arg, context);
-        const resolved = await resolver?.resolve({ variable, arg }, context);
-        return resolved ? { ...resolved, arg } : undefined;
+        const cacheKey = `${variableName}${PromptText.VARIABLE_SEPARATOR_CHAR}${arg ?? ''}`;
+
+        // If the current cache key exists and is still in progress, we reached a cycle.
+        // If we reach it but it has been resolved, it was part of another resolvement branch and we can simply return it.
+        if (cache.has(cacheKey)) {
+            const existingEntry = cache.get(cacheKey)!;
+            if (existingEntry.inProgress) {
+                this.logger.warn(`Cycle detected for variable: ${variableName} with arg: ${arg}. Skipping resolution.`);
+                return undefined;
+            }
+            return existingEntry.promise;
+        }
+
+        const entry: CacheEntry = { promise: Promise.resolve(undefined), inProgress: true };
+        cache.set(cacheKey, entry);
+
+        // TODO track all resolved dependencies of resolved variables.
+        // Does this need to be done here or in resolver implementations? If here: derive from cache?
+        const promise = (async () => {
+            const variable = this.getVariable(variableName);
+            if (!variable) {
+                return undefined;
+            }
+            const resolver = await this.getResolver(variableName, arg, context);
+            let resolved: ResolvedAIVariable | undefined;
+            if (isResolverWithDependencies(resolver)) {
+                // Explicit cast needed because Typescript does not consider the method parameter length of the type guard at compile time
+                resolved = await (resolver as AIVariableResolverWithVariableDependencies).resolve(
+                    { variable, arg },
+                    context,
+                    async (depRequest: AIVariableResolutionRequest) =>
+                        this.resolveVariable(depRequest, context, cache)
+                );
+            } else if (resolver) {
+                resolved = await (resolver as AIVariableResolver).resolve({ variable, arg }, context);
+            } else {
+                resolved = undefined;
+            }
+            return resolved ? { ...resolved, arg } : undefined;
+        })();
+
+        entry.promise = promise;
+        promise.finally(() => {
+            entry.inProgress = false;
+        });
+
+        return promise;
     }
 }
