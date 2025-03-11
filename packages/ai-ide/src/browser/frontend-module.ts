@@ -38,6 +38,7 @@ import { AIAgentConfigurationViewContribution } from './ai-configuration/ai-conf
 import { AIConfigurationContainerWidget } from './ai-configuration/ai-configuration-widget';
 import { AIVariableConfigurationWidget } from './ai-configuration/variable-configuration-widget';
 import { ContextFilesVariableContribution } from '../common/context-files-variable';
+import {AiConfigurationPreferences} from './ai-configuration/ai-configuration-preferences';
 
 export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: WorkspacePreferencesSchema });
@@ -106,4 +107,5 @@ export default new ContainerModule(bind => {
     bind(ToolProvider).to(SimpleReplaceContentInFileProvider);
     bind(ToolProvider).to(AddFileToChatContext);
     bind(AIVariableContribution).to(ContextFilesVariableContribution).inSingletonScope();
+    bind(PreferenceContribution).toConstantValue({schema: AiConfigurationPreferences});
 });

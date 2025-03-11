@@ -306,6 +306,7 @@ export const DEFAULT_LAYOUT: PreferenceLayout[] = [
     {
         id: 'ai-features',
         label: 'AI Features', // TODO localize
+        settings: ['ai-features.*']
     },
     {
         id: 'extensions',

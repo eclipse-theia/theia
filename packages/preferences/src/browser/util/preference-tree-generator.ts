@@ -92,7 +92,7 @@ export class PreferenceTreeGenerator {
         }
         for (const propertyName of propertyNames) {
             const property = preferencesSchema.properties[propertyName];
-            if (!this.preferenceConfigs.isSectionName(propertyName) && !OVERRIDE_PROPERTY_PATTERN.test(propertyName) && !property.deprecationMessage) {
+            if (!property.hidden && !property.deprecationMessage && !this.preferenceConfigs.isSectionName(propertyName) && !OVERRIDE_PROPERTY_PATTERN.test(propertyName)) {
                 if (property.owner) {
                     this.createPluginLeafNode(propertyName, property, root, groups);
                 } else {
