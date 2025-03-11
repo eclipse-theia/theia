@@ -22,7 +22,7 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatAgentService } from './chat-agent-service';
 import { ChatAgentLocation } from './chat-agents';
-import { ChatRequest } from './chat-model';
+import { ChatContext, ChatRequest } from './chat-model';
 import {
     chatAgentLeader,
     chatFunctionLeader,
@@ -35,15 +35,17 @@ import {
     ParsedChatRequest,
     ParsedChatRequestPart,
 } from './parsed-chat-request';
-import { AIVariable, AIVariableService, PROMPT_FUNCTION_REGEX, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
+import { AIVariable, AIVariableService, createAIResolveVariableCache, getAllResolvedAIVariables, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
+import { ILogger } from '@theia/core';
 
 const agentReg = /^@([\w_\-\.]+)(?=(\s|$|\b))/i; // An @-agent
 const functionReg = /^~([\w_\-\.]+)(?=(\s|$|\b))/i; // A ~ tool function
+const functionPromptFormatReg = /^\~\{\s*(.*?)\s*\}/i; // A ~{} prompt-format tool function
 const variableReg = /^#([\w_\-]+)(?::([\w_\-_\/\\.:]+))?(?=(\s|$|\b))/i; // A #-variable with an optional : arg (#file:workspace/path/name.ext)
 
 export const ChatRequestParser = Symbol('ChatRequestParser');
 export interface ChatRequestParser {
-    parseChatRequest(request: ChatRequest, location: ChatAgentLocation): ParsedChatRequest;
+    parseChatRequest(request: ChatRequest, location: ChatAgentLocation, context: ChatContext): Promise<ParsedChatRequest>;
 }
 
 function offsetRange(start: number, endExclusive: number): OffsetRange {
@@ -57,10 +59,43 @@ export class ChatRequestParserImpl {
     constructor(
         @inject(ChatAgentService) private readonly agentService: ChatAgentService,
         @inject(AIVariableService) private readonly variableService: AIVariableService,
-        @inject(ToolInvocationRegistry) private readonly toolInvocationRegistry: ToolInvocationRegistry
+        @inject(ToolInvocationRegistry) private readonly toolInvocationRegistry: ToolInvocationRegistry,
+        @inject(ILogger) private readonly logger: ILogger
     ) { }
 
-    parseChatRequest(request: ChatRequest, location: ChatAgentLocation): ParsedChatRequest {
+    async parseChatRequest(request: ChatRequest, location: ChatAgentLocation, context: ChatContext): Promise<ParsedChatRequest> {
+        // Parse the request into parts
+        const { parts, toolRequests, variables } = this.parseParts(request, location);
+
+        // Resolve all variables and add them to the variable parts.
+        // Parse resolved variable texts again for tool requests.
+        // These are not added to parts as they are not visible in the initial chat message.
+        // However, add they need to be added to the result to be considered by the executing agent.
+        // TODO [recursive variable resolution] collect recursively resolved variables for result
+        for (const part of parts) {
+            if (part instanceof ParsedChatRequestVariablePart) {
+                const resolvedVariable = await this.variableService.resolveVariable(
+                    { variable: part.variableName, arg: part.variableArg },
+                    context
+                );
+                if (resolvedVariable) {
+                    part.resolution = resolvedVariable;
+                    // Resolve tool requests in resolved variables
+                    this.parseFunctionsFromVariableText(resolvedVariable.value, toolRequests);
+                } else {
+                    this.logger.warn(`Failed to resolve variable ${part.variableName} for ${location}`);
+                }
+            }
+        }
+
+        return { request, parts, toolRequests, variables };
+    }
+
+    protected parseParts(request: ChatRequest, location: ChatAgentLocation): {
+        parts: ParsedChatRequestPart[];
+        toolRequests: Map<string, ToolRequest>;
+        variables: Map<string, AIVariable>;
+    } {
         const parts: ParsedChatRequestPart[] = [];
         const variables = new Map<string, AIVariable>();
         const toolRequests = new Map<string, ToolRequest>();
@@ -72,7 +107,7 @@ export class ChatRequestParserImpl {
 
             if (previousChar.match(/\s/) || i === 0) {
                 if (char === chatFunctionLeader) {
-                    const functionPart = this.tryParseFunction(
+                    const functionPart = this.tryToParseFunction(
                         message.slice(i),
                         i
                     );
@@ -107,8 +142,7 @@ export class ChatRequestParserImpl {
                 if (i !== 0) {
                     // Insert a part for all the text we passed over, then insert the new parsed part
                     const previousPart = parts.at(-1);
-                    const previousPartEnd =
-                        previousPart?.range.endExclusive ?? 0;
+                    const previousPartEnd = previousPart?.range.endExclusive ?? 0;
                     parts.push(
                         new ParsedChatRequestTextPart(
                             offsetRange(previousPartEnd, i),
@@ -131,8 +165,25 @@ export class ChatRequestParserImpl {
                 )
             );
         }
+        return { parts, toolRequests, variables };
+    }
 
-        return { request, parts, toolRequests, variables };
+    /**
+     * Parse text for tool requests and add them to the given map
+     */
+    private parseFunctionsFromVariableText(text: string, toolRequests: Map<string, ToolRequest>): void {
+        for (let i = 0; i < text.length; i++) {
+            const char = text.charAt(i);
+
+            // Check for function markers at start of words
+            if (char === chatFunctionLeader) {
+                const functionPart = this.tryToParseFunction(text.slice(i), i);
+                if (functionPart) {
+                    // Add the found tool request to the given map
+                    toolRequests.set(functionPart.toolRequest.id, functionPart.toolRequest);
+                }
+            }
+        }
     }
 
     private tryToParseAgent(
@@ -201,9 +252,9 @@ export class ChatRequestParserImpl {
         return new ParsedChatRequestVariablePart(varRange, name, variableArg);
     }
 
-    private tryParseFunction(message: string, offset: number): ParsedChatRequestFunctionPart | undefined {
+    private tryToParseFunction(message: string, offset: number): ParsedChatRequestFunctionPart | undefined {
         // Support both the and chat and prompt formats for functions
-        const nextFunctionMatch = message.match(functionReg) || message.match(PROMPT_FUNCTION_REGEX);
+        const nextFunctionMatch = message.match(functionPromptFormatReg) || message.match(functionReg);
         if (!nextFunctionMatch) {
             return;
         }
