@@ -69,7 +69,11 @@ export class RemoteNativeDependencyService {
             : { ...DEFAULT_HTTP_OPTIONS, ...downloadURI };
         const req = await this.requestService.request(options);
         if (RequestContext.isSuccess(req)) {
-            return Buffer.from(req.buffer);
+            if (typeof req.buffer === 'string') {
+                return Buffer.from(req.buffer, 'utf8');
+            } else {
+                return Buffer.from(req.buffer);
+            }
         } else {
             throw new Error('Server error while downloading native dependency from: ' + options.url);
         }
