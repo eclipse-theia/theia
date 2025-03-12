@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/tslint/config */
 // *****************************************************************************
-// Copyright (C) {year, original author} and others.
+// Copyright (C) 2025 EclipseSource GmbH and others.
 //
 // This file is licensed under the MIT License.
 // See LICENSE-MIT.txt in the project root for license information.
