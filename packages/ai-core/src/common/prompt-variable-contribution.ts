@@ -23,7 +23,7 @@ import {
     AIVariableService,
     AIVariableResolutionRequest,
     AIVariableContext,
-    ResolvedAIContextVariable
+    ResolvedAIVariable
 } from './variable-service';
 import { PromptCustomizationService, PromptService } from './prompt-service';
 import { PromptText } from './prompt-text';
@@ -34,8 +34,7 @@ export const PROMPT_VARIABLE: AIVariable = {
     name: 'prompt',
     args: [
         { name: 'id', description: nls.localize('theia/ai/core/promptVariable/argDescription', 'The prompt template id to resolve') }
-    ],
-    isContextVariable: true
+    ]
 };
 
 @injectable()
@@ -59,13 +58,13 @@ export class PromptVariableContribution implements AIVariableContribution, AIVar
         return -1;
     }
 
-    async resolve(request: AIVariableResolutionRequest, context: AIVariableContext): Promise<ResolvedAIContextVariable | undefined> {
+    async resolve(request: AIVariableResolutionRequest, context: AIVariableContext): Promise<ResolvedAIVariable | undefined> {
         if (request.variable.name === PROMPT_VARIABLE.name) {
             const promptId = request.arg?.trim();
             if (promptId) {
                 const resolvedPrompt = await this.promptService.getPromptFragment(promptId);
                 if (resolvedPrompt) {
-                    return { variable: request.variable, value: resolvedPrompt.text, contextValue: resolvedPrompt.text };
+                    return { variable: request.variable, value: resolvedPrompt.text };
                 }
             }
         }
