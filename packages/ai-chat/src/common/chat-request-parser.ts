@@ -35,7 +35,7 @@ import {
     ParsedChatRequest,
     ParsedChatRequestPart,
 } from './parsed-chat-request';
-import { AIVariable, AIVariableService, PROMPT_FUNCTION_REGEX, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
+import { AIVariable, AIVariableService, createAIResolveVariableCache, getAllResolvedAIVariables, PROMPT_FUNCTION_REGEX, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
 import { ILogger } from '@theia/core';
 
 const agentReg = /^@([\w_\-\.]+)(?=(\s|$|\b))/i; // An @-agent
@@ -64,18 +64,19 @@ export class ChatRequestParserImpl {
 
     async parseChatRequest(request: ChatRequest, location: ChatAgentLocation, context: ChatContext): Promise<ParsedChatRequest> {
         // Parse the request into parts
-        const { parts, toolRequests, variables } = this.parseParts(request, location);
+        const { parts, toolRequests } = this.parseParts(request, location);
 
         // Resolve all variables and add them to the variable parts.
         // Parse resolved variable texts again for tool requests.
         // These are not added to parts as they are not visible in the initial chat message.
         // However, add they need to be added to the result to be considered by the executing agent.
-        // TODO [recursive variable resolution] collect recursively resolved variables for result
+        const variableCache = createAIResolveVariableCache();
         for (const part of parts) {
             if (part instanceof ParsedChatRequestVariablePart) {
                 const resolvedVariable = await this.variableService.resolveVariable(
                     { variable: part.variableName, arg: part.variableArg },
-                    context
+                    context,
+                    variableCache
                 );
                 if (resolvedVariable) {
                     part.resolution = resolvedVariable;
@@ -87,7 +88,11 @@ export class ChatRequestParserImpl {
             }
         }
 
-        return { request, parts, toolRequests, variables };
+        // Get resolved variables from variable cache after all variables have been resolved.
+        // We want to return all recursilvely resolved variables, thus use the whole cache.
+        const resolvedVariables = await getAllResolvedAIVariables(variableCache);
+
+        return { request, parts, toolRequests, variables: resolvedVariables };
     }
 
     protected parseParts(request: ChatRequest, location: ChatAgentLocation): {
