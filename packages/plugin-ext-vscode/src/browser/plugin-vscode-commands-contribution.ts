@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Command, CommandContribution, CommandRegistry, environment, isOSX, CancellationTokenSource, MessageService } from '@theia/core';
+import { Command, CommandContribution, CommandRegistry, environment, isOSX, CancellationTokenSource, MessageService, isArray } from '@theia/core';
 import {
     ApplicationShell,
     CommonCommands,
@@ -106,8 +106,13 @@ export namespace VscodeCommands {
         id: 'vscode.diff'
     };
 
-    export const INSTALL_FROM_VSIX: Command = {
+    export const INSTALL_EXTENSION_FROM_ID_OR_URI: Command = {
         id: 'workbench.extensions.installExtension'
+    };
+
+    // see https://github.com/microsoft/vscode/blob/2fc07b811f760549dab9be9d2bedd06c51dfcb9a/src/vs/workbench/contrib/extensions/common/extensions.ts#L246
+    export const INSTALL_EXTENSION_FROM_VSIX_COMMAND: Command = {
+        id: 'workbench.extensions.command.installFromVSIX'
     };
 }
 
@@ -370,13 +375,23 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         commands.registerCommand({ id: 'workbench.files.action.refreshFilesExplorer' }, {
             execute: () => commands.executeCommand(FileNavigatorCommands.REFRESH_NAVIGATOR.id)
         });
-        commands.registerCommand({ id: VscodeCommands.INSTALL_FROM_VSIX.id }, {
+        commands.registerCommand({ id: VscodeCommands.INSTALL_EXTENSION_FROM_ID_OR_URI.id }, {
             execute: async (vsixUriOrExtensionId: TheiaURI | UriComponents | string) => {
                 if (typeof vsixUriOrExtensionId === 'string') {
                     await this.pluginServer.deploy(VSCodeExtensionUri.fromId(vsixUriOrExtensionId).toString());
                 } else {
-                    const uriPath = isUriComponents(vsixUriOrExtensionId) ? URI.revive(vsixUriOrExtensionId).fsPath : await this.fileService.fsPath(vsixUriOrExtensionId);
-                    await this.pluginServer.deploy(`local-file:${uriPath}`);
+                    await this.deployPlugin(vsixUriOrExtensionId);
+                }
+            }
+        });
+        commands.registerCommand({ id: VscodeCommands.INSTALL_EXTENSION_FROM_VSIX_COMMAND.id }, {
+            execute: async (uris: TheiaURI[] | UriComponents[] | TheiaURI | UriComponents) => {
+                if (isArray(uris)) {
+                    await Promise.all((uris as (TheiaURI | UriComponents)[]).map(async vsix => {
+                        await this.deployPlugin(vsix);
+                    }));
+                } else {
+                    await this.deployPlugin(uris);
                 }
             }
         });
@@ -982,6 +997,11 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         commands.registerCommand({ id: 'outline.focus' }, {
             execute: () => this.outlineViewContribution.openView({ activate: true })
         });
+    }
+
+    private async deployPlugin(uri: TheiaURI | UriComponents): Promise<void> {
+        const uriPath = isUriComponents(uri) ? URI.revive(uri).fsPath : await this.fileService.fsPath(uri);
+        return this.pluginServer.deploy(`local-file:${uriPath}`);
     }
 
     private async resolveLanguageId(resource: URI): Promise<string> {
