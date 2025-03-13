@@ -2262,8 +2262,8 @@ export interface UriMain {
 }
 
 export interface PluginApiAccessExt {
-    $exec(pluginId: string, methodName: string, args: any[]): Promise<any>;
-    $getBasicExports<T extends object>(pluginId: string): Promise<T>
+    $exec(pluginId: string, propertyPath: string[], args: any[]): Promise<any>;
+    $getBasicExports<T extends Record<string, unknown>>(pluginId: string): Promise<T>
 }
 
 export interface TestControllerUpdate {

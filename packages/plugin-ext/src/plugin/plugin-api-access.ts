@@ -21,15 +21,31 @@ export class PluginApiAccessExtImpl implements PluginApiAccessExt {
     constructor(protected pluginManager: PluginManager) { }
 
     async $getBasicExports<T>(pluginId: string): Promise<T> {
-        return this.pluginManager.getPluginExport(pluginId) as T;
+        return JSON.parse(JSON.stringify(this.pluginManager.getPluginExport(pluginId) as T,
+            (key, value) => typeof value === 'function' ? '$extension-exports-callable' : value));
     }
 
-    async $exec(pluginId: string, property: string, args?: unknown[]): Promise<unknown> {
-        const exports = this.pluginManager.getPluginExport(pluginId);
+    async $exec(pluginId: string, propertyPath: string[], args?: unknown[]): Promise<unknown> {
+        const exports = this.pluginManager.getPluginExport(pluginId) as Record<string, unknown>;
         if (!exports) {
             throw new Error(`Plugin with id ${pluginId} not found.`);
         }
-        return await (exports as Record<string, (...arg: unknown[]) => unknown>)[property](...(args ?? []));
+        let currentProperty: Record<string, unknown> | ((...args: unknown[]) => unknown) = exports;
+        for (const property of propertyPath) {
+            if (typeof currentProperty !== 'object') {
+                throw new Error(`Error trying to access Property ${propertyPath[propertyPath.length - 1]} on value of type ${typeof currentProperty}.`);
+            }
+            if (!currentProperty[property]) {
+                throw new Error(`Property ${property} not found in plugin with id ${pluginId}.`);
+            }
+            currentProperty = currentProperty[property] as Record<string, unknown> | ((...args: unknown[]) => unknown);
+        }
+
+        if (!currentProperty || typeof currentProperty !== 'function') {
+            throw new Error(`Property ${propertyPath[propertyPath.length - 1]} is not a function.`);
+        }
+
+        return await currentProperty(...(args ?? []));
     }
 
 }

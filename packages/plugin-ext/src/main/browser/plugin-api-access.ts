@@ -27,17 +27,36 @@ export class PluginApiAccessService {
         this.pluginApiAccessExt = rpc.getProxy(MAIN_RPC_CONTEXT.PLUGIN_API_ACCESS_EXT);
     }
 
-    async getExports<T extends object>(pluginId: string): Promise<T> {
+    /**
+     * get exports of a vscode extension
+     * @param pluginId id of the plugin
+     * @returns a proxy for accessing the exports of the extension.
+     * Be aware that fields are only resolved once when executing this method.
+     */
+    async getExports<T extends Record<string, unknown>>(pluginId: string): Promise<T> {
         const pluginApiAccessExt = this.pluginApiAccessExt;
         const apiObject = await pluginApiAccessExt.$getBasicExports(pluginId);
-        return Promise.resolve(new Proxy(apiObject, {
+        return this.createApiProxy<T>([], apiObject, pluginId);
+    }
+
+    protected createApiProxy<T extends Record<string, unknown>>(propertyPath: string[], apiObject: Record<string, unknown>, pluginId: string): T {
+        const that = this;
+        return new Proxy(apiObject, {
             get(target, p: string, receiver): unknown {
-                if (p in target) {
-                    return (target as never)[p];
+                if (p === 'then' || p === 'catch') {
+                    return undefined;
                 }
-                return async (...args: unknown[]) =>
-                    pluginApiAccessExt.$exec(pluginId, p.toString(), args);
+
+                if (p in target) {
+                    const value = target[p];
+                    if (value === '$extension-exports-callable') {
+                        return async (...args: unknown[]) => that.pluginApiAccessExt.$exec(pluginId, [...propertyPath, p], args);
+                    }
+                    return typeof value === 'object' ? that.createApiProxy([...propertyPath, p], value as Record<string, unknown>, pluginId) : value;
+                } else {
+                    return undefined;
+                }
             },
-        }) as T);
+        }) as T;
     }
 }

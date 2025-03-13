@@ -66,8 +66,14 @@ export class PluginApiFrontendContribution implements CommandContribution, TabBa
             label: 'Plugin API Access Test'
         }, {
             async execute(): Promise<void> {
-                const api = pluginApiAccessService.getExports<{ environments: {} }>('ms-python.python');
-                console.log((await api).environments);
+                const api = await (pluginApiAccessService.getExports<{
+                    environments: {
+                        getActiveEnvironmentPath(): { id: string };
+                        known: { id: string }[]
+                    }
+                }>('ms-python.python'));
+                console.log(api.environments.known[0].id);
+                console.log((await api.environments.getActiveEnvironmentPath()).id);
             }
         });
 
