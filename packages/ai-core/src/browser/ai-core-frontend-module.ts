@@ -42,12 +42,13 @@ import {
     LanguageModelDelegateClientImpl,
 } from './frontend-language-model-registry';
 
-import { FrontendApplicationContribution } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, PreferenceContribution } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { LanguageGrammarDefinitionContribution } from '@theia/monaco/lib/browser/textmate';
 
 import { AICoreFrontendApplicationContribution } from './ai-core-frontend-application-contribution';
 import { bindAICorePreferences } from './ai-core-preferences';
+import { AgentSettingsPreferenceSchema } from './agent-preferences';
 import { AISettingsServiceImpl } from './ai-settings-service';
 import { FrontendPromptCustomizationServiceImpl } from './frontend-prompt-customization-service';
 import { DefaultFrontendVariableService, FrontendVariableService } from './frontend-variable-service';
@@ -88,6 +89,7 @@ export default new ContainerModule(bind => {
         .inSingletonScope();
 
     bindAICorePreferences(bind);
+    bind(PreferenceContribution).toConstantValue({ schema: AgentSettingsPreferenceSchema });
 
     bind(FrontendPromptCustomizationServiceImpl).toSelf().inSingletonScope();
     bind(PromptCustomizationService).toService(FrontendPromptCustomizationServiceImpl);
