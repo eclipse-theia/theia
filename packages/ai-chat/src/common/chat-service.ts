@@ -35,7 +35,7 @@ import {
     ChatContext,
 } from './chat-model';
 import { ChatRequestParser } from './chat-request-parser';
-import { ParsedChatRequest, ParsedChatRequestAgentPart, ParsedChatRequestVariablePart } from './parsed-chat-request';
+import { ParsedChatRequest, ParsedChatRequestAgentPart } from './parsed-chat-request';
 
 export interface ChatRequestInvocation {
     /**
@@ -191,7 +191,9 @@ export class ChatServiceImpl implements ChatService {
         }
         session.title = request.text;
 
-        const parsedRequest = this.chatRequestParser.parseChatRequest(request, session.model.location);
+        const resolutionContext: ChatSessionContext = { model: session.model };
+        const resolvedContext = await this.resolveChatContext(session.model.context.getVariables(), resolutionContext);
+        const parsedRequest = await this.chatRequestParser.parseChatRequest(request, session.model.location, resolvedContext);
         const agent = this.getAgent(parsedRequest, session);
 
         if (agent === undefined) {
@@ -205,24 +207,8 @@ export class ChatServiceImpl implements ChatService {
             };
         }
 
-        const resolutionContext: ChatSessionContext = { model: session.model };
-        const resolvedContext = await this.resolveChatContext(session.model.context.getVariables(), resolutionContext);
         const requestModel = session.model.addRequest(parsedRequest, agent?.id, resolvedContext);
         resolutionContext.request = requestModel;
-
-        for (const part of parsedRequest.parts) {
-            if (part instanceof ParsedChatRequestVariablePart) {
-                const resolvedVariable = await this.variableService.resolveVariable(
-                    { variable: part.variableName, arg: part.variableArg },
-                    resolutionContext
-                );
-                if (resolvedVariable) {
-                    part.resolution = resolvedVariable;
-                } else {
-                    this.logger.warn(`Failed to resolve variable ${part.variableName} for ${session.model.location}`);
-                }
-            }
-        }
 
         let resolveResponseCreated: (responseModel: ChatResponseModel) => void;
         let resolveResponseCompleted: (responseModel: ChatResponseModel) => void;
@@ -259,6 +245,7 @@ export class ChatServiceImpl implements ChatService {
         resolutionRequests: readonly AIVariableResolutionRequest[],
         context: ChatSessionContext,
     ): Promise<ChatContext> {
+        // TODO use a common cache to resolve variables and return recursively resolved variables?
         const resolvedVariables = await Promise.all(
             resolutionRequests.map(async contextVariable => {
                 const resolvedVariable = await this.variableService.resolveVariable(contextVariable, context);
