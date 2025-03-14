@@ -67,6 +67,7 @@ export interface ActiveSessionChangedEvent {
 }
 
 export function isActiveSessionChangedEvent(obj: unknown): obj is ActiveSessionChangedEvent {
+    // eslint-disable-next-line no-null/no-null
     return typeof obj === 'object' && obj !== null && 'type' in obj && obj.type === 'activeChange';
 }
 
@@ -76,6 +77,7 @@ export interface SessionCreatedEvent {
 }
 
 export function isSessionCreatedEvent(obj: unknown): obj is SessionCreatedEvent {
+    // eslint-disable-next-line no-null/no-null
     return typeof obj === 'object' && obj !== null && 'type' in obj && obj.type === 'created';
 }
 
@@ -85,6 +87,7 @@ export interface SessionDeletedEvent {
 }
 
 export function isSessionDeletedEvent(obj: unknown): obj is SessionDeletedEvent {
+    // eslint-disable-next-line no-null/no-null
     return typeof obj === 'object' && obj !== null && 'type' in obj && obj.type === 'deleted';
 }
 

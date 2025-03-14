@@ -102,7 +102,6 @@ export namespace ToolRequest {
             (!('required' in obj) || (Array.isArray(obj.required) && obj.required.every(prop => typeof prop === 'string')));
     }
 }
-
 export interface LanguageModelRequest {
     messages: LanguageModelRequestMessage[],
     tools?: ToolRequest[];
@@ -119,8 +118,11 @@ export interface ResponseFormatJsonSchema {
     };
 }
 
-export interface LanguageModelRequestWithRawResponse extends LanguageModelRequest {
-    response?: LanguageModelTextResponse & { tool_calls?: ToolCall[] };
+export interface UserRequest extends LanguageModelRequest {
+    sessionId: string;
+    requestId: string;
+    agentId: string;
+    cancellationToken?: CancellationToken;
 }
 
 export interface LanguageModelTextResponse {
