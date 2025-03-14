@@ -38,6 +38,27 @@ export const WorkspacePreferencesSchema: PreferenceSchema = {
             items: {
                 type: 'string'
             }
-        }
+        },
+        'ai-features.agents.details': {
+            type: 'null',
+            markdownDescription: nls.localize('theia/ai/ide/agent-description',
+                'Additional settings for AI agents can be configured using the [AI Configuration View]({0}).',
+                'command:aiConfiguration:open'
+            )
+        },
+        'ai-features.promptTemplates.details': {
+            type: 'null',
+            markdownDescription: nls.localize('theia/ai/ide/prompt-template-description',
+                'Additional AI prompt template settings can be configured using the [AI Configuration View]({0}).',
+                'command:aiConfiguration:open'
+            )
+        },
+        'ai-features.models.details': {
+            type: 'null',
+            markdownDescription: nls.localize('theia/ai/ide/prompt-template-description',
+                'Additional settings for AI models can be configured using the [AI Configuration View]({0}).',
+                'command:aiConfiguration:open'
+            )
+        },
     }
 };

@@ -36,6 +36,7 @@ import { PreferencesScopeTabBar } from './preference-scope-tabbar-widget';
 import { PreferencesSearchbarWidget } from './preference-searchbar-widget';
 import { PreferencesTreeWidget } from './preference-tree-widget';
 import { PreferencesWidget } from './preference-widget';
+import { PreferenceNullInputRenderer, PreferenceNullRendererContribution } from './components/preference-null-input';
 
 export function bindPreferencesWidgets(bind: interfaces.Bind): void {
     bind(PreferenceTreeLabelProvider).toSelf().inSingletonScope();
@@ -58,6 +59,8 @@ export function bindPreferencesWidgets(bind: interfaces.Bind): void {
 
     bind(PreferenceStringInputRenderer).toSelf();
     bind(PreferenceNodeRendererContribution).to(PreferenceStringInputRendererContribution).inSingletonScope();
+    bind(PreferenceNullInputRenderer).toSelf();
+    bind(PreferenceNodeRendererContribution).to(PreferenceNullRendererContribution).inSingletonScope();
 
     bind(PreferenceBooleanInputRenderer).toSelf();
     bind(PreferenceNodeRendererContribution).to(PreferenceBooleanInputRendererContribution).inSingletonScope();
