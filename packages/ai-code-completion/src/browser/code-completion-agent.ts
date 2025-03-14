@@ -22,6 +22,7 @@ import { generateUuid, ILogger, nls, ProgressService } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
 import { PREF_AI_INLINE_COMPLETION_MAX_CONTEXT_LINES } from './ai-code-completion-preference';
+import { codeCompletionPromptTemplates } from './code-completion-prompt-template';
 import { PreferenceService } from '@theia/core/lib/browser';
 import { CodeCompletionPostProcessor } from './code-completion-postprocessor';
 
@@ -185,36 +186,7 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
     name = 'Code Completion';
     description =
         nls.localize('theia/ai/completion/agent/description', 'This agent provides inline code completion in the code editor in the Theia IDE.');
-    promptTemplates: PromptTemplate[] = [
-        {
-            id: 'code-completion-prompt-previous',
-            variantOf: 'code-completion-prompt',
-            template: `{{!-- Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
-https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
-You are a code completion agent. The current file you have to complete is named {{file}}.
-The language of the file is {{language}}. Return your result as plain text without markdown formatting.
-Finish the following code snippet.
-
-{{prefix}}[[MARKER]]{{suffix}}
-
-Only return the exact replacement for [[MARKER]] to complete the snippet.`
-        },
-        {
-            id: 'code-completion-prompt',
-            template: `{{!-- Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
-https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
-## Code snippet
-\`\`\`
-{{ prefix }}[[MARKER]]{{ suffix }}
-\`\`\`
-
-## Meta Data
-- File: {{file}}
-- Language: {{language}}
-
-Replace [[MARKER]] with the exact code to complete the code snippet. Return only the replacement of [[MAKRER]] as plain text.`,
-        },
-    ];
+    promptTemplates: PromptTemplate[] = codeCompletionPromptTemplates;
     languageModelRequirements: LanguageModelRequirement[] = [
         {
             purpose: 'code-completion',

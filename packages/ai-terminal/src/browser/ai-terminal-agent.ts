@@ -23,6 +23,7 @@ import {
     PromptService
 } from '@theia/ai-core/lib/common';
 import { generateUuid, ILogger, nls } from '@theia/core';
+import { terminalPromptTemplates } from './ai-terminal-prompt-template';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { z } from 'zod';
 import zodToJsonSchema from 'zod-to-json-schema';
@@ -50,69 +51,7 @@ export class AiTerminalAgent implements Agent {
         { name: 'cwd', usedInPrompt: true, description: 'The current working directory.' },
         { name: 'recentTerminalContents', usedInPrompt: true, description: 'The last 0 to 50 recent lines visible in the terminal.' }
     ];
-    promptTemplates = [
-        {
-            id: 'terminal-system',
-            name: 'AI Terminal System Prompt',
-            description: nls.localize('theia/ai/terminal/systemPrompt/description', 'Prompt for the AI Terminal Assistant'),
-            template: `{{!-- Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
-https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
-# Instructions
-Generate one or more command suggestions based on the user's request, considering the shell being used,
-the current working directory, and the recent terminal contents. Provide the best suggestion first,
-followed by other relevant suggestions if the user asks for further options. 
-
-Parameters:
-- user-request: The user's question or request.
-- shell: The shell being used, e.g., /usr/bin/zsh.
-- cwd: The current working directory.
-- recent-terminal-contents: The last 0 to 50 recent lines visible in the terminal.
-
-Return the result in the following JSON format:
-{
-  "commands": [
-    "best_command_suggestion",
-    "next_best_command_suggestion",
-    "another_command_suggestion"
-  ]
-}
-
-## Example
-user-request: "How do I commit changes?"
-shell: "/usr/bin/zsh"
-cwd: "/home/user/project"
-recent-terminal-contents:
-git status
-On branch main
-Your branch is up to date with 'origin/main'.
-nothing to commit, working tree clean
-
-## Expected JSON output
-\`\`\`json
-\{
-  "commands": [
-    "git commit",
-    "git commit --amend",
-    "git commit -a"
-  ]
-}
-\`\`\`
-`
-        },
-        {
-            id: 'terminal-user',
-            name: 'AI Terminal User Prompt',
-            description: nls.localize('theia/ai/terminal/userPrompt/description', 'Prompt that contains the user request'),
-            template: `{{!-- Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
-https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
-user-request: {{userRequest}}
-shell: {{shell}}
-cwd: {{cwd}}
-recent-terminal-contents:
-{{recentTerminalContents}}
-`
-        }
-    ];
+    promptTemplates = terminalPromptTemplates;
     languageModelRequirements: LanguageModelRequirement[] = [
         {
             purpose: 'suggest-terminal-commands',
