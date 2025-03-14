@@ -10,6 +10,11 @@
 
 - [core] fixed version `@types/express` to `^4.17.21` and `@types/express-serve-static-core` to `5.0.4`. This might be required for adopters as well if they run into typing issues. [#15147](https://github.com/eclipse-theia/theia/pull/15147)
 
+<a name="breaking_changes_1.60.0">[Breaking Changes:](#breaking_changes_1.60.0)</a>
+
+- [ai-chat] `ParsedChatRequest.variables` is now `ResolvedAIVariable[]` instead of a `Map<string, AIVariable>` [#15196](https://github.com/eclipse-theia/theia/pull/15196)
+- [ai-chat] `ChatRequestParser.parseChatRequest` is now asynchronous and expects an additional `ChatContext` parameter [#15196](https://github.com/eclipse-theia/theia/pull/15196)
+
 ## 1.59.0 - 02/27/2025
 
 - [ai] added claude sonnet 3.7 to default models [#15023](https://github.com/eclipse-theia/theia/pull/15023)
