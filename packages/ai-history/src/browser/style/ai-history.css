@@ -56,37 +56,44 @@
   margin: 5px 0;
 }
 
-.theia-card-llm-requests details {
+/* Common styles for request and response sections */
+.theia-card-request details,
+.theia-card-response details {
   margin: 10px 0;
   border: 1px solid var(--theia-editorWidget-border);
   border-radius: 4px;
   overflow: hidden;
 }
 
-.theia-card-llm-requests summary {
+.theia-card-request summary,
+.theia-card-response summary {
   padding: 10px;
   background-color: var(--theia-editorWidget-background);
   cursor: pointer;
   transition: background-color 0.2s;
 }
 
-.theia-card-llm-requests summary:hover {
+.theia-card-request summary:hover,
+.theia-card-response summary:hover {
   background-color: var(--theia-list-hoverBackground);
 }
 
-.theia-card-llm-requests summary h3 {
+.theia-card-request summary h3,
+.theia-card-response summary h3 {
   display: inline;
   margin: 0;
 }
 
-.theia-card-llm-requests details > div {
+.theia-card-request details > div,
+.theia-card-response details > div {
   padding: 0 10px 10px 10px;
   border-top: 1px solid var(--theia-editorWidget-border);
   background-color: var(--theia-editor-background);
   position: relative;
 }
 
-.theia-card-llm-requests h4 {
+.theia-card-request h4,
+.theia-card-response h4 {
   margin-top: 12px;
   color: var(--theia-editor-foreground);
   font-size: var(--theia-ui-font-size1);
@@ -94,12 +101,14 @@
   padding-bottom: 5px;
 }
 
-.theia-card-llm-requests ul {
+.theia-card-request ul,
+.theia-card-response ul {
   list-style: none;
   padding-inline-start: 0;
 }
 
-.theia-card-llm-requests pre {
+.theia-card-request pre,
+.theia-card-response pre {
   background-color: var(--theia-editor-background);
 }
 
@@ -108,13 +117,15 @@
   margin-bottom: 10px;
 }
 
-.theia-card-llm-request-messages-list li,
-.theia-card-llm-request-response-tool-calls-list li {
+/* Message lists styling */
+.theia-card-request-messages-list li,
+.theia-card-response-messages-list li {
   margin-bottom: 15px;
   position: relative;
   padding-left: 0;
 }
 
+/* Meta information styling */
 .theia-card-request-id,
 .theia-card-session-id,
 .theia-card-timestamp,

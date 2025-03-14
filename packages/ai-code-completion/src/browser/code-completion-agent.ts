@@ -14,16 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { LanguageModelService } from '@theia/ai-core/lib/browser';
 import {
     Agent, AgentSpecificVariables, CommunicationRecordingService, getTextOfResponse,
-    LanguageModelRegistry, LanguageModelRequest, LanguageModelRequirement, PromptService, PromptTemplate
+    LanguageModelRegistry, LanguageModelRequirement, PromptService, PromptTemplate,
+    UserRequest
 } from '@theia/ai-core/lib/common';
 import { generateUuid, ILogger, nls, ProgressService } from '@theia/core';
+import { PreferenceService } from '@theia/core/lib/browser';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
 import { PREF_AI_INLINE_COMPLETION_MAX_CONTEXT_LINES } from './ai-code-completion-preference';
 import { codeCompletionPromptTemplates } from './code-completion-prompt-template';
-import { PreferenceService } from '@theia/core/lib/browser';
 import { CodeCompletionPostProcessor } from './code-completion-postprocessor';
 
 export const CodeCompletionAgent = Symbol('CodeCompletionAgent');
@@ -34,6 +36,9 @@ export interface CodeCompletionAgent extends Agent {
 
 @injectable()
 export class CodeCompletionAgentImpl implements CodeCompletionAgent {
+    @inject(LanguageModelService)
+    protected languageModelService: LanguageModelService;
+
     async provideInlineCompletions(
         model: monaco.editor.ITextModel,
         position: monaco.Position,
@@ -114,23 +119,20 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
             // since we do not actually hold complete conversions, the request/response pair is considered a session
             const sessionId = generateUuid();
             const requestId = generateUuid();
-            const request: LanguageModelRequest = {
+            const request: UserRequest = {
                 messages: [{ type: 'text', actor: 'user', query: prompt }],
                 settings: {
                     stream: false
-                }
+                },
+                agentId: this.id,
+                sessionId,
+                requestId,
+                cancellationToken: token
             };
             if (token.isCancellationRequested) {
                 return undefined;
             }
-            this.recordingService.recordRequest({
-                agentId: this.id,
-                sessionId,
-                requestId,
-                request: prompt,
-                llmRequests: [request]
-            });
-            const response = await languageModel.request(request, token);
+            const response = await this.languageModelService.sendRequest(languageModel, request);
             if (token.isCancellationRequested) {
                 return undefined;
             }
@@ -142,7 +144,7 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
                 agentId: this.id,
                 sessionId,
                 requestId,
-                response: completionText,
+                response: [{ actor: 'ai', query: completionText, type: 'text' }]
             });
 
             const postProcessedCompletionText = this.postProcessor.postProcess(completionText);

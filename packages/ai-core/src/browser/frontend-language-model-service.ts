@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2024 EclipseSource GmbH.
+// Copyright (C) 2025 EclipseSource GmbH.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,16 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './ai-activation-service';
-export * from './ai-core-frontend-application-contribution';
-export * from './ai-core-frontend-module';
-export * from './ai-core-preferences';
-export * from './ai-settings-service';
-export * from './ai-view-contribution';
-export * from './frontend-language-model-registry';
-export * from './frontend-variable-service';
-export * from './prompttemplate-contribution';
-export * from './theia-variable-contribution';
-export * from './frontend-variable-service';
-export * from './ai-core-command-contribution';
-export * from '../common/language-model-service';
+import { injectable } from '@theia/core/shared/inversify';
+import { LanguageModelServiceImpl } from '../common/language-model-service';
+
+@injectable()
+export class FrontendLanguageModelServiceImpl extends LanguageModelServiceImpl {
+
+}

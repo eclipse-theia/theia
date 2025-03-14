@@ -22,10 +22,12 @@
 import {
     AgentSpecificVariables,
     AIVariableContext,
+    CommunicationRecordingService,
     getTextOfResponse,
     LanguageModel,
     LanguageModelRequirement,
     LanguageModelResponse,
+    LanguageModelService,
     LanguageModelStreamResponse,
     PromptService,
     PromptTemplate,
@@ -56,7 +58,6 @@ import {
 import { findFirstMatch, parseContents } from './parse-contents';
 import { DefaultResponseContentFactory, ResponseContentMatcher, ResponseContentMatcherProvider } from './response-content-matcher';
 import { ChatToolRequest, ChatToolRequestService } from './chat-tool-request-service';
-import { ChatLanguageModelService } from './chat-language-model-service';
 
 /**
  * A conversation consists of a sequence of ChatMessages.
@@ -138,7 +139,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
     @inject(LanguageModelRegistry) protected languageModelRegistry: LanguageModelRegistry;
     @inject(ILogger) protected logger: ILogger;
     @inject(ChatToolRequestService) protected chatToolRequestService: ChatToolRequestService;
-    @inject(ChatLanguageModelService) protected chatLanguageModelService: ChatLanguageModelService;
+    @inject(LanguageModelService) protected languageModelService: LanguageModelService;
     @inject(PromptService) protected promptService: PromptService;
 
     @inject(ContributionProvider) @named(ResponseContentMatcherProvider)
@@ -146,6 +147,9 @@ export abstract class AbstractChatAgent implements ChatAgent {
 
     @inject(DefaultResponseContentFactory)
     protected defaultContentFactory: DefaultResponseContentFactory;
+
+    @inject(CommunicationRecordingService)
+    protected recordingService: CommunicationRecordingService;
 
     readonly abstract id: string;
     readonly abstract name: string;
@@ -198,7 +202,6 @@ export abstract class AbstractChatAgent implements ChatAgent {
                 ...this.chatToolRequestService.toChatToolRequests(systemMessageToolRequests ? Array.from(systemMessageToolRequests) : [], request),
                 ...this.chatToolRequestService.toChatToolRequests(this.additionalToolRequests, request)
             ];
-
             const languageModelResponse = await this.sendLlmRequest(request, messages, tools, languageModel);
 
             await this.addContentsToResponse(languageModelResponse, request);
@@ -279,7 +282,18 @@ export abstract class AbstractChatAgent implements ChatAgent {
     ): Promise<LanguageModelResponse> {
         const settings = this.getLlmSettings();
         const tools = toolRequests.length > 0 ? toolRequests : undefined;
-        return this.chatLanguageModelService.sendRequest({ messages, tools, settings }, request, languageModel);
+        return this.languageModelService.sendRequest(
+            languageModel,
+            {
+                messages,
+                tools,
+                settings,
+                agentId: this.id,
+                sessionId: request.session.id,
+                requestId: request.id,
+                cancellationToken: request.response.cancellationToken
+            }
+        );
     }
 
     /**
@@ -296,6 +310,15 @@ export abstract class AbstractChatAgent implements ChatAgent {
      * Subclasses may override this method to perform additional actions or keep the response open for processing further requests.
      */
     protected async onResponseComplete(request: MutableChatRequestModel): Promise<void> {
+        this.recordingService.recordResponse(
+            {
+                agentId: this.id,
+                sessionId: request.session.id,
+                requestId: request.id,
+                response: request.response.response.content.flatMap(c =>
+                    ({ type: 'text', actor: 'ai', query: c.asDisplayString?.() ?? c.asString?.() ?? JSON.stringify(c) }))
+            }
+        );
         return request.response.complete();
     }
 

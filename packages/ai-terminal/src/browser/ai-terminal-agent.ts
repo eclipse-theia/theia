@@ -19,9 +19,12 @@ import {
     CommunicationRecordingService,
     getJsonOfResponse,
     isLanguageModelParsedResponse,
-    LanguageModelRegistry, LanguageModelRequest, LanguageModelRequirement,
-    PromptService
+    LanguageModelRegistry,
+    LanguageModelRequirement,
+    PromptService,
+    UserRequest
 } from '@theia/ai-core/lib/common';
+import { LanguageModelService } from '@theia/ai-core/lib/browser';
 import { generateUuid, ILogger, nls } from '@theia/core';
 import { terminalPromptTemplates } from './ai-terminal-prompt-template';
 import { inject, injectable } from '@theia/core/shared/inversify';
@@ -68,6 +71,9 @@ export class AiTerminalAgent implements Agent {
     @inject(ILogger)
     protected logger: ILogger;
 
+    @inject(LanguageModelService)
+    protected languageModelService: LanguageModelService;
+
     async getCommands(
         userRequest: string,
         cwd: string,
@@ -100,7 +106,7 @@ export class AiTerminalAgent implements Agent {
         // since we do not actually hold complete conversions, the request/response pair is considered a session
         const sessionId = generateUuid();
         const requestId = generateUuid();
-        const llmRequest: LanguageModelRequest = {
+        const llmRequest: UserRequest = {
             messages: [
                 {
                     actor: 'ai',
@@ -120,25 +126,28 @@ export class AiTerminalAgent implements Agent {
                     description: 'Suggested terminal commands based on the user request',
                     schema: zodToJsonSchema(Commands)
                 }
-            }
-        };
-        this.recordingService.recordRequest({
+            },
             agentId: this.id,
-            sessionId,
             requestId,
-            request,
-            llmRequests: [llmRequest]
-        });
+            sessionId
+        };
+
+        const result = await this.languageModelService.sendRequest(lm, llmRequest);
+        // this.recordingService.recordRequest({
+        //     agentId: this.id,
+        //     sessionId,
+        //     requestId,
+        //     request: llmRequest.messages
+        // });
 
         try {
-            const result = await lm.request(llmRequest);
+            // const result = await lm.request(llmRequest);
 
             if (isLanguageModelParsedResponse(result)) {
                 // model returned structured output
                 const parsedResult = Commands.safeParse(result.parsed);
                 if (parsedResult.success) {
-                    const response = JSON.stringify(parsedResult.data.commands);
-                    this.recordingService.recordResponse({ agentId: this.id, sessionId, requestId, response, ...result });
+                    this.recordingService.recordResponse({ agentId: this.id, sessionId, requestId, response: [{ actor: 'ai', query: result.content, type: 'text' }] });
                     return parsedResult.data.commands;
                 }
             }
@@ -146,7 +155,7 @@ export class AiTerminalAgent implements Agent {
             // fall back to agent-based parsing of result
             const jsonResult = await getJsonOfResponse(result);
             const responseTextFromJSON = JSON.stringify(jsonResult);
-            this.recordingService.recordResponse({ agentId: this.id, sessionId, requestId, response: responseTextFromJSON });
+            this.recordingService.recordResponse({ agentId: this.id, sessionId, requestId, response: [{ actor: 'ai', query: responseTextFromJSON, type: 'text' }] });
             const parsedJsonResult = Commands.safeParse(jsonResult);
             if (parsedJsonResult.success) {
                 return parsedJsonResult.data.commands;
