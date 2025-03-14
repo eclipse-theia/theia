@@ -72,7 +72,7 @@ export class TerminalLinkProviderContribution implements TerminalContribution {
         const context = getLinkContext(terminal.getTerminal(), line);
 
         const linkProviderPromises: Promise<TerminalLink[]>[] = [];
-        for (const provider of this.terminalLinkContributionProvider.getContributions()) {
+        for (const provider of this.terminalLinkContributionProvider.getContributions(true)) {
             linkProviderPromises.push(provider.provideLinks(context.text, terminal));
         }
 
