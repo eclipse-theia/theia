@@ -18,7 +18,6 @@ import { FrontendApplicationContribution, PreferenceService } from '@theia/core/
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { AnthropicLanguageModelsManager, AnthropicModelDescription } from '../common';
 import { API_KEY_PREF, MODELS_PREF } from './anthropic-preferences';
-import { PREFERENCE_NAME_REQUEST_SETTINGS, RequestSetting } from '@theia/ai-core/lib/browser/ai-core-preferences';
 
 const ANTHROPIC_PROVIDER_ID = 'anthropic';
 
@@ -39,8 +38,7 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
             this.manager.setApiKey(apiKey);
 
             const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
-            const requestSettings = this.getRequestSettingsPref();
-            this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createAnthropicModelDescription(modelId, requestSettings)));
+            this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createAnthropicModelDescription(modelId)));
             this.prevModels = [...models];
 
             this.preferenceService.onPreferenceChanged(event => {
@@ -48,8 +46,6 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
                     this.manager.setApiKey(event.newValue);
                 } else if (event.preferenceName === MODELS_PREF) {
                     this.handleModelChanges(event.newValue as string[]);
-                } else if (event.preferenceName === PREFERENCE_NAME_REQUEST_SETTINGS) {
-                    this.handleRequestSettingsChanges(event.newValue as RequestSetting[]);
                 }
             });
         });
@@ -63,45 +59,17 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
         const modelsToAdd = [...updatedModels].filter(model => !oldModels.has(model));
 
         this.manager.removeLanguageModels(...modelsToRemove.map(model => `${ANTHROPIC_PROVIDER_ID}/${model}`));
-        const requestSettings = this.getRequestSettingsPref();
-        this.manager.createOrUpdateLanguageModels(...modelsToAdd.map(modelId => this.createAnthropicModelDescription(modelId, requestSettings)));
+        this.manager.createOrUpdateLanguageModels(...modelsToAdd.map(modelId => this.createAnthropicModelDescription(modelId)));
         this.prevModels = newModels;
     }
 
-    private getRequestSettingsPref(): RequestSetting[] {
-        return this.preferenceService.get<RequestSetting[]>(PREFERENCE_NAME_REQUEST_SETTINGS, []);
-    }
-
-    protected handleRequestSettingsChanges(newSettings: RequestSetting[]): void {
-        const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
-        this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createAnthropicModelDescription(modelId, newSettings)));
-    }
-
-    protected createAnthropicModelDescription(modelId: string, requestSettings: RequestSetting[]): AnthropicModelDescription {
+    protected createAnthropicModelDescription(modelId: string): AnthropicModelDescription {
         const id = `${ANTHROPIC_PROVIDER_ID}/${modelId}`;
-        const modelRequestSetting = this.getMatchingRequestSetting(modelId, ANTHROPIC_PROVIDER_ID, requestSettings);
         return {
             id: id,
             model: modelId,
             apiKey: true,
-            enableStreaming: true,
-            defaultRequestSettings: modelRequestSetting?.requestSettings
+            enableStreaming: true
         };
-    }
-
-    protected getMatchingRequestSetting(
-        modelId: string,
-        providerId: string,
-        requestSettings: RequestSetting[]
-    ): RequestSetting | undefined {
-        const matchingSettings = requestSettings.filter(
-            setting => (!setting.providerId || setting.providerId === providerId) && setting.modelId === modelId
-        );
-        if (matchingSettings.length > 1) {
-            console.warn(
-                `Multiple entries found for provider "${providerId}" and model "${modelId}". Using the first match.`
-            );
-        }
-        return matchingSettings[0];
     }
 }

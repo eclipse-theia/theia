@@ -26,10 +26,6 @@ export interface HuggingFaceModelDescription {
      * The model ID as used by the Hugging Face API.
      */
     model: string;
-    /**
-     * Default request settings for the Hugging Face model.
-     */
-    defaultRequestSettings?: { [key: string]: unknown };
 }
 
 export interface HuggingFaceLanguageModelsManager {

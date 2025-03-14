@@ -18,9 +18,7 @@ import { FrontendApplicationContribution, PreferenceService } from '@theia/core/
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { LlamafileManager, LlamafileModelDescription } from '../common/llamafile-manager';
 import { PREFERENCE_LLAMAFILE } from './llamafile-preferences';
-import { PREFERENCE_NAME_REQUEST_SETTINGS, RequestSetting } from '@theia/ai-core/lib/browser/ai-core-preferences';
 
-const LLAMAFILE_PROVIDER_ID = 'llamafile';
 @injectable()
 export class LlamafileFrontendApplicationContribution implements FrontendApplicationContribution {
 
@@ -46,31 +44,17 @@ export class LlamafileFrontendApplicationContribution implements FrontendApplica
                 if (event.preferenceName === PREFERENCE_LLAMAFILE) {
                     const newModels = event.newValue.filter((llamafileEntry: unknown) => LlamafileEntry.is(llamafileEntry)) as LlamafileEntry[];
                     this.handleLlamaFilePreferenceChange(newModels);
-                } else if (event.preferenceName === PREFERENCE_NAME_REQUEST_SETTINGS) {
-                    this.handleRequestSettingsChange(event.newValue as RequestSetting[]);
                 }
             });
         });
     }
 
     protected getLLamaFileModelDescriptions(llamafiles: LlamafileEntry[]): LlamafileModelDescription[] {
-        const requestSettings = this.preferenceService.get<RequestSetting[]>(PREFERENCE_NAME_REQUEST_SETTINGS, []);
-        return llamafiles.map(llamafile => {
-            const matchingSettings = requestSettings.filter(
-                setting =>
-                    (!setting.providerId || setting.providerId === LLAMAFILE_PROVIDER_ID) &&
-                    setting.modelId === llamafile.name
-            );
-            if (matchingSettings.length > 1) {
-                console.warn(`Multiple entries found for model "${llamafile.name}". Using the first match.`);
-            }
-            return {
-                name: llamafile.name,
-                uri: llamafile.uri,
-                port: llamafile.port,
-                defaultRequestSettings: matchingSettings[0]?.requestSettings
-            };
-        });
+        return llamafiles.map(llamafile => ({
+            name: llamafile.name,
+            uri: llamafile.uri,
+            port: llamafile.port
+        }));
     }
 
     protected handleLlamaFilePreferenceChange(newModels: LlamafileEntry[]): void {
@@ -87,14 +71,6 @@ export class LlamafileFrontendApplicationContribution implements FrontendApplica
 
         this.llamafileManager.addLanguageModels(this.getLLamaFileModelDescriptions(llamafilesToAdd));
         llamafilesToAdd.forEach(model => this._knownLlamaFiles.set(model.name, model));
-    }
-
-    protected handleRequestSettingsChange(newSettings: RequestSetting[]): void {
-        const llamafiles = Array.from(this._knownLlamaFiles.values());
-        const llamafileModelDescriptions = this.getLLamaFileModelDescriptions(llamafiles);
-        llamafileModelDescriptions.forEach(llamafileModelDescription => {
-            this.llamafileManager.updateRequestSettings(llamafileModelDescription.name, llamafileModelDescription.defaultRequestSettings);
-        });
     }
 }
 

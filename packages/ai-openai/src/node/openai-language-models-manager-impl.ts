@@ -75,7 +75,6 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                 model.apiVersion = apiVersionProvider;
                 model.developerMessageSettings = modelDescription.developerMessageSettings || 'developer';
                 model.supportsStructuredOutput = modelDescription.supportsStructuredOutput;
-                model.defaultRequestSettings = modelDescription.defaultRequestSettings;
             } else {
                 this.languageModelRegistry.addLanguageModels([
                     new OpenAiModel(
@@ -88,7 +87,6 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                         modelDescription.url,
                         this.openAiModelUtils,
                         modelDescription.developerMessageSettings,
-                        modelDescription.defaultRequestSettings
                     )
                 ]);
             }
