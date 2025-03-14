@@ -36,10 +36,7 @@ export interface AnthropicModelDescription {
      * Maximum number of tokens to generate. Default is 4096.
      */
     maxTokens?: number;
-    /**
-     * Default request settings for the Anthropic model.
-     */
-    defaultRequestSettings?: { [key: string]: unknown };
+
 }
 export interface AnthropicLanguageModelsManager {
     apiKey: string | undefined;

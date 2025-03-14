@@ -14,10 +14,52 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from '@theia/core/shared/inversify';
+import { PreferenceService } from '@theia/core/lib/browser';
+import { inject, injectable } from '@theia/core/shared/inversify';
+import { Prioritizeable } from '@theia/core/lib/common/prioritizeable';
+import { LanguageModel, LanguageModelResponse, UserRequest } from '../common';
 import { LanguageModelServiceImpl } from '../common/language-model-service';
+import { PREFERENCE_NAME_REQUEST_SETTINGS, RequestSetting, getRequestSettingSpecificity } from './ai-core-preferences';
 
 @injectable()
 export class FrontendLanguageModelServiceImpl extends LanguageModelServiceImpl {
 
+    @inject(PreferenceService)
+    protected preferenceService: PreferenceService;
+
+    override async sendRequest(
+        languageModel: LanguageModel,
+        languageModelRequest: UserRequest
+    ): Promise<LanguageModelResponse> {
+        const requestSettings = this.preferenceService.get<RequestSetting[]>(PREFERENCE_NAME_REQUEST_SETTINGS, []);
+
+        // Find the most specific matching setting using Prioritizeable
+        const ids = languageModel.id.split('/');
+        const prioritizedSettings = Prioritizeable.prioritizeAllSync(requestSettings,
+            setting => getRequestSettingSpecificity(setting, {
+                modelId: ids[1],
+                providerId: ids[0],
+                agentId: languageModelRequest.agentId
+            }));
+
+        // Get the highest priority setting if any valid ones exist
+        const matchingSetting = prioritizedSettings.length > 0 ? prioritizedSettings[0].value : undefined;
+
+        if (matchingSetting?.requestSettings) {
+            // Merge the settings, with user request taking precedence
+            languageModelRequest.settings = {
+                ...matchingSetting.requestSettings,
+                ...languageModelRequest.settings
+            };
+        }
+        if (matchingSetting?.clientSettings) {
+            // Merge the clientSettings, with user request taking precedence
+            languageModelRequest.clientSettings = {
+                ...matchingSetting.clientSettings,
+                ...languageModelRequest.clientSettings
+            };
+        }
+
+        return super.sendRequest(languageModel, languageModelRequest);
+    }
 }

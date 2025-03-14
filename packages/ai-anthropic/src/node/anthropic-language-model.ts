@@ -92,12 +92,11 @@ export class AnthropicModel implements LanguageModel {
         public model: string,
         public enableStreaming: boolean,
         public apiKey: () => string | undefined,
-        public defaultRequestSettings?: Readonly<Record<string, unknown>>,
         public maxTokens: number = DEFAULT_MAX_TOKENS
     ) { }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
-        return request.settings ?? this.defaultRequestSettings ?? {};
+        return request.settings ?? {};
     }
 
     async request(request: LanguageModelRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {

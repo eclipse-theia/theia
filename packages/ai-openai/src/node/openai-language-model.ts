@@ -44,7 +44,6 @@ export class OpenAiModel implements LanguageModel {
      * @param apiVersion a function that returns the OpenAPI version to use for this model, called on each request
      * @param developerMessageSettings how to handle system messages
      * @param url the OpenAI API compatible endpoint where the model is hosted. If not provided the default OpenAI endpoint will be used.
-     * @param defaultRequestSettings optional default settings for requests made using this model.
      */
     constructor(
         public readonly id: string,
@@ -55,16 +54,11 @@ export class OpenAiModel implements LanguageModel {
         public supportsStructuredOutput: boolean,
         public url: string | undefined,
         public openAiModelUtils: OpenAiModelUtils,
-        public developerMessageSettings: DeveloperMessageSettings = 'developer',
-        public defaultRequestSettings?: { [key: string]: unknown },
+        public developerMessageSettings: DeveloperMessageSettings = 'developer'
     ) { }
 
     protected getSettings(request: LanguageModelRequest): Record<string, unknown> {
-        const settings = request.settings ? request.settings : this.defaultRequestSettings;
-        if (!settings) {
-            return {};
-        }
-        return settings;
+        return request.settings ?? {};
     }
 
     async request(request: LanguageModelRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {

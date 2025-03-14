@@ -64,8 +64,7 @@ export class HuggingFaceModel implements LanguageModel {
         public readonly version?: string,
         public readonly family?: string,
         public readonly maxInputTokens?: number,
-        public readonly maxOutputTokens?: number,
-        public defaultRequestSettings?: Record<string, unknown>
+        public readonly maxOutputTokens?: number
     ) { }
 
     async request(request: LanguageModelRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
@@ -78,11 +77,7 @@ export class HuggingFaceModel implements LanguageModel {
     }
 
     protected getSettings(request: LanguageModelRequest): Record<string, unknown> {
-        const settings = request.settings ? request.settings : this.defaultRequestSettings;
-        if (!settings) {
-            return {};
-        }
-        return settings;
+        return request.settings ?? {};
     }
 
     protected async handleNonStreamingRequest(hfInference: HfInference, request: LanguageModelRequest): Promise<LanguageModelTextResponse> {
