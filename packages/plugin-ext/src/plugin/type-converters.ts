@@ -342,11 +342,12 @@ export function fromTextEdit(edit: theia.TextEdit): model.TextEdit {
     };
 }
 
-function fromSnippetTextEdit(edit: theia.SnippetTextEdit): model.TextEdit & { insertAsSnippet?: boolean } {
+function fromSnippetTextEdit(edit: theia.SnippetTextEdit): model.TextEdit & { insertAsSnippet?: boolean, keepWhitespace?: boolean } {
     return {
         text: edit.snippet.value,
         range: fromRange(edit.range),
-        insertAsSnippet: true
+        insertAsSnippet: true,
+        keepWhitespace: edit.keepWhitespace
     };
 }
 

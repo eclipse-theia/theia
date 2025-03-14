@@ -1146,7 +1146,20 @@ export module '@theia/plugin' {
          * @return A promise that resolves with a value indicating if the snippet could be inserted. Note that the promise does not signal
          * that the snippet is completely filled-in or accepted.
          */
-        insertSnippet(snippet: SnippetString, location?: Position | Range | Position[] | Range[], options?: { undoStopBefore: boolean; undoStopAfter: boolean; }): Thenable<boolean>;
+        insertSnippet(snippet: SnippetString, location?: Position | Range | Position[] | Range[], options?: {
+            /**
+             * Add undo stop before making the edits.
+             */
+            readonly undoStopBefore: boolean;
+            /**
+             * Add undo stop after making the edits.
+             */
+            readonly undoStopAfter: boolean;
+            /**
+             * Keep whitespace of the {@link SnippetString.value} as is.
+             */
+            readonly keepWhitespace?: boolean;
+        }): Thenable<boolean>;
 
         /**
          * Adds a set of decorations to the text editor. If a set of decorations already exists with
@@ -16298,6 +16311,11 @@ export module '@theia/plugin' {
          * The {@link SnippetString snippet} this edit will perform.
          */
         snippet: SnippetString;
+
+        /**
+         * Whether the snippet edit should be applied with existing whitespace preserved.
+         */
+        keepWhitespace?: boolean;
 
         /**
          * Create a new snippet edit.
