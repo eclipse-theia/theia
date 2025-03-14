@@ -94,6 +94,14 @@ export class MCPServer {
         return this.client.listTools();
     }
 
+    async getResources(): ReturnType<Client['listResources']> {
+        return this.client.listResources();
+    }
+
+    async getResourceContent(resourceId: string): ReturnType<Client['readResource']> {
+        return this.client.readResource({ uri: resourceId });
+    }
+
     update(command: string, args?: string[], env?: { [key: string]: string }): void {
         this.command = command;
         this.args = args;
