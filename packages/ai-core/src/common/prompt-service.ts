@@ -16,7 +16,7 @@
 
 import { URI, Event } from '@theia/core';
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
-import { AIVariableContext, AIVariableService } from './variable-service';
+import { AIVariableArg, AIVariableContext, AIVariableService, createAIResolveVariableCache, ResolvedAIVariable } from './variable-service';
 import { ToolInvocationRegistry } from './tool-invocation-registry';
 import { toolRequestToPromptText } from './language-model-util';
 import { ToolRequest } from './language-model';
@@ -41,6 +41,8 @@ export interface ResolvedPromptTemplate {
     text: string;
     /** All functions referenced in the prompt template. */
     functionDescriptions?: Map<string, ToolRequest>;
+    /** All variables resolved in the prompt template */
+    variables?: ResolvedAIVariable[];
 }
 
 export const PromptService = Symbol('PromptService');
@@ -81,9 +83,16 @@ export interface PromptService {
      * This allows resolving them later as part of the prompt or chat message containing the fragment.
      *
      * @param id the id of the prompt
-     * @param @param args the object with placeholders, mapping the placeholder key to the value
+     * @param args the object with placeholders, mapping the placeholder key to the value
+     * @param context the {@link AIVariableContext} to use during variable resolvement
+     * @param resolveVariable the variable resolving method. Fall back to using the {@link AIVariableService} if not given.
      */
-    getPromptFragment(id: string, args?: { [key: string]: unknown }): Promise<Omit<ResolvedPromptTemplate, 'functionDescriptions'> | undefined>;
+    getPromptFragment(
+        id: string,
+        args?: { [key: string]: unknown },
+        context?: AIVariableContext,
+        resolveVariable?: (variable: AIVariableArg) => Promise<ResolvedAIVariable | undefined>
+    ): Promise<Omit<ResolvedPromptTemplate, 'functionDescriptions'> | undefined>;
 
     /**
      * Adds a {@link PromptTemplate} to the list of prompts.
@@ -266,7 +275,7 @@ export class PromptServiceImpl implements PromptService {
         // First resolve variables and arguments
         let resolvedTemplate = prompt.template;
         const variableAndArgReplacements = await this.getVariableAndArgReplacements(prompt.template, args, context);
-        variableAndArgReplacements.forEach(replacement => resolvedTemplate = resolvedTemplate.replace(replacement.placeholder, replacement.value));
+        variableAndArgReplacements.replacements.forEach(replacement => resolvedTemplate = resolvedTemplate.replace(replacement.placeholder, replacement.value));
 
         // Then resolve function references with already resolved variables and arguments
         // This allows to resolve function references contained in resolved variables (e.g. prompt fragments)
@@ -289,23 +298,31 @@ export class PromptServiceImpl implements PromptService {
         return {
             id,
             text: resolvedTemplate,
-            functionDescriptions: functions.size > 0 ? functions : undefined
+            functionDescriptions: functions.size > 0 ? functions : undefined,
+            variables: variableAndArgReplacements.resolvedVariables
         };
     }
 
-    async getPromptFragment(id: string, args?: { [key: string]: unknown }): Promise<Omit<ResolvedPromptTemplate, 'functionDescriptions'> | undefined> {
+    async getPromptFragment(
+        id: string,
+        args?: { [key: string]: unknown },
+        context?: AIVariableContext,
+        resolveVariable?: (variable: AIVariableArg) => Promise<ResolvedAIVariable | undefined>
+    ): Promise<Omit<ResolvedPromptTemplate, 'functionDescriptions'> | undefined> {
         const variantId = await this.getVariantId(id);
         const prompt = this.getUnresolvedPrompt(variantId);
         if (prompt === undefined) {
             return undefined;
         }
 
-        const replacements = await this.getVariableAndArgReplacements(prompt.template, args);
+        const replacements = await this.getVariableAndArgReplacements(prompt.template, args, context, resolveVariable);
         let resolvedTemplate = prompt.template;
-        replacements.forEach(replacement => resolvedTemplate = resolvedTemplate.replace(replacement.placeholder, replacement.value));
+        replacements.replacements.forEach(replacement => resolvedTemplate = resolvedTemplate.replace(replacement.placeholder, replacement.value));
+
         return {
             id,
             text: resolvedTemplate,
+            variables: replacements.resolvedVariables
         };
     }
 
@@ -314,14 +331,20 @@ export class PromptServiceImpl implements PromptService {
      *
      * @param template the unresolved template text
      * @param args the object with placeholders, mapping the placeholder key to the value
+     * @param context the {@link AIVariableContext} to use during variable resolvement
+     * @param resolveVariable the variable resolving method. Fall back to using the {@link AIVariableService} if not given.
      */
     protected async getVariableAndArgReplacements(
         template: string,
         args?: { [key: string]: unknown },
-        context?: AIVariableContext
-    ): Promise<{ placeholder: string; value: string }[]> {
+        context?: AIVariableContext,
+        resolveVariable?: (variable: AIVariableArg) => Promise<ResolvedAIVariable | undefined>
+    ): Promise<{ replacements: { placeholder: string; value: string }[], resolvedVariables: ResolvedAIVariable[] }> {
         const matches = matchVariablesRegEx(template);
-        const variableAndArgReplacements = await Promise.all(matches.map(async match => {
+        const variableCache = createAIResolveVariableCache();
+        const variableAndArgReplacements: { placeholder: string; value: string }[] = [];
+        const resolvedVariables: Set<ResolvedAIVariable> = new Set();
+        for (const match of matches) {
             const completeText = match[0];
             const variableAndArg = match[1];
             let variableName = variableAndArg;
@@ -331,15 +354,25 @@ export class PromptServiceImpl implements PromptService {
                 variableName = parts[0];
                 argument = parts[1];
             }
-            return {
-                placeholder: completeText,
-                value: String(args?.[variableAndArg] ?? (await this.variableService?.resolveVariable({
-                    variable: variableName,
-                    arg: argument
-                }, context ?? {}))?.value ?? completeText)
-            };
-        }));
-        return variableAndArgReplacements;
+            let value: string;
+            if (args && args[variableAndArg] !== undefined) {
+                value = String(args[variableAndArg]);
+            } else {
+                const toResolve = { variable: variableName, arg: argument };
+                const resolved = resolveVariable
+                    ? await resolveVariable(toResolve)
+                    : await this.variableService?.resolveVariable(toResolve, context ?? {}, variableCache);
+                // Track resolved variable and its dependencies in all resolved variables
+                if (resolved) {
+                    resolvedVariables.add(resolved);
+                    resolved.allResolvedDependencies?.forEach(v => resolvedVariables.add(v));
+                }
+                value = String(resolved?.value ?? completeText);
+            }
+            variableAndArgReplacements.push({ placeholder: completeText, value });
+        }
+
+        return { replacements: variableAndArgReplacements, resolvedVariables: Array.from(resolvedVariables) };
     }
 
     getAllPrompts(): PromptMap {

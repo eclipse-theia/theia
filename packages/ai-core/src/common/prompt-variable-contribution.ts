@@ -19,11 +19,12 @@ import * as monaco from '@theia/monaco-editor-core';
 import {
     AIVariable,
     AIVariableContribution,
-    AIVariableResolver,
     AIVariableService,
     AIVariableResolutionRequest,
     AIVariableContext,
-    ResolvedAIVariable
+    ResolvedAIVariable,
+    AIVariableResolverWithVariableDependencies,
+    AIVariableArg
 } from './variable-service';
 import { PromptCustomizationService, PromptService } from './prompt-service';
 import { PromptText } from './prompt-text';
@@ -38,7 +39,7 @@ export const PROMPT_VARIABLE: AIVariable = {
 };
 
 @injectable()
-export class PromptVariableContribution implements AIVariableContribution, AIVariableResolver {
+export class PromptVariableContribution implements AIVariableContribution, AIVariableResolverWithVariableDependencies {
 
     @inject(PromptService)
     protected readonly promptService: PromptService;
@@ -58,13 +59,21 @@ export class PromptVariableContribution implements AIVariableContribution, AIVar
         return -1;
     }
 
-    async resolve(request: AIVariableResolutionRequest, context: AIVariableContext): Promise<ResolvedAIVariable | undefined> {
+    async resolve(
+        request: AIVariableResolutionRequest,
+        context: AIVariableContext,
+        resolveDependency?: (variable: AIVariableArg) => Promise<ResolvedAIVariable | undefined>
+    ): Promise<ResolvedAIVariable | undefined> {
         if (request.variable.name === PROMPT_VARIABLE.name) {
             const promptId = request.arg?.trim();
             if (promptId) {
-                const resolvedPrompt = await this.promptService.getPromptFragment(promptId);
+                const resolvedPrompt = await this.promptService.getPromptFragment(promptId, undefined, context, resolveDependency);
                 if (resolvedPrompt) {
-                    return { variable: request.variable, value: resolvedPrompt.text };
+                    return {
+                        variable: request.variable,
+                        value: resolvedPrompt.text,
+                        allResolvedDependencies: resolvedPrompt.variables
+                    };
                 }
             }
         }

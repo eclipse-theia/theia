@@ -245,6 +245,7 @@ export class ChatServiceImpl implements ChatService {
         resolutionRequests: readonly AIVariableResolutionRequest[],
         context: ChatSessionContext,
     ): Promise<ChatContext> {
+        // TODO use a common cache to resolve variables and return recursively resolved variables?
         const resolvedVariables = await Promise.all(
             resolutionRequests.map(async contextVariable => {
                 const resolvedVariable = await this.variableService.resolveVariable(contextVariable, context);

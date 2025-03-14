@@ -22,6 +22,8 @@ import { PromptService, PromptServiceImpl } from './prompt-service';
 import { DefaultAIVariableService, AIVariableService } from './variable-service';
 import { ToolInvocationRegistry } from './tool-invocation-registry';
 import { ToolRequest } from './language-model';
+import { Logger } from '@theia/core';
+import * as sinon from 'sinon';
 
 describe('PromptService', () => {
     let promptService: PromptService;
@@ -29,8 +31,9 @@ describe('PromptService', () => {
     beforeEach(() => {
         const container = new Container();
         container.bind<PromptService>(PromptService).to(PromptServiceImpl).inSingletonScope();
+        const logger = sinon.createStubInstance(Logger);
 
-        const variableService = new DefaultAIVariableService({ getContributions: () => [] });
+        const variableService = new DefaultAIVariableService({ getContributions: () => [] }, logger);
         const nameVariable = { id: 'test', name: 'name', description: 'Test name ' };
         variableService.registerResolver(nameVariable, {
             canResolve: () => 100,
