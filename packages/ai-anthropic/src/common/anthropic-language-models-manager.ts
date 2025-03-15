@@ -33,6 +33,10 @@ export interface AnthropicModelDescription {
      */
     enableStreaming: boolean;
     /**
+     * Maximum number of tokens to generate. Default is 4096.
+     */
+    maxTokens?: number;
+    /**
      * Default request settings for the Anthropic model.
      */
     defaultRequestSettings?: { [key: string]: unknown };
