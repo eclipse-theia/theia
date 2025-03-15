@@ -52,10 +52,6 @@ export interface OpenAiModelDescription {
      * Flag to configure whether the OpenAPI model supports structured output. Default is `true`.
      */
     supportsStructuredOutput: boolean;
-    /**
-     * Default request settings for the OpenAI model.
-     */
-    defaultRequestSettings?: { [key: string]: unknown };
 }
 export interface OpenAiLanguageModelsManager {
     apiKey: string | undefined;

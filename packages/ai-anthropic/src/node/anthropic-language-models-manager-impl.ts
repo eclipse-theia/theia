@@ -52,7 +52,6 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                 model.model = modelDescription.model;
                 model.enableStreaming = modelDescription.enableStreaming;
                 model.apiKey = apiKeyProvider;
-                model.defaultRequestSettings = modelDescription.defaultRequestSettings;
             } else {
                 this.languageModelRegistry.addLanguageModels([
                     new AnthropicModel(
@@ -60,7 +59,6 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                         modelDescription.model,
                         modelDescription.enableStreaming,
                         apiKeyProvider,
-                        modelDescription.defaultRequestSettings
                     )
                 ]);
             }

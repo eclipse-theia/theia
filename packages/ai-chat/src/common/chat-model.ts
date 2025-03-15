@@ -911,6 +911,7 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     asDisplayString(): string {
         return `Tool call: ${this._name}(${this._arguments ?? ''})`;
     }
+
     merge(nextChatResponseContent: ToolCallChatResponseContent): boolean {
         if (nextChatResponseContent.id === this.id) {
             this._finished = nextChatResponseContent.finished;
@@ -1097,7 +1098,7 @@ class ChatResponseImpl implements ChatResponse {
     }
 }
 
-class MutableChatResponseModel implements ChatResponseModel {
+export class MutableChatResponseModel implements ChatResponseModel {
     protected readonly _onDidChangeEmitter = new Emitter<void>();
     onDidChange: Event<void> = this._onDidChangeEmitter.event;
 

@@ -46,22 +46,9 @@ export class LlamafileManagerImpl implements LlamafileManager {
                     new LlamafileLanguageModel(
                         llamafile.name,
                         llamafile.uri,
-                        llamafile.port,
-                        llamafile.defaultRequestSettings
+                        llamafile.port
                     )
                 ]);
-            }
-        }
-    }
-
-    async updateRequestSettings(modelId: string, requestSettings?: { [key: string]: unknown; }): Promise<void> {
-        const model = await this.languageModelRegistry.getLanguageModel(modelId);
-        if (model) {
-            if (!(model instanceof LlamafileLanguageModel)) {
-                console.warn(`Llamafile: model ${model.id} is not a Llamafile model`);
-                return;
-            } else {
-                model.defaultRequestSettings = requestSettings;
             }
         }
     }

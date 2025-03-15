@@ -19,9 +19,12 @@ import {
     CommunicationRecordingService,
     getJsonOfResponse,
     isLanguageModelParsedResponse,
-    LanguageModelRegistry, LanguageModelRequirement,
-    PromptService
+    LanguageModelRegistry,
+    LanguageModelRequirement,
+    PromptService,
+    UserRequest
 } from '@theia/ai-core/lib/common';
+import { LanguageModelService } from '@theia/ai-core/lib/browser';
 import { generateUuid, ILogger, nls } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { z } from 'zod';
@@ -129,6 +132,9 @@ recent-terminal-contents:
     @inject(ILogger)
     protected logger: ILogger;
 
+    @inject(LanguageModelService)
+    protected languageModelService: LanguageModelService;
+
     async getCommands(
         userRequest: string,
         cwd: string,
@@ -161,44 +167,48 @@ recent-terminal-contents:
         // since we do not actually hold complete conversions, the request/response pair is considered a session
         const sessionId = generateUuid();
         const requestId = generateUuid();
-        this.recordingService.recordRequest({
+        const llmRequest: UserRequest = {
+            messages: [
+                {
+                    actor: 'ai',
+                    type: 'text',
+                    query: systemMessage
+                },
+                {
+                    actor: 'user',
+                    type: 'text',
+                    query: request
+                }
+            ],
+            response_format: {
+                type: 'json_schema',
+                json_schema: {
+                    name: 'terminal-commands',
+                    description: 'Suggested terminal commands based on the user request',
+                    schema: zodToJsonSchema(Commands)
+                }
+            },
             agentId: this.id,
-            sessionId,
             requestId,
-            request,
-            systemMessage
-        });
+            sessionId
+        };
+
+        const result = await this.languageModelService.sendRequest(lm, llmRequest);
+        // this.recordingService.recordRequest({
+        //     agentId: this.id,
+        //     sessionId,
+        //     requestId,
+        //     request: llmRequest.messages
+        // });
 
         try {
-            const result = await lm.request({
-                messages: [
-                    {
-                        actor: 'ai',
-                        type: 'text',
-                        query: systemMessage
-                    },
-                    {
-                        actor: 'user',
-                        type: 'text',
-                        query: request
-                    }
-                ],
-                response_format: {
-                    type: 'json_schema',
-                    json_schema: {
-                        name: 'terminal-commands',
-                        description: 'Suggested terminal commands based on the user request',
-                        schema: zodToJsonSchema(Commands)
-                    }
-                }
-            });
+            // const result = await lm.request(llmRequest);
 
             if (isLanguageModelParsedResponse(result)) {
                 // model returned structured output
                 const parsedResult = Commands.safeParse(result.parsed);
                 if (parsedResult.success) {
-                    const response = JSON.stringify(parsedResult.data.commands);
-                    this.recordingService.recordResponse({ agentId: this.id, sessionId, requestId, response, systemMessage });
+                    this.recordingService.recordResponse({ agentId: this.id, sessionId, requestId, response: [{ actor: 'ai', query: result.content, type: 'text' }] });
                     return parsedResult.data.commands;
                 }
             }
@@ -206,7 +216,7 @@ recent-terminal-contents:
             // fall back to agent-based parsing of result
             const jsonResult = await getJsonOfResponse(result);
             const responseTextFromJSON = JSON.stringify(jsonResult);
-            this.recordingService.recordResponse({ agentId: this.id, sessionId, requestId, response: responseTextFromJSON });
+            this.recordingService.recordResponse({ agentId: this.id, sessionId, requestId, response: [{ actor: 'ai', query: responseTextFromJSON, type: 'text' }] });
             const parsedJsonResult = Commands.safeParse(jsonResult);
             if (parsedJsonResult.success) {
                 return parsedJsonResult.data.commands;

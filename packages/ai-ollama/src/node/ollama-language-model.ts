@@ -46,13 +46,11 @@ export class OllamaModel implements LanguageModel {
      * @param id the unique id for this language model. It will be used to identify the model in the UI.
      * @param model the unique model name as used in the Ollama environment.
      * @param hostProvider a function to provide the host URL for the Ollama server.
-     * @param defaultRequestSettings optional default settings for requests made using this model.
      */
     constructor(
         public readonly id: string,
         protected readonly model: string,
-        protected host: () => string | undefined,
-        public defaultRequestSettings?: { [key: string]: unknown }
+        protected host: () => string | undefined
     ) { }
 
     async request(request: LanguageModelRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
@@ -76,7 +74,7 @@ export class OllamaModel implements LanguageModel {
      * @returns A partial ChatRequest object containing the merged settings.
      */
     protected getSettings(request: LanguageModelRequest): Partial<ChatRequest> {
-        const settings = request.settings ?? this.defaultRequestSettings ?? {};
+        const settings = request.settings ?? {};
         return {
             options: settings as Partial<Options>
         };
