@@ -144,7 +144,6 @@ export class AnthropicModel implements LanguageModel {
         const settings = this.getSettings(request);
         const { messages, systemMessage } = transformToAnthropicParams(request.messages);
         const tools = this.createTools(request);
-        console.log(this.maxTokens);
         const params: Anthropic.MessageCreateParams = {
             max_tokens: this.maxTokens,
             messages: [...messages, ...(toolMessages ?? [])],
