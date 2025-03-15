@@ -172,12 +172,12 @@ recent-terminal-contents:
                 {
                     actor: 'ai',
                     type: 'text',
-                        text: systemMessage
+                    text: systemMessage
                 },
                 {
                     actor: 'user',
                     type: 'text',
-                        text: request
+                    text: request
                 }
             ],
             response_format: {
@@ -208,7 +208,7 @@ recent-terminal-contents:
                 // model returned structured output
                 const parsedResult = Commands.safeParse(result.parsed);
                 if (parsedResult.success) {
-                    this.recordingService.recordResponse({ agentId: this.id, sessionId, requestId, response: [{ actor: 'ai', query: result.content, type: 'text' }] });
+                    this.recordingService.recordResponse({ agentId: this.id, sessionId, requestId, response: [{ actor: 'ai', text: result.content, type: 'text' }] });
                     return parsedResult.data.commands;
                 }
             }
@@ -216,7 +216,7 @@ recent-terminal-contents:
             // fall back to agent-based parsing of result
             const jsonResult = await getJsonOfResponse(result);
             const responseTextFromJSON = JSON.stringify(jsonResult);
-            this.recordingService.recordResponse({ agentId: this.id, sessionId, requestId, response: [{ actor: 'ai', query: responseTextFromJSON, type: 'text' }] });
+            this.recordingService.recordResponse({ agentId: this.id, sessionId, requestId, response: [{ actor: 'ai', text: responseTextFromJSON, type: 'text' }] });
             const parsedJsonResult = Commands.safeParse(jsonResult);
             if (parsedJsonResult.success) {
                 return parsedJsonResult.data.commands;

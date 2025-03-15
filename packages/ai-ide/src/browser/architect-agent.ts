@@ -39,17 +39,4 @@ export class ArchitectAgent extends AbstractStreamParsingChatAgent {
     override functions = [GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID];
     protected override systemPromptId: string | undefined = architectPromptTemplate.id;
 
-    protected override getLlmSettings(): { [key: string]: unknown; } | undefined {
-        const parentSettings = super.getLlmSettings() ?? {};
-        const currentSettings = {
-            max_tokens: 12238,
-            temperature: 1,
-            thinking: {
-                type: 'enabled',
-                budget_tokens: 8192
-            }
-        };
-        return { ...parentSettings, ...currentSettings };
-    }
-
 }
