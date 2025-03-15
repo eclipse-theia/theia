@@ -22,6 +22,14 @@ import { PREFERENCE_NAME_REQUEST_SETTINGS, RequestSetting } from '@theia/ai-core
 
 const ANTHROPIC_PROVIDER_ID = 'anthropic';
 
+// Model-specific maxTokens values
+const DEFAULT_MODEL_MAX_TOKENS: Record<string, number> = {
+    'claude-3-opus-latest': 4096,
+    'claude-3-5-haiku-latest': 8192,
+    'claude-3-5-sonnet-latest': 8192,
+    'claude-3-7-sonnet-latest': 64000
+};
+
 @injectable()
 export class AnthropicFrontendApplicationContribution implements FrontendApplicationContribution {
 
@@ -80,13 +88,21 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
     protected createAnthropicModelDescription(modelId: string, requestSettings: RequestSetting[]): AnthropicModelDescription {
         const id = `${ANTHROPIC_PROVIDER_ID}/${modelId}`;
         const modelRequestSetting = this.getMatchingRequestSetting(modelId, ANTHROPIC_PROVIDER_ID, requestSettings);
-        return {
+        const maxTokens = DEFAULT_MODEL_MAX_TOKENS[modelId];
+
+        const description: AnthropicModelDescription = {
             id: id,
             model: modelId,
             apiKey: true,
             enableStreaming: true,
             defaultRequestSettings: modelRequestSetting?.requestSettings
         };
+
+        if (maxTokens !== undefined) {
+            description.maxTokens = maxTokens;
+        }
+
+        return description;
     }
 
     protected getMatchingRequestSetting(

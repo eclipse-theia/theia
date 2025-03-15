@@ -16,7 +16,7 @@
 
 import { LanguageModelRegistry } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { AnthropicModel } from './anthropic-language-model';
+import { AnthropicModel, DEFAULT_MAX_TOKENS } from './anthropic-language-model';
 import { AnthropicLanguageModelsManager, AnthropicModelDescription } from '../common';
 
 @injectable()
@@ -53,6 +53,11 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                 model.enableStreaming = modelDescription.enableStreaming;
                 model.apiKey = apiKeyProvider;
                 model.defaultRequestSettings = modelDescription.defaultRequestSettings;
+                if (modelDescription.maxTokens !== undefined) {
+                    model.maxTokens = modelDescription.maxTokens;
+                } else {
+                    model.maxTokens = DEFAULT_MAX_TOKENS;
+                }
             } else {
                 this.languageModelRegistry.addLanguageModels([
                     new AnthropicModel(
@@ -60,7 +65,8 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                         modelDescription.model,
                         modelDescription.enableStreaming,
                         apiKeyProvider,
-                        modelDescription.defaultRequestSettings
+                        modelDescription.defaultRequestSettings,
+                        modelDescription.maxTokens
                     )
                 ]);
             }
