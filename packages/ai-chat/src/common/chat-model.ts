@@ -24,7 +24,7 @@ import { MarkdownString, MarkdownStringImpl } from '@theia/core/lib/common/markd
 import { Position } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ChatAgentLocation } from './chat-agents';
 import { ParsedChatRequest } from './parsed-chat-request';
-import { AIVariableResolutionRequest, ResolvedAIContextVariable } from '@theia/ai-core';
+import { AIVariableResolutionRequest, LanguageModelMessage, ResolvedAIContextVariable, TextMessage, ThinkingMessage, ToolResultMessage, ToolUseMessage } from '@theia/ai-core';
 
 /**********************
  * INTERFACES AND TYPE GUARDS
@@ -197,6 +197,7 @@ export interface ChatResponseContent {
     asString?(): string | undefined;
     asDisplayString?(): string | undefined;
     merge?(nextChatResponseContent: ChatResponseContent): boolean;
+    toLanguageModelMessage?(): LanguageModelMessage | LanguageModelMessage[];
 }
 
 export namespace ChatResponseContent {
@@ -222,6 +223,11 @@ export namespace ChatResponseContent {
         obj: ChatResponseContent
     ): obj is Required<Pick<ChatResponseContent, 'merge'>> & ChatResponseContent {
         return typeof obj.merge === 'function';
+    }
+    export function hasToLanguageModelMessage(
+        obj: ChatResponseContent
+    ): obj is Required<Pick<ChatResponseContent, 'toLanguageModelMessage'>> & ChatResponseContent {
+        return typeof obj.toLanguageModelMessage === 'function';
     }
 }
 
@@ -250,7 +256,7 @@ export interface CodeChatResponseContent
     location?: Location;
 }
 
-export interface HorizontalLayoutChatResponseContent extends Required<ChatResponseContent> {
+export interface HorizontalLayoutChatResponseContent extends ChatResponseContent {
     kind: 'horizontal';
     content: ChatResponseContent[];
 }
@@ -262,6 +268,13 @@ export interface ToolCallChatResponseContent extends Required<ChatResponseConten
     arguments?: string;
     finished: boolean;
     result?: string;
+}
+
+export interface ThinkingChatResponseContent
+    extends Required<ChatResponseContent> {
+    kind: 'thinking';
+    content: string;
+    signature: string;
 }
 
 export interface Location {
@@ -385,6 +398,17 @@ export namespace ErrorChatResponseContent {
             obj.kind === 'error' &&
             'error' in obj &&
             obj.error instanceof Error
+        );
+    }
+}
+
+export namespace ThinkingChatResponseContent {
+    export function is(obj: unknown): obj is ThinkingChatResponseContent {
+        return (
+            ChatResponseContent.is(obj) &&
+            obj.kind === 'thinking' &&
+            'content' in obj &&
+            typeof obj.content === 'string'
         );
     }
 }
@@ -785,6 +809,57 @@ export class TextChatResponseContentImpl implements TextChatResponseContent {
         this._content += nextChatResponseContent.content;
         return true;
     }
+    toLanguageModelMessage(): TextMessage {
+        return {
+            actor: 'ai',
+            type: 'text',
+            text: this.content
+        };
+    }
+}
+export class ThinkingChatResponseContentImpl implements ThinkingChatResponseContent {
+    readonly kind = 'thinking';
+    protected _content: string;
+    protected _signature: string;
+
+    constructor(content: string, signature: string) {
+        this._content = content;
+        this._signature = signature;
+    }
+
+    get content(): string {
+        return this._content;
+    }
+    get signature(): string {
+        return this._signature;
+    }
+
+    asString(): string {
+        return JSON.stringify({
+            type: 'thinking',
+            thinking: this.content,
+            signature: this.signature
+        });
+    }
+
+    asDisplayString(): string | undefined {
+        return `<Thinking>${this.content}</Thinking>`;
+    }
+
+    merge(nextChatResponseContent: ThinkingChatResponseContent): boolean {
+        this._content += nextChatResponseContent.content;
+        this._signature += nextChatResponseContent.signature;
+        return true;
+    }
+
+    toLanguageModelMessage(): ThinkingMessage {
+        return {
+            actor: 'ai',
+            type: 'thinking',
+            thinking: this.content,
+            signature: this.signature
+        };
+    }
 }
 
 export class MarkdownChatResponseContentImpl implements MarkdownChatResponseContent {
@@ -810,6 +885,14 @@ export class MarkdownChatResponseContentImpl implements MarkdownChatResponseCont
     merge(nextChatResponseContent: MarkdownChatResponseContent): boolean {
         this._content.appendMarkdown(nextChatResponseContent.content.value);
         return true;
+    }
+
+    toLanguageModelMessage(): TextMessage {
+        return {
+            actor: 'ai',
+            type: 'text',
+            text: this.content.value
+        };
     }
 }
 
@@ -926,6 +1009,21 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
         }
         this._arguments += `${nextChatResponseContent.arguments}`;
         return true;
+    }
+
+    toLanguageModelMessage(): [ToolUseMessage, ToolResultMessage] {
+        return [{
+            actor: 'ai',
+            type: 'tool_use',
+            id: this.id ?? '',
+            input: (this.arguments && JSON.parse(this.arguments)) ?? undefined,
+            name: this.name ?? ''
+        }, {
+            actor: 'user',
+            type: 'tool_result',
+            tool_use_id: this.id ?? '',
+            content: this.result
+        }];
     }
 }
 

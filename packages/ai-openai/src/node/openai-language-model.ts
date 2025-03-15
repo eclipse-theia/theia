@@ -18,9 +18,10 @@ import {
     LanguageModel,
     LanguageModelParsedResponse,
     LanguageModelRequest,
-    LanguageModelRequestMessage,
+    LanguageModelMessage,
     LanguageModelResponse,
-    LanguageModelTextResponse
+    LanguageModelTextResponse,
+    TextMessage
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
@@ -165,7 +166,7 @@ export class OpenAiModel implements LanguageModel {
         }
     }
 
-    protected processMessages(messages: LanguageModelRequestMessage[]): ChatCompletionMessageParam[] {
+    protected processMessages(messages: LanguageModelMessage[]): ChatCompletionMessageParam[] {
         return this.openAiModelUtils.processMessages(messages, this.developerMessageSettings, this.model);
     }
 }
@@ -179,25 +180,27 @@ export class OpenAiModel implements LanguageModel {
 export class OpenAiModelUtils {
 
     protected processSystemMessages(
-        messages: LanguageModelRequestMessage[],
+        messages: LanguageModelMessage[],
         developerMessageSettings: DeveloperMessageSettings
-    ): LanguageModelRequestMessage[] {
+    ): LanguageModelMessage[] {
         if (developerMessageSettings === 'skip') {
             return messages.filter(message => message.actor !== 'system');
         } else if (developerMessageSettings === 'mergeWithFollowingUserMessage') {
             const updated = messages.slice();
             for (let i = updated.length - 1; i >= 0; i--) {
                 if (updated[i].actor === 'system') {
+                    const systemMessage = updated[i] as TextMessage;
                     if (i + 1 < updated.length && updated[i + 1].actor === 'user') {
                         // Merge system message with the next user message
+                        const userMessage = updated[i + 1] as TextMessage;
                         updated[i + 1] = {
                             ...updated[i + 1],
-                            query: updated[i].query + '\n' + updated[i + 1].query
-                        };
+                            text: systemMessage.text + '\n' + userMessage.text
+                        } as TextMessage;
                         updated.splice(i, 1);
                     } else {
                         // The message directly after is not a user message (or none exists), so create a new user message right after
-                        updated.splice(i + 1, 0, { actor: 'user', type: 'text', query: updated[i].query });
+                        updated.splice(i + 1, 0, { actor: 'user', type: 'text', text: systemMessage.text });
                         updated.splice(i, 1);
                     }
                 }
@@ -208,7 +211,7 @@ export class OpenAiModelUtils {
     }
 
     protected toOpenAiRole(
-        message: LanguageModelRequestMessage,
+        message: LanguageModelMessage,
         developerMessageSettings: DeveloperMessageSettings
     ): 'developer' | 'user' | 'assistant' | 'system' {
         if (message.actor === 'system') {
@@ -224,13 +227,29 @@ export class OpenAiModelUtils {
     }
 
     protected toOpenAIMessage(
-        message: LanguageModelRequestMessage,
+        message: LanguageModelMessage,
         developerMessageSettings: DeveloperMessageSettings
     ): ChatCompletionMessageParam {
-        return {
-            role: this.toOpenAiRole(message, developerMessageSettings),
-            content: message.query || ''
-        };
+        if (LanguageModelMessage.isTextMessage(message)) {
+            return {
+                role: this.toOpenAiRole(message, developerMessageSettings),
+                content: message.text
+            };
+        }
+        if (LanguageModelMessage.isToolUseMessage(message)) {
+            return {
+                role: 'assistant',
+                tool_calls: [{ id: message.id, function: { name: message.name, arguments: JSON.stringify(message.input) }, type: 'function' }]
+            };
+        }
+        if (LanguageModelMessage.isToolResultMessage(message)) {
+            return {
+                role: 'tool',
+                tool_call_id: message.tool_use_id,
+                content: ''
+            };
+        }
+        throw new Error(`Unknown message type:'${JSON.stringify(message)}'`);
     }
 
     /**
@@ -245,7 +264,7 @@ export class OpenAiModelUtils {
      * @returns an array of messages formatted for the OpenAI API.
      */
     processMessages(
-        messages: LanguageModelRequestMessage[],
+        messages: LanguageModelMessage[],
         developerMessageSettings: DeveloperMessageSettings,
         model: string
     ): ChatCompletionMessageParam[] {

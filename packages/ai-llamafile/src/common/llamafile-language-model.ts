@@ -14,8 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModel, LanguageModelRequest, LanguageModelResponse, LanguageModelStreamResponsePart } from '@theia/ai-core';
+import { LanguageModel, LanguageModelMessage, LanguageModelRequest, LanguageModelResponse, LanguageModelStreamResponsePart } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
+
+const createMessageContent = (message: LanguageModelMessage): string => {
+    if (LanguageModelMessage.isTextMessage(message)) {
+        return message.text;
+    }
+    return '';
+};
+
 export class LlamafileLanguageModel implements LanguageModel {
 
     readonly providerId = 'llamafile';
@@ -51,11 +59,11 @@ export class LlamafileLanguageModel implements LanguageModel {
             let prompt = request.messages.map(message => {
                 switch (message.actor) {
                     case 'user':
-                        return `User: ${message.query}`;
+                        return `User: ${createMessageContent(message)}`;
                     case 'ai':
-                        return `Llama: ${message.query}`;
+                        return `Llama: ${createMessageContent(message)}`;
                     case 'system':
-                        return `${message.query.replace(/\n\n/g, '\n')}`;
+                        return `${createMessageContent(message).replace(/\n\n/g, '\n')}`;
                 }
             }).join('\n');
             prompt += '\nLlama:';

@@ -172,12 +172,12 @@ recent-terminal-contents:
                 {
                     actor: 'ai',
                     type: 'text',
-                    query: systemMessage
+                        text: systemMessage
                 },
                 {
                     actor: 'user',
                     type: 'text',
-                    query: request
+                        text: request
                 }
             ],
             response_format: {

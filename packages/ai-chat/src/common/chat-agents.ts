@@ -24,7 +24,11 @@ import {
     AIVariableContext,
     CommunicationRecordingService,
     getTextOfResponse,
+    isTextResponsePart,
+    isThinkingResponsePart,
+    isToolCallResponsePart,
     LanguageModel,
+    LanguageModelMessage,
     LanguageModelRequirement,
     LanguageModelResponse,
     LanguageModelService,
@@ -32,6 +36,7 @@ import {
     PromptService,
     PromptTemplate,
     ResolvedPromptTemplate,
+    TextMessage,
     ToolCall,
     ToolRequest,
 } from '@theia/ai-core';
@@ -40,8 +45,7 @@ import {
     isLanguageModelStreamResponse,
     isLanguageModelTextResponse,
     LanguageModelRegistry,
-    LanguageModelStreamResponsePart,
-    MessageActor,
+    LanguageModelStreamResponsePart
 } from '@theia/ai-core/lib/common';
 import { ContributionProvider, ILogger, isArray } from '@theia/core';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
@@ -53,23 +57,12 @@ import {
     ErrorChatResponseContentImpl,
     MarkdownChatResponseContentImpl,
     ToolCallChatResponseContentImpl,
-    ChatRequestModel
+    ChatRequestModel,
+    ThinkingChatResponseContentImpl
 } from './chat-model';
 import { findFirstMatch, parseContents } from './parse-contents';
 import { DefaultResponseContentFactory, ResponseContentMatcher, ResponseContentMatcherProvider } from './response-content-matcher';
 import { ChatToolRequest, ChatToolRequestService } from './chat-tool-request-service';
-
-/**
- * A conversation consists of a sequence of ChatMessages.
- * Each ChatMessage is either a user message, AI message or a system message.
- *
- * For now we only support text based messages.
- */
-export interface ChatMessage {
-    actor: MessageActor;
-    type: 'text';
-    query: string;
-}
 
 /**
  * System message content, enriched with function descriptions.
@@ -187,10 +180,10 @@ export abstract class AbstractChatAgent implements ChatAgent {
             const messages = await this.getMessages(request.session);
 
             if (systemMessageDescription) {
-                const systemMsg: ChatMessage = {
+                const systemMsg: LanguageModelMessage = {
                     actor: 'system',
                     type: 'text',
-                    query: systemMessageDescription.text
+                    text: systemMessageDescription.text
                 };
                 // insert system message at the beginning of the request messages
                 messages.unshift(systemMsg);
@@ -252,21 +245,28 @@ export abstract class AbstractChatAgent implements ChatAgent {
 
     protected async getMessages(
         model: ChatModel, includeResponseInProgress = false
-    ): Promise<ChatMessage[]> {
+    ): Promise<LanguageModelMessage[]> {
         const requestMessages = model.getRequests().flatMap(request => {
-            const messages: ChatMessage[] = [];
+            const messages: LanguageModelMessage[] = [];
             const text = request.message.parts.map(part => part.promptText).join('');
             messages.push({
                 actor: 'user',
                 type: 'text',
-                query: text,
+                text: text,
             });
             if (request.response.isComplete || includeResponseInProgress) {
-                messages.push({
-                    actor: 'ai',
-                    type: 'text',
-                    query: request.response.response.asString(),
+                const responseMessages: LanguageModelMessage[] = request.response.response.content.flatMap(c => {
+                    if (ChatResponseContent.hasToLanguageModelMessage(c)) {
+                        return c.toLanguageModelMessage();
+                    }
+
+                    return {
+                        actor: 'ai',
+                        type: 'text',
+                        text: c.asString?.() ?? c.asDisplayString?.() ?? '',
+                    } as TextMessage;
                 });
+                messages.push(...responseMessages);
             }
             return messages;
         });
@@ -276,7 +276,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
 
     protected async sendLlmRequest(
         request: MutableChatRequestModel,
-        messages: ChatMessage[],
+        messages: LanguageModelMessage[],
         toolRequests: ChatToolRequest[],
         languageModel: LanguageModel
     ): Promise<LanguageModelResponse> {
@@ -409,17 +409,24 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
     }
 
     protected parse(token: LanguageModelStreamResponsePart, request: MutableChatRequestModel): ChatResponseContent | ChatResponseContent[] {
-        const content = token.content;
-        // eslint-disable-next-line no-null/no-null
-        if (content !== undefined && content !== null) {
-            return this.defaultContentFactory.create(content, request);
+        if (isTextResponsePart(token)) {
+            const content = token.content;
+            // eslint-disable-next-line no-null/no-null
+            if (content !== undefined && content !== null) {
+                return this.defaultContentFactory.create(content, request);
+            }
         }
-        const toolCalls = token.tool_calls;
-        if (toolCalls !== undefined) {
-            const toolCallContents = toolCalls.map(toolCall =>
-                this.createToolCallResponseContent(toolCall)
-            );
-            return toolCallContents;
+        if (isToolCallResponsePart(token)) {
+            const toolCalls = token.tool_calls;
+            if (toolCalls !== undefined) {
+                const toolCallContents = toolCalls.map(toolCall =>
+                    this.createToolCallResponseContent(toolCall)
+                );
+                return toolCallContents;
+            }
+        }
+        if (isThinkingResponsePart(token)) {
+            return new ThinkingChatResponseContentImpl(token.thought, token.signature);
         }
         return this.defaultContentFactory.create('', request);
     }
