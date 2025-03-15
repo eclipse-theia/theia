@@ -28,8 +28,8 @@ export class TextPartRenderer implements ChatResponsePartRenderer<ChatResponseCo
         return 1;
     }
     render(response: ChatResponseContent): ReactNode {
-        if (response && ChatResponseContent.hasAsString(response)) {
-            return <span>{response.asString()}</span>;
+        if (response && ChatResponseContent.hasDisplayString(response)) {
+            return <span>{response.asDisplayString()}</span>;
         }
         return <span>
             {nls.localize('theia/ai/chat-ui/text-part-renderer/cantDisplay',

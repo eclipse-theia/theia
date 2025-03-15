@@ -17,7 +17,7 @@
 import {
     LanguageModel,
     LanguageModelRequest,
-    LanguageModelRequestMessage,
+    LanguageModelMessage,
     LanguageModelResponse,
     LanguageModelStreamResponsePart,
     LanguageModelTextResponse,
@@ -27,12 +27,18 @@ import { CancellationToken } from '@theia/core';
 import { HfInference } from '@huggingface/inference';
 
 export const HuggingFaceModelIdentifier = Symbol('HuggingFaceModelIdentifier');
-
-function toHuggingFacePrompt(messages: LanguageModelRequestMessage[]): string {
-    if (messages.length === 1) {
-        return messages[0].query;
+const createMessageContent = (message: LanguageModelMessage): string => {
+    if (LanguageModelMessage.isTextMessage(message)) {
+        return message.text;
     }
-    return messages.map(message => `${toRoleLabel(message.actor)}: ${message.query}`).join('\n');
+    return '';
+};
+function toHuggingFacePrompt(messages: LanguageModelMessage[]): string {
+    if (messages.length === 1) {
+        const message = messages[0];
+        return (LanguageModelMessage.isTextMessage(message) && message.text) || '';
+    }
+    return messages.map(message => `${toRoleLabel(message.actor)}: ${createMessageContent(message)}`).join('\n');
 }
 
 function toRoleLabel(actor: MessageActor): string {

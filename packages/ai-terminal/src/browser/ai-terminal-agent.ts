@@ -111,12 +111,12 @@ export class AiTerminalAgent implements Agent {
                 {
                     actor: 'ai',
                     type: 'text',
-                    query: systemMessage
+                        text: systemMessage
                 },
                 {
                     actor: 'user',
                     type: 'text',
-                    query: request
+                        text: request
                 }
             ],
             response_format: {

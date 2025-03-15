@@ -33,6 +33,7 @@ import {
     HorizontalLayoutPartRenderer,
     InsertCodeAtCursorButtonAction,
     MarkdownPartRenderer,
+    TextPartRenderer,
     ToolCallPartRenderer,
 } from './chat-response-renderer';
 import {
@@ -79,6 +80,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
 
     bind(ContextVariablePicker).toSelf().inSingletonScope();
 
+    bind(ChatResponsePartRenderer).to(TextPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(HorizontalLayoutPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(ErrorPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(MarkdownPartRenderer).inSingletonScope();

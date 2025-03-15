@@ -18,7 +18,7 @@ import {
     LanguageModel,
     LanguageModelParsedResponse,
     LanguageModelRequest,
-    LanguageModelRequestMessage,
+    LanguageModelMessage,
     LanguageModelResponse,
     LanguageModelStreamResponse,
     LanguageModelStreamResponsePart,
@@ -234,15 +234,22 @@ export class OllamaModel implements LanguageModel {
         };
     }
 
-    protected toOllamaMessage(message: LanguageModelRequestMessage): Message {
+    private createMessageContent(message: LanguageModelMessage): string {
+        if (LanguageModelMessage.isTextMessage(message)) {
+            return message.text;
+        }
+        return '';
+    };
+
+    protected toOllamaMessage(message: LanguageModelMessage): Message {
         if (message.actor === 'ai') {
-            return { role: 'assistant', content: message.query || '' };
+            return { role: 'assistant', content: this.createMessageContent(message) };
         }
         if (message.actor === 'user') {
-            return { role: 'user', content: message.query || '' };
+            return { role: 'user', content: this.createMessageContent(message) };
         }
         if (message.actor === 'system') {
-            return { role: 'system', content: message.query || '' };
+            return { role: 'system', content: this.createMessageContent(message) };
         }
         return { role: 'system', content: '' };
     }
