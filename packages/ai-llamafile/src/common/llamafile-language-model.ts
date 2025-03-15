@@ -14,8 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModel, LanguageModelRequest, LanguageModelResponse, LanguageModelStreamResponsePart } from '@theia/ai-core';
+import { LanguageModel, LanguageModelMessage, LanguageModelRequest, LanguageModelResponse, LanguageModelStreamResponsePart } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
+
+const createMessageContent = (message: LanguageModelMessage): string => {
+    if (LanguageModelMessage.isTextMessage(message)) {
+        return message.text;
+    }
+    return '';
+};
+
 export class LlamafileLanguageModel implements LanguageModel {
 
     readonly providerId = 'llamafile';
@@ -25,29 +33,24 @@ export class LlamafileLanguageModel implements LanguageModel {
      * @param name the unique name for this language model. It will be used to identify the model in the UI.
      * @param uri the URI pointing to the Llamafile model location.
      * @param port the port on which the Llamafile model server operates.
-     * @param defaultRequestSettings optional default settings for requests made using this model.
      */
     constructor(
         public readonly name: string,
         public readonly uri: string,
         public readonly port: number,
-        public defaultRequestSettings?: { [key: string]: unknown }
     ) { }
 
     get id(): string {
         return this.name;
     }
     protected getSettings(request: LanguageModelRequest): Record<string, unknown> {
-        const settings = request.settings ? request.settings : this.defaultRequestSettings;
-        if (!settings) {
-            return {
-                n_predict: 200,
-                stream: true,
-                stop: ['</s>', 'Llama:', 'User:', '<|eot_id|>'],
-                cache_prompt: true,
-            };
-        }
-        return settings;
+        return {
+            n_predict: 200,
+            stream: true,
+            stop: ['</s>', 'Llama:', 'User:', '<|eot_id|>'],
+            cache_prompt: true,
+            ...(request.settings ?? {})
+        };
     }
 
     async request(request: LanguageModelRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
@@ -56,11 +59,11 @@ export class LlamafileLanguageModel implements LanguageModel {
             let prompt = request.messages.map(message => {
                 switch (message.actor) {
                     case 'user':
-                        return `User: ${message.query}`;
+                        return `User: ${createMessageContent(message)}`;
                     case 'ai':
-                        return `Llama: ${message.query}`;
+                        return `Llama: ${createMessageContent(message)}`;
                     case 'system':
-                        return `${message.query.replace(/\n\n/g, '\n')}`;
+                        return `${createMessageContent(message).replace(/\n\n/g, '\n')}`;
                 }
             }).join('\n');
             prompt += '\nLlama:';

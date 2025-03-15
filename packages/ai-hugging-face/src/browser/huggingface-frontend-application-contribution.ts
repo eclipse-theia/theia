@@ -18,7 +18,6 @@ import { FrontendApplicationContribution, PreferenceService } from '@theia/core/
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { HuggingFaceLanguageModelsManager, HuggingFaceModelDescription } from '../common';
 import { API_KEY_PREF, MODELS_PREF } from './huggingface-preferences';
-import { PREFERENCE_NAME_REQUEST_SETTINGS, RequestSetting } from '@theia/ai-core/lib/browser/ai-core-preferences';
 
 const HUGGINGFACE_PROVIDER_ID = 'huggingface';
 @injectable()
@@ -38,8 +37,7 @@ export class HuggingFaceFrontendApplicationContribution implements FrontendAppli
             this.manager.setApiKey(apiKey);
 
             const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
-            const requestSettings = this.preferenceService.get<RequestSetting[]>(PREFERENCE_NAME_REQUEST_SETTINGS, []);
-            this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createHuggingFaceModelDescription(modelId, requestSettings)));
+            this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createHuggingFaceModelDescription(modelId)));
             this.prevModels = [...models];
 
             this.preferenceService.onPreferenceChanged(event => {
@@ -47,8 +45,6 @@ export class HuggingFaceFrontendApplicationContribution implements FrontendAppli
                     this.manager.setApiKey(event.newValue);
                 } else if (event.preferenceName === MODELS_PREF) {
                     this.handleModelChanges(event.newValue as string[]);
-                } else if (event.preferenceName === PREFERENCE_NAME_REQUEST_SETTINGS) {
-                    this.handleRequestSettingsChanges(event.newValue as RequestSetting[]);
                 }
             });
         });
@@ -62,34 +58,17 @@ export class HuggingFaceFrontendApplicationContribution implements FrontendAppli
         const modelsToAdd = [...updatedModels].filter(model => !oldModels.has(model));
 
         this.manager.removeLanguageModels(...modelsToRemove.map(model => `${HUGGINGFACE_PROVIDER_ID}/${model}`));
-        const requestSettings = this.preferenceService.get<RequestSetting[]>(PREFERENCE_NAME_REQUEST_SETTINGS, []);
-        this.manager.createOrUpdateLanguageModels(...modelsToAdd.map(modelId => this.createHuggingFaceModelDescription(modelId, requestSettings)));
+        this.manager.createOrUpdateLanguageModels(...modelsToAdd.map(modelId => this.createHuggingFaceModelDescription(modelId)));
         this.prevModels = newModels;
     }
 
-    protected handleRequestSettingsChanges(newSettings: RequestSetting[]): void {
-        const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
-        this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createHuggingFaceModelDescription(modelId, newSettings)));
-    }
-
     protected createHuggingFaceModelDescription(
-        modelId: string,
-        requestSettings: RequestSetting[]
+        modelId: string
     ): HuggingFaceModelDescription {
         const id = `${HUGGINGFACE_PROVIDER_ID}/${modelId}`;
-        const matchingSettings = requestSettings.filter(
-            setting => (!setting.providerId || setting.providerId === HUGGINGFACE_PROVIDER_ID) && setting.modelId === modelId
-        );
-        if (matchingSettings.length > 1) {
-            console.warn(
-                `Multiple entries found for modelId "${modelId}". Using the first match and ignoring the rest.`
-            );
-        }
-        const modelRequestSetting = matchingSettings[0];
         return {
             id: id,
-            model: modelId,
-            defaultRequestSettings: modelRequestSetting?.requestSettings
+            model: modelId
         };
     }
 }

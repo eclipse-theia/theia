@@ -21,10 +21,6 @@ export interface LlamafileModelDescription {
     name: string;
     uri: string;
     port: number;
-    /**
-     * Default request settings for the Llama model.
-     */
-    defaultRequestSettings?: { [key: string]: unknown };
 }
 
 export interface LlamafileManager {
@@ -34,7 +30,6 @@ export interface LlamafileManager {
     setClient(client: LlamafileServerManagerClient): void;
     addLanguageModels(llamaFiles: LlamafileModelDescription[]): Promise<void>;
     removeLanguageModels(modelIds: string[]): void;
-    updateRequestSettings(modelId: string, requestSettings?: { [key: string]: unknown }): void;
 }
 export interface LlamafileServerManagerClient {
     log(llamafileName: string, message: string): void;

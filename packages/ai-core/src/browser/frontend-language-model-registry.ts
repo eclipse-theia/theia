@@ -32,6 +32,7 @@ import {
     isLanguageModelStreamResponseDelegate,
     isLanguageModelTextResponse,
     isModelMatching,
+    isTextResponsePart,
     LanguageModel,
     LanguageModelDelegateClient,
     LanguageModelFrontendDelegate,
@@ -391,7 +392,7 @@ const languageModelOutputHandler = (
                         const loggedStream = {
                             async *[Symbol.asyncIterator](): AsyncIterator<LanguageModelStreamResponsePart> {
                                 for await (const part of stream) {
-                                    outputChannel.append(part.content || '');
+                                    outputChannel.append((isTextResponsePart(part) && part.content) || '');
                                     yield part;
                                 }
                                 outputChannel.append('\n');

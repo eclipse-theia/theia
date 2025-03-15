@@ -32,10 +32,6 @@ export interface AnthropicModelDescription {
      * Indicate whether the streaming API shall be used.
      */
     enableStreaming: boolean;
-    /**
-     * Default request settings for the Anthropic model.
-     */
-    defaultRequestSettings?: { [key: string]: unknown };
 }
 export interface AnthropicLanguageModelsManager {
     apiKey: string | undefined;
