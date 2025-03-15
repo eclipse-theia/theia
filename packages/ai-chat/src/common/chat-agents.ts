@@ -316,7 +316,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
                 sessionId: request.session.id,
                 requestId: request.id,
                 response: request.response.response.content.flatMap(c =>
-                    ({ type: 'text', actor: 'ai', query: c.asDisplayString?.() ?? c.asString?.() ?? JSON.stringify(c) }))
+                    c.toLanguageModelMessage?.() ?? ({ type: 'text', actor: 'ai', text: c.asDisplayString?.() ?? c.asString?.() ?? JSON.stringify(c) }))
             }
         );
         return request.response.complete();

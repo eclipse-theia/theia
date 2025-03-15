@@ -144,7 +144,7 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
                 agentId: this.id,
                 sessionId,
                 requestId,
-                response: [{ actor: 'ai', query: completionText, type: 'text' }]
+                response: [{ actor: 'ai', text: completionText, type: 'text' }]
             });
 
             const postProcessedCompletionText = this.postProcessor.postProcess(completionText);

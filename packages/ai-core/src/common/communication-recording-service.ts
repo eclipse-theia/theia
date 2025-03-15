@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { Event } from '@theia/core';
-import { LanguageModelRequestMessage } from './language-model';
+import { LanguageModelMessage } from './language-model';
 
 export type CommunicationHistory = CommunicationHistoryEntry[];
 
@@ -27,8 +27,8 @@ export interface CommunicationHistoryEntryBase {
 }
 
 export interface CommunicationHistoryEntry extends CommunicationHistoryEntryBase {
-    request?: LanguageModelRequestMessage[];
-    response?: LanguageModelRequestMessage[];
+    request?: LanguageModelMessage[];
+    response?: LanguageModelMessage[];
     responseTime?: number;
 }
 
