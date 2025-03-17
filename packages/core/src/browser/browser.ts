@@ -18,7 +18,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Disposable, environment } from '../common';
+import { Disposable, environment, isOSX } from '../common';
 
 const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : '';
 
@@ -236,4 +236,9 @@ export function onDomEvent<K extends keyof HTMLElementEventMap>(
     options?: boolean | AddEventListenerOptions): Disposable {
     element.addEventListener(type, listener, options);
     return { dispose: () => element.removeEventListener(type, listener, options) };
+}
+
+/** Is a mouse `event` the pointer event that triggers the context menu on this platform? */
+export function isContextMenuEvent(event: MouseEvent): boolean {
+    return isOSX ? event.ctrlKey && event.button === 0 : event.button === 2;
 }
