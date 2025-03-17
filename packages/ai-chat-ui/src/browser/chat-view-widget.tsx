@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { CommandService, deepClone, Emitter, Event, MessageService } from '@theia/core';
-import { ChatRequest, ChatRequestModel, ChatService, ChatSession, isActiveSessionChangedEvent } from '@theia/ai-chat';
+import { ChatRequest, ChatRequestModel, ChatService, ChatSession, isActiveSessionChangedEvent, MutableChatModel } from '@theia/ai-chat';
 import { BaseWidget, codicon, ExtractableWidget, Message, PanelLayout, PreferenceService, StatefulWidget } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
@@ -219,5 +219,16 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
 
     addContext(variable: AIVariableResolutionRequest): void {
         this.inputWidget.addContext(variable);
+    }
+
+    setSettings(settings: { [key: string]: unknown }): void {
+        if (this.chatSession && this.chatSession.model) {
+            const model = this.chatSession.model as MutableChatModel;
+            model.setSettings(settings);
+        }
+    }
+
+    getSettings(): { [key: string]: unknown } | undefined {
+        return this.chatSession.model.settings;
     }
 }

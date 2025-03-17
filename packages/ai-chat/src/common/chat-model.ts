@@ -95,6 +95,7 @@ export interface ChatModel {
     readonly location: ChatAgentLocation;
     readonly changeSet?: ChangeSet;
     readonly context: ChatContextManager;
+    readonly settings?: { [key: string]: unknown };
     getRequests(): ChatRequestModel[];
     isEmpty(): boolean;
 }
@@ -522,6 +523,7 @@ export class MutableChatModel implements ChatModel, Disposable {
     protected _id: string;
     protected _changeSet?: ChangeSetImpl;
     protected readonly _contextManager = new ChatContextManagerImpl();
+    protected _settings: { [key: string]: unknown };
 
     constructor(public readonly location = ChatAgentLocation.Panel) {
         // TODO accept serialized data as a parameter to restore a previously saved ChatModel
@@ -548,6 +550,14 @@ export class MutableChatModel implements ChatModel, Disposable {
 
     get context(): ChatContextManager {
         return this._contextManager;
+    }
+
+    get settings(): { [key: string]: unknown } {
+        return this._settings;
+    }
+
+    setSettings(settings: { [key: string]: unknown }): void {
+        this._settings = settings;
     }
 
     setChangeSet(changeSet: ChangeSetImpl | undefined): void {
