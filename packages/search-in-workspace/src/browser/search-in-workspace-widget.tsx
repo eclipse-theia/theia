@@ -30,6 +30,7 @@ import { SearchInWorkspacePreferences } from './search-in-workspace-preferences'
 import { SearchInWorkspaceInput } from './components/search-in-workspace-input';
 import { SearchInWorkspaceTextArea } from './components/search-in-workspace-textarea';
 import { nls } from '@theia/core/lib/common/nls';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 
 export interface SearchFieldState {
     className: string;
@@ -70,6 +71,8 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     private replaceRef = React.createRef<SearchInWorkspaceTextArea>();
     private includeRef = React.createRef<SearchInWorkspaceInput>();
     private excludeRef = React.createRef<SearchInWorkspaceInput>();
+
+    private refsAreSet = new Deferred();
 
     protected _showReplaceField = false;
     protected get showReplaceField(): boolean {
@@ -346,18 +349,19 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         this.focusInputField();
     }
 
-    protected focusInputField(): void {
-        const f = document.getElementById('search-input-field');
-        if (f) {
-            (f as HTMLInputElement).focus();
-            (f as HTMLInputElement).select();
+    protected async focusInputField(): Promise<void> {
+        // Wait until React rendering is sufficiently progressed before trying to focus the input field.
+        await this.refsAreSet.promise;
+        if (this.searchRef.current?.textarea.current) {
+            this.searchRef.current.textarea.current.focus();
+            this.searchRef.current.textarea.current.select();
         }
     }
 
     protected renderSearchHeader(): React.ReactNode {
         const searchAndReplaceContainer = this.renderSearchAndReplace();
         const searchDetails = this.renderSearchDetails();
-        return <div>{searchAndReplaceContainer}{searchDetails}</div>;
+        return <div ref={() => this.refsAreSet.resolve()}>{searchAndReplaceContainer}{searchDetails}</div>;
     }
 
     protected renderSearchAndReplace(): React.ReactNode {
