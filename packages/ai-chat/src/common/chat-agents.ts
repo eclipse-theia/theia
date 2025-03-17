@@ -280,7 +280,8 @@ export abstract class AbstractChatAgent implements ChatAgent {
         toolRequests: ChatToolRequest[],
         languageModel: LanguageModel
     ): Promise<LanguageModelResponse> {
-        const settings = this.getLlmSettings();
+        const agentSettings = this.getLlmSettings();
+        const settings = { ...agentSettings, ...request.session.settings };
         const tools = toolRequests.length > 0 ? toolRequests : undefined;
         return this.languageModelService.sendRequest(
             languageModel,
