@@ -31,6 +31,8 @@ import { IInstantiationService } from '@theia/monaco-editor-core/esm/vs/platform
 import { ContextKeyValue, IContextKey } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
 import { IDisposable } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
 import { ICommandHandler } from '@theia/monaco-editor-core/esm/vs/platform/commands/common/commands';
+import { EditorContextKeys } from '@theia/monaco-editor-core/esm/vs/editor/common/editorContextKeys';
+import { IEditorOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
 
 export namespace MonacoDiffEditor {
     export interface IOptions extends MonacoEditor.ICommonOptions, IDiffEditorConstructionOptions {
@@ -56,6 +58,7 @@ export class MonacoDiffEditor extends MonacoEditor {
         this.documents.add(originalModel);
         const original = originalModel.textEditorModel;
         const modified = modifiedModel.textEditorModel;
+        this.wordWrapOverride = options?.wordWrapOverride2;
         this._diffNavigator = diffNavigatorFactory.createdDiffNavigator(this._diffEditor);
         this._diffEditor.setModel({ original, modified });
     }
@@ -82,10 +85,20 @@ export class MonacoDiffEditor extends MonacoEditor {
         return this._diffEditor;
     }
 
+    protected wordWrapOverride: IEditorOptions['wordWrapOverride2'];
+    protected lastReachedSideBySideBreakpoint = true;
     protected override resize(dimension: Dimension | null): void {
         if (this.node) {
             const layoutSize = this.computeLayoutSize(this.node, dimension);
             this._diffEditor.layout(layoutSize);
+            // Workaround for https://github.com/microsoft/vscode/issues/217386#issuecomment-2711750462
+            const leftEditor = this._diffEditor.getOriginalEditor();
+            const hasReachedSideBySideBreakpoint = leftEditor.contextKeyService
+                .getContextKeyValue(EditorContextKeys.diffEditorRenderSideBySideInlineBreakpointReached.key);
+            if (hasReachedSideBySideBreakpoint !== this.lastReachedSideBySideBreakpoint) {
+                leftEditor.updateOptions({ wordWrapOverride2: this.wordWrapOverride ?? hasReachedSideBySideBreakpoint ?  'off' : 'inherit' });
+            }
+            this.lastReachedSideBySideBreakpoint = !!hasReachedSideBySideBreakpoint;
         }
     }
 
