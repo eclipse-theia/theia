@@ -113,7 +113,10 @@
   border-radius: 5px;
 }
 
-.lm-Menu:focus {
+/* Remove focus outline for menu and context menu items */
+.lm-Menu:focus,
+.lm-Menu-item:focus,
+.lm-MenuBar-item:focus {
   outline: none;
 }
 
