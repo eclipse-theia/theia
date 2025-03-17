@@ -28,8 +28,7 @@ import { Stopwatch } from '@theia/core/lib/common';
 import { PluginUninstallationManager } from '../../main/node/plugin-uninstallation-manager';
 
 @injectable()
-export class HostedPluginDeployerHandler implements PluginDeployerHandler {
-
+export class PluginDeployerHandlerImpl implements PluginDeployerHandler {
     @inject(ILogger)
     protected readonly logger: ILogger;
 
@@ -83,6 +82,10 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
         return Array.from(this.deployedBackendPlugins.values());
     }
 
+    async getDeployedPluginIds(): Promise<readonly PluginIdentifiers.VersionedId[]> {
+        return [... await this.getDeployedBackendPluginIds(), ... await this.getDeployedFrontendPluginIds()];
+    }
+
     async getDeployedPlugins(): Promise<DeployedPlugin[]> {
         await this.frontendPluginsMetadataDeferred.promise;
         await this.backendPluginsMetadataDeferred.promise;
@@ -117,7 +120,7 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
             if (!manifest) {
                 return undefined;
             }
-            const metadata = this.reader.readMetadata(manifest);
+            const metadata = await this.reader.readMetadata(manifest);
             const dependencies: PluginDependencies = { metadata };
             // Do not resolve system (aka builtin) plugins because it should be done statically at build time.
             if (entry.type !== PluginType.System) {
@@ -168,7 +171,7 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
                 return success = false;
             }
 
-            const metadata = this.reader.readMetadata(manifest);
+            const metadata = await this.reader.readMetadata(manifest);
             metadata.isUnderDevelopment = entry.getValue('isUnderDevelopment') ?? false;
 
             id = PluginIdentifiers.componentsToVersionedId(metadata.model);
@@ -270,5 +273,13 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
             : [entry.rootPath];
         storedLocations.forEach(location => knownLocations.add(location));
         this.sourceLocations.set(id, knownLocations);
+    }
+
+    async enablePlugin(pluginId: PluginIdentifiers.VersionedId): Promise<boolean> {
+        return this.uninstallationManager.markAsEnabled(pluginId);
+    }
+
+    async disablePlugin(pluginId: PluginIdentifiers.VersionedId): Promise<boolean> {
+        return this.uninstallationManager.markAsDisabled(pluginId);
     }
 }

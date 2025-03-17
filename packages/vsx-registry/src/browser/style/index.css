@@ -16,9 +16,7 @@
 
 :root {
   --theia-vsx-extension-icon-size: calc(var(--theia-ui-icon-font-size) * 3);
-  --theia-vsx-extension-editor-icon-size: calc(
-    var(--theia-vsx-extension-icon-size) * 3
-  );
+  --theia-vsx-extension-editor-icon-size: calc(var(--theia-vsx-extension-icon-size) * 3);
 }
 
 .vsx-search-container {
@@ -76,14 +74,14 @@
 }
 
 .theia-vsx-extension,
-.theia-vsx-extensions-view-container .part > .body {
+.theia-vsx-extensions-view-container .part>.body {
   min-height: calc(var(--theia-content-line-height) * 3);
 }
 
 .theia-vsx-extensions-search-bar {
-  padding: var(--theia-ui-padding) var(--theia-scrollbar-width)
-    var(--theia-ui-padding) 18px
-    /* expansion toggle padding of tree elements in result list */;
+  padding: var(--theia-ui-padding) var(--theia-scrollbar-width) var(--theia-ui-padding) 18px
+    /* expansion toggle padding of tree elements in result list */
+  ;
   display: flex;
   align-content: center;
 }
@@ -100,6 +98,7 @@
   border: none;
   outline: none;
 }
+
 .theia-vsx-extension {
   display: flex;
   flex-direction: row;
@@ -125,9 +124,7 @@
 .theia-vsx-extension-content {
   display: flex;
   flex-direction: column;
-  width: calc(
-    100% - var(--theia-vsx-extension-icon-size) - var(--theia-ui-padding) * 2.5
-  );
+  width: calc(100% - var(--theia-vsx-extension-icon-size) - var(--theia-ui-padding) * 2.5);
 }
 
 .theia-vsx-extension-content .title {
@@ -139,6 +136,10 @@
 }
 
 .theia-vsx-extension-content .title .name {
+  font-weight: bold;
+}
+
+.theia-vsx-extension-content .disabled {
   font-weight: bold;
 }
 
@@ -158,13 +159,13 @@
   align-items: center;
 }
 
-.theia-vsx-extension-content .title .stat .average-rating > i {
+.theia-vsx-extension-content .title .stat .average-rating>i {
   color: #ff8e00;
 }
 
-.theia-vsx-extension-editor .download-count > i,
-.theia-vsx-extension-content .title .stat .average-rating > i,
-.theia-vsx-extension-content .title .stat .download-count > i {
+.theia-vsx-extension-editor .download-count>i,
+.theia-vsx-extension-content .title .stat .average-rating>i,
+.theia-vsx-extension-content .title .stat .download-count>i {
   padding-right: calc(var(--theia-ui-padding) / 2);
 }
 
@@ -220,8 +221,7 @@
 
 .theia-vsx-extension-editor .header {
   display: flex;
-  padding: calc(var(--theia-ui-padding) * 3) calc(var(--theia-ui-padding) * 3)
-    calc(var(--theia-ui-padding) * 3);
+  padding: calc(var(--theia-ui-padding) * 3) calc(var(--theia-ui-padding) * 3) calc(var(--theia-ui-padding) * 3);
   flex-shrink: 0;
   border-bottom: 1px solid hsla(0, 0%, 50%, 0.5);
   width: 100%;
@@ -262,19 +262,19 @@
   border-collapse: collapse;
 }
 
-.theia-vsx-extension-editor .body table > thead > tr > th {
+.theia-vsx-extension-editor .body table>thead>tr>th {
   text-align: left;
   border-bottom: 1px solid var(--theia-extensionEditor-tableHeadBorder);
 }
 
-.theia-vsx-extension-editor .body table > thead > tr > th,
-.theia-vsx-extension-editor .body table > thead > tr > td,
-.theia-vsx-extension-editor .body table > tbody > tr > th,
-.theia-vsx-extension-editor .body table > tbody > tr > td {
+.theia-vsx-extension-editor .body table>thead>tr>th,
+.theia-vsx-extension-editor .body table>thead>tr>td,
+.theia-vsx-extension-editor .body table>tbody>tr>th,
+.theia-vsx-extension-editor .body table>tbody>tr>td {
   padding: 5px 10px;
 }
 
-.theia-vsx-extension-editor .body table > tbody > tr + tr > td {
+.theia-vsx-extension-editor .body table>tbody>tr+tr>td {
   border-top: 1px solid var(--theia-extensionEditor-tableCellBorder);
 }
 
@@ -364,7 +364,7 @@
   white-space: nowrap;
 }
 
-.theia-vsx-extension-editor .header .details .subtitle > span {
+.theia-vsx-extension-editor .header .details .subtitle>span {
   display: flex;
   align-items: center;
   cursor: pointer;
@@ -372,11 +372,7 @@
   height: var(--theia-content-line-height);
 }
 
-.theia-vsx-extension-editor
-  .header
-  .details
-  .subtitle
-  > span:not(:first-child):not(:empty) {
+.theia-vsx-extension-editor .header .details .subtitle>span:not(:first-child):not(:empty) {
   border-left: 1px solid hsla(0, 0%, 50%, 0.7);
   padding-left: calc(var(--theia-ui-padding) * 2);
   margin-left: calc(var(--theia-ui-padding) * 2);
@@ -387,26 +383,16 @@
   font-size: var(--theia-ui-font-size3);
 }
 
-.theia-vsx-extension-editor
-  .header
-  .details
-  .subtitle
-  .publisher
-  .namespace-access,
+.theia-vsx-extension-editor .header .details .subtitle .publisher .namespace-access,
 .theia-vsx-extension-editor .header .details .subtitle .download-count::before {
   padding-right: var(--theia-ui-padding);
 }
 
-.theia-vsx-extension-editor .header .details .subtitle .average-rating > i {
+.theia-vsx-extension-editor .header .details .subtitle .average-rating>i {
   color: #ff8e00;
 }
 
-.theia-vsx-extension-editor
-  .header
-  .details
-  .subtitle
-  .average-rating
-  > i:not(:first-child) {
+.theia-vsx-extension-editor .header .details .subtitle .average-rating>i:not(:first-child) {
   padding-left: calc(var(--theia-ui-padding) / 2);
 }
 

@@ -20,7 +20,7 @@ import { HostedPluginReader as PluginReaderHosted } from '@theia/plugin-ext/lib/
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { PluginMetadata } from '@theia/plugin-ext/lib/common/plugin-protocol';
 import { PluginDeployerEntryImpl } from '@theia/plugin-ext/lib/main/node/plugin-deployer-entry-impl';
-import { HostedPluginDeployerHandler } from '@theia/plugin-ext/lib/hosted/node/hosted-plugin-deployer-handler';
+import { PluginDeployerHandlerImpl } from '@theia/plugin-ext/lib/hosted/node/plugin-deployer-handler-impl';
 
 @injectable()
 export class HostedPluginReader implements BackendApplicationContribution {
@@ -30,8 +30,8 @@ export class HostedPluginReader implements BackendApplicationContribution {
 
     private readonly hostedPlugin = new Deferred<PluginMetadata | undefined>();
 
-    @inject(HostedPluginDeployerHandler)
-    protected deployerHandler: HostedPluginDeployerHandler;
+    @inject(PluginDeployerHandlerImpl)
+    protected deployerHandler: PluginDeployerHandlerImpl;
 
     async initialize(): Promise<void> {
         this.pluginReader.getPluginMetadata(process.env.HOSTED_PLUGIN)

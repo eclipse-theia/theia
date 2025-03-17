@@ -18,21 +18,31 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { PluginDeployerImpl } from './plugin-deployer-impl';
 import { PluginsKeyValueStorage } from './plugins-key-value-storage';
-import { PluginServer, PluginDeployer, PluginStorageKind, PluginType, UnresolvedPluginEntry, PluginIdentifiers, PluginDeployOptions } from '../../common/plugin-protocol';
+import {
+    PluginServer, PluginDeployer, PluginStorageKind, PluginType, UnresolvedPluginEntry, PluginIdentifiers,
+    PluginDeployOptions, PluginDeployerHandler
+} from '../../common/plugin-protocol';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from '../../common/types';
+import { PluginUninstallationManager } from './plugin-uninstallation-manager';
 
 @injectable()
-export class PluginServerHandler implements PluginServer {
+export class PluginServerImpl implements PluginServer {
 
     @inject(PluginDeployer)
     protected readonly pluginDeployer: PluginDeployerImpl;
 
+    @inject(PluginDeployerHandler)
+    protected readonly pluginDeployerHandler: PluginDeployerHandler;
+
     @inject(PluginsKeyValueStorage)
     protected readonly pluginsKeyValueStorage: PluginsKeyValueStorage;
 
-    async deploy(pluginEntry: string, arg2?: PluginType | CancellationToken, options?: PluginDeployOptions): Promise<void> {
+    @inject(PluginUninstallationManager)
+    protected readonly uninstallationManager: PluginUninstallationManager;
+
+    async install(pluginEntry: string, arg2?: PluginType | CancellationToken, options?: PluginDeployOptions): Promise<void> {
         const type = typeof arg2 === 'number' ? arg2 as PluginType : undefined;
-        const successfulDeployments = await this.doDeploy({
+        const successfulDeployments = await this.doInstall({
             id: pluginEntry,
             type: type ?? PluginType.User
         }, options);
@@ -42,16 +52,32 @@ export class PluginServerHandler implements PluginServer {
         }
     }
 
-    protected doDeploy(pluginEntry: UnresolvedPluginEntry, options?: PluginDeployOptions): Promise<number> {
+    protected doInstall(pluginEntry: UnresolvedPluginEntry, options?: PluginDeployOptions): Promise<number> {
         return this.pluginDeployer.deploy(pluginEntry, options);
+    }
+
+    getInstalledPlugins(): Promise<readonly PluginIdentifiers.VersionedId[]> {
+        return Promise.resolve(this.pluginDeployerHandler.getDeployedPluginIds());
+    }
+
+    getUninstalledPlugins(): Promise<readonly PluginIdentifiers.VersionedId[]> {
+        return Promise.resolve(this.uninstallationManager.getUninstalledPluginIds());
+    }
+
+    getDisabledPlugins(): Promise<readonly PluginIdentifiers.VersionedId[]> {
+        return Promise.resolve(this.uninstallationManager.getDisabledPluginIds());
     }
 
     uninstall(pluginId: PluginIdentifiers.VersionedId): Promise<void> {
         return this.pluginDeployer.uninstall(pluginId);
     }
 
-    undeploy(pluginId: PluginIdentifiers.VersionedId): Promise<void> {
-        return this.pluginDeployer.undeploy(pluginId);
+    enablePlugin(pluginId: PluginIdentifiers.VersionedId): Promise<boolean> {
+        return this.pluginDeployer.enablePlugin(pluginId);
+    }
+
+    disablePlugin(pluginId: PluginIdentifiers.VersionedId): Promise<boolean> {
+        return this.pluginDeployer.disablePlugin(pluginId);
     }
 
     setStorageValue(key: string, value: KeysToAnyValues, kind: PluginStorageKind): Promise<boolean> {

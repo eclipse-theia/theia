@@ -43,6 +43,7 @@ import { BackendRequestFacade } from './request/backend-request-facade';
 import { FileSystemLocking, FileSystemLockingImpl } from './filesystem-locking';
 import { BackendRemoteService } from './remote/backend-remote-service';
 import { RemoteCliContribution } from './remote/remote-cli-contribution';
+import { SettingService, SettingServiceImpl } from './setting-service';
 
 decorate(injectable(), ApplicationPackage);
 
@@ -136,4 +137,7 @@ export const backendApplicationModule = new ContainerModule(bind => {
     bindBackendStopwatchServer(bind);
 
     bind(FileSystemLocking).to(FileSystemLockingImpl).inSingletonScope();
+
+    bind(SettingServiceImpl).toSelf().inSingletonScope();
+    bind(SettingService).toService(SettingServiceImpl);
 });
