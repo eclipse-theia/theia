@@ -11,6 +11,9 @@
 - [core] fixed version `@types/express` to `^4.17.21` and `@types/express-serve-static-core` to `5.0.4`. This might be required for adopters as well if they run into typing issues. [#15147](https://github.com/eclipse-theia/theia/pull/15147)
 - [core] migration from deprecated `phosphorJs` to actively maintained fork `Lumino` [#14320](https://github.com/eclipse-theia/theia/pull/14320) - Contributed on behalf of STMicroelectronics
   Adopters importing `@phosphor` packages now need to import from `@lumino`. CSS selectors refering to `.p-` classes now need to refer to `.lm-` classes. There are also minor code adaptations, for example now using `iconClass` instead of `icon` in Lumino commands.
+- [core] allow to disable plugins. The PR includes a couple of renamings: `HostedPluginDeployerHandler` => `PluginDeployerHandlerImpl` and
+`PluginServerHandler` => `PluginServerImpl`. Also removed the ability of `HostedPluginProcess` to add extra deployed plugins. [#15205](https://github.com/eclipse-theia/theia/pull/15205) - contributed on behalf of STMicroelectronics
+
 
 ## 1.59.0 - 02/27/2025
 

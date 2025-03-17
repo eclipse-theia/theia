@@ -121,7 +121,8 @@ export class MenusContributionPointHandler {
                         }
                     }
                 } catch (error) {
-                    console.warn(`Failed to register a menu item for plugin ${plugin.metadata.model.id} contributed to ${contributionPoint}`, item, error);
+                    console.warn(`Failed to register a menu item for plugin ${plugin.metadata.model.id} contributed to ${contributionPoint}`, item);
+                    console.debug(error);
                 }
             }
         }

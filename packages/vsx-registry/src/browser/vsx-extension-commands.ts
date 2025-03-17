@@ -44,6 +44,14 @@ export namespace VSXExtensionsCommands {
     export const INSTALL_ANOTHER_VERSION: Command = {
         id: 'vsxExtensions.installAnotherVersion'
     };
+
+    export const DISABLE: Command = {
+        id: 'vsxExtensions.disable'
+    };
+
+    export const ENABLE: Command = {
+        id: 'vsxExtensions.enable'
+    };
     export const COPY: Command = {
         id: 'vsxExtensions.copy'
     };

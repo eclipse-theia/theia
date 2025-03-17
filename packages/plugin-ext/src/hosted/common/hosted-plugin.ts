@@ -208,7 +208,10 @@ export abstract class AbstractHostedPluginSupport<PM extends AbstractPluginManag
         let didChangeInstallationStatus = false;
         try {
             const newPluginIds: PluginIdentifiers.VersionedId[] = [];
-            const [deployedPluginIds, uninstalledPluginIds] = await Promise.all([this.server.getDeployedPluginIds(), this.server.getUninstalledPluginIds()]);
+            const [deployedPluginIds, uninstalledPluginIds, disabledPlugins] = await Promise.all(
+                [this.server.getDeployedPluginIds(), this.server.getUninstalledPluginIds(), this.server.getDisabledPluginIds()]);
+
+            const ignoredPlugins = [...disabledPlugins, ...uninstalledPluginIds];
             waitPluginsMeasurement.log('Waiting for backend deployment');
             syncPluginsMeasurement = this.measure('syncPlugins');
             for (const versionedId of deployedPluginIds) {
@@ -221,20 +224,20 @@ export abstract class AbstractHostedPluginSupport<PM extends AbstractPluginManag
             for (const pluginId of toUnload) {
                 this.contributions.get(pluginId)?.dispose();
             }
-            for (const versionedId of uninstalledPluginIds) {
+            for (const versionedId of ignoredPlugins) {
                 const plugin = this.getPlugin(PluginIdentifiers.unversionedFromVersioned(versionedId));
                 if (plugin && PluginIdentifiers.componentsToVersionedId(plugin.metadata.model) === versionedId && !plugin.metadata.outOfSync) {
                     plugin.metadata.outOfSync = didChangeInstallationStatus = true;
                 }
             }
             for (const contribution of this.contributions.values()) {
-                if (contribution.plugin.metadata.outOfSync && !uninstalledPluginIds.includes(PluginIdentifiers.componentsToVersionedId(contribution.plugin.metadata.model))) {
+                if (contribution.plugin.metadata.outOfSync && !ignoredPlugins.includes(PluginIdentifiers.componentsToVersionedId(contribution.plugin.metadata.model))) {
                     contribution.plugin.metadata.outOfSync = false;
                     didChangeInstallationStatus = true;
                 }
             }
             if (newPluginIds.length) {
-                const deployedPlugins = await this.server.getDeployedPlugins({ pluginIds: newPluginIds });
+                const deployedPlugins = await this.server.getDeployedPlugins(newPluginIds);
 
                 const plugins: DeployedPlugin[] = [];
                 for (const plugin of deployedPlugins) {

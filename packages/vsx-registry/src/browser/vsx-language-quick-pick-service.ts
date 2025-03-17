@@ -71,7 +71,7 @@ export class VSXLanguageQuickPickService extends LanguageQuickPickService {
                                 });
                                 try {
                                     const extensionUri = VSCodeExtensionUri.fromId(`${extension.extension.namespace}.${extension.extension.name}`).toString();
-                                    await this.pluginServer.deploy(extensionUri);
+                                    await this.pluginServer.install(extensionUri);
                                 } finally {
                                     progress.cancel();
                                 }
