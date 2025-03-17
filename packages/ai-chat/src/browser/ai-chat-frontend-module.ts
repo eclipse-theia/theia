@@ -45,7 +45,7 @@ import { FileChatVariableContribution } from './file-chat-variable-contribution'
 import { ContextSummaryVariableContribution } from '../common/context-summary-variable';
 import { ContextDetailsVariableContribution } from '../common/context-details-variable';
 import { ChangeSetVariableContribution } from './change-set-variable';
-import { ChatSessionNamingService } from '../common/chat-session-naming-service';
+import { ChatSessionNamingAgent, ChatSessionNamingService } from '../common/chat-session-naming-service';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, Agent);
@@ -58,7 +58,8 @@ export default new ContainerModule(bind => {
     bind(PinChatAgent).toConstantValue(true);
 
     bind(ChatSessionNamingService).toSelf().inSingletonScope();
-    bind(Agent).toService(ChatSessionNamingService);
+    bind(ChatSessionNamingAgent).toSelf().inSingletonScope();
+    bind(Agent).toService(ChatSessionNamingAgent);
 
     bindContributionProvider(bind, ResponseContentMatcherProvider);
     bind(DefaultResponseContentMatcherProvider).toSelf().inSingletonScope();

@@ -261,7 +261,9 @@ export class ChatServiceImpl implements ChatService {
             request.response.onDidChange(() => {
                 if (request.response.isComplete && !didGenerateName) {
                     namingService.generateChatSessionName(session, otherSessionNames).then(name => {
-                        session.title = name;
+                        if (name && session.title === requestText) {
+                            session.title = name;
+                        }
                         didGenerateName = true;
                     }).catch(error => this.logger.error('Failed to generate chat session name', error));
                 }
