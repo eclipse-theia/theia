@@ -248,6 +248,13 @@ blockquote {
     outline-color: var(--theia-focusBorder);
 }
 
+/* Remove focus outline for menu and context menu items */
+.lm-Menu:focus,
+.lm-Menu-item:focus,
+.lm-MenuBar-item:focus {
+    outline: none;
+}
+
 ::selection {
     background: var(--theia-selection-background);
 }
