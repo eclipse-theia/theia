@@ -366,17 +366,15 @@ export class FileDiagonsticProvider implements ToolProvider {
                 required: ['file']
             },
             handler: async arg => {
-                const { file } = JSON.parse(arg);
-                let workspaceRoot;
                 try {
-                    workspaceRoot = await this.workspaceScope.getWorkspaceRoot();
+                    const { file } = JSON.parse(arg);
+                    const workspaceRoot = await this.workspaceScope.getWorkspaceRoot();
+                    const targetUri = workspaceRoot.resolve(file);
+                    this.workspaceScope.ensureWithinWorkspace(targetUri, workspaceRoot);
+                    return this.getDiagnosticsForFile(targetUri);
                 } catch (error) {
-                    return JSON.stringify({ error: error.message });
+                    return JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error.' });
                 }
-
-                const targetUri = workspaceRoot.resolve(file);
-                this.workspaceScope.ensureWithinWorkspace(targetUri, workspaceRoot);
-                return this.getDiagnosticsForFile(targetUri);
             }
         };
     }
