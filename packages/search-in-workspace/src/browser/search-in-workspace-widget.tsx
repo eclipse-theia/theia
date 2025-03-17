@@ -30,6 +30,7 @@ import { SearchInWorkspacePreferences } from './search-in-workspace-preferences'
 import { SearchInWorkspaceInput } from './components/search-in-workspace-input';
 import { SearchInWorkspaceTextArea } from './components/search-in-workspace-textarea';
 import { nls } from '@theia/core/lib/common/nls';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 
 export interface SearchFieldState {
     className: string;
@@ -71,8 +72,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     private includeRef = React.createRef<SearchInWorkspaceInput>();
     private excludeRef = React.createRef<SearchInWorkspaceInput>();
 
-    private refsAreSet: Promise<void> = new Promise(resolve => this.resolveRefsAreSet = resolve);
-    private resolveRefsAreSet: () => void;
+    private refsAreSet = new Deferred();
 
     protected _showReplaceField = false;
     protected get showReplaceField(): boolean {
@@ -351,7 +351,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
 
     protected async focusInputField(): Promise<void> {
         // Wait until React rendering is sufficiently progressed before trying to focus the input field.
-        await this.refsAreSet;
+        await this.refsAreSet.promise;
         if (this.searchRef.current?.textarea.current) {
             this.searchRef.current.textarea.current.focus();
             this.searchRef.current.textarea.current.select();
@@ -361,7 +361,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     protected renderSearchHeader(): React.ReactNode {
         const searchAndReplaceContainer = this.renderSearchAndReplace();
         const searchDetails = this.renderSearchDetails();
-        return <div ref={() => this.resolveRefsAreSet()}>{searchAndReplaceContainer}{searchDetails}</div>;
+        return <div ref={() => this.refsAreSet.resolve()}>{searchAndReplaceContainer}{searchDetails}</div>;
     }
 
     protected renderSearchAndReplace(): React.ReactNode {
