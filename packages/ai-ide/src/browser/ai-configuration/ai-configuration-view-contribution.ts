@@ -13,8 +13,10 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+import { Command, CommandRegistry, nls } from '@theia/core';
+import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { AIViewContribution } from '@theia/ai-core/lib/browser';
-import { Command, CommandRegistry } from '@theia/core';
+import { ChatViewWidget } from '@theia/ai-chat-ui/lib/browser/chat-view-widget';
 import { FrontendApplication } from '@theia/core/lib/browser';
 import { injectable } from '@theia/core/shared/inversify';
 import { AIConfigurationContainerWidget } from './ai-configuration-widget';
@@ -26,7 +28,7 @@ export const OPEN_AI_CONFIG_VIEW = Command.toLocalizedCommand({
 });
 
 @injectable()
-export class AIAgentConfigurationViewContribution extends AIViewContribution<AIConfigurationContainerWidget> {
+export class AIAgentConfigurationViewContribution extends AIViewContribution<AIConfigurationContainerWidget> implements TabBarToolbarContribution {
 
     constructor() {
         super({
@@ -48,6 +50,17 @@ export class AIAgentConfigurationViewContribution extends AIViewContribution<AIC
         super.registerCommands(commands);
         commands.registerCommand(OPEN_AI_CONFIG_VIEW, {
             execute: () => this.openView({ activate: true }),
+        });
+    }
+
+    registerToolbarItems(registry: TabBarToolbarRegistry): void {
+        registry.registerItem({
+            id: 'chat-view.' + OPEN_AI_CONFIG_VIEW.id,
+            command: OPEN_AI_CONFIG_VIEW.id,
+            tooltip: nls.localize('theia/ai-ide/open-agent-settings-tooltip', 'Open agent settings...'),
+            group: 'ai-settings',
+            priority: 2,
+            isVisible: widget => widget instanceof ChatViewWidget
         });
     }
 }
