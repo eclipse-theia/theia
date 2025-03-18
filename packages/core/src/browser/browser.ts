@@ -240,5 +240,5 @@ export function onDomEvent<K extends keyof HTMLElementEventMap>(
 
 /** Is a mouse `event` the pointer event that triggers the context menu on this platform? */
 export function isContextMenuEvent(event: MouseEvent): boolean {
-    return isOSX ? event.ctrlKey && event.button === 0 : event.button === 2;
+    return isOSX && event.ctrlKey && event.button === 0 || event.button === 2;
 }
