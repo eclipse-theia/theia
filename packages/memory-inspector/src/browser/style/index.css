@@ -273,8 +273,8 @@
   margin-right: var(--theia-ui-padding);
 }
 
-.toggle-settings-container + div > .t-mv-settings-group-header:first-of-type,
-.toggle-settings-container + .t-mv-settings-group-header {
+.toggle-settings-container+div>.t-mv-settings-group-header:first-of-type,
+.toggle-settings-container+.t-mv-settings-group-header {
   margin-top: 0;
 }
 
@@ -394,11 +394,10 @@ table.t-mv-view .t-mv-view-address {
 
 .mw-input-select .theia-input {
   position: absolute;
-  top: 1px;
-  left: 1px;
   z-index: 1;
   width: calc(100% - 18px);
-  padding-block: unset;
+  border: var(--theia-border-width) solid var(--theia-dropdown-border);
+  line-height: calc(var(--theia-content-line-height) - 2px);
 }
 
 .mw-input-select .theia-input:focus {
@@ -719,7 +718,7 @@ table.t-mv-view .t-mv-view-address {
   -webkit-appearance: none;
 }
 
-.mw-bookmarks-bar input:checked ~ .bookmark-radio-button {
+.mw-bookmarks-bar input:checked~.bookmark-radio-button {
   background-color: var(--theia-button-background);
   color: var(--theia-button-foreground);
 }
@@ -733,9 +732,7 @@ table.t-mv-view .t-mv-view-address {
   cursor: pointer;
 }
 
-#memory-table-widget.editable
-  .t-mv-memory-container:focus
-  .eight-bits.highlight {
+#memory-table-widget.editable .t-mv-memory-container:focus .eight-bits.highlight {
   cursor: text;
 }
 
