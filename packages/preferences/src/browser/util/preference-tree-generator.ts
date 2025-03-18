@@ -207,6 +207,16 @@ export class PreferenceTreeGenerator {
         return this.defaultTopLevelCategory;
     }
 
+    protected getSubgroupName(labels: string[], computedGroupName: string): string | undefined {
+        if (computedGroupName !== labels[0]) {
+            return labels[0];
+        } else if (labels.length > 1) {
+            return labels[1];
+        } else {
+            return undefined;
+        }
+    }
+
     protected generateName(id: string): string {
         return this.labelProvider.formatString(id);
     }
