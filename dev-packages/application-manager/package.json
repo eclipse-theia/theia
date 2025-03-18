@@ -49,7 +49,7 @@
     "ignore-loader": "^0.1.2",
     "less": "^3.0.3",
     "mini-css-extract-plugin": "^2.6.1",
-    "node-abi": "*",
+    "node-abi": "^3.74.0",
     "node-loader": "^2.0.0",
     "path-browserify": "^1.0.1",
     "semver": "^7.5.4",
