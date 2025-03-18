@@ -290,7 +290,7 @@ export function addKeyListener<K extends keyof HTMLElementEventMap>(
             return (actual: KeyCode) => KeysOrKeyCodes.toKeyCodes(keysOrKeyCodes).some(k => k.equals(actual));
         }
     })();
-    toDispose.push(addEventListener(element, 'keydown', e => {
+    const wrappedHandler = (e: KeyboardEvent) => {
         const kc = KeyCode.createKeyCode(e);
         if (keyCodePredicate(kc)) {
             const result = action(e);
@@ -299,17 +299,10 @@ export function addKeyListener<K extends keyof HTMLElementEventMap>(
                 e.preventDefault();
             }
         }
-    }));
+    };
+    toDispose.push(addEventListener(element, 'keydown', wrappedHandler));
     for (const type of additionalEventTypes) {
-        toDispose.push(addEventListener(element, type, e => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const event = (type as any)['keydown'];
-            const result = action(event);
-            if (typeof result !== 'boolean' || result) {
-                e.stopPropagation();
-                e.preventDefault();
-            }
-        }));
+        toDispose.push(addEventListener(element, type as 'keydown', wrappedHandler));
     }
     return toDispose;
 }
