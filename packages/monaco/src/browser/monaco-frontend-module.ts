@@ -78,6 +78,7 @@ import { IThemeService } from '@theia/monaco-editor-core/esm/vs/platform/theme/c
 import { ActiveMonacoUndoRedoHandler, FocusedMonacoUndoRedoHandler } from './monaco-undo-redo-handler';
 import { ILogService } from '@theia/monaco-editor-core/esm/vs/platform/log/common/log';
 import { DefaultContentHoverWidgetPatcher } from './default-content-hover-widget-patcher';
+import { MonacoWorkspaceContextService } from './monaco-workspace-context-service';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(MonacoThemingService).toSelf().inSingletonScope();
@@ -101,6 +102,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     }
 
     bind(MonacoWorkspace).toSelf().inSingletonScope();
+    bind(MonacoWorkspaceContextService).toSelf().inSingletonScope();
 
     bind(MonacoConfigurationService).toDynamicValue(({ container }) => createMonacoConfigurationService(container)).inSingletonScope();
 
@@ -220,6 +222,12 @@ export function createMonacoConfigurationService(container: interfaces.Container
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     service.updateValues = (values: [string, any][]) => Promise.resolve();
+
+    /*
+     * There are a few places in Monaco where this method is called from, including actions for editor minimap in `ContextMenuController`.
+     */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    service.updateValue = (key: string, value: any) => preferences.updateValue(key, value);
 
     const toTarget = (scope: PreferenceScope): ConfigurationTarget => {
         switch (scope) {
