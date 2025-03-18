@@ -547,6 +547,74 @@ export class ApplicationShell extends Widget {
         }
     }
 
+    private openUri = async (fileUri: URI) => {
+        try {
+            const opener = await this.openerService.getOpener(fileUri);
+            opener.open(fileUri);
+        } catch (e) {
+            console.info(`no opener found for '${fileUri}'`);
+        }
+    };
+
+    /**
+     * drop event handler for dockPanel
+     */
+    protected dropEventHandler(event: DragEvent): void {
+        if (event.dataTransfer) {
+            const uris = this.additionalDraggedUris || ApplicationShell.getDraggedEditorUris(event.dataTransfer);
+            if (uris.length > 0) {
+                uris.forEach(this.openUri);
+            } else if (event.dataTransfer.files?.length > 0) {
+                // the files were dragged from the outside the workspace
+                Array.from(event.dataTransfer.files).forEach(async file => {
+                    if (environment.electron.is()) {
+                        if (file.path) {
+                            const fileUri = URI.fromFilePath(file.path);
+                            await this.openUri(fileUri);
+                        }
+                    } else {
+                        const fileContent = await file.text();
+                        const fileName = file.name;
+                        const uri = new URI(`${UNTITLED_SCHEME}:/${fileName}`);
+                        // Only create a new untitled resource if it doesn't already exist.
+                        // VS Code does the same thing, and there's not really a better solution,
+                        // since we want to keep the original name of the file,
+                        // but also to prevent duplicates of the same file.
+                        if (!this.untitledResourceResolver.has(uri)) {
+                            const untitledResource = await this.untitledResourceResolver.createUntitledResource(
+                                fileContent,
+                                undefined,
+                                new URI(`${UNTITLED_SCHEME}:/${fileName}`)
+                            );
+                            await this.openUri(untitledResource.uri);
+                        }
+                    }
+                });
+            }
+        }
+    }
+
+    /**
+     * dblclick event handler for dockPanel
+     */
+    protected dblClickEventHandler(event: MouseEvent): void {
+    const el = event.target as Element;
+    if (el.id === MAIN_AREA_ID || el.classList.contains('lm-TabBar-content')) {
+            this.onDidDoubleClickMainAreaEmitter.fire();
+        }
+    }
+
+    /**
+     * dragover and dragenter events handler for dockPanel
+     */
+    protected dragEventHandler(e: DragEvent): void {
+        if (e.dataTransfer) {
+            e.dataTransfer.dropEffect = 'link';
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    }
+
     /**
      * Create the dock panel in the main shell area.
      */
@@ -564,66 +632,10 @@ export class ApplicationShell extends Widget {
         dockPanel.widgetAdded.connect((_, widget) => this.fireDidAddWidget(widget));
         dockPanel.widgetRemoved.connect((_, widget) => this.fireDidRemoveWidget(widget));
 
-        const openUri = async (fileUri: URI) => {
-            try {
-                const opener = await this.openerService.getOpener(fileUri);
-                opener.open(fileUri);
-            } catch (e) {
-                console.info(`no opener found for '${fileUri}'`);
-            }
-        };
-
-        dockPanel.node.addEventListener('drop', event => {
-            if (event.dataTransfer) {
-                const uris = this.additionalDraggedUris || ApplicationShell.getDraggedEditorUris(event.dataTransfer);
-                if (uris.length > 0) {
-                    uris.forEach(openUri);
-                } else if (event.dataTransfer.files?.length > 0) {
-                    // the files were dragged from the outside the workspace
-                    Array.from(event.dataTransfer.files).forEach(async file => {
-                        if (environment.electron.is()) {
-                            if (file.path) {
-                                const fileUri = URI.fromFilePath(file.path);
-                                openUri(fileUri);
-                            }
-                        } else {
-                            const fileContent = await file.text();
-                            const fileName = file.name;
-                            const uri = new URI(`${UNTITLED_SCHEME}:/${fileName}`);
-                            // Only create a new untitled resource if it doesn't already exist.
-                            // VS Code does the same thing, and there's not really a better solution,
-                            // since we want to keep the original name of the file,
-                            // but also to prevent duplicates of the same file.
-                            if (!this.untitledResourceResolver.has(uri)) {
-                                const untitledResource = await this.untitledResourceResolver.createUntitledResource(
-                                    fileContent,
-                                    undefined,
-                                    new URI(`${UNTITLED_SCHEME}:/${fileName}`)
-                                );
-                                openUri(untitledResource.uri);
-                            }
-                        }
-                    });
-                }
-            }
-        });
-
-        dockPanel.node.addEventListener('dblclick', event => {
-            const el = event.target as Element;
-            if (el.id === MAIN_AREA_ID || el.classList.contains('lm-TabBar-content')) {
-                this.onDidDoubleClickMainAreaEmitter.fire();
-            }
-        });
-
-        const handler = (e: DragEvent) => {
-            if (e.dataTransfer) {
-                e.dataTransfer.dropEffect = 'link';
-                e.preventDefault();
-                e.stopPropagation();
-            }
-        };
-        dockPanel.node.addEventListener('dragover', handler);
-        dockPanel.node.addEventListener('dragenter', handler);
+        dockPanel.node.addEventListener('drop', this.dropEventHandler);
+        dockPanel.node.addEventListener('dblclick', this.dblClickEventHandler);
+        dockPanel.node.addEventListener('dragover', this.dragEventHandler);
+        dockPanel.node.addEventListener('dragenter', this.dragEventHandler);
 
         return dockPanel;
     }
