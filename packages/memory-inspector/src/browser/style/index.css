@@ -273,8 +273,8 @@
   margin-right: var(--theia-ui-padding);
 }
 
-.toggle-settings-container+div>.t-mv-settings-group-header:first-of-type,
-.toggle-settings-container+.t-mv-settings-group-header {
+.toggle-settings-container + div > .t-mv-settings-group-header:first-of-type,
+.toggle-settings-container + .t-mv-settings-group-header {
   margin-top: 0;
 }
 
@@ -718,7 +718,7 @@ table.t-mv-view .t-mv-view-address {
   -webkit-appearance: none;
 }
 
-.mw-bookmarks-bar input:checked~.bookmark-radio-button {
+.mw-bookmarks-bar input:checked ~ .bookmark-radio-button {
   background-color: var(--theia-button-background);
   color: var(--theia-button-foreground);
 }
@@ -732,7 +732,9 @@ table.t-mv-view .t-mv-view-address {
   cursor: pointer;
 }
 
-#memory-table-widget.editable .t-mv-memory-container:focus .eight-bits.highlight {
+#memory-table-widget.editable
+  .t-mv-memory-container:focus
+  .eight-bits.highlight {
   cursor: text;
 }
 
