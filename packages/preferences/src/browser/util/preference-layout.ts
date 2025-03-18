@@ -305,8 +305,80 @@ export const DEFAULT_LAYOUT: PreferenceLayout[] = [
     },
     {
         id: 'ai-features',
-        label: 'AI Features', // TODO localize
-        settings: ['ai-features.*']
+        label: nls.localize('theia/preferences/ai-features', 'AI Features'),
+        children: [
+            {
+                id: 'ai-features.aiEnablement',
+                label: nls.localize('theia/preferences/ai-features/ai-enable', 'AI Enablement'),
+                settings: ['ai-features.AiEnable.*']
+            },
+            {
+                id: 'ai-features.anthropic',
+                label: 'Anthropic',
+                settings: ['ai-features.anthropic.*']
+            },
+            {
+                id: 'ai-features.chat',
+                label: nls.localizeByDefault('Chat'),
+                settings: ['ai-features.chat.*']
+            },
+            {
+                id: 'ai-features.codeCompletion',
+                label: nls.localize('theia/preferences/ai-features/code-completion', 'Code Completion'),
+                settings: ['ai-features.codeCompletion.*']
+            },
+            {
+                id: 'ai-features.huggingFace',
+                label: 'Hugging Face',
+                settings: ['ai-features.huggingFace.*']
+            },
+            {
+                id: 'ai-features.mcp',
+                label: nls.localize('theia/preferences/ai-features/MCP', 'MCP'),
+                settings: ['ai-features.mcp.*']
+            },
+            {
+                id: 'ai-features.modelSettings',
+                label: nls.localize('theia/preferences/ai-features/model-settings', 'Model Settings'),
+                settings: ['ai-features.modelSettings.*']
+            },
+            {
+                id: 'ai-features.ollama',
+                label: 'Ollama',
+                settings: ['ai-features.ollama']
+            },
+            {
+                id: 'ai-features.llamafile',
+                label: 'Llamafile',
+                settings: ['ai-features.llamafile.*']
+            },
+            {
+                id: 'ai-features.openAiCustom',
+                label: nls.localize('theia/preferences/ai-features/open-ai-custom', '{0} Custom Models', 'Open AI'),
+                settings: ['ai-features.openAiCustom.*']
+            },
+            {
+                id: 'ai-features.openAiOfficial',
+                label: nls.localize('theia/preferences/ai-features/open-ai-official', '{0} Official Models', 'Open AI'),
+                settings: ['ai-features.openAiOfficial.*']
+            },
+            {
+                id: 'ai-features.promptTemplates',
+                label: nls.localize('theia/preferences/ai-features/promptTemplates', 'Prompt Templates'),
+                settings: ['ai-features.promptTemplates.*']
+            },
+            {
+                id: 'ai-features.SCANOSS',
+                label: 'SCAN OSS',
+                settings: ['ai-features.SCANOSS.*']
+            },
+            {
+                id: 'ai-features.workspaceFunctions',
+                label: nls.localize('theia/preferences/ai-features/workspace-functions', 'Workspace Functions'),
+                settings: ['ai-features.workspaceFunctions.*']
+            }
+        ]
+
     },
     {
         id: 'extensions',
