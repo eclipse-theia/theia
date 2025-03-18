@@ -70,7 +70,7 @@ export class ChatRequestParserImpl {
         // Resolve all variables and add them to the variable parts.
         // Parse resolved variable texts again for tool requests.
         // These are not added to parts as they are not visible in the initial chat message.
-        // However, add they need to be added to the result to be considered by the executing agent.
+        // However, they need to be added to the result to be considered by the executing agent.
         const variableCache = createAIResolveVariableCache();
         for (const part of parts) {
             if (part instanceof ParsedChatRequestVariablePart) {

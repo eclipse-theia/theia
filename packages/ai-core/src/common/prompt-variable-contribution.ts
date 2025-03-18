@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { nls } from '@theia/core';
+import { CommandService, nls } from '@theia/core';
 import { injectable, inject, optional } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
 import {
@@ -41,6 +41,9 @@ export const PROMPT_VARIABLE: AIVariable = {
 @injectable()
 export class PromptVariableContribution implements AIVariableContribution, AIVariableResolverWithVariableDependencies {
 
+    @inject(CommandService)
+    protected readonly commandService: CommandService;
+
     @inject(PromptService)
     protected readonly promptService: PromptService;
 
@@ -49,6 +52,7 @@ export class PromptVariableContribution implements AIVariableContribution, AIVar
 
     registerVariables(service: AIVariableService): void {
         service.registerResolver(PROMPT_VARIABLE, this);
+        service.registerArgumentPicker(PROMPT_VARIABLE, this.triggerArgumentPicker.bind(this));
         service.registerArgumentCompletionProvider(PROMPT_VARIABLE, this.provideArgumentCompletionItems.bind(this));
     }
 
@@ -77,6 +81,14 @@ export class PromptVariableContribution implements AIVariableContribution, AIVar
                 }
             }
         }
+        return undefined;
+    }
+
+    protected async triggerArgumentPicker(): Promise<string | undefined> {
+        // Trigger the suggestion command to show argument completions
+        this.commandService.executeCommand('editor.action.triggerSuggest');
+        // Return undefined because we don't actually pick the argument here.
+        // The argument is selected and inserted by the monaco editor's completion mechanism.
         return undefined;
     }
 
