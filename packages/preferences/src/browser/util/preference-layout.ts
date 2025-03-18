@@ -369,7 +369,7 @@ export const DEFAULT_LAYOUT: PreferenceLayout[] = [
             },
             {
                 id: 'ai-features.SCANOSS',
-                label: 'SCAN OSS',
+                label: 'SCANOSS',
                 settings: ['ai-features.SCANOSS.*']
             },
             {
