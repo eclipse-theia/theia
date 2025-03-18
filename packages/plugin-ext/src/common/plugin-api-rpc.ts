@@ -1047,6 +1047,7 @@ export interface SourceControlProviderFeatures {
 
 export interface SourceControlGroupFeatures {
     hideWhenEmpty: boolean | undefined;
+    contextValue: string | undefined;
 }
 
 export interface ScmRawResource {
