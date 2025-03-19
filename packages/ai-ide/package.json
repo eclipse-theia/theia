@@ -16,6 +16,7 @@
   ],
   "dependencies": {
     "@theia/ai-chat": "1.59.0",
+    "@theia/ai-chat-ui": "1.59.0",
     "@theia/ai-core": "1.59.0",
     "@theia/core": "1.59.0",
     "@theia/filesystem": "1.59.0",
