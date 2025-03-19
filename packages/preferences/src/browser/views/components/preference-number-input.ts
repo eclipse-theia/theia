@@ -147,6 +147,9 @@ export class PreferenceNumberInputRenderer extends PreferenceLeafNodeRenderer<nu
                 errorMessages.push(nls.localizeByDefault('Value must be strictly less than {0}.', data.exclusiveMaximum));
             }
         }
+        if (isNumber(data.multipleOf) && data.multipleOf !== 0 && !Number.isInteger(inputValue / data.multipleOf)) {
+            errorMessages.push(nls.localizeByDefault('Value must be a multiple of {0}.', data.multipleOf));
+        }
 
         return {
             value: errorMessages.length ? NaN : inputValue,
