@@ -105,6 +105,9 @@ export class PreferenceNumberInputRenderer extends PreferenceLeafNodeRenderer<nu
         if (input === '' || isNaN(inputValue)) {
             return { value: NaN, message: nls.localizeByDefault('Value must be a number.') };
         }
+        if (data.type === 'integer' && !Number.isInteger(inputValue)) {
+            errorMessages.push(nls.localizeByDefault('Value must be an integer.'));
+        }
         if (data.minimum !== undefined && isFinite(data.minimum)) {
             // https://json-schema.org/understanding-json-schema/reference/numeric
             // "In JSON Schema Draft 4, exclusiveMinimum and exclusiveMaximum work differently.
