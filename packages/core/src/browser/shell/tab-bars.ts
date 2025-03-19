@@ -39,6 +39,7 @@ import { SelectComponent } from '../widgets/select-component';
 import { createElement } from 'react';
 import { PreviewableWidget } from '../widgets/previewable-widget';
 import { EnhancedPreviewWidget } from '../widgets/enhanced-preview-widget';
+import { isContextMenuEvent } from '../browser';
 import { ContextKeyService } from '../context-key-service';
 
 /** The class name added to hidden content nodes, which are required to render vertical side bars. */
@@ -1046,6 +1047,10 @@ export class ToolbarAwareTabBar extends ScrollableTabBar {
 
     override handleEvent(event: Event): void {
         if (event instanceof MouseEvent) {
+            if (isContextMenuEvent(event)) {
+                // Let this bubble up to handle the context menu
+                return;
+            }
             if (this.toolbar && this.toolbar.shouldHandleMouseEvent(event) || this.isOver(event, this.openTabsContainer)) {
                 // if the mouse event is over the toolbar part don't handle it.
                 return;
@@ -1328,16 +1333,22 @@ export class SideTabBar extends ScrollableTabBar {
     override handleEvent(event: Event): void {
         switch (event.type) {
             case 'pointerdown':
-                this.onMouseDown(event as PointerEvent);
-                super.handleEvent(event);
+                if (!isContextMenuEvent(event as PointerEvent)) {
+                    this.onMouseDown(event as PointerEvent);
+                    super.handleEvent(event);
+                }
                 break;
             case 'pointerup':
-                super.handleEvent(event);
-                this.onMouseUp(event as PointerEvent);
+                if (!isContextMenuEvent(event as PointerEvent)) {
+                    super.handleEvent(event);
+                    this.onMouseUp(event as PointerEvent);
+                }
                 break;
             case 'mousemove':
-                this.onMouseMove(event as PointerEvent);
-                super.handleEvent(event);
+                if (!isContextMenuEvent(event as PointerEvent)) {
+                    this.onMouseMove(event as PointerEvent);
+                    super.handleEvent(event);
+                }
                 break;
             case 'lm-dragenter':
                 this.onDragEnter(event as Drag.Event);
@@ -1347,6 +1358,9 @@ export class SideTabBar extends ScrollableTabBar {
                 break;
             case 'lm-dragleave': case 'lm-drop':
                 this.cancelViewContainerDND();
+                break;
+            case 'contextmenu':
+                // Let the event bubble up instead of quashing it in the superclass
                 break;
             default:
                 super.handleEvent(event);

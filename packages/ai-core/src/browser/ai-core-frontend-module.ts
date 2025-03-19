@@ -62,6 +62,7 @@ import { AgentService, AgentServiceImpl } from '../common/agent-service';
 import { AICommandHandlerFactory } from './ai-command-handler-factory';
 import { AISettingsService } from '../common/settings-service';
 import { AiCoreCommandContribution } from './ai-core-command-contribution';
+import { PromptVariableContribution } from '../common/prompt-variable-contribution';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, LanguageModelProvider);
@@ -112,6 +113,7 @@ export default new ContainerModule(bind => {
     bind(TheiaVariableContribution).toSelf().inSingletonScope();
     bind(AIVariableContribution).toService(TheiaVariableContribution);
 
+    bind(AIVariableContribution).to(PromptVariableContribution).inSingletonScope();
     bind(AIVariableContribution).to(TodayVariableContribution).inSingletonScope();
     bind(AIVariableContribution).to(FileVariableContribution).inSingletonScope();
     bind(AIVariableContribution).to(AgentsVariableContribution).inSingletonScope();

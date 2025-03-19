@@ -20,6 +20,10 @@ import { expect } from 'chai';
 import { Container } from 'inversify';
 import { PromptService, PromptServiceImpl } from './prompt-service';
 import { DefaultAIVariableService, AIVariableService } from './variable-service';
+import { ToolInvocationRegistry } from './tool-invocation-registry';
+import { ToolRequest } from './language-model';
+import { Logger } from '@theia/core';
+import * as sinon from 'sinon';
 
 describe('PromptService', () => {
     let promptService: PromptService;
@@ -27,8 +31,9 @@ describe('PromptService', () => {
     beforeEach(() => {
         const container = new Container();
         container.bind<PromptService>(PromptService).to(PromptServiceImpl).inSingletonScope();
+        const logger = sinon.createStubInstance(Logger);
 
-        const variableService = new DefaultAIVariableService({ getContributions: () => [] });
+        const variableService = new DefaultAIVariableService({ getContributions: () => [] }, logger);
         const nameVariable = { id: 'test', name: 'name', description: 'Test name ' };
         variableService.registerResolver(nameVariable, {
             canResolve: () => 100,
@@ -297,5 +302,67 @@ describe('PromptService', () => {
 
         expect(variantsForMainWithVariants).to.deep.equal(['variant1', 'variant2']);
         expect(variantsForMainWithoutVariants).to.deep.equal([]);
+    });
+
+    it('should resolve function references within resolved variable replacements', async () => {
+        // Mock the tool invocation registry
+        const toolInvocationRegistry = {
+            getFunction: sinon.stub()
+        };
+
+        // Create a test tool request that will be returned by the registry
+        const testFunction: ToolRequest = {
+            id: 'testFunction',
+            name: 'Test Function',
+            description: 'A test function',
+            parameters: {
+                type: 'object',
+                properties: {
+                    param1: {
+                        type: 'string',
+                        description: 'Test parameter'
+                    }
+                }
+            },
+            providerName: 'test-provider',
+            handler: sinon.stub()
+        };
+        toolInvocationRegistry.getFunction.withArgs('testFunction').returns(testFunction);
+
+        // Create a container with our mocked registry
+        const container = new Container();
+        container.bind<PromptService>(PromptService).to(PromptServiceImpl).inSingletonScope();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        container.bind<ToolInvocationRegistry>(ToolInvocationRegistry).toConstantValue(toolInvocationRegistry as any);
+
+        // Set up a variable service that returns a fragment with a function reference
+        const variableService = new DefaultAIVariableService({ getContributions: () => [] }, sinon.createStubInstance(Logger));
+        const fragmentVariable = { id: 'test', name: 'fragment', description: 'Test fragment with function' };
+        variableService.registerResolver(fragmentVariable, {
+            canResolve: () => 100,
+            resolve: async () => ({
+                variable: fragmentVariable,
+                value: 'This fragment contains a function reference: ~{testFunction}'
+            })
+        });
+        container.bind<AIVariableService>(AIVariableService).toConstantValue(variableService);
+
+        const testPromptService = container.get<PromptService>(PromptService);
+        testPromptService.storePromptTemplate({ id: 'testPrompt', template: 'Template with fragment: {{fragment}}' });
+
+        // Get the resolved prompt
+        const resolvedPrompt = await testPromptService.getPrompt('testPrompt');
+
+        // Verify that the function was resolved
+        expect(resolvedPrompt).to.not.be.undefined;
+        expect(resolvedPrompt?.text).to.include('This fragment contains a function reference:');
+        expect(resolvedPrompt?.text).to.not.include('~{testFunction}');
+
+        // Verify that the function description was added to functionDescriptions
+        expect(resolvedPrompt?.functionDescriptions?.size).to.equal(1);
+        expect(resolvedPrompt?.functionDescriptions?.get('testFunction')).to.deep.equal(testFunction);
+
+        // Verify that the tool invocation registry was called
+        expect(toolInvocationRegistry.getFunction.calledWith('testFunction')).to.be.true;
     });
 });

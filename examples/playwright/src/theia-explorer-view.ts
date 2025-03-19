@@ -176,7 +176,7 @@ export class TheiaExplorerView extends TheiaView {
         if (await this.isTreeNodeSelected(filePath)) {
             await treeNode.focus();
         } else {
-            await treeNode.click({ modifiers: ['Control'] });
+            await treeNode.click({ modifiers: [OSUtil.isMacOS ? 'Meta' : 'Control'] });
             // make sure the click has been acted-upon before returning
             while (!await this.isTreeNodeSelected(filePath)) {
                 console.debug('Waiting for clicked tree node to be selected: ' + filePath);

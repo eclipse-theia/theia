@@ -28,6 +28,9 @@
       "path": "../filesystem"
     },
     {
+      "path": "../markers"
+    },
+    {
       "path": "../monaco"
     },
     {
