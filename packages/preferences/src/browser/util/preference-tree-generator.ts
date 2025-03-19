@@ -21,6 +21,7 @@ import { Emitter } from '@theia/core';
 import debounce = require('@theia/core/shared/lodash.debounce');
 import { Preference } from './preference-types';
 import { COMMONLY_USED_SECTION_PREFIX, PreferenceLayoutProvider } from './preference-layout';
+import { PreferenceTreeLabelProvider } from './preference-tree-label-provider';
 
 export interface CreatePreferencesGroupOptions {
     id: string,
@@ -37,6 +38,7 @@ export class PreferenceTreeGenerator {
     @inject(PreferenceSchemaProvider) protected readonly schemaProvider: PreferenceSchemaProvider;
     @inject(PreferenceConfigurations) protected readonly preferenceConfigs: PreferenceConfigurations;
     @inject(PreferenceLayoutProvider) protected readonly layoutProvider: PreferenceLayoutProvider;
+    @inject(PreferenceTreeLabelProvider) protected readonly labelProvider: PreferenceTreeLabelProvider;
 
     protected _root: CompositeTreeNode;
     protected _idCache = new Map<string, string>();
@@ -92,7 +94,7 @@ export class PreferenceTreeGenerator {
         }
         for (const propertyName of propertyNames) {
             const property = preferencesSchema.properties[propertyName];
-            if (!this.preferenceConfigs.isSectionName(propertyName) && !OVERRIDE_PROPERTY_PATTERN.test(propertyName) && !property.deprecationMessage) {
+            if (!property.hidden && !property.deprecationMessage && !this.preferenceConfigs.isSectionName(propertyName) && !OVERRIDE_PROPERTY_PATTERN.test(propertyName)) {
                 if (property.owner) {
                     this.createPluginLeafNode(propertyName, property, root, groups);
                 } else {
@@ -122,26 +124,8 @@ export class PreferenceTreeGenerator {
     };
 
     protected createBuiltinLeafNode(name: string, property: PreferenceDataProperty, root: CompositeTreeNode, groups: Map<string, Preference.CompositeTreeNode>): void {
-        const layoutItem = this.layoutProvider.getLayoutForPreference(name);
-        const labels = (layoutItem?.id ?? name).split('.');
-        const groupID = this.getGroupName(labels);
-        const subgroupName = this.getSubgroupName(labels, groupID);
-        const subgroupID = [groupID, subgroupName].join('.');
-        const toplevelParent = this.getOrCreatePreferencesGroup({
-            id: groupID,
-            group: groupID,
-            root,
-            groups,
-            label: this.generateName(groupID)
-        });
-        const immediateParent = subgroupName ? this.getOrCreatePreferencesGroup({
-            id: subgroupID,
-            group: groupID,
-            root: toplevelParent,
-            groups,
-            label: layoutItem?.label ?? this.generateName(subgroupName)
-        }) : undefined;
-        this.createLeafNode(name, immediateParent || toplevelParent, property);
+        const { immediateParent, topLevelParent } = this.getParents(name, root, groups);
+        this.createLeafNode(name, immediateParent || topLevelParent, property);
     }
 
     protected createPluginLeafNode(name: string, property: PreferenceDataProperty, root: CompositeTreeNode, groups: Map<string, Preference.CompositeTreeNode>): void {
@@ -183,6 +167,38 @@ export class PreferenceTreeGenerator {
         return this._idCache.get(preferenceId) ?? '';
     }
 
+    protected getParents(
+        name: string, root: CompositeTreeNode, groups: Map<string, Preference.CompositeTreeNode>
+    ): {
+        topLevelParent: Preference.CompositeTreeNode, immediateParent: Preference.CompositeTreeNode | undefined
+    } {
+        const layoutItem = this.layoutProvider.getLayoutForPreference(name);
+        const labels = (layoutItem?.id ?? name).split('.');
+        const groupID = this.getGroupName(labels);
+        const subgroupName = groupID !== labels[0]
+            ? labels[0]
+            // If a layout item is present, any additional segments are sections
+            // If not, then the name describes a leaf node and only non-final segments are sections.
+            : layoutItem || labels.length > 2
+                ? labels.at(1)
+                : undefined;
+        const topLevelParent = this.getOrCreatePreferencesGroup({
+            id: groupID,
+            group: groupID,
+            root,
+            groups,
+            label: this.generateName(groupID)
+        });
+        const immediateParent = subgroupName ? this.getOrCreatePreferencesGroup({
+            id: [groupID, subgroupName].join('.'),
+            group: groupID,
+            root: topLevelParent,
+            groups,
+            label: layoutItem?.label ?? this.generateName(subgroupName)
+        }) : undefined;
+        return { immediateParent, topLevelParent };
+    }
+
     protected getGroupName(labels: string[]): string {
         const defaultGroup = labels[0];
         if (this.layoutProvider.hasCategory(defaultGroup)) {
@@ -202,7 +218,7 @@ export class PreferenceTreeGenerator {
     }
 
     protected generateName(id: string): string {
-        return id.substring(0, 1).toUpperCase() + id.substring(1);
+        return this.labelProvider.formatString(id);
     }
 
     doHandleChangedSchema(): void {
