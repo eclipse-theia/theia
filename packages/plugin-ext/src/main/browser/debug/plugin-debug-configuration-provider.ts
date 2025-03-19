@@ -23,6 +23,11 @@ import {
 import { DebugConfiguration } from '@theia/debug/lib/common/debug-configuration';
 
 export class PluginDebugConfigurationProvider implements DebugConfigurationProvider {
+    /**
+     * After https://github.com/eclipse-theia/theia/pull/13196, the debug config handles might change.
+     * Store the original handle to be able to call the extension host when getting by handle.
+     */
+    protected readonly originalHandle: number;
     public handle: number;
     public type: string;
     public triggerKind: DebugConfigurationProviderTriggerKind;
@@ -41,23 +46,24 @@ export class PluginDebugConfigurationProvider implements DebugConfigurationProvi
         protected readonly debugExt: DebugExt
     ) {
         this.handle = description.handle;
+        this.originalHandle = this.handle;
         this.type = description.type;
         this.triggerKind = description.trigger;
 
         if (description.provideDebugConfiguration) {
-            this.provideDebugConfigurations = async (folder: string | undefined) => this.debugExt.$provideDebugConfigurationsByHandle(this.handle, folder);
+            this.provideDebugConfigurations = async (folder: string | undefined) => this.debugExt.$provideDebugConfigurationsByHandle(this.originalHandle, folder);
         }
 
         if (description.resolveDebugConfigurations) {
             this.resolveDebugConfiguration =
                 async (folder: string | undefined, debugConfiguration: DebugConfiguration) =>
-                    this.debugExt.$resolveDebugConfigurationByHandle(this.handle, folder, debugConfiguration);
+                    this.debugExt.$resolveDebugConfigurationByHandle(this.originalHandle, folder, debugConfiguration);
         }
 
         if (description.resolveDebugConfigurationWithSubstitutedVariables) {
             this.resolveDebugConfigurationWithSubstitutedVariables =
                 async (folder: string | undefined, debugConfiguration: DebugConfiguration) =>
-                    this.debugExt.$resolveDebugConfigurationWithSubstitutedVariablesByHandle(this.handle, folder, debugConfiguration);
+                    this.debugExt.$resolveDebugConfigurationWithSubstitutedVariablesByHandle(this.originalHandle, folder, debugConfiguration);
         }
     }
 }
