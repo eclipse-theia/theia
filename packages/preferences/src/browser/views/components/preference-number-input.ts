@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { nls } from '@theia/core';
+import { nls, isBoolean, isNumber } from '@theia/core';
 import { injectable, interfaces } from '@theia/core/shared/inversify';
 import { Preference } from '../../util/preference-types';
 import { PreferenceLeafNodeRenderer, PreferenceNodeRenderer } from './preference-node-renderer';
@@ -105,14 +105,44 @@ export class PreferenceNumberInputRenderer extends PreferenceLeafNodeRenderer<nu
         if (input === '' || isNaN(inputValue)) {
             return { value: NaN, message: nls.localizeByDefault('Value must be a number.') };
         }
-        if (data.minimum && inputValue < data.minimum) {
-            errorMessages.push(nls.localizeByDefault('Value must be greater than or equal to {0}.', data.minimum));
-        };
-        if (data.maximum && inputValue > data.maximum) {
-            errorMessages.push(nls.localizeByDefault('Value must be less than or equal to {0}.', data.maximum));
-        };
-        if (data.type === 'integer' && !Number.isInteger(inputValue)) {
-            errorMessages.push(nls.localizeByDefault('Value must be an integer.'));
+        if (data.minimum !== undefined && isFinite(data.minimum)) {
+            // https://json-schema.org/understanding-json-schema/reference/numeric
+            // "In JSON Schema Draft 4, exclusiveMinimum and exclusiveMaximum work differently.
+            // There they are boolean values, that indicate whether minimum and maximum are exclusive of the value"
+            if (isBoolean(data.exclusiveMinimum) && data.exclusiveMinimum) {
+                if (inputValue <= data.minimum) {
+                    errorMessages.push(nls.localizeByDefault('Value must be strictly greater than {0}.', data.minimum));
+                }
+            } else {
+                if (inputValue < data.minimum) {
+                    errorMessages.push(nls.localizeByDefault('Value must be greater than or equal to {0}.', data.minimum));
+                }
+            }
+        }
+        if (data.maximum !== undefined && isFinite(data.maximum)) {
+            // https://json-schema.org/understanding-json-schema/reference/numeric
+            // "In JSON Schema Draft 4, exclusiveMinimum and exclusiveMaximum work differently.
+            // There they are boolean values, that indicate whether minimum and maximum are exclusive of the value"
+            if (isBoolean(data.exclusiveMaximum) && data.exclusiveMaximum) {
+                if (inputValue >= data.maximum) {
+                    errorMessages.push(nls.localizeByDefault('Value must be strictly less than {0}.', data.maximum));
+                }
+            } else {
+                if (inputValue > data.maximum) {
+                    errorMessages.push(nls.localizeByDefault('Value must be less than or equal to {0}.', data.maximum));
+                }
+            }
+        }
+        // Using JSON Schema before Draft 4 both exclusive and non-exclusive variants can be set
+        if (isNumber(data.exclusiveMinimum) && isFinite(data.exclusiveMinimum)) {
+            if (inputValue <= data.exclusiveMinimum) {
+                errorMessages.push(nls.localizeByDefault('Value must be strictly greater than {0}.', data.exclusiveMinimum));
+            }
+        }
+        if (isNumber(data.exclusiveMaximum) && isFinite(data.exclusiveMaximum)) {
+            if (inputValue >= data.exclusiveMaximum) {
+                errorMessages.push(nls.localizeByDefault('Value must be strictly less than {0}.', data.exclusiveMaximum));
+            }
         }
 
         return {
