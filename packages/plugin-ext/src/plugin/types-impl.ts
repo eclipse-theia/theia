@@ -21,7 +21,7 @@
 
 /* eslint-disable no-null/no-null */
 
-import { UUID } from '@theia/core/shared/@phosphor/coreutils';
+import { UUID } from '@theia/core/shared/@lumino/coreutils';
 import { illegalArgument } from '../common/errors';
 import type * as theia from '@theia/plugin';
 import { URI as CodeURI, UriComponents } from '@theia/core/shared/vscode-uri';
@@ -1648,6 +1648,7 @@ export class DocumentLink {
 export class DocumentDropOrPasteEditKind {
     static readonly Empty: DocumentDropOrPasteEditKind = new DocumentDropOrPasteEditKind('');
     static readonly Text: DocumentDropOrPasteEditKind = new DocumentDropOrPasteEditKind('text');
+    static readonly TextUpdateImports: DocumentDropOrPasteEditKind = new DocumentDropOrPasteEditKind('updateImports');
 
     private static sep = '.';
 
@@ -1796,8 +1797,6 @@ export interface WorkspaceEditMetadata {
     label: string;
     description?: string;
     iconPath?: {
-        id: string;
-    } | {
         light: URI;
         dark: URI;
     } | ThemeIcon;
@@ -3784,6 +3783,8 @@ export class InteractiveWindowInput {
 // #region DocumentPaste
 export class DocumentPasteEditKind {
     static Empty: DocumentPasteEditKind;
+    static Text: DocumentPasteEditKind;
+    static TextUpdateImports: DocumentPasteEditKind;
 
     constructor(public readonly value: string) { }
 
@@ -3803,6 +3804,8 @@ export class DocumentPasteEditKind {
     }
 }
 DocumentPasteEditKind.Empty = new DocumentPasteEditKind('');
+DocumentPasteEditKind.Text = new DocumentDropOrPasteEditKind('text');
+DocumentPasteEditKind.TextUpdateImports = DocumentDropOrPasteEditKind.Text.append('updateImports');
 
 @es5ClassCompat
 export class DocumentPasteEdit {

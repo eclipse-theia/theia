@@ -67,7 +67,6 @@ export class DebugEditorModel implements Disposable {
     protected currentBreakpointDecorations: string[] = [];
 
     protected editorDecorations: string[] = [];
-    protected topFrameRange: monaco.Range | undefined;
 
     protected updatingDecorations = false;
     protected toDisposeOnModelChange = new DisposableCollection();
@@ -223,14 +222,13 @@ export class DebugEditorModel implements Disposable {
                 options: DebugEditorModel.TOP_STACK_FRAME_DECORATION,
                 range: columnUntilEOLRange
             });
-            const { topFrameRange } = this;
-            if (topFrameRange && topFrameRange.startLineNumber === currentFrame.raw.line && topFrameRange.startColumn !== currentFrame.raw.column) {
+            const firstNonWhitespaceColumn = this.editor.document.textEditorModel.getLineFirstNonWhitespaceColumn(currentFrame.raw.line);
+            if (currentFrame.raw.column > firstNonWhitespaceColumn) {
                 decorations.push({
                     options: DebugEditorModel.TOP_STACK_FRAME_INLINE_DECORATION,
                     range: columnUntilEOLRange
                 });
             }
-            this.topFrameRange = columnUntilEOLRange;
         } else {
             decorations.push({
                 options: DebugEditorModel.FOCUSED_STACK_FRAME_MARGIN,

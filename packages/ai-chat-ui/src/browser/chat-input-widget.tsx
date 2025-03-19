@@ -216,7 +216,8 @@ export class AIChatInputWidget extends ReactWidget {
         this.contextMenuRenderer.render({
             menuPath: AIChatInputWidget.CONTEXT_MENU,
             anchor: { x: event.posx, y: event.posy },
-            context: event.target
+            context: event.target,
+            args: [this.editorRef]
         });
         event.preventDefault();
     }
@@ -463,7 +464,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                     endLineNumber: 1,
                     endColumn: 1
                 },
-                text: '@ ',
+                text: '@',
             }]);
             editorRef.current.getControl().setPosition({ lineNumber: 1, column: 2 });
             editorRef.current.getControl().getAction('editor.action.triggerSuggest')?.run();

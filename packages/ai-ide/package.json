@@ -1,6 +1,6 @@
 {
   "name": "@theia/ai-ide",
-  "version": "1.58.0",
+  "version": "1.59.0",
   "description": "AI IDE Agents Extension",
   "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
   "repository": {
@@ -15,14 +15,15 @@
     "theia-extension"
   ],
   "dependencies": {
-    "@theia/core": "1.58.0",
-    "@theia/filesystem": "1.58.0",
-    "@theia/workspace": "1.58.0",
-    "@theia/monaco": "1.58.0",
-    "@theia/navigator": "1.58.0",
-    "@theia/terminal": "1.58.0",
-    "@theia/ai-core": "1.58.0",
-    "@theia/ai-chat": "1.58.0",
+    "@theia/ai-chat": "1.59.0",
+    "@theia/ai-core": "1.59.0",
+    "@theia/core": "1.59.0",
+    "@theia/filesystem": "1.59.0",
+    "@theia/markers": "1.59.0",
+    "@theia/monaco": "1.59.0",
+    "@theia/navigator": "1.59.0",
+    "@theia/terminal": "1.59.0",
+    "@theia/workspace": "1.59.0",
     "ignore": "^6.0.0",
     "minimatch": "^9.0.0"
   },
@@ -30,8 +31,8 @@
     "access": "public"
   },
   "devDependencies": {
-    "@theia/cli": "1.58.0",
-    "@theia/test": "1.58.0"
+    "@theia/cli": "1.59.0",
+    "@theia/test": "1.59.0"
   },
   "theiaExtensions": [
     {
@@ -52,5 +53,6 @@
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
-  }
+  },
+  "gitHead": "21358137e41342742707f660b8e222f940a27652"
 }

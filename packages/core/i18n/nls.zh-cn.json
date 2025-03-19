@@ -12,6 +12,346 @@
   "terminal:new:profile": "从配置文件中创建新的集成终端",
   "terminal:profile:default": "选择默认的终端配置文件",
   "theia": {
+    "ai": {
+      "anthropic": {
+        "apiKey": {
+          "description": "输入 Anthropic 官方账户的 API 密钥。**请注意:** 使用此选项时,Anthropic API 密钥将以明文形式存储在运行 Theia 的机器上。请使用环境变量 `ANTHROPIC_API_KEY` 安全设置密钥。"
+        },
+        "models": {
+          "description": "正式使用的人类学模型"
+        }
+      },
+      "chat": {
+        "defaultAgent": {
+          "description": "可选项:<agent-name> ,如果用户查询中没有使用 @<agent-name> 明确提及代理,则将调用该聊天代理。如果没有配置默认代理,则将使用 Theia 的默认值。"
+        },
+        "pinChatAgent": {
+          "description": "启用代理固定功能可自动让被提及的聊天代理在整个提示过程中保持活跃,减少重复提及的需要。"
+        }
+      },
+      "chat-ui": {
+        "addContextVariable": "添加上下文变量",
+        "applyAll": "全部申请",
+        "applyAllTitle": "应用所有待处理的更改",
+        "attachToContext": "将元素附加到上下文",
+        "cancel": "取消 (Esc)",
+        "chat-view-tree-widget": {
+          "ai": "人工智能",
+          "aiConfigurationView": "AI 配置视图",
+          "aiFeatureHeader": "🚀 可用的 AI 功能(Alpha 版)！",
+          "aiFeaturesEnable": "Ai 功能:启用",
+          "aiHistoryView": "人工智能历史视图",
+          "featuresDisabled": "目前,所有人工智能功能都已禁用！",
+          "howToEnable": "如何启用人工智能功能",
+          "noRenderer": "错误:未找到渲染器",
+          "settingsMenu": "设置菜单",
+          "waitingForInput": "等待输入",
+          "you": "你"
+        },
+        "code-part-renderer": {
+          "generatedCode": "生成代码"
+        },
+        "copyCodeBlock": "复制代码块",
+        "deleteChangeSet": "删除更改集",
+        "errorChatInvocation": "调用聊天服务时发生错误。",
+        "openDiff": "开放式差速器",
+        "openOriginalFile": "打开原始文件",
+        "pinAgent": "针剂",
+        "removeChat": "删除聊天",
+        "selectChat": "选择聊天",
+        "selectVariableArguments": "选择变量参数",
+        "send": "发送(输入)",
+        "text-part-renderer": {
+          "cantDisplay": "无法显示回复,请检查您的 ChatResponsePartRenderers！"
+        },
+        "toolcall-part-renderer": {
+          "finished": "冉冉",
+          "prettyPrintError": "内容无法转换为字符串:'{0}'。这是原始内容:{1}'."
+        },
+        "unpinAgent": "解销代理"
+      },
+      "code-completion": {
+        "progressText": "计算人工智能代码完成度..."
+      },
+      "completion": {
+        "agent": {
+          "description": "该代理可在 Theia IDE 的代码编辑器中提供内联代码自动补全功能。"
+        },
+        "automaticEnable": {
+          "description": "编辑时在任何(摩纳哥)编辑器内自动触发 AI 补充。            \n            您也可以通过 \"触发内联建议 \"命令或默认快捷键 \"Ctrl+Alt+Space \"手动触发代码。"
+        },
+        "excludedFileExts": {
+          "description": "指定应禁用人工智能补全的文件扩展名(如 .md、.txt)。",
+          "title": "排除的文件扩展名"
+        },
+        "maxContextLines": {
+          "description": "作为上下文使用的最大行数,分布在光标位置前后的行中(前缀和后缀)。            如果设置为-1,则使用整个文件作为上下文,没有行数限制;如果设置为 0,则只使用当前行。",
+          "title": "最大上下文行数"
+        },
+        "stripBackticks": {
+          "description": "从某些 LLM 返回的代码中删除周围的回车键。如果检测到回车键,则也会删除回车键后的所有内容。此设置有助于确保语言模型使用类似于标记下划线的格式时,能返回纯代码。",
+          "title": "从内联填写中删除反标"
+        }
+      },
+      "core": {
+        "agentConfiguration": {
+          "addCustomAgent": "添加自定义代理",
+          "description": "说明",
+          "enableAgent": "启用代理",
+          "label": "代理商",
+          "name": "名称:",
+          "noDefaultTemplate": "没有可用的默认模板",
+          "notUsedInPrompt": "不用于提示",
+          "promptTemplates": "提示模板",
+          "selectAgentMessage": "请先选择代理！",
+          "undeclared": "未申报"
+        },
+        "aiConfiguration": {
+          "label": "人工智能配置 [阿尔法] ✨ AI 配置"
+        },
+        "changeSetSummaryVariable": {
+          "description": "提供变更集中文件及其内容的摘要。"
+        },
+        "discardCustomPrompt": {
+          "tooltip": "放弃自定义"
+        },
+        "enableAI": {
+          "mdDescription": "❗ 此设置允许您访问最新的人工智能功能(Alpha 版本)。            \n            请注意,这些功能正处于 Alpha 阶段,这意味着它们可能会发生变化,并将得到进一步改进。需要注意的是,这些功能可能会对您提供访问权限的语言模型 (LLM) 产生持续请求。这可能会产生您需要密切监控的成本。启用此选项即表示您承认这些风险。            \n            **请注意！本节下面的设置只有在主功能设置启用后才会生效。\n            只有在主功能设置启用后才会生效。启用该功能后,您需要在下面配置至少一个 LLM 提供商。另请参阅 [文档](https://theia-ide.org/docs/user_ai/)**。"
+        },
+        "languageModelRenderer": {
+          "family": "家庭",
+          "languageModel": "语言模式",
+          "maxOutputTokens": "最大输出令牌",
+          "minInputTokens": "最小输入令牌",
+          "purpose": "目的",
+          "vendor": "供应商"
+        },
+        "prefs": {
+          "title": "✨ 人工智能功能 [Alpha]"
+        },
+        "promptTemplates": {
+          "description": "用于存储自定义提示模板的文件夹。如果未自定义,则使用用户配置目录。请考虑使用受版本控制的文件夹来管理提示模板的变体。"
+        },
+        "requestSettings": {
+          "mdDescription": "允许为多个模型指定自定义请求设置。\n            每个对象代表一个特定模型的配置。modelId \"字段指定模型 ID,\"requestSettings \"定义特定于模型的设置。\n            提供商 ID \"字段是可选的,允许将设置应用于特定的提供商。如果未设置,设置将应用于所有提供商。\n            示例提供程序 ID:huggingface、openai、ollama、llamafile。\n            更多信息请参阅 [我们的文档](https://theia-ide.org/docs/user_ai/#custom-request-settings)。",
+          "title": "自定义请求设置"
+        },
+        "templateSettings": {
+          "selectVariant": "选择变体:",
+          "unavailableVariant": "所选变体不再可用"
+        },
+        "variable-contribution": {
+          "builtInVariable": "Theia 内置变量",
+          "currentAbsoluteFilePath": "当前打开文件的绝对路径。请注意,大多数代理希望使用相对文件路径(相对于当前工作区)。",
+          "currentFileContent": "当前打开文件的纯内容。这不包括内容来源的信息。请注意,大多数代理使用相对文件路径(相对于当前工作区)时效果会更好。",
+          "currentRelativeDirPath": "包含当前打开文件的目录的相对路径。",
+          "currentRelativeFilePath": "当前打开文件的相对路径。",
+          "currentSelectedText": "打开的文件中当前选中的纯文本。这不包括内容来源的信息。请注意,大多数代理使用相对文件路径(相对于当前工作区)时效果会更好。"
+        }
+      },
+      "history": {
+        "clear": {
+          "tooltip": "清除所有代理的历史记录"
+        },
+        "communication-card": {
+          "context": "背景",
+          "messages": "信息",
+          "request": "要求",
+          "requestId": "申请 ID",
+          "response": "回应",
+          "responseTime": "响应时间",
+          "sessionId": "会话 ID",
+          "systemMessage": "系统信息",
+          "timestamp": "时间戳"
+        },
+        "sortChronologically": {
+          "tooltip": "按时间排序"
+        },
+        "sortReverseChronologically": {
+          "tooltip": "按时间倒序排序"
+        },
+        "view": {
+          "label": "✨ 人工智能代理历史 [Alpha]",
+          "noAgent": "没有代理。",
+          "noAgentSelected": "未选择代理。",
+          "noHistoryForAgent": "所选代理无历史记录 '{0}'"
+        }
+      },
+      "huggingFace": {
+        "apiKey": {
+          "mdDescription": "输入 Hugging Face 账户的 API 密钥。**请注意:** 使用此首选项后,Hugging Face API 密钥将以明文形式存储在运行 Theia 的机器上。使用环境变量 `HUGGINGFACE_API_KEY` 安全设置密钥。"
+        },
+        "models": {
+          "description": "使用拥抱脸模型"
+        }
+      },
+      "llamaFile": {
+        "prefs": {
+          "mdDescription": "此设置允许您在 Theia IDE 中配置和管理 LlamaFile 模型。            \n            每个条目都需要一个用户友好的 \"名称\"、指向 LlamaFile 的文件 \"uri \"以及运行它的 \"端口\"。            \n            要启动 LlamaFile,请使用 \"Start LlamaFile\"(启动 LlamaFile)命令,该命令可让您选择所需的模型。            \n            如果您编辑了一个条目(例如更改端口),任何正在运行的实例都将停止,您需要重新手动启动它。            \n            [有关配置和管理 LlamaFiles 的更多信息,请参阅 Theia IDE 文档](https://theia-ide.org/docs/user_ai/#llamafile-models)。",
+          "name": {
+            "description": "用于此 Llamafile 的模型名称。"
+          },
+          "port": {
+            "description": "用于启动服务器的端口。"
+          },
+          "title": "✨ AI LlamaFile",
+          "uri": {
+            "description": "Llamafile 的文件 uri。"
+          }
+        },
+        "start": "启动 Llamafile",
+        "stop": "停止 Llamafile"
+      },
+      "llamafile": {
+        "error": {
+          "noConfigured": "未配置 Llamafiles。",
+          "noRunning": "没有运行 Llamafiles。",
+          "startFailed": "在启动 llamafile 时出了问题:{0} 。\n有关详细信息,请参阅控制台。",
+          "stopFailed": "在停止 llamafile 的过程中出了问题:{0} 。\n有关详细信息,请参阅控制台。"
+        }
+      },
+      "mcp": {
+        "error": {
+          "allServersRunning": "所有 MCP 服务器均已运行。",
+          "noRunningServers": "没有运行 MCP 服务器。",
+          "noServersConfigured": "未配置 MCP 服务器。",
+          "startFailed": "启动 MCP 服务器时发生错误。"
+        },
+        "info": {
+          "serverStarted": "MCP 服务器 \"{0}\" 成功启动。已注册工具:{1}"
+        },
+        "servers": {
+          "args": {
+            "mdDescription": "要传递给命令的参数数组。",
+            "title": "命令参数"
+          },
+          "autostart": {
+            "mdDescription": "在前台启动时自动启动该服务器。新添加的服务器不会立即自动启动,但会在重启时自动启动",
+            "title": "自动启动"
+          },
+          "command": {
+            "mdDescription": "用于启动 MCP 服务器的命令,如 \"uvx \"或 \"npx\"。",
+            "title": "执行 MCP 服务器的命令"
+          },
+          "env": {
+            "mdDescription": "为服务器设置的可选环境变量,如 API 密钥。",
+            "title": "环境变量"
+          },
+          "mdDescription": "使用命令、参数、可选环境变量和自动启动(默认为 true)配置 MCP 服务器。每个服务器都有一个唯一的关键字,如 \"brave-search \"或 \"filesystem\"。要启动服务器,可使用 \"MCP: Start MCP Server(MCP:启动 MCP 服务器)\"命令选择所需的服务器。要停止服务器,请使用 \"MCP: Stop MCP Server(MCP:停止 MCP 服务器)\"命令。请注意,自动启动只有在重启后才会生效,您需要首次手动启动服务器。\n配置示例:\n```{\n  \"brave-search\":{\n    \"command\":\"npx\"、\n    \"args\":[\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\" [ \"-y\", \"@modelcontextprotocol/server-brave-search\" ].\n    ],\n    \"env\":{\n      \"brave_api_key\":\"YOUR_API_KEY\"(您的应用程序密钥\n    },\n  },\n  \"文件系统{\n    \"命令\":\"npx\"、\n    \"args\":[\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"]、\n    \"env\":{\n      \"custom_env_var\":\"自定义值\"\n    },\n    \"自动启动\": false\n  }\n}\n```",
+          "title": "MCP 服务器配置"
+        },
+        "start": {
+          "label": "MCP: 启动 MCP 服务器"
+        },
+        "stop": {
+          "label": "MCP: 停止 MCP 服务器"
+        },
+        "tool": {
+          "unnamed": "未命名工具"
+        }
+      },
+      "openai": {
+        "apiKey": {
+          "mdDescription": "输入您官方 OpenAI 账户的 API 密钥。**请注意:** 使用此选项时,Open AI API 密钥将以明文形式存储在运行 Theia 的机器上。请使用环境变量 `OPENAI_API_KEY` 安全设置密钥。"
+        },
+        "customEndpoints": {
+          "apiKey": {
+            "title": "访问指定 url 上提供的 API 的密钥,或者 `true` 来使用全局 OpenAI API 密钥"
+          },
+          "apiVersion": {
+            "title": "或者是访问 Azure 中给定 url 上提供的 API 的版本,或者是使用全局 OpenAI API 版本的 `true"
+          },
+          "developerMessageSettings": {
+            "title": "控制对系统消息的处理:用户\"、\"系统 \"和 \"开发者 \"将作为一个角色,\"mergeWithFollowingUserMessage \"将在下面的用户消息前加上系统消息,或者如果下一条消息不是用户消息,则将系统消息转换为用户消息。                         skip \"将直接删除系统消息),默认为 \"developer\"。"
+          },
+          "enableStreaming": {
+            "title": "表示是否使用流式 API。默认为 `true`。"
+          },
+          "id": {
+            "title": "用户界面中用于识别自定义模型的唯一标识符"
+          },
+          "mdDescription": "集成与 OpenAI API 兼容的自定义模型,例如通过 `vllm`。所需属性为 `model` 和 `url`。            \n            可选择         \n            - 指定一个唯一的 `id` 以在用户界面中识别自定义模型。如果没有指定 `model` 将被用作 `id`。            \n            - 提供一个 `apiKey` 以访问在给定 url 上提供的 API。使用 `true` 表示使用全局 OpenAI API 密钥。            \n            - 提供一个 `apiVersion` 以访问在 Azure 中通过给定网址提供的 API。使用 `true` 表示使用全局 OpenAI API 版本。            \n            - 将 `developerMessageSettings` 设置为 `user`、`system`、`developer`、`mergeWithFollowingUserMessage` 或 `skip`,以控制如何包含开发人员消息(其中 `user`、`system` 和 `developer` 将用作角色,`mergeWithFollowingUserMessage` 将在下面的用户消息前加上系统消息,或者如果下一条消息不是用户消息,则将系统消息转换为用户消息。`skip` 则只删除系统消息)。            默认为 `developer`。            \n            - 指定 `supportsStructuredOutput: false` 表示不使用结构化输出。            \n            - 指定 `enableStreaming: false` 表示不使用流媒体。            \n            更多信息请参阅[我们的文档](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm)。",
+          "modelId": {
+            "title": "型号 ID"
+          },
+          "supportsStructuredOutput": {
+            "title": "表示模型是否支持结构化输出。默认为 `true`。"
+          },
+          "url": {
+            "title": "托管模型的开放式人工智能应用程序接口兼容端点"
+          }
+        },
+        "models": {
+          "description": "可使用的官方 OpenAI 模型"
+        }
+      },
+      "scanoss": {
+        "changeSet": {
+          "clean": "无匹配",
+          "error": "错误:重新运行",
+          "error-notification": "遇到 ScanOSS 错误:{0} 。",
+          "scan": "扫描",
+          "scanning": "扫描...",
+          "view-matches": "查看比赛"
+        },
+        "mode": {
+          "automatic": {
+            "description": "启用自动扫描聊天视图中的代码片段。"
+          },
+          "description": "配置 SCANOSS 功能以分析聊天视图中的代码片段。这将把建议代码片段的哈希值发送到由 [Software Transparency foundation]() 托管的 SCANOSS\n服务进行分析。",
+          "manual": {
+            "description": "用户可以通过点击聊天视图中的 SCANOSS 项目手动触发扫描。"
+          },
+          "off": {
+            "description": "功能完全关闭。"
+          }
+        },
+        "snippet": {
+          "dialog-header": "扫描和OSS结果",
+          "errored": "SCANOSS - 错误{0}",
+          "file-name-heading": "在{0}",
+          "in-progress": "SCANOSS - 执行扫描...",
+          "match-count": "找到{0} 匹配",
+          "matched": "SCANOSS - 找到{0} 匹配",
+          "no-match": "SCANOSS - 不匹配",
+          "summary": "摘要"
+        }
+      },
+      "terminal": {
+        "agent": {
+          "description": "该代理为编写和执行任意终端命令提供帮助。         根据用户的请求,它可提出命令建议,并允许用户在终端中直接粘贴和执行这些命令。         它能访问当前目录、环境和终端会话的最近终端输出,以提供上下文感知辅助功能"
+        },
+        "askAi": "向人工智能提问",
+        "askTerminalCommand": "询问一个终端命令...",
+        "hitEnterConfirm": "按回车键确认",
+        "howCanIHelp": "我能帮您什么忙?",
+        "loading": "加载中",
+        "systemPrompt": {
+          "description": "提示人工智能终端助手"
+        },
+        "tryAgain": "再试一次...",
+        "useArrowsAlternatives": "或使用 ⇅ 来显示替代方案...",
+        "userPrompt": {
+          "description": "包含用户请求的提示"
+        }
+      },
+      "workspace": {
+        "coderAgent": {
+          "description": "Theia IDE 中集成的人工智能助手,旨在为软件开发人员提供帮助。该代理可以访问用户的工作区,获取所有可用文件和文件夹的列表,并检索其内容。此外,它还能向用户提出修改文件的建议。因此,它可以协助用户完成编码任务或其他涉及文件修改的任务。"
+        },
+        "considerGitignore": {
+          "description": "如果启用,则排除全局 .gitignore 文件中指定的文件/文件夹(预计位置为工作区根目录)。",
+          "title": "考虑 .gitignore"
+        },
+        "excludedPattern": {
+          "description": "要排除的文件/文件夹的模式(glob 或 regex)列表。",
+          "title": "排除的文件模式"
+        },
+        "workspaceAgent": {
+          "description": "Theia IDE 中集成的人工智能助手,旨在为软件开发人员提供帮助。该代理可以访问用户的工作区,获取所有可用文件和文件夹的列表,并检索其内容。它不能修改文件。因此,它可以回答工作区中有关当前项目、项目文件和源代码的问题,如如何构建项目、在哪里放置源代码、在哪里查找特定代码或配置等。"
+        }
+      }
+    },
     "callhierarchy": {
       "noCallers": "没有发现调用者。",
       "open": "打开调用层次结构"
@@ -46,8 +386,7 @@
     "core": {
       "about": {
         "compatibility": "{0} 兼容性",
-        "defaultApi": "默认的{0} API",
-        "version": "版本"
+        "defaultApi": "默认的{0} API"
       },
       "common": {
         "closeAll": "全部关闭",
@@ -59,6 +398,8 @@
         "closeTabMain": "关闭主区域标签页",
         "collapseAllTabs": "折叠所有面板",
         "collapseBottomPanel": "折叠底部面板",
+        "collapseLeftPanel": "切换左面板",
+        "collapseRightPanel": "切换右面板",
         "collapseTab": "折叠面板",
         "showNextTabGroup": "切换到下一个标签页组",
         "showNextTabInGroup": "切换到组中的下一个标签页",
@@ -137,38 +478,20 @@
       "toggleTracing": "启用/禁用与调试适配器的跟踪通信"
     },
     "editor": {
-      "diffEditor.experimental.useTrueInlineView": "如果启用且编辑器使用内联视图,字词更改将以内联方式呈现。",
       "diffEditor.wordWrap2": "行将根据 `#editor.wordWrap#` 设置换行。",
       "dirtyEncoding": "该文件是脏的。请先保存它,然后用另一种编码重新打开它。",
       "editor.bracketPairColorization.enabled": "控制是否启用括号对着色。使用 `#workbench.colorCustomizations#` 覆盖括号高亮颜色。",
       "editor.codeActions.triggerOnFocusChange": "当 `#files.autoSave#` 设置为 `afterDelay` 时,启用触发 `#editor.codeActionsOnSave#`。代码操作必须设置为 \"always\",才能在窗口和焦点改变时触发。",
-      "editor.cursorStyle": "控制插入输入模式下的光标样式。",
-      "editor.defaultColorDecorators": "控制是否使用默认文档颜色提供程序显示内嵌颜色装饰。",
-      "editor.defaultColorDecorators0": "仅在没有扩展提供颜色装饰器时才显示默认颜色装饰器。",
-      "editor.defaultColorDecorators1": "始终显示默认颜色装饰器。",
-      "editor.defaultColorDecorators2": "从不显示默认颜色装饰器。",
       "editor.detectIndentation": "控制打开文件时是否根据文件内容自动检测 `#editor.tabSize#` 和 `#editor.insertSpaces#`。",
-      "editor.experimental.preferTreeSitter": "控制是否开启特定语言的树坐标分析。对于指定的语言,这将优先于 `editor.experimental.treeSitterTelemetry`。",
-      "editor.experimental.treeSitterTelemetry": "控制是否开启树坐标解析和收集遥测数据。为特定语言设置 `editor.experimental.preferTreeSitter` 将优先。",
-      "editor.experimentalEditContextEnabled": "设置是否使用新的实验编辑上下文而不是文本区域。",
-      "editor.find.history": "控制查找 widget 历史记录的存储方式",
-      "editor.find.history0": "不要存储查找 widget 中的搜索历史记录。",
-      "editor.find.history1": "存储整个活动工作区的搜索历史记录",
       "editor.inlayHints.enabled1": "镶嵌提示默认显示,按住 \"Ctrl+Alt \"时隐藏。",
       "editor.inlayHints.enabled2": "镶嵌提示默认是隐藏的,当按住`Ctrl+Alt`时显示。",
       "editor.inlayHints.fontFamily": "控制编辑器中镶嵌提示的字体家族。设置为空时,将使用 `#editor.fontFamily#`。",
       "editor.inlayHints.fontSize": "控制编辑器中镶嵌提示的字体大小。默认情况下,当配置值小于 \"5 \"或大于编辑器字体大小时,将使用 \"#editor.fontSize#\"。",
-      "editor.inlayHints.maximumLength": "编辑器截断单行嵌套提示前,嵌套提示的最大总长度。设置为 \"0 \"则永不截断",
       "editor.inlineSuggest.edits.experimental.enabled": "控制是否在内联建议中启用实验性编辑。",
       "editor.inlineSuggest.edits.experimental.onlyShowWhenCloseToCursor": "控制是否只在光标接近建议时显示内联建议。",
       "editor.inlineSuggest.edits.experimental.useInterleavedLinesDiff": "控制是否启用内联建议中的实验性交错行差异。",
       "editor.inlineSuggest.edits.experimental.useMixedLinesDiff": "控制是否在内联建议中启用实验性编辑。",
-      "editor.inlineSuggest.syntaxHighlightingEnabled": "控制是否在编辑器中为内联建议显示语法高亮。",
       "editor.insertSpaces": "按 `Tab` 键时插入空格。当启用 `#editor.detectIndentation#`时,该设置会根据文件内容被覆盖。",
-      "editor.minimap.sectionHeaderLetterSpacing": "控制章节标题字符之间的空间大小(以像素为单位)。这有助于小字体标题的可读性。",
-      "editor.occurrencesHighlightDelay": "以毫秒为单位控制高亮显示出现的延迟时间。",
-      "editor.overtypeCursorStyle": "控制超输入模式下的光标样式。",
-      "editor.overtypeOnPaste": "控制粘贴时是否重打。",
       "editor.quickSuggestions": "控制在输入时是否应该自动显示建议。这可以在输入评论、字符串和其他代码时加以控制。快速建议可以被配置为显示为幽灵文本或建议小部件。还要注意'#editor.suggestOnTriggerCharacters#'设置,它控制建议是否被特殊字符触发。",
       "editor.suggestFontSize": "建议 widget 的字体大小。设置为 \"0 \"时,将使用 \"#editor.fontSize#\"的值。",
       "editor.suggestLineHeight": "建议 widget 的行高。设置为 \"0 \"时,将使用 \"#editor.lineHeight#\"的值。最小值为 8。",
@@ -448,7 +771,6 @@
       "location": "位置",
       "noProperties": "没有可用的属性。",
       "properties": "属性",
-      "size": "尺寸",
       "symbolicLink": "符号链接"
     },
     "scm": {
@@ -483,8 +805,7 @@
     "task": {
       "attachTask": "附加任务...",
       "clearHistory": "清除历史",
-      "noTaskToRun": "没有发现要运行的任务。配置任务...",
-      "openUserTasks": "打开用户的任务"
+      "noTaskToRun": "没有发现要运行的任务。配置任务..."
     },
     "terminal": {
       "defaultProfile": "上使用的默认配置文件。{0}",

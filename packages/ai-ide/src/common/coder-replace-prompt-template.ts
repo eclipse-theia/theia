@@ -21,7 +21,8 @@ import { CHANGE_SET_SUMMARY_VARIABLE_ID } from '@theia/ai-chat';
 import {
   GET_WORKSPACE_FILE_LIST_FUNCTION_ID,
   FILE_CONTENT_FUNCTION_ID,
-  GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID
+  GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID,
+  GET_FILE_DIAGNOSTICS_ID
 } from './workspace-functions';
 import { CONTEXT_FILES_VARIABLE_ID } from './context-variables';
 import { UPDATE_CONTEXT_FILES_FUNCTION_ID } from './context-functions';
@@ -41,13 +42,18 @@ Use the following functions to interact with the workspace files if you require 
 - **~{${FILE_CONTENT_FUNCTION_ID}}**: Retrieves the content of a specific file.
 - **~{${UPDATE_CONTEXT_FILES_FUNCTION_ID}}**: Remember file locations that are relevant for completing your tasks. Only add files that are really relevant to look at later.
 
+## File Validation
+Use the following function to retrieve a list of problems in a file if the user requests fixes in a given file:
+- **~{${GET_FILE_DIAGNOSTICS_ID}}**: Retrieves a list of problems identified in a given file by tool integrations such as language servers and linters.
+
 ## Propose Code Changes
 To propose code changes or any file changes to the user, never print code or new file content in your response.
 
 Instead, for each file you want to propose changes for:
 - **Always Retrieve Current Content**: Use ${FILE_CONTENT_FUNCTION_ID} to get the latest content of the target file.
 - **Change Content**: Use ~{changeSet_writeChangeToFile}${withSearchAndReplace ? ' or ~{changeSet_replaceContentInFile}' : ''} to propose file changes to the user.\
-  ${withSearchAndReplace ? 'Only select and call one function per file.' : ''}
+  ${withSearchAndReplace ? 'If ~{changeSet_replaceContentInFile} continously fails use ~{changeSet_writeChangeToFile}. Calling a function on a file will override previous function\
+  calls on the same files, so you need one successful call per changed file.' : ''}
   
 ## Additional Context
 
