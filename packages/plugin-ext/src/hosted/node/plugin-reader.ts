@@ -103,8 +103,8 @@ export class HostedPluginReader implements BackendApplicationContribution {
         return manifest;
     }
 
-    readMetadata(plugin: PluginPackage): PluginMetadata {
-        const pluginMetadata = this.scanner.getPluginMetadata(plugin);
+    async readMetadata(plugin: PluginPackage): Promise<PluginMetadata> {
+        const pluginMetadata = await this.scanner.getPluginMetadata(plugin);
         if (pluginMetadata.model.entryPoint.backend) {
             pluginMetadata.model.entryPoint.backend = path.resolve(plugin.packagePath, pluginMetadata.model.entryPoint.backend);
         }

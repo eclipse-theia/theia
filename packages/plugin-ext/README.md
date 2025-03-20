@@ -33,10 +33,11 @@ The implementation is inspired from: <https://blog.mattbierner.com/vscode-webvie
   When you change the host pattern via the `THEIA_WEBVIEW_EXTERNAL_ENDPOINT` environment variable warning will be emitted both from the frontend and from the backend.
   You can disable those warnings by setting `warnOnPotentiallyInsecureHostPattern: false` in the appropriate application configurations in your application's `package.json`.
 
-## Runtime System Plugin Resolvement
+## Naming in this package
 
-The backend application property `resolveSystemPlugins` is used to control the resolvement behavior for system plugins (builtins).
-The property is used to control whether or not extension-packs and extension-dependencies are resolved at runtime.
+This package has a different folder structure than other Theia packages. Stuff in the "hosted" folder is meant to be scoped to a front end,
+whereas "main" is global to a back end instance. Code in "plugin" runs inside the plugin host process. But be aware that this is not always the case,
+for example the plugin manifest scanners (e.g. `scanner-theia.ts`) are in the `hosted` folder, even though they a global concern.
 
 ## Additional Information
 

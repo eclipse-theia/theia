@@ -114,6 +114,18 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
             execute: async (extension: VSXExtension) => this.installAnotherVersion(extension),
         });
 
+        commands.registerCommand(VSXExtensionsCommands.DISABLE, {
+            isVisible: (extension: VSXExtension) => extension.installed && !extension.disabled,
+            isEnabled: (extension: VSXExtension) => extension.installed && !extension.disabled,
+            execute: async (extension: VSXExtension) => extension.disable(),
+        });
+
+        commands.registerCommand(VSXExtensionsCommands.ENABLE, {
+            isVisible: (extension: VSXExtension) => extension.installed && extension.disabled,
+            isEnabled: (extension: VSXExtension) => extension.installed && extension.disabled,
+            execute: async (extension: VSXExtension) => extension.enable(),
+        });
+
         commands.registerCommand(VSXExtensionsCommands.COPY, {
             execute: (extension: VSXExtension) => this.copy(extension)
         });
@@ -151,6 +163,15 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
             commandId: VSXExtensionsCommands.COPY_EXTENSION_ID.id,
             label: nls.localizeByDefault('Copy Extension ID'),
             order: '1'
+        });
+        menus.registerMenuAction(VSXExtensionsContextMenu.DISABLE, {
+            commandId: VSXExtensionsCommands.DISABLE.id,
+            label: nls.localizeByDefault('Disable')
+        });
+
+        menus.registerMenuAction(VSXExtensionsContextMenu.ENABLE, {
+            commandId: VSXExtensionsCommands.ENABLE.id,
+            label: nls.localizeByDefault('Enable')
         });
         menus.registerMenuAction(VSXExtensionsContextMenu.INSTALL, {
             commandId: VSXExtensionsCommands.INSTALL_ANOTHER_VERSION.id,

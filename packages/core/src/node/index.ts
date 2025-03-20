@@ -19,4 +19,5 @@ export * from './debug';
 export * from '../common/file-uri';
 export * from './messaging';
 export * from './cli';
+export * from './setting-service';
 export { FileSystemLocking } from './filesystem-locking';

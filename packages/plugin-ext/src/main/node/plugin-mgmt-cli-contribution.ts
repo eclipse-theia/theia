@@ -17,7 +17,7 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { Argv, Arguments } from '@theia/core/shared/yargs';
 import { CliContribution } from '@theia/core/lib/node/cli';
-import { HostedPluginDeployerHandler } from '../../hosted/node/hosted-plugin-deployer-handler';
+import { PluginDeployerHandlerImpl } from '../../hosted/node/plugin-deployer-handler-impl';
 import { PluginType } from '../../common';
 
 @injectable()
@@ -27,8 +27,8 @@ export class PluginMgmtCliContribution implements CliContribution {
     static SHOW_VERSIONS = '--show-versions';
     static SHOW_BUILTINS = '--show-builtins';
 
-    @inject(HostedPluginDeployerHandler)
-    protected deployerHandler: HostedPluginDeployerHandler;
+    @inject(PluginDeployerHandlerImpl)
+    protected deployerHandler: PluginDeployerHandlerImpl;
 
     configure(conf: Argv): void {
         conf.command([PluginMgmtCliContribution.LIST_PLUGINS, 'list-extensions'],

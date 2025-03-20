@@ -30,7 +30,7 @@ import { GrammarsReader } from './scanners/grammars-reader';
 import { HostedPluginProcess, HostedPluginProcessConfiguration } from './hosted-plugin-process';
 import { ExtPluginApiProvider } from '../../common/plugin-ext-api-contribution';
 import { HostedPluginCliContribution } from './hosted-plugin-cli-contribution';
-import { HostedPluginDeployerHandler } from './hosted-plugin-deployer-handler';
+import { PluginDeployerHandlerImpl } from './plugin-deployer-handler-impl';
 import { PluginUriFactory } from './scanners/plugin-uri-factory';
 import { FilePluginUriFactory } from './scanners/file-plugin-uri-factory';
 import { HostedPluginLocalizationService } from './hosted-plugin-localization-service';
@@ -67,8 +67,8 @@ export function bindCommonHostedBackend(bind: interfaces.Bind): void {
 
     bind(HostedPluginLocalizationService).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(HostedPluginLocalizationService);
-    bind(HostedPluginDeployerHandler).toSelf().inSingletonScope();
-    bind(PluginDeployerHandler).toService(HostedPluginDeployerHandler);
+    bind(PluginDeployerHandlerImpl).toSelf().inSingletonScope();
+    bind(PluginDeployerHandler).toService(PluginDeployerHandlerImpl);
 
     bind(PluginLanguagePackService).toSelf().inSingletonScope();
     bind(LanguagePackService).toService(PluginLanguagePackService);
