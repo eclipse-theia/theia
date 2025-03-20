@@ -13,8 +13,20 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio';
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import {StdioClientTransport} from '@modelcontextprotocol/sdk/client/stdio';
+import {SSEClientTransport} from '@modelcontextprotocol/sdk/client/sse';
+import {Client} from '@modelcontextprotocol/sdk/client/index.js';
+
+export type TransportType = 'stdio' | 'sse';
+
+export interface MCPServerConfig {
+    name: string;
+    command?: string;
+    args?: string[];
+    env?: { [key: string]: string };
+    transportType?: TransportType;
+    sseUrl?: string;
+}
 
 export class MCPServer {
     private name: string;
@@ -23,12 +35,16 @@ export class MCPServer {
     private client: Client;
     private env?: { [key: string]: string };
     private started: boolean = false;
+    private transportType: TransportType = 'stdio';
+    private sseUrl?: string;
 
-    constructor(name: string, command: string, args?: string[], env?: Record<string, string>) {
+    constructor(name: string, command: string, args?: string[], env?: Record<string, string>, transportType: TransportType = 'stdio', sseUrl?: string) {
         this.name = name;
         this.command = command;
         this.args = args;
         this.env = env;
+        this.transportType = transportType;
+        this.sseUrl = sseUrl;
     }
 
     isStarted(): boolean {
@@ -39,22 +55,40 @@ export class MCPServer {
         if (this.started) {
             return;
         }
-        console.log(`Starting server "${this.name}" with command: ${this.command} and args: ${this.args?.join(' ')} and env: ${JSON.stringify(this.env)}`);
-        // Filter process.env to exclude undefined values
-        const sanitizedEnv: Record<string, string> = Object.fromEntries(
-            Object.entries(process.env).filter((entry): entry is [string, string] => entry[1] !== undefined)
-        );
 
-        const mergedEnv: Record<string, string> = {
-            ...sanitizedEnv,
-            ...(this.env || {})
-        };
-        const transport = new StdioClientTransport({
-            command: this.command,
-            args: this.args,
-            env: mergedEnv,
-        });
-        transport.onerror = error => {
+        console.log(`Starting server "${this.name}" with transport: ${this.transportType}`);
+
+        let transport;
+
+        if (this.transportType === 'sse') {
+            if (!this.sseUrl) {
+                throw new Error(`SSE transport requires a URL, but none was provided for server "${this.name}"`);
+            }
+
+            console.log(`Using SSE transport with URL: ${this.sseUrl}`);
+            transport = new SSEClientTransport(new URL(this.sseUrl));
+        } else {
+            // Default to stdio transport
+            console.log(`Using stdio transport with command: ${this.command} and args: ${this.args?.join(' ')} and env: ${JSON.stringify(this.env)}`);
+
+            // Filter process.env to exclude undefined values
+            const sanitizedEnv: Record<string, string> = Object.fromEntries(
+                Object.entries(process.env).filter((entry): entry is [string, string] => entry[1] !== undefined)
+            );
+
+            const mergedEnv: Record<string, string> = {
+                ...sanitizedEnv,
+                ...(this.env || {})
+            };
+
+            transport = new StdioClientTransport({
+                command: this.command,
+                args: this.args,
+                env: mergedEnv,
+            });
+        }
+
+        transport.onerror = (error: Error) => {
             console.error('Error: ' + error);
         };
 
@@ -64,7 +98,7 @@ export class MCPServer {
         }, {
             capabilities: {}
         });
-        this.client.onerror = error => {
+        this.client.onerror = (error: Error) => {
             console.error('Error in MCP client: ' + error);
         };
 
@@ -76,7 +110,7 @@ export class MCPServer {
         let args;
         try {
             args = JSON.parse(arg_string);
-        } catch (error) {
+        } catch (error: unknown) {
             console.error(
                 `Failed to parse arguments for calling tool "${toolName}" in MCP server "${this.name}" with command "${this.command}".
                 Invalid JSON: ${arg_string}`,
@@ -94,10 +128,18 @@ export class MCPServer {
         return this.client.listTools();
     }
 
-    update(command: string, args?: string[], env?: { [key: string]: string }): void {
+    update(command: string, args?: string[], env?: {
+        [key: string]: string
+    }, transportType?: TransportType, sseUrl?: string): void {
         this.command = command;
         this.args = args;
         this.env = env;
+        if (transportType) {
+            this.transportType = transportType;
+        }
+        if (sseUrl) {
+            this.sseUrl = sseUrl;
+        }
     }
 
     stop(): void {
