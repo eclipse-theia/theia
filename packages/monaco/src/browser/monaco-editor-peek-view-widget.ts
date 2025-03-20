@@ -90,6 +90,14 @@ export class MonacoEditorPeekViewWidget {
                 return this._actionbarWidget;
             }
 
+            fillContainer(container: HTMLElement): void {
+                super._fillContainer(container);
+            }
+
+            protected override _fillContainer(container: HTMLElement): void {
+                that.fillContainer(container);
+            }
+
             fillHead(container: HTMLElement, noCloseAction?: boolean): void {
                 super._fillHead(container, noCloseAction);
             }
@@ -136,6 +144,26 @@ export class MonacoEditorPeekViewWidget {
 
             protected override revealRange(range: monaco.Range, isLastLine: boolean): void {
                 that.doRevealRange(that.editor['m2p'].asRange(range), isLastLine);
+            }
+
+            getBodyElement(): HTMLDivElement | undefined {
+                return this._bodyElement;
+            }
+
+            setBodyElement(element: HTMLDivElement | undefined): void {
+                this._bodyElement = element;
+            }
+
+            getHeadElement(): HTMLDivElement | undefined {
+                return this._headElement;
+            }
+
+            setHeadElement(element: HTMLDivElement | undefined): void {
+                this._headElement = element;
+            }
+
+            override setCssClass(className: string, classToReplace?: string | undefined): void {
+                super.setCssClass(className, classToReplace);
             }
         }(
             editor.getControl() as unknown as ICodeEditor,
@@ -185,6 +213,10 @@ export class MonacoEditorPeekViewWidget {
         return action;
     }
 
+    protected fillContainer(container: HTMLElement): void {
+        this.delegate.fillContainer(container)
+    }
+
     protected fillHead(container: HTMLElement, noCloseAction?: boolean): void {
         this.delegate.fillHead(container, noCloseAction);
     }
@@ -207,6 +239,26 @@ export class MonacoEditorPeekViewWidget {
 
     protected doRevealRange(range: Range, isLastLine: boolean): void {
         this.delegate.doRevealRange(this.editor['p2m'].asRange(range), isLastLine);
+    }
+
+    protected get bodyElement(): HTMLDivElement | undefined {
+        return this.delegate.getBodyElement();
+    }
+
+    protected set bodyElement(element: HTMLDivElement | undefined) {
+        this.delegate.setBodyElement(element);
+    }
+
+    protected get headElement(): HTMLDivElement | undefined {
+        return this.delegate.getHeadElement();
+    }
+
+    protected set headElement(element: HTMLDivElement | undefined) {
+        this.delegate.setHeadElement(element);
+    }
+
+    protected setCssClass(className: string, classToReplace?: string | undefined): void {
+        this.delegate.setCssClass(className, classToReplace);
     }
 
     private convertStyles(styles: MonacoEditorPeekViewWidget.Styles): IPeekViewStyles {
