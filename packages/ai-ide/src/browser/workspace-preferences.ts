@@ -19,6 +19,9 @@ import { PreferenceSchema } from '@theia/core/lib/browser/preferences/preference
 
 export const CONSIDER_GITIGNORE_PREF = 'ai-features.workspaceFunctions.considerGitIgnore';
 export const USER_EXCLUDE_PATTERN_PREF = 'ai-features.workspaceFunctions.userExcludes';
+export const PROMPT_TEMPLATE_WORKSPACE_DIRECTORIES_PREF = 'ai-features.promptTemplates.WorkspaceTemplateDirectories';
+export const PROMPT_TEMPLATE_WORKSPACE_EXTENSIONS_PREF = 'ai-features.promptTemplates.WorkspaceTemplateExtensions';
+export const PROMPT_TEMPLATE_WORKSPACE_FILES_PREF = 'ai-features.promptTemplates.WorkspaceTemplateFiles';
 
 export const WorkspacePreferencesSchema: PreferenceSchema = {
     type: 'object',
@@ -35,6 +38,39 @@ export const WorkspacePreferencesSchema: PreferenceSchema = {
             title: nls.localize('theia/ai/workspace/excludedPattern/title', 'Excluded File Patterns'),
             description: nls.localize('theia/ai/workspace/excludedPattern/description', 'List of patterns (glob or regex) for files/folders to exclude.'),
             default: ['node_modules', 'lib', '.*'],
+            items: {
+                type: 'string'
+            }
+        },
+        [PROMPT_TEMPLATE_WORKSPACE_DIRECTORIES_PREF]: {
+            type: 'array',
+            title: nls.localize('theia/ai/promptTemplates/directories/title', 'Workspace-specific Prompt Template Directories'),
+            description: nls.localize('theia/ai/promptTemplates/directories/description',
+                'List of relative paths indicating folders in the current workspace to be scanned for WORKSPACE specific prompt templates. Templates from workspace directories \
+                have higher priority than global templates but lower priority than specific template files.'),
+            default: [],
+            items: {
+                type: 'string'
+            }
+        },
+        [PROMPT_TEMPLATE_WORKSPACE_EXTENSIONS_PREF]: {
+            type: 'array',
+            title: nls.localize('theia/ai/promptTemplates/extensions/title', 'Workspace-specific Prompt Template File Extensions'),
+            description: nls.localize('theia/ai/promptTemplates/extensions/description',
+                'List of file extensions in workspace-specific locations that are considered as prompt templates. When templates with the same ID exist in multiple locations, \
+                conflicts are resolved by priority: specific template files (highest) > workspace directories > global directories (lowest).'),
+            default: ['.prompttemplates'],
+            items: {
+                type: 'string'
+            }
+        },
+        [PROMPT_TEMPLATE_WORKSPACE_FILES_PREF]: {
+            type: 'array',
+            title: nls.localize('theia/ai/promptTemplates/files/title', 'Workspace-specific Prompt Template Files'),
+            description: nls.localize('theia/ai/promptTemplates/files/description',
+                'List of relative paths to specific files in the current workspace to be used as prompt templates. Template files have the highest priority and will override \
+                templates from both global and workspace directories when template IDs conflict.'),
+            default: [],
             items: {
                 type: 'string'
             }
