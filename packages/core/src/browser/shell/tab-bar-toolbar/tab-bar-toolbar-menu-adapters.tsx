@@ -14,13 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Widget } from '@phosphor/widgets';
+import { Widget } from '@lumino/widgets';
 import * as React from 'react';
-import { CommandRegistry, DisposableCollection, Event } from '../../../common';
+import { CommandRegistry, Event } from '../../../common';
 import { NAVIGATION, RenderedToolbarAction } from './tab-bar-toolbar-types';
 import { TabBarToolbar, toAnchor } from './tab-bar-toolbar';
 import { ACTION_ITEM, codicon } from '../../widgets';
-import { Anchor, ContextMenuAccess, ContextMenuRenderer } from '../../context-menu-renderer';
+import { ContextMenuRenderer } from '../../context-menu-renderer';
 import { TabBarToolbarItem } from './tab-toolbar-item';
 import { ContextKeyService, ContextMatcher } from '../../context-key-service';
 import { CommandMenu, CompoundMenuNode, MenuModelRegistry, MenuNode, MenuPath, RenderedMenuNode } from '../../../common/menu';
@@ -76,27 +76,14 @@ abstract class AbstractToolbarMenuWrapper {
         event.stopPropagation();
         event.preventDefault();
         const anchor = toAnchor(event);
-        this.renderPopupMenu(widget, menuPath, this.menuNode as CompoundMenuNode, anchor, contextMatcher);
-    }
 
-    /**
-     * Renders the menu popped up on a menu toolbar item.
-     *
-     * @param menuPath the path of the registered menu to render
-     * @param anchor a description of where to render the menu
-     * @returns platform-specific access to the rendered context menu
-     */
-    protected renderPopupMenu(widget: Widget | undefined, menuPath: MenuPath, menu: CompoundMenuNode, anchor: Anchor, contextMatcher: ContextMatcher): ContextMenuAccess {
-        const toDisposeOnHide = new DisposableCollection();
-
-        return this.contextMenuRenderer.render({
+        this.contextMenuRenderer.render({
             menuPath: menuPath,
-            menu: menu,
+            menu: this.menuNode as CompoundMenuNode,
             args: [widget],
             anchor,
-            context: widget?.node,
+            context: widget?.node || event.target as HTMLElement,
             contextKeyService: contextMatcher,
-            onHide: () => toDisposeOnHide.dispose()
         });
     }
 

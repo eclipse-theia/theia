@@ -93,23 +93,27 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
                 return this.doRegisterItem(new ToolbarSubmenuWrapper(item.menuPath,
                     this.commandRegistry, this.menuRegistry, this.contextKeyService, this.contextMenuRenderer, item));
             } else {
-                return this.doRegisterItem(new RenderedToolbarItemImpl(this.commandRegistry, this.contextKeyService, this.keybindingRegistry, this.labelParser, item));
+                const wrapper = new RenderedToolbarItemImpl(this.commandRegistry, this.contextKeyService, this.keybindingRegistry, this.labelParser, item);
+                const disposables = this.doRegisterItem(wrapper);
+                disposables.push(wrapper);
+                return disposables;
             }
         }
     }
 
-    doRegisterItem(item: TabBarToolbarItem): Disposable {
+    doRegisterItem(item: TabBarToolbarItem): DisposableCollection {
         if (this.items.has(item.id)) {
             throw new Error(`A toolbar item is already registered with the '${item.id}' ID.`);
         }
         this.items.set(item.id, item);
         this.fireOnDidChange();
         const toDispose = new DisposableCollection(
-            Disposable.create(() => this.fireOnDidChange()),
             Disposable.create(() => {
                 this.items.delete(item.id);
+                this.fireOnDidChange();
             })
         );
+
         if (item.onDidChange) {
             toDispose.push(item.onDidChange(() => this.fireOnDidChange()));
         }
