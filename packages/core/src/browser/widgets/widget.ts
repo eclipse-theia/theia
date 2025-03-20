@@ -207,11 +207,11 @@ export class BaseWidget extends Widget implements PreviewableWidget {
         this.toDisposeOnDetach.push(addEventListener(element, type, listener, useCapture));
     }
 
-    protected addKeyListener<K extends Array<keyof HTMLElementEventMap> = []>(
+    protected addKeyListener<K extends keyof HTMLElementEventMap = never>(
         element: HTMLElement,
         keysOrKeyCodes: KeyCode.Predicate | KeysOrKeyCodes,
-        action: EventHandler<K[number] | 'keydown'>,
-        ...additionalEventTypes: K): void {
+        action: EventHandler<K | 'keydown'>,
+        ...additionalEventTypes: K[]): void {
         this.toDisposeOnDetach.push(addKeyListener(element, keysOrKeyCodes, action, ...additionalEventTypes));
     }
 
@@ -280,11 +280,11 @@ export function addEventListener<K extends keyof HTMLElementEventMap>(
     );
 }
 
-export function addKeyListener<K extends Array<keyof HTMLElementEventMap> = []>(
+export function addKeyListener<K extends keyof HTMLElementEventMap = never>(
     element: HTMLElement,
     keysOrKeyCodes: KeyCode.Predicate | KeysOrKeyCodes,
-    action: EventHandler<K[number] | 'keydown'>,
-    ...additionalEventTypes: K): Disposable {
+    action: EventHandler<K | 'keydown'>,
+    ...additionalEventTypes: K[]): Disposable {
     type HandledEvent = Parameters<typeof action>[0];
 
     const toDispose = new DisposableCollection();
