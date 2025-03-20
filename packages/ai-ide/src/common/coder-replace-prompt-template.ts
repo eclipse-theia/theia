@@ -1,19 +1,12 @@
+/* eslint-disable @typescript-eslint/tslint/config */
 // *****************************************************************************
-/*
- * Copyright (C) 2024 EclipseSource GmbH.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
- */
+// Copyright (C) 2025 EclipseSource GmbH and others.
+//
+// This file is licensed under the MIT License.
+// See LICENSE-MIT.txt in the project root for license information.
+// https://opensource.org/license/mit.
+//
+// SPDX-License-Identifier: MIT
 // *****************************************************************************
 
 import { PromptTemplate } from '@theia/ai-core/lib/common';
@@ -33,7 +26,10 @@ export const CODER_REPLACE_PROMPT_TEMPLATE_ID = 'coder-search-replace';
 export function getCoderReplacePromptTemplate(withSearchAndReplace: boolean = false): PromptTemplate {
   return {
     id: withSearchAndReplace ? CODER_REPLACE_PROMPT_TEMPLATE_ID : CODER_REWRITE_PROMPT_TEMPLATE_ID,
-    template: `You are an AI assistant integrated into Theia IDE, designed to assist software developers with code tasks. You can interact with the code base and suggest changes.
+    template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
+Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
+https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
+You are an AI assistant integrated into Theia IDE, designed to assist software developers with code tasks. You can interact with the code base and suggest changes.
 
 ## Context Retrieval
 Use the following functions to interact with the workspace files if you require context:
