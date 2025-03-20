@@ -16,9 +16,9 @@
 
 import { ContextKeyService } from '../../context-key-service';
 import { ReactTabBarToolbarAction, RenderedToolbarAction, TabBarToolbarActionBase } from './tab-bar-toolbar-types';
-import { Widget } from '@phosphor/widgets';
+import { Widget } from '@lumino/widgets';
 import { LabelIcon, LabelParser } from '../../label-parser';
-import { CommandRegistry, Event, Disposable, Emitter } from '../../../common';
+import { CommandRegistry, Event, Disposable, Emitter, DisposableCollection } from '../../../common';
 import { KeybindingRegistry } from '../../keybinding';
 import { ACTION_ITEM } from '../../widgets';
 import { TabBarToolbar } from './tab-bar-toolbar';
@@ -47,7 +47,6 @@ class AbstractToolbarItemImpl<T extends TabBarToolbarActionBase> {
         protected readonly commandRegistry: CommandRegistry,
         protected readonly contextKeyService: ContextKeyService,
         protected readonly action: T) {
-
     }
 
     get id(): string {
@@ -58,6 +57,10 @@ class AbstractToolbarItemImpl<T extends TabBarToolbarActionBase> {
     }
     get priority(): number | undefined {
         return this.action.priority;
+    }
+
+    get onDidChange(): Event<void> | undefined {
+        return this.action.onDidChange;
     }
 
     isVisible(widget: Widget): boolean {
@@ -80,6 +83,7 @@ class AbstractToolbarItemImpl<T extends TabBarToolbarActionBase> {
 
 export class RenderedToolbarItemImpl extends AbstractToolbarItemImpl<RenderedToolbarAction> implements TabBarToolbarItem {
     protected contextKeyListener: Disposable | undefined;
+    protected disposables = new DisposableCollection();
 
     constructor(
         commandRegistry: CommandRegistry,
@@ -88,6 +92,13 @@ export class RenderedToolbarItemImpl extends AbstractToolbarItemImpl<RenderedToo
         protected readonly labelParser: LabelParser,
         action: RenderedToolbarAction) {
         super(commandRegistry, contextKeyService, action);
+        if (action.onDidChange) {
+            this.disposables.push(action.onDidChange(() => this.onDidChangeEmitter.fire()));
+        }
+    }
+
+    dispose(): void {
+        this.disposables.dispose();
     }
 
     updateContextKeyListener(when: string): void {
@@ -138,7 +149,9 @@ export class RenderedToolbarItemImpl extends AbstractToolbarItemImpl<RenderedToo
     }
 
     protected readonly onDidChangeEmitter = new Emitter<void>;
-    onDidChange: Event<void> = this.onDidChangeEmitter.event;
+    override get onDidChange(): Event<void> | undefined {
+        return this.onDidChangeEmitter.event;
+    }
 
     toMenuNode?(): MenuNode {
         const action = new ActionMenuNode({

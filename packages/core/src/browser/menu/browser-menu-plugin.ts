@@ -305,7 +305,7 @@ export class DynamicMenuWidget extends MenuWidget {
         super.open(x, y, options);
     }
 
-    protected updateSubMenus(parentPath: MenuPath, parent: MenuWidget, menu: CompoundMenuNode, commands: PhosphorCommandRegistry,
+    protected updateSubMenus(parentPath: MenuPath, parent: MenuWidget, menu: CompoundMenuNode, commands: LuminoCommandRegistry,
         contextMatcher: ContextMatcher, context?: HTMLElement | undefined): void {
         const items = this.createItems(parentPath, menu.children, commands, contextMatcher, context);
         while (items[items.length - 1]?.type === 'separator') {
@@ -323,7 +323,7 @@ export class DynamicMenuWidget extends MenuWidget {
         }
     }
 
-    protected createItems(parentPath: MenuPath, nodes: MenuNode[], phCommandRegistry: PhosphorCommandRegistry,
+    protected createItems(parentPath: MenuPath, nodes: MenuNode[], phCommandRegistry: LuminoCommandRegistry,
         contextMatcher: ContextMatcher, context?: HTMLElement): MenuWidget.IItemOptions[] {
         const result: MenuWidget.IItemOptions[] = [];
 
@@ -356,7 +356,7 @@ export class DynamicMenuWidget extends MenuWidget {
                         isToggled: () => node.isToggled ? !!node.isToggled(nodePath, ...(this.args || [])) : false,
                         isVisible: () => true,
                         label: node.label,
-                        icon: node.icon,
+                        iconClass: node.icon,
                     });
 
                     const accelerator = (AcceleratorSource.is(node) ? node.getAccelerator(this.options.context) : []);
