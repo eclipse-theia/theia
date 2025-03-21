@@ -19,6 +19,8 @@ import type { Client } from '@modelcontextprotocol/sdk/client/index';
 export interface MCPServer {
     callTool(toolName: string, arg_string: string): ReturnType<Client['callTool']>;
     getTools(): ReturnType<Client['listTools']>;
+    getResources(): ReturnType<Client['listResources']>;
+    getResourceContent(resourceId: string): ReturnType<Client['readResource']>;
 }
 
 export interface MCPServerManager {
@@ -26,6 +28,8 @@ export interface MCPServerManager {
     removeServer(name: string): void;
     addOrUpdateServer(description: MCPServerDescription): void;
     getTools(serverName: string): ReturnType<MCPServer['getTools']>
+    getResources(serverName: string): ReturnType<MCPServer['getResources']>
+    getResourceContent(serverName: string, resourceId: string): ReturnType<MCPServer['getResourceContent']>
     getServerNames(): Promise<string[]>;
     startServer(serverName: string): Promise<void>;
     stopServer(serverName: string): Promise<void>;
