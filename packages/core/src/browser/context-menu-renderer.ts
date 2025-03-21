@@ -31,7 +31,7 @@ export function coordinateFromAnchor(anchor: Anchor): Coordinate {
     return { x, y };
 }
 
-export abstract class ContextMenuAccess implements Disposable {
+export class ContextMenuAccess implements Disposable {
 
     protected readonly toDispose = new DisposableCollection();
     readonly onDispose = this.toDispose.onDispose;
@@ -61,6 +61,9 @@ export abstract class ContextMenuRenderer {
      */
     get current(): ContextMenuAccess | undefined {
         return this._current;
+    }
+    set current(current: ContextMenuAccess | undefined) {
+        this.setCurrent(current);
     }
     protected setCurrent(current: ContextMenuAccess | undefined): void {
         if (this._current === current) {

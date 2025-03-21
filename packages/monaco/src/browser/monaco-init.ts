@@ -82,6 +82,8 @@ import { MonacoStandaloneThemeService } from './monaco-standalone-theme-service'
 import { createContentHoverWidgetPatcher } from './content-hover-widget-patcher';
 import { IHoverService } from '@theia/monaco-editor-core/esm/vs/platform/hover/browser/hover';
 import { setBaseLayerHoverDelegate } from '@theia/monaco-editor-core/esm/vs/base/browser/ui/hover/hoverDelegate2';
+import { IWorkspaceContextService } from '@theia/monaco-editor-core/esm/vs/platform/workspace/common/workspace';
+import { MonacoWorkspaceContextService } from './monaco-workspace-context-service';
 
 export const contentHoverWidgetPatcher = createContentHoverWidgetPatcher();
 
@@ -143,6 +145,12 @@ class MonacoStandaloneThemeServiceConstructor {
     }
 }
 
+class MonacoWorkspaceContextServiceConstructor {
+    constructor(container: Container) {
+        return container.get(MonacoWorkspaceContextService);
+    }
+}
+
 export namespace MonacoInit {
     export function init(container: Container): void {
         StandaloneServices.initialize({
@@ -153,7 +161,8 @@ export namespace MonacoInit {
             [IBulkEditService.toString()]: new SyncDescriptor(MonacoBulkEditServiceConstructor, [container]),
             [ICommandService.toString()]: new SyncDescriptor(MonacoCommandServiceConstructor, [container]),
             [IQuickInputService.toString()]: new SyncDescriptor(MonacoQuickInputImplementationConstructor, [container]),
-            [IStandaloneThemeService.toString()]: new SyncDescriptor(MonacoStandaloneThemeServiceConstructor, [])
+            [IStandaloneThemeService.toString()]: new SyncDescriptor(MonacoStandaloneThemeServiceConstructor, []),
+            [IWorkspaceContextService.toString()]: new SyncDescriptor(MonacoWorkspaceContextServiceConstructor, [container])
         });
         // Make sure the global base hover delegate is initialized as otherwise the quick input will throw an error and not update correctly
         // in case no Monaco editor was constructed before and items with keybindings are shown. See #15042.
