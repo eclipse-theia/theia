@@ -77,7 +77,7 @@ export class MonacoDiffEditor extends MonacoEditor {
     }
 
     protected override create(options?: IDiffEditorConstructionOptions, override?: EditorServiceOverrides): Disposable {
-        options = { ...options, fixedOverflowWidgets: false };
+        options = { ...options, fixedOverflowWidgets: true };
         const instantiator = this.getInstantiatorWithOverrides(override);
         /**
          *  @monaco-uplift. Should be guaranteed to work.
@@ -101,7 +101,7 @@ export class MonacoDiffEditor extends MonacoEditor {
             const hasReachedSideBySideBreakpoint = leftEditor.contextKeyService
                 .getContextKeyValue(EditorContextKeys.diffEditorRenderSideBySideInlineBreakpointReached.key);
             if (hasReachedSideBySideBreakpoint !== this.lastReachedSideBySideBreakpoint) {
-                leftEditor.updateOptions({ wordWrapOverride2: this.wordWrapOverride ?? hasReachedSideBySideBreakpoint ?  'off' : 'inherit' });
+                leftEditor.updateOptions({ wordWrapOverride2: this.wordWrapOverride ?? hasReachedSideBySideBreakpoint ? 'off' : 'inherit' });
             }
             this.lastReachedSideBySideBreakpoint = !!hasReachedSideBySideBreakpoint;
         }
@@ -131,7 +131,7 @@ export class MonacoDiffEditor extends MonacoEditor {
 
     override handleVisibilityChanged(nowVisible: boolean): void {
         if (nowVisible) {
-            this.diffEditor.setModel({original: this.originalTextModel, modified: this.modifiedTextModel});
+            this.diffEditor.setModel({ original: this.originalTextModel, modified: this.modifiedTextModel });
             this.diffEditor.restoreViewState(this.savedDiffState);
             this.diffEditor.focus();
         } else {

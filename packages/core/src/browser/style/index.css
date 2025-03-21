@@ -221,6 +221,8 @@ blockquote {
 
 .lm-Widget {
     font-size: var(--theia-ui-font-size1);
+    /** We override the contain of lm-Widget to make sure Monaco autocomplete etc. is correctly applied */
+    contain: none !important;
 }
 
 .lm-Widget.lm-mod-hidden {
