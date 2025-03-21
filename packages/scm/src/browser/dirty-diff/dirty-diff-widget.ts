@@ -48,8 +48,8 @@ export class DirtyDiffWidget implements Disposable {
     private readonly onDidCloseEmitter = new Emitter<unknown>();
     readonly onDidClose: Event<unknown> = this.onDidCloseEmitter.event;
     protected index: number = -1;
-    private peekView?: DirtyDiffPeekView;
-    private diffEditorPromise?: Promise<MonacoDiffEditor>;
+    private peekView: DirtyDiffPeekView;
+    private diffEditorPromise: Promise<MonacoDiffEditor>;
 
     constructor(
         @inject(DirtyDiffWidgetProps) protected readonly props: DirtyDiffWidgetProps,
@@ -90,16 +90,16 @@ export class DirtyDiffWidget implements Disposable {
         return this.index;
     }
 
-    showChange(index: number): void {
-        this.checkCreated();
+    async showChange(index: number): Promise<void> {
+        await this.checkCreated();
         if (index >= 0 && index < this.changes.length) {
             this.index = index;
             this.showCurrentChange();
         }
     }
 
-    showNextChange(): void {
-        this.checkCreated();
+    async showNextChange(): Promise<void> {
+        await this.checkCreated();
         const index = this.index;
         const length = this.changes.length;
         if (length > 0 && (index < 0 || length > 1)) {
@@ -108,8 +108,8 @@ export class DirtyDiffWidget implements Disposable {
         }
     }
 
-    showPreviousChange(): void {
-        this.checkCreated();
+    async showPreviousChange(): Promise<void> {
+        await this.checkCreated();
         const index = this.index;
         const length = this.changes.length;
         if (length > 0 && (index < 0 || length > 1)) {
@@ -119,7 +119,7 @@ export class DirtyDiffWidget implements Disposable {
     }
 
     async getContentWithSelectedChanges(predicate: (change: Change, index: number, changes: readonly Change[]) => boolean): Promise<string> {
-        this.checkCreated();
+        await this.checkCreated();
         const changes = this.changes.filter(predicate);
         const { diffEditor } = await this.diffEditorPromise!;
         const diffEditorModel = diffEditor.getModel()!;
@@ -134,9 +134,9 @@ export class DirtyDiffWidget implements Disposable {
     protected showCurrentChange(): void {
         this.peekView!.setTitle(this.computePrimaryHeading(), this.computeSecondaryHeading());
         const { previousRange, currentRange } = this.changes[this.index];
-        this.peekView!.show(Position.create(LineRange.getEndPosition(currentRange).line, 0),
+        this.peekView.show(Position.create(LineRange.getEndPosition(currentRange).line, 0),
             this.computeHeightInLines());
-        this.diffEditorPromise!.then(({ diffEditor }) => {
+        this.diffEditorPromise.then(({ diffEditor }) => {
             let startLine = LineRange.getStartPosition(currentRange).line;
             let endLine = LineRange.getEndPosition(currentRange).line;
             if (LineRange.isEmpty(currentRange)) { // the change is a removal
@@ -174,10 +174,8 @@ export class DirtyDiffWidget implements Disposable {
         return Math.min(changeHeightInLines + /* padding */ 8, Math.floor(editorHeightInLines / 3));
     }
 
-    protected checkCreated(): void {
-        if (!this.peekView) {
-            throw new Error('create() method needs to be called first.');
-        }
+    protected async checkCreated(): Promise<void> {
+        await this.diffEditorPromise;
     }
 }
 
@@ -250,7 +248,7 @@ function applyChanges(changes: readonly Change[], original: monaco.editor.ITextM
 
 class DirtyDiffPeekView extends MonacoEditorPeekViewWidget {
 
-    private diffEditorPromise?: Promise<MonacoDiffEditor>;
+    private diffEditor?: MonacoDiffEditor;
     private height?: number;
 
     constructor(readonly widget: DirtyDiffWidget) {
@@ -259,12 +257,16 @@ class DirtyDiffPeekView extends MonacoEditorPeekViewWidget {
 
     override async create(): Promise<MonacoDiffEditor> {
         try {
+            this.bodyElement = document.createElement('div');
+            this.bodyElement.classList.add('body');
+            const diffEditor = await this.widget.editorProvider.createEmbeddedDiffEditor(this.editor, this.bodyElement, this.widget.previousRevisionUri);
+            this.diffEditor = diffEditor;
+            this.toDispose.push(diffEditor);
             super.create();
-            const diffEditor = await this.diffEditorPromise!;
             return new Promise(resolve => {
-            // setTimeout is needed here because the non-side-by-side diff editor might still not have created the view zones;
-            // otherwise, the first change shown might not be properly revealed in the diff editor.
-            // see also https://github.com/microsoft/vscode/blob/b30900b56c4b3ca6c65d7ab92032651f4cb23f15/src/vs/workbench/contrib/scm/browser/dirtydiffDecorator.ts#L248
+                // setTimeout is needed here because the non-side-by-side diff editor might still not have created the view zones;
+                // otherwise, the first change shown might not be properly revealed in the diff editor.
+                // see also https://github.com/microsoft/vscode/blob/b30900b56c4b3ca6c65d7ab92032651f4cb23f15/src/vs/workbench/contrib/scm/browser/dirtydiffDecorator.ts#L248
                 const disposable = diffEditor.diffEditor.onDidUpdateDiff(() => setTimeout(() => {
                     resolve(diffEditor);
                     disposable.dispose();
@@ -329,15 +331,20 @@ class DirtyDiffPeekView extends MonacoEditorPeekViewWidget {
             () => this.dispose());
     }
 
-    protected override fillHead(container: HTMLElement): void {
-        super.fillHead(container, true);
+    protected override fillContainer(container: HTMLElement): void {
+        this.setCssClass('peekview-widget');
+
+        this.headElement = document.createElement('div');
+        this.headElement.classList.add('head');
+
+        container.appendChild(this.headElement);
+        container.appendChild(this.bodyElement!);
+
+        this.fillHead(this.headElement);
     }
 
-    protected override fillBody(container: HTMLElement): void {
-        this.diffEditorPromise = this.widget.editorProvider.createEmbeddedDiffEditor(this.editor, container, this.widget.previousRevisionUri).then(diffEditor => {
-            this.toDispose.push(diffEditor);
-            return diffEditor;
-        });
+    protected override fillHead(container: HTMLElement): void {
+        super.fillHead(container, true);
     }
 
     protected override doLayoutBody(height: number, width: number): void {
@@ -355,7 +362,7 @@ class DirtyDiffPeekView extends MonacoEditorPeekViewWidget {
     }
 
     private layout(height: number, width: number): void {
-        this.diffEditorPromise?.then(({ diffEditor }) => diffEditor.layout({ height, width }));
+        this.diffEditor?.diffEditor.layout({ height, width });
     }
 
     protected override doRevealRange(range: Range): void {
