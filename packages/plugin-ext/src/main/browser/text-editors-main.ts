@@ -23,7 +23,6 @@ import {
     TextEditorRevealType,
     SingleEditOperation,
     ApplyEditsOptions,
-    UndoStopOptions,
     DecorationRenderOptions,
     ThemeDecorationInstanceRenderOptions,
     DecorationOptions,
@@ -31,6 +30,7 @@ import {
     WorkspaceNotebookCellEditDto,
     DocumentsMain,
     WorkspaceEditMetadataDto,
+    SnippetEditOptions,
 } from '../../common/plugin-api-rpc';
 import { Range, TextDocumentShowOptions } from '../../common/plugin-api-rpc-model';
 import { EditorsAndDocumentsMain } from './editors-and-documents-main';
@@ -157,7 +157,7 @@ export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
         }
     }
 
-    $tryInsertSnippet(id: string, template: string, ranges: Range[], opts: UndoStopOptions): Promise<boolean> {
+    $tryInsertSnippet(id: string, template: string, ranges: Range[], opts: SnippetEditOptions): Promise<boolean> {
         if (!this.editorsAndDocuments.getEditor(id)) {
             return Promise.reject(disposed(`TextEditor(${id})`));
         }

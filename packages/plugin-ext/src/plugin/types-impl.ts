@@ -1341,6 +1341,7 @@ export class NotebookRange implements theia.NotebookRange {
 export class SnippetTextEdit implements theia.SnippetTextEdit {
     range: Range;
     snippet: SnippetString;
+    keepWhitespace?: boolean;
 
     static isSnippetTextEdit(thing: unknown): thing is SnippetTextEdit {
         return thing instanceof SnippetTextEdit || isObject<SnippetTextEdit>(thing)
