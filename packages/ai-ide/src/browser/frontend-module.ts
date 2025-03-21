@@ -20,7 +20,7 @@ import { Agent, AIVariableContribution, ToolProvider } from '@theia/ai-core/lib/
 import { ArchitectAgent } from './architect-agent';
 import { CoderAgent } from './coder-agent';
 import { FileContentFunction, FileDiagonsticProvider, GetWorkspaceDirectoryStructure, GetWorkspaceFileList, WorkspaceFunctionScope } from './workspace-functions';
-import { PreferenceContribution, WidgetFactory, bindViewContribution } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, PreferenceContribution, WidgetFactory, bindViewContribution } from '@theia/core/lib/browser';
 import { WorkspacePreferencesSchema } from './workspace-preferences';
 import {
     ReplaceContentInFileFunctionHelper,
@@ -39,7 +39,8 @@ import { AIConfigurationContainerWidget } from './ai-configuration/ai-configurat
 import { AIVariableConfigurationWidget } from './ai-configuration/variable-configuration-widget';
 import { ContextFilesVariableContribution } from '../common/context-files-variable';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import {AiConfigurationPreferences} from './ai-configuration/ai-configuration-preferences';
+import { AiConfigurationPreferences } from './ai-configuration/ai-configuration-preferences';
+import { TemplatePreferenceContribution } from './template-preference-contribution';
 
 export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: WorkspacePreferencesSchema });
@@ -109,5 +110,7 @@ export default new ContainerModule(bind => {
     bind(ToolProvider).to(SimpleReplaceContentInFileProvider);
     bind(ToolProvider).to(AddFileToChatContext);
     bind(AIVariableContribution).to(ContextFilesVariableContribution).inSingletonScope();
-    bind(PreferenceContribution).toConstantValue({schema: AiConfigurationPreferences});
+    bind(PreferenceContribution).toConstantValue({ schema: AiConfigurationPreferences });
+
+    bind(FrontendApplicationContribution).to(TemplatePreferenceContribution);
 });
