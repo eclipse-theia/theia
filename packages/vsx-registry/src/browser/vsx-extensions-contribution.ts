@@ -244,7 +244,7 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
     protected async installVsixFile(fileURI: URI): Promise<void> {
         const extensionName = this.labelProvider.getName(fileURI);
         try {
-            await this.commandRegistry.executeCommand(VscodeCommands.INSTALL_FROM_VSIX.id, fileURI);
+            await this.commandRegistry.executeCommand(VscodeCommands.INSTALL_EXTENSION_FROM_ID_OR_URI.id, fileURI);
             this.messageService.info(nls.localizeByDefault('Completed installing extension.', extensionName));
         } catch (e) {
             this.messageService.error(nls.localize('theia/vsx-registry/failedInstallingVSIX', 'Failed to install {0} from VSIX.', extensionName));
