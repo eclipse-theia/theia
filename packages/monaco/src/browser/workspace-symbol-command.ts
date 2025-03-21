@@ -156,7 +156,7 @@ export class WorkspaceSymbolCommand implements QuickAccessProvider, CommandContr
         if (!kind) {
             return undefined;
         }
-        return [`codicon ${inline ? 'inline' : 'block'} codicon-symbol-${kind.toLowerCase() || 'property'}`];
+        return ['codicon', `${inline ? 'inline' : 'block'}`, `codicon-symbol-${kind.toLowerCase() || 'property'}`];
     }
 
     private openURL(uri: URI, start: Position, end: Position): void {
