@@ -66,6 +66,7 @@ import { NotebooksAndEditorsMain } from './notebooks/notebook-documents-and-edit
 import { TestingMainImpl } from './test-main';
 import { UriMainImpl } from './uri-main';
 import { LoggerMainImpl } from './logger-main';
+import { PluginApiAccessService } from './plugin-api-access';
 
 export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container): void {
     const loggerMain = new LoggerMainImpl(container);
@@ -211,4 +212,6 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
 
     const uriMain = new UriMainImpl(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.URI_MAIN, uriMain);
+
+    container.get(PluginApiAccessService).init(rpc);
 }

@@ -288,6 +288,7 @@ import { TestingExtImpl } from './tests';
 import { UriExtImpl } from './uri-ext';
 import { isObject } from '@theia/core';
 import { PluginLogger } from './logger';
+import { PluginApiAccessExtImpl } from './plugin-api-access';
 
 export function createAPIObject<T extends Object>(rawObject: T): T {
     return new Proxy(rawObject, {
@@ -353,6 +354,7 @@ export function createAPIFactory(
     const testingExt = rpc.set(MAIN_RPC_CONTEXT.TESTING_EXT, new TestingExtImpl(rpc, commandRegistry));
     const uriExt = rpc.set(MAIN_RPC_CONTEXT.URI_EXT, new UriExtImpl(rpc));
     rpc.set(MAIN_RPC_CONTEXT.DEBUG_EXT, debugExt);
+    rpc.set(MAIN_RPC_CONTEXT.PLUGIN_API_ACCESS_EXT, new PluginApiAccessExtImpl(pluginManager));
 
     const commandLogger = new PluginLogger(rpc, 'commands-plugin');
 
