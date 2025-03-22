@@ -128,7 +128,8 @@ export interface AIVariableContext {
 export type AIVariableArg = string | { variable: string, arg?: string } | AIVariableResolutionRequest;
 
 export type AIVariableArgPicker = (context: AIVariableContext) => MaybePromise<string | undefined>;
-export type AIVariableArgCompletionProvider = (model: monaco.editor.ITextModel, position: monaco.Position) => MaybePromise<monaco.languages.CompletionItem[] | undefined>;
+export type AIVariableArgCompletionProvider =
+    (model: monaco.editor.ITextModel, position: monaco.Position, matchString?: string) => MaybePromise<monaco.languages.CompletionItem[] | undefined>;
 
 export interface AIVariableResolver {
     canResolve(request: AIVariableResolutionRequest, context: AIVariableContext): MaybePromise<number>,
