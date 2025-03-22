@@ -110,6 +110,11 @@ export class PromptTemplateContribution implements LanguageGrammarDefinitionCont
             triggerCharacters: ['{'],
             provideCompletionItems: (model, position, _context, _token): ProviderResult<monaco.languages.CompletionList> => this.provideVariableCompletions(model, position),
         });
+        monaco.languages.registerCompletionItemProvider(PROMPT_TEMPLATE_LANGUAGE_ID, {
+            // Monaco only supports single character trigger characters
+            triggerCharacters: ['{', ':'],
+            provideCompletionItems: (model, position, _context, _token): ProviderResult<monaco.languages.CompletionList> => this.provideVariableWithArgCompletions(model, position),
+        });
 
         const textmateGrammar = require('../../data/prompttemplate.tmLanguage.json');
         const grammarDefinitionProvider: GrammarDefinitionProvider = {
@@ -149,6 +154,49 @@ export class PromptTemplateContribution implements LanguageGrammarDefinitionCont
             variable => variable.name,
             variable => variable.description ?? ''
         );
+    }
+
+    async provideVariableWithArgCompletions(model: monaco.editor.ITextModel, position: monaco.Position): Promise<monaco.languages.CompletionList> {
+        // Get the text of the current line up to the cursor position
+        const textUntilPosition = model.getValueInRange({
+            startLineNumber: position.lineNumber,
+            startColumn: 1,
+            endLineNumber: position.lineNumber,
+            endColumn: position.column,
+        });
+
+        // Regex that captures the variable name in contexts like {{, {{{, {{varname, {{{varname, {{varname:, or {{{varname:
+        const variableRegex = /(?:\{\{\{|\{\{)([\w-]+)?(?::)?/;
+        const match = textUntilPosition.match(variableRegex);
+
+        if (!match) {
+            return { suggestions: [] };
+        }
+
+        const currentVariableName = match[1];
+        const hasColonSeparator = textUntilPosition.includes(`${currentVariableName}:`);
+
+        const variables = this.variableService.getVariables();
+        const suggestions: monaco.languages.CompletionItem[] = [];
+
+        for (const variable of variables) {
+            // If we have a variable:arg pattern, only process the matching variable
+            if (hasColonSeparator && variable.name !== currentVariableName) {
+                continue;
+            }
+
+            const provider = await this.variableService.getArgumentCompletionProvider(variable.name);
+            if (provider) {
+                const items = await provider(model, position, '{');
+                if (items) {
+                    suggestions.push(...items.map(item => ({
+                        ...item
+                    })));
+                }
+            }
+        }
+
+        return { suggestions };
     }
 
     getCompletionRange(model: monaco.editor.ITextModel, position: monaco.Position, triggerCharacters: string): monaco.Range | undefined {
