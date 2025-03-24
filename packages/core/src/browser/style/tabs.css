@@ -459,7 +459,7 @@
 }
 
 .theia-tabBar-breadcrumb-row {
-  min-width: 100%;
+  width: 100%;
 }
 
 .lm-TabBar.theia-tabBar-multirow[data-orientation="horizontal"] {
@@ -470,7 +470,7 @@
 .lm-TabBar[data-orientation="horizontal"] .theia-tabBar-tab-row {
   display: flex;
   flex-flow: row nowrap;
-  min-width: 100%;
+  width: 100%;
 }
 
 .lm-TabBar[data-orientation="vertical"] .theia-tabBar-tab-row {
