@@ -47,12 +47,41 @@ export class StreamingAsyncIterator implements AsyncIterableIterator<LanguageMod
                     }]
                 });
             }
+            // GEMINI workaround
+            if (message.role === 'assistant' && message.tool_calls) {
+                // eslint-disable-next-line no-null/no-null
+                if (message.content === null) {
+                    message.content = undefined;
+                }
+                // eslint-disable-next-line no-null/no-null
+                if (message.refusal === null) {
+                    message.refusal = undefined;
+                }
+            }
+            // END OF GEMINI workaround
             console.debug('Received Open AI message', JSON.stringify(message));
         });
         this.registerStreamListener('end', () => {
             this.dispose();
         }, true);
-        this.registerStreamListener('chunk', chunk => {
+        this.registerStreamListener('chunk', (chunk, snapshot) => {
+            // GEMINI workaround
+            snapshot?.choices.forEach(choice => {
+                if (choice.finish_reason === 'tool_calls' && choice.message.tool_calls?.length === 0) {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const toolCall = (choice.message.tool_calls as any).undefined;
+                    toolCall.id = `**${toolCall.function.name}**`;
+                    choice.message.tool_calls.push(toolCall);
+                    if (chunk.choices[0]?.delta.tool_calls) {
+                        chunk.choices[0]?.delta.tool_calls.forEach(tc => {
+                            if (tc.id === '') {
+                                tc.id = `**${tc.function?.name}**`;
+                            }
+                        });
+                    }
+                }
+            });
+            // END OF GEMINI workaround
             this.handleIncoming({ ...chunk.choices[0]?.delta });
         });
         if (cancellationToken) {
