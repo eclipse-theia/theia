@@ -403,6 +403,22 @@ export class GettingStartedWidget extends ReactWidget {
         return <WelcomePreferences preferenceService={this.preferenceService}></WelcomePreferences>;
     }
 
+    protected renderNews(): React.ReactNode {
+        return <div className='gs-section'>
+            <h3 className='gs-section-header'>🚀 AI Support in the Theia IDE is available (Alpha Version)! ✨</h3>
+            <div className='gs-action-container'>
+                <a
+                    role={'button'}
+                    style={{ fontSize: 'var(--theia-ui-font-size2)' }}
+                    tabIndex={0}
+                    onClick={() => this.doOpenAIChatView()}
+                    onKeyDown={(e: React.KeyboardEvent) => this.doOpenAIChatViewEnter(e)}>
+                    {'Open the AI Chat View now to learn how to start! ✨'}
+                </a>
+            </div>
+        </div>;
+    }
+
     protected renderAIBanner(): React.ReactNode {
         return <div className='gs-container gs-aifeature-container'>
             <div className='flex-grid'>
