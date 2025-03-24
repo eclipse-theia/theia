@@ -35,7 +35,7 @@
     "fs-extra": "^9.0.8"
   },
   "devDependencies": {
-    "@theia/cli": "1.55.0",
+    "@theia/cli": "1.57.0",
     "@types/fs-extra": "^9.0.8",
     "allure-commandline": "^2.23.1",
     "allure-playwright": "^2.5.0",
