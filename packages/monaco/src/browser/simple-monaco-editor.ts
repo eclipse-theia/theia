@@ -16,7 +16,7 @@
 
 import { EditorServiceOverrides, MonacoEditor, MonacoEditorServices } from './monaco-editor';
 
-import { CodeEditorWidget, ICodeEditorWidgetOptions } from '@theia/monaco-editor-core/esm/vs/editor/browser/widget/codeEditorWidget';
+import { CodeEditorWidget, ICodeEditorWidgetOptions } from '@theia/monaco-editor-core/esm/vs/editor/browser/widget/codeEditor/codeEditorWidget';
 import { IInstantiationService } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { ServiceCollection } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/serviceCollection';
@@ -24,9 +24,10 @@ import { Disposable, DisposableCollection, Emitter, TextDocumentContentChangeDel
 import { MonacoEditorModel } from './monaco-editor-model';
 import { Dimension, EditorMouseEvent, MouseTarget, Position, TextDocumentChangeEvent } from '@theia/editor/lib/browser';
 import * as monaco from '@theia/monaco-editor-core';
-import { ElementExt } from '@theia/core/shared/@phosphor/domutils';
+import { ElementExt } from '@theia/core/shared/@lumino/domutils';
 import { Selection } from '@theia/editor/lib/browser/editor';
 import { SelectionDirection } from '@theia/monaco-editor-core/esm/vs/editor/common/core/selection';
+import { ShowLightbulbIconMode } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
 
 export class SimpleMonacoEditor extends MonacoEditorServices implements Disposable {
 
@@ -87,7 +88,7 @@ export class SimpleMonacoEditor extends MonacoEditorServices implements Disposab
     protected create(options?: MonacoEditor.IOptions, override?: EditorServiceOverrides, widgetOptions?: ICodeEditorWidgetOptions): Disposable {
         const combinedOptions = {
             ...options,
-            lightbulb: { enabled: true },
+            lightbulb: { enabled: ShowLightbulbIconMode.On },
             fixedOverflowWidgets: true,
             automaticLayout: true,
             scrollbar: {

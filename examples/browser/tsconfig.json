@@ -9,6 +9,9 @@
       "path": "../../dev-packages/cli"
     },
     {
+      "path": "../../dev-packages/native-webpack-plugin"
+    },
+    {
       "path": "../../packages/ai-anthropic"
     },
     {
@@ -30,6 +33,9 @@
       "path": "../../packages/ai-hugging-face"
     },
     {
+      "path": "../../packages/ai-ide"
+    },
+    {
       "path": "../../packages/ai-llamafile"
     },
     {
@@ -46,9 +52,6 @@
     },
     {
       "path": "../../packages/ai-terminal"
-    },
-    {
-      "path": "../../packages/ai-workspace-agent"
     },
     {
       "path": "../../packages/bulk-edit"

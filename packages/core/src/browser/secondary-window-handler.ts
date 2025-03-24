@@ -140,6 +140,7 @@ export class SecondaryWindowHandler {
             widget.secondaryWindow = newWindow;
             const rootWidget = new SecondaryWindowRootWidget();
             rootWidget.addClass('secondary-widget-root');
+            rootWidget.addClass('monaco-workbench'); // needed for compatility with VSCode styles
             Widget.attach(rootWidget, element);
             rootWidget.addWidget(widget);
             widget.show();

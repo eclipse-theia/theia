@@ -275,9 +275,12 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
         }
     }
 
+    protected shouldUpdateModelSelection = true;
+
     protected setFirstVisibleChildID(id?: string): void {
         if (id && id !== this.firstVisibleChildID) {
             this.firstVisibleChildID = id;
+            if (!this.shouldUpdateModelSelection) { return; }
             let currentNode = this.model.getNode(id);
             let expansionAncestor;
             let selectionAncestor;
@@ -314,16 +317,24 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
                     if (renderer?.visible) {
                         // When filtered, treat the first visible child as the selected node, since it will be the one scrolled to.
                         this.lastUserSelection = renderer.nodeId;
-                        renderer.node.scrollIntoView();
+                        this.scrollWithoutModelUpdate(renderer.node);
                         return;
                     }
                 }
             } else {
                 const { id, collection } = this.analyzeIDAndGetRendererGroup(node.id);
                 const renderer = collection.get(id);
-                renderer?.node.scrollIntoView();
+                this.scrollWithoutModelUpdate(renderer?.node);
             }
         }
+    }
+
+    /** Ensures that we don't set the model's selection while attempting to scroll in reaction to a model selection change. */
+    protected scrollWithoutModelUpdate(node?: HTMLElement): void {
+        if (!node) { return; }
+        this.shouldUpdateModelSelection = false;
+        node.scrollIntoView();
+        requestAnimationFrame(() => this.shouldUpdateModelSelection = true);
     }
 
     protected analyzeIDAndGetRendererGroup(nodeID: string): { id: string, group: string, collection: Map<string, GeneralPreferenceNodeRenderer> } {

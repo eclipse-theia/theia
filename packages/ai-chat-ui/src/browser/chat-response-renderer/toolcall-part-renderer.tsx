@@ -18,6 +18,7 @@ import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
 import { injectable } from '@theia/core/shared/inversify';
 import { ChatResponseContent, ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
 import { ReactNode } from '@theia/core/shared/react';
+import { nls } from '@theia/core/lib/common/nls';
 import * as React from '@theia/core/shared/react';
 
 @injectable()
@@ -35,14 +36,14 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
             <h4 className='theia-toolCall'>
                 {response.finished ? (
                     <details>
-                        <summary>Ran {response.name}
+                        <summary>{nls.localize('theia/ai/chat-ui/toolcall-part-renderer/finished', 'Ran')} {response.name}
                             ({this.renderCollapsibleArguments(response.arguments)})
                         </summary>
                         <pre>{this.tryPrettyPrintJson(response)}</pre>
                     </details>
                 ) : (
                     <span>
-                        <Spinner /> Running {response.name}({this.renderCollapsibleArguments(response.arguments)})
+                        <Spinner /> {nls.localizeByDefault('Running')} {response.name}({this.renderCollapsibleArguments(response.arguments)})
                     </span>
                 )}
             </h4>
@@ -74,10 +75,21 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
     private tryPrettyPrintJson(response: ToolCallChatResponseContent): string | undefined {
         let responseContent = response.result;
         try {
-            if (response.result) {
-                responseContent = JSON.stringify(JSON.parse(response.result), undefined, 2);
+            if (responseContent) {
+                if (typeof responseContent === 'string') {
+                    responseContent = JSON.parse(responseContent);
+                }
+                responseContent = JSON.stringify(responseContent, undefined, 2);
             }
         } catch (e) {
+            if (typeof responseContent !== 'string') {
+                responseContent = nls.localize(
+                    'theia/ai/chat-ui/toolcall-part-renderer/prettyPrintError',
+                    "The content could not be converted to string: '{0}'. This is the original content: '{1}'.",
+                    e.message,
+                    responseContent
+                );
+            }
             // fall through
         }
         return responseContent;

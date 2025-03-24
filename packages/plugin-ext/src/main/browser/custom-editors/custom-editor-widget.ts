@@ -17,7 +17,7 @@
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { FileOperation } from '@theia/filesystem/lib/common/files';
-import { ApplicationShell, DelegatingSaveable, NavigatableWidget, Saveable, SaveableSource, SaveOptions } from '@theia/core/lib/browser';
+import { ApplicationShell, DelegatingSaveable, NavigatableWidget, Saveable, SaveableSource } from '@theia/core/lib/browser';
 import { SaveableService } from '@theia/core/lib/browser/saveable-service';
 import { Reference } from '@theia/core/lib/common/reference';
 import { WebviewWidget } from '../webview/webview';
@@ -29,7 +29,6 @@ export class CustomEditorWidget extends WebviewWidget implements CustomEditorWid
     static override FACTORY_ID = 'plugin-custom-editor';
     static readonly SIDE_BY_SIDE_FACTORY_ID = CustomEditorWidget.FACTORY_ID + '.side-by-side';
 
-    override id: string;
     resource: URI;
 
     protected _modelRef: Reference<CustomEditorModel | undefined> = { object: undefined, dispose: () => { } };
@@ -72,18 +71,6 @@ export class CustomEditorWidget extends WebviewWidget implements CustomEditorWid
 
     redo(): void {
         this._modelRef.object?.redo();
-    }
-
-    async save(options?: SaveOptions): Promise<void> {
-        await this._modelRef.object?.saveCustomEditor(options);
-    }
-
-    async saveAs(source: URI, target: URI, options?: SaveOptions): Promise<void> {
-        if (this._modelRef.object) {
-            const result = await this._modelRef.object.saveCustomEditorAs(source, target, options);
-            this.doMove(target);
-            return result;
-        }
     }
 
     getResourceUri(): URI | undefined {

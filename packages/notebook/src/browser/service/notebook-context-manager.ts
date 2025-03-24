@@ -87,6 +87,7 @@ export class NotebookContextManager {
 
         // Cell Selection related keys
         this.scopedStore.setContext(NOTEBOOK_CELL_FOCUSED, !!widget.model?.selectedCell);
+        this.selectedCellChanged(widget.model?.selectedCell);
         widget.model?.onDidChangeSelectedCell(e => {
             this.selectedCellChanged(e.cell);
             this.scopedStore.setContext(NOTEBOOK_CELL_FOCUSED, !!e);

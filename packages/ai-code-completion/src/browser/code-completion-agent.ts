@@ -18,11 +18,13 @@ import {
     Agent, AgentSpecificVariables, CommunicationRecordingService, getTextOfResponse,
     LanguageModelRegistry, LanguageModelRequest, LanguageModelRequirement, PromptService, PromptTemplate
 } from '@theia/ai-core/lib/common';
-import { generateUuid, ILogger, ProgressService } from '@theia/core';
+import { generateUuid, ILogger, nls, ProgressService } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
 import { PREF_AI_INLINE_COMPLETION_MAX_CONTEXT_LINES } from './ai-code-completion-preference';
+import { codeCompletionPromptTemplates } from './code-completion-prompt-template';
 import { PreferenceService } from '@theia/core/lib/browser';
+import { CodeCompletionPostProcessor } from './code-completion-postprocessor';
 
 export const CodeCompletionAgent = Symbol('CodeCompletionAgent');
 export interface CodeCompletionAgent extends Agent {
@@ -39,7 +41,7 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
         token: monaco.CancellationToken
     ): Promise<monaco.languages.InlineCompletions | undefined> {
         const progress = await this.progressService.showProgress(
-            { text: 'Calculating AI code completion...', options: { location: 'window' } }
+            { text: nls.localize('theia/ai/code-completion/progressText', 'Calculating AI code completion...'), options: { location: 'window' } }
         );
         try {
             const languageModel =
@@ -109,12 +111,14 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
                 this.logger.error('No prompt found for code-completion-agent');
                 return undefined;
             }
-
             // since we do not actually hold complete conversions, the request/response pair is considered a session
             const sessionId = generateUuid();
             const requestId = generateUuid();
             const request: LanguageModelRequest = {
                 messages: [{ type: 'text', actor: 'user', query: prompt }],
+                settings: {
+                    stream: false
+                }
             };
             if (token.isCancellationRequested) {
                 return undefined;
@@ -140,11 +144,18 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
                 response: completionText,
             });
 
+            const postProcessedCompletionText = this.postProcessor.postProcess(completionText);
+
             return {
-                items: [{ insertText: completionText }],
+                items: [{ insertText: postProcessedCompletionText }],
                 enableForwardStability: true,
             };
-        } finally {
+        } catch (e) {
+            if (!token.isCancellationRequested) {
+                console.error(e.message, e);
+            }
+        }
+        finally {
             progress.cancel();
         }
     }
@@ -168,24 +179,14 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
     @inject(PreferenceService)
     protected preferences: PreferenceService;
 
+    @inject(CodeCompletionPostProcessor)
+    protected postProcessor: CodeCompletionPostProcessor;
+
     id = 'Code Completion';
     name = 'Code Completion';
     description =
-        'This agent provides inline code completion in the code editor in the Theia IDE.';
-    promptTemplates: PromptTemplate[] = [
-        {
-            id: 'code-completion-prompt',
-            template: `{{!-- Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
-https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
-You are a code completion agent. The current file you have to complete is named {{file}}.
-The language of the file is {{language}}. Return your result as plain text without markdown formatting.
-Finish the following code snippet.
-
-{{prefix}}[[MARKER]]{{suffix}}
-
-Only return the exact replacement for [[MARKER]] to complete the snippet.`,
-        },
-    ];
+        nls.localize('theia/ai/completion/agent/description', 'This agent provides inline code completion in the code editor in the Theia IDE.');
+    promptTemplates: PromptTemplate[] = codeCompletionPromptTemplates;
     languageModelRequirements: LanguageModelRequirement[] = [
         {
             purpose: 'code-completion',

@@ -16,7 +16,7 @@
 import { CommandRegistry, MenuModelRegistry } from '@theia/core';
 import { AbstractViewContribution, CommonMenus, KeybindingRegistry, PreferenceService, Widget } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { AIActivationService, EXPERIMENTAL_AI_CONTEXT_KEY } from './ai-activation-service';
+import { AIActivationService, ENABLE_AI_CONTEXT_KEY } from './ai-activation-service';
 import { AICommandHandlerFactory } from './ai-command-handler-factory';
 
 @injectable()
@@ -49,7 +49,7 @@ export class AIViewContribution<T extends Widget> extends AbstractViewContributi
         }
         this.quickView?.registerItem({
             label: this.viewLabel,
-            when: EXPERIMENTAL_AI_CONTEXT_KEY,
+            when: ENABLE_AI_CONTEXT_KEY,
             open: () => this.openView({ activate: true })
         });
 
@@ -59,7 +59,7 @@ export class AIViewContribution<T extends Widget> extends AbstractViewContributi
         if (this.toggleCommand) {
             menus.registerMenuAction(CommonMenus.VIEW_VIEWS, {
                 commandId: this.toggleCommand.id,
-                when: EXPERIMENTAL_AI_CONTEXT_KEY,
+                when: ENABLE_AI_CONTEXT_KEY,
                 label: this.viewLabel
             });
         }
@@ -68,7 +68,7 @@ export class AIViewContribution<T extends Widget> extends AbstractViewContributi
         if (this.toggleCommand && this.options.toggleKeybinding) {
             keybindings.registerKeybinding({
                 command: this.toggleCommand.id,
-                when: EXPERIMENTAL_AI_CONTEXT_KEY,
+                when: ENABLE_AI_CONTEXT_KEY,
                 keybinding: this.options.toggleKeybinding
             });
         }

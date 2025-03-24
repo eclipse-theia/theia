@@ -35,13 +35,13 @@ process, the steps for undertaking a Monaco uplift are outlined here.
 
 2. Find the latest release tag in the official VSCode repo, and the most recent uplift branch in the Theia fork.
 
- > At the time of this writing the latest release tag is `1.67.2`, and the uplift branch is `monaco-uplift-2022-6`
+ > At the time of this writing the latest release tag is `1.96.3`, and the uplift branch is `monaco-uplift-1.96.3`
 
 3. Check out the release tag, cherry pick the tip of the uplift branch, and resolve any conflicts.
 
  > As you resolve conflicts and make changes to the VSCode repo, make sure you end up with a single commit on the uplift branch to make it easier for the next person to rebase.
 
-4. Try to build. At the moment, this means running `yarn` and `yarn run gulp editor-distro`.
+4. Try to build. At the moment, this means running `npm install` and `npm run gulp editor-distro`.
 5. Fix any build errors that arise.
 6. Change the version in `build/monaco/package.json`
 

@@ -13,17 +13,19 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+
 import { FrontendApplicationContribution, PreferenceProvider, PreferenceService } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { MCPServerDescription, MCPServerManager } from '../common';
 import { MCP_SERVERS_PREF } from './mcp-preferences';
-import { JSONObject } from '@theia/core/shared/@phosphor/coreutils';
+import { JSONObject } from '@theia/core/shared/@lumino/coreutils';
 import { MCPFrontendService } from './mcp-frontend-service';
 
 interface MCPServersPreferenceValue {
     command: string;
     args?: string[];
     env?: { [key: string]: string };
+    autostart?: boolean;
 };
 
 interface MCPServersPreference {
@@ -35,7 +37,8 @@ namespace MCPServersPreference {
         return !!obj && typeof obj === 'object' &&
             'command' in obj && typeof obj.command === 'string' &&
             (!('args' in obj) || Array.isArray(obj.args) && obj.args.every(arg => typeof arg === 'string')) &&
-            (!('env' in obj) || !!obj.env && typeof obj.env === 'object' && Object.values(obj.env).every(value => typeof value === 'string'));
+            (!('env' in obj) || !!obj.env && typeof obj.env === 'object' && Object.values(obj.env).every(value => typeof value === 'string')) &&
+            (!('autostart' in obj) || typeof obj.autostart === 'boolean');
     }
 }
 
@@ -72,8 +75,9 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
                 MCP_SERVERS_PREF,
                 {}
             ));
-            this.syncServers(servers);
             this.prevServers = this.convertToMap(servers);
+            this.syncServers(this.prevServers);
+            this.autoStartServers(this.prevServers);
 
             this.preferenceService.onPreferenceChanged(event => {
                 if (event.preferenceName === MCP_SERVERS_PREF) {
@@ -82,6 +86,17 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
             });
         });
         this.frontendMCPService.registerToolsForAllStartedServers();
+    }
+
+    protected async autoStartServers(servers: Map<string, MCPServerDescription>): Promise<void> {
+        const startedServers = await this.frontendMCPService.getStartedServers();
+        for (const [name, serverDesc] of servers) {
+            if (serverDesc && serverDesc.autostart) {
+                if (!startedServers.includes(name)) {
+                    await this.frontendMCPService.startServer(name);
+                }
+            }
+        }
     }
 
     protected handleServerChanges(newServers: MCPServersPreference): void {
@@ -116,20 +131,17 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
         this.prevServers = updatedServers;
     }
 
-    protected syncServers(servers: MCPServersPreference): void {
-        const updatedServers = this.convertToMap(servers);
+    protected syncServers(servers: Map<string, MCPServerDescription>): void {
 
-        for (const [, description] of updatedServers) {
+        for (const [, description] of servers) {
             this.manager.addOrUpdateServer(description);
         }
 
         for (const [name] of this.prevServers) {
-            if (!updatedServers.has(name)) {
+            if (!servers.has(name)) {
                 this.manager.removeServer(name);
             }
         }
-
-        this.prevServers = updatedServers;
     }
 
     protected convertToMap(servers: MCPServersPreference): Map<string, MCPServerDescription> {
@@ -138,6 +150,7 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
             map.set(name, {
                 name,
                 ...description,
+                autostart: 'autostart' in description ? description.autostart : true,
                 env: description.env || undefined
             });
         });

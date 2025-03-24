@@ -16,8 +16,7 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { InMemoryResources } from '@theia/core';
-import { JsonSchemaRegisterContext, JsonSchemaContribution } from '@theia/core/lib/browser/json-schema-store';
+import { JsonSchemaRegisterContext, JsonSchemaContribution, JsonSchemaDataStore } from '@theia/core/lib/browser/json-schema-store';
 import { PreferenceSchemaProvider } from '@theia/core/lib/browser/preferences/preference-contribution';
 import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
 import { PreferenceScope } from '@theia/core/lib/browser';
@@ -28,16 +27,16 @@ const USER_STORAGE_PREFIX = 'user-storage:/';
 
 @injectable()
 export class PreferencesJsonSchemaContribution implements JsonSchemaContribution {
-    private serializeSchema = (scope: PreferenceScope) => JSON.stringify(this.schemaProvider.getSchema(scope));
+    protected serializeSchema = (scope: PreferenceScope) => JSON.stringify(this.schemaProvider.getSchema(scope));
 
     @inject(PreferenceSchemaProvider)
     protected readonly schemaProvider: PreferenceSchemaProvider;
 
-    @inject(InMemoryResources)
-    protected readonly inmemoryResources: InMemoryResources;
-
     @inject(PreferenceConfigurations)
     protected readonly preferenceConfigurations: PreferenceConfigurations;
+
+    @inject(JsonSchemaDataStore)
+    protected readonly jsonSchemaData: JsonSchemaDataStore;
 
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
@@ -52,11 +51,11 @@ export class PreferencesJsonSchemaContribution implements JsonSchemaContribution
         this.schemaProvider.onDidPreferenceSchemaChanged(() => this.updateInMemoryResources());
     }
 
-    private registerSchema(scope: PreferenceScope, context: JsonSchemaRegisterContext): void {
+    protected registerSchema(scope: PreferenceScope, context: JsonSchemaRegisterContext): void {
         const scopeStr = PreferenceScope[scope].toLowerCase();
         const uri = new URI(PREFERENCE_URI_PREFIX + scopeStr);
 
-        this.inmemoryResources.add(uri, this.serializeSchema(scope));
+        this.jsonSchemaData.setSchema(uri, this.serializeSchema(scope));
 
         context.registerSchema({
             fileMatch: this.getFileMatch(scopeStr),
@@ -64,22 +63,22 @@ export class PreferencesJsonSchemaContribution implements JsonSchemaContribution
         });
     }
 
-    private updateInMemoryResources(): void {
-        this.inmemoryResources.update(this.getSchemaURIForScope(PreferenceScope.Default),
+    protected updateInMemoryResources(): void {
+        this.jsonSchemaData.setSchema(this.getSchemaURIForScope(PreferenceScope.Default),
             this.serializeSchema(+PreferenceScope.Default));
-        this.inmemoryResources.update(this.getSchemaURIForScope(PreferenceScope.User),
+        this.jsonSchemaData.setSchema(this.getSchemaURIForScope(PreferenceScope.User),
             this.serializeSchema(+PreferenceScope.User));
-        this.inmemoryResources.update(this.getSchemaURIForScope(PreferenceScope.Workspace),
+        this.jsonSchemaData.setSchema(this.getSchemaURIForScope(PreferenceScope.Workspace),
             this.serializeSchema(+PreferenceScope.Workspace));
-        this.inmemoryResources.update(this.getSchemaURIForScope(PreferenceScope.Folder),
+        this.jsonSchemaData.setSchema(this.getSchemaURIForScope(PreferenceScope.Folder),
             this.serializeSchema(+PreferenceScope.Folder));
     }
 
-    private getSchemaURIForScope(scope: PreferenceScope): URI {
+    protected getSchemaURIForScope(scope: PreferenceScope): URI {
         return new URI(PREFERENCE_URI_PREFIX + PreferenceScope[scope].toLowerCase());
     }
 
-    private getFileMatch(scope: string): string[] {
+    protected getFileMatch(scope: string): string[] {
         const baseName = this.preferenceConfigurations.getConfigName() + '.json';
         return [baseName, new URI(USER_STORAGE_PREFIX + scope).resolve(baseName).toString()];
     }

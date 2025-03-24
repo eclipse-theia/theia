@@ -21,7 +21,7 @@
 
 /* eslint-disable no-null/no-null */
 
-import { UUID } from '@theia/core/shared/@phosphor/coreutils';
+import { UUID } from '@theia/core/shared/@lumino/coreutils';
 import { illegalArgument } from '../common/errors';
 import type * as theia from '@theia/plugin';
 import { URI as CodeURI, UriComponents } from '@theia/core/shared/vscode-uri';
@@ -1647,6 +1647,8 @@ export class DocumentLink {
 @es5ClassCompat
 export class DocumentDropOrPasteEditKind {
     static readonly Empty: DocumentDropOrPasteEditKind = new DocumentDropOrPasteEditKind('');
+    static readonly Text: DocumentDropOrPasteEditKind = new DocumentDropOrPasteEditKind('text');
+    static readonly TextUpdateImports: DocumentDropOrPasteEditKind = new DocumentDropOrPasteEditKind('updateImports');
 
     private static sep = '.';
 
@@ -1795,8 +1797,6 @@ export interface WorkspaceEditMetadata {
     label: string;
     description?: string;
     iconPath?: {
-        id: string;
-    } | {
         light: URI;
         dark: URI;
     } | ThemeIcon;
@@ -3783,6 +3783,8 @@ export class InteractiveWindowInput {
 // #region DocumentPaste
 export class DocumentPasteEditKind {
     static Empty: DocumentPasteEditKind;
+    static Text: DocumentPasteEditKind;
+    static TextUpdateImports: DocumentPasteEditKind;
 
     constructor(public readonly value: string) { }
 
@@ -3802,6 +3804,8 @@ export class DocumentPasteEditKind {
     }
 }
 DocumentPasteEditKind.Empty = new DocumentPasteEditKind('');
+DocumentPasteEditKind.Text = new DocumentDropOrPasteEditKind('text');
+DocumentPasteEditKind.TextUpdateImports = DocumentDropOrPasteEditKind.Text.append('updateImports');
 
 @es5ClassCompat
 export class DocumentPasteEdit {
@@ -3839,6 +3843,33 @@ export enum EditSessionIdentityMatch {
     Complete = 100,
     Partial = 50,
     None = 0
+}
+// #endregion
+
+// #region terminalCompletionProvider
+export class TerminalCompletionList<T extends theia.TerminalCompletionItem> {
+
+    resourceRequestConfig?: theia.TerminalResourceRequestConfig;
+
+    items: T[];
+
+    /**
+     * Creates a new completion list.
+     *
+     * @param items The completion items.
+     * @param resourceRequestConfig Indicates which resources should be shown as completions for the cwd of the terminal.
+     * @stubbed
+     */
+    constructor(items?: T[], resourceRequestConfig?: theia.TerminalResourceRequestConfig) {
+    }
+}
+
+export enum TerminalCompletionItemKind {
+    File = 0,
+    Folder = 1,
+    Flag = 2,
+    Method = 3,
+    Argument = 4
 }
 // #endregion
 

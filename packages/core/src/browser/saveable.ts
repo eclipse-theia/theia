@@ -14,20 +14,22 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Widget } from '@phosphor/widgets';
-import { Message } from '@phosphor/messaging';
+import { Widget } from '@lumino/widgets';
+import { Message } from '@lumino/messaging';
 import { Emitter, Event } from '../common/event';
 import { MaybePromise } from '../common/types';
 import { Key } from './keyboard/keys';
 import { AbstractDialog } from './dialogs';
 import { nls } from '../common/nls';
-import { Disposable, DisposableCollection, isObject } from '../common';
+import { Disposable, DisposableCollection, isObject, URI } from '../common';
 import { BinaryBuffer } from '../common/buffer';
 
 export type AutoSaveMode = 'off' | 'afterDelay' | 'onFocusChange' | 'onWindowChange';
 
 export interface Saveable {
     readonly dirty: boolean;
+    /** If false, the saveable will not participate in autosaving. */
+    readonly autosaveable?: boolean;
     /**
      * This event is fired when the content of the `dirty` variable changes.
      */
@@ -42,6 +44,10 @@ export interface Saveable {
      * Saves dirty changes.
      */
     save(options?: SaveOptions): MaybePromise<void>;
+    /**
+     * Performs the save operation with a new file name.
+     */
+    saveAs?(options: SaveAsOptions): MaybePromise<void>;
     /**
      * Reverts dirty changes.
      */
@@ -85,6 +91,7 @@ export class DelegatingSaveable implements Saveable {
     createSnapshot?(): Saveable.Snapshot;
     applySnapshot?(snapshot: object): void;
     serialize?(): Promise<BinaryBuffer>;
+    saveAs?(options: SaveAsOptions): MaybePromise<void>;
 
     protected _delegate?: Saveable;
     protected toDispose = new DisposableCollection();
@@ -108,6 +115,7 @@ export class DelegatingSaveable implements Saveable {
         this.createSnapshot = delegate.createSnapshot?.bind(delegate);
         this.applySnapshot = delegate.applySnapshot?.bind(delegate);
         this.serialize = delegate.serialize?.bind(delegate);
+        this.saveAs = delegate.saveAs?.bind(delegate);
     }
 
 }
@@ -339,6 +347,10 @@ export interface SaveOptions {
     readonly saveReason?: SaveReason;
 }
 
+export interface SaveAsOptions extends SaveOptions {
+    readonly target: URI;
+}
+
 /**
  * The class name added to the dirty widget's title.
  */
@@ -392,4 +404,7 @@ export class ShouldSaveDialog extends AbstractDialog<boolean> {
         return this.shouldSave;
     }
 
+    override async open(disposeOnResolve?: boolean): Promise<boolean | undefined> {
+        return super.open(disposeOnResolve);
+    }
 }

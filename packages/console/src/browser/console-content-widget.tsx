@@ -14,11 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Message } from '@theia/core/shared/@phosphor/messaging';
 import { interfaces, Container, injectable } from '@theia/core/shared/inversify';
 import { MenuPath } from '@theia/core';
 import { TreeProps } from '@theia/core/lib/browser/tree';
-import { SourceTreeWidget, TreeSourceNode, TreeElementNode } from '@theia/core/lib/browser/source-tree';
+import { SourceTreeWidget, TreeElementNode } from '@theia/core/lib/browser/source-tree';
 import { ConsoleItem } from './console-session';
 import { Severity } from '@theia/core/lib/common/severity';
 
@@ -27,39 +26,17 @@ export class ConsoleContentWidget extends SourceTreeWidget {
 
     static CONTEXT_MENU: MenuPath = ['console-context-menu'];
 
-    protected _shouldScrollToEnd = true;
-
-    protected set shouldScrollToEnd(shouldScrollToEnd: boolean) {
-        this._shouldScrollToEnd = shouldScrollToEnd;
-        this.shouldScrollToRow = this._shouldScrollToEnd;
-    }
-
-    protected get shouldScrollToEnd(): boolean {
-        return this._shouldScrollToEnd;
-    }
-
     static override createContainer(parent: interfaces.Container, props?: Partial<TreeProps>): Container {
         const child = SourceTreeWidget.createContainer(parent, {
             contextMenuPath: ConsoleContentWidget.CONTEXT_MENU,
+            viewProps: {
+                followOutput: true
+            },
             ...props
         });
         child.unbind(SourceTreeWidget);
         child.bind(ConsoleContentWidget).toSelf();
         return child;
-    }
-
-    protected override onAfterAttach(msg: Message): void {
-        super.onAfterAttach(msg);
-        this.toDisposeOnDetach.push(this.onScrollUp(() => this.shouldScrollToEnd = false));
-        this.toDisposeOnDetach.push(this.onScrollYReachEnd(() => this.shouldScrollToEnd = true));
-        this.toDisposeOnDetach.push(this.model.onChanged(() => this.revealLastOutputIfNeeded()));
-    }
-
-    protected revealLastOutputIfNeeded(): void {
-        const { root } = this.model;
-        if (this.shouldScrollToEnd && TreeSourceNode.is(root)) {
-            this.model.selectNode(root.children[root.children.length - 1]);
-        }
     }
 
     protected override createTreeElementNodeClassNames(node: TreeElementNode): string[] {

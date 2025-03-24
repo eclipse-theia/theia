@@ -376,14 +376,11 @@ function coerceLocalizations(translations: Record<string, string | LocalizeInfo>
     return translations as Record<string, string>;
 }
 
-const NLS_REGEX = /^%([\w\d.-]+)%$/i;
-
 function localizePackage(value: unknown, translations: PackageTranslation, callback: (key: string, defaultValue: string) => string): unknown {
     if (typeof value === 'string') {
-        const match = NLS_REGEX.exec(value);
         let result = value;
-        if (match) {
-            const key = match[1];
+        if (value.startsWith('%') && value.endsWith('%')) {
+            const key = value.slice(1, -1);
             if (translations.translation) {
                 result = translations.translation[key];
             } else if (translations.default) {

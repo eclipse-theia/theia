@@ -48,7 +48,7 @@ import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 export const MonacoEditorFactory = Symbol('MonacoEditorFactory');
 export interface MonacoEditorFactory {
     readonly scheme: string;
-    create(model: MonacoEditorModel, defaultOptions: MonacoEditor.IOptions, defaultOverrides: EditorServiceOverrides): MonacoEditor;
+    create(model: MonacoEditorModel, defaultOptions: MonacoEditor.IOptions, defaultOverrides: EditorServiceOverrides): Promise<MonacoEditor>;
 }
 
 @injectable()
@@ -198,8 +198,8 @@ export class MonacoEditorProvider {
         const options = this.createMonacoEditorOptions(model);
         const factory = this.factories.getContributions().find(({ scheme }) => uri.scheme === scheme);
         const editor = factory
-            ? factory.create(model, options, override)
-            : new MonacoEditor(uri, model, document.createElement('div'), this.services, options, override);
+            ? await factory.create(model, options, override)
+            : await MonacoEditor.create(uri, model, document.createElement('div'), this.services, options, override);
         toDispose.push(this.editorPreferences.onPreferenceChanged(event => {
             if (event.affects(uri.toString(), model.languageId)) {
                 this.updateMonacoEditorOptions(editor, event);
@@ -373,14 +373,10 @@ export class MonacoEditorProvider {
         return this.doCreateEditor(uri, async (override, toDispose) => {
             const overrides = override ? Array.from(override) : [];
             overrides.push([IContextMenuService, { showContextMenu: () => {/** no op! */ } }]);
-            const document = new MonacoEditorModel({
-                uri,
-                readContents: async () => '',
-                dispose: () => { }
-            }, this.m2p, this.p2m);
-            toDispose.push(document);
+            const document = await this.getModel(uri, toDispose);
+            document.suppressOpenEditorWhenDirty = true;
             const model = (await document.load()).textEditorModel;
-            return new MonacoEditor(
+            return await MonacoEditor.create(
                 uri,
                 document,
                 node,

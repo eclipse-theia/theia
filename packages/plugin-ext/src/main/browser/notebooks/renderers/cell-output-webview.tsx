@@ -42,6 +42,7 @@ import { NotebookOptionsService, NotebookOutputOptions } from '@theia/notebook/l
 import { NotebookCellModel } from '@theia/notebook/lib/browser/view-model/notebook-cell-model';
 import { CellOutput, NotebookCellsChangeType } from '@theia/notebook/lib/common';
 import { NotebookCellOutputModel } from '@theia/notebook/lib/browser/view-model/notebook-cell-output-model';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 
 export const AdditionalNotebookCellOutputCss = Symbol('AdditionalNotebookCellOutputCss');
 
@@ -242,6 +243,7 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
     protected element?: HTMLDivElement; // React.createRef<HTMLDivElement>();
 
     protected webviewWidget: WebviewWidget;
+    protected webviewWidgetInitialized = new Deferred();
 
     protected toDispose = new DisposableCollection();
 
@@ -257,6 +259,9 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
         }));
 
         this.webviewWidget = await this.widgetManager.getOrCreateWidget(WebviewWidget.FACTORY_ID, { id: this.id });
+
+        this.webviewWidgetInitialized.resolve();
+
         // this.webviewWidget.parent = this.editor ?? null;
         this.webviewWidget.setContentOptions({
             allowScripts: true,
@@ -331,15 +336,16 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
     }
 
     render(): React.JSX.Element {
-        return <div className='theia-notebook-cell-output-webview' ref={element => {
+        return <div className='theia-notebook-cell-output-webview' ref={async element => {
             if (element) {
                 this.element = element;
+                await this.webviewWidgetInitialized.promise;
                 this.attachWebview();
             }
         }}></div>;
     }
 
-    attachWebview(): void {
+    protected attachWebview(): void {
         if (this.element) {
             this.webviewWidget.processMessage(new Message('before-attach'));
             this.element.appendChild(this.webviewWidget.node);

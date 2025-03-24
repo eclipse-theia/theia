@@ -19,10 +19,9 @@ import {
     ChatAgent,
     ChatMessage,
     ChatModel,
-    ChatRequestModelImpl,
+    MutableChatRequestModel,
     lastProgressMessage,
     QuestionResponseContentImpl,
-    SystemMessageDescription,
     unansweredQuestions
 } from '@theia/ai-chat';
 import { Agent, PromptTemplate } from '@theia/ai-core';
@@ -109,21 +108,26 @@ Do not ask further questions once the text contains 5 or more "Question/Answer" 
  * This is a very simple example agent that asks questions and continues the conversation based on the user's answers.
  */
 @injectable()
-export class AskAndContinueChatAgent extends AbstractStreamParsingChatAgent implements ChatAgent {
-    override id = 'AskAndContinue';
-    readonly name = 'AskAndContinue';
-    override defaultLanguageModelPurpose = 'chat';
-    readonly description = 'This chat will ask questions related to the input and continues after that.';
-    readonly variables = [];
-    readonly agentSpecificVariables = [];
-    readonly functions = [];
+export class AskAndContinueChatAgent extends AbstractStreamParsingChatAgent {
+    id = 'AskAndContinue';
+    name = 'AskAndContinue';
+    override description = 'This chat will ask questions related to the input and continues after that.';
+    protected defaultLanguageModelPurpose = 'chat';
+    override languageModelRequirements = [
+        {
+            purpose: 'chat',
+            identifier: 'openai/gpt-4o',
+        }
+    ];
+    override promptTemplates = [systemPrompt];
+    protected override systemPromptId: string | undefined = systemPrompt.id;
 
     @postConstruct()
     addContentMatchers(): void {
         this.contentMatchers.push({
             start: /^<question>.*$/m,
             end: /^<\/question>$/m,
-            contentFactory: (content: string, request: ChatRequestModelImpl) => {
+            contentFactory: (content: string, request: MutableChatRequestModel) => {
                 const question = content.replace(/^<question>\n|<\/question>$/g, '');
                 const parsedQuestion = JSON.parse(question);
                 return new QuestionResponseContentImpl(parsedQuestion.question, parsedQuestion.options, request, selectedOption => {
@@ -133,21 +137,7 @@ export class AskAndContinueChatAgent extends AbstractStreamParsingChatAgent impl
         });
     }
 
-    override languageModelRequirements = [
-        {
-            purpose: 'chat',
-            identifier: 'openai/gpt-4o',
-        }
-    ];
-
-    readonly promptTemplates = [systemPrompt];
-
-    protected override async getSystemMessageDescription(): Promise<SystemMessageDescription | undefined> {
-        const resolvedPrompt = await this.promptService.getPrompt(systemPrompt.id);
-        return resolvedPrompt ? SystemMessageDescription.fromResolvedPromptTemplate(resolvedPrompt) : undefined;
-    }
-
-    protected override async onResponseComplete(request: ChatRequestModelImpl): Promise<void> {
+    protected override async onResponseComplete(request: MutableChatRequestModel): Promise<void> {
         const unansweredQs = unansweredQuestions(request);
         if (unansweredQs.length < 1) {
             return super.onResponseComplete(request);
@@ -156,7 +146,7 @@ export class AskAndContinueChatAgent extends AbstractStreamParsingChatAgent impl
         request.response.waitForInput();
     }
 
-    protected handleAnswer(selectedOption: { text: string; value?: string; }, request: ChatRequestModelImpl): void {
+    protected handleAnswer(selectedOption: { text: string; value?: string; }, request: MutableChatRequestModel): void {
         const progressMessage = lastProgressMessage(request);
         if (progressMessage) {
             request.response.updateProgressMessage({ ...progressMessage, show: 'untilFirstContent', status: 'completed' });

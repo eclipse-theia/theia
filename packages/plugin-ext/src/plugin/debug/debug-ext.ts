@@ -35,6 +35,7 @@ import { NodeDebugAdapterCreator } from '../node/debug/plugin-node-debug-adapter
 import { DebugProtocol } from '@vscode/debugprotocol';
 import { DebugConfiguration, DebugSessionOptions } from '@theia/debug/lib/common/debug-configuration';
 import { checkTestRunInstance } from '../tests';
+import { PluginLogger } from '../logger';
 
 interface ConfigurationProviderRecord {
     handle: number;
@@ -69,6 +70,7 @@ export class DebugExtImpl implements DebugExt {
     private commandRegistryExt: CommandRegistryImpl;
 
     private proxy: DebugMain;
+    private logger: PluginLogger;
 
     private readonly onDidChangeBreakpointsEmitter = new Emitter<theia.BreakpointsChangeEvent>();
     private readonly onDidChangeActiveDebugSessionEmitter = new Emitter<theia.DebugSession | undefined>();
@@ -104,6 +106,7 @@ export class DebugExtImpl implements DebugExt {
     @postConstruct()
     initialize(): void {
         this.proxy = this.rpc.getProxy(Ext.DEBUG_MAIN);
+        this.logger = new PluginLogger(this.rpc, 'debug');
     }
 
     /**
@@ -129,7 +132,7 @@ export class DebugExtImpl implements DebugExt {
                 type: contribution.type,
                 label: contribution.label || contribution.type
             });
-            console.log(`Debugger contribution has been registered: ${contribution.type}`);
+            this.logger.debug(`Debugger contribution has been registered: ${contribution.type}`);
         });
     }
 
@@ -259,7 +262,7 @@ export class DebugExtImpl implements DebugExt {
     }
 
     registerDebugConfigurationProvider(debugType: string, provider: theia.DebugConfigurationProvider, trigger: DebugConfigurationProviderTriggerKind): Disposable {
-        console.log(`Debug configuration provider has been registered: ${debugType}, trigger: ${trigger}`);
+        this.logger.info(`Debug configuration provider has been registered: ${debugType}, trigger: ${trigger}`);
 
         const handle = this.configurationProviderHandleGenerator++;
         this.configurationProviders.push({ handle, type: debugType, trigger, provider });

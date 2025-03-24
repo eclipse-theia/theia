@@ -69,7 +69,14 @@ export class MonacoToProtocolConverter {
         }
     }
 
-    asSelection(selection: monaco.Selection): Selection {
+    asSelection(selection: monaco.Selection | null): Selection {
+        if (!selection) {
+            return {
+                start: { line: 0, character: 0 },
+                end: { line: 0, character: 0 },
+                direction: 'ltr'
+            };
+        }
         const start = this.asPosition(selection.selectionStartLineNumber, selection.selectionStartColumn);
         const end = this.asPosition(selection.positionLineNumber, selection.positionColumn);
         return {

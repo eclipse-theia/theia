@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { CommandRegistry, QuickInputButton, QuickInputService, QuickPickItem } from '@theia/core';
+import { CommandRegistry, isOSX, nls, QuickInputButton, QuickInputService, QuickPickItem } from '@theia/core';
 import { Widget } from '@theia/core/lib/browser';
 import { AI_CHAT_NEW_CHAT_WINDOW_COMMAND, AI_CHAT_SHOW_CHATS_COMMAND, ChatCommands } from './chat-view-commands';
 import { ChatAgentLocation, ChatService } from '@theia/ai-chat';
@@ -24,6 +24,8 @@ import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/li
 import { ChatViewWidget } from './chat-view-widget';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { SecondaryWindowHandler } from '@theia/core/lib/browser/secondary-window-handler';
+import { AI_SHOW_SETTINGS_COMMAND } from '@theia/ai-core/lib/browser';
+import { OPEN_AI_HISTORY_VIEW } from '@theia/ai-history/lib/browser/ai-history-contribution';
 
 export const AI_CHAT_TOGGLE_COMMAND_ID = 'aiChat:toggle';
 
@@ -37,7 +39,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
 
     protected static readonly REMOVE_CHAT_BUTTON: QuickInputButton = {
         iconClass: 'codicon-remove-close',
-        tooltip: 'Remove Chat',
+        tooltip: nls.localize('theia/ai/chat-ui/removeChat', 'Remove Chat'),
     };
 
     @inject(SecondaryWindowHandler)
@@ -48,11 +50,11 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
             widgetId: ChatViewWidget.ID,
             widgetName: ChatViewWidget.LABEL,
             defaultWidgetOptions: {
-                area: 'left',
+                area: 'right',
                 rank: 100
             },
             toggleCommandId: AI_CHAT_TOGGLE_COMMAND_ID,
-            toggleKeybinding: 'ctrlcmd+alt+i'
+            toggleKeybinding: isOSX ? 'ctrl+cmd+i' : 'ctrl+alt+i'
         });
     }
 
@@ -90,19 +92,31 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         registry.registerItem({
             id: AI_CHAT_NEW_CHAT_WINDOW_COMMAND.id,
             command: AI_CHAT_NEW_CHAT_WINDOW_COMMAND.id,
-            tooltip: 'New Chat',
-            isVisible: widget => this.isChatViewWidget(widget)
+            tooltip: nls.localizeByDefault('New Chat'),
+            isVisible: widget => this.withWidget(widget)
         });
         registry.registerItem({
             id: AI_CHAT_SHOW_CHATS_COMMAND.id,
             command: AI_CHAT_SHOW_CHATS_COMMAND.id,
-            tooltip: 'Show Chats...',
-            isVisible: widget => this.isChatViewWidget(widget),
+            tooltip: nls.localizeByDefault('Show Chats...'),
+            isVisible: widget => this.withWidget(widget),
         });
-    }
-
-    protected isChatViewWidget(widget?: Widget): boolean {
-        return !!widget && ChatViewWidget.ID === widget.id;
+        registry.registerItem({
+            id: 'chat-view.' + AI_SHOW_SETTINGS_COMMAND.id,
+            command: AI_SHOW_SETTINGS_COMMAND.id,
+            group: 'ai-settings',
+            priority: 3,
+            tooltip: nls.localize('theia/ai-chat-ui/open-settings-tooltip', 'Open AI settings...'),
+            isVisible: widget => this.withWidget(widget),
+        });
+        registry.registerItem({
+            id: 'chat-view.' + OPEN_AI_HISTORY_VIEW.id,
+            command: OPEN_AI_HISTORY_VIEW.id,
+            tooltip: nls.localize('theia/ai-chat-ui/open-history-tooltip', 'Open AI history...'),
+            group: 'ai-settings',
+            priority: 1,
+            isVisible: widget => this.withWidget(widget),
+        });
     }
 
     protected async selectChat(sessionId?: string): Promise<void> {
@@ -122,14 +136,14 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
     protected askForChatSession(): Promise<QuickPickItem | undefined> {
         const getItems = () =>
             this.chatService.getSessions().filter(session => !session.isActive).map(session => <QuickPickItem>({
-                label: session.title ?? 'New Chat',
+                label: session.title ?? nls.localizeByDefault('New Chat'),
                 id: session.id,
                 buttons: [AIChatContribution.REMOVE_CHAT_BUTTON]
             })).reverse();
 
         const defer = new Deferred<QuickPickItem | undefined>();
         const quickPick = this.quickInputService.createQuickPick();
-        quickPick.placeholder = 'Select chat';
+        quickPick.placeholder = nls.localize('theia/ai/chat-ui/selectChat', 'Select chat');
         quickPick.canSelectMany = false;
         quickPick.items = getItems();
 

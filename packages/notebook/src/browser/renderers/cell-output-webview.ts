@@ -45,7 +45,5 @@ export interface CellOutputWebview extends Disposable {
     onDidRenderOutput: Event<OutputRenderEvent>
 
     requestOutputPresentationUpdate(cellHandle: number, output: NotebookCellOutputModel): void;
-
-    attachWebview(): void;
     isAttached(): boolean
 }

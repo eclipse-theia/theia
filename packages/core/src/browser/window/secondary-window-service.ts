@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { Event } from '../../common';
 import { ApplicationShell } from '../shell';
 import { ExtractableWidget } from '../widgets';
 
@@ -33,6 +34,8 @@ export interface SecondaryWindowService {
      * @returns the created window or `undefined` if it could not be created
      */
     createSecondaryWindow(widget: ExtractableWidget, shell: ApplicationShell): Window | undefined;
+    readonly onWindowOpened: Event<Window>;
+    readonly onWindowClosed: Event<Window>;
 
     /** Handles focussing the given secondary window in the browser and on Electron. */
     focus(win: Window): void;

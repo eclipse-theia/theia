@@ -15,6 +15,7 @@
 // *****************************************************************************
 export const OPENAI_LANGUAGE_MODELS_MANAGER_PATH = '/services/open-ai/language-model-manager';
 export const OpenAiLanguageModelsManager = Symbol('OpenAiLanguageModelsManager');
+
 export interface OpenAiModelDescription {
     /**
      * The identifier of the model which will be shown in the UI.
@@ -41,9 +42,16 @@ export interface OpenAiModelDescription {
      */
     enableStreaming: boolean;
     /**
-     * Flag to configure whether the OpenAPI model supports the `developer` role. Default is `true`.
+     * Property to configure the developer message of the model. Setting this property to 'user', 'system', or 'developer' will use that string as the role for the system message.
+     * Setting it to 'mergeWithFollowingUserMessage' will prefix the following user message with the system message or convert the system message to user if the following message
+     * is not a user message. 'skip' will remove the system message altogether.
+     * Defaults to 'developer'.
      */
-    supportsDeveloperMessage: boolean;
+    developerMessageSettings?: 'user' | 'system' | 'developer' | 'mergeWithFollowingUserMessage' | 'skip';
+    /**
+     * Flag to configure whether the OpenAPI model supports structured output. Default is `true`.
+     */
+    supportsStructuredOutput: boolean;
     /**
      * Default request settings for the OpenAI model.
      */

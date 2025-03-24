@@ -21,6 +21,7 @@ export const LanguageModelDelegateClient = Symbol('LanguageModelDelegateClient')
 export interface LanguageModelDelegateClient {
     toolCall(requestId: string, toolId: string, args_string: string): Promise<unknown>;
     send(id: string, token: LanguageModelStreamResponsePart | undefined): void;
+    error(id: string, error: Error): void;
 }
 export const LanguageModelRegistryFrontendDelegate = Symbol('LanguageModelRegistryFrontendDelegate');
 export interface LanguageModelRegistryFrontendDelegate {

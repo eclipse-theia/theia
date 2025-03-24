@@ -295,6 +295,8 @@ export interface TextEditor extends Disposable, TextEditorSelection, Navigatable
     readonly onEncodingChanged: Event<string>;
 
     shouldDisplayDirtyDiff(): boolean;
+
+    handleVisibilityChanged(nowVisible: boolean): void;
 }
 
 export interface Selection extends Range {

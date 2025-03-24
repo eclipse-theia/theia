@@ -33,10 +33,16 @@ export class ScmContextKeyService {
         return this._scmResourceGroup;
     }
 
+    protected _scmResourceGroupState: ContextKey<string | undefined>;
+    get scmResourceGroupState(): ContextKey<string | undefined> {
+        return this._scmResourceGroupState;
+    }
+
     @postConstruct()
     protected init(): void {
         this._scmProvider = this.contextKeyService.createKey<string | undefined>('scmProvider', undefined);
         this._scmResourceGroup = this.contextKeyService.createKey<string | undefined>('scmResourceGroup', undefined);
+        this._scmResourceGroupState = this.contextKeyService.createKey<string | undefined>('scmResourceGroupState', undefined);
     }
 
     match(expression: string | undefined): boolean {

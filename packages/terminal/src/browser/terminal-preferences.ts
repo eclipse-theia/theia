@@ -196,6 +196,15 @@ export const TerminalConfigSchema: PreferenceSchema = {
             default: [],
             deprecationMessage: shellArgsDeprecatedMessage(OS.Type.Linux),
         },
+        // TODO: This preference currently features no implementation but is only available for plugins to use.
+        'terminal.integrated.commandsToSkipShell': {
+            type: 'array',
+            markdownDescription: nls.localizeByDefault('A set of command IDs whose keybindings will not be sent to the shell but instead always be handled by VS Code. This allows keybindings that would normally be consumed by the shell to act instead the same as when the terminal is not focused, for example `Ctrl+P` to launch Quick Open.\n\n&nbsp;\n\nMany commands are skipped by default. To override a default and pass that command\'s keybinding to the shell instead, add the command prefixed with the `-` character. For example add `-workbench.action.quickOpen` to allow `Ctrl+P` to reach the shell.\n\n&nbsp;\n\nThe following list of default skipped commands is truncated when viewed in Settings Editor. To see the full list, {1} and search for the first command from the list below.\n\n&nbsp;\n\nDefault Skipped Commands:\n\n{0}'),
+            items: {
+                type: 'string'
+            },
+            default: []
+        },
         'terminal.integrated.confirmOnExit': {
             type: 'string',
             description: nls.localizeByDefault('Controls whether to confirm when the window closes if there are active terminal sessions.'),

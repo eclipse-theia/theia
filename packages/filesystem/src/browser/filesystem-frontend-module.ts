@@ -33,6 +33,7 @@ import { FilepathBreadcrumbsContribution } from './breadcrumbs/filepath-breadcru
 import { BreadcrumbsFileTreeWidget, createFileTreeBreadcrumbsWidget } from './breadcrumbs/filepath-breadcrumbs-container';
 import { FilesystemSaveableService } from './filesystem-saveable-service';
 import { SaveableService } from '@theia/core/lib/browser/saveable-service';
+import { VSCodeFileServiceContribution, VSCodeFileSystemProvider } from './vscode-file-service-contribution';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bindFileSystemPreferences(bind);
@@ -46,6 +47,9 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(RemoteFileSystemProvider).toSelf().inSingletonScope();
     bind(RemoteFileServiceContribution).toSelf().inSingletonScope();
     bind(FileServiceContribution).toService(RemoteFileServiceContribution);
+    bind(VSCodeFileSystemProvider).toSelf().inSingletonScope();
+    bind(VSCodeFileServiceContribution).toSelf().inSingletonScope();
+    bind(FileServiceContribution).toService(VSCodeFileServiceContribution);
 
     bind(FileSystemWatcherErrorHandler).toSelf().inSingletonScope();
 

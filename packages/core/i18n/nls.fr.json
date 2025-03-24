@@ -12,6 +12,346 @@
   "terminal:new:profile": "Créer un nouveau terminal intégré à partir d'un profil",
   "terminal:profile:default": "Choisissez le profil du terminal par défaut",
   "theia": {
+    "ai": {
+      "anthropic": {
+        "apiKey": {
+          "description": "Entrez une clé API de votre compte Anthropic officiel. **Note : En utilisant cette préférence, la clé API d'Anthropic sera stockée en clair sur la machine qui exécute Theia. Utilisez la variable d'environnement `ANTHROPIC_API_KEY` pour définir la clé de manière sécurisée."
+        },
+        "models": {
+          "description": "Modèles anthropiques officiels à utiliser"
+        }
+      },
+      "chat": {
+        "defaultAgent": {
+          "description": "Facultatif : <agent-name> de l'agent conversationnel qui sera invoqué, si aucun agent n'est explicitement mentionné avec @<agent-name> dans la requête de l'utilisateur. Si aucun agent par défaut n'est configuré, les valeurs par défaut de Theia seront appliquées."
+        },
+        "pinChatAgent": {
+          "description": "Activez l'épinglage d'agent pour maintenir automatiquement actif un agent de chat mentionné à travers les invites, réduisant ainsi le besoin de mentions répétées."
+        }
+      },
+      "chat-ui": {
+        "addContextVariable": "Ajouter une variable contextuelle",
+        "applyAll": "Appliquer tout",
+        "applyAllTitle": "Appliquer toutes les modifications en cours",
+        "attachToContext": "Attacher des éléments au contexte",
+        "cancel": "Annuler (Esc)",
+        "chat-view-tree-widget": {
+          "ai": "AI",
+          "aiConfigurationView": "Vue de la configuration AI",
+          "aiFeatureHeader": "🚀 Fonctionnalités AI disponibles (version Alpha) !",
+          "aiFeaturesEnable": "Ai-features : Activer",
+          "aiHistoryView": "Vue de l'historique de l'IA",
+          "featuresDisabled": "Actuellement, toutes les fonctionnalités de l'IA sont désactivées !",
+          "howToEnable": "Comment activer les fonctions d'intelligence artificielle :",
+          "noRenderer": "Erreur : Aucun moteur de rendu n'a été trouvé",
+          "settingsMenu": "le menu des réglages",
+          "waitingForInput": "En attente d'une contribution",
+          "you": "Vous"
+        },
+        "code-part-renderer": {
+          "generatedCode": "Code généré"
+        },
+        "copyCodeBlock": "Copier le bloc de code",
+        "deleteChangeSet": "Supprimer Modifier Définir",
+        "errorChatInvocation": "Une erreur s'est produite lors de l'invocation du service de chat.",
+        "openDiff": "Diff ouvert",
+        "openOriginalFile": "Ouvrir le fichier original",
+        "pinAgent": "Agent des épingles",
+        "removeChat": "Supprimer le chat",
+        "selectChat": "Sélectionner le chat",
+        "selectVariableArguments": "Sélectionner les arguments de la variable",
+        "send": "Envoyer (Enter)",
+        "text-part-renderer": {
+          "cantDisplay": "Impossible d'afficher la réponse, veuillez vérifier vos ChatResponsePartRenderers !"
+        },
+        "toolcall-part-renderer": {
+          "finished": "Ran",
+          "prettyPrintError": "Le contenu n'a pas pu être converti en chaîne : '{0}'. Il s'agit du contenu original : '{1}'."
+        },
+        "unpinAgent": "Agent non épinglé"
+      },
+      "code-completion": {
+        "progressText": "Calcul de l'achèvement du code de l'IA..."
+      },
+      "completion": {
+        "agent": {
+          "description": "Cet agent permet de compléter le code en ligne dans l'éditeur de code de l'IDE Theia."
+        },
+        "automaticEnable": {
+          "description": "Déclencher automatiquement des compléments AI en ligne dans n'importe quel éditeur (Monaco) pendant l'édition.            \n            Vous pouvez également déclencher manuellement le code via la commande \"Trigger Inline Suggestion\" ou le raccourci par défaut \"Ctrl+Alt+Espace\"."
+        },
+        "excludedFileExts": {
+          "description": "Indiquer les extensions de fichiers (par exemple, .md, .txt) dans lesquelles les compléments AI doivent être désactivés.",
+          "title": "Extensions de fichiers exclues"
+        },
+        "maxContextLines": {
+          "description": "Le nombre maximum de lignes utilisées comme contexte, réparties entre les lignes avant et après la position du curseur (préfixe et suffixe).            Définissez cette valeur à -1 pour utiliser le fichier complet comme contexte sans limite de lignes et à 0 pour n'utiliser que la ligne en cours.",
+          "title": "Lignes de contexte maximales"
+        },
+        "stripBackticks": {
+          "description": "Suppression des bâtons entourant le code renvoyé par certains LLM. Si un bâton est détecté, tout le contenu après le bâton de fermeture est également supprimé. Ce paramètre permet de s'assurer que le code renvoyé est clair lorsque les modèles de langage utilisent un formatage de type \"markdown\".",
+          "title": "Supprimer les marques de retour des achèvements en ligne"
+        }
+      },
+      "core": {
+        "agentConfiguration": {
+          "addCustomAgent": "Ajouter un agent personnalisé",
+          "description": "Description :",
+          "enableAgent": "Activer l'agent",
+          "label": "Agents",
+          "name": "Nom :",
+          "noDefaultTemplate": "Pas de modèle par défaut disponible",
+          "notUsedInPrompt": "Non utilisé dans l'invite",
+          "promptTemplates": "Modèles d'invites",
+          "selectAgentMessage": "Veuillez d'abord sélectionner un agent !",
+          "undeclared": "Non déclaré"
+        },
+        "aiConfiguration": {
+          "label": "✨ Configuration AI [Alpha]"
+        },
+        "changeSetSummaryVariable": {
+          "description": "Fournit un résumé des fichiers d'un ensemble de modifications et de leur contenu."
+        },
+        "discardCustomPrompt": {
+          "tooltip": "Rejeter les personnalisations"
+        },
+        "enableAI": {
+          "mdDescription": "❗ Ce paramètre vous permet d'accéder aux dernières capacités de l'IA (version Alpha).            \n            Veuillez noter que ces fonctionnalités sont en phase alpha, ce qui signifie qu'elles peuvent subir des modifications et qu'elles seront encore améliorées. Il est important de savoir que ces fonctionnalités peuvent générer des requêtes continues aux modèles linguistiques (LLM) auxquels vous donnez accès. Cela peut entraîner des coûts que vous devez surveiller de près. En activant cette option, vous reconnaissez ces risques.            \n            **Remarque ! Les paramètres ci-dessous dans cette section ne prendront effet qu'une fois que le paramètre de la fonctionnalité principale sera activé.\n            qu'une fois que la fonction principale est activée. Après avoir activé la fonction, vous devez configurer au moins un fournisseur LLM ci-dessous. Consultez également [la documentation] (https://theia-ide.org/docs/user_ai/)**."
+        },
+        "languageModelRenderer": {
+          "family": "Famille",
+          "languageModel": "Modèle linguistique",
+          "maxOutputTokens": "Jetons de sortie maximum",
+          "minInputTokens": "Jetons d'entrée minimum",
+          "purpose": "Objectif",
+          "vendor": "Vendeur"
+        },
+        "prefs": {
+          "title": "Fonctionnalités de l'IA [Alpha]"
+        },
+        "promptTemplates": {
+          "description": "Dossier permettant de stocker les modèles d'invite personnalisés. S'il n'est pas personnalisé, le répertoire de configuration de l'utilisateur est utilisé. Pensez à utiliser un dossier sous contrôle de version pour gérer vos variantes de modèles d'invite."
+        },
+        "requestSettings": {
+          "mdDescription": "Permet de spécifier des paramètres de demande personnalisés pour plusieurs modèles.\n            Chaque objet représente la configuration d'un modèle spécifique. Le champ `modelId` spécifie l'ID du modèle, `requestSettings` définit les paramètres spécifiques au modèle.\n            Le champ `providerId` est optionnel et vous permet d'appliquer les paramètres à un fournisseur spécifique. S'il n'est pas renseigné, les paramètres seront appliqués à tous les fournisseurs.\n            Exemples de providerIds : huggingface, openai, ollama, llamafile.\n            Pour plus d'informations, consultez [notre documentation] (https://theia-ide.org/docs/user_ai/#custom-request-settings).",
+          "title": "Paramètres des demandes personnalisées"
+        },
+        "templateSettings": {
+          "selectVariant": "Sélectionner la variante :",
+          "unavailableVariant": "La variante sélectionnée n'est plus disponible"
+        },
+        "variable-contribution": {
+          "builtInVariable": "Theia Variable intégré",
+          "currentAbsoluteFilePath": "Le chemin absolu du fichier actuellement ouvert. Veuillez noter que la plupart des agents attendent un chemin d'accès relatif (par rapport à l'espace de travail actuel).",
+          "currentFileContent": "Le contenu brut du fichier actuellement ouvert. Cela exclut les informations sur la provenance du contenu. Veuillez noter que la plupart des agents fonctionneront mieux avec un chemin de fichier relatif (relatif à l'espace de travail actuel).",
+          "currentRelativeDirPath": "Le chemin relatif du répertoire contenant le fichier actuellement ouvert.",
+          "currentRelativeFilePath": "Le chemin relatif du fichier actuellement ouvert.",
+          "currentSelectedText": "Le texte en clair actuellement sélectionné dans le fichier ouvert. Cela exclut les informations sur l'origine du contenu. Veuillez noter que la plupart des agents fonctionneront mieux avec un chemin de fichier relatif (relatif à l'espace de travail actuel)."
+        }
+      },
+      "history": {
+        "clear": {
+          "tooltip": "Historique clair de tous les agents"
+        },
+        "communication-card": {
+          "context": "Contexte",
+          "messages": "Messages",
+          "request": "Request",
+          "requestId": "Request ID",
+          "response": "Réponse",
+          "responseTime": "Temps de réponse",
+          "sessionId": "ID de la session",
+          "systemMessage": "Message du système",
+          "timestamp": "Horodatage"
+        },
+        "sortChronologically": {
+          "tooltip": "Trier par ordre chronologique"
+        },
+        "sortReverseChronologically": {
+          "tooltip": "Tri chronologique inversé"
+        },
+        "view": {
+          "label": "Historique de l'agent d'IA [Alpha]",
+          "noAgent": "Aucun agent n'est disponible.",
+          "noAgentSelected": "Aucun agent n'a été sélectionné.",
+          "noHistoryForAgent": "Aucun historique n'est disponible pour l'agent sélectionné '{0}'"
+        }
+      },
+      "huggingFace": {
+        "apiKey": {
+          "mdDescription": "Entrez une clé API pour votre compte Hugging Face. **Remarque : En utilisant cette préférence, la clé API de Hugging Face sera stockée en clair sur la machine qui exécute Theia. Utilisez la variable d'environnement `HUGGINGFACE_API_KEY` pour définir la clé en toute sécurité."
+        },
+        "models": {
+          "description": "Modèles de visages d'accolades à utiliser"
+        }
+      },
+      "llamaFile": {
+        "prefs": {
+          "mdDescription": "Ce paramètre vous permet de configurer et de gérer les modèles LlamaFile dans l'IDE Theia.            \n            Chaque entrée nécessite un `nom` convivial, le fichier `uri` pointant vers votre LlamaFile, et le `port` sur lequel il sera exécuté.            \n            Pour démarrer un LlamaFile, utilisez la commande \"Start LlamaFile\", qui vous permet de sélectionner le modèle désiré.            \n            Si vous modifiez une entrée (par exemple, en changeant le port), toute instance en cours d'exécution s'arrêtera et vous devrez la relancer manuellement.            \n            [Pour en savoir plus sur la configuration et la gestion des LlamaFiles, consultez la documentation de l'IDE Theia] (https://theia-ide.org/docs/user_ai/#llamafile-models).",
+          "name": {
+            "description": "Le nom du modèle à utiliser pour ce fichier Llamafile."
+          },
+          "port": {
+            "description": "Le port à utiliser pour démarrer le serveur."
+          },
+          "title": "✨ AI LlamaFile",
+          "uri": {
+            "description": "L'uri du fichier Llamafile."
+          }
+        },
+        "start": "Démarrer Llamafile",
+        "stop": "Stop Llamafile"
+      },
+      "llamafile": {
+        "error": {
+          "noConfigured": "Aucun fichier Llamafiles n'est configuré.",
+          "noRunning": "Pas de Llamafiles en cours.",
+          "startFailed": "Un problème s'est produit lors du démarrage de llamafile : {0}.\nPour plus d'informations, voir la console.",
+          "stopFailed": "Un problème s'est produit lors de l'arrêt de llamafile : {0}.\nPour plus d'informations, voir la console."
+        }
+      },
+      "mcp": {
+        "error": {
+          "allServersRunning": "Tous les serveurs MCP fonctionnent déjà.",
+          "noRunningServers": "Aucun serveur MCP ne fonctionne.",
+          "noServersConfigured": "Aucun serveur MCP n'est configuré.",
+          "startFailed": "Une erreur s'est produite lors du démarrage du serveur MCP."
+        },
+        "info": {
+          "serverStarted": "Serveur MCP \"{0}\" démarré avec succès. Outils enregistrés : {1}"
+        },
+        "servers": {
+          "args": {
+            "mdDescription": "Un tableau d'arguments à passer à la commande.",
+            "title": "Arguments pour la commande"
+          },
+          "autostart": {
+            "mdDescription": "Démarrer automatiquement ce serveur au démarrage du frontend. Les serveurs nouvellement ajoutés ne sont pas immédiatement démarrés automatiquement, mais au redémarrage.",
+            "title": "Démarrage automatique"
+          },
+          "command": {
+            "mdDescription": "La commande utilisée pour démarrer le serveur MCP, par exemple \"uvx\" ou \"npx\".",
+            "title": "Commande pour exécuter le serveur MCP"
+          },
+          "env": {
+            "mdDescription": "Variables d'environnement facultatives à définir pour le serveur, telles qu'une clé API.",
+            "title": "Variables d'environnement"
+          },
+          "mdDescription": "Configurer les serveurs MCP avec des commandes, des arguments, éventuellement des variables d'environnement et un démarrage automatique (vrai par défaut). Chaque serveur est identifié par une clé unique, telle que \"brave-search\" ou \"filesystem\". Pour démarrer un serveur, utilisez la commande \"MCP : Start MCP Server\", qui vous permet de sélectionner le serveur souhaité. Pour arrêter un serveur, utilisez la commande \"MCP : Stop MCP Server\". Veuillez noter que le démarrage automatique ne prend effet qu'après un redémarrage, vous devez donc démarrer un serveur manuellement pour la première fois.\nExemple de configuration :\n```{\n  \"brave-search\" : {\n    \"command\" : \"npx\",\n    \"args\" : [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\" : {\n      \"BRAVE_API_KEY\" : \"YOUR_API_KEY\"\n    },\n  },\n  \"filesystem\" : {\n    \"command\" : \"npx\",\n    \"args\" : [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\" : {\n      \"CUSTOM_ENV_VAR\" : \"custom-value\"\n    },\n    \"autostart\" : false\n  }\n}\n```",
+          "title": "Configuration des serveurs MCP"
+        },
+        "start": {
+          "label": "MCP : Démarrer le serveur MCP"
+        },
+        "stop": {
+          "label": "MCP : Arrêter le serveur MCP"
+        },
+        "tool": {
+          "unnamed": "Outil sans nom"
+        }
+      },
+      "openai": {
+        "apiKey": {
+          "mdDescription": "Entrez une clé API de votre compte officiel OpenAI. **Remarque : En utilisant cette préférence, la clé API Open AI sera stockée en clair sur la machine qui exécute Theia. Utilisez la variable d'environnement `OPENAI_API_KEY` pour définir la clé de manière sécurisée."
+        },
+        "customEndpoints": {
+          "apiKey": {
+            "title": "Soit la clé pour accéder à l'API servie à l'url donnée, soit `true` pour utiliser la clé globale de l'API OpenAI."
+          },
+          "apiVersion": {
+            "title": "Soit la version pour accéder à l'API servie à l'url donnée dans Azure ou `true` pour utiliser la version globale de l'API OpenAI"
+          },
+          "developerMessageSettings": {
+            "title": "Contrôle la gestion des messages système : `user`, `system`, et `developer` seront utilisés comme rôle, `mergeWithFollowingUserMessage` préfixera le message utilisateur suivant avec le message système ou convertira le message système en message utilisateur si le message suivant n'est pas un message utilisateur.                         `skip` supprimera simplement le message système), la valeur par défaut étant `developer`."
+          },
+          "enableStreaming": {
+            "title": "Indique si l'API de streaming doit être utilisée. `true` par défaut."
+          },
+          "id": {
+            "title": "Un identifiant unique utilisé dans l'interface utilisateur pour identifier le modèle personnalisé."
+          },
+          "mdDescription": "Intégrer des modèles personnalisés compatibles avec l'API OpenAI, par exemple via `vllm`. Les attributs requis sont `model` et `url`.            \n            Optionnellement, vous pouvez      \n            - spécifier un `id` unique pour identifier le modèle personnalisé dans l'interface utilisateur. Si aucun n'est donné, `model` sera utilisé comme `id`.            \n            - fournir une `apiKey` pour accéder à l'API servie à l'url donnée. Utilisez `true` pour indiquer l'utilisation de la clé globale de l'API OpenAI.            \n            - provide an `apiVersion` to access the API served at the given url in Azure. Utilisez `true` pour indiquer l'utilisation de la version globale de l'API OpenAI.            \n            - mettre `developerMessageSettings` à l'une des valeurs suivantes : `user`, `system`, `developer`, `mergeWithFollowingUserMessage`, ou `skip` pour contrôler comment le message du développeur est inclus (où `user`, `system`, et `developer` seront utilisés comme rôle, `mergeWithFollowingUserMessage` préfixera le message suivant de l'utilisateur avec le message du système ou convertira le message du système en message de l'utilisateur si le message suivant n'est pas un message de l'utilisateur. `skip` supprimera simplement le message système).            La valeur par défaut est `developer`.            \n            - spécifier `supportsStructuredOutput : false` pour indiquer que la sortie structurée ne doit pas être utilisée.            \n            - specify `enableStreaming : false` pour indiquer que le streaming ne doit pas être utilisé.            \n            Référez-vous à [notre documentation] (https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm) pour plus d'informations.",
+          "modelId": {
+            "title": "Modèle ID"
+          },
+          "supportsStructuredOutput": {
+            "title": "Indique si le modèle supporte les sorties structurées. `true` par défaut."
+          },
+          "url": {
+            "title": "Le point d'accès compatible avec l'API Open AI où le modèle est hébergé"
+          }
+        },
+        "models": {
+          "description": "Modèles officiels de l'OpenAI à utiliser"
+        }
+      },
+      "scanoss": {
+        "changeSet": {
+          "clean": "Pas de correspondance",
+          "error": "Erreur : Réexécution",
+          "error-notification": "Erreur ScanOSS rencontrée : {0}.",
+          "scan": "Scanner",
+          "scanning": "Scanner...",
+          "view-matches": "Voir les correspondances"
+        },
+        "mode": {
+          "automatic": {
+            "description": "Activation de l'analyse automatique des extraits de code dans les vues de chat."
+          },
+          "description": "Configurer la fonctionnalité SCANOSS pour l'analyse des extraits de code dans les vues de chat. Cela enverra un hachage des extraits de code suggérés au service SCANOSS\nhébergé par la [Software Transparency foundation] (https://www.softwaretransparency.org/osskb) pour analyse.",
+          "manual": {
+            "description": "L'utilisateur peut déclencher manuellement le balayage en cliquant sur l'élément SCANOSS dans la vue du chat."
+          },
+          "off": {
+            "description": "La fonction est complètement désactivée."
+          }
+        },
+        "snippet": {
+          "dialog-header": "Résultats du ScanOSS",
+          "errored": "SCANOSS - Erreur - {0}",
+          "file-name-heading": "Correspondance trouvée dans {0}",
+          "in-progress": "SCANOSS - Effectuer un balayage...",
+          "match-count": "{0} trouvé(s) correspond(ent)",
+          "matched": "SCANOSS - Correspondance trouvée {0} ",
+          "no-match": "SCANOSS - Pas de correspondance",
+          "summary": "Résumé"
+        }
+      },
+      "terminal": {
+        "agent": {
+          "description": "Cet agent fournit une assistance pour écrire et exécuter des commandes de terminal arbitraires.         En fonction de la demande de l'utilisateur, il suggère des commandes et permet à l'utilisateur de les coller et de les exécuter directement dans le terminal.         Il accède au répertoire actuel, à l'environnement et à la sortie récente de la session du terminal pour fournir une assistance contextuelle."
+        },
+        "askAi": "Demander à l'IA",
+        "askTerminalCommand": "Posez une question sur une commande de terminal...",
+        "hitEnterConfirm": "Appuyer sur la touche \"Entrée\" pour confirmer",
+        "howCanIHelp": "Comment puis-je vous aider ?",
+        "loading": "Chargement",
+        "systemPrompt": {
+          "description": "Invite pour l'assistant terminal AI"
+        },
+        "tryAgain": "Réessayez...",
+        "useArrowsAlternatives": " ou utiliser ⇅ pour montrer les alternatives...",
+        "userPrompt": {
+          "description": "Invite contenant la demande de l'utilisateur"
+        }
+      },
+      "workspace": {
+        "coderAgent": {
+          "description": "Un assistant IA intégré à l'IDE Theia, conçu pour aider les développeurs de logiciels. Cet agent peut accéder à l'espace de travail de l'utilisateur, il peut obtenir une liste de tous les fichiers et dossiers disponibles et récupérer leur contenu. En outre, il peut suggérer des modifications de fichiers à l'utilisateur. Il peut donc aider l'utilisateur à effectuer des tâches de codage ou d'autres tâches impliquant des modifications de fichiers."
+        },
+        "considerGitignore": {
+          "description": "Si cette option est activée, elle exclut les fichiers/dossiers spécifiés dans un fichier .gitignore global (l'emplacement prévu est la racine de l'espace de travail).",
+          "title": "Considérez .gitignore"
+        },
+        "excludedPattern": {
+          "description": "Liste de motifs (glob ou regex) pour les fichiers/dossiers à exclure.",
+          "title": "Modèles de fichiers exclus"
+        },
+        "workspaceAgent": {
+          "description": "Un assistant IA intégré à l'IDE Theia, conçu pour aider les développeurs de logiciels. Cet agent peut accéder à l'espace de travail de l'utilisateur, il peut obtenir une liste de tous les fichiers et dossiers disponibles et récupérer leur contenu. Il ne peut pas modifier les fichiers. Il peut donc répondre à des questions sur le projet en cours, les fichiers du projet et le code source dans l'espace de travail, comme par exemple comment construire le projet, où mettre le code source, où trouver du code ou des configurations spécifiques, etc."
+        }
+      }
+    },
     "callhierarchy": {
       "noCallers": "Aucun appelant n'a été détecté.",
       "open": "Hiérarchie des appels ouverts"
@@ -46,8 +386,7 @@
     "core": {
       "about": {
         "compatibility": "{0} Compatibilité",
-        "defaultApi": "API par défaut {0} ",
-        "version": "Version"
+        "defaultApi": "API par défaut {0} "
       },
       "common": {
         "closeAll": "Fermer tous les onglets",
@@ -59,6 +398,8 @@
         "closeTabMain": "Close Tab dans la zone principale",
         "collapseAllTabs": "Réduire tous les panneaux latéraux",
         "collapseBottomPanel": "Panneau inférieur à bascule",
+        "collapseLeftPanel": "Panneau de gauche à bascule",
+        "collapseRightPanel": "Basculer vers le panneau de droite",
         "collapseTab": "Panneau latéral d'effondrement",
         "showNextTabGroup": "Passer au groupe d'onglets suivant",
         "showNextTabInGroup": "Passer à l'onglet suivant dans le groupe",
@@ -139,28 +480,22 @@
     "editor": {
       "diffEditor.wordWrap2": "Les lignes s'enrouleront en fonction du paramètre `#editor.wordWrap#`.",
       "dirtyEncoding": "Le fichier est sale. Veuillez le sauvegarder avant de le rouvrir avec un autre encodage.",
-      "editor.accessibilitySupport0": "Utiliser les API de la plate-forme pour détecter la présence d'un lecteur d'écran.",
-      "editor.accessibilitySupport1": "Optimiser pour l'utilisation avec un lecteur d'écran",
-      "editor.accessibilitySupport2": "Supposons qu'il n'y ait pas de lecteur d'écran",
       "editor.bracketPairColorization.enabled": "Contrôle si la colorisation des paires de crochets est activée ou non. Utilisez `#workbench.colorCustomizations#` pour surcharger les couleurs de mise en évidence des crochets.",
-      "editor.codeActionWidget.includeNearbyQuickfixes": "Activer/désactiver l'affichage de la réparation rapide la plus proche dans une ligne lorsqu'il n'y a pas de diagnostic en cours.",
+      "editor.codeActions.triggerOnFocusChange": "Permet de déclencher `#editor.codeActionsOnSave#` lorsque `#files.autoSave#` est réglé sur `afterDelay`. Les actions de code doivent être réglées sur `toujours` pour être déclenchées lors des changements de fenêtre et de focus.",
       "editor.detectIndentation": "Contrôle si `#editor.tabSize#` et `#editor.insertSpaces#` seront automatiquement détectés lors de l'ouverture d'un fichier en fonction de son contenu.",
-      "editor.dropIntoEditor.enabled": "Contrôle si vous pouvez glisser-déposer un fichier dans un éditeur de texte en maintenant la touche \"Maj\" enfoncée (au lieu d'ouvrir le fichier dans un éditeur).",
-      "editor.hover.hidingDelay": "Contrôle le délai en millisecondes après lequel le survol est caché. Nécessite que `editor.hover.sticky` soit activé.",
       "editor.inlayHints.enabled1": "Les conseils d'incrustation sont affichés par défaut et sont masqués lorsque vous maintenez les touches `Ctrl+Alt`.",
       "editor.inlayHints.enabled2": "Les indices d'incrustation sont cachés par défaut et s'affichent en maintenant les touches `Ctrl+Alt`.",
       "editor.inlayHints.fontFamily": "Contrôle la famille de police des indices d'incrustation dans l'éditeur. Si la valeur est vide, c'est la police `#editor.fontFamily#` qui est utilisée.",
       "editor.inlayHints.fontSize": "Contrôle la taille de la police des indices d'incrustation dans l'éditeur. Par défaut, `#editor.fontSize#` est utilisé lorsque la valeur configurée est inférieure à `5` ou supérieure à la taille de la police de l'éditeur.",
+      "editor.inlineSuggest.edits.experimental.enabled": "Permet d'activer ou non les éditions expérimentales dans les suggestions en ligne.",
+      "editor.inlineSuggest.edits.experimental.onlyShowWhenCloseToCursor": "Contrôle l'affichage des suggestions en ligne uniquement lorsque le curseur est proche de la suggestion.",
+      "editor.inlineSuggest.edits.experimental.useInterleavedLinesDiff": "Permet d'activer ou non les lignes entrelacées expérimentales dans les suggestions en ligne.",
+      "editor.inlineSuggest.edits.experimental.useMixedLinesDiff": "Permet d'activer ou non les éditions expérimentales dans les suggestions en ligne.",
       "editor.insertSpaces": "Insérer des espaces lorsque l'on appuie sur `Tab`. Ce paramètre est modifié en fonction du contenu du fichier lorsque `#editor.detectIndentation#` est activé.",
-      "editor.occurrencesHighlight": "Contrôle si l'éditeur doit mettre en évidence les occurrences de symboles sémantiques.",
       "editor.quickSuggestions": "Contrôle si les suggestions doivent s'afficher automatiquement pendant la saisie. Cela peut être contrôlé pour la saisie de commentaires, de chaînes de caractères et d'autres codes. La suggestion rapide peut être configurée pour s'afficher sous forme de texte fantôme ou avec le widget de suggestion. Tenez également compte du paramètre '#editor.suggestOnTriggerCharacters#' qui contrôle si les suggestions sont déclenchées par des caractères spéciaux.",
-      "editor.stickyScroll.scrollWithEditor": "Active le défilement du widget de défilement collant avec la barre de défilement horizontale de l'éditeur.",
       "editor.suggestFontSize": "Taille de la police pour le widget de suggestion. Si elle vaut `0`, la valeur de `#editor.fontSize#` est utilisée.",
       "editor.suggestLineHeight": "Hauteur de ligne pour le widget de suggestion. Lorsqu'il vaut `0`, la valeur de `#editor.lineHeight#` est utilisée. La valeur minimale est de 8.",
       "editor.tabSize": "Le nombre d'espaces que représente une tabulation. Ce paramètre est modifié en fonction du contenu du fichier lorsque `#editor.detectIndentation#` est activé.",
-      "editor.useTabStops": "L'insertion et la suppression d'espaces blancs suivent les taquets de tabulation.",
-      "editor.wordBasedSuggestions": "Contrôle si les compléments doivent être calculés sur la base des mots du document.",
-      "editor.wordBasedSuggestionsMode": "Contrôle les documents à partir desquels les complétions basées sur les mots sont calculées.",
       "formatOnSaveTimeout": "Délai en millisecondes après lequel le formatage qui est exécuté lors de l'enregistrement du fichier est annulé.",
       "persistClosedEditors": "Contrôle la persistance ou non de l'historique de l'éditeur fermé pour l'espace de travail lors des rechargements de la fenêtre.",
       "showAllEditors": "Afficher tous les éditeurs ouverts",
@@ -436,7 +771,6 @@
       "location": "Localisation",
       "noProperties": "Aucune propriété disponible.",
       "properties": "Propriétés",
-      "size": "Taille",
       "symbolicLink": "Lien symbolique"
     },
     "scm": {
@@ -471,8 +805,7 @@
     "task": {
       "attachTask": "Attacher la tâche...",
       "clearHistory": "Histoire claire",
-      "noTaskToRun": "Aucune tâche à exécuter n'a été trouvée. Configurer les tâches...",
-      "openUserTasks": "Tâches d'utilisateur ouvertes"
+      "noTaskToRun": "Aucune tâche à exécuter n'a été trouvée. Configurer les tâches..."
     },
     "terminal": {
       "defaultProfile": "Le profil par défaut utilisé sur {0}",

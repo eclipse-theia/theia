@@ -19,7 +19,16 @@
       "path": "../core"
     },
     {
+      "path": "../editor"
+    },
+    {
+      "path": "../file-search"
+    },
+    {
       "path": "../filesystem"
+    },
+    {
+      "path": "../monaco"
     },
     {
       "path": "../workspace"

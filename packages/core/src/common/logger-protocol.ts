@@ -110,10 +110,12 @@ export namespace ConsoleLogger {
         console.trace = consoles.get(LogLevel.TRACE)!;
         console.log = originalConsoleLog;
     }
-    export function log(name: string, logLevel: number, message: string, params: any[]): void {
+    export function log(name: string, logLevel: number, message: string, params: any[]): string {
         const console = consoles.get(logLevel) || originalConsoleLog;
         const severity = (LogLevel.strings.get(logLevel) || 'unknown').toUpperCase();
         const now = new Date();
-        console(`${now.toISOString()} ${name} ${severity} ${message}`, ...params);
+        const formattedMessage = `${now.toISOString()} ${name} ${severity} ${message}`;
+        console(formattedMessage, ...params);
+        return formattedMessage;
     }
 }

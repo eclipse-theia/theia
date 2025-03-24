@@ -14,13 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import '../../src/browser/style/index.css';
 import { bindContributionProvider, CommandContribution, MenuContribution } from '@theia/core';
 import { bindViewContribution, FrontendApplicationContribution, WidgetFactory } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
-import { EditorManager } from '@theia/editor/lib/browser';
+import { EditorSelectionResolver } from '@theia/editor/lib/browser/editor-manager';
 import { AIChatContribution } from './ai-chat-ui-contribution';
-import { AIChatInputWidget } from './chat-input-widget';
+import { AIChatInputConfiguration, AIChatInputWidget } from './chat-input-widget';
 import { ChatNodeToolbarActionContribution } from './chat-node-toolbar-action-contribution';
 import { ChatResponsePartRenderer } from './chat-response-part-renderer';
 import {
@@ -35,21 +36,20 @@ import {
     ToolCallPartRenderer,
 } from './chat-response-renderer';
 import {
-    AIEditorManager,
-    AIEditorSelectionResolver,
     GitHubSelectionResolver,
     TextFragmentSelectionResolver,
     TypeDocSymbolSelectionResolver,
-} from './chat-response-renderer/ai-editor-manager';
+} from './chat-response-renderer/ai-selection-resolver';
+import { QuestionPartRenderer } from './chat-response-renderer/question-part-renderer';
 import { createChatViewTreeWidget } from './chat-tree-view';
 import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
 import { ChatViewMenuContribution } from './chat-view-contribution';
 import { ChatViewLanguageContribution } from './chat-view-language-contribution';
 import { ChatViewWidget } from './chat-view-widget';
 import { ChatViewWidgetToolbarContribution } from './chat-view-widget-toolbar-contribution';
-import { EditorPreviewManager } from '@theia/editor-preview/lib/browser/editor-preview-manager';
-import { QuestionPartRenderer } from './chat-response-renderer/question-part-renderer';
-import '../../src/browser/style/index.css';
+import { ContextVariablePicker } from './context-variable-picker';
+import { ChangeSetActionRenderer, ChangeSetActionService } from './change-set-actions/change-set-action-service';
+import { ChangeSetAcceptAction } from './change-set-actions/change-set-accept-action';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindViewContribution(bind, AIChatContribution);
@@ -60,6 +60,10 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindChatViewWidget(bind);
 
     bind(AIChatInputWidget).toSelf();
+    bind(AIChatInputConfiguration).toConstantValue({
+        showContext: true,
+        showPinnedAgent: true
+    });
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
         id: AIChatInputWidget.ID,
         createWidget: () => container.get(AIChatInputWidget)
@@ -72,6 +76,8 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
         id: ChatViewTreeWidget.ID,
         createWidget: () => container.get(ChatViewTreeWidget)
     })).inSingletonScope();
+
+    bind(ContextVariablePicker).toSelf().inSingletonScope();
 
     bind(ChatResponsePartRenderer).to(HorizontalLayoutPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(ErrorPartRenderer).inSingletonScope();
@@ -86,24 +92,23 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     );
 
     bindContributionProvider(bind, CodePartRendererAction);
+    bindContributionProvider(bind, ChangeSetActionRenderer);
     bind(CopyToClipboardButtonAction).toSelf().inSingletonScope();
     bind(CodePartRendererAction).toService(CopyToClipboardButtonAction);
     bind(InsertCodeAtCursorButtonAction).toSelf().inSingletonScope();
     bind(CodePartRendererAction).toService(InsertCodeAtCursorButtonAction);
 
-    bind(AIEditorManager).toSelf().inSingletonScope();
-    rebind(EditorManager).toService(AIEditorManager);
-    rebind(EditorPreviewManager).toService(AIEditorManager);
-
-    bindContributionProvider(bind, AIEditorSelectionResolver);
-    bind(AIEditorSelectionResolver).to(GitHubSelectionResolver).inSingletonScope();
-    bind(AIEditorSelectionResolver).to(TypeDocSymbolSelectionResolver).inSingletonScope();
-    bind(AIEditorSelectionResolver).to(TextFragmentSelectionResolver).inSingletonScope();
+    bind(EditorSelectionResolver).to(GitHubSelectionResolver).inSingletonScope();
+    bind(EditorSelectionResolver).to(TypeDocSymbolSelectionResolver).inSingletonScope();
+    bind(EditorSelectionResolver).to(TextFragmentSelectionResolver).inSingletonScope();
 
     bind(ChatViewWidgetToolbarContribution).toSelf().inSingletonScope();
     bind(TabBarToolbarContribution).toService(ChatViewWidgetToolbarContribution);
 
     bind(FrontendApplicationContribution).to(ChatViewLanguageContribution).inSingletonScope();
+    bind(ChangeSetActionService).toSelf().inSingletonScope();
+    bind(ChangeSetAcceptAction).toSelf().inSingletonScope();
+    bind(ChangeSetActionRenderer).toService(ChangeSetAcceptAction);
 
     bindContributionProvider(bind, ChatNodeToolbarActionContribution);
 });

@@ -17,7 +17,7 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { GrammarDefinition, GrammarDefinitionProvider, LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/monaco/lib/browser/textmate';
 import * as monaco from '@theia/monaco-editor-core';
-import { Command, CommandContribution, CommandRegistry, MessageService } from '@theia/core';
+import { Command, CommandContribution, CommandRegistry, MessageService, nls } from '@theia/core';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 
 import { codicon, Widget } from '@theia/core/lib/browser';
@@ -30,19 +30,19 @@ const PROMPT_TEMPLATE_TEXTMATE_SCOPE = 'source.prompttemplate';
 
 export const PROMPT_TEMPLATE_EXTENSION = '.prompttemplate';
 
-export const DISCARD_PROMPT_TEMPLATE_CUSTOMIZATIONS: Command = {
+export const DISCARD_PROMPT_TEMPLATE_CUSTOMIZATIONS: Command = Command.toLocalizedCommand({
     id: 'theia-ai-prompt-template:discard',
     iconClass: codicon('discard'),
     category: 'Theia AI Prompt Templates'
-};
+}, '', 'theia/ai/core/prompts/category');
 
 // TODO this command is mainly for testing purposes
-export const SHOW_ALL_PROMPTS_COMMAND: Command = {
+export const SHOW_ALL_PROMPTS_COMMAND: Command = Command.toLocalizedCommand({
     id: 'theia-ai-prompt-template:show-prompts-command',
     label: 'Show all prompts',
     iconClass: codicon('beaker'),
     category: 'Theia AI Prompt Templates',
-};
+}, 'theia/ai/core/showAllPrompts/label', 'theia/ai/core/prompts/category');
 
 @injectable()
 export class PromptTemplateContribution implements LanguageGrammarDefinitionContribution, CommandContribution, TabBarToolbarContribution {
@@ -245,7 +245,7 @@ export class PromptTemplateContribution implements LanguageGrammarDefinitionCont
         registry.registerItem({
             id: DISCARD_PROMPT_TEMPLATE_CUSTOMIZATIONS.id,
             command: DISCARD_PROMPT_TEMPLATE_CUSTOMIZATIONS.id,
-            tooltip: 'Discard Customizations'
+            tooltip: nls.localize('theia/ai/core/discardCustomPrompt/tooltip', 'Discard Customizations')
         });
     }
 }

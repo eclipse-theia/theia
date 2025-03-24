@@ -743,10 +743,18 @@ export interface QuickOpenMain {
     $showInputBox(options: TransferInputBox, validateInput: boolean): Promise<string | undefined>;
 }
 
+export interface FindFilesOptions {
+    exclude?: string;
+    useDefaultExcludes?: boolean;
+    useDefaultSearchExcludes?: boolean;
+    maxResults?: number;
+    useIgnoreFiles?: boolean;
+    fuzzy?: boolean;
+}
+
 export interface WorkspaceMain {
     $pickWorkspaceFolder(options: WorkspaceFolderPickOptionsMain): Promise<theia.WorkspaceFolder | undefined>;
-    $startFileSearch(includePattern: string, includeFolder: string | undefined, excludePatternOrDisregardExcludes: string | false,
-        maxResults: number | undefined, token: theia.CancellationToken): PromiseLike<UriComponents[]>;
+    $startFileSearch(includePattern: string, includeFolder: string | undefined, options: FindFilesOptions, token: theia.CancellationToken): PromiseLike<UriComponents[]>;
     $findTextInFiles(query: theia.TextSearchQuery, options: theia.FindTextInFilesOptions, searchRequestId: number,
         token?: theia.CancellationToken): Promise<theia.TextSearchComplete>
     $registerTextDocumentContentProvider(scheme: string): Promise<void>;
@@ -814,7 +822,7 @@ export interface TreeViewsMain {
     $registerTreeDataProvider(treeViewId: string, options?: RegisterTreeDataProviderOptions): void;
     $readDroppedFile(contentId: string): Promise<BinaryBuffer>;
     $unregisterTreeDataProvider(treeViewId: string): void;
-    $refresh(treeViewId: string): Promise<void>;
+    $refresh(treeViewId: string, itemIds?: string[]): Promise<void>;
     $reveal(treeViewId: string, elementParentChain: string[], options: TreeViewRevealOptions): Promise<any>;
     $setMessage(treeViewId: string, message: string): void;
     $setTitle(treeViewId: string, title: string): void;
@@ -1039,6 +1047,7 @@ export interface SourceControlProviderFeatures {
 
 export interface SourceControlGroupFeatures {
     hideWhenEmpty: boolean | undefined;
+    contextValue: string | undefined;
 }
 
 export interface ScmRawResource {
@@ -1521,7 +1530,7 @@ export interface WorkspaceEditEntryMetadataDto {
     needsConfirmation: boolean;
     label: string;
     description?: string;
-    iconPath?: ThemeIcon | {
+    iconPath?: UriComponents | ThemeIcon | {
         light: UriComponents;
         dark: UriComponents;
     };
@@ -1892,8 +1901,8 @@ export interface CustomEditorsExt {
     $redo(resource: UriComponents, viewType: string, editId: number, isDirty: boolean): Promise<void>;
     $revert(resource: UriComponents, viewType: string, cancellation: CancellationToken): Promise<void>;
     $disposeEdits(resourceComponents: UriComponents, viewType: string, editIds: number[]): void;
-    $onSave(resource: UriComponents, viewType: string, cancellation: CancellationToken): Promise<void>;
-    $onSaveAs(resource: UriComponents, viewType: string, targetResource: UriComponents, cancellation: CancellationToken): Promise<void>;
+    $save(resource: UriComponents, viewType: string, cancellation: CancellationToken): Promise<void>;
+    $saveAs(resource: UriComponents, viewType: string, targetResource: UriComponents, cancellation: CancellationToken): Promise<void>;
     // $backup(resource: UriComponents, viewType: string, cancellation: CancellationToken): Promise<string>;
     $onMoveCustomEditor(handle: string, newResource: UriComponents, viewType: string): Promise<void>;
 }
@@ -2061,10 +2070,10 @@ export interface ClipboardMain {
 }
 
 export interface CommentsExt {
-    $createCommentThreadTemplate(commentControllerHandle: number, uriComponents: UriComponents, range: Range): void;
+    $createCommentThreadTemplate(commentControllerHandle: number, uriComponents: UriComponents, range: Range | undefined): void;
     $updateCommentThreadTemplate(commentControllerHandle: number, threadHandle: number, range: Range): Promise<void>;
     $deleteCommentThread(commentControllerHandle: number, commentThreadHandle: number): Promise<void>;
-    $provideCommentingRanges(commentControllerHandle: number, uriComponents: UriComponents, token: CancellationToken): Promise<Range[] | undefined>;
+    $provideCommentingRanges(commentControllerHandle: number, uriComponents: UriComponents, token: CancellationToken): Promise<{ ranges: Range[]; fileComments: boolean } | undefined>;
 }
 
 export interface CommentProviderFeatures {
@@ -2085,7 +2094,7 @@ export interface CommentsMain {
     $registerCommentController(handle: number, id: string, label: string): void;
     $unregisterCommentController(handle: number): void;
     $updateCommentControllerFeatures(handle: number, features: CommentProviderFeatures): void;
-    $createCommentThread(handle: number, commentThreadHandle: number, threadId: string, resource: UriComponents, range: Range, extensionId: string): CommentThread | undefined;
+    $createCommentThread(handle: number, commentThreadHandle: number, threadId: string, resource: UriComponents, range: Range | undefined, extensionId: string): CommentThread | undefined;
     $updateCommentThread(handle: number, commentThreadHandle: number, threadId: string, resource: UriComponents, changes: CommentThreadChanges): void;
     $deleteCommentThread(handle: number, commentThreadHandle: number): void;
     $onDidCommentThreadsChange(handle: number, event: CommentThreadChangedEvent): void;
@@ -2288,8 +2297,9 @@ export interface TestingMain {
 }
 
 export const PLUGIN_RPC_CONTEXT = {
-    AUTHENTICATION_MAIN: <ProxyIdentifier<AuthenticationMain>>createProxyIdentifier<AuthenticationMain>('AuthenticationMain'),
-    COMMAND_REGISTRY_MAIN: <ProxyIdentifier<CommandRegistryMain>>createProxyIdentifier<CommandRegistryMain>('CommandRegistryMain'),
+    LOGGER_MAIN: createProxyIdentifier<LoggerMain>('LoggerMain'),
+    AUTHENTICATION_MAIN: createProxyIdentifier<AuthenticationMain>('AuthenticationMain'),
+    COMMAND_REGISTRY_MAIN: createProxyIdentifier<CommandRegistryMain>('CommandRegistryMain'),
     QUICK_OPEN_MAIN: createProxyIdentifier<QuickOpenMain>('QuickOpenMain'),
     DIALOGS_MAIN: createProxyIdentifier<DialogsMain>('DialogsMain'),
     WORKSPACE_MAIN: createProxyIdentifier<WorkspaceMain>('WorkspaceMain'),
@@ -2322,14 +2332,14 @@ export const PLUGIN_RPC_CONTEXT = {
     SECRETS_MAIN: createProxyIdentifier<SecretsMain>('SecretsMain'),
     DECORATIONS_MAIN: createProxyIdentifier<DecorationsMain>('DecorationsMain'),
     WINDOW_MAIN: createProxyIdentifier<WindowMain>('WindowMain'),
-    CLIPBOARD_MAIN: <ProxyIdentifier<ClipboardMain>>createProxyIdentifier<ClipboardMain>('ClipboardMain'),
-    LABEL_SERVICE_MAIN: <ProxyIdentifier<LabelServiceMain>>createProxyIdentifier<LabelServiceMain>('LabelServiceMain'),
-    TIMELINE_MAIN: <ProxyIdentifier<TimelineMain>>createProxyIdentifier<TimelineMain>('TimelineMain'),
-    THEMING_MAIN: <ProxyIdentifier<ThemingMain>>createProxyIdentifier<ThemingMain>('ThemingMain'),
-    COMMENTS_MAIN: <ProxyIdentifier<CommentsMain>>createProxyIdentifier<CommentsMain>('CommentsMain'),
-    TABS_MAIN: <ProxyIdentifier<TabsMain>>createProxyIdentifier<TabsMain>('TabsMain'),
-    TELEMETRY_MAIN: <ProxyIdentifier<TelemetryMain>>createProxyIdentifier<TelemetryMain>('TelemetryMain'),
-    LOCALIZATION_MAIN: <ProxyIdentifier<LocalizationMain>>createProxyIdentifier<LocalizationMain>('LocalizationMain'),
+    CLIPBOARD_MAIN: createProxyIdentifier<ClipboardMain>('ClipboardMain'),
+    LABEL_SERVICE_MAIN: createProxyIdentifier<LabelServiceMain>('LabelServiceMain'),
+    TIMELINE_MAIN: createProxyIdentifier<TimelineMain>('TimelineMain'),
+    THEMING_MAIN: createProxyIdentifier<ThemingMain>('ThemingMain'),
+    COMMENTS_MAIN: createProxyIdentifier<CommentsMain>('CommentsMain'),
+    TABS_MAIN: createProxyIdentifier<TabsMain>('TabsMain'),
+    TELEMETRY_MAIN: createProxyIdentifier<TelemetryMain>('TelemetryMain'),
+    LOCALIZATION_MAIN: createProxyIdentifier<LocalizationMain>('LocalizationMain'),
     TESTING_MAIN: createProxyIdentifier<TestingMain>('TestingMain'),
     URI_MAIN: createProxyIdentifier<UriMain>('UriMain')
 };
@@ -2750,4 +2760,16 @@ export interface StringDetails {
 
 export interface LocalizationMain {
     $fetchBundle(id: string): Promise<LanguagePackBundle | undefined>;
+}
+
+export enum LogLevel {
+    Trace = 1,
+    Debug = 2,
+    Info = 3,
+    Warn = 4,
+    Error = 5
+}
+
+export interface LoggerMain {
+    $log(level: LogLevel, name: string | undefined, message: string, params: any[]): void;
 }

@@ -43,6 +43,8 @@ export class LogLevelCliContribution implements CliContribution {
      */
     protected _defaultLogLevel: LogLevel = LogLevel.INFO;
 
+    protected _logFile?: string;
+
     protected logConfigChangedEvent: Emitter<void> = new Emitter<void>();
 
     get defaultLogLevel(): LogLevel {
@@ -51,6 +53,10 @@ export class LogLevelCliContribution implements CliContribution {
 
     get logLevels(): LogLevels {
         return this._logLevels;
+    }
+
+    get logFile(): string | undefined {
+        return this._logFile;
     }
 
     configure(conf: yargs.Argv): void {
@@ -64,6 +70,12 @@ export class LogLevelCliContribution implements CliContribution {
             description: 'Path to the JSON file specifying the configuration of various loggers',
             type: 'string',
             nargs: 1,
+        });
+
+        conf.option('log-file', {
+            description: 'Path to the log file',
+            type: 'string',
+            nargs: 1
         });
     }
 
@@ -87,22 +99,46 @@ export class LogLevelCliContribution implements CliContribution {
                 console.error(`Error reading log config file ${filename}: ${e}`);
             }
         }
+
+        if (args['log-file'] !== undefined) {
+            let filename = args['log-file'] as string;
+            try {
+                filename = path.resolve(filename);
+                try {
+                    const stat = await fs.stat(filename);
+                    if (stat && stat.isFile()) {
+                        // Rename the previous log file to avoid overwriting it
+                        const oldFilename = `${filename}.${stat.ctime.toISOString().replace(/:/g, '-')}.old`;
+                        await fs.rename(filename, oldFilename);
+                    }
+                } catch {
+                    // File does not exist, just continue to create it
+                }
+                await fs.writeFile(filename, '');
+                this._logFile = filename;
+            } catch (e) {
+                console.error(`Error creating log file ${filename}: ${e}`);
+            }
+        }
     }
 
     protected async watchLogConfigFile(filename: string): Promise<void> {
-        await subscribe(filename, async (err, events) => {
+        const dir = path.dirname(filename);
+        await subscribe(dir, async (err, events) => {
             if (err) {
                 console.log(`Error during log file watching ${filename}: ${err}`);
                 return;
             }
             try {
                 for (const event of events) {
-                    switch (event.type) {
-                        case 'create':
-                        case 'update':
-                            await this.slurpLogConfigFile(filename);
-                            this.logConfigChangedEvent.fire(undefined);
-                            break;
+                    if (event.path === filename) {
+                        switch (event.type) {
+                            case 'create':
+                            case 'update':
+                                await this.slurpLogConfigFile(filename);
+                                this.logConfigChangedEvent.fire(undefined);
+                                break;
+                        }
                     }
                 }
             } catch (e) {

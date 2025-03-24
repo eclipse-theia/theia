@@ -218,6 +218,10 @@
   color: var(--theia-debugConsole-errorForeground);
 }
 
+.theia-debug-console-variable .watch-not-available {
+  font-style: italic;
+}
+
 .theia-debug-watch-expression {
   display: flex;
 }
@@ -362,6 +366,7 @@
   border: 1px solid var(--theia-editorHoverWidget-border);
   background: var(--theia-editorHoverWidget-background);
   color: var(--theia-editorHoverWidget-foreground);
+  z-index: 1000;
 }
 
 .theia-debug-hover.complex-value {

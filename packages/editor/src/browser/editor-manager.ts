@@ -14,12 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, postConstruct, inject } from '@theia/core/shared/inversify';
+import { injectable, postConstruct, inject, named } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { RecursivePartial, Emitter, Event, MaybePromise, CommandService, nls } from '@theia/core/lib/common';
+import { RecursivePartial, Emitter, Event, MaybePromise, CommandService, nls, ContributionProvider, Prioritizeable, Disposable } from '@theia/core/lib/common';
 import {
-    WidgetOpenerOptions, NavigatableWidgetOpenHandler, NavigatableWidgetOptions, Widget, PreferenceService, CommonCommands, OpenWithService, getDefaultHandler,
-    defaultHandlerPriority
+    WidgetOpenerOptions, NavigatableWidgetOpenHandler, NavigatableWidgetOptions, Widget, PreferenceService, CommonCommands, getDefaultHandler, defaultHandlerPriority
 } from '@theia/core/lib/browser';
 import { EditorWidget } from './editor-widget';
 import { Range, Position, Location, TextEditor } from './editor';
@@ -33,7 +32,13 @@ export interface WidgetId {
 export interface EditorOpenerOptions extends WidgetOpenerOptions {
     selection?: RecursivePartial<Range>;
     preview?: boolean;
-    counter?: number
+    counter?: number;
+}
+
+export const EditorSelectionResolver = Symbol('EditorSelectionResolver');
+export interface EditorSelectionResolver {
+    priority?: number;
+    resolveSelection(widget: EditorWidget, options: EditorOpenerOptions, uri?: URI): Promise<RecursivePartial<Range> | undefined>;
 }
 
 @injectable()
@@ -59,11 +64,20 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
 
     @inject(CommandService) protected readonly commands: CommandService;
     @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
-    @inject(OpenWithService) protected readonly openWithService: OpenWithService;
+
+    @inject(ContributionProvider) @named(EditorSelectionResolver)
+    protected readonly resolverContributions: ContributionProvider<EditorSelectionResolver>;
+    protected selectionResolvers: EditorSelectionResolver[] = [];
 
     @postConstruct()
     protected override init(): void {
         super.init();
+
+        this.selectionResolvers = Prioritizeable.prioritizeAllSync(
+            this.resolverContributions.getContributions(),
+            resolver => resolver.priority ?? 0
+        ).map(p => p.value);
+
         this.shell.onDidChangeActiveWidget(() => this.updateActiveEditor());
         this.shell.onDidChangeCurrentWidget(() => this.updateCurrentEditor());
         this.shell.onDidDoubleClickMainArea(() =>
@@ -88,17 +102,28 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
                 this.addRecentlyVisible(widget);
             }
         }
-        this.openWithService.registerHandler({
-            id: 'default',
-            label: this.label,
-            providerName: nls.localizeByDefault('Built-in'),
-            canHandle: () => 100,
-            // Higher priority than any other handler
-            // so that the text editor always appears first in the quick pick
-            getOrder: () => 10000,
-            open: uri => this.open(uri)
-        });
+
         this.updateCurrentEditor();
+    }
+
+    /**
+     * Registers a dynamic selection resolver.
+     * The resolver is added to the sorted list of selection resolvers and can later be disposed to remove it.
+     *
+     * @param resolver The selection resolver to register.
+     * @returns A Disposable that unregisters the resolver when disposed.
+     */
+    public registerSelectionResolver(resolver: EditorSelectionResolver): Disposable {
+        this.selectionResolvers.push(resolver);
+        this.selectionResolvers.sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+        return {
+            dispose: () => {
+                const index = this.selectionResolvers.indexOf(resolver);
+                if (index !== -1) {
+                    this.selectionResolvers.splice(index, 1);
+                }
+            }
+        };
     }
 
     override getByUri(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget | undefined> {
@@ -111,22 +136,24 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
 
     protected override tryGetPendingWidget(uri: URI, options?: EditorOpenerOptions): MaybePromise<EditorWidget> | undefined {
         const editorPromise = super.tryGetPendingWidget(uri, options);
-        if (editorPromise) {
-            // Reveal selection before attachment to manage nav stack. (https://github.com/eclipse-theia/theia/issues/8955)
-            if (!(editorPromise instanceof Widget)) {
-                editorPromise.then(editor => this.revealSelection(editor, options, uri));
-            } else {
-                this.revealSelection(editorPromise, options, uri);
-            }
+        if (!editorPromise) {
+            return editorPromise;
         }
-        return editorPromise;
+
+        // Reveal selection before attachment to manage nav stack. (https://github.com/eclipse-theia/theia/issues/8955)
+        if (!(editorPromise instanceof Widget)) {
+            return editorPromise.then(editor => this.revealSelection(editor, options, uri)).then(() => editorPromise);
+        } else {
+            return this.revealSelection(editorPromise, options, uri).then(() => editorPromise);
+        }
+
     }
 
     protected override async getWidget(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget | undefined> {
         const editor = await super.getWidget(uri, options);
         if (editor) {
             // Reveal selection before attachment to manage nav stack. (https://github.com/eclipse-theia/theia/issues/8955)
-            this.revealSelection(editor, options, uri);
+            await this.revealSelection(editor, options, uri);
         }
         return editor;
     }
@@ -134,7 +161,7 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
     protected override async getOrCreateWidget(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget> {
         const editor = await super.getOrCreateWidget(uri, options);
         // Reveal selection before attachment to manage nav stack. (https://github.com/eclipse-theia/theia/issues/8955)
-        this.revealSelection(editor, options, uri);
+        await this.revealSelection(editor, options, uri);
         return editor;
     }
 
@@ -250,13 +277,17 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
         return this.open(uri, splitOptions);
     }
 
-    protected revealSelection(widget: EditorWidget, input?: EditorOpenerOptions, uri?: URI): void {
+    protected async revealSelection(widget: EditorWidget, input?: EditorOpenerOptions, uri?: URI): Promise<void> {
         let inputSelection = input?.selection;
+        if (!inputSelection) {
+            inputSelection = await this.resolveSelection(widget, input ?? {}, uri);
+        }
+        // this logic could be moved into a 'EditorSelectionResolver'
         if (!inputSelection && uri) {
+            // support file:///some/file.js#73,84
+            // support file:///some/file.js#L73
             const match = /^L?(\d+)(?:,(\d+))?/.exec(uri.fragment);
             if (match) {
-                // support file:///some/file.js#73,84
-                // support file:///some/file.js#L73
                 inputSelection = {
                     start: {
                         line: parseInt(match[1]) - 1,
@@ -266,20 +297,34 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
             }
         }
         if (inputSelection) {
-            const editor = widget.editor;
             const selection = this.getSelection(widget, inputSelection);
+            const editor = widget.editor;
             if (Position.is(selection)) {
                 editor.cursor = selection;
                 editor.revealPosition(selection);
             } else if (Range.is(selection)) {
                 editor.cursor = selection.end;
-                editor.selection = {
-                    ...selection,
-                    direction: 'ltr'
-                };
+                editor.selection = { ...selection, direction: 'ltr' };
                 editor.revealRange(selection);
             }
         }
+    }
+
+    protected async resolveSelection(widget: EditorWidget, options: EditorOpenerOptions, uri?: URI): Promise<RecursivePartial<Range> | undefined> {
+        if (options.selection) {
+            return options.selection;
+        }
+        for (const resolver of this.selectionResolvers) {
+            try {
+                const selection = await resolver.resolveSelection(widget, options, uri);
+                if (selection) {
+                    return selection;
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        }
+        return undefined;
     }
 
     protected getSelection(widget: EditorWidget, selection: RecursivePartial<Range>): Range | Position | undefined {

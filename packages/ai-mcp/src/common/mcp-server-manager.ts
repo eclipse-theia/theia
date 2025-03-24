@@ -52,6 +52,11 @@ export interface MCPServerDescription {
      * Optional environment variables to set when starting the server.
      */
     env?: { [key: string]: string };
+
+    /**
+     * Flag indicating whether the server should automatically start when the application starts.
+     */
+    autostart?: boolean;
 }
 
 export const MCPServerManager = Symbol('MCPServerManager');

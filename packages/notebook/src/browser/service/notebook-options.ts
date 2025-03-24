@@ -21,7 +21,7 @@ import { Emitter } from '@theia/core';
 import { NotebookPreferences, notebookPreferenceSchema } from '../contributions/notebook-preferences';
 import { EditorPreferences } from '@theia/editor/lib/browser';
 import { BareFontInfo } from '@theia/monaco-editor-core/esm/vs/editor/common/config/fontInfo';
-import { PixelRatio } from '@theia/monaco-editor-core/esm/vs/base/browser/browser';
+import { PixelRatio } from '@theia/monaco-editor-core/esm/vs/base/browser/pixelRatio';
 
 const notebookOutputOptionsRelevantPreferences = [
     'editor.fontSize',
@@ -149,7 +149,7 @@ export class NotebookOptionsService {
             fontLigatures: this.editorPreferences['editor.fontLigatures'],
             lineHeight: this.editorPreferences['editor.lineHeight'],
             letterSpacing: this.editorPreferences['editor.letterSpacing'],
-        }, PixelRatio.value);
+        }, PixelRatio.getInstance(window).value);
     }
 
 }

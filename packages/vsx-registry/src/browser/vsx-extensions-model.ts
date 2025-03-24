@@ -33,6 +33,7 @@ import { OVSXClientProvider } from '../common/ovsx-client-provider';
 import { RequestContext, RequestService } from '@theia/core/shared/@theia/request';
 import { OVSXApiFilterProvider } from '@theia/ovsx-client';
 import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
 
 @injectable()
 export class VSXExtensionsModel {
@@ -80,6 +81,9 @@ export class VSXExtensionsModel {
 
     @inject(OVSXApiFilterProvider)
     protected vsxApiFilter: OVSXApiFilterProvider;
+
+    @inject(FileService)
+    protected readonly fileService: FileService;
 
     @inject(ApplicationServer)
     protected readonly applicationServer: ApplicationServer;
@@ -135,13 +139,24 @@ export class VSXExtensionsModel {
     resolve(id: string): Promise<VSXExtension> {
         return this.doChange(async () => {
             await this.initialized;
-            const extension = await this.refresh(id);
+            const extension = await this.refresh(id) ?? this.getExtension(id);
             if (!extension) {
                 throw new Error(`Failed to resolve ${id} extension.`);
             }
-            if (extension.readmeUrl) {
+            if (extension.readme === undefined) {
                 try {
-                    const rawReadme = RequestContext.asText(await this.request.request({ url: extension.readmeUrl }));
+                    let rawReadme: string = '';
+                    const installedReadme = await this.findReadmeFile(extension);
+                    // Attempt to read the local readme first
+                    // It saves network resources and is faster
+                    if (installedReadme) {
+                        const readmeContent = await this.fileService.readFile(installedReadme);
+                        rawReadme = readmeContent.value.toString();
+                    } else if (extension.readmeUrl) {
+                        rawReadme = RequestContext.asText(
+                            await this.request.request({ url: extension.readmeUrl })
+                        );
+                    }
                     const readme = this.compileReadme(rawReadme);
                     extension.update({ readme });
                 } catch (e) {
@@ -152,6 +167,22 @@ export class VSXExtensionsModel {
             }
             return extension;
         });
+    }
+
+    protected async findReadmeFile(extension: VSXExtension): Promise<URI | undefined> {
+        if (!extension.plugin) {
+            return undefined;
+        }
+        // Since we don't know the exact capitalization of the readme file (might be README.md, readme.md, etc.)
+        // We attempt to find the readme file by searching through the plugin's directories
+        const packageUri = new URI(extension.plugin.metadata.model.packageUri);
+        const pluginUri = packageUri.withPath(packageUri.path.join('..'));
+        const pluginDirStat = await this.fileService.resolve(pluginUri);
+        const possibleNames = ['readme.md', 'readme.txt', 'readme'];
+        const readmeFileUri = pluginDirStat.children
+            ?.find(child => possibleNames.includes(child.name.toLowerCase()))
+            ?.resource;
+        return readmeFileUri;
     }
 
     protected async initInstalled(): Promise<void> {

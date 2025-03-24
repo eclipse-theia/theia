@@ -5,11 +5,10 @@ This guide details the steps for maintainers to release Eclipse Theia, including
 ## Table of Contents
 
 1. [Pre-Release Steps](#1-pre-release-steps)
-   - [1.1 NPM Upgrade](#11-npm-upgrade)
-   - [1.2 Announce Release](#12-announce-release)
-   - [1.3 Localization](#13-localization)
-   - [1.4 Prepare Release Branch](#14-prepare-release-branch)
-   - [1.5 Update Changelog](#15-update-changelog)
+   - [1.1 Announce Release](#11-announce-release)
+   - [1.2 Localization](#12-localization)
+   - [1.3 Prepare Release Branch](#13-prepare-release-branch)
+   - [1.4 Update Changelog](#14-update-changelog)
 2. [Release Process](#2-release-process)
    - [2.1 Performing a Release](#21-performing-a-release)
    - [2.2 Community Releases](#22-community-releases)
@@ -19,27 +18,13 @@ This guide details the steps for maintainers to release Eclipse Theia, including
    - [3.3 Update Future Milestones](#33-update-future-milestones)
    - [3.4 Merge Website PRs](#34-merge-website-prs)
    - [3.5 Publish GitHub Pages](#35-publish-github-pages)
+   - [3.6 NPM Upgrade](#36-npm-upgrade)
 4. [Troubleshooting](#4-troubleshooting)
    - [Failures During Publishing](#41-failures-during-publishing)
 
 ## 1. Pre-Release Steps
 
-### 1.1 NPM Upgrade
-
-Perform a `npm upgrade` on the repository prior to a release to update the `package-lock.json`. The upgrade helps to:
-
-- Better represent what adopters will pull during a release.
-- Validate dependencies with our declared version ranges.
-- Fix known security vulnerabilities from dependencies.
-
-To perform the upgrade:
-
-- Run `npm upgrade` at the root of the repository.
-- Fix any compilation errors, typing errors, and failing tests.
-- Open a PR with the changes ([example](https://github.com/eclipse-theia/theia/pull/13423)).
-- Confirm licenses and wait for the "IP Check" to complete ([example](https://gitlab.eclipse.org/eclipsefdn/emo-team/iplab/-/issues/9377)).
-
-### 1.2 Announce Release
+### 1.1 Announce Release
 
 - Provide a heads-up to developers and the community a few hours before the release.
 - Use [GitHub Discussions](https://github.com/eclipse-theia/theia/discussions) for the announcement.
@@ -61,14 +46,14 @@ To perform the upgrade:
   >
   > The Eclipse Theia v{version} release is scheduled for later today! You can follow the progress here: {add link here}
 
-### 1.3 Localization
+### 1.2 Localization
 
 - Perform `nls` updates before a release ([example](https://github.com/eclipse-theia/theia/pull/14373)).
 - Trigger the automatic translation workflow via GitHub Actions ([workflow link](https://github.com/eclipse-theia/theia/actions/workflows/translation.yml)).
 - Force-push the branch created by the bot to properly trigger CI.
 - Once the PR is approved, use `Squash and merge` to finalize it.
 
-### 1.4 Prepare Release Branch
+### 1.3 Prepare Release Branch
 
 - Checkout `master` with the latest changes:
 
@@ -84,7 +69,7 @@ To perform the upgrade:
 
 - Create a branch with the pattern `release/x.y.z` (e.g., `release/1.55.x`).
 
-### 1.5 Update Changelog
+### 1.4 Update Changelog
 
 Add entries for non-breaking changes since the last release. Breaking changes should be added by the PR, not during the release.
 
@@ -121,7 +106,7 @@ Format:
 - Build the changes:
 
   ```bash
-  npm install && npm build
+  npm install && npm run build
   ```
 
 - Confirm the changes are built (ensure `@theia` extensions have their `lib/` folders).
@@ -157,6 +142,12 @@ Format:
 
 - Verify the packages are published on npm.
 
+- Deprecate the `@theia/git` extension (needs to be done after each release).
+
+  ```bash
+  npm deprecate @theia/git "The Theia Git extension is no longer maintained, please use the built-in VS Code Git extension instead, which covers the same feature set."
+  ```
+
 - Remove the auth token:
 
   ```bash
@@ -169,7 +160,11 @@ Format:
 
 - Push the branch.
 
-- Run the [_Package Native Dependencies_](https://github.com/eclipse-theia/theia/actions/workflows/native-dependencies.yml) GitHub Action on the new branch and download the artifacts.
+- Get the `native dependencies`
+  - Run the [_Package Native Dependencies_](https://github.com/eclipse-theia/theia/actions/workflows/native-dependencies.yml) GitHub Action on the new branch (You can continue while you wait).
+  - Download the artifacts (They are located on the build overview at the bottom).
+  - Extract the downloaded folders.
+  - Leave the dependencies for now, you will need them later.
 
 - Create a PR (not needed for patch releases):
   - Name: `Theia {version}`.
@@ -182,6 +177,12 @@ Format:
   git tag -a v{version} ${sha} -m "v{version}"
   ```
 
+  _Note_: The tag needs to be annotated otherwise it might break the publishing. Check that the output of the following command is `tag` and not `commit`.
+
+  ```bash
+  git for-each-ref refs/tags | grep 'v{version}' | awk '{print $2}'
+  ```
+
 - Push the tag:
 
   ```bash
@@ -190,21 +191,20 @@ Format:
 
 - Create a GitHub release:
   - Draft a release on the [releases page](https://github.com/eclipse-theia/theia/releases).
-  - Choose the appropriate `tag` and input a `name` (e.g., `v1.55.0`, `Eclipse Theia v1.55.0`).
+  - Choose the appropriate `tag` and input a `name` (e.g., `v{version}`, `Eclipse Theia v{version}`).
   - Use `generate release notes` for contributors and format like previous releases.
   - Reference the `changelog` and breaking changes.
-  - Attach _Package Native Dependencies_ artifacts.
+  - Attach _Native Dependencies_ artifacts (the extracted zips).
+    - native-dependencies-darwin-arm64.zip
+    - native-dependencies-linux-x64.zip
+    - native-dependencies-win32-x64.zip
   - Mark the release as `latest` (_Do not mark for a patch on an older version_).
   - Select _"Publish Release"_.
   - See [GitHub documentation](https://help.github.com/en/github/administering-a-repository/managing-releases-in-a-repository#creating-a-release) for details.
 
 ### 2.2 Community Releases
 
-Community releases are similar to regular releases but with fewer steps (e.g., no need to submit a pull request).
-
-- Prepare the community release branch from a specific release `tag`.
-- Cherry-pick any changes to apply on top of the `tag` (e.g., patches).
-- Perform the release as usual using a `dist-tag` of `community`.
+Community releases follow the same procedure as the regular releases. Please follow [2.1 Performing a Release](#21-performing-a-release).
 
 ## 3. Post-Release Steps
 
@@ -241,6 +241,23 @@ Community releases are similar to regular releases but with fewer steps (e.g., n
 ### 3.5 Publish GitHub Pages
 
 - Publish the `latest` documentation with the [GitHub Pages workflow](https://github.com/eclipse-theia/theia/actions/workflows/publish-gh-pages.yml) manually using the `manual_dispatch` job.
+
+### 3.6 NPM Upgrade
+
+Perform a `npm upgrade` on the repository after the release to update the `package-lock.json`. The upgrade helps to:
+
+- Better represent what adopters will pull during a release.
+- Validate dependencies with our declared version ranges.
+- Fix known security vulnerabilities from dependencies.
+
+To perform the upgrade:
+
+- Run `npm upgrade` at the root of the repository.
+- Fix any compilation errors, typing errors, and failing tests.
+- Open a PR with the changes ([example](https://github.com/eclipse-theia/theia/pull/13423)).
+- Confirm licenses and wait for the "IP Check" to complete ([example](https://gitlab.eclipse.org/eclipsefdn/emo-team/iplab/-/issues/9377)).
+
+Performing this after the release helps us to find issues with the new dependencies and gives time to perform a license check on the dependencies.
 
 ## 4. Troubleshooting
 

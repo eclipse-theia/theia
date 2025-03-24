@@ -17,14 +17,20 @@
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { HUGGINGFACE_LANGUAGE_MODELS_MANAGER_PATH, HuggingFaceLanguageModelsManager } from '../common/huggingface-language-models-manager';
 import { ConnectionHandler, RpcConnectionHandler } from '@theia/core';
+import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
 import { HuggingFaceLanguageModelsManagerImpl } from './huggingface-language-models-manager-impl';
 
 export const HuggingFaceModelFactory = Symbol('HuggingFaceModelFactory');
 
-export default new ContainerModule(bind => {
+// We use a connection module to handle AI services separately for each frontend.
+const huggingfaceConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService, bindFrontendService }) => {
     bind(HuggingFaceLanguageModelsManagerImpl).toSelf().inSingletonScope();
     bind(HuggingFaceLanguageModelsManager).toService(HuggingFaceLanguageModelsManagerImpl);
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new RpcConnectionHandler(HUGGINGFACE_LANGUAGE_MODELS_MANAGER_PATH, () => ctx.container.get(HuggingFaceLanguageModelsManager))
     ).inSingletonScope();
+});
+
+export default new ContainerModule(bind => {
+    bind(ConnectionContainerModule).toConstantValue(huggingfaceConnectionModule);
 });

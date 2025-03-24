@@ -27,7 +27,7 @@ import {
     CHANNEL_REQUEST_RELOAD, CHANNEL_APP_STATE_CHANGED, CHANNEL_SHOW_ITEM_IN_FOLDER, CHANNEL_READ_CLIPBOARD, CHANNEL_WRITE_CLIPBOARD,
     CHANNEL_KEYBOARD_LAYOUT_CHANGED, CHANNEL_IPC_CONNECTION, InternalMenuDto, CHANNEL_REQUEST_SECONDARY_CLOSE, CHANNEL_SET_BACKGROUND_COLOR,
     CHANNEL_WC_METADATA, CHANNEL_ABOUT_TO_CLOSE, CHANNEL_OPEN_WITH_SYSTEM_APP,
-    CHANNEL_OPEN_URL
+    CHANNEL_OPEN_URL, CHANNEL_SET_THEME
 } from '../electron-common/electron-api';
 
 // eslint-disable-next-line import/no-extraneous-dependencies
@@ -120,6 +120,9 @@ const api: TheiaCoreAPI = {
     setBackgroundColor: function (backgroundColor): void {
         ipcRenderer.send(CHANNEL_SET_BACKGROUND_COLOR, backgroundColor);
     },
+    setTheme: function (theme): void {
+        ipcRenderer.send(CHANNEL_SET_THEME, theme);
+    },
     minimize: function (): void {
         ipcRenderer.send(CHANNEL_MINIMIZE);
     },
@@ -160,7 +163,7 @@ const api: TheiaCoreAPI = {
         return Disposable.create(() => ipcRenderer.off(CHANNEL_ON_WINDOW_EVENT, h));
     },
     setCloseRequestHandler: function (handler: (stopReason: StopReason) => Promise<boolean>): void {
-        ipcRenderer.on(CHANNEL_REQUEST_CLOSE, async (event, stopReason, confirmChannel, cancelChannel) => {
+        ipcRenderer.on(CHANNEL_REQUEST_CLOSE, async (event: Electron.IpcRendererEvent, stopReason: StopReason, confirmChannel: string, cancelChannel: string) => {
             try {
                 if (await handler(stopReason)) {
                     event.sender.send(confirmChannel);
@@ -249,7 +252,7 @@ function createDisposableListener(channel: string, handler: (event: any, ...args
 
 export function preload(): void {
     console.log('exposing theia core electron api');
-    ipcRenderer.on(CHANNEL_INVOKE_MENU, (_, menuId: number, handlerId: number) => {
+    ipcRenderer.on(CHANNEL_INVOKE_MENU, (_: Electron.IpcRendererEvent, menuId: number, handlerId: number) => {
         const map = commandHandlers.get(menuId);
         if (map) {
             const handler = map.get(handlerId);

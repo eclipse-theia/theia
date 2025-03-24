@@ -65,7 +65,7 @@ import { WebSocketConnectionProvider } from './messaging';
 import { AboutDialog, AboutDialogProps } from './about-dialog';
 import { EnvVariablesServer, envVariablesPath, EnvVariable } from './../common/env-variables';
 import { FrontendApplicationStateService } from './frontend-application-state';
-import { JsonSchemaStore, JsonSchemaContribution, DefaultJsonSchemaContribution } from './json-schema-store';
+import { JsonSchemaStore, JsonSchemaContribution, DefaultJsonSchemaContribution, JsonSchemaDataStore } from './json-schema-store';
 import { TabBarToolbarRegistry, TabBarToolbarContribution, TabBarToolbarFactory, TabBarToolbar } from './shell/tab-bar-toolbar';
 import { bindCorePreferences, CorePreferences } from './core-preferences';
 import { ContextKeyService, ContextKeyServiceDummyImpl } from './context-key-service';
@@ -342,6 +342,7 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bindContributionProvider(bind, JsonSchemaContribution);
     bind(JsonSchemaStore).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(JsonSchemaStore);
+    bind(JsonSchemaDataStore).toSelf().inSingletonScope();
     bind(DefaultJsonSchemaContribution).toSelf().inSingletonScope();
     bind(JsonSchemaContribution).toService(DefaultJsonSchemaContribution);
 

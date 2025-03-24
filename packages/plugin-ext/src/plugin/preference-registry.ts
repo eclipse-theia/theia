@@ -34,6 +34,7 @@ import { RPCProtocol } from '../common/rpc-protocol';
 import { isObject, mixin } from '../common/types';
 import { WorkspaceExtImpl } from './workspace';
 import cloneDeep = require('lodash.clonedeep');
+import { ILogService, LogLevel } from '@theia/monaco-editor-core/esm/vs/platform/log/common/log';
 
 const injectionRe = /\b__proto__\b|\bconstructor\.prototype\b/;
 
@@ -78,6 +79,30 @@ export class TheiaWorkspace extends Workspace {
         super(generateUuid(), folders, false, ext.workspaceFile ?? null, () => isOSX || isWindows);
     }
 }
+
+const logService: ILogService = {
+    _serviceBrand: undefined,
+    onDidChangeLogLevel: new Emitter<LogLevel>().event,
+    getLevel: function (): LogLevel {
+        return LogLevel.Info;
+    },
+    setLevel: function (level: LogLevel): void {
+    },
+    trace: function (message: string, ...args: any[]): void {
+    },
+    debug: function (message: string, ...args: any[]): void {
+    },
+    info: function (message: string, ...args: any[]): void {
+    },
+    warn: function (message: string, ...args: any[]): void {
+    },
+    error: function (message: string | Error, ...args: any[]): void {
+    },
+    flush: function (): void {
+    },
+    dispose: function (): void {
+    }
+};
 
 @injectable()
 export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
@@ -251,19 +276,27 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
         Object.keys(data[PreferenceScope.Folder]).forEach(resource => {
             folderConfigurations.set(URI.parse(resource), this.getConfigurationModel(`Folder: ${resource}`, data[PreferenceScope.Folder][resource]));
         });
+
+        function createEmptyModel(): ConfigurationModel {
+            return new ConfigurationModel({}, [], [], undefined, logService);
+        }
+
         return new Configuration(
             defaultConfiguration,
-            new ConfigurationModel(), /** policy configuration. */
-            new ConfigurationModel(), /** application configuration. */
+            createEmptyModel(), /** policy configuration. */
+            createEmptyModel(), /** application configuration. */
             userConfiguration,
-            new ConfigurationModel(), /** remote configuration. */
+            createEmptyModel(), /** remote configuration. */
             workspaceConfiguration,
-            folderConfigurations
+            folderConfigurations,
+            ConfigurationModel.createEmptyModel(logService),
+            new ResourceMap<ConfigurationModel>(),
+            logService
         );
     }
 
     private getConfigurationModel(label: string, data: { [key: string]: any }): ConfigurationModel {
-        const parser = new ConfigurationModelParser(label);
+        const parser = new ConfigurationModelParser(label, logService);
         const sanitized = this.sanitize(data);
         parser.parseRaw(sanitized);
         return parser.configurationModel;

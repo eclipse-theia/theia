@@ -16,8 +16,8 @@
 
 import debounce = require('@theia/core/shared/lodash.debounce');
 
-import { Widget } from '@theia/core/shared/@phosphor/widgets';
-import { Message } from '@theia/core/shared/@phosphor/messaging';
+import { Widget } from '@theia/core/shared/@lumino/widgets';
+import { Message } from '@theia/core/shared/@lumino/messaging';
 import { injectable, postConstruct, inject, Container, interfaces } from '@theia/core/shared/inversify';
 import { Key } from '@theia/core/lib/browser';
 import { SourceTreeWidget } from '@theia/core/lib/browser/source-tree';
@@ -196,24 +196,25 @@ export class DebugHoverWidget extends SourceTreeWidget implements monaco.editor.
                 }
             }
         } else { // use fallback if no provider was registered
-            matchingExpression = this.expressionProvider.get(this.editor.getControl().getModel()!, options.selection);
-            if (matchingExpression) {
-                const expressionLineContent = this.editor
-                    .getControl()
-                    .getModel()!
-                    .getLineContent(this.options.selection.startLineNumber);
-                const startColumn =
-                    expressionLineContent.indexOf(
-                        matchingExpression,
-                        this.options.selection.startColumn - matchingExpression.length
-                    ) + 1;
-                const endColumn = startColumn + matchingExpression.length;
-                this.options.selection = new monaco.Range(
-                    this.options.selection.startLineNumber,
-                    startColumn,
-                    this.options.selection.startLineNumber,
-                    endColumn
-                );
+            const model = this.editor.getControl().getModel();
+            if (model) {
+
+                matchingExpression = this.expressionProvider.get(model, options.selection);
+                if (matchingExpression) {
+                    const expressionLineContent = model.getLineContent(this.options.selection.startLineNumber);
+                    const startColumn =
+                        expressionLineContent.indexOf(
+                            matchingExpression,
+                            this.options.selection.startColumn - matchingExpression.length
+                        ) + 1;
+                    const endColumn = startColumn + matchingExpression.length;
+                    this.options.selection = new monaco.Range(
+                        this.options.selection.startLineNumber,
+                        startColumn,
+                        this.options.selection.startLineNumber,
+                        endColumn
+                    );
+                }
             }
         }
 
@@ -263,7 +264,7 @@ export class DebugHoverWidget extends SourceTreeWidget implements monaco.editor.
     }
 
     protected isEditorFrame(): boolean {
-        return this.sessions.isCurrentEditorFrame(this.editor.getControl().getModel()!.uri);
+        return this.sessions.isCurrentEditorFrame(this.editor.getResourceUri());
     }
 
     getPosition(): monaco.editor.IContentWidgetPosition {

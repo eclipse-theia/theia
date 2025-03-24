@@ -35,11 +35,11 @@ export class OutputEditorFactory implements MonacoEditorFactory {
 
     readonly scheme: string = OutputUri.SCHEME;
 
-    create(model: MonacoEditorModel, defaultsOptions: MonacoEditor.IOptions): MonacoEditor {
+    create(model: MonacoEditorModel, defaultsOptions: MonacoEditor.IOptions): Promise<MonacoEditor> {
         const uri = new URI(model.uri);
         const options = this.createOptions(model, defaultsOptions);
         const overrides = this.createOverrides(model);
-        return new MonacoEditor(uri, model, document.createElement('div'), this.services, options, overrides);
+        return MonacoEditor.create(uri, model, document.createElement('div'), this.services, options, overrides);
     }
 
     protected createOptions(model: MonacoEditorModel, defaultOptions: MonacoEditor.IOptions): MonacoEditor.IOptions {

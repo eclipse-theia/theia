@@ -140,18 +140,18 @@ export const corePreferenceSchema: PreferenceSchema = {
         'http.proxy': {
             type: 'string',
             pattern: '^https?://([^:]*(:[^@]*)?@)?([^:]+|\\[[:0-9a-fA-F]+\\])(:\\d+)?/?$|^$',
-            markdownDescription: nls.localizeByDefault('The proxy setting to use. If not set, will be inherited from the `http_proxy` and `https_proxy` environment variables.'),
+            markdownDescription: nls.localizeByDefault('The proxy setting to use. If not set, will be inherited from the `http_proxy` and `https_proxy` environment variables. When during [remote development](https://aka.ms/vscode-remote) the {0} setting is disabled this setting can be configured in the local and the remote settings separately.'),
             scope: 'application'
         },
         'http.proxyStrictSSL': {
             type: 'boolean',
             default: true,
-            description: nls.localizeByDefault('Controls whether the proxy server certificate should be verified against the list of supplied CAs.'),
+            description: nls.localizeByDefault('Controls whether the proxy server certificate should be verified against the list of supplied CAs. When during [remote development](https://aka.ms/vscode-remote) the {0} setting is disabled this setting can be configured in the local and the remote settings separately.'),
             scope: 'application'
         },
         'http.proxyAuthorization': {
             type: 'string',
-            markdownDescription: nls.localizeByDefault('The value to send as the `Proxy-Authorization` header for every network request.'),
+            markdownDescription: nls.localizeByDefault('The value to send as the `Proxy-Authorization` header for every network request. When during [remote development](https://aka.ms/vscode-remote) the {0} setting is disabled this setting can be configured in the local and the remote settings separately.'),
             scope: 'application'
         },
         'http.proxySupport': {
@@ -164,13 +164,13 @@ export const corePreferenceSchema: PreferenceSchema = {
                 nls.localizeByDefault('Enable proxy support for extensions, override request options.'),
             ],
             default: 'override',
-            description: nls.localizeByDefault('Use the proxy support for extensions.'),
+            description: nls.localizeByDefault('Use the proxy support for extensions. When during [remote development](https://aka.ms/vscode-remote) the {0} setting is disabled this setting can be configured in the local and the remote settings separately.'),
             scope: 'application'
         },
         'http.systemCertificates': {
             type: 'boolean',
             default: true,
-            description: nls.localizeByDefault('Controls whether CA certificates should be loaded from the OS. (On Windows and macOS, a reload of the window is required after turning this off.)'),
+            description: nls.localizeByDefault('Controls whether CA certificates should be loaded from the OS. On Windows and macOS, a reload of the window is required after turning this off. When during [remote development](https://aka.ms/vscode-remote) the {0} setting is disabled this setting can be configured in the local and the remote settings separately.'),
             scope: 'application'
         },
         'workbench.list.openMode': {
