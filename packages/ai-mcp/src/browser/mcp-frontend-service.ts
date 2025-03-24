@@ -15,15 +15,19 @@
 // *****************************************************************************
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { MCPServer, MCPServerManager } from '../common/mcp-server-manager';
-import { ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
+import { ToolInvocationRegistry, ToolRequest, PromptService } from '@theia/ai-core';
 
 @injectable()
 export class MCPFrontendService {
+
     @inject(MCPServerManager)
     protected readonly mcpServerManager: MCPServerManager;
 
     @inject(ToolInvocationRegistry)
     protected readonly toolInvocationRegistry: ToolInvocationRegistry;
+
+    @inject(PromptService)
+    protected readonly promptService: PromptService;
 
     async startServer(serverName: string): Promise<void> {
         await this.mcpServerManager.startServer(serverName);
@@ -43,10 +47,28 @@ export class MCPFrontendService {
         toolRequests.forEach(toolRequest =>
             this.toolInvocationRegistry.registerTool(toolRequest)
         );
+
+        this.createPromptTemplate(serverName, toolRequests);
+    }
+
+    private getPromptTemplateId(serverName: string): string {
+        return `mcp_${serverName}_tools`;
+    }
+
+    protected createPromptTemplate(serverName: string, toolRequests: ToolRequest[]): void {
+        const templateId = this.getPromptTemplateId(serverName);
+        const functionIds = toolRequests.map(tool => `~{${tool.id}}`);
+        const template = functionIds.join('\n');
+
+        this.promptService.storePromptTemplate({
+            id: templateId,
+            template
+        });
     }
 
     async stopServer(serverName: string): Promise<void> {
         this.toolInvocationRegistry.unregisterAllTools(`mcp_${serverName}`);
+        this.promptService.removePrompt(this.getPromptTemplateId(serverName));
         await this.mcpServerManager.stopServer(serverName);
     }
 
