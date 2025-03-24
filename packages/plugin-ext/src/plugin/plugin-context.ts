@@ -286,7 +286,6 @@ import { NotebookDocumentsExtImpl } from './notebook/notebook-documents';
 import { NotebookEditorsExtImpl } from './notebook/notebook-editors';
 import { TestingExtImpl } from './tests';
 import { UriExtImpl } from './uri-ext';
-import { isObject } from '@theia/core';
 import { PluginLogger } from './logger';
 
 export function createAPIObject<T extends Object>(rawObject: T): T {
@@ -688,21 +687,12 @@ export function createAPIFactory(
             onDidStartTerminalShellExecution: Event.None
         };
 
-        function createFileSystemWatcher(pattern: RelativePattern, options?: theia.FileSystemWatcherOptions): theia.FileSystemWatcher;
         function createFileSystemWatcher(pattern: theia.GlobPattern, ignoreCreateEvents?: boolean, ignoreChangeEvents?:
-            boolean, ignoreDeleteEvents?: boolean): theia.FileSystemWatcher;
-        function createFileSystemWatcher(pattern: RelativePattern | theia.GlobPattern,
-            ignoreCreateOrOptions?: theia.FileSystemWatcherOptions | boolean, ignoreChangeEventsBoolean?: boolean, ignoreDeleteEventsBoolean?: boolean): theia.FileSystemWatcher {
-            if (isObject<theia.FileSystemWatcherOptions>(ignoreCreateOrOptions)) {
-                const { ignoreCreateEvents, ignoreChangeEvents, ignoreDeleteEvents, excludes } = (ignoreCreateOrOptions as theia.FileSystemWatcherOptions);
-                return createAPIObject(
-                    extHostFileSystemEvent.createFileSystemWatcher(fromGlobPattern(pattern),
-                        ignoreCreateEvents, ignoreChangeEvents, ignoreDeleteEvents, excludes));
-            } else {
-                return createAPIObject(
-                    extHostFileSystemEvent.createFileSystemWatcher(fromGlobPattern(pattern),
-                        ignoreCreateOrOptions as boolean, ignoreChangeEventsBoolean, ignoreDeleteEventsBoolean));
-            }
+            boolean, ignoreDeleteEvents?: boolean): theia.FileSystemWatcher {
+            return createAPIObject(
+                extHostFileSystemEvent.createFileSystemWatcher(fromGlobPattern(pattern),
+                    ignoreCreateEvents, ignoreChangeEvents, ignoreDeleteEvents));
+
         }
         const workspace: typeof theia.workspace = {
 
