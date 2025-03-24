@@ -28,21 +28,21 @@ export const AiConfigurationPreferences: PreferenceSchema = {
         'ai-features.agentSettings.details': {
             type: 'null',
             markdownDescription: nls.localize('theia/ai/ide/agent-description',
-                'Additional settings for AI agents can be configured using the [AI Configuration View]({0}).',
+                'Configure AI agent settings including enablement, LLM selection, prompt template customization, and custom agent creation in the [AI Configuration View]({0}).',
                 'command:aiConfiguration:open'
             )
         },
         'ai-features.promptTemplates.details': {
             type: 'null',
             markdownDescription: nls.localize('theia/ai/ide/prompt-template-description',
-                'Additional AI prompt template settings can be configured using the [AI Configuration View]({0}).',
+                'Select prompt variants and customize prompt templates for AI agents in the [AI Configuration View]({0}).',
                 'command:aiConfiguration:open'
             )
         },
-        'ai-features.models.details': {
+        'ai-features.modelSelection.details': {
             type: 'null',
-            markdownDescription: nls.localize('theia/ai/ide/prompt-template-description',
-                'Additional settings for AI models can be configured using the [AI Configuration View]({0}).',
+            markdownDescription: nls.localize('theia/ai/ide/model-selection-description',
+                'Choose which Large Language Models (LLMs) are used by each AI agent in the [AI Configuration View]({0}).',
                 'command:aiConfiguration:open'
             )
         }
