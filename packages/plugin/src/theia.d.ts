@@ -14793,15 +14793,21 @@ export module '@theia/plugin' {
     }
 
     /**
-     * Optional options to be used when calling {@link authentication.getSession} with the flag `forceNewSession`.
+     * Optional options to be used when calling {@link authentication.getSession} with interactive options `forceNewSession` & `createIfNone`.
      */
-    export interface AuthenticationForceNewSessionOptions {
+    export interface AuthenticationGetSessionPresentationOptions {
         /**
          * An optional message that will be displayed to the user when we ask to re-authenticate. Providing additional context
          * as to why you are asking a user to re-authenticate can help increase the odds that they will accept.
          */
         detail?: string;
     }
+
+    /**
+     * Optional options to be used when calling {@link authentication.getSession} with the flag `forceNewSession`.
+     * @deprecated Use {@link AuthenticationGetSessionPresentationOptions} instead.
+     */
+    export type AuthenticationForceNewSessionOptions = AuthenticationGetSessionPresentationOptions;
 
     /**
      * Options to be used when getting an {@link AuthenticationSession AuthenticationSession} from an {@link AuthenticationProvider AuthenticationProvider}.
@@ -14814,9 +14820,14 @@ export module '@theia/plugin' {
          * on the accounts activity bar icon. An entry for the extension will be added under the menu to sign in. This
          * allows quietly prompting the user to sign in.
          *
+         * If you provide options, you will also see the dialog but with the additional context provided.
+         *
+         * If there is a matching session but the extension has not been granted access to it, setting this to true
+         * will also result in an immediate modal dialog, and false will add a numbered badge to the accounts icon.
+         *
          * Defaults to false.
          */
-        createIfNone?: boolean;
+        createIfNone?: boolean | AuthenticationGetSessionPresentationOptions;
 
         /**
          * Whether the existing user session preference should be cleared.
@@ -14835,9 +14846,14 @@ export module '@theia/plugin' {
          * If true, a modal dialog will be shown asking the user to sign in again. This is mostly used for scenarios
          * where the token needs to be re minted because it has lost some authorization.
          *
-         * Defaults to false.
+         * If you provide options, you will also see the dialog but with the additional context provided.
+         *
+         * If there are no existing sessions and forceNewSession is true, it will behave identically to
+         * {@link AuthenticationGetSessionOptions.createIfNone createIfNone}.
+         *
+         *  Defaults to false.
          */
-        forceNewSession?: boolean | AuthenticationForceNewSessionOptions;
+        forceNewSession?: boolean | AuthenticationGetSessionPresentationOptions | AuthenticationForceNewSessionOptions;
 
         /**
          * Whether we should show the indication to sign in in the Accounts menu.
@@ -14990,7 +15006,7 @@ export module '@theia/plugin' {
          * @param options The {@link GetSessionOptions getSessionOptions} to use
          * @returns A thenable that resolves to an authentication session
          */
-        export function getSession(providerId: string, scopes: readonly string[], options: AuthenticationGetSessionOptions & { createIfNone: true }): Thenable<AuthenticationSession>;
+        export function getSession(providerId: string, scopes: readonly string[], options: AuthenticationGetSessionOptions & { createIfNone: true | AuthenticationGetSessionPresentationOptions }): Thenable<AuthenticationSession>;
 
         /**
          * Get an authentication session matching the desired scopes. Rejects if a provider with providerId is not
@@ -15005,7 +15021,7 @@ export module '@theia/plugin' {
          * @param options The {@link AuthenticationGetSessionOptions} to use
          * @returns A thenable that resolves to an authentication session
          */
-        export function getSession(providerId: string, scopes: readonly string[], options: AuthenticationGetSessionOptions & { forceNewSession: true | { detail: string } }): Thenable<AuthenticationSession>;
+        export function getSession(providerId: string, scopes: readonly string[], options: AuthenticationGetSessionOptions & { forceNewSession: true | AuthenticationGetSessionPresentationOptions | AuthenticationForceNewSessionOptions }): Thenable<AuthenticationSession>;
 
         /**
          * Get an authentication session matching the desired scopes. Rejects if a provider with providerId is not
