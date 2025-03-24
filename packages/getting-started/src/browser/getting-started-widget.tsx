@@ -149,6 +149,13 @@ export class GettingStartedWidget extends ReactWidget {
                 }
                 {this.renderHeader()}
                 <hr className='gs-hr' />
+                {this.aiIsIncluded &&
+                    <div className='flex-grid'>
+                        <div className='col'>
+                            {this.renderNews()}
+                        </div>
+                    </div>
+                }
                 <div className='flex-grid'>
                     <div className='col'>
                         {this.renderStart()}
