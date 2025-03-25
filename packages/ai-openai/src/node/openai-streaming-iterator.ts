@@ -67,18 +67,40 @@ export class StreamingAsyncIterator implements AsyncIterableIterator<LanguageMod
         this.registerStreamListener('chunk', (chunk, snapshot) => {
             // GEMINI workaround
             snapshot?.choices.forEach(choice => {
-                if (choice.finish_reason === 'tool_calls' && choice.message.tool_calls?.length === 0) {
+                if (choice.finish_reason === 'tool_calls' && choice.message.tool_calls && choice.message.tool_calls.length === 0) {
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     const toolCall = (choice.message.tool_calls as any).undefined;
-                    toolCall.id = `**${toolCall.function.name}**`;
-                    choice.message.tool_calls.push(toolCall);
-                    if (chunk.choices[0]?.delta.tool_calls) {
-                        chunk.choices[0]?.delta.tool_calls.forEach(tc => {
-                            if (tc.id === '') {
-                                tc.id = `**${tc.function?.name}**`;
-                            }
-                        });
-                    }
+                    const args = toolCall.function.arguments.split('}{');
+                    args.forEach((argument: string, index: number) => {
+                        if (argument === '') {
+                            return;
+                        }
+                        let arg = argument;
+                        if (!arg.startsWith('{')) {
+                            arg = `{${arg}`;
+                        }
+                        if (!arg.endsWith('}')) {
+                            arg = `${arg}}`;
+                        }
+
+                        const newToolCall = {
+                            id: `**${toolCall.function.name}_${index}**`,
+                            function: {
+                                name: toolCall.function.name,
+                                arguments: arg
+                            },
+                            type: toolCall.type
+                        };
+                        choice.message.tool_calls!.push(newToolCall);
+                        if (chunk.choices[0]?.delta.tool_calls) {
+                            chunk.choices[0]?.delta.tool_calls.forEach((tc, i) => {
+                                if (tc.id === '') {
+                                    tc.id = `**${tc.function?.name}_${i}**`;
+                                }
+                            });
+                        }
+
+                    });
                 }
             });
             // END OF GEMINI workaround
