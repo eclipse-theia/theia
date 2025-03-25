@@ -214,7 +214,7 @@ export class MonacoEditorPeekViewWidget {
     }
 
     protected fillContainer(container: HTMLElement): void {
-        this.delegate.fillContainer(container)
+        this.delegate.fillContainer(container);
     }
 
     protected fillHead(container: HTMLElement, noCloseAction?: boolean): void {
