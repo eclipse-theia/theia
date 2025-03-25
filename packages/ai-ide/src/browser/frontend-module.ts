@@ -39,7 +39,8 @@ import { AIConfigurationContainerWidget } from './ai-configuration/ai-configurat
 import { AIVariableConfigurationWidget } from './ai-configuration/variable-configuration-widget';
 import { ContextFilesVariableContribution } from '../common/context-files-variable';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import {AiConfigurationPreferences} from './ai-configuration/ai-configuration-preferences';
+import { AiConfigurationPreferences } from './ai-configuration/ai-configuration-preferences';
+import { AIMCPConfigurationWidget } from './ai-configuration/mcp-configuration-widget';
 
 export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: WorkspacePreferencesSchema });
@@ -109,5 +110,13 @@ export default new ContainerModule(bind => {
     bind(ToolProvider).to(SimpleReplaceContentInFileProvider);
     bind(ToolProvider).to(AddFileToChatContext);
     bind(AIVariableContribution).to(ContextFilesVariableContribution).inSingletonScope();
-    bind(PreferenceContribution).toConstantValue({schema: AiConfigurationPreferences});
+    bind(PreferenceContribution).toConstantValue({ schema: AiConfigurationPreferences });
+    bind(AIMCPConfigurationWidget).toSelf();
+    bind(WidgetFactory)
+        .toDynamicValue(ctx => ({
+            id: AIMCPConfigurationWidget.ID,
+            createWidget: () => ctx.container.get(AIMCPConfigurationWidget)
+        }))
+        .inSingletonScope();
+
 });
