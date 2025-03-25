@@ -17,7 +17,7 @@ import { AICommandHandlerFactory } from '@theia/ai-core/lib/browser/ai-command-h
 import { CommandContribution, CommandRegistry, MessageService, nls } from '@theia/core';
 import { QuickInputService } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { MCPFrontendService } from '../common/mcp-server-manager';
+import { MCPFrontendService, MCPServerStatus } from '../common/mcp-server-manager';
 
 export const StartMCPServer = {
     id: 'mcp.startserver',
@@ -91,12 +91,24 @@ export class MCPCommandContribution implements CommandContribution {
                         return;
                     }
                     await this.mcpFrontendService.startServer(selection);
-                    const { tools } = await this.mcpFrontendService.getTools(selection);
-                    const toolNames = tools.map(tool => tool.name || nls.localize('theia/ai/mcp/tool/unnamed', 'Unnamed Tool')).join(', ');
-                    this.messageService.info(
-                        nls.localize('theia/ai/mcp/info/serverStarted', 'MCP server "{0}" successfully started. Registered tools: {1}', selection, toolNames ||
-                            nls.localize('theia/ai/mcp/tool/noTools', 'No tools available.'))
-                    );
+                    const serverDescription = await this.mcpFrontendService.getServerDescription(selection);
+                    if (serverDescription && serverDescription.status) {
+                        if (serverDescription.status === MCPServerStatus.Running) {
+                            let toolNames: string | undefined = undefined;
+                            if (serverDescription.tools) {
+                                toolNames = serverDescription.tools.map(tool => tool.name).join(',');
+                            }
+                            this.messageService.info(
+                                nls.localize('theia/ai/mcp/info/serverStarted', 'MCP server "{0}" successfully started. Registered tools: {1}', selection, toolNames ||
+                                    nls.localize('theia/ai/mcp/tool/noTools', 'No tools available.'))
+                            );
+                            return;
+                        }
+                        if (serverDescription.error) {
+                            console.error('Error while starting MCP server:', serverDescription.error);
+                        }
+                    }
+                    this.messageService.error(nls.localize('theia/ai/mcp/error/startFailed', 'An error occurred while starting the MCP server.'));
                 } catch (error) {
                     this.messageService.error(nls.localize('theia/ai/mcp/error/startFailed', 'An error occurred while starting the MCP server.'));
                     console.error('Error while starting MCP server:', error);

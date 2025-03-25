@@ -25,7 +25,7 @@ export interface MCPFrontendService {
     getStartedServers(): Promise<string[]>;
     getServerNames(): Promise<string[]>;
     getServerDescription(name: string): Promise<MCPServerDescription | undefined>;
-    getTools(serverName: string): ReturnType<MCPServer['getTools']>;
+    getTools(serverName: string): Promise<ReturnType<MCPServer['getTools']> | undefined>;
 }
 
 export const MCPFrontendNotificationService = Symbol('MCPFrontendNotificationService');
@@ -44,7 +44,7 @@ export interface MCPServerManager {
     callTool(serverName: string, toolName: string, arg_string: string): ReturnType<MCPServer['callTool']>;
     removeServer(name: string): void;
     addOrUpdateServer(description: MCPServerDescription): void;
-    getTools(serverName: string): ReturnType<MCPServer['getTools']>
+    getTools(serverName: string): ReturnType<MCPServer['getTools']>;
     getServerNames(): Promise<string[]>;
     getServerDescription(name: string): Promise<MCPServerDescription | undefined>;
     startServer(serverName: string): Promise<void>;

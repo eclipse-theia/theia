@@ -42,13 +42,15 @@ export class MCPFrontendServiceImpl implements MCPFrontendService {
     }
 
     async registerTools(serverName: string): Promise<void> {
-        const { tools } = await this.getTools(serverName);
-        const toolRequests: ToolRequest[] = tools.map(tool => this.convertToToolRequest(tool, serverName));
-        toolRequests.forEach(toolRequest =>
-            this.toolInvocationRegistry.registerTool(toolRequest)
-        );
+        const returnedTools = await this.getTools(serverName);
+        if (returnedTools) {
+            const toolRequests: ToolRequest[] = returnedTools.tools.map(tool => this.convertToToolRequest(tool, serverName));
+            toolRequests.forEach(toolRequest =>
+                this.toolInvocationRegistry.registerTool(toolRequest)
+            );
 
-        this.createPromptTemplate(serverName, toolRequests);
+            this.createPromptTemplate(serverName, toolRequests);
+        }
     }
 
     private getPromptTemplateId(serverName: string): string {
@@ -84,8 +86,13 @@ export class MCPFrontendServiceImpl implements MCPFrontendService {
         return this.mcpServerManager.getServerDescription(name);
     }
 
-    getTools(serverName: string): ReturnType<MCPServer['getTools']> {
-        return this.mcpServerManager.getTools(serverName);
+    async getTools(serverName: string): Promise<ReturnType<MCPServer['getTools']> | undefined> {
+        try {
+            return await this.mcpServerManager.getTools(serverName);
+        } catch (error) {
+            console.error('Error while trying to get tools: ' + error);
+            return undefined;
+        }
     }
 
     private convertToToolRequest(tool: Awaited<ReturnType<MCPServerManager['getTools']>>['tools'][number], serverName: string): ToolRequest {
