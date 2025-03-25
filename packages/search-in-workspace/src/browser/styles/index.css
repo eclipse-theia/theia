@@ -16,10 +16,17 @@
 
 #search-in-workspace {
   height: 100%;
+  position: relative;
 }
 
 #search-in-workspace .theia-TreeContainer.empty {
   overflow: hidden;
+}
+
+#search-in-workspace .theia-progress-bar-container {
+    position: absolute;
+    top: 0;
+    left: 0;
 }
 
 .t-siw-search-container {
