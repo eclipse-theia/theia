@@ -163,8 +163,8 @@ export class ExtHostFileSystemEventService implements ExtHostFileSystemEventServ
     // --- file events
 
     createFileSystemWatcher(globPattern: string | IRelativePattern, ignoreCreateEvents?: boolean,
-        ignoreChangeEvents?: boolean, ignoreDeleteEvents?: boolean, excludes?: string[]): vscode.FileSystemWatcher {
-        return new FileSystemWatcher(this._onFileSystemEvent.event, globPattern, ignoreCreateEvents, ignoreChangeEvents, ignoreDeleteEvents, excludes);
+        ignoreChangeEvents?: boolean, ignoreDeleteEvents?: boolean): vscode.FileSystemWatcher {
+        return new FileSystemWatcher(this._onFileSystemEvent.event, globPattern, ignoreCreateEvents, ignoreChangeEvents, ignoreDeleteEvents);
     }
 
     $onFileEvent(events: FileSystemEvents) {
