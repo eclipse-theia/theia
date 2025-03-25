@@ -17,7 +17,7 @@ import { AICommandHandlerFactory } from '@theia/ai-core/lib/browser/ai-command-h
 import { CommandContribution, CommandRegistry, MessageService, nls } from '@theia/core';
 import { QuickInputService } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { MCPFrontendService } from './mcp-frontend-service';
+import { MCPFrontendService } from '../common/mcp-server-manager';
 
 export const StartMCPServer = {
     id: 'mcp.startserver',

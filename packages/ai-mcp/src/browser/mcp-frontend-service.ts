@@ -14,11 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { MCPServer, MCPServerManager } from '../common/mcp-server-manager';
+import { MCPFrontendService, MCPServer, MCPServerDescription, MCPServerManager } from '../common/mcp-server-manager';
 import { ToolInvocationRegistry, ToolRequest, PromptService } from '@theia/ai-core';
 
 @injectable()
-export class MCPFrontendService {
+export class MCPFrontendServiceImpl implements MCPFrontendService {
 
     @inject(MCPServerManager)
     protected readonly mcpServerManager: MCPServerManager;
@@ -31,7 +31,7 @@ export class MCPFrontendService {
 
     async startServer(serverName: string): Promise<void> {
         await this.mcpServerManager.startServer(serverName);
-        this.registerTools(serverName);
+        await this.registerTools(serverName);
     }
 
     async registerToolsForAllStartedServers(): Promise<void> {
@@ -73,11 +73,15 @@ export class MCPFrontendService {
     }
 
     getStartedServers(): Promise<string[]> {
-        return this.mcpServerManager.getStartedServers();
+        return this.mcpServerManager.getRunningServers();
     }
 
     getServerNames(): Promise<string[]> {
         return this.mcpServerManager.getServerNames();
+    }
+
+    async getServerDescription(name: string): Promise<MCPServerDescription | undefined> {
+        return this.mcpServerManager.getServerDescription(name);
     }
 
     getTools(serverName: string): ReturnType<MCPServer['getTools']> {
