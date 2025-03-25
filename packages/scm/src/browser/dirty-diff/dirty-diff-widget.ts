@@ -36,7 +36,6 @@ export const DirtyDiffWidgetProps = Symbol('DirtyDiffWidgetProps');
 export interface DirtyDiffWidgetProps {
     readonly editor: MonacoEditor;
     readonly previousRevisionUri: URI;
-    readonly changes: readonly Change[];
 }
 
 export const DirtyDiffWidgetFactory = Symbol('DirtyDiffWidgetFactory');
@@ -50,6 +49,7 @@ export class DirtyDiffWidget implements Disposable {
     protected index: number = -1;
     private peekView: DirtyDiffPeekView;
     private diffEditorPromise: Promise<MonacoDiffEditor>;
+    protected _changes?: readonly Change[];
 
     constructor(
         @inject(DirtyDiffWidgetProps) protected readonly props: DirtyDiffWidgetProps,
@@ -66,6 +66,14 @@ export class DirtyDiffWidget implements Disposable {
         this.diffEditorPromise = this.peekView.create();
     }
 
+    get changes(): readonly Change[] {
+        return this._changes ?? [];
+    }
+
+    set changes(changes: readonly Change[]) {
+        this.handleChangedChanges(changes);
+    }
+
     get editor(): MonacoEditor {
         return this.props.editor;
     }
@@ -78,16 +86,22 @@ export class DirtyDiffWidget implements Disposable {
         return this.props.previousRevisionUri;
     }
 
-    get changes(): readonly Change[] {
-        return this.props.changes;
-    }
-
     get currentChange(): Change | undefined {
         return this.changes[this.index];
     }
 
     get currentChangeIndex(): number {
         return this.index;
+    }
+
+    protected handleChangedChanges(updated: readonly Change[]): void {
+        if (this.currentChange) {
+            const {previousRange: {start, end}} = this.currentChange;
+            this.index = updated.findIndex(candidate => candidate.previousRange.start === start && candidate.previousRange.end === end);
+        } else {
+            this.index = -1;
+        }
+        this._changes = updated;
     }
 
     async showChange(index: number): Promise<void> {
@@ -99,23 +113,20 @@ export class DirtyDiffWidget implements Disposable {
     }
 
     async showNextChange(): Promise<void> {
-        await this.checkCreated();
-        const index = this.index;
-        const length = this.changes.length;
-        if (length > 0 && (index < 0 || length > 1)) {
-            this.index = index < 0 ? 0 : cycle(index, 1, length);
-            this.showCurrentChange();
-        }
+        const editor = await this.checkCreated();
+        editor.diffNavigator.next();
+        this.updateIndex(editor);
     }
 
     async showPreviousChange(): Promise<void> {
-        await this.checkCreated();
-        const index = this.index;
-        const length = this.changes.length;
-        if (length > 0 && (index < 0 || length > 1)) {
-            this.index = index < 0 ? length - 1 : cycle(index, -1, length);
-            this.showCurrentChange();
-        }
+        const editor = await this.checkCreated();
+        editor.diffNavigator.previous();
+        this.updateIndex(editor);
+    }
+
+    protected updateIndex(editor: MonacoDiffEditor): void {
+        const line = editor.cursor.line;
+        this.index = this.changes.findIndex(candidate => candidate.currentRange.start <= line && candidate.currentRange.end  >= line);
     }
 
     async getContentWithSelectedChanges(predicate: (change: Change, index: number, changes: readonly Change[]) => boolean): Promise<string> {
@@ -174,13 +185,9 @@ export class DirtyDiffWidget implements Disposable {
         return Math.min(changeHeightInLines + /* padding */ 8, Math.floor(editorHeightInLines / 3));
     }
 
-    protected async checkCreated(): Promise<void> {
-        await this.diffEditorPromise;
+    protected async checkCreated(): Promise<MonacoDiffEditor> {
+        return this.diffEditorPromise;
     }
-}
-
-function cycle(index: number, offset: -1 | 1, length: number): number {
-    return (index + offset + length) % length;
 }
 
 // adapted from https://github.com/microsoft/vscode/blob/823d54f86ee13eb357bc6e8e562e89d793f3c43b/extensions/git/src/staging.ts

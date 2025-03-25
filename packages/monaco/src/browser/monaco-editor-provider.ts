@@ -424,7 +424,7 @@ export class MonacoEditorProvider {
             fixedOverflowWidgets: true,
             minimap: { enabled: false },
             renderSideBySide: false,
-            readOnly: true,
+            readOnly: false,
             renderIndicators: false,
             diffAlgorithm: 'advanced',
             stickyScroll: { enabled: false },
