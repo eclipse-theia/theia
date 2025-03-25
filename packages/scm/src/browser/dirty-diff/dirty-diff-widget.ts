@@ -315,8 +315,10 @@ class DirtyDiffPeekView extends MonacoEditorPeekViewWidget {
                     if (item instanceof ActionMenuNode) {
                         const { command, id, label, icon, when } = item;
                         if (icon && menuCommandExecutor.isVisible(menuPath, command, this.widget) && (!when || contextKeyService.match(when))) {
+                            // Close editor on successful contributed action.
+                            // https://github.com/microsoft/vscode/blob/11b1500e0a2e8b5ba12e98a3905f9d120b8646a0/src/vs/workbench/contrib/scm/browser/quickDiffWidget.ts#L356-L361
                             this.addAction(id, label, icon, menuCommandExecutor.isEnabled(menuPath, command, this.widget), () => {
-                                menuCommandExecutor.executeCommand(menuPath, command, this.widget);
+                                menuCommandExecutor.executeCommand(menuPath, command, this.widget).then(() =>  this.dispose());
                             });
                         }
                     }

@@ -135,7 +135,6 @@ export class DirtyDiffController implements Disposable {
 
     handleDirtyDiffUpdate(dirtyDiff: DirtyDiffUpdate): void {
         if (dirtyDiff.editor === this.editor) {
-            this.closeWidget();
             this.dirtyDiff = dirtyDiff;
         }
     }
