@@ -95,13 +95,25 @@ export class DirtyDiffWidget implements Disposable {
     }
 
     protected handleChangedChanges(updated: readonly Change[]): void {
+        if (!updated.length) {
+            return this.dispose();
+        }
         if (this.currentChange) {
-            const {previousRange: {start, end}} = this.currentChange;
-            this.index = updated.findIndex(candidate => candidate.previousRange.start === start && candidate.previousRange.end === end);
+            const { previousRange: { start, end } } = this.currentChange;
+            // Same change or first after it.
+            const newIndex = updated.findIndex(candidate => (candidate.previousRange.start === start && candidate.previousRange.end === end)
+                || candidate.previousRange.start > start);
+            if (newIndex !== -1) {
+                this.index = newIndex;
+            } else {
+                this.index = Math.min(this.index, updated.length - 1);
+            }
+            this.showCurrentChange();
         } else {
             this.index = -1;
         }
         this._changes = updated;
+        this.updateHeading();
     }
 
     async showChange(index: number): Promise<void> {
@@ -112,21 +124,24 @@ export class DirtyDiffWidget implements Disposable {
         }
     }
 
-    async showNextChange(): Promise<void> {
-        const editor = await this.checkCreated();
-        editor.diffNavigator.next();
-        this.updateIndex(editor);
+    showNextChange(): void {
+        this.checkCreated();
+        const index = this.index;
+        const length = this.changes.length;
+        if (length > 0 && (index < 0 || length > 1)) {
+            this.index = index < 0 ? 0 : cycle(index, 1, length);
+            this.showCurrentChange();
+        }
     }
 
-    async showPreviousChange(): Promise<void> {
-        const editor = await this.checkCreated();
-        editor.diffNavigator.previous();
-        this.updateIndex(editor);
-    }
-
-    protected updateIndex(editor: MonacoDiffEditor): void {
-        const line = editor.cursor.line;
-        this.index = this.changes.findIndex(candidate => candidate.currentRange.start <= line && candidate.currentRange.end  >= line);
+    showPreviousChange(): void {
+        this.checkCreated();
+        const index = this.index;
+        const length = this.changes.length;
+        if (length > 0 && (index < 0 || length > 1)) {
+            this.index = index < 0 ? length - 1 : cycle(index, -1, length);
+            this.showCurrentChange();
+        }
     }
 
     async getContentWithSelectedChanges(predicate: (change: Change, index: number, changes: readonly Change[]) => boolean): Promise<string> {
@@ -143,7 +158,7 @@ export class DirtyDiffWidget implements Disposable {
     }
 
     protected showCurrentChange(): void {
-        this.peekView!.setTitle(this.computePrimaryHeading(), this.computeSecondaryHeading());
+        this.updateHeading();
         const { previousRange, currentRange } = this.changes[this.index];
         this.peekView.show(Position.create(LineRange.getEndPosition(currentRange).line, 0),
             this.computeHeightInLines());
@@ -160,6 +175,10 @@ export class DirtyDiffWidget implements Disposable {
                 monaco.editor.ScrollType.Immediate);
         });
         this.editor.focus();
+    }
+
+    protected updateHeading(): void {
+        this.peekView.setTitle(this.computePrimaryHeading(), this.computeSecondaryHeading());
     }
 
     protected computePrimaryHeading(): string {
@@ -188,6 +207,10 @@ export class DirtyDiffWidget implements Disposable {
     protected async checkCreated(): Promise<MonacoDiffEditor> {
         return this.diffEditorPromise;
     }
+}
+
+function cycle(index: number, offset: -1 | 1, length: number): number {
+    return (index + offset + length) % length;
 }
 
 // adapted from https://github.com/microsoft/vscode/blob/823d54f86ee13eb357bc6e8e562e89d793f3c43b/extensions/git/src/staging.ts
@@ -325,7 +348,7 @@ class DirtyDiffPeekView extends MonacoEditorPeekViewWidget {
                             // Close editor on successful contributed action.
                             // https://github.com/microsoft/vscode/blob/11b1500e0a2e8b5ba12e98a3905f9d120b8646a0/src/vs/workbench/contrib/scm/browser/quickDiffWidget.ts#L356-L361
                             this.addAction(id, label, icon, menuCommandExecutor.isEnabled(menuPath, command, this.widget), () => {
-                                menuCommandExecutor.executeCommand(menuPath, command, this.widget).then(() =>  this.dispose());
+                                menuCommandExecutor.executeCommand(menuPath, command, this.widget).then(() => this.dispose());
                             });
                         }
                     }
