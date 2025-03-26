@@ -26,6 +26,7 @@ export interface MCPFrontendService {
     getServerNames(): Promise<string[]>;
     getServerDescription(name: string): Promise<MCPServerDescription | undefined>;
     getTools(serverName: string): Promise<ReturnType<MCPServer['getTools']> | undefined>;
+    getPromptTemplateId(serverName: string): string;
 }
 
 export const MCPFrontendNotificationService = Symbol('MCPFrontendNotificationService');

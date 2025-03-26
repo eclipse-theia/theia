@@ -213,21 +213,31 @@ export class AIMCPConfigurationWidget extends ReactWidget {
                     <div style={{ flexGrow: 1 }}>
                         <span className="mcp-section-label">Tools: </span>
                     </div>
-                    <div style={{ display: 'flex' }}>
+                    <div style={{ display: 'flex', gap: '4px' }}>
                         {this.renderButton(
-                            <i className="codicon codicon-copy"></i>,
-                            'Copy all (for prompttemplate)',
+                            <i className="codicon codicon-versions"></i>,
+                            'Copy all (multiple lines prompttemplate)',
                             e => {
                                 e.stopPropagation();
                                 if (server.tools) {
                                     const toolNames = server.tools.map(tool => `~{mcp_${server.name}_${tool.name}}`).join('\n');
                                     navigator.clipboard.writeText(toolNames);
-                                    this.messageService.info('Copied all tools to clipboard (for prompttemplate)');
+                                    this.messageService.info('Copied all tools to clipboard (multiple lines prompttemplate)');
                                 }
                             },
                             'mcp-copy-tool-button'
                         )}
-                                            </div>
+                        {this.renderButton(
+                            <i className="codicon codicon-copy"></i>,
+                            'Copy all (single line prompttemplate)',
+                            e => {
+                                e.stopPropagation();
+                                navigator.clipboard.writeText(`~{${this.mcpFrontendService.getPromptTemplateId(server.name)}}`);
+                                this.messageService.info('Copied all tools to clipboard (single line prompttemplate)');
+                            },
+                            'mcp-copy-tool-button'
+                        )}
+                    </div>
                 </div>
                 {isToolsExpanded && (
                     <div className="mcp-tools-list">

@@ -53,7 +53,7 @@ export class MCPFrontendServiceImpl implements MCPFrontendService {
         }
     }
 
-    private getPromptTemplateId(serverName: string): string {
+    getPromptTemplateId(serverName: string): string {
         return `mcp_${serverName}_tools`;
     }
 
