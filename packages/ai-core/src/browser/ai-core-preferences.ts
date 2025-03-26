@@ -118,6 +118,7 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
                         }
                     },
                 },
+                additionalProperties: false
             },
             default: [],
         }
