@@ -18,11 +18,12 @@ import { injectable, postConstruct, inject, named } from '@theia/core/shared/inv
 import URI from '@theia/core/lib/common/uri';
 import { RecursivePartial, Emitter, Event, MaybePromise, CommandService, nls, ContributionProvider, Prioritizeable, Disposable } from '@theia/core/lib/common';
 import {
-    WidgetOpenerOptions, NavigatableWidgetOpenHandler, NavigatableWidgetOptions, Widget, PreferenceService, CommonCommands, getDefaultHandler, defaultHandlerPriority
+    WidgetOpenerOptions, NavigatableWidgetOpenHandler, NavigatableWidgetOptions, PreferenceService, CommonCommands, getDefaultHandler, defaultHandlerPriority
 } from '@theia/core/lib/browser';
 import { EditorWidget } from './editor-widget';
 import { Range, Position, Location, TextEditor } from './editor';
 import { EditorWidgetFactory } from './editor-widget-factory';
+import { NavigationLocationService } from './navigation/navigation-location-service';
 
 export interface WidgetId {
     id: number;
@@ -38,7 +39,7 @@ export interface EditorOpenerOptions extends WidgetOpenerOptions {
 export const EditorSelectionResolver = Symbol('EditorSelectionResolver');
 export interface EditorSelectionResolver {
     priority?: number;
-    resolveSelection(widget: EditorWidget, options: EditorOpenerOptions, uri?: URI): Promise<RecursivePartial<Range> | undefined>;
+    resolveSelection(widget: EditorWidget, selection?: RecursivePartial<Range>, uri?: URI): Promise<RecursivePartial<Range> | undefined>;
 }
 
 @injectable()
@@ -68,6 +69,9 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
     @inject(ContributionProvider) @named(EditorSelectionResolver)
     protected readonly resolverContributions: ContributionProvider<EditorSelectionResolver>;
     protected selectionResolvers: EditorSelectionResolver[] = [];
+
+    @inject(NavigationLocationService)
+    protected readonly navigationLocationService: NavigationLocationService;
 
     @postConstruct()
     protected override init(): void {
@@ -139,30 +143,6 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
         if (!editorPromise) {
             return editorPromise;
         }
-
-        // Reveal selection before attachment to manage nav stack. (https://github.com/eclipse-theia/theia/issues/8955)
-        if (!(editorPromise instanceof Widget)) {
-            return editorPromise.then(editor => this.revealSelection(editor, options, uri)).then(() => editorPromise);
-        } else {
-            return this.revealSelection(editorPromise, options, uri).then(() => editorPromise);
-        }
-
-    }
-
-    protected override async getWidget(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget | undefined> {
-        const editor = await super.getWidget(uri, options);
-        if (editor) {
-            // Reveal selection before attachment to manage nav stack. (https://github.com/eclipse-theia/theia/issues/8955)
-            await this.revealSelection(editor, options, uri);
-        }
-        return editor;
-    }
-
-    protected override async getOrCreateWidget(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget> {
-        const editor = await super.getOrCreateWidget(uri, options);
-        // Reveal selection before attachment to manage nav stack. (https://github.com/eclipse-theia/theia/issues/8955)
-        await this.revealSelection(editor, options, uri);
-        return editor;
     }
 
     protected readonly recentlyVisibleIds: string[] = [];
@@ -214,8 +194,10 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
         return this._currentEditor;
     }
     protected setCurrentEditor(current: EditorWidget | undefined): void {
-        this._currentEditor = current;
-        this.onCurrentEditorChangedEmitter.fire(this._currentEditor);
+        if (this._currentEditor !== current) {
+            this._currentEditor = current;
+            this.onCurrentEditorChangedEmitter.fire(this._currentEditor);
+        }
     }
     protected updateCurrentEditor(): void {
         const widget = this.shell.currentWidget;
@@ -233,38 +215,44 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
         return 100;
     }
 
-    override open(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget> {
-        if (options?.counter === undefined) {
-            const insertionOptions = this.shell.getInsertionOptions(options?.widgetOptions);
-            // Definitely creating a new tabbar - no widget can match.
-            if (insertionOptions.addOptions.mode?.startsWith('split')) {
-                return super.open(uri, { counter: this.createCounterForUri(uri), ...options });
-            }
-            // Check the target tabbar for an existing widget.
-            const tabbar = insertionOptions.addOptions.ref && this.shell.getTabBarFor(insertionOptions.addOptions.ref);
-            if (tabbar) {
-                const currentUri = uri.toString();
-                for (const title of tabbar.titles) {
-                    if (title.owner instanceof EditorWidget) {
-                        const { uri: otherWidgetUri, id } = this.extractIdFromWidget(title.owner);
-                        if (otherWidgetUri === currentUri) {
-                            return super.open(uri, { counter: id, ...options });
+    override async open(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget> {
+        this.navigationLocationService.startNavigation();
+        try {
+            if (options?.counter === undefined) {
+                const insertionOptions = this.shell.getInsertionOptions(options?.widgetOptions);
+                // Definitely creating a new tabbar - no widget can match.
+                if (insertionOptions.addOptions.mode?.startsWith('split')) {
+                    return await super.open(uri, { counter: this.createCounterForUri(uri), ...options });
+                }
+                // Check the target tabbar for an existing widget.
+                const tabbar = insertionOptions.addOptions.ref && this.shell.getTabBarFor(insertionOptions.addOptions.ref);
+                if (tabbar) {
+                    const currentUri = uri.toString();
+                    for (const title of tabbar.titles) {
+                        if (title.owner instanceof EditorWidget) {
+                            const { uri: otherWidgetUri, id } = this.extractIdFromWidget(title.owner);
+                            if (otherWidgetUri === currentUri) {
+                                return await super.open(uri, { counter: id, ...options });
+                            }
                         }
                     }
                 }
-            }
-            // If the user has opted to prefer to open an existing editor even if it's on a different tab, check if we have anything about the URI.
-            if (this.preferenceService.get('workbench.editor.revealIfOpen', false)) {
-                const counter = this.getCounterForUri(uri);
-                if (counter !== undefined) {
-                    return super.open(uri, { counter, ...options });
+                // If the user has opted to prefer to open an existing editor even if it's on a different tab, check if we have anything about the URI.
+                if (this.preferenceService.get('workbench.editor.revealIfOpen', false)) {
+                    const counter = this.getCounterForUri(uri);
+                    if (counter !== undefined) {
+                        return await super.open(uri, { counter, ...options });
+                    }
                 }
+                // Open a new widget.
+                return await super.open(uri, { counter: this.createCounterForUri(uri), ...options });
             }
-            // Open a new widget.
-            return super.open(uri, { counter: this.createCounterForUri(uri), ...options });
-        }
 
-        return super.open(uri, options);
+            return await super.open(uri, options);
+
+        } finally {
+            this.navigationLocationService.endNavigation();
+        }
     }
 
     /**
@@ -277,10 +265,15 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
         return this.open(uri, splitOptions);
     }
 
-    protected async revealSelection(widget: EditorWidget, input?: EditorOpenerOptions, uri?: URI): Promise<void> {
-        let inputSelection = input?.selection;
+    protected override async doOpen(widget: EditorWidget, uri?: URI, options?: EditorOpenerOptions): Promise<void> {
+        await super.doOpen(widget, uri, options);
+        await this.revealSelection(widget, uri, options);
+    }
+
+    protected async revealSelection(widget: EditorWidget, uri?: URI, options?: EditorOpenerOptions): Promise<void> {
+        let inputSelection = options?.selection;
         if (!inputSelection) {
-            inputSelection = await this.resolveSelection(widget, input ?? {}, uri);
+            inputSelection = await this.resolveSelection(widget, options ?? {}, uri);
         }
         // this logic could be moved into a 'EditorSelectionResolver'
         if (!inputSelection && uri) {
@@ -316,7 +309,7 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
         }
         for (const resolver of this.selectionResolvers) {
             try {
-                const selection = await resolver.resolveSelection(widget, options, uri);
+                const selection = await resolver.resolveSelection(widget, options.selection, uri);
                 if (selection) {
                     return selection;
                 }
