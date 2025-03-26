@@ -55,7 +55,6 @@ export class FrontendLanguageModelServiceImpl extends LanguageModelServiceImpl {
 }
 
 export const mergeRequestSettings = (requestSettings: RequestSetting[], modelId: string, providerId: string, agentId: string): RequestSetting => {
-    // Sort using Prioritizeable
     const prioritizedSettings = Prioritizeable.prioritizeAllSync(requestSettings,
         setting => getRequestSettingSpecificity(setting, {
             modelId,

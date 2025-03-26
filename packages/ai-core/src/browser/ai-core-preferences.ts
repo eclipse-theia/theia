@@ -107,12 +107,13 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
                             keepToolCalls: {
                                 type: 'boolean',
                                 default: true,
-                                description: 'If set to true, all tool request and tool responses will be send back to the llm during the next request in the same session.'
+                                description: 'If set to false, all tool request and tool responses will be filtered \
+                                before sending the next user request in a multi-turn conversation.'
                             },
                             keepThinking: {
                                 type: 'boolean',
                                 default: true,
-                                description: 'If set to true, all thinking output will be send back to the llm during the next request in the same session.'
+                                description: 'If set to false, all thinking output will be filtered before sending the next user request in a multi-turn conversation.'
                             }
                         }
                     },

@@ -599,6 +599,7 @@ div:last-child > .theia-ChatNode {
   padding: 6px;
   background-color: var(--theia-editor-background);
   overflow: auto;
+  text-wrap: auto;
 }
 
 .collapsible-arguments {

@@ -160,6 +160,7 @@ export class AnthropicModel implements LanguageModel {
             max_tokens: this.maxTokens,
             messages: [...messages, ...(toolMessages ?? [])],
             tools,
+            tool_choice: { type: 'auto' },
             model: this.model,
             ...(systemMessage && { system: systemMessage }),
             ...settings
