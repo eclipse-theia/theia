@@ -132,16 +132,15 @@ export class AiTerminalAgent implements Agent {
             sessionId
         };
 
-        const result = await this.languageModelService.sendRequest(lm, llmRequest);
-        // this.recordingService.recordRequest({
-        //     agentId: this.id,
-        //     sessionId,
-        //     requestId,
-        //     request: llmRequest.messages
-        // });
+        this.recordingService.recordRequest({
+            agentId: this.id,
+            sessionId,
+            requestId,
+            request: llmRequest.messages
+        });
 
         try {
-            // const result = await lm.request(llmRequest);
+            const result = await this.languageModelService.sendRequest(lm, llmRequest);
 
             if (isLanguageModelParsedResponse(result)) {
                 // model returned structured output

@@ -132,6 +132,12 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
             if (token.isCancellationRequested) {
                 return undefined;
             }
+            this.recordingService.recordRequest({
+                agentId: this.id,
+                sessionId,
+                requestId,
+                request: request.messages
+            });
             const response = await this.languageModelService.sendRequest(languageModel, request);
             if (token.isCancellationRequested) {
                 return undefined;

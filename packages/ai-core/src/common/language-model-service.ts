@@ -40,13 +40,6 @@ export class LanguageModelServiceImpl implements LanguageModelService {
         languageModel: LanguageModel,
         languageModelRequest: UserRequest
     ): Promise<LanguageModelResponse> {
-        this.recordingService.recordRequest({
-            agentId: languageModelRequest.agentId,
-            sessionId: languageModelRequest.sessionId,
-            requestId: languageModelRequest.requestId,
-            request: languageModelRequest.messages
-        });
-
         return languageModel.request(languageModelRequest, languageModelRequest.cancellationToken);
     }
 

@@ -41,11 +41,11 @@ export class ChatViewWidgetToolbarContribution implements TabBarToolbarContribut
     protected readonly onChatWidgetStateChangedEmitter = new Emitter<void>();
     protected readonly onChatWidgetStateChanged = this.onChatWidgetStateChangedEmitter.event;
 
-    private readonly sessionSettingsURI = new URI('json-data-dialog:/editor.json');
+    private readonly sessionSettingsURI = new URI('chat-view:/settings.json');
 
     @postConstruct()
     protected init(): void {
-        this.resources.add(this.sessionSettingsURI, '');
+        this.resources.add(this.sessionSettingsURI, '{}');
 
         this.chatContribution.widget.then(widget => {
             widget.onStateChanged(() => this.onChatWidgetStateChangedEmitter.fire());

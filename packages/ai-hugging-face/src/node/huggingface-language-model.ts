@@ -27,18 +27,24 @@ import { CancellationToken } from '@theia/core';
 import { HfInference } from '@huggingface/inference';
 
 export const HuggingFaceModelIdentifier = Symbol('HuggingFaceModelIdentifier');
-const createMessageContent = (message: LanguageModelMessage): string => {
+const createMessageContent = (message: LanguageModelMessage): string | undefined => {
     if (LanguageModelMessage.isTextMessage(message)) {
         return message.text;
     }
-    return '';
+    return undefined;
 };
 function toHuggingFacePrompt(messages: LanguageModelMessage[]): string {
     if (messages.length === 1) {
         const message = messages[0];
         return (LanguageModelMessage.isTextMessage(message) && message.text) || '';
     }
-    return messages.map(message => `${toRoleLabel(message.actor)}: ${createMessageContent(message)}`).join('\n');
+    return messages.map(message => {
+        const messageContent = createMessageContent(message);
+        if (messageContent === undefined) {
+            return undefined;
+        }
+        return `${toRoleLabel(message.actor)}: ${messageContent}`;
+    }).filter(m => m !== undefined).join('\n');
 }
 
 function toRoleLabel(actor: MessageActor): string {

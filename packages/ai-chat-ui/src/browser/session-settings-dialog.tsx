@@ -25,9 +25,6 @@ export interface SessionSettingsDialogProps {
     initialSettings: { [key: string]: unknown } | undefined;
 }
 
-const DEFAULT_DIALOG_HEIGHT = 400;
-const DEFAULT_DIALOG_WIDTH = 600;
-
 export class SessionSettingsDialog extends AbstractDialog<{ [key: string]: unknown }> {
 
     protected jsonEditor: MonacoEditor | undefined;
@@ -50,12 +47,9 @@ export class SessionSettingsDialog extends AbstractDialog<{ [key: string]: unkno
         this.initialSettingsString = JSON.stringify(initialSettings, undefined, 2) || '{}';
 
         this.contentNode.classList.add('monaco-session-settings-dialog');
-        this.contentNode.style.width = `${DEFAULT_DIALOG_WIDTH}px`;
-        this.contentNode.style.height = `${DEFAULT_DIALOG_HEIGHT}px`;
 
         this.dialogContent = document.createElement('div');
         this.dialogContent.className = 'session-settings-container';
-        this.dialogContent.style.height = `${DEFAULT_DIALOG_HEIGHT - 70}px`;
         this.contentNode.appendChild(this.dialogContent);
 
         this.errorMessageDiv = document.createElement('div');
@@ -125,11 +119,9 @@ export class SessionSettingsDialog extends AbstractDialog<{ [key: string]: unkno
         try {
             this.settings = JSON.parse(jsonContent);
             this.errorMessageDiv.textContent = '';
-            this.errorMessageDiv.style.display = 'none';
             this.setErrorButtonState(false);
         } catch (error) {
             this.errorMessageDiv.textContent = `${error}`;
-            this.errorMessageDiv.style.display = 'block';
             this.setErrorButtonState(true);
         }
     }

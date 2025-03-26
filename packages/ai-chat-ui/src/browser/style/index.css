@@ -686,16 +686,19 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
 
 .session-settings-container {
     margin-bottom: 10px;
+    height: calc(100% - 50px);
 }
-
-.json-editor-description {
-    margin-bottom: 10px;
-    color: var(--theia-foreground);
-}
-
 .monaco-session-settings-dialog {
     flex: 1;
     min-height: 350px;
+    min-width: 500px;
+    height: 25vh;
+    width: 30vh;
     border: 1px solid var(--theia-editorWidget-border);
     margin-bottom: 10px;
+}
+.session-settings-error {
+  color: var(--theia-errorForeground);
+  min-height: 1em;
+  display: block;
 }

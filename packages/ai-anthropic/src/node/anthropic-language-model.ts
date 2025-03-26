@@ -64,7 +64,7 @@ function transformToAnthropicParams(
 ): { messages: MessageParam[]; systemMessage?: string } {
     // Extract the system message (if any), as it is a separate parameter in the Anthropic API.
     const systemMessageObj = messages.find(message => message.actor === 'system');
-    const systemMessage = systemMessageObj && LanguageModelMessage.isTextMessage(systemMessageObj) && systemMessageObj.text || '';
+    const systemMessage = systemMessageObj && LanguageModelMessage.isTextMessage(systemMessageObj) && systemMessageObj.text || undefined;
 
     const convertedMessages = messages
         .filter(message => message.actor !== 'system')
@@ -164,7 +164,6 @@ export class AnthropicModel implements LanguageModel {
             ...(systemMessage && { system: systemMessage }),
             ...settings
         };
-        console.log(JSON.stringify(params));
         const stream = anthropic.messages.stream(params);
 
         cancellationToken?.onCancellationRequested(() => {
@@ -238,17 +237,6 @@ export class AnthropicModel implements LanguageModel {
                         return { finished: true, id: tr.id, result: resultAsString, function: { name: tr.name, arguments: tr.arguments } };
                     });
                     yield { tool_calls: calls };
-
-                    // const toolRequestMessage: Anthropic.Messages.MessageParam = {
-                    //     role: 'assistant',
-                    //     content: toolResult.map(call => ({
-
-                    //         type: 'tool_use',
-                    //         id: call.id,
-                    //         name: call.name,
-                    //         input: JSON.parse(call.arguments)
-                    //     }))
-                    // };
 
                     const toolResponseMessage: Anthropic.Messages.MessageParam = {
                         role: 'user',
