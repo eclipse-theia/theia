@@ -48,7 +48,7 @@ export interface ToolRequestParameters {
 export interface ToolRequest {
     id: string;
     name: string;
-    parameters?: ToolRequestParameters
+    parameters: ToolRequestParameters
     description?: string;
     handler: (arg_string: string, ctx?: unknown) => Promise<unknown>;
     providerName?: string;
