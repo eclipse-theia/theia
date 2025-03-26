@@ -149,6 +149,13 @@ export class GettingStartedWidget extends ReactWidget {
                 }
                 {this.renderHeader()}
                 <hr className='gs-hr' />
+                {this.aiIsIncluded &&
+                    <div className='flex-grid'>
+                        <div className='col'>
+                            {this.renderNews()}
+                        </div>
+                    </div>
+                }
                 <div className='flex-grid'>
                     <div className='col'>
                         {this.renderStart()}
@@ -401,6 +408,22 @@ export class GettingStartedWidget extends ReactWidget {
 
     protected renderPreferences(): React.ReactNode {
         return <WelcomePreferences preferenceService={this.preferenceService}></WelcomePreferences>;
+    }
+
+    protected renderNews(): React.ReactNode {
+        return <div className='gs-section'>
+            <h3 className='gs-section-header'>🚀 AI Support in the Theia IDE is available (Alpha Version)! ✨</h3>
+            <div className='gs-action-container'>
+                <a
+                    role={'button'}
+                    style={{ fontSize: 'var(--theia-ui-font-size2)' }}
+                    tabIndex={0}
+                    onClick={() => this.doOpenAIChatView()}
+                    onKeyDown={(e: React.KeyboardEvent) => this.doOpenAIChatViewEnter(e)}>
+                    {'Open the AI Chat View now to learn how to start! ✨'}
+                </a>
+            </div>
+        </div>;
     }
 
     protected renderAIBanner(): React.ReactNode {

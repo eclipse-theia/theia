@@ -409,7 +409,7 @@ export class MonacoEditorProvider {
         overviewRulerBorder: false,
         scrollBeyondLastLine: false,
         renderLineHighlight: 'none',
-        fixedOverflowWidgets: false,
+        fixedOverflowWidgets: true,
         acceptSuggestionOnEnter: 'smart',
         minimap: {
             enabled: false
@@ -421,7 +421,7 @@ export class MonacoEditorProvider {
         options = {
             scrollBeyondLastLine: true,
             overviewRulerLanes: 2,
-            fixedOverflowWidgets: false,
+            fixedOverflowWidgets: true,
             minimap: { enabled: false },
             renderSideBySide: false,
             readOnly: true,

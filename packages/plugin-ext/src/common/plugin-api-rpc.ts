@@ -1242,6 +1242,10 @@ export interface ApplyEditsOptions extends UndoStopOptions {
     setEndOfLine: EndOfLine | undefined;
 }
 
+export interface SnippetEditOptions extends UndoStopOptions {
+    keepWhitespace?: boolean;
+}
+
 export interface ThemeColor {
     id: string;
 }
@@ -1346,7 +1350,7 @@ export interface TextEditorsMain {
     $trySetSelections(id: string, selections: Selection[]): Promise<void>;
     $tryApplyEdits(id: string, modelVersionId: number, edits: SingleEditOperation[], opts: ApplyEditsOptions): Promise<boolean>;
     $tryApplyWorkspaceEdit(workspaceEditDto: WorkspaceEditDto, metadata?: WorkspaceEditMetadataDto): Promise<boolean>;
-    $tryInsertSnippet(id: string, template: string, selections: Range[], opts: UndoStopOptions): Promise<boolean>;
+    $tryInsertSnippet(id: string, template: string, selections: Range[], opts: SnippetEditOptions): Promise<boolean>;
     $save(uri: UriComponents): PromiseLike<UriComponents | undefined>;
     $saveAs(uri: UriComponents): PromiseLike<UriComponents | undefined>;
     $saveAll(includeUntitled?: boolean): Promise<boolean>;
@@ -1546,7 +1550,7 @@ export interface WorkspaceFileEditDto {
 export interface WorkspaceTextEditDto {
     resource: UriComponents;
     modelVersionId?: number;
-    textEdit: TextEdit & { insertAsSnippet?: boolean };
+    textEdit: TextEdit & { insertAsSnippet?: boolean, keepWhitespace?: boolean };
     metadata?: WorkspaceEditEntryMetadataDto;
 }
 export namespace WorkspaceTextEditDto {

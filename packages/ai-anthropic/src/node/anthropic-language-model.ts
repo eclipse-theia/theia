@@ -28,11 +28,6 @@ import { Anthropic } from '@anthropic-ai/sdk';
 import { MessageParam } from '@anthropic-ai/sdk/resources';
 
 export const DEFAULT_MAX_TOKENS = 4096;
-const EMPTY_INPUT_SCHEMA = {
-    type: 'object',
-    properties: {},
-    required: []
-} as const;
 
 interface ToolCallback {
     readonly name: string;
@@ -254,7 +249,7 @@ export class AnthropicModel implements LanguageModel {
         return request.tools?.map(tool => ({
             name: tool.name,
             description: tool.description,
-            input_schema: tool.parameters ?? EMPTY_INPUT_SCHEMA
+            input_schema: tool.parameters
         } as Anthropic.Messages.Tool));
     }
 

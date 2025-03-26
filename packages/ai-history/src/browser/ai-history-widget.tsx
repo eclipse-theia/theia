@@ -35,7 +35,7 @@ export class AIHistoryView extends ReactWidget implements StatefulWidget {
     protected readonly agentService: AgentService;
 
     public static ID = 'ai-history-widget';
-    static LABEL = nls.localize('theia/ai/history/view/label', '✨ AI Agent History [Alpha]');
+    static LABEL = nls.localize('theia/ai/history/view/label', 'AI Agent History [Alpha]');
 
     protected selectedAgent?: Agent;
 
