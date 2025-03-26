@@ -143,6 +143,10 @@ export class GetWorkspaceDirectoryStructure implements ToolProvider {
             name: GetWorkspaceDirectoryStructure.ID,
             description: `Retrieve the complete directory structure of the workspace, listing only directories (no file contents). This structure excludes specific directories,
             such as node_modules and hidden files, ensuring paths are within workspace boundaries.`,
+            parameters: {
+                type: 'object',
+                properties: {}
+            },
             handler: () => this.getDirectoryStructure()
         };
     }

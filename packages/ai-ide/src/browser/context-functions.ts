@@ -35,7 +35,11 @@ export class ListChatContext implements ToolProvider {
                     type: contextElement.variable.name
                 }));
                 return JSON.stringify(result, undefined, 2);
-            }
+            },
+            parameters: {
+                type: 'object',
+                properties: {}
+            },
         };
     }
 }

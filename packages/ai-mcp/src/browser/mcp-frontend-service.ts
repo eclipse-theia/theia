@@ -94,7 +94,10 @@ export class MCPFrontendService {
                 type: tool.inputSchema.type,
                 properties: tool.inputSchema.properties,
                 required: tool.inputSchema.required
-            } : undefined,
+            } : {
+                type: 'object',
+                properties: {}
+            },
             description: tool.description,
             handler: async (arg_string: string) => {
                 try {
