@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2024 EclipseSource GmbH.
+// Copyright (C) 2025 EclipseSource GmbH.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -27,8 +27,8 @@ export class AIMCPConfigurationWidget extends ReactWidget {
     static readonly ID = 'ai-mcp-configuration-container-widget';
     static readonly LABEL = 'MCP Servers';
 
-    servers: MCPServerDescription[] = [];
-    expandedTools: Record<string, boolean> = {};
+    protected servers: MCPServerDescription[] = [];
+    protected expandedTools: Record<string, boolean> = {};
 
     @inject(MCPFrontendService)
     protected readonly mcpFrontendService: MCPFrontendService;
@@ -55,8 +55,7 @@ export class AIMCPConfigurationWidget extends ReactWidget {
 
     protected async loadServers(): Promise<void> {
         const serverNames = await this.mcpFrontendService.getServerNames();
-        const promises = serverNames.map(name => this.mcpFrontendService.getServerDescription(name));
-        const descriptions = await Promise.all(promises);
+        const descriptions = await Promise.all(serverNames.map(name => this.mcpFrontendService.getServerDescription(name)));
         this.servers = descriptions.filter((desc): desc is MCPServerDescription => desc !== undefined);
         this.update();
     }
@@ -228,7 +227,7 @@ export class AIMCPConfigurationWidget extends ReactWidget {
                             },
                             'mcp-copy-tool-button'
                         )}
-                    </div>
+                                            </div>
                 </div>
                 {isToolsExpanded && (
                     <div className="mcp-tools-list">
@@ -286,7 +285,7 @@ export class AIMCPConfigurationWidget extends ReactWidget {
                     'mcp-server-button play-button'
                 )}
                 {isStoppable && this.renderButton(
-                    <><i className="codicon codicon-debug-stop"></i> Stop Server</>,
+                    <><i className="codicon codicon-close"></i> Stop Server</>,
                     'Stop Server',
                     () => this.handleStopServer(server.name),
                     'mcp-server-button stop-button'
