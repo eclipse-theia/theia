@@ -88,13 +88,13 @@ export class ChatViewTreeWidget extends TreeWidget {
     protected readonly variableService: AIVariableService;
 
     @inject(CommandRegistry)
-    private commandRegistry: CommandRegistry;
+    protected commandRegistry: CommandRegistry;
 
     @inject(OpenerService)
     protected readonly openerService: OpenerService;
 
     @inject(HoverService)
-    private hoverService: HoverService;
+    protected hoverService: HoverService;
 
     protected _shouldScrollToEnd = true;
 
@@ -148,7 +148,7 @@ export class ChatViewTreeWidget extends TreeWidget {
         return this.renderDisabledMessage();
     }
 
-    private renderDisabledMessage(): React.ReactNode {
+    protected renderDisabledMessage(): React.ReactNode {
         return <div className={'theia-ResponseNode'}>
             <div className='theia-ResponseNode-Content' key={'disabled-message'}>
                 <div className="disable-message">
@@ -205,7 +205,7 @@ export class ChatViewTreeWidget extends TreeWidget {
         </div >;
     }
 
-    private renderLinkButton(title: string, openCommandId: string): React.ReactNode {
+    protected renderLinkButton(title: string, openCommandId: string): React.ReactNode {
         return <a
             role={'button'}
             tabIndex={0}
@@ -215,7 +215,7 @@ export class ChatViewTreeWidget extends TreeWidget {
         </a>;
     }
 
-    private mapRequestToNode(request: ChatRequestModel): RequestNode {
+    protected mapRequestToNode(request: ChatRequestModel): RequestNode {
         return {
             id: request.id,
             parent: this.model.root as CompositeTreeNode,
@@ -223,7 +223,7 @@ export class ChatViewTreeWidget extends TreeWidget {
         };
     }
 
-    private mapResponseToNode(response: ChatResponseModel): ResponseNode {
+    protected mapResponseToNode(response: ChatResponseModel): ResponseNode {
         return {
             id: response.id,
             parent: this.model.root as CompositeTreeNode,
@@ -259,7 +259,7 @@ export class ChatViewTreeWidget extends TreeWidget {
         return super.getScrollToRow();
     }
 
-    private async recreateModelTree(chatModel: ChatModel): Promise<void> {
+    protected async recreateModelTree(chatModel: ChatModel): Promise<void> {
         if (CompositeTreeNode.is(this.model.root)) {
             const nodes: TreeNode[] = [];
             chatModel.getRequests().forEach(request => {
@@ -289,7 +289,7 @@ export class ChatViewTreeWidget extends TreeWidget {
         </React.Fragment>;
     }
 
-    private renderAgent(node: RequestNode | ResponseNode): React.ReactNode {
+    protected renderAgent(node: RequestNode | ResponseNode): React.ReactNode {
         const inProgress = isResponseNode(node) && !node.response.isComplete && !node.response.isCanceled && !node.response.isError;
         const waitingForInput = isResponseNode(node) && node.response.isWaitingForInput;
         const toolbarContributions = !inProgress
@@ -345,7 +345,7 @@ export class ChatViewTreeWidget extends TreeWidget {
         </React.Fragment>;
     }
 
-    private getAgentLabel(node: RequestNode | ResponseNode): string {
+    protected getAgentLabel(node: RequestNode | ResponseNode): string {
         if (isRequestNode(node)) {
             // TODO find user name
             return nls.localize('theia/ai/chat-ui/chat-view-tree-widget/you', 'You');
@@ -353,14 +353,14 @@ export class ChatViewTreeWidget extends TreeWidget {
         return this.getAgent(node)?.name ?? nls.localize('theia/ai/chat-ui/chat-view-tree-widget/ai', 'AI');
     }
 
-    private getAgent(node: RequestNode | ResponseNode): ChatAgent | undefined {
+    protected getAgent(node: RequestNode | ResponseNode): ChatAgent | undefined {
         if (isRequestNode(node)) {
             return undefined;
         }
         return node.response.agentId ? this.chatAgentService.getAgent(node.response.agentId) : undefined;
     }
 
-    private getAgentIconClassName(node: RequestNode | ResponseNode): string | undefined {
+    protected getAgentIconClassName(node: RequestNode | ResponseNode): string | undefined {
         if (isRequestNode(node)) {
             return codicon('account');
         }
@@ -369,7 +369,7 @@ export class ChatViewTreeWidget extends TreeWidget {
         return agent?.iconClass ?? codicon('copilot');
     }
 
-    private renderDetail(node: RequestNode | ResponseNode): React.ReactNode {
+    protected renderDetail(node: RequestNode | ResponseNode): React.ReactNode {
         if (isRequestNode(node)) {
             return this.renderChatRequest(node);
         }
@@ -378,7 +378,7 @@ export class ChatViewTreeWidget extends TreeWidget {
         };
     }
 
-    private renderChatRequest(node: RequestNode): React.ReactNode {
+    protected renderChatRequest(node: RequestNode): React.ReactNode {
         return <ChatRequestRender
             node={node}
             hoverService={this.hoverService}
@@ -388,7 +388,7 @@ export class ChatViewTreeWidget extends TreeWidget {
         />;
     }
 
-    private renderChatResponse(node: ResponseNode): React.ReactNode {
+    protected renderChatResponse(node: ResponseNode): React.ReactNode {
         return (
             <div className={'theia-ResponseNode'}>
                 {!node.response.isComplete
@@ -419,7 +419,7 @@ export class ChatViewTreeWidget extends TreeWidget {
         );
     }
 
-    private getChatResponsePartRenderer(content: ChatResponseContent, node: ResponseNode): React.ReactNode {
+    protected getChatResponsePartRenderer(content: ChatResponseContent, node: ResponseNode): React.ReactNode {
         const renderer = this.chatResponsePartRenderers.getContributions().reduce<[number, ChatResponsePartRenderer<ChatResponseContent> | undefined]>(
             (prev, current) => {
                 const prio = current.canHandle(content);
