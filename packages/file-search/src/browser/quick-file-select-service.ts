@@ -109,7 +109,7 @@ export class QuickFileSelectService {
                             label: nls.localizeByDefault('recently opened')
                         });
                     }
-                    const item = this.toItem(fileFilter, location.uri);
+                    const item = this.toItem(fileFilter, location.uri, options.onSelect);
                     recentlyUsedItems.push(item);
                     alreadyCollected.add(uriString);
                 }

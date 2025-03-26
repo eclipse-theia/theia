@@ -44,6 +44,7 @@ export interface ScmResourceGroup extends Disposable {
     readonly label: string;
     readonly resources: ScmResource[];
     readonly hideWhenEmpty?: boolean;
+    readonly contextValue?: string;
 
     readonly provider: ScmProvider;
 }

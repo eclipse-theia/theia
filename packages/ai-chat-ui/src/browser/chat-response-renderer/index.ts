@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-export * from './ai-editor-manager';
+export * from './ai-selection-resolver';
 export * from './code-part-renderer';
 export * from './command-part-renderer';
 export * from './error-part-renderer';

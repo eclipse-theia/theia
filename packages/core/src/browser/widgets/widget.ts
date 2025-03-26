@@ -17,20 +17,20 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { injectable, decorate, unmanaged } from 'inversify';
-import { Title, Widget } from '@phosphor/widgets';
-import { Message, MessageLoop } from '@phosphor/messaging';
+import { Title, Widget } from '@lumino/widgets';
+import { Message, MessageLoop } from '@lumino/messaging';
 import { Emitter, Event, Disposable, DisposableCollection, MaybePromise, isObject } from '../../common';
 import { KeyCode, KeysOrKeyCodes } from '../keyboard/keys';
 
 import PerfectScrollbar from 'perfect-scrollbar';
 import { PreviewableWidget } from '../widgets/previewable-widget';
-import { Slot } from '@phosphor/signaling';
+import { Slot } from '@lumino/signaling';
 
 decorate(injectable(), Widget);
 decorate(unmanaged(), Widget, 0);
 
-export * from '@phosphor/widgets';
-export * from '@phosphor/messaging';
+export * from '@lumino/widgets';
+export * from '@lumino/messaging';
 
 export const ACTION_ITEM = 'action-label';
 
@@ -62,8 +62,8 @@ export const DEFAULT_SCROLL_OPTIONS: PerfectScrollbar.Options = {
 };
 
 /**
- * At a number of places in the code, we have effectively reimplemented Phosphor's Widget.attach and Widget.detach,
- * but omitted the checks that Phosphor expects to be performed for those operations. That is a bad idea, because it
+ * At a number of places in the code, we have effectively reimplemented Lumino's Widget.attach and Widget.detach,
+ * but omitted the checks that Lumino expects to be performed for those operations. That is a bad idea, because it
  * means that we are telling widgets that they are attached or detached when not all the conditions that should apply
  * do apply. We should explicitly mark those locations so that we know where we should go fix them later.
  */
@@ -207,10 +207,11 @@ export class BaseWidget extends Widget implements PreviewableWidget {
         this.toDisposeOnDetach.push(addEventListener(element, type, listener, useCapture));
     }
 
-    protected addKeyListener<K extends keyof HTMLElementEventMap>(
+    protected addKeyListener<K extends keyof HTMLElementEventMap = never>(
         element: HTMLElement,
         keysOrKeyCodes: KeyCode.Predicate | KeysOrKeyCodes,
-        action: (event: KeyboardEvent) => boolean | void | Object, ...additionalEventTypes: K[]): void {
+        action: EventHandler<K | 'keydown'>,
+        ...additionalEventTypes: K[]): void {
         this.toDisposeOnDetach.push(addKeyListener(element, keysOrKeyCodes, action, ...additionalEventTypes));
     }
 
@@ -234,9 +235,11 @@ export class BaseWidget extends Widget implements PreviewableWidget {
     }
 
     override clearFlag(flag: Widget.Flag): void {
+        const wasVisible = this.isVisible;
         super.clearFlag(flag);
-        if (flag === Widget.Flag.IsVisible) {
-            this.handleVisiblityChanged(this.isVisible);
+        const isVisible = this.isVisible;
+        if (isVisible !== wasVisible) {
+            this.handleVisiblityChanged(isVisible);
         }
     }
 }
@@ -257,6 +260,8 @@ export function createIconButton(...classNames: string[]): HTMLSpanElement {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type EventListener<K extends keyof HTMLElementEventMap> = (this: HTMLElement, event: HTMLElementEventMap[K]) => any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type EventHandler<K extends keyof HTMLElementEventMap> = (event: HTMLElementEventMap[K]) => any;
 export interface EventListenerObject<K extends keyof HTMLElementEventMap> {
     handleEvent(evt: HTMLElementEventMap[K]): void;
 }
@@ -275,10 +280,12 @@ export function addEventListener<K extends keyof HTMLElementEventMap>(
     );
 }
 
-export function addKeyListener<K extends keyof HTMLElementEventMap>(
+export function addKeyListener<K extends keyof HTMLElementEventMap = never>(
     element: HTMLElement,
     keysOrKeyCodes: KeyCode.Predicate | KeysOrKeyCodes,
-    action: (event: KeyboardEvent) => boolean | void | Object, ...additionalEventTypes: K[]): Disposable {
+    action: EventHandler<K | 'keydown'>,
+    ...additionalEventTypes: K[]): Disposable {
+    type HandledEvent = Parameters<typeof action>[0];
 
     const toDispose = new DisposableCollection();
     const keyCodePredicate = (() => {
@@ -291,7 +298,7 @@ export function addKeyListener<K extends keyof HTMLElementEventMap>(
     toDispose.push(addEventListener(element, 'keydown', e => {
         const kc = KeyCode.createKeyCode(e);
         if (keyCodePredicate(kc)) {
-            const result = action(e);
+            const result = action(e as HandledEvent);
             if (typeof result !== 'boolean' || result) {
                 e.stopPropagation();
                 e.preventDefault();
@@ -300,9 +307,7 @@ export function addKeyListener<K extends keyof HTMLElementEventMap>(
     }));
     for (const type of additionalEventTypes) {
         toDispose.push(addEventListener(element, type, e => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const event = (type as any)['keydown'];
-            const result = action(event);
+            const result = action(e as HandledEvent);
             if (typeof result !== 'boolean' || result) {
                 e.stopPropagation();
                 e.preventDefault();

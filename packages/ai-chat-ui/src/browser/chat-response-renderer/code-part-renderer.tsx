@@ -137,7 +137,8 @@ export class CodePartRenderer
         this.contextMenuRenderer.render({
             menuPath: ChatViewTreeWidget.CONTEXT_MENU,
             anchor: { x: event.posx, y: event.posy },
-            args: [node, { code }]
+            args: [node, { code }],
+            context: event.target
         });
         event.preventDefault();
     }
@@ -190,7 +191,7 @@ const InsertCodeAtCursorButton = (props: { code: string, editorManager: EditorMa
             }]);
         }
     }, [code, editorManager]);
-    return <div className='button codicon codicon-insert' title={nls.localizeByDefault('Insert at Cursor')} role='button' onClick={insertCode}></div>;
+    return <div className='button codicon codicon-insert' title={nls.localizeByDefault('Insert At Cursor')} role='button' onClick={insertCode}></div>;
 };
 
 /**

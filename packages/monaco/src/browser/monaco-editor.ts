@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, inject, unmanaged } from '@theia/core/shared/inversify';
-import { ElementExt } from '@theia/core/shared/@phosphor/domutils';
+import { ElementExt } from '@theia/core/shared/@lumino/domutils';
 import URI from '@theia/core/lib/common/uri';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { DisposableCollection, Disposable, Emitter, Event, nullToUndefined, MaybeNull } from '@theia/core/lib/common';
@@ -128,7 +128,7 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
     protected model: monaco.editor.ITextModel | null;
     savedViewState: monaco.editor.ICodeEditorViewState | null;
 
-    constructor(
+    protected constructor(
         readonly uri: URI,
         readonly document: MonacoEditorModel,
         readonly node: HTMLElement,
@@ -198,7 +198,9 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
         const instantiator = StandaloneServices.get(IInstantiationService);
         if (override) {
             const overrideServices = new ServiceCollection(...override);
-            return instantiator.createChild(overrideServices);
+            const child = instantiator.createChild(overrideServices);
+            this.toDispose.push(child);
+            return child;
         }
         return instantiator;
     }
@@ -559,10 +561,8 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
         const toPosition = (line: number): monaco.Position => this.p2m.asPosition({ line, character: 0 });
         const start = toPosition(startLineNumber).lineNumber;
         const end = toPosition(endLineNumber).lineNumber;
-        return this.editor
-            .getModel()!
-            .getLinesDecorations(start, end)
-            .map(this.toEditorDecoration.bind(this));
+        return this.editor.getModel()?.getLinesDecorations(start, end)
+            .map(this.toEditorDecoration.bind(this)) || [];
     }
 
     protected toEditorDecoration(decoration: monaco.editor.IModelDecoration): EditorDecoration & Readonly<{ id: string }> {

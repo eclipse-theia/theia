@@ -373,14 +373,10 @@ export class MonacoEditorProvider {
         return this.doCreateEditor(uri, async (override, toDispose) => {
             const overrides = override ? Array.from(override) : [];
             overrides.push([IContextMenuService, { showContextMenu: () => {/** no op! */ } }]);
-            const document = new MonacoEditorModel({
-                uri,
-                readContents: async () => '',
-                dispose: () => { }
-            }, this.m2p, this.p2m);
-            toDispose.push(document);
+            const document = await this.getModel(uri, toDispose);
+            document.suppressOpenEditorWhenDirty = true;
             const model = (await document.load()).textEditorModel;
-            return new MonacoEditor(
+            return await MonacoEditor.create(
                 uri,
                 document,
                 node,

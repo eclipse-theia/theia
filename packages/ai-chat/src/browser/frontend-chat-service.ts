@@ -65,8 +65,8 @@ export class FrontendChatServiceImpl extends ChatServiceImpl {
         return configuredDefaultChatAgent;
     }
 
-    override createSession(location?: ChatAgentLocation, options?: SessionOptions): ChatSession {
-        const session = super.createSession(location, options);
+    override createSession(location?: ChatAgentLocation, options?: SessionOptions, pinnedAgent?: ChatAgent): ChatSession {
+        const session = super.createSession(location, options, pinnedAgent);
         session.model.onDidChange(event => {
             const changeSet = (event as { changeSet?: ChangeSet }).changeSet;
             if (event.kind === 'removeChangeSet') {

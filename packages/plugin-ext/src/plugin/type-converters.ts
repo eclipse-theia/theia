@@ -342,11 +342,12 @@ export function fromTextEdit(edit: theia.TextEdit): model.TextEdit {
     };
 }
 
-function fromSnippetTextEdit(edit: theia.SnippetTextEdit): model.TextEdit & { insertAsSnippet?: boolean } {
+function fromSnippetTextEdit(edit: theia.SnippetTextEdit): model.TextEdit & { insertAsSnippet?: boolean, keepWhitespace?: boolean } {
     return {
         text: edit.snippet.value,
         range: fromRange(edit.range),
-        insertAsSnippet: true
+        insertAsSnippet: true,
+        keepWhitespace: edit.keepWhitespace
     };
 }
 
@@ -616,17 +617,24 @@ export function fromWorkspaceEdit(value: theia.WorkspaceEdit, documents?: any): 
     };
     for (const entry of (value as types.WorkspaceEdit)._allEntries()) {
         if (entry?._type === types.FileEditType.Text) {
-            // text edits
             const doc = documents ? documents.getDocument(entry.uri.toString()) : undefined;
             const workspaceTextEditDto: WorkspaceTextEditDto = {
                 resource: entry.uri,
                 modelVersionId: doc?.version,
-                textEdit: (entry.edit instanceof types.TextEdit) ? fromTextEdit(entry.edit) : fromSnippetTextEdit(entry.edit),
+                textEdit: fromTextEdit(entry.edit),
+                metadata: entry.metadata
+            };
+            result.edits.push(workspaceTextEditDto);
+        } else if (entry?._type === types.FileEditType.Snippet) {
+            const doc = documents ? documents.getDocument(entry.uri.toString()) : undefined;
+            const workspaceTextEditDto: WorkspaceTextEditDto = {
+                resource: entry.uri,
+                modelVersionId: doc?.version,
+                textEdit: fromSnippetTextEdit(entry.edit),
                 metadata: entry.metadata
             };
             result.edits.push(workspaceTextEditDto);
         } else if (entry?._type === types.FileEditType.File) {
-            // resource edits
             const workspaceFileEditDto: WorkspaceFileEditDto = {
                 oldResource: entry.from,
                 newResource: entry.to,
@@ -635,7 +643,6 @@ export function fromWorkspaceEdit(value: theia.WorkspaceEdit, documents?: any): 
             };
             result.edits.push(workspaceFileEditDto);
         } else if (entry?._type === types.FileEditType.Cell) {
-            // cell edit
             if (entry.edit) {
                 result.edits.push({
                     metadata: entry.metadata,
@@ -644,7 +651,6 @@ export function fromWorkspaceEdit(value: theia.WorkspaceEdit, documents?: any): 
                 });
             }
         } else if (entry?._type === types.FileEditType.CellReplace) {
-            // cell replace
             result.edits.push({
                 metadata: entry.metadata,
                 resource: entry.uri,

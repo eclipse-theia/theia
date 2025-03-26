@@ -83,7 +83,8 @@ export class GettingStartedWidget extends ReactWidget {
     protected readonly compatibilityUrl = 'https://eclipse-theia.github.io/vscode-theia-comparator/status.html';
     protected readonly extensionUrl = 'https://www.theia-ide.org/docs/authoring_extensions';
     protected readonly pluginUrl = 'https://www.theia-ide.org/docs/authoring_plugins';
-    protected readonly theiaAIDocUrl = 'https://theia-ide.org/docs/user_ai/';
+    protected readonly userAIDocUrl = 'https://theia-ide.org/docs/user_ai/';
+    protected readonly theiaAIDocUrl = 'https://theia-ide.org/docs/theia_ai/';
     protected readonly ghProjectUrl = 'https://github.com/eclipse-theia/theia/issues/new/choose';
 
     @inject(ApplicationServer)
@@ -148,6 +149,13 @@ export class GettingStartedWidget extends ReactWidget {
                 }
                 {this.renderHeader()}
                 <hr className='gs-hr' />
+                {this.aiIsIncluded &&
+                    <div className='flex-grid'>
+                        <div className='col'>
+                            {this.renderNews()}
+                        </div>
+                    </div>
+                }
                 <div className='flex-grid'>
                     <div className='col'>
                         {this.renderStart()}
@@ -402,31 +410,45 @@ export class GettingStartedWidget extends ReactWidget {
         return <WelcomePreferences preferenceService={this.preferenceService}></WelcomePreferences>;
     }
 
+    protected renderNews(): React.ReactNode {
+        return <div className='gs-section'>
+            <h3 className='gs-section-header'>🚀 AI Support in the Theia IDE is available (Alpha Version)! ✨</h3>
+            <div className='gs-action-container'>
+                <a
+                    role={'button'}
+                    style={{ fontSize: 'var(--theia-ui-font-size2)' }}
+                    tabIndex={0}
+                    onClick={() => this.doOpenAIChatView()}
+                    onKeyDown={(e: React.KeyboardEvent) => this.doOpenAIChatViewEnter(e)}>
+                    {'Open the AI Chat View now to learn how to start! ✨'}
+                </a>
+            </div>
+        </div>;
+    }
+
     protected renderAIBanner(): React.ReactNode {
-        return <div className='gs-container gs-experimental-container'>
+        return <div className='gs-container gs-aifeature-container'>
             <div className='flex-grid'>
                 <div className='col'>
-                    <h3 className='gs-section-header'> 🚀 AI Support in the Theia IDE is available! [Experimental] ✨</h3>
-                    <br />
+                    <h3 className='gs-section-header'> 🚀 AI Support in the Theia IDE is available (Alpha Version)! ✨</h3>
                     <div className='gs-action-container'>
-                        Theia IDE now contains experimental AI support, which offers early access to cutting-edge AI capabilities within your IDE.
-                        <br />
+                        Theia IDE now contains AI support, which offers early access to cutting-edge AI capabilities within your IDE.
                         <br />
                         Please note that these features are disabled by default, ensuring that users can opt-in at their discretion.
-                        For those who choose to enable AI support, it is important to be aware that these experimental features may generate continuous
+                        For those who choose to enable AI support, it is important to be aware that these may generate continuous
                         requests to the language models (LLMs) you provide access to. This might incur costs that you need to monitor closely.
                         <br />
                         For more details, please visit &nbsp;
                         <a
                             role={'button'}
                             tabIndex={0}
-                            onClick={() => this.doOpenExternalLink(this.theiaAIDocUrl)}
-                            onKeyDown={(e: React.KeyboardEvent) => this.doOpenExternalLinkEnter(e, this.theiaAIDocUrl)}>
+                            onClick={() => this.doOpenExternalLink(this.userAIDocUrl)}
+                            onKeyDown={(e: React.KeyboardEvent) => this.doOpenExternalLinkEnter(e, this.userAIDocUrl)}>
                             {'the documentation'}
                         </a>.
                         <br />
                         <br />
-                        🚧 Please note that this feature is currently in development and may undergo frequent changes.
+                        🚧 Please note that this feature is currently in an alpha state and may undergo frequent changes.
                         We welcome your feedback, contributions, and sponsorship! To support the ongoing development of the AI capabilities please visit the&nbsp;
                         <a
                             role={'button'}
@@ -436,6 +458,15 @@ export class GettingStartedWidget extends ReactWidget {
                             {'Github Project'}
                         </a>.
                         &nbsp;Thank you for being part of our community!
+                        <br />
+                        The AI features are built on the framework Theia AI. If you want to build a custom AI-powered tool or IDE, Theia AI has been published as stable release.
+                        Check out <a
+                            role={'button'}
+                            tabIndex={0}
+                            onClick={() => this.doOpenExternalLink(this.theiaAIDocUrl)}
+                            onKeyDown={(e: React.KeyboardEvent) => this.doOpenExternalLinkEnter(e, this.theiaAIDocUrl)}>
+                            {'the Theia AI documentation'}
+                        </a>!
                     </div>
                     <br />
                     <div className='gs-action-container'>
@@ -448,8 +479,6 @@ export class GettingStartedWidget extends ReactWidget {
                             {'Open the AI Chat View now to learn how to start! ✨'}
                         </a>
                     </div>
-                    <br />
-                    <br />
                 </div>
             </div>
         </div>;

@@ -70,7 +70,7 @@ export class AboutDialog extends ReactDialog<void> {
         const compatibilityUrl = 'https://eclipse-theia.github.io/vscode-theia-comparator/status.html';
 
         const detailsLabel = nls.localizeByDefault('Details');
-        const versionLabel = nls.localize('theia/core/about/version', 'Version');
+        const versionLabel = nls.localizeByDefault('Version');
         const defaultApiLabel = nls.localize('theia/core/about/defaultApi', 'Default {0} API', 'VS Code');
         const compatibilityLabel = nls.localize('theia/core/about/compatibility', '{0} Compatibility', 'VS Code');
 
@@ -94,8 +94,9 @@ export class AboutDialog extends ReactDialog<void> {
 
     protected renderExtensions(): React.ReactNode {
         const extensionsInfos = this.extensionsInfos;
+        const listOfExtensions = nls.localize('theia/core/about/listOfExtensions', 'List of extensions');
         return <>
-            <h3>List of extensions</h3>
+            <h3>{listOfExtensions}</h3>
             <ul className={ABOUT_EXTENSIONS_CLASS}>
                 {
                     extensionsInfos

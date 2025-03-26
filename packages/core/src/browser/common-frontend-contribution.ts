@@ -253,6 +253,16 @@ export namespace CommonCommands {
         category: VIEW_CATEGORY,
         label: 'Toggle Bottom Panel'
     }, 'theia/core/common/collapseBottomPanel', VIEW_CATEGORY_KEY);
+    export const TOGGLE_LEFT_PANEL = Command.toLocalizedCommand({
+        id: 'core.toggle.left.panel',
+        category: VIEW_CATEGORY,
+        label: 'Toggle Left Panel'
+    }, 'theia/core/common/collapseLeftPanel', VIEW_CATEGORY_KEY);
+    export const TOGGLE_RIGHT_PANEL = Command.toLocalizedCommand({
+        id: 'core.toggle.right.panel',
+        category: VIEW_CATEGORY,
+        label: 'Toggle Right Panel'
+    }, 'theia/core/common/collapseRightPanel', VIEW_CATEGORY_KEY);
     export const TOGGLE_STATUS_BAR = Command.toDefaultLocalizedCommand({
         id: 'workbench.action.toggleStatusbarVisibility',
         category: VIEW_CATEGORY,
@@ -483,28 +493,30 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         this.preferences.ready.then(() => this.setSashProperties());
         this.preferences.onPreferenceChanged(e => this.handlePreferenceChange(e, app));
 
-        app.shell.leftPanelHandler.addBottomMenu({
-            id: 'settings-menu',
-            iconClass: codicon('settings-gear'),
-            title: nls.localizeByDefault(CommonCommands.MANAGE_CATEGORY),
-            menuPath: MANAGE_MENU,
-            order: 0,
-        });
-        const accountsMenu: SidebarMenu = {
-            id: 'accounts-menu',
-            iconClass: codicon('account'),
-            title: nls.localizeByDefault('Accounts'),
-            menuPath: ACCOUNTS_MENU,
-            order: 1,
-            onDidBadgeChange: this.authenticationService.onDidUpdateSignInCount
-        };
-        this.authenticationService.onDidRegisterAuthenticationProvider(() => {
-            app.shell.leftPanelHandler.addBottomMenu(accountsMenu);
-        });
-        this.authenticationService.onDidUnregisterAuthenticationProvider(() => {
-            if (this.authenticationService.getProviderIds().length === 0) {
-                app.shell.leftPanelHandler.removeBottomMenu(accountsMenu.id);
-            }
+        app.shell.initialized.then(() => {
+            app.shell.leftPanelHandler.addBottomMenu({
+                id: 'settings-menu',
+                iconClass: codicon('settings-gear'),
+                title: nls.localizeByDefault(CommonCommands.MANAGE_CATEGORY),
+                menuPath: MANAGE_MENU,
+                order: 0,
+            });
+            const accountsMenu: SidebarMenu = {
+                id: 'accounts-menu',
+                iconClass: codicon('account'),
+                title: nls.localizeByDefault('Accounts'),
+                menuPath: ACCOUNTS_MENU,
+                order: 1,
+                onDidBadgeChange: this.authenticationService.onDidUpdateSignInCount
+            };
+            this.authenticationService.onDidRegisterAuthenticationProvider(() => {
+                app.shell.leftPanelHandler.addBottomMenu(accountsMenu);
+            });
+            this.authenticationService.onDidUnregisterAuthenticationProvider(() => {
+                if (this.authenticationService.getProviderIds().length === 0) {
+                    app.shell.leftPanelHandler.removeBottomMenu(accountsMenu.id);
+                }
+            });
         });
     }
 
@@ -952,6 +964,26 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     this.shell.collapsePanel('bottom');
                 } else {
                     this.shell.expandPanel('bottom');
+                }
+            }
+        });
+        commandRegistry.registerCommand(CommonCommands.TOGGLE_LEFT_PANEL, {
+            isEnabled: () => this.shell.getWidgets('left').length > 0,
+            execute: () => {
+                if (this.shell.isExpanded('left')) {
+                    this.shell.collapsePanel('left');
+                } else {
+                    this.shell.expandPanel('left');
+                }
+            }
+        });
+        commandRegistry.registerCommand(CommonCommands.TOGGLE_RIGHT_PANEL, {
+            isEnabled: () => this.shell.getWidgets('right').length > 0,
+            execute: () => {
+                if (this.shell.isExpanded('right')) {
+                    this.shell.collapsePanel('right');
+                } else {
+                    this.shell.expandPanel('right');
                 }
             }
         });

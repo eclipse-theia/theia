@@ -88,13 +88,13 @@ export class ChatViewTreeWidget extends TreeWidget {
     protected readonly variableService: AIVariableService;
 
     @inject(CommandRegistry)
-    private commandRegistry: CommandRegistry;
+    protected commandRegistry: CommandRegistry;
 
     @inject(OpenerService)
     protected readonly openerService: OpenerService;
 
     @inject(HoverService)
-    private hoverService: HoverService;
+    protected hoverService: HoverService;
 
     protected _shouldScrollToEnd = true;
 
@@ -148,21 +148,21 @@ export class ChatViewTreeWidget extends TreeWidget {
         return this.renderDisabledMessage();
     }
 
-    private renderDisabledMessage(): React.ReactNode {
+    protected renderDisabledMessage(): React.ReactNode {
         return <div className={'theia-ResponseNode'}>
             <div className='theia-ResponseNode-Content' key={'disabled-message'}>
                 <div className="disable-message">
                     <span className="section-header">{
-                        nls.localize('theia/ai/chat-ui/chat-view-tree-widget/experimentalFeatureHeader', '🚀 Experimental AI Feature Available!')}
+                        nls.localize('theia/ai/chat-ui/chat-view-tree-widget/aiFeatureHeader', '🚀 AI Features Available (Alpha Version)!')}
                     </span>
                     <div className="section-title">
                         <p><code>{nls.localize('theia/ai/chat-ui/chat-view-tree-widget/featuresDisabled', 'Currently, all AI Features are disabled!')}</code></p>
                     </div>
                     <div className="section-title">
-                        <p>{nls.localize('theia/ai/chat-ui/chat-view-tree-widget/howToEnable', 'How to Enable Experimental AI Features:')}</p>
+                        <p>{nls.localize('theia/ai/chat-ui/chat-view-tree-widget/howToEnable', 'How to Enable the AI Features:')}</p>
                     </div>
                     <div className="section-content">
-                        <p>To enable the experimental AI features, please go to &nbsp;
+                        <p>To enable the AI features, please go to &nbsp;
                             {this.renderLinkButton(nls.localize('theia/ai/chat-ui/chat-view-tree-widget/settingsMenu', 'the settings menu'), CommonCommands.OPEN_PREFERENCES.id)}
                             &nbsp;and locate the <strong>AI Features</strong> section.</p>
                         <ol>
@@ -170,21 +170,25 @@ export class ChatViewTreeWidget extends TreeWidget {
                             <li>Provide at least one LLM provider (e.g. OpenAI), also see <a href="https://theia-ide.org/docs/user_ai/" target="_blank">the documentation</a>
                                 for more information.</li>
                         </ol>
-                        <p>This will activate the new AI capabilities in the app. Please remember, these features are still in development, so they may change or be unstable. 🚧</p>
+                        <p>This will activate the AI capabilities in the app. Please remember, these features are <strong>in an alpha state</strong>,
+                            so they may change and we are working on improving them 🚧.<br></br>
+                            Please support us by <a href="https://github.com/eclipse-theia/theia">providing feedback
+                            </a>!</p>
                     </div>
 
                     <div className="section-title">
                         <p>Currently Supported Views and Features:</p>
                     </div>
                     <div className="section-content">
-                        <p>Once the experimental AI features are enabled, you can access the following views and features:</p>
+                        <p>Once the AI features are enabled, you can access the following views and features:</p>
                         <ul>
                             <li>Code Completion</li>
                             <li>Terminal Assistance (via CTRL+I in a terminal)</li>
                             <li>This Chat View (features the following agents):
                                 <ul>
                                     <li>Universal Chat Agent</li>
-                                    <li>Workspace Chat Agent</li>
+                                    <li>Coder Chat Agent</li>
+                                    <li>Architect Chat Agent</li>
                                     <li>Command Chat Agent</li>
                                     <li>Orchestrator Chat Agent</li>
                                 </ul>
@@ -201,7 +205,7 @@ export class ChatViewTreeWidget extends TreeWidget {
         </div >;
     }
 
-    private renderLinkButton(title: string, openCommandId: string): React.ReactNode {
+    protected renderLinkButton(title: string, openCommandId: string): React.ReactNode {
         return <a
             role={'button'}
             tabIndex={0}
@@ -211,7 +215,7 @@ export class ChatViewTreeWidget extends TreeWidget {
         </a>;
     }
 
-    private mapRequestToNode(request: ChatRequestModel): RequestNode {
+    protected mapRequestToNode(request: ChatRequestModel): RequestNode {
         return {
             id: request.id,
             parent: this.model.root as CompositeTreeNode,
@@ -219,7 +223,7 @@ export class ChatViewTreeWidget extends TreeWidget {
         };
     }
 
-    private mapResponseToNode(response: ChatResponseModel): ResponseNode {
+    protected mapResponseToNode(response: ChatResponseModel): ResponseNode {
         return {
             id: response.id,
             parent: this.model.root as CompositeTreeNode,
@@ -255,7 +259,7 @@ export class ChatViewTreeWidget extends TreeWidget {
         return super.getScrollToRow();
     }
 
-    private async recreateModelTree(chatModel: ChatModel): Promise<void> {
+    protected async recreateModelTree(chatModel: ChatModel): Promise<void> {
         if (CompositeTreeNode.is(this.model.root)) {
             const nodes: TreeNode[] = [];
             chatModel.getRequests().forEach(request => {
@@ -285,7 +289,7 @@ export class ChatViewTreeWidget extends TreeWidget {
         </React.Fragment>;
     }
 
-    private renderAgent(node: RequestNode | ResponseNode): React.ReactNode {
+    protected renderAgent(node: RequestNode | ResponseNode): React.ReactNode {
         const inProgress = isResponseNode(node) && !node.response.isComplete && !node.response.isCanceled && !node.response.isError;
         const waitingForInput = isResponseNode(node) && node.response.isWaitingForInput;
         const toolbarContributions = !inProgress
@@ -341,7 +345,7 @@ export class ChatViewTreeWidget extends TreeWidget {
         </React.Fragment>;
     }
 
-    private getAgentLabel(node: RequestNode | ResponseNode): string {
+    protected getAgentLabel(node: RequestNode | ResponseNode): string {
         if (isRequestNode(node)) {
             // TODO find user name
             return nls.localize('theia/ai/chat-ui/chat-view-tree-widget/you', 'You');
@@ -349,14 +353,14 @@ export class ChatViewTreeWidget extends TreeWidget {
         return this.getAgent(node)?.name ?? nls.localize('theia/ai/chat-ui/chat-view-tree-widget/ai', 'AI');
     }
 
-    private getAgent(node: RequestNode | ResponseNode): ChatAgent | undefined {
+    protected getAgent(node: RequestNode | ResponseNode): ChatAgent | undefined {
         if (isRequestNode(node)) {
             return undefined;
         }
         return node.response.agentId ? this.chatAgentService.getAgent(node.response.agentId) : undefined;
     }
 
-    private getAgentIconClassName(node: RequestNode | ResponseNode): string | undefined {
+    protected getAgentIconClassName(node: RequestNode | ResponseNode): string | undefined {
         if (isRequestNode(node)) {
             return codicon('account');
         }
@@ -365,7 +369,7 @@ export class ChatViewTreeWidget extends TreeWidget {
         return agent?.iconClass ?? codicon('copilot');
     }
 
-    private renderDetail(node: RequestNode | ResponseNode): React.ReactNode {
+    protected renderDetail(node: RequestNode | ResponseNode): React.ReactNode {
         if (isRequestNode(node)) {
             return this.renderChatRequest(node);
         }
@@ -374,7 +378,7 @@ export class ChatViewTreeWidget extends TreeWidget {
         };
     }
 
-    private renderChatRequest(node: RequestNode): React.ReactNode {
+    protected renderChatRequest(node: RequestNode): React.ReactNode {
         return <ChatRequestRender
             node={node}
             hoverService={this.hoverService}
@@ -384,7 +388,7 @@ export class ChatViewTreeWidget extends TreeWidget {
         />;
     }
 
-    private renderChatResponse(node: ResponseNode): React.ReactNode {
+    protected renderChatResponse(node: ResponseNode): React.ReactNode {
         return (
             <div className={'theia-ResponseNode'}>
                 {!node.response.isComplete
@@ -415,7 +419,7 @@ export class ChatViewTreeWidget extends TreeWidget {
         );
     }
 
-    private getChatResponsePartRenderer(content: ChatResponseContent, node: ResponseNode): React.ReactNode {
+    protected getChatResponsePartRenderer(content: ChatResponseContent, node: ResponseNode): React.ReactNode {
         const renderer = this.chatResponsePartRenderers.getContributions().reduce<[number, ChatResponsePartRenderer<ChatResponseContent> | undefined]>(
             (prev, current) => {
                 const prio = current.canHandle(content);
@@ -435,7 +439,8 @@ export class ChatViewTreeWidget extends TreeWidget {
         this.contextMenuRenderer.render({
             menuPath: ChatViewTreeWidget.CONTEXT_MENU,
             anchor: { x: event.clientX, y: event.clientY },
-            args: [node]
+            args: [node],
+            context: event.currentTarget
         });
         event.preventDefault();
     }

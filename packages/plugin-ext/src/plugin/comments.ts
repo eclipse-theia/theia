@@ -38,6 +38,7 @@ import {
     Plugin as InternalPlugin,
     PLUGIN_RPC_CONTEXT
 } from '../common/plugin-api-rpc';
+import { isArray } from '../common/types';
 
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
@@ -163,7 +164,11 @@ export class CommentsExtImpl implements CommentsExt {
         }
     }
 
-    async $provideCommentingRanges(commentControllerHandle: number, uriComponents: UriComponents, token: theia.CancellationToken): Promise<Range[] | undefined> {
+    async $provideCommentingRanges(
+        commentControllerHandle: number,
+        uriComponents: UriComponents,
+        token: theia.CancellationToken
+    ): Promise<{ ranges: Range[]; fileComments: boolean } | undefined> {
         const commentController = this.commentControllers.get(commentControllerHandle);
 
         if (!commentController || !commentController.commentingRangeProvider) {
@@ -172,11 +177,20 @@ export class CommentsExtImpl implements CommentsExt {
 
         const documentData = this._documents.getDocumentData(URI.revive(uriComponents));
         if (documentData) {
-            const ranges: theia.Range[] | undefined | null = await commentController.commentingRangeProvider!.provideCommentingRanges(documentData.document, token);
-            if (ranges) {
-                return ranges.map(x => fromRange(x));
+            const commentingRanges = await commentController.commentingRangeProvider!.provideCommentingRanges(documentData.document, token);
+            if (isArray(commentingRanges)) {
+                return {
+                    ranges: commentingRanges.map(x => fromRange(x)),
+                    fileComments: false
+                };
+            } else if (commentingRanges) {
+                return {
+                    ranges: commentingRanges.ranges?.map(x => fromRange(x)) || [],
+                    fileComments: commentingRanges.enableFileComments
+                };
             }
         }
+        return undefined;
     }
 }
 
@@ -220,15 +234,16 @@ export class ExtHostCommentThread implements theia.CommentThread, theia.Disposab
     private readonly _onDidUpdateCommentThread = new Emitter<void>();
     readonly onDidUpdateCommentThread = this._onDidUpdateCommentThread.event;
 
-    set range(range: theia.Range) {
-        if (!range.isEqual(this._range)) {
+    set range(range: theia.Range | undefined) {
+        if (((range === undefined) !== (this._range === undefined))
+            || (range && this._range && !range.isEqual(this._range))) {
             this._range = range;
             this.modifications.range = range;
             this._onDidUpdateCommentThread.fire();
         }
     }
 
-    get range(): theia.Range {
+    get range(): theia.Range | undefined {
         return this._range;
     }
 
@@ -320,7 +335,7 @@ export class ExtHostCommentThread implements theia.CommentThread, theia.Disposab
         private commentController: CommentController,
         private _id: string | undefined,
         private _uri: theia.Uri,
-        private _range: theia.Range,
+        private _range: theia.Range | undefined,
         private _comments: theia.Comment[],
         extensionId: string
     ) {

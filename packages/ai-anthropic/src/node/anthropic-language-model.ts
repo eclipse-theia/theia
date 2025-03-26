@@ -27,13 +27,7 @@ import { CancellationToken, isArray } from '@theia/core';
 import { Anthropic } from '@anthropic-ai/sdk';
 import { MessageParam } from '@anthropic-ai/sdk/resources';
 
-const DEFAULT_MAX_TOKENS_STREAMING = 4096;
-const DEFAULT_MAX_TOKENS_NON_STREAMING = 2048;
-const EMPTY_INPUT_SCHEMA = {
-    type: 'object',
-    properties: {},
-    required: []
-} as const;
+export const DEFAULT_MAX_TOKENS = 4096;
 
 interface ToolCallback {
     readonly name: string;
@@ -93,7 +87,8 @@ export class AnthropicModel implements LanguageModel {
         public model: string,
         public enableStreaming: boolean,
         public apiKey: () => string | undefined,
-        public defaultRequestSettings?: Readonly<Record<string, unknown>>
+        public defaultRequestSettings?: Readonly<Record<string, unknown>>,
+        public maxTokens: number = DEFAULT_MAX_TOKENS
     ) { }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
@@ -145,7 +140,7 @@ export class AnthropicModel implements LanguageModel {
         const { messages, systemMessage } = transformToAnthropicParams(request.messages);
         const tools = this.createTools(request);
         const params: Anthropic.MessageCreateParams = {
-            max_tokens: DEFAULT_MAX_TOKENS_STREAMING,
+            max_tokens: this.maxTokens,
             messages: [...messages, ...(toolMessages ?? [])],
             tools,
             model: this.model,
@@ -254,7 +249,7 @@ export class AnthropicModel implements LanguageModel {
         return request.tools?.map(tool => ({
             name: tool.name,
             description: tool.description,
-            input_schema: tool.parameters ?? EMPTY_INPUT_SCHEMA
+            input_schema: tool.parameters
         } as Anthropic.Messages.Tool));
     }
 
@@ -267,7 +262,7 @@ export class AnthropicModel implements LanguageModel {
         const { messages, systemMessage } = transformToAnthropicParams(request.messages);
 
         const params: Anthropic.MessageCreateParams = {
-            max_tokens: DEFAULT_MAX_TOKENS_NON_STREAMING,
+            max_tokens: this.maxTokens,
             messages,
             model: this.model,
             ...(systemMessage && { system: systemMessage }),

@@ -248,14 +248,15 @@ div:last-child > .theia-ChatNode {
   color: var(--theia-disabledForeground);
   padding-top: 0;
   margin: 0;
-  display: flex;
 }
 
-.theia-ChatInput-ChangeSet-Header-Actions button {
+.theia-ChatInput-ChangeSet-Header-Actions .theia-button {
+  height: 100%;
+  box-sizing: border-box;
   font-size: 12px;
   padding: 2px 4px;
   min-width: 40px;
-  margin-left: 6px;
+  margin: 0;
 }
 
 .theia-ChatInput-ChangeSet-List ul {
@@ -339,6 +340,17 @@ div:last-child > .theia-ChatNode {
   text-overflow: ellipsis;
 }
 
+.theia-ChatInput-ChangeSet-Header-Actions {
+  display: flex;
+  flex: none;
+  flex-flow: row nowrap;
+  gap: var(--theia-ui-padding);
+}
+
+.theia-changeSet-Action {
+  flex: none;
+}
+
 .theia-ChatInput-ChangeSet-Header-Actions,
 .theia-ChatInput-ChangeSet-Box h3,
 .theia-ChatInput-ChangeSet-additionalInfo {
@@ -393,6 +405,10 @@ div:last-child > .theia-ChatNode {
   border-color: var(--theia-focusBorder);
 }
 
+.theia-ChatInput-Editor-Box .monaco-editor {
+  outline-color: var(--theia-editor-background);
+}
+
 .theia-ChatInput-Editor {
   width: 100%;
   height: auto;
@@ -437,7 +453,7 @@ div:last-child > .theia-ChatNode {
 .theia-ChatInputOptions {
   width: 100%;
   height: 25px;
-  padding-left: 6px;
+  padding-left: 3px;
   padding-right: 6px;
   display: flex;
   justify-content: space-between;
@@ -449,7 +465,7 @@ div:last-child > .theia-ChatNode {
 }
 
 .theia-ChatInputOptions .theia-ChatInputOptions-right {
-  margin-right: 12px;
+  margin-right: 8px;
 }
 
 .theia-ChatInputOptions .option {
@@ -481,7 +497,7 @@ div:last-child > .theia-ChatNode {
 }
 
 .theia-ChatInputOptions .reverse {
-    flex-direction: row-reverse;
+  flex-direction: row-reverse;
 }
 
 .theia-CodePartRenderer-root {
@@ -490,6 +506,10 @@ div:last-child > .theia-ChatNode {
   gap: 2px;
   border: var(--theia-border-width) solid var(--theia-input-border);
   border-radius: 4px;
+}
+
+.theia-CodePartRenderer-root .monaco-editor {
+  outline-color: var(--theia-editor-background);
 }
 
 .theia-CodePartRenderer-left {
