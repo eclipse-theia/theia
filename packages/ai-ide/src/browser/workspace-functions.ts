@@ -392,7 +392,7 @@ export class FileDiagonsticProvider implements ToolProvider {
                 await open(this.openerService, uri);
                 // Give some time to fetch problems in a newly opened editor.
                 await new Promise<void>(res => {
-                    setTimeout(() => res, 5000);
+                    setTimeout(res, 5000);
                     // Give another moment for additional markers to come in from different sources.
                     const listener = this.problemManager.onDidChangeMarkers(changed => changed.isEqual(uri) && setTimeout(res, 500));
                     toDispose.push(listener);
