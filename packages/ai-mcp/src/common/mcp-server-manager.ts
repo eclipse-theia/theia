@@ -15,21 +15,56 @@
 // *****************************************************************************
 
 import type { Client } from '@modelcontextprotocol/sdk/client/index';
+import { Event } from '@theia/core/lib/common/event';
+
+export const MCPFrontendService = Symbol('MCPFrontendService');
+export interface MCPFrontendService {
+    startServer(serverName: string): Promise<void>;
+    registerToolsForAllStartedServers(): Promise<void>;
+    stopServer(serverName: string): Promise<void>;
+    getStartedServers(): Promise<string[]>;
+    getServerNames(): Promise<string[]>;
+    getServerDescription(name: string): Promise<MCPServerDescription | undefined>;
+    getTools(serverName: string): Promise<ReturnType<MCPServer['getTools']> | undefined>;
+    getPromptTemplateId(serverName: string): string;
+}
+
+export const MCPFrontendNotificationService = Symbol('MCPFrontendNotificationService');
+export interface MCPFrontendNotificationService {
+    readonly onDidUpdateMCPServers: Event<void>;
+    didUpdateMCPServers(): void;
+}
 
 export interface MCPServer {
     callTool(toolName: string, arg_string: string): ReturnType<Client['callTool']>;
     getTools(): ReturnType<Client['listTools']>;
+    description: MCPServerDescription;
 }
 
 export interface MCPServerManager {
     callTool(serverName: string, toolName: string, arg_string: string): ReturnType<MCPServer['callTool']>;
     removeServer(name: string): void;
     addOrUpdateServer(description: MCPServerDescription): void;
-    getTools(serverName: string): ReturnType<MCPServer['getTools']>
+    getTools(serverName: string): ReturnType<MCPServer['getTools']>;
     getServerNames(): Promise<string[]>;
+    getServerDescription(name: string): Promise<MCPServerDescription | undefined>;
     startServer(serverName: string): Promise<void>;
     stopServer(serverName: string): Promise<void>;
-    getStartedServers(): Promise<string[]>;
+    getRunningServers(): Promise<string[]>;
+    setClient(client: MCPFrontendNotificationService): void;
+    disconnectClient(client: MCPFrontendNotificationService): void;
+}
+
+export interface ToolInformation {
+    name: string;
+    description?: string;
+}
+
+export enum MCPServerStatus {
+    NotRunning = 'Not Running',
+    Starting = 'Starting',
+    Running = 'Running',
+    Errored = 'Errored'
 }
 
 export interface MCPServerDescription {
@@ -57,6 +92,21 @@ export interface MCPServerDescription {
      * Flag indicating whether the server should automatically start when the application starts.
      */
     autostart?: boolean;
+
+    /**
+     * The current status of the server. Optional because only set by the server.
+     */
+    status?: MCPServerStatus;
+
+    /**
+     * Last error message that the server has returned.
+     */
+    error?: string;
+
+    /**
+     * List of available tools for the server. Returns the name and description if available.
+     */
+    tools?: ToolInformation[];
 }
 
 export const MCPServerManager = Symbol('MCPServerManager');
