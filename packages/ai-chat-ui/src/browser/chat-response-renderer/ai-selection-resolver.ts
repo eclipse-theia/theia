@@ -16,7 +16,7 @@
 
 import { CancellationToken, RecursivePartial, URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { EditorOpenerOptions, EditorWidget, Range } from '@theia/editor/lib/browser';
+import { EditorWidget, Range } from '@theia/editor/lib/browser';
 
 import { EditorSelectionResolver } from '@theia/editor/lib/browser/editor-manager';
 import { DocumentSymbol } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
@@ -33,7 +33,7 @@ export const LOCATION_REGEX = /#L(\d+)?(?:C(\d+))?(?:-L(\d+)?(?:C(\d+))?)?$/;
 export class GitHubSelectionResolver implements EditorSelectionResolver {
     priority = 100;
 
-    async resolveSelection(widget: EditorWidget, options: EditorOpenerOptions, uri?: URI): Promise<RecursivePartial<Range> | undefined> {
+    async resolveSelection(widget: EditorWidget, selection?: RecursivePartial<Range>, uri?: URI): Promise<RecursivePartial<Range> | undefined> {
         if (!uri) {
             return;
         }
@@ -63,7 +63,7 @@ export class TypeDocSymbolSelectionResolver implements EditorSelectionResolver {
 
     @inject(MonacoToProtocolConverter) protected readonly m2p: MonacoToProtocolConverter;
 
-    async resolveSelection(widget: EditorWidget, options: EditorOpenerOptions, uri?: URI): Promise<RecursivePartial<Range> | undefined> {
+    async resolveSelection(widget: EditorWidget, selection?: RecursivePartial<Range>, uri?: URI): Promise<RecursivePartial<Range> | undefined> {
         if (!uri) {
             return;
         }
@@ -115,7 +115,7 @@ export class TypeDocSymbolSelectionResolver implements EditorSelectionResolver {
 
 @injectable()
 export class TextFragmentSelectionResolver implements EditorSelectionResolver {
-    async resolveSelection(widget: EditorWidget, options: EditorOpenerOptions, uri?: URI): Promise<RecursivePartial<Range> | undefined> {
+    async resolveSelection(widget: EditorWidget, selection?: RecursivePartial<Range>, uri?: URI): Promise<RecursivePartial<Range> | undefined> {
         if (!uri) {
             return;
         }

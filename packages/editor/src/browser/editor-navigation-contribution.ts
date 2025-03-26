@@ -245,25 +245,25 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
                 editor.onSelectionChanged(selection => this.onSelectionChanged(editor, selection)),
                 editor.onDocumentContentChanged(event => this.onDocumentContentChanged(editor, event))
             ]);
-            this.locationStack.register(NavigationLocation.create(editor, editor.selection));
+            this.locationStack.navigate(service => service.register(NavigationLocation.create(editor, editor.selection)));
         }
     }
 
     protected onCursorPositionChanged(editor: TextEditor, position: Position): void {
-        this.locationStack.register(NavigationLocation.create(editor, position));
+        this.locationStack.navigate(service => service.register(NavigationLocation.create(editor, position)));
     }
 
     protected onSelectionChanged(editor: TextEditor, selection: Range): void {
         if (this.isZeroLengthRange(selection)) {
             this.onCursorPositionChanged(editor, selection.start);
         } else {
-            this.locationStack.register(NavigationLocation.create(editor, selection));
+            this.locationStack.navigate(service => service.register(NavigationLocation.create(editor, selection)));
         }
     }
 
     protected onDocumentContentChanged(editor: TextEditor, event: TextDocumentChangeEvent): void {
         if (event.contentChanges.length > 0) {
-            this.locationStack.register(NavigationLocation.create(editor, event.contentChanges[0]));
+            this.locationStack.navigate(service => service.register(NavigationLocation.create(editor, event.contentChanges[0])));
         }
     }
 

@@ -90,10 +90,10 @@ export abstract class WidgetOpenHandler<W extends BaseWidget> implements OpenHan
      */
     async open(uri: URI, options?: WidgetOpenerOptions): Promise<W> {
         const widget = await this.getOrCreateWidget(uri, options);
-        await this.doOpen(widget, options);
+        await this.doOpen(widget, uri, options);
         return widget;
     }
-    protected async doOpen(widget: W, options?: WidgetOpenerOptions): Promise<void> {
+    protected async doOpen(widget: W, uri?: URI, options?: WidgetOpenerOptions): Promise<void> {
         const op: WidgetOpenerOptions = {
             mode: 'activate',
             ...options
