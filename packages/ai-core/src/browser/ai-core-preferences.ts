@@ -87,7 +87,7 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
                             },
                             providerId: {
                                 type: 'string',
-                                description: 'The (optional) provider id to apply the settings to. If not set, the settings will be applied to all providers.',
+                                description: 'The (optional) provider id to apply the settings to.',
                             }, agentId: {
                                 type: 'string',
                                 description: 'The (optional) agent id to apply the settings to.',
@@ -106,11 +106,13 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
                         properties: {
                             keepToolCalls: {
                                 type: 'boolean',
-                                default: false
+                                default: true,
+                                description: 'If set to true, all tool request and tool responses will be send back to the llm during the next request in the same session.'
                             },
                             keepThinking: {
                                 type: 'boolean',
-                                default: false
+                                default: true,
+                                description: 'If set to true, all thinking output will be send back to the llm during the next request in the same session.'
                             }
                         }
                     },

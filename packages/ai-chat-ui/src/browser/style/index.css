@@ -574,7 +574,7 @@ div:last-child > .theia-ChatNode {
   background-color: var(--theia-button-secondaryBackground);
 }
 
-.theia-toolCall {
+.theia-toolCall, .theia-thinking {
   font-weight: normal;
   color: var(--theia-descriptionForeground);
   line-height: 20px;
@@ -584,11 +584,14 @@ div:last-child > .theia-ChatNode {
 }
 
 .theia-toolCall .fa,
-.theia-toolCall details summary::marker {
+.theia-toolCall details summary::marker,
+.theia-thinking .fa,
+.theia-thinking details summary::marker {
   color: var(--theia-button-background);
 }
 
-.theia-toolCall details pre {
+.theia-toolCall details pre,
+.theia-thinking details pre {
   cursor: text;
   line-height: 1rem;
   margin-top: 0;

@@ -33,18 +33,8 @@ export class FrontendLanguageModelServiceImpl extends LanguageModelServiceImpl {
     ): Promise<LanguageModelResponse> {
         const requestSettings = this.preferenceService.get<RequestSetting[]>(PREFERENCE_NAME_REQUEST_SETTINGS, []);
 
-        // Find the most specific matching setting using Prioritizeable
         const ids = languageModel.id.split('/');
-        const prioritizedSettings = Prioritizeable.prioritizeAllSync(requestSettings,
-            setting => getRequestSettingSpecificity(setting, {
-                modelId: ids[1],
-                providerId: ids[0],
-                agentId: languageModelRequest.agentId
-            }));
-
-        // Get the highest priority setting if any valid ones exist
-        const matchingSetting = prioritizedSettings.length > 0 ? prioritizedSettings[0].value : undefined;
-
+        const matchingSetting = mergeRequestSettings(requestSettings, ids[1], ids[0], languageModelRequest.agentId);
         if (matchingSetting?.requestSettings) {
             // Merge the settings, with user request taking precedence
             languageModelRequest.settings = {
@@ -63,3 +53,16 @@ export class FrontendLanguageModelServiceImpl extends LanguageModelServiceImpl {
         return super.sendRequest(languageModel, languageModelRequest);
     }
 }
+
+export const mergeRequestSettings = (requestSettings: RequestSetting[], modelId: string, providerId: string, agentId: string): RequestSetting => {
+    // Sort using Prioritizeable
+    const prioritizedSettings = Prioritizeable.prioritizeAllSync(requestSettings,
+        setting => getRequestSettingSpecificity(setting, {
+            modelId,
+            providerId,
+            agentId
+        }));
+    // merge all settings from lowest to highest, identical priorities will be overwritten by the following
+    const matchingSetting = prioritizedSettings.reduceRight((acc, cur) => ({ ...acc, ...cur.value }), {} as RequestSetting);
+    return matchingSetting;
+};

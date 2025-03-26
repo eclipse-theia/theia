@@ -61,7 +61,7 @@ export class OllamaModel implements LanguageModel {
             model: this.model,
             ...this.DEFAULT_REQUEST_SETTINGS,
             ...settings,
-            messages: request.messages.map(this.toOllamaMessage),
+            messages: request.messages.map(this.toOllamaMessage).filter(m => m !== undefined) as Message[],
             tools: request.tools?.map(this.toOllamaTool)
         };
         const structured = request.response_format?.type === 'json_schema';
@@ -241,17 +241,21 @@ export class OllamaModel implements LanguageModel {
         return '';
     };
 
-    protected toOllamaMessage(message: LanguageModelMessage): Message {
+    protected toOllamaMessage(message: LanguageModelMessage): Message | undefined {
+        const content = this.createMessageContent(message);
+        if (content === undefined) {
+            return undefined;
+        }
         if (message.actor === 'ai') {
-            return { role: 'assistant', content: this.createMessageContent(message) };
+            return { role: 'assistant', content };
         }
         if (message.actor === 'user') {
-            return { role: 'user', content: this.createMessageContent(message) };
+            return { role: 'user', content };
         }
         if (message.actor === 'system') {
-            return { role: 'system', content: this.createMessageContent(message) };
+            return { role: 'system', content };
         }
-        return { role: 'system', content: '' };
+        return undefined;
     }
 }
 

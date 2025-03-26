@@ -17,11 +17,11 @@
 import { LanguageModel, LanguageModelMessage, LanguageModelRequest, LanguageModelResponse, LanguageModelStreamResponsePart } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 
-const createMessageContent = (message: LanguageModelMessage): string => {
+const createMessageContent = (message: LanguageModelMessage): string | undefined => {
     if (LanguageModelMessage.isTextMessage(message)) {
         return message.text;
     }
-    return '';
+    return undefined;
 };
 
 export class LlamafileLanguageModel implements LanguageModel {
@@ -57,15 +57,19 @@ export class LlamafileLanguageModel implements LanguageModel {
         const settings = this.getSettings(request);
         try {
             let prompt = request.messages.map(message => {
+                const content = createMessageContent(message);
+                if (content === undefined) {
+                    return undefined;
+                }
                 switch (message.actor) {
                     case 'user':
-                        return `User: ${createMessageContent(message)}`;
+                        return `User: ${content}`;
                     case 'ai':
-                        return `Llama: ${createMessageContent(message)}`;
+                        return `Llama: ${content}`;
                     case 'system':
-                        return `${createMessageContent(message).replace(/\n\n/g, '\n')}`;
+                        return `${content.replace(/\n\n/g, '\n')}`;
                 }
-            }).join('\n');
+            }).filter(m => m !== undefined).join('\n');
             prompt += '\nLlama:';
             const response = await fetch(`http://localhost:${this.port}/completion`, {
                 method: 'POST',
