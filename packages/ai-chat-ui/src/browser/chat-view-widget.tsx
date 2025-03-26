@@ -33,7 +33,7 @@ export namespace ChatViewWidget {
 export class ChatViewWidget extends BaseWidget implements ExtractableWidget, StatefulWidget {
 
     public static ID = 'chat-view-widget';
-    static LABEL = `${nls.localizeByDefault('Chat')}`;
+    static LABEL = nls.localize('theia/ai/chat/view/label', 'AI Chat');
 
     @inject(ChatService)
     protected chatService: ChatService;

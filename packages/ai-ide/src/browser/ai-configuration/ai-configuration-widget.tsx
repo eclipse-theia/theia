@@ -28,7 +28,7 @@ import { AIMCPConfigurationWidget } from './mcp-configuration-widget';
 export class AIConfigurationContainerWidget extends BaseWidget {
 
     static readonly ID = 'ai-configuration';
-    static readonly LABEL = nls.localize('theia/ai/core/aiConfiguration/label', '✨ AI Configuration [Alpha]');
+    static readonly LABEL = nls.localize('theia/ai/core/aiConfiguration/label', 'AI Configuration [Alpha]');
     protected dockpanel: DockPanel;
 
     @inject(TheiaDockPanel.Factory)
