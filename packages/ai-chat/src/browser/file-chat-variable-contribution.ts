@@ -87,7 +87,7 @@ export class FileChatVariableContribution implements FrontendVariableContributio
         const typedWord = lineContent.substring(triggerCharIndex + 1, position.column - 1);
         const range = new monaco.Range(position.lineNumber, triggerCharIndex + 2, position.lineNumber, position.column);
         const picks = await this.quickFileSelectService.getPicks(typedWord, CancellationToken.None);
-        const matchVariableChar = lineContent[triggerCharIndex] === matchString ? matchString : PromptText.VARIABLE_CHAR;
+        const matchVariableChar = lineContent[triggerCharIndex] === (matchString ? matchString : PromptText.VARIABLE_CHAR);
         const prefix = matchVariableChar ? FILE_VARIABLE.name + PromptText.VARIABLE_SEPARATOR_CHAR : '';
 
         return Promise.all(
