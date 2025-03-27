@@ -63,7 +63,8 @@ import { ILanguageConfigurationService } from '@theia/monaco-editor-core/esm/vs/
 import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures';
 import * as objects from '@theia/monaco-editor-core/esm/vs/base/common/objects';
 import { Selection } from '@theia/editor/lib/browser/editor';
-import { IHoverService } from '@theia/monaco-editor-core/esm/vs/platform/hover/browser/hover';
+import { IHoverService, WorkbenchHoverDelegate } from '@theia/monaco-editor-core/esm/vs/platform/hover/browser/hover';
+import { setHoverDelegateFactory } from '@theia/monaco-editor-core/esm/vs/base/browser/ui/hover/hoverDelegateFactory';
 import { MonacoTextModelService } from './monaco-text-model-service';
 
 export type ServicePair<T> = [ServiceIdentifier<T>, T];
@@ -155,6 +156,11 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
             ...MonacoEditor.createReadOnlyOptions(document.readOnly),
             ...options
         }, override));
+        // Ensure that a valid InstantiationService is responsible for creating hover delegates when the InstantiationService for this widget is disposed.
+        // Cf. https://github.com/eclipse-theia/theia/issues/15102
+        this.toDispose.push(Disposable.create(() => setHoverDelegateFactory((placement, enableInstantHover) =>
+            StandaloneServices.get(IInstantiationService).createInstance(WorkbenchHoverDelegate, placement, enableInstantHover, {})
+        )));
         this.addHandlers(this.editor);
     }
 
