@@ -26,10 +26,6 @@ export interface OllamaModelDescription {
      * The name or ID of the model in the Ollama environment.
      */
     model: string;
-    /**
-     * Default request settings for the Ollama model.
-     */
-    defaultRequestSettings?: { [key: string]: unknown };
 }
 
 export interface OllamaLanguageModelsManager {

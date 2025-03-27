@@ -17,7 +17,7 @@
 import {
     LanguageModel,
     LanguageModelRequest,
-    LanguageModelRequestMessage,
+    LanguageModelMessage,
     LanguageModelResponse,
     LanguageModelStreamResponse,
     LanguageModelStreamResponsePart,
@@ -25,7 +25,7 @@ import {
 } from '@theia/ai-core';
 import { CancellationToken, isArray } from '@theia/core';
 import { Anthropic } from '@anthropic-ai/sdk';
-import { MessageParam } from '@anthropic-ai/sdk/resources';
+import { Message, MessageParam } from '@anthropic-ai/sdk/resources';
 
 export const DEFAULT_MAX_TOKENS = 4096;
 
@@ -36,23 +36,36 @@ interface ToolCallback {
     args: string;
 }
 
+const createMessageContent = (message: LanguageModelMessage): MessageParam['content'] => {
+    if (LanguageModelMessage.isTextMessage(message)) {
+        return message.text;
+    } else if (LanguageModelMessage.isThinkingMessage(message)) {
+        return [{ signature: message.signature, thinking: message.thinking, type: 'thinking' }];
+    } else if (LanguageModelMessage.isToolUseMessage(message)) {
+        return [{ id: message.id, input: message.input, name: message.name, type: 'tool_use' }];
+    } else if (LanguageModelMessage.isToolResultMessage(message)) {
+        return [{ type: 'tool_result', tool_use_id: message.tool_use_id }];
+    }
+    throw new Error(`Unknown message type:'${JSON.stringify(message)}'`);
+};
+
 /**
  * Transforms Theia language model messages to Anthropic API format
  * @param messages Array of LanguageModelRequestMessage to transform
  * @returns Object containing transformed messages and optional system message
  */
 function transformToAnthropicParams(
-    messages: readonly LanguageModelRequestMessage[]
+    messages: readonly LanguageModelMessage[]
 ): { messages: MessageParam[]; systemMessage?: string } {
     // Extract the system message (if any), as it is a separate parameter in the Anthropic API.
     const systemMessageObj = messages.find(message => message.actor === 'system');
-    const systemMessage = systemMessageObj?.query;
+    const systemMessage = systemMessageObj && LanguageModelMessage.isTextMessage(systemMessageObj) && systemMessageObj.text || undefined;
 
     const convertedMessages = messages
         .filter(message => message.actor !== 'system')
         .map(message => ({
             role: toAnthropicRole(message),
-            content: message.query || '',
+            content: createMessageContent(message)
         }));
 
     return {
@@ -68,7 +81,7 @@ export const AnthropicModelIdentifier = Symbol('AnthropicModelIdentifier');
  * @param message The message to convert
  * @returns Anthropic role ('user' or 'assistant')
  */
-function toAnthropicRole(message: LanguageModelRequestMessage): 'user' | 'assistant' {
+function toAnthropicRole(message: LanguageModelMessage): 'user' | 'assistant' {
     switch (message.actor) {
         case 'ai':
             return 'assistant';
@@ -87,12 +100,11 @@ export class AnthropicModel implements LanguageModel {
         public model: string,
         public enableStreaming: boolean,
         public apiKey: () => string | undefined,
-        public defaultRequestSettings?: Readonly<Record<string, unknown>>,
         public maxTokens: number = DEFAULT_MAX_TOKENS
     ) { }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
-        return request.settings ?? this.defaultRequestSettings ?? {};
+        return request.settings ?? {};
     }
 
     async request(request: LanguageModelRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
@@ -143,11 +155,11 @@ export class AnthropicModel implements LanguageModel {
             max_tokens: this.maxTokens,
             messages: [...messages, ...(toolMessages ?? [])],
             tools,
+            tool_choice: { type: 'auto' },
             model: this.model,
             ...(systemMessage && { system: systemMessage }),
             ...settings
         };
-
         const stream = anthropic.messages.stream(params);
 
         cancellationToken?.onCancellationRequested(() => {
@@ -160,11 +172,15 @@ export class AnthropicModel implements LanguageModel {
 
                 const toolCalls: ToolCallback[] = [];
                 let toolCall: ToolCallback | undefined;
+                const currentMessages: Message[] = [];
 
                 for await (const event of stream) {
                     if (event.type === 'content_block_start') {
                         const contentBlock = event.content_block;
 
+                        if (contentBlock.type === 'thinking') {
+                            yield { thought: contentBlock.thinking, signature: contentBlock.signature ?? '' };
+                        }
                         if (contentBlock.type === 'text') {
                             yield { content: contentBlock.text };
                         }
@@ -174,7 +190,12 @@ export class AnthropicModel implements LanguageModel {
                         }
                     } else if (event.type === 'content_block_delta') {
                         const delta = event.delta;
-
+                        if (delta.type === 'thinking_delta') {
+                            yield { thought: delta.thinking, signature: '' };
+                        }
+                        if (delta.type === 'signature_delta') {
+                            yield { thought: '', signature: delta.signature };
+                        }
                         if (delta.type === 'text_delta') {
                             yield { content: delta.text };
                         }
@@ -194,6 +215,8 @@ export class AnthropicModel implements LanguageModel {
                             }
                             throw new Error(`The response was stopped because it exceeded the max token limit of ${event.usage.output_tokens}.`);
                         }
+                    } else if (event.type === 'message_start') {
+                        currentMessages.push(event.message);
                     }
                 }
                 if (toolCalls.length > 0) {
@@ -211,17 +234,6 @@ export class AnthropicModel implements LanguageModel {
                     });
                     yield { tool_calls: calls };
 
-                    const toolRequestMessage: Anthropic.Messages.MessageParam = {
-                        role: 'assistant',
-                        content: toolResult.map(call => ({
-
-                            type: 'tool_use',
-                            id: call.id,
-                            name: call.name,
-                            input: JSON.parse(call.arguments)
-                        }))
-                    };
-
                     const toolResponseMessage: Anthropic.Messages.MessageParam = {
                         role: 'user',
                         content: toolResult.map(call => ({
@@ -230,7 +242,15 @@ export class AnthropicModel implements LanguageModel {
                             content: that.formatToolCallResult(call.result)
                         }))
                     };
-                    const result = await that.handleStreamingRequest(anthropic, request, cancellationToken, [...(toolMessages ?? []), toolRequestMessage, toolResponseMessage]);
+                    const result = await that.handleStreamingRequest(
+                        anthropic,
+                        request,
+                        cancellationToken,
+                        [
+                            ...(toolMessages ?? []),
+                            ...currentMessages.map(m => ({ role: m.role, content: m.content })),
+                            toolResponseMessage
+                        ]);
                     for await (const nestedEvent of result.stream) {
                         yield nestedEvent;
                     }

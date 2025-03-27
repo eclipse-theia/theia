@@ -38,4 +38,5 @@ export class ArchitectAgent extends AbstractStreamParsingChatAgent {
     override promptTemplates = [architectPromptTemplate];
     override functions = [GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID];
     protected override systemPromptId: string | undefined = architectPromptTemplate.id;
+
 }

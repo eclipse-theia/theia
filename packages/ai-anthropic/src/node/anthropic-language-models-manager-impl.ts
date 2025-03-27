@@ -52,7 +52,6 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                 model.model = modelDescription.model;
                 model.enableStreaming = modelDescription.enableStreaming;
                 model.apiKey = apiKeyProvider;
-                model.defaultRequestSettings = modelDescription.defaultRequestSettings;
                 if (modelDescription.maxTokens !== undefined) {
                     model.maxTokens = modelDescription.maxTokens;
                 } else {
@@ -65,7 +64,6 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                         modelDescription.model,
                         modelDescription.enableStreaming,
                         apiKeyProvider,
-                        modelDescription.defaultRequestSettings,
                         modelDescription.maxTokens
                     )
                 ]);

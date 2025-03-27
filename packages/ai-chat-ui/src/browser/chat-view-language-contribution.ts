@@ -25,6 +25,7 @@ import { ProviderResult } from '@theia/monaco-editor-core/esm/vs/editor/common/l
 import { ChatViewWidget } from './chat-view-widget';
 
 export const CHAT_VIEW_LANGUAGE_ID = 'theia-ai-chat-view-language';
+export const SETTINGS_LANGUAGE_ID = 'theia-ai-chat-settings-language';
 export const CHAT_VIEW_LANGUAGE_EXTENSION = 'aichatviewlanguage';
 
 const VARIABLE_RESOLUTION_CONTEXT = { context: 'chat-input-autocomplete' };
@@ -58,6 +59,7 @@ export class ChatViewLanguageContribution implements FrontendApplicationContribu
 
     onStart(_app: FrontendApplication): MaybePromise<void> {
         monaco.languages.register({ id: CHAT_VIEW_LANGUAGE_ID, extensions: [CHAT_VIEW_LANGUAGE_EXTENSION] });
+        monaco.languages.register({ id: SETTINGS_LANGUAGE_ID, extensions: ['json'], filenames: ['editor'] });
 
         this.registerCompletionProviders();
 

@@ -24,13 +24,19 @@ import {
     AIVariableContext,
     CommunicationRecordingService,
     getTextOfResponse,
+    isTextResponsePart,
+    isThinkingResponsePart,
+    isToolCallResponsePart,
     LanguageModel,
+    LanguageModelMessage,
     LanguageModelRequirement,
     LanguageModelResponse,
+    LanguageModelService,
     LanguageModelStreamResponse,
     PromptService,
     PromptTemplate,
     ResolvedPromptTemplate,
+    TextMessage,
     ToolCall,
     ToolRequest,
 } from '@theia/ai-core';
@@ -39,10 +45,9 @@ import {
     isLanguageModelStreamResponse,
     isLanguageModelTextResponse,
     LanguageModelRegistry,
-    LanguageModelStreamResponsePart,
-    MessageActor,
+    LanguageModelStreamResponsePart
 } from '@theia/ai-core/lib/common';
-import { CancellationToken, ContributionProvider, ILogger, isArray } from '@theia/core';
+import { ContributionProvider, ILogger, isArray } from '@theia/core';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { ChatAgentService } from './chat-agent-service';
 import {
@@ -52,24 +57,12 @@ import {
     ErrorChatResponseContentImpl,
     MarkdownChatResponseContentImpl,
     ToolCallChatResponseContentImpl,
-    ChatRequestModel
+    ChatRequestModel,
+    ThinkingChatResponseContentImpl
 } from './chat-model';
 import { findFirstMatch, parseContents } from './parse-contents';
 import { DefaultResponseContentFactory, ResponseContentMatcher, ResponseContentMatcherProvider } from './response-content-matcher';
-import { ChatHistoryEntry } from './chat-history-entry';
-import { ChatToolRequestService } from './chat-tool-request-service';
-
-/**
- * A conversation consists of a sequence of ChatMessages.
- * Each ChatMessage is either a user message, AI message or a system message.
- *
- * For now we only support text based messages.
- */
-export interface ChatMessage {
-    actor: MessageActor;
-    type: 'text';
-    query: string;
-}
+import { ChatToolRequest, ChatToolRequestService } from './chat-tool-request-service';
 
 /**
  * System message content, enriched with function descriptions.
@@ -138,8 +131,8 @@ export interface ChatAgent extends Agent {
 export abstract class AbstractChatAgent implements ChatAgent {
     @inject(LanguageModelRegistry) protected languageModelRegistry: LanguageModelRegistry;
     @inject(ILogger) protected logger: ILogger;
-    @inject(CommunicationRecordingService) protected recordingService: CommunicationRecordingService;
     @inject(ChatToolRequestService) protected chatToolRequestService: ChatToolRequestService;
+    @inject(LanguageModelService) protected languageModelService: LanguageModelService;
     @inject(PromptService) protected promptService: PromptService;
 
     @inject(ContributionProvider) @named(ResponseContentMatcherProvider)
@@ -147,6 +140,9 @@ export abstract class AbstractChatAgent implements ChatAgent {
 
     @inject(DefaultResponseContentFactory)
     protected defaultContentFactory: DefaultResponseContentFactory;
+
+    @inject(CommunicationRecordingService)
+    protected recordingService: CommunicationRecordingService;
 
     readonly abstract id: string;
     readonly abstract name: string;
@@ -160,7 +156,6 @@ export abstract class AbstractChatAgent implements ChatAgent {
     agentSpecificVariables: AgentSpecificVariables[] = [];
     functions: string[] = [];
     protected readonly abstract defaultLanguageModelPurpose: string;
-    protected defaultLogging: boolean = true;
     protected systemPromptId: string | undefined = undefined;
     protected additionalToolRequests: ToolRequest[] = [];
     protected contentMatchers: ResponseContentMatcher[] = [];
@@ -183,21 +178,12 @@ export abstract class AbstractChatAgent implements ChatAgent {
             }
             const systemMessageDescription = await this.getSystemMessageDescription({ model: request.session, request } satisfies ChatSessionContext);
             const messages = await this.getMessages(request.session);
-            if (this.defaultLogging) {
-                this.recordingService.recordRequest(
-                    ChatHistoryEntry.fromRequest(
-                        this.id, request, {
-                        messages,
-                        systemMessage: systemMessageDescription?.text
-                    })
-                );
-            }
 
             if (systemMessageDescription) {
-                const systemMsg: ChatMessage = {
+                const systemMsg: LanguageModelMessage = {
                     actor: 'system',
                     type: 'text',
-                    query: systemMessageDescription.text
+                    text: systemMessageDescription.text
                 };
                 // insert system message at the beginning of the request messages
                 messages.unshift(systemMsg);
@@ -209,18 +195,11 @@ export abstract class AbstractChatAgent implements ChatAgent {
                 ...this.chatToolRequestService.toChatToolRequests(systemMessageToolRequests ? Array.from(systemMessageToolRequests) : [], request),
                 ...this.chatToolRequestService.toChatToolRequests(this.additionalToolRequests, request)
             ];
+            const languageModelResponse = await this.sendLlmRequest(request, messages, tools, languageModel);
 
-            const languageModelResponse = await this.callLlm(
-                languageModel,
-                messages,
-                tools.length > 0 ? tools : undefined,
-                request.response.cancellationToken
-            );
             await this.addContentsToResponse(languageModelResponse, request);
             await this.onResponseComplete(request);
-            if (this.defaultLogging) {
-                this.recordingService.recordResponse(ChatHistoryEntry.fromResponse(this.id, request));
-            }
+
         } catch (e) {
             this.handleError(request, e);
         }
@@ -266,21 +245,28 @@ export abstract class AbstractChatAgent implements ChatAgent {
 
     protected async getMessages(
         model: ChatModel, includeResponseInProgress = false
-    ): Promise<ChatMessage[]> {
+    ): Promise<LanguageModelMessage[]> {
         const requestMessages = model.getRequests().flatMap(request => {
-            const messages: ChatMessage[] = [];
+            const messages: LanguageModelMessage[] = [];
             const text = request.message.parts.map(part => part.promptText).join('');
             messages.push({
                 actor: 'user',
                 type: 'text',
-                query: text,
+                text: text,
             });
             if (request.response.isComplete || includeResponseInProgress) {
-                messages.push({
-                    actor: 'ai',
-                    type: 'text',
-                    query: request.response.response.asString(),
+                const responseMessages: LanguageModelMessage[] = request.response.response.content.flatMap(c => {
+                    if (ChatResponseContent.hasToLanguageModelMessage(c)) {
+                        return c.toLanguageModelMessage();
+                    }
+
+                    return {
+                        actor: 'ai',
+                        type: 'text',
+                        text: c.asString?.() ?? c.asDisplayString?.() ?? '',
+                    } as TextMessage;
                 });
+                messages.push(...responseMessages);
             }
             return messages;
         });
@@ -288,19 +274,33 @@ export abstract class AbstractChatAgent implements ChatAgent {
         return requestMessages;
     }
 
-    protected async callLlm(
-        languageModel: LanguageModel,
-        messages: ChatMessage[],
-        tools: ToolRequest[] | undefined,
-        token: CancellationToken
+    protected async sendLlmRequest(
+        request: MutableChatRequestModel,
+        messages: LanguageModelMessage[],
+        toolRequests: ChatToolRequest[],
+        languageModel: LanguageModel
     ): Promise<LanguageModelResponse> {
-        const settings = this.getLlmSettings();
-        const languageModelResponse = languageModel.request({
-            messages,
-            tools,
-            settings,
-        }, token);
-        return languageModelResponse;
+        const agentSettings = this.getLlmSettings();
+        const settings = { ...agentSettings, ...request.session.settings };
+        const tools = toolRequests.length > 0 ? toolRequests : undefined;
+        this.recordingService.recordRequest({
+            agentId: this.id,
+            sessionId: request.session.id,
+            requestId: request.id,
+            request: messages
+        });
+        return this.languageModelService.sendRequest(
+            languageModel,
+            {
+                messages,
+                tools,
+                settings,
+                agentId: this.id,
+                sessionId: request.session.id,
+                requestId: request.id,
+                cancellationToken: request.response.cancellationToken
+            }
+        );
     }
 
     /**
@@ -317,6 +317,15 @@ export abstract class AbstractChatAgent implements ChatAgent {
      * Subclasses may override this method to perform additional actions or keep the response open for processing further requests.
      */
     protected async onResponseComplete(request: MutableChatRequestModel): Promise<void> {
+        this.recordingService.recordResponse(
+            {
+                agentId: this.id,
+                sessionId: request.session.id,
+                requestId: request.id,
+                response: request.response.response.content.flatMap(c =>
+                    c.toLanguageModelMessage?.() ?? ({ type: 'text', actor: 'ai', text: c.asDisplayString?.() ?? c.asString?.() ?? JSON.stringify(c) }))
+            }
+        );
         return request.response.complete();
     }
 
@@ -407,17 +416,24 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
     }
 
     protected parse(token: LanguageModelStreamResponsePart, request: MutableChatRequestModel): ChatResponseContent | ChatResponseContent[] {
-        const content = token.content;
-        // eslint-disable-next-line no-null/no-null
-        if (content !== undefined && content !== null) {
-            return this.defaultContentFactory.create(content, request);
+        if (isTextResponsePart(token)) {
+            const content = token.content;
+            // eslint-disable-next-line no-null/no-null
+            if (content !== undefined && content !== null) {
+                return this.defaultContentFactory.create(content, request);
+            }
         }
-        const toolCalls = token.tool_calls;
-        if (toolCalls !== undefined) {
-            const toolCallContents = toolCalls.map(toolCall =>
-                this.createToolCallResponseContent(toolCall)
-            );
-            return toolCallContents;
+        if (isToolCallResponsePart(token)) {
+            const toolCalls = token.tool_calls;
+            if (toolCalls !== undefined) {
+                const toolCallContents = toolCalls.map(toolCall =>
+                    this.createToolCallResponseContent(toolCall)
+                );
+                return toolCallContents;
+            }
+        }
+        if (isThinkingResponsePart(token)) {
+            return new ThinkingChatResponseContentImpl(token.thought, token.signature);
         }
         return this.defaultContentFactory.create('', request);
     }
