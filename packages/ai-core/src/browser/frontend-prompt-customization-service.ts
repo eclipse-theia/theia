@@ -69,7 +69,7 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
     @inject(OpenerService)
     protected readonly openerService: OpenerService;
 
-    /** Stores URI strings of template files form dirctories currently being monitored for changes. */
+    /** Stores URI strings of template files from directories currently being monitored for changes. */
     protected trackedTemplateURIs = new Set<string>();
     /** Contains the currently active templates, mapped by template ID. */
     protected effectiveTemplates = new Map<string, TemplateEntry>();
