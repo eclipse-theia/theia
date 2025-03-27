@@ -270,7 +270,7 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
         await this.revealSelection(widget, uri, options);
     }
 
-    protected async revealSelection(widget: EditorWidget, uri?: URI, options?: EditorOpenerOptions): Promise<void> {
+    protected async revealSelection(widget: EditorWidget, uri: URI, options?: EditorOpenerOptions): Promise<void> {
         let inputSelection = options?.selection;
         if (!inputSelection) {
             inputSelection = await this.resolveSelection(widget, options ?? {}, uri);
