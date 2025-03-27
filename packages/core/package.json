@@ -59,7 +59,7 @@
     "markdown-it": "^12.3.2",
     "msgpackr": "^1.10.2",
     "p-debounce": "^2.1.0",
-    "perfect-scrollbar": "^1.5.5",
+    "perfect-scrollbar": "1.5.5",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-tooltip": "^4.2.21",
