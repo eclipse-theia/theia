@@ -59,7 +59,7 @@ export const WorkspacePreferencesSchema: PreferenceSchema = {
             description: nls.localize('theia/ai/promptTemplates/extensions/description',
                 'List of file extensions in workspace-specific locations that are considered as prompt templates. When templates with the same ID exist in multiple locations, \
                 conflicts are resolved by priority: specific template files (highest) > workspace directories > global directories (lowest).'),
-            default: ['.prompttemplates'],
+            default: ['.prompttemplate'],
             items: {
                 type: 'string'
             }
