@@ -147,7 +147,7 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
         content: string,
         priority: number,
         sourceUri: string,
-        loadedTemplates: Map<string, TemplateEntry> = this.allLoadedTemplates
+        loadedTemplates: Map<string, TemplateEntry>
     ): void {
         // Always add to loadedTemplates to keep track of all templates including overridden ones
         if (sourceUri) {
@@ -188,7 +188,7 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
      */
     protected removeTemplateBySourceUri(
         sourceUri: string,
-        loadedTemplates: Map<string, TemplateEntry> = this.allLoadedTemplates
+        loadedTemplates: Map<string, TemplateEntry>
     ): void {
         // Get the template entry from loadedTemplates
         const removedTemplate = loadedTemplates.get(sourceUri);
@@ -250,7 +250,7 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
                 const fileInfo = this.watchedFiles.get(fileUriString);
 
                 if (fileInfo) {
-                    this.removeTemplateBySourceUri(fileUriString, this.allLoadedTemplates);
+                    this.removeTemplateBySourceUri(fileUriString, loadedTemplates);
                     this.trackedTemplateURIs.delete(fileUriString);
                     this.onDidChangePromptEmitter.fire(fileInfo.templateId);
                 }
@@ -269,7 +269,7 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
                         fileContent.value,
                         TemplatePriority.TEMPLATE_FILE,
                         fileUriString,
-                        this.allLoadedTemplates
+                        loadedTemplates
                     );
                     this.onDidChangePromptEmitter.fire(fileInfo.templateId);
                 }
@@ -288,7 +288,7 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
                         fileContent.value,
                         TemplatePriority.TEMPLATE_FILE,
                         fileUriString,
-                        this.allLoadedTemplates
+                        loadedTemplates
                     );
                     this.trackedTemplateURIs.add(fileUriString);
                     this.onDidChangePromptEmitter.fire(fileInfo.templateId);
@@ -325,7 +325,7 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
                 if (this.trackedTemplateURIs.has(deletedFile.resource.toString())) {
                     this.trackedTemplateURIs.delete(deletedFile.resource.toString());
                     const templateId = this.removePromptTemplateSuffix(deletedFile.resource.path.name);
-                    this.removeTemplateBySourceUri(deletedFile.resource.toString(), this.allLoadedTemplates);
+                    this.removeTemplateBySourceUri(deletedFile.resource.toString(), loadedTemplates);
                     this.onDidChangePromptEmitter.fire(templateId);
                 }
             }
@@ -335,7 +335,7 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
                 if (this.trackedTemplateURIs.has(updatedFile.resource.toString())) {
                     const fileContent = await this.fileService.read(updatedFile.resource);
                     const templateId = this.removePromptTemplateSuffix(updatedFile.resource.path.name);
-                    this.addTemplate(this.effectiveTemplates, templateId, fileContent.value, priority, updatedFile.resource.toString(), this.allLoadedTemplates);
+                    this.addTemplate(this.effectiveTemplates, templateId, fileContent.value, priority, updatedFile.resource.toString(), loadedTemplates);
                     this.onDidChangePromptEmitter.fire(templateId);
                 }
             }
@@ -347,7 +347,7 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
                     this.trackedTemplateURIs.add(addedFile.resource.toString());
                     const fileContent = await this.fileService.read(addedFile.resource);
                     const templateId = this.removePromptTemplateSuffix(addedFile.resource.path.name);
-                    this.addTemplate(this.effectiveTemplates, templateId, fileContent.value, priority, addedFile.resource.toString(), this.allLoadedTemplates);
+                    this.addTemplate(this.effectiveTemplates, templateId, fileContent.value, priority, addedFile.resource.toString(), loadedTemplates);
                     this.onDidChangePromptEmitter.fire(templateId);
                 }
             }
