@@ -333,7 +333,7 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
     protected scrollWithoutModelUpdate(node?: HTMLElement): void {
         if (!node) { return; }
         this.shouldUpdateModelSelection = false;
-        node.scrollIntoView();
+        this.scrollContainer.scrollTo(0, node.offsetTop);
         requestAnimationFrame(() => this.shouldUpdateModelSelection = true);
     }
 
