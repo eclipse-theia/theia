@@ -39,7 +39,7 @@ export interface EditorOpenerOptions extends WidgetOpenerOptions {
 export const EditorSelectionResolver = Symbol('EditorSelectionResolver');
 export interface EditorSelectionResolver {
     priority?: number;
-    resolveSelection(widget: EditorWidget, selection?: RecursivePartial<Range>, uri?: URI): Promise<RecursivePartial<Range> | undefined>;
+    resolveSelection(widget: EditorWidget, options: EditorOpenerOptions, uri?: URI): Promise<RecursivePartial<Range> | undefined>;
 }
 
 @injectable()
@@ -265,7 +265,7 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
         return this.open(uri, splitOptions);
     }
 
-    protected override async doOpen(widget: EditorWidget, uri?: URI, options?: EditorOpenerOptions): Promise<void> {
+    protected override async doOpen(widget: EditorWidget, uri: URI, options?: EditorOpenerOptions): Promise<void> {
         await super.doOpen(widget, uri, options);
         await this.revealSelection(widget, uri, options);
     }
@@ -309,7 +309,7 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
         }
         for (const resolver of this.selectionResolvers) {
             try {
-                const selection = await resolver.resolveSelection(widget, options.selection, uri);
+                const selection = await resolver.resolveSelection(widget, options, uri);
                 if (selection) {
                     return selection;
                 }
