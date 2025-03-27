@@ -14,7 +14,8 @@
   margin-left: var(--theia-ui-padding);
 }
 
-.theia-settings-container .settings-section-subcategory-title.ai-settings-section-subcategory-title {
+.theia-settings-container
+  .settings-section-subcategory-title.ai-settings-section-subcategory-title {
   padding-left: 0;
 }
 
@@ -308,4 +309,42 @@
   font-size: 12px;
   color: var(--theia-descriptionForeground);
   white-space: nowrap;
+}
+
+.theia-ResponseNode-Content .disable-message {
+  font-size: 12px;
+  line-height: 1.6;
+  padding: 15px;
+}
+
+.theia-WelcomeMessage {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+.theia-WelcomeMessage-Content {
+  text-align: center;
+  padding: 0 18px;
+  max-width: 350px;
+}
+
+.theia-WelcomeMessage-Content h1 {
+  margin-top: 0;
+}
+
+.theia-WelcomeMessage-Content p {
+  font-size: var(--theia-ui-font-size2);
+  line-height: 18px;
+}
+
+.theia-WelcomeMessage-Content p .codicon {
+  vertical-align: sub;
+}
+
+.theia-WelcomeMessage-Content em {
+  font-weight: bolder;
+  font-style: normal;
 }

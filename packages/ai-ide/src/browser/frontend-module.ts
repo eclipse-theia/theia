@@ -41,6 +41,8 @@ import { ContextFilesVariableContribution } from '../common/context-files-variab
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { AiConfigurationPreferences } from './ai-configuration/ai-configuration-preferences';
 import { AIMCPConfigurationWidget } from './ai-configuration/mcp-configuration-widget';
+import { ChatWelcomeMessageProvider } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
+import { IdeChatWelcomeMessageProvider } from './ide-chat-welcome-message-provider';
 
 export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: WorkspacePreferencesSchema });
@@ -67,6 +69,8 @@ export default new ContainerModule(bind => {
 
     bind(DefaultChatAgentId).toConstantValue({ id: OrchestratorChatAgentId });
     bind(FallbackChatAgentId).toConstantValue({ id: UniversalChatAgentId });
+
+    bind(ChatWelcomeMessageProvider).to(IdeChatWelcomeMessageProvider);
 
     bind(ToolProvider).to(GetWorkspaceFileList);
     bind(ToolProvider).to(FileContentFunction);
