@@ -114,7 +114,7 @@ export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: AiConfigurationPreferences });
 
     bind(FrontendApplicationContribution).to(TemplatePreferenceContribution);
-  
+
     bind(AIMCPConfigurationWidget).toSelf();
     bind(WidgetFactory)
         .toDynamicValue(ctx => ({

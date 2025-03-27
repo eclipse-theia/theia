@@ -19,7 +19,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { FrontendPromptCustomizationServiceImpl } from '@theia/ai-core/lib/browser/frontend-prompt-customization-service';
 import {
     PROMPT_TEMPLATE_WORKSPACE_DIRECTORIES_PREF,
-    PROMPT_TEMPLATE_WORKSPACE_EXTENSIONS_PREF,
+    PROMPT_TEMPLATE_ADDITIONAL_EXTENSIONS_PREF,
     PROMPT_TEMPLATE_WORKSPACE_FILES_PREF
 } from './workspace-preferences';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -49,7 +49,7 @@ export class TemplatePreferenceContribution implements FrontendApplicationContri
                 if (event.preferenceName === PROMPT_TEMPLATE_WORKSPACE_DIRECTORIES_PREF) {
                     this.updateTemplateDirectories();
                 }
-                if (event.preferenceName === PROMPT_TEMPLATE_WORKSPACE_EXTENSIONS_PREF) {
+                if (event.preferenceName === PROMPT_TEMPLATE_ADDITIONAL_EXTENSIONS_PREF) {
                     this.updateTemplateFileExtensions();
                 }
                 if (event.preferenceName === PROMPT_TEMPLATE_WORKSPACE_FILES_PREF) {
@@ -89,10 +89,10 @@ export class TemplatePreferenceContribution implements FrontendApplicationContri
 
     protected async updateTemplateFileExtensions(): Promise<void> {
         // Get the template file extensions from preferences
-        const extensions = this.preferenceService.get<string[]>(PROMPT_TEMPLATE_WORKSPACE_EXTENSIONS_PREF, ['.prompttemplate']);
+        const extensions = this.preferenceService.get<string[]>(PROMPT_TEMPLATE_ADDITIONAL_EXTENSIONS_PREF, []);
 
         // Update the template file extensions in the customization service
-        await this.customizationService.updateTemplateFileExtensions(extensions);
+        await this.customizationService.updateAdditionalTemplateFileExtensions(extensions);
     }
 
     protected async updateTemplateFiles(): Promise<void> {

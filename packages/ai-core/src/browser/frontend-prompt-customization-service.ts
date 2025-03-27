@@ -94,6 +94,9 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
 
     @postConstruct()
     protected init(): void {
+        // Ensure PROMPT_TEMPLATE_EXTENSION is always included in templateExtensions as a default
+        this.templateExtensions.add(PROMPT_TEMPLATE_EXTENSION);
+
         this.preferences.onPreferenceChanged(event => {
             if (event.preferenceName === PREFERENCE_NAME_PROMPT_TEMPLATES) {
                 this.update();
@@ -415,14 +418,17 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
     }
 
     /**
-     * Updates the list of file extensions considered as prompt templates.
+     * Updates the list of additional file extensions considered as prompt templates.
+     * PROMPT_TEMPLATE_EXTENSION is always valid by default
      * @param extensions Array of file extensions including the leading dot (e.g., '.prompttemplate')
      */
-    async updateTemplateFileExtensions(extensions: string[]): Promise<void> {
+    async updateAdditionalTemplateFileExtensions(extensions: string[]): Promise<void> {
         this.templateExtensions.clear();
         for (const ext of extensions) {
             this.templateExtensions.add(ext);
         }
+        // Always include the default PROMPT_TEMPLATE_EXTENSION
+        this.templateExtensions.add(PROMPT_TEMPLATE_EXTENSION);
         await this.update();
     }
 
@@ -464,10 +470,6 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
             if (filename.endsWith(ext)) {
                 return filename.slice(0, -ext.length);
             }
-        }
-        // If no matching extension found, try the default one
-        if (filename.endsWith(PROMPT_TEMPLATE_EXTENSION)) {
-            return filename.slice(0, -PROMPT_TEMPLATE_EXTENSION.length);
         }
         return filename;
     }

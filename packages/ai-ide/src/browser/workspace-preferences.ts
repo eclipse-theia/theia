@@ -20,7 +20,7 @@ import { PreferenceSchema } from '@theia/core/lib/browser/preferences/preference
 export const CONSIDER_GITIGNORE_PREF = 'ai-features.workspaceFunctions.considerGitIgnore';
 export const USER_EXCLUDE_PATTERN_PREF = 'ai-features.workspaceFunctions.userExcludes';
 export const PROMPT_TEMPLATE_WORKSPACE_DIRECTORIES_PREF = 'ai-features.promptTemplates.WorkspaceTemplateDirectories';
-export const PROMPT_TEMPLATE_WORKSPACE_EXTENSIONS_PREF = 'ai-features.promptTemplates.WorkspaceTemplateExtensions';
+export const PROMPT_TEMPLATE_ADDITIONAL_EXTENSIONS_PREF = 'ai-features.promptTemplates.AdditionalTemplateExtensions';
 export const PROMPT_TEMPLATE_WORKSPACE_FILES_PREF = 'ai-features.promptTemplates.WorkspaceTemplateFiles';
 
 export const WorkspacePreferencesSchema: PreferenceSchema = {
@@ -53,13 +53,13 @@ export const WorkspacePreferencesSchema: PreferenceSchema = {
                 type: 'string'
             }
         },
-        [PROMPT_TEMPLATE_WORKSPACE_EXTENSIONS_PREF]: {
+        [PROMPT_TEMPLATE_ADDITIONAL_EXTENSIONS_PREF]: {
             type: 'array',
-            title: nls.localize('theia/ai/promptTemplates/extensions/title', 'Workspace-specific Prompt Template File Extensions'),
+            title: nls.localize('theia/ai/promptTemplates/extensions/title', 'Additional Prompt Template File Extensions'),
             description: nls.localize('theia/ai/promptTemplates/extensions/description',
-                'List of file extensions in workspace-specific locations that are considered as prompt templates. When templates with the same ID exist in multiple locations, \
-                conflicts are resolved by priority: specific template files (highest) > workspace directories > global directories (lowest).'),
-            default: ['.prompttemplate'],
+                'List of additional file extensions in prompt locations that are considered as prompt templates. \'.prompttemplate\' is always considered as a default. \
+                When templates with the same ID exist in multiple locations, conflicts are resolved by priority: specific template files \
+                (highest) > workspace directories > global directories (lowest).'),
             items: {
                 type: 'string'
             }
