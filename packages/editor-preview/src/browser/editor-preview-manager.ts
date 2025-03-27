@@ -71,7 +71,7 @@ export class EditorPreviewManager extends EditorManager {
         document.addEventListener('dblclick', this.convertEditorOnDoubleClick.bind(this));
     }
 
-    protected override async doOpen(widget: EditorPreviewWidget, uri?: URI, options?: EditorOpenerOptions): Promise<void> {
+    protected override async doOpen(widget: EditorPreviewWidget, uri: URI, options?: EditorOpenerOptions): Promise<void> {
         const { preview, widgetOptions = { area: 'main' }, mode = 'activate' } = options ?? {};
         if (!widget.isAttached) {
             await this.shell.addWidget(widget, widgetOptions);
