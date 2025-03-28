@@ -66,10 +66,15 @@ export class IdeChatWelcomeMessageProvider implements ChatWelcomeMessageProvider
             <div className="theia-WelcomeMessage-Content">
                 <h1>Ask the Theia IDE AI</h1>
                 <p>
-                    Chat with agents specialized for specific tasks or questions, such as <em>@Coder</em> or <em>@Architect</em>.
+                    To talk to a specialized agent, simply start your message with <em>@</em> followed by the agent's name:{' '}
+                    <em>@Coder</em>, <em>@Architect</em>, <em>@Universal</em>, and more.
                 </p>
                 <p>
-                    Attach context: click <span className="codicon codicon-add" /> or use variables, like <em>#selectedText</em>, <em>#currentFileContent</em>, or <em>#file</em>.
+                    Attach context:  use variables, like <em>#file</em>, <em>#_f</em> (current file), <em>#selectedText</em>{' '}
+                    or click <span className="codicon codicon-add" />.
+                </p>
+                <p>
+                    Lean more in the <a target='_blank' href="https://theia-ide.org/docs/user_ai/#chat">documentation</a>.
                 </p>
             </div>
         </div>;
