@@ -748,8 +748,8 @@ export class MutableChatRequestModel implements ChatRequestModel {
         this._data[key] = value;
     }
 
-    getDataByKey(key: string): unknown {
-        return this._data[key];
+    getDataByKey<T = unknown>(key: string): T {
+        return this._data[key] as T;
     }
 
     get id(): string {
