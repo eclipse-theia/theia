@@ -574,7 +574,8 @@ div:last-child > .theia-ChatNode {
   background-color: var(--theia-button-secondaryBackground);
 }
 
-.theia-toolCall, .theia-thinking {
+.theia-toolCall,
+.theia-thinking {
   font-weight: normal;
   color: var(--theia-descriptionForeground);
   line-height: 20px;
@@ -670,12 +671,6 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
   margin: 20px 0px;
 }
 
-.disable-message {
-  font-size: 12px;
-  line-height: 1.6;
-  padding: 15px;
-}
-
 .section-content p {
   margin: 10px 0;
 }
@@ -689,17 +684,17 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
 }
 
 .session-settings-container {
-    margin-bottom: 10px;
-    height: calc(100% - 50px);
+  margin-bottom: 10px;
+  height: calc(100% - 50px);
 }
 .monaco-session-settings-dialog {
-    flex: 1;
-    min-height: 350px;
-    min-width: 500px;
-    height: 25vh;
-    width: 30vh;
-    border: 1px solid var(--theia-editorWidget-border);
-    margin-bottom: 10px;
+  flex: 1;
+  min-height: 350px;
+  min-width: 500px;
+  height: 25vh;
+  width: 30vh;
+  border: 1px solid var(--theia-editorWidget-border);
+  margin-bottom: 10px;
 }
 .session-settings-error {
   color: var(--theia-errorForeground);
