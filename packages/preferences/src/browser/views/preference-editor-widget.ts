@@ -242,7 +242,7 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
                 const { id, collection } = this.analyzeIDAndGetRendererGroup(nodeIDToScrollTo);
                 const renderer = collection.get(id);
                 if (renderer?.visible) {
-                    renderer.node.scrollIntoView();
+                    this.scrollContainer.scrollTo(0, renderer.node.offsetHeight);
                     return;
                 }
             }
