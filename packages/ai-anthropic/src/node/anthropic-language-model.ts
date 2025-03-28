@@ -155,7 +155,7 @@ export class AnthropicModel implements LanguageModel {
             max_tokens: this.maxTokens,
             messages: [...messages, ...(toolMessages ?? [])],
             tools,
-            tool_choice: { type: 'auto' },
+            tool_choice: tools ? { type: 'auto' } : undefined,
             model: this.model,
             ...(systemMessage && { system: systemMessage }),
             ...settings
@@ -266,6 +266,9 @@ export class AnthropicModel implements LanguageModel {
     }
 
     private createTools(request: LanguageModelRequest): Anthropic.Messages.Tool[] | undefined {
+        if (request.tools?.length === 0) {
+            return undefined;
+        }
         return request.tools?.map(tool => ({
             name: tool.name,
             description: tool.description,
