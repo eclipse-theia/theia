@@ -188,30 +188,39 @@ const ChangeSetScanOSSIntegration = React.memo(({
     }, [scanOSSResult, changeSetElements]);
 
     const state = getResult(scanOSSResult);
-    const content = getTitle(state);
-    const title = `ScanOSS: ${content}`;
+    const title = `ScanOSS: ${getTitle(state)}`;
+    const content = getContent(state);
     const icon = getIcon(state);
 
     if (scanOssMode === 'off' || changeSetElements.length === 0) {
         return undefined;
     } else if (state === 'clean' || state === 'pending') {
-        return <div
-            className={`theia-button button theia-changeSet-scanOss ${state}`}
-            title={title}
-        >
-            <span className={'scanoss-icon icon-container'} />
-            {content}
-            {icon}
+        return <div className='theia-changeSet-scanOss readonly'>
+            <div
+                className={`button scanoss-icon icon-container ${state === 'pending'
+                    ? 'requesting'
+                    : state
+                        ? state
+                        : ''
+                    }`}
+                title={title}
+            >
+                {icon}
+            </div>
         </div>;
     } else {
         return <button
-            className={`theia-button theia-changeSet-scanOss ${state}`}
+            className={`theia-button secondary theia-changeSet-scanOss ${state}`}
             title={title}
             onClick={scanOSSClicked}
         >
-            <span className={'scanoss-icon icon-container'} />
+            <div
+                className={`button scanoss-icon icon-container ${state}`}
+                title={title}
+            >
+                {icon}
+            </div>
             {content}
-            {icon}
         </button>;
     }
 });
@@ -231,7 +240,16 @@ function getTitle(result: ScanOSSState): string {
         case 'none': return nls.localize('theia/ai/scanoss/changeSet/scan', 'Scan');
         case 'pending': return nls.localize('theia/ai/scanoss/changeSet/scanning', 'Scanning...');
         case 'error': return nls.localize('theia/ai/scanoss/changeSet/error', 'Error: Rerun');
+        case 'match': return nls.localize('theia/ai/scanoss/changeSet/match', 'View Matches');
         case 'clean': return nls.localize('theia/ai/scanoss/changeSet/clean', 'No Matches');
+        default: return '';
+    }
+}
+
+function getContent(result: ScanOSSState): string {
+    switch (result) {
+        case 'none': return getTitle(result);
+        case 'pending': return getTitle(result);
         default: return '';
     }
 }
@@ -244,7 +262,6 @@ function getIcon(result: ScanOSSState): React.ReactNode {
         case 'match': return (<span className="status-icon">
             <span className="codicon codicon-warning" />
         </span>);
-        case 'pending': return <i className="fa fa-spinner fa-spin" />;
         default: return undefined;
     }
 }
