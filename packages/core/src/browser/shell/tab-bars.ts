@@ -17,7 +17,16 @@
 import PerfectScrollbar from 'perfect-scrollbar';
 import { TabBar, Title, Widget } from '@lumino/widgets';
 import { VirtualElement, h, VirtualDOM, ElementInlineStyle } from '@lumino/virtualdom';
-import { Disposable, DisposableCollection, MenuPath, notEmpty, SelectionService, CommandService, nls, ArrayUtils } from '../../common';
+import {
+    Disposable,
+    DisposableCollection,
+    MenuPath,
+    notEmpty,
+    SelectionService,
+    CommandService,
+    nls,
+    ArrayUtils,
+} from '../../common';
 import { ContextMenuRenderer } from '../context-menu-renderer';
 import { Signal, Slot } from '@lumino/signaling';
 import { Message, MessageLoop } from '@lumino/messaging';
@@ -72,7 +81,7 @@ export interface SideBarRenderData extends TabBar.IRenderData<Widget> {
     iconSize?: SizeData;
     paddingTop?: number;
     paddingBottom?: number;
-    visible?: boolean
+    visible?: boolean;
 }
 
 export interface ScrollableRenderData extends TabBar.IRenderData<Widget> {
@@ -105,7 +114,7 @@ export class TabBarRenderer extends TabBar.Renderer {
         protected readonly commandService?: CommandService,
         protected readonly corePreferences?: CorePreferences,
         protected readonly hoverService?: HoverService,
-        protected readonly contextKeyService?: ContextKeyService,
+        protected readonly contextKeyService?: ContextKeyService
     ) {
         super();
         if (this.decoratorService) {
@@ -113,11 +122,22 @@ export class TabBarRenderer extends TabBar.Renderer {
             this.toDispose.push(this.decoratorService.onDidChangeDecorations(() => this.resetDecorations()));
         }
         if (this.iconThemeService) {
-            this.toDispose.push(this.iconThemeService.onDidChangeCurrent(() => {
-                if (this._tabBar) {
-                    this._tabBar.update();
-                }
-            }));
+            this.toDispose.push(
+                this.iconThemeService.onDidChangeCurrent(() => {
+                    if (this._tabBar) {
+                        this._tabBar.update();
+                    }
+                })
+            );
+        }
+        if (this.corePreferences) {
+            this.toDispose.push(
+                this.corePreferences.onPreferenceChanged(event => {
+                    if (event.preferenceName === 'window.tabCloseIconPlacement' && this._tabBar) {
+                        this._tabBar.update();
+                    }
+                })
+            );
         }
     }
 
@@ -142,7 +162,8 @@ export class TabBarRenderer extends TabBar.Renderer {
         this.toDispose.push(this.toDisposeOnTabBar);
         this._tabBar = tabBar;
         if (tabBar) {
-            const listener: Slot<Widget, TabBar.ITabCloseRequestedArgs<Widget>> = (_, { title }) => this.resetDecorations(title);
+            const listener: Slot<Widget, TabBar.ITabCloseRequestedArgs<Widget>> = (_, { title }) =>
+                this.resetDecorations(title);
             tabBar.tabCloseRequested.connect(listener);
             this.toDisposeOnTabBar.push(Disposable.create(() => tabBar.tabCloseRequested.disconnect(listener)));
         }
@@ -159,47 +180,64 @@ export class TabBarRenderer extends TabBar.Renderer {
      * @param {boolean} isPartOfHiddenTabBar An optional check which determines if the tab is in the hidden horizontal tab bar.
      * @returns {VirtualElement} The virtual element of the rendered tab.
      */
-    override renderTab(data: SideBarRenderData, isInSidePanel?: boolean, isPartOfHiddenTabBar?: boolean): VirtualElement {
+    override renderTab(
+        data: SideBarRenderData,
+        isInSidePanel?: boolean,
+        isPartOfHiddenTabBar?: boolean
+    ): VirtualElement {
+        const tabCloseIconStart = this.corePreferences?.['window.tabCloseIconPlacement'] === 'start';
+
         const title = data.title;
         const id = this.createTabId(title, isPartOfHiddenTabBar);
         const key = this.createTabKey(data);
         const style = this.createTabStyle(data);
-        const className = this.createTabClass(data);
+        const className = this.createTabClass(data) + (tabCloseIconStart ? ' closeIcon-start' : '');
         const dataset = this.createTabDataset(data);
         const closeIconTitle = data.title.className.includes(PINNED_CLASS)
             ? nls.localizeByDefault('Unpin')
             : nls.localizeByDefault('Close');
 
-        const hover = this.tabBar && (this.tabBar.orientation === 'horizontal' && this.corePreferences?.['window.tabbar.enhancedPreview'] === 'classic')
-            ? { title: title.caption }
-            : {
-                onmouseenter: this.handleMouseEnterEvent
-            };
+        const hover =
+            this.tabBar &&
+            this.tabBar.orientation === 'horizontal' &&
+            this.corePreferences?.['window.tabbar.enhancedPreview'] === 'classic'
+                ? { title: title.caption }
+                : {
+                      onmouseenter: this.handleMouseEnterEvent,
+                  };
+
+        const tabLabel = h.div(
+            { className: 'theia-tab-icon-label' },
+            this.renderIcon(data, isInSidePanel),
+            this.renderLabel(data, isInSidePanel),
+            this.renderTailDecorations(data, isInSidePanel),
+            this.renderBadge(data, isInSidePanel),
+            this.renderLock(data, isInSidePanel)
+        );
+        const tabCloseIcon = h.div({
+            className: 'lm-TabBar-tabCloseIcon action-label',
+            title: closeIconTitle,
+            onclick: this.handleCloseClickEvent,
+        });
+
+        const tabContents = tabCloseIconStart ? [tabCloseIcon, tabLabel] : [tabLabel, tabCloseIcon];
 
         return h.li(
             {
                 ...hover,
-                key, className, id, style, dataset,
+                key,
+                className,
+                id,
+                style,
+                dataset,
                 oncontextmenu: this.handleContextMenuEvent,
                 ondblclick: this.handleDblClickEvent,
                 onauxclick: (e: MouseEvent) => {
                     // If user closes the tab using mouse wheel, nothing should be pasted to an active editor
                     e.preventDefault();
-                }
+                },
             },
-            h.div(
-                { className: 'theia-tab-icon-label' },
-                this.renderIcon(data, isInSidePanel),
-                this.renderLabel(data, isInSidePanel),
-                this.renderTailDecorations(data, isInSidePanel),
-                this.renderBadge(data, isInSidePanel),
-                this.renderLock(data, isInSidePanel)
-            ),
-            h.div({
-                className: 'lm-TabBar-tabCloseIcon action-label',
-                title: closeIconTitle,
-                onclick: this.handleCloseClickEvent
-            })
+            ...tabContents
         );
     }
 
@@ -233,7 +271,11 @@ export class TabBarRenderer extends TabBar.Renderer {
         let height: string | undefined;
         let width: string | undefined;
         if (labelSize || iconSize) {
-            const labelHeight = labelSize ? (this.tabBar && this.tabBar.orientation === 'horizontal' ? labelSize.height : labelSize.width) : 0;
+            const labelHeight = labelSize
+                ? this.tabBar && this.tabBar.orientation === 'horizontal'
+                    ? labelSize.height
+                    : labelSize.width
+                : 0;
             const iconHeight = iconSize ? iconSize.height : 0;
             let paddingTop = data.paddingTop || 0;
             if (labelHeight > 0 && iconHeight > 0) {
@@ -286,9 +328,11 @@ export class TabBarRenderer extends TabBar.Renderer {
         const originalToDisplayedMap = this.findDuplicateLabels([...this.tabBar!.titles]);
         const labelDetails: string | undefined = originalToDisplayedMap.get(data.title.caption);
         if (labelDetails) {
-            return h.div({ className: 'lm-TabBar-tabLabelWrapper' },
+            return h.div(
+                { className: 'lm-TabBar-tabLabelWrapper' },
                 h.div({ className: 'lm-TabBar-tabLabel', style }, data.title.label),
-                h.div({ className: 'lm-TabBar-tabLabelDetails', style }, labelDetails));
+                h.div({ className: 'lm-TabBar-tabLabelDetails', style }, labelDetails)
+            );
         }
         return h.div({ className: 'lm-TabBar-tabLabel', style }, data.title.label);
     }
@@ -317,10 +361,18 @@ export class TabBarRenderer extends TabBar.Renderer {
             const iconToRender = icon ?? iconClass;
             const className = ['lm-TabBar-tail', 'flex'].join(' ');
             const style = fontData ? fontData : color ? { color } : undefined;
-            const content = (data ? data : iconToRender
-                ? h.span({ className: this.getIconClass(iconToRender, iconToRender === 'circle' ? [WidgetDecoration.Styles.DECORATOR_SIZE_CLASS] : []) })
-                : '') + (index !== decorationsToRender.length - 1 ? ',' : '');
-            return h.span({ key: ('tailDecoration_' + index), className, style, title: tooltip ?? content }, content);
+            const content =
+                (data
+                    ? data
+                    : iconToRender
+                    ? h.span({
+                          className: this.getIconClass(
+                              iconToRender,
+                              iconToRender === 'circle' ? [WidgetDecoration.Styles.DECORATOR_SIZE_CLASS] : []
+                          ),
+                      })
+                    : '') + (index !== decorationsToRender.length - 1 ? ',' : '');
+            return h.span({ key: 'tailDecoration_' + index, className, style, title: tooltip ?? content }, content);
         });
     }
 
@@ -360,7 +412,7 @@ export class TabBarRenderer extends TabBar.Renderer {
      */
     protected getDecorations(title: Title<Widget>): WidgetDecoration.Data[] {
         if (this.tabBar && this.decoratorService) {
-            const owner: { resetTabBarDecorations?: () => void; } & Widget = title.owner;
+            const owner: { resetTabBarDecorations?: () => void } & Widget = title.owner;
             if (!owner.resetTabBarDecorations) {
                 owner.resetTabBarDecorations = () => this.decorations.delete(title);
                 title.owner.disposed.connect(owner.resetTabBarDecorations);
@@ -378,8 +430,13 @@ export class TabBarRenderer extends TabBar.Renderer {
      * @param {string} title The title.
      * @param {K} key The type of the decoration data.
      */
-    protected getDecorationData<K extends keyof WidgetDecoration.Data>(title: Title<Widget>, key: K): WidgetDecoration.Data[K][] {
-        return this.getDecorations(title).filter(data => data[key] !== undefined).map(data => data[key]);
+    protected getDecorationData<K extends keyof WidgetDecoration.Data>(
+        title: Title<Widget>,
+        key: K
+    ): WidgetDecoration.Data[K][] {
+        return this.getDecorations(title)
+            .filter(data => data[key] !== undefined)
+            .map(data => data[key]);
     }
 
     /**
@@ -388,7 +445,7 @@ export class TabBarRenderer extends TabBar.Renderer {
      * @param {string[]} additionalClasses Additional classes of the icon.
      */
     protected getIconClass(iconName: string | string[], additionalClasses: string[] = []): string {
-        const iconClass = (typeof iconName === 'string') ? ['a', 'fa', `fa-${iconName}`] : ['a'].concat(iconName);
+        const iconClass = typeof iconName === 'string' ? ['a', 'fa', `fa-${iconName}`] : ['a'].concat(iconName);
         return iconClass.concat(additionalClasses).join(' ');
     }
 
@@ -424,7 +481,7 @@ export class TabBarRenderer extends TabBar.Renderer {
                 labelGroup.forEach((pathStr, index) => {
                     const steps = pathStr.split('/');
                     maxPathLength = Math.max(maxPathLength, steps.length);
-                    paths[index] = (steps.slice(0, steps.length - 1));
+                    paths[index] = steps.slice(0, steps.length - 1);
                     // By default, show at maximum three levels from the end.
                     let defaultDisplayedPath = steps.slice(-4, -1).join('/');
                     if (steps.length > 4) {
@@ -501,13 +558,24 @@ export class TabBarRenderer extends TabBar.Renderer {
         if (decorationData.length > 0) {
             const baseIcon: VirtualElement = h.div({ className: baseClassName, style }, data.title.iconLabel);
             const wrapperClassName: string = WidgetDecoration.Styles.ICON_WRAPPER_CLASS;
-            const decoratorSizeClassName: string = isInSidePanel ? WidgetDecoration.Styles.DECORATOR_SIDEBAR_SIZE_CLASS : WidgetDecoration.Styles.DECORATOR_SIZE_CLASS;
+            const decoratorSizeClassName: string = isInSidePanel
+                ? WidgetDecoration.Styles.DECORATOR_SIDEBAR_SIZE_CLASS
+                : WidgetDecoration.Styles.DECORATOR_SIZE_CLASS;
 
             decorationData
                 .filter(notEmpty)
-                .map(overlay => [overlay.position, overlay] as [WidgetDecoration.IconOverlayPosition, WidgetDecoration.IconOverlay | WidgetDecoration.IconClassOverlay])
+                .map(
+                    overlay =>
+                        [overlay.position, overlay] as [
+                            WidgetDecoration.IconOverlayPosition,
+                            WidgetDecoration.IconOverlay | WidgetDecoration.IconClassOverlay
+                        ]
+                )
                 .forEach(([position, overlay]) => {
-                    const iconAdditionalClasses: string[] = [decoratorSizeClassName, WidgetDecoration.IconOverlayPosition.getStyle(position, isInSidePanel)];
+                    const iconAdditionalClasses: string[] = [
+                        decoratorSizeClassName,
+                        WidgetDecoration.IconOverlayPosition.getStyle(position, isInSidePanel),
+                    ];
                     const overlayIconStyle = (color?: string) => {
                         if (color === undefined) {
                             return {};
@@ -516,16 +584,29 @@ export class TabBarRenderer extends TabBar.Renderer {
                     };
                     // Parse the optional background (if it exists) of the overlay icon.
                     if (overlay.background) {
-                        const backgroundIconClassName = this.getIconClass(overlay.background.shape, iconAdditionalClasses);
+                        const backgroundIconClassName = this.getIconClass(
+                            overlay.background.shape,
+                            iconAdditionalClasses
+                        );
                         overlayIcons.push(
-                            h.div({ key: data.title.label + '-background', className: backgroundIconClassName, style: overlayIconStyle(overlay.background.color) })
+                            h.div({
+                                key: data.title.label + '-background',
+                                className: backgroundIconClassName,
+                                style: overlayIconStyle(overlay.background.color),
+                            })
                         );
                     }
                     // Parse the overlay icon.
-                    const overlayIcon = (overlay as WidgetDecoration.IconOverlay).icon || (overlay as WidgetDecoration.IconClassOverlay).iconClass;
+                    const overlayIcon =
+                        (overlay as WidgetDecoration.IconOverlay).icon ||
+                        (overlay as WidgetDecoration.IconClassOverlay).iconClass;
                     const overlayIconClassName = this.getIconClass(overlayIcon, iconAdditionalClasses);
                     overlayIcons.push(
-                        h.span({ key: data.title.label, className: overlayIconClassName, style: overlayIconStyle(overlay.color) })
+                        h.span({
+                            key: data.title.label,
+                            className: overlayIconClassName,
+                            style: overlayIconStyle(overlay.color),
+                        })
                     );
                 });
             return h.div({ className: wrapperClassName, style }, [baseIcon, ...overlayIcons]);
@@ -575,8 +656,14 @@ export class TabBarRenderer extends TabBar.Renderer {
                         visualPreview.id = `preview:${widget.id}`;
 
                         // Use the current visible editor as a fallback if not available
-                        const height: number = visualPreview.style.height === '' ? this.tabBar.currentTitle!.owner.node.offsetHeight : parseFloat(visualPreview.style.height);
-                        const width: number = visualPreview.style.width === '' ? this.tabBar.currentTitle!.owner.node.offsetWidth : parseFloat(visualPreview.style.width);
+                        const height: number =
+                            visualPreview.style.height === ''
+                                ? this.tabBar.currentTitle!.owner.node.offsetHeight
+                                : parseFloat(visualPreview.style.height);
+                        const width: number =
+                            visualPreview.style.width === ''
+                                ? this.tabBar.currentTitle!.owner.node.offsetWidth
+                                : parseFloat(visualPreview.style.width);
                         const desiredRatio = 9 / 16;
                         const desiredHeight = desiredWidth * desiredRatio;
                         const ratio = height / width;
@@ -584,7 +671,7 @@ export class TabBarRenderer extends TabBar.Renderer {
                         visualPreviewDiv.style.height = `${desiredHeight}px`;
 
                         // If the view is wider than the desiredRatio scale the width and crop the height. If the view is longer its the other way around.
-                        const scale = ratio < desiredRatio ? (desiredHeight / height) : (desiredWidth / width);
+                        const scale = ratio < desiredRatio ? desiredHeight / height : desiredWidth / width;
                         visualPreview.style.transform = `scale(${scale},${scale})`;
                         visualPreview.style.removeProperty('top');
                         visualPreview.style.removeProperty('left');
@@ -618,13 +705,16 @@ export class TabBarRenderer extends TabBar.Renderer {
                         target: event.currentTarget,
                         position: 'bottom',
                         cssClasses: ['extended-tab-preview'],
-                        visualPreview: this.corePreferences?.['window.tabbar.enhancedPreview'] === 'visual' ? width => this.renderVisualPreview(width, title) : undefined
+                        visualPreview:
+                            this.corePreferences?.['window.tabbar.enhancedPreview'] === 'visual'
+                                ? width => this.renderVisualPreview(width, title)
+                                : undefined,
                     });
                 } else if (title.caption) {
                     this.hoverService.requestHover({
                         content: title.caption,
                         target: event.currentTarget,
-                        position: 'right'
+                        position: 'right',
                     });
                 }
             }
@@ -637,8 +727,9 @@ export class TabBarRenderer extends TabBar.Renderer {
             event.preventDefault();
             let widget: Widget | undefined = undefined;
             if (this.tabBar) {
-                const titleIndex = Array.from(this.tabBar.contentNode.getElementsByClassName('lm-TabBar-tab'))
-                    .findIndex(node => node.contains(event.currentTarget as HTMLElement));
+                const titleIndex = Array.from(
+                    this.tabBar.contentNode.getElementsByClassName('lm-TabBar-tab')
+                ).findIndex(node => node.contains(event.currentTarget as HTMLElement));
                 if (titleIndex !== -1) {
                     widget = this.tabBar.titles[titleIndex].owner;
                 }
@@ -646,10 +737,14 @@ export class TabBarRenderer extends TabBar.Renderer {
 
             const oldSelection = this.selectionService?.selection;
             if (widget && this.selectionService) {
-                this.selectionService.selection = NavigatableWidget.is(widget) ? { uri: widget.getResourceUri() } : widget;
+                this.selectionService.selection = NavigatableWidget.is(widget)
+                    ? { uri: widget.getResourceUri() }
+                    : widget;
             }
 
-            const contextKeyServiceOverlay = this.contextKeyService?.createOverlay([['isTerminalTab', widget && 'terminalId' in widget]]);
+            const contextKeyServiceOverlay = this.contextKeyService?.createOverlay([
+                ['isTerminalTab', widget && 'terminalId' in widget],
+            ]);
             this.contextMenuRenderer.render({
                 menuPath: this.contextMenuPath!,
                 anchor: event,
@@ -657,7 +752,12 @@ export class TabBarRenderer extends TabBar.Renderer {
                 context: event.currentTarget,
                 contextKeyService: contextKeyServiceOverlay,
                 // We'd like to wait until the command triggered by the context menu has been run, but this should let it get through the preamble, at least.
-                onHide: () => setTimeout(() => { if (this.selectionService) { this.selectionService.selection = oldSelection; } })
+                onHide: () =>
+                    setTimeout(() => {
+                        if (this.selectionService) {
+                            this.selectionService.selection = oldSelection;
+                        }
+                    }),
             });
         }
     };
@@ -685,7 +785,6 @@ export class TabBarRenderer extends TabBar.Renderer {
             }
         }
     };
-
 }
 
 export interface TabBarPrivateMethods {
@@ -696,7 +795,6 @@ export interface TabBarPrivateMethods {
  * A specialized tab bar for the main and bottom areas.
  */
 export class ScrollableTabBar extends TabBar<Widget> {
-
     protected scrollBar?: PerfectScrollbar;
 
     protected scrollBarFactory: () => PerfectScrollbar;
@@ -712,7 +810,10 @@ export class ScrollableTabBar extends TabBar<Widget> {
     protected openTabsContainer: HTMLDivElement;
     protected openTabsRoot: Root;
 
-    constructor(options?: TabBar.IOptions<Widget> & PerfectScrollbar.Options, dynamicTabOptions?: ScrollableTabBar.Options) {
+    constructor(
+        options?: TabBar.IOptions<Widget> & PerfectScrollbar.Options,
+        dynamicTabOptions?: ScrollableTabBar.Options
+    ) {
         super(options);
         this.scrollBarFactory = () => new PerfectScrollbar(this.scrollbarHost, options);
         this._dynamicTabOptions = dynamicTabOptions;
@@ -763,7 +864,9 @@ export class ScrollableTabBar extends TabBar<Widget> {
     protected rewireDOM(): void {
         const contentNode = this.node.getElementsByClassName(ScrollableTabBar.Styles.TAB_BAR_CONTENT)[0];
         if (!contentNode) {
-            throw new Error(`'this.node' does not have the content as a direct child with class name '${ScrollableTabBar.Styles.TAB_BAR_CONTENT}'.`);
+            throw new Error(
+                `'this.node' does not have the content as a direct child with class name '${ScrollableTabBar.Styles.TAB_BAR_CONTENT}'.`
+            );
         }
         this.node.removeChild(contentNode);
         this.contentContainer = document.createElement('div');
@@ -786,7 +889,9 @@ export class ScrollableTabBar extends TabBar<Widget> {
         if (!this.scrollBar) {
             this.scrollBar = this.scrollBarFactory();
         }
-        this.node.addEventListener('mouseenter', () => { this.isMouseOver = true; });
+        this.node.addEventListener('mouseenter', () => {
+            this.isMouseOver = true;
+        });
         this.node.addEventListener('mouseleave', () => {
             this.isMouseOver = false;
             if (this.needsRecompute) {
@@ -812,14 +917,15 @@ export class ScrollableTabBar extends TabBar<Widget> {
     protected updateTabs(): void {
         const content = [];
         if (this.dynamicTabOptions) {
-
-            this.openTabsRoot.render(createElement(SelectComponent, {
-                options: this.titles,
-                onChange: (option, index) => {
-                    this.currentIndex = index;
-                },
-                alignment: 'right'
-            }));
+            this.openTabsRoot.render(
+                createElement(SelectComponent, {
+                    options: this.titles,
+                    onChange: (option, index) => {
+                        this.currentIndex = index;
+                    },
+                    alignment: 'right',
+                })
+            );
 
             if (this.isMouseOver) {
                 this.needsRecompute = true;
@@ -837,8 +943,10 @@ export class ScrollableTabBar extends TabBar<Widget> {
                     } else {
                         this.openTabsContainer.classList.remove('lm-mod-hidden');
                     }
-                    this.tabSize = Math.max(Math.min(effectiveWidth / this.titles.length,
-                        this.dynamicTabOptions.defaultTabSize), this.dynamicTabOptions.minimumTabSize);
+                    this.tabSize = Math.max(
+                        Math.min(effectiveWidth / this.titles.length, this.dynamicTabOptions.defaultTabSize),
+                        this.dynamicTabOptions.minimumTabSize
+                    );
                 }
             }
             this.node.classList.add('dynamic-tabs');
@@ -946,16 +1054,13 @@ export class ScrollableTabBar extends TabBar<Widget> {
 }
 
 export namespace ScrollableTabBar {
-
     export interface Options {
         minimumTabSize: number;
         defaultTabSize: number;
     }
     export namespace Styles {
-
         export const TAB_BAR_CONTENT = 'lm-TabBar-content';
         export const TAB_BAR_CONTENT_CONTAINER = 'lm-TabBar-content-container';
-
     }
 }
 
@@ -992,12 +1097,14 @@ export class ToolbarAwareTabBar extends ScrollableTabBar {
         this.toolbar = this.tabBarToolbarFactory();
         this.toDispose.push(this.tabBarToolbarRegistry.onDidChange(() => this.update()));
         this.toDispose.push(this.breadcrumbsRenderer);
-        this.toDispose.push(this.breadcrumbsRenderer.onDidChangeActiveState(active => {
-            this.node.classList.toggle('theia-tabBar-multirow', active);
-            if (this.parent) {
-                MessageLoop.sendMessage(this.parent, new Message('fit-request'));
-            }
-        }));
+        this.toDispose.push(
+            this.breadcrumbsRenderer.onDidChangeActiveState(active => {
+                this.node.classList.toggle('theia-tabBar-multirow', active);
+                if (this.parent) {
+                    MessageLoop.sendMessage(this.parent, new Message('fit-request'));
+                }
+            })
+        );
         this.node.classList.toggle('theia-tabBar-multirow', this.breadcrumbsRenderer.active);
         const handler = () => this.updateBreadcrumbs();
         this.currentChanged.connect(handler);
@@ -1051,7 +1158,10 @@ export class ToolbarAwareTabBar extends ScrollableTabBar {
                 // Let this bubble up to handle the context menu
                 return;
             }
-            if (this.toolbar && this.toolbar.shouldHandleMouseEvent(event) || this.isOver(event, this.openTabsContainer)) {
+            if (
+                (this.toolbar && this.toolbar.shouldHandleMouseEvent(event)) ||
+                this.isOver(event, this.openTabsContainer)
+            ) {
                 // if the mouse event is over the toolbar part don't handle it.
                 return;
             }
@@ -1082,7 +1192,6 @@ export class ToolbarAwareTabBar extends ScrollableTabBar {
  * A specialized tab bar for side areas.
  */
 export class SideTabBar extends ScrollableTabBar {
-
     protected static readonly DRAG_THRESHOLD = 5;
 
     /**
@@ -1098,17 +1207,17 @@ export class SideTabBar extends ScrollableTabBar {
     /**
      * Emitted when the set of overflowing/hidden tabs changes.
      */
-    readonly tabsOverflowChanged = new Signal<this, { titles: Title<Widget>[], startIndex: number }>(this);
+    readonly tabsOverflowChanged = new Signal<this, { titles: Title<Widget>[]; startIndex: number }>(this);
 
     protected mouseData?: {
-        pressX: number,
-        pressY: number,
-        mouseDownTabIndex: number
+        pressX: number;
+        pressY: number;
+        mouseDownTabIndex: number;
     };
 
     protected tabsOverflowData?: {
-        titles: Title<Widget>[],
-        startIndex: number
+        titles: Title<Widget>[];
+        startIndex: number;
     };
 
     constructor(options?: TabBar.IOptions<Widget> & PerfectScrollbar.Options) {
@@ -1213,7 +1322,7 @@ export class SideTabBar extends ScrollableTabBar {
                     const tabStyle = window.getComputedStyle(hiddenTab);
                     const rd: Partial<SideBarRenderData> = {
                         paddingTop: parseFloat(tabStyle.paddingTop!),
-                        paddingBottom: parseFloat(tabStyle.paddingBottom!)
+                        paddingBottom: parseFloat(tabStyle.paddingBottom!),
                     };
                     // Extract label size from the DOM
                     const labelElements = hiddenTab.getElementsByClassName('lm-TabBar-tabLabel');
@@ -1256,8 +1365,10 @@ export class SideTabBar extends ScrollableTabBar {
                 return;
             }
 
-            if ((newOverflowingTabs.length !== this.tabsOverflowData?.titles.length ?? 0) ||
-                newOverflowingTabs.find((newTitle, i) => newTitle !== this.tabsOverflowData?.titles[i]) !== undefined) {
+            if (
+                (newOverflowingTabs.length !== this.tabsOverflowData?.titles.length ?? 0) ||
+                newOverflowingTabs.find((newTitle, i) => newTitle !== this.tabsOverflowData?.titles[i]) !== undefined
+            ) {
                 this.tabsOverflowData = { titles: newOverflowingTabs, startIndex };
                 this.tabsOverflowChanged.emit(this.tabsOverflowData);
             }
@@ -1282,7 +1393,9 @@ export class SideTabBar extends ScrollableTabBar {
                      * there might already be enough space to show the last tab. In this case, we need to include the size of the
                      * additional menu widget and recheck if the last tab is visible */
                     if (startIndex === n - 1 && this.tabsOverflowData) {
-                        const additionalViewsMenu = this.node.parentElement?.querySelector('.theia-additional-views-menu') as HTMLDivElement;
+                        const additionalViewsMenu = this.node.parentElement?.querySelector(
+                            '.theia-additional-views-menu'
+                        ) as HTMLDivElement;
                         if (tab.offsetTop + tab.offsetHeight < availableHeight + additionalViewsMenu.offsetHeight) {
                             tab.classList.remove(invisibleClass);
                             startIndex = -1;
@@ -1356,7 +1469,8 @@ export class SideTabBar extends ScrollableTabBar {
             case 'lm-dragover':
                 this.onDragOver(event as Drag.Event);
                 break;
-            case 'lm-dragleave': case 'lm-drop':
+            case 'lm-dragleave':
+            case 'lm-drop':
                 this.cancelViewContainerDND();
                 break;
             case 'contextmenu':
@@ -1389,7 +1503,7 @@ export class SideTabBar extends ScrollableTabBar {
         this.mouseData = {
             pressX: event.clientX,
             pressY: event.clientY,
-            mouseDownTabIndex: index
+            mouseDownTabIndex: index,
         };
     }
 
@@ -1466,14 +1580,16 @@ export class SideTabBar extends ScrollableTabBar {
             if (widget.options.disableDraggingToOtherContainers || widget.viewContainer.disableDNDBetweenContainers) {
                 event.dropAction = 'none';
                 target.classList.add('theia-cursor-no-drop');
-                this.toCancelViewContainerDND.push(Disposable.create(() => {
-                    target.classList.remove('theia-cursor-no-drop');
-                }));
+                this.toCancelViewContainerDND.push(
+                    Disposable.create(() => {
+                        target.classList.remove('theia-cursor-no-drop');
+                    })
+                );
             } else {
                 event.dropAction = event.proposedAction;
             }
             const { top, bottom, left, right, height } = target.getBoundingClientRect();
-            const mouseOnTop = (clientY - top) < (height / 2);
+            const mouseOnTop = clientY - top < height / 2;
             const dropTargetClass = `drop-target-${mouseOnTop ? 'top' : 'bottom'}`;
             const tabs = this.contentNode.children;
             const targetTab = ArrayExt.findFirstValue(tabs, t => ElementExt.hitTest(t, clientX, clientY));
@@ -1481,13 +1597,17 @@ export class SideTabBar extends ScrollableTabBar {
                 return;
             }
             targetTab.classList.add(dropTargetClass);
-            this.toCancelViewContainerDND.push(Disposable.create(() => {
-                if (targetTab) {
-                    targetTab.classList.remove(dropTargetClass);
-                }
-            }));
+            this.toCancelViewContainerDND.push(
+                Disposable.create(() => {
+                    if (targetTab) {
+                        targetTab.classList.remove(dropTargetClass);
+                    }
+                })
+            );
             const openTabTimer = setTimeout(() => {
-                const title = this.titles.find(t => (this.renderer as TabBarRenderer).createTabId(t) === targetTab.id);
+                const title = this.titles.find(
+                    t => (this.renderer as TabBarRenderer).createTabId(t) === targetTab.id
+                );
                 if (title) {
                     const mouseStillOnTab = clientX >= left && clientX <= right && clientY >= top && clientY <= bottom;
                     if (mouseStillOnTab) {
@@ -1495,10 +1615,11 @@ export class SideTabBar extends ScrollableTabBar {
                     }
                 }
             }, 800);
-            this.toCancelViewContainerDND.push(Disposable.create(() => {
-                clearTimeout(openTabTimer);
-            }));
+            this.toCancelViewContainerDND.push(
+                Disposable.create(() => {
+                    clearTimeout(openTabTimer);
+                })
+            );
         }
     };
-
 }
