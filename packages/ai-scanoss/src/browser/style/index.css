@@ -1,169 +1,187 @@
-.scanoss-logo {
-  background-image: url("scanoss_logo_dark_theme.svg");
-  background-repeat: no-repeat;
-  background-position: center;
-}
-
-.vs-light .scanoss-logo,
-.theia-light .scanoss-logo,
-.light-theia .scanoss-logo   {
-  background-image: url("scanoss_logo_light_theme.svg");
-}
-
-/* We need a more detailed selector to override the default button style */
-.theia-CodePartRenderer-actions .scanoss-logo {
-  background-size: 82% auto; /* scale the image to be a bit smaller than the button because the codicon icons are also smaller */
-  transition: filter 0.3s;
+.scanoss-icon::before {
+  content: "";
+  mask-image: url("scanoss_logo_dark_theme.svg");
+  mask-repeat: no-repeat;
+  mask-position: 50% 50%;
+  mask-size: 16px;
+  height: 16px;
+  width: 16px;
   display: inline-block;
 }
 
-.scanoss-logo.requesting {
-  animation: pulse 1s infinite ease-in-out;
+.vs-light .scanoss-icon,
+.theia-light .scanoss-icon,
+.light-theia .scanoss-icon {
+  mask-image: url("scanoss_logo_light_theme.svg");
+}
+
+/* We need a more detailed selector to override the default button style */
+.theia-CodePartRenderer-actions .scanoss-icon::before {
+  transition: filter 0.3s;
+  background: var(--theia-sideBar-foreground);
+}
+
+.scanoss-icon.requesting {
+  pointer-events: none;
+  cursor: default;
+}
+.scanoss-icon.requesting::before {
+  animation: scan-os-fade 3s infinite ease-in-out;
+}
+
+@keyframes scan-os-fade {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 /* Use a rounded background when not hovered  */
-.theia-CodePartRenderer-actions .scanoss-logo:not(:hover) {
+.theia-CodePartRenderer-actions .scanoss-icon:not(:hover) {
   border-radius: 50%;
 }
 
-.scanoss-logo.clean {
+.scanoss-icon.clean::before {
   background-color: rgba(46, 125, 50, 0.3); /* translucent green */
 }
 
-.scanoss-logo.match {
+.scanoss-icon.match::before {
   background-color: rgba(249, 215, 116, 0.3); /* translucent yellow */
 }
 
-.scanoss-logo.error {
+.scanoss-icon.error::before {
   background-color: rgba(210, 72, 72, 0.3); /* translucent red */
 }
 
 .icon-container {
-  position: relative; 
+  position: relative;
   display: inline-block;
   width: 16px;
   height: 16px;
 }
 
 /* The placeholder is used to align with the remaining actions, however it should not be visible*/
-.scanoss-logo .placeholder {
+.scanoss-icon .placeholder {
   visibility: hidden;
 }
 
 /* The status icon is used to display the result of the scan on the top right */
-.scanoss-logo .status-icon {
+.scanoss-icon .status-icon {
   position: absolute;
   transform: translate(-4px, -5px);
 }
 
-.scanoss-logo.clean .status-icon {
-    color: green;
+.scanoss-icon.clean .status-icon {
+  color: green;
 }
-.scanoss-logo.match .status-icon {
-    color: yellow;
-    text-shadow: 0 0 3px rgba(0,0,0,0.9);
+.scanoss-icon.match .status-icon {
+  color: yellow;
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.9);
 }
-.scanoss-logo.error .status-icon {
-    color: red;
-    text-shadow: 0 0 3px currentColor
+.scanoss-icon.error .status-icon {
+  color: red;
+  text-shadow: 0 0 3px currentColor;
 }
 
 /* Disable the button when it's in the clean state */
-.theia-CodePartRenderer-actions .scanoss-logo.clean{
-  pointer-events: none; 
+.theia-CodePartRenderer-actions .scanoss-icon.clean {
+  pointer-events: none;
   cursor: default;
 }
 
 .scanoss-dialog-container .scanoss-header {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
 }
 
-.scanoss-dialog-container .scanoss-logo-container {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 10px;
+.scanoss-dialog-container .scanoss-icon-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
 }
 
-.scanoss-dialog-container .scanoss-logo {
-    width: 40px;
-    height: 40px;
-    background-size: contain;
+.scanoss-dialog-container .scanoss-icon {
+  width: 40px;
+  height: 40px;
+  background-size: contain;
 }
 
-.scanoss-dialog-container .scanoss-logo-container h2 {
-    font-size: 1.8em;
-    margin: 0;
+.scanoss-dialog-container .scanoss-icon-container h2 {
+  font-size: 1.8em;
+  margin: 0;
 }
 
 .scanoss-dialog-container .scanoss-summary {
-    padding: 15px;
-    border-radius: 4px;
-    margin-bottom: 20px;
+  padding: 15px;
+  border-radius: 4px;
+  margin-bottom: 20px;
 }
 
 .scanoss-dialog-container .scanoss-summary h3 {
-    margin-top: 0;
-    font-size: 1.4em;
-    margin-bottom: 10px;
+  margin-top: 0;
+  font-size: 1.4em;
+  margin-bottom: 10px;
 }
 
 .scanoss-dialog-container .scanoss-details {
-    padding: 15px;
-    border-radius: 4px;
-    border: 1px solid var(--theia-sideBarSectionHeader-border);
+  padding: 15px;
+  border-radius: 4px;
+  border: 1px solid var(--theia-sideBarSectionHeader-border);
 }
 
 .scanoss-dialog-container .scanoss-details h4 {
-    margin-top: 0;
-    font-size: 1.2em;
-    margin-bottom: 10px;
+  margin-top: 0;
+  font-size: 1.2em;
+  margin-bottom: 10px;
 }
 
 .scanoss-dialog-container .scanoss-details pre {
-    background: var(--theia-editor-background);
-    padding: 10px;
-    border-radius: 4px;
-    overflow: auto;
-    font-size: 0.9em;
+  background: var(--theia-editor-background);
+  padding: 10px;
+  border-radius: 4px;
+  overflow: auto;
+  font-size: 0.9em;
 }
 
 .theia-changeSet-scanOss {
-    display: flex;
-    flex-flow: row nowrap;
-    align-items: center;
-    justify-content: center;
-    gap: var(--theia-ui-padding);
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--theia-ui-padding);
 }
 
-.theia-changeSet-Action .theia-changeSet-scanOss .scanoss-logo {
-    background-size: cover;
-    background-color: inherit;
-    /* Buttons in all themes tested used a light font color */
-    background-image: url("scanoss_logo_dark_theme.svg");
+.theia-changeSet-Action .theia-changeSet-scanOss .scanoss-icon {
+  background-size: cover;
+  background-color: inherit;
+  /* Buttons in all themes tested used a light font color */
+  background-image: url("scanoss_logo_dark_theme.svg");
 }
 
 .theia-changeSet-scanOss.clean,
 .theia-changeSet-scanOss.pending {
-    cursor: default;
+  cursor: default;
 }
 
 .theia-changeSet-scanOss.clean:hover,
 .theia-changeSet-scanOss.pending:hover {
-    background-color: var(--theia-button-background);
+  background-color: var(--theia-button-background);
 }
 
 .theia-changeSet-scanOss .status-icon {
-    height: 16px;
+  height: 16px;
 }
 
 .theia-changeSet-scanOss.clean .status-icon {
-    color: var(--theia-notebookStatusSuccessIcon-foreground);
+  color: var(--theia-notebookStatusSuccessIcon-foreground);
 }
 
 .theia-changeSet-scanOss.match .status-icon {
-    color: var(--theia-problemsWarningIcon-foreground);
+  color: var(--theia-problemsWarningIcon-foreground);
 }

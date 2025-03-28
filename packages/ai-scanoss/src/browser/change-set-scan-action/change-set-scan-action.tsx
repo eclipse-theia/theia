@@ -36,6 +36,7 @@ type ScanOSSResultOptions = 'pending' | ScanOSSResult[] | undefined;
 @injectable()
 export class ChangeSetScanActionRenderer implements ChangeSetActionRenderer {
     readonly id = 'change-set-scanoss';
+    readonly priority = 10;
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange = this.onDidChangeEmitter.event;
 
@@ -198,7 +199,7 @@ const ChangeSetScanOSSIntegration = React.memo(({
             className={`theia-button button theia-changeSet-scanOss ${state}`}
             title={title}
         >
-            <span className={'scanoss-logo icon-container'} />
+            <span className={'scanoss-icon icon-container'} />
             {content}
             {icon}
         </div>;
@@ -208,7 +209,7 @@ const ChangeSetScanOSSIntegration = React.memo(({
             title={title}
             onClick={scanOSSClicked}
         >
-            <span className={'scanoss-logo icon-container'} />
+            <span className={'scanoss-icon icon-container'} />
             {content}
             {icon}
         </button>;
@@ -230,8 +231,8 @@ function getTitle(result: ScanOSSState): string {
         case 'none': return nls.localize('theia/ai/scanoss/changeSet/scan', 'Scan');
         case 'pending': return nls.localize('theia/ai/scanoss/changeSet/scanning', 'Scanning...');
         case 'error': return nls.localize('theia/ai/scanoss/changeSet/error', 'Error: Rerun');
-        case 'match': return nls.localize('theia/ai/scanoss/changeSet/view-matches', 'View Matches');
         case 'clean': return nls.localize('theia/ai/scanoss/changeSet/clean', 'No Matches');
+        default: return '';
     }
 }
 
