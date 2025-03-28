@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { getJsonOfText, getTextOfResponse, LanguageModelRequirement, LanguageModelResponse } from '@theia/ai-core';
+import { getJsonOfText, getTextOfResponse, LanguageModel, LanguageModelMessage, LanguageModelRequirement, LanguageModelResponse } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
 import { AbstractStreamParsingChatAgent } from '@theia/ai-chat/lib/common/chat-agents';
@@ -22,6 +22,7 @@ import { MutableChatRequestModel, InformationalChatResponseContentImpl } from '@
 import { generateUuid, nls } from '@theia/core';
 
 import { orchestratorTemplate } from './orchestrator-prompt-template';
+import { ChatToolRequest } from '@theia/ai-chat/lib/common/chat-tool-request-service';
 
 export const OrchestratorChatAgentId = 'Orchestrator';
 const OrchestratorRequestIdKey = 'orchestatorRequestIdKey';
@@ -58,10 +59,56 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
         return super.invoke(request);
     }
 
+    // override sendLlmRequest to modify the data sent to the recording service
+    // should no longer be needed after https://github.com/eclipse-theia/theia/issues/15221
+    protected override async sendLlmRequest(
+        request: MutableChatRequestModel,
+        messages: LanguageModelMessage[],
+        toolRequests: ChatToolRequest[],
+        languageModel: LanguageModel
+    ): Promise<LanguageModelResponse> {
+        const agentSettings = this.getLlmSettings();
+        const settings = { ...agentSettings, ...request.session.settings };
+        const tools = toolRequests.length > 0 ? toolRequests : undefined;
+        this.recordingService.recordRequest({
+            agentId: this.id,
+            sessionId: request.session.id,
+            requestId: request.getDataByKey<string>(OrchestratorRequestIdKey) ?? request.id,
+            request: messages
+        });
+        return this.languageModelService.sendRequest(
+            languageModel,
+            {
+                messages,
+                tools,
+                settings,
+                agentId: this.id,
+                sessionId: request.session.id,
+                requestId: request.id,
+                cancellationToken: request.response.cancellationToken
+            }
+        );
+    }
+
+    // override onResponseComplete to not send data to the communication service on completion
+    // should no longer be needed after https://github.com/eclipse-theia/theia/issues/15221
+    protected override async onResponseComplete(request: MutableChatRequestModel): Promise<void> {
+        return request.response.complete();
+    }
+
     protected override async addContentsToResponse(response: LanguageModelResponse, request: MutableChatRequestModel): Promise<void> {
-        let agentIds: string[] = [];
         const responseText = await getTextOfResponse(response);
-        // We use the previously generated, dedicated ID to log the orchestrator response before we forward the original request
+
+        // record orchestrator response
+        this.recordingService.recordResponse({
+            agentId: this.id,
+            sessionId: request.session.id,
+            requestId: request.getDataByKey<string>(OrchestratorRequestIdKey) ?? request.id,
+            response: [{ type: 'text', actor: 'ai', text: responseText }]
+        });
+
+        let agentIds: string[] = [];
+
         try {
             const jsonResponse = await getJsonOfText(responseText);
             if (Array.isArray(jsonResponse)) {
