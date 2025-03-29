@@ -16,6 +16,8 @@
 
 #search-in-workspace {
   height: 100%;
+  display: flex;
+  flex-flow: column nowrap;
 }
 
 #search-in-workspace .theia-TreeContainer.empty {
@@ -28,6 +30,7 @@
   flex-direction: column;
   height: 100%;
   box-sizing: border-box;
+  flex: 1 1 auto;
 }
 
 .t-siw-search-container .theia-ExpansionToggle {
