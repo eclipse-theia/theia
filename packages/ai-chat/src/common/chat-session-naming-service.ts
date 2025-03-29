@@ -59,7 +59,7 @@ export class ChatSessionNamingService {
 export class ChatSessionNamingAgent implements Agent {
     static ID = 'chat-session-naming-service';
     id = ChatSessionNamingAgent.ID;
-    name = 'Chat Session Naming Service';
+    name = 'Chat Session Naming';
     description = 'Service to generate chat session names';
     variables = [];
     promptTemplates: PromptTemplate[] = [CHAT_SESSION_NAMING_PROMPT];
