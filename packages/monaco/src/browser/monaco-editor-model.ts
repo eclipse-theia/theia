@@ -561,6 +561,7 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
             return;
         }
 
+        const currentToSaveVersion = this.model.getAlternativeVersionId();
         const contentLength = this.model.getValueLength();
         const content = this.model.getValue();
         try {
@@ -572,7 +573,7 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
             this.updateContentEncoding();
             this.setValid(true);
 
-            if (token.isCancellationRequested) {
+            if (token.isCancellationRequested && this.model.getAlternativeVersionId() !== currentToSaveVersion) {
                 return;
             }
 
