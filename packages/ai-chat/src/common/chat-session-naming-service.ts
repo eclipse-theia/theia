@@ -106,7 +106,7 @@ export class ChatSessionNamingAgent implements Agent {
         const request: LanguageModelRequest = {
             messages: [{
                 actor: 'user',
-                query: message,
+                text: message,
                 type: 'text'
             }]
         };
@@ -126,7 +126,7 @@ export class ChatSessionNamingAgent implements Agent {
             agentId: this.id,
             sessionId,
             requestId,
-            response,
+            response: [{ actor: 'ai', text: response, type: 'text' }]
         });
 
         return response.replace(/\s+/g, ' ').substring(0, 100);
