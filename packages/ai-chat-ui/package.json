@@ -15,7 +15,8 @@
     "@theia/workspace": "1.59.0",
     "minimatch": "^5.1.0",
     "tslib": "^2.6.2",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "date-fns": "^4.1.0"
   },
   "publishConfig": {
     "access": "public"
