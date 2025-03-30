@@ -17,21 +17,44 @@
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { AIChatContribution } from './ai-chat-ui-contribution';
-import { Emitter, nls } from '@theia/core';
+import { Emitter, InMemoryResources, URI, nls } from '@theia/core';
 import { ChatCommands } from './chat-view-commands';
+import { CommandRegistry } from '@theia/core/lib/common/command';
+import { SessionSettingsDialog } from './session-settings-dialog';
+import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
+import { ChatViewWidget } from './chat-view-widget';
 
 @injectable()
 export class ChatViewWidgetToolbarContribution implements TabBarToolbarContribution {
     @inject(AIChatContribution)
     protected readonly chatContribution: AIChatContribution;
 
+    @inject(CommandRegistry)
+    protected readonly commandRegistry: CommandRegistry;
+
+    @inject(MonacoEditorProvider)
+    protected readonly editorProvider: MonacoEditorProvider;
+
+    @inject(InMemoryResources)
+    protected readonly resources: InMemoryResources;
+
     protected readonly onChatWidgetStateChangedEmitter = new Emitter<void>();
     protected readonly onChatWidgetStateChanged = this.onChatWidgetStateChangedEmitter.event;
 
+    private readonly sessionSettingsURI = new URI('chat-view:/settings.json');
+
     @postConstruct()
     protected init(): void {
+        this.resources.add(this.sessionSettingsURI, '{}');
+
         this.chatContribution.widget.then(widget => {
             widget.onStateChanged(() => this.onChatWidgetStateChangedEmitter.fire());
+        });
+
+        this.commandRegistry.registerCommand(ChatCommands.EDIT_SESSION_SETTINGS, {
+            execute: () => this.openJsonDataDialog(),
+            isEnabled: widget => widget instanceof ChatViewWidget,
+            isVisible: widget => widget instanceof ChatViewWidget
         });
     }
 
@@ -50,5 +73,28 @@ export class ChatViewWidgetToolbarContribution implements TabBarToolbarContribut
             onDidChange: this.onChatWidgetStateChanged,
             priority: 2
         });
+        registry.registerItem({
+            id: ChatCommands.EDIT_SESSION_SETTINGS.id,
+            command: ChatCommands.EDIT_SESSION_SETTINGS.id,
+            tooltip: nls.localize('theia/ai/session-settings-dialog/tooltip', 'Set Session Settings'),
+            priority: 3
+        });
+    }
+
+    protected async openJsonDataDialog(): Promise<void> {
+        const widget = await this.chatContribution.widget;
+        if (!widget) {
+            return;
+        }
+
+        const dialog = new SessionSettingsDialog(this.editorProvider, this.resources, this.sessionSettingsURI, {
+            initialSettings: widget.getSettings()
+        });
+
+        const result = await dialog.open();
+        if (result) {
+            widget.setSettings(result);
+        }
+
     }
 }

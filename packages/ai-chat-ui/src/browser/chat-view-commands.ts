@@ -32,6 +32,12 @@ export namespace ChatCommands {
         category: CHAT_CATEGORY,
         iconClass: codicon('lock')
     }, '', CHAT_CATEGORY_KEY);
+
+    export const EDIT_SESSION_SETTINGS = Command.toLocalizedCommand({
+        id: 'chat:widget:session-settings',
+        category: CHAT_CATEGORY,
+        iconClass: codicon('bracket')
+    }, 'Set Session Settings', CHAT_CATEGORY_KEY);
 }
 
 export const AI_CHAT_NEW_CHAT_WINDOW_COMMAND: Command = {

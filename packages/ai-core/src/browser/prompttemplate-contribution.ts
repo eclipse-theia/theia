@@ -22,8 +22,9 @@ import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/li
 
 import { codicon, Widget } from '@theia/core/lib/browser';
 import { EditorWidget, ReplaceOperation } from '@theia/editor/lib/browser';
-import { PromptCustomizationService, PromptService, ToolInvocationRegistry } from '../common';
+import { PromptCustomizationService, PromptService, PromptText, ToolInvocationRegistry } from '../common';
 import { ProviderResult } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
+import { AIVariableService } from '../common/variable-service';
 
 const PROMPT_TEMPLATE_LANGUAGE_ID = 'theia-ai-prompt-template';
 const PROMPT_TEMPLATE_TEXTMATE_SCOPE = 'source.prompttemplate';
@@ -59,19 +60,28 @@ export class PromptTemplateContribution implements LanguageGrammarDefinitionCont
     @inject(ToolInvocationRegistry)
     protected readonly toolInvocationRegistry: ToolInvocationRegistry;
 
+    @inject(AIVariableService)
+    protected readonly variableService: AIVariableService;
+
     readonly config: monaco.languages.LanguageConfiguration =
         {
             'brackets': [
                 ['${', '}'],
-                ['~{', '}']
+                ['~{', '}'],
+                ['{{', '}}'],
+                ['{{{', '}}}']
             ],
             'autoClosingPairs': [
                 { 'open': '${', 'close': '}' },
                 { 'open': '~{', 'close': '}' },
+                { 'open': '{{', 'close': '}}' },
+                { 'open': '{{{', 'close': '}}}' }
             ],
             'surroundingPairs': [
                 { 'open': '${', 'close': '}' },
-                { 'open': '~{', 'close': '}' }
+                { 'open': '~{', 'close': '}' },
+                { 'open': '{{', 'close': '}}' },
+                { 'open': '{{{', 'close': '}}}' }
             ]
         };
 
@@ -93,6 +103,17 @@ export class PromptTemplateContribution implements LanguageGrammarDefinitionCont
             // Monaco only supports single character trigger characters
             triggerCharacters: ['{'],
             provideCompletionItems: (model, position, _context, _token): ProviderResult<monaco.languages.CompletionList> => this.provideFunctionCompletions(model, position),
+        });
+
+        monaco.languages.registerCompletionItemProvider(PROMPT_TEMPLATE_LANGUAGE_ID, {
+            // Monaco only supports single character trigger characters
+            triggerCharacters: ['{'],
+            provideCompletionItems: (model, position, _context, _token): ProviderResult<monaco.languages.CompletionList> => this.provideVariableCompletions(model, position),
+        });
+        monaco.languages.registerCompletionItemProvider(PROMPT_TEMPLATE_LANGUAGE_ID, {
+            // Monaco only supports single character trigger characters
+            triggerCharacters: ['{', ':'],
+            provideCompletionItems: (model, position, _context, _token): ProviderResult<monaco.languages.CompletionList> => this.provideVariableWithArgCompletions(model, position),
         });
 
         const textmateGrammar = require('../../data/prompttemplate.tmLanguage.json');
@@ -120,6 +141,62 @@ export class PromptTemplateContribution implements LanguageGrammarDefinitionCont
             tool => tool.name,
             tool => tool.description ?? ''
         );
+    }
+
+    provideVariableCompletions(model: monaco.editor.ITextModel, position: monaco.Position): ProviderResult<monaco.languages.CompletionList> {
+        return this.getSuggestions(
+            model,
+            position,
+            '{{',
+            this.variableService.getVariables(),
+            monaco.languages.CompletionItemKind.Variable,
+            variable => variable.args?.some(arg => !arg.isOptional) ? variable.name + PromptText.VARIABLE_SEPARATOR_CHAR : variable.name,
+            variable => variable.name,
+            variable => variable.description ?? ''
+        );
+    }
+
+    async provideVariableWithArgCompletions(model: monaco.editor.ITextModel, position: monaco.Position): Promise<monaco.languages.CompletionList> {
+        // Get the text of the current line up to the cursor position
+        const textUntilPosition = model.getValueInRange({
+            startLineNumber: position.lineNumber,
+            startColumn: 1,
+            endLineNumber: position.lineNumber,
+            endColumn: position.column,
+        });
+
+        // Regex that captures the variable name in contexts like {{, {{{, {{varname, {{{varname, {{varname:, or {{{varname:
+        const variableRegex = /(?:\{\{\{|\{\{)([\w-]+)?(?::)?/;
+        const match = textUntilPosition.match(variableRegex);
+
+        if (!match) {
+            return { suggestions: [] };
+        }
+
+        const currentVariableName = match[1];
+        const hasColonSeparator = textUntilPosition.includes(`${currentVariableName}:`);
+
+        const variables = this.variableService.getVariables();
+        const suggestions: monaco.languages.CompletionItem[] = [];
+
+        for (const variable of variables) {
+            // If we have a variable:arg pattern, only process the matching variable
+            if (hasColonSeparator && variable.name !== currentVariableName) {
+                continue;
+            }
+
+            const provider = await this.variableService.getArgumentCompletionProvider(variable.name);
+            if (provider) {
+                const items = await provider(model, position, '{');
+                if (items) {
+                    suggestions.push(...items.map(item => ({
+                        ...item
+                    })));
+                }
+            }
+        }
+
+        return { suggestions };
     }
 
     getCompletionRange(model: monaco.editor.ITextModel, position: monaco.Position, triggerCharacters: string): monaco.Range | undefined {

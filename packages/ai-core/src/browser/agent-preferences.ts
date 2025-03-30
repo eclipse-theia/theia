@@ -25,6 +25,7 @@ export const AgentSettingsPreferenceSchema: PreferenceSchema = {
     [AGENT_SETTINGS_PREF]: {
       type: 'object',
       title: nls.localize('theia/ai/agents/title', 'Agent Settings'),
+      hidden: true,
       markdownDescription: nls.localize('theia/ai/agents/mdDescription', 'Configure agent settings such as enabling or disabling specific agents, configuring prompts and \
         selecting LLMs.'),
       additionalProperties: {

@@ -135,8 +135,10 @@ export class DirtyDiffController implements Disposable {
 
     handleDirtyDiffUpdate(dirtyDiff: DirtyDiffUpdate): void {
         if (dirtyDiff.editor === this.editor) {
-            this.closeWidget();
             this.dirtyDiff = dirtyDiff;
+            if (this.widget) {
+                this.widget.changes = dirtyDiff.changes                ;
+            }
         }
     }
 
@@ -210,7 +212,8 @@ export class DirtyDiffController implements Disposable {
     protected createWidget(): DirtyDiffWidget | undefined {
         const { widgetFactory, editor, changes, previousRevisionUri } = this;
         if (widgetFactory && editor instanceof MonacoEditor && changes?.length && previousRevisionUri) {
-            const widget = widgetFactory({ editor, previousRevisionUri, changes });
+            const widget = widgetFactory({ editor, previousRevisionUri });
+            widget.changes = changes;
             widget.onDidClose(() => {
                 this.widget = undefined;
             });

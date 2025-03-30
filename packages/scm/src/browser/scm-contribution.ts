@@ -204,6 +204,7 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
             execute: widget => {
                 if (widget instanceof EditorWidget && widget.editor instanceof MonacoDiffEditor) {
                     widget.editor.diffNavigator.next();
+                    widget.activate();
                 } else {
                     this.dirtyDiffNavigator.gotoNextChange();
                 }
@@ -219,6 +220,7 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
             execute: widget => {
                 if (widget instanceof EditorWidget && widget.editor instanceof MonacoDiffEditor) {
                     widget.editor.diffNavigator.previous();
+                    widget.activate();
                 } else {
                     this.dirtyDiffNavigator.gotoPreviousChange();
                 }

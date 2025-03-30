@@ -64,8 +64,34 @@ export interface ChatSession {
 }
 
 export interface ActiveSessionChangedEvent {
+    type: 'activeChange';
     sessionId: string | undefined;
     focus?: boolean;
+}
+
+export function isActiveSessionChangedEvent(obj: unknown): obj is ActiveSessionChangedEvent {
+    // eslint-disable-next-line no-null/no-null
+    return typeof obj === 'object' && obj !== null && 'type' in obj && obj.type === 'activeChange';
+}
+
+export interface SessionCreatedEvent {
+    type: 'created';
+    sessionId: string;
+}
+
+export function isSessionCreatedEvent(obj: unknown): obj is SessionCreatedEvent {
+    // eslint-disable-next-line no-null/no-null
+    return typeof obj === 'object' && obj !== null && 'type' in obj && obj.type === 'created';
+}
+
+export interface SessionDeletedEvent {
+    type: 'deleted';
+    sessionId: string;
+}
+
+export function isSessionDeletedEvent(obj: unknown): obj is SessionDeletedEvent {
+    // eslint-disable-next-line no-null/no-null
+    return typeof obj === 'object' && obj !== null && 'type' in obj && obj.type === 'deleted';
 }
 
 export interface SessionOptions {
@@ -93,7 +119,7 @@ export type PinChatAgent = boolean;
 
 export const ChatService = Symbol('ChatService');
 export interface ChatService {
-    onActiveSessionChanged: Event<ActiveSessionChangedEvent>
+    onSessionEvent: Event<ActiveSessionChangedEvent | SessionCreatedEvent | SessionDeletedEvent>
 
     getSession(id: string): ChatSession | undefined;
     getSessions(): ChatSession[];
@@ -118,8 +144,8 @@ interface ChatSessionInternal extends ChatSession {
 
 @injectable()
 export class ChatServiceImpl implements ChatService {
-    protected readonly onActiveSessionChangedEmitter = new Emitter<ActiveSessionChangedEvent>();
-    onActiveSessionChanged = this.onActiveSessionChangedEmitter.event;
+    protected readonly onSessionEventEmitter = new Emitter<ActiveSessionChangedEvent | SessionCreatedEvent | SessionDeletedEvent>();
+    onSessionEvent = this.onSessionEventEmitter.event;
 
     @inject(ChatAgentService)
     protected chatAgentService: ChatAgentService;
@@ -165,6 +191,7 @@ export class ChatServiceImpl implements ChatService {
         };
         this._sessions.push(session);
         this.setActiveSession(session.id, options);
+        this.onSessionEventEmitter.fire({ type: 'created', sessionId: session.id });
         return session;
     }
 
@@ -178,13 +205,14 @@ export class ChatServiceImpl implements ChatService {
         }
         session.model.dispose();
         this._sessions.splice(sessionIndex, 1);
+        this.onSessionEventEmitter.fire({ type: 'deleted', sessionId: sessionId });
     }
 
     setActiveSession(sessionId: string | undefined, options?: SessionOptions): void {
         this._sessions.forEach(session => {
             session.isActive = session.id === sessionId;
         });
-        this.onActiveSessionChangedEmitter.fire({ sessionId: sessionId, ...options });
+        this.onSessionEventEmitter.fire({ type: 'activeChange', sessionId: sessionId, ...options });
     }
 
     async sendRequest(

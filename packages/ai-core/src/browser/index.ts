@@ -25,3 +25,5 @@ export * from './frontend-variable-service';
 export * from './prompttemplate-contribution';
 export * from './theia-variable-contribution';
 export * from './frontend-variable-service';
+export * from './ai-core-command-contribution';
+export * from '../common/language-model-service';

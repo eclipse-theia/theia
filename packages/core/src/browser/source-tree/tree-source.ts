@@ -34,6 +34,7 @@ export interface CompositeTreeElement extends TreeElement {
     /** default: true */
     readonly hasElements?: boolean
     getElements(): MaybePromise<IterableIterator<TreeElement>>
+    expandByDefault?(): boolean
 }
 export namespace CompositeTreeElement {
     export function is(element: unknown): element is CompositeTreeElement {

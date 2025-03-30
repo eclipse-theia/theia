@@ -357,19 +357,21 @@ export module '@theia/plugin' {
     export class Selection extends Range {
 
         /**
-         * Position where selection starts.
+         * The position at which the selection starts.
+         * This position might be before or after {@link Selection.active active}.
          */
-        anchor: Position;
+        readonly anchor: Position;
 
         /**
-         * Position of the cursor
+         * The position of the cursor.
+         * This position might be before or after {@link Selection.anchor anchor}.
          */
-        active: Position;
+        readonly active: Position;
 
         /**
-         * A selection is reversed if `active.isBefore(anchor)`
+         * A selection is reversed if its {@link Selection.anchor anchor} is the {@link Selection.end end} position.
          */
-        isReversed: boolean;
+        readonly isReversed: boolean;
 
         /**
          * Create a selection from two positions.
@@ -1146,7 +1148,20 @@ export module '@theia/plugin' {
          * @return A promise that resolves with a value indicating if the snippet could be inserted. Note that the promise does not signal
          * that the snippet is completely filled-in or accepted.
          */
-        insertSnippet(snippet: SnippetString, location?: Position | Range | Position[] | Range[], options?: { undoStopBefore: boolean; undoStopAfter: boolean; }): Thenable<boolean>;
+        insertSnippet(snippet: SnippetString, location?: Position | Range | Position[] | Range[], options?: {
+            /**
+             * Add undo stop before making the edits.
+             */
+            readonly undoStopBefore: boolean;
+            /**
+             * Add undo stop after making the edits.
+             */
+            readonly undoStopAfter: boolean;
+            /**
+             * Keep whitespace of the {@link SnippetString.value} as is.
+             */
+            readonly keepWhitespace?: boolean;
+        }): Thenable<boolean>;
 
         /**
          * Adds a set of decorations to the text editor. If a set of decorations already exists with
@@ -12244,6 +12259,26 @@ export module '@theia/plugin' {
         hideWhenEmpty?: boolean;
 
         /**
+         * Context value of the resource group. This can be used to contribute resource group specific actions.
+         * For example, if a resource group is given a context value of `exportable`, when contributing actions to `scm/resourceGroup/context`
+         * using `menus` extension point, you can specify context value for key `scmResourceGroupState` in `when` expressions, like `scmResourceGroupState == exportable`.
+         * ```json
+         * "contributes": {
+         *   "menus": {
+         *     "scm/resourceGroup/context": [
+         *       {
+         *         "command": "extension.export",
+         *         "when": "scmResourceGroupState == exportable"
+         *       }
+         *     ]
+         *   }
+         * }
+         * ```
+         * This will show action `extension.export` only for resource groups with `contextValue` equal to `exportable`.
+         */
+        contextValue?: string;
+
+        /**
          * This group's collection of
          * {@link SourceControlResourceState source control resource states}.
          */
@@ -16298,6 +16333,11 @@ export module '@theia/plugin' {
          * The {@link SnippetString snippet} this edit will perform.
          */
         snippet: SnippetString;
+
+        /**
+         * Whether the snippet edit should be applied with existing whitespace preserved.
+         */
+        keepWhitespace?: boolean;
 
         /**
          * Create a new snippet edit.

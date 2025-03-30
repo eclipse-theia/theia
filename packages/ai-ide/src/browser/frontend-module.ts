@@ -38,6 +38,11 @@ import { AIAgentConfigurationViewContribution } from './ai-configuration/ai-conf
 import { AIConfigurationContainerWidget } from './ai-configuration/ai-configuration-widget';
 import { AIVariableConfigurationWidget } from './ai-configuration/variable-configuration-widget';
 import { ContextFilesVariableContribution } from '../common/context-files-variable';
+import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { AiConfigurationPreferences } from './ai-configuration/ai-configuration-preferences';
+import { AIMCPConfigurationWidget } from './ai-configuration/mcp-configuration-widget';
+import { ChatWelcomeMessageProvider } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
+import { IdeChatWelcomeMessageProvider } from './ide-chat-welcome-message-provider';
 
 export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: WorkspacePreferencesSchema });
@@ -65,6 +70,8 @@ export default new ContainerModule(bind => {
     bind(DefaultChatAgentId).toConstantValue({ id: OrchestratorChatAgentId });
     bind(FallbackChatAgentId).toConstantValue({ id: UniversalChatAgentId });
 
+    bind(ChatWelcomeMessageProvider).to(IdeChatWelcomeMessageProvider);
+
     bind(ToolProvider).to(GetWorkspaceFileList);
     bind(ToolProvider).to(FileContentFunction);
     bind(ToolProvider).to(GetWorkspaceDirectoryStructure);
@@ -86,6 +93,7 @@ export default new ContainerModule(bind => {
         .inSingletonScope();
 
     bindViewContribution(bind, AIAgentConfigurationViewContribution);
+    bind(TabBarToolbarContribution).toService(AIAgentConfigurationViewContribution);
 
     bind(AIVariableConfigurationWidget).toSelf();
     bind(WidgetFactory)
@@ -106,4 +114,13 @@ export default new ContainerModule(bind => {
     bind(ToolProvider).to(SimpleReplaceContentInFileProvider);
     bind(ToolProvider).to(AddFileToChatContext);
     bind(AIVariableContribution).to(ContextFilesVariableContribution).inSingletonScope();
+    bind(PreferenceContribution).toConstantValue({ schema: AiConfigurationPreferences });
+    bind(AIMCPConfigurationWidget).toSelf();
+    bind(WidgetFactory)
+        .toDynamicValue(ctx => ({
+            id: AIMCPConfigurationWidget.ID,
+            createWidget: () => ctx.container.get(AIMCPConfigurationWidget)
+        }))
+        .inSingletonScope();
+
 });

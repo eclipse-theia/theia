@@ -61,7 +61,10 @@ import { AIActivationService } from './ai-activation-service';
 import { AgentService, AgentServiceImpl } from '../common/agent-service';
 import { AICommandHandlerFactory } from './ai-command-handler-factory';
 import { AISettingsService } from '../common/settings-service';
+import { AiCoreCommandContribution } from './ai-core-command-contribution';
 import { PromptVariableContribution } from '../common/prompt-variable-contribution';
+import { LanguageModelService } from '../common/language-model-service';
+import { FrontendLanguageModelServiceImpl } from './frontend-language-model-service';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, LanguageModelProvider);
@@ -133,7 +136,12 @@ export default new ContainerModule(bind => {
             execute: (...args: unknown[]) => handler.execute(...args),
             isEnabled: (...args: unknown[]) => activationService.isActive && (handler.isEnabled?.(...args) ?? true),
             isVisible: (...args: unknown[]) => activationService.isActive && (handler.isVisible?.(...args) ?? true),
-            isToggled: (...args: unknown[]) => handler.isToggled?.(...args) ?? false
+            isToggled: handler.isToggled
         };
     });
+
+    bind(AiCoreCommandContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(AiCoreCommandContribution);
+    bind(FrontendLanguageModelServiceImpl).toSelf().inSingletonScope();
+    bind(LanguageModelService).toService(FrontendLanguageModelServiceImpl);
 });

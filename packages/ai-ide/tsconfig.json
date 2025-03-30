@@ -16,7 +16,13 @@
       "path": "../ai-chat"
     },
     {
+      "path": "../ai-chat-ui"
+    },
+    {
       "path": "../ai-core"
+    },
+    {
+      "path": "../ai-mcp"
     },
     {
       "path": "../core"

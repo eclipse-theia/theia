@@ -26,6 +26,8 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 import { SecondaryWindowHandler } from '@theia/core/lib/browser/secondary-window-handler';
 import { formatDistance } from 'date-fns';
 import * as locales from 'date-fns/locale';
+import { AI_SHOW_SETTINGS_COMMAND } from '@theia/ai-core/lib/browser';
+import { OPEN_AI_HISTORY_VIEW } from '@theia/ai-history/lib/browser/ai-history-contribution';
 
 export const AI_CHAT_TOGGLE_COMMAND_ID = 'aiChat:toggle';
 
@@ -97,18 +99,30 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
             id: AI_CHAT_NEW_CHAT_WINDOW_COMMAND.id,
             command: AI_CHAT_NEW_CHAT_WINDOW_COMMAND.id,
             tooltip: nls.localizeByDefault('New Chat'),
-            isVisible: widget => this.isChatViewWidget(widget)
+            isVisible: widget => this.withWidget(widget)
         });
         registry.registerItem({
             id: AI_CHAT_SHOW_CHATS_COMMAND.id,
             command: AI_CHAT_SHOW_CHATS_COMMAND.id,
             tooltip: nls.localizeByDefault('Show Chats...'),
-            isVisible: widget => this.isChatViewWidget(widget),
+            isVisible: widget => this.withWidget(widget),
         });
-    }
-
-    protected isChatViewWidget(widget?: Widget): boolean {
-        return !!widget && ChatViewWidget.ID === widget.id;
+        registry.registerItem({
+            id: 'chat-view.' + AI_SHOW_SETTINGS_COMMAND.id,
+            command: AI_SHOW_SETTINGS_COMMAND.id,
+            group: 'ai-settings',
+            priority: 3,
+            tooltip: nls.localize('theia/ai-chat-ui/open-settings-tooltip', 'Open AI settings...'),
+            isVisible: widget => this.withWidget(widget),
+        });
+        registry.registerItem({
+            id: 'chat-view.' + OPEN_AI_HISTORY_VIEW.id,
+            command: OPEN_AI_HISTORY_VIEW.id,
+            tooltip: nls.localize('theia/ai-chat-ui/open-history-tooltip', 'Open AI history...'),
+            group: 'ai-settings',
+            priority: 1,
+            isVisible: widget => this.withWidget(widget),
+        });
     }
 
     protected async selectChat(sessionId?: string): Promise<void> {

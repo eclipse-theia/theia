@@ -19,12 +19,51 @@ import { inject, injectable, named, postConstruct } from '@theia/core/shared/inv
 
 export type MessageActor = 'user' | 'ai' | 'system';
 
-export interface LanguageModelRequestMessage {
+export type LanguageModelMessage = TextMessage | ThinkingMessage | ToolUseMessage | ToolResultMessage;
+export namespace LanguageModelMessage {
+
+    export function isTextMessage(obj: LanguageModelMessage): obj is TextMessage {
+        return obj.type === 'text';
+    }
+    export function isThinkingMessage(obj: LanguageModelMessage): obj is ThinkingMessage {
+        return obj.type === 'thinking';
+    }
+    export function isToolUseMessage(obj: LanguageModelMessage): obj is ToolUseMessage {
+        return obj.type === 'tool_use';
+    }
+    export function isToolResultMessage(obj: LanguageModelMessage): obj is ToolResultMessage {
+        return obj.type === 'tool_result';
+    }
+}
+export interface TextMessage {
     actor: MessageActor;
     type: 'text';
-    query: string;
+    text: string;
 }
-export const isLanguageModelRequestMessage = (obj: unknown): obj is LanguageModelRequestMessage =>
+export interface ThinkingMessage {
+    actor: 'ai'
+    type: 'thinking';
+    thinking: string;
+    signature: string;
+}
+
+export interface ToolResultMessage {
+    actor: 'user';
+    tool_use_id: string;
+    type: 'tool_result';
+    content?: string;
+    is_error?: boolean;
+}
+
+export interface ToolUseMessage {
+    actor: 'ai';
+    type: 'tool_use';
+    id: string;
+    input: unknown;
+    name: string;
+}
+
+export const isLanguageModelRequestMessage = (obj: unknown): obj is LanguageModelMessage =>
     !!(obj && typeof obj === 'object' &&
         'type' in obj &&
         typeof (obj as { type: unknown }).type === 'string' &&
@@ -48,7 +87,7 @@ export interface ToolRequestParameters {
 export interface ToolRequest {
     id: string;
     name: string;
-    parameters?: ToolRequestParameters
+    parameters: ToolRequestParameters
     description?: string;
     handler: (arg_string: string, ctx?: unknown) => Promise<unknown>;
     providerName?: string;
@@ -102,12 +141,12 @@ export namespace ToolRequest {
             (!('required' in obj) || (Array.isArray(obj.required) && obj.required.every(prop => typeof prop === 'string')));
     }
 }
-
 export interface LanguageModelRequest {
-    messages: LanguageModelRequestMessage[],
+    messages: LanguageModelMessage[],
     tools?: ToolRequest[];
     response_format?: { type: 'text' } | { type: 'json_object' } | ResponseFormatJsonSchema;
     settings?: { [key: string]: unknown };
+    clientSettings?: { keepToolCalls: boolean; keepThinking: boolean }
 }
 export interface ResponseFormatJsonSchema {
     type: 'json_schema';
@@ -119,16 +158,38 @@ export interface ResponseFormatJsonSchema {
     };
 }
 
+export interface UserRequest extends LanguageModelRequest {
+    sessionId: string;
+    requestId: string;
+    agentId: string;
+    cancellationToken?: CancellationToken;
+}
+
 export interface LanguageModelTextResponse {
     text: string;
 }
 export const isLanguageModelTextResponse = (obj: unknown): obj is LanguageModelTextResponse =>
     !!(obj && typeof obj === 'object' && 'text' in obj && typeof (obj as { text: unknown }).text === 'string');
 
-export interface LanguageModelStreamResponsePart {
-    content?: string | null;
-    tool_calls?: ToolCall[];
+export type LanguageModelStreamResponsePart = TextResponsePart | ToolCallResponsePart | ThinkingResponsePart;
+export interface TextResponsePart {
+    content: string;
 }
+export const isTextResponsePart = (part: unknown): part is TextResponsePart =>
+    !!(part && typeof part === 'object' && 'content' in part && typeof part.content === 'string');
+
+export interface ToolCallResponsePart {
+    tool_calls: ToolCall[];
+}
+export const isToolCallResponsePart = (part: unknown): part is ToolCallResponsePart =>
+    !!(part && typeof part === 'object' && 'tool_calls' in part && Array.isArray(part.tool_calls));
+
+export interface ThinkingResponsePart {
+    thought: string;
+    signature: string;
+}
+export const isThinkingResponsePart = (part: unknown): part is ThinkingResponsePart =>
+    !!(part && typeof part === 'object' && 'thought' in part && typeof part.thought === 'string');
 
 export interface ToolCall {
     id?: string;
@@ -171,11 +232,6 @@ export interface LanguageModelMetaData {
     readonly family?: string;
     readonly maxInputTokens?: number;
     readonly maxOutputTokens?: number;
-    /**
-     * Default request settings for the language model. These settings can be set by a user preferences.
-     * Settings in a request will override these default settings.
-     */
-    readonly defaultRequestSettings?: { [key: string]: unknown };
 }
 
 export namespace LanguageModelMetaData {

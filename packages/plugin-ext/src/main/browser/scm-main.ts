@@ -53,6 +53,8 @@ export class PluginScmResourceGroup implements ScmResourceGroup {
 
     get hideWhenEmpty(): boolean { return !!this.features.hideWhenEmpty; }
 
+    get contextValue(): string | undefined { return this.features.contextValue; }
+
     private readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange: Event<void> = this.onDidChangeEmitter.event;
 
