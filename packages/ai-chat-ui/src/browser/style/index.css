@@ -305,6 +305,7 @@ div:last-child > .theia-ChatNode {
 }
 
 .theia-ChatInput-ChangeSet-List .theia-ChatInput-ChangeSet-Icon {
+  position: relative;
   padding-left: 2px;
   padding-right: 4px;
   min-width: var(--theia-icon-size);
@@ -320,6 +321,13 @@ div:last-child > .theia-ChatNode {
 .theia-ChatInput-ChangeSet-List
   .theia-ChatInput-ChangeSet-Icon.codicon::before {
   font-size: var(--theia-ui-font-size1);
+}
+
+.theia-ChatInput-ChangeSet-List .theia-ChatInput-ChangeSet-IconOverlay {
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  font-size: var(--theia-ui-font-size0) px;
 }
 
 .theia-ChatInput-ChangeSet-Actions .action {

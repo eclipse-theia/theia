@@ -46,6 +46,7 @@ import { ContextSummaryVariableContribution } from '../common/context-summary-va
 import { ContextDetailsVariableContribution } from '../common/context-details-variable';
 import { ChangeSetVariableContribution } from './change-set-variable';
 import { ChatSessionNamingAgent, ChatSessionNamingService } from '../common/chat-session-naming-service';
+import { ChangeSetDecorator, ChangeSetDecoratorService } from './change-set-decorator-service';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, Agent);
@@ -106,6 +107,11 @@ export default new ContainerModule(bind => {
         container.bind(ChangeSetFileElement).toSelf().inSingletonScope();
         return container.get(ChangeSetFileElement);
     });
+
+    bind(ChangeSetDecoratorService).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(ChangeSetDecoratorService);
+    bindContributionProvider(bind, ChangeSetDecorator);
+
     bind(ChangeSetFileResourceResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toService(ChangeSetFileResourceResolver);
     bind(ToolCallChatResponseContentFactory).toSelf().inSingletonScope();

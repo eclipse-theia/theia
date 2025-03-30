@@ -27,6 +27,7 @@ import { AIVariableResolutionRequest } from '@theia/ai-core';
 import { FrontendVariableService } from '@theia/ai-core/lib/browser';
 import { ContextVariablePicker } from './context-variable-picker';
 import { ChangeSetActionRenderer, ChangeSetActionService } from './change-set-actions/change-set-action-service';
+import { ChangeSetDecoratorService } from '@theia/ai-chat/lib/browser/change-set-decorator-service';
 
 type Query = (query: string) => Promise<void>;
 type Unpin = () => void;
@@ -68,6 +69,9 @@ export class AIChatInputWidget extends ReactWidget {
 
     @inject(ChangeSetActionService)
     protected readonly changeSetActionService: ChangeSetActionService;
+
+    @inject(ChangeSetDecoratorService)
+    protected readonly changeSetDecoratorService: ChangeSetDecoratorService;
 
     protected editorRef: MonacoEditor | undefined = undefined;
     private editorReady = new Deferred<void>();
@@ -157,6 +161,7 @@ export class AIChatInputWidget extends ReactWidget {
                 showPinnedAgent={this.configuration?.showPinnedAgent}
                 labelProvider={this.labelProvider}
                 actionService={this.changeSetActionService}
+                decoratorService={this.changeSetDecoratorService}
             />
         );
     }
@@ -249,6 +254,7 @@ interface ChatInputProperties {
     showPinnedAgent?: boolean;
     labelProvider: LabelProvider;
     actionService: ChangeSetActionService;
+    decoratorService: ChangeSetDecoratorService;
 }
 
 const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInputProperties) => {
@@ -392,6 +398,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                 onDeleteChangeSetElement
             )
             : undefined);
+
         return () => {
             listener?.dispose();
             responseListenerRef.current?.dispose();
@@ -404,6 +411,22 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             if (!props.chatModel.changeSet) { return; }
             const newActions = props.actionService.getActionsForChangeset(props.chatModel.changeSet);
             setChangeSetUI(current => !current ? current : { ...current, actions: newActions });
+        });
+        return () => disposable.dispose();
+    });
+
+    React.useEffect(() => {
+        const disposable = props.decoratorService.onDidChangeDecorations(() => {
+            if (!props.chatModel.changeSet) {
+                return;
+            }
+            setChangeSetUI(buildChangeSetUI(
+                props.chatModel.changeSet,
+                props.labelProvider,
+                props.actionService.getActionsForChangeset(props.chatModel.changeSet),
+                onDeleteChangeSet,
+                onDeleteChangeSetElement
+            ));
         });
         return () => disposable.dispose();
     });
@@ -551,6 +574,7 @@ const buildChangeSetUI = (
     elements: changeSet.getElements().map(element => ({
         open: element.open?.bind(element),
         iconClass: element.icon ?? labelProvider.getIcon(element.uri) ?? labelProvider.fileIcon,
+        iconOverlayClass: element.iconOverlay,
         nameClass: `${element.type} ${element.state}`,
         name: element.name ?? labelProvider.getName(element.uri),
         additionalInfo: element.additionalInfo ?? labelProvider.getDetails(element.uri),
@@ -565,6 +589,7 @@ const buildChangeSetUI = (
 interface ChangeSetUIElement {
     name: string;
     iconClass: string;
+    iconOverlayClass?: string[];
     nameClass: string;
     additionalInfo: string;
     open?: () => void;
@@ -596,7 +621,9 @@ const ChangeSetBox: React.FunctionComponent<{ changeSet: ChangeSetUI }> = React.
             <ul>
                 {elements.map((element, index) => (
                     <li key={index} title={nls.localize('theia/ai/chat-ui/openDiff', 'Open Diff')} onClick={() => element.openChange?.()}>
-                        <div className={`theia-ChatInput-ChangeSet-Icon ${element.iconClass}`} />
+                        <div className={`theia-ChatInput-ChangeSet-Icon ${element.iconClass}`}>
+                            {element.iconOverlayClass && <div className={`theia-ChatInput-ChangeSet-IconOverlay ${element.iconOverlayClass.join(' ')}`}></div>}
+                        </div>
                         <span className='theia-ChatInput-ChangeSet-labelParts'>
                             <span className={`theia-ChatInput-ChangeSet-title ${element.nameClass}`}>
                                 {element.name}

@@ -22,6 +22,7 @@ import { ChangeSetFileResourceResolver, createChangeSetFileUri, UpdatableReferen
 import { ChangeSetFileService } from './change-set-file-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { ConfirmDialog } from '@theia/core/lib/browser';
+import { ChangeSetDecoratorService } from './change-set-decorator-service';
 
 export const ChangeSetFileElementFactory = Symbol('ChangeSetFileElementFactory');
 export type ChangeSetFileElementFactory = (elementProps: ChangeSetElementArgs) => ChangeSetFileElement;
@@ -60,6 +61,9 @@ export class ChangeSetFileElement implements ChangeSetElement {
     @inject(ChangeSetFileService)
     protected readonly changeSetFileService: ChangeSetFileService;
 
+    @inject(ChangeSetDecoratorService)
+    protected readonly changeSetDecoratorService: ChangeSetDecoratorService;
+
     @inject(FileService)
     protected readonly fileService: FileService;
 
@@ -73,6 +77,9 @@ export class ChangeSetFileElement implements ChangeSetElement {
 
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange = this.onDidChangeEmitter.event;
+    protected readonly onDidChangeDecorationsEmitter = new Emitter<void>();
+    readonly onDidChangeDecorations = this.onDidChangeDecorationsEmitter.event;
+
     protected readOnlyResource: UpdatableReferenceResource;
     protected changeResource: UpdatableReferenceResource;
 
@@ -82,6 +89,9 @@ export class ChangeSetFileElement implements ChangeSetElement {
         this.obtainOriginalContent();
         this.listenForOriginalFileChanges();
         this.toDispose.push(this.onDidChangeEmitter);
+        this.toDispose.push(this.changeSetDecoratorService.onDidChangeDecorations(() => {
+            this.onDidChangeDecorationsEmitter.fire();
+        }));
     }
 
     protected async obtainOriginalContent(): Promise<void> {
@@ -138,6 +148,10 @@ export class ChangeSetFileElement implements ChangeSetElement {
 
     get icon(): string | undefined {
         return this.elementProps.icon ?? this.changeSetFileService.getIcon(this.uri);
+    }
+
+    get iconOverlay(): string[] | undefined {
+        return this.elementProps.iconOverlay ?? this.changeSetDecoratorService.getIconOverlay(this);
     }
 
     get additionalInfo(): string | undefined {
