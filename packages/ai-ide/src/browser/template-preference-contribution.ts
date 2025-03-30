@@ -16,7 +16,7 @@
 
 import { FrontendApplicationContribution, PreferenceService } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { FrontendPromptCustomizationServiceImpl } from '@theia/ai-core/lib/browser/frontend-prompt-customization-service';
+import { FrontendPromptCustomizationServiceImpl, PromptCustomizationProperties } from '@theia/ai-core/lib/browser/frontend-prompt-customization-service';
 import {
     PROMPT_TEMPLATE_WORKSPACE_DIRECTORIES_PREF,
     PROMPT_TEMPLATE_ADDITIONAL_EXTENSIONS_PREF,
@@ -39,80 +39,61 @@ export class TemplatePreferenceContribution implements FrontendApplicationContri
 
     onStart(): void {
         Promise.all([this.preferenceService.ready, this.workspaceService.ready]).then(() => {
-            // Set initial template directories, extensions, and files from preferences
-            this.updateTemplateDirectories();
-            this.updateTemplateFileExtensions();
-            this.updateTemplateFiles();
+            // Set initial template configuration from preferences
+            this.updateConfiguration();
 
             // Listen for preference changes
             this.preferenceService.onPreferenceChanged(event => {
-                if (event.preferenceName === PROMPT_TEMPLATE_WORKSPACE_DIRECTORIES_PREF) {
-                    this.updateTemplateDirectories();
-                }
-                if (event.preferenceName === PROMPT_TEMPLATE_ADDITIONAL_EXTENSIONS_PREF) {
-                    this.updateTemplateFileExtensions();
-                }
-                if (event.preferenceName === PROMPT_TEMPLATE_WORKSPACE_FILES_PREF) {
-                    this.updateTemplateFiles();
+                if (event.preferenceName === PROMPT_TEMPLATE_WORKSPACE_DIRECTORIES_PREF ||
+                    event.preferenceName === PROMPT_TEMPLATE_ADDITIONAL_EXTENSIONS_PREF ||
+                    event.preferenceName === PROMPT_TEMPLATE_WORKSPACE_FILES_PREF) {
+                    this.updateConfiguration(event.preferenceName);
                 }
             });
 
             // Listen for workspace root changes
             this.workspaceService.onWorkspaceLocationChanged(() => {
-                this.updateTemplateDirectories();
-                this.updateTemplateFileExtensions();
-                this.updateTemplateFiles();
+                this.updateConfiguration();
             });
         });
     }
 
-    protected async updateTemplateDirectories(): Promise<void> {
+    /**
+     * Updates the template configuration in the customization service.
+     * If a specific preference name is provided, only that configuration aspect is updated.
+     * @param changedPreference Optional name of the preference that changed
+     */
+    protected async updateConfiguration(changedPreference?: string): Promise<void> {
         const workspaceRoot = this.workspaceService.tryGetRoots()[0];
         if (!workspaceRoot) {
             return;
         }
 
         const workspaceRootUri = workspaceRoot.resource;
+        const configProperties: PromptCustomizationProperties = {};
 
-        // Get the workspace template directories from preferences
-        const relativeDirectories = this.preferenceService.get<string[]>(PROMPT_TEMPLATE_WORKSPACE_DIRECTORIES_PREF, []);
-        // Convert relative paths to absolute paths
-        const absoluteDirectories = relativeDirectories.map(dir => {
-            const path = new Path(dir);
-            const uri = workspaceRootUri.resolve(path.toString());
-            return uri.path.toString();
-        });
-
-        // Update the template directories in the customization service
-        await this.customizationService.updateTemplateDirectories(absoluteDirectories);
-    }
-
-    protected async updateTemplateFileExtensions(): Promise<void> {
-        // Get the template file extensions from preferences
-        const extensions = this.preferenceService.get<string[]>(PROMPT_TEMPLATE_ADDITIONAL_EXTENSIONS_PREF, []);
-
-        // Update the template file extensions in the customization service
-        await this.customizationService.updateAdditionalTemplateFileExtensions(extensions);
-    }
-
-    protected async updateTemplateFiles(): Promise<void> {
-        const workspaceRoot = this.workspaceService.tryGetRoots()[0];
-        if (!workspaceRoot) {
-            return;
+        if (!changedPreference || changedPreference === PROMPT_TEMPLATE_WORKSPACE_DIRECTORIES_PREF) {
+            const relativeDirectories = this.preferenceService.get<string[]>(PROMPT_TEMPLATE_WORKSPACE_DIRECTORIES_PREF, []);
+            configProperties.directoryPaths = relativeDirectories.map(dir => {
+                const path = new Path(dir);
+                const uri = workspaceRootUri.resolve(path.toString());
+                return uri.path.toString();
+            });
         }
 
-        const workspaceRootUri = workspaceRoot.resource;
+        if (!changedPreference || changedPreference === PROMPT_TEMPLATE_ADDITIONAL_EXTENSIONS_PREF) {
+            configProperties.extensions = this.preferenceService.get<string[]>(PROMPT_TEMPLATE_ADDITIONAL_EXTENSIONS_PREF, []);
+        }
 
-        // Get the specific template files from preferences
-        const relativeFilePaths = this.preferenceService.get<string[]>(PROMPT_TEMPLATE_WORKSPACE_FILES_PREF, []);
-        // Convert relative paths to absolute paths
-        const absoluteFilePaths = relativeFilePaths.map(filePath => {
-            const path = new Path(filePath);
-            const uri = workspaceRootUri.resolve(path.toString());
-            return uri.path.toString();
-        });
+        if (!changedPreference || changedPreference === PROMPT_TEMPLATE_WORKSPACE_FILES_PREF) {
+            const relativeFilePaths = this.preferenceService.get<string[]>(PROMPT_TEMPLATE_WORKSPACE_FILES_PREF, []);
+            configProperties.filePaths = relativeFilePaths.map(filePath => {
+                const path = new Path(filePath);
+                const uri = workspaceRootUri.resolve(path.toString());
+                return uri.path.toString();
+            });
+        }
 
-        // Update the template files in the customization service
-        await this.customizationService.updateTemplateFiles(absoluteFilePaths);
+        await this.customizationService.updateConfiguration(configProperties);
     }
 }

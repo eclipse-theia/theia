@@ -42,6 +42,18 @@ const enum TemplatePriority {
     TEMPLATE_FILE = 3
 }
 
+/**
+ * Interface defining properties that can be updated in the service
+ */
+export interface PromptCustomizationProperties {
+    /** Array of directory paths to load templates from */
+    directoryPaths?: string[];
+    /** Array of file paths to treat as templates */
+    filePaths?: string[];
+    /** Array of file extensions to consider as template files */
+    extensions?: string[];
+}
+
 interface TemplateEntry {
     content: string;
     priority: number;
@@ -398,38 +410,11 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
     }
 
     /**
-     * Updates the list of template directories by replacing the current list with a new one.
-     * @param directoryPaths Array of absolute paths to the directories to watch
-     */
-    async updateTemplateDirectories(directoryPaths: string[]): Promise<void> {
-        this.additionalTemplateDirs.clear();
-        for (const path of directoryPaths) {
-            this.additionalTemplateDirs.add(path);
-        }
-        await this.update();
-    }
-
-    /**
      * Gets the list of file extensions that are considered prompt templates.
      * @returns Array of file extensions including the leading dot (e.g., '.prompttemplate')
      */
     getTemplateFileExtensions(): string[] {
         return Array.from(this.templateExtensions);
-    }
-
-    /**
-     * Updates the list of additional file extensions considered as prompt templates.
-     * PROMPT_TEMPLATE_EXTENSION is always valid by default
-     * @param extensions Array of file extensions including the leading dot (e.g., '.prompttemplate')
-     */
-    async updateAdditionalTemplateFileExtensions(extensions: string[]): Promise<void> {
-        this.templateExtensions.clear();
-        for (const ext of extensions) {
-            this.templateExtensions.add(ext);
-        }
-        // Always include the default PROMPT_TEMPLATE_EXTENSION
-        this.templateExtensions.add(PROMPT_TEMPLATE_EXTENSION);
-        await this.update();
     }
 
     /**
@@ -441,14 +426,36 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
     }
 
     /**
-     * Updates the list of specific template files by replacing the current list with a new one.
-     * @param filePaths Array of absolute paths to the template files to watch
+     * Updates multiple configuration properties at once, triggering only a single update process.
+     *
+     * @param properties An object containing the properties to update
+     * @returns Promise that resolves when the update is complete
      */
-    async updateTemplateFiles(filePaths: string[]): Promise<void> {
-        this.templateFiles.clear();
-        for (const path of filePaths) {
-            this.templateFiles.add(path);
+    async updateConfiguration(properties: PromptCustomizationProperties): Promise<void> {
+        if (properties.directoryPaths !== undefined) {
+            this.additionalTemplateDirs.clear();
+            for (const path of properties.directoryPaths) {
+                this.additionalTemplateDirs.add(path);
+            }
         }
+
+        if (properties.extensions !== undefined) {
+            this.templateExtensions.clear();
+            for (const ext of properties.extensions) {
+                this.templateExtensions.add(ext);
+            }
+            // Always include the default PROMPT_TEMPLATE_EXTENSION
+            this.templateExtensions.add(PROMPT_TEMPLATE_EXTENSION);
+        }
+
+        if (properties.filePaths !== undefined) {
+            this.templateFiles.clear();
+            for (const path of properties.filePaths) {
+                this.templateFiles.add(path);
+            }
+        }
+
+        // Only run the update process once, no matter how many properties were changed
         await this.update();
     }
 
