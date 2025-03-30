@@ -30,7 +30,7 @@ import { ChatSession } from './chat-service';
 import { generateUuid } from '@theia/core';
 
 const CHAT_SESSION_NAMING_PROMPT = {
-    id: 'chat-session-naming-service-prompt',
+    id: 'chat-session-naming-prompt',
     template: '{{!-- Made improvements or adaptations to this prompt template? We\'d love for you to share it with the community! Contribute back here: ' +
         'https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}\n\n' +
         'Provide a short and descriptive name for the given AI chat conversation of an AI-powered tool based on the conversation below.\n\n' +
@@ -57,10 +57,10 @@ export class ChatSessionNamingService {
 
 @injectable()
 export class ChatSessionNamingAgent implements Agent {
-    static ID = 'chat-session-naming-service';
+    static ID = 'chat-session-naming-agent';
     id = ChatSessionNamingAgent.ID;
     name = 'Chat Session Naming';
-    description = 'Service to generate chat session names';
+    description = 'Agent for generating chat session names';
     variables = [];
     promptTemplates: PromptTemplate[] = [CHAT_SESSION_NAMING_PROMPT];
     languageModelRequirements: LanguageModelRequirement[] = [{
