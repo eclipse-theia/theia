@@ -27,6 +27,9 @@
       "path": "../../packages/ai-core"
     },
     {
+      "path": "../../packages/ai-google"
+    },
+    {
       "path": "../../packages/ai-history"
     },
     {

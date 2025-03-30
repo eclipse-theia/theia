@@ -31,6 +31,7 @@
     "@theia/ai-chat-ui": "1.59.0",
     "@theia/ai-code-completion": "1.59.0",
     "@theia/ai-core": "1.59.0",
+    "@theia/ai-google": "1.59.0",
     "@theia/ai-history": "1.59.0",
     "@theia/ai-huggingface": "1.59.0",
     "@theia/ai-ide": "1.59.0",

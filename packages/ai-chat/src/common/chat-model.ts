@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2024 EclipseSource GmbH.
+// Copyright (C) 2024-2025 EclipseSource GmbH.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -1032,7 +1032,8 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
             actor: 'user',
             type: 'tool_result',
             tool_use_id: this.id ?? '',
-            content: this.result
+            content: this.result,
+            name: this.name ?? ''
         }];
     }
 }

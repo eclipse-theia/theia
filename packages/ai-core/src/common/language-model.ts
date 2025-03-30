@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2024 EclipseSource GmbH.
+// Copyright (C) 2024-2025 EclipseSource GmbH.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -50,6 +50,7 @@ export interface ThinkingMessage {
 export interface ToolResultMessage {
     actor: 'user';
     tool_use_id: string;
+    name: string;
     type: 'tool_result';
     content?: string;
     is_error?: boolean;
