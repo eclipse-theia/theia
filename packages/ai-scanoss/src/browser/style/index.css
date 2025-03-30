@@ -82,10 +82,11 @@
 }
 
 .scanoss-icon.clean .status-icon {
-  color: green;
+  color: var(--theia-notebookStatusSuccessIcon-foreground);
 }
-.scanoss-icon.match .status-icon {
-  color: yellow;
+.scanoss-icon.match .status-icon,
+.scanoss-icon-overlay.match {
+  color: var(--theia-problemsWarningIcon-foreground);
 }
 .scanoss-icon.error .status-icon {
   color: red;
@@ -194,12 +195,4 @@
 
 .theia-changeSet-scanOss .status-icon {
   height: 16px;
-}
-
-.theia-changeSet-scanOss.clean .status-icon {
-  color: var(--theia-notebookStatusSuccessIcon-foreground);
-}
-
-.theia-changeSet-scanOss.match .status-icon {
-  color: var(--theia-problemsWarningIcon-foreground);
 }

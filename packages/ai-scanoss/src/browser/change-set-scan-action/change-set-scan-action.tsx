@@ -29,6 +29,7 @@ import { IDiffProviderFactoryService } from '@theia/monaco-editor-core/esm/vs/ed
 import { IDocumentDiffProvider } from '@theia/monaco-editor-core/esm/vs/editor/common/diff/documentDiffProvider';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { CancellationToken, Emitter, MessageService, nls } from '@theia/core';
+import { ScanChangeSetElementDecorator } from './change-set-scan-decorator';
 
 type ScanOSSState = 'pending' | 'clean' | 'match' | 'error' | 'none';
 type ScanOSSResultOptions = 'pending' | ScanOSSResult[] | undefined;
@@ -52,6 +53,9 @@ export class ChangeSetScanActionRenderer implements ChangeSetActionRenderer {
     @inject(MessageService)
     protected readonly messageService: MessageService;
 
+    @inject(ScanChangeSetElementDecorator)
+    protected readonly scanChangeSetElementDecorator: ScanChangeSetElementDecorator;
+
     protected differ: IDocumentDiffProvider;
 
     @postConstruct()
@@ -69,6 +73,7 @@ export class ChangeSetScanActionRenderer implements ChangeSetActionRenderer {
         return (
             <ChangeSetScanOSSIntegration
                 changeSet={changeSet}
+                decorator={this.scanChangeSetElementDecorator}
                 scanOssMode={this.getPreferenceValues()}
                 scanChangeSet={this._scan}
             />
@@ -143,12 +148,14 @@ export class ChangeSetScanActionRenderer implements ChangeSetActionRenderer {
 
 interface ChangeSetScanActionProps {
     changeSet: ChangeSet;
+    decorator: ScanChangeSetElementDecorator;
     scanOssMode: string;
     scanChangeSet: (changeSet: ChangeSetElement[], cache: Map<string, ScanOSSResult>, userTriggered: boolean) => Promise<ScanOSSResult[]>
 }
 
 const ChangeSetScanOSSIntegration = React.memo(({
     changeSet,
+    decorator,
     scanOssMode,
     scanChangeSet
 }: ChangeSetScanActionProps) => {
@@ -164,6 +171,13 @@ const ChangeSetScanOSSIntegration = React.memo(({
             }
         }
     }, [scanOssMode, scanOSSResult]);
+
+    React.useEffect(() => {
+        if (!Array.isArray(scanOSSResult)) {
+            return;
+        }
+        decorator.setScanResult(scanOSSResult);
+    }, [decorator, scanOSSResult]);
 
     React.useEffect(() => {
         const disposable = changeSet.onDidChange(() => {
