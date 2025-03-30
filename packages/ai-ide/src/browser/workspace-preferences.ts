@@ -20,7 +20,7 @@ import { PreferenceSchema } from '@theia/core/lib/browser/preferences/preference
 export const CONSIDER_GITIGNORE_PREF = 'ai-features.workspaceFunctions.considerGitIgnore';
 export const USER_EXCLUDE_PATTERN_PREF = 'ai-features.workspaceFunctions.userExcludes';
 export const PROMPT_TEMPLATE_WORKSPACE_DIRECTORIES_PREF = 'ai-features.promptTemplates.WorkspaceTemplateDirectories';
-export const PROMPT_TEMPLATE_ADDITIONAL_EXTENSIONS_PREF = 'ai-features.promptTemplates.AdditionalTemplateExtensions';
+export const PROMPT_TEMPLATE_ADDITIONAL_EXTENSIONS_PREF = 'ai-features.promptTemplates.TemplateExtensions';
 export const PROMPT_TEMPLATE_WORKSPACE_FILES_PREF = 'ai-features.promptTemplates.WorkspaceTemplateFiles';
 
 const CONFLICT_RESOLUTION_DESCRIPTION = 'When templates with the same ID (filename) exist in multiple locations, conflicts are resolved by priority: specific template files \
@@ -49,7 +49,7 @@ export const WorkspacePreferencesSchema: PreferenceSchema = {
             type: 'array',
             title: nls.localize('theia/ai/promptTemplates/directories/title', 'Workspace-specific Prompt Template Directories'),
             description: nls.localize('theia/ai/promptTemplates/directories/description',
-                'List of relative paths indicating folders in the current workspace to be scanned for WORKSPACE specific prompt templates. ' + 
+                'List of relative paths indicating folders in the current workspace to be scanned for WORKSPACE specific prompt templates. ' +
                 CONFLICT_RESOLUTION_DESCRIPTION),
             default: [],
             items: {
@@ -69,7 +69,7 @@ export const WorkspacePreferencesSchema: PreferenceSchema = {
             type: 'array',
             title: nls.localize('theia/ai/promptTemplates/files/title', 'Workspace-specific Prompt Template Files'),
             description: nls.localize('theia/ai/promptTemplates/files/description',
-                'List of relative paths to specific files in the current workspace to be used as prompt templates. ' + 
+                'List of relative paths to specific files in the current workspace to be used as prompt templates. ' +
                 CONFLICT_RESOLUTION_DESCRIPTION),
             default: [],
             items: {
