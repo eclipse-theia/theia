@@ -29,7 +29,7 @@ import { IDiffProviderFactoryService } from '@theia/monaco-editor-core/esm/vs/ed
 import { IDocumentDiffProvider } from '@theia/monaco-editor-core/esm/vs/editor/common/diff/documentDiffProvider';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { CancellationToken, Emitter, MessageService, nls } from '@theia/core';
-import { ScanChangeSetElementDecorator } from './change-set-scan-decorator';
+import { ChangeSetScanDecorator } from './change-set-scan-decorator';
 
 type ScanOSSState = 'pending' | 'clean' | 'match' | 'error' | 'none';
 type ScanOSSResultOptions = 'pending' | ScanOSSResult[] | undefined;
@@ -53,8 +53,8 @@ export class ChangeSetScanActionRenderer implements ChangeSetActionRenderer {
     @inject(MessageService)
     protected readonly messageService: MessageService;
 
-    @inject(ScanChangeSetElementDecorator)
-    protected readonly scanChangeSetElementDecorator: ScanChangeSetElementDecorator;
+    @inject(ChangeSetScanDecorator)
+    protected readonly scanChangeSetDecorator: ChangeSetScanDecorator;
 
     protected differ: IDocumentDiffProvider;
 
@@ -73,7 +73,7 @@ export class ChangeSetScanActionRenderer implements ChangeSetActionRenderer {
         return (
             <ChangeSetScanOSSIntegration
                 changeSet={changeSet}
-                decorator={this.scanChangeSetElementDecorator}
+                decorator={this.scanChangeSetDecorator}
                 scanOssMode={this.getPreferenceValues()}
                 scanChangeSet={this._scan}
             />
@@ -148,7 +148,7 @@ export class ChangeSetScanActionRenderer implements ChangeSetActionRenderer {
 
 interface ChangeSetScanActionProps {
     changeSet: ChangeSet;
-    decorator: ScanChangeSetElementDecorator;
+    decorator: ChangeSetScanDecorator;
     scanOssMode: string;
     scanChangeSet: (changeSet: ChangeSetElement[], cache: Map<string, ScanOSSResult>, userTriggered: boolean) => Promise<ScanOSSResult[]>
 }
@@ -174,6 +174,7 @@ const ChangeSetScanOSSIntegration = React.memo(({
 
     React.useEffect(() => {
         if (!Array.isArray(scanOSSResult)) {
+            decorator.setScanResult([]);
             return;
         }
         decorator.setScanResult(scanOSSResult);
@@ -211,8 +212,8 @@ const ChangeSetScanOSSIntegration = React.memo(({
     } else if (state === 'clean' || state === 'pending') {
         return <div className='theia-changeSet-scanOss readonly'>
             <div
-                className={`button scanoss-icon icon-container ${state === 'pending'
-                    ? 'requesting'
+                className={`scanoss-icon icon-container ${state === 'pending'
+                    ? 'pending'
                     : state
                         ? state
                         : ''
@@ -229,7 +230,7 @@ const ChangeSetScanOSSIntegration = React.memo(({
             onClick={scanOSSClicked}
         >
             <div
-                className={`button scanoss-icon icon-container ${state}`}
+                className={`scanoss-icon icon-container ${state}`}
                 title={title}
             >
                 {icon}

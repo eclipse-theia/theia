@@ -23,7 +23,7 @@ import { CodePartRendererAction } from '@theia/ai-chat-ui/lib/browser/chat-respo
 import { ChangeSetActionRenderer } from '@theia/ai-chat-ui/lib/browser/change-set-actions/change-set-action-service';
 import { ChangeSetScanActionRenderer } from './change-set-scan-action/change-set-scan-action';
 import { ChangeSetDecorator } from '@theia/ai-chat/lib/browser/change-set-decorator-service';
-import { ScanChangeSetElementDecorator } from './change-set-scan-action/change-set-scan-decorator';
+import { ChangeSetScanDecorator } from './change-set-scan-action/change-set-scan-decorator';
 
 export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: AIScanOSSPreferencesSchema });
@@ -31,6 +31,6 @@ export default new ContainerModule(bind => {
     bind(CodePartRendererAction).toService(ScanOSSScanButtonAction);
     bind(ChangeSetScanActionRenderer).toSelf();
     bind(ChangeSetActionRenderer).toService(ChangeSetScanActionRenderer);
-    bind(ScanChangeSetElementDecorator).toSelf().inSingletonScope();
-    bind(ChangeSetDecorator).toService(ScanChangeSetElementDecorator);
+    bind(ChangeSetScanDecorator).toSelf().inSingletonScope();
+    bind(ChangeSetDecorator).toService(ChangeSetScanDecorator);
 });

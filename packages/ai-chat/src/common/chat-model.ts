@@ -101,7 +101,6 @@ export interface ChatModel {
 
 export interface ChangeSet extends Disposable {
     onDidChange: Event<ChangeSetChangeEvent>;
-    onDidDecorationChange: Event<void>;
     readonly title: string;
     getElements(): ChangeSetElement[];
     dispose(): void;
@@ -119,10 +118,8 @@ export interface ChangeSetElement {
     readonly uri: URI;
 
     onDidChange?: Event<void>
-    onDidChangeDecorations?: Event<void>
     readonly name?: string;
     readonly icon?: string;
-    readonly iconOverlay?: string[];
     readonly additionalInfo?: string;
 
     readonly state?: 'pending' | 'applied' | 'stale';
@@ -138,7 +135,7 @@ export interface ChangeSetElement {
 
 export interface ChangeSetDecoration {
     readonly priority?: number;
-    readonly iconOverlay?: string[];
+    readonly additionalInfoSuffixIcon?: string[];
 }
 
 export interface ChatRequest {
@@ -501,8 +498,6 @@ export interface ChatResponseModel {
 export class MutableChatModel implements ChatModel, Disposable {
     protected readonly _onDidChangeEmitter = new Emitter<ChatChangeEvent>();
     onDidChange: Event<ChatChangeEvent> = this._onDidChangeEmitter.event;
-    protected readonly _onDidDecorationChangeEmitter = new Emitter<void>();
-    onDidDecorationChange: Event<void> = this._onDidDecorationChangeEmitter.event;
 
     protected _requests: MutableChatRequestModel[];
     protected _id: string;
@@ -599,8 +594,6 @@ interface ChangeSetChangeEvent {
 export class ChangeSetImpl implements ChangeSet {
     protected readonly _onDidChangeEmitter = new Emitter<ChangeSetChangeEvent>();
     onDidChange: Event<ChangeSetChangeEvent> = this._onDidChangeEmitter.event;
-    protected readonly _onDidDecorationChangeEmitter = new Emitter<void>();
-    onDidDecorationChange: Event<void> = this._onDidDecorationChangeEmitter.event;
 
     protected _elements: ChangeSetElement[] = [];
 
@@ -629,7 +622,6 @@ export class ChangeSetImpl implements ChangeSet {
                 this._elements.push(element);
             }
             element.onDidChange?.(() => this.notifyChange({ state: [element.uri] }));
-            element.onDidChangeDecorations?.(() => this._onDidDecorationChangeEmitter.fire());
         });
         toDispose.forEach(element => element.dispose?.());
         this.notifyChange({ added, modified });

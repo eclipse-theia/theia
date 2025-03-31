@@ -21,11 +21,11 @@
   transition: filter 0.3s;
 }
 
-.scanoss-icon.requesting {
+.scanoss-icon.pending {
   pointer-events: none;
   cursor: default;
 }
-.scanoss-icon.requesting::before {
+.scanoss-icon.pending::before {
   animation: scan-os-fade 3s infinite ease-in-out;
 }
 
@@ -82,14 +82,14 @@
 }
 
 .scanoss-icon.clean .status-icon {
-  color: var(--theia-notebookStatusSuccessIcon-foreground);
+  color: var(--theia-successBackground);
 }
 .scanoss-icon.match .status-icon,
-.scanoss-icon-overlay.match {
+.additional-info-scanoss-icon.match {
   color: var(--theia-problemsWarningIcon-foreground);
 }
 .scanoss-icon.error .status-icon {
-  color: red;
+  color: var(--theia-problemsErrorIcon-foreground);
 }
 
 /* Disable the button when it's in the clean state */

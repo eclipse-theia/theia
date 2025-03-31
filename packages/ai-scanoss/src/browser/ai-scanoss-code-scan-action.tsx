@@ -144,10 +144,11 @@ const ScanOSSIntegration = React.memo((props: {
             title = nls.localize('theia/ai/scanoss/snippet/no-match', 'SCANOSS - No match');
         }
     }
+
     return (
         <div
             className={`button scanoss-icon icon-container ${scanOSSResult === 'pending'
-                ? 'requesting'
+                ? 'pending'
                 : scanOSSResult
                     ? scanOSSResult.type
                     : ''
