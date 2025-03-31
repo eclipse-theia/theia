@@ -89,9 +89,6 @@ export class AuthenticationMainImpl implements AuthenticationMain {
         const sessions = await this.authenticationService.getSessions(providerId, scopes, options?.account);
 
         // Error cases
-        if (options.forceNewSession && !sessions.length) {
-            throw new Error('No existing sessions found.');
-        }
         if (options.forceNewSession && options.createIfNone) {
             throw new Error('Invalid combination of options. Please remove one of the following: forceNewSession, createIfNone');
         }
@@ -125,13 +122,21 @@ export class AuthenticationMainImpl implements AuthenticationMain {
         // We may need to prompt because we don't have a valid session modal flows
         if (options.createIfNone || options.forceNewSession) {
             const providerName = this.authenticationService.getLabel(providerId);
-            const detail = isAuthenticationForceNewSessionOptions(options.forceNewSession) ? options.forceNewSession!.detail : undefined;
-            const isAllowed = await this.loginPrompt(providerName, extensionName, !!options.forceNewSession, detail);
+            let detail: string | undefined;
+            if (isAuthenticationGetSessionPresentationOptions(options.forceNewSession)) {
+                detail = options.forceNewSession.detail;
+            } else if (isAuthenticationGetSessionPresentationOptions(options.createIfNone)) {
+                detail = options.createIfNone.detail;
+            }
+            const shouldForceNewSession = !!options.forceNewSession;
+            const recreatingSession = shouldForceNewSession && !sessions.length;
+
+            const isAllowed = await this.loginPrompt(providerName, extensionName, recreatingSession, detail);
             if (!isAllowed) {
                 throw new Error('User did not consent to login.');
             }
 
-            const session = sessions?.length && !options.forceNewSession && supportsMultipleAccounts
+            const session = sessions?.length && !shouldForceNewSession && supportsMultipleAccounts
                 ? await this.selectSession(providerId, providerName, extensionId, extensionName, sessions, scopes, !!options.clearSessionPreference)
                 : await this.authenticationService.login(providerId, scopes);
             await this.setTrustedExtensionAndAccountPreference(providerId, session.account.label, extensionId, extensionName, session.id);
@@ -250,8 +255,8 @@ export class AuthenticationMainImpl implements AuthenticationMain {
     }
 }
 
-function isAuthenticationForceNewSessionOptions(arg: unknown): arg is theia.AuthenticationForceNewSessionOptions {
-    return isObject<theia.AuthenticationForceNewSessionOptions>(arg) && typeof arg.detail === 'string';
+function isAuthenticationGetSessionPresentationOptions(arg: unknown): arg is theia.AuthenticationGetSessionPresentationOptions {
+    return isObject<theia.AuthenticationGetSessionPresentationOptions>(arg) && typeof arg.detail === 'string';
 }
 
 async function addAccountUsage(storageService: StorageService, providerId: string, accountName: string, extensionId: string, extensionName: string): Promise<void> {
