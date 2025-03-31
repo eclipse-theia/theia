@@ -323,13 +323,6 @@ div:last-child > .theia-ChatNode {
   font-size: var(--theia-ui-font-size1);
 }
 
-.theia-ChatInput-ChangeSet-List .theia-ChatInput-ChangeSet-IconOverlay {
-  position: absolute;
-  top: -1px;
-  right: -1px;
-  font-size: var(--theia-ui-font-size0) px;
-}
-
 .theia-ChatInput-ChangeSet-Actions .action {
   width: 16px;
   height: 16px;
@@ -337,11 +330,20 @@ div:last-child > .theia-ChatNode {
 }
 
 .theia-ChatInput-ChangeSet-additionalInfo {
+  align-items: center;
+  gap: 4px;
   margin-left: 8px;
   color: var(--theia-disabledForeground);
 }
 
+.theia-ChatInput-ChangeSet-List
+  .theia-ChatInput-ChangeSet-AdditionalInfo-SuffixIcon {
+  font-size: var(--theia-ui-font-size0) px;
+  margin-left: 4px;
+}
+
 .theia-ChatInput-ChangeSet-labelParts {
+  display: flex;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -366,6 +368,7 @@ div:last-child > .theia-ChatNode {
 .theia-ChatInput-ChangeSet-Header-Actions,
 .theia-ChatInput-ChangeSet-Box h3,
 .theia-ChatInput-ChangeSet-additionalInfo {
+  display: flex;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

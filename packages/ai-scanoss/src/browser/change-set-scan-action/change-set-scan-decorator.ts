@@ -21,8 +21,8 @@ import { injectable } from '@theia/core/shared/inversify';
 import type { ScanOSSResult } from '@theia/scanoss';
 
 @injectable()
-export class ScanChangeSetElementDecorator implements ChangeSetDecorator {
-    readonly id = 'theia-scan-change-element-decorator';
+export class ChangeSetScanDecorator implements ChangeSetDecorator {
+    readonly id = 'thei-change-set-scanoss-decorator';
 
     protected readonly emitter = new Emitter<void>();
     readonly onDidChangeDecorations = this.emitter.event;
@@ -44,7 +44,7 @@ export class ScanChangeSetElementDecorator implements ChangeSetDecorator {
 
         if (match) {
             return {
-                iconOverlay: ['scanoss-icon-overlay', 'match', 'codicon', 'codicon-warning'],
+                additionalInfoSuffixIcon: ['additional-info-scanoss-icon', 'match', 'codicon', 'codicon-warning'],
             };
         }
 

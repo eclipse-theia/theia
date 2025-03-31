@@ -20,10 +20,12 @@ import { inject, injectable, named } from '@theia/core/shared/inversify';
 import debounce = require('@theia/core/shared/lodash.debounce');
 import type { ChangeSetDecoration, ChangeSetElement } from '../common';
 
+/**
+ * A decorator for a change set element.
+ * It allows to add additional information to the element, such as icons.
+ */
 export const ChangeSetDecorator = Symbol('ChangeSetDecorator');
-
 export interface ChangeSetDecorator {
-
     readonly id: string;
 
     readonly onDidChangeDecorations: Event<void>;
@@ -63,8 +65,8 @@ export class ChangeSetDecoratorService implements FrontendApplicationContributio
         return decorations;
     }
 
-    getIconOverlay(element: ChangeSetElement): string[] | undefined {
+    getAdditionalInfoSuffixIcon(element: ChangeSetElement): string[] | undefined {
         const decorations = this.getDecorations(element);
-        return decorations.find(d => d.iconOverlay)?.iconOverlay;
+        return decorations.find(d => d.additionalInfoSuffixIcon)?.additionalInfoSuffixIcon;
     }
 }

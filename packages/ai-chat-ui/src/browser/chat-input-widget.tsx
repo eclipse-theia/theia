@@ -268,6 +268,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             ? buildChangeSetUI(
                 props.chatModel.changeSet,
                 props.labelProvider,
+                props.decoratorService,
                 props.actionService.getActionsForChangeset(props.chatModel.changeSet),
                 onDeleteChangeSet,
                 onDeleteChangeSetElement
@@ -382,6 +383,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                     setChangeSetUI(buildChangeSetUI(
                         event.changeSet,
                         props.labelProvider,
+                        props.decoratorService,
                         props.actionService.getActionsForChangeset(event.changeSet),
                         onDeleteChangeSet,
                         onDeleteChangeSetElement
@@ -393,12 +395,12 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             ? buildChangeSetUI(
                 props.chatModel.changeSet,
                 props.labelProvider,
+                props.decoratorService,
                 props.actionService.getActionsForChangeset(props.chatModel.changeSet),
                 onDeleteChangeSet,
                 onDeleteChangeSetElement
             )
             : undefined);
-
         return () => {
             listener?.dispose();
             responseListenerRef.current?.dispose();
@@ -423,6 +425,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             setChangeSetUI(buildChangeSetUI(
                 props.chatModel.changeSet,
                 props.labelProvider,
+                props.decoratorService,
                 props.actionService.getActionsForChangeset(props.chatModel.changeSet),
                 onDeleteChangeSet,
                 onDeleteChangeSetElement
@@ -564,6 +567,7 @@ const noPropagation = (handler: () => void) => (e: React.MouseEvent) => {
 const buildChangeSetUI = (
     changeSet: ChangeSet,
     labelProvider: LabelProvider,
+    decoratorService: ChangeSetDecoratorService,
     actions: ChangeSetActionRenderer[],
     onDeleteChangeSet: () => void,
     onDeleteChangeSetElement: (index: number) => void
@@ -574,24 +578,24 @@ const buildChangeSetUI = (
     elements: changeSet.getElements().map(element => ({
         open: element.open?.bind(element),
         iconClass: element.icon ?? labelProvider.getIcon(element.uri) ?? labelProvider.fileIcon,
-        iconOverlayClass: element.iconOverlay,
         nameClass: `${element.type} ${element.state}`,
         name: element.name ?? labelProvider.getName(element.uri),
         additionalInfo: element.additionalInfo ?? labelProvider.getDetails(element.uri),
+        additionalInfoSuffixIcon: decoratorService.getAdditionalInfoSuffixIcon(element),
         openChange: element?.openChange?.bind(element),
         apply: element.state !== 'applied' ? element?.apply?.bind(element) : undefined,
         revert: element.state === 'applied' || element.state === 'stale' ? element?.revert?.bind(element) : undefined,
         delete: () => onDeleteChangeSetElement(changeSet.getElements().indexOf(element))
-    })),
+    } satisfies ChangeSetUIElement)),
     actions
 });
 
 interface ChangeSetUIElement {
     name: string;
     iconClass: string;
-    iconOverlayClass?: string[];
     nameClass: string;
     additionalInfo: string;
+    additionalInfoSuffixIcon?: string[];
     open?: () => void;
     openChange?: () => void;
     apply?: () => void;
@@ -622,16 +626,17 @@ const ChangeSetBox: React.FunctionComponent<{ changeSet: ChangeSetUI }> = React.
                 {elements.map((element, index) => (
                     <li key={index} title={nls.localize('theia/ai/chat-ui/openDiff', 'Open Diff')} onClick={() => element.openChange?.()}>
                         <div className={`theia-ChatInput-ChangeSet-Icon ${element.iconClass}`}>
-                            {element.iconOverlayClass && <div className={`theia-ChatInput-ChangeSet-IconOverlay ${element.iconOverlayClass.join(' ')}`}></div>}
                         </div>
-                        <span className='theia-ChatInput-ChangeSet-labelParts'>
+                        <div className='theia-ChatInput-ChangeSet-labelParts'>
                             <span className={`theia-ChatInput-ChangeSet-title ${element.nameClass}`}>
                                 {element.name}
                             </span>
-                            <span className='theia-ChatInput-ChangeSet-additionalInfo'>
-                                {element.additionalInfo}
-                            </span>
-                        </span>
+                            <div className='theia-ChatInput-ChangeSet-additionalInfo'>
+                                {element.additionalInfo && <span>{element.additionalInfo}</span>}
+                                {element.additionalInfoSuffixIcon
+                                    && <div className={`theia-ChatInput-ChangeSet-AdditionalInfo-SuffixIcon ${element.additionalInfoSuffixIcon.join(' ')}`}></div>}
+                            </div>
+                        </div>
                         <div className='theia-ChatInput-ChangeSet-Actions'>
                             {element.open && (
                                 <span

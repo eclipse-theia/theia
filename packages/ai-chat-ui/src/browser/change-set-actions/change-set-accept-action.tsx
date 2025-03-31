@@ -23,7 +23,6 @@ import { nls } from '@theia/core';
 @injectable()
 export class ChangeSetAcceptAction implements ChangeSetActionRenderer {
     readonly id = 'change-set-accept-action';
-
     canRender(changeSet: ChangeSet): boolean {
         return changeSet.getElements().length > 0;
     }
