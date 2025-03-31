@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { OpenerService, OpenerOptions, open } from '@theia/core/lib/browser/opener-service';
 import { EditorOpenerOptions } from '../editor-manager';
@@ -40,7 +40,7 @@ export class NavigationLocationService {
     private static MAX_STACK_ITEMS = 30;
     private static readonly MAX_RECENTLY_CLOSED_EDITORS = 20;
 
-    @inject(ILogger)
+    @inject(ILogger) @named('NavigationLocationService')
     protected readonly logger: ILogger;
 
     @inject(OpenerService)
@@ -59,16 +59,16 @@ export class NavigationLocationService {
 
     protected recentlyClosedEditors: RecentlyClosedEditor[] = [];
 
-    protected activeNavigation: [number, NavigationLocation[] | undefined] = [0, undefined];
+    protected activeNavigations: { count: number, lastLocation: NavigationLocation[] | undefined } = { count: 0, lastLocation: undefined };
 
     /**
      * Start a logical navigation operation. Invoke this before invoking `registerLocations`
      */
     startNavigation(): void {
         if (this.canRegister) {
-            this.activeNavigation[0]++;
-            console.debug(`start navigation ${this.activeNavigation[0]}`);
-            console.trace(new Error('start'));
+            this.activeNavigations.count++;
+            this.logger.debug(`start navigation ${this.activeNavigations.count}`);
+            this.logger.trace(new Error('start'));
         }
     }
 
@@ -77,14 +77,14 @@ export class NavigationLocationService {
      */
     endNavigation(): void {
         if (this.canRegister) {
-            this.activeNavigation[0]--;
-            console.debug(`end navigation ${this.activeNavigation[0]}`);
-            console.trace(new Error('end'));
+            this.activeNavigations.count--;
+            this.logger.debug(`end navigation ${this.activeNavigations.count}`);
+            this.logger.trace(new Error('end'));
 
-            if (this.activeNavigation[0] === 0 && this.activeNavigation[1] !== undefined) {
-                console.debug(`ending navigation with location ${JSON.stringify(NavigationLocation.toObject(this.activeNavigation[1][0]))}`);
-                const locations = this.activeNavigation[1];
-                this.activeNavigation[1] = undefined;
+            if (this.activeNavigations.count === 0 && this.activeNavigations.lastLocation !== undefined) {
+                this.logger.debug(`ending navigation with location ${JSON.stringify(NavigationLocation.toObject(this.activeNavigations.lastLocation[0]))}`);
+                const locations = this.activeNavigations.lastLocation;
+                this.activeNavigations.lastLocation = undefined;
                 this.doRegister(locations);
             }
         }
@@ -109,10 +109,10 @@ export class NavigationLocationService {
      */
     register(...locations: NavigationLocation[]): void {
         if (this.canRegister) {
-            if (this.activeNavigation[0] > 0) {
-                this.activeNavigation[1] = locations;
+            if (this.activeNavigations.count > 0) {
+                this.activeNavigations.lastLocation = locations;
             } else {
-                console.warn('no activative navigation', new Error('No active navigation'));
+                this.logger.warn('no activative navigation', new Error('No active navigation'));
                 this.doRegister(locations);
             }
         }
