@@ -66,8 +66,39 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
     }
 
     async connectToContainer(options: ContainerConnectionOptions): Promise<ContainerConnectionResult> {
-        const dockerConnection = new Docker();
-        const version = await dockerConnection.version().catch(() => undefined);
+        const dockerOptions: Docker.DockerOptions = {};
+        const dockerHost = process.env.DOCKER_HOST;
+
+        try {
+            if (dockerHost) {
+                const dockerHostURL = new URL(dockerHost);
+
+                if (dockerHostURL.protocol === 'unix:') {
+                    dockerOptions.socketPath = dockerHostURL.pathname;
+                } else {
+                    if (dockerHostURL.protocol === 'http:') {
+                        dockerOptions.protocol = 'http';
+                    } else if (dockerHostURL.protocol === 'https:') {
+                        dockerOptions.protocol = 'https';
+                    } else if (dockerHostURL.protocol === 'ssh:') {
+                        dockerOptions.protocol = 'ssh';
+                    } else {
+                        dockerOptions.protocol = undefined;
+                    }
+                    dockerOptions.port = parseInt(dockerHostURL.port) || undefined;
+                    dockerOptions.username = dockerHostURL.username || undefined;
+                }
+            }
+        } catch (_) {
+            this.messageService.warn('Ignoring invalid DOCKER_HOST=' + dockerHost);
+        }
+
+        const dockerConnection = new Docker(dockerOptions);
+        const version = await dockerConnection.version()
+            .catch(e => {
+                console.error('Docker Error:', e);
+                this.messageService.error('Docker Error: ' + e.message);
+            });
 
         if (!version) {
             this.messageService.error('Docker Daemon is not running');
@@ -287,13 +318,25 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
 
     async copy(localPath: string | Buffer | NodeJS.ReadableStream, remotePath: string): Promise<void> {
         const deferred = new Deferred<void>();
-        const process = exec(`docker cp -qa ${localPath.toString()} ${this.container.id}:${remotePath}`);
+        const dockerHost = process.env.DOCKER_HOST;
+        let remoteHost = '';
+        try {
+            if (dockerHost) {
+                const dockerHostURL = new URL(dockerHost);
+                if (dockerHostURL.protocol === 'http:' || dockerHostURL.protocol === 'https:') {
+                    dockerHostURL.protocol = 'tcp:';
+                }
+                remoteHost = '-H ' + dockerHostURL.href + ' ';
+            }
+        } catch (_) { }
+
+        const subprocess = exec(`docker ${remoteHost}cp -a ${localPath.toString()} ${this.container.id}:${remotePath}`);
 
         let stderr = '';
-        process.stderr?.on('data', data => {
+        subprocess.stderr?.on('data', data => {
             stderr += data.toString();
         });
-        process.on('close', code => {
+        subprocess.on('close', code => {
             if (code === 0) {
                 deferred.resolve();
             } else {
