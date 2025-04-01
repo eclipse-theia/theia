@@ -19,13 +19,14 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import * as React from '@theia/core/shared/react';
 import { HoverService } from '@theia/core/lib/browser/hover-service';
 import { MCPFrontendNotificationService, MCPFrontendService, MCPServerDescription, MCPServerStatus } from '@theia/ai-mcp/lib/common/mcp-server-manager';
-import { MessageService } from '@theia/core';
+import { MessageService, nls } from '@theia/core';
+import { PROMPT_VARIABLE } from '@theia/ai-core/lib/common/prompt-variable-contribution';
 
 @injectable()
 export class AIMCPConfigurationWidget extends ReactWidget {
 
     static readonly ID = 'ai-mcp-configuration-container-widget';
-    static readonly LABEL = 'MCP Servers';
+    static readonly LABEL = nls.localize('theia/ai/mcpConfiguration/widgetLabel', 'MCP Servers');
 
     protected servers: MCPServerDescription[] = [];
     protected expandedTools: Record<string, boolean> = {};
@@ -143,7 +144,7 @@ export class AIMCPConfigurationWidget extends ReactWidget {
     protected renderCommandSection(server: MCPServerDescription): React.ReactNode {
         return (
             <div className="mcp-server-section">
-                <span className="mcp-section-label">Command: </span>
+                <span className="mcp-section-label">{nls.localize('theia/ai/mcpConfiguration/command', 'Command: ')}</span>
                 <code className="mcp-code-block">{server.command}</code>
             </div>
         );
@@ -155,7 +156,7 @@ export class AIMCPConfigurationWidget extends ReactWidget {
         }
         return (
             <div className="mcp-server-section">
-                <span className="mcp-section-label">Arguments: </span>
+                <span className="mcp-section-label">{nls.localize('theia/ai/mcpConfiguration/arguments', 'Arguments: ')}</span>
                 <code className="mcp-code-block">{server.args.join(' ')}</code>
             </div>
         );
@@ -167,7 +168,7 @@ export class AIMCPConfigurationWidget extends ReactWidget {
         }
         return (
             <div className="mcp-server-section">
-                <span className="mcp-section-label">Environment Variables: </span>
+                <span className="mcp-section-label">{nls.localize('theia/ai/mcpConfiguration/environmentVariables', 'Environment Variables: ')}</span>
                 <div className="mcp-env-block">
                     {Object.entries(server.env).map(([key, value]) => (
                         <div key={key}>
@@ -182,12 +183,12 @@ export class AIMCPConfigurationWidget extends ReactWidget {
     protected renderAutostartSection(server: MCPServerDescription): React.ReactNode {
         return (
             <div className="mcp-server-section">
-                <span className="mcp-section-label">Autostart: </span>
+                <span className="mcp-section-label">{nls.localize('theia/ai/mcpConfiguration/autostart', 'Autostart: ')}</span>
                 <span className="mcp-autostart-badge" style={{
                     backgroundColor: server.autostart ? 'var(--theia-successBackground)' : 'var(--theia-errorBackground)',
                     color: server.autostart ? 'var(--theia-successForeground)' : 'var(--theia-errorForeground)',
                 }}>
-                    {server.autostart ? 'Enabled' : 'Disabled'}
+                    {server.autostart ? nls.localize('theia/ai/mcpConfiguration/enabled', 'Enabled') : nls.localize('theia/ai/mcpConfiguration/disabled', 'Disabled')}
                 </span>
             </div>
         );
@@ -211,29 +212,30 @@ export class AIMCPConfigurationWidget extends ReactWidget {
                         </span>
                     </div>
                     <div style={{ flexGrow: 1 }}>
-                        <span className="mcp-section-label">Tools: </span>
+                        <span className="mcp-section-label">{nls.localize('theia/ai/mcpConfiguration/tools', 'Tools: ')}</span>
                     </div>
                     <div style={{ display: 'flex', gap: '4px' }}>
                         {this.renderButton(
                             <i className="codicon codicon-versions"></i>,
-                            'Copy all (multiple lines prompttemplate)',
+                            nls.localize('theia/ai/mcpConfiguration/copyAllList', 'Copy all (list of all tools)'),
                             e => {
                                 e.stopPropagation();
                                 if (server.tools) {
                                     const toolNames = server.tools.map(tool => `~{mcp_${server.name}_${tool.name}}`).join('\n');
                                     navigator.clipboard.writeText(toolNames);
-                                    this.messageService.info('Copied all tools to clipboard (multiple lines prompttemplate)');
+                                    this.messageService.info(nls.localize('theia/ai/mcpConfiguration/copiedAllList', 'Copied all tools to clipboard (list of all tools)'));
                                 }
                             },
                             'mcp-copy-tool-button'
                         )}
                         {this.renderButton(
                             <i className="codicon codicon-copy"></i>,
-                            'Copy all (single line prompttemplate)',
+                            nls.localize('theia/ai/mcpConfiguration/copyAllSingle', 'Copy all (single prompt fragment with all tools)'),
                             e => {
                                 e.stopPropagation();
-                                navigator.clipboard.writeText(`~{${this.mcpFrontendService.getPromptTemplateId(server.name)}}`);
-                                this.messageService.info('Copied all tools to clipboard (single line prompttemplate)');
+                                navigator.clipboard.writeText(`#${PROMPT_VARIABLE.name}:${this.mcpFrontendService.getPromptTemplateId(server.name)}`);
+                                this.messageService.info(nls.localize('theia/ai/mcpConfiguration/copiedAllSingle', 'Copied all tools to clipboard (single prompt fragment with \
+                                    all tools)'));
                             },
                             'mcp-copy-tool-button'
                         )}
@@ -249,7 +251,7 @@ export class AIMCPConfigurationWidget extends ReactWidget {
                                 <div style={{ display: 'flex', gap: '4px' }}>
                                     {this.renderButton(
                                         <i className="codicon codicon-comment"></i>,
-                                        'Copy (for Chat)',
+                                        nls.localize('theia/ai/mcpConfiguration/copyForChat', 'Copy (for Chat)'),
                                         e => {
                                             e.stopPropagation();
                                             const copied = `~mcp_${server.name}_${tool.name}`;
@@ -260,7 +262,7 @@ export class AIMCPConfigurationWidget extends ReactWidget {
                                     )}
                                     {this.renderButton(
                                         <i className="codicon codicon-copy"></i>,
-                                        'Copy (for prompttemplate)',
+                                        nls.localize('theia/ai/mcpConfiguration/copyForPrompt', 'Copy (for prompttemplate)'),
                                         e => {
                                             e.stopPropagation();
                                             const copied = `~{mcp_${server.name}_${tool.name}}`;
@@ -289,14 +291,14 @@ export class AIMCPConfigurationWidget extends ReactWidget {
         return (
             <div className="mcp-server-controls">
                 {isStartable && this.renderButton(
-                    <><i className="codicon codicon-play"></i> Start Server</>,
-                    'Start Server',
+                    <><i className="codicon codicon-play"></i> {nls.localize('theia/ai/mcpConfiguration/startServer', 'Start Server')}</>,
+                    nls.localize('theia/ai/mcpConfiguration/startServer', 'Start Server'),
                     () => this.handleStartServer(server.name),
                     'mcp-server-button play-button'
                 )}
                 {isStoppable && this.renderButton(
-                    <><i className="codicon codicon-close"></i> Stop Server</>,
-                    'Stop Server',
+                    <><i className="codicon codicon-close"></i> {nls.localize('theia/ai/mcpConfiguration/stopServer', 'Stop Server')}</>,
+                    nls.localize('theia/ai/mcpConfiguration/stopServer', 'Stop Server'),
                     () => this.handleStopServer(server.name),
                     'mcp-server-button stop-button'
                 )}
@@ -322,14 +324,14 @@ export class AIMCPConfigurationWidget extends ReactWidget {
         if (this.servers.length === 0) {
             return (
                 <div className="mcp-no-servers">
-                    No MCP servers configured
+                    {nls.localize('theia/ai/mcpConfiguration/noServers', 'No MCP servers configured')}
                 </div>
             );
         }
 
         return (
             <div className="mcp-configuration-container">
-                <h2 className="mcp-configuration-title">MCP Server Configurations</h2>
+                <h2 className="mcp-configuration-title">{nls.localize('theia/ai/mcpConfiguration/serverConfigurations', 'MCP Server Configurations')}</h2>
                 {this.servers.map(server => this.renderServerCard(server))}
             </div>
         );
