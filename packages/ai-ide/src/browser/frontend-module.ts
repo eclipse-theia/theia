@@ -16,7 +16,7 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { ChatAgent, DefaultChatAgentId, FallbackChatAgentId } from '@theia/ai-chat/lib/common';
-import { Agent, AIVariableContribution, ToolProvider } from '@theia/ai-core/lib/common';
+import { Agent, AIVariableContribution, bindToolProvider } from '@theia/ai-core/lib/common';
 import { ArchitectAgent } from './architect-agent';
 import { CoderAgent } from './coder-agent';
 import { FileContentFunction, FileDiagonsticProvider, GetWorkspaceDirectoryStructure, GetWorkspaceFileList, WorkspaceFunctionScope } from './workspace-functions';
@@ -73,17 +73,17 @@ export default new ContainerModule(bind => {
 
     bind(ChatWelcomeMessageProvider).to(IdeChatWelcomeMessageProvider);
 
-    bind(ToolProvider).to(GetWorkspaceFileList);
-    bind(ToolProvider).to(FileContentFunction);
-    bind(ToolProvider).to(GetWorkspaceDirectoryStructure);
-    bind(ToolProvider).to(FileDiagonsticProvider);
+    bindToolProvider(GetWorkspaceFileList, bind);
+    bindToolProvider(FileContentFunction, bind);
+    bindToolProvider(GetWorkspaceDirectoryStructure, bind);
+    bindToolProvider(FileDiagonsticProvider, bind);
     bind(WorkspaceFunctionScope).toSelf().inSingletonScope();
 
-    bind(ToolProvider).to(WriteChangeToFileProvider);
+    bindToolProvider(WriteChangeToFileProvider, bind);
     bind(ReplaceContentInFileFunctionHelper).toSelf().inSingletonScope();
-    bind(ToolProvider).to(ReplaceContentInFileProvider);
-    bind(ToolProvider).to(ListChatContext);
-    bind(ToolProvider).to(ResolveChatContext);
+    bindToolProvider(ReplaceContentInFileProvider, bind);
+    bindToolProvider(ListChatContext, bind);
+    bindToolProvider(ResolveChatContext, bind);
     bind(AIConfigurationSelectionService).toSelf().inSingletonScope();
     bind(AIConfigurationContainerWidget).toSelf();
     bind(WidgetFactory)
@@ -112,8 +112,8 @@ export default new ContainerModule(bind => {
         }))
         .inSingletonScope();
 
-    bind(ToolProvider).to(SimpleReplaceContentInFileProvider);
-    bind(ToolProvider).to(AddFileToChatContext);
+    bindToolProvider(SimpleReplaceContentInFileProvider, bind);
+    bindToolProvider(AddFileToChatContext, bind);
     bind(AIVariableContribution).to(ContextFilesVariableContribution).inSingletonScope();
     bind(PreferenceContribution).toConstantValue({ schema: AiConfigurationPreferences });
 
