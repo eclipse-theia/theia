@@ -701,3 +701,7 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
   min-height: 1em;
   display: block;
 }
+
+.session-settings-container .monaco-editor {
+  outline-color: var(--theia-editor-background);
+}
