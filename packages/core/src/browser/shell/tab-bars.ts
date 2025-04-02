@@ -20,7 +20,7 @@ import { VirtualElement, h, VirtualDOM, ElementInlineStyle } from '@lumino/virtu
 import { Disposable, DisposableCollection, MenuPath, notEmpty, SelectionService, CommandService, nls, ArrayUtils } from '../../common';
 import { ContextMenuRenderer } from '../context-menu-renderer';
 import { Signal, Slot } from '@lumino/signaling';
-import { Message, MessageLoop } from '@lumino/messaging';
+import { Message } from '@lumino/messaging';
 import { ArrayExt } from '@lumino/algorithm';
 import { ElementExt } from '@lumino/domutils';
 import { TabBarToolbarRegistry, TabBarToolbar } from './tab-bar-toolbar';
@@ -978,6 +978,7 @@ export class ToolbarAwareTabBar extends ScrollableTabBar {
     protected toolbar: TabBarToolbar | undefined;
     protected breadcrumbsContainer: HTMLElement;
     protected readonly breadcrumbsRenderer: BreadcrumbsRenderer;
+    protected dockPanel: TheiaDockPanel;
 
     constructor(
         protected readonly tabBarToolbarRegistry: TabBarToolbarRegistry,
@@ -994,14 +995,18 @@ export class ToolbarAwareTabBar extends ScrollableTabBar {
         this.toDispose.push(this.breadcrumbsRenderer);
         this.toDispose.push(this.breadcrumbsRenderer.onDidChangeActiveState(active => {
             this.node.classList.toggle('theia-tabBar-multirow', active);
-            if (this.parent) {
-                MessageLoop.sendMessage(this.parent, new Message('fit-request'));
+            if (this.dockPanel) {
+                this.dockPanel.fit();
             }
         }));
         this.node.classList.toggle('theia-tabBar-multirow', this.breadcrumbsRenderer.active);
         const handler = () => this.updateBreadcrumbs();
         this.currentChanged.connect(handler);
         this.toDispose.push(Disposable.create(() => this.currentChanged.disconnect(handler)));
+    }
+
+    setDockPanel(panel: TheiaDockPanel): void  {
+        this.dockPanel = panel;
     }
 
     protected async updateBreadcrumbs(): Promise<void> {
@@ -1256,7 +1261,7 @@ export class SideTabBar extends ScrollableTabBar {
                 return;
             }
 
-            if ((newOverflowingTabs.length !== this.tabsOverflowData?.titles.length ?? 0) ||
+            if ((newOverflowingTabs.length !== (this.tabsOverflowData?.titles.length ?? 0)) ||
                 newOverflowingTabs.find((newTitle, i) => newTitle !== this.tabsOverflowData?.titles[i]) !== undefined) {
                 this.tabsOverflowData = { titles: newOverflowingTabs, startIndex };
                 this.tabsOverflowChanged.emit(this.tabsOverflowData);
