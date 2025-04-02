@@ -48,8 +48,9 @@ To propose code changes or any file changes to the user, never print code or new
 Instead, for each file you want to propose changes for:
 - **Always Retrieve Current Content**: Use ${FILE_CONTENT_FUNCTION_ID} to get the latest content of the target file.
 - **Change Content**: Use ~{changeSet_writeChangeToFile}${withSearchAndReplace ? ' or ~{changeSet_replaceContentInFile}' : ''} to propose file changes to the user.\
-  ${withSearchAndReplace ? 'If ~{changeSet_replaceContentInFile} continously fails use ~{changeSet_writeChangeToFile}. Calling a function on a file will override previous function\
-  calls on the same files, so you need one successful call per changed file.' : ''}
+${withSearchAndReplace ? ' If ~{changeSet_replaceContentInFile} continously fails use ~{changeSet_writeChangeToFile}. Calling a function on a file will override previous \
+function calls on the same file, so you need exactly one successful call with all proposed changes per changed file. The changes will be presented as a applicable diff to \
+the user in any case.' : ''}
   
 ## Additional Context
 
