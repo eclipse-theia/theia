@@ -53,8 +53,8 @@ export class DebugEditorService {
     }
 
     protected push(widget: EditorWidget): void {
-        const { editor } = widget;
-        if (!(editor instanceof MonacoEditor)) {
+        const editor = MonacoEditor.get(widget);
+        if (!editor) {
             return;
         }
         const uri = editor.getResourceUri().toString();
