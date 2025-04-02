@@ -31,7 +31,7 @@ const TheiaIdeAiLogo = ({ width = 200, height = 200, className = '' }) =>
     >
         <rect x="55" y="45" width="90" height="85" rx="30" fill="var(--theia-disabledForeground)" />
 
-        <line x1="100" y1="45" x2="100" y2="30" stroke="var(--theia-foreground)" stroke-width="4" />
+        <line x1="100" y1="45" x2="100" y2="30" stroke="var(--theia-foreground)" strokeWidth="4" />
         <circle cx="100" cy="25" r="6" fill="var(--theia-foreground)" />
 
         <rect x="40" y="75" width="15" height="30" rx="5" fill="var(--theia-foreground)" />
@@ -40,7 +40,7 @@ const TheiaIdeAiLogo = ({ width = 200, height = 200, className = '' }) =>
         <circle cx="80" cy="80" r="10" fill="var(--theia-editor-background)" />
         <circle cx="120" cy="80" r="10" fill="var(--theia-editor-background)" />
 
-        <path d="M85 105 Q100 120 115 105" fill="none" stroke="var(--theia-editor-background)" stroke-width="4" stroke-linecap="round" />
+        <path d="M85 105 Q100 120 115 105" fill="none" stroke="var(--theia-editor-background)" strokeWidth="4" strokeLinecap="round" />
 
         <rect x="55" y="135" width="90" height="30" rx="5" fill="var(--theia-foreground)" />
 
