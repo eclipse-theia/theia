@@ -58,13 +58,11 @@ export class EnvVariablesServerImpl implements EnvVariablesServer {
         let theiaConfigDir: string;
         if (dataFolderExists) {
             const userDataExists = this.pathExistenceCache[userDataPath] ??= await pathExists(userDataPath);
-            if (userDataExists) {
-                theiaConfigDir = userDataPath;
-            } else {
+            if (!userDataExists) {
                 await mkdir(userDataPath);
-                theiaConfigDir = userDataPath;
                 this.pathExistenceCache[userDataPath] = true;
             }
+            theiaConfigDir = userDataPath;
         } else {
             theiaConfigDir = join(homedir(), BackendApplicationConfigProvider.get().configurationFolder);
         }
