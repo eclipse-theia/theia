@@ -55,19 +55,20 @@ export class EnvVariablesServerImpl implements EnvVariablesServer {
         const dataFolderPath = join(BackendApplicationPath, 'data');
         const userDataPath = join(dataFolderPath, 'user-data');
         const dataFolderExists = this.pathExistenceCache[dataFolderPath] ??= await pathExists(dataFolderPath);
+        let theiaConfigDir: string;
         if (dataFolderExists) {
             const userDataExists = this.pathExistenceCache[userDataPath] ??= await pathExists(userDataPath);
             if (userDataExists) {
-                process.env.THEIA_CONFIG_DIR = userDataPath;
+                theiaConfigDir = userDataPath;
             } else {
                 await mkdir(userDataPath);
-                process.env.THEIA_CONFIG_DIR = userDataPath;
+                theiaConfigDir = userDataPath;
                 this.pathExistenceCache[userDataPath] = true;
             }
         } else {
-            process.env.THEIA_CONFIG_DIR = join(homedir(), BackendApplicationConfigProvider.get().configurationFolder);
+            theiaConfigDir = join(homedir(), BackendApplicationConfigProvider.get().configurationFolder);
         }
-        return FileUri.create(process.env.THEIA_CONFIG_DIR).toString();
+        return FileUri.create(theiaConfigDir).toString();
     }
 
     async getExecPath(): Promise<string> {
