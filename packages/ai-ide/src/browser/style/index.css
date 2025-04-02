@@ -348,3 +348,101 @@
   font-weight: bolder;
   font-style: normal;
 }
+
+/* Token Usage Configuration Styles */
+.token-usage-configuration-container {
+  padding: 16px;
+}
+
+.token-usage-configuration-title {
+  margin: 0 0 16px 0;
+  border-bottom: 1px solid var(--theia-widget-border);
+  padding-bottom: 8px;
+}
+
+.token-usage-controls {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}
+
+.token-usage-refresh-button {
+  display: inline-flex;
+  align-items: center;
+  background-color: var(--theia-button-background);
+  color: var(--theia-button-foreground);
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.token-usage-refresh-button:hover {
+  background-color: var(--theia-button-hoverBackground);
+}
+
+.token-usage-refresh-button i {
+  margin-right: 6px;
+}
+
+.token-usage-table-container {
+  overflow-x: auto;
+  border-radius: 6px;
+  background-color: var(--theia-editorWidget-background);
+}
+
+.token-usage-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.token-usage-header th {
+  text-align: left;
+  padding: 10px;
+  background-color: var(--theia-editor-background);
+  color: var(--theia-descriptionForeground);
+  font-weight: bold;
+}
+
+.token-usage-model-column {
+  width: 25%;
+}
+
+.token-usage-column {
+  width: 18.75%;
+}
+
+.token-usage-row td {
+  padding: 10px;
+}
+
+.token-usage-row:hover {
+  background-color: var(--theia-list-hoverBackground);
+}
+
+.token-usage-summary-row td {
+  padding: 10px;
+  background-color: var(--theia-editor-background);
+  color: var(--theia-foreground);
+}
+
+.token-usage-model-cell {
+  font-weight: 500;
+}
+
+.token-usage-notes {
+  margin-top: 16px;
+  color: var(--theia-descriptionForeground);
+}
+
+.token-usage-note {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+}
+
+.token-usage-note i {
+  margin-right: 8px;
+}

@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelRegistry } from '@theia/ai-core';
+import { LanguageModelRegistry, TokenUsageService } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { AnthropicModel, DEFAULT_MAX_TOKENS } from './anthropic-language-model';
 import { AnthropicLanguageModelsManager, AnthropicModelDescription } from '../common';
@@ -26,6 +26,9 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
 
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: LanguageModelRegistry;
+
+    @inject(TokenUsageService)
+    protected readonly tokenUsageService: TokenUsageService;
 
     get apiKey(): string | undefined {
         return this._apiKey ?? process.env.ANTHROPIC_API_KEY;
@@ -64,7 +67,8 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                         modelDescription.model,
                         modelDescription.enableStreaming,
                         apiKeyProvider,
-                        modelDescription.maxTokens
+                        modelDescription.maxTokens,
+                        this.tokenUsageService
                     )
                 ]);
             }

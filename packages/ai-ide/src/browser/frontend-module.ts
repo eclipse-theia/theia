@@ -44,6 +44,7 @@ import { TemplatePreferenceContribution } from './template-preference-contributi
 import { AIMCPConfigurationWidget } from './ai-configuration/mcp-configuration-widget';
 import { ChatWelcomeMessageProvider } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import { IdeChatWelcomeMessageProvider } from './ide-chat-welcome-message-provider';
+import { AITokenUsageConfigurationWidget } from './ai-configuration/token-usage-configuration-widget';
 
 export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: WorkspacePreferencesSchema });
@@ -124,6 +125,14 @@ export default new ContainerModule(bind => {
         .toDynamicValue(ctx => ({
             id: AIMCPConfigurationWidget.ID,
             createWidget: () => ctx.container.get(AIMCPConfigurationWidget)
+        }))
+        .inSingletonScope();
+    // Register the token usage configuration widget
+    bind(AITokenUsageConfigurationWidget).toSelf();
+    bind(WidgetFactory)
+        .toDynamicValue(ctx => ({
+            id: AITokenUsageConfigurationWidget.ID,
+            createWidget: () => ctx.container.get(AITokenUsageConfigurationWidget)
         }))
         .inSingletonScope();
 });

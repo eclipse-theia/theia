@@ -21,7 +21,9 @@ import {
     LanguageModelResponse,
     LanguageModelStreamResponse,
     LanguageModelStreamResponsePart,
-    LanguageModelTextResponse
+    LanguageModelTextResponse,
+    TokenUsageService,
+    UserRequest
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 import { GoogleGenAI, FunctionCallingConfigMode, FunctionDeclaration, Content, Schema, Part, Modality } from '@google/genai';
@@ -117,14 +119,15 @@ export class GoogleModel implements LanguageModel {
         public readonly id: string,
         public model: string,
         public enableStreaming: boolean,
-        public apiKey: () => string | undefined
+        public apiKey: () => string | undefined,
+        protected readonly tokenUsageService?: TokenUsageService
     ) { }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
         return request.settings ?? {};
     }
 
-    async request(request: LanguageModelRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
+    async request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
         if (!request.messages?.length) {
             throw new Error('Request must contain at least one message');
         }
@@ -143,7 +146,7 @@ export class GoogleModel implements LanguageModel {
     }
     protected async handleStreamingRequest(
         genAI: GoogleGenAI,
-        request: LanguageModelRequest,
+        request: UserRequest,
         cancellationToken?: CancellationToken,
         toolMessages?: Content[]
     ): Promise<LanguageModelStreamResponse> {
@@ -225,6 +228,19 @@ export class GoogleModel implements LanguageModel {
                                         }]
                                     };
                                 }
+                            }
+                        }
+
+                        // Report token usage if available
+                        if (chunk.usageMetadata && that.tokenUsageService && that.id) {
+                            const promptTokens = chunk.usageMetadata.promptTokenCount;
+                            const completionTokens = chunk.usageMetadata.candidatesTokenCount;
+                            if (promptTokens && completionTokens) {
+                                that.tokenUsageService.recordTokenUsage(that.id, {
+                                    inputTokens: promptTokens,
+                                    outputTokens: completionTokens,
+                                    requestId: request.requestId
+                                }).catch(error => console.error('Error recording token usage:', error));
                             }
                         }
                     }
@@ -319,7 +335,7 @@ export class GoogleModel implements LanguageModel {
 
     protected async handleNonStreamingRequest(
         genAI: GoogleGenAI,
-        request: LanguageModelRequest
+        request: UserRequest
     ): Promise<LanguageModelTextResponse> {
         const settings = this.getSettings(request);
         const { contents: parts, systemMessage } = transformToGeminiMessages(request.messages);
@@ -342,6 +358,19 @@ export class GoogleModel implements LanguageModel {
 
         try {
             const responseText = model.text;
+
+            // Record token usage if available
+            if (model.usageMetadata && this.tokenUsageService) {
+                const promptTokens = model.usageMetadata.promptTokenCount;
+                const completionTokens = model.usageMetadata.candidatesTokenCount;
+                if (promptTokens && completionTokens) {
+                    await this.tokenUsageService.recordTokenUsage(this.id, {
+                        inputTokens: promptTokens,
+                        outputTokens: completionTokens,
+                        requestId: request.requestId
+                    });
+                }
+            }
 
             return { text: responseText ?? '' };
         } catch (error) {

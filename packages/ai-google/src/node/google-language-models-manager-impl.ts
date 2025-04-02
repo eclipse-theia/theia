@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelRegistry } from '@theia/ai-core';
+import { LanguageModelRegistry, TokenUsageService } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { GoogleModel } from './google-language-model';
 import { GoogleLanguageModelsManager, GoogleModelDescription } from '../common';
@@ -26,6 +26,9 @@ export class GoogleLanguageModelsManagerImpl implements GoogleLanguageModelsMana
 
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: LanguageModelRegistry;
+
+    @inject(TokenUsageService)
+    protected readonly tokenUsageService: TokenUsageService;
 
     get apiKey(): string | undefined {
         return this._apiKey ?? process.env.GOOGLE_API_KEY ?? process.env.GEMINI_API_KEY;
@@ -58,7 +61,8 @@ export class GoogleLanguageModelsManagerImpl implements GoogleLanguageModelsMana
                         modelDescription.id,
                         modelDescription.model,
                         modelDescription.enableStreaming,
-                        apiKeyProvider
+                        apiKeyProvider,
+                        this.tokenUsageService
                     )
                 ]);
             }

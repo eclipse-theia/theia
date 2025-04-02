@@ -36,15 +36,35 @@ import {
     LanguageModelRegistryFrontendDelegate,
     languageModelDelegatePath,
     languageModelRegistryDelegatePath,
-    LanguageModelRegistryClient
+    LanguageModelRegistryClient,
+    TokenUsageService,
+    TokenUsageServiceClient,
+    TOKEN_USAGE_SERVICE_PATH
 } from '../common';
 import { BackendLanguageModelRegistry } from './backend-language-model-registry';
+import { TokenUsageServiceImpl } from './token-usage-service-impl';
 
 // We use a connection module to handle AI services separately for each frontend.
 const aiCoreConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService, bindFrontendService }) => {
     bindContributionProvider(bind, LanguageModelProvider);
     bind(BackendLanguageModelRegistry).toSelf().inSingletonScope();
     bind(LanguageModelRegistry).toService(BackendLanguageModelRegistry);
+
+    bind(TokenUsageService).to(TokenUsageServiceImpl).inSingletonScope();
+
+    bind(ConnectionHandler)
+        .toDynamicValue(
+            ({ container }) =>
+                new RpcConnectionHandler<TokenUsageServiceClient>(
+                    TOKEN_USAGE_SERVICE_PATH,
+                    client => {
+                        const service = container.get<TokenUsageService>(TokenUsageService);
+                        service.setClient(client);
+                        return service;
+                    }
+                )
+        )
+        .inSingletonScope();
 
     bind(LanguageModelRegistryFrontendDelegate).to(LanguageModelRegistryFrontendDelegateImpl).inSingletonScope();
     bind(ConnectionHandler)

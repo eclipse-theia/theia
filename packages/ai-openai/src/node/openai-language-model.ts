@@ -21,7 +21,9 @@ import {
     LanguageModelMessage,
     LanguageModelResponse,
     LanguageModelTextResponse,
-    TextMessage
+    TextMessage,
+    TokenUsageService,
+    UserRequest
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
@@ -55,14 +57,15 @@ export class OpenAiModel implements LanguageModel {
         public supportsStructuredOutput: boolean,
         public url: string | undefined,
         public openAiModelUtils: OpenAiModelUtils,
-        public developerMessageSettings: DeveloperMessageSettings = 'developer'
+        public developerMessageSettings: DeveloperMessageSettings = 'developer',
+        protected readonly tokenUsageService?: TokenUsageService
     ) { }
 
     protected getSettings(request: LanguageModelRequest): Record<string, unknown> {
         return request.settings ?? {};
     }
 
-    async request(request: LanguageModelRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
+    async request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
         const settings = this.getSettings(request);
         const openai = this.initializeOpenAi();
 
@@ -84,6 +87,9 @@ export class OpenAiModel implements LanguageModel {
                 model: this.model,
                 messages: this.processMessages(request.messages),
                 stream: true,
+                stream_options: {
+                    include_usage: true
+                },
                 tools: tools,
                 tool_choice: 'auto',
                 ...settings
@@ -93,14 +99,17 @@ export class OpenAiModel implements LanguageModel {
                 model: this.model,
                 messages: this.processMessages(request.messages),
                 stream: true,
+                stream_options: {
+                    include_usage: true
+                },
                 ...settings
             });
         }
 
-        return { stream: new StreamingAsyncIterator(runner, cancellationToken) };
+        return { stream: new StreamingAsyncIterator(runner, request.requestId, cancellationToken, this.tokenUsageService, this.id) };
     }
 
-    protected async handleNonStreamingRequest(openai: OpenAI, request: LanguageModelRequest): Promise<LanguageModelTextResponse> {
+    protected async handleNonStreamingRequest(openai: OpenAI, request: UserRequest): Promise<LanguageModelTextResponse> {
         const settings = this.getSettings(request);
         const response = await openai.chat.completions.create({
             model: this.model,
@@ -109,6 +118,19 @@ export class OpenAiModel implements LanguageModel {
         });
 
         const message = response.choices[0].message;
+
+        // Record token usage if token usage service is available
+        if (this.tokenUsageService && response.usage) {
+            await this.tokenUsageService.recordTokenUsage(
+                this.id,
+                {
+                    inputTokens: response.usage.prompt_tokens,
+                    outputTokens: response.usage.completion_tokens,
+                    requestId: request.requestId
+                }
+
+            );
+        }
 
         return {
             text: message.content ?? ''
@@ -119,7 +141,7 @@ export class OpenAiModel implements LanguageModel {
         return !this.enableStreaming;
     }
 
-    protected async handleStructuredOutputRequest(openai: OpenAI, request: LanguageModelRequest): Promise<LanguageModelParsedResponse> {
+    protected async handleStructuredOutputRequest(openai: OpenAI, request: UserRequest): Promise<LanguageModelParsedResponse> {
         const settings = this.getSettings(request);
         // TODO implement tool support for structured output (parse() seems to require different tool format)
         const result = await openai.beta.chat.completions.parse({
@@ -132,6 +154,19 @@ export class OpenAiModel implements LanguageModel {
         if (message.refusal || message.parsed === undefined) {
             console.error('Error in OpenAI chat completion stream:', JSON.stringify(message));
         }
+
+        // Record token usage if token usage service is available
+        if (this.tokenUsageService && result.usage) {
+            await this.tokenUsageService.recordTokenUsage(
+                this.id,
+                {
+                    inputTokens: result.usage.prompt_tokens,
+                    outputTokens: result.usage.completion_tokens,
+                    requestId: request.requestId
+                }
+            );
+        }
+
         return {
             content: message.content ?? '',
             parsed: message.parsed
