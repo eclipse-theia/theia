@@ -123,7 +123,9 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
             this.tabBarToolbarFactory,
             this.breadcrumbsRendererFactory,
             {
-                renderer,
+                renderer
+            },
+            {
                 // Scroll bar options
                 handlers: ['drag-thumb', 'keyboard', 'wheel', 'touch'],
                 useBothWheelAxes: true,
