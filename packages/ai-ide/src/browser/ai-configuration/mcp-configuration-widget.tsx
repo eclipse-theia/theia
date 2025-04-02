@@ -229,17 +229,6 @@ export class AIMCPConfigurationWidget extends ReactWidget {
                             'mcp-copy-tool-button'
                         )}
                         {this.renderButton(
-                            <i className="codicon codicon-copy"></i>,
-                            nls.localize('theia/ai/mcpConfiguration/copyAllSingle', 'Copy all for chat (single prompt fragment with all tools)'),
-                            e => {
-                                e.stopPropagation();
-                                navigator.clipboard.writeText(`#${PROMPT_VARIABLE.name}:${this.mcpFrontendService.getPromptTemplateId(server.name)}`);
-                                this.messageService.info(nls.localize('theia/ai/mcpConfiguration/copiedAllSingle', 'Copied all tools to clipboard (single prompt fragment with \
-                                    all tools)'));
-                            },
-                            'mcp-copy-tool-button'
-                        )}
-                        {this.renderButton(
                             <i className="codicon codicon-bracket"></i>,
                             nls.localize('theia/ai/mcpConfiguration/copyForPromptTemplate', 'Copy all for prompt template (single prompt fragment with all tools)'),
                             e => {
@@ -247,6 +236,17 @@ export class AIMCPConfigurationWidget extends ReactWidget {
                                 navigator.clipboard.writeText(`{{${PROMPT_VARIABLE.name}:${this.mcpFrontendService.getPromptTemplateId(server.name)}}}`);
                                 this.messageService.info(nls.localize('theia/ai/mcpConfiguration/copiedForPromptTemplate', 'Copied all tools to clipboard for prompt template \
                                     (single prompt fragment with all tools)'));
+                            },
+                            'mcp-copy-tool-button'
+                        )}
+                        {this.renderButton(
+                            <i className="codicon codicon-copy"></i>,
+                            nls.localize('theia/ai/mcpConfiguration/copyAllSingle', 'Copy all for chat (single prompt fragment with all tools)'),
+                            e => {
+                                e.stopPropagation();
+                                navigator.clipboard.writeText(`#${PROMPT_VARIABLE.name}:${this.mcpFrontendService.getPromptTemplateId(server.name)}`);
+                                this.messageService.info(nls.localize('theia/ai/mcpConfiguration/copiedAllSingle', 'Copied all tools to clipboard (single prompt fragment with \
+                                    all tools)'));
                             },
                             'mcp-copy-tool-button'
                         )}
