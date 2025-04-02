@@ -27,6 +27,7 @@ import {
     isTextResponsePart,
     isThinkingResponsePart,
     isToolCallResponsePart,
+    isUsageResponsePart,
     LanguageModel,
     LanguageModelMessage,
     LanguageModelRequirement,
@@ -441,6 +442,9 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
         }
         if (isThinkingResponsePart(token)) {
             return new ThinkingChatResponseContentImpl(token.thought, token.signature);
+        }
+        if (isUsageResponsePart(token)) {
+            return [];
         }
         return this.defaultContentFactory.create('', request);
     }

@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2024 EclipseSource GmbH.
+// Copyright (C) 2025 EclipseSource GmbH.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -15,27 +15,33 @@
 // *****************************************************************************
 
 import { Event } from '@theia/core';
-import { LanguageModelMetaData } from './language-model';
-import { TokenUsage } from './token-usage-service';
 
-export const LanguageModelRegistryClient = Symbol('LanguageModelRegistryClient');
-export interface LanguageModelRegistryClient {
-    languageModelAdded(metadata: LanguageModelMetaData): void;
-    languageModelRemoved(id: string): void;
+/**
+ * Data structure for token usage data specific to a model.
+ */
+export interface ModelTokenUsageData {
+    /** The model identifier */
+    modelId: string;
+    /** Number of input tokens used */
+    inputTokens: number;
+    /** Number of output tokens used */
+    outputTokens: number;
+    /** Date when the model was last used */
+    lastUsed?: Date;
 }
 
-export const TOKEN_USAGE_SERVICE_PATH = '/services/token-usage';
-
-export const TokenUsageServiceClient = Symbol('TokenUsageServiceClient');
-
-export interface TokenUsageServiceClient {
+/**
+ * Service for managing token usage data on the frontend.
+ */
+export const TokenUsageFrontendService = Symbol('TokenUsageFrontendService');
+export interface TokenUsageFrontendService {
     /**
-     * Notify the client about new token usage
+     * Event emitted when token usage data is updated
      */
-    notifyTokenUsage(usage: TokenUsage): void;
+    readonly onTokenUsageUpdated: Event<ModelTokenUsageData[]>;
 
     /**
-     * An event that is fired when token usage data is updated.
+     * Gets the current token usage data for all models
      */
-    readonly onTokenUsageUpdated: Event<TokenUsage>;
+    getTokenUsageData(): Promise<ModelTokenUsageData[]>;
 }
