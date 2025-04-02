@@ -239,6 +239,17 @@ export class AIMCPConfigurationWidget extends ReactWidget {
                             },
                             'mcp-copy-tool-button'
                         )}
+                        {this.renderButton(
+                            <i className="codicon codicon-bracket"></i>,
+                            nls.localize('theia/ai/mcpConfiguration/copyForPromptTemplate', 'Copy all for prompt template((single prompt fragment with all tools))'),
+                            e => {
+                                e.stopPropagation();
+                                navigator.clipboard.writeText(`{{${PROMPT_VARIABLE.name}:${this.mcpFrontendService.getPromptTemplateId(server.name)}}}`);
+                                this.messageService.info(nls.localize('theia/ai/mcpConfiguration/copiedForPromptTemplate', 'Copied all tools to clipboard for prompt template \
+                                    (single prompt fragment with all tools)'));
+                            },
+                            'mcp-copy-tool-button'
+                        )}
                     </div>
                 </div>
                 {isToolsExpanded && (
@@ -250,24 +261,13 @@ export class AIMCPConfigurationWidget extends ReactWidget {
                                 </div>
                                 <div style={{ display: 'flex', gap: '4px' }}>
                                     {this.renderButton(
-                                        <i className="codicon codicon-comment"></i>,
-                                        nls.localize('theia/ai/mcpConfiguration/copyForChat', 'Copy (for Chat)'),
-                                        e => {
-                                            e.stopPropagation();
-                                            const copied = `~mcp_${server.name}_${tool.name}`;
-                                            navigator.clipboard.writeText(copied);
-                                            this.messageService.info(`Copied ${copied} to clipboard (for chat)`);
-                                        },
-                                        'mcp-copy-tool-button'
-                                    )}
-                                    {this.renderButton(
                                         <i className="codicon codicon-copy"></i>,
-                                        nls.localize('theia/ai/mcpConfiguration/copyForPrompt', 'Copy (for prompttemplate)'),
+                                        nls.localize('theia/ai/mcpConfiguration/copyForPrompt', 'Copy tool (for chat or prompt template)'),
                                         e => {
                                             e.stopPropagation();
                                             const copied = `~{mcp_${server.name}_${tool.name}}`;
                                             navigator.clipboard.writeText(copied);
-                                            this.messageService.info(`Copied ${copied} to clipboard (for prompttemplate)`);
+                                            this.messageService.info(`Copied ${copied} to clipboard (for chat or prompt template)`);
                                         },
                                         'mcp-copy-tool-button'
                                     )}
