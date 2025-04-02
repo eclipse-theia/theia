@@ -1032,7 +1032,8 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
             actor: 'user',
             type: 'tool_result',
             tool_use_id: this.id ?? '',
-            content: this.result
+            content: this.result,
+            name: this.name ?? ''
         }];
     }
 }
