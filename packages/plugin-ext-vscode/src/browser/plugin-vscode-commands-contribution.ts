@@ -375,7 +375,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         commands.registerCommand({ id: 'workbench.files.action.refreshFilesExplorer' }, {
             execute: () => commands.executeCommand(FileNavigatorCommands.REFRESH_NAVIGATOR.id)
         });
-        commands.registerCommand({ id: VscodeCommands.INSTALL_EXTENSION_FROM_ID_OR_URI.id }, {
+        commands.registerCommand(VscodeCommands.INSTALL_EXTENSION_FROM_ID_OR_URI, {
             execute: async (vsixUriOrExtensionId: TheiaURI | UriComponents | string) => {
                 if (typeof vsixUriOrExtensionId === 'string') {
                     await this.pluginServer.deploy(VSCodeExtensionUri.fromId(vsixUriOrExtensionId).toString());
@@ -384,10 +384,10 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                 }
             }
         });
-        commands.registerCommand({ id: VscodeCommands.INSTALL_EXTENSION_FROM_VSIX_COMMAND.id }, {
+        commands.registerCommand(VscodeCommands.INSTALL_EXTENSION_FROM_VSIX_COMMAND, {
             execute: async (uris: TheiaURI[] | UriComponents[] | TheiaURI | UriComponents) => {
                 if (isArray(uris)) {
-                    await Promise.all((uris as (TheiaURI | UriComponents)[]).map(async vsix => {
+                    await Promise.all(uris.map(async vsix => {
                         await this.deployPlugin(vsix);
                     }));
                 } else {
