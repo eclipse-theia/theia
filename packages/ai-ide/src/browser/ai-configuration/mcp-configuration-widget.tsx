@@ -241,7 +241,7 @@ export class AIMCPConfigurationWidget extends ReactWidget {
                         )}
                         {this.renderButton(
                             <i className="codicon codicon-bracket"></i>,
-                            nls.localize('theia/ai/mcpConfiguration/copyForPromptTemplate', 'Copy all for prompt template((single prompt fragment with all tools))'),
+                            nls.localize('theia/ai/mcpConfiguration/copyForPromptTemplate', 'Copy all for prompt template (single prompt fragment with all tools)'),
                             e => {
                                 e.stopPropagation();
                                 navigator.clipboard.writeText(`{{${PROMPT_VARIABLE.name}:${this.mcpFrontendService.getPromptTemplateId(server.name)}}}`);
