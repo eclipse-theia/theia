@@ -114,7 +114,7 @@ describe('parseContents', () => {
 
     it('should handle text with only start code block', () => {
         const text = '```typescript\nconsole.log("Hello World");';
-        // We're using the standard CodeContentMatcher which has incompleteContentFactory 
+        // We're using the standard CodeContentMatcher which has incompleteContentFactory
         const result = parseContents(text, fakeRequest);
         expect(result).to.deep.equal([new CodeChatResponseContentImpl('console.log("Hello World");', 'typescript')]);
     });
