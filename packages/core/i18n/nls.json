@@ -1,4 +1,5 @@
 {
+  "ai-chat-ui.show-settings": "Show AI Settings",
   "aiConfiguration:open": "Open AI Configuration view",
   "aiHistory:clear": "AI History: Clear History",
   "aiHistory:open": "Open AI History view",
@@ -13,6 +14,30 @@
   "terminal:profile:default": "Choose the default Terminal Profile",
   "theia": {
     "ai": {
+      "agents": {
+        "enable": {
+          "mdDescription": "Specifies whether the agent should be enabled (true) or disabled (false).",
+          "title": "Enable Agent"
+        },
+        "languageModelRequirements": {
+          "identifier": {
+            "mdDescription": "The identifier of the language model to be used.",
+            "title": "Identifier"
+          },
+          "mdDescription": "Specifies the used language models for this agent.",
+          "purpose": {
+            "mdDescription": "The purpose for which this language model is used.",
+            "title": "Purpose"
+          },
+          "title": "Language Model Requirements"
+        },
+        "mdDescription": "Configure agent settings such as enabling or disabling specific agents, configuring prompts and         selecting LLMs.",
+        "selectedVariants": {
+          "mdDescription": "Specifies the currently selected prompt variants for this agent.",
+          "title": "Selected Variants"
+        },
+        "title": "Agent Settings"
+      },
       "anthropic": {
         "apiKey": {
           "description": "Enter an API Key of your official Anthropic Account. **Please note:** By using this preference the Anthropic API key will be stored in clear text            on the machine running Theia. Use the environment variable `ANTHROPIC_API_KEY` to set the key securely."
@@ -27,6 +52,9 @@
         },
         "pinChatAgent": {
           "description": "Enable agent pinning to automatically keep a mentioned chat agent active across prompts, reducing the need for repeated mentions.You can manually unpin or switch agents anytime."
+        },
+        "view": {
+          "label": "AI Chat"
         }
       },
       "chat-ui": {
@@ -53,16 +81,21 @@
         },
         "copyCodeBlock": "Copy Code Block",
         "deleteChangeSet": "Delete Change Set",
+        "enterChatName": "Enter chat name",
         "errorChatInvocation": "An error occurred during chat service invocation.",
         "openDiff": "Open Diff",
         "openOriginalFile": "Open Original File",
         "pinAgent": "Pin Agent",
         "removeChat": "Remove Chat",
+        "renameChat": "Rename Chat",
         "selectChat": "Select chat",
         "selectVariableArguments": "Select variable arguments",
         "send": "Send (Enter)",
         "text-part-renderer": {
           "cantDisplay": "Can't display response, please check your ChatResponsePartRenderers!"
+        },
+        "thinking-part-renderer": {
+          "thinking": "Thinking"
         },
         "toolcall-part-renderer": {
           "finished": "Ran",
@@ -107,7 +140,7 @@
           "undeclared": "Undeclared"
         },
         "aiConfiguration": {
-          "label": "✨ AI Configuration [Alpha]"
+          "label": "AI Configuration [Alpha]"
         },
         "changeSetSummaryVariable": {
           "description": "Provides a summary of the files in a change set and their contents."
@@ -132,9 +165,15 @@
         "promptTemplates": {
           "description": "Folder for storing customized prompt templates. If not customized the user config directory is used. Please consider to use a folder, which is            under version control to manage your variants of prompt templates."
         },
+        "prompts": {
+          "category": "Theia AI Prompt Templates"
+        },
         "requestSettings": {
-          "mdDescription": "Allows specifying custom request settings for multiple models.\n            Each object represents the configuration for a specific model. The `modelId` field specifies the model ID, `requestSettings` defines model-specific settings.\n            The `providerId` field is optional and allows you to apply the settings to a specific provider. If not set, the settings will be applied to all providers.\n            Example providerIds: huggingface, openai, ollama, llamafile.\n            Refer to [our documentation](https://theia-ide.org/docs/user_ai/#custom-request-settings) for more information.",
+          "mdDescription": "Allows specifying custom request settings for multiple models.\n            Each setting consists of:\n            - `scope`: Defines when the setting applies:\n              - `modelId` (optional): The model ID to match\n              - `providerId` (optional): The provider ID to match (e.g., huggingface, openai, ollama, llamafile)\n              - `agentId` (optional): The agent ID to match\n            - `requestSettings`: Model-specific settings as key-value pairs\n            - `clientSettings`: Client-side message handling settings:\n              - `keepToolCalls` (boolean): Whether to keep tool calls in the context\n              - `keepThinking` (boolean): Whether to keep thinking messages\n            Settings are matched based on specificity (agent: 100, model: 10, provider: 1 points).\n            Refer to [our documentation](https://theia-ide.org/docs/user_ai/#custom-request-settings) for more information.",
           "title": "Custom Request Settings"
+        },
+        "showAllPrompts": {
+          "label": "Show all prompts"
         },
         "templateSettings": {
           "selectVariant": "Select Variant:",
@@ -142,11 +181,20 @@
         },
         "variable-contribution": {
           "builtInVariable": "Theia Built-in Variable",
-          "currentAbsoluteFilePath": "The absolute path of the             currently opened file. Please note that most agents will expect a relative file path (relative to the current workspace).",
-          "currentFileContent": "The plain content of the             currently opened file. This excludes the information where the content is coming from. Please note that most agents will work better with a relative file path             (relative to the current workspace).",
-          "currentRelativeDirPath": "The relative path of the directory             containing the currently opened file.",
-          "currentRelativeFilePath": "The relative path of the             currently opened file.",
-          "currentSelectedText": "The plain text that is currently selected in the             opened file. This excludes the information where the content is coming from. Please note that most agents will work better with a relative file path             (relative to the current workspace)."
+          "currentAbsoluteFilePath": "The absolute path of the                 currently opened file. Please note that most agents will expect a relative file path (relative to the current workspace).",
+          "currentFileContent": "The plain content of the                 currently opened file. This excludes the information where the content is coming from. Please note that most agents will work better with a relative file path                 (relative to the current workspace).",
+          "currentRelativeDirPath": "The relative path of the directory                 containing the currently opened file.",
+          "currentRelativeFilePath": "The relative path of the                 currently opened file.",
+          "currentSelectedText": "The plain text that is currently selected in the                 opened file. This excludes the information where the content is coming from. Please note that most agents will work better with a relative file path                 (relative to the current workspace).",
+          "dotRelativePath": "Short reference to the relative path of the                 currently opened file ('currentRelativeFilePath')."
+        }
+      },
+      "google": {
+        "apiKey": {
+          "description": "Enter an API Key of your official Google AI (Gemini) Account. **Please note:** By using this preference the GOOGLE AI API key will be stored in clear text            on the machine running Theia. Use the environment variable `GOOGLE_API_KEY` to set the key securely."
+        },
+        "models": {
+          "description": "Official Google Gemini models to use"
         }
       },
       "history": {
@@ -154,14 +202,11 @@
           "tooltip": "Clear History of all agents"
         },
         "communication-card": {
-          "context": "Context",
-          "messages": "Messages",
           "request": "Request",
           "requestId": "Request ID",
           "response": "Response",
           "responseTime": "Response Time",
           "sessionId": "Session ID",
-          "systemMessage": "System Message",
           "timestamp": "Timestamp"
         },
         "sortChronologically": {
@@ -171,7 +216,7 @@
           "tooltip": "Sort reverse chronologically"
         },
         "view": {
-          "label": "✨ AI Agent History [Alpha]",
+          "label": "AI Agent History [Alpha]",
           "noAgent": "No agent available.",
           "noAgentSelected": "No agent selected.",
           "noHistoryForAgent": "No history available for the selected agent '{0}'"
@@ -184,6 +229,11 @@
         "models": {
           "description": "Hugging Face models to use"
         }
+      },
+      "ide": {
+        "agent-description": "Configure AI agent settings including enablement, LLM selection, prompt template customization, and custom agent creation in the [AI Configuration View]({0}).",
+        "model-selection-description": "Choose which Large Language Models (LLMs) are used by each AI agent in the [AI Configuration View]({0}).",
+        "prompt-template-description": "Select prompt variants and customize prompt templates for AI agents in the [AI Configuration View]({0})."
       },
       "llamaFile": {
         "prefs": {
@@ -245,10 +295,28 @@
         },
         "stop": {
           "label": "MCP: Stop MCP Server"
-        },
-        "tool": {
-          "unnamed": "Unnamed Tool"
         }
+      },
+      "mcpConfiguration": {
+        "arguments": "Arguments: ",
+        "autostart": "Autostart: ",
+        "command": "Command: ",
+        "copiedAllList": "Copied all tools to clipboard (list of all tools)",
+        "copiedAllSingle": "Copied all tools to clipboard (single prompt fragment with                                     all tools)",
+        "copiedForPromptTemplate": "Copied all tools to clipboard for prompt template                                     (single prompt fragment with all tools)",
+        "copyAllList": "Copy all (list of all tools)",
+        "copyAllSingle": "Copy all for chat (single prompt fragment with all tools)",
+        "copyForPrompt": "Copy tool (for chat or prompt template)",
+        "copyForPromptTemplate": "Copy all for prompt template (single prompt fragment with all tools)",
+        "disabled": "Disabled",
+        "enabled": "Enabled",
+        "environmentVariables": "Environment Variables: ",
+        "noServers": "No MCP servers configured",
+        "serverConfigurations": "MCP Server Configurations",
+        "startServer": "Start Server",
+        "stopServer": "Stop Server",
+        "tools": "Tools: ",
+        "widgetLabel": "MCP Servers"
       },
       "openai": {
         "apiKey": {
@@ -285,6 +353,18 @@
           "description": "Official OpenAI models to use"
         }
       },
+      "promptTemplates": {
+        "directories": {
+          "title": "Workspace-specific Prompt Template Directories"
+        },
+        "extensions": {
+          "description": "List of additional file extensions in prompt locations that are considered as prompt templates. '.prompttemplate' is always considered as a default.",
+          "title": "Additional Prompt Template File Extensions"
+        },
+        "files": {
+          "title": "Workspace-specific Prompt Template Files"
+        }
+      },
       "scanoss": {
         "changeSet": {
           "clean": "No Matches",
@@ -316,6 +396,10 @@
           "no-match": "SCANOSS - No match",
           "summary": "Summary"
         }
+      },
+      "session-settings-dialog": {
+        "title": "Set Session Settings",
+        "tooltip": "Set Session Settings"
       },
       "terminal": {
         "agent": {
@@ -352,6 +436,13 @@
         }
       }
     },
+    "ai-chat-ui": {
+      "open-history-tooltip": "Open AI history...",
+      "open-settings-tooltip": "Open AI settings..."
+    },
+    "ai-ide": {
+      "open-agent-settings-tooltip": "Open Agent settings..."
+    },
     "callhierarchy": {
       "noCallers": "No callers have been detected.",
       "open": "Open Call Hierarchy"
@@ -386,7 +477,8 @@
     "core": {
       "about": {
         "compatibility": "{0} Compatibility",
-        "defaultApi": "Default {0} API"
+        "defaultApi": "Default {0} API",
+        "listOfExtensions": "List of extensions"
       },
       "common": {
         "closeAll": "Close All Tabs",
@@ -758,6 +850,7 @@
       "webviewWarnIfUnsecure": "Warns users that webviews are currently deployed unsecurely."
     },
     "preferences": {
+      "ai-features": "AI Features",
       "hostedPlugin": "Hosted Plugin",
       "toolbar": "Toolbar"
     },
@@ -858,6 +951,9 @@
     "typehierarchy": {
       "subtypeHierarchy": "Subtype Hierarchy",
       "supertypeHierarchy": "Supertype Hierarchy"
+    },
+    "variableResolver": {
+      "listAllVariables": "Variable: List All"
     },
     "vsx-registry": {
       "confirmDialogMessage": "The extension \"{0}\" is unverified and might pose a security risk.",

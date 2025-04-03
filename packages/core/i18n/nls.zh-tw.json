@@ -1,4 +1,5 @@
 {
+  "ai-chat-ui.show-settings": "顯示 AI 設定",
   "aiConfiguration:open": "開啟 AI 設定檢視",
   "aiHistory:clear": "AI 歷史:清除歷史",
   "aiHistory:open": "開啟 AI 歷史檢視",
@@ -13,6 +14,30 @@
   "terminal:profile:default": "選擇預設終端設定檔",
   "theia": {
     "ai": {
+      "agents": {
+        "enable": {
+          "mdDescription": "指定代理應啟用(true)還是停用(false)。",
+          "title": "啟用代理程式"
+        },
+        "languageModelRequirements": {
+          "identifier": {
+            "mdDescription": "要使用的語言模型的識別碼。",
+            "title": "識別"
+          },
+          "mdDescription": "指定此代理使用的語言模型。",
+          "purpose": {
+            "mdDescription": "使用此語言模型的目的。",
+            "title": "目的"
+          },
+          "title": "語言模型要求"
+        },
+        "mdDescription": "設定代理程式設定,例如啟用或停用特定代理程式、設定提示和選擇 LLM。",
+        "selectedVariants": {
+          "mdDescription": "指定此代理目前選擇的提示變異。",
+          "title": "精選變體"
+        },
+        "title": "代理設定"
+      },
       "anthropic": {
         "apiKey": {
           "description": "輸入您正式 Anthropic 帳戶的 API 金鑰。**請注意:** 使用此偏好設定時,Anthropic API 金鑰會以明碼方式儲存在執行 Theia 的機器上。使用環境變數 `ANTHROPIC_API_KEY` 來安全地設定金鑰。"
@@ -27,6 +52,9 @@
         },
         "pinChatAgent": {
           "description": "啟用代理釘住功能可自動讓被提及的聊天代理在各個提示中保持活動,減少重複提及的需要。您可以隨時手動取消釘住或切換代理。"
+        },
+        "view": {
+          "label": "AI 聊天"
         }
       },
       "chat-ui": {
@@ -53,16 +81,21 @@
         },
         "copyCodeBlock": "複製代碼區塊",
         "deleteChangeSet": "刪除變更設定",
+        "enterChatName": "輸入聊天名稱",
         "errorChatInvocation": "聊天服務呼叫期間發生錯誤。",
         "openDiff": "開放式差分",
         "openOriginalFile": "開啟原始檔案",
         "pinAgent": "銷代理",
         "removeChat": "移除聊天",
+        "renameChat": "重新命名聊天",
         "selectChat": "選擇聊天",
         "selectVariableArguments": "選擇變數參數",
         "send": "傳送 (輸入)",
         "text-part-renderer": {
           "cantDisplay": "無法顯示回應,請檢查您的 ChatResponsePartRenderers！"
+        },
+        "thinking-part-renderer": {
+          "thinking": "思考"
         },
         "toolcall-part-renderer": {
           "finished": "冉",
@@ -132,9 +165,15 @@
         "promptTemplates": {
           "description": "儲存自訂提示範本的資料夾。如果未自訂,則使用使用者設定目錄。請考慮使用受版本控制的資料夾,以管理提示範本的變體。"
         },
+        "prompts": {
+          "category": "Theia AI 提示範本"
+        },
         "requestSettings": {
           "mdDescription": "允許為多個模型指定自訂請求設定。\n            每個物件代表特定模型的設定。`modelId` 欄位指定模型 ID,`requestSettings` 定義特定於模型的設定。\n            提供者 ID ` 欄位是可選的,可讓您將設定套用到特定的提供者。如果未設定,設定將應用於所有提供者。\n            範例 providerId:huggingface、openai、ollama、llamafile。\n            如需詳細資訊,請參閱 [我們的說明文件](https://theia-ide.org/docs/user_ai/#custom-request-settings)。",
           "title": "自訂請求設定"
+        },
+        "showAllPrompts": {
+          "label": "顯示所有提示"
         },
         "templateSettings": {
           "selectVariant": "選擇變種:",
@@ -146,7 +185,16 @@
           "currentFileContent": "目前開啟的檔案的原始內容。這不包括內容來自何處的資訊。請注意,大多數代理程式使用相對檔案路徑 (相對於目前工作區) 效果會更好。",
           "currentRelativeDirPath": "包含目前開啟檔案的目錄的相對路徑。",
           "currentRelativeFilePath": "目前開啟檔案的相對路徑。",
-          "currentSelectedText": "目前在開啟的檔案中選擇的純文字。這不包括內容來自何處的資訊。請注意,大多數代理程式使用相對檔案路徑 (相對於目前工作區) 效果會更好。"
+          "currentSelectedText": "目前在開啟的檔案中選擇的純文字。這不包括內容來自何處的資訊。請注意,大多數代理程式使用相對檔案路徑 (相對於目前工作區) 效果會更好。",
+          "dotRelativePath": "目前開啟檔案的相對路徑的簡短參考 ('currentRelativeFilePath')。"
+        }
+      },
+      "google": {
+        "apiKey": {
+          "description": "輸入您官方 Google AI (Gemini) 帳戶的 API 金鑰。**請注意:** 使用此偏好設定時,GOOGLE AI API 金鑰會以明碼儲存於執行 Theia 的機器上。請使用環境變數 `GOOGLE_API_KEY` 來安全地設定金鑰。"
+        },
+        "models": {
+          "description": "使用的官方 Google 雙子星模型"
         }
       },
       "history": {
@@ -154,14 +202,11 @@
           "tooltip": "清除所有代理的歷史記錄"
         },
         "communication-card": {
-          "context": "內容",
-          "messages": "訊息",
           "request": "請求",
           "requestId": "請求 ID",
           "response": "回應",
           "responseTime": "回應時間",
           "sessionId": "會話 ID",
-          "systemMessage": "系統訊息",
           "timestamp": "時間戳記"
         },
         "sortChronologically": {
@@ -184,6 +229,11 @@
         "models": {
           "description": "使用的擁抱臉模型"
         }
+      },
+      "ide": {
+        "agent-description": "在 [AI Configuration View]({0}) 中設定 AI 代理程式設定,包括啟用、LLM 選擇、提示範本自訂及自訂代理程式建立。",
+        "model-selection-description": "在 [AI Configuration View]({0}) 中選擇每個 AI 代理使用哪些大型語言模型 (LLM)。",
+        "prompt-template-description": "在 [AI 配置檢視]({0}) 中選擇 AI 代理的提示變體和自訂提示範本。"
       },
       "llamaFile": {
         "prefs": {
@@ -245,10 +295,28 @@
         },
         "stop": {
           "label": "MCP:停止 MCP 伺服器"
-        },
-        "tool": {
-          "unnamed": "未命名工具"
         }
+      },
+      "mcpConfiguration": {
+        "arguments": "論據: ",
+        "autostart": "自動啟動: ",
+        "command": "指令: ",
+        "copiedAllList": "複製所有工具到剪貼簿 (所有工具清單)",
+        "copiedAllSingle": "將所有工具複製到剪貼簿(包含所有工具的單一提示片段)",
+        "copiedForPromptTemplate": "為提示範本複製所有工具至剪貼簿 (包含所有工具的單一提示片段)",
+        "copyAllList": "全部複製(所有工具的清單)",
+        "copyAllSingle": "複製所有聊天內容(使用所有工具的單一提示片段)",
+        "copyForPrompt": "複製工具(用於聊天或提示範本)",
+        "copyForPromptTemplate": "全部複製為提示範本 (使用所有工具的單一提示片段)",
+        "disabled": "殘障",
+        "enabled": "已啟用",
+        "environmentVariables": "環境變數: ",
+        "noServers": "未設定 MCP 伺服器",
+        "serverConfigurations": "MCP 伺服器組態",
+        "startServer": "啟動伺服器",
+        "stopServer": "停止伺服器",
+        "tools": "工具: ",
+        "widgetLabel": "MCP 伺服器"
       },
       "openai": {
         "apiKey": {
@@ -285,6 +353,18 @@
           "description": "使用的官方 OpenAI 模型"
         }
       },
+      "promptTemplates": {
+        "directories": {
+          "title": "特定工作區的提示範本目錄"
+        },
+        "extensions": {
+          "description": "提示位置中被視為提示範本的附加檔案副檔名清單。.prompttemplate'總是被視為預設值。",
+          "title": "其他提示範本檔案副檔名"
+        },
+        "files": {
+          "title": "特定工作區的提示範本檔案"
+        }
+      },
       "scanoss": {
         "changeSet": {
           "clean": "無匹配",
@@ -316,6 +396,10 @@
           "no-match": "SCANOSS - 無匹配",
           "summary": "摘要"
         }
+      },
+      "session-settings-dialog": {
+        "title": "設定工作階段設定",
+        "tooltip": "設定工作階段設定"
       },
       "terminal": {
         "agent": {
@@ -352,6 +436,13 @@
         }
       }
     },
+    "ai-chat-ui": {
+      "open-history-tooltip": "開啟 AI 歷史...",
+      "open-settings-tooltip": "開啟 AI 設定..."
+    },
+    "ai-ide": {
+      "open-agent-settings-tooltip": "開啟代理程式設定..."
+    },
     "callhierarchy": {
       "noCallers": "未偵測到來電者。",
       "open": "開放式呼叫層級"
@@ -386,7 +477,8 @@
     "core": {
       "about": {
         "compatibility": "{0} 相容性",
-        "defaultApi": "預設{0} API"
+        "defaultApi": "預設{0} API",
+        "listOfExtensions": "擴充清單"
       },
       "common": {
         "closeAll": "關閉所有標籤",
@@ -758,6 +850,7 @@
       "webviewWarnIfUnsecure": "警告使用者目前以不安全的方式部署 webview。"
     },
     "preferences": {
+      "ai-features": "AI 功能",
       "hostedPlugin": "託管外掛程式",
       "toolbar": "工具列"
     },
@@ -858,6 +951,9 @@
     "typehierarchy": {
       "subtypeHierarchy": "子類別階層",
       "supertypeHierarchy": "超類型層級"
+    },
+    "variableResolver": {
+      "listAllVariables": "變數:列出所有"
     },
     "vsx-registry": {
       "confirmDialogMessage": "副檔名 \"{0}\" 未經驗證,可能會構成安全風險。",

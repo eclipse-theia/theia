@@ -1,4 +1,5 @@
 {
+  "ai-chat-ui.show-settings": "AI Ayarlarını Göster",
   "aiConfiguration:open": "AI Yapılandırma görünümünü açın",
   "aiHistory:clear": "AI Geçmişi: Geçmişi Temizle",
   "aiHistory:open": "Yapay Zeka Geçmişi görünümünü açın",
@@ -13,6 +14,30 @@
   "terminal:profile:default": "Varsayılan Terminal Profilini seçin",
   "theia": {
     "ai": {
+      "agents": {
+        "enable": {
+          "mdDescription": "Temsilcinin etkinleştirilmesi (true) veya devre dışı bırakılması (false) gerektiğini belirtir.",
+          "title": "Temsilciyi Etkinleştir"
+        },
+        "languageModelRequirements": {
+          "identifier": {
+            "mdDescription": "Kullanılacak dil modelinin tanımlayıcısı.",
+            "title": "Tanımlama"
+          },
+          "mdDescription": "Bu aracı için kullanılan dil modellerini belirtir.",
+          "purpose": {
+            "mdDescription": "Bu dil modelinin hangi amaçla kullanıldığı.",
+            "title": "Amaç"
+          },
+          "title": "Dil Modeli Gereksinimleri"
+        },
+        "mdDescription": "Belirli aracıları etkinleştirme veya devre dışı bırakma, istemleri yapılandırma ve LLM'leri seçme gibi aracı ayarlarını yapılandırın.",
+        "selectedVariants": {
+          "mdDescription": "Bu müşteri temsilcisi için o anda seçili olan istem varyantlarını belirtir.",
+          "title": "Seçilmiş Varyantlar"
+        },
+        "title": "Temsilci Ayarları"
+      },
       "anthropic": {
         "apiKey": {
           "description": "Resmi Anthropic Hesabınızın API Anahtarını girin. **Lütfen dikkat:** Bu tercihi kullanarak Anthropic API anahtarı Theia'yı çalıştıran makinede açık metin olarak saklanacaktır. Anahtarı güvenli bir şekilde ayarlamak için `ANTHROPIC_API_KEY` ortam değişkenini kullanın."
@@ -27,6 +52,9 @@
         },
         "pinChatAgent": {
           "description": "Bahsedilen bir sohbet temsilcisini istemler arasında otomatik olarak etkin tutmak için temsilci sabitlemeyi etkinleştirin ve tekrarlanan bahsetmenin gerekliliğini azaltın."
+        },
+        "view": {
+          "label": "Yapay Zeka Sohbeti"
         }
       },
       "chat-ui": {
@@ -53,16 +81,21 @@
         },
         "copyCodeBlock": "Kod Bloğunu Kopyala",
         "deleteChangeSet": "Değişiklik Setini Sil",
+        "enterChatName": "Sohbet adını girin",
         "errorChatInvocation": "Sohbet hizmeti çağrısı sırasında bir hata oluştu.",
         "openDiff": "Açık Fark",
         "openOriginalFile": "Orijinal Dosyayı Aç",
         "pinAgent": "Pin Ajan",
         "removeChat": "Sohbeti Kaldır",
+        "renameChat": "Sohbeti Yeniden Adlandır",
         "selectChat": "Sohbet seçin",
         "selectVariableArguments": "Değişken argümanları seçme",
         "send": "Gönder (Enter)",
         "text-part-renderer": {
           "cantDisplay": "Yanıt görüntülenemiyor, lütfen ChatResponsePartRenderers'ınızı kontrol edin!"
+        },
+        "thinking-part-renderer": {
+          "thinking": "Düşünme"
         },
         "toolcall-part-renderer": {
           "finished": "Ran",
@@ -132,9 +165,15 @@
         "promptTemplates": {
           "description": "Özelleştirilmiş istem şablonlarını saklamak için kullanılan klasör. Eğer özelleştirilmemişse kullanıcı yapılandırma dizini kullanılır. Lütfen istem şablonlarınızın varyantlarını yönetmek için sürüm kontrolü altında olan bir klasör kullanmayı düşünün."
         },
+        "prompts": {
+          "category": "Theia AI İstemi Şablonları"
+        },
         "requestSettings": {
           "mdDescription": "Birden fazla model için özel istek ayarlarının belirtilmesine izin verir.\n            Her nesne belirli bir model için yapılandırmayı temsil eder. ModelId` alanı model kimliğini belirtir, `requestSettings` modele özgü ayarları tanımlar.\n            ProviderId` alanı isteğe bağlıdır ve ayarları belirli bir sağlayıcıya uygulamanıza olanak tanır. Ayarlanmazsa, ayarlar tüm sağlayıcılara uygulanır.\n            Örnek providerId'ler: huggingface, openai, ollama, llamafile.\n            Daha fazla bilgi için [belgelerimize] (https://theia-ide.org/docs/user_ai/#custom-request-settings) bakın.",
           "title": "Özel İstek Ayarları"
+        },
+        "showAllPrompts": {
+          "label": "Tüm istemleri göster"
         },
         "templateSettings": {
           "selectVariant": "Varyantı seçin:",
@@ -146,7 +185,16 @@
           "currentFileContent": "O anda açık olan dosyanın düz içeriği. Bu, içeriğin nereden geldiği bilgisini hariç tutar. Lütfen çoğu aracının göreli bir dosya yolu (geçerli çalışma alanına göreli) ile daha iyi çalışacağını unutmayın.",
           "currentRelativeDirPath": "Geçerli olarak açılmış dosyayı içeren dizinin göreli yolu.",
           "currentRelativeFilePath": "O anda açık olan dosyanın göreli yolu.",
-          "currentSelectedText": "Açılan dosyada o anda seçili olan düz metin. Bu, içeriğin nereden geldiği bilgisini hariç tutar. Lütfen çoğu aracının göreli bir dosya yolu (geçerli çalışma alanına göreli) ile daha iyi çalışacağını unutmayın."
+          "currentSelectedText": "Açılan dosyada o anda seçili olan düz metin. Bu, içeriğin nereden geldiği bilgisini hariç tutar. Lütfen çoğu aracının göreli bir dosya yolu (geçerli çalışma alanına göreli) ile daha iyi çalışacağını unutmayın.",
+          "dotRelativePath": "O anda açık olan dosyanın göreli yoluna kısa referans ('currentRelativeFilePath')."
+        }
+      },
+      "google": {
+        "apiKey": {
+          "description": "Resmi Google AI (Gemini) Hesabınızın API Anahtarını girin. **Lütfen dikkat:** Bu tercihi kullanarak GOOGLE AI API anahtarı Theia'yı çalıştıran makinede açık metin olarak saklanacaktır. Anahtarı güvenli bir şekilde ayarlamak için `GOOGLE_API_KEY` ortam değişkenini kullanın."
+        },
+        "models": {
+          "description": "Kullanılacak resmi Google Gemini modelleri"
         }
       },
       "history": {
@@ -154,14 +202,11 @@
           "tooltip": "Tüm acentelerin Geçmişini Temizle"
         },
         "communication-card": {
-          "context": "Bağlam",
-          "messages": "Mesajlar",
           "request": "İstek",
           "requestId": "Talep Kimliği",
           "response": "Yanıt",
           "responseTime": "Yanıt Süresi",
           "sessionId": "Oturum Kimliği",
-          "systemMessage": "Sistem Mesajı",
           "timestamp": "Zaman Damgası"
         },
         "sortChronologically": {
@@ -184,6 +229,11 @@
         "models": {
           "description": "Kullanılacak Sarılan Yüz modelleri"
         }
+      },
+      "ide": {
+        "agent-description": "Etkinleştirme, LLM seçimi, istem şablonu özelleştirme ve [AI Yapılandırma Görünümü]'nde özel aracı oluşturma dahil olmak üzere AI aracı ayarlarını yapılandırın({0}).",
+        "model-selection-description": "AI Yapılandırma Görünümü]({0})'nde her bir YZ aracısı tarafından hangi Büyük Dil Modellerinin (LLM'ler) kullanılacağını seçin.",
+        "prompt-template-description": "AI Yapılandırma Görünümü]({0})'nde AI temsilcileri için istem varyantlarını seçin ve istem şablonlarını özelleştirin."
       },
       "llamaFile": {
         "prefs": {
@@ -245,10 +295,28 @@
         },
         "stop": {
           "label": "MCP: MCP Sunucusunu Durdur"
-        },
-        "tool": {
-          "unnamed": "İsimsiz Alet"
         }
+      },
+      "mcpConfiguration": {
+        "arguments": "Argümanlar: ",
+        "autostart": "Otomatik başlatma: ",
+        "command": "Emredin: ",
+        "copiedAllList": "Tüm araçları panoya kopyalama (tüm araçların listesi)",
+        "copiedAllSingle": "Tüm araçları panoya kopyaladı (tüm araçlarla birlikte tek istem parçası)",
+        "copiedForPromptTemplate": "Bilgi istemi şablonu için tüm araçları panoya kopyaladı (tüm araçları içeren tek bilgi istemi parçası)",
+        "copyAllList": "Tümünü kopyala (tüm araçların listesi)",
+        "copyAllSingle": "Sohbet için tümünü kopyala (tüm araçlarla tek istem parçası)",
+        "copyForPrompt": "Kopyalama aracı (sohbet veya istem şablonu için)",
+        "copyForPromptTemplate": "Bilgi istemi şablonu için tümünü kopyala (tüm araçlarla tek bilgi istemi parçası)",
+        "disabled": "Engelli",
+        "enabled": "Etkin",
+        "environmentVariables": "Ortam Değişkenleri: ",
+        "noServers": "Yapılandırılmış MCP sunucusu yok",
+        "serverConfigurations": "MCP Sunucu Yapılandırmaları",
+        "startServer": "Sunucu Başlat",
+        "stopServer": "Sunucuyu Durdur",
+        "tools": "Aletler: ",
+        "widgetLabel": "MCP Sunucuları"
       },
       "openai": {
         "apiKey": {
@@ -285,6 +353,18 @@
           "description": "Kullanılacak resmi OpenAI modelleri"
         }
       },
+      "promptTemplates": {
+        "directories": {
+          "title": "Çalışma Alanına Özel İstem Şablonu Dizinleri"
+        },
+        "extensions": {
+          "description": "Bilgi istemi konumlarında bilgi istemi şablonu olarak kabul edilen ek dosya uzantılarının listesi. '.prompttemplate' her zaman varsayılan olarak kabul edilir.",
+          "title": "Ek İstem Şablonu Dosya Uzantıları"
+        },
+        "files": {
+          "title": "Çalışma Alanına Özel Komut İstemi Şablon Dosyaları"
+        }
+      },
       "scanoss": {
         "changeSet": {
           "clean": "Eşleşme Yok",
@@ -316,6 +396,10 @@
           "no-match": "SCANOSS - Eşleşme yok",
           "summary": "Özet"
         }
+      },
+      "session-settings-dialog": {
+        "title": "Oturum Ayarlarını Ayarlama",
+        "tooltip": "Oturum Ayarlarını Ayarlama"
       },
       "terminal": {
         "agent": {
@@ -352,6 +436,13 @@
         }
       }
     },
+    "ai-chat-ui": {
+      "open-history-tooltip": "Yapay zeka tarihini açın...",
+      "open-settings-tooltip": "AI ayarlarını açın..."
+    },
+    "ai-ide": {
+      "open-agent-settings-tooltip": "Ajan ayarlarını açın..."
+    },
     "callhierarchy": {
       "noCallers": "Herhangi bir arayan tespit edilmedi.",
       "open": "Açık Çağrı Hiyerarşisi"
@@ -386,7 +477,8 @@
     "core": {
       "about": {
         "compatibility": "{0} Uyumluluk",
-        "defaultApi": "Varsayılan {0} API"
+        "defaultApi": "Varsayılan {0} API",
+        "listOfExtensions": "Uzantıların listesi"
       },
       "common": {
         "closeAll": "Tüm Sekmeleri Kapat",
@@ -758,6 +850,7 @@
       "webviewWarnIfUnsecure": "Kullanıcıları web görünümlerinin şu anda güvenli olmayan bir şekilde dağıtıldığı konusunda uyarır."
     },
     "preferences": {
+      "ai-features": "Yapay Zeka Özellikleri",
       "hostedPlugin": "Barındırılan Eklenti",
       "toolbar": "Araç Çubuğu"
     },
@@ -858,6 +951,9 @@
     "typehierarchy": {
       "subtypeHierarchy": "Alt Tip Hiyerarşisi",
       "supertypeHierarchy": "Süper Tip Hiyerarşisi"
+    },
+    "variableResolver": {
+      "listAllVariables": "Değişkenler: Tümünü Listele"
     },
     "vsx-registry": {
       "confirmDialogMessage": "\"{0}\" uzantısı doğrulanmamıştır ve güvenlik riski oluşturabilir.",
