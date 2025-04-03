@@ -530,7 +530,9 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
                 }
                 break;
             case 'webviewFocusChanged':
-                console.log('webviewFocusChanged', message.focused);
+                if (message.focused) {
+                    window.getSelection()?.empty();
+                }
                 this.contextKeyService.setContext(NOTEBOOK_OUTPUT_FOCUSED, message.focused);
                 break;
             case 'cellHeightRequest':

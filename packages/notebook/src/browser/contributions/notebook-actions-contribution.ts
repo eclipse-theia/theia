@@ -23,7 +23,7 @@ import { CellEditType, CellKind, NotebookCommand } from '../../common';
 import { NotebookKernelQuickPickService } from '../service/notebook-kernel-quick-pick-service';
 import { NotebookExecutionService } from '../service/notebook-execution-service';
 import { NotebookEditorWidgetService } from '../service/notebook-editor-widget-service';
-import { NOTEBOOK_CELL_CURSOR_FIRST_LINE, NOTEBOOK_CELL_CURSOR_LAST_LINE, NOTEBOOK_CELL_FOCUSED, NOTEBOOK_EDITOR_FOCUSED, NOTEBOOK_HAS_OUTPUTS } from './notebook-context-keys';
+import { NOTEBOOK_CELL_CURSOR_FIRST_LINE, NOTEBOOK_CELL_CURSOR_LAST_LINE, NOTEBOOK_CELL_FOCUSED, NOTEBOOK_EDITOR_FOCUSED, NOTEBOOK_HAS_OUTPUTS, NOTEBOOK_OUTPUT_FOCUSED } from './notebook-context-keys';
 import { NotebookClipboardService } from '../service/notebook-clipboard-service';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { NotebookEditorWidget } from '../notebook-editor-widget';
@@ -344,17 +344,17 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
             {
                 command: NotebookCommands.CUT_SELECTED_CELL.id,
                 keybinding: 'ctrlcmd+x',
-                when: `${NOTEBOOK_EDITOR_FOCUSED} && !inputFocus`
+                when: `${NOTEBOOK_EDITOR_FOCUSED} && !inputFocus && !${NOTEBOOK_OUTPUT_FOCUSED}`
             },
             {
                 command: NotebookCommands.COPY_SELECTED_CELL.id,
                 keybinding: 'ctrlcmd+c',
-                when: `${NOTEBOOK_EDITOR_FOCUSED} && !inputFocus`
+                when: `${NOTEBOOK_EDITOR_FOCUSED} && !inputFocus && !${NOTEBOOK_OUTPUT_FOCUSED}`
             },
             {
                 command: NotebookCommands.PASTE_CELL.id,
                 keybinding: 'ctrlcmd+v',
-                when: `${NOTEBOOK_EDITOR_FOCUSED} && !inputFocus`
+                when: `${NOTEBOOK_EDITOR_FOCUSED} && !inputFocus && !${NOTEBOOK_OUTPUT_FOCUSED}`
             },
             {
                 command: NotebookCommands.NOTEBOOK_FIND.id,
