@@ -17,7 +17,6 @@ import {
     ChatAgent,
     ChatAgentService,
     ChatModel,
-    ChatProgressMessage,
     ChatRequestModel,
     ChatResponseContent,
     ChatResponseModel,
@@ -53,6 +52,7 @@ import { ChatNodeToolbarActionContribution } from '../chat-node-toolbar-action-c
 import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
 import { useMarkdownRendering } from '../chat-response-renderer/markdown-part-renderer';
 import { AIVariableService } from '@theia/ai-core';
+import { ProgressMessage } from '../chat-progress-message';
 
 // TODO Instead of directly operating on the ChatRequestModel we could use an intermediate view model
 export interface RequestNode extends TreeNode {
@@ -474,23 +474,3 @@ const HoverableLabel = (
         </span>
     );
 };
-
-const ProgressMessage = (c: ChatProgressMessage) => (
-    <div className='theia-ResponseNode-ProgressMessage'>
-        <Indicator {...c} /> {c.content}
-    </div>
-);
-
-const Indicator = (progressMessage: ChatProgressMessage) => (
-    <span className='theia-ResponseNode-ProgressMessage-Indicator'>
-        {progressMessage.status === 'inProgress' &&
-            <i className={'fa fa-spinner fa-spin ' + progressMessage.status}></i>
-        }
-        {progressMessage.status === 'completed' &&
-            <i className={'fa fa-check ' + progressMessage.status}></i>
-        }
-        {progressMessage.status === 'failed' &&
-            <i className={'fa fa-warning ' + progressMessage.status}></i>
-        }
-    </span>
-);

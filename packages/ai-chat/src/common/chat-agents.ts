@@ -60,7 +60,7 @@ import {
     ChatRequestModel,
     ThinkingChatResponseContentImpl
 } from './chat-model';
-import { findFirstMatch, parseContents } from './parse-contents';
+import { parseContents } from './parse-contents';
 import { DefaultResponseContentFactory, ResponseContentMatcher, ResponseContentMatcherProvider } from './response-content-matcher';
 import { ChatToolRequest, ChatToolRequestService } from './chat-tool-request-service';
 
@@ -389,28 +389,38 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
     }
 
     protected async addStreamResponse(languageModelResponse: LanguageModelStreamResponse, request: MutableChatRequestModel): Promise<void> {
+        // Keep a buffer of the entire streamed text so far
+        let completeTextBuffer = '';
+
+        // Create a marker content to identify the start of this stream
+        const streamMarkerContent = new MarkdownChatResponseContentImpl('');
+        request.response.response.addContent(streamMarkerContent);
+        const markerIndex = request.response.response.content.length - 1;
+
         for await (const token of languageModelResponse.stream) {
-            const newContents = this.parse(token, request);
-            if (isArray(newContents)) {
-                request.response.response.addContents(newContents);
-            } else {
-                request.response.response.addContent(newContents);
-            }
+            // Process the token - get new content to add
+            const newContent = this.parse(token, request);
 
-            const lastContent = request.response.response.content.pop();
-            if (lastContent === undefined) {
-                return;
-            }
-            const text = lastContent.asString?.();
-            if (text === undefined) {
-                return;
-            }
+            // If it's a text token, append to our buffer
+            if (isTextResponsePart(token) && token.content) {
+                completeTextBuffer += token.content;
 
-            const result: ChatResponseContent[] = findFirstMatch(this.contentMatchers, text) ? this.parseContents(text, request) : [];
-            if (result.length > 0) {
-                request.response.response.addContents(result);
+                // Parse the entire buffer to get the updated content including incomplete matches
+                const parsedContents = this.parseContents(completeTextBuffer, request);
+
+                // Get all content before our marker
+                const contentBeforeMarker = request.response.response.content.slice(0, markerIndex);
+
+                // Replace everything after (and including) the marker with the new parsed content
+                request.response.response.clearContent();
+                request.response.response.addContents(contentBeforeMarker);
+                request.response.response.addContents(parsedContents);
+            } else if (isArray(newContent)) {
+                // For non-text tokens (like tool calls), add them directly
+                request.response.response.addContents(newContent);
             } else {
-                request.response.response.addContent(lastContent);
+                // Single content, add it directly
+                request.response.response.addContent(newContent);
             }
         }
     }

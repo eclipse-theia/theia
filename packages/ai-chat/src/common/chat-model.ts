@@ -278,6 +278,12 @@ export interface ThinkingChatResponseContent
     signature: string;
 }
 
+export interface ProgressChatResponseContent
+    extends Required<ChatResponseContent> {
+    kind: 'progress';
+    message: string;
+}
+
 export interface Location {
     uri: URI;
     position: Position;
@@ -410,6 +416,17 @@ export namespace ThinkingChatResponseContent {
             obj.kind === 'thinking' &&
             'content' in obj &&
             typeof obj.content === 'string'
+        );
+    }
+}
+
+export namespace ProgressChatResponseContent {
+    export function is(obj: unknown): obj is ProgressChatResponseContent {
+        return (
+            ChatResponseContent.is(obj) &&
+            obj.kind === 'progress' &&
+            'message' in obj &&
+            typeof obj.message === 'string'
         );
     }
 }
@@ -1127,6 +1144,12 @@ class ChatResponseImpl implements ChatResponse {
         return this._content;
     }
 
+    clearContent(): void {
+        this._content = [];
+        this._updateResponseRepresentation();
+        this._onDidChangeEmitter.fire();
+    }
+
     addContents(contents: ChatResponseContent[]): void {
         contents.forEach(c => this.doAddContent(c));
         this._onDidChangeEmitter.fire();
@@ -1351,5 +1374,42 @@ export class ErrorChatResponseModel extends MutableChatResponseModel {
     constructor(requestId: string, error: Error, agentId?: string) {
         super(requestId, agentId);
         this.error(error);
+    }
+}
+
+export class ProgressChatResponseContentImpl implements ProgressChatResponseContent {
+    readonly kind = 'progress';
+    protected _message: string;
+
+    constructor(message: string) {
+        this._message = message;
+    }
+
+    get message(): string {
+        return this._message;
+    }
+
+    asString(): string {
+        return JSON.stringify({
+            type: 'progress',
+            message: this.message
+        });
+    }
+
+    asDisplayString(): string | undefined {
+        return `<Progress>${this.message}</Progress>`;
+    }
+
+    merge(nextChatResponseContent: ProgressChatResponseContent): boolean {
+        this._message = nextChatResponseContent.message;
+        return true;
+    }
+
+    toLanguageModelMessage(): TextMessage {
+        return {
+            actor: 'ai',
+            type: 'text',
+            text: this.message
+        };
     }
 }

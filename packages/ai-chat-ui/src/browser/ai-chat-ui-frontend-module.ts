@@ -35,6 +35,7 @@ import {
     MarkdownPartRenderer,
     ToolCallPartRenderer,
     ThinkingPartRenderer,
+    ProgressPartRenderer,
 } from './chat-response-renderer';
 import {
     GitHubSelectionResolver,
@@ -89,6 +90,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(ChatResponsePartRenderer).to(ErrorPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(ThinkingPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(QuestionPartRenderer).inSingletonScope();
+    bind(ChatResponsePartRenderer).to(ProgressPartRenderer).inSingletonScope();
     [CommandContribution, MenuContribution].forEach(serviceIdentifier =>
         bind(serviceIdentifier).to(ChatViewMenuContribution).inSingletonScope()
     );
