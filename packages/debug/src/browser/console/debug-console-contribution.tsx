@@ -157,13 +157,14 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
         }
     };
 
-    static create(parent: interfaces.Container): ConsoleWidget {
+    static async create(parent: interfaces.Container): Promise<ConsoleWidget> {
         const inputFocusContextKey = parent.get<InDebugReplContextKey>(InDebugReplContextKey);
         const child = ConsoleWidget.createContainer(parent, {
             ...DebugConsoleContribution.options,
             inputFocusContextKey
         });
         const widget = child.get(ConsoleWidget);
+        await widget.ready;
         return widget;
     }
 
