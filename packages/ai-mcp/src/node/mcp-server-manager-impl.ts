@@ -14,13 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import {injectable} from '@theia/core/shared/inversify';
-import {MCPServerDescription, MCPServerManager} from '../common/mcp-server-manager';
+import {MCPFrontendNotificationService, MCPServerDescription, MCPServerManager} from '../common/mcp-server-manager';
 import {MCPServer} from './mcp-server';
+import {Disposable} from '@theia/core/lib/common/disposable';
 
 @injectable()
 export class MCPServerManagerImpl implements MCPServerManager {
 
     protected servers: Map<string, MCPServer> = new Map();
+    protected clients: Array<MCPFrontendNotificationService> = [];
+    protected serverListeners: Map<string, Disposable> = new Map();
 
     async stopServer(serverName: string): Promise<void> {
         const server = this.servers.get(serverName);
@@ -29,16 +32,17 @@ export class MCPServerManagerImpl implements MCPServerManager {
         }
         server.stop();
         console.log(`MCP server "${serverName}" stopped.`);
+        this.notifyClients();
     }
 
-    async getStartedServers(): Promise<string[]> {
-        const startedServers: string[] = [];
+    async getRunningServers(): Promise<string[]> {
+        const runningServers: string[] = [];
         for (const [name, server] of this.servers.entries()) {
-            if (server.isStarted()) {
-                startedServers.push(name);
+            if (server.isRunnning()) {
+                runningServers.push(name);
             }
         }
-        return startedServers;
+        return runningServers;
     }
 
     callTool(serverName: string, toolName: string, arg_string: string): ReturnType<MCPServer['callTool']> {
@@ -55,9 +59,16 @@ export class MCPServerManagerImpl implements MCPServerManager {
             throw new Error(`MCP server "${serverName}" not found.`);
         }
         await server.start();
+        this.notifyClients();
     }
+
     async getServerNames(): Promise<string[]> {
         return Array.from(this.servers.keys());
+    }
+
+    async getServerDescription(name: string): Promise<MCPServerDescription | undefined> {
+        const server = this.servers.get(name);
+        return server ? server.getDescription() : undefined;
     }
 
     public async getTools(serverName: string): ReturnType<MCPServer['getTools']> {
@@ -66,19 +77,26 @@ export class MCPServerManagerImpl implements MCPServerManager {
             throw new Error(`MCP server "${serverName}" not found.`);
         }
         return server.getTools();
-
     }
 
     addOrUpdateServer(description: MCPServerDescription): void {
-        const { name, command, args, env } = description;
-        const existingServer = this.servers.get(name);
+        const existingServer = this.servers.get(description.name);
 
         if (existingServer) {
-            existingServer.update(command, args, env);
+            existingServer.update(description);
         } else {
-            const newServer = new MCPServer(name, command, args, env);
-            this.servers.set(name, newServer);
+            const newServer = new MCPServer(description);
+            this.servers.set(description.name, newServer);
+
+            // Subscribe to status updates from the new server
+            const listener = newServer.onDidUpdateStatus(() => {
+                this.notifyClients();
+            });
+
+            // Store the listener for later disposal
+            this.serverListeners.set(description.name, listener);
         }
+        this.notifyClients();
     }
 
     removeServer(name: string): void {
@@ -86,9 +104,32 @@ export class MCPServerManagerImpl implements MCPServerManager {
         if (server) {
             server.stop();
             this.servers.delete(name);
+
+            // Clean up the status listener
+            const listener = this.serverListeners.get(name);
+            if (listener) {
+                listener.dispose();
+                this.serverListeners.delete(name);
+            }
         } else {
             console.warn(`MCP server "${name}" not found.`);
         }
+        this.notifyClients();
+    }
+
+    setClient(client: MCPFrontendNotificationService): void {
+        this.clients.push(client);
+    }
+
+    disconnectClient(client: MCPFrontendNotificationService): void {
+        const index = this.clients.indexOf(client);
+        if (index !== -1) {
+            this.clients.splice(index, 1);
+        }
+    }
+
+    private notifyClients(): void {
+        this.clients.forEach(client => client.didUpdateMCPServers());
     }
 
     listResources(serverName: string): ReturnType<MCPServer['listResources']> {

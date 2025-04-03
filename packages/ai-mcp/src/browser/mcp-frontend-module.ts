@@ -14,22 +14,30 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CommandContribution } from '@theia/core';
-import { ContainerModule } from '@theia/core/shared/inversify';
-import { MCPCommandContribution } from './mcp-command-contribution';
-import { FrontendApplicationContribution, PreferenceContribution, RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser';
-import { MCPServerManager, MCPServerManagerPath } from '../common/mcp-server-manager';
-import { McpServersPreferenceSchema } from './mcp-preferences';
-import { McpFrontendApplicationContribution } from './mcp-frontend-application-contribution';
-import { MCPFrontendService } from './mcp-frontend-service';
+import {CommandContribution} from '@theia/core';
+import {ContainerModule} from '@theia/core/shared/inversify';
+import {MCPCommandContribution} from './mcp-command-contribution';
+import {
+    FrontendApplicationContribution,
+    PreferenceContribution,
+    RemoteConnectionProvider,
+    ServiceConnectionProvider
+} from '@theia/core/lib/browser';
+import {MCPFrontendNotificationService, MCPFrontendService, MCPServerManager, MCPServerManagerPath} from '../common';
+import {McpServersPreferenceSchema} from './mcp-preferences';
+import {McpFrontendApplicationContribution} from './mcp-frontend-application-contribution';
+import {MCPFrontendServiceImpl} from './mcp-frontend-service';
+import {MCPFrontendNotificationServiceImpl} from './mcp-frontend-notification-service';
 
 export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: McpServersPreferenceSchema });
     bind(FrontendApplicationContribution).to(McpFrontendApplicationContribution).inSingletonScope();
     bind(CommandContribution).to(MCPCommandContribution);
+    bind(MCPFrontendService).to(MCPFrontendServiceImpl).inSingletonScope();
+    bind(MCPFrontendNotificationService).to(MCPFrontendNotificationServiceImpl).inSingletonScope();
     bind(MCPServerManager).toDynamicValue(ctx => {
         const connection = ctx.container.get<ServiceConnectionProvider>(RemoteConnectionProvider);
-        return connection.createProxy<MCPServerManager>(MCPServerManagerPath);
+        const client = ctx.container.get<MCPFrontendNotificationService>(MCPFrontendNotificationService);
+        return connection.createProxy<MCPServerManager>(MCPServerManagerPath, client);
     }).inSingletonScope();
-    bind(MCPFrontendService).toSelf().inSingletonScope();
 });

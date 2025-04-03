@@ -14,23 +14,22 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { FrontendApplicationContribution, PreferenceProvider, PreferenceService } from '@theia/core/lib/browser';
-import { inject, injectable } from '@theia/core/shared/inversify';
-import { MCPServerDescription, MCPServerManager } from '../common';
-import { MCP_SERVERS_PREF } from './mcp-preferences';
-import { JSONObject } from '@theia/core/shared/@lumino/coreutils';
-import { MCPFrontendService } from './mcp-frontend-service';
+import {FrontendApplicationContribution, PreferenceProvider, PreferenceService} from '@theia/core/lib/browser';
+import {inject, injectable} from '@theia/core/shared/inversify';
+import {MCPFrontendService, MCPServerDescription, MCPServerManager} from '../common';
+import {MCP_SERVERS_PREF} from './mcp-preferences';
+import {JSONObject} from '@theia/core/shared/@lumino/coreutils';
 
 interface MCPServersPreferenceValue {
     command: string;
     args?: string[];
     env?: { [key: string]: string };
     autostart?: boolean;
-};
+}
 
 interface MCPServersPreference {
     [name: string]: MCPServersPreferenceValue
-};
+}
 
 namespace MCPServersPreference {
     export function isValue(obj: unknown): obj is MCPServersPreferenceValue {
