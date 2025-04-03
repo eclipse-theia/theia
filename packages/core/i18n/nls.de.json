@@ -1,4 +1,5 @@
 {
+  "ai-chat-ui.show-settings": "AI-Einstellungen anzeigen",
   "aiConfiguration:open": "AI-Konfigurationsansicht öffnen",
   "aiHistory:clear": "AI-Verlauf: Geschichte löschen",
   "aiHistory:open": "AI-Historienansicht öffnen",
@@ -13,6 +14,30 @@
   "terminal:profile:default": "Wählen Sie das Standard-Terminalprofil",
   "theia": {
     "ai": {
+      "agents": {
+        "enable": {
+          "mdDescription": "Gibt an, ob der Agent aktiviert (true) oder deaktiviert (false) werden soll.",
+          "title": "Agent freischalten"
+        },
+        "languageModelRequirements": {
+          "identifier": {
+            "mdDescription": "Der Bezeichner des zu verwendenden Sprachmodells.",
+            "title": "Identifizieren"
+          },
+          "mdDescription": "Gibt die verwendeten Sprachmodelle für diesen Agenten an.",
+          "purpose": {
+            "mdDescription": "Der Zweck, für den dieses Sprachmodell verwendet wird.",
+            "title": "Zweck"
+          },
+          "title": "Anforderungen an das Sprachmodell"
+        },
+        "mdDescription": "Konfigurieren Sie Agenteneinstellungen wie die Aktivierung oder Deaktivierung bestimmter Agenten, die Konfiguration von Eingabeaufforderungen und die Auswahl von LLMs.",
+        "selectedVariants": {
+          "mdDescription": "Gibt die aktuell ausgewählten Prompt-Varianten für diesen Agenten an.",
+          "title": "Ausgewählte Varianten"
+        },
+        "title": "Agent-Einstellungen"
+      },
       "anthropic": {
         "apiKey": {
           "description": "Geben Sie einen API-Schlüssel für Ihr offizielles Anthropic-Konto ein. **Bitte beachten Sie:** Wenn Sie diese Einstellung verwenden, wird der Anthropic-API-Schlüssel im Klartext auf dem Rechner gespeichert, auf dem Theia läuft. Verwenden Sie die Umgebungsvariable `ANTHROPIC_API_KEY`, um den Schlüssel sicher zu setzen."
@@ -27,6 +52,9 @@
         },
         "pinChatAgent": {
           "description": "Aktivieren Sie das Anheften von Agenten, um einen erwähnten Chat-Agenten automatisch über mehrere Prompts hinweg aktiv zu halten und so die Notwendigkeit wiederholter Erwähnungen zu verringern."
+        },
+        "view": {
+          "label": "AI-Chat"
         }
       },
       "chat-ui": {
@@ -53,16 +81,21 @@
         },
         "copyCodeBlock": "Codeblock kopieren",
         "deleteChangeSet": "Änderungssatz löschen",
+        "enterChatName": "Chat-Namen eingeben",
         "errorChatInvocation": "Beim Aufruf des Chatdienstes ist ein Fehler aufgetreten.",
         "openDiff": "Open Diff",
         "openOriginalFile": "Originaldatei öffnen",
         "pinAgent": "Pin-Agent",
         "removeChat": "Chat entfernen",
+        "renameChat": "Chat umbenennen",
         "selectChat": "Chat auswählen",
         "selectVariableArguments": "Variable Argumente auswählen",
         "send": "Send (Enter)",
         "text-part-renderer": {
           "cantDisplay": "Antwort kann nicht angezeigt werden, bitte überprüfen Sie Ihre ChatResponsePartRenderer!"
+        },
+        "thinking-part-renderer": {
+          "thinking": "Nachdenken"
         },
         "toolcall-part-renderer": {
           "finished": "Ran",
@@ -132,9 +165,15 @@
         "promptTemplates": {
           "description": "Ordner zum Speichern von benutzerdefinierten Prompt-Vorlagen. Wenn nicht angepasst, wird das Benutzer-Konfigurationsverzeichnis verwendet. Bitte beachten Sie, dass Sie einen Ordner verwenden sollten, der unter Versionskontrolle steht, um Ihre Varianten von Prompt-Vorlagen zu verwalten."
         },
+        "prompts": {
+          "category": "Theia AI Prompt-Vorlagen"
+        },
         "requestSettings": {
           "mdDescription": "Ermöglicht die Angabe von benutzerdefinierten Anfrageeinstellungen für mehrere Modelle.\n            Jedes Objekt stellt die Konfiguration für ein bestimmtes Modell dar. Das Feld `modelId` gibt die Modell-ID an, `requestSettings` definiert modellspezifische Einstellungen.\n            Das Feld `providerId` ist optional und ermöglicht es Ihnen, die Einstellungen auf einen bestimmten Anbieter anzuwenden. Wenn es nicht gesetzt ist, werden die Einstellungen auf alle Anbieter angewandt.\n            Beispiel für providerIds: huggingface, openai, ollama, llamafile.\n            Weitere Informationen finden Sie in [unserer Dokumentation] (https://theia-ide.org/docs/user_ai/#custom-request-settings).",
           "title": "Benutzerdefinierte Anfrageeinstellungen"
+        },
+        "showAllPrompts": {
+          "label": "Alle Eingabeaufforderungen anzeigen"
         },
         "templateSettings": {
           "selectVariant": "Variante auswählen:",
@@ -146,7 +185,16 @@
           "currentFileContent": "Der reine Inhalt der aktuell geöffneten Datei. Dies schließt die Information aus, woher der Inhalt kommt. Bitte beachten Sie, dass die meisten Agenten besser mit einem relativen Dateipfad (relativ zum aktuellen Arbeitsbereich) arbeiten.",
           "currentRelativeDirPath": "Der relative Pfad des Verzeichnisses, das die aktuell geöffnete Datei enthält.",
           "currentRelativeFilePath": "Der relative Pfad der aktuell geöffneten Datei.",
-          "currentSelectedText": "Der reine Text, der in der geöffneten Datei ausgewählt ist. Dies schließt die Information aus, woher der Inhalt kommt. Bitte beachten Sie, dass die meisten Agenten besser mit einem relativen Dateipfad (relativ zum aktuellen Arbeitsbereich) arbeiten."
+          "currentSelectedText": "Der reine Text, der in der geöffneten Datei ausgewählt ist. Dies schließt die Information aus, woher der Inhalt kommt. Bitte beachten Sie, dass die meisten Agenten besser mit einem relativen Dateipfad (relativ zum aktuellen Arbeitsbereich) arbeiten.",
+          "dotRelativePath": "Kurzer Verweis auf den relativen Pfad der aktuell geöffneten Datei ('currentRelativeFilePath')."
+        }
+      },
+      "google": {
+        "apiKey": {
+          "description": "Geben Sie einen API-Schlüssel für Ihr offizielles Google AI (Gemini) Konto ein. **Bitte beachten Sie:** Wenn Sie diese Einstellung verwenden, wird der GOOGLE AI API-Schlüssel im Klartext auf dem Rechner gespeichert, auf dem Theia läuft. Verwenden Sie die Umgebungsvariable `GOOGLE_API_KEY`, um den Schlüssel sicher zu setzen."
+        },
+        "models": {
+          "description": "Offizielle Google Gemini-Modelle zur Verwendung"
         }
       },
       "history": {
@@ -154,14 +202,11 @@
           "tooltip": "Historie aller Agenten löschen"
         },
         "communication-card": {
-          "context": "Kontext",
-          "messages": "Nachrichten",
           "request": "Request",
           "requestId": "Request ID",
           "response": "Antwort",
           "responseTime": "Reaktionszeit",
           "sessionId": "Sitzungs-ID",
-          "systemMessage": "System Message",
           "timestamp": "Zeitstempel"
         },
         "sortChronologically": {
@@ -184,6 +229,11 @@
         "models": {
           "description": "Umarmung Gesicht Modelle zu verwenden"
         }
+      },
+      "ide": {
+        "agent-description": "Konfigurieren Sie die Einstellungen des AI-Agenten, einschließlich Aktivierung, LLM-Auswahl, Anpassung der Eingabeaufforderungsvorlage und Erstellung eines benutzerdefinierten Agenten in der [AI-Konfigurationsansicht] ({0}).",
+        "model-selection-description": "Wählen Sie in der [AI Configuration View]({0}), welche Large Language Models (LLMs) von jedem AI-Agenten verwendet werden.",
+        "prompt-template-description": "Wählen Sie Prompt-Varianten aus und passen Sie Prompt-Vorlagen für AI-Agenten in der [AI Configuration View]({0}) an."
       },
       "llamaFile": {
         "prefs": {
@@ -245,10 +295,28 @@
         },
         "stop": {
           "label": "MCP: MCP-Server anhalten"
-        },
-        "tool": {
-          "unnamed": "Unbenanntes Werkzeug"
         }
+      },
+      "mcpConfiguration": {
+        "arguments": "Argumente: ",
+        "autostart": "Autostart: ",
+        "command": "Befehl: ",
+        "copiedAllList": "Alle Werkzeuge in die Zwischenablage kopiert (Liste aller Werkzeuge)",
+        "copiedAllSingle": "Alle Werkzeuge in die Zwischenablage kopiert (einzelnes Prompt-Fragment mit allen Werkzeugen)",
+        "copiedForPromptTemplate": "Kopieren aller Werkzeuge in die Zwischenablage für Prompt-Vorlage (einzelnes Prompt-Fragment mit allen Werkzeugen)",
+        "copyAllList": "Alles kopieren (Liste aller Werkzeuge)",
+        "copyAllSingle": "Alles für den Chat kopieren (einzelnes Prompt-Fragment mit allen Tools)",
+        "copyForPrompt": "Kopierwerkzeug (für Chat oder Prompt-Vorlage)",
+        "copyForPromptTemplate": "Alles kopieren für Prompt-Vorlage (einzelnes Prompt-Fragment mit allen Werkzeugen)",
+        "disabled": "Behinderte",
+        "enabled": "Aktiviert",
+        "environmentVariables": "Umgebungsvariablen: ",
+        "noServers": "Keine MCP-Server konfiguriert",
+        "serverConfigurations": "MCP-Server-Konfigurationen",
+        "startServer": "Server starten",
+        "stopServer": "Server anhalten",
+        "tools": "Werkzeuge: ",
+        "widgetLabel": "MCP-Server"
       },
       "openai": {
         "apiKey": {
@@ -285,6 +353,18 @@
           "description": "Offizielle OpenAI-Modelle zur Verwendung"
         }
       },
+      "promptTemplates": {
+        "directories": {
+          "title": "Arbeitsbereichsspezifische Verzeichnisse für Prompt-Vorlagen"
+        },
+        "extensions": {
+          "description": "Liste der zusätzlichen Dateierweiterungen in Prompt-Speicherorten, die als Prompt-Vorlagen gelten. '.prompttemplate' wird immer als Standard betrachtet.",
+          "title": "Zusätzliche Dateierweiterungen für Eingabeaufforderungsvorlagen"
+        },
+        "files": {
+          "title": "Arbeitsbereichsspezifische Prompt-Vorlagendateien"
+        }
+      },
       "scanoss": {
         "changeSet": {
           "clean": "Keine Übereinstimmungen",
@@ -316,6 +396,10 @@
           "no-match": "SCANOSS - Keine Übereinstimmung",
           "summary": "Zusammenfassung"
         }
+      },
+      "session-settings-dialog": {
+        "title": "Sitzungseinstellungen festlegen",
+        "tooltip": "Sitzungseinstellungen festlegen"
       },
       "terminal": {
         "agent": {
@@ -352,6 +436,13 @@
         }
       }
     },
+    "ai-chat-ui": {
+      "open-history-tooltip": "KI-Geschichte öffnen...",
+      "open-settings-tooltip": "AI-Einstellungen öffnen..."
+    },
+    "ai-ide": {
+      "open-agent-settings-tooltip": "Agent-Einstellungen öffnen..."
+    },
     "callhierarchy": {
       "noCallers": "Es wurden keine Anrufer entdeckt.",
       "open": "Öffne Aufruf-Hierarchie"
@@ -386,7 +477,8 @@
     "core": {
       "about": {
         "compatibility": "{0} Kompatibilität",
-        "defaultApi": "Standard {0} API"
+        "defaultApi": "Standard {0} API",
+        "listOfExtensions": "Liste der Erweiterungen"
       },
       "common": {
         "closeAll": "Alle Registerkarten schließen",
@@ -758,6 +850,7 @@
       "webviewWarnIfUnsecure": "Warnt Benutzer, dass Webviews derzeit unsicher eingesetzt werden."
     },
     "preferences": {
+      "ai-features": "AI-Funktionen",
       "hostedPlugin": "Gehostetes Plugin",
       "toolbar": "Symbolleiste"
     },
@@ -858,6 +951,9 @@
     "typehierarchy": {
       "subtypeHierarchy": "Hierarchie der Untertypen",
       "supertypeHierarchy": "Supertyp-Hierarchie"
+    },
+    "variableResolver": {
+      "listAllVariables": "Variable: Alle auflisten"
     },
     "vsx-registry": {
       "confirmDialogMessage": "Die Erweiterung \"{0}\" ist ungeprüft und könnte ein Sicherheitsrisiko darstellen.",

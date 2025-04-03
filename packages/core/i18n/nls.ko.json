@@ -1,4 +1,5 @@
 {
+  "ai-chat-ui.show-settings": "AI 설정 표시",
   "aiConfiguration:open": "AI 구성 보기 열기",
   "aiHistory:clear": "AI 기록: 기록 지우기",
   "aiHistory:open": "AI 기록 보기 열기",
@@ -13,6 +14,30 @@
   "terminal:profile:default": "기본 터미널 프로필을 선택합니다.",
   "theia": {
     "ai": {
+      "agents": {
+        "enable": {
+          "mdDescription": "에이전트를 사용 설정할지(true) 또는 사용 중지할지(false)를 지정합니다.",
+          "title": "에이전트 사용"
+        },
+        "languageModelRequirements": {
+          "identifier": {
+            "mdDescription": "사용할 언어 모델의 식별자입니다.",
+            "title": "식별"
+          },
+          "mdDescription": "이 에이전트에 사용되는 언어 모델을 지정합니다.",
+          "purpose": {
+            "mdDescription": "이 언어 모델이 사용되는 목적입니다.",
+            "title": "목적"
+          },
+          "title": "언어 모델 요구 사항"
+        },
+        "mdDescription": "특정 에이전트 활성화 또는 비활성화, 프롬프트 구성, LLM 선택 등의 에이전트 설정을 구성합니다.",
+        "selectedVariants": {
+          "mdDescription": "이 상담원에 대해 현재 선택된 프롬프트 변형을 지정합니다.",
+          "title": "선택된 변형"
+        },
+        "title": "상담원 설정"
+      },
       "anthropic": {
         "apiKey": {
           "description": "공식 Anthropic 계정의 API 키를 입력합니다. **참고: **이 환경설정을 사용하면 Anthropic API 키가 테아를 실행하는 컴퓨터에 일반 텍스트로 저장됩니다. 키를 안전하게 설정하려면 환경 변수 `ANTHROPIC_API_KEY`를 사용하세요."
@@ -27,6 +52,9 @@
         },
         "pinChatAgent": {
           "description": "상담원 고정을 사용 설정하면 멘션된 채팅 상담원을 여러 프롬프트에서 자동으로 활성 상태로 유지하여 반복적으로 멘션할 필요성을 줄일 수 있으며, 언제든지 수동으로 고정 해제하거나 상담원을 전환할 수 있습니다."
+        },
+        "view": {
+          "label": "AI 채팅"
         }
       },
       "chat-ui": {
@@ -53,16 +81,21 @@
         },
         "copyCodeBlock": "코드 블록 복사",
         "deleteChangeSet": "변경 집합 삭제",
+        "enterChatName": "채팅 이름 입력",
         "errorChatInvocation": "채팅 서비스를 호출하는 동안 오류가 발생했습니다.",
         "openDiff": "Diff 열기",
         "openOriginalFile": "원본 파일 열기",
         "pinAgent": "핀 에이전트",
         "removeChat": "채팅 제거",
+        "renameChat": "채팅 이름 바꾸기",
         "selectChat": "채팅 선택",
         "selectVariableArguments": "변수 인수 선택",
         "send": "보내기(엔터)",
         "text-part-renderer": {
           "cantDisplay": "응답을 표시할 수 없습니다. ChatResponsePartRenderers를 확인해 주세요!"
+        },
+        "thinking-part-renderer": {
+          "thinking": "사고"
         },
         "toolcall-part-renderer": {
           "finished": "Ran",
@@ -132,9 +165,15 @@
         "promptTemplates": {
           "description": "사용자 지정한 프롬프트 템플릿을 저장하는 폴더입니다. 사용자 지정하지 않으면 사용자 설정 디렉터리가 사용됩니다. 프롬프트 템플릿의 변형을 관리하려면 버전 관리가 이루어지는 폴더를 사용하는 것이 좋습니다."
         },
+        "prompts": {
+          "category": "Theia AI 프롬프트 템플릿"
+        },
         "requestSettings": {
           "mdDescription": "여러 모델에 대한 사용자 지정 요청 설정을 지정할 수 있습니다.\n            각 개체는 특정 모델에 대한 구성을 나타냅니다. modelId` 필드는 모델 ID를 지정하고 `requestSettings`는 모델별 설정을 정의합니다.\n            제공자Id` 필드는 선택 사항이며 특정 제공업체에 설정을 적용할 수 있습니다. 설정하지 않으면 모든 제공업체에 설정이 적용됩니다.\n            제공자 ID 예: huggingface, openai, ollama, llamafile.\n            자세한 내용은 [문서](https://theia-ide.org/docs/user_ai/#custom-request-settings)를 참조하세요.",
           "title": "사용자 지정 요청 설정"
+        },
+        "showAllPrompts": {
+          "label": "모든 프롬프트 표시"
         },
         "templateSettings": {
           "selectVariant": "변형을 선택합니다:",
@@ -146,7 +185,16 @@
           "currentFileContent": "현재 열려 있는 파일의 일반 콘텐츠입니다. 여기에는 콘텐츠의 출처 정보가 제외됩니다. 대부분의 상담원은 상대 파일 경로(현재 작업 영역 기준)를 사용하면 더 잘 작동한다는 점에 유의하세요.",
           "currentRelativeDirPath": "현재 열려 있는 파일이 포함된 디렉터리의 상대 경로입니다.",
           "currentRelativeFilePath": "현재 열려 있는 파일의 상대 경로입니다.",
-          "currentSelectedText": "열린 파일에서 현재 선택되어 있는 일반 텍스트입니다. 여기에는 콘텐츠의 출처 정보가 제외됩니다. 대부분의 상담원은 상대 파일 경로(현재 작업 영역 기준)를 사용하면 더 잘 작동한다는 점에 유의하세요."
+          "currentSelectedText": "열린 파일에서 현재 선택되어 있는 일반 텍스트입니다. 여기에는 콘텐츠의 출처 정보가 제외됩니다. 대부분의 상담원은 상대 파일 경로(현재 작업 영역 기준)를 사용하면 더 잘 작동한다는 점에 유의하세요.",
+          "dotRelativePath": "현재 열려 있는 파일의 상대 경로에 대한 짧은 참조('currentRelativeFilePath')입니다."
+        }
+      },
+      "google": {
+        "apiKey": {
+          "description": "공식 구글 AI(제미니) 계정의 API 키를 입력합니다. **참고: **이 환경설정을 사용하면 구글 AI API 키가 테아를 실행하는 컴퓨터에 일반 텍스트로 저장됩니다. 키를 안전하게 설정하려면 환경 변수 `GOOGLE_API_KEY`를 사용하세요."
+        },
+        "models": {
+          "description": "공식 Google 제미니 모델 사용"
         }
       },
       "history": {
@@ -154,14 +202,11 @@
           "tooltip": "모든 상담원의 기록 삭제"
         },
         "communication-card": {
-          "context": "컨텍스트",
-          "messages": "메시지",
           "request": "요청",
           "requestId": "요청 ID",
           "response": "응답",
           "responseTime": "응답 시간",
           "sessionId": "세션 ID",
-          "systemMessage": "시스템 메시지",
           "timestamp": "타임스탬프"
         },
         "sortChronologically": {
@@ -184,6 +229,11 @@
         "models": {
           "description": "포옹하는 얼굴 모델 사용"
         }
+      },
+      "ide": {
+        "agent-description": "AI 구성 보기]({0})에서 사용 설정, LLM 선택, 프롬프트 템플릿 사용자 지정, 사용자 지정 상담원 만들기 등 AI 상담원 설정을 구성합니다.",
+        "model-selection-description": "AI 구성 보기]({0})에서 각 AI 에이전트가 사용할 LLM(대규모 언어 모델)을 선택합니다.",
+        "prompt-template-description": "AI 구성 보기]({0})에서 프롬프트 변형을 선택하고 AI 상담원을 위한 프롬프트 템플릿을 사용자 지정합니다."
       },
       "llamaFile": {
         "prefs": {
@@ -245,10 +295,28 @@
         },
         "stop": {
           "label": "MCP: MCP 서버 중지"
-        },
-        "tool": {
-          "unnamed": "이름 없는 도구"
         }
+      },
+      "mcpConfiguration": {
+        "arguments": "인수: ",
+        "autostart": "자동 시작: ",
+        "command": "명령: ",
+        "copiedAllList": "모든 도구를 클립보드에 복사(모든 도구 목록)",
+        "copiedAllSingle": "모든 도구를 클립보드에 복사(모든 도구가 포함된 단일 프롬프트 조각)",
+        "copiedForPromptTemplate": "프롬프트 템플릿을 위해 모든 도구를 클립보드에 복사(모든 도구가 포함된 단일 프롬프트 조각)",
+        "copyAllList": "모두 복사(모든 도구 목록)",
+        "copyAllSingle": "채팅용 모두 복사(모든 도구가 포함된 단일 프롬프트 조각)",
+        "copyForPrompt": "복사 도구(채팅 또는 프롬프트 템플릿용)",
+        "copyForPromptTemplate": "프롬프트 템플릿의 경우 모두 복사(모든 도구가 포함된 단일 프롬프트 조각)",
+        "disabled": "장애인",
+        "enabled": "활성화됨",
+        "environmentVariables": "환경 변수: ",
+        "noServers": "구성된 MCP 서버 없음",
+        "serverConfigurations": "MCP 서버 구성",
+        "startServer": "서버 시작",
+        "stopServer": "서버 중지",
+        "tools": "도구: ",
+        "widgetLabel": "MCP 서버"
       },
       "openai": {
         "apiKey": {
@@ -285,6 +353,18 @@
           "description": "공식 OpenAI 모델 사용"
         }
       },
+      "promptTemplates": {
+        "directories": {
+          "title": "워크스페이스별 프롬프트 템플릿 디렉터리"
+        },
+        "extensions": {
+          "description": "프롬프트 템플릿으로 간주되는 프롬프트 위치의 추가 파일 확장자 목록입니다. '.prompttemplate'이 항상 기본값으로 간주됩니다.",
+          "title": "추가 프롬프트 템플릿 파일 확장자"
+        },
+        "files": {
+          "title": "워크스페이스별 프롬프트 템플릿 파일"
+        }
+      },
       "scanoss": {
         "changeSet": {
           "clean": "일치하는 항목 없음",
@@ -316,6 +396,10 @@
           "no-match": "SCANOSS - 일치하는 항목 없음",
           "summary": "요약"
         }
+      },
+      "session-settings-dialog": {
+        "title": "세션 설정 설정",
+        "tooltip": "세션 설정 설정"
       },
       "terminal": {
         "agent": {
@@ -352,6 +436,13 @@
         }
       }
     },
+    "ai-chat-ui": {
+      "open-history-tooltip": "AI 기록 열기...",
+      "open-settings-tooltip": "AI 설정 열기..."
+    },
+    "ai-ide": {
+      "open-agent-settings-tooltip": "상담원 설정 열기..."
+    },
     "callhierarchy": {
       "noCallers": "발신자가 감지되지 않았습니다.",
       "open": "오픈 콜 계층 구조"
@@ -386,7 +477,8 @@
     "core": {
       "about": {
         "compatibility": "{0} 호환성",
-        "defaultApi": "기본값 {0} API"
+        "defaultApi": "기본값 {0} API",
+        "listOfExtensions": "확장 프로그램 목록"
       },
       "common": {
         "closeAll": "모든 탭 닫기",
@@ -758,6 +850,7 @@
       "webviewWarnIfUnsecure": "웹뷰가 현재 안전하지 않게 배포되었음을 사용자에게 경고합니다."
     },
     "preferences": {
+      "ai-features": "AI 기능",
       "hostedPlugin": "호스팅 플러그인",
       "toolbar": "도구 모음"
     },
@@ -858,6 +951,9 @@
     "typehierarchy": {
       "subtypeHierarchy": "하위 유형 계층 구조",
       "supertypeHierarchy": "슈퍼타입 계층 구조"
+    },
+    "variableResolver": {
+      "listAllVariables": "변수: 모두 나열"
     },
     "vsx-registry": {
       "confirmDialogMessage": "확장자 \"{0}\"는 확인되지 않았으며 보안 위험을 초래할 수 있습니다.",

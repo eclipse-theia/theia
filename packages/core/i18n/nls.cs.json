@@ -1,4 +1,5 @@
 {
+  "ai-chat-ui.show-settings": "Zobrazit nastavení AI",
   "aiConfiguration:open": "Otevřete zobrazení konfigurace AI",
   "aiHistory:clear": "Historie umělé inteligence: Vymazat historii",
   "aiHistory:open": "Otevřít zobrazení Historie AI",
@@ -13,6 +14,30 @@
   "terminal:profile:default": "Zvolte výchozí profil terminálu",
   "theia": {
     "ai": {
+      "agents": {
+        "enable": {
+          "mdDescription": "Určuje, zda má být agent povolen (true) nebo zakázán (false).",
+          "title": "Povolení agenta"
+        },
+        "languageModelRequirements": {
+          "identifier": {
+            "mdDescription": "Identifikátor jazykového modelu, který se má použít.",
+            "title": "Identifikace"
+          },
+          "mdDescription": "Určuje použité jazykové modely pro tohoto agenta.",
+          "purpose": {
+            "mdDescription": "Účel, pro který se tento jazykový model používá.",
+            "title": "Účel"
+          },
+          "title": "Požadavky na jazykový model"
+        },
+        "mdDescription": "Konfigurace nastavení agenta, například povolení nebo zakázání konkrétních agentů, konfigurace výzev a výběr LLM.",
+        "selectedVariants": {
+          "mdDescription": "Určuje aktuálně vybrané varianty výzev pro tohoto agenta.",
+          "title": "Vybrané varianty"
+        },
+        "title": "Nastavení agenta"
+      },
       "anthropic": {
         "apiKey": {
           "description": "Zadejte klíč API svého oficiálního účtu Anthropic. **Upozornění:** Při použití této předvolby bude klíč API Anthropic uložen v otevřeném textu na počítači, na kterém běží Theia. Pro bezpečné nastavení klíče použijte proměnnou prostředí `ANTHROPIC_API_KEY`."
@@ -27,6 +52,9 @@
         },
         "pinChatAgent": {
           "description": "Povolením připnutí agenta automaticky udržíte zmíněného agenta chatu aktivního napříč výzvami, čímž snížíte potřebu opakovaných zmínek.Agenta můžete kdykoli ručně odepnout nebo přepnout."
+        },
+        "view": {
+          "label": "AI Chat"
         }
       },
       "chat-ui": {
@@ -53,16 +81,21 @@
         },
         "copyCodeBlock": "Kopírování bloku kódu",
         "deleteChangeSet": "Odstranit sadu změn",
+        "enterChatName": "Zadejte název chatu",
         "errorChatInvocation": "Při volání služby chatu došlo k chybě.",
         "openDiff": "Otevřený diferenciál",
         "openOriginalFile": "Otevřít původní soubor",
         "pinAgent": "Agent na špendlíky",
         "removeChat": "Odstranění chatu",
+        "renameChat": "Přejmenování chatu",
         "selectChat": "Vybrat chat",
         "selectVariableArguments": "Výběr proměnných argumentů",
         "send": "Odeslat (Zadat)",
         "text-part-renderer": {
           "cantDisplay": "Nelze zobrazit odpověď, zkontrolujte prosím své ChatResponsePartRenderers!"
+        },
+        "thinking-part-renderer": {
+          "thinking": "Přemýšlení"
         },
         "toolcall-part-renderer": {
           "finished": "Ran",
@@ -132,9 +165,15 @@
         "promptTemplates": {
           "description": "Složka pro ukládání přizpůsobených šablon výzev. Pokud nejsou přizpůsobeny, použije se adresář uživatelské konfigurace. Zvažte prosím použití složky, která je pod správou verzí pro správu variant šablon výzev."
         },
+        "prompts": {
+          "category": "Šablony Theia AI Prompt"
+        },
         "requestSettings": {
           "mdDescription": "Umožňuje zadat vlastní nastavení požadavku pro více modelů.\n            Každý objekt představuje konfiguraci pro konkrétní model. Pole `modelId` určuje ID modelu, `requestSettings` definuje nastavení specifické pro daný model.\n            Pole `providerId` je nepovinné a umožňuje použít nastavení pro konkrétního poskytovatele. Pokud není nastaveno, bude nastavení použito pro všechny poskytovatele.\n            Příklad providerId: huggingface, openai, ollama, llamafile.\n            Další informace naleznete v [naší dokumentaci](https://theia-ide.org/docs/user_ai/#custom-request-settings).",
           "title": "Vlastní nastavení požadavku"
+        },
+        "showAllPrompts": {
+          "label": "Zobrazit všechny výzvy"
         },
         "templateSettings": {
           "selectVariant": "Vyberte variantu:",
@@ -146,7 +185,16 @@
           "currentFileContent": "Prostý obsah aktuálně otevřeného souboru. Vyloučeny jsou informace o tom, odkud obsah pochází. Upozorňujeme, že většina agentů bude lépe pracovat s relativní cestou k souboru (vzhledem k aktuálnímu pracovnímu prostoru).",
           "currentRelativeDirPath": "Relativní cesta k adresáři obsahujícímu aktuálně otevřený soubor.",
           "currentRelativeFilePath": "Relativní cesta k aktuálně otevřenému souboru.",
-          "currentSelectedText": "Obyčejný text, který je aktuálně vybrán v otevřeném souboru. Tím se vyloučí informace o tom, odkud obsah pochází. Upozorňujeme, že většina agentů bude lépe pracovat s relativní cestou k souboru (vzhledem k aktuální pracovní oblasti)."
+          "currentSelectedText": "Obyčejný text, který je aktuálně vybrán v otevřeném souboru. Tím se vyloučí informace o tom, odkud obsah pochází. Upozorňujeme, že většina agentů bude lépe pracovat s relativní cestou k souboru (vzhledem k aktuální pracovní oblasti).",
+          "dotRelativePath": "Krátký odkaz na relativní cestu k aktuálně otevřenému souboru (\"currentRelativeFilePath\")."
+        }
+      },
+      "google": {
+        "apiKey": {
+          "description": "Zadejte klíč API svého oficiálního účtu Google AI (Gemini). **Upozornění:** Při použití této předvolby bude klíč API GOOGLE AI uložen v otevřeném textu na počítači, na kterém běží Theia. Pro bezpečné nastavení klíče použijte proměnnou prostředí `GOOGLE_API_KEY`."
+        },
+        "models": {
+          "description": "Oficiální modely Google Gemini k použití"
         }
       },
       "history": {
@@ -154,14 +202,11 @@
           "tooltip": "Vymazání historie všech agentů"
         },
         "communication-card": {
-          "context": "Kontext",
-          "messages": "Zprávy",
           "request": "Žádost",
           "requestId": "ID žádosti",
           "response": "Reakce",
           "responseTime": "Doba odezvy",
           "sessionId": "ID relace",
-          "systemMessage": "Systémová zpráva",
           "timestamp": "Časové razítko"
         },
         "sortChronologically": {
@@ -184,6 +229,11 @@
         "models": {
           "description": "Objímání modelů obličeje k použití"
         }
+      },
+      "ide": {
+        "agent-description": "Konfigurace nastavení agenta AI včetně povolení, výběru LLM, přizpůsobení šablony výzvy a vytvoření vlastního agenta v zobrazení [AI Configuration View]({0}).",
+        "model-selection-description": "V zobrazení [AI Configuration View]({0}) vyberte, které velké jazykové modely (LLM) bude používat každý agent umělé inteligence.",
+        "prompt-template-description": "Vyberte varianty výzev a přizpůsobte šablony výzev pro agenty AI v zobrazení [AI Configuration View]({0})."
       },
       "llamaFile": {
         "prefs": {
@@ -245,10 +295,28 @@
         },
         "stop": {
           "label": "MCP: Zastavení serveru MCP"
-        },
-        "tool": {
-          "unnamed": "Nejmenovaný nástroj"
         }
+      },
+      "mcpConfiguration": {
+        "arguments": "Argumenty: ",
+        "autostart": "Automatické spuštění: ",
+        "command": "Příkaz: ",
+        "copiedAllList": "Zkopírování všech nástrojů do schránky (seznam všech nástrojů)",
+        "copiedAllSingle": "Zkopírování všech nástrojů do schránky (jeden fragment výzvy se všemi nástroji)",
+        "copiedForPromptTemplate": "Zkopírování všech nástrojů do schránky pro šablonu výzvy (jeden fragment výzvy se všemi nástroji)",
+        "copyAllList": "Kopírovat vše (seznam všech nástrojů)",
+        "copyAllSingle": "Kopírovat vše pro chat (jeden fragment výzvy se všemi nástroji)",
+        "copyForPrompt": "Nástroj pro kopírování (pro šablonu chatu nebo výzvy)",
+        "copyForPromptTemplate": "Kopírovat vše pro šablonu výzvy (jeden fragment výzvy se všemi nástroji)",
+        "disabled": "Bezbariérový",
+        "enabled": "Povoleno",
+        "environmentVariables": "Proměnné prostředí: ",
+        "noServers": "Nejsou nakonfigurovány žádné servery MCP",
+        "serverConfigurations": "Konfigurace serveru MCP",
+        "startServer": "Spuštění serveru",
+        "stopServer": "Zastavit server",
+        "tools": "Nástroje: ",
+        "widgetLabel": "Servery MCP"
       },
       "openai": {
         "apiKey": {
@@ -285,6 +353,18 @@
           "description": "Oficiální modely OpenAI k použití"
         }
       },
+      "promptTemplates": {
+        "directories": {
+          "title": "Adresáře šablon specifických pro pracovní prostor"
+        },
+        "extensions": {
+          "description": "Seznam dalších přípon souborů v umístění výzvy, které jsou považovány za šablony výzvy. '.prompttemplate' je vždy považován za výchozí.",
+          "title": "Další přípony souborů šablony Prompt"
+        },
+        "files": {
+          "title": "Soubory šablon specifických pro pracovní prostor"
+        }
+      },
       "scanoss": {
         "changeSet": {
           "clean": "Žádné shody",
@@ -316,6 +396,10 @@
           "no-match": "SCANOSS - Žádná shoda",
           "summary": "Souhrn"
         }
+      },
+      "session-settings-dialog": {
+        "title": "Nastavení relací",
+        "tooltip": "Nastavení relací"
       },
       "terminal": {
         "agent": {
@@ -352,6 +436,13 @@
         }
       }
     },
+    "ai-chat-ui": {
+      "open-history-tooltip": "Otevřete historii AI...",
+      "open-settings-tooltip": "Otevřete nastavení AI..."
+    },
+    "ai-ide": {
+      "open-agent-settings-tooltip": "Otevřít nastavení agenta..."
+    },
     "callhierarchy": {
       "noCallers": "Nebyl zjištěn žádný volající.",
       "open": "Hierarchie otevřených výzev"
@@ -386,7 +477,8 @@
     "core": {
       "about": {
         "compatibility": "{0} Kompatibilita",
-        "defaultApi": "Výchozí rozhraní API {0} "
+        "defaultApi": "Výchozí rozhraní API {0} ",
+        "listOfExtensions": "Seznam rozšíření"
       },
       "common": {
         "closeAll": "Zavřít všechny karty",
@@ -758,6 +850,7 @@
       "webviewWarnIfUnsecure": "Upozorňuje uživatele, že webové náhledy jsou v současné době nasazeny nezabezpečeně."
     },
     "preferences": {
+      "ai-features": "Funkce umělé inteligence",
       "hostedPlugin": "Hostovaný plugin",
       "toolbar": "Panel nástrojů"
     },
@@ -858,6 +951,9 @@
     "typehierarchy": {
       "subtypeHierarchy": "Hierarchie podtypů",
       "supertypeHierarchy": "Hierarchie nadtypů"
+    },
+    "variableResolver": {
+      "listAllVariables": "Proměnná: Seznam všech"
     },
     "vsx-registry": {
       "confirmDialogMessage": "Rozšíření \"{0}\" není ověřeno a může představovat bezpečnostní riziko.",
