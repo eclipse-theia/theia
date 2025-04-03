@@ -40,6 +40,6 @@ https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-
 - File: {{file}}
 - Language: {{language}}
 
-Replace [[MARKER]] with the exact code to complete the code snippet. Return only the replacement of [[MAKRER]] as plain text.`,
+Replace [[MARKER]] with the exact code to complete the code snippet. Return only the replacement of [[MARKER]] as plain text.`,
     },
 ];
