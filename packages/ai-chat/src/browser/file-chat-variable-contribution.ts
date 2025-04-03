@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { AIVariableContext, AIVariableResolutionRequest, PromptText } from '@theia/ai-core';
-import { AIVariableDropResult, FrontendVariableContribution, FrontendVariableService } from '@theia/ai-core/lib/browser';
+import { AIVariableCompletionContext, AIVariableDropResult, FrontendVariableContribution, FrontendVariableService } from '@theia/ai-core/lib/browser';
 import { FILE_VARIABLE } from '@theia/ai-core/lib/browser/file-variable-contribution';
 import { CancellationToken, QuickInputService, URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
@@ -72,29 +72,17 @@ export class FileChatVariableContribution implements FrontendVariableContributio
         position: monaco.Position,
         matchString?: string
     ): Promise<monaco.languages.CompletionItem[] | undefined> {
-        const lineContent = model.getLineContent(position.lineNumber);
-        const indexOfVariableTrigger = lineContent.lastIndexOf(matchString ?? PromptText.VARIABLE_CHAR, position.column - 1);
+        const context = AIVariableCompletionContext.get(FILE_VARIABLE.name, model, position, matchString);
+        if (!context) { return undefined; }
+        const { userInput, range, prefix } = context;
 
-        // check if there is a variable trigger and no space typed between the variable trigger and the cursor
-        if (indexOfVariableTrigger === -1 || lineContent.substring(indexOfVariableTrigger).includes(' ')) {
-            return undefined;
-        }
-
-        // determine whether we are providing completions before or after the variable argument separator
-        const indexOfVariableArgSeparator = lineContent.lastIndexOf(PromptText.VARIABLE_SEPARATOR_CHAR, position.column - 1);
-        const triggerCharIndex = Math.max(indexOfVariableTrigger, indexOfVariableArgSeparator);
-
-        const typedWord = lineContent.substring(triggerCharIndex + 1, position.column - 1);
-        const range = new monaco.Range(position.lineNumber, triggerCharIndex + 2, position.lineNumber, position.column);
-        const picks = await this.quickFileSelectService.getPicks(typedWord, CancellationToken.None);
-        const matchVariableChar = lineContent[triggerCharIndex] === (matchString ? matchString : PromptText.VARIABLE_CHAR);
-        const prefix = matchVariableChar ? FILE_VARIABLE.name + PromptText.VARIABLE_SEPARATOR_CHAR : '';
+        const picks = await this.quickFileSelectService.getPicks(userInput, CancellationToken.None);
 
         return Promise.all(
             picks
                 .filter(FileQuickPickItem.is)
                 // only show files with highlights, if the user started typing to filter down the results
-                .filter(p => !typedWord || p.highlights?.label)
+                .filter(p => !userInput || p.highlights?.label)
                 .map(async (pick, index) => ({
                     label: pick.label,
                     kind: monaco.languages.CompletionItemKind.File,
@@ -102,7 +90,7 @@ export class FileChatVariableContribution implements FrontendVariableContributio
                     insertText: `${prefix}${await this.wsService.getWorkspaceRelativePath(pick.uri)}`,
                     detail: await this.wsService.getWorkspaceRelativePath(pick.uri.parent),
                     // don't let monaco filter the items, as we only return picks that are filtered
-                    filterText: typedWord,
+                    filterText: userInput,
                     // keep the order of the items, but move them to the end of the list
                     sortText: `ZZ${index.toString().padStart(4, '0')}_${pick.label}`,
                 }))

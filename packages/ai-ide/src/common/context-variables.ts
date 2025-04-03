@@ -15,3 +15,4 @@
 // *****************************************************************************
 
 export const CONTEXT_FILES_VARIABLE_ID = 'contextFiles';
+export const CONTEXT_SESSION_MEMORY_VARIABLE_ID = 'contextMemories';

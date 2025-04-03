@@ -266,11 +266,7 @@ export class ChatServiceImpl implements ChatService {
             }
         });
 
-        if (agent) {
-            agent.invoke(requestModel).catch(error => requestModel.response.error(error));
-        } else {
-            this.logger.error('No ChatAgents available to handle request!', requestModel);
-        }
+        agent.invoke(requestModel).catch(error => requestModel.response.error(error));
 
         return invocation;
     }

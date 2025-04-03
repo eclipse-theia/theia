@@ -46,6 +46,9 @@ import { ContextSummaryVariableContribution } from '../common/context-summary-va
 import { ContextDetailsVariableContribution } from '../common/context-details-variable';
 import { ChangeSetVariableContribution } from './change-set-variable';
 import { ChatSessionNamingAgent, ChatSessionNamingService } from '../common/chat-session-naming-service';
+import { ChatSessionSummaryAgent } from '../common/chat-session-summary-agent';
+import { SessionSumaryVariableContribution } from './session-summary-variable-contribution';
+import { SessionSummaryVariableLabelProvider } from './session-summary-variable-label-provider';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, Agent);
@@ -113,4 +116,11 @@ export default new ContainerModule(bind => {
     bind(AIVariableContribution).to(ContextSummaryVariableContribution).inSingletonScope();
     bind(AIVariableContribution).to(ContextDetailsVariableContribution).inSingletonScope();
     bind(AIVariableContribution).to(ChangeSetVariableContribution).inSingletonScope();
+
+    bind(ChatSessionSummaryAgent).toSelf().inSingletonScope();
+    bind(Agent).toService(ChatSessionSummaryAgent);
+    bind(SessionSumaryVariableContribution).toSelf().inSingletonScope();
+    bind(AIVariableContribution).toService(SessionSumaryVariableContribution);
+    bind(SessionSummaryVariableLabelProvider).toSelf().inSingletonScope();
+    bind(LabelProviderContribution).toService(SessionSummaryVariableLabelProvider);
 });

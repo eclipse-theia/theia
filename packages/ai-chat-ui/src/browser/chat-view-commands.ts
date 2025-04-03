@@ -45,6 +45,10 @@ export const AI_CHAT_NEW_CHAT_WINDOW_COMMAND: Command = {
     iconClass: codicon('add')
 };
 
+export const AI_CHAT_NEW_WITH_MEMORY: Command = {
+    id: 'ai-chat.new-with-memory',
+};
+
 export const AI_CHAT_SHOW_CHATS_COMMAND: Command = {
     id: 'ai-chat-ui.show-chats',
     iconClass: codicon('history')

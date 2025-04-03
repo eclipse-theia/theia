@@ -17,7 +17,7 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { CommandRegistry, isOSX, nls, QuickInputButton, QuickInputService, QuickPickItem } from '@theia/core';
 import { Widget } from '@theia/core/lib/browser';
-import { AI_CHAT_NEW_CHAT_WINDOW_COMMAND, AI_CHAT_SHOW_CHATS_COMMAND, ChatCommands } from './chat-view-commands';
+import { AI_CHAT_NEW_CHAT_WINDOW_COMMAND, AI_CHAT_NEW_WITH_MEMORY, AI_CHAT_SHOW_CHATS_COMMAND, ChatCommands } from './chat-view-commands';
 import { ChatAgentLocation, ChatService } from '@theia/ai-chat';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
@@ -28,6 +28,7 @@ import { formatDistance } from 'date-fns';
 import * as locales from 'date-fns/locale';
 import { AI_SHOW_SETTINGS_COMMAND } from '@theia/ai-core/lib/browser';
 import { OPEN_AI_HISTORY_VIEW } from '@theia/ai-history/lib/browser/ai-history-contribution';
+import { SESSION_SUMMARY_VARIABLE } from '@theia/ai-chat/lib/browser/session-summary-variable-contribution';
 
 export const AI_CHAT_TOGGLE_COMMAND_ID = 'aiChat:toggle';
 
@@ -83,9 +84,20 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
             })
         });
         registry.registerCommand(AI_CHAT_NEW_CHAT_WINDOW_COMMAND, {
-            execute: () => this.chatService.createSession(ChatAgentLocation.Panel, { focus: true }),
-            isEnabled: widget => this.withWidget(widget, () => true),
+            execute: () => this.openView().then(() => this.chatService.createSession(ChatAgentLocation.Panel, { focus: true })),
             isVisible: widget => this.withWidget(widget, () => true),
+        });
+        registry.registerCommand(AI_CHAT_NEW_WITH_MEMORY, {
+            execute: () => {
+                const activeSessions = this.chatService.getSessions().filter(candidate => candidate.isActive);
+                if (activeSessions.length !== 1) {
+                    return;
+                }
+                const activeSession = activeSessions[0];
+                const newSession = this.chatService.createSession(ChatAgentLocation.Panel, { focus: true }, activeSession.pinnedAgent);
+                newSession.model.context.addVariables({ variable: SESSION_SUMMARY_VARIABLE, arg: activeSession.id });
+            },
+            isVisible: () => false
         });
         registry.registerCommand(AI_CHAT_SHOW_CHATS_COMMAND, {
             execute: () => this.selectChat(),
