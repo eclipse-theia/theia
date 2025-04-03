@@ -389,38 +389,33 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
     }
 
     protected async addStreamResponse(languageModelResponse: LanguageModelStreamResponse, request: MutableChatRequestModel): Promise<void> {
-        // Keep a buffer of the entire streamed text so far
         let completeTextBuffer = '';
-
-        // Create a marker content to identify the start of this stream
-        const streamMarkerContent = new MarkdownChatResponseContentImpl('');
-        request.response.response.addContent(streamMarkerContent);
-        const markerIndex = request.response.response.content.length - 1;
+        let startIndex = request.response.response.content.length - 1;
 
         for await (const token of languageModelResponse.stream) {
-            // Process the token - get new content to add
             const newContent = this.parse(token, request);
 
-            // If it's a text token, append to our buffer
-            if (isTextResponsePart(token) && token.content) {
+            if (!(isTextResponsePart(token) && token.content)) {
+                // For non-text tokens (like tool calls), add them directly
+                if (isArray(newContent)) {
+                    request.response.response.addContents(newContent);
+                } else {
+                    request.response.response.addContent(newContent);
+                }
+                // And reset the marker index and the text buffer as we skip matching across non-text tokens
+                startIndex = request.response.response.content.length - 1;
+                completeTextBuffer = '';
+            } else {
+                // parse the entire text so far (since beginning of the stream or last non-text token)
+                // and replace the entire content with the currently parsed content parts
                 completeTextBuffer += token.content;
 
-                // Parse the entire buffer to get the updated content including incomplete matches
                 const parsedContents = this.parseContents(completeTextBuffer, request);
+                const contentBeforeMarker = request.response.response.content.slice(0, startIndex);
 
-                // Get all content before our marker
-                const contentBeforeMarker = request.response.response.content.slice(0, markerIndex);
-
-                // Replace everything after (and including) the marker with the new parsed content
                 request.response.response.clearContent();
                 request.response.response.addContents(contentBeforeMarker);
                 request.response.response.addContents(parsedContents);
-            } else if (isArray(newContent)) {
-                // For non-text tokens (like tool calls), add them directly
-                request.response.response.addContents(newContent);
-            } else {
-                // Single content, add it directly
-                request.response.response.addContent(newContent);
             }
         }
     }
