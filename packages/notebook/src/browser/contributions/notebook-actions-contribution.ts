@@ -23,7 +23,10 @@ import { CellEditType, CellKind, NotebookCommand } from '../../common';
 import { NotebookKernelQuickPickService } from '../service/notebook-kernel-quick-pick-service';
 import { NotebookExecutionService } from '../service/notebook-execution-service';
 import { NotebookEditorWidgetService } from '../service/notebook-editor-widget-service';
-import { NOTEBOOK_CELL_CURSOR_FIRST_LINE, NOTEBOOK_CELL_CURSOR_LAST_LINE, NOTEBOOK_CELL_FOCUSED, NOTEBOOK_EDITOR_FOCUSED, NOTEBOOK_HAS_OUTPUTS, NOTEBOOK_OUTPUT_FOCUSED } from './notebook-context-keys';
+import {
+    NOTEBOOK_CELL_CURSOR_FIRST_LINE, NOTEBOOK_CELL_CURSOR_LAST_LINE,
+    NOTEBOOK_CELL_FOCUSED, NOTEBOOK_EDITOR_FOCUSED, NOTEBOOK_HAS_OUTPUTS, NOTEBOOK_OUTPUT_FOCUSED
+} from './notebook-context-keys';
 import { NotebookClipboardService } from '../service/notebook-clipboard-service';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { NotebookEditorWidget } from '../notebook-editor-widget';
