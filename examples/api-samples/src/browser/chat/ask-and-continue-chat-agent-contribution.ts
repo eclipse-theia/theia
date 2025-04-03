@@ -17,14 +17,13 @@
 import {
     AbstractStreamParsingChatAgent,
     ChatAgent,
-    ChatMessage,
     ChatModel,
     MutableChatRequestModel,
     lastProgressMessage,
     QuestionResponseContentImpl,
     unansweredQuestions
 } from '@theia/ai-chat';
-import { Agent, PromptTemplate } from '@theia/ai-core';
+import {Agent, LanguageModelMessage, PromptTemplate} from '@theia/ai-core';
 import { injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
 
 export function bindAskAndContinueChatAgentContribution(bind: interfaces.Bind): void {
@@ -161,7 +160,7 @@ export class AskAndContinueChatAgent extends AbstractStreamParsingChatAgent {
      * As the question/answer are handled within the same response, we add an additional user message at the end to indicate to
      * the LLM to continue generating.
      */
-    protected override async getMessages(model: ChatModel): Promise<ChatMessage[]> {
+    protected override async getMessages(model: ChatModel): Promise<LanguageModelMessage[]> {
         const messages = await super.getMessages(model, true);
         const requests = model.getRequests();
         if (!requests[requests.length - 1].response.isComplete && requests[requests.length - 1].response.response?.content.length > 0) {
@@ -169,7 +168,7 @@ export class AskAndContinueChatAgent extends AbstractStreamParsingChatAgent {
             {
                 type: 'text',
                 actor: 'user',
-                query: 'Continue generating based on the user\'s answer or finish the conversation if 5 or more questions were already answered.'
+                text: 'Continue generating based on the user\'s answer or finish the conversation if 5 or more questions were already answered.'
             }];
         }
         return messages;

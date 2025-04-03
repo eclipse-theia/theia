@@ -504,7 +504,6 @@ div:last-child > .theia-ChatNode {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  border: var(--theia-border-width) solid var(--theia-input-border);
   border-radius: 4px;
 }
 
@@ -535,12 +534,6 @@ div:last-child > .theia-ChatNode {
 
 .theia-CodePartRenderer-right .button:hover {
   background-color: var(--theia-toolbar-hoverBackground);
-}
-
-.theia-CodePartRenderer-separator {
-  width: 100%;
-  height: 1px;
-  background-color: var(--theia-input-border);
 }
 
 .theia-QuestionPartRenderer-root {
@@ -574,7 +567,8 @@ div:last-child > .theia-ChatNode {
   background-color: var(--theia-button-secondaryBackground);
 }
 
-.theia-toolCall {
+.theia-toolCall,
+.theia-thinking {
   font-weight: normal;
   color: var(--theia-descriptionForeground);
   line-height: 20px;
@@ -584,11 +578,14 @@ div:last-child > .theia-ChatNode {
 }
 
 .theia-toolCall .fa,
-.theia-toolCall details summary::marker {
+.theia-toolCall details summary::marker,
+.theia-thinking .fa,
+.theia-thinking details summary::marker {
   color: var(--theia-button-background);
 }
 
-.theia-toolCall details pre {
+.theia-toolCall details pre,
+.theia-thinking details pre {
   cursor: text;
   line-height: 1rem;
   margin-top: 0;
@@ -596,6 +593,7 @@ div:last-child > .theia-ChatNode {
   padding: 6px;
   background-color: var(--theia-editor-background);
   overflow: auto;
+    text-wrap: auto;
 }
 
 .collapsible-arguments {
@@ -666,12 +664,6 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
   margin: 20px 0px;
 }
 
-.disable-message {
-  font-size: 12px;
-  line-height: 1.6;
-  padding: 15px;
-}
-
 .section-content p {
   margin: 10px 0;
 }
@@ -682,4 +674,29 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
 
 .section-content strong {
   font-weight: bold;
+}
+
+.session-settings-container {
+    margin-bottom: 10px;
+    height: calc(100% - 50px);
+}
+
+.monaco-session-settings-dialog {
+    flex: 1;
+    min-height: 350px;
+    min-width: 500px;
+    height: 25vh;
+    width: 30vh;
+    border: 1px solid var(--theia-editorWidget-border);
+    margin-bottom: 10px;
+}
+
+.session-settings-error {
+    color: var(--theia-errorForeground);
+    min-height: 1em;
+    display: block;
+}
+
+.session-settings-container .monaco-editor {
+    outline-color: var(--theia-editor-background);
 }

@@ -33,9 +33,11 @@ import {
     ChatResponseModel,
     ErrorChatResponseModel,
     ChatContext,
+    MutableChatRequestModel,
 } from './chat-model';
 import { ChatRequestParser } from './chat-request-parser';
 import { ParsedChatRequest, ParsedChatRequestAgentPart } from './parsed-chat-request';
+import {ChatSessionNamingService} from './chat-session-naming-service';
 
 export interface ChatRequestInvocation {
     /**
@@ -55,14 +57,41 @@ export interface ChatRequestInvocation {
 export interface ChatSession {
     id: string;
     title?: string;
+    lastInteraction?: Date;
     model: ChatModel;
     isActive: boolean;
     pinnedAgent?: ChatAgent;
 }
 
 export interface ActiveSessionChangedEvent {
+    type: 'activeChange';
     sessionId: string | undefined;
     focus?: boolean;
+}
+
+export function isActiveSessionChangedEvent(obj: unknown): obj is ActiveSessionChangedEvent {
+    // eslint-disable-next-line no-null/no-null
+    return typeof obj === 'object' && obj !== null && 'type' in obj && obj.type === 'activeChange';
+}
+
+export interface SessionCreatedEvent {
+    type: 'created';
+    sessionId: string;
+}
+
+export function isSessionCreatedEvent(obj: unknown): obj is SessionCreatedEvent {
+    // eslint-disable-next-line no-null/no-null
+    return typeof obj === 'object' && obj !== null && 'type' in obj && obj.type === 'created';
+}
+
+export interface SessionDeletedEvent {
+    type: 'deleted';
+    sessionId: string;
+}
+
+export function isSessionDeletedEvent(obj: unknown): obj is SessionDeletedEvent {
+    // eslint-disable-next-line no-null/no-null
+    return typeof obj === 'object' && obj !== null && 'type' in obj && obj.type === 'deleted';
 }
 
 export interface SessionOptions {
@@ -90,7 +119,7 @@ export type PinChatAgent = boolean;
 
 export const ChatService = Symbol('ChatService');
 export interface ChatService {
-    onActiveSessionChanged: Event<ActiveSessionChangedEvent>
+    onSessionEvent: Event<ActiveSessionChangedEvent | SessionCreatedEvent | SessionDeletedEvent>
 
     getSession(id: string): ChatSession | undefined;
     getSessions(): ChatSession[];
@@ -115,8 +144,8 @@ interface ChatSessionInternal extends ChatSession {
 
 @injectable()
 export class ChatServiceImpl implements ChatService {
-    protected readonly onActiveSessionChangedEmitter = new Emitter<ActiveSessionChangedEvent>();
-    onActiveSessionChanged = this.onActiveSessionChangedEmitter.event;
+    protected readonly onSessionEventEmitter = new Emitter<ActiveSessionChangedEvent | SessionCreatedEvent | SessionDeletedEvent>();
+    onSessionEvent = this.onSessionEventEmitter.event;
 
     @inject(ChatAgentService)
     protected chatAgentService: ChatAgentService;
@@ -126,6 +155,9 @@ export class ChatServiceImpl implements ChatService {
 
     @inject(FallbackChatAgentId) @optional()
     protected fallbackChatAgentId: FallbackChatAgentId | undefined;
+
+    @inject(ChatSessionNamingService) @optional()
+    protected chatSessionNamingService: ChatSessionNamingService | undefined;
 
     @inject(PinChatAgent) @optional()
     protected pinChatAgent: boolean | undefined;
@@ -159,6 +191,7 @@ export class ChatServiceImpl implements ChatService {
         };
         this._sessions.push(session);
         this.setActiveSession(session.id, options);
+        this.onSessionEventEmitter.fire({type: 'created', sessionId: session.id});
         return session;
     }
 
@@ -172,13 +205,14 @@ export class ChatServiceImpl implements ChatService {
         }
         session.model.dispose();
         this._sessions.splice(sessionIndex, 1);
+        this.onSessionEventEmitter.fire({type: 'deleted', sessionId: sessionId});
     }
 
     setActiveSession(sessionId: string | undefined, options?: SessionOptions): void {
         this._sessions.forEach(session => {
             session.isActive = session.id === sessionId;
         });
-        this.onActiveSessionChangedEmitter.fire({ sessionId: sessionId, ...options });
+        this.onSessionEventEmitter.fire({type: 'activeChange', sessionId: sessionId, ...options});
     }
 
     async sendRequest(
@@ -189,7 +223,6 @@ export class ChatServiceImpl implements ChatService {
         if (!session) {
             return undefined;
         }
-        session.title = request.text;
 
         const resolutionContext: ChatSessionContext = { model: session.model };
         const resolvedContext = await this.resolveChatContext(session.model.context.getVariables(), resolutionContext);
@@ -208,6 +241,7 @@ export class ChatServiceImpl implements ChatService {
         }
 
         const requestModel = session.model.addRequest(parsedRequest, agent?.id, resolvedContext);
+        this.updateSessionMetadata(session, requestModel);
         resolutionContext.request = requestModel;
 
         let resolveResponseCreated: (responseModel: ChatResponseModel) => void;
@@ -239,6 +273,30 @@ export class ChatServiceImpl implements ChatService {
         }
 
         return invocation;
+    }
+
+    protected updateSessionMetadata(session: ChatSessionInternal, request: MutableChatRequestModel): void {
+        session.lastInteraction = new Date();
+        if (session.title) {
+            return;
+        }
+        const requestText = request.request.displayText ?? request.request.text;
+        session.title = requestText;
+        if (this.chatSessionNamingService) {
+            const otherSessionNames = this._sessions.map(s => s.title).filter((title): title is string => title !== undefined);
+            const namingService = this.chatSessionNamingService;
+            let didGenerateName = false;
+            request.response.onDidChange(() => {
+                if (request.response.isComplete && !didGenerateName) {
+                    namingService.generateChatSessionName(session, otherSessionNames).then(name => {
+                        if (name && session.title === requestText) {
+                            session.title = name;
+                        }
+                        didGenerateName = true;
+                    }).catch(error => this.logger.error('Failed to generate chat session name', error));
+                }
+            });
+        }
     }
 
     protected async resolveChatContext(

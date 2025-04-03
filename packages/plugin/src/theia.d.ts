@@ -1148,7 +1148,20 @@ export module '@theia/plugin' {
          * @return A promise that resolves with a value indicating if the snippet could be inserted. Note that the promise does not signal
          * that the snippet is completely filled-in or accepted.
          */
-        insertSnippet(snippet: SnippetString, location?: Position | Range | Position[] | Range[], options?: { undoStopBefore: boolean; undoStopAfter: boolean; }): Thenable<boolean>;
+        insertSnippet(snippet: SnippetString, location?: Position | Range | Position[] | Range[], options?: {
+            /**
+             * Add undo stop before making the edits.
+             */
+            readonly undoStopBefore: boolean;
+            /**
+             * Add undo stop after making the edits.
+             */
+            readonly undoStopAfter: boolean;
+            /**
+             * Keep whitespace of the {@link SnippetString.value} as is.
+             */
+            readonly keepWhitespace?: boolean;
+        }): Thenable<boolean>;
 
         /**
          * Adds a set of decorations to the text editor. If a set of decorations already exists with
@@ -12246,6 +12259,26 @@ export module '@theia/plugin' {
         hideWhenEmpty?: boolean;
 
         /**
+         * Context value of the resource group. This can be used to contribute resource group specific actions.
+         * For example, if a resource group is given a context value of `exportable`, when contributing actions to `scm/resourceGroup/context`
+         * using `menus` extension point, you can specify context value for key `scmResourceGroupState` in `when` expressions, like `scmResourceGroupState == exportable`.
+         * ```json
+         * "contributes": {
+         *   "menus": {
+         *     "scm/resourceGroup/context": [
+         *       {
+         *         "command": "extension.export",
+         *         "when": "scmResourceGroupState == exportable"
+         *       }
+         *     ]
+         *   }
+         * }
+         * ```
+         * This will show action `extension.export` only for resource groups with `contextValue` equal to `exportable`.
+         */
+        contextValue?: string;
+
+        /**
          * This group's collection of
          * {@link SourceControlResourceState source control resource states}.
          */
@@ -14773,15 +14806,21 @@ export module '@theia/plugin' {
     }
 
     /**
-     * Optional options to be used when calling {@link authentication.getSession} with the flag `forceNewSession`.
+     * Optional options to be used when calling {@link authentication.getSession} with interactive options `forceNewSession` & `createIfNone`.
      */
-    export interface AuthenticationForceNewSessionOptions {
+    export interface AuthenticationGetSessionPresentationOptions {
         /**
          * An optional message that will be displayed to the user when we ask to re-authenticate. Providing additional context
          * as to why you are asking a user to re-authenticate can help increase the odds that they will accept.
          */
         detail?: string;
     }
+
+    /**
+     * Optional options to be used when calling {@link authentication.getSession} with the flag `forceNewSession`.
+     * @deprecated Use {@link AuthenticationGetSessionPresentationOptions} instead.
+     */
+    export type AuthenticationForceNewSessionOptions = AuthenticationGetSessionPresentationOptions;
 
     /**
      * Options to be used when getting an {@link AuthenticationSession AuthenticationSession} from an {@link AuthenticationProvider AuthenticationProvider}.
@@ -14794,9 +14833,14 @@ export module '@theia/plugin' {
          * on the accounts activity bar icon. An entry for the extension will be added under the menu to sign in. This
          * allows quietly prompting the user to sign in.
          *
+         * If you provide options, you will also see the dialog but with the additional context provided.
+         *
+         * If there is a matching session but the extension has not been granted access to it, setting this to true
+         * will also result in an immediate modal dialog, and false will add a numbered badge to the accounts icon.
+         *
          * Defaults to false.
          */
-        createIfNone?: boolean;
+        createIfNone?: boolean | AuthenticationGetSessionPresentationOptions;
 
         /**
          * Whether the existing user session preference should be cleared.
@@ -14815,9 +14859,14 @@ export module '@theia/plugin' {
          * If true, a modal dialog will be shown asking the user to sign in again. This is mostly used for scenarios
          * where the token needs to be re minted because it has lost some authorization.
          *
-         * Defaults to false.
+         * If you provide options, you will also see the dialog but with the additional context provided.
+         *
+         * If there are no existing sessions and forceNewSession is true, it will behave identically to
+         * {@link AuthenticationGetSessionOptions.createIfNone createIfNone}.
+         *
+         *  Defaults to false.
          */
-        forceNewSession?: boolean | AuthenticationForceNewSessionOptions;
+        forceNewSession?: boolean | AuthenticationGetSessionPresentationOptions | AuthenticationForceNewSessionOptions;
 
         /**
          * Whether we should show the indication to sign in in the Accounts menu.
@@ -14970,7 +15019,7 @@ export module '@theia/plugin' {
          * @param options The {@link GetSessionOptions getSessionOptions} to use
          * @returns A thenable that resolves to an authentication session
          */
-        export function getSession(providerId: string, scopes: readonly string[], options: AuthenticationGetSessionOptions & { createIfNone: true }): Thenable<AuthenticationSession>;
+        export function getSession(providerId: string, scopes: readonly string[], options: AuthenticationGetSessionOptions & { createIfNone: true | AuthenticationGetSessionPresentationOptions }): Thenable<AuthenticationSession>;
 
         /**
          * Get an authentication session matching the desired scopes. Rejects if a provider with providerId is not
@@ -14985,7 +15034,7 @@ export module '@theia/plugin' {
          * @param options The {@link AuthenticationGetSessionOptions} to use
          * @returns A thenable that resolves to an authentication session
          */
-        export function getSession(providerId: string, scopes: readonly string[], options: AuthenticationGetSessionOptions & { forceNewSession: true | { detail: string } }): Thenable<AuthenticationSession>;
+        export function getSession(providerId: string, scopes: readonly string[], options: AuthenticationGetSessionOptions & { forceNewSession: true | AuthenticationGetSessionPresentationOptions | AuthenticationForceNewSessionOptions }): Thenable<AuthenticationSession>;
 
         /**
          * Get an authentication session matching the desired scopes. Rejects if a provider with providerId is not
@@ -16300,6 +16349,11 @@ export module '@theia/plugin' {
          * The {@link SnippetString snippet} this edit will perform.
          */
         snippet: SnippetString;
+
+        /**
+         * Whether the snippet edit should be applied with existing whitespace preserved.
+         */
+        keepWhitespace?: boolean;
 
         /**
          * Create a new snippet edit.

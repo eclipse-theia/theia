@@ -207,10 +207,11 @@ export class BaseWidget extends Widget implements PreviewableWidget {
         this.toDisposeOnDetach.push(addEventListener(element, type, listener, useCapture));
     }
 
-    protected addKeyListener<K extends keyof HTMLElementEventMap>(
+    protected addKeyListener<K extends keyof HTMLElementEventMap = never>(
         element: HTMLElement,
         keysOrKeyCodes: KeyCode.Predicate | KeysOrKeyCodes,
-        action: (event: KeyboardEvent) => boolean | void | Object, ...additionalEventTypes: K[]): void {
+        action: EventHandler<K | 'keydown'>,
+        ...additionalEventTypes: K[]): void {
         this.toDisposeOnDetach.push(addKeyListener(element, keysOrKeyCodes, action, ...additionalEventTypes));
     }
 
@@ -259,6 +260,8 @@ export function createIconButton(...classNames: string[]): HTMLSpanElement {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type EventListener<K extends keyof HTMLElementEventMap> = (this: HTMLElement, event: HTMLElementEventMap[K]) => any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type EventHandler<K extends keyof HTMLElementEventMap> = (event: HTMLElementEventMap[K]) => any;
 export interface EventListenerObject<K extends keyof HTMLElementEventMap> {
     handleEvent(evt: HTMLElementEventMap[K]): void;
 }
@@ -277,10 +280,12 @@ export function addEventListener<K extends keyof HTMLElementEventMap>(
     );
 }
 
-export function addKeyListener<K extends keyof HTMLElementEventMap>(
+export function addKeyListener<K extends keyof HTMLElementEventMap = never>(
     element: HTMLElement,
     keysOrKeyCodes: KeyCode.Predicate | KeysOrKeyCodes,
-    action: (event: KeyboardEvent) => boolean | void | Object, ...additionalEventTypes: K[]): Disposable {
+    action: EventHandler<K | 'keydown'>,
+    ...additionalEventTypes: K[]): Disposable {
+    type HandledEvent = Parameters<typeof action>[0];
 
     const toDispose = new DisposableCollection();
     const keyCodePredicate = (() => {
@@ -293,7 +298,7 @@ export function addKeyListener<K extends keyof HTMLElementEventMap>(
     toDispose.push(addEventListener(element, 'keydown', e => {
         const kc = KeyCode.createKeyCode(e);
         if (keyCodePredicate(kc)) {
-            const result = action(e);
+            const result = action(e as HandledEvent);
             if (typeof result !== 'boolean' || result) {
                 e.stopPropagation();
                 e.preventDefault();
@@ -302,9 +307,7 @@ export function addKeyListener<K extends keyof HTMLElementEventMap>(
     }));
     for (const type of additionalEventTypes) {
         toDispose.push(addEventListener(element, type, e => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const event = (type as any)['keydown'];
-            const result = action(event);
+            const result = action(e as HandledEvent);
             if (typeof result !== 'boolean' || result) {
                 e.stopPropagation();
                 e.preventDefault();

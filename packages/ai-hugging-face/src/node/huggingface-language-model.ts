@@ -17,7 +17,7 @@
 import {
     LanguageModel,
     LanguageModelRequest,
-    LanguageModelRequestMessage,
+    LanguageModelMessage,
     LanguageModelResponse,
     LanguageModelStreamResponsePart,
     LanguageModelTextResponse,
@@ -27,12 +27,25 @@ import { CancellationToken } from '@theia/core';
 import { HfInference } from '@huggingface/inference';
 
 export const HuggingFaceModelIdentifier = Symbol('HuggingFaceModelIdentifier');
-
-function toHuggingFacePrompt(messages: LanguageModelRequestMessage[]): string {
-    if (messages.length === 1) {
-        return messages[0].query;
+const createMessageContent = (message: LanguageModelMessage): string | undefined => {
+    if (LanguageModelMessage.isTextMessage(message)) {
+        return message.text;
     }
-    return messages.map(message => `${toRoleLabel(message.actor)}: ${message.query}`).join('\n');
+    return undefined;
+};
+
+function toHuggingFacePrompt(messages: LanguageModelMessage[]): string {
+    if (messages.length === 1) {
+        const message = messages[0];
+        return (LanguageModelMessage.isTextMessage(message) && message.text) || '';
+    }
+    return messages.map(message => {
+        const messageContent = createMessageContent(message);
+        if (messageContent === undefined) {
+            return undefined;
+        }
+        return `${toRoleLabel(message.actor)}: ${messageContent}`;
+    }).filter(m => m !== undefined).join('\n');
 }
 
 function toRoleLabel(actor: MessageActor): string {
@@ -64,8 +77,7 @@ export class HuggingFaceModel implements LanguageModel {
         public readonly version?: string,
         public readonly family?: string,
         public readonly maxInputTokens?: number,
-        public readonly maxOutputTokens?: number,
-        public defaultRequestSettings?: Record<string, unknown>
+        public readonly maxOutputTokens?: number
     ) { }
 
     async request(request: LanguageModelRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
@@ -78,11 +90,7 @@ export class HuggingFaceModel implements LanguageModel {
     }
 
     protected getSettings(request: LanguageModelRequest): Record<string, unknown> {
-        const settings = request.settings ? request.settings : this.defaultRequestSettings;
-        if (!settings) {
-            return {};
-        }
-        return settings;
+        return request.settings ?? {};
     }
 
     protected async handleNonStreamingRequest(hfInference: HfInference, request: LanguageModelRequest): Promise<LanguageModelTextResponse> {

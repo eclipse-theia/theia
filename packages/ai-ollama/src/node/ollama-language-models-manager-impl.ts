@@ -43,14 +43,12 @@ export class OllamaLanguageModelsManagerImpl implements OllamaLanguageModelsMana
                     console.warn(`Ollama: model ${modelDescription.id} is not an Ollama model`);
                     continue;
                 }
-                existingModel.defaultRequestSettings = modelDescription.defaultRequestSettings;
             } else {
                 this.languageModelRegistry.addLanguageModels([
                     new OllamaModel(
                         modelDescription.id,
                         modelDescription.model,
                         hostProvider,
-                        modelDescription.defaultRequestSettings
                     )
                 ]);
             }

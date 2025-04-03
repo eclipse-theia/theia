@@ -14,7 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { CommandService, deepClone, Emitter, Event, MessageService } from '@theia/core';
-import { ChatRequest, ChatRequestModel, ChatService, ChatSession } from '@theia/ai-chat';
+import {
+    ChatRequest,
+    ChatRequestModel,
+    ChatService,
+    ChatSession,
+    isActiveSessionChangedEvent,
+    MutableChatModel
+} from '@theia/ai-chat';
 import { BaseWidget, codicon, ExtractableWidget, Message, PanelLayout, PreferenceService, StatefulWidget } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
@@ -33,7 +40,7 @@ export namespace ChatViewWidget {
 export class ChatViewWidget extends BaseWidget implements ExtractableWidget, StatefulWidget {
 
     public static ID = 'chat-view-widget';
-    static LABEL = `${nls.localizeByDefault('Chat')}`;
+    static LABEL = nls.localize('theia/ai/chat/view/label', 'AI Chat');
 
     @inject(ChatService)
     protected chatService: ChatService;
@@ -114,7 +121,10 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
 
     protected initListeners(): void {
         this.toDispose.push(
-            this.chatService.onActiveSessionChanged(event => {
+            this.chatService.onSessionEvent(event => {
+                if (!isActiveSessionChangedEvent(event)) {
+                    return;
+                }
                 const session = event.sessionId ? this.chatService.getSession(event.sessionId) : this.chatService.createSession();
                 if (session) {
                     this.chatSession = session;
@@ -216,5 +226,16 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
 
     addContext(variable: AIVariableResolutionRequest): void {
         this.inputWidget.addContext(variable);
+    }
+
+    setSettings(settings: { [key: string]: unknown }): void {
+        if (this.chatSession && this.chatSession.model) {
+            const model = this.chatSession.model as MutableChatModel;
+            model.setSettings(settings);
+        }
+    }
+
+    getSettings(): { [key: string]: unknown } | undefined {
+        return this.chatSession.model.settings;
     }
 }

@@ -379,11 +379,11 @@ function coerceLocalizations(translations: Record<string, string | LocalizeInfo>
 function localizePackage(value: unknown, translations: PackageTranslation, callback: (key: string, defaultValue: string) => string): unknown {
     if (typeof value === 'string') {
         let result = value;
-        if (value.startsWith('%') && value.endsWith('%')) {
+        if (value.length > 2 && value.startsWith('%') && value.endsWith('%')) {
             const key = value.slice(1, -1);
-            if (translations.translation) {
+            if (translations.translation && key in translations.translation) {
                 result = translations.translation[key];
-            } else if (translations.default) {
+            } else if (translations.default && key in translations.default) {
                 result = callback(key, translations.default[key]);
             }
         }

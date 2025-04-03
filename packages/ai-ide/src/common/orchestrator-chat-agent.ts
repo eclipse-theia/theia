@@ -14,51 +14,22 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { getJsonOfText, getTextOfResponse, LanguageModelRequirement, LanguageModelResponse } from '@theia/ai-core';
-import { PromptTemplate } from '@theia/ai-core/lib/common';
+import {
+    getJsonOfText,
+    getTextOfResponse,
+    LanguageModel,
+    LanguageModelMessage,
+    LanguageModelRequirement,
+    LanguageModelResponse
+} from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
-import { AbstractStreamParsingChatAgent, ChatSessionContext } from '@theia/ai-chat/lib/common/chat-agents';
+import {AbstractStreamParsingChatAgent} from '@theia/ai-chat/lib/common/chat-agents';
 import { MutableChatRequestModel, InformationalChatResponseContentImpl } from '@theia/ai-chat/lib/common/chat-model';
 import { generateUuid, nls } from '@theia/core';
-import { ChatHistoryEntry } from '@theia/ai-chat/lib/common/chat-history-entry';
 
-export const orchestratorTemplate: PromptTemplate = {
-    id: 'orchestrator-system',
-    template: `{{!-- Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
-https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
-# Instructions
-
-Your task is to identify which Chat Agent(s) should best reply a given user's message.
-You consider all messages of the conversation to ensure consistency and avoid agent switches without a clear context change.
-You should select the best Chat Agent based on the name and description of the agents, matching them to the user message.
-
-## Constraints
-
-Your response must be a JSON array containing the id(s) of the selected Chat Agent(s).
-
-* Do not use ids that are not provided in the list below.
-* Do not include any additional information, explanations, or questions for the user.
-* If there is no suitable choice, pick \`Universal\`.
-* If there are multiple good choices, return all of them.
-
-Unless there is a more specific agent available, select \`Universal\`, especially for general programming-related questions.
-You must only use the \`id\` attribute of the agent, never the name.
-
-### Example Results
-
-\`\`\`json
-["Universal"]
-\`\`\`
-
-\`\`\`json
-["AnotherChatAgent", "Universal"]
-\`\`\`
-
-## List of Currently Available Chat Agents
-
-{{chatAgents}}
-`};
+import {orchestratorTemplate} from './orchestrator-prompt-template';
+import {ChatToolRequest} from '@theia/ai-chat/lib/common/chat-tool-request-service';
 
 export const OrchestratorChatAgentId = 'Orchestrator';
 const OrchestratorRequestIdKey = 'orchestatorRequestIdKey';
@@ -80,7 +51,6 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
     (by using AI).The user\'s request will be directly delegated to the selected agent without further confirmation.');
     override iconClass: string = 'codicon codicon-symbol-boolean';
 
-    protected override defaultLogging = false;
     protected override systemPromptId: string = orchestratorTemplate.id;
 
     private fallBackChatAgentId = 'Universal';
@@ -93,31 +63,59 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
         // We generate a dedicated ID for recording the orchestrator request/response, as we will forward the original request to another agent
         const orchestratorRequestId = generateUuid();
         request.addData(OrchestratorRequestIdKey, orchestratorRequestId);
-        const messages = await this.getMessages(request.session);
-        const systemMessage = (await this.getSystemMessageDescription({ model: request.session, request } satisfies ChatSessionContext))?.text;
-        this.recordingService.recordRequest(
-            ChatHistoryEntry.fromRequest(this.id, request, {
-                requestId: orchestratorRequestId,
-                messages,
-                systemMessage
-            })
-        );
         return super.invoke(request);
     }
 
-    protected override async addContentsToResponse(response: LanguageModelResponse, request: MutableChatRequestModel): Promise<void> {
-        let agentIds: string[] = [];
-        const responseText = await getTextOfResponse(response);
-        // We use the previously generated, dedicated ID to log the orchestrator response before we forward the original request
-        const orchestratorRequestId = request.getDataByKey(OrchestratorRequestIdKey);
-        if (typeof orchestratorRequestId === 'string') {
-            this.recordingService.recordResponse({
+    // override sendLlmRequest to modify the data sent to the recording service
+    // should no longer be needed after https://github.com/eclipse-theia/theia/issues/15221
+    protected override async sendLlmRequest(
+        request: MutableChatRequestModel,
+        messages: LanguageModelMessage[],
+        toolRequests: ChatToolRequest[],
+        languageModel: LanguageModel
+    ): Promise<LanguageModelResponse> {
+        const agentSettings = this.getLlmSettings();
+        const settings = {...agentSettings, ...request.session.settings};
+        const tools = toolRequests.length > 0 ? toolRequests : undefined;
+        this.recordingService.recordRequest({
+            agentId: this.id,
+            sessionId: request.session.id,
+            requestId: request.getDataByKey<string>(OrchestratorRequestIdKey) ?? request.id,
+            request: messages
+        });
+        return this.languageModelService.sendRequest(
+            languageModel,
+            {
+                messages,
+                tools,
+                settings,
                 agentId: this.id,
                 sessionId: request.session.id,
-                requestId: orchestratorRequestId,
-                response: responseText,
-            });
-        }
+                requestId: request.id,
+                cancellationToken: request.response.cancellationToken
+            }
+        );
+    }
+
+    // override onResponseComplete to not send data to the communication service on completion
+    // should no longer be needed after https://github.com/eclipse-theia/theia/issues/15221
+    protected override async onResponseComplete(request: MutableChatRequestModel): Promise<void> {
+        return request.response.complete();
+    }
+
+    protected override async addContentsToResponse(response: LanguageModelResponse, request: MutableChatRequestModel): Promise<void> {
+        const responseText = await getTextOfResponse(response);
+
+        // record orchestrator response
+        this.recordingService.recordResponse({
+            agentId: this.id,
+            sessionId: request.session.id,
+            requestId: request.getDataByKey<string>(OrchestratorRequestIdKey) ?? request.id,
+            response: [{type: 'text', actor: 'ai', text: responseText}]
+        });
+
+        let agentIds: string[] = [];
+
         try {
             const jsonResponse = await getJsonOfText(responseText);
             if (Array.isArray(jsonResponse)) {

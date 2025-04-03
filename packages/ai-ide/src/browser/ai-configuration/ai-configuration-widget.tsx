@@ -22,12 +22,13 @@ import { AIAgentConfigurationWidget } from './agent-configuration-widget';
 import { AIVariableConfigurationWidget } from './variable-configuration-widget';
 import { AIConfigurationSelectionService } from './ai-configuration-service';
 import { nls } from '@theia/core';
+import {AIMCPConfigurationWidget} from './mcp-configuration-widget';
 
 @injectable()
 export class AIConfigurationContainerWidget extends BaseWidget {
 
     static readonly ID = 'ai-configuration';
-    static readonly LABEL = nls.localize('theia/ai/core/aiConfiguration/label', '✨ AI Configuration [Alpha]');
+    static readonly LABEL = nls.localize('theia/ai/core/aiConfiguration/label', 'AI Configuration [Alpha]');
     protected dockpanel: DockPanel;
 
     @inject(TheiaDockPanel.Factory)
@@ -39,6 +40,7 @@ export class AIConfigurationContainerWidget extends BaseWidget {
 
     protected agentsWidget: AIAgentConfigurationWidget;
     protected variablesWidget: AIVariableConfigurationWidget;
+    protected mcpWidget: AIMCPConfigurationWidget;
 
     @postConstruct()
     protected init(): void {
@@ -63,8 +65,10 @@ export class AIConfigurationContainerWidget extends BaseWidget {
 
         this.agentsWidget = await this.widgetManager.getOrCreateWidget(AIAgentConfigurationWidget.ID);
         this.variablesWidget = await this.widgetManager.getOrCreateWidget(AIVariableConfigurationWidget.ID);
+        this.mcpWidget = await this.widgetManager.getOrCreateWidget(AIMCPConfigurationWidget.ID);
         this.dockpanel.addWidget(this.agentsWidget);
         this.dockpanel.addWidget(this.variablesWidget);
+        this.dockpanel.addWidget(this.mcpWidget);
 
         this.update();
     }
@@ -75,6 +79,8 @@ export class AIConfigurationContainerWidget extends BaseWidget {
                 this.dockpanel.activateWidget(this.agentsWidget);
             } else if (widgetId === AIVariableConfigurationWidget.ID) {
                 this.dockpanel.activateWidget(this.variablesWidget);
+            } else if (widgetId === AIMCPConfigurationWidget.ID) {
+                this.dockpanel.activateWidget(this.mcpWidget);
             }
         });
     }

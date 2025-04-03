@@ -137,12 +137,20 @@ describe('ChatRequestParserImpl', () => {
         const testTool1: ToolRequest = {
             id: 'testTool1',
             name: 'Test Tool 1',
-            handler: async () => undefined
+            handler: async () => undefined,
+            parameters: {
+                type: 'object',
+                properties: {}
+            },
         };
         const testTool2: ToolRequest = {
             id: 'testTool2',
             name: 'Test Tool 2',
-            handler: async () => undefined
+            handler: async () => undefined,
+            parameters: {
+                type: 'object',
+                properties: {}
+            },
         };
         // Configure the tool registry to return our test tools
         toolInvocationRegistry.getFunction.withArgs(testTool1.id).returns(testTool1);

@@ -33,7 +33,7 @@ export const AICodeCompletionPreferencesSchema: PreferenceSchema = {
                 'Automatically trigger AI completions inline within any (Monaco) editor while editing.\
             \n\
             Alternatively, you can manually trigger the code via the command "Trigger Inline Suggestion" or the default shortcut "Ctrl+Alt+Space".'),
-            default: true
+            default: false
         },
         [PREF_AI_INLINE_COMPLETION_EXCLUDED_EXTENSIONS]: {
             title: nls.localize('theia/ai/completion/excludedFileExts/title', 'Excluded File Extensions'),

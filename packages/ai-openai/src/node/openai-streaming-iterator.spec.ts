@@ -19,7 +19,7 @@ import * as sinon from 'sinon';
 import { StreamingAsyncIterator } from './openai-streaming-iterator';
 import { ChatCompletionStream } from 'openai/lib/ChatCompletionStream';
 import { CancellationTokenSource, CancellationError } from '@theia/core';
-import { LanguageModelStreamResponsePart } from '@theia/ai-core';
+import {LanguageModelStreamResponsePart, isTextResponsePart, isToolCallResponsePart} from '@theia/ai-core';
 import { EventEmitter } from 'events';
 
 describe('StreamingAsyncIterator', () => {
@@ -88,7 +88,7 @@ describe('StreamingAsyncIterator', () => {
             if (done) {
                 break;
             }
-            results.push(value.content ?? '');
+            results.push((isTextResponsePart(value) && value.content) || '');
         }
 
         expect(results).to.deep.equal(['A', 'B', 'C']);
@@ -126,7 +126,7 @@ describe('StreamingAsyncIterator', () => {
             if (done) {
                 break;
             }
-            results.push(value.content ?? '');
+            results.push((isTextResponsePart(value) && value.content) || '');
         }
 
         expect(results).to.deep.equal(['EndTest1', 'EndTest2']);
@@ -243,7 +243,7 @@ describe('StreamingAsyncIterator', () => {
         }
 
         expect(results).to.have.lengthOf(1);
-        expect(results[0].tool_calls).to.deep.equal([
+        expect(isToolCallResponsePart(results[0]) && results[0].tool_calls).to.deep.equal([
             {
                 id: 'tool-123',
                 finished: true,

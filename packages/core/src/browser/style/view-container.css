@@ -73,6 +73,7 @@
   z-index: 10;
   color: var(--theia-sideBarSectionHeader-foreground);
   font-weight: 700;
+  overflow: hidden;
 }
 
 .lm-Widget > .theia-view-container-part-header {

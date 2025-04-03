@@ -135,7 +135,13 @@ export class AIAgentConfigurationWidget extends ReactWidget {
         const functions = Array.from(new Set([...parsedPromptParts.functions, ...agent.functions]));
 
         return <div key={agent.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-            <div className='settings-section-title settings-section-category-title' style={{ paddingLeft: 0, paddingBottom: 10 }}>{this.renderAgentName(agent)}</div>
+            <div className='settings-section-title settings-section-category-title'
+                 style={{paddingLeft: 0, paddingBottom: 10}}>
+                {this.renderAgentName(agent)}
+                <pre style={{fontSize: 'small', margin: 0}}>
+                    Id: {agent.id}
+                </pre>
+            </div>
             <div style={{ paddingBottom: 10 }}>{agent.description}</div>
             <div style={{ paddingBottom: 10 }}>
                 <label>

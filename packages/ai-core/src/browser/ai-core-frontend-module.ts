@@ -63,6 +63,8 @@ import { AICommandHandlerFactory } from './ai-command-handler-factory';
 import { AISettingsService } from '../common/settings-service';
 import { AiCoreCommandContribution } from './ai-core-command-contribution';
 import { PromptVariableContribution } from '../common/prompt-variable-contribution';
+import {LanguageModelService} from '../common/language-model-service';
+import {FrontendLanguageModelServiceImpl} from './frontend-language-model-service';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, LanguageModelProvider);
@@ -140,4 +142,6 @@ export default new ContainerModule(bind => {
 
     bind(AiCoreCommandContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(AiCoreCommandContribution);
+    bind(FrontendLanguageModelServiceImpl).toSelf().inSingletonScope();
+    bind(LanguageModelService).toService(FrontendLanguageModelServiceImpl);
 });

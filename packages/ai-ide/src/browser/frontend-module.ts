@@ -16,11 +16,16 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { ChatAgent, DefaultChatAgentId, FallbackChatAgentId } from '@theia/ai-chat/lib/common';
-import { Agent, AIVariableContribution, ToolProvider } from '@theia/ai-core/lib/common';
+import {Agent, AIVariableContribution, bindToolProvider} from '@theia/ai-core/lib/common';
 import { ArchitectAgent } from './architect-agent';
 import { CoderAgent } from './coder-agent';
 import { FileContentFunction, FileDiagonsticProvider, GetWorkspaceDirectoryStructure, GetWorkspaceFileList, WorkspaceFunctionScope } from './workspace-functions';
-import { PreferenceContribution, WidgetFactory, bindViewContribution } from '@theia/core/lib/browser';
+import {
+    FrontendApplicationContribution,
+    PreferenceContribution,
+    WidgetFactory,
+    bindViewContribution
+} from '@theia/core/lib/browser';
 import { WorkspacePreferencesSchema } from './workspace-preferences';
 import {
     ReplaceContentInFileFunctionHelper,
@@ -40,6 +45,10 @@ import { AIVariableConfigurationWidget } from './ai-configuration/variable-confi
 import { ContextFilesVariableContribution } from '../common/context-files-variable';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import {AiConfigurationPreferences} from './ai-configuration/ai-configuration-preferences';
+import {TemplatePreferenceContribution} from './template-preference-contribution';
+import {AIMCPConfigurationWidget} from './ai-configuration/mcp-configuration-widget';
+import {ChatWelcomeMessageProvider} from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
+import {IdeChatWelcomeMessageProvider} from './ide-chat-welcome-message-provider';
 
 export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: WorkspacePreferencesSchema });
@@ -67,17 +76,19 @@ export default new ContainerModule(bind => {
     bind(DefaultChatAgentId).toConstantValue({ id: OrchestratorChatAgentId });
     bind(FallbackChatAgentId).toConstantValue({ id: UniversalChatAgentId });
 
-    bind(ToolProvider).to(GetWorkspaceFileList);
-    bind(ToolProvider).to(FileContentFunction);
-    bind(ToolProvider).to(GetWorkspaceDirectoryStructure);
-    bind(ToolProvider).to(FileDiagonsticProvider);
+    bind(ChatWelcomeMessageProvider).to(IdeChatWelcomeMessageProvider);
+
+    bindToolProvider(GetWorkspaceFileList, bind);
+    bindToolProvider(FileContentFunction, bind);
+    bindToolProvider(GetWorkspaceDirectoryStructure, bind);
+    bindToolProvider(FileDiagonsticProvider, bind);
     bind(WorkspaceFunctionScope).toSelf().inSingletonScope();
 
-    bind(ToolProvider).to(WriteChangeToFileProvider);
+    bindToolProvider(WriteChangeToFileProvider, bind);
     bind(ReplaceContentInFileFunctionHelper).toSelf().inSingletonScope();
-    bind(ToolProvider).to(ReplaceContentInFileProvider);
-    bind(ToolProvider).to(ListChatContext);
-    bind(ToolProvider).to(ResolveChatContext);
+    bindToolProvider(ReplaceContentInFileProvider, bind);
+    bindToolProvider(ListChatContext, bind);
+    bindToolProvider(ResolveChatContext, bind);
     bind(AIConfigurationSelectionService).toSelf().inSingletonScope();
     bind(AIConfigurationContainerWidget).toSelf();
     bind(WidgetFactory)
@@ -106,8 +117,18 @@ export default new ContainerModule(bind => {
         }))
         .inSingletonScope();
 
-    bind(ToolProvider).to(SimpleReplaceContentInFileProvider);
-    bind(ToolProvider).to(AddFileToChatContext);
+    bindToolProvider(SimpleReplaceContentInFileProvider, bind);
+    bindToolProvider(AddFileToChatContext, bind);
     bind(AIVariableContribution).to(ContextFilesVariableContribution).inSingletonScope();
     bind(PreferenceContribution).toConstantValue({schema: AiConfigurationPreferences});
+
+    bind(FrontendApplicationContribution).to(TemplatePreferenceContribution);
+
+    bind(AIMCPConfigurationWidget).toSelf();
+    bind(WidgetFactory)
+        .toDynamicValue(ctx => ({
+            id: AIMCPConfigurationWidget.ID,
+            createWidget: () => ctx.container.get(AIMCPConfigurationWidget)
+        }))
+        .inSingletonScope();
 });

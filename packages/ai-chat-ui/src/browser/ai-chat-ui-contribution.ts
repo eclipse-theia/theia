@@ -24,6 +24,8 @@ import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/li
 import { ChatViewWidget } from './chat-view-widget';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { SecondaryWindowHandler } from '@theia/core/lib/browser/secondary-window-handler';
+import {formatDistance} from 'date-fns';
+import * as locales from 'date-fns/locale';
 import { AI_SHOW_SETTINGS_COMMAND } from '@theia/ai-core/lib/browser';
 import { OPEN_AI_HISTORY_VIEW } from '@theia/ai-history/lib/browser/ai-history-contribution';
 
@@ -37,6 +39,10 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
     @inject(QuickInputService)
     protected readonly quickInputService: QuickInputService;
 
+    protected static readonly RENAME_CHAT_BUTTON: QuickInputButton = {
+        iconClass: 'codicon-edit',
+        tooltip: nls.localize('theia/ai/chat-ui/renameChat', 'Rename Chat'),
+    };
     protected static readonly REMOVE_CHAT_BUTTON: QuickInputButton = {
         iconClass: 'codicon-remove-close',
         tooltip: nls.localize('theia/ai/chat-ui/removeChat', 'Remove Chat'),
@@ -135,11 +141,27 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
 
     protected askForChatSession(): Promise<QuickPickItem | undefined> {
         const getItems = () =>
-            this.chatService.getSessions().filter(session => !session.isActive).map(session => <QuickPickItem>({
-                label: session.title ?? nls.localizeByDefault('New Chat'),
-                id: session.id,
-                buttons: [AIChatContribution.REMOVE_CHAT_BUTTON]
-            })).reverse();
+            this.chatService.getSessions()
+                .filter(session => !session.isActive && session.title)
+                .sort((a, b) => {
+                    if (!a.lastInteraction) {
+                        return 1;
+                    }
+                    if (!b.lastInteraction) {
+                        return -1;
+                    }
+                    return b.lastInteraction.getTime() - a.lastInteraction.getTime();
+                })
+                .map(session => <QuickPickItem>({
+                    label: session.title,
+                    description: session.lastInteraction ? formatDistance(session.lastInteraction, new Date(), {
+                        addSuffix: false,
+                        locale: getDateFnsLocale()
+                    }) : undefined,
+                    detail: session.model.getRequests().at(0)?.request.text,
+                    id: session.id,
+                    buttons: [AIChatContribution.RENAME_CHAT_BUTTON, AIChatContribution.REMOVE_CHAT_BUTTON]
+                }));
 
         const defer = new Deferred<QuickPickItem | undefined>();
         const quickPick = this.quickInputService.createQuickPick();
@@ -148,10 +170,24 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         quickPick.items = getItems();
 
         quickPick.onDidTriggerItemButton(async context => {
-            this.chatService.deleteSession(context.item.id!);
-            quickPick.items = getItems();
-            if (this.chatService.getSessions().length <= 1) {
+            if (context.button === AIChatContribution.RENAME_CHAT_BUTTON) {
                 quickPick.hide();
+                this.quickInputService.input({
+                    placeHolder: nls.localize('theia/ai/chat-ui/enterChatName', 'Enter chat name')
+                }).then(name => {
+                    if (name && name.length > 0) {
+                        const session = this.chatService.getSession(context.item.id!);
+                        if (session) {
+                            session.title = name;
+                        }
+                    }
+                });
+            } else if (context.button === AIChatContribution.REMOVE_CHAT_BUTTON) {
+                this.chatService.deleteSession(context.item.id!);
+                quickPick.items = getItems();
+                if (this.chatService.getSessions().length <= 1) {
+                    quickPick.hide();
+                }
             }
         });
 
@@ -182,4 +218,9 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
     canExtractChatView(chatView: ChatViewWidget): boolean {
         return !chatView.secondaryWindow;
     }
+}
+
+function getDateFnsLocale(): locales.Locale {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return nls.locale ? (locales as any)[nls.locale] ?? locales.enUS : locales.enUS;
 }

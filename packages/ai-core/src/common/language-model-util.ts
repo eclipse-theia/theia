@@ -14,7 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { isLanguageModelParsedResponse, isLanguageModelStreamResponse, isLanguageModelTextResponse, LanguageModelResponse, ToolRequest } from './language-model';
+import {
+    isLanguageModelParsedResponse,
+    isLanguageModelStreamResponse,
+    isLanguageModelTextResponse,
+    isTextResponsePart,
+    LanguageModelResponse,
+    ToolRequest
+} from './language-model';
 
 /**
  * Retrieves the text content from a `LanguageModelResponse` object.
@@ -32,7 +39,7 @@ export const getTextOfResponse = async (response: LanguageModelResponse): Promis
     } else if (isLanguageModelStreamResponse(response)) {
         let result = '';
         for await (const chunk of response.stream) {
-            result += chunk.content ?? '';
+            result += (isTextResponsePart(chunk) && chunk.content) ? chunk.content : '';
         }
         return result;
     } else if (isLanguageModelParsedResponse(response)) {

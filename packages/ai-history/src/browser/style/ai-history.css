@@ -4,7 +4,6 @@
     align-items: center;
 }
 
-
 .agent-history-widget .theia-select-component {
     margin: 10px 0;
     width: 80%;
@@ -42,38 +41,91 @@
 .theia-card-content h2 {
     font-size: var(--theia-ui-font-size2);
 }
+
 .theia-card-content h3 {
     font-size: var(--theia-ui-font-size1);
     font-weight: bold;
 }
 
-.theia-card-content .theia-card-context h2 {
+.theia-card-content pre {
+    border-radius: 4px;
+    border: 1px solid var(--theia-sideBarSectionHeader-border);
+    background-color: var(--theia-terminal-background);
+    overflow: auto;
+    padding: 10px;
+    margin: 5px 0;
+}
+
+/* Common styles for request and response sections */
+.theia-card-request details,
+.theia-card-response details {
+    margin: 10px 0;
+    border: 1px solid var(--theia-editorWidget-border);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.theia-card-request summary,
+.theia-card-response summary {
+    padding: 10px;
+    background-color: var(--theia-editorWidget-background);
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.theia-card-request summary:hover,
+.theia-card-response summary:hover {
+    background-color: var(--theia-list-hoverBackground);
+}
+
+.theia-card-request summary h3,
+.theia-card-response summary h3 {
     display: inline;
-}
-.theia-card-content .theia-card-context ul {
-    padding-inline-start: 20px;
-}
-.theia-card-content .theia-card-context pre {
-    overflow: scroll;
+    margin: 0;
 }
 
-.theia-card-content p {
-    margin: var(--theia-ui-padding) 0;
+.theia-card-request details > div,
+.theia-card-response details > div {
+    padding: 0 10px 10px 10px;
+    border-top: 1px solid var(--theia-editorWidget-border);
+    background-color: var(--theia-editor-background);
+    position: relative;
 }
 
-.theia-card-request, .theia-card-response {
-    margin-bottom: 10px;
+.theia-card-request h4,
+.theia-card-response h4 {
+    margin-top: 12px;
+    color: var(--theia-editor-foreground);
+    font-size: var(--theia-ui-font-size1);
+    border-bottom: 1px solid var(--theia-sideBarSectionHeader-border);
+    padding-bottom: 5px;
+}
+
+.theia-card-request ul,
+.theia-card-response ul {
+    list-style: none;
+    padding-inline-start: 0;
 }
 
 .theia-card-request pre,
 .theia-card-response pre {
-    font-family: monospace;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    background-color: var(--theia-sideBar-background);
-    margin: var(--theia-ui-padding) 0;
+    background-color: var(--theia-editor-background);
 }
 
+.theia-card-request,
+.theia-card-response {
+    margin-bottom: 10px;
+}
+
+/* Message lists styling */
+.theia-card-request-messages-list li,
+.theia-card-response-messages-list li {
+    margin-bottom: 15px;
+    position: relative;
+    padding-left: 0;
+}
+
+/* Meta information styling */
 .theia-card-request-id,
 .theia-card-session-id,
 .theia-card-timestamp,

@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
+import {inject, injectable, named, postConstruct, interfaces} from '@theia/core/shared/inversify';
 import { ToolRequest } from './language-model';
 import { ContributionProvider } from '@theia/core';
 
@@ -67,6 +67,12 @@ export interface ToolInvocationRegistry {
 export const ToolProvider = Symbol('ToolProvider');
 export interface ToolProvider {
     getTool(): ToolRequest;
+}
+
+/** Binds the identifier to self in singleton scope and then binds `ToolProvider` to that service. */
+export function bindToolProvider(identifier: interfaces.Newable<ToolProvider>, bind: interfaces.Bind): void {
+    bind(identifier).toSelf().inSingletonScope();
+    bind(ToolProvider).toService(identifier);
 }
 
 @injectable()
@@ -122,4 +128,3 @@ export class ToolInvocationRegistryImpl implements ToolInvocationRegistry {
         return tools;
     }
 }
-

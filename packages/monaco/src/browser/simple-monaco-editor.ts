@@ -89,7 +89,7 @@ export class SimpleMonacoEditor extends MonacoEditorServices implements Disposab
         const combinedOptions = {
             ...options,
             lightbulb: { enabled: ShowLightbulbIconMode.On },
-            fixedOverflowWidgets: false,
+            fixedOverflowWidgets: true,
             automaticLayout: true,
             scrollbar: {
                 useShadows: false,

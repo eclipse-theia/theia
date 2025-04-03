@@ -20,7 +20,7 @@ import { VirtualElement, h, VirtualDOM, ElementInlineStyle } from '@lumino/virtu
 import { Disposable, DisposableCollection, MenuPath, notEmpty, SelectionService, CommandService, nls, ArrayUtils } from '../../common';
 import { ContextMenuRenderer } from '../context-menu-renderer';
 import { Signal, Slot } from '@lumino/signaling';
-import { Message, MessageLoop } from '@lumino/messaging';
+import {Message} from '@lumino/messaging';
 import { ArrayExt } from '@lumino/algorithm';
 import { ElementExt } from '@lumino/domutils';
 import { TabBarToolbarRegistry, TabBarToolbar } from './tab-bar-toolbar';
@@ -697,9 +697,8 @@ export interface TabBarPrivateMethods {
  */
 export class ScrollableTabBar extends TabBar<Widget> {
 
-    protected scrollBar?: PerfectScrollbar;
+    protected scrollBar: PerfectScrollbar | undefined;
 
-    protected scrollBarFactory: () => PerfectScrollbar;
     protected pendingReveal?: Promise<void>;
     protected isMouseOver = false;
     protected needsRecompute = false;
@@ -712,11 +711,27 @@ export class ScrollableTabBar extends TabBar<Widget> {
     protected openTabsContainer: HTMLDivElement;
     protected openTabsRoot: Root;
 
-    constructor(options?: TabBar.IOptions<Widget> & PerfectScrollbar.Options, dynamicTabOptions?: ScrollableTabBar.Options) {
+    constructor(options?: TabBar.IOptions<Widget>, protected readonly scrollbarOptions?: PerfectScrollbar.Options, dynamicTabOptions?: ScrollableTabBar.Options) {
         super(options);
-        this.scrollBarFactory = () => new PerfectScrollbar(this.scrollbarHost, options);
         this._dynamicTabOptions = dynamicTabOptions;
-        this.rewireDOM();
+        this.topRow = document.createElement('div');
+        this.topRow.classList.add('theia-tabBar-tab-row');
+        this.node.appendChild(this.topRow);
+
+        const contentNode = this.contentNode;
+        if (!contentNode) {
+            throw new Error('tab bar does not have the content node.');
+        }
+        this.node.removeChild(contentNode);
+        this.contentContainer = document.createElement('div');
+        this.contentContainer.classList.add(ScrollableTabBar.Styles.TAB_BAR_CONTENT_CONTAINER);
+        this.contentContainer.appendChild(contentNode);
+        this.topRow.appendChild(this.contentContainer);
+
+        this.openTabsContainer = document.createElement('div');
+        this.openTabsContainer.classList.add('theia-tabBar-open-tabs');
+        this.openTabsRoot = createRoot(this.openTabsContainer);
+        this.topRow.appendChild(this.openTabsContainer);
     }
 
     set dynamicTabOptions(options: ScrollableTabBar.Options | undefined) {
@@ -753,39 +768,7 @@ export class ScrollableTabBar extends TabBar<Widget> {
         (this as unknown as TabBarPrivateMethods)._releaseMouse();
     }
 
-    /**
-     * Restructures the DOM defined in Lumino.
-     *
-     * By default the tabs (`li`) are contained in the `this.contentNode` (`ul`) which is wrapped in a `div` (`this.node`).
-     * Instead of this structure, we add a container for the `this.contentNode` and for the toolbar.
-     * The scrollbar will only work for the `ul` part but it does not affect the toolbar, so it can be on the right hand-side.
-     */
-    protected rewireDOM(): void {
-        const contentNode = this.node.getElementsByClassName(ScrollableTabBar.Styles.TAB_BAR_CONTENT)[0];
-        if (!contentNode) {
-            throw new Error(`'this.node' does not have the content as a direct child with class name '${ScrollableTabBar.Styles.TAB_BAR_CONTENT}'.`);
-        }
-        this.node.removeChild(contentNode);
-        this.contentContainer = document.createElement('div');
-        this.contentContainer.classList.add(ScrollableTabBar.Styles.TAB_BAR_CONTENT_CONTAINER);
-        this.contentContainer.appendChild(contentNode);
-
-        this.topRow = document.createElement('div');
-        this.topRow.classList.add('theia-tabBar-tab-row');
-        this.topRow.appendChild(this.contentContainer);
-
-        this.openTabsContainer = document.createElement('div');
-        this.openTabsContainer.classList.add('theia-tabBar-open-tabs');
-        this.openTabsRoot = createRoot(this.openTabsContainer);
-        this.topRow.appendChild(this.openTabsContainer);
-
-        this.node.appendChild(this.topRow);
-    }
-
     protected override onAfterAttach(msg: Message): void {
-        if (!this.scrollBar) {
-            this.scrollBar = this.scrollBarFactory();
-        }
         this.node.addEventListener('mouseenter', () => { this.isMouseOver = true; });
         this.node.addEventListener('mouseleave', () => {
             this.isMouseOver = false;
@@ -795,14 +778,12 @@ export class ScrollableTabBar extends TabBar<Widget> {
         });
 
         super.onAfterAttach(msg);
+        this.scrollBar = new PerfectScrollbar(this.contentContainer, this.scrollbarOptions);
     }
 
     protected override onBeforeDetach(msg: Message): void {
         super.onBeforeDetach(msg);
-        if (this.scrollBar) {
-            this.scrollBar.destroy();
-            this.scrollBar = undefined;
-        }
+        this.scrollBar?.destroy();
     }
 
     protected override onUpdateRequest(msg: Message): void {
@@ -826,7 +807,7 @@ export class ScrollableTabBar extends TabBar<Widget> {
             } else {
                 this.needsRecompute = false;
                 if (this.orientation === 'horizontal') {
-                    let availableWidth = this.scrollbarHost.clientWidth;
+                    let availableWidth = this.contentNode.clientWidth;
                     let effectiveWidth = availableWidth;
                     if (!this.openTabsContainer.classList.contains('lm-mod-hidden')) {
                         availableWidth += this.openTabsContainer.getBoundingClientRect().width;
@@ -890,7 +871,7 @@ export class ScrollableTabBar extends TabBar<Widget> {
             window.requestAnimationFrame(() => {
                 const tab = this.contentNode.children[index] as HTMLElement;
                 if (tab && this.isVisible) {
-                    const parent = this.scrollbarHost;
+                    const parent = this.contentNode;
                     if (this.orientation === 'horizontal') {
                         const scroll = parent.scrollLeft;
                         const left = tab.offsetLeft;
@@ -924,25 +905,6 @@ export class ScrollableTabBar extends TabBar<Widget> {
         this.pendingReveal = result;
         return result;
     }
-
-    /**
-     * Overrides the `contentNode` property getter in LuminoJS' TabBar.
-     */
-    // @ts-expect-error TS2611 `TabBar<T>.contentNode` is declared as `readonly contentNode` but is implemented as a getter.
-    get contentNode(): HTMLUListElement {
-        return this.node.getElementsByClassName(ToolbarAwareTabBar.Styles.TAB_BAR_CONTENT)[0] as HTMLUListElement;
-    }
-
-    /**
-     * Overrides the scrollable host from the parent class.
-     */
-    protected get scrollbarHost(): HTMLElement {
-        return this.tabBarContainer;
-    }
-
-    protected get tabBarContainer(): HTMLElement {
-        return this.node.getElementsByClassName(ToolbarAwareTabBar.Styles.TAB_BAR_CONTENT_CONTAINER)[0] as HTMLElement;
-    }
 }
 
 export namespace ScrollableTabBar {
@@ -953,7 +915,6 @@ export namespace ScrollableTabBar {
     }
     export namespace Styles {
 
-        export const TAB_BAR_CONTENT = 'lm-TabBar-content';
         export const TAB_BAR_CONTENT_CONTAINER = 'lm-TabBar-content-container';
 
     }
@@ -978,30 +939,52 @@ export class ToolbarAwareTabBar extends ScrollableTabBar {
     protected toolbar: TabBarToolbar | undefined;
     protected breadcrumbsContainer: HTMLElement;
     protected readonly breadcrumbsRenderer: BreadcrumbsRenderer;
+    protected dockPanel: TheiaDockPanel;
 
     constructor(
         protected readonly tabBarToolbarRegistry: TabBarToolbarRegistry,
         protected readonly tabBarToolbarFactory: () => TabBarToolbar,
         protected readonly breadcrumbsRendererFactory: BreadcrumbsRendererFactory,
-        options?: TabBar.IOptions<Widget> & PerfectScrollbar.Options,
+        options?: TabBar.IOptions<Widget>,
+        scrollbarOptions?: PerfectScrollbar.Options,
         dynamicTabOptions?: ScrollableTabBar.Options
     ) {
-        super(options, dynamicTabOptions);
+        super(options, scrollbarOptions, dynamicTabOptions);
+
         this.breadcrumbsRenderer = this.breadcrumbsRendererFactory();
-        this.addBreadcrumbs();
+        this.breadcrumbsContainer = document.createElement('div');
+        this.breadcrumbsContainer.classList.add('theia-tabBar-breadcrumb-row');
+        this.breadcrumbsContainer.appendChild(this.breadcrumbsRenderer.host);
+        this.node.appendChild(this.breadcrumbsContainer);
+
         this.toolbar = this.tabBarToolbarFactory();
         this.toDispose.push(this.tabBarToolbarRegistry.onDidChange(() => this.update()));
         this.toDispose.push(this.breadcrumbsRenderer);
+
+        if (!this.breadcrumbsRenderer.active) {
+            this.breadcrumbsContainer.style.setProperty('display', 'none');
+        } else {
+            this.node.classList.add('theia-tabBar-multirow');
+        }
         this.toDispose.push(this.breadcrumbsRenderer.onDidChangeActiveState(active => {
-            this.node.classList.toggle('theia-tabBar-multirow', active);
-            if (this.parent) {
-                MessageLoop.sendMessage(this.parent, new Message('fit-request'));
+            if (active) {
+                this.breadcrumbsContainer.style.removeProperty('display');
+                this.node.classList.add('theia-tabBar-multirow');
+            } else {
+                this.breadcrumbsContainer.style.setProperty('display', 'none');
+                this.node.classList.remove('theia-tabBar-multirow');
+            }
+            if (this.dockPanel) {
+                this.dockPanel.fit();
             }
         }));
-        this.node.classList.toggle('theia-tabBar-multirow', this.breadcrumbsRenderer.active);
         const handler = () => this.updateBreadcrumbs();
         this.currentChanged.connect(handler);
         this.toDispose.push(Disposable.create(() => this.currentChanged.disconnect(handler)));
+    }
+
+    setDockPanel(panel: TheiaDockPanel): void {
+        this.dockPanel = panel;
     }
 
     protected async updateBreadcrumbs(): Promise<void> {
@@ -1061,20 +1044,6 @@ export class ToolbarAwareTabBar extends ScrollableTabBar {
 
     protected isOver(event: Event, element: Element): boolean {
         return element && event.target instanceof Element && element.contains(event.target);
-    }
-
-    /**
-     * Restructures the DOM defined in Lumino.
-     *
-     * By default the tabs (`li`) are contained in the `this.contentNode` (`ul`) which is wrapped in a `div` (`this.node`).
-     * Instead of this structure, we add a container for the `this.contentNode` and for the toolbar.
-     * The scrollbar will only work for the `ul` part but it does not affect the toolbar, so it can be on the right hand-side.
-     */
-    protected addBreadcrumbs(): void {
-        this.breadcrumbsContainer = document.createElement('div');
-        this.breadcrumbsContainer.classList.add('theia-tabBar-breadcrumb-row');
-        this.breadcrumbsContainer.appendChild(this.breadcrumbsRenderer.host);
-        this.node.appendChild(this.breadcrumbsContainer);
     }
 }
 
@@ -1256,7 +1225,7 @@ export class SideTabBar extends ScrollableTabBar {
                 return;
             }
 
-            if ((newOverflowingTabs.length !== this.tabsOverflowData?.titles.length ?? 0) ||
+            if ((newOverflowingTabs.length !== (this.tabsOverflowData?.titles.length ?? 0)) ||
                 newOverflowingTabs.find((newTitle, i) => newTitle !== this.tabsOverflowData?.titles[i]) !== undefined) {
                 this.tabsOverflowData = { titles: newOverflowingTabs, startIndex };
                 this.tabsOverflowChanged.emit(this.tabsOverflowData);
