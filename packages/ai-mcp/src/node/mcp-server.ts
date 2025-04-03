@@ -19,17 +19,8 @@ import {Client} from '@modelcontextprotocol/sdk/client/index.js';
 
 export type TransportType = 'stdio' | 'sse';
 
-export interface MCPServerConfig {
-    name: string;
-    command?: string;
-    args?: string[];
-    env?: { [key: string]: string };
-    transportType?: TransportType;
-    sseUrl?: string;
-}
-
 export class MCPServer {
-    private name: string;
+    private readonly name: string;
     private command: string;
     private args?: string[];
     private client: Client;
@@ -149,5 +140,14 @@ export class MCPServer {
         console.log(`Stopping MCP server "${this.name}"`);
         this.client.close();
         this.started = false;
+    }
+
+    listResources(): ReturnType<Client['listResources']> {
+        return this.client.listResources();
+    }
+
+    readResource(resourceId: string): ReturnType<Client['readResource']> {
+        const params = {uri: resourceId};
+        return this.client.readResource(params);
     }
 }

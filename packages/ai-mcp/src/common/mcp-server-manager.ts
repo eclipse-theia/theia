@@ -14,11 +14,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import type { Client } from '@modelcontextprotocol/sdk/client/index';
+import type {Client} from '@modelcontextprotocol/sdk/client/index';
 
 export interface MCPServer {
     callTool(toolName: string, arg_string: string): ReturnType<Client['callTool']>;
     getTools(): ReturnType<Client['listTools']>;
+
+    listResources(): ReturnType<Client['listResources']>;
+
+    readResource(resourceId: string): ReturnType<Client['readResource']>;
 }
 
 export interface MCPServerManager {
@@ -30,6 +34,10 @@ export interface MCPServerManager {
     startServer(serverName: string): Promise<void>;
     stopServer(serverName: string): Promise<void>;
     getStartedServers(): Promise<string[]>;
+
+    listResources(serverName: string): ReturnType<MCPServer['listResources']>;
+
+    readResource(serverName: string, resourceId: string): ReturnType<MCPServer['readResource']>;
 }
 
 export interface MCPServerDescription {
