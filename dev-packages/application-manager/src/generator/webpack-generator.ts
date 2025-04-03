@@ -420,9 +420,19 @@ const config = {
         path: path.resolve(__dirname, 'lib', 'backend'),
         devtoolModuleFilenameTemplate: 'webpack:///[absolute-resource-path]?[loaders]',
     },${this.ifElectron(`
-    externals: {
-        electron: 'require("electron")'
-    },`)}
+    externals: [
+        {
+            electron: 'require("electron")'
+        },
+        function ({ context, request }, callback) {
+            if (context.endsWith('external-node-pty')) {
+                callback(null, 'commonjs ' + request);
+            } else {
+                callback();
+            }
+        }
+    ],
+    `)}
     entry: {
         // Main entry point of the Theia application backend:
         'main': require.resolve('./src-gen/backend/main'),
