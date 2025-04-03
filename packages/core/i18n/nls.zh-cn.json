@@ -1,4 +1,5 @@
 {
+  "ai-chat-ui.show-settings": "显示人工智能设置",
   "aiConfiguration:open": "打开 AI 配置视图",
   "aiHistory:clear": "人工智能历史:清除历史记录",
   "aiHistory:open": "打开人工智能历史视图",
@@ -13,6 +14,30 @@
   "terminal:profile:default": "选择默认的终端配置文件",
   "theia": {
     "ai": {
+      "agents": {
+        "enable": {
+          "mdDescription": "指定应启用(true)还是禁用(false)代理。",
+          "title": "启用代理"
+        },
+        "languageModelRequirements": {
+          "identifier": {
+            "mdDescription": "要使用的语言模型的标识符。",
+            "title": "确定"
+          },
+          "mdDescription": "指定该代理使用的语言模型。",
+          "purpose": {
+            "mdDescription": "使用该语言模型的目的。",
+            "title": "目的"
+          },
+          "title": "语言模型要求"
+        },
+        "mdDescription": "配置代理设置,如启用或禁用特定代理、配置提示和选择 LLM。",
+        "selectedVariants": {
+          "mdDescription": "指定此代理当前选择的提示变量。",
+          "title": "部分变体"
+        },
+        "title": "代理设置"
+      },
       "anthropic": {
         "apiKey": {
           "description": "输入 Anthropic 官方账户的 API 密钥。**请注意:** 使用此选项时,Anthropic API 密钥将以明文形式存储在运行 Theia 的机器上。请使用环境变量 `ANTHROPIC_API_KEY` 安全设置密钥。"
@@ -27,6 +52,9 @@
         },
         "pinChatAgent": {
           "description": "启用代理固定功能可自动让被提及的聊天代理在整个提示过程中保持活跃,减少重复提及的需要。"
+        },
+        "view": {
+          "label": "人工智能聊天"
         }
       },
       "chat-ui": {
@@ -53,16 +81,21 @@
         },
         "copyCodeBlock": "复制代码块",
         "deleteChangeSet": "删除更改集",
+        "enterChatName": "输入聊天名称",
         "errorChatInvocation": "调用聊天服务时发生错误。",
         "openDiff": "开放式差速器",
         "openOriginalFile": "打开原始文件",
         "pinAgent": "针剂",
         "removeChat": "删除聊天",
+        "renameChat": "重命名聊天",
         "selectChat": "选择聊天",
         "selectVariableArguments": "选择变量参数",
         "send": "发送(输入)",
         "text-part-renderer": {
           "cantDisplay": "无法显示回复,请检查您的 ChatResponsePartRenderers！"
+        },
+        "thinking-part-renderer": {
+          "thinking": "思考"
         },
         "toolcall-part-renderer": {
           "finished": "冉冉",
@@ -132,9 +165,15 @@
         "promptTemplates": {
           "description": "用于存储自定义提示模板的文件夹。如果未自定义,则使用用户配置目录。请考虑使用受版本控制的文件夹来管理提示模板的变体。"
         },
+        "prompts": {
+          "category": "Theia AI 提示模板"
+        },
         "requestSettings": {
           "mdDescription": "允许为多个模型指定自定义请求设置。\n            每个对象代表一个特定模型的配置。modelId \"字段指定模型 ID,\"requestSettings \"定义特定于模型的设置。\n            提供商 ID \"字段是可选的,允许将设置应用于特定的提供商。如果未设置,设置将应用于所有提供商。\n            示例提供程序 ID:huggingface、openai、ollama、llamafile。\n            更多信息请参阅 [我们的文档](https://theia-ide.org/docs/user_ai/#custom-request-settings)。",
           "title": "自定义请求设置"
+        },
+        "showAllPrompts": {
+          "label": "显示所有提示"
         },
         "templateSettings": {
           "selectVariant": "选择变体:",
@@ -146,7 +185,16 @@
           "currentFileContent": "当前打开文件的纯内容。这不包括内容来源的信息。请注意,大多数代理使用相对文件路径(相对于当前工作区)时效果会更好。",
           "currentRelativeDirPath": "包含当前打开文件的目录的相对路径。",
           "currentRelativeFilePath": "当前打开文件的相对路径。",
-          "currentSelectedText": "打开的文件中当前选中的纯文本。这不包括内容来源的信息。请注意,大多数代理使用相对文件路径(相对于当前工作区)时效果会更好。"
+          "currentSelectedText": "打开的文件中当前选中的纯文本。这不包括内容来源的信息。请注意,大多数代理使用相对文件路径(相对于当前工作区)时效果会更好。",
+          "dotRelativePath": "当前打开文件相对路径的简短引用(\"currentRelativeFilePath\")。"
+        }
+      },
+      "google": {
+        "apiKey": {
+          "description": "输入您的 Google AI (Gemini) 官方账户的 API 密钥。**请注意:** 使用此选项时,GOOGLE AI API 密钥将以明文形式存储在运行 Theia 的机器上。请使用环境变量 `GOOGLE_API_KEY` 安全设置密钥。"
+        },
+        "models": {
+          "description": "使用的官方 Google 双子座模型"
         }
       },
       "history": {
@@ -154,14 +202,11 @@
           "tooltip": "清除所有代理的历史记录"
         },
         "communication-card": {
-          "context": "背景",
-          "messages": "信息",
           "request": "要求",
           "requestId": "申请 ID",
           "response": "回应",
           "responseTime": "响应时间",
           "sessionId": "会话 ID",
-          "systemMessage": "系统信息",
           "timestamp": "时间戳"
         },
         "sortChronologically": {
@@ -184,6 +229,11 @@
         "models": {
           "description": "使用拥抱脸模型"
         }
+      },
+      "ide": {
+        "agent-description": "在 [AI 配置视图]({0}) 中配置 AI 代理设置,包括启用、LLM 选择、提示模板定制和自定义代理创建。",
+        "model-selection-description": "在 [AI 配置视图]({0}) 中选择每个人工智能代理使用的大型语言模型 (LLM)。",
+        "prompt-template-description": "在 [AI 配置视图]({0}) 中为 AI 代理选择提示变量和自定义提示模板。"
       },
       "llamaFile": {
         "prefs": {
@@ -245,10 +295,28 @@
         },
         "stop": {
           "label": "MCP: 停止 MCP 服务器"
-        },
-        "tool": {
-          "unnamed": "未命名工具"
         }
+      },
+      "mcpConfiguration": {
+        "arguments": "论据: ",
+        "autostart": "自动启动: ",
+        "command": "命令: ",
+        "copiedAllList": "将所有工具复制到剪贴板(所有工具列表)",
+        "copiedAllSingle": "将所有工具复制到剪贴板(包含所有工具的单一提示片段)",
+        "copiedForPromptTemplate": "为提示模板将所有工具复制到剪贴板(包含所有工具的单一提示片段)",
+        "copyAllList": "全部复制(所有工具列表)",
+        "copyAllSingle": "复制所有聊天内容(使用所有工具的单一提示片段)",
+        "copyForPrompt": "复制工具(用于聊天或提示模板)",
+        "copyForPromptTemplate": "全部复制提示模板(使用所有工具的单一提示片段)",
+        "disabled": "残疾",
+        "enabled": "已启用",
+        "environmentVariables": "环境变量: ",
+        "noServers": "未配置 MCP 服务器",
+        "serverConfigurations": "MCP 服务器配置",
+        "startServer": "启动服务器",
+        "stopServer": "停止服务器",
+        "tools": "工具 ",
+        "widgetLabel": "MCP 服务器"
       },
       "openai": {
         "apiKey": {
@@ -285,6 +353,18 @@
           "description": "可使用的官方 OpenAI 模型"
         }
       },
+      "promptTemplates": {
+        "directories": {
+          "title": "特定工作区的提示模板目录"
+        },
+        "extensions": {
+          "description": "提示位置中被视为提示模板的附加文件扩展名列表。.prompttemplate \"始终被视为默认文件。",
+          "title": "其他提示模板文件扩展名"
+        },
+        "files": {
+          "title": "特定工作区的提示模板文件"
+        }
+      },
       "scanoss": {
         "changeSet": {
           "clean": "无匹配",
@@ -316,6 +396,10 @@
           "no-match": "SCANOSS - 不匹配",
           "summary": "摘要"
         }
+      },
+      "session-settings-dialog": {
+        "title": "设置会话设置",
+        "tooltip": "设置会话设置"
       },
       "terminal": {
         "agent": {
@@ -352,6 +436,13 @@
         }
       }
     },
+    "ai-chat-ui": {
+      "open-history-tooltip": "打开人工智能历史...",
+      "open-settings-tooltip": "打开人工智能设置..."
+    },
+    "ai-ide": {
+      "open-agent-settings-tooltip": "打开代理设置..."
+    },
     "callhierarchy": {
       "noCallers": "没有发现调用者。",
       "open": "打开调用层次结构"
@@ -386,7 +477,8 @@
     "core": {
       "about": {
         "compatibility": "{0} 兼容性",
-        "defaultApi": "默认的{0} API"
+        "defaultApi": "默认的{0} API",
+        "listOfExtensions": "扩展名列表"
       },
       "common": {
         "closeAll": "全部关闭",
@@ -758,6 +850,7 @@
       "webviewWarnIfUnsecure": "警告用户,目前网络视图的部署是不安全的。"
     },
     "preferences": {
+      "ai-features": "人工智能功能",
       "hostedPlugin": "托管插件",
       "toolbar": "工具栏"
     },
@@ -858,6 +951,9 @@
     "typehierarchy": {
       "subtypeHierarchy": "子类型层次结构",
       "supertypeHierarchy": "超类型层次结构"
+    },
+    "variableResolver": {
+      "listAllVariables": "变量列出所有"
     },
     "vsx-registry": {
       "confirmDialogMessage": "扩展名 \"{0}\" 未经验证,可能存在安全风险。",

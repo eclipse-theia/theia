@@ -1,4 +1,5 @@
 {
+  "ai-chat-ui.show-settings": "AI beállítások megjelenítése",
   "aiConfiguration:open": "AI konfigurációs nézet megnyitása",
   "aiHistory:clear": "AI történelem: Előzmények törlése",
   "aiHistory:open": "AI előzmények nézet megnyitása",
@@ -13,6 +14,30 @@
   "terminal:profile:default": "Válassza ki az alapértelmezett terminálprofilt",
   "theia": {
     "ai": {
+      "agents": {
+        "enable": {
+          "mdDescription": "Megadja, hogy az ügynök engedélyezve (true) vagy letiltva (false) legyen.",
+          "title": "Ügynök engedélyezése"
+        },
+        "languageModelRequirements": {
+          "identifier": {
+            "mdDescription": "A használandó nyelvi modell azonosítója.",
+            "title": "Azonosítsa a  címet."
+          },
+          "mdDescription": "Megadja az ügynök használt nyelvi modelljeit.",
+          "purpose": {
+            "mdDescription": "A nyelvi modell használatának célja.",
+            "title": "Cél"
+          },
+          "title": "Nyelvi modell követelmények"
+        },
+        "mdDescription": "Az ügynökbeállítások konfigurálása, például egyes ügynökök engedélyezése vagy letiltása, a felszólítások konfigurálása és az LLM-ek kiválasztása.",
+        "selectedVariants": {
+          "mdDescription": "Megadja az ügynök jelenleg kiválasztott prompt-változatát.",
+          "title": "Kiválasztott változatok"
+        },
+        "title": "Ügynöki beállítások"
+      },
       "anthropic": {
         "apiKey": {
           "description": "Adja meg a hivatalos Anthropic-fiókjának API-kulcsát. **Figyelem:** Ha ezt a beállítást használja, az Anthropic API-kulcsa tiszta szövegben lesz tárolva a Theia-t futtató gépen. A kulcs biztonságos beállításához használja az `ANTHROPIC_API_KEY` környezeti változót."
@@ -27,6 +52,9 @@
         },
         "pinChatAgent": {
           "description": "Ha engedélyezi az ügynök kitűzését, akkor az említett csevegőügynök automatikusan aktív marad az összes felszólítás között, csökkentve ezzel az ismételt említések szükségességét.Az ügynökök kitűzését vagy váltását bármikor manuálisan feloldhatja."
+        },
+        "view": {
+          "label": "AI Chat"
         }
       },
       "chat-ui": {
@@ -53,16 +81,21 @@
         },
         "copyCodeBlock": "Kódblokk másolása",
         "deleteChangeSet": "Váltáskészlet törlése",
+        "enterChatName": "Csevegőnév megadása",
         "errorChatInvocation": "Hiba történt a chatszolgáltatás meghívása során.",
         "openDiff": "Nyitott diff",
         "openOriginalFile": "Eredeti fájl megnyitása",
         "pinAgent": "Pin ügynök",
         "removeChat": "Chat eltávolítása",
+        "renameChat": "Chat átnevezése",
         "selectChat": "Válassza ki a csevegést",
         "selectVariableArguments": "Változó argumentumok kiválasztása",
         "send": "Küldés (Enter)",
         "text-part-renderer": {
           "cantDisplay": "Nem tudja megjeleníteni a választ, kérjük ellenőrizze a ChatResponsePartRenderereket!"
+        },
+        "thinking-part-renderer": {
+          "thinking": "Gondolkodás"
         },
         "toolcall-part-renderer": {
           "finished": "Ran",
@@ -132,9 +165,15 @@
         "promptTemplates": {
           "description": "Egyéni prompt sablonok tárolására szolgáló mappa. Ha nincs testreszabva, akkor a felhasználói konfigurációs könyvtárat kell használni. Kérjük, fontolja meg egy olyan mappa használatát, amely verzióvezérlés alatt áll a prompt sablonok változatainak kezeléséhez."
         },
+        "prompts": {
+          "category": "Theia AI Prompt sablonok"
+        },
         "requestSettings": {
           "mdDescription": "Lehetővé teszi az egyéni kérési beállítások megadását több modellhez.\n            Minden objektum egy adott modell konfigurációját jelenti. A `modelId` mező a modell azonosítóját adja meg, a `requestSettings` a modellspecifikus beállításokat határozza meg.\n            A `providerId` mező opcionális, és lehetővé teszi a beállítások alkalmazását egy adott szolgáltatóra. Ha nincs megadva, a beállítások az összes szolgáltatóra alkalmazásra kerülnek.\n            Példa providerId: huggingface, openai, ollama, llamafile.\n            További információért lásd [dokumentációnk](https://theia-ide.org/docs/user_ai/#custom-request-settings).",
           "title": "Egyéni kérési beállítások"
+        },
+        "showAllPrompts": {
+          "label": "Minden felszólítás megjelenítése"
         },
         "templateSettings": {
           "selectVariant": "Válassza ki a változatot:",
@@ -146,7 +185,16 @@
           "currentFileContent": "Az aktuálisan megnyitott fájl egyszerű tartalma. Ez nem tartalmazza azt az információt, hogy honnan származik a tartalom. Vegye figyelembe, hogy a legtöbb ügynök jobban fog működni relatív fájlútvonallal (az aktuális munkaterülethez képest).",
           "currentRelativeDirPath": "Az aktuálisan megnyitott fájlt tartalmazó könyvtár relatív elérési útja.",
           "currentRelativeFilePath": "Az aktuálisan megnyitott fájl relatív elérési útja.",
-          "currentSelectedText": "A megnyitott fájlban jelenleg kijelölt sima szöveg. Ez kizárja azt az információt, hogy honnan származik a tartalom. Kérjük, vegye figyelembe, hogy a legtöbb ügynök jobban működik relatív fájlútvonallal (az aktuális munkaterülethez viszonyítva)."
+          "currentSelectedText": "A megnyitott fájlban jelenleg kijelölt sima szöveg. Ez kizárja azt az információt, hogy honnan származik a tartalom. Kérjük, vegye figyelembe, hogy a legtöbb ügynök jobban működik relatív fájlútvonallal (az aktuális munkaterülethez viszonyítva).",
+          "dotRelativePath": "Rövid hivatkozás az aktuálisan megnyitott fájl relatív elérési útvonalára ('currentRelativeFilePath')."
+        }
+      },
+      "google": {
+        "apiKey": {
+          "description": "Adja meg a hivatalos Google AI (Gemini) fiókjának API-kulcsát. **Kérjük, vegye figyelembe:** Ennek a beállításnak a használatával a GOOGLE AI API kulcsa tiszta szövegben tárolódik a Theia-t futtató gépen. A kulcs biztonságos beállításához használja a `GOOGLE_API_KEY` környezeti változót."
+        },
+        "models": {
+          "description": "Hivatalos Google Gemini modellek használata"
         }
       },
       "history": {
@@ -154,14 +202,11 @@
           "tooltip": "Törölje az összes ügynök előzményeit"
         },
         "communication-card": {
-          "context": "Kontextus",
-          "messages": "Üzenetek",
           "request": "Kérés",
           "requestId": "Kérelem azonosítója",
           "response": "Válasz",
           "responseTime": "Válaszidő",
           "sessionId": "Munkamenet azonosítója",
-          "systemMessage": "Rendszerüzenet",
           "timestamp": "Időbélyegző"
         },
         "sortChronologically": {
@@ -184,6 +229,11 @@
         "models": {
           "description": "Hugging Face modellek használata"
         }
+      },
+      "ide": {
+        "agent-description": "Az AI-ügynök beállításainak konfigurálása, beleértve az engedélyezést, az LLM kiválasztását, a prompt sablon testreszabását és az egyéni ügynök létrehozását az [AI konfigurációs nézetben]({0}).",
+        "model-selection-description": "Válassza ki, hogy az egyes mesterséges intelligencia-ügynökök milyen nagy nyelvi modelleket (LLM) használjanak az [AI Configuration View] ({0}) menüpontban.",
+        "prompt-template-description": "A [AI Configuration View (AI konfigurációs nézet)] ({0}) ablakban kiválaszthatja a prompt-változatokat és testre szabhatja a prompt-sablonokat az AI-ügynökök számára."
       },
       "llamaFile": {
         "prefs": {
@@ -245,10 +295,28 @@
         },
         "stop": {
           "label": "MCP: MCP-kiszolgáló leállítása"
-        },
-        "tool": {
-          "unnamed": "Névtelen eszköz"
         }
+      },
+      "mcpConfiguration": {
+        "arguments": "Érvek: ",
+        "autostart": "Autostart: ",
+        "command": "Parancs: ",
+        "copiedAllList": "Az összes eszköz másolása a vágólapra (az összes eszköz listája)",
+        "copiedAllSingle": "Az összes eszközt a vágólapra másolta (egyetlen prompt töredék az összes eszközzel)",
+        "copiedForPromptTemplate": "Az összes eszközt a vágólapra másolta a prompt sablonhoz (egyetlen prompt töredék az összes eszközzel)",
+        "copyAllList": "Minden másolása (az összes eszköz listája)",
+        "copyAllSingle": "Mindent másolni a chathez (egyetlen prompt töredék minden eszközzel)",
+        "copyForPrompt": "Másoló eszköz (chat vagy prompt sablonhoz)",
+        "copyForPromptTemplate": "Mindent másolni a prompt sablonhoz (egyetlen prompt töredék minden eszközzel)",
+        "disabled": "Mozgáskorlátozottak",
+        "enabled": "Engedélyezve",
+        "environmentVariables": "Környezeti változók: ",
+        "noServers": "Nincsenek MCP-kiszolgálók konfigurálva",
+        "serverConfigurations": "MCP-kiszolgáló konfigurációk",
+        "startServer": "Kiszolgáló indítása",
+        "stopServer": "Kiszolgáló leállítása",
+        "tools": "Eszközök: ",
+        "widgetLabel": "MCP szerverek"
       },
       "openai": {
         "apiKey": {
@@ -285,6 +353,18 @@
           "description": "Hivatalos OpenAI modellek használata"
         }
       },
+      "promptTemplates": {
+        "directories": {
+          "title": "Munkaterület-specifikus Prompt sablonkönyvtárak"
+        },
+        "extensions": {
+          "description": "A prompt helyeken található további fájlkiterjesztések listája, amelyeket prompt sablonoknak tekintünk. A '.prompttemplate' mindig alapértelmezettnek tekintendő.",
+          "title": "További Prompt sablon fájl kiterjesztések"
+        },
+        "files": {
+          "title": "Munkaterület-specifikus Prompt sablonfájlok"
+        }
+      },
       "scanoss": {
         "changeSet": {
           "clean": "Nincsenek találatok",
@@ -316,6 +396,10 @@
           "no-match": "SCANOSS - Nincs egyezés",
           "summary": "Összefoglaló"
         }
+      },
+      "session-settings-dialog": {
+        "title": "Munkamenet-beállítások beállítása",
+        "tooltip": "Munkamenet-beállítások beállítása"
       },
       "terminal": {
         "agent": {
@@ -352,6 +436,13 @@
         }
       }
     },
+    "ai-chat-ui": {
+      "open-history-tooltip": "Nyitott AI történelem...",
+      "open-settings-tooltip": "AI beállítások megnyitása..."
+    },
+    "ai-ide": {
+      "open-agent-settings-tooltip": "Ügynöki beállítások megnyitása..."
+    },
     "callhierarchy": {
       "noCallers": "Nem észleltek hívókat.",
       "open": "Nyílt felhívás hierarchia"
@@ -386,7 +477,8 @@
     "core": {
       "about": {
         "compatibility": "{0} Kompatibilitás",
-        "defaultApi": "Alapértelmezett {0} API"
+        "defaultApi": "Alapértelmezett {0} API",
+        "listOfExtensions": "A kiterjesztések listája"
       },
       "common": {
         "closeAll": "Minden lap bezárása",
@@ -758,6 +850,7 @@
       "webviewWarnIfUnsecure": "Figyelmezteti a felhasználókat, hogy a webnézetek jelenleg nem biztonságosan vannak telepítve."
     },
     "preferences": {
+      "ai-features": "AI funkciók",
       "hostedPlugin": "Hostolt bővítmény",
       "toolbar": "Eszköztár"
     },
@@ -858,6 +951,9 @@
     "typehierarchy": {
       "subtypeHierarchy": "Altípus-hierarchia",
       "supertypeHierarchy": "Szupertípus hierarchia"
+    },
+    "variableResolver": {
+      "listAllVariables": "Változó: List All"
     },
     "vsx-registry": {
       "confirmDialogMessage": "A \"{0}\" kiterjesztés nem ellenőrzött, és biztonsági kockázatot jelenthet.",

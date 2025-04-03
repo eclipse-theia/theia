@@ -1,4 +1,5 @@
 {
+  "ai-chat-ui.show-settings": "AI設定の表示",
   "aiConfiguration:open": "AI設定ビューを開く",
   "aiHistory:clear": "AI履歴クリアヒストリー",
   "aiHistory:open": "AI履歴ビューを開く",
@@ -13,6 +14,30 @@
   "terminal:profile:default": "デフォルトの端末プロファイルを選択",
   "theia": {
     "ai": {
+      "agents": {
+        "enable": {
+          "mdDescription": "エージェントを有効(true)にするか無効(false)にするかを指定します。",
+          "title": "エージェントを有効にする"
+        },
+        "languageModelRequirements": {
+          "identifier": {
+            "mdDescription": "使用する言語モデルの識別子。",
+            "title": "特定する"
+          },
+          "mdDescription": "このエージェントで使用する言語モデルを指定します。",
+          "purpose": {
+            "mdDescription": "この言語モデルを使用する目的。",
+            "title": "目的"
+          },
+          "title": "言語モデルの要件"
+        },
+        "mdDescription": "特定のエージェントの有効化、無効化、プロンプトの設定、LLMの選択など、エージェントの設定を行います。",
+        "selectedVariants": {
+          "mdDescription": "このエージェントで現在選択されているプロンプトのバリエーションを指定します。",
+          "title": "厳選されたバリエーション"
+        },
+        "title": "エージェント設定"
+      },
       "anthropic": {
         "apiKey": {
           "description": "Anthropic公式アカウントのAPIキーを入力してください。**AnthropicのAPIキーは、Theiaを実行しているマシンにクリアテキストで保存されます。キーを安全に設定するには、環境変数 `ANTHROPIC_API_KEY` を使用してください。"
@@ -27,6 +52,9 @@
         },
         "pinChatAgent": {
           "description": "エージェントのピン留めを有効にすると、プロンプトの間、言及されたチャットエージェントを自動的にアクティブに保ち、繰り返し言及する必要性を減らします。"
+        },
+        "view": {
+          "label": "AIチャット"
         }
       },
       "chat-ui": {
@@ -53,16 +81,21 @@
         },
         "copyCodeBlock": "コードブロックのコピー",
         "deleteChangeSet": "変更セットの削除",
+        "enterChatName": "チャット名を入力",
         "errorChatInvocation": "チャットサービス呼び出し中にエラーが発生しました。",
         "openDiff": "オープンデフ",
         "openOriginalFile": "オリジナル・ファイルを開く",
         "pinAgent": "ピン・エージェント",
         "removeChat": "チャットの削除",
+        "renameChat": "チャット名の変更",
         "selectChat": "チャットを選択",
         "selectVariableArguments": "変数引数の選択",
         "send": "送信 (Enter)",
         "text-part-renderer": {
           "cantDisplay": "ChatResponsePartRenderersをチェックしてください！"
+        },
+        "thinking-part-renderer": {
+          "thinking": "考える"
         },
         "toolcall-part-renderer": {
           "finished": "ラン",
@@ -132,9 +165,15 @@
         "promptTemplates": {
           "description": "カスタマイズされたプロンプトテンプレートを保存するフォルダ。カスタマイズされていない場合は、ユーザー設定ディレクトリが使用される。プロンプトテンプレートのバリエーションを管理するために、バージョン管理下にあるフォルダを使用することを検討してください。"
         },
+        "prompts": {
+          "category": "テイアAIプロンプトテンプレート"
+        },
         "requestSettings": {
           "mdDescription": "複数のモデルのカスタムリクエスト設定を指定することができます。\n            各オブジェクトは特定のモデルの設定を表す。modelId` フィールドはモデル ID を指定し、`requestSettings` フィールドはモデル固有の設定を定義する。\n            providerId` フィールドはオプションであり、設定を特定のプロバイダに適用することができる。設定されていない場合、設定はすべてのプロバイダに適用される。\n            providerIdの例: huggingface, openai, ollama, llamafile.\n            詳しくは[our documentation](https://theia-ide.org/docs/user_ai/#custom-request-settings)を参照してください。",
           "title": "カスタムリクエスト設定"
+        },
+        "showAllPrompts": {
+          "label": "すべてのプロンプトを表示する"
         },
         "templateSettings": {
           "selectVariant": "バリアントを選択する:",
@@ -146,7 +185,16 @@
           "currentFileContent": "現在開いているファイルのプレーンな内容。これは、コンテンツがどこから来たかという情報を除きます。ほとんどのエージェントは、相対ファイルパス(現在のワークスペースからの相対パス)の方がうまく動作することに注意してください。",
           "currentRelativeDirPath": "現在開いているファイルを含むディレクトリの相対パス。",
           "currentRelativeFilePath": "現在開いているファイルの相対パス。",
-          "currentSelectedText": "開いているファイルで現在選択されているプレーンテキスト。これは、コンテンツがどこから来たかという情報を除きます。ほとんどのエージェントは、相対ファイルパス(現在のワークスペースからの相対パス)の方がうまく動作することに注意してください。"
+          "currentSelectedText": "開いているファイルで現在選択されているプレーンテキスト。これは、コンテンツがどこから来たかという情報を除きます。ほとんどのエージェントは、相対ファイルパス(現在のワークスペースからの相対パス)の方がうまく動作することに注意してください。",
+          "dotRelativePath": "現在開いているファイルの相対パス ('currentRelativeFilePath')へのショートリファレンス。"
+        }
+      },
+      "google": {
+        "apiKey": {
+          "description": "公式 Google AI (Gemini) アカウントの API キーを入力してください。**注意:** この設定を使用すると、Theia を実行しているマシンに GOOGLE AI API キーが平文で保存されます。キーを安全に設定するには、環境変数 `GOOGLE_API_KEY` を使用してください。"
+        },
+        "models": {
+          "description": "使用するGoogle Gemini公式モデル"
         }
       },
       "history": {
@@ -154,14 +202,11 @@
           "tooltip": "全エージェントの履歴を消去"
         },
         "communication-card": {
-          "context": "コンテクスト",
-          "messages": "メッセージ",
           "request": "リクエスト",
           "requestId": "リクエストID",
           "response": "応答",
           "responseTime": "応答時間",
           "sessionId": "セッションID",
-          "systemMessage": "システムメッセージ",
           "timestamp": "タイムスタンプ"
         },
         "sortChronologically": {
@@ -184,6 +229,11 @@
         "models": {
           "description": "ハグする顔のモデル"
         }
+      },
+      "ide": {
+        "agent-description": "AI Configuration View]({0})で、AIエージェントの有効化、LLMの選択、プロンプトテンプレートのカスタマイズ、カスタムエージェントの作成などの設定を行います。",
+        "model-selection-description": "AI Configuration View]({0})で、各AIエージェントが使用するLarge Language Models (LLM) を選択します。",
+        "prompt-template-description": "AI Configuration View]({0})で、AIエージェントのプロンプトバリアントを選択し、プロンプトテンプレートをカスタマイズする。"
       },
       "llamaFile": {
         "prefs": {
@@ -245,10 +295,28 @@
         },
         "stop": {
           "label": "MCP:MCPサーバーの停止"
-        },
-        "tool": {
-          "unnamed": "無名ツール"
         }
+      },
+      "mcpConfiguration": {
+        "arguments": "論拠: ",
+        "autostart": "オートスタート: ",
+        "command": "命令だ: ",
+        "copiedAllList": "すべてのツールをクリップボードにコピー(すべてのツールのリスト)",
+        "copiedAllSingle": "すべてのツールをクリップボードにコピー(すべてのツールを含む単一のプロンプトフラグメント)",
+        "copiedForPromptTemplate": "プロンプトテンプレートのためにすべてのツールをクリップボードにコピー(すべてのツールを含む単一のプロンプトフラグメント)",
+        "copyAllList": "すべてコピー(すべてのツールのリスト)",
+        "copyAllSingle": "チャットのためにすべてをコピーする(すべてのツールで単一のプロンプトフラグメント)",
+        "copyForPrompt": "コピーツール(チャットまたはプロンプトテンプレート用)",
+        "copyForPromptTemplate": "プロンプトテンプレートのすべてをコピーする(すべてのツールで単一のプロンプトフラグメント)",
+        "disabled": "無効",
+        "enabled": "有効",
+        "environmentVariables": "環境変数: ",
+        "noServers": "MCPサーバーが設定されていない",
+        "serverConfigurations": "MCPサーバーの構成",
+        "startServer": "サーバ起動",
+        "stopServer": "サーバー停止",
+        "tools": "道具だ: ",
+        "widgetLabel": "MCPサーバー"
       },
       "openai": {
         "apiKey": {
@@ -285,6 +353,18 @@
           "description": "OpenAIの公式使用モデル"
         }
       },
+      "promptTemplates": {
+        "directories": {
+          "title": "ワークスペース固有のプロンプト・テンプレート・ディレクトリ"
+        },
+        "extensions": {
+          "description": "プロンプトのテンプレートとみなされる、 プロンプトの場所にある追加のファイル拡張子のリスト。'.prompttemplate' は常にデフォルトとみなされる。",
+          "title": "その他のプロンプト・テンプレート・ファイル拡張子"
+        },
+        "files": {
+          "title": "ワークスペース固有のプロンプト・テンプレート・ファイル"
+        }
+      },
       "scanoss": {
         "changeSet": {
           "clean": "マッチなし",
@@ -316,6 +396,10 @@
           "no-match": "SCANOSS - 該当なし",
           "summary": "概要"
         }
+      },
+      "session-settings-dialog": {
+        "title": "セッション設定の設定",
+        "tooltip": "セッション設定の設定"
       },
       "terminal": {
         "agent": {
@@ -352,6 +436,13 @@
         }
       }
     },
+    "ai-chat-ui": {
+      "open-history-tooltip": "AIの歴史を開く...",
+      "open-settings-tooltip": "AIの設定を開く..."
+    },
+    "ai-ide": {
+      "open-agent-settings-tooltip": "エージェントの設定を開く..."
+    },
     "callhierarchy": {
       "noCallers": "発信者は検出されていません。",
       "open": "オープンコールヒエラルキー"
@@ -386,7 +477,8 @@
     "core": {
       "about": {
         "compatibility": "{0} 互換性",
-        "defaultApi": "デフォルト{0} API"
+        "defaultApi": "デフォルト{0} API",
+        "listOfExtensions": "エクステンション一覧"
       },
       "common": {
         "closeAll": "すべてのタブを閉じる",
@@ -758,6 +850,7 @@
       "webviewWarnIfUnsecure": "現在、ウェブビューが安全でない状態で展開されていることをユーザーに警告します。"
     },
     "preferences": {
+      "ai-features": "AI機能",
       "hostedPlugin": "ホスト型プラグイン",
       "toolbar": "ツールバー"
     },
@@ -858,6 +951,9 @@
     "typehierarchy": {
       "subtypeHierarchy": "サブタイプヒエラルキー",
       "supertypeHierarchy": "スーパータイプヒエラルキー"
+    },
+    "variableResolver": {
+      "listAllVariables": "変数すべてをリストする"
     },
     "vsx-registry": {
       "confirmDialogMessage": "拡張子 \"{0}\" は未検証であり、セキュリティリスクをもたらす可能性があります。",
