@@ -197,6 +197,8 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
                 this.props.notebookCellEditorService.editorFocusChanged(this.editor);
             }));
             this.toDispose.push(this.editor.getControl().onDidBlurEditorText(() => {
+                // extra blur to really also loose widget focus. Otherwise actions like copy can still be handled by monaco even thogh it does not have focus.
+                this.blurEditor();
                 if (this.props.notebookCellEditorService.getActiveCell()?.uri.toString() === this.props.cell.uri.toString()) {
                     this.props.notebookCellEditorService.editorFocusChanged(undefined);
                 }
