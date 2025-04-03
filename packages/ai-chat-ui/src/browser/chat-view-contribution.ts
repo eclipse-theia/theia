@@ -147,7 +147,6 @@ export class ChatViewMenuContribution implements MenuContribution, CommandContri
             commandId: CommonCommands.PASTE.id
         });
     }
-
 }
 
 function hasAsFirstArg<T>(args: unknown[], guard: (arg: unknown) => arg is T): args is [T, ...unknown[]] {

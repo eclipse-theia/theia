@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { Path, URI } from '@theia/core';
-import { codiconArray } from '@theia/core/lib/browser';
+import { OpenerService, codiconArray, open } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
@@ -23,11 +23,12 @@ import {
     AIVariable,
     AIVariableContext,
     AIVariableContribution,
+    AIVariableOpener,
     AIVariableResolutionRequest,
     AIVariableResolver,
-    AIVariableService,
     ResolvedAIContextVariable,
 } from '../common/variable-service';
+import { FrontendVariableService } from './frontend-variable-service';
 
 export namespace FileVariableArgs {
     export const uri = 'uri';
@@ -44,15 +45,19 @@ export const FILE_VARIABLE: AIVariable = {
 };
 
 @injectable()
-export class FileVariableContribution implements AIVariableContribution, AIVariableResolver {
+export class FileVariableContribution implements AIVariableContribution, AIVariableResolver, AIVariableOpener {
     @inject(FileService)
     protected readonly fileService: FileService;
 
     @inject(WorkspaceService)
     protected readonly wsService: WorkspaceService;
 
-    registerVariables(service: AIVariableService): void {
+    @inject(OpenerService)
+    protected readonly openerService: OpenerService;
+
+    registerVariables(service: FrontendVariableService): void {
         service.registerResolver(FILE_VARIABLE, this);
+        service.registerOpener(FILE_VARIABLE, this);
     }
 
     async canResolve(request: AIVariableResolutionRequest, _: AIVariableContext): Promise<number> {
@@ -60,26 +65,41 @@ export class FileVariableContribution implements AIVariableContribution, AIVaria
     }
 
     async resolve(request: AIVariableResolutionRequest, _: AIVariableContext): Promise<ResolvedAIContextVariable | undefined> {
-        if (request.variable.name !== FILE_VARIABLE.name || request.arg === undefined) {
-            return undefined;
-        }
+        const uri = await this.toUri(request);
 
-        const path = request.arg;
-        const absoluteUri = await this.makeAbsolute(path);
-        if (!absoluteUri) {
-            return undefined;
-        }
+        if (!uri) { return undefined; }
 
         try {
-            const content = await this.fileService.readFile(absoluteUri);
+            const content = await this.fileService.readFile(uri);
             return {
                 variable: request.variable,
-                value: await this.wsService.getWorkspaceRelativePath(absoluteUri),
+                value: await this.wsService.getWorkspaceRelativePath(uri),
                 contextValue: content.value.toString(),
             };
         } catch (error) {
             return undefined;
         }
+    }
+
+    protected async toUri(request: AIVariableResolutionRequest): Promise<URI | undefined> {
+        if (request.variable.name !== FILE_VARIABLE.name || request.arg === undefined) {
+            return undefined;
+        }
+
+        const path = request.arg;
+        return this.makeAbsolute(path);
+    }
+
+    canOpen(request: AIVariableResolutionRequest, context: AIVariableContext): Promise<number> {
+        return this.canResolve(request, context);
+    }
+
+    async open(request: AIVariableResolutionRequest, context: AIVariableContext): Promise<void> {
+        const uri = await this.toUri(request);
+        if (!uri) {
+            throw new Error('Unable to resolve URI for request.');
+        }
+        await open(this.openerService, uri);
     }
 
     protected async makeAbsolute(pathStr: string): Promise<URI | undefined> {

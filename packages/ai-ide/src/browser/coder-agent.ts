@@ -13,16 +13,19 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { AbstractStreamParsingChatAgent } from '@theia/ai-chat/lib/common';
-import { injectable } from '@theia/core/shared/inversify';
+import { AbstractStreamParsingChatAgent, ChatRequestModel, ChatService, ChatSession, MutableChatModel, MutableChatRequestModel } from '@theia/ai-chat/lib/common';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { FILE_CONTENT_FUNCTION_ID, GET_WORKSPACE_FILE_LIST_FUNCTION_ID, GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID } from '../common/workspace-functions';
 import { CODER_REPLACE_PROMPT_TEMPLATE_ID, getCoderReplacePromptTemplate, getCoderReplacePromptTemplateNext } from '../common/coder-replace-prompt-template';
 import { WriteChangeToFileProvider } from './file-changeset-functions';
 import { LanguageModelRequirement } from '@theia/ai-core';
 import { nls } from '@theia/core';
+import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
+import { AI_CHAT_NEW_CHAT_WINDOW_COMMAND, AI_CHAT_NEW_WITH_TASK_CONTEXT } from '@theia/ai-chat-ui/lib/browser/chat-view-commands';
 
 @injectable()
 export class CoderAgent extends AbstractStreamParsingChatAgent {
+    @inject(ChatService) protected readonly chatService: ChatService;
     id: string = 'Coder';
     name = 'Coder';
     languageModelRequirements: LanguageModelRequirement[] = [{
@@ -38,5 +41,26 @@ export class CoderAgent extends AbstractStreamParsingChatAgent {
     override promptTemplates = [getCoderReplacePromptTemplate(true), getCoderReplacePromptTemplate(false), getCoderReplacePromptTemplateNext()];
     override functions = [GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID, GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID, WriteChangeToFileProvider.ID];
     protected override systemPromptId: string | undefined = CODER_REPLACE_PROMPT_TEMPLATE_ID;
-
+    override async invoke(request: MutableChatRequestModel): Promise<void> {
+        await super.invoke(request);
+        this.suggest(request);
+    }
+    async suggest(context: ChatSession | ChatRequestModel): Promise<void> {
+        const contextIsRequest = ChatRequestModel.is(context);
+        const model = contextIsRequest ? context.session : context.model;
+        const session = contextIsRequest ? this.chatService.getSessions().find(candidate => candidate.model.id === model.id) : context;
+        if (!(model instanceof MutableChatModel) || !session) { return; }
+        if (model.isEmpty()) {
+            model.setSuggestions([
+                {
+                    kind: 'callback',
+                    callback: () => this.chatService.sendRequest(session.id, { text: '@Coder please look at #_f and fix any problems.' }),
+                    content: '[Fix problems](_callback) in the current file.'
+                },
+            ]);
+        } else {
+            model.setSuggestions([new MarkdownStringImpl(`Keep chats short and focused. [Start a new chat](command:${AI_CHAT_NEW_CHAT_WINDOW_COMMAND.id}) for a new task`
+                + ` or [start a new chat with a summary of this one](command:${AI_CHAT_NEW_WITH_TASK_CONTEXT.id}).`)]);
+        }
+    }
 }

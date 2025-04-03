@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { bindContributionProvider, CommandContribution, CommandHandler } from '@theia/core';
+import { bindContributionProvider, CommandContribution, CommandHandler, ResourceResolver } from '@theia/core';
 import {
     RemoteConnectionProvider,
     ServiceConnectionProvider,
@@ -38,17 +38,16 @@ import {
     ToolProvider,
     TokenUsageService,
     TOKEN_USAGE_SERVICE_PATH,
-    TokenUsageServiceClient
+    TokenUsageServiceClient,
+    AIVariableResourceResolver
 } from '../common';
 import {
     FrontendLanguageModelRegistryImpl,
     LanguageModelDelegateClientImpl,
 } from './frontend-language-model-registry';
-
-import { FrontendApplicationContribution, PreferenceContribution } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, LabelProviderContribution, PreferenceContribution } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { LanguageGrammarDefinitionContribution } from '@theia/monaco/lib/browser/textmate';
-
 import { AICoreFrontendApplicationContribution } from './ai-core-frontend-application-contribution';
 import { bindAICorePreferences } from './ai-core-preferences';
 import { AgentSettingsPreferenceSchema } from './agent-preferences';
@@ -70,6 +69,7 @@ import { LanguageModelService } from '../common/language-model-service';
 import { FrontendLanguageModelServiceImpl } from './frontend-language-model-service';
 import { TokenUsageFrontendService } from './token-usage-frontend-service';
 import { TokenUsageFrontendServiceImpl, TokenUsageServiceClientImpl } from './token-usage-frontend-service-impl';
+import { AIVariableUriLabelProvider } from './ai-variable-uri-label-provider';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, LanguageModelProvider);
@@ -158,4 +158,8 @@ export default new ContainerModule(bind => {
         const client = ctx.container.get<TokenUsageServiceClient>(TokenUsageServiceClient);
         return connection.createProxy<TokenUsageService>(TOKEN_USAGE_SERVICE_PATH, client);
     }).inSingletonScope();
+    bind(AIVariableResourceResolver).toSelf().inSingletonScope();
+    bind(ResourceResolver).toService(AIVariableResourceResolver);
+    bind(AIVariableUriLabelProvider).toSelf().inSingletonScope();
+    bind(LabelProviderContribution).toService(AIVariableUriLabelProvider);
 });

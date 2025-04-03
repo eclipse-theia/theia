@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2025 EclipseSource GmbH.
+// Copyright (C) 2025 EclipseSource GmbH and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,10 +14,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { URI } from '@theia/core';
+import { AIVariable } from '@theia/ai-core';
+import { codiconArray } from '@theia/core/lib/browser';
 
-export const CHANGE_SET_FILE_RESOURCE_SCHEME = 'changeset-file';
-
-export function createChangeSetFileUri(chatSessionId: string, elementUri: URI): URI {
-    return elementUri.withScheme(CHANGE_SET_FILE_RESOURCE_SCHEME).withAuthority(chatSessionId);
-}
+export const TASK_CONTEXT_VARIABLE: AIVariable = {
+    id: 'taskContext',
+    description: 'Provides context information for a task, e.g. the plan for completing a task or a summary of a previous sessions',
+    name: 'taskContext',
+    label: 'Task Context',
+    iconClasses: codiconArray('clippy'),
+    isContextVariable: true,
+    args: [{ name: 'context-id', description: 'The ID of the task context to retrieve, or a chat session to summarize.' }]
+};

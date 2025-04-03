@@ -45,6 +45,15 @@ export const AI_CHAT_NEW_CHAT_WINDOW_COMMAND: Command = {
     iconClass: codicon('add')
 };
 
+export const AI_CHAT_NEW_WITH_TASK_CONTEXT: Command = {
+    id: 'ai-chat.new-with-task-context',
+};
+
+export const AI_CHAT_SUMMARIZE_CURRENT_SESSION: Command = {
+    id: 'ai-chat-summary-current-session',
+    iconClass: codicon('note')
+};
+
 export const AI_CHAT_SHOW_CHATS_COMMAND: Command = {
     id: 'ai-chat-ui.show-chats',
     iconClass: codicon('history')

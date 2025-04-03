@@ -22,6 +22,8 @@ import { AIChatInputWidget } from './chat-input-widget';
 import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
 import { AIActivationService } from '@theia/ai-core/lib/browser/ai-activation-service';
 import { AIVariableResolutionRequest } from '@theia/ai-core';
+import { ProgressBarFactory } from '@theia/core/lib/browser/progress-bar-factory';
+import { FrontendVariableService } from '@theia/ai-core/lib/browser';
 
 export namespace ChatViewWidget {
     export interface State {
@@ -49,6 +51,12 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
 
     @inject(AIActivationService)
     protected readonly activationService: AIActivationService;
+
+    @inject(FrontendVariableService)
+    protected readonly variableService: FrontendVariableService;
+
+    @inject(ProgressBarFactory)
+    protected readonly progressBarFactory: ProgressBarFactory;
 
     protected chatSession: ChatSession;
 
@@ -98,6 +106,7 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         this.inputWidget.pinnedAgent = this.chatSession.pinnedAgent;
         this.inputWidget.onDeleteChangeSet = this.onDeleteChangeSet.bind(this);
         this.inputWidget.onDeleteChangeSetElement = this.onDeleteChangeSetElement.bind(this);
+        this.inputWidget.onOpenContextElement = this.onOpenContextElement.bind(this);
         this.treeWidget.trackChatModel(this.chatSession.model);
 
         this.initListeners();
@@ -110,6 +119,7 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
             this.inputWidget.setEnabled(change);
             this.update();
         });
+        this.toDispose.push(this.progressBarFactory({ container: this.node, insertMode: 'prepend', locationId: 'ai-chat' }));
     }
 
     protected initListeners(): void {
@@ -203,6 +213,11 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
 
     protected onDeleteChangeSetElement(sessionId: string, index: number): void {
         this.chatService.deleteChangeSetElement(sessionId, index);
+    }
+
+    protected async onOpenContextElement(request: AIVariableResolutionRequest): Promise<void> {
+        const context = { session: this.chatSession };
+        await this.variableService.open(request, context);
     }
 
     lock(): void {

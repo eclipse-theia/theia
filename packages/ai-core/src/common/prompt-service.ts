@@ -84,7 +84,7 @@ export interface PromptService {
      *
      * @param id the id of the prompt
      * @param args the object with placeholders, mapping the placeholder key to the value
-     * @param context the {@link AIVariableContext} to use during variable resolvement
+     * @param context the {@link AIVariableContext} to use during variable resolution
      * @param resolveVariable the variable resolving method. Fall back to using the {@link AIVariableService} if not given.
      */
     getPromptFragment(
@@ -341,7 +341,7 @@ export class PromptServiceImpl implements PromptService {
      *
      * @param template the unresolved template text
      * @param args the object with placeholders, mapping the placeholder key to the value
-     * @param context the {@link AIVariableContext} to use during variable resolvement
+     * @param context the {@link AIVariableContext} to use during variable resolution
      * @param resolveVariable the variable resolving method. Fall back to using the {@link AIVariableService} if not given.
      */
     protected async getVariableAndArgReplacements(

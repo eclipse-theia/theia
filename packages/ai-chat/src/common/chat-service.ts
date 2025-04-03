@@ -38,6 +38,7 @@ import {
 import { ChatRequestParser } from './chat-request-parser';
 import { ParsedChatRequest, ParsedChatRequestAgentPart } from './parsed-chat-request';
 import { ChatSessionNamingService } from './chat-session-naming-service';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 
 export interface ChatRequestInvocation {
     /**
@@ -125,6 +126,7 @@ export interface ChatService {
     getSessions(): ChatSession[];
     createSession(location?: ChatAgentLocation, options?: SessionOptions, pinnedAgent?: ChatAgent): ChatSession;
     deleteSession(sessionId: string): void;
+    getActiveSession(): ChatSession | undefined;
     setActiveSession(sessionId: string, options?: SessionOptions): void;
 
     sendRequest(
@@ -208,6 +210,12 @@ export class ChatServiceImpl implements ChatService {
         this.onSessionEventEmitter.fire({ type: 'deleted', sessionId: sessionId });
     }
 
+    getActiveSession(): ChatSession | undefined {
+        const activeSessions = this._sessions.filter(candidate => candidate.isActive);
+        if (activeSessions.length > 1) { throw new Error('More than one session marked as active. This indicates an error in ChatService.'); }
+        return activeSessions.at(0);
+    }
+
     setActiveSession(sessionId: string | undefined, options?: SessionOptions): void {
         this._sessions.forEach(session => {
             session.isActive = session.id === sessionId;
@@ -244,33 +252,23 @@ export class ChatServiceImpl implements ChatService {
         this.updateSessionMetadata(session, requestModel);
         resolutionContext.request = requestModel;
 
-        let resolveResponseCreated: (responseModel: ChatResponseModel) => void;
-        let resolveResponseCompleted: (responseModel: ChatResponseModel) => void;
+        const responseCompletionDeferred = new Deferred<ChatResponseModel>();
         const invocation: ChatRequestInvocation = {
             requestCompleted: Promise.resolve(requestModel),
-            responseCreated: new Promise(resolve => {
-                resolveResponseCreated = resolve;
-            }),
-            responseCompleted: new Promise(resolve => {
-                resolveResponseCompleted = resolve;
-            }),
+            responseCreated: Promise.resolve(requestModel.response),
+            responseCompleted: responseCompletionDeferred.promise,
         };
 
-        resolveResponseCreated!(requestModel.response);
         requestModel.response.onDidChange(() => {
             if (requestModel.response.isComplete) {
-                resolveResponseCompleted!(requestModel.response);
+                responseCompletionDeferred.resolve(requestModel.response);
             }
             if (requestModel.response.isError) {
-                resolveResponseCompleted!(requestModel.response);
+                responseCompletionDeferred.resolve(requestModel.response);
             }
         });
 
-        if (agent) {
-            agent.invoke(requestModel).catch(error => requestModel.response.error(error));
-        } else {
-            this.logger.error('No ChatAgents available to handle request!', requestModel);
-        }
+        agent.invoke(requestModel).catch(error => requestModel.response.error(error));
 
         return invocation;
     }
@@ -304,15 +302,8 @@ export class ChatServiceImpl implements ChatService {
         context: ChatSessionContext,
     ): Promise<ChatContext> {
         // TODO use a common cache to resolve variables and return recursively resolved variables?
-        const resolvedVariables = await Promise.all(
-            resolutionRequests.map(async contextVariable => {
-                const resolvedVariable = await this.variableService.resolveVariable(contextVariable, context);
-                if (ResolvedAIContextVariable.is(resolvedVariable)) {
-                    return resolvedVariable;
-                }
-                return undefined;
-            })
-        ).then(results => results.filter((result): result is ResolvedAIContextVariable => result !== undefined));
+        const resolvedVariables = await Promise.all(resolutionRequests.map(async contextVariable => this.variableService.resolveVariable(contextVariable, context)))
+            .then(results => results.filter(ResolvedAIContextVariable.is));
         return { variables: resolvedVariables };
     }
 

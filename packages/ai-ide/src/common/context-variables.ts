@@ -15,3 +15,4 @@
 // *****************************************************************************
 
 export const CONTEXT_FILES_VARIABLE_ID = 'contextFiles';
+export const TASK_CONTEXT_SUMMARY_VARIABLE_ID = 'taskContextSummary';

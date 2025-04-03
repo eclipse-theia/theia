@@ -75,6 +75,7 @@
     "lint": "lerna run lint",
     "lint:fix": "lerna run lint -- --fix",
     "lint:clean": "rimraf .eslintcache",
+    "lint:fix": "lerna run lint -- --fix",
     "preinstall": "node-gyp install",
     "postinstall": "theia-patch && npm run -s compute-references && lerna run afterInstall",
     "publish:latest": "lerna publish --exact --yes",

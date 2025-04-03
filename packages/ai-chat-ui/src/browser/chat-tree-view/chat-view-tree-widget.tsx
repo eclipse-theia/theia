@@ -29,7 +29,7 @@ import {
 } from '@theia/ai-chat';
 import { AIVariableService } from '@theia/ai-core';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
-import { CommandRegistry, ContributionProvider, DisposableCollection, Emitter } from '@theia/core';
+import { CommandRegistry, ContributionProvider, Disposable, DisposableCollection, Emitter } from '@theia/core';
 import {
     codicon,
     CompositeTreeNode,
@@ -60,7 +60,6 @@ import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
 import { useMarkdownRendering } from '../chat-response-renderer/markdown-part-renderer';
 import { ProgressMessage } from '../chat-progress-message';
 import { AIChatTreeInputFactory, type AIChatTreeInputWidget } from './chat-view-tree-input-widget';
-import { Disposable } from '@theia/core/shared/vscode-languageserver-protocol';
 
 // TODO Instead of directly operating on the ChatRequestModel we could use an intermediate view model
 export interface RequestNode extends TreeNode {

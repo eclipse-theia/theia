@@ -12,15 +12,15 @@
 import { PromptTemplate } from '@theia/ai-core/lib/common';
 import { CHANGE_SET_SUMMARY_VARIABLE_ID } from '@theia/ai-chat';
 import {
-  GET_WORKSPACE_FILE_LIST_FUNCTION_ID,
-  FILE_CONTENT_FUNCTION_ID,
-  GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID,
-  GET_FILE_DIAGNOSTICS_ID,
-  SEARCH_IN_WORKSPACE_FUNCTION_ID,
-  LIST_TASKS_FUNCTION_ID,
-  RUN_TASK_FUNCTION_ID
+    GET_WORKSPACE_FILE_LIST_FUNCTION_ID,
+    FILE_CONTENT_FUNCTION_ID,
+    GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID,
+    GET_FILE_DIAGNOSTICS_ID,
+    SEARCH_IN_WORKSPACE_FUNCTION_ID,
+    LIST_TASKS_FUNCTION_ID,
+    RUN_TASK_FUNCTION_ID
 } from './workspace-functions';
-import { CONTEXT_FILES_VARIABLE_ID } from './context-variables';
+import { CONTEXT_FILES_VARIABLE_ID, TASK_CONTEXT_SUMMARY_VARIABLE_ID } from './context-variables';
 import { UPDATE_CONTEXT_FILES_FUNCTION_ID } from './context-functions';
 
 export const CODER_REWRITE_PROMPT_TEMPLATE_ID = 'coder-rewrite';
@@ -28,9 +28,9 @@ export const CODER_REPLACE_PROMPT_TEMPLATE_ID = 'coder-search-replace';
 export const CODER_REPLACE_PROMPT_TEMPLATE_NEXT_ID = 'coder-search-replace-next';
 
 export function getCoderReplacePromptTemplateNext(): PromptTemplate {
-  return {
-    id: CODER_REPLACE_PROMPT_TEMPLATE_NEXT_ID,
-    template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
+    return {
+        id: CODER_REPLACE_PROMPT_TEMPLATE_NEXT_ID,
+        template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
 Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
 You are an AI assistant integrated into Theia IDE, designed to assist software developers with code tasks. You can interact with the code base and suggest changes.
@@ -76,13 +76,13 @@ You have previously proposed changes for the following files. Some suggestions m
 
 {{prompt:project-info}}
 `,
-    ...({ variantOf: CODER_REPLACE_PROMPT_TEMPLATE_ID }),
-  };
+        ...({ variantOf: CODER_REPLACE_PROMPT_TEMPLATE_ID }),
+    };
 }
 export function getCoderReplacePromptTemplate(withSearchAndReplace: boolean = false): PromptTemplate {
-  return {
-    id: withSearchAndReplace ? CODER_REPLACE_PROMPT_TEMPLATE_ID : CODER_REWRITE_PROMPT_TEMPLATE_ID,
-    template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
+    return {
+        id: withSearchAndReplace ? CODER_REPLACE_PROMPT_TEMPLATE_ID : CODER_REWRITE_PROMPT_TEMPLATE_ID,
+        template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
 Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
 You are an AI assistant integrated into Theia IDE, designed to assist software developers with code tasks. You can interact with the code base and suggest changes.
@@ -107,19 +107,19 @@ Instead, for each file you want to propose changes for:
 ${withSearchAndReplace ? ' If ~{changeSet_replaceContentInFile} continously fails use ~{changeSet_writeChangeToFile}. Calling a function on a file will override previous \
 function calls on the same file, so you need exactly one successful call with all proposed changes per changed file. The changes will be presented as a applicable diff to \
 the user in any case.' : ''}
-  
+
 ## Additional Context
 
 The following files have been provided for additional context. Some of them may also be referred to by the user. \
 Always look at the relevant files to understand your task using the function ~{${FILE_CONTENT_FUNCTION_ID}}
 {{${CONTEXT_FILES_VARIABLE_ID}}}
 
-## Previously Proposed Changes
-You have previously proposed changes for the following files. Some suggestions may have been accepted by the user, while others may still be pending.
 {{${CHANGE_SET_SUMMARY_VARIABLE_ID}}}
 
 {{prompt:project-info}}
+
+{{${TASK_CONTEXT_SUMMARY_VARIABLE_ID}}}
 `,
-    ...(!withSearchAndReplace ? { variantOf: CODER_REPLACE_PROMPT_TEMPLATE_ID } : {}),
-  };
+        ...(!withSearchAndReplace ? { variantOf: CODER_REPLACE_PROMPT_TEMPLATE_ID } : {}),
+    };
 }

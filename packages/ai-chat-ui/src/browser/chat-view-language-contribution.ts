@@ -14,15 +14,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { ChatAgentService } from '@theia/ai-chat';
-import { AIContextVariable, AIVariableService } from '@theia/ai-core/lib/common';
+import { AIVariableService } from '@theia/ai-core/lib/common';
 import { PromptText } from '@theia/ai-core/lib/common/prompt-text';
 import { ToolInvocationRegistry } from '@theia/ai-core/lib/common/tool-invocation-registry';
 import { MaybePromise, nls } from '@theia/core';
-import { ApplicationShell, FrontendApplication, FrontendApplicationContribution } from '@theia/core/lib/browser';
+import { FrontendApplication, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
 import { ProviderResult } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
-import { ChatViewWidget } from './chat-view-widget';
+import { AIChatFrontendContribution, VARIABLE_ADD_CONTEXT_COMMAND } from '@theia/ai-chat/lib/browser/ai-chat-frontend-contribution';
 
 export const CHAT_VIEW_LANGUAGE_ID = 'theia-ai-chat-view-language';
 export const SETTINGS_LANGUAGE_ID = 'theia-ai-chat-settings-language';
@@ -30,7 +30,6 @@ export const CHAT_VIEW_LANGUAGE_EXTENSION = 'aichatviewlanguage';
 
 const VARIABLE_RESOLUTION_CONTEXT = { context: 'chat-input-autocomplete' };
 const VARIABLE_ARGUMENT_PICKER_COMMAND = 'trigger-variable-argument-picker';
-const VARIABLE_ADD_CONTEXT_COMMAND = 'add-context-variable';
 
 interface CompletionSource<T> {
     triggerCharacter: string;
@@ -54,8 +53,8 @@ export class ChatViewLanguageContribution implements FrontendApplicationContribu
     @inject(ToolInvocationRegistry)
     protected readonly toolInvocationRegistry: ToolInvocationRegistry;
 
-    @inject(ApplicationShell)
-    protected readonly shell: ApplicationShell;
+    @inject(AIChatFrontendContribution)
+    protected readonly chatFrontendContribution: AIChatFrontendContribution;
 
     onStart(_app: FrontendApplication): MaybePromise<void> {
         monaco.languages.register({ id: CHAT_VIEW_LANGUAGE_ID, extensions: [CHAT_VIEW_LANGUAGE_EXTENSION] });
@@ -64,7 +63,6 @@ export class ChatViewLanguageContribution implements FrontendApplicationContribu
         this.registerCompletionProviders();
 
         monaco.editor.registerCommand(VARIABLE_ARGUMENT_PICKER_COMMAND, this.triggerVariableArgumentPicker.bind(this));
-        monaco.editor.registerCommand(VARIABLE_ADD_CONTEXT_COMMAND, (_, ...args) => args.length > 1 ? this.addContextVariable(args[0], args[1]) : undefined);
     }
 
     protected registerCompletionProviders(): void {
@@ -205,12 +203,12 @@ export class ChatViewLanguageContribution implements FrontendApplicationContribu
                 const items = await provider(model, position);
                 if (items) {
                     suggestions.push(...items.map(item => ({
-                        ...item,
                         command: {
-                            title: nls.localize('theia/ai/chat-ui/addContextVariable', 'Add context variable'),
-                            id: VARIABLE_ADD_CONTEXT_COMMAND,
+                            title: VARIABLE_ADD_CONTEXT_COMMAND.label!,
+                            id: VARIABLE_ADD_CONTEXT_COMMAND.id,
                             arguments: [variable.name, item.insertText]
-                        }
+                        },
+                        ...item,
                     })));
                 }
             }
@@ -262,22 +260,10 @@ export class ChatViewLanguageContribution implements FrontendApplicationContribu
             text: arg
         }]);
 
-        await this.addContextVariable(variableName, arg);
+        await this.chatFrontendContribution.addContextVariable(variableName, arg);
     }
 
     protected getCharacterBeforePosition(model: monaco.editor.ITextModel, position: monaco.Position): string {
         return model.getLineContent(position.lineNumber)[position.column - 1 - 1];
-    }
-
-    protected async addContextVariable(variableName: string, arg: string | undefined): Promise<void> {
-        const variable = this.variableService.getVariable(variableName);
-        if (!variable || !AIContextVariable.is(variable)) {
-            return;
-        }
-
-        const widget = this.shell.getWidgetById(ChatViewWidget.ID);
-        if (widget instanceof ChatViewWidget) {
-            widget.addContext({ variable, arg });
-        }
     }
 }
