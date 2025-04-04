@@ -21,8 +21,7 @@
       ],
       "export =": [
         "electron as Electron",
-        "electron-store as ElectronStore",
-        "fix-path as fixPath"
+        "electron-store as ElectronStore"
       ]
     }
   },
