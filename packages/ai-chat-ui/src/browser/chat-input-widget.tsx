@@ -719,12 +719,14 @@ const ChatContext: React.FunctionComponent<ChatContextUI> = ({ context }) => (
             {context.map((element, index) => (
                 <li key={index} className="theia-ChatInput-ChatContext-Element" title={element.details} onClick={() => element.open?.()}>
                     <div className={`theia-ChatInput-ChatContext-Icon ${element.iconClass}`} />
-                    <span className={`theia-ChatInput-ChatContext-title ${element.nameClass}`}>
-                        {element.name}
-                    </span>
-                    <span className='theia-ChatInput-ChatContext-additionalInfo'>
-                        {element.additionalInfo}
-                    </span>
+                    <div className="theia-ChatInput-ChatContext-labelParts">
+                        <span className={`theia-ChatInput-ChatContext-title ${element.nameClass}`}>
+                            {element.name}
+                        </span>
+                        <span className='theia-ChatInput-ChatContext-additionalInfo'>
+                            {element.additionalInfo}
+                        </span>
+                    </div>
                     <span className="codicon codicon-close action" title={nls.localizeByDefault('Delete')} onClick={() => element.delete()} />
                 </li>
             ))}
