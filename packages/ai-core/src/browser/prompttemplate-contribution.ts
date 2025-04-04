@@ -33,10 +33,10 @@ export const PROMPT_TEMPLATE_EXTENSION = '.prompttemplate';
 
 export const DISCARD_PROMPT_TEMPLATE_CUSTOMIZATIONS: Command = Command.toLocalizedCommand({
     id: 'theia-ai-prompt-template:discard',
-    label: 'Discard AI Prompt Templates',
+    label: 'Discard AI Prompt Template',
     iconClass: codicon('discard'),
     category: 'AI Prompt Templates'
-}, '', 'theia/ai/core/prompts/category');
+}, 'theia/ai/core/discard/label', 'theia/ai/core/prompts/category');
 
 @injectable()
 export class PromptTemplateContribution implements LanguageGrammarDefinitionContribution, CommandContribution, TabBarToolbarContribution {
